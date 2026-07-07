@@ -168,6 +168,79 @@ function summarizeH2H(h2hMatches, player1Name) {
   return { p1Wins, p2Wins, record: `${p1Wins}-${p2Wins}` };
 }
 
+// Full past-meeting list from get_H2H's raw H2H array — same last-name
+// comparison technique as summarizeH2H() above, so a match's winner here can
+// never disagree with the overall record. get_H2H doesn't return a surface
+// field directly (confirmed live) — surface is derived from tournament_key
+// via the same surfaceMap already used elsewhere in the pipeline (e.g.
+// seasonRowFromFixtures), not a new lookup.
+function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
+  return (h2hMatches || [])
+    .map(m => {
+      const p1WasFirst = lastName(m.event_first_player) === lastName(player1Name);
+      const winnerIsFirst = m.event_winner === 'First Player';
+      const p1Won = p1WasFirst ? winnerIsFirst : !winnerIsFirst;
+      // event_final_result is always "player1 sets - player2 sets" in RAW
+      // fixture order, NOT self-first — same reordering already applied in
+      // buildRecentFormData/loadTournamentProfiles for the same raw quirk.
+      let result = m.event_final_result;
+      if (!p1WasFirst && result && result.includes('-')) {
+        const parts = result.split('-').map(s => s.trim());
+        if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
+      }
+      return {
+        date: m.event_date,
+        tournament: m.tournament_name,
+        round: m.tournament_round || null,
+        surface: surfaceMap.get(String(m.tournament_key)) || null,
+        p1Won,
+        result,
+      };
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// Year-by-year record at THIS specific tournament, reused straight from the
+// tournament-profile match data already fetched/cached by
+// loadTournamentProfiles() (allEditionMatches) — no new API calls needed,
+// same principle as seasonRowFromFixtures reusing real match results instead
+// of a separate aggregate. CONFIRMED GAP: qualifying-round matches are
+// explicitly excluded when tournament profiles are built (see the
+// `event_qualification === 'True'` filter in loadTournamentProfiles), so a
+// separate qualifying-round record can't be derived from this data — would
+// need its own fetch path per player/tournament, left out entirely rather
+// than faked or half-built.
+function roundLabel(round) {
+  if (!round) return null;
+  const parts = round.split(' - ');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
+}
+function buildTournamentHistory(profile, playerKey) {
+  if (!profile || !profile.allEditionMatches) return null;
+  const years = [];
+  for (const edition of profile.allEditionMatches) {
+    const playerMatches = (edition.matches || []).filter(m =>
+      String(m.p1Key) === String(playerKey) || String(m.p2Key) === String(playerKey));
+    if (playerMatches.length === 0) continue;
+    let won = 0, lost = 0;
+    for (const m of playerMatches) {
+      const isP1 = String(m.p1Key) === String(playerKey);
+      const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
+      if (didWin) won++; else lost++;
+    }
+    const latest = playerMatches.reduce((a, b) => (b.date > a.date ? b : a));
+    years.push({ year: edition.season, matchCount: playerMatches.length, won, lost, roundReached: roundLabel(latest.round) });
+  }
+  if (years.length === 0) return null;
+  years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
+  return {
+    editionsPlayed: years.length,
+    totalWon: years.reduce((s, y) => s + y.won, 0),
+    totalLost: years.reduce((s, y) => s + y.lost, 0),
+    years,
+  };
+}
+
 // Recent form: filters get_H2H's recentResults field (reuses the H2H call —
 // no extra request needed) down to real main-tour matches, resolves self vs.
 // opponent by player KEY (not name/position — confirmed live that position
@@ -818,7 +891,7 @@ function computeModelProbability() {
   return null;
 }
 
-async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueMap) {
+async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueMap, tournamentProfiles) {
   const surface = surfaceFromEvent(oddsEvent);
   const tour = oddsEvent.sport_key.includes('atp') ? 'ATP' : 'WTA';
 
@@ -862,6 +935,9 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2RecentFormMatches: null,
     p1Yearly: null,
     p2Yearly: null,
+    p1TournamentHistory: null,
+    p2TournamentHistory: null,
+    venue: null,
     weather: null, // from Open-Meteo, independent of API-Tennis fixture match
     live: false,
     liveStatus: null,
@@ -873,30 +949,53 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // Weather doesn't depend on the API-Tennis fixture match, only on tournament + time
   match.weather = await fetchMatchWeather(oddsEvent.sport_title, oddsEvent.commence_time, venueMap);
 
+  // Curated static reference facts (city/country/category/indoor) — same source
+  // of truth as TOURNAMENT_VENUE_HINTS used for weather above, not a new lookup.
+  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => oddsEvent.sport_title.includes(k));
+  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
+  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
+
   const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
   if (!fixture) return match; // no API-Tennis match found — stays "coming soon" in the UI
 
   match.tournamentRound = fixture.tournament_round;
 
+  // CORRECTNESS FIX: findApiTennisFixture() matches by last name in EITHER
+  // player order (see its OR clause), so fixture.event_first_player is NOT
+  // guaranteed to be match.p1 (oddsEvent.home_team) — it can legitimately be
+  // match.p2 instead. Every field below used to assume fixture-first == p1
+  // unconditionally, which would silently swap p1/p2 data (H2H, form, rank,
+  // surface win rate, live score/server) for any real match where API-Tennis
+  // happened to list the players in the opposite order from the odds feed.
+  // Established once here via the same lastName() comparison already used
+  // throughout this file, and used consistently below instead of assuming order.
+  const p1IsFixtureFirst = lastName(fixture.event_first_player) === lastName(oddsEvent.home_team);
+  const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
+  const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
+
   // Live state — real fields from the API-Tennis fixture, confirmed live this session
   // against an actual in-progress match (event_live: "1", event_status: "Set 1").
-  // Follows the same fixture-first-player == p1 convention already used throughout
-  // this function (p1Rank, p1SurfaceWinRate, p1RecentForm, etc.) — not re-derived here.
   match.live = fixture.event_live === '1';
   match.liveStatus = match.live ? fixture.event_status : null;
   match.liveScore = match.live && Array.isArray(fixture.scores)
-    ? fixture.scores.map(s => ({ set: Number(s.score_set), p1: Number(s.score_first), p2: Number(s.score_second) }))
+    ? fixture.scores.map(s => ({
+        set: Number(s.score_set),
+        p1: Number(p1IsFixtureFirst ? s.score_first : s.score_second),
+        p2: Number(p1IsFixtureFirst ? s.score_second : s.score_first),
+      }))
     : null;
   match.liveGameScore = match.live ? (fixture.event_game_result || null) : null;
   match.liveServer = match.live
-    ? (fixture.event_serve === 'First Player' ? 'p1' : fixture.event_serve === 'Second Player' ? 'p2' : null)
+    ? (fixture.event_serve === (p1IsFixtureFirst ? 'First Player' : 'Second Player') ? 'p1'
+      : fixture.event_serve === (p1IsFixtureFirst ? 'Second Player' : 'First Player') ? 'p2' : null)
     : null;
 
-  const h2hData = await fetchH2H(fixture.first_player_key, fixture.second_player_key);
+  const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
-    match.h2h = summarizeH2H(h2hData.headToHead, fixture.event_first_player);
-    const p1Form = buildRecentFormData(h2hData.p1RecentResults, fixture.first_player_key);
-    const p2Form = buildRecentFormData(h2hData.p2RecentResults, fixture.second_player_key);
+    match.h2h = summarizeH2H(h2hData.headToHead, oddsEvent.home_team);
+    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, oddsEvent.home_team, surfaceMap);
+    const p1Form = buildRecentFormData(h2hData.p1RecentResults, p1Key);
+    const p2Form = buildRecentFormData(h2hData.p2RecentResults, p2Key);
     match.p1RecentForm = p1Form.pct;
     match.p2RecentForm = p2Form.pct;
     match.p1RecentFormMatches = p1Form.matches;
@@ -904,8 +1003,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   }
 
   const [p1Stats, p2Stats] = await Promise.all([
-    fetchPlayerStats(fixture.first_player_key),
-    fetchPlayerStats(fixture.second_player_key),
+    fetchPlayerStats(p1Key),
+    fetchPlayerStats(p2Key),
   ]);
   match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
   match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
@@ -914,14 +1013,20 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   const currentYear = new Date().getFullYear();
   const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
-    fetchPlayerFixturesForYear(fixture.first_player_key, currentYear),
-    fetchPlayerFixturesForYear(fixture.second_player_key, currentYear),
+    fetchPlayerFixturesForYear(p1Key, currentYear),
+    fetchPlayerFixturesForYear(p2Key, currentYear),
   ]);
-  const p1CurrentRow = seasonRowFromFixtures(p1CurrentFixtures, fixture.first_player_key, currentYear, surfaceMap);
-  const p2CurrentRow = seasonRowFromFixtures(p2CurrentFixtures, fixture.second_player_key, currentYear, surfaceMap);
+  const p1CurrentRow = seasonRowFromFixtures(p1CurrentFixtures, p1Key, currentYear, surfaceMap);
+  const p2CurrentRow = seasonRowFromFixtures(p2CurrentFixtures, p2Key, currentYear, surfaceMap);
 
   match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
   match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  // Year-by-year record at this specific tournament — reused from the
+  // tournament-profile match data (allEditionMatches), no new API calls.
+  const profile = hintKey ? tournamentProfiles?.[hintKey] : null;
+  match.p1TournamentHistory = buildTournamentHistory(profile, p1Key);
+  match.p2TournamentHistory = buildTournamentHistory(profile, p2Key);
 
   return match;
 }
@@ -946,20 +1051,23 @@ async function runPipeline() {
   const surfaceMap = await loadTournamentSurfaceMap();
   const venueMap = await loadTournamentVenueMap();
 
+  // Loaded before match-building (moved up from its old post-matches spot) so
+  // buildMatchObject() can reuse allEditionMatches for each match's real
+  // year-by-year record at that specific tournament — no new API calls.
+  console.log('Loading tournament profiles (draw size / champion / palmarès / per-edition match history — cached for 30 days)...');
+  const tournamentProfiles = await loadTournamentProfiles();
+  const profileCount = Object.values(tournamentProfiles.profiles).filter(Boolean).length;
+  console.log(`Tournament profiles ready: ${profileCount}/${Object.keys(tournamentProfiles.profiles).length} tournaments have historical data on record.`);
+
   const matches = [];
   for (const event of oddsEvents) {
-    matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap));
+    matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap, tournamentProfiles.profiles));
   }
 
   fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));
   console.log(`Wrote ${matches.length} matches to matches.json`);
   const enriched = matches.filter(m => m.h2h !== null).length;
   console.log(`${enriched}/${matches.length} matches got real H2H/stats data (rest had no API-Tennis fixture match).`);
-
-  console.log('Loading tournament profiles (draw size / champion / palmarès — cached for 30 days)...');
-  const tournamentProfiles = await loadTournamentProfiles();
-  const profileCount = Object.values(tournamentProfiles.profiles).filter(Boolean).length;
-  console.log(`Tournament profiles ready: ${profileCount}/${Object.keys(tournamentProfiles.profiles).length} tournaments have historical data on record.`);
 }
 
 runPipeline().catch(err => {
