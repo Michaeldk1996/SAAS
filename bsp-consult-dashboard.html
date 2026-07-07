@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSP Consult — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #08090C;
+    --panel: #12151C;
+    --panel-2: #181C25;
+    --border: #262B35;
+    --header-bg: #0E1633;
+    --text: #F2F4F7;
+    --text-dim: #8F98A6;
+    --text-faint: #565F6A;
+    --accent: #3E7BFA;
+    --accent-dim: #152A4D;
+    --accent-hover: #2f63d1;
+    --court-clay: #C1602A;
+    --court-grass: #4F8C5B;
+    --court-hard: #4A7DAA;
+    --court-clay-dim:#3A2015;
+    --court-grass-dim:#1B2F20;
+    --court-hard-dim:#17293B;
+    --value-pos: #4FBF7A;
+    --value-neg: #D9695A;
+    --radius: 8px;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0; background: var(--bg); color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5;
+  }
+  .display{ font-family:'Space Grotesk', sans-serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  /* Top nav */
+  .topnav{
+    display:flex; align-items:center; gap:28px;
+    padding: 0 24px; height:56px;
+    border-bottom:1px solid var(--border);
+    background: var(--header-bg);
+  }
+  .brand{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px;
+    display:flex; align-items:center; gap:8px; margin-right: 8px;
+  }
+  .brand .dot{ width:8px; height:8px; border-radius:50%; background: var(--accent); }
+  .navlinks{ display:flex; gap:22px; flex:1; overflow-x:auto; }
+  .navlinks button{
+    background:none; border:none; color: var(--text-dim); font-size:13px; font-weight:500;
+    white-space:nowrap; padding:4px 0; border-bottom:2px solid transparent;
+    cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .navlinks button.active{ color: var(--text); border-color: var(--accent); }
+  .navlinks button:hover{ color: var(--text); }
+  .account{
+    font-size:13px; color: var(--text-dim); white-space:nowrap;
+    display:flex; align-items:center; gap:14px;
+  }
+  .account .pill{
+    background: var(--panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:999px; color:var(--text); font-weight:500;
+  }
+
+  .tabpage{ display:none; }
+  .tabpage.active{ display:block; }
+
+  .header{
+    padding: 22px 24px 0 24px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    flex-wrap:wrap; gap:14px;
+  }
+  .header h1{ font-family:'Space Grotesk', sans-serif; font-size:22px; margin:0 0 4px 0; font-weight:600; }
+  .header p{ margin:0; color:var(--text-dim); font-size:13px; }
+  .circuit-toggle{
+    display:flex; background: var(--panel-2); border:1px solid var(--border);
+    border-radius: 999px; padding:3px; gap:2px;
+  }
+  .circuit-toggle button{
+    background:none; border:none; color:var(--text-dim); font-size:12px;
+    font-weight:600; padding:6px 16px; border-radius:999px; cursor:pointer;
+    font-family:'Inter', sans-serif;
+  }
+  .circuit-toggle button.active{ background: var(--accent); color:#fff; }
+  .circuit-toggle button:disabled{ cursor:not-allowed; opacity:0.5; }
+
+  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; padding: 18px 24px; }
+  .stat{ background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:14px 16px; }
+  .stat .label{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .stat .value{ font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; }
+  .stat .value.accent{ color: var(--value-pos); }
+  @media (max-width:720px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+
+  .controls{ padding: 4px 24px 0 24px; }
+  .daytabs{ display:flex; gap:4px; border-bottom:1px solid var(--border); }
+  .daytabs button{
+    background:none; border:none; color:var(--text-dim); font-size:13px; font-weight:500;
+    padding:10px 14px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'Inter', sans-serif;
+  }
+  .daytabs button.active{ color:var(--text); border-color: var(--accent); }
+
+  .filterbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding: 14px 0; }
+  .filterbar .group{ display:flex; gap:4px; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:3px; }
+  .filterbar .group button{
+    background:none; border:none; color:var(--text-dim); font-size:12px; font-weight:500;
+    padding:6px 12px; border-radius:4px; cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .filterbar .group button.active{ background: var(--panel); color:var(--text); }
+  .search{
+    background: var(--panel-2); border:1px solid var(--border); border-radius:6px;
+    padding:7px 12px; color:var(--text); font-size:13px; flex:1; min-width:160px;
+    font-family:'Inter', sans-serif;
+  }
+  .search::placeholder{ color: var(--text-faint); }
+  .sortsel{
+    background: var(--panel-2); border:1px solid var(--border); border-radius:6px;
+    padding:7px 10px; color:var(--text-dim); font-size:12px; font-family:'Inter', sans-serif;
+  }
+
+  /* Matches list */
+  .matchlist{ padding: 4px 24px 40px 24px; display:flex; flex-direction:column; gap:14px; }
+  .matchcard{ background: var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .matchcard .metabar{ display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .matchcard .metabar .surfacetag{ font-size:11px; font-weight:600; padding:4px 10px; border-radius:6px; }
+  .matchcard .metabar .surfacetag.clay{ background:var(--court-clay-dim); color:var(--court-clay); }
+  .matchcard .metabar .surfacetag.grass{ background:var(--court-grass-dim); color:var(--court-grass); }
+  .matchcard .metabar .surfacetag.hard{ background:var(--court-hard-dim); color:var(--court-hard); }
+  .matchcard .metabar .tourname{ font-size:13px; color:var(--text-dim); }
+  .matchcard .metabar .time{ font-size:12px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace; }
+  .matchcard .metabar .statusbadge{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:6px; background:var(--panel-2); color:var(--text-dim); }
+  .matchcard .metabar .statusbadge.live{ background:#3A2015; color:#E28B4A; }
+  .matchcard .metabar .fav{ margin-left:auto; cursor:pointer; color:var(--text-faint); font-size:16px; }
+  .matchcard .metabar .fav:hover{ color:var(--accent); }
+  .matchcard .livescore{ padding:0 18px 12px 18px; font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-dim); display:flex; flex-direction:column; gap:2px; }
+  .matchcard .livescore .anote{ font-family:'Inter', sans-serif; font-size:10px; color:var(--text-faint); }
+  .serveddot{ color:#E28B4A; font-size:14px; }
+  .matchcard .vsrow{ display:grid; grid-template-columns:1fr auto 1fr; gap:20px; padding:20px 18px; align-items:start; }
+  .matchcard .playerpanel .ptop{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .matchcard .playerpanel .pname{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:16px; }
+  .matchcard .playerpanel .oddsbadge{ background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; text-align:center; min-width:56px; }
+  .matchcard .playerpanel .oddsbadge .lbl{ font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; }
+  .matchcard .playerpanel .oddsbadge .val{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:15px; }
+  .matchcard .playerpanel .comingsoon{ font-size:12px; color:var(--text-faint); }
+  .matchcard .playerpanel .favoribadge{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--value-pos); margin-top:10px; }
+  .matchcard .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:12px; align-self:center; padding-top:24px; }
+  .matchcard .h2hrow{ padding:0 18px 16px 18px; font-size:12px; color:var(--text-faint); }
+  .matchcard .footer{ display:flex; justify-content:flex-end; padding:12px 18px; border-top:1px solid var(--border); }
+  .matchcard .footer a{ font-size:12px; color:var(--accent); text-decoration:none; cursor:pointer; }
+  @media (max-width: 640px){
+    .matchcard .vsrow{ grid-template-columns:1fr; }
+    .matchcard .vslabel{ display:none; }
+    .navlinks{ display:none; }
+  }
+
+
+  .badge{ font-size:10px; font-weight:600; padding:2px 6px; border-radius:3px; letter-spacing:0.03em; }
+  .badge.atp{ background: var(--accent-dim); color: var(--accent); }
+  .badge.wta{ background: var(--court-grass-dim); color: var(--court-grass); }
+  .badge.ch{ background: var(--court-grass-dim); color: var(--court-grass); }
+  .badge.live{ background:#3A2015; color:#E28B4A; }
+  .badge.upcoming{ background: var(--accent-dim); color: var(--accent); }
+  .badge.finished{ background:var(--panel-2); color:var(--text-faint); }
+  .badge.won{ background: var(--court-grass-dim); color: var(--value-pos); }
+  .badge.lost{ background:#3A1E1B; color:var(--value-neg); }
+  /* Category / venue-type badges — curated static reference facts, same
+     treatment as surfacetag (fixed, public, non-fabricated). */
+  .badge.gs{ background:#332312; color:#E2A945; }
+  .badge.m1000{ background: var(--accent-dim); color: var(--accent); }
+  .badge.finals{ background:#2A1533; color:#B183E0; }
+  .badge.a500{ background:var(--court-hard-dim); color:var(--court-hard); }
+  .badge.a250{ background:var(--panel-2); color:var(--text-dim); border:1px solid var(--border); }
+  .badge.nextgen{ background:#2A1533; color:#B183E0; }
+  .badge.indoor{ background:var(--panel-2); color:var(--text-dim); border:1px solid var(--border); }
+  .badge.outdoor{ background:var(--panel-2); color:var(--text-dim); border:1px solid var(--border); }
+
+  /* Generic page padding */
+  .pagewrap{ padding: 22px 24px 48px 24px; }
+  .pagehead{ margin-bottom:20px; }
+  .pagehead h1{ font-family:'Space Grotesk', sans-serif; font-size:22px; margin:0 0 4px 0; font-weight:600; }
+  .pagehead p{ margin:0; color:var(--text-dim); font-size:13px; }
+
+  /* Players grid */
+  .playergrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:14px; }
+  .playercard{ background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:16px; }
+  .playercard .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .playercard .name{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; }
+  .playercard .style{ font-size:11px; color:var(--text-faint); margin-bottom:12px; }
+  .playercard .row{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .playercard .row b{ color:var(--text); font-family:'IBM Plex Mono', monospace; font-weight:600; }
+  .playercard .surfacetags{ display:flex; gap:6px; margin-top:12px; }
+  .surfacetag{ font-size:10px; font-weight:600; padding:3px 7px; border-radius:4px; }
+  .surfacetag.clay{ background:var(--court-clay-dim); color:var(--court-clay); }
+  .surfacetag.grass{ background:var(--court-grass-dim); color:var(--court-grass); }
+  .surfacetag.hard{ background:var(--court-hard-dim); color:var(--court-hard); }
+
+  /* Tournaments — catalog list view */
+  .tourfilterbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .tourfilterbar .search{ flex:1; min-width:200px; }
+  .tourfilterbar select.sortsel{ min-width:160px; }
+  .tourgrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:14px; }
+  .tourcard{
+    display:flex; flex-direction:column; text-align:left; cursor:pointer;
+    background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); overflow:hidden;
+    font-family:'Inter', sans-serif; padding:0;
+  }
+  .tourcard:hover{ border-color: var(--accent); }
+  .tourcard .b{ height:4px; width:100%; }
+  .tourcard .b.clay{ background:var(--court-clay); } .tourcard .b.grass{ background:var(--court-grass); } .tourcard .b.hard{ background:var(--court-hard); }
+  .tourcard .info{ padding:14px 16px; }
+  .tourcard .info .n{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; margin-bottom:10px; }
+  .tourcard .info .badges{ display:flex; gap:6px; flex-wrap:wrap; }
+
+  /* Tournaments — profile view */
+  .tprofile-back{ background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; padding:0; margin-bottom:16px; font-family:'Inter', sans-serif; }
+  .tprofile-back:hover{ color:var(--text); }
+  .tprofile-header{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; }
+  .tprofile-header .badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .tprofile-header h1{ font-family:'Space Grotesk', sans-serif; font-size:24px; margin:0; font-weight:600; }
+  .tprofile-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+  .tprofile-explore{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+  .tprofile-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+  .tprofile-card .cardlabel{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
+  .tprofile-palmares-row{ display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .tprofile-palmares-row:last-child{ border-bottom:none; }
+  .tprofile-palmares-row .season{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:12px; }
+  .tprofile-palmares-row .champ{ color:var(--text); font-weight:600; }
+  .tprofile-palmares-row .country{ color:var(--text-faint); font-size:11px; }
+  .tprofile-entrants{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tprofile-entrants span{ background:var(--panel-2); border:1px solid var(--border); border-radius:4px; padding:4px 8px; font-size:12px; color:var(--text-dim); }
+  .tprofile-winrate .lbl{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .tprofile-winrate .track{ height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; }
+  .tprofile-winrate .track div{ height:100%; background:var(--accent); }
+  .tprofile-cta{ background:var(--accent-dim); border:1px solid var(--accent); border-radius:var(--radius); padding:20px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .tprofile-cta .txt{ font-size:14px; color:var(--text); }
+  .tprofile-cta button{ background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 18px; font-weight:600; font-size:13px; cursor:pointer; font-family:'Inter', sans-serif; white-space:nowrap; }
+  .tprofile-cta button:hover{ background:var(--accent-hover); }
+  @media (max-width:820px){ .tprofile-stats{ grid-template-columns:repeat(2,1fr); } .tprofile-explore{ grid-template-columns:1fr; } }
+
+  /* H2H */
+  .h2hselect{ display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap; }
+  .h2hselect select{
+    background: var(--panel-2); border:1px solid var(--border); border-radius:6px; color:var(--text);
+    padding:9px 12px; font-size:13px; font-family:'Inter', sans-serif; min-width:180px;
+  }
+  .h2hselect .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:13px; }
+  .h2hcard{ background: var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px; max-width:520px; }
+  .h2hcard .heads{ display:flex; justify-content:space-between; margin-bottom:20px; }
+  .h2hcard .heads .name{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; }
+  .h2hcard .barrow{ margin-bottom:14px; }
+  .h2hcard .barrow .lbl{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-faint); margin-bottom:4px; }
+  .h2hcard .barrow .track{ height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; }
+  .h2hcard .barrow .track div{ height:100%; background: var(--accent); }
+  .h2hcard .callout{ margin-top:16px; background:#16301F; border:1px solid var(--court-grass); border-radius:6px; padding:12px 14px; font-size:13px; color:var(--value-pos); font-weight:600; }
+
+  /* Playing styles */
+  .stylegrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:14px; }
+  .stylecard{ background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:20px; }
+  .stylecard .ic{ font-size:22px; margin-bottom:12px; }
+  .stylecard h3{ font-family:'Space Grotesk', sans-serif; font-size:15px; margin:0 0 8px 0; }
+  .stylecard p{ font-size:13px; color:var(--text-dim); margin:0 0 10px 0; }
+  .stylecard .examples{ font-size:11px; color:var(--text-faint); }
+
+  /* Track record */
+  .tracktable{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .tracktable th{ text-align:left; font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; padding:12px 16px; border-bottom:1px solid var(--border); }
+  .tracktable td{ padding:12px 16px; font-size:13px; border-bottom:1px solid var(--border); color:var(--text-dim); }
+  .tracktable tr:last-child td{ border-bottom:none; }
+  .tracktable td.mono{ font-family:'IBM Plex Mono', monospace; color:var(--text); }
+  .tablewrap{ overflow-x:auto; }
+
+  /* Methodology */
+  .methosection{ margin-bottom:32px; max-width:680px; }
+  .methosection h2{ font-family:'Space Grotesk', sans-serif; font-size:18px; margin:0 0 10px 0; display:flex; align-items:center; gap:10px; }
+  .methosection h2 .ic{ font-size:18px; }
+  .methosection p{ color:var(--text-dim); font-size:14px; margin:0; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal-overlay.open{ display:flex; }
+  .modal{ background: var(--panel); border:1px solid var(--border); border-radius:12px; padding:28px; max-width:340px; text-align:center; }
+  .modal .icon{ font-size:28px; margin-bottom:10px; color:var(--accent); }
+  .modal h3{ font-family:'Space Grotesk', sans-serif; margin:0 0 8px 0; font-size:18px; }
+  .modal p{ color:var(--text-dim); font-size:13px; margin:0 0 18px 0; }
+  .modal button{
+    background: var(--accent); color:#fff; border:none; border-radius:6px;
+    padding:10px 20px; font-weight:600; font-size:13px; cursor:pointer; font-family:'Inter', sans-serif; width:100%;
+  }
+  .modal button:hover{ background: var(--accent-hover); }
+  .modal .dismiss{ background:none; color:var(--text-faint); margin-top:10px; font-weight:500; }
+  .modal .dismiss:hover{ background:none; color:var(--text-dim); }
+
+  .modal-analysis{ max-width:700px; width:100%; text-align:left; max-height:85vh; overflow-y:auto; padding:0; }
+  .modal-analysis .ahead{ padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .modal-analysis .ahead .close{ cursor:pointer; color:var(--text-faint); font-size:18px; }
+  .modal-analysis .ahead .close:hover{ color:var(--text); }
+  .modal-analysis .amatchup{ padding:16px 24px 0 24px; display:flex; align-items:center; gap:12px; font-family:'Space Grotesk', sans-serif; font-size:17px; font-weight:600; }
+  .modal-analysis .amatchup .aodds{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:3px 8px; }
+  .modal-analysis .alivebar{ margin:10px 24px 0 24px; padding:8px 12px; background:#3A2015; color:#E28B4A; border-radius:6px; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .modal-analysis .alivebar .anote{ font-family:'Inter', sans-serif; font-weight:400; color:var(--text-faint); text-align:left; }
+  .modal-analysis .atabs{ display:flex; gap:6px; padding:16px 24px; flex-wrap:wrap; border-bottom:1px solid var(--border); }
+  .modal-analysis .atabs button{ background:var(--panel-2); border:1px solid var(--border); color:var(--text-dim); font-size:12px; font-weight:500; padding:7px 13px; border-radius:999px; cursor:pointer; font-family:'Inter', sans-serif; }
+  .modal-analysis .atabs button.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .modal-analysis .abody{ padding:20px 24px 28px 24px; }
+  .modal-analysis .asection{ display:none; }
+  .modal-analysis .asection.active{ display:block; }
+  .modal-analysis .arow{ margin-bottom:16px; }
+  .modal-analysis .arow .albl{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:5px; }
+  .modal-analysis .arow .aval{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+  .modal-analysis .arow .atrack{ height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; }
+  .modal-analysis .arow .atrack div{ height:100%; background:var(--border-strong, var(--text-faint)); }
+  .modal-analysis .acomingsoon{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
+  .modal-analysis .anote{ font-size:11px; color:var(--text-faint); text-align:center; margin-top:8px; }
+
+  /* Year-by-year career records table (Overview tab) */
+  .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .yr-col{ min-width:0; }
+  .yr-name{ font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .yr-summary{ font-size:11px; color:var(--text-faint); margin-bottom:10px; line-height:1.6; }
+  .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
+  .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
+  .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
+  .yr-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:11px; }
+  .yr-table th{ text-align:left; font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; padding:5px 3px; border-bottom:1px solid var(--border); font-family:'Inter', sans-serif; }
+  .yr-table td{ padding:5px 3px; border-bottom:1px solid var(--border); color:var(--text-dim); }
+  .yr-table tfoot td{ border-top:1px solid var(--border); border-bottom:none; font-weight:700; padding-top:8px; color:var(--text); }
+  .yr-table .yr-col-total{ color:var(--text); }
+  .yr-table .yr-col-clay{ color:var(--court-clay); }
+  .yr-table .yr-col-hard{ color:var(--court-hard); }
+  .yr-table .yr-col-grass{ color:var(--court-grass); }
+  .yr-table .yr-na{ color:var(--text-faint); }
+
+  /* Weather tab (match-time forecast) */
+  .wx-callout{ background:#16301F; border:1px solid var(--court-grass); border-radius:6px; padding:12px 14px; font-size:13px; color:var(--value-pos); font-weight:600; margin-bottom:18px; line-height:1.5; }
+  .wx-cardlabel{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
+  .wx-stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:6px; }
+  .wx-stat{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:14px 8px; text-align:center; }
+  .wx-stat .wx-icon{ font-size:20px; margin-bottom:6px; }
+  .wx-stat .wx-num{ font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:700; color:var(--text); }
+  .wx-summary{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; font-size:13px; color:var(--text); line-height:1.5; margin-top:22px; }
+  .wx-stat .wx-lbl{ font-size:11px; color:var(--text-faint); margin-top:3px; }
+
+  /* Form tab (last-10-results form, per player) */
+  .aform-callout{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text-dim); line-height:1.5; margin-bottom:18px; }
+  .badge.form{ background:var(--accent-dim); color:var(--accent); font-size:12px; padding:3px 8px; }
+  .aform-col{ min-width:0; }
+  .aform-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px; }
+  .aform-name{ font-size:13px; font-weight:700; color:var(--text); }
+  .aform-caption{ font-size:10px; color:var(--text-faint); margin-bottom:12px; }
+  .aform-pills{ display:flex; gap:4px; margin-bottom:14px; flex-wrap:wrap; }
+  .aform-pill{ width:22px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'IBM Plex Mono', monospace; }
+  .aform-pill.win{ background:var(--court-grass-dim); color:var(--value-pos); }
+  .aform-pill.loss{ background:#3A1E1B; color:var(--value-neg); }
+  .aform-matchlist{ margin-bottom:6px; }
+  .aform-row{ display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); cursor:pointer; font-size:12px; }
+  .aform-row:last-child{ border-bottom:none; }
+  .aform-row .res{ font-family:'IBM Plex Mono', monospace; font-weight:700; width:16px; flex:none; }
+  .aform-row .res.win{ color:var(--value-pos); }
+  .aform-row .res.loss{ color:var(--value-neg); }
+  .aform-row .opp{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+  .aform-row .score{ font-family:'IBM Plex Mono', monospace; color:var(--text-dim); flex:none; }
+  .aform-row .date{ color:var(--text-faint); font-size:11px; flex:none; }
+  .aform-row .chev{ color:var(--text-faint); flex:none; transition:transform 0.15s; font-size:10px; }
+  .aform-row .chev.open{ transform:rotate(90deg); }
+  .aform-detail{ display:none; padding:0 0 8px 24px; font-size:11px; color:var(--text-faint); margin-top:-4px; }
+  .aform-detail.open{ display:block; }
+  .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
+  .aform-surfacehead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:18px 0 8px 0; }
+  @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } .aform-row .date{ display:none; } }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand"><span class="dot"></span>BSP CONSULT</div>
+  <div class="navlinks" id="mainNav">
+    <button class="active" data-tab="matches">Matches</button>
+    <button data-tab="players">Players</button>
+    <button data-tab="tournaments">Tournaments</button>
+    <button data-tab="h2h">Head-to-Head</button>
+    <button data-tab="styles">Playing Styles</button>
+    <button data-tab="track">Track Record</button>
+    <button data-tab="metho">Methodology</button>
+  </div>
+  <div class="account"><span class="pill">Account</span></div>
+</div>
+
+<!-- MATCHES TAB -->
+<div class="tabpage active" data-page="matches">
+  <div class="header">
+    <div>
+      <h1>Today's Matches</h1>
+      <p>Live odds across bookmakers for every ATP match today. Value signals coming soon.</p>
+      <p id="dataStatus" style="margin-top:6px;font-size:12px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;">Loading…</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">Matches tracked</div><div class="value" id="statMatchesTracked">—</div></div>
+    <div class="stat"><div class="label">Active tournaments</div><div class="value" id="statActiveTournaments">—</div></div>
+    <div class="stat"><div class="label">Bookmakers compared</div><div class="value" id="statBookmakersCompared">—</div></div>
+    <div class="stat"><div class="label">Value signals</div><div class="value" style="font-size:15px;color:var(--text-faint);">Coming soon</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="daytabs" id="dayTabs">
+      <button data-day="daymin2" id="daymin2Tab"></button>
+      <button data-day="yesterday">Yesterday</button>
+      <button class="active" data-day="today">Today</button>
+      <button data-day="tomorrow">Tomorrow</button>
+      <button data-day="day2" id="day2Tab"></button>
+      <button data-day="all">All days</button>
+      <button data-day="past">Live &amp; past</button>
+    </div>
+    <div class="filterbar">
+      <div class="group" id="tourGroup">
+        <button class="active" data-tour="all">All</button>
+        <button data-tour="ATP">ATP</button>
+      </div>
+      <div class="group" id="surfaceGroup">
+        <button class="active" data-surface="all">All surfaces</button>
+        <button data-surface="clay">Clay</button>
+        <button data-surface="hard">Hard</button>
+        <button data-surface="grass">Grass</button>
+      </div>
+      <input class="search" id="searchInput" placeholder="Search for a player...">
+      <select class="sortsel" id="sortSelect">
+        <option value="time">Sort: Time</option>
+        <option value="oddsgap">Sort: Biggest odds gap</option>
+        <option value="surface">Sort: Surface</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="matchlist" id="matchlist"></div>
+</div>
+
+<!-- PLAYERS TAB -->
+<div class="tabpage" data-page="players">
+  <div class="pagewrap">
+    <div class="pagehead">
+      <h1>Players</h1>
+      <p>Players in today's matches, with current odds. Full stats profiles coming soon.</p>
+    </div>
+    <input class="search" id="playerSearch" placeholder="Search for a player..." style="max-width:320px;margin-bottom:18px;display:block;">
+    <div class="playergrid" id="playerGrid"></div>
+  </div>
+</div>
+
+<!-- TOURNAMENTS TAB -->
+<div class="tabpage" data-page="tournaments">
+  <div class="pagewrap">
+    <div id="tourListView">
+      <div class="pagehead">
+        <h1>Tournaments</h1>
+        <p>Browse the ATP tour calendar — draw size, defending champion, and past results, reconstructed from real match history.</p>
+      </div>
+      <div class="tourfilterbar">
+        <input class="search" id="tourSearch" placeholder="Search tournaments...">
+        <select class="sortsel" id="tourCategoryFilter">
+          <option value="all">All categories</option>
+          <option value="Grand Slam">Grand Slam</option>
+          <option value="Masters 1000">Masters 1000</option>
+          <option value="ATP Finals">ATP Finals</option>
+          <option value="ATP 500">ATP 500</option>
+          <option value="ATP 250">ATP 250</option>
+          <option value="Next Gen Finals">Next Gen Finals</option>
+        </select>
+      </div>
+      <div class="tourgrid" id="tourGrid"></div>
+    </div>
+    <div id="tourProfileView" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- HEAD TO HEAD TAB -->
+<div class="tabpage" data-page="h2h">
+  <div class="pagewrap">
+    <div class="pagehead">
+      <h1>Head-to-Head</h1>
+      <p>Compare odds between two players. Full stats (W/UE, surface form, past meetings) coming soon.</p>
+    </div>
+    <div class="h2hselect">
+      <select id="h2hP1"></select>
+      <span class="vslabel">VS</span>
+      <select id="h2hP2"></select>
+    </div>
+    <div class="h2hcard" id="h2hCard"></div>
+  </div>
+</div>
+
+<!-- PLAYING STYLES TAB -->
+<div class="tabpage" data-page="styles">
+  <div class="pagewrap">
+    <div class="pagehead">
+      <h1>Playing Styles</h1>
+      <p>Not live yet — archetypes require a real stats source (currently blocked on the Flashscore scraper).</p>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;color:var(--text-dim);font-size:13px;max-width:480px;">
+      <div style="font-size:24px;margin-bottom:12px;">🚧</div>
+      Playing-style classification needs player stats (W/UE, first serve, etc.) that aren't connected yet. This page will populate once that source is fixed.
+    </div>
+  </div>
+</div>
+
+<!-- TRACK RECORD TAB -->
+<div class="tabpage" data-page="track">
+  <div class="pagewrap">
+    <div class="pagehead">
+      <h1>Track Record</h1>
+      <p>Not live yet — this page will show every signal published, win or lose, once the scoring model is wired in.</p>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;color:var(--text-dim);font-size:13px;max-width:480px;">
+      <div style="font-size:24px;margin-bottom:12px;">🚧</div>
+      No signals published yet. Track record will populate automatically once the scoring pipeline is connected — nothing here is invented in the meantime.
+    </div>
+  </div>
+</div>
+
+<!-- METHODOLOGY TAB -->
+<div class="tabpage" data-page="metho">
+  <div class="pagewrap" style="max-width:760px;">
+    <div class="pagehead">
+      <h1>Methodology</h1>
+      <p>How every signal will be built — no black box, no guesswork.</p>
+    </div>
+    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;padding:14px 16px;font-size:13px;color:var(--text);margin-bottom:28px;">
+      <b>Current status:</b> the dashboard is live with real odds data. The scoring model described below isn't wired in yet — this page describes the methodology being built, not something already running.
+    </div>
+    <div class="methosection">
+      <h2><span class="ic">📊</span> W/UE ratio</h2>
+      <p>We track the winners-to-unforced-error ratio for every player, broken down by surface rather than as a single career average. A player's clay-court ratio can differ enormously from their grass-court ratio, and treating them as one number hides exactly the edge we're looking for.</p>
+    </div>
+    <div class="methosection">
+      <h2><span class="ic">🎯</span> First serve</h2>
+      <p>First-serve percentage on its own means little — what matters is what happens behind it. We combine serve percentage with points won behind the first serve, over a rolling 12-month window, so recent form is weighted more than a stale season-old average.</p>
+    </div>
+    <div class="methosection">
+      <h2><span class="ic">🏟️</span> Surface form</h2>
+      <p>Results are scored separately for clay, hard, and grass. A player in great overall form but historically weak on the surface being played is flagged rather than assumed to carry their form across.</p>
+    </div>
+    <div class="methosection">
+      <h2><span class="ic">⚡</span> Fatigue &amp; schedule</h2>
+      <p>Cumulative time on court and consecutive rounds played are factored into every score. A player through three long three-setters is treated differently from one who's had routine straight-set wins, even if the head-to-head record favors them on paper.</p>
+    </div>
+    <div class="methosection">
+      <h2><span class="ic">✓</span> How we validate</h2>
+      <p>Every signal we publish is logged before the match starts and kept on the Track Record page regardless of outcome. We don't remove or retroactively edit past calls.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="favModal">
+  <div class="modal">
+    <div class="icon">★</div>
+    <h3>Favorites are Premium</h3>
+    <p>Follow your players and get an alert as soon as a signal appears on their matches.</p>
+    <button onclick="closeModal()">Go Premium</button>
+    <button class="dismiss" onclick="closeModal()">Later</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="analysisModal">
+  <div class="modal modal-analysis">
+    <div class="ahead">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;">Match analysis</div>
+      <div class="close" onclick="closeAnalysisModal()">✕</div>
+    </div>
+    <div class="amatchup">
+      <span id="aP1Name"></span>
+      <span class="aodds" id="aP1Odds"></span>
+      <span style="color:var(--text-faint);font-weight:400;font-size:13px;">vs</span>
+      <span id="aP2Name"></span>
+      <span class="aodds" id="aP2Odds"></span>
+    </div>
+    <div class="alivebar" id="aLiveBar" style="display:none;"></div>
+    <div class="atabs" id="aTabs">
+      <button class="active" data-atab="key">Key factors</button>
+      <button data-atab="style">Playing style</button>
+      <button data-atab="form">Form</button>
+      <button data-atab="h2h">H2H</button>
+      <button data-atab="overview">Overview</button>
+      <button data-atab="tournament">Tournament</button>
+      <button data-atab="weather">Weather</button>
+      <button data-atab="extra">Extra stats</button>
+    </div>
+    <div class="abody">
+      <div class="asection active" data-asection="key" id="aSectionKey"></div>
+      <div class="asection" data-asection="style"><div class="acomingsoon">Playing-style comparison needs your own methodology — not built yet. (No vendor sells this — it's your IP to define.)</div></div>
+      <div class="asection" data-asection="form" id="aSectionForm"></div>
+      <div class="asection" data-asection="h2h" id="aSectionH2H"></div>
+      <div class="asection" data-asection="overview" id="aSectionOverview"></div>
+      <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
+      <div class="asection" data-asection="weather" id="aSectionWeather"></div>
+      <div class="asection" data-asection="extra"><div class="acomingsoon">No extra stats source connected yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- TAB SWITCHING ---------- */
+document.getElementById('mainNav').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === tab));
+});
+
+/* ---------- MATCHES ---------- */
+// Fetched from matches.json — the file bsp-pipeline.js writes when run.
+// NOTE: this fetch will fail if you open this HTML file directly
+// (file:// URLs are blocked by browser CORS rules). Serve it via a
+// local server instead, e.g.: python3 -m http.server, then visit
+// http://localhost:8000/bsp-consult-dashboard.html
+let matches = [];
+let dataLoadedAt = null;
+
+async function loadMatches(){
+  try {
+    const res = await fetch('./matches.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    matches = await res.json();
+    dataLoadedAt = new Date();
+    document.getElementById('dataStatus').innerHTML =
+      `<span style="color:var(--value-pos);">●</span> Live — updated ${dataLoadedAt.toLocaleTimeString()}`;
+  } catch (err) {
+    console.error('Could not load matches.json:', err);
+    matches = [];
+    document.getElementById('dataStatus').innerHTML =
+      `<span style="color:var(--value-neg);">●</span> Couldn't load matches.json — run bsp-pipeline.js first, and serve this page via a local server (not file://)`;
+  }
+  renderHeaderStats();
+  renderMatches();
+  renderPlayers();
+  populateH2HSelects();
+  renderH2H();
+}
+
+// Real numbers computed from matches.json — no hardcoded placeholders.
+function renderHeaderStats(){
+  document.getElementById('statMatchesTracked').textContent = matches.length;
+  document.getElementById('statActiveTournaments').textContent =
+    new Set(matches.map(m => m.tour).filter(Boolean)).size;
+  const bookmakers = new Set();
+  for (const m of matches) {
+    if (m.odds?.bookmaker) bookmakers.add(m.odds.bookmaker);
+    if (m.bestOdds?.p1?.bookmaker) bookmakers.add(m.bestOdds.p1.bookmaker);
+    if (m.bestOdds?.p2?.bookmaker) bookmakers.add(m.bestOdds.p2.bookmaker);
+  }
+  document.getElementById('statBookmakersCompared').textContent = bookmakers.size;
+}
+
+const state = { day:"today", tour:"all", surface:"all", search:"", sort:"time", favorites:new Set() };
+
+function oddsGap(m){
+  // Gap in implied win probability between the two players — a real,
+  // computable measure of how lopsided the match is, no model required.
+  // Returns 0 (neutral) if odds aren't pulled yet for this match.
+  if (!m.odds || !m.odds.p1 || !m.odds.p2) return 0;
+  const p1Implied = 1 / m.odds.p1;
+  const p2Implied = 1 / m.odds.p2;
+  return Math.abs(p1Implied - p2Implied);
+}
+
+function getFiltered(){
+  let out = matches.filter(m => {
+    if (state.day !== 'all') {
+      if (state.day === 'past') { if (m.day !== 'past' && !m.live) return false; }
+      else if (m.day !== state.day) return false;
+    }
+    if (state.tour !== 'all' && m.tourBadge !== state.tour) return false;
+    if (state.surface !== 'all' && m.surface !== state.surface) return false;
+    if (state.search){
+      const q = state.search.toLowerCase();
+      if (!m.p1.toLowerCase().includes(q) && !m.p2.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const surfaceOrder = { clay:0, hard:1, grass:2 };
+  if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
+  else if (state.sort === 'surface') out.sort((a,b) => surfaceOrder[a.surface] - surfaceOrder[b.surface]);
+  else out.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+  return out;
+}
+
+// e.g. "9 Jul" — used for both the daymin2/day2 tabs and match-card badges,
+// computed client-side so it's always correct for whatever day this is viewed.
+function formatShortDate(d){
+  return `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
+}
+const daymin2Label = formatShortDate(new Date(Date.now() - 2 * 86400000));
+const day2Label = formatShortDate(new Date(Date.now() + 2 * 86400000));
+document.getElementById('daymin2Tab').textContent = daymin2Label;
+document.getElementById('day2Tab').textContent = day2Label;
+
+function statusLabel(m){
+  if (m.live) return `EN DIRECT${m.liveStatus ? ' · ' + m.liveStatus : ''}`;
+  const day = m.day;
+  if (day === 'past') return 'Terminé';
+  if (day === 'daymin2') return daymin2Label;
+  if (day === 'yesterday') return 'Hier';
+  if (day === 'today') return "Aujourd'hui";
+  if (day === 'tomorrow') return 'Demain';
+  if (day === 'day2') return day2Label;
+  return 'À venir';
+}
+
+// Real live score only — built from m.liveScore (per-set games, from the API-Tennis
+// fixture's own `scores` array) and m.liveGameScore (current game, raw). Returns ''
+// if the match isn't live or has no score data yet (never fabricated/padded).
+function formatLiveScore(m){
+  if (!m.live) return '';
+  const sets = (m.liveScore || []).map(s => `${s.p1}-${s.p2}`).join(', ');
+  if (!sets) return m.liveGameScore || '';
+  return m.liveGameScore ? `${sets} (${m.liveGameScore})` : sets;
+}
+
+function renderMatches(){
+  const list = document.getElementById('matchlist');
+  const filtered = getFiltered();
+  if (filtered.length === 0){
+    list.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text-faint);font-size:13px;">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(m => {
+    // "Favori" is honestly derived from real market odds (lower odds = favorite) —
+    // not a fabricated stat. Only shown when odds actually exist for this match.
+    const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
+    const p1IsFavorite = hasOdds && m.odds.p1 < m.odds.p2;
+    const p1OddsDisplay = m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '—';
+    const p2OddsDisplay = m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '—';
+    const bookmakerLine = (m.bestOdds?.p1?.bookmaker && m.bestOdds?.p2?.bookmaker)
+      ? `best odds via ${m.bestOdds.p1.bookmaker} / ${m.bestOdds.p2.bookmaker}`
+      : 'odds not yet pulled for this match';
+    return `
+    <div class="matchcard">
+      <div class="metabar">
+        <span class="surfacetag ${m.surface}">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}</span>
+        <span class="tourname">${m.tour}</span>
+        <span class="time">${m.time || '—'}</span>
+        <span class="statusbadge${m.live ? ' live' : ''}">${statusLabel(m)}</span>
+        <span class="fav" data-id="${m.id}" onclick="toggleFav('${m.id}')">${state.favorites.has(m.id) ? '★' : '☆'}</span>
+      </div>
+      ${m.live ? `<div class="livescore">${formatLiveScore(m)}<span class="anote" style="margin:2px 0 0 0;">as of last data refresh</span></div>` : ''}
+      <div class="vsrow">
+        <div class="playerpanel">
+          <div class="ptop">
+            <div class="pname">${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
+            <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>
+          </div>
+          <div class="comingsoon">Style · Elo · form — coming soon</div>
+          ${p1IsFavorite ? '<div class="favoribadge">★ Favorite</div>' : ''}
+        </div>
+        <div class="vslabel">VS</div>
+        <div class="playerpanel">
+          <div class="ptop">
+            <div class="pname">${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
+            <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>
+          </div>
+          <div class="comingsoon">Style · Elo · form — coming soon</div>
+          ${(hasOdds && !p1IsFavorite) ? '<div class="favoribadge">★ Favorite</div>' : ''}
+        </div>
+      </div>
+      <div class="h2hrow">H2H — coming soon · ${bookmakerLine}</div>
+      <div class="footer"><a onclick="openAnalysisModal('${m.id}')">See full analysis →</a></div>
+    </div>
+  `;
+  }).join('');
+}
+function toggleFav(id){ openModal(); }
+
+// --- Year-by-year career records table (Overview tab) ---
+// A cell is { won, lost } for real data, or null when the player didn't
+// play that surface that year (API-Tennis returns "" — treated as "no
+// data", not 0, by yearlyBreakdown() in the pipeline).
+function cellClass(cell, col){
+  if (!cell) return 'yr-na';
+  return `yr-col-${col}`;
+}
+function cellText(cell){
+  return cell ? `${cell.won}/${cell.lost}` : '—';
+}
+function sumCells(rows, key){
+  let won = 0, lost = 0, has = false;
+  for (const r of rows) {
+    if (r[key]) { won += r[key].won; lost += r[key].lost; has = true; }
+  }
+  return has ? { won, lost } : null;
+}
+function currentSeasonSummary(latestYear){
+  if (!latestYear) return '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
+  const parts = [];
+  if (latestYear.clay) parts.push(`<span class="yr-surf clay">Clay ${latestYear.clay.won}/${latestYear.clay.lost}</span>`);
+  if (latestYear.hard) parts.push(`<span class="yr-surf hard">Hard ${latestYear.hard.won}/${latestYear.hard.lost}</span>`);
+  if (latestYear.grass) parts.push(`<span class="yr-surf grass">Grass ${latestYear.grass.won}/${latestYear.grass.lost}</span>`);
+  return parts.length ? parts.join(' · ') : '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
+}
+function buildYearlyTable(name, rows){
+  if (!rows || rows.length === 0) {
+    return `
+      <div class="yr-col">
+        <div class="yr-name">${name}</div>
+        <div class="acomingsoon" style="padding:16px 0;">No year-by-year stats found for this player.</div>
+      </div>
+    `;
+  }
+  const bodyRows = rows.map(r => `
+    <tr>
+      <td>${r.year}</td>
+      <td class="${cellClass(r.total, 'total')}">${cellText(r.total)}</td>
+      <td class="${cellClass(r.clay, 'clay')}">${cellText(r.clay)}</td>
+      <td class="${cellClass(r.hard, 'hard')}">${cellText(r.hard)}</td>
+      <td class="${cellClass(r.grass, 'grass')}">${cellText(r.grass)}</td>
+    </tr>
+  `).join('');
+  const totals = { total: sumCells(rows, 'total'), clay: sumCells(rows, 'clay'), hard: sumCells(rows, 'hard'), grass: sumCells(rows, 'grass') };
+  return `
+    <div class="yr-col">
+      <div class="yr-name">${name}</div>
+      <div class="yr-summary">${currentSeasonSummary(rows[0])}</div>
+      <table class="yr-table">
+        <thead><tr><th>Year</th><th>Total</th><th>Clay</th><th>Hard</th><th>Grass</th></tr></thead>
+        <tbody>${bodyRows}</tbody>
+        <tfoot><tr>
+          <td>Total</td>
+          <td class="${cellClass(totals.total, 'total')}">${cellText(totals.total)}</td>
+          <td class="${cellClass(totals.clay, 'clay')}">${cellText(totals.clay)}</td>
+          <td class="${cellClass(totals.hard, 'hard')}">${cellText(totals.hard)}</td>
+          <td class="${cellClass(totals.grass, 'grass')}">${cellText(totals.grass)}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+  `;
+}
+function buildYearlyTables(m){
+  const hasYearly = (m.p1Yearly && m.p1Yearly.length) || (m.p2Yearly && m.p2Yearly.length);
+  if (!hasYearly) {
+    return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
+  }
+  return `
+    <div class="yr-grid">
+      ${buildYearlyTable(m.p1, m.p1Yearly || [])}
+      ${buildYearlyTable(m.p2, m.p2Yearly || [])}
+    </div>
+  `;
+}
+
+// --- Weather tab (Open-Meteo forecast at match time) ---
+// Bucket thresholds match the ones used for the (currently unavailable)
+// "record by temperature/wind" splits, so the forecast labels and the
+// split buckets stay consistent if that data source ever arrives.
+function tempLabel(c){
+  if (c < 18) return 'Cold';
+  if (c <= 28) return 'Mild';
+  return 'Hot';
+}
+function windLabel(kmh){
+  if (kmh < 15) return 'Calm';
+  if (kmh <= 30) return 'Moderate';
+  return 'Strong';
+}
+function humidityLabel(pct){
+  return pct < 50 ? 'Dry' : 'Humid';
+}
+// Rule-based read on how forecast conditions affect play, grounded in
+// well-established tennis physics (heat speeds up every surface but
+// clay/hard/grass react differently; wind disrupts toss/timing; humidity
+// adds fatigue). This is general domain logic applied to the real
+// forecast numbers — not a stat about either player, so it stays
+// separate from (and doesn't pretend to replace) the unavailable
+// "record by temperature/wind" splits above.
+const SURFACE_HEAT_EFFECT = {
+  clay: 'clay dries out and plays faster, with more skid — better for aggressive baseliners',
+  hard: 'hard courts heat up and get noticeably faster, with a higher, livelier bounce',
+  grass: 'grass dries out and gets slicker, keeping the bounce low and rewarding first-strike tennis',
+};
+const SURFACE_COLD_EFFECT = {
+  clay: 'clay plays heavier and slower, favoring grinders who can extend rallies',
+  hard: 'hard courts play slower and the ball sits up less, blunting big hitters\' pace advantage',
+  grass: 'grass stays soft with a lower, slower bounce, stretching rallies out a little',
+};
+function weatherImpactPhrase(w, surface){
+  const temp = tempLabel(w.temperature);
+  const wind = windLabel(w.windSpeed);
+  const humidity = humidityLabel(w.humidity);
+  const parts = [];
+  if (temp === 'Hot' && SURFACE_HEAT_EFFECT[surface]) parts.push(SURFACE_HEAT_EFFECT[surface]);
+  else if (temp === 'Cold' && SURFACE_COLD_EFFECT[surface]) parts.push(SURFACE_COLD_EFFECT[surface]);
+  if (wind === 'Strong') parts.push('strong wind will likely disrupt serve toss and shot timing, expect more unforced errors');
+  else if (wind === 'Moderate') parts.push('moderate wind may affect ball trajectory, particularly for big servers');
+  if (humidity === 'Humid') parts.push('high humidity adds to physical fatigue over a long match');
+  if (parts.length === 0) return 'Conditions are mild and calm — unlikely to meaningfully affect how either player performs.';
+  const sentence = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  const rest = parts.slice(1);
+  return rest.length ? `${sentence}; ${rest.join('; ')}.` : `${sentence}.`;
+}
+function buildWeatherSection(m){
+  const w = m.weather;
+  if (!w) {
+    return `<div class="acomingsoon">Weather forecast not available for this match — either the venue isn't mapped yet, or the match is too far out/in the past for Open-Meteo's forecast window.</div>`;
+  }
+  const forecastCard = `
+    <div class="wx-cardlabel">Forecast at match time</div>
+    <div class="wx-stats">
+      <div class="wx-stat">
+        <div class="wx-icon">🌡️</div>
+        <div class="wx-num">${w.temperature}°C</div>
+        <div class="wx-lbl">${tempLabel(w.temperature)}</div>
+      </div>
+      <div class="wx-stat">
+        <div class="wx-icon">💨</div>
+        <div class="wx-num">${w.windSpeed}</div>
+        <div class="wx-lbl">${windLabel(w.windSpeed)} · km/h</div>
+      </div>
+      <div class="wx-stat">
+        <div class="wx-icon">💧</div>
+        <div class="wx-num">${w.humidity}%</div>
+        <div class="wx-lbl">${humidityLabel(w.humidity)}</div>
+      </div>
+    </div>
+  `;
+  const summary = `<div class="wx-summary">Forecast at match time: ${w.temperature}°C, wind ${w.windSpeed} km/h, humidity ${w.humidity}%. ${weatherImpactPhrase(w, m.surface)}</div>`;
+  return `${forecastCard}${summary}`;
+}
+
+/* ---------- FORM TAB ---------- */
+function formRowHtml(match, idPrefix){
+  const surfaceTag = match.surface ? `<span class="surfacetag ${match.surface}">${match.surface.charAt(0).toUpperCase()+match.surface.slice(1)}</span>` : '';
+  return `
+    <div class="aform-row" onclick="toggleFormDetail('${idPrefix}')">
+      <span class="res ${match.won ? 'win' : 'loss'}">${match.won ? 'W' : 'L'}</span>
+      <span class="opp">${match.opponent}</span>
+      <span class="score">${match.result || '—'}</span>
+      ${surfaceTag}
+      <span class="date">${match.date || ''}</span>
+      <span class="chev" id="formChev-${idPrefix}">▸</span>
+    </div>
+    <div class="aform-detail" id="formDetail-${idPrefix}">${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}</div>
+  `;
+}
+function toggleFormDetail(idPrefix){
+  const chev = document.getElementById('formChev-' + idPrefix);
+  const detail = document.getElementById('formDetail-' + idPrefix);
+  if (!chev || !detail) return;
+  chev.classList.toggle('open');
+  detail.classList.toggle('open');
+}
+function showFormMore(colPrefix){
+  document.querySelectorAll('.aform-extra-' + colPrefix).forEach(el => { el.style.display = ''; });
+  const link = document.getElementById('formShowMore-' + colPrefix);
+  if (link) link.style.display = 'none';
+}
+function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix){
+  if (!allMatches || allMatches.length === 0) {
+    return `
+      <div class="aform-col">
+        <div class="aform-head"><span class="aform-name">${name}</span></div>
+        <div class="acomingsoon" style="padding:16px 0;">No tour-level match history on record.</div>
+      </div>
+    `;
+  }
+  const pillsHtml = allMatches.map(m => `<span class="aform-pill ${m.won ? 'win' : 'loss'}">${m.won ? 'W' : 'L'}</span>`).join('');
+  const visible = allMatches.slice(0, 5);
+  const extra = allMatches.slice(5);
+  const visibleRows = visible.map((m, i) => formRowHtml(m, `${colPrefix}main${i}`)).join('');
+  const extraRows = extra.map((m, i) => `<div class="aform-extra-${colPrefix}" style="display:none;">${formRowHtml(m, `${colPrefix}main${i + 5}`)}</div>`).join('');
+  const showMoreHtml = extra.length ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${extra.length} more match${extra.length === 1 ? '' : 'es'}</div>` : '';
+
+  const surfaceMatches = allMatches.filter(m => m.surface === currentSurface);
+  const surfaceRows = surfaceMatches.length
+    ? surfaceMatches.map((m, i) => formRowHtml(m, `${colPrefix}surf${i}`)).join('')
+    : `<div class="acomingsoon" style="padding:14px 0;">No matches on record on this surface in their recent history.</div>`;
+  const surfaceLabel = currentSurface.charAt(0).toUpperCase() + currentSurface.slice(1);
+
+  return `
+    <div class="aform-col">
+      <div class="aform-head">
+        <span class="aform-name">${name}</span>
+        <span class="badge form">⚡ ${pct}% form</span>
+      </div>
+      <div class="aform-caption">BSP Consult form score — simple win rate, last ${allMatches.length} result${allMatches.length === 1 ? '' : 's'}</div>
+      <div class="aform-pills">${pillsHtml}</div>
+      <div class="aform-matchlist">${visibleRows}${extraRows}</div>
+      ${showMoreHtml}
+      <div class="aform-surfacehead">History on ${surfaceLabel} — ${surfaceMatches.length} match${surfaceMatches.length === 1 ? '' : 'es'} on record</div>
+      <div class="aform-matchlist">${surfaceRows}</div>
+    </div>
+  `;
+}
+function buildFormSection(m){
+  if (!m.p1RecentFormMatches && !m.p2RecentFormMatches) {
+    return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
+  }
+  const callout = `<div class="aform-callout">Form reflects who's playing better right now, based on each player's last 10 completed tour-level matches on record (fewer if less history exists on file) — most recent results shown first.</div>`;
+  return `
+    ${callout}
+    <div class="yr-grid">
+      ${buildFormPlayerColumn(m.p1, m.p1RecentForm, m.p1RecentFormMatches, m.surface, 'p1')}
+      ${buildFormPlayerColumn(m.p2, m.p2RecentForm, m.p2RecentFormMatches, m.surface, 'p2')}
+    </div>
+  `;
+}
+
+function openAnalysisModal(matchId){
+  const m = matches.find(x => x.id === matchId);
+  if (!m) return;
+
+  document.getElementById('aP1Name').textContent = m.p1;
+  document.getElementById('aP2Name').textContent = m.p2;
+  document.getElementById('aP1Odds').textContent = m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '—';
+  document.getElementById('aP2Odds').textContent = m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '—';
+
+  const liveBar = document.getElementById('aLiveBar');
+  if (m.live) {
+    liveBar.style.display = '';
+    liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
+  } else {
+    liveBar.style.display = 'none';
+  }
+
+  const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
+  if (hasOdds) {
+    const p1Implied = 1 / m.odds.p1;
+    const p2Implied = 1 / m.odds.p2;
+    const total = p1Implied + p2Implied;
+    const p1Fair = (p1Implied / total * 100).toFixed(1);
+    const p2Fair = (p2Implied / total * 100).toFixed(1);
+    const favorite = m.odds.p1 < m.odds.p2 ? m.p1 : m.p2;
+
+    document.getElementById('aSectionKey').innerHTML = `
+      <div class="arow">
+        <div class="albl"><span>Market-implied win probability (vig removed)</span><span>${p1Fair}% / ${p2Fair}%</span></div>
+        <div class="atrack"><div style="width:${p1Fair}%"></div></div>
+      </div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-top:10px;">
+        Based on live market odds via ${m.odds.bookmaker}, <b style="color:var(--text);">${favorite}</b> is favored. This reflects the betting market only — BSP Consult's own model-based prediction (Elo, style, surface form) isn't connected yet.
+      </div>
+      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)} · ${m.tour} · ${m.time || 'time TBD'}</div>
+    `;
+  } else {
+    document.getElementById('aSectionKey').innerHTML = `
+      <div class="acomingsoon">Odds haven't been pulled yet for this match — fixture confirmed real, market data pending.</div>
+      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)} · ${m.tour} · ${m.time || 'time TBD'}</div>
+    `;
+  }
+
+  document.getElementById('aSectionTournament').innerHTML = m.tournamentRound ? `
+    <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">
+      <b style="color:var(--text);">${m.tour}</b><br>
+      Round: ${m.tournamentRound}<br>
+      Surface: ${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}<br><br>
+      Draw position and past tournament results coming soon.
+    </div>
+  ` : `
+    <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">
+      <b style="color:var(--text);">${m.tour}</b><br>
+      Surface: ${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}<br><br>
+      No matching tournament record found yet — round/draw details coming soon.
+    </div>
+  `;
+
+  document.getElementById('aSectionH2H').innerHTML = m.h2h ? `
+    <div class="arow">
+      <div class="albl"><span>Head-to-head record</span><span>${m.h2h.record}</span></div>
+      <div class="atrack"><div style="width:${m.h2h.p1Wins + m.h2h.p2Wins > 0 ? (m.h2h.p1Wins / (m.h2h.p1Wins + m.h2h.p2Wins) * 100) : 50}%"></div></div>
+    </div>
+    <div class="anote">${m.p1} ${m.h2h.p1Wins} — ${m.h2h.p2Wins} ${m.p2}</div>
+  ` : `<div class="acomingsoon">No head-to-head data found for this pairing (data source connected, but no match record on file).</div>`;
+
+  document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
+
+  document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
+
+  document.getElementById('aSectionWeather').innerHTML = buildWeatherSection(m);
+
+  document.querySelectorAll('#aTabs button').forEach(b => b.classList.remove('active'));
+  document.querySelector('#aTabs button[data-atab="key"]').classList.add('active');
+  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
+  document.querySelector('.asection[data-asection="key"]').classList.add('active');
+
+  document.getElementById('analysisModal').classList.add('open');
+}
+
+document.getElementById('aTabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-atab]');
+  if (!btn) return;
+  document.querySelectorAll('#aTabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
+});
+
+function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); }
+function setActiveButton(groupEl, clickedBtn){
+  groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  clickedBtn.classList.add('active');
+}
+document.getElementById('dayTabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-day]'); if (!btn) return;
+  setActiveButton(document.getElementById('dayTabs'), btn); state.day = btn.dataset.day; renderMatches();
+});
+document.getElementById('tourGroup').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tour]'); if (!btn) return;
+  setActiveButton(document.getElementById('tourGroup'), btn); state.tour = btn.dataset.tour; renderMatches();
+});
+document.getElementById('surfaceGroup').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-surface]'); if (!btn) return;
+  setActiveButton(document.getElementById('surfaceGroup'), btn); state.surface = btn.dataset.surface; renderMatches();
+});
+document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
+document.getElementById('sortSelect').addEventListener('change', e => { state.sort = e.target.value; renderMatches(); });
+function openModal(){ document.getElementById('favModal').classList.add('open'); }
+function closeModal(){ document.getElementById('favModal').classList.remove('open'); }
+
+/* ---------- PLAYERS (derived from real matches, no fake stats) ---------- */
+function getPlayersFromMatches(){
+  const map = new Map();
+  matches.forEach(m => {
+    [{name:m.p1, odds:m.bestOdds?.p1 || null}, {name:m.p2, odds:m.bestOdds?.p2 || null}].forEach(p => {
+      if (!map.has(p.name)) map.set(p.name, { name:p.name, matches:[] });
+      map.get(p.name).matches.push({ opponent: p.name === m.p1 ? m.p2 : m.p1, tour:m.tour, surface:m.surface, odds:p.odds });
+    });
+  });
+  return Array.from(map.values());
+}
+function renderPlayers(filter){
+  const grid = document.getElementById('playerGrid');
+  const q = (filter||"").toLowerCase();
+  const list = getPlayersFromMatches().filter(p => p.name.toLowerCase().includes(q));
+  grid.innerHTML = list.map(p => {
+    const odds = p.matches[0].odds;
+    return `
+    <div class="playercard">
+      <div class="top"><div class="name">${p.name}</div></div>
+      <div class="style">vs ${p.matches[0].opponent} · ${p.matches[0].tour}</div>
+      <div class="row"><span>Best odds</span><b>${odds?.price ? odds.price.toFixed(2) : 'pending'}</b></div>
+      <div class="row"><span>Bookmaker</span><b style="font-family:'Inter',sans-serif;font-size:11px;">${odds?.bookmaker || '—'}</b></div>
+      <div class="surfacetags"><span class="surfacetag ${p.matches[0].surface}">${p.matches[0].surface}</span></div>
+    </div>
+  `;
+  }).join('') || `<div style="color:var(--text-faint);font-size:13px;">No players found.</div>`;
+}
+document.getElementById('playerSearch').addEventListener('input', e => renderPlayers(e.target.value));
+
+/* ---------- TOURNAMENTS ---------- */
+// Curated static reference facts (category, surface, indoor/outdoor) — same
+// source of truth as TOURNAMENT_VENUE_HINTS in bsp-pipeline.js. Not pulled
+// from any API (API-Tennis has no category/venue-type field at all). These
+// are fixed, public facts about the tour calendar, not invented data.
+const TOURNAMENT_CATALOG = [
+  { name: 'Australian Open', category: 'Grand Slam', surface: 'hard', indoor: false },
+  { name: 'French Open', category: 'Grand Slam', surface: 'clay', indoor: false },
+  { name: 'Roland Garros', category: 'Grand Slam', surface: 'clay', indoor: false },
+  { name: 'Wimbledon', category: 'Grand Slam', surface: 'grass', indoor: false },
+  { name: 'US Open', category: 'Grand Slam', surface: 'hard', indoor: false },
+  { name: 'Indian Wells', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Miami', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Monte Carlo', category: 'Masters 1000', surface: 'clay', indoor: false },
+  { name: 'Madrid', category: 'Masters 1000', surface: 'clay', indoor: false },
+  { name: 'Rome', category: 'Masters 1000', surface: 'clay', indoor: false },
+  { name: 'Montreal', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Toronto', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Cincinnati', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Shanghai', category: 'Masters 1000', surface: 'hard', indoor: false },
+  { name: 'Paris', category: 'Masters 1000', surface: 'hard', indoor: true },
+  { name: 'Turin', category: 'ATP Finals', surface: 'hard', indoor: true },
+  { name: 'Rotterdam', category: 'ATP 500', surface: 'hard', indoor: true },
+  { name: 'Dubai', category: 'ATP 500', surface: 'hard', indoor: false },
+  { name: 'Acapulco', category: 'ATP 500', surface: 'hard', indoor: false },
+  { name: 'Rio de Janeiro', category: 'ATP 500', surface: 'clay', indoor: false },
+  { name: 'Barcelona', category: 'ATP 500', surface: 'clay', indoor: false },
+  { name: 'Halle', category: 'ATP 500', surface: 'grass', indoor: false },
+  { name: 'London', category: 'ATP 500', surface: 'grass', indoor: false },
+  { name: 'Hamburg', category: 'ATP 500', surface: 'clay', indoor: false },
+  { name: 'Washington', category: 'ATP 500', surface: 'hard', indoor: false },
+  { name: 'Beijing', category: 'ATP 500', surface: 'hard', indoor: false },
+  { name: 'Tokyo', category: 'ATP 500', surface: 'hard', indoor: false },
+  { name: 'Vienna', category: 'ATP 500', surface: 'hard', indoor: true },
+  { name: 'Basel', category: 'ATP 500', surface: 'hard', indoor: true },
+  { name: 'Auckland', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Adelaide', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Brisbane', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Sydney', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Hong Kong', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Chengdu', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Zhuhai', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Hangzhou', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Pune', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Doha', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Marseille', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Delray Beach', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Dallas', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Montpellier', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Cordoba', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Buenos Aires', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Santiago', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Los Cabos', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Marrakech', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Munich', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Bucharest', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Estoril', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Geneva', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Gstaad', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Bastad', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Newport', category: 'ATP 250', surface: 'grass', indoor: false },
+  { name: 'Umag', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Kitzbuhel', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Winston-Salem', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Tel Aviv', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Almaty', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Astana', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Antwerp', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Stockholm', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Metz', category: 'ATP 250', surface: 'hard', indoor: true },
+  { name: 'Belgrade', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Eastbourne', category: 'ATP 250', surface: 'grass', indoor: false },
+  { name: 'Hertogenbosch', category: 'ATP 250', surface: 'grass', indoor: false },
+  { name: 'Mallorca', category: 'ATP 250', surface: 'grass', indoor: false },
+  { name: 'Stuttgart', category: 'ATP 250', surface: 'grass', indoor: false },
+  { name: 'Ho Chi Minh City', category: 'ATP 250', surface: 'hard', indoor: false },
+  { name: 'Houston', category: 'ATP 250', surface: 'clay', indoor: false },
+  { name: 'Jeddah', category: 'Next Gen Finals', surface: 'hard', indoor: true },
+];
+
+const CATEGORY_BADGE_CLASS = {
+  'Grand Slam': 'gs', 'Masters 1000': 'm1000', 'ATP Finals': 'finals',
+  'ATP 500': 'a500', 'ATP 250': 'a250', 'Next Gen Finals': 'nextgen',
+};
+
+// Loaded from tournament-profiles.json — real historical match data
+// (draw size, champion, palmarès) reconstructed by bsp-pipeline.js from
+// actual get_fixtures results. Court speed / playing-style win rate /
+// favorite win rate / tiebreak rate / betting ROI are deliberately NOT
+// shown anywhere in this section — no real data source exists for them.
+let tournamentProfiles = {};
+let tournamentProfilesSinceYear = null;
+async function loadTournamentProfiles(){
+  try {
+    const res = await fetch('./tournament-profiles.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    tournamentProfiles = data.profiles || {};
+    tournamentProfilesSinceYear = data.sinceYear || null;
+  } catch (err) {
+    console.error('Could not load tournament-profiles.json:', err);
+    tournamentProfiles = {};
+  }
+  renderTournamentCatalog();
+}
+
+const tourState = { search: '', category: 'all' };
+
+function renderTournamentCatalog(){
+  const grid = document.getElementById('tourGrid');
+  const q = tourState.search.toLowerCase();
+  const list = TOURNAMENT_CATALOG.filter(t => {
+    if (tourState.category !== 'all' && t.category !== tourState.category) return false;
+    if (q && !t.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (list.length === 0){
+    grid.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text-faint);font-size:13px;grid-column:1/-1;">No tournaments match.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(t => `
+    <div class="tourcard" onclick="showTournamentProfile('${t.name.replace(/'/g,"\\'")}')">
+      <div class="b ${t.surface}"></div>
+      <div class="info">
+        <div class="n">${t.name}</div>
+        <div class="badges">
+          <span class="badge ${CATEGORY_BADGE_CLASS[t.category] || ''}">${t.category}</span>
+          <span class="surfacetag ${t.surface}">${t.surface.charAt(0).toUpperCase()+t.surface.slice(1)}</span>
+          <span class="badge ${t.indoor ? 'indoor' : 'outdoor'}">${t.indoor ? 'Indoor' : 'Outdoor'}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('tourSearch').addEventListener('input', e => { tourState.search = e.target.value; renderTournamentCatalog(); });
+document.getElementById('tourCategoryFilter').addEventListener('change', e => { tourState.category = e.target.value; renderTournamentCatalog(); });
+
+function showTournamentList(){
+  document.getElementById('tourListView').style.display = '';
+  document.getElementById('tourProfileView').style.display = 'none';
+}
+function switchToMatchesTab(){
+  document.querySelector('#mainNav button[data-tab="matches"]').click();
+}
+
+// Real W-L record for a player at this event, computed client-side from
+// the already-loaded fixture history — no extra API calls.
+function playerRecordAtTournament(profile, playerName){
+  let won = 0, lost = 0;
+  (profile.allEditionMatches || []).forEach(e => {
+    e.matches.forEach(m => {
+      if (m.p1 !== playerName && m.p2 !== playerName) return;
+      const isP1 = m.p1 === playerName;
+      const playerWon = (isP1 && m.winner === 'First Player') || (!isP1 && m.winner === 'Second Player');
+      if (playerWon) won++; else lost++;
+    });
+  });
+  return { won, lost };
+}
+
+function showTournamentProfile(key){
+  document.getElementById('tourListView').style.display = 'none';
+  const view = document.getElementById('tourProfileView');
+  view.style.display = '';
+
+  const cat = TOURNAMENT_CATALOG.find(t => t.name === key);
+  const profile = tournamentProfiles[key] || null;
+  const currentYear = new Date().getFullYear();
+
+  const badges = cat ? `
+    <span class="badge ${CATEGORY_BADGE_CLASS[cat.category] || ''}">${cat.category}</span>
+    <span class="surfacetag ${cat.surface}">${cat.surface.charAt(0).toUpperCase()+cat.surface.slice(1)}</span>
+    <span class="badge ${cat.indoor ? 'indoor' : 'outdoor'}">${cat.indoor ? 'Indoor' : 'Outdoor'}</span>
+    <span class="badge upcoming">${currentYear}</span>
+  ` : '';
+
+  const header = `
+    <button class="tprofile-back" onclick="showTournamentList()">← Back to Tournaments</button>
+    <div class="tprofile-header">
+      <div class="badges">${badges}</div>
+      <h1>${key}</h1>
+    </div>
+  `;
+
+  if (!profile) {
+    view.innerHTML = header + `
+      <div class="tprofile-card">
+        <div class="acomingsoon">No historical match data on record yet for this tournament.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const champ = profile.defendingChampion;
+  const statsHtml = `
+    <div class="tprofile-stats">
+      <div class="wx-stat"><div class="wx-num">${profile.editionsOnRecord}</div><div class="wx-lbl">Editions on record${tournamentProfilesSinceYear ? ' (since ' + tournamentProfilesSinceYear + ')' : ''}</div></div>
+      <div class="wx-stat"><div class="wx-num">${profile.totalMatchesOnRecord}</div><div class="wx-lbl">Matches on record</div></div>
+      <div class="wx-stat"><div class="wx-num">${profile.mostRecentDrawSize ?? '—'}</div><div class="wx-lbl">Draw size (most recent)</div></div>
+      <div class="wx-stat"><div class="wx-num" style="font-size:15px;">${champ ? champ.name : '—'}</div><div class="wx-lbl">Defending champion${champ && champ.country ? ' · ' + champ.country : ''}</div></div>
+    </div>
+  `;
+
+  const palmaresHtml = profile.palmares.length ? profile.palmares.map(p => `
+    <div class="tprofile-palmares-row">
+      <span class="season">${p.season}</span>
+      <span class="champ">${p.champion.name}</span>
+      <span class="country">${p.champion.country || ''}</span>
+    </div>
+  `).join('') : `<div class="acomingsoon" style="padding:16px 0;">No completed editions on record.</div>`;
+
+  const currentEdition = profile.currentEditionMatches;
+  let entrantsHtml;
+  if (currentEdition && currentEdition.length) {
+    const players = Array.from(new Set(currentEdition.flatMap(m => [m.p1, m.p2]))).sort();
+    entrantsHtml = `<div class="tprofile-entrants">${players.map(p => `<span>${p}</span>`).join('')}</div>`;
+  } else {
+    entrantsHtml = `<div class="acomingsoon" style="padding:16px 0;">Draw not yet released for this year's edition.</div>`;
+  }
+
+  const allPlayers = Array.from(new Set((profile.allEditionMatches || []).flatMap(e => e.matches.flatMap(m => [m.p1, m.p2])))).sort();
+  const standoutHtml = allPlayers.length ? `
+    <select class="sortsel" id="standoutSelect" style="width:100%;margin-bottom:14px;" onchange="renderStandoutRecord('${key.replace(/'/g,"\\'")}')">
+      ${allPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+    </select>
+    <div id="standoutRecordBody"></div>
+  ` : `<div class="acomingsoon" style="padding:16px 0;">No player match history on record.</div>`;
+
+  const ctaHtml = `
+    <div class="tprofile-cta">
+      <div class="txt">Ready to find today's edge?</div>
+      <button onclick="switchToMatchesTab()">Go to Matches →</button>
+    </div>
+  `;
+
+  view.innerHTML = header + statsHtml + `
+    <div class="tprofile-explore">
+      <div class="tprofile-card">
+        <div class="cardlabel">Palmarès</div>
+        ${palmaresHtml}
+      </div>
+      <div class="tprofile-card">
+        <div class="cardlabel">${currentYear} edition — entrants</div>
+        ${entrantsHtml}
+      </div>
+      <div class="tprofile-card">
+        <div class="cardlabel">Standout player — record at this event</div>
+        ${standoutHtml}
+      </div>
+    </div>
+    ${ctaHtml}
+  `;
+
+  if (allPlayers.length) renderStandoutRecord(key);
+}
+
+function renderStandoutRecord(key){
+  const sel = document.getElementById('standoutSelect');
+  if (!sel) return;
+  const profile = tournamentProfiles[key];
+  const record = playerRecordAtTournament(profile, sel.value);
+  const total = record.won + record.lost;
+  const winPct = total > 0 ? (record.won / total * 100) : 0;
+  document.getElementById('standoutRecordBody').innerHTML = `
+    <div class="tprofile-winrate">
+      <div class="lbl"><span>Record at this event</span><span>${record.won}-${record.lost} (${winPct.toFixed(0)}%)</span></div>
+      <div class="track"><div style="width:${winPct}%"></div></div>
+    </div>
+  `;
+}
+/* ---------- HEAD TO HEAD (real odds only, no fake W/UE stats) ---------- */
+function populateH2HSelects(){
+  const names = getPlayersFromMatches().map(p => p.name);
+  const s1 = document.getElementById('h2hP1'); const s2 = document.getElementById('h2hP2');
+  s1.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  s2.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (names.length > 0) s1.value = names[0];
+  if (names.length > 1) s2.value = names[1];
+}
+function renderH2H(){
+  const p1 = document.getElementById('h2hP1').value;
+  const p2 = document.getElementById('h2hP2').value;
+  const match = matches.find(m => (m.p1 === p1 && m.p2 === p2) || (m.p1 === p2 && m.p2 === p1));
+
+  if (!match){
+    document.getElementById('h2hCard').innerHTML = `
+      <div class="heads"><div class="name">${p1}</div><div class="name">${p2}</div></div>
+      <div style="color:var(--text-faint);font-size:13px;padding:20px 0;text-align:center;">These two aren't playing each other today — no odds data available for this pairing.</div>
+    `;
+    return;
+  }
+
+  const hasOdds = match.odds && match.odds.p1 && match.odds.p2;
+  if (!hasOdds) {
+    document.getElementById('h2hCard').innerHTML = `
+      <div class="heads"><div class="name">${p1}</div><div class="name">${p2}</div></div>
+      <div style="color:var(--text-faint);font-size:13px;padding:20px 0;text-align:center;">Real fixture confirmed (${match.tournamentRound || match.tour}) but odds haven't been pulled yet for this match.</div>
+    `;
+    return;
+  }
+
+  const p1IsHome = match.p1 === p1;
+  const p1Odds = p1IsHome ? match.odds.p1 : match.odds.p2;
+  const p2Odds = p1IsHome ? match.odds.p2 : match.odds.p1;
+  const p1Implied = (1/p1Odds) / ((1/p1Odds)+(1/p2Odds)) * 100;
+  const p2Implied = 100 - p1Implied;
+
+  document.getElementById('h2hCard').innerHTML = `
+    <div class="heads"><div class="name">${p1}</div><div class="name">${p2}</div></div>
+    <div class="barrow"><div class="lbl"><span>Market odds (${match.odds.bookmaker})</span><span>${p1Odds.toFixed(2)} / ${p2Odds.toFixed(2)}</span></div><div class="track"><div style="width:${p1Implied}%"></div></div></div>
+    <div class="barrow"><div class="lbl"><span>Implied win probability (vig removed)</span><span>${p1Implied.toFixed(1)}% / ${p2Implied.toFixed(1)}%</span></div><div class="track"><div style="width:${p1Implied}%"></div></div></div>
+    <div style="color:var(--text-faint);font-size:12px;margin-top:12px;">Head-to-head history and surface-specific stats coming soon.</div>
+  `;
+}
+document.getElementById('h2hP1').addEventListener('change', renderH2H);
+document.getElementById('h2hP2').addEventListener('change', renderH2H);
+
+/* ---------- INITIAL LOAD ---------- */
+loadMatches();
+// tournament-profiles.json is historical/curated data (30-day server-side
+// cache) — loaded once on page load, not on the 3-minute matches refresh.
+loadTournamentProfiles();
+// Refresh automatically every 3 minutes while the page is open — cheap
+// since it's just re-reading the local matches.json, not re-calling
+// the paid APIs (that only happens when bsp-pipeline.js itself runs).
+setInterval(loadMatches, 3 * 60 * 1000);
+</script>
+
+</body>
+</html>

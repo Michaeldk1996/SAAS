@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSP Consult — The Value Before The Result</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090C; --panel:#12151C; --panel-2:#181C25; --border:#262B35;
+    --header-bg:#0E1633;
+    --text:#F2F4F7; --text-dim:#8F98A6; --text-faint:#565F6A;
+    --accent:#3E7BFA; --accent-dim:#152A4D; --accent-hover:#2f63d1;
+    --court-clay:#C1602A; --court-grass:#4F8C5B; --court-hard:#4A7DAA;
+    --value-pos:#4FBF7A; --radius:8px;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:15px; line-height:1.6; }
+  .display{ font-family:'Space Grotesk',sans-serif; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  a{ color:inherit; }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 24px; }
+  section{ padding:80px 0; }
+  h2.sectiontitle{ font-family:'Space Grotesk',sans-serif; font-size:30px; font-weight:600; margin:0 0 12px 0; }
+  p.sectionsub{ color:var(--text-dim); font-size:15px; margin:0 0 40px 0; max-width:520px; }
+  .eyebrow{ font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .eyebrow::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:8px; font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; padding:12px 22px; text-decoration:none; }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:var(--accent-hover); }
+  .btn-ghost{ background:var(--panel-2); color:var(--text); border:1px solid var(--border); }
+  .btn-ghost:hover{ border-color:var(--text-faint); }
+
+  .announce{ background:var(--accent); color:#fff; text-align:center; font-size:13px; font-weight:600; padding:9px 16px; }
+  .announce span.strike{ text-decoration:line-through; opacity:0.7; margin-left:6px; }
+
+  header.site{ position:sticky; top:0; z-index:40; background:rgba(14,22,51,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .headerbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 24px; max-width:1120px; margin:0 auto; }
+  .brand{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; display:flex; align-items:center; gap:8px; }
+  .brand .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  .navlinks{ display:flex; gap:28px; }
+  .navlinks a{ font-size:13px; font-weight:500; color:var(--text-dim); text-decoration:none; }
+  .navlinks a:hover{ color:var(--text); }
+  .headeractions{ display:flex; align-items:center; gap:16px; }
+  .headeractions .login{ font-size:13px; font-weight:500; color:var(--text-dim); text-decoration:none; }
+  @media (max-width:800px){ .navlinks{ display:none; } }
+
+  .hero{ padding:90px 0 60px 0; text-align:center; }
+  .hero h1{ font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:700; line-height:1.15; max-width:760px; margin:0 auto 20px auto; }
+  .hero h1 .accent{ color:var(--accent); }
+  .hero p.sub{ color:var(--text-dim); font-size:16px; max-width:480px; margin:0 auto 32px auto; }
+  .hero .ctas{ display:flex; gap:14px; justify-content:center; margin-bottom:56px; }
+
+  .heromock{ background:var(--panel); border:1px solid var(--border); border-radius:14px; max-width:920px; margin:0 auto; overflow:hidden; box-shadow:0 30px 60px -20px rgba(0,0,0,0.5); }
+  .heromock .bar{ display:flex; gap:6px; padding:12px 16px; border-bottom:1px solid var(--border); }
+  .heromock .bar span{ width:9px; height:9px; border-radius:50%; background:var(--border); }
+  .heromock .content{ padding:20px; }
+  .mockstats{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .mockstats .s{ background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; text-align:left; }
+  .mockstats .s .l{ font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; }
+  .mockstats .s .v{ font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; margin-top:4px; }
+  .mockrow{ display:grid; grid-template-columns:4px 60px 1fr 100px; align-items:center; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; overflow:hidden; margin-bottom:8px; text-align:left; }
+  .mockrow .b{ align-self:stretch; }
+  .mockrow .b.clay{ background:var(--court-clay); } .mockrow .b.grass{ background:var(--court-grass); } .mockrow .b.hard{ background:var(--court-hard); }
+  .mockrow .t{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint); padding:0 8px; }
+  .mockrow .p{ font-size:13px; padding:10px 4px; }
+  .mockrow .p b{ font-weight:600; }
+  .mockrow .val{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--value-pos); font-size:13px; padding:0 12px; text-align:right; }
+
+  .features{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .feature{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
+  .feature .ic{ font-size:22px; margin-bottom:14px; }
+  .feature h3{ font-family:'Space Grotesk',sans-serif; font-size:15px; margin:0 0 8px 0; }
+  .feature p{ font-size:13px; color:var(--text-dim); margin:0; }
+  @media (max-width:900px){ .features{ grid-template-columns:repeat(2,1fr); } }
+
+  .showcase{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+  .showcase .text ul{ list-style:none; padding:0; margin:20px 0 0 0; }
+  .showcase .text li{ display:flex; gap:10px; font-size:14px; color:var(--text-dim); margin-bottom:12px; }
+  .showcase .text li::before{ content:'✓'; color:var(--value-pos); font-weight:700; }
+  .showcasecard{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:22px; }
+  .showcasecard .h2h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .showcasecard .h2h .side{ text-align:center; flex:1; }
+  .showcasecard .h2h .side .name{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; }
+  .showcasecard .h2h .vs{ font-family:'IBM Plex Mono',monospace; color:var(--text-faint); font-size:12px; padding:0 12px; }
+  .showcasecard .barrow{ margin-bottom:12px; }
+  .showcasecard .barrow .lbl{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-faint); margin-bottom:4px; }
+  .showcasecard .barrow .track{ height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; }
+  .showcasecard .barrow .track div{ height:100%; background:var(--accent); }
+  .showcasecard .callout{ margin-top:16px; background:#16301F; border:1px solid var(--court-grass); border-radius:6px; padding:12px 14px; font-size:13px; color:var(--value-pos); font-weight:600; }
+  @media (max-width:850px){ .showcase{ grid-template-columns:1fr; } }
+
+  .process{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .step .num{ font-family:'IBM Plex Mono',monospace; color:var(--accent); font-size:13px; font-weight:600; margin-bottom:10px; }
+  .step h3{ font-family:'Space Grotesk',sans-serif; font-size:16px; margin:0 0 8px 0; }
+  .step p{ font-size:13px; color:var(--text-dim); margin:0; }
+  @media (max-width:850px){ .process{ grid-template-columns:1fr; } }
+
+  .reviews{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .review{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .review .stars{ color:var(--accent); font-size:13px; margin-bottom:10px; }
+  .review p{ font-size:13px; color:var(--text-dim); margin:0 0 14px 0; }
+  .review .who{ font-size:12px; font-weight:600; color:var(--text); }
+  @media (max-width:850px){ .reviews{ grid-template-columns:1fr; } }
+
+  .pricing{ display:flex; justify-content:center; }
+  .priceswitch{ display:flex; justify-content:center; margin-bottom:36px; }
+  .priceswitch .group{ display:flex; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; }
+  .priceswitch button{ background:none; border:none; color:var(--text-dim); font-size:12px; font-weight:600; padding:7px 16px; border-radius:999px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .priceswitch button.active{ background:var(--accent); color:#fff; }
+  .pricecard{ background:var(--panel); border:1px solid var(--accent); border-radius:14px; padding:36px; max-width:380px; width:100%; text-align:center; }
+  .pricecard .plan{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; color:var(--text-dim); margin-bottom:6px; }
+  .pricecard .amount{ font-family:'IBM Plex Mono',monospace; font-size:42px; font-weight:600; }
+  .pricecard .amount span{ font-size:15px; color:var(--text-dim); font-weight:400; }
+  .pricecard ul{ list-style:none; padding:0; margin:26px 0; text-align:left; }
+  .pricecard li{ display:flex; gap:10px; font-size:13px; color:var(--text-dim); margin-bottom:12px; }
+  .pricecard li::before{ content:'✓'; color:var(--value-pos); font-weight:700; }
+  .promo{ margin-top:16px; font-size:12px; color:var(--text-faint); }
+  .promo b{ color:var(--accent); }
+
+  .faq-item{ border-bottom:1px solid var(--border); padding:18px 0; cursor:pointer; }
+  .faq-item .q{ display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; }
+  .faq-item .q .chev{ color:var(--text-faint); transition:transform 0.2s; }
+  .faq-item.open .q .chev{ transform:rotate(180deg); }
+  .faq-item .a{ display:none; color:var(--text-dim); font-size:13px; margin-top:12px; max-width:600px; }
+  .faq-item.open .a{ display:block; }
+
+  .finalcta{ text-align:center; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:60px 24px; }
+  .finalcta h2{ font-family:'Space Grotesk',sans-serif; font-size:28px; margin:0 0 10px 0; }
+  .finalcta p{ color:var(--text-dim); margin:0 0 26px 0; }
+
+  footer{ border-top:1px solid var(--border); padding:48px 0 24px 0; }
+  .footgrid{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:24px; margin-bottom:36px; }
+  .footgrid h4{ font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); margin:0 0 14px 0; }
+  .footgrid a{ display:block; font-size:13px; color:var(--text-dim); text-decoration:none; margin-bottom:10px; }
+  .footgrid a:hover{ color:var(--text); }
+  .footbottom{ display:flex; justify-content:space-between; color:var(--text-faint); font-size:12px; border-top:1px solid var(--border); padding-top:20px; }
+  @media (max-width:850px){ .footgrid{ grid-template-columns:1fr 1fr; } }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .modal-overlay.open{ display:flex; }
+  .modal{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:28px; max-width:360px; width:100%; }
+  .modal h3{ font-family:'Space Grotesk',sans-serif; margin:0 0 6px 0; font-size:18px; }
+  .modal p.sub{ color:var(--text-dim); font-size:13px; margin:0 0 20px 0; }
+  .modal input{ width:100%; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; color:var(--text); font-size:13px; margin-bottom:10px; font-family:'Inter',sans-serif; }
+  .modal .btn-primary{ width:100%; margin-top:6px; }
+  .modal .close{ float:right; cursor:pointer; color:var(--text-faint); font-size:18px; }
+</style>
+</head>
+<body>
+
+<div class="announce">🎾 Wimbledon offer — 1 month free with code <b>W2026</b> <span class="strike">$39</span> $19/mo</div>
+
+<header class="site">
+  <div class="headerbar">
+    <div class="brand"><span class="dot"></span>BSP CONSULT</div>
+    <nav class="navlinks">
+      <a href="#product">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#reviews">Reviews</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="headeractions">
+      <a href="#" class="login">Log in</a>
+      <a href="#pricing" class="btn btn-primary">Subscribe</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center;">400+ active members</div>
+    <h1>Every bet, backed by numbers.<br>Not <span class="accent">instinct</span>.</h1>
+    <p class="sub">BSP Consult spots value across the ATP and Challenger tours — W/UE, first serve, surface form — before the odds move.</p>
+    <div class="ctas">
+      <a href="#pricing" class="btn btn-primary">See today's signals</a>
+      <a href="#pricing" class="btn btn-ghost">See pricing</a>
+    </div>
+
+    <div class="heromock">
+      <div class="bar"><span></span><span></span><span></span></div>
+      <div class="content">
+        <div class="mockstats">
+          <div class="s"><div class="l">Signals</div><div class="v">7</div></div>
+          <div class="s"><div class="l">Tournaments</div><div class="v">4</div></div>
+          <div class="s"><div class="l">Surface</div><div class="v" style="font-size:13px;">Grass</div></div>
+          <div class="s"><div class="l">Top value</div><div class="v" style="color:var(--value-pos);">+9.2%</div></div>
+        </div>
+        <div class="mockrow"><div class="b grass"></div><div class="t">11:00</div><div class="p"><b>C. Alcaraz</b> vs L. Musetti</div><div class="val">+9.2%</div></div>
+        <div class="mockrow"><div class="b grass"></div><div class="t">13:30</div><div class="p"><b>A. Fils</b> vs B. Shelton</div><div class="val">+6.4%</div></div>
+        <div class="mockrow"><div class="b clay"></div><div class="t">09:15</div><div class="p"><b>J. Munar</b> vs T. Griekspoor</div><div class="val">+4.8%</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="product">
+  <div class="wrap">
+    <div class="eyebrow">Product</div>
+    <h2 class="sectiontitle">A method, not predictions</h2>
+    <p class="sectionsub">Every signal is built on objective data, not gut feeling.</p>
+    <div class="features">
+      <div class="feature"><div class="ic">📊</div><h3>W/UE ratio</h3><p>Winners-to-unforced-error ratio by surface, updated match by match.</p></div>
+      <div class="feature"><div class="ic">🎯</div><h3>First serve</h3><p>First-serve percentage and effectiveness behind it, over the last 12 months.</p></div>
+      <div class="feature"><div class="ic">🏟️</div><h3>Surface form</h3><p>Results specific to clay / hard / grass — not a misleading overall average.</p></div>
+      <div class="feature"><div class="ic">⚡</div><h3>Fatigue &amp; schedule</h3><p>Cumulative time on court and back-to-back rounds factored into the score.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="showcase">
+      <div class="text">
+        <div class="eyebrow">How it works</div>
+        <h2 class="sectiontitle" style="margin-bottom:16px;">The value, visible at a glance</h2>
+        <p style="color:var(--text-dim);font-size:14px;">For every match of the day, we cross-reference playing style, head-to-head history, and market odds to isolate the gap that matters.</p>
+        <ul>
+          <li>Head-to-head across the last 5 meetings</li>
+          <li>Cross-matched playing style (aggressive / consistent / server)</li>
+          <li>Odds-vs-model gap shown clearly, never a black box</li>
+        </ul>
+      </div>
+      <div class="showcasecard">
+        <div class="h2h">
+          <div class="side"><div class="name">C. Alcaraz</div></div>
+          <div class="vs">VS</div>
+          <div class="side"><div class="name">L. Musetti</div></div>
+        </div>
+        <div class="barrow"><div class="lbl"><span>W/UE clay-grass</span><span>64% / 51%</span></div><div class="track"><div style="width:64%"></div></div></div>
+        <div class="barrow"><div class="lbl"><span>First serve</span><span>68% / 59%</span></div><div class="track"><div style="width:68%"></div></div></div>
+        <div class="barrow"><div class="lbl"><span>H2H last 5</span><span>4-1</span></div><div class="track"><div style="width:80%"></div></div></div>
+        <div class="callout">Value detected: +9.2% on C. Alcaraz</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">3 steps</div>
+    <h2 class="sectiontitle">From sign-up to your first signal</h2>
+    <p class="sectionsub">No complicated setup.</p>
+    <div class="process">
+      <div class="step"><div class="num">01</div><h3>Create your account</h3><p>Monthly or annual subscription, cancel anytime.</p></div>
+      <div class="step"><div class="num">02</div><h3>Check today's matches</h3><p>Filter by tour, surface, or a player you follow.</p></div>
+      <div class="step"><div class="num">03</div><h3>Follow the value, not the noise</h3><p>A clear signal, no unnecessary jargon, before every match.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="reviews">
+  <div class="wrap">
+    <div class="eyebrow">Verified reviews</div>
+    <h2 class="sectiontitle">What members are saying</h2>
+    <div class="reviews">
+      <div class="review"><div class="stars">★★★★★</div><p>Reading it surface by surface changes everything — I don't check the odds first anymore.</p><div class="who">Julien M.</div></div>
+      <div class="review"><div class="stars">★★★★★</div><p>Simple, direct, no fluff. The Challenger signals are underused everywhere else.</p><div class="who">Sophie D.</div></div>
+      <div class="review"><div class="stars">★★★★★</div><p>Subscribed since Roland Garros, the grass-court tracking is especially precise.</p><div class="who">Karim B.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center;">Pricing</div>
+    <h2 class="sectiontitle" style="text-align:center;">One plan, everything included</h2>
+    <p class="sectionsub" style="margin:0 auto 36px auto;text-align:center;">No hidden tiers — every member gets access to all signals.</p>
+    <div class="priceswitch">
+      <div class="group">
+        <button class="active" id="pMonthly">Monthly</button>
+        <button id="pAnnual">Annual <span style="opacity:0.7;">-20%</span></button>
+      </div>
+    </div>
+    <div class="pricing">
+      <div class="pricecard">
+        <div class="plan">Premium</div>
+        <div class="amount" id="priceAmount">$19<span>/mo</span></div>
+        <ul>
+          <li>All ATP &amp; Challenger signals</li>
+          <li>Filter by surface and playing style</li>
+          <li>Favorites tracking and alerts</li>
+          <li>Full history &amp; track record</li>
+        </ul>
+        <a href="#" class="btn btn-primary" style="width:100%;" onclick="openSignup(event)">Subscribe</a>
+        <div class="promo">Code <b>W2026</b> — 1 month free</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="eyebrow">FAQ</div>
+    <h2 class="sectiontitle">Frequently asked questions</h2>
+    <div class="faq-item"><div class="q"><span>Can I cancel anytime?</span><span class="chev">▾</span></div><div class="a">Yes, the subscription has no commitment and can be cancelled in one click from your account.</div></div>
+    <div class="faq-item"><div class="q"><span>Do the signals cover the women's tour?</span><span class="chev">▾</span></div><div class="a">WTA coverage is in development and will be available soon.</div></div>
+    <div class="faq-item"><div class="q"><span>How are the signals calculated?</span><span class="chev">▾</span></div><div class="a">From public data (W/UE, first serve, H2H, surface form) combined in a proprietary model — the full methodology is detailed on the Methodology page.</div></div>
+    <div class="faq-item"><div class="q"><span>Can the promo code be combined with other offers?</span><span class="chev">▾</span></div><div class="a">No, only one promo code can be applied per account.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="finalcta">
+      <h2>Ready to bet with a method?</h2>
+      <p>Join 400+ members who follow the value, not the noise.</p>
+      <a href="#pricing" class="btn btn-primary">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footgrid">
+      <div>
+        <div class="brand" style="margin-bottom:12px;"><span class="dot"></span>BSP CONSULT</div>
+        <p style="color:var(--text-faint);font-size:12px;max-width:220px;">Data-driven tennis analysis — ATP &amp; Challenger tours.</p>
+      </div>
+      <div><h4>Product</h4><a href="#product">Features</a><a href="#how">Methodology</a><a href="#pricing">Pricing</a></div>
+      <div><h4>Account</h4><a href="#">Log in</a><a href="#">Create an account</a><a href="#">Help</a></div>
+      <div><h4>Legal</h4><a href="#">Legal notice</a><a href="#">Terms of use</a><a href="#">Contact</a></div>
+    </div>
+    <div class="footbottom">
+      <span>© 2026 BSP Consult. All rights reserved.</span>
+      <span>Sports betting involves risk — play responsibly.</span>
+    </div>
+  </div>
+</footer>
+
+<div class="modal-overlay" id="signupModal">
+  <div class="modal">
+    <span class="close" onclick="closeSignup()">✕</span>
+    <h3>Create your account</h3>
+    <p class="sub">Secure payment via Stripe. Cancel anytime.</p>
+    <input type="email" placeholder="Email address">
+    <input type="password" placeholder="Password">
+    <button class="btn btn-primary">Continue</button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.querySelector('.q').addEventListener('click', () => item.classList.toggle('open'));
+  });
+
+  const priceAmount = document.getElementById('priceAmount');
+  document.getElementById('pMonthly').addEventListener('click', function(){
+    setActive(this); priceAmount.innerHTML = '$19<span>/mo</span>';
+  });
+  document.getElementById('pAnnual').addEventListener('click', function(){
+    setActive(this); priceAmount.innerHTML = '$15<span>/mo, billed annually</span>';
+  });
+  function setActive(btn){
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function openSignup(e){ e.preventDefault(); document.getElementById('signupModal').classList.add('open'); }
+  function closeSignup(){ document.getElementById('signupModal').classList.remove('open'); }
+</script>
+
+</body>
+</html>
