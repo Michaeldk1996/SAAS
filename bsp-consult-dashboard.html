@@ -95,6 +95,38 @@
   .stat .value.accent{ color: var(--value-pos); }
   @media (max-width:720px){ .stats{ grid-template-columns:repeat(2,1fr); } }
 
+  /* Value-signals notification banner (header, top-right) */
+  .signalbanner{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; max-width:360px; }
+  .signalbanner .sb-body{ min-width:0; }
+  .signalbanner .sb-title{ font-size:13px; font-weight:600; color:var(--text); }
+  .signalbanner .sb-sub{ font-size:11px; color:var(--text-faint); margin-top:2px; }
+  .signalbanner button{ background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:11px; font-weight:600; padding:6px 12px; cursor:pointer; font-family:'Inter', sans-serif; white-space:nowrap; margin-left:auto; }
+  .signalbanner button:hover{ color:var(--text); border-color:var(--text-faint); }
+
+  /* Day tabs — weekday sub-label + scroll chevrons */
+  .daytabsrow{ display:flex; align-items:center; gap:4px; }
+  .daytabs-scroll{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--border); flex:1; }
+  .daytabs-scroll::-webkit-scrollbar{ display:none; }
+  .daytabschevron{ background:none; border:none; color:var(--text-faint); cursor:pointer; padding:8px 4px; flex-shrink:0; font-size:14px; }
+  .daytabschevron:hover{ color:var(--text-dim); }
+  .daytabs button{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .daytabs button .dbottom{ font-size:10px; color:var(--text-faint); font-weight:400; }
+  .daytabs button.active .dbottom{ color:var(--accent); }
+
+  /* Filter bar restructure — segmented pill tour toggle, dropdown-style surface control */
+  .filterbar .group.pilltoggle{ background:var(--panel-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; }
+  .filterbar .group.pilltoggle button{ border-radius:999px; }
+  .filterbar .group.pilltoggle button.active{ background:var(--accent); color:#fff; }
+  .surfacefilter{ display:flex; align-items:center; gap:8px; }
+  .surfacedropdown{ background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text-dim); font-size:12px; font-weight:500; cursor:pointer; font-family:'Inter', sans-serif; display:flex; align-items:center; gap:6px; }
+  .surfacedropdown.active{ background:var(--panel); color:var(--text); border-color:var(--accent); }
+  .surfacedropdown .chev{ font-size:9px; color:var(--text-faint); }
+
+  /* Match card — player avatars + centered odds column */
+  .avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--panel-2); }
+  .avatar-fallback{ width:36px; height:36px; border-radius:50%; flex-shrink:0; background:var(--accent-dim); color:var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12px; }
+  .matchcard .oddscenter{ display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:20px; }
+
   .controls{ padding: 4px 24px 0 24px; }
   .daytabs{ display:flex; gap:4px; border-bottom:1px solid var(--border); }
   .daytabs button{
@@ -141,7 +173,7 @@
   .matchcard .livescore .anote{ font-family:'Inter', sans-serif; font-size:10px; color:var(--text-faint); }
   .serveddot{ color:#E28B4A; font-size:14px; }
   .matchcard .vsrow{ display:grid; grid-template-columns:1fr auto 1fr; gap:20px; padding:20px 18px; align-items:start; }
-  .matchcard .playerpanel .ptop{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .matchcard .playerpanel .ptop{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
   .matchcard .playerpanel .pname{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:16px; }
   .matchcard .playerpanel .oddsbadge{ background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; text-align:center; min-width:56px; }
   .matchcard .playerpanel .oddsbadge .lbl{ font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; }
@@ -154,7 +186,7 @@
   .matchcard .playerpanel .formdot.loss{ background:var(--text-faint); }
   .matchcard .playerpanel .formpct{ font-size:11px; font-weight:600; color:#E2A945; white-space:nowrap; }
   .matchcard .playerpanel .favoribadge{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--value-pos); margin-top:10px; }
-  .matchcard .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:12px; align-self:center; padding-top:24px; }
+  .matchcard .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:12px; }
   .matchcard .h2hrow{ padding:0 18px 16px 18px; font-size:12px; color:var(--text-faint); }
   .matchcard .footer{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 18px; border-top:1px solid var(--border); }
   .matchcard .footer .bookmakernote{ font-size:11px; color:var(--text-faint); }
@@ -223,16 +255,38 @@
   .tourrow .rowname{ flex:1; font-weight:500; }
 
   /* Tournaments — profile view */
-  .tprofile-back{ background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; padding:0; margin-bottom:16px; font-family:'Inter', sans-serif; }
-  .tprofile-back:hover{ color:var(--text); }
+  .tprofile-back{ background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; padding:0; margin-bottom:16px; font-family:'Inter', sans-serif; display:inline-flex; align-items:center; gap:6px; }
+  .tprofile-back:hover{ color:var(--accent-hover); text-decoration:underline; }
   .tprofile-header{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; }
-  .tprofile-header .badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .tprofile-header .badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .tprofile-header .titlerow{ display:flex; align-items:center; gap:14px; }
   .tprofile-header h1{ font-family:'Space Grotesk', sans-serif; font-size:24px; margin:0; font-weight:600; }
-  .tprofile-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:20px; }
+  .temblem{ width:44px; height:44px; border-radius:10px; background:var(--accent-dim); color:var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px; letter-spacing:0.02em; flex-shrink:0; }
+
+  /* Stat tiles — icon circle + caption/value/sublabel */
+  .tprofile-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-bottom:20px; }
+  .ticon-tile{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; align-items:center; gap:12px; }
+  .ticon-circle{ width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .ticon-circle.blue{ background:var(--accent-dim); color:var(--accent); }
+  .ticon-circle.green{ background:var(--court-grass-dim); color:var(--value-pos); }
+  .ticon-circle.purple{ background:#2A1533; color:#B183E0; }
+  .ticon-circle.orange{ background:var(--court-clay-dim); color:var(--court-clay); }
+  .ticon-circle.gray{ background:var(--panel-2); color:var(--text-dim); }
+  .ticon-body{ min-width:0; }
+  .ticon-cap{ font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+  .ticon-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:var(--text); line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ticon-sub{ font-size:10px; color:var(--text-faint); margin-top:2px; }
+
   .tprofile-explore{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
   .tprofile-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
-  .tprofile-card .cardlabel{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
+  .tprofile-card .cardlabel{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; display:flex; align-items:center; }
+  .info-ico{ display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--panel-2); border:1px solid var(--border); color:var(--text-faint); font-size:10px; cursor:help; margin-left:6px; text-transform:none; letter-spacing:normal; flex-shrink:0; }
+  .info-ico:hover{ color:var(--text-dim); border-color:var(--text-faint); }
+  .tdesc{ font-size:12px; color:var(--text-dim); line-height:1.55; margin-top:12px; }
+  .tinsight{ display:flex; align-items:flex-start; gap:9px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:11px 13px; font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:14px; }
+  .tinsight .tinsight-ico{ flex-shrink:0; font-size:13px; margin-top:1px; }
   .tprofile-cta{ background:var(--accent-dim); border:1px solid var(--accent); border-radius:var(--radius); padding:20px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .tprofile-cta .ctaleft{ display:flex; align-items:center; gap:14px; }
   .tprofile-cta .txt{ font-size:14px; color:var(--text); }
   .tprofile-cta button{ background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 18px; font-weight:600; font-size:13px; cursor:pointer; font-family:'Inter', sans-serif; white-space:nowrap; }
   .tprofile-cta button:hover{ background:var(--accent-hover); }
@@ -254,14 +308,9 @@
   .aspeed-card .cpi-row{ margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--text-faint); }
   .aspeed-card .cpi-row b{ color:var(--text); font-weight:600; }
 
-  /* 3-Year Speed Trend — CSS bar chart, missing years render as a dashed gap */
-  .trend-card .trend-cols{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:6px; }
-  .trend-card .trend-col{ display:flex; flex-direction:column; align-items:center; }
-  .trend-card .trend-val{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
-  .trend-card .trend-bartrack{ width:100%; height:70px; background:var(--panel-2); border-radius:4px; display:flex; align-items:flex-end; overflow:hidden; }
-  .trend-card .trend-bartrack.empty{ background:transparent; border:1px dashed var(--border); }
-  .trend-card .trend-bar{ width:100%; background:var(--accent); border-radius:4px 4px 0 0; }
-  .trend-card .trend-yr{ font-size:11px; color:var(--text-faint); margin-top:6px; }
+  /* 3-Year Speed Trend — connected line/area chart, missing years render as a gap (no dot, no interpolation) */
+  .trend-card .trend-chart{ margin-top:4px; }
+  .trend-card .trend-svg{ width:100%; height:110px; display:block; overflow:visible; }
 
   /* H2H */
   .h2hselect{ display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap; }
@@ -476,35 +525,51 @@
       <p>Live odds across bookmakers for every ATP match today. Value signals coming soon.</p>
       <p id="dataStatus" style="margin-top:6px;font-size:12px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;">Loading…</p>
     </div>
+    <div class="signalbanner">
+      <div class="ticon-circle gray">🔔</div>
+      <div class="sb-body">
+        <div class="sb-title">Value signals coming soon</div>
+        <div class="sb-sub">We're analyzing value across all matches</div>
+      </div>
+      <button onclick="openInfoModal('signals')">Learn more</button>
+    </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="label">Matches tracked</div><div class="value" id="statMatchesTracked">—</div></div>
-    <div class="stat"><div class="label">Active tournaments</div><div class="value" id="statActiveTournaments">—</div></div>
-    <div class="stat"><div class="label">Bookmakers compared</div><div class="value" id="statBookmakersCompared">—</div></div>
-    <div class="stat"><div class="label">Value signals</div><div class="value" style="font-size:15px;color:var(--text-faint);">Coming soon</div></div>
+    <div class="ticon-tile"><div class="ticon-circle blue">📊</div><div class="ticon-body"><div class="ticon-cap">Matches tracked</div><div class="ticon-val" id="statMatchesTracked">—</div></div></div>
+    <div class="ticon-tile"><div class="ticon-circle purple">🏆</div><div class="ticon-body"><div class="ticon-cap">Active tournaments</div><div class="ticon-val" id="statActiveTournaments">—</div></div></div>
+    <div class="ticon-tile"><div class="ticon-circle green">📖</div><div class="ticon-body"><div class="ticon-cap">Bookmakers compared</div><div class="ticon-val" id="statBookmakersCompared">—</div></div></div>
+    <div class="ticon-tile"><div class="ticon-circle orange">🎯</div><div class="ticon-body"><div class="ticon-cap">Value signals</div><div class="ticon-val" style="font-size:13px;color:var(--text-faint);">Coming soon</div></div></div>
   </div>
 
   <div class="controls">
-    <div class="daytabs" id="dayTabs">
-      <button data-day="daymin2" id="daymin2Tab"></button>
-      <button data-day="yesterday">Yesterday</button>
-      <button class="active" data-day="today">Today</button>
-      <button data-day="tomorrow">Tomorrow</button>
-      <button data-day="day2" id="day2Tab"></button>
-      <button data-day="all">All days</button>
-      <button data-day="past">Live &amp; past</button>
+    <div class="daytabsrow">
+      <button class="daytabschevron" id="dayTabsLeft" aria-label="Scroll left">◀</button>
+      <div class="daytabs-scroll" id="dayTabsScroll">
+        <div class="daytabs" id="dayTabs">
+          <button data-day="daymin2" id="daymin2Tab"><span class="dtop" id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
+          <button data-day="yesterday"><span class="dtop">Yesterday</span><span class="dbottom" id="yesterdayBottom"></span></button>
+          <button class="active" data-day="today"><span class="dtop">Today</span><span class="dbottom" id="todayBottom"></span></button>
+          <button data-day="tomorrow"><span class="dtop">Tomorrow</span><span class="dbottom" id="tomorrowBottom"></span></button>
+          <button data-day="day2" id="day2Tab"><span class="dtop" id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
+          <button data-day="all"><span class="dtop">All days</span></button>
+          <button data-day="past"><span class="dtop">Live &amp; past</span></button>
+        </div>
+      </div>
+      <button class="daytabschevron" id="dayTabsRight" aria-label="Scroll right">▶</button>
     </div>
     <div class="filterbar">
-      <div class="group" id="tourGroup">
+      <div class="group pilltoggle" id="tourGroup">
         <button class="active" data-tour="all">All</button>
         <button data-tour="ATP">ATP</button>
       </div>
-      <div class="group" id="surfaceGroup">
-        <button class="active" data-surface="all">All surfaces</button>
-        <button data-surface="clay">Clay</button>
-        <button data-surface="hard">Hard</button>
-        <button data-surface="grass">Grass</button>
+      <div class="surfacefilter">
+        <div class="surfacedropdown active" data-surface="all" id="surfaceAllBtn">All surfaces <span class="chev">▾</span></div>
+        <div class="group" id="surfaceGroup">
+          <button data-surface="clay">Clay</button>
+          <button data-surface="hard">Hard</button>
+          <button data-surface="grass">Grass</button>
+        </div>
       </div>
       <input class="search" id="searchInput" placeholder="Search for a player...">
       <select class="sortsel" id="sortSelect">
@@ -773,10 +838,18 @@ function getFiltered(){
 function formatShortDate(d){
   return `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
 }
-const daymin2Label = formatShortDate(new Date(Date.now() - 2 * 86400000));
-const day2Label = formatShortDate(new Date(Date.now() + 2 * 86400000));
-document.getElementById('daymin2Tab').textContent = daymin2Label;
-document.getElementById('day2Tab').textContent = day2Label;
+const daymin2Date = new Date(Date.now() - 2 * 86400000);
+const day2Date = new Date(Date.now() + 2 * 86400000);
+const daymin2Label = formatShortDate(daymin2Date);
+const day2Label = formatShortDate(day2Date);
+function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' }); }
+document.getElementById('daymin2Top').textContent = daymin2Label;
+document.getElementById('daymin2Bottom').textContent = weekday(daymin2Date);
+document.getElementById('day2Top').textContent = day2Label;
+document.getElementById('day2Bottom').textContent = weekday(day2Date);
+document.getElementById('yesterdayBottom').textContent = weekday(new Date(Date.now() - 86400000));
+document.getElementById('todayBottom').textContent = weekday(new Date());
+document.getElementById('tomorrowBottom').textContent = weekday(new Date(Date.now() + 86400000));
 
 function statusLabel(m){
   if (m.live) return `EN DIRECT${m.liveStatus ? ' · ' + m.liveStatus : ''}`;
@@ -828,6 +901,27 @@ function formDotsHtml(recentMatches){
   const last5 = (recentMatches || []).slice(0, 5).reverse();
   return last5.map(x => `<span class="formdot ${x.won ? 'win' : 'loss'}" title="${x.won ? 'Win' : 'Loss'} vs ${x.opponent || 'opponent'} (${x.date || 'date unknown'})"></span>`).join('');
 }
+// Real headshot from API-Tennis (m.p1PhotoUrl/p2PhotoUrl) when available; falls
+// back to an initials circle (never a broken image) — same simple 1-2 letter
+// generator convention as tournamentInitials(), applied to a player's real name.
+function playerInitials(name){
+  const words = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+function avatarFallback(img, initials){
+  const div = document.createElement('div');
+  div.className = 'avatar-fallback';
+  div.textContent = initials;
+  img.replaceWith(div);
+}
+function playerAvatarHtml(photoUrl, name){
+  const initials = playerInitials(name);
+  if (!photoUrl) return `<div class="avatar-fallback">${initials}</div>`;
+  return `<img class="avatar" src="${photoUrl}" alt="${name}" onerror="avatarFallback(this,'${initials}')">`;
+}
+
 function renderMatches(){
   const list = document.getElementById('matchlist');
   const filtered = getFiltered();
@@ -892,30 +986,34 @@ function renderMatches(){
       <div class="vsrow">
         <div class="playerpanel">
           <div class="ptop">
+            ${playerAvatarHtml(m.p1PhotoUrl, m.p1)}
             <div class="pname">${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
-            ${hasOdds
-              ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>`
-              : finalScore
-                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p1Sets}</div></div>`
-                : isPastDay
-                  ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
-                  : ''}
           </div>
           ${m.p1RecentFormMatches && m.p1RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p1RecentFormMatches)}</span>${m.p1RecentForm !== null ? `<span class="formpct">⚡ ${m.p1RecentForm}%</span>` : ''}</div>` : ''}
           ${p1IsFavorite ? '<div class="favoribadge">★ Favorite</div>' : ''}
           ${finalScore && finalScore.winner === 'p1' ? '<div class="favoribadge">✓ Winner</div>' : ''}
         </div>
-        <div class="vslabel">VS</div>
+        <div class="oddscenter">
+          ${hasOdds
+            ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>`
+            : finalScore
+              ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p1Sets}</div></div>`
+              : isPastDay
+                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
+                : ''}
+          <div class="vslabel">VS</div>
+          ${hasOdds
+            ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>`
+            : finalScore
+              ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p2Sets}</div></div>`
+              : isPastDay
+                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
+                : ''}
+        </div>
         <div class="playerpanel">
           <div class="ptop">
+            ${playerAvatarHtml(m.p2PhotoUrl, m.p2)}
             <div class="pname">${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
-            ${hasOdds
-              ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>`
-              : finalScore
-                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p2Sets}</div></div>`
-                : isPastDay
-                  ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
-                  : ''}
           </div>
           ${m.p2RecentFormMatches && m.p2RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p2RecentFormMatches)}</span>${m.p2RecentForm !== null ? `<span class="formpct">⚡ ${m.p2RecentForm}%</span>` : ''}</div>` : ''}
           ${(hasOdds && !p1IsFavorite) ? '<div class="favoribadge">★ Favorite</div>' : ''}
@@ -1574,13 +1672,44 @@ document.getElementById('tourGroup').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tour]'); if (!btn) return;
   setActiveButton(document.getElementById('tourGroup'), btn); state.tour = btn.dataset.tour; renderMatches();
 });
+function setSurfaceActive(value){
+  document.getElementById('surfaceAllBtn').classList.toggle('active', value === 'all');
+  document.querySelectorAll('#surfaceGroup button').forEach(b => b.classList.toggle('active', b.dataset.surface === value));
+}
+document.getElementById('surfaceAllBtn').addEventListener('click', () => {
+  setSurfaceActive('all'); state.surface = 'all'; renderMatches();
+});
 document.getElementById('surfaceGroup').addEventListener('click', e => {
   const btn = e.target.closest('button[data-surface]'); if (!btn) return;
-  setActiveButton(document.getElementById('surfaceGroup'), btn); state.surface = btn.dataset.surface; renderMatches();
+  setSurfaceActive(btn.dataset.surface); state.surface = btn.dataset.surface; renderMatches();
 });
 document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
 document.getElementById('sortSelect').addEventListener('change', e => { state.sort = e.target.value; renderMatches(); });
-function openModal(){ document.getElementById('favModal').classList.add('open'); }
+document.getElementById('dayTabsLeft').addEventListener('click', () => {
+  document.getElementById('dayTabsScroll').scrollBy({ left: -120, behavior: 'smooth' });
+});
+document.getElementById('dayTabsRight').addEventListener('click', () => {
+  document.getElementById('dayTabsScroll').scrollBy({ left: 120, behavior: 'smooth' });
+});
+function openModal(){ openInfoModal('favorites'); }
+// Reuses #favModal for both the favorites-upsell trigger (star icon on a match
+// card) and the new Value-signals banner's "Learn more" trigger — same modal
+// markup/CSS, just swapping the heading/body/button text per the real trigger,
+// not two separate modals for one simple info-card pattern.
+const INFO_MODAL_COPY = {
+  favorites: { icon: '★', title: 'Favorites are Premium', body: 'Follow your players and get an alert as soon as a signal appears on their matches.', btn: 'Go Premium', dismiss: 'Later' },
+  signals: { icon: '🎯', title: 'Value signals — on the roadmap', body: "We're building a scoring model (W/UE ratio, first-serve stats, surface form, fatigue) to flag real value against the market odds. See the Methodology tab for the full breakdown of what's being built.", btn: 'Got it', dismiss: 'Close' },
+};
+function openInfoModal(kind){
+  const copy = INFO_MODAL_COPY[kind] || INFO_MODAL_COPY.favorites;
+  const modal = document.getElementById('favModal');
+  modal.querySelector('.icon').textContent = copy.icon;
+  modal.querySelector('h3').textContent = copy.title;
+  modal.querySelector('p').textContent = copy.body;
+  modal.querySelector('button').textContent = copy.btn;
+  modal.querySelector('.dismiss').textContent = copy.dismiss;
+  modal.classList.add('open');
+}
 function closeModal(){ document.getElementById('favModal').classList.remove('open'); }
 
 /* ---------- PLAYERS (derived from real matches, no fake stats) ---------- */
@@ -1893,6 +2022,122 @@ const ABS_SPEED_CENTER_RANGE = 0.59;
 const ABS_SPEED_TREND_MIN = 0.41;
 const ABS_SPEED_TREND_MAX = 1.76;
 
+// Decorative 2-letter emblem derived from the real tournament name — not a
+// logo asset, just initials (e.g. "Australian Open" -> "AO", "US Open" -> "US").
+function tournamentInitials(name){
+  const clean = name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  const first = words[0];
+  if (first.length <= 3 && first === first.toUpperCase() && /[A-Z]/.test(first)) return first.slice(0, 2);
+  if (words.length === 1) return first.slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function statTile(icon, colorClass, caption, value, sublabel){
+  return `
+    <div class="ticon-tile">
+      <div class="ticon-circle ${colorClass}">${icon}</div>
+      <div class="ticon-body">
+        <div class="ticon-cap">${caption}</div>
+        <div class="ticon-val">${value}</div>
+        ${sublabel ? `<div class="ticon-sub">${sublabel}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Template-based description: speed category + surface -> one factual sentence.
+// Every clause is a fixed lookup keyed off real data (courtSpeedCategory() output,
+// TOURNAMENT_CATALOG surface) — no open-ended generation, nothing invented.
+const SURFACE_CLAUSE = {
+  hard: 'hard courts with a consistent, true bounce',
+  clay: 'clay courts with a high, kicking bounce',
+  grass: 'grass courts with a low, skidding bounce',
+};
+const SPEED_CLAUSE = {
+  Slow: { adj: 'Slow', play: 'Rewards patient rallying and heavy topspin over raw pace.' },
+  Medium: { adj: 'Medium-paced', play: 'Balances serve-and-power play with baseline rallying.' },
+  Fast: { adj: 'Fast', play: 'Rewards aggressive baseline play and big servers.' },
+};
+function speedDescription(speedCat, surface){
+  const s = SPEED_CLAUSE[speedCat];
+  const surfaceClause = SURFACE_CLAUSE[surface] || 'courts';
+  if (!s) return '';
+  return `${s.adj} ${surfaceClause}. ${s.play}`;
+}
+
+// Template-based insight: derived purely from where the real Abstract Speed
+// value sits relative to 1.0 (tour average) — fixed thresholds, no invented specifics.
+function abstractSpeedInsight(asVal){
+  const diff = asVal - 1;
+  let level;
+  if (diff >= 0.08) level = 'well above';
+  else if (diff >= 0.03) level = 'above';
+  else if (diff > -0.03) level = 'in line with';
+  else if (diff > -0.08) level = 'below';
+  else level = 'well below';
+  const favors = diff >= 0.03
+    ? 'favoring players with a strong serve and aggressive groundstrokes'
+    : diff <= -0.03
+      ? 'favoring players with strong movement and return depth'
+      : 'suiting a balanced mix of playing styles';
+  return `Court speed is ${level} tour average, ${favors}.`;
+}
+
+// Template-based insight: compares whichever real AS years are available
+// (2+ needed) and describes direction + level — no interpolation of missing years.
+function trendInsight(trendYears, trendVals){
+  const known = trendVals.map((v, i) => v == null ? null : { v, y: trendYears[i] }).filter(Boolean);
+  if (known.length < 2) return null;
+  const first = known[0].v, last = known[known.length - 1].v;
+  const delta = last - first;
+  let dirText;
+  if (Math.abs(delta) < 0.03) dirText = 'remained stable';
+  else if (delta > 0) dirText = delta >= 0.08 ? 'increased notably' : 'increased slightly';
+  else dirText = delta <= -0.08 ? 'decreased notably' : 'decreased slightly';
+  const avg = known.reduce((sum, x) => sum + x.v, 0) / known.length;
+  const levelText = avg > 1.05 ? 'and remains consistently fast' : avg < 0.95 ? 'and remains consistently slow' : 'and remains close to tour average';
+  return `Court speed has ${dirText} ${levelText}.`;
+}
+
+// Connected line/area chart for the 3-Year Speed Trend, drawn as inline SVG
+// (no chart library in this codebase — same hand-rolled approach as every
+// other visual here). Only consecutive real values are connected by a line
+// segment; a missing year is a gap (dash + em-dash), never interpolated/faked.
+function trendChartSvg(trendYears, trendVals, min, max){
+  const W = 320, H = 110, padTop = 22, padBottom = 22;
+  const usableH = H - padTop - padBottom;
+  const xs = trendYears.map((y, i) => 40 + i * ((W - 80) / (trendYears.length - 1)));
+  const pts = trendVals.map((v, i) => v == null ? null : {
+    x: xs[i], y: padTop + (1 - (v - min) / (max - min)) * usableH, v
+  });
+  const known = pts.filter(Boolean);
+  let areaPath = '', linePath = '';
+  if (known.length >= 2) {
+    linePath = known.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+    areaPath = 'M' + known[0].x + ',' + (H - padBottom) + ' L' + known.map(p => p.x + ',' + p.y).join(' L') + ' L' + known[known.length - 1].x + ',' + (H - padBottom) + ' Z';
+  }
+  const parts = pts.map((p, i) => {
+    const yrLabel = `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--text-faint)" font-family="Inter, sans-serif">${trendYears[i]}</text>`;
+    if (!p) {
+      return `<text x="${xs[i]}" y="${padTop + usableH / 2 + 4}" text-anchor="middle" font-size="14" fill="var(--text-faint)" font-family="IBM Plex Mono, monospace">—</text>` + yrLabel;
+    }
+    return `
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>
+      <text x="${p.x}" y="${p.y - 11}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)" font-family="IBM Plex Mono, monospace">${p.v}</text>
+      ${yrLabel}
+    `;
+  }).join('');
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="trend-svg" preserveAspectRatio="none">
+      ${areaPath ? `<path d="${areaPath}" fill="var(--accent-dim)" opacity="0.6"/>` : ''}
+      ${linePath ? `<path d="${linePath}" fill="none" stroke="var(--accent)" stroke-width="2"/>` : ''}
+      ${parts}
+    </svg>
+  `;
+}
+
 function showTournamentProfile(key){
   document.getElementById('tourListView').style.display = 'none';
   const view = document.getElementById('tourProfileView');
@@ -1913,7 +2158,10 @@ function showTournamentProfile(key){
     <button class="tprofile-back" onclick="showTournamentList()">← Back to Tournaments</button>
     <div class="tprofile-header">
       <div class="badges">${badges}</div>
-      <h1>${key}</h1>
+      <div class="titlerow">
+        <div class="temblem">${tournamentInitials(key)}</div>
+        <h1>${key}</h1>
+      </div>
     </div>
   `;
 
@@ -1931,12 +2179,12 @@ function showTournamentProfile(key){
   const speedCat = courtData ? courtSpeedCategory(courtData.speed) : null;
 
   const statTiles = [
-    `<div class="wx-stat"><div class="wx-num" style="font-size:15px;">${champ ? champ.name : '—'}</div><div class="wx-lbl">Defending champion${champ && champ.country ? ' · ' + champ.country : ''}</div></div>`
+    statTile('🏆', 'blue', 'Defending Champion', champ ? champ.name : '—', champ && champ.country ? champ.country : null)
   ];
   if (courtData) {
-    statTiles.push(`<div class="wx-stat"><div class="wx-num">${courtData.altitude}m</div><div class="wx-lbl">Altitude</div></div>`);
-    if (courtData.firstServeWon != null) statTiles.push(`<div class="wx-stat"><div class="wx-num">${courtData.firstServeWon}%</div><div class="wx-lbl">1st serve pts won</div></div>`);
-    if (courtData.serviceHold != null) statTiles.push(`<div class="wx-stat"><div class="wx-num">${courtData.serviceHold}%</div><div class="wx-lbl">Service hold</div></div>`);
+    statTiles.push(statTile('⛰️', 'blue', 'Altitude', `${courtData.altitude}m`, 'Above sea level'));
+    if (courtData.firstServeWon != null) statTiles.push(statTile('🎾', 'green', '1st Serve Points Won', `${courtData.firstServeWon}%`, 'Tournament average'));
+    if (courtData.serviceHold != null) statTiles.push(statTile('🎯', 'purple', 'Service Hold', `${courtData.serviceHold}%`, 'Tournament average'));
   }
   const statsHtml = `<div class="tprofile-stats">${statTiles.join('')}</div>`;
 
@@ -1944,12 +2192,13 @@ function showTournamentProfile(key){
   if (courtData) {
     const speedCardHtml = `
       <div class="tprofile-card">
-        <div class="cardlabel">Speed</div>
+        <div class="cardlabel">Court Speed <span class="info-ico" title="Derived 0-100 index: min-max normalized from each tournament's real Abstract Speed value.">ⓘ</span></div>
         <span class="badge speed-${speedCat.toLowerCase()}">${speedCat}</span>
         <div class="terrain-slider">
           <div class="track"><div class="marker" style="left:${courtData.speed}%;"></div></div>
           <div class="endpoints"><span>Slow</span><span>Fast</span></div>
         </div>
+        <div class="tdesc">${speedDescription(speedCat, cat ? cat.surface : null)}</div>
       </div>
     `;
 
@@ -1961,7 +2210,7 @@ function showTournamentProfile(key){
     ` : '';
     const abstractCardHtml = `
       <div class="tprofile-card aspeed-card">
-        <div class="cardlabel">Abstract Speed (internal model) — ${courtData.abstractSpeedYear}</div>
+        <div class="cardlabel">Abstract Speed (internal model) — ${courtData.abstractSpeedYear} <span class="info-ico" title="BSP's internal pace model, independent of the official CPI. 1.0 = tour-average pace.">ⓘ</span></div>
         <div class="aspeed-value">${asVal}</div>
         <div class="aspeed-lbl">${asDir} than tour average (1.0 = average pace)</div>
         <div class="aspeed-track">
@@ -1970,6 +2219,7 @@ function showTournamentProfile(key){
         </div>
         <div class="aspeed-endpoints"><span>Slower</span><span>Faster</span></div>
         ${cpiRowHtml}
+        <div class="tinsight"><span class="tinsight-ico">💡</span><span>${abstractSpeedInsight(asVal)}</span></div>
       </div>
     `;
 
@@ -1977,18 +2227,13 @@ function showTournamentProfile(key){
     const trendVals = trendYears.map(y => courtData['as' + y]);
     let trendCardHtml = '';
     if (trendVals.some(v => v != null)) {
-      const cols = trendYears.map((y, i) => {
-        const v = trendVals[i];
-        if (v == null) {
-          return `<div class="trend-col"><div class="trend-val">—</div><div class="trend-bartrack empty"></div><div class="trend-yr">${y}</div></div>`;
-        }
-        const pct = Math.max(2, Math.min(100, ((v - ABS_SPEED_TREND_MIN) / (ABS_SPEED_TREND_MAX - ABS_SPEED_TREND_MIN)) * 100));
-        return `<div class="trend-col"><div class="trend-val">${v}</div><div class="trend-bartrack"><div class="trend-bar" style="height:${pct}%;"></div></div><div class="trend-yr">${y}</div></div>`;
-      }).join('');
+      const svg = trendChartSvg(trendYears, trendVals, ABS_SPEED_TREND_MIN, ABS_SPEED_TREND_MAX);
+      const insight = trendInsight(trendYears, trendVals);
       trendCardHtml = `
         <div class="tprofile-card trend-card">
           <div class="cardlabel">3-Year Speed Trend</div>
-          <div class="trend-cols">${cols}</div>
+          <div class="trend-chart">${svg}</div>
+          ${insight ? `<div class="tinsight"><span class="tinsight-ico">📈</span><span>${insight}</span></div>` : ''}
         </div>
       `;
     }
@@ -2004,7 +2249,10 @@ function showTournamentProfile(key){
 
   const ctaHtml = `
     <div class="tprofile-cta">
-      <div class="txt">Ready to find today's edge?</div>
+      <div class="ctaleft">
+        <div class="ticon-circle blue">📅</div>
+        <div class="txt">Ready to find today's edge?</div>
+      </div>
       <button onclick="switchToMatchesTab()">Go to Matches →</button>
     </div>
   `;

@@ -1313,6 +1313,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     liveScore: null,
     liveGameScore: null,
     liveServer: null,
+    p1PhotoUrl: null,
+    p2PhotoUrl: null,
   };
 
   // Weather doesn't depend on the API-Tennis fixture match, only on tournament + time
@@ -1349,6 +1351,13 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   const p1IsFixtureFirst = lastName(fixture.event_first_player) === lastName(oddsEvent.home_team);
   const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
   const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
+
+  // Real headshot URLs from the API-Tennis fixture (confirmed live this session:
+  // event_first_player_logo / event_second_player_logo). Reuses p1IsFixtureFirst
+  // for the same reason the live-state fields below do — the fixture's player
+  // order isn't guaranteed to match p1/p2 (oddsEvent.home_team/away_team).
+  match.p1PhotoUrl = p1IsFixtureFirst ? fixture.event_first_player_logo : fixture.event_second_player_logo;
+  match.p2PhotoUrl = p1IsFixtureFirst ? fixture.event_second_player_logo : fixture.event_first_player_logo;
 
   // Live state — real fields from the API-Tennis fixture, confirmed live this session
   // against an actual in-progress match (event_live: "1", event_status: "Set 1").
@@ -1489,6 +1498,8 @@ async function buildPastMatchObject(fixture, surfaceMap) {
     time: fixture.event_time || null,
     p1: fixture.event_first_player,
     p2: fixture.event_second_player,
+    p1PhotoUrl: fixture.event_first_player_logo || null,
+    p2PhotoUrl: fixture.event_second_player_logo || null,
     tour,
     tourBadge: 'ATP', // event_type_key=265 = ATP Singles only, same filter used everywhere else
     surface,
