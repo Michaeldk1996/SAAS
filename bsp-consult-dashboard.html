@@ -1279,6 +1279,77 @@ function buildExtraStatsSection(m){
   return `${last52}<div style="height:22px;"></div>${surface}${fallbackNote}`;
 }
 
+// Key factors — condensed aggregator pulling already-computed headline
+// numbers from every other tab. Deliberately does NOT recompute anything
+// itself (no duplicate logic): every value here is read straight off the
+// same match object fields the H2H/Form/Overview/Tournament tabs already use.
+function keyFactorRowHtml(label, p1Display, p2Display, barWidth, note){
+  return `
+    <div class="arow">
+      <div class="albl"><span>${label}</span>${note ? `<span>${note}</span>` : ''}</div>
+      <div class="aval"><span>${p1Display}</span><span>${p2Display}</span></div>
+      ${barWidth != null ? `<div class="atrack"><div style="width:${barWidth}%"></div></div>` : ''}
+    </div>
+  `;
+}
+
+function buildKeyFactorsSection(m){
+  const rows = [];
+
+  const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
+  if (hasOdds) {
+    const p1Implied = 1 / m.odds.p1;
+    const p2Implied = 1 / m.odds.p2;
+    const total = p1Implied + p2Implied;
+    const p1Fair = (p1Implied / total * 100).toFixed(1);
+    const p2Fair = (p2Implied / total * 100).toFixed(1);
+    const favorite = m.odds.p1 < m.odds.p2 ? m.p1 : m.p2;
+    rows.push(keyFactorRowHtml('Market-implied win probability (vig removed)', `${p1Fair}%`, `${p2Fair}%`, p1Fair));
+    rows.push(`<div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin:2px 0 14px 0;">Based on live market odds via ${m.odds.bookmaker}, <b style="color:var(--text);">${favorite}</b> is favored. This reflects the betting market only — BSP Consult's own model-based prediction (Elo, style, surface form) isn't connected yet.</div>`);
+  } else {
+    rows.push(`<div class="acomingsoon">Odds haven't been pulled yet for this match — fixture confirmed real, market data pending.</div>`);
+  }
+
+  if (m.h2h) {
+    const total = m.h2h.p1Wins + m.h2h.p2Wins;
+    const bar = total > 0 ? Math.round((m.h2h.p1Wins / total) * 100) : null;
+    rows.push(keyFactorRowHtml('Head-to-head', m.h2h.p1Wins, m.h2h.p2Wins, bar, `${total} meeting${total === 1 ? '' : 's'} on record`));
+  } else {
+    rows.push(`<div class="anote" style="text-align:left;margin-bottom:12px;">Head-to-head: no record on file for this pairing.</div>`);
+  }
+
+  if (m.p1RecentForm != null && m.p2RecentForm != null) {
+    const p1Count = m.p1RecentFormMatches ? m.p1RecentFormMatches.length : 0;
+    const p2Count = m.p2RecentFormMatches ? m.p2RecentFormMatches.length : 0;
+    rows.push(keyFactorRowHtml('Recent form (simple win rate)', `${m.p1RecentForm}%`, `${m.p2RecentForm}%`, m.p1RecentForm, `last ${p1Count} / ${p2Count} results`));
+  }
+
+  if (m.p1SurfaceWinRate != null && m.p2SurfaceWinRate != null) {
+    const surfaceLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
+    rows.push(keyFactorRowHtml(`Career win rate on ${surfaceLabel}`, `${m.p1SurfaceWinRate}%`, `${m.p2SurfaceWinRate}%`, m.p1SurfaceWinRate));
+  }
+
+  const p1T = m.p1TournamentHistory, p2T = m.p2TournamentHistory;
+  if (p1T || p2T) {
+    const p1Total = p1T ? p1T.totalWon + p1T.totalLost : 0;
+    const p2Total = p2T ? p2T.totalWon + p2T.totalLost : 0;
+    const p1Pct = p1Total > 0 ? Math.round((p1T.totalWon / p1Total) * 100) : null;
+    const p2Pct = p2Total > 0 ? Math.round((p2T.totalWon / p2Total) * 100) : null;
+    if (p1Pct != null || p2Pct != null) {
+      const barTotal = (p1Pct ?? 0) + (p2Pct ?? 0);
+      const bar = barTotal > 0 ? Math.round(((p1Pct ?? 0) / barTotal) * 100) : null;
+      rows.push(keyFactorRowHtml(`Win rate at ${m.tour}`, p1Pct != null ? `${p1Pct}%` : '—', p2Pct != null ? `${p2Pct}%` : '—', bar));
+    }
+  }
+
+  if (m.p1Rank != null || m.p2Rank != null) {
+    rows.push(keyFactorRowHtml('Current ranking', m.p1Rank != null ? `#${m.p1Rank}` : '—', m.p2Rank != null ? `#${m.p2Rank}` : '—', null));
+  }
+
+  const footer = `<div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)} · ${m.tour} · ${m.time || 'time TBD'}</div>`;
+  return `${rows.join('')}${footer}`;
+}
+
 function openAnalysisModal(matchId){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -1296,31 +1367,7 @@ function openAnalysisModal(matchId){
     liveBar.style.display = 'none';
   }
 
-  const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
-  if (hasOdds) {
-    const p1Implied = 1 / m.odds.p1;
-    const p2Implied = 1 / m.odds.p2;
-    const total = p1Implied + p2Implied;
-    const p1Fair = (p1Implied / total * 100).toFixed(1);
-    const p2Fair = (p2Implied / total * 100).toFixed(1);
-    const favorite = m.odds.p1 < m.odds.p2 ? m.p1 : m.p2;
-
-    document.getElementById('aSectionKey').innerHTML = `
-      <div class="arow">
-        <div class="albl"><span>Market-implied win probability (vig removed)</span><span>${p1Fair}% / ${p2Fair}%</span></div>
-        <div class="atrack"><div style="width:${p1Fair}%"></div></div>
-      </div>
-      <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-top:10px;">
-        Based on live market odds via ${m.odds.bookmaker}, <b style="color:var(--text);">${favorite}</b> is favored. This reflects the betting market only — BSP Consult's own model-based prediction (Elo, style, surface form) isn't connected yet.
-      </div>
-      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)} · ${m.tour} · ${m.time || 'time TBD'}</div>
-    `;
-  } else {
-    document.getElementById('aSectionKey').innerHTML = `
-      <div class="acomingsoon">Odds haven't been pulled yet for this match — fixture confirmed real, market data pending.</div>
-      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)} · ${m.tour} · ${m.time || 'time TBD'}</div>
-    `;
-  }
+  document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
 
   document.getElementById('aSectionTournament').innerHTML = buildTournamentSection(m);
 
