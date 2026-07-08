@@ -410,6 +410,18 @@
   .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); }
   .atourn-showmore{ font-size:12px; color:var(--accent); cursor:pointer; margin-top:6px; }
   .atourn-showmore:hover{ text-decoration:underline; }
+  .atourn-yearrow.clickable{ cursor:pointer; }
+  .atourn-yearrow.clickable:hover .yr{ color:var(--accent); }
+  .atourn-yearrow .exp{ font-size:10px; color:var(--text-faint); margin-left:6px; }
+  .atourn-matchlist{ padding:2px 0 8px 0; }
+  .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 12px; border-bottom:1px dashed var(--border); font-size:11px; }
+  .atourn-matchrow:last-child{ border-bottom:none; }
+  .atourn-matchrow .d{ color:var(--text-faint); font-family:'IBM Plex Mono', monospace; flex:0 0 auto; }
+  .atourn-matchrow .opp{ color:var(--text-dim); flex:1 1 auto; }
+  .atourn-matchrow .opp.win{ color:var(--value-pos); }
+  .atourn-matchrow .opp.loss{ color:var(--text-dim); }
+  .atourn-matchrow .rd{ color:var(--text-faint); flex:0 0 auto; }
+  .atourn-matchrow .sc{ font-family:'IBM Plex Mono', monospace; color:var(--text-dim); flex:0 0 auto; }
 
   /* Extra stats tab — real per-match serve/return/point stats */
   .aextra-windowhead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; font-weight:600; }
@@ -1142,13 +1154,32 @@ function buildH2HSection(m){
 // Note: deliberately does not include anything derived from "court speed
 // index" or win% by court-speed category — that classification needs
 // Michael's own methodology and isn't built here, per explicit scope.
-function atournYearRowHtml(y){
+function atournMatchRowHtml(x){
   return `
-    <div class="atourn-yearrow">
-      <span class="yr">${y.year}</span>
+    <div class="atourn-matchrow">
+      <span class="d">${x.date || '—'}</span>
+      <span class="opp ${x.won ? 'win' : 'loss'}">${x.won ? 'def.' : 'Lost to'} ${x.opponent || 'Unknown'}</span>
+      <span class="rd">${x.round || ''}</span>
+      <span class="sc">${x.result || '—'}</span>
+    </div>
+  `;
+}
+function toggleTournamentYear(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+function atournYearRowHtml(y, colPrefix){
+  const matches = Array.isArray(y.matches) ? y.matches : [];
+  const listId = `atournMatches-${colPrefix}-${y.year}`;
+  const rows = matches.map(atournMatchRowHtml).join('');
+  return `
+    <div class="atourn-yearrow${matches.length ? ' clickable' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''}>
+      <span class="yr">${y.year}${matches.length ? '<span class="exp">▾</span>' : ''}</span>
       <span class="rd">${y.roundReached || '—'}</span>
       <span class="wl">${y.won}-${y.lost}</span>
     </div>
+    ${matches.length ? `<div class="atourn-matchlist" id="${listId}" style="display:none;">${rows}</div>` : ''}
   `;
 }
 function showTournamentMore(colPrefix){
@@ -1169,8 +1200,8 @@ function atournPlayerColumn(name, history, colPrefix){
   const pct = total > 0 ? Math.round(history.totalWon / total * 100) : 0;
   const visible = history.years.slice(0, 3);
   const extra = history.years.slice(3);
-  const visibleRows = visible.map(atournYearRowHtml).join('');
-  const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y)}</div>`).join('');
+  const visibleRows = visible.map(y => atournYearRowHtml(y, colPrefix)).join('');
+  const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix)}</div>`).join('');
   const showMoreHtml = extra.length ? `<div class="atourn-showmore" id="atournShowMore-${colPrefix}" onclick="showTournamentMore('${colPrefix}')">Show ${extra.length} earlier edition${extra.length === 1 ? '' : 's'}</div>` : '';
   return `
     <div class="atourn-col">

@@ -306,7 +306,24 @@ function buildTournamentHistory(matches, playerKey) {
       if (didWin) won++; else lost++;
     }
     const latest = seasonMatches.reduce((a, b) => (b.date > a.date ? b : a));
-    years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round) });
+    // Per-match detail (opponent, round, self-first score, win/loss) for this
+    // edition — same self-first score reordering already used in
+    // buildH2HMatchList (event_final_result is always "player1 sets -
+    // player2 sets" in raw fixture order, not self-first).
+    const matchList = seasonMatches
+      .map(m => {
+        const isP1 = String(m.p1Key) === String(playerKey);
+        const opponent = isP1 ? m.p2 : m.p1;
+        const won2 = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
+        let result = m.result;
+        if (!isP1 && result && result.includes('-')) {
+          const parts = result.split('-').map(s => s.trim());
+          if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
+        }
+        return { date: m.date, opponent, round: roundLabel(m.round), won: won2, result };
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
   }
   if (years.length === 0) return null;
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));

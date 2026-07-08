@@ -11,8 +11,8 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.91,
-      "p2": 1.98,
+      "p1": 1.89,
+      "p2": 2,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -21,7 +21,7 @@
         "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 2.04,
+        "price": 2.06,
         "bookmaker": "Betfair"
       }
     },
@@ -797,42 +797,229 @@
           "matchCount": 4,
           "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-07-06",
+              "opponent": "A. Bublik",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-04",
+              "opponent": "L. Sonego",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-07-02",
+              "opponent": "P. Kypson",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-06-30",
+              "opponent": "D. Lajovic",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 6,
           "won": 5,
           "lost": 1,
-          "roundReached": "Semi-finals"
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2025-07-11",
+              "opponent": "C. Alcaraz",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "2025-07-08",
+              "opponent": "K. Khachanov",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-06",
+              "opponent": "J. Thompson",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "1 - 0"
+            },
+            {
+              "date": "2025-07-04",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-02",
+              "opponent": "G. Diallo",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2025-07-01",
+              "opponent": "G. Mpetshi Perricard",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 5,
           "won": 4,
           "lost": 1,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2024-07-10",
+              "opponent": "L. Musetti",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2024-07-08",
+              "opponent": "A. Zverev",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2024-07-06",
+              "opponent": "A. Tabilo",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-04",
+              "opponent": "A. Rinderknech",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2024-07-02",
+              "opponent": "C. O'Connell",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2023",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
-          "roundReached": "1/32-finals"
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2023-07-06",
+              "opponent": "M. Ymer",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2023-07-05",
+              "opponent": "Y. Hanfmann",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2"
+            }
+          ]
         },
         {
           "year": "2022",
           "matchCount": 5,
           "won": 4,
           "lost": 1,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2022-07-06",
+              "opponent": "R. Nadal",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2022-07-04",
+              "opponent": "J. Kubler",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-07-02",
+              "opponent": "A. Molcan",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-06-30",
+              "opponent": "A. Gray",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-06-28",
+              "opponent": "L. Musetti",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2021",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
-          "roundReached": "1/16-finals"
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2021-07-03",
+              "opponent": "A. Zverev",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "2021-07-01",
+              "opponent": "S. Johnson",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2021-06-30",
+              "opponent": "B. Nakashima",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         }
       ]
     },
@@ -846,35 +1033,157 @@
           "matchCount": 4,
           "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-07-07",
+              "opponent": "J. Lehecka",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-07-04",
+              "opponent": "M. Giron",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-02",
+              "opponent": "V. Royer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-06-30",
+              "opponent": "A. Blockx",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 1,
           "won": 0,
           "lost": 1,
-          "roundReached": "1/64-finals"
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2025-07-01",
+              "opponent": "A. Rinderknech",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "2 - 3"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2024-07-08",
+              "opponent": "T. Fritz",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2024-07-06",
+              "opponent": "C. Norrie",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-04",
+              "opponent": "M. Giron",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-02",
+              "opponent": "R. Carballes Baena",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2023",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
-          "roundReached": "1/16-finals"
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2023-07-08",
+              "opponent": "M. Berrettini",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 3"
+            },
+            {
+              "date": "2023-07-07",
+              "opponent": "Y. Watanuki",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2023-07-06",
+              "opponent": "G. Brouwer",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2021",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2021-07-05",
+              "opponent": "F. Auger-Aliassime",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2021-07-03",
+              "opponent": "T. Fritz",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2021-07-01",
+              "opponent": "T. Sandgren",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-06-29",
+              "opponent": "T. Griekspoor",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         }
       ]
     },
@@ -976,7 +1285,7 @@
     "value": null,
     "odds": {
       "p1": 1.38,
-      "p2": 3.32,
+      "p2": 3.33,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -1492,21 +1801,104 @@
           "matchCount": 4,
           "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-07-06",
+              "opponent": "A. De Minaur",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-04",
+              "opponent": "K. Khachanov",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2026-07-02",
+              "opponent": "J. Duckworth",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-07-01",
+              "opponent": "M. Navone",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 5,
           "won": 4,
           "lost": 1,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2025-07-09",
+              "opponent": "N. Djokovic",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "2025-07-07",
+              "opponent": "M. Cilic",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-05",
+              "opponent": "J. Mensik",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-03",
+              "opponent": "J. Pinnington Jones",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-01",
+              "opponent": "B. Zhukayev",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
-          "roundReached": "1/32-finals"
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2024-07-04",
+              "opponent": "A. Tabilo",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2024-07-02",
+              "opponent": "R. Hijikata",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         }
       ]
     },
@@ -1520,35 +1912,122 @@
           "matchCount": 4,
           "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals"
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-07-06",
+              "opponent": "G. Dimitrov",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2026-07-04",
+              "opponent": "Z. Bergs",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2026-07-02",
+              "opponent": "O. Virtanen",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-06-30",
+              "opponent": "D. Dzumhur",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
-          "roundReached": "1/32-finals"
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2025-07-03",
+              "opponent": "L. Darderi",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 3"
+            },
+            {
+              "date": "2025-06-30",
+              "opponent": "A. Popyrin",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 1,
           "won": 0,
           "lost": 1,
-          "roundReached": "1/64-finals"
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2024-07-01",
+              "opponent": "D. Altmaier",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "2 - 3"
+            }
+          ]
         },
         {
           "year": "2023",
           "matchCount": 1,
           "won": 0,
           "lost": 1,
-          "roundReached": "1/64-finals"
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2023-07-05",
+              "opponent": "D. Medvedev",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 3"
+            }
+          ]
         },
         {
           "year": "2021",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2021-06-24",
+              "opponent": "T. Griekspoor",
+              "round": "Final",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2021-06-23",
+              "opponent": "M. Ebden",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 1"
+            },
+            {
+              "date": "2021-06-22",
+              "opponent": "P. Gunneswaran",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
         }
       ]
     },
@@ -1649,8 +2128,8 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.24,
-      "p2": 4.47,
+      "p1": 1.23,
+      "p2": 4.57,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -1659,7 +2138,7 @@
         "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 4.47,
+        "price": 4.57,
         "bookmaker": "Pinnacle"
       }
     },
@@ -2345,42 +2824,257 @@
           "matchCount": 5,
           "won": 5,
           "lost": 0,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2026-07-07",
+              "opponent": "J-L. Struff",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-05",
+              "opponent": "S. Mochizuki",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-03",
+              "opponent": "J. Brooksby",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-07-01",
+              "opponent": "N. Borges",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-06-29",
+              "opponent": "M. Kecmanovic",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 7,
           "won": 7,
           "lost": 0,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2025-07-13",
+              "opponent": "C. Alcaraz",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-11",
+              "opponent": "N. Djokovic",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-09",
+              "opponent": "B. Shelton",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-07",
+              "opponent": "G. Dimitrov",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "0 - 2"
+            },
+            {
+              "date": "2025-07-05",
+              "opponent": "P. Martinez",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-03",
+              "opponent": "A. Vukic",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-01",
+              "opponent": "L. Nardi",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 5,
           "won": 4,
           "lost": 1,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2024-07-09",
+              "opponent": "D. Medvedev",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2024-07-07",
+              "opponent": "B. Shelton",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-05",
+              "opponent": "M. Kecmanovic",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-03",
+              "opponent": "M. Berrettini",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2024-07-01",
+              "opponent": "Y. Hanfmann",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2023",
           "matchCount": 6,
           "won": 5,
           "lost": 1,
-          "roundReached": "Semi-finals"
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2023-07-14",
+              "opponent": "N. Djokovic",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 3"
+            },
+            {
+              "date": "2023-07-11",
+              "opponent": "R. Safiullin",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2023-07-09",
+              "opponent": "D. E. Galan",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2023-07-07",
+              "opponent": "Q. Halys",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2023-07-05",
+              "opponent": "D. Schwartzman",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2023-07-03",
+              "opponent": "J. M. Cerundolo",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2022",
           "matchCount": 5,
           "won": 4,
           "lost": 1,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2022-07-05",
+              "opponent": "N. Djokovic",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2022-07-03",
+              "opponent": "C. Alcaraz",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2022-07-01",
+              "opponent": "J. Isner",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-06-29",
+              "opponent": "M. Ymer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2022-06-27",
+              "opponent": "S. Wawrinka",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2021",
           "matchCount": 1,
           "won": 0,
           "lost": 1,
-          "roundReached": "1/64-finals"
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2021-06-28",
+              "opponent": "M. Fucsovics",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "1 - 3"
+            }
+          ]
         }
       ]
     },
@@ -2394,42 +3088,327 @@
           "matchCount": 5,
           "won": 5,
           "lost": 0,
-          "roundReached": "Quarter-finals"
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2026-07-07",
+              "opponent": "F. Auger-Aliassime",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2026-07-05",
+              "opponent": "R. Safiullin",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-07-03",
+              "opponent": "A. Rinderknech",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2026-07-01",
+              "opponent": "S. Tsitsipas",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2026-06-29",
+              "opponent": "Y. Wu",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2025",
           "matchCount": 6,
           "won": 5,
           "lost": 1,
-          "roundReached": "Semi-finals"
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2025-07-11",
+              "opponent": "J. Sinner",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 3"
+            },
+            {
+              "date": "2025-07-09",
+              "opponent": "F. Cobolli",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-07",
+              "opponent": "A. De Minaur",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2025-07-05",
+              "opponent": "M. Kecmanovic",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-03",
+              "opponent": "D. Evans",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2025-07-01",
+              "opponent": "A. Muller",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2024",
           "matchCount": 7,
           "won": 6,
           "lost": 1,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2024-07-14",
+              "opponent": "C. Alcaraz",
+              "round": "Final",
+              "won": false,
+              "result": "0 - 3"
+            },
+            {
+              "date": "2024-07-12",
+              "opponent": "L. Musetti",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-10",
+              "opponent": "A. De Minaur",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": " - "
+            },
+            {
+              "date": "2024-07-08",
+              "opponent": "H. Rune",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2024-07-06",
+              "opponent": "A. Popyrin",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2024-07-04",
+              "opponent": "J. Fearnley",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2024-07-02",
+              "opponent": "V. Kopriva",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2023",
           "matchCount": 7,
           "won": 6,
           "lost": 1,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2023-07-16",
+              "opponent": "C. Alcaraz",
+              "round": "Final",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "2023-07-14",
+              "opponent": "J. Sinner",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2023-07-11",
+              "opponent": "A. Rublev",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2023-07-10",
+              "opponent": "H. Hurkacz",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2023-07-07",
+              "opponent": "S. Wawrinka",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2023-07-05",
+              "opponent": "J. Thompson",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2023-07-03",
+              "opponent": "P. Cachin",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
         },
         {
           "year": "2022",
           "matchCount": 7,
           "won": 7,
           "lost": 0,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2022-07-10",
+              "opponent": "N. Kyrgios",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2022-07-08",
+              "opponent": "C. Norrie",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2022-07-05",
+              "opponent": "J. Sinner",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "2022-07-03",
+              "opponent": "T. van Rijthoven",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2022-07-01",
+              "opponent": "M. Kecmanovic",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-06-29",
+              "opponent": "T. Kokkinakis",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2022-06-27",
+              "opponent": "S. Kwon",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         },
         {
           "year": "2021",
           "matchCount": 7,
           "won": 7,
           "lost": 0,
-          "roundReached": "Final"
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2021-07-11",
+              "opponent": "M. Berrettini",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "2021-07-09",
+              "opponent": "D. Shapovalov",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-07-07",
+              "opponent": "M. Fucsovics",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-07-05",
+              "opponent": "C. Garin",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-07-02",
+              "opponent": "D. Kudla",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-06-30",
+              "opponent": "K. Anderson",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "2021-06-28",
+              "opponent": "J. Draper",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
         }
       ]
     },
