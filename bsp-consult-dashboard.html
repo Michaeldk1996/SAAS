@@ -370,6 +370,25 @@
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-surfacehead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:18px 0 8px 0; }
   @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } .aform-row .date{ display:none; } }
+
+  /* H2H tab (full match-history expansion) */
+  .ah2h-callout{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text-dim); line-height:1.5; margin-bottom:18px; }
+  .ah2h-callout b{ color:var(--text); }
+  .ah2h-smallsample{ color:#E2A945; font-size:12px; margin-top:6px; display:block; }
+  .ah2h-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .ah2h-tile{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+  .ah2h-tile .lbl{ font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+  .ah2h-tile .val{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; color:var(--text); }
+  .ah2h-tile .sub{ font-size:11px; color:var(--text-faint); margin-top:2px; }
+  .ah2h-listhead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:18px 0 8px 0; }
+  .ah2h-row{ padding:10px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .ah2h-row:last-child{ border-bottom:none; }
+  .ah2h-row .top{ display:flex; justify-content:space-between; align-items:center; color:var(--text-faint); font-size:11px; margin-bottom:4px; }
+  .ah2h-row .top .tour{ color:var(--text-dim); }
+  .ah2h-row .bottom{ display:flex; justify-content:space-between; align-items:center; }
+  .ah2h-row .winner{ color:var(--value-pos); font-weight:600; }
+  .ah2h-row .score{ font-family:'IBM Plex Mono', monospace; color:var(--text-dim); }
+  .ah2h-cta{ text-align:center; font-size:12px; color:var(--text-faint); border:1px dashed var(--border); border-radius:8px; padding:12px; margin-top:16px; }
 </style>
 </head>
 <body>
@@ -1006,6 +1025,94 @@ function buildFormSection(m){
   `;
 }
 
+/* ---------- H2H TAB ---------- */
+function h2hRoundLabel(round){
+  if (!round) return null;
+  const parts = round.split(' - ');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
+}
+function h2hRowHtml(match, p1, p2){
+  const surfaceTag = match.surface ? `<span class="surfacetag ${match.surface}">${match.surface.charAt(0).toUpperCase()+match.surface.slice(1)}</span>` : '';
+  const roundText = h2hRoundLabel(match.round);
+  const winner = match.p1Won ? p1 : p2;
+  const loser = match.p1Won ? p2 : p1;
+  return `
+    <div class="ah2h-row">
+      <div class="top">
+        <span>${match.date || 'Date unknown'}</span>
+        <span class="tour">${match.tournament || 'Tournament unknown'}${roundText ? ' · ' + roundText : ''}</span>
+      </div>
+      <div class="bottom">
+        <span class="winner">${winner} def. ${loser}</span>
+        <span class="score">${match.result || '—'} ${surfaceTag}</span>
+      </div>
+    </div>
+  `;
+}
+function buildH2HSection(m){
+  const h2h = m.h2h;
+  if (!h2h) {
+    return `<div class="acomingsoon">No head-to-head data found for this pairing (data source connected, but no match record on file).</div>`;
+  }
+  const totalMatches = h2h.p1Wins + h2h.p2Wins;
+  const smallSample = totalMatches > 0 && totalMatches <= 2
+    ? `<span class="ah2h-smallsample">Only ${totalMatches} meeting${totalMatches === 1 ? '' : 's'} on record — take this record with caution.</span>`
+    : '';
+
+  const leaderText = h2h.p1Wins === h2h.p2Wins
+    ? `tied at ${h2h.record}`
+    : `with <b>${h2h.p1Wins > h2h.p2Wins ? m.p1 : m.p2}</b> leading ${h2h.record}`;
+  const callout = `
+    <div class="ah2h-callout">
+      <b>${m.p1}</b> and <b>${m.p2}</b> have met ${totalMatches} time${totalMatches === 1 ? '' : 's'} on record, ${leaderText}.
+      ${smallSample}
+      <span class="ah2h-smallsample">This record reflects what our data provider has on file, not necessarily every professional meeting between them — long-running rivalries in particular may include older matches the provider doesn't carry. Check ATP Tour's official H2H page to confirm the complete record.</span>
+    </div>
+  `;
+
+  const matchesList = Array.isArray(h2h.matches) ? h2h.matches : [];
+  const surfaceMatches = matchesList.filter(x => x.surface === m.surface);
+  const surfaceWins = surfaceMatches.filter(x => x.p1Won).length;
+  const last3 = matchesList.slice(0, 3);
+  const last3Wins = last3.filter(x => x.p1Won).length;
+
+  const tiles = `
+    <div class="ah2h-tiles">
+      <div class="ah2h-tile">
+        <div class="lbl">Overall record</div>
+        <div class="val">${h2h.record}</div>
+        <div class="sub">${m.p1} — ${m.p2}</div>
+      </div>
+      <div class="ah2h-tile">
+        <div class="lbl">Matches played</div>
+        <div class="val">${totalMatches}</div>
+        <div class="sub">on record</div>
+      </div>
+      <div class="ah2h-tile">
+        <div class="lbl">On ${m.surface} (today's surface)</div>
+        <div class="val">${surfaceMatches.length ? `${surfaceWins}-${surfaceMatches.length - surfaceWins}` : '—'}</div>
+        <div class="sub">${surfaceMatches.length} meeting${surfaceMatches.length === 1 ? '' : 's'} on record</div>
+      </div>
+      <div class="ah2h-tile">
+        <div class="lbl">Last ${last3.length || 0} meeting${last3.length === 1 ? '' : 's'}</div>
+        <div class="val">${last3.length ? `${last3Wins}-${last3.length - last3Wins}` : '—'}</div>
+        <div class="sub">${m.p1} — ${m.p2}</div>
+      </div>
+    </div>
+  `;
+
+  const historyList = matchesList.length
+    ? `
+      <div class="ah2h-listhead">Full match history</div>
+      ${matchesList.map(x => h2hRowHtml(x, m.p1, m.p2)).join('')}
+    `
+    : `<div class="acomingsoon">Overall record is on file, but the individual match-by-match history isn't available for this pairing.</div>`;
+
+  const cta = `<div class="ah2h-cta">These are the meetings on file with our data provider — no per-match stat breakdown (serve %, break points, etc.) available yet.</div>`;
+
+  return `${callout}${tiles}${historyList}${cta}`;
+}
+
 function openAnalysisModal(matchId){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -1064,13 +1171,7 @@ function openAnalysisModal(matchId){
     </div>
   `;
 
-  document.getElementById('aSectionH2H').innerHTML = m.h2h ? `
-    <div class="arow">
-      <div class="albl"><span>Head-to-head record</span><span>${m.h2h.record}</span></div>
-      <div class="atrack"><div style="width:${m.h2h.p1Wins + m.h2h.p2Wins > 0 ? (m.h2h.p1Wins / (m.h2h.p1Wins + m.h2h.p2Wins) * 100) : 50}%"></div></div>
-    </div>
-    <div class="anote">${m.p1} ${m.h2h.p1Wins} — ${m.h2h.p2Wins} ${m.p2}</div>
-  ` : `<div class="acomingsoon">No head-to-head data found for this pairing (data source connected, but no match record on file).</div>`;
+  document.getElementById('aSectionH2H').innerHTML = buildH2HSection(m);
 
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
 
