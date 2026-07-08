@@ -650,7 +650,30 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
   return { matchCount, stats };
 }
 
-async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearFixtures, p2CurrentYearFixtures) {
+// Buckets a player's real last-52-weeks fixtures by court-speed category
+// (via the same COURT_CONDITIONS name-matching used for match.courtSpeed)
+// and tallies win/loss at the given category — zero new API calls, reuses
+// fixtures already fetched for buildExtraStats. Returns null (not a
+// fabricated 0%) if the player has no decided matches in that category.
+function courtSpeedRecordFromFixtures(fixtures, playerKey, category) {
+  if (!category) return null;
+  let wins = 0, losses = 0;
+  for (const f of fixtures) {
+    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || !f.event_winner) continue;
+    const isFirst = String(f.first_player_key) === String(playerKey);
+    const isSecond = String(f.second_player_key) === String(playerKey);
+    if (!isFirst && !isSecond) continue;
+    const cc = courtConditionsFor(f.tournament_name);
+    if (!cc || courtSpeedCategory(cc.speed) !== category) continue;
+    const won = isFirst ? f.event_winner === 'First Player' : f.event_winner === 'Second Player';
+    if (won) wins++; else losses++;
+  }
+  const sampleSize = wins + losses;
+  if (sampleSize === 0) return null;
+  return { wins, losses, sampleSize, pct: Math.round((wins / sampleSize) * 1000) / 10 };
+}
+
+async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearFixtures, p2CurrentYearFixtures, courtSpeedCategoryForMatch) {
   const currentYear = new Date().getFullYear();
   const [p1PrevYearFixtures, p2PrevYearFixtures] = await Promise.all([
     fetchPlayerFixturesForYear(p1Key, currentYear - 1),
@@ -674,6 +697,10 @@ async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearF
       p2: aggregateStatsFromFixtures(p2Fixtures.filter(onThisSurface), p2Key),
     },
     surfaceLabel: surface,
+    courtSpeedRecord: courtSpeedCategoryForMatch ? {
+      p1: courtSpeedRecordFromFixtures(p1Fixtures.filter(inLast52Weeks), p1Key, courtSpeedCategoryForMatch),
+      p2: courtSpeedRecordFromFixtures(p2Fixtures.filter(inLast52Weeks), p2Key, courtSpeedCategoryForMatch),
+    } : null,
   };
 }
 
@@ -805,6 +832,98 @@ const TOURNAMENT_VENUE_HINTS = {
   'Houston': { city: 'Houston', country: 'US', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Jeddah': { city: 'Jeddah', country: 'SA', category: 'Next Gen Finals', indoor: true, surface: 'hard' },
 };
+
+// Real court-conditions data, self-compiled by the user in a Google Sheet
+// ("COURT CONDITIONS MODEL", docs.google.com/spreadsheets/d/1N0QsNufXvpfz9uX19c_v63shbwqwMAjqvfROyb4buoM),
+// fetched 2026-07-08. The sheet has 4 tabs (General/Hard/Clay/Grass); Hard/
+// Clay/Grass are pure surface-filtered subsets of General, so General alone
+// (58 rows) is the full source. Matched by tournament name against the keys
+// above: 57/58 real matches (1 sheet row, "Atlanta Open", isn't a current
+// ATP-tour venue and was dropped, not guessed). 16 of the keys above have no
+// real court data in the sheet and are simply absent here (including
+// 'Toronto' — the sheet's Montreal data is specific to that physical venue,
+// not interchangeable with Toronto even though the Masters alternates
+// between them). speed: 0-100 index. altitude: meters. abstractSpeed: a
+// separate compound index, distinct scale from speed (null where the
+// sheet itself has a real gap, e.g. Montreal). firstServeWon/serviceHold:
+// real %s. To refresh: re-pull the sheet's General tab CSV and re-run the
+// matching script that produced this table.
+const COURT_CONDITIONS = {
+  'Turin': { speed: 100, altitude: 240, abstractSpeed: 1.39, firstServeWon: 77, serviceHold: 87 },
+  'Stuttgart': { speed: 87, altitude: 245, abstractSpeed: 1.27, firstServeWon: 76, serviceHold: 86 },
+  'Vienna': { speed: 85, altitude: 190, abstractSpeed: 1.15, firstServeWon: 73, serviceHold: 83 },
+  'Halle': { speed: 84, altitude: 90, abstractSpeed: 1.35, firstServeWon: 75, serviceHold: 86 },
+  'Adelaide': { speed: 84, altitude: 0, abstractSpeed: 1.07, firstServeWon: 73, serviceHold: 83 },
+  'Hertogenbosch': { speed: 81, altitude: 6, abstractSpeed: 0.92, firstServeWon: 73, serviceHold: 83 },
+  'London': { speed: 80, altitude: 24, abstractSpeed: 1.24, firstServeWon: 74, serviceHold: 82 },
+  'Dallas': { speed: 79, altitude: 150, abstractSpeed: 1.11, firstServeWon: 75, serviceHold: 85 },
+  'Mallorca': { speed: 78, altitude: 60, abstractSpeed: 1.26, firstServeWon: 75, serviceHold: 85 },
+  'Dubai': { speed: 78, altitude: 16, abstractSpeed: 1.13, firstServeWon: 73, serviceHold: 82 },
+  'Paris': { speed: 74, altitude: 35, abstractSpeed: 1.24, firstServeWon: 74, serviceHold: 81 },
+  'Basel': { speed: 74, altitude: 260, abstractSpeed: 1.48, firstServeWon: 75, serviceHold: 82 },
+  'Antwerp': { speed: 70, altitude: 8, abstractSpeed: 1.38, firstServeWon: 74, serviceHold: 83 },
+  'Wimbledon': { speed: 70, altitude: 24, abstractSpeed: 1.19, firstServeWon: 72, serviceHold: 81 },
+  'Eastbourne': { speed: 69, altitude: 15, abstractSpeed: 1.26, firstServeWon: 71, serviceHold: 80 },
+  'Chengdu': { speed: 69, altitude: 250, abstractSpeed: 1.45, firstServeWon: 72, serviceHold: 78 },
+  'Marseille': { speed: 69, altitude: 50, abstractSpeed: 1.29, firstServeWon: 73, serviceHold: 81 },
+  'Cincinnati': { speed: 68, altitude: 226, abstractSpeed: 1.09, firstServeWon: 72, serviceHold: 80 },
+  'Montreal': { speed: 68, altitude: 30, abstractSpeed: null, firstServeWon: 72, serviceHold: 79 },
+  'Metz': { speed: 67, altitude: 209, abstractSpeed: 1.02, firstServeWon: 72, serviceHold: 81 },
+  'Shanghai': { speed: 67, altitude: 4, abstractSpeed: 1.16, firstServeWon: 71, serviceHold: 80 },
+  'Australian Open': { speed: 66, altitude: 14, abstractSpeed: 1.14, firstServeWon: 71, serviceHold: 79 },
+  'Doha': { speed: 64, altitude: 16, abstractSpeed: 0.77, firstServeWon: 69, serviceHold: 78 },
+  'Winston-Salem': { speed: 64, altitude: 241, abstractSpeed: 1.01, firstServeWon: 72, serviceHold: 77 },
+  'Miami': { speed: 63, altitude: 5, abstractSpeed: 1.11, firstServeWon: 72, serviceHold: 80 },
+  'Montpellier': { speed: 63, altitude: 27, abstractSpeed: 0.99, firstServeWon: 71, serviceHold: 79 },
+  'Tokyo': { speed: 62, altitude: 40, abstractSpeed: 1.16, firstServeWon: 71, serviceHold: 79 },
+  'Madrid': { speed: 60, altitude: 650, abstractSpeed: 0.72, firstServeWon: 71, serviceHold: 81 },
+  'Auckland': { speed: 60, altitude: 39, abstractSpeed: 1.05, firstServeWon: 72, serviceHold: 80 },
+  'Stockholm': { speed: 60, altitude: 28, abstractSpeed: 1.08, firstServeWon: 70, serviceHold: 77 },
+  'Rotterdam': { speed: 59, altitude: 2, abstractSpeed: 1.26, firstServeWon: 71, serviceHold: 79 },
+  'Washington': { speed: 56, altitude: 90, abstractSpeed: 1.22, firstServeWon: 72, serviceHold: 79 },
+  'Beijing': { speed: 55, altitude: 50, abstractSpeed: 0.9, firstServeWon: 70, serviceHold: 76 },
+  'Newport': { speed: 54, altitude: 5, abstractSpeed: 0.9, firstServeWon: 71, serviceHold: 78 },
+  'Gstaad': { speed: 51, altitude: 1050, abstractSpeed: 0.79, firstServeWon: 71, serviceHold: 79 },
+  'Indian Wells': { speed: 50, altitude: 27, abstractSpeed: 0.84, firstServeWon: 71, serviceHold: 77 },
+  'Los Cabos': { speed: 50, altitude: 20, abstractSpeed: 0.73, firstServeWon: 70, serviceHold: 77 },
+  'Santiago': { speed: 49, altitude: 520, abstractSpeed: 1.18, firstServeWon: 69, serviceHold: 76 },
+  'Cordoba': { speed: 47, altitude: 390, abstractSpeed: 0.72, firstServeWon: 70, serviceHold: 75 },
+  'Delray Beach': { speed: 47, altitude: 5, abstractSpeed: 0.95, firstServeWon: 71, serviceHold: 78 },
+  'Geneva': { speed: 45, altitude: 375, abstractSpeed: 0.68, firstServeWon: 71, serviceHold: 78 },
+  'Acapulco': { speed: 45, altitude: 30, abstractSpeed: 0.87, firstServeWon: 70, serviceHold: 75 },
+  'Houston': { speed: 45, altitude: 24, abstractSpeed: 0.8, firstServeWon: 70, serviceHold: 79 },
+  'Kitzbuhel': { speed: 42, altitude: 762, abstractSpeed: 0.83, firstServeWon: 70, serviceHold: 77 },
+  'Hamburg': { speed: 42, altitude: 23, abstractSpeed: 0.89, firstServeWon: 69, serviceHold: 76 },
+  'Rome': { speed: 41, altitude: 21, abstractSpeed: 0.7, firstServeWon: 69, serviceHold: 77 },
+  'Lyon': { speed: 41, altitude: 230, abstractSpeed: 0.81, firstServeWon: 68, serviceHold: 75 },
+  'Bastad': { speed: 39, altitude: 14, abstractSpeed: 0.56, firstServeWon: 67, serviceHold: 73 },
+  'Rio de Janeiro': { speed: 38, altitude: 40, abstractSpeed: 0.66, firstServeWon: 65, serviceHold: 71 },
+  'Roland Garros': { speed: 38, altitude: 35, abstractSpeed: 0.67, firstServeWon: 69, serviceHold: 74 },
+  'Munich': { speed: 35, altitude: 520, abstractSpeed: 0.65, firstServeWon: 68, serviceHold: 75 },
+  'Estoril': { speed: 34, altitude: 49, abstractSpeed: 0.59, firstServeWon: 67, serviceHold: 74 },
+  'Marrakech': { speed: 33, altitude: 457, abstractSpeed: 0.89, firstServeWon: 67, serviceHold: 72 },
+  'Umag': { speed: 31, altitude: 1, abstractSpeed: 0.53, firstServeWon: 67, serviceHold: 72 },
+  'Barcelona': { speed: 29, altitude: 65, abstractSpeed: 0.62, firstServeWon: 65, serviceHold: 70 },
+  'Monte Carlo': { speed: 28, altitude: 25, abstractSpeed: 0.61, firstServeWon: 67, serviceHold: 72 },
+  'Buenos Aires': { speed: 27, altitude: 25, abstractSpeed: 0.67, firstServeWon: 65, serviceHold: 71 },
+};
+
+// Speed category buckets aren't an externally sourced label — they're real
+// terciles of the 58 sheet speed values (p33=47, p66=67), disclosed here as
+// a derived split rather than presented as sourced data.
+function courtSpeedCategory(speed) {
+  if (speed == null) return null;
+  return speed <= 47 ? 'Slow' : speed <= 67 ? 'Medium' : 'Fast';
+}
+
+// Matches a raw tournament_name (verbose API string, e.g. "Halle Terra
+// Wortmann Open") to a COURT_CONDITIONS key, reusing the exact substring
+// pattern already used for TOURNAMENT_VENUE_HINTS lookups elsewhere.
+function courtConditionsFor(tournamentName) {
+  if (!tournamentName) return null;
+  const key = Object.keys(COURT_CONDITIONS).find(k => tournamentName.includes(k));
+  return key ? { key, ...COURT_CONDITIONS[key] } : null;
+}
 
 async function geocodeCity(city, countryCode) {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=10&countryCode=${countryCode}`;
@@ -1165,6 +1284,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2TournamentHistory: null,
     extraStats: null,
     venue: null,
+    courtSpeed: null,
     weather: null, // from Open-Meteo, independent of API-Tennis fixture match
     live: false,
     liveStatus: null,
@@ -1181,6 +1301,14 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => oddsEvent.sport_title.includes(k));
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
   match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
+
+  // Court-conditions data reuses the same hintKey lookup as match.venue above
+  // (both keyed by the same short tournament names) — real data from the
+  // user's court-conditions sheet (COURT_CONDITIONS), not re-derived.
+  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
+  match.courtSpeed = courtConditions
+    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
+    : null;
 
   const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
   if (!fixture) return match; // no API-Tennis match found — stays "coming soon" in the UI
@@ -1253,7 +1381,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // p2CurrentFixtures already fetched above for the season row, plus one
   // extra fetch for the prior year (inside buildExtraStats) to guarantee
   // full 52-week coverage.
-  match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures);
+  match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures, match.courtSpeed ? match.courtSpeed.category : null);
 
   // Year-by-year record at this specific tournament — one dedicated
   // per-player query each (see fetchPlayerTournamentMatches), covering each
