@@ -21,15 +21,15 @@
         "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 2.02,
+        "price": 2.04,
         "bookmaker": "Betfair"
       }
     },
     "tournamentRound": "ATP Wimbledon - Quarter-finals",
     "h2h": {
-      "p1Wins": 8,
-      "p2Wins": 1,
-      "record": "8-1",
+      "p1Wins": 9,
+      "p2Wins": 3,
+      "record": "9-3",
       "matches": [
         {
           "date": "2026-06-20",
@@ -99,6 +99,30 @@
           "date": "2023-01-02",
           "tournament": "ATP United Cup",
           "round": null,
+          "surface": "hard",
+          "p1Won": true,
+          "result": "2 - 0"
+        },
+        {
+          "date": "2022-01-04",
+          "tournament": "ATP ATP Cup",
+          "round": null,
+          "surface": "hard",
+          "p1Won": false,
+          "result": "0 - 2"
+        },
+        {
+          "date": "2021-07-03",
+          "tournament": "Wimbledon",
+          "round": "Wimbledon - 1/16-finals",
+          "surface": "grass",
+          "p1Won": false,
+          "result": "1 - 3"
+        },
+        {
+          "date": "2019-10-22",
+          "tournament": "Basel",
+          "round": "Basel - 1/16-finals",
           "surface": "hard",
           "p1Won": true,
           "result": "2 - 0"
@@ -1625,7 +1649,7 @@
     "bestOdds": {
       "p1": {
         "price": 1.26,
-        "bookmaker": "Betfair"
+        "bookmaker": "1xBet"
       },
       "p2": {
         "price": 4.47,

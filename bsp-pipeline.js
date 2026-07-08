@@ -147,19 +147,25 @@ async function fetchApiTennisFixtures(dateStartStr, dateStopStr) {
 
 // get_H2H is confirmed live to sometimes OMIT real completed matches that
 // DO exist in the underlying fixtures database — e.g. the 2022 Wimbledon QF
-// and 2023 Wimbledon SF between Sinner/Djokovic are both absent from
-// get_H2H's response but present via get_fixtures?player_key=<key>, fully
-// scored with a real winner. This backfills those gaps: get_fixtures
+// and 2023 Wimbledon SF between Sinner/Djokovic, and separately the 2019
+// Basel and 2021 Wimbledon meetings between Fritz/Zverev, are all absent
+// from get_H2H's response but present via get_fixtures?player_key=<key>,
+// fully scored with a real winner. This backfills those gaps: get_fixtures
 // accepts a player_key param that returns one player's full match list
 // across a date range in a single request (confirmed live: 185 real Sinner
-// matches for 2021-2023 in one call), so we scope it to firstPlayerKey and
-// filter locally for matches against secondPlayerKey — one extra request
-// per H2H lookup, not a monthly ATP-wide scan. Reuses the same PROFILE_YEARS_BACK
-// lookback window already established elsewhere in this file as the
-// earliest reliably-covered period for this API.
+// matches for 2021-2023, 425 real Fritz matches for 2015-2026, each in one
+// call), so we scope it to firstPlayerKey and filter locally for matches
+// against secondPlayerKey — one extra request per H2H lookup, not a
+// monthly ATP-wide scan.
+//
+// Date range: intentionally NOT limited to PROFILE_YEARS_BACK (that window
+// is specific to the tournament-profile builder's own reliability cutoff).
+// Confirmed live that get_fixtures has real, correctly-classified matches
+// older than that window (2019 Basel), so the backfill queries as far back
+// as 2000 — before any active player's pro career — to avoid silently
+// missing older real meetings for any pair the pipeline processes.
 async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
-  const currentYear = new Date().getFullYear();
-  const start = `${currentYear - PROFILE_YEARS_BACK + 1}-01-01`;
+  const start = '2000-01-01';
   const stop = new Date().toISOString().split('T')[0];
   const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${start}&date_stop=${stop}&event_type_key=265&player_key=${firstPlayerKey}`;
   const res = await fetch(url);
@@ -168,7 +174,12 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
   return (data.result || []).filter(f =>
     (String(f.first_player_key) === String(secondPlayerKey) || String(f.second_player_key) === String(secondPlayerKey)) &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player') &&
-    f.event_qualification === 'False'
+    // Team events (Laver Cup, United Cup, ATP Cup) come back with
+    // event_qualification: null rather than 'False' in this API — confirmed
+    // live on 2022 ATP Cup / 2023 United Cup / Laver Cup fixtures — so only
+    // exclude actual qualifying-round matches ('True'), don't require an
+    // exact 'False' match.
+    f.event_qualification !== 'True'
   );
 }
 
