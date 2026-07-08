@@ -834,86 +834,108 @@ const TOURNAMENT_VENUE_HINTS = {
 };
 
 // Real court-conditions data, self-compiled by the user in a Google Sheet
-// ("COURT CONDITIONS MODEL", docs.google.com/spreadsheets/d/1N0QsNufXvpfz9uX19c_v63shbwqwMAjqvfROyb4buoM),
-// fetched 2026-07-08. The sheet has 4 tabs (General/Hard/Clay/Grass); Hard/
-// Clay/Grass are pure surface-filtered subsets of General, so General alone
-// (58 rows) is the full source. Matched by tournament name against the keys
-// above: 57/58 real matches (1 sheet row, "Atlanta Open", isn't a current
-// ATP-tour venue and was dropped, not guessed). 16 of the keys above have no
-// real court data in the sheet and are simply absent here (including
-// 'Toronto' — the sheet's Montreal data is specific to that physical venue,
-// not interchangeable with Toronto even though the Masters alternates
-// between them). speed: 0-100 index. altitude: meters. abstractSpeed: a
-// separate compound index, distinct scale from speed (null where the
-// sheet itself has a real gap, e.g. Montreal). firstServeWon/serviceHold:
-// real %s. To refresh: re-pull the sheet's General tab CSV and re-run the
-// matching script that produced this table.
+// ("OFFICIAL 2026 COURT CONDITIONS MODEL", tab "COURT CONDITIONS GENERAL",
+// docs.google.com/spreadsheets/d/1WT9HNK7vSTbznrNBEiBz58-i44CdLj9IGOSCjyArIBQ),
+// fetched 2026-07-08. Supersedes the earlier 57-entry dataset — this sheet
+// has real per-tournament ALTITUDE, 3-year Abstract Speed history (AS
+// 2023/2024/2025), 1ST SERVE POINTS WON %, SERVICE HOLD %, and CPI (official
+// Court Pace Index, mostly Masters 1000/Slams/Finals only) columns. Matched
+// by tournament name against the keys above: 64/65 real matches (1 sheet
+// row, "Atlanta Open", isn't a current ATP-tour venue and was dropped, not
+// guessed) — includes real, separate rows for both Toronto and Montreal this
+// time (previously only Montreal had data).
+//   speed: 0-100 index — NOT a sheet column this time (the sheet has no
+//     direct 0-100 field). Derived by min-max normalizing each tournament's
+//     most-recent-available AS value (2025→2024→2023 fallback) across all 64
+//     real values (min 0.41 "Bucharest"→0, max 1.42 "Hangzhou"→100). A
+//     disclosed transformation of real data, not a fabricated number.
+//   altitude: meters, real.
+//   abstractSpeed/abstractSpeedYear: the most-recent-available AS value and
+//     which year it's actually from (so a 2023 fallback is never mislabeled
+//     as current).
+//   as2023/as2024/as2025: real per-year AS values (null = real gap in the
+//     sheet), for the 3-year trend chart — never plot a fake value for a gap.
+//   firstServeWon/serviceHold: real %s.
+//   cpi/cpiYear: real official Court Pace Index and which year it's from
+//     (null = not published for this venue, true for most non-Masters/Slam
+//     events). 2025→2024→2023 fallback, same as abstractSpeed.
+// To refresh: re-pull the sheet's "COURT CONDITIONS GENERAL" tab CSV and
+// re-run the matching/derivation scripts that produced this table.
 const COURT_CONDITIONS = {
-  'Turin': { speed: 100, altitude: 240, abstractSpeed: 1.39, firstServeWon: 77, serviceHold: 87 },
-  'Stuttgart': { speed: 87, altitude: 245, abstractSpeed: 1.27, firstServeWon: 76, serviceHold: 86 },
-  'Vienna': { speed: 85, altitude: 190, abstractSpeed: 1.15, firstServeWon: 73, serviceHold: 83 },
-  'Halle': { speed: 84, altitude: 90, abstractSpeed: 1.35, firstServeWon: 75, serviceHold: 86 },
-  'Adelaide': { speed: 84, altitude: 0, abstractSpeed: 1.07, firstServeWon: 73, serviceHold: 83 },
-  'Hertogenbosch': { speed: 81, altitude: 6, abstractSpeed: 0.92, firstServeWon: 73, serviceHold: 83 },
-  'London': { speed: 80, altitude: 24, abstractSpeed: 1.24, firstServeWon: 74, serviceHold: 82 },
-  'Dallas': { speed: 79, altitude: 150, abstractSpeed: 1.11, firstServeWon: 75, serviceHold: 85 },
-  'Mallorca': { speed: 78, altitude: 60, abstractSpeed: 1.26, firstServeWon: 75, serviceHold: 85 },
-  'Dubai': { speed: 78, altitude: 16, abstractSpeed: 1.13, firstServeWon: 73, serviceHold: 82 },
-  'Paris': { speed: 74, altitude: 35, abstractSpeed: 1.24, firstServeWon: 74, serviceHold: 81 },
-  'Basel': { speed: 74, altitude: 260, abstractSpeed: 1.48, firstServeWon: 75, serviceHold: 82 },
-  'Antwerp': { speed: 70, altitude: 8, abstractSpeed: 1.38, firstServeWon: 74, serviceHold: 83 },
-  'Wimbledon': { speed: 70, altitude: 24, abstractSpeed: 1.19, firstServeWon: 72, serviceHold: 81 },
-  'Eastbourne': { speed: 69, altitude: 15, abstractSpeed: 1.26, firstServeWon: 71, serviceHold: 80 },
-  'Chengdu': { speed: 69, altitude: 250, abstractSpeed: 1.45, firstServeWon: 72, serviceHold: 78 },
-  'Marseille': { speed: 69, altitude: 50, abstractSpeed: 1.29, firstServeWon: 73, serviceHold: 81 },
-  'Cincinnati': { speed: 68, altitude: 226, abstractSpeed: 1.09, firstServeWon: 72, serviceHold: 80 },
-  'Montreal': { speed: 68, altitude: 30, abstractSpeed: null, firstServeWon: 72, serviceHold: 79 },
-  'Metz': { speed: 67, altitude: 209, abstractSpeed: 1.02, firstServeWon: 72, serviceHold: 81 },
-  'Shanghai': { speed: 67, altitude: 4, abstractSpeed: 1.16, firstServeWon: 71, serviceHold: 80 },
-  'Australian Open': { speed: 66, altitude: 14, abstractSpeed: 1.14, firstServeWon: 71, serviceHold: 79 },
-  'Doha': { speed: 64, altitude: 16, abstractSpeed: 0.77, firstServeWon: 69, serviceHold: 78 },
-  'Winston-Salem': { speed: 64, altitude: 241, abstractSpeed: 1.01, firstServeWon: 72, serviceHold: 77 },
-  'Miami': { speed: 63, altitude: 5, abstractSpeed: 1.11, firstServeWon: 72, serviceHold: 80 },
-  'Montpellier': { speed: 63, altitude: 27, abstractSpeed: 0.99, firstServeWon: 71, serviceHold: 79 },
-  'Tokyo': { speed: 62, altitude: 40, abstractSpeed: 1.16, firstServeWon: 71, serviceHold: 79 },
-  'Madrid': { speed: 60, altitude: 650, abstractSpeed: 0.72, firstServeWon: 71, serviceHold: 81 },
-  'Auckland': { speed: 60, altitude: 39, abstractSpeed: 1.05, firstServeWon: 72, serviceHold: 80 },
-  'Stockholm': { speed: 60, altitude: 28, abstractSpeed: 1.08, firstServeWon: 70, serviceHold: 77 },
-  'Rotterdam': { speed: 59, altitude: 2, abstractSpeed: 1.26, firstServeWon: 71, serviceHold: 79 },
-  'Washington': { speed: 56, altitude: 90, abstractSpeed: 1.22, firstServeWon: 72, serviceHold: 79 },
-  'Beijing': { speed: 55, altitude: 50, abstractSpeed: 0.9, firstServeWon: 70, serviceHold: 76 },
-  'Newport': { speed: 54, altitude: 5, abstractSpeed: 0.9, firstServeWon: 71, serviceHold: 78 },
-  'Gstaad': { speed: 51, altitude: 1050, abstractSpeed: 0.79, firstServeWon: 71, serviceHold: 79 },
-  'Indian Wells': { speed: 50, altitude: 27, abstractSpeed: 0.84, firstServeWon: 71, serviceHold: 77 },
-  'Los Cabos': { speed: 50, altitude: 20, abstractSpeed: 0.73, firstServeWon: 70, serviceHold: 77 },
-  'Santiago': { speed: 49, altitude: 520, abstractSpeed: 1.18, firstServeWon: 69, serviceHold: 76 },
-  'Cordoba': { speed: 47, altitude: 390, abstractSpeed: 0.72, firstServeWon: 70, serviceHold: 75 },
-  'Delray Beach': { speed: 47, altitude: 5, abstractSpeed: 0.95, firstServeWon: 71, serviceHold: 78 },
-  'Geneva': { speed: 45, altitude: 375, abstractSpeed: 0.68, firstServeWon: 71, serviceHold: 78 },
-  'Acapulco': { speed: 45, altitude: 30, abstractSpeed: 0.87, firstServeWon: 70, serviceHold: 75 },
-  'Houston': { speed: 45, altitude: 24, abstractSpeed: 0.8, firstServeWon: 70, serviceHold: 79 },
-  'Kitzbuhel': { speed: 42, altitude: 762, abstractSpeed: 0.83, firstServeWon: 70, serviceHold: 77 },
-  'Hamburg': { speed: 42, altitude: 23, abstractSpeed: 0.89, firstServeWon: 69, serviceHold: 76 },
-  'Rome': { speed: 41, altitude: 21, abstractSpeed: 0.7, firstServeWon: 69, serviceHold: 77 },
-  'Lyon': { speed: 41, altitude: 230, abstractSpeed: 0.81, firstServeWon: 68, serviceHold: 75 },
-  'Bastad': { speed: 39, altitude: 14, abstractSpeed: 0.56, firstServeWon: 67, serviceHold: 73 },
-  'Rio de Janeiro': { speed: 38, altitude: 40, abstractSpeed: 0.66, firstServeWon: 65, serviceHold: 71 },
-  'Roland Garros': { speed: 38, altitude: 35, abstractSpeed: 0.67, firstServeWon: 69, serviceHold: 74 },
-  'Munich': { speed: 35, altitude: 520, abstractSpeed: 0.65, firstServeWon: 68, serviceHold: 75 },
-  'Estoril': { speed: 34, altitude: 49, abstractSpeed: 0.59, firstServeWon: 67, serviceHold: 74 },
-  'Marrakech': { speed: 33, altitude: 457, abstractSpeed: 0.89, firstServeWon: 67, serviceHold: 72 },
-  'Umag': { speed: 31, altitude: 1, abstractSpeed: 0.53, firstServeWon: 67, serviceHold: 72 },
-  'Barcelona': { speed: 29, altitude: 65, abstractSpeed: 0.62, firstServeWon: 65, serviceHold: 70 },
-  'Monte Carlo': { speed: 28, altitude: 25, abstractSpeed: 0.61, firstServeWon: 67, serviceHold: 72 },
-  'Buenos Aires': { speed: 27, altitude: 25, abstractSpeed: 0.67, firstServeWon: 65, serviceHold: 71 },
+  'Hangzhou': { speed: 100, altitude: 42, abstractSpeed: 1.42, abstractSpeedYear: 2025, as2023: null, as2024: 1.38, as2025: 1.42, firstServeWon: 74, serviceHold: 80, cpi: null, cpiYear: null },
+  'Stuttgart': { speed: 98, altitude: 245, abstractSpeed: 1.4, abstractSpeedYear: 2025, as2023: 1.45, as2024: 1.36, as2025: 1.4, firstServeWon: 76, serviceHold: 86, cpi: null, cpiYear: null },
+  'Basel': { speed: 98, altitude: 260, abstractSpeed: 1.4, abstractSpeedYear: 2025, as2023: 1.11, as2024: 1.43, as2025: 1.4, firstServeWon: 75, serviceHold: 82, cpi: null, cpiYear: null },
+  'Turin': { speed: 94, altitude: 240, abstractSpeed: 1.36, abstractSpeedYear: 2025, as2023: 1.76, as2024: 1.41, as2025: 1.36, firstServeWon: 77, serviceHold: 87, cpi: 38.9, cpiYear: 2025 },
+  'London': { speed: 93, altitude: 24, abstractSpeed: 1.35, abstractSpeedYear: 2025, as2023: 1.1, as2024: 1.34, as2025: 1.35, firstServeWon: 74, serviceHold: 82, cpi: null, cpiYear: null },
+  'Metz': { speed: 93, altitude: 209, abstractSpeed: 1.35, abstractSpeedYear: 2025, as2023: 1.08, as2024: 1.34, as2025: 1.35, firstServeWon: 72, serviceHold: 81, cpi: null, cpiYear: null },
+  'Antwerp': { speed: 92, altitude: 8, abstractSpeed: 1.34, abstractSpeedYear: 2025, as2023: 1.25, as2024: 1.33, as2025: 1.34, firstServeWon: 74, serviceHold: 83, cpi: null, cpiYear: null },
+  'Halle': { speed: 85, altitude: 90, abstractSpeed: 1.27, abstractSpeedYear: 2025, as2023: 1.28, as2024: 1.23, as2025: 1.27, firstServeWon: 75, serviceHold: 86, cpi: null, cpiYear: null },
+  'Vienna': { speed: 81, altitude: 190, abstractSpeed: 1.23, abstractSpeedYear: 2025, as2023: 1.15, as2024: 1.24, as2025: 1.23, firstServeWon: 73, serviceHold: 83, cpi: null, cpiYear: null },
+  'Brisbane': { speed: 81, altitude: 32, abstractSpeed: 1.23, abstractSpeedYear: 2025, as2023: null, as2024: 1.26, as2025: 1.23, firstServeWon: 75, serviceHold: 85, cpi: null, cpiYear: null },
+  'Almaty': { speed: 80, altitude: 800, abstractSpeed: 1.22, abstractSpeedYear: 2025, as2023: null, as2024: 1.16, as2025: 1.22, firstServeWon: 74, serviceHold: 84, cpi: null, cpiYear: null },
+  'Dallas': { speed: 79, altitude: 150, abstractSpeed: 1.21, abstractSpeedYear: 2025, as2023: 1.29, as2024: 1.19, as2025: 1.21, firstServeWon: 75, serviceHold: 85, cpi: null, cpiYear: null },
+  'Cincinnati': { speed: 78, altitude: 226, abstractSpeed: 1.2, abstractSpeedYear: 2025, as2023: 0.8, as2024: 1.19, as2025: 1.2, firstServeWon: 72, serviceHold: 80, cpi: 43, cpiYear: 2025 },
+  'Miami': { speed: 76, altitude: 5, abstractSpeed: 1.18, abstractSpeedYear: 2025, as2023: 1.24, as2024: 1.16, as2025: 1.18, firstServeWon: 72, serviceHold: 80, cpi: 40.7, cpiYear: 2025 },
+  'Tokyo': { speed: 76, altitude: 40, abstractSpeed: 1.18, abstractSpeedYear: 2025, as2023: 1.12, as2024: 1.17, as2025: 1.18, firstServeWon: 71, serviceHold: 79, cpi: null, cpiYear: null },
+  'Washington': { speed: 76, altitude: 90, abstractSpeed: 1.18, abstractSpeedYear: 2025, as2023: 1, as2024: 1.17, as2025: 1.18, firstServeWon: 72, serviceHold: 79, cpi: null, cpiYear: null },
+  'Chengdu': { speed: 75, altitude: 250, abstractSpeed: 1.17, abstractSpeedYear: 2025, as2023: 1, as2024: 1.17, as2025: 1.17, firstServeWon: 72, serviceHold: 78, cpi: null, cpiYear: null },
+  'Adelaide': { speed: 73, altitude: 0, abstractSpeed: 1.15, abstractSpeedYear: 2025, as2023: 1.25, as2024: 1.1, as2025: 1.15, firstServeWon: 73, serviceHold: 83, cpi: null, cpiYear: null },
+  'Cordoba': { speed: 73, altitude: 390, abstractSpeed: 1.15, abstractSpeedYear: 2023, as2023: 1.15, as2024: null, as2025: null, firstServeWon: 70, serviceHold: 75, cpi: null, cpiYear: null },
+  'Wimbledon': { speed: 69, altitude: 24, abstractSpeed: 1.11, abstractSpeedYear: 2025, as2023: 1.1, as2024: 1.08, as2025: 1.11, firstServeWon: 72, serviceHold: 81, cpi: 37, cpiYear: 2025 },
+  'Delray Beach': { speed: 69, altitude: 5, abstractSpeed: 1.11, abstractSpeedYear: 2025, as2023: 1.12, as2024: 1.09, as2025: 1.11, firstServeWon: 71, serviceHold: 78, cpi: null, cpiYear: null },
+  'Winston-Salem': { speed: 68, altitude: 241, abstractSpeed: 1.1, abstractSpeedYear: 2025, as2023: 1.15, as2024: 1.09, as2025: 1.1, firstServeWon: 72, serviceHold: 77, cpi: null, cpiYear: null },
+  'Montpellier': { speed: 68, altitude: 27, abstractSpeed: 1.1, abstractSpeedYear: 2025, as2023: 1.02, as2024: 1.08, as2025: 1.1, firstServeWon: 71, serviceHold: 79, cpi: null, cpiYear: null },
+  'Marseille': { speed: 67, altitude: 50, abstractSpeed: 1.09, abstractSpeedYear: 2025, as2023: 1.12, as2024: 1.04, as2025: 1.09, firstServeWon: 73, serviceHold: 81, cpi: null, cpiYear: null },
+  'Shanghai': { speed: 66, altitude: 4, abstractSpeed: 1.08, abstractSpeedYear: 2025, as2023: 1.07, as2024: 1.08, as2025: 1.08, firstServeWon: 71, serviceHold: 80, cpi: 32.8, cpiYear: 2025 },
+  'Doha': { speed: 66, altitude: 16, abstractSpeed: 1.08, abstractSpeedYear: 2025, as2023: 1.06, as2024: 1.07, as2025: 1.08, firstServeWon: 69, serviceHold: 78, cpi: null, cpiYear: null },
+  'Mallorca': { speed: 64, altitude: 60, abstractSpeed: 1.06, abstractSpeedYear: 2025, as2023: 1.12, as2024: 1.05, as2025: 1.06, firstServeWon: 75, serviceHold: 85, cpi: null, cpiYear: null },
+  'Australian Open': { speed: 64, altitude: 14, abstractSpeed: 1.06, abstractSpeedYear: 2025, as2023: 1.03, as2024: 1.06, as2025: 1.06, firstServeWon: 71, serviceHold: 79, cpi: null, cpiYear: null },
+  'Beijing': { speed: 64, altitude: 50, abstractSpeed: 1.06, abstractSpeedYear: 2025, as2023: 0.93, as2024: 1.05, as2025: 1.06, firstServeWon: 70, serviceHold: 76, cpi: null, cpiYear: null },
+  'Dubai': { speed: 61, altitude: 16, abstractSpeed: 1.03, abstractSpeedYear: 2025, as2023: 1.15, as2024: 1, as2025: 1.03, firstServeWon: 73, serviceHold: 82, cpi: null, cpiYear: null },
+  'Hong Kong': { speed: 60, altitude: 47, abstractSpeed: 1.02, abstractSpeedYear: 2025, as2023: null, as2024: 1.3, as2025: 1.02, firstServeWon: 72, serviceHold: 80, cpi: null, cpiYear: null },
+  'Montreal': { speed: 60, altitude: 30, abstractSpeed: 1.02, abstractSpeedYear: 2025, as2023: 1.07, as2024: null, as2025: 1.02, firstServeWon: 72, serviceHold: 79, cpi: 37.8, cpiYear: 2025 },
+  'Los Cabos': { speed: 60, altitude: 20, abstractSpeed: 1.02, abstractSpeedYear: 2025, as2023: 0.92, as2024: 0.98, as2025: 1.02, firstServeWon: 70, serviceHold: 77, cpi: null, cpiYear: null },
+  'Toronto': { speed: 59, altitude: 30, abstractSpeed: 1.01, abstractSpeedYear: 2024, as2023: null, as2024: 1.01, as2025: null, firstServeWon: 72, serviceHold: 79, cpi: 44.6, cpiYear: 2025 },
+  'Gstaad': { speed: 58, altitude: 1050, abstractSpeed: 1, abstractSpeedYear: 2025, as2023: 0.78, as2024: 1.05, as2025: 1, firstServeWon: 71, serviceHold: 79, cpi: null, cpiYear: null },
+  'US Open': { speed: 56, altitude: 10, abstractSpeed: 0.98, abstractSpeedYear: 2025, as2023: 1.01, as2024: 0.98, as2025: 0.98, firstServeWon: 72, serviceHold: 78, cpi: 42.8, cpiYear: 2024 },
+  'Hertogenbosch': { speed: 55, altitude: 6, abstractSpeed: 0.97, abstractSpeedYear: 2025, as2023: 1.22, as2024: 0.98, as2025: 0.97, firstServeWon: 73, serviceHold: 83, cpi: null, cpiYear: null },
+  'Paris': { speed: 55, altitude: 35, abstractSpeed: 0.97, abstractSpeedYear: 2025, as2023: 1.1, as2024: 0.99, as2025: 0.97, firstServeWon: 74, serviceHold: 81, cpi: 35.1, cpiYear: 2025 },
+  'Auckland': { speed: 51, altitude: 39, abstractSpeed: 0.93, abstractSpeedYear: 2025, as2023: 1.15, as2024: 0.93, as2025: 0.93, firstServeWon: 72, serviceHold: 80, cpi: null, cpiYear: null },
+  'Stockholm': { speed: 51, altitude: 28, abstractSpeed: 0.93, abstractSpeedYear: 2025, as2023: 0.95, as2024: 0.89, as2025: 0.93, firstServeWon: 70, serviceHold: 77, cpi: null, cpiYear: null },
+  'Rio de Janeiro': { speed: 50, altitude: 40, abstractSpeed: 0.91, abstractSpeedYear: 2025, as2023: 0.87, as2024: 0.91, as2025: 0.91, firstServeWon: 65, serviceHold: 71, cpi: null, cpiYear: null },
+  'Buenos Aires': { speed: 48, altitude: 25, abstractSpeed: 0.89, abstractSpeedYear: 2025, as2023: 0.7, as2024: 0.86, as2025: 0.89, firstServeWon: 65, serviceHold: 71, cpi: null, cpiYear: null },
+  'Bastad': { speed: 43, altitude: 14, abstractSpeed: 0.84, abstractSpeedYear: 2025, as2023: 0.86, as2024: 0.85, as2025: 0.84, firstServeWon: 67, serviceHold: 73, cpi: null, cpiYear: null },
+  'Umag': { speed: 41, altitude: 1, abstractSpeed: 0.82, abstractSpeedYear: 2025, as2023: 0.67, as2024: 0.79, as2025: 0.82, firstServeWon: 67, serviceHold: 72, cpi: null, cpiYear: null },
+  'Acapulco': { speed: 40, altitude: 30, abstractSpeed: 0.81, abstractSpeedYear: 2025, as2023: 0.68, as2024: 0.81, as2025: 0.81, firstServeWon: 70, serviceHold: 75, cpi: null, cpiYear: null },
+  'Kitzbuhel': { speed: 40, altitude: 762, abstractSpeed: 0.81, abstractSpeedYear: 2025, as2023: 0.95, as2024: 0.8, as2025: 0.81, firstServeWon: 70, serviceHold: 77, cpi: null, cpiYear: null },
+  'Madrid': { speed: 39, altitude: 650, abstractSpeed: 0.8, abstractSpeedYear: 2025, as2023: 0.92, as2024: 0.77, as2025: 0.8, firstServeWon: 71, serviceHold: 81, cpi: 26.1, cpiYear: 2025 },
+  'Marrakech': { speed: 39, altitude: 457, abstractSpeed: 0.8, abstractSpeedYear: 2025, as2023: 0.59, as2024: 0.77, as2025: 0.8, firstServeWon: 67, serviceHold: 72, cpi: null, cpiYear: null },
+  'Rotterdam': { speed: 37, altitude: 2, abstractSpeed: 0.78, abstractSpeedYear: 2025, as2023: 0.96, as2024: 0.77, as2025: 0.78, firstServeWon: 71, serviceHold: 79, cpi: null, cpiYear: null },
+  'Eastbourne': { speed: 36, altitude: 15, abstractSpeed: 0.77, abstractSpeedYear: 2025, as2023: 1.1, as2024: 0.75, as2025: 0.77, firstServeWon: 71, serviceHold: 80, cpi: null, cpiYear: null },
+  'Houston': { speed: 35, altitude: 24, abstractSpeed: 0.76, abstractSpeedYear: 2025, as2023: 0.93, as2024: 0.76, as2025: 0.76, firstServeWon: 70, serviceHold: 79, cpi: null, cpiYear: null },
+  'Indian Wells': { speed: 33, altitude: 27, abstractSpeed: 0.74, abstractSpeedYear: 2025, as2023: 0.89, as2024: 0.72, as2025: 0.74, firstServeWon: 71, serviceHold: 77, cpi: 30.9, cpiYear: 2025 },
+  'Geneva': { speed: 31, altitude: 375, abstractSpeed: 0.72, abstractSpeedYear: 2025, as2023: 0.88, as2024: 0.7, as2025: 0.72, firstServeWon: 71, serviceHold: 78, cpi: null, cpiYear: null },
+  'Santiago': { speed: 29, altitude: 520, abstractSpeed: 0.7, abstractSpeedYear: 2025, as2023: 0.88, as2024: 0.68, as2025: 0.7, firstServeWon: 69, serviceHold: 76, cpi: null, cpiYear: null },
+  'Lyon': { speed: 29, altitude: 230, abstractSpeed: 0.7, abstractSpeedYear: 2023, as2023: 0.7, as2024: null, as2025: null, firstServeWon: 68, serviceHold: 75, cpi: null, cpiYear: null },
+  'Estoril': { speed: 29, altitude: 49, abstractSpeed: 0.7, abstractSpeedYear: 2023, as2023: 0.7, as2024: null, as2025: null, firstServeWon: 67, serviceHold: 74, cpi: null, cpiYear: null },
+  'Roland Garros': { speed: 27, altitude: 35, abstractSpeed: 0.68, abstractSpeedYear: 2025, as2023: 0.62, as2024: 0.68, as2025: 0.68, firstServeWon: 69, serviceHold: 74, cpi: null, cpiYear: null },
+  'Munich': { speed: 24, altitude: 520, abstractSpeed: 0.65, abstractSpeedYear: 2025, as2023: 0.63, as2024: 0.64, as2025: 0.65, firstServeWon: 68, serviceHold: 75, cpi: null, cpiYear: null },
+  'Newport': { speed: 21, altitude: 5, abstractSpeed: 0.62, abstractSpeedYear: 2023, as2023: 0.62, as2024: null, as2025: null, firstServeWon: 71, serviceHold: 78, cpi: null, cpiYear: null },
+  'Rome': { speed: 20, altitude: 21, abstractSpeed: 0.61, abstractSpeedYear: 2025, as2023: 0.69, as2024: 0.59, as2025: 0.61, firstServeWon: 69, serviceHold: 77, cpi: 28.9, cpiYear: 2025 },
+  'Barcelona': { speed: 18, altitude: 65, abstractSpeed: 0.59, abstractSpeedYear: 2025, as2023: 0.51, as2024: 0.56, as2025: 0.59, firstServeWon: 65, serviceHold: 70, cpi: null, cpiYear: null },
+  'Hamburg': { speed: 17, altitude: 23, abstractSpeed: 0.58, abstractSpeedYear: 2025, as2023: 0.8, as2024: 0.56, as2025: 0.58, firstServeWon: 69, serviceHold: 76, cpi: null, cpiYear: null },
+  'Monte Carlo': { speed: 15, altitude: 25, abstractSpeed: 0.56, abstractSpeedYear: 2025, as2023: 0.61, as2024: 0.55, as2025: 0.56, firstServeWon: 67, serviceHold: 72, cpi: 29, cpiYear: 2025 },
+  'Bucharest': { speed: 0, altitude: 75, abstractSpeed: 0.41, abstractSpeedYear: 2025, as2023: null, as2024: 0.44, as2025: 0.41, firstServeWon: 67, serviceHold: 72, cpi: null, cpiYear: null },
 };
 
 // Speed category buckets aren't an externally sourced label — they're real
-// terciles of the 58 sheet speed values (p33=47, p66=67), disclosed here as
-// a derived split rather than presented as sourced data.
+// terciles of the 64 derived speed values (p33≈43, p66=68), disclosed here
+// as a derived split rather than presented as sourced data. Recomputed for
+// this new dataset (previous thresholds were 47/67, based on the old
+// 58-tournament speed set).
 function courtSpeedCategory(speed) {
   if (speed == null) return null;
-  return speed <= 47 ? 'Slow' : speed <= 67 ? 'Medium' : 'Fast';
+  return speed <= 43 ? 'Slow' : speed <= 68 ? 'Medium' : 'Fast';
 }
 
 // Matches a raw tournament_name (verbose API string, e.g. "Halle Terra
