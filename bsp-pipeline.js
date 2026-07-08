@@ -453,6 +453,107 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
 }
 
 // =================================================================
+// EXTRA STATS — real per-match serve/return/point stats, straight from
+// get_fixtures' inline `statistics` array (confirmed live this session:
+// aces, double faults, serve %, break points saved/converted, winners,
+// unforced errors, etc. — no extra per-match API call needed).
+//
+// SCOPE, confirmed honestly rather than fabricated:
+// - "Last 52 weeks" and "This surface" are both built for real below,
+//   using each player's current + previous calendar year of fixtures
+//   (already fetched for the Overview tab's season row — reused here,
+//   plus one extra fetch for the prior year to guarantee full 52-week
+//   coverage even early in a calendar year).
+// - A genuine full-"Career" aggregate is NOT built: for a veteran like
+//   Djokovic (pro since 2003) that would mean ~20 more years of
+//   get_fixtures calls per player, on every pipeline run, which isn't
+//   practical here. "This surface" is explicitly scoped to the last two
+//   seasons on file, not implied to be a career figure.
+// - "Opponent style" filtering is NOT built: it depends on the playing-
+//   style classification system, which is explicitly out of scope
+//   (needs Michael's own methodology).
+// =================================================================
+const EXTRA_STAT_DEFS = [
+  { type: 'Service', name: 'Aces', kind: 'count' },
+  { type: 'Service', name: 'Double Faults', kind: 'count' },
+  { type: 'Service', name: '1st Serve Points Won', kind: 'pct' },
+  { type: 'Service', name: '2nd Serve Points Won', kind: 'pct' },
+  { type: 'Service', name: 'Break Points Saved', kind: 'pct' },
+  { type: 'Return', name: 'Break Points Converted', kind: 'pct' },
+  { type: 'Points', name: 'Winners', kind: 'count' },
+  { type: 'Points', name: 'Unforced Errors', kind: 'count' },
+  { type: 'Points', name: 'Service Points Won', kind: 'pct' },
+  { type: 'Points', name: 'Return Points Won', kind: 'pct' },
+];
+
+// Aggregates real per-match `statistics` entries for one player across a
+// set of fixtures. Percentage stats (kind: 'pct') are weighted by summing
+// each match's real stat_won/stat_total (not averaging pre-rounded
+// percentages, which would skew toward short matches). Count stats
+// (kind: 'count') are reported as a per-match average.
+function aggregateStatsFromFixtures(fixtures, playerKey) {
+  const totals = {};
+  let matchCount = 0;
+  for (const f of fixtures) {
+    if (!Array.isArray(f.statistics) || f.statistics.length === 0) continue;
+    const isFirst = String(f.first_player_key) === String(playerKey);
+    const isSecond = String(f.second_player_key) === String(playerKey);
+    if (!isFirst && !isSecond) continue;
+    let matchHadStats = false;
+    for (const stat of f.statistics) {
+      if (String(stat.player_key) !== String(playerKey)) continue;
+      const def = EXTRA_STAT_DEFS.find(d => d.type === stat.stat_type && d.name === stat.stat_name);
+      if (!def) continue;
+      matchHadStats = true;
+      const key = `${def.type}:${def.name}`;
+      if (!totals[key]) totals[key] = { won: 0, total: 0, sum: 0, kind: def.kind };
+      if (def.kind === 'pct') {
+        totals[key].won += Number(stat.stat_won) || 0;
+        totals[key].total += Number(stat.stat_total) || 0;
+      } else {
+        totals[key].sum += parseInt(stat.stat_value, 10) || 0;
+      }
+    }
+    if (matchHadStats) matchCount++;
+  }
+  if (matchCount === 0) return null;
+  const stats = {};
+  for (const [key, v] of Object.entries(totals)) {
+    stats[key] = v.kind === 'pct'
+      ? (v.total > 0 ? Math.round((v.won / v.total) * 1000) / 10 : null)
+      : Math.round((v.sum / matchCount) * 10) / 10;
+  }
+  return { matchCount, stats };
+}
+
+async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearFixtures, p2CurrentYearFixtures) {
+  const currentYear = new Date().getFullYear();
+  const [p1PrevYearFixtures, p2PrevYearFixtures] = await Promise.all([
+    fetchPlayerFixturesForYear(p1Key, currentYear - 1),
+    fetchPlayerFixturesForYear(p2Key, currentYear - 1),
+  ]);
+  const p1Fixtures = [...p1CurrentYearFixtures, ...p1PrevYearFixtures];
+  const p2Fixtures = [...p2CurrentYearFixtures, ...p2PrevYearFixtures];
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 371); // 53 weeks, safely covers a full 52-week window
+  const inLast52Weeks = f => new Date(f.event_date) >= cutoff;
+  const onThisSurface = f => surfaceMap.get(String(f.tournament_key)) === surface;
+
+  return {
+    last52Weeks: {
+      p1: aggregateStatsFromFixtures(p1Fixtures.filter(inLast52Weeks), p1Key),
+      p2: aggregateStatsFromFixtures(p2Fixtures.filter(inLast52Weeks), p2Key),
+    },
+    surface: {
+      p1: aggregateStatsFromFixtures(p1Fixtures.filter(onThisSurface), p1Key),
+      p2: aggregateStatsFromFixtures(p2Fixtures.filter(onThisSurface), p2Key),
+    },
+    surfaceLabel: surface,
+  };
+}
+
+// =================================================================
 // OPEN-METEO — free weather API, no key required. Verified live:
 // returns real hourly forecast for the match's venue/time (sane
 // temperature/wind/humidity for the current forecast window).
@@ -937,6 +1038,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2Yearly: null,
     p1TournamentHistory: null,
     p2TournamentHistory: null,
+    extraStats: null,
     venue: null,
     weather: null, // from Open-Meteo, independent of API-Tennis fixture match
     live: false,
@@ -1021,6 +1123,12 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
   match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  // Real per-match serve/return/point stats — reuses p1CurrentFixtures/
+  // p2CurrentFixtures already fetched above for the season row, plus one
+  // extra fetch for the prior year (inside buildExtraStats) to guarantee
+  // full 52-week coverage.
+  match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures);
 
   // Year-by-year record at this specific tournament — reused from the
   // tournament-profile match data (allEditionMatches), no new API calls.

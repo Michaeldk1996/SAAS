@@ -410,6 +410,10 @@
   .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); }
   .atourn-showmore{ font-size:12px; color:var(--accent); cursor:pointer; margin-top:6px; }
   .atourn-showmore:hover{ text-decoration:underline; }
+
+  /* Extra stats tab — real per-match serve/return/point stats */
+  .aextra-windowhead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; font-weight:600; }
+  .aextra-names{ display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--text); margin-bottom:12px; }
 </style>
 </head>
 <body>
@@ -635,7 +639,7 @@
       <div class="asection" data-asection="overview" id="aSectionOverview"></div>
       <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
       <div class="asection" data-asection="weather" id="aSectionWeather"></div>
-      <div class="asection" data-asection="extra"><div class="acomingsoon">No extra stats source connected yet.</div></div>
+      <div class="asection" data-asection="extra" id="aSectionExtra"></div>
     </div>
   </div>
 </div>
@@ -1207,6 +1211,74 @@ function buildTournamentSection(m){
   `;
 }
 
+// Fixed display order/labels — mirrors EXTRA_STAT_DEFS in bsp-pipeline.js so
+// stats always render in the same order regardless of raw key insertion order.
+const EXTRA_STAT_ORDER = [
+  ['Service:Aces', 'Aces', 'count'],
+  ['Service:Double Faults', 'Double Faults', 'count'],
+  ['Service:1st Serve Points Won', '1st Serve Points Won', 'pct'],
+  ['Service:2nd Serve Points Won', '2nd Serve Points Won', 'pct'],
+  ['Service:Break Points Saved', 'Break Points Saved', 'pct'],
+  ['Return:Break Points Converted', 'Break Points Converted', 'pct'],
+  ['Points:Winners', 'Winners', 'count'],
+  ['Points:Unforced Errors', 'Unforced Errors', 'count'],
+  ['Points:Service Points Won', 'Service Points Won', 'pct'],
+  ['Points:Return Points Won', 'Return Points Won', 'pct'],
+];
+
+function extraStatRowHtml(label, kind, p1Val, p2Val){
+  if (p1Val == null && p2Val == null) return '';
+  const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
+  const a = p1Val ?? 0;
+  const b = p2Val ?? 0;
+  const total = a + b;
+  const width = total > 0 ? Math.round((a / total) * 100) : 50;
+  return `
+    <div class="arow">
+      <div class="albl"><span>${label}</span></div>
+      <div class="aval"><span>${fmt(p1Val)}</span><span>${fmt(p2Val)}</span></div>
+      <div class="atrack"><div style="width:${width}%"></div></div>
+    </div>
+  `;
+}
+
+function extraStatsWindowHtml(m, windowData, windowLabel){
+  if (!windowData || (!windowData.p1 && !windowData.p2)) {
+    return `
+      <div class="aextra-windowhead">${windowLabel}</div>
+      <div class="acomingsoon">Not enough recent match data on file for either player in this window.</div>
+    `;
+  }
+  const p1Stats = windowData.p1 ? windowData.p1.stats : {};
+  const p2Stats = windowData.p2 ? windowData.p2.stats : {};
+  const rows = EXTRA_STAT_ORDER
+    .map(([key, label, kind]) => extraStatRowHtml(label, kind, p1Stats[key], p2Stats[key]))
+    .filter(Boolean)
+    .join('');
+  const countsNote = `<div class="anote">${m.p1}: ${windowData.p1 ? windowData.p1.matchCount + ' matches' : 'no data'} · ${m.p2}: ${windowData.p2 ? windowData.p2.matchCount + ' matches' : 'no data'} on file</div>`;
+  return `
+    <div class="aextra-windowhead">${windowLabel}</div>
+    <div class="aextra-names"><span>${m.p1}</span><span>${m.p2}</span></div>
+    ${rows || '<div class="acomingsoon">No comparable stats on file for this window.</div>'}
+    ${countsNote}
+  `;
+}
+
+function buildExtraStatsSection(m){
+  if (!m.extraStats) {
+    return `<div class="acomingsoon">No extra stats data on file yet for this match.</div>`;
+  }
+  const last52 = extraStatsWindowHtml(m, m.extraStats.last52Weeks, 'Last 52 weeks (all surfaces)');
+  const surfaceLabel = m.extraStats.surfaceLabel ? m.extraStats.surfaceLabel.charAt(0).toUpperCase() + m.extraStats.surfaceLabel.slice(1) : 'this surface';
+  const surface = extraStatsWindowHtml(m, m.extraStats.surface, `On ${surfaceLabel} (last 2 seasons on file)`);
+  const fallbackNote = `
+    <div class="anote" style="margin-top:18px;text-align:left;">
+      Career totals and opponent-style splits aren't built: a true full-career aggregate would need years of extra API calls per veteran player, and opponent-style filtering depends on the playing-style methodology (not defined yet).
+    </div>
+  `;
+  return `${last52}<div style="height:22px;"></div>${surface}${fallbackNote}`;
+}
+
 function openAnalysisModal(matchId){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -1259,6 +1331,8 @@ function openAnalysisModal(matchId){
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
 
   document.getElementById('aSectionWeather').innerHTML = buildWeatherSection(m);
+
+  document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);
 
   document.querySelectorAll('#aTabs button').forEach(b => b.classList.remove('active'));
   document.querySelector('#aTabs button[data-atab="key"]').classList.add('active');
