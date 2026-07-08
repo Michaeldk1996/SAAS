@@ -210,18 +210,14 @@
   .tourfilterbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
   .tourfilterbar .search{ flex:1; min-width:200px; }
   .tourfilterbar select.sortsel{ min-width:160px; }
-  .tourgrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:14px; }
-  .tourcard{
-    display:flex; flex-direction:column; text-align:left; cursor:pointer;
-    background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); overflow:hidden;
-    font-family:'Inter', sans-serif; padding:0;
-  }
-  .tourcard:hover{ border-color: var(--accent); }
-  .tourcard .b{ height:4px; width:100%; }
-  .tourcard .b.clay{ background:var(--court-clay); } .tourcard .b.grass{ background:var(--court-grass); } .tourcard .b.hard{ background:var(--court-hard); }
-  .tourcard .info{ padding:14px 16px; }
-  .tourcard .info .n{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; margin-bottom:10px; }
-  .tourcard .info .badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .tourgrid{ display:block; }
+  .tourgroup{ margin-bottom:22px; }
+  .tourgroup-header{ font-size:12px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; padding:0 4px 8px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+  .tourgroup-header .count{ color:var(--text-faint); font-weight:500; text-transform:none; letter-spacing:normal; }
+  .tourrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; color:var(--text); }
+  .tourrow:hover{ background:var(--panel-2); }
+  .tourrow .flag{ font-size:16px; line-height:1; width:20px; text-align:center; flex-shrink:0; }
+  .tourrow .rowname{ flex:1; font-weight:500; }
 
   /* Tournaments — profile view */
   .tprofile-back{ background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; padding:0; margin-bottom:16px; font-family:'Inter', sans-serif; }
@@ -529,7 +525,7 @@
         <select class="sortsel" id="tourCategoryFilter">
           <option value="all">All categories</option>
           <option value="Grand Slam">Grand Slam</option>
-          <option value="Masters 1000">Masters 1000</option>
+          <option value="ATP 1000">ATP 1000</option>
           <option value="ATP Finals">ATP Finals</option>
           <option value="ATP 500">ATP 500</option>
           <option value="ATP 250">ATP 250</option>
@@ -1555,85 +1551,97 @@ document.getElementById('playerSearch').addEventListener('input', e => renderPla
 // from any API (API-Tennis has no category/venue-type field at all). These
 // are fixed, public facts about the tour calendar, not invented data.
 const TOURNAMENT_CATALOG = [
-  { name: 'Australian Open', category: 'Grand Slam', surface: 'hard', indoor: false },
-  { name: 'French Open', category: 'Grand Slam', surface: 'clay', indoor: false },
-  { name: 'Roland Garros', category: 'Grand Slam', surface: 'clay', indoor: false },
-  { name: 'Wimbledon', category: 'Grand Slam', surface: 'grass', indoor: false },
-  { name: 'US Open', category: 'Grand Slam', surface: 'hard', indoor: false },
-  { name: 'Indian Wells', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Miami', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Monte Carlo', category: 'Masters 1000', surface: 'clay', indoor: false },
-  { name: 'Madrid', category: 'Masters 1000', surface: 'clay', indoor: false },
-  { name: 'Rome', category: 'Masters 1000', surface: 'clay', indoor: false },
-  { name: 'Montreal', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Toronto', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Cincinnati', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Shanghai', category: 'Masters 1000', surface: 'hard', indoor: false },
-  { name: 'Paris', category: 'Masters 1000', surface: 'hard', indoor: true },
-  { name: 'Turin', category: 'ATP Finals', surface: 'hard', indoor: true },
-  { name: 'Rotterdam', category: 'ATP 500', surface: 'hard', indoor: true },
-  { name: 'Dubai', category: 'ATP 500', surface: 'hard', indoor: false },
-  { name: 'Acapulco', category: 'ATP 500', surface: 'hard', indoor: false },
-  { name: 'Rio de Janeiro', category: 'ATP 500', surface: 'clay', indoor: false },
-  { name: 'Barcelona', category: 'ATP 500', surface: 'clay', indoor: false },
-  { name: 'Halle', category: 'ATP 500', surface: 'grass', indoor: false },
-  { name: 'London', category: 'ATP 500', surface: 'grass', indoor: false },
-  { name: 'Hamburg', category: 'ATP 500', surface: 'clay', indoor: false },
-  { name: 'Washington', category: 'ATP 500', surface: 'hard', indoor: false },
-  { name: 'Beijing', category: 'ATP 500', surface: 'hard', indoor: false },
-  { name: 'Tokyo', category: 'ATP 500', surface: 'hard', indoor: false },
-  { name: 'Vienna', category: 'ATP 500', surface: 'hard', indoor: true },
-  { name: 'Basel', category: 'ATP 500', surface: 'hard', indoor: true },
-  { name: 'Auckland', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Adelaide', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Brisbane', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Sydney', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Hong Kong', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Chengdu', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Zhuhai', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Hangzhou', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Pune', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Doha', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Marseille', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Delray Beach', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Dallas', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Montpellier', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Cordoba', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Buenos Aires', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Santiago', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Los Cabos', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Marrakech', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Munich', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Bucharest', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Estoril', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Geneva', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Gstaad', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Bastad', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Newport', category: 'ATP 250', surface: 'grass', indoor: false },
-  { name: 'Umag', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Kitzbuhel', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Winston-Salem', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Tel Aviv', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Almaty', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Astana', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Antwerp', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Stockholm', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Metz', category: 'ATP 250', surface: 'hard', indoor: true },
-  { name: 'Belgrade', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Eastbourne', category: 'ATP 250', surface: 'grass', indoor: false },
-  { name: 'Hertogenbosch', category: 'ATP 250', surface: 'grass', indoor: false },
-  { name: 'Mallorca', category: 'ATP 250', surface: 'grass', indoor: false },
-  { name: 'Stuttgart', category: 'ATP 250', surface: 'grass', indoor: false },
-  { name: 'Ho Chi Minh City', category: 'ATP 250', surface: 'hard', indoor: false },
-  { name: 'Houston', category: 'ATP 250', surface: 'clay', indoor: false },
-  { name: 'Jeddah', category: 'Next Gen Finals', surface: 'hard', indoor: true },
+  { name: 'Australian Open', category: 'Grand Slam', surface: 'hard', indoor: false, country: 'AU' },
+  { name: 'French Open', category: 'Grand Slam', surface: 'clay', indoor: false, country: 'FR' },
+  { name: 'Roland Garros', category: 'Grand Slam', surface: 'clay', indoor: false, country: 'FR' },
+  { name: 'Wimbledon', category: 'Grand Slam', surface: 'grass', indoor: false, country: 'GB' },
+  { name: 'US Open', category: 'Grand Slam', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Indian Wells', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Miami', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Monte Carlo', category: 'ATP 1000', surface: 'clay', indoor: false, country: 'MC' },
+  { name: 'Madrid', category: 'ATP 1000', surface: 'clay', indoor: false, country: 'ES' },
+  { name: 'Rome', category: 'ATP 1000', surface: 'clay', indoor: false, country: 'IT' },
+  { name: 'Montreal', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'CA' },
+  { name: 'Toronto', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'CA' },
+  { name: 'Cincinnati', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Shanghai', category: 'ATP 1000', surface: 'hard', indoor: false, country: 'CN' },
+  { name: 'Paris', category: 'ATP 1000', surface: 'hard', indoor: true, country: 'FR' },
+  { name: 'Turin', category: 'ATP Finals', surface: 'hard', indoor: true, country: 'IT' },
+  { name: 'Rotterdam', category: 'ATP 500', surface: 'hard', indoor: true, country: 'NL' },
+  { name: 'Dubai', category: 'ATP 500', surface: 'hard', indoor: false, country: 'AE' },
+  { name: 'Acapulco', category: 'ATP 500', surface: 'hard', indoor: false, country: 'MX' },
+  { name: 'Rio de Janeiro', category: 'ATP 500', surface: 'clay', indoor: false, country: 'BR' },
+  { name: 'Barcelona', category: 'ATP 500', surface: 'clay', indoor: false, country: 'ES' },
+  { name: 'Halle', category: 'ATP 500', surface: 'grass', indoor: false, country: 'DE' },
+  { name: 'London', category: 'ATP 500', surface: 'grass', indoor: false, country: 'GB' },
+  { name: 'Hamburg', category: 'ATP 500', surface: 'clay', indoor: false, country: 'DE' },
+  { name: 'Washington', category: 'ATP 500', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Beijing', category: 'ATP 500', surface: 'hard', indoor: false, country: 'CN' },
+  { name: 'Tokyo', category: 'ATP 500', surface: 'hard', indoor: false, country: 'JP' },
+  { name: 'Vienna', category: 'ATP 500', surface: 'hard', indoor: true, country: 'AT' },
+  { name: 'Basel', category: 'ATP 500', surface: 'hard', indoor: true, country: 'CH' },
+  { name: 'Auckland', category: 'ATP 250', surface: 'hard', indoor: false, country: 'NZ' },
+  { name: 'Adelaide', category: 'ATP 250', surface: 'hard', indoor: false, country: 'AU' },
+  { name: 'Brisbane', category: 'ATP 250', surface: 'hard', indoor: false, country: 'AU' },
+  { name: 'Sydney', category: 'ATP 250', surface: 'hard', indoor: false, country: 'AU' },
+  { name: 'Hong Kong', category: 'ATP 250', surface: 'hard', indoor: false, country: 'HK' },
+  { name: 'Chengdu', category: 'ATP 250', surface: 'hard', indoor: false, country: 'CN' },
+  { name: 'Zhuhai', category: 'ATP 250', surface: 'hard', indoor: false, country: 'CN' },
+  { name: 'Hangzhou', category: 'ATP 250', surface: 'hard', indoor: false, country: 'CN' },
+  { name: 'Pune', category: 'ATP 250', surface: 'hard', indoor: false, country: 'IN' },
+  { name: 'Doha', category: 'ATP 250', surface: 'hard', indoor: false, country: 'QA' },
+  { name: 'Marseille', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR' },
+  { name: 'Delray Beach', category: 'ATP 250', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Dallas', category: 'ATP 250', surface: 'hard', indoor: true, country: 'US' },
+  { name: 'Montpellier', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR' },
+  { name: 'Cordoba', category: 'ATP 250', surface: 'clay', indoor: false, country: 'AR' },
+  { name: 'Buenos Aires', category: 'ATP 250', surface: 'clay', indoor: false, country: 'AR' },
+  { name: 'Santiago', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CL' },
+  { name: 'Los Cabos', category: 'ATP 250', surface: 'hard', indoor: false, country: 'MX' },
+  { name: 'Marrakech', category: 'ATP 250', surface: 'clay', indoor: false, country: 'MA' },
+  { name: 'Munich', category: 'ATP 250', surface: 'clay', indoor: false, country: 'DE' },
+  { name: 'Bucharest', category: 'ATP 250', surface: 'clay', indoor: false, country: 'RO' },
+  { name: 'Estoril', category: 'ATP 250', surface: 'clay', indoor: false, country: 'PT' },
+  { name: 'Geneva', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CH' },
+  { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false, country: 'FR' },
+  { name: 'Gstaad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CH' },
+  { name: 'Bastad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'SE' },
+  { name: 'Newport', category: 'ATP 250', surface: 'grass', indoor: false, country: 'US' },
+  { name: 'Umag', category: 'ATP 250', surface: 'clay', indoor: false, country: 'HR' },
+  { name: 'Kitzbuhel', category: 'ATP 250', surface: 'clay', indoor: false, country: 'AT' },
+  { name: 'Winston-Salem', category: 'ATP 250', surface: 'hard', indoor: false, country: 'US' },
+  { name: 'Tel Aviv', category: 'ATP 250', surface: 'hard', indoor: false, country: 'IL' },
+  { name: 'Almaty', category: 'ATP 250', surface: 'hard', indoor: true, country: 'KZ' },
+  { name: 'Astana', category: 'ATP 250', surface: 'hard', indoor: true, country: 'KZ' },
+  { name: 'Antwerp', category: 'ATP 250', surface: 'hard', indoor: true, country: 'BE' },
+  { name: 'Stockholm', category: 'ATP 250', surface: 'hard', indoor: true, country: 'SE' },
+  { name: 'Metz', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR' },
+  { name: 'Belgrade', category: 'ATP 250', surface: 'clay', indoor: false, country: 'RS' },
+  { name: 'Eastbourne', category: 'ATP 250', surface: 'grass', indoor: false, country: 'GB' },
+  { name: 'Hertogenbosch', category: 'ATP 250', surface: 'grass', indoor: false, country: 'NL' },
+  { name: 'Mallorca', category: 'ATP 250', surface: 'grass', indoor: false, country: 'ES' },
+  { name: 'Stuttgart', category: 'ATP 250', surface: 'grass', indoor: false, country: 'DE' },
+  { name: 'Ho Chi Minh City', category: 'ATP 250', surface: 'hard', indoor: false, country: 'VN' },
+  { name: 'Houston', category: 'ATP 250', surface: 'clay', indoor: false, country: 'US' },
+  { name: 'Jeddah', category: 'Next Gen Finals', surface: 'hard', indoor: true, country: 'SA' },
 ];
 
 const CATEGORY_BADGE_CLASS = {
-  'Grand Slam': 'gs', 'Masters 1000': 'm1000', 'ATP Finals': 'finals',
+  'Grand Slam': 'gs', 'ATP 1000': 'm1000', 'ATP Finals': 'finals',
   'ATP 500': 'a500', 'ATP 250': 'a250', 'Next Gen Finals': 'nextgen',
 };
+
+// Fixed display order for the grouped tournament browse list, matching the
+// existing category-filter dropdown's order.
+const CATEGORY_ORDER = ['Grand Slam', 'ATP 1000', 'ATP 500', 'ATP 250', 'ATP Finals', 'Next Gen Finals'];
+
+// Real ISO 3166-1 alpha-2 → flag emoji conversion (Unicode regional
+// indicator symbols), computed from the country code already on file in
+// TOURNAMENT_CATALOG — not a separate lookup table that can drift.
+function countryFlagEmoji(iso2){
+  if (!iso2 || iso2.length !== 2) return '';
+  return String.fromCodePoint(...[...iso2.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+}
 
 // Loaded from tournament-profiles.json — real historical match data
 // (draw size, champion, palmarès) reconstructed by bsp-pipeline.js from
@@ -1659,30 +1667,33 @@ async function loadTournamentProfiles(){
 const tourState = { search: '', category: 'all' };
 
 function renderTournamentCatalog(){
-  const grid = document.getElementById('tourGrid');
+  const container = document.getElementById('tourGrid');
   const q = tourState.search.toLowerCase();
-  const list = TOURNAMENT_CATALOG.filter(t => {
+  const filtered = TOURNAMENT_CATALOG.filter(t => {
     if (tourState.category !== 'all' && t.category !== tourState.category) return false;
     if (q && !t.name.toLowerCase().includes(q)) return false;
     return true;
   });
-  if (list.length === 0){
-    grid.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text-faint);font-size:13px;grid-column:1/-1;">No tournaments match.</div>`;
+  if (filtered.length === 0){
+    container.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text-faint);font-size:13px;">No tournaments match.</div>`;
     return;
   }
-  grid.innerHTML = list.map(t => `
-    <div class="tourcard" onclick="showTournamentProfile('${t.name.replace(/'/g,"\\'")}')">
-      <div class="b ${t.surface}"></div>
-      <div class="info">
-        <div class="n">${t.name}</div>
-        <div class="badges">
-          <span class="badge ${CATEGORY_BADGE_CLASS[t.category] || ''}">${t.category}</span>
-          <span class="surfacetag ${t.surface}">${t.surface.charAt(0).toUpperCase()+t.surface.slice(1)}</span>
-          <span class="badge ${t.indoor ? 'indoor' : 'outdoor'}">${t.indoor ? 'Indoor' : 'Outdoor'}</span>
-        </div>
+  // Grouped into labeled, counted sections by tier (Grand Slam / ATP 1000 /
+  // ATP 500 / ATP 250 / ATP Finals / Next Gen Finals), skipping any tier
+  // with zero matches — selecting a single tier via the category dropdown
+  // naturally collapses the view to just that group.
+  container.innerHTML = CATEGORY_ORDER.map(cat => {
+    const group = filtered.filter(t => t.category === cat);
+    if (group.length === 0) return '';
+    const rows = group.map(t => `
+      <div class="tourrow" onclick="showTournamentProfile('${t.name.replace(/'/g,"\\'")}')">
+        <span class="flag">${countryFlagEmoji(t.country)}</span>
+        <span class="rowname">${t.name}</span>
+        <span class="badge ${CATEGORY_BADGE_CLASS[t.category] || ''}">${t.category}</span>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+    return `<div class="tourgroup"><div class="tourgroup-header">${cat} <span class="count">· ${group.length}</span></div>${rows}</div>`;
+  }).join('');
 }
 document.getElementById('tourSearch').addEventListener('input', e => { tourState.search = e.target.value; renderTournamentCatalog(); });
 document.getElementById('tourCategoryFilter').addEventListener('change', e => { tourState.category = e.target.value; renderTournamentCatalog(); });

@@ -696,7 +696,7 @@ async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearF
 // 198 "Atp Singles" entries, e.g. "Miami", "Rome", "Cincinnati", not
 // just "Wimbledon"). So instead of hand-typing lat/lon per venue, we
 // keep a curated city+country hint per known tour-level tournament
-// (Slams, Masters 1000s, ATP Finals, 500s, and the ATP 250s we could
+// (Slams, ATP 1000s, ATP Finals, 500s, and the ATP 250s we could
 // confidently confirm are current/active) and resolve exact
 // coordinates automatically via Open-Meteo's free geocoding API,
 // cached to disk. Plain city-name geocoding is ambiguous on its own
@@ -732,17 +732,17 @@ const TOURNAMENT_VENUE_HINTS = {
   'Roland Garros': { city: 'Paris', country: 'FR', category: 'Grand Slam', indoor: false, surface: 'clay' },
   'Wimbledon': { city: 'Wimbledon', country: 'GB', category: 'Grand Slam', indoor: false, surface: 'grass' },
   'US Open': { city: 'New York', country: 'US', category: 'Grand Slam', indoor: false, surface: 'hard' },
-  // Masters 1000
-  'Indian Wells': { city: 'Indian Wells', country: 'US', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Miami': { city: 'Miami', country: 'US', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Monte Carlo': { city: 'Monaco', country: 'MC', category: 'Masters 1000', indoor: false, surface: 'clay' }, // "Monte Carlo" isn't in Open-Meteo's geocoding db; "Monaco" resolves correctly
-  'Madrid': { city: 'Madrid', country: 'ES', category: 'Masters 1000', indoor: false, surface: 'clay' },
-  'Rome': { city: 'Rome', country: 'IT', category: 'Masters 1000', indoor: false, surface: 'clay' },
-  'Montreal': { city: 'Montreal', country: 'CA', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Toronto': { city: 'Toronto', country: 'CA', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Cincinnati': { city: 'Cincinnati', country: 'US', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Shanghai': { city: 'Shanghai', country: 'CN', category: 'Masters 1000', indoor: false, surface: 'hard' },
-  'Paris': { city: 'Paris', country: 'FR', category: 'Masters 1000', indoor: true, surface: 'hard' }, // Paris Masters (indoor, distinct tournament_key from French Open)
+  // ATP 1000
+  'Indian Wells': { city: 'Indian Wells', country: 'US', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Miami': { city: 'Miami', country: 'US', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Monte Carlo': { city: 'Monaco', country: 'MC', category: 'ATP 1000', indoor: false, surface: 'clay' }, // "Monte Carlo" isn't in Open-Meteo's geocoding db; "Monaco" resolves correctly
+  'Madrid': { city: 'Madrid', country: 'ES', category: 'ATP 1000', indoor: false, surface: 'clay' },
+  'Rome': { city: 'Rome', country: 'IT', category: 'ATP 1000', indoor: false, surface: 'clay' },
+  'Montreal': { city: 'Montreal', country: 'CA', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Toronto': { city: 'Toronto', country: 'CA', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Cincinnati': { city: 'Cincinnati', country: 'US', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Shanghai': { city: 'Shanghai', country: 'CN', category: 'ATP 1000', indoor: false, surface: 'hard' },
+  'Paris': { city: 'Paris', country: 'FR', category: 'ATP 1000', indoor: true, surface: 'hard' }, // Paris Masters (indoor, distinct tournament_key from French Open)
   // ATP Finals
   'Turin': { city: 'Turin', country: 'IT', category: 'ATP Finals', indoor: true, surface: 'hard' },
   // ATP 500
@@ -1034,7 +1034,7 @@ async function loadTournamentProfiles() {
       }
       // Draw size = count of distinct players who appear in the clean match
       // set, snapped to the nearest canonical ATP draw size. NOT round-match-
-      // count*2 — confirmed real bug: Masters 1000 draws (Miami, Monte Carlo,
+      // count*2 — confirmed real bug: ATP 1000 draws (Miami, Monte Carlo,
       // etc.) give the top ~1/3 of seeds a bye straight to the second round,
       // so the "first round" bucket only contains the non-bye players and
       // undercounts (e.g. Miami's real 96-draw has only 32 "Round of 64"

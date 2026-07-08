@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.87,
-      "p2": 2.02,
+      "p1": 1.79,
+      "p2": 2.13,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.94,
-        "bookmaker": "Betfair"
+        "price": 1.87,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 2.06,
-        "bookmaker": "Matchbook"
+        "price": 2.2,
+        "bookmaker": "Betfair"
       }
     },
     "tournamentRound": "ATP Wimbledon - Quarter-finals",
@@ -798,9 +798,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 4,
-          "won": 4,
+          "matchCount": 1,
+          "won": 1,
           "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-06-30",
+              "opponent": "D. Lajovic",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 9,
+          "won": 8,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -824,22 +840,6 @@
               "won": true,
               "result": "3 - 0"
             },
-            {
-              "date": "2026-06-30",
-              "opponent": "D. Lajovic",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "3 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
-          "roundReached": "Semi-finals",
-          "matches": [
             {
               "date": "2025-07-11",
               "opponent": "C. Alcaraz",
@@ -1037,9 +1037,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 4,
-          "won": 4,
+          "matchCount": 1,
+          "won": 1,
           "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-06-30",
+              "opponent": "A. Blockx",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -1063,22 +1079,6 @@
               "won": true,
               "result": "3 - 0"
             },
-            {
-              "date": "2026-06-30",
-              "opponent": "A. Blockx",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "3 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
             {
               "date": "2025-07-01",
               "opponent": "A. Rinderknech",
@@ -1277,9 +1277,9 @@
       "indoor": false
     },
     "weather": {
-      "temperature": 28.9,
-      "windSpeed": 4.3,
-      "humidity": 43,
+      "temperature": 28.7,
+      "windSpeed": 3.6,
+      "humidity": 42,
       "source": "Open-Meteo"
     },
     "live": false,
@@ -1301,18 +1301,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.37,
-      "p2": 3.37,
+      "p1": 1.38,
+      "p2": 3.36,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.4,
+        "price": 1.39,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 3.45,
-        "bookmaker": "Betfair"
+        "price": 3.55,
+        "bookmaker": "Matchbook"
       }
     },
     "tournamentRound": "ATP Wimbledon - Quarter-finals",
@@ -1809,7 +1809,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 9,
       "totalLost": 2,
       "longMatches": 7,
@@ -1817,10 +1817,10 @@
       "longMatchPct": 64,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 4,
-          "lost": 0,
+          "year": "2025",
+          "matchCount": 9,
+          "won": 8,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -1850,16 +1850,7 @@
               "round": "1/64-finals",
               "won": true,
               "result": "3 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 5,
-          "won": 4,
-          "lost": 1,
-          "roundReached": "Quarter-finals",
-          "matches": [
+            },
             {
               "date": "2025-07-09",
               "opponent": "N. Djokovic",
@@ -1932,9 +1923,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 4,
-          "won": 4,
+          "matchCount": 1,
+          "won": 1,
           "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-06-30",
+              "opponent": "D. Dzumhur",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 5,
+          "won": 4,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -1958,22 +1965,6 @@
               "won": true,
               "result": "3 - 1"
             },
-            {
-              "date": "2026-06-30",
-              "opponent": "D. Dzumhur",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "3 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
             {
               "date": "2025-07-03",
               "opponent": "L. Darderi",
@@ -2137,9 +2128,9 @@
       "indoor": false
     },
     "weather": {
-      "temperature": 28.9,
-      "windSpeed": 4.3,
-      "humidity": 43,
+      "temperature": 28.7,
+      "windSpeed": 3.6,
+      "humidity": 42,
       "source": "Open-Meteo"
     },
     "live": false,
@@ -2162,7 +2153,7 @@
     "value": null,
     "odds": {
       "p1": 1.22,
-      "p2": 4.74,
+      "p2": 4.75,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -2857,8 +2848,24 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
-          "won": 5,
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-06-29",
+              "opponent": "M. Kecmanovic",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 11,
+          "won": 11,
           "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
@@ -2890,22 +2897,6 @@
               "won": true,
               "result": "3 - 0"
             },
-            {
-              "date": "2026-06-29",
-              "opponent": "M. Kecmanovic",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "3 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 7,
-          "lost": 0,
-          "roundReached": "Final",
-          "matches": [
             {
               "date": "2025-07-13",
               "opponent": "C. Alcaraz",
@@ -3124,9 +3115,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
-          "won": 5,
+          "matchCount": 1,
+          "won": 1,
           "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-06-29",
+              "opponent": "Y. Wu",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 10,
+          "won": 9,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -3157,22 +3164,6 @@
               "won": true,
               "result": "3 - 0"
             },
-            {
-              "date": "2026-06-29",
-              "opponent": "Y. Wu",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "3 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
-          "roundReached": "Semi-finals",
-          "matches": [
             {
               "date": "2025-07-11",
               "opponent": "J. Sinner",
