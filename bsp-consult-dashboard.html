@@ -860,9 +860,19 @@ function renderMatches(){
     const p1IsFavorite = hasOdds && m.odds.p1 < m.odds.p2;
     const p1OddsDisplay = m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '—';
     const p2OddsDisplay = m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '—';
-    const bookmakerLine = (m.bestOdds?.p1?.bookmaker && m.bestOdds?.p2?.bookmaker)
-      ? `best odds via ${m.bestOdds.p1.bookmaker} / ${m.bestOdds.p2.bookmaker}`
-      : 'odds not yet pulled for this match';
+    // Yesterday / 2-days-ago matches have no betting market (the match is
+    // already over) — show the real final score instead of odds. "pending"
+    // (never blank/guessed) if this is a past-day match whose score wasn't
+    // returned by the API.
+    const isPastDay = m.day === 'daymin2' || m.day === 'yesterday';
+    const finalScore = m.finalScore || null;
+    const bookmakerLine = finalScore
+      ? 'Match completed'
+      : isPastDay
+        ? 'Result pending'
+        : (m.bestOdds?.p1?.bookmaker && m.bestOdds?.p2?.bookmaker)
+          ? `best odds via ${m.bestOdds.p1.bookmaker} / ${m.bestOdds.p2.bookmaker}`
+          : 'odds not yet pulled for this match';
     const roundBadge = roundBadgeText(m.tournamentRound);
     // Overall + surface-specific H2H — same summarized h2h object and the
     // same surface-filter approach already used in buildH2HSection's tiles,
@@ -890,24 +900,44 @@ function renderMatches(){
         <span class="statusbadge${m.live ? ' live' : ''}">${statusLabel(m)}</span>
         <span class="fav" data-id="${m.id}" onclick="toggleFav('${m.id}')">${state.favorites.has(m.id) ? '★' : '☆'}</span>
       </div>
-      ${m.live ? `<div class="livescore">${formatLiveScore(m)}<span class="anote" style="margin:2px 0 0 0;">as of last data refresh</span></div>` : ''}
+      ${m.live
+        ? `<div class="livescore">${formatLiveScore(m)}<span class="anote" style="margin:2px 0 0 0;">as of last data refresh</span></div>`
+        : finalScore
+          ? `<div class="livescore">${finalScore.display}<span class="anote" style="margin:2px 0 0 0;">Final score</span></div>`
+          : isPastDay
+            ? `<div class="livescore">Score pending<span class="anote" style="margin:2px 0 0 0;">not yet returned by the data provider</span></div>`
+            : ''}
       <div class="vsrow">
         <div class="playerpanel">
           <div class="ptop">
             <div class="pname">${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
-            <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>
+            ${hasOdds
+              ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>`
+              : finalScore
+                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p1Sets}</div></div>`
+                : isPastDay
+                  ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
+                  : ''}
           </div>
           ${m.p1RecentFormMatches && m.p1RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p1RecentFormMatches)}</span>${m.p1RecentForm !== null ? `<span class="formpct">⚡ ${m.p1RecentForm}%</span>` : ''}</div>` : ''}
           ${p1IsFavorite ? '<div class="favoribadge">★ Favorite</div>' : ''}
+          ${finalScore && finalScore.winner === 'p1' ? '<div class="favoribadge">✓ Winner</div>' : ''}
         </div>
         <div class="vslabel">VS</div>
         <div class="playerpanel">
           <div class="ptop">
             <div class="pname">${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
-            <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>
+            ${hasOdds
+              ? `<div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>`
+              : finalScore
+                ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">${finalScore.p2Sets}</div></div>`
+                : isPastDay
+                  ? `<div class="oddsbadge"><div class="lbl">Sets</div><div class="val">—</div></div>`
+                  : ''}
           </div>
           ${m.p2RecentFormMatches && m.p2RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p2RecentFormMatches)}</span>${m.p2RecentForm !== null ? `<span class="formpct">⚡ ${m.p2RecentForm}%</span>` : ''}</div>` : ''}
           ${(hasOdds && !p1IsFavorite) ? '<div class="favoribadge">★ Favorite</div>' : ''}
+          ${finalScore && finalScore.winner === 'p2' ? '<div class="favoribadge">✓ Winner</div>' : ''}
         </div>
       </div>
       ${h2hLineHtml}
@@ -1452,6 +1482,8 @@ function buildKeyFactorsSection(m){
     const favorite = m.odds.p1 < m.odds.p2 ? m.p1 : m.p2;
     rows.push(keyFactorRowHtml('Market-implied win probability (vig removed)', `${p1Fair}%`, `${p2Fair}%`, p1Fair));
     rows.push(`<div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin:2px 0 14px 0;">Based on live market odds via ${m.odds.bookmaker}, <b style="color:var(--text);">${favorite}</b> is favored. This reflects the betting market only — BSP Consult's own model-based prediction (Elo, style, surface form) isn't connected yet.</div>`);
+  } else if (m.finalScore) {
+    rows.push(`<div class="acomingsoon">Match completed — no market odds are available for a finished fixture.</div>`);
   } else {
     rows.push(`<div class="acomingsoon">Odds haven't been pulled yet for this match — fixture confirmed real, market data pending.</div>`);
   }
@@ -1509,6 +1541,9 @@ function openAnalysisModal(matchId){
   if (m.live) {
     liveBar.style.display = '';
     liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
+  } else if (m.finalScore) {
+    liveBar.style.display = '';
+    liveBar.innerHTML = `✅ Final · ${m.finalScore.display} <span class="anote" style="margin:0;">completed match</span>`;
   } else {
     liveBar.style.display = 'none';
   }

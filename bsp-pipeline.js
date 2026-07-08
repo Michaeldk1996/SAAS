@@ -1399,6 +1399,169 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 }
 
 // =================================================================
+// PAST MATCHES (Yesterday / 2-days-ago day-tabs) — a completed fixture has
+// no betting-odds event (markets close once a match starts/finishes), so
+// these matches are built directly from an API-Tennis fixture instead of
+// from an oddsEvent. No player-order reordering is needed here (unlike
+// buildMatchObject above): p1/p2 are simply the fixture's own first/second
+// player, since there's no separate odds-feed order to reconcile against.
+// =================================================================
+
+// Parses one set's raw score pair into game counts + a display string.
+// API-Tennis encodes a set that went to a tiebreak as "<games>.<tiebreakPoints>"
+// per side, e.g. score_first:"6.4", score_second:"7.7" means the set was won
+// 7-6 with the tiebreak itself going 7-4 — NOT a decimal game count. Confirmed
+// against a real fixture this session (De Minaur 5-7, 6-7(4), 3-6 Cobolli).
+// Returns null (never a guessed/partial value) if either side isn't parseable.
+function formatSetScore(scoreFirst, scoreSecond) {
+  if (scoreFirst == null || scoreSecond == null) return null;
+  const [gF, tbF] = String(scoreFirst).split('.');
+  const [gS, tbS] = String(scoreSecond).split('.');
+  const p1 = Number(gF);
+  const p2 = Number(gS);
+  if (!Number.isFinite(p1) || !Number.isFinite(p2)) return null;
+  let tb = '';
+  if (tbF !== undefined || tbS !== undefined) {
+    const loserTb = p1 < p2 ? tbF : tbS;
+    if (loserTb !== undefined) tb = `(${loserTb})`;
+  }
+  return { p1, p2, display: `${p1}-${p2}${tb}` };
+}
+
+// Builds the final-score summary for a finished fixture from its real
+// `scores` array. Returns null (shown as "pending" client-side, never
+// blank/guessed) if the fixture has no usable scores data.
+function buildFinalScore(fixture) {
+  if (!Array.isArray(fixture.scores) || fixture.scores.length === 0) return null;
+  const sorted = [...fixture.scores].sort((a, b) => Number(a.score_set) - Number(b.score_set));
+  const sets = sorted.map(s => formatSetScore(s.score_first, s.score_second));
+  if (sets.some(s => s === null)) return null;
+  const p1Sets = sets.filter(s => s.p1 > s.p2).length;
+  const p2Sets = sets.filter(s => s.p2 > s.p1).length;
+  const winner = fixture.event_winner === 'First Player' ? 'p1'
+    : fixture.event_winner === 'Second Player' ? 'p2' : null;
+  return {
+    display: sets.map(s => s.display).join(', '),
+    sets: sets.map(s => ({ p1: s.p1, p2: s.p2 })),
+    p1Sets,
+    p2Sets,
+    winner,
+  };
+}
+
+async function buildPastMatchObject(fixture, surfaceMap) {
+  const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
+  // Same real, already-provided-by-the-API string format used by h2hRoundLabel()
+  // client-side ("ATP <Name> - <Round>") — take the tournament-name segment.
+  const tour = fixture.tournament_round
+    ? fixture.tournament_round.split(' - ')[0].trim()
+    : `ATP ${fixture.tournament_name}`;
+
+  const p1Key = fixture.first_player_key;
+  const p2Key = fixture.second_player_key;
+
+  const match = {
+    id: `past-${fixture.event_key}`,
+    day: computeDay(fixture.event_date),
+    date: fixture.event_date,
+    time: fixture.event_time || null,
+    p1: fixture.event_first_player,
+    p2: fixture.event_second_player,
+    tour,
+    tourBadge: 'ATP', // event_type_key=265 = ATP Singles only, same filter used everywhere else
+    surface,
+    style: 'TBD',
+    value: null,
+    // No betting markets exist for an already-finished match.
+    odds: { p1: null, p2: null, bookmaker: null },
+    bestOdds: { p1: null, p2: null },
+    tournamentRound: fixture.tournament_round,
+    h2h: null,
+    p1SurfaceWinRate: null,
+    p2SurfaceWinRate: null,
+    p1Rank: null,
+    p2Rank: null,
+    p1RecentForm: null,
+    p2RecentForm: null,
+    p1RecentFormMatches: null,
+    p2RecentFormMatches: null,
+    p1Yearly: null,
+    p2Yearly: null,
+    p1TournamentHistory: null,
+    p2TournamentHistory: null,
+    extraStats: null,
+    venue: null,
+    courtSpeed: null,
+    // Confirmed empirically this session: Open-Meteo's /v1/forecast endpoint
+    // (as called by fetchMatchWeather, no past_days param) only returns data
+    // starting at today 00:00 UTC onward — it never covers a 2-days-ago match
+    // time. Skipped outright rather than making a network call known to
+    // always return null.
+    weather: null,
+    live: false,
+    liveStatus: null,
+    liveScore: null,
+    liveGameScore: null,
+    liveServer: null,
+    finalScore: buildFinalScore(fixture),
+  };
+
+  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
+  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
+  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
+
+  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
+  match.courtSpeed = courtConditions
+    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
+    : null;
+
+  const h2hData = await fetchH2H(p1Key, p2Key);
+  if (h2hData) {
+    match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
+    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
+    const p1Form = buildRecentFormData(h2hData.p1RecentResults, p1Key);
+    const p2Form = buildRecentFormData(h2hData.p2RecentResults, p2Key);
+    match.p1RecentForm = p1Form.pct;
+    match.p2RecentForm = p2Form.pct;
+    match.p1RecentFormMatches = p1Form.matches;
+    match.p2RecentFormMatches = p2Form.matches;
+  }
+
+  const [p1Stats, p2Stats] = await Promise.all([
+    fetchPlayerStats(p1Key),
+    fetchPlayerStats(p2Key),
+  ]);
+  match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
+  match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
+  match.p1Rank = currentSinglesRank(p1Stats);
+  match.p2Rank = currentSinglesRank(p2Stats);
+
+  const currentYear = new Date().getFullYear();
+  const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
+    fetchPlayerFixturesForYear(p1Key, currentYear),
+    fetchPlayerFixturesForYear(p2Key, currentYear),
+  ]);
+  const p1CurrentRow = seasonRowFromFixtures(p1CurrentFixtures, p1Key, currentYear, surfaceMap);
+  const p2CurrentRow = seasonRowFromFixtures(p2CurrentFixtures, p2Key, currentYear, surfaceMap);
+
+  match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
+  match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures, match.courtSpeed ? match.courtSpeed.category : null);
+
+  if (hintKey) {
+    const [p1TournMatches, p2TournMatches] = await Promise.all([
+      fetchPlayerTournamentMatches(p1Key, hintKey),
+      fetchPlayerTournamentMatches(p2Key, hintKey),
+    ]);
+    match.p1TournamentHistory = buildTournamentHistory(p1TournMatches, p1Key);
+    match.p2TournamentHistory = buildTournamentHistory(p2TournMatches, p2Key);
+  }
+
+  return match;
+}
+
+// =================================================================
 // MAIN
 // =================================================================
 async function runPipeline() {
@@ -1430,6 +1593,27 @@ async function runPipeline() {
   const matches = [];
   for (const event of oddsEvents) {
     matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap));
+  }
+
+  // Yesterday / 2-days-ago day-tabs: a 2-day trailing window only (not a full
+  // archive), sourced directly from get_fixtures since finished matches have
+  // no betting-odds event to build from. Same 'Finished'/'Retired'/
+  // 'Walk Over' filter already used elsewhere (courtSpeedRecordFromFixtures,
+  // seasonRowFromFixtures) for a genuinely decided match, plus excluding
+  // qualifying-round matches to match the main-tour-only scope the odds-driven
+  // Today/Tomorrow tabs already have.
+  const dayMs = 86400000;
+  const dateStr = d => d.toISOString().split('T')[0];
+  const twoDaysAgo = dateStr(new Date(Date.now() - 2 * dayMs));
+  const yesterday = dateStr(new Date(Date.now() - dayMs));
+  console.log(`Fetching past fixtures (${twoDaysAgo} to ${yesterday}) for the Yesterday / 2-days-ago tabs...`);
+  const pastFixtures = await fetchApiTennisFixtures(twoDaysAgo, yesterday);
+  const finishedPastFixtures = pastFixtures.filter(f =>
+    ['Finished', 'Retired', 'Walk Over'].includes(f.event_status) && f.event_qualification !== 'True'
+  );
+  console.log(`Found ${finishedPastFixtures.length} finished past matches for the 2-day trailing window.`);
+  for (const fixture of finishedPastFixtures) {
+    matches.push(await buildPastMatchObject(fixture, surfaceMap));
   }
 
   fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));
