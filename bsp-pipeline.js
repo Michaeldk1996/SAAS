@@ -298,6 +298,8 @@ function buildTournamentHistory(matches, playerKey) {
     bySeason[season].push(m);
   }
   const years = [];
+  let longMatches = 0; // matches that went over 3.5 total sets (4 or 5)
+  let scoredMatches = 0; // matches where the set score could actually be parsed
   for (const [season, seasonMatches] of Object.entries(bySeason)) {
     let won = 0, lost = 0;
     for (const m of seasonMatches) {
@@ -320,17 +322,45 @@ function buildTournamentHistory(matches, playerKey) {
           const parts = result.split('-').map(s => s.trim());
           if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
         }
+        // "Over 3.5 sets" = the match went 4 or 5 sets (i.e. wasn't decided
+        // in straight sets) — parsed straight from the same self-first
+        // result string, no separate API field needed.
+        if (result && result.includes('-')) {
+          const nums = result.split('-').map(s => parseInt(s.trim(), 10));
+          if (nums.length === 2 && !nums.some(Number.isNaN)) {
+            scoredMatches++;
+            if (nums[0] + nums[1] > 3.5) longMatches++;
+          }
+        }
         return { date: m.date, opponent, round: roundLabel(m.round), won: won2, result };
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
   }
   if (years.length === 0) return null;
+
+  // Fill in any year strictly between the player's earliest and latest
+  // edition on file where they have zero matches — e.g. Zverev skipping
+  // Wimbledon 2022 while playing 2021/2023-2026. Shown as an explicit 0-0
+  // "Withdrawal" row instead of silently disappearing from the list. Only
+  // fills gaps INSIDE the player's own known span at this tournament — never
+  // guesses at editions outside the years we actually have data for.
+  const presentYears = new Set(years.map(y => parseInt(y.year, 10)));
+  const minYear = Math.min(...presentYears);
+  const maxYear = Math.max(...presentYears);
+  for (let y = minYear + 1; y < maxYear; y++) {
+    if (!presentYears.has(y)) {
+      years.push({ year: String(y), matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true });
+    }
+  }
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
   return {
-    editionsPlayed: years.length,
+    editionsPlayed: years.filter(y => !y.withdrew).length,
     totalWon: years.reduce((s, y) => s + y.won, 0),
     totalLost: years.reduce((s, y) => s + y.lost, 0),
+    longMatches,
+    longMatchesPlayed: scoredMatches,
+    longMatchPct: scoredMatches > 0 ? Math.round((longMatches / scoredMatches) * 100) : 0,
     years,
   };
 }

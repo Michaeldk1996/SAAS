@@ -402,6 +402,7 @@
   .atourn-card .track{ height:6px; background:var(--panel); border-radius:3px; overflow:hidden; margin:8px 0; }
   .atourn-card .track div{ height:100%; background:var(--accent); }
   .atourn-card .sub{ font-size:11px; color:var(--text-faint); }
+  .atourn-card .sub2{ font-size:11px; color:var(--text-faint); margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); }
   .atourn-yearhead{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:14px 0 8px 0; }
   .atourn-yearrow{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
   .atourn-yearrow:last-child{ border-bottom:none; }
@@ -413,6 +414,7 @@
   .atourn-yearrow.clickable{ cursor:pointer; }
   .atourn-yearrow.clickable:hover .yr{ color:var(--accent); }
   .atourn-yearrow .exp{ font-size:10px; color:var(--text-faint); margin-left:6px; }
+  .atourn-yearrow.withdrawn{ opacity:0.55; font-style:italic; }
   .atourn-matchlist{ padding:2px 0 8px 0; }
   .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 12px; border-bottom:1px dashed var(--border); font-size:11px; }
   .atourn-matchrow:last-child{ border-bottom:none; }
@@ -1174,7 +1176,7 @@ function atournYearRowHtml(y, colPrefix){
   const listId = `atournMatches-${colPrefix}-${y.year}`;
   const rows = matches.map(atournMatchRowHtml).join('');
   return `
-    <div class="atourn-yearrow${matches.length ? ' clickable' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''}>
+    <div class="atourn-yearrow${matches.length ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''}>
       <span class="yr">${y.year}${matches.length ? '<span class="exp">▾</span>' : ''}</span>
       <span class="rd">${y.roundReached || '—'}</span>
       <span class="wl">${y.won}-${y.lost}</span>
@@ -1210,6 +1212,7 @@ function atournPlayerColumn(name, history, colPrefix){
         <div class="pct">${pct}% win rate</div>
         <div class="track"><div style="width:${pct}%"></div></div>
         <div class="sub">${history.totalWon}-${history.totalLost} · ${history.editionsPlayed} edition${history.editionsPlayed === 1 ? '' : 's'} played</div>
+        <div class="sub2">${history.longMatchesPlayed ? `Went 4+ sets in ${history.longMatches}/${history.longMatchesPlayed} match${history.longMatchesPlayed === 1 ? '' : 'es'} (${history.longMatchPct}%)` : 'No scored matches on file to compute set length'}</div>
       </div>
       <div class="atourn-yearhead">Year-by-year</div>
       ${visibleRows}${extraRows}

@@ -12,7 +12,7 @@
     "value": null,
     "odds": {
       "p1": 1.89,
-      "p2": 2,
+      "p2": 1.99,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -21,7 +21,7 @@
         "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 2.06,
+        "price": 2.04,
         "bookmaker": "Betfair"
       }
     },
@@ -791,6 +791,9 @@
       "editionsPlayed": 6,
       "totalWon": 20,
       "totalLost": 5,
+      "longMatches": 15,
+      "longMatchesPlayed": 25,
+      "longMatchPct": 60,
       "years": [
         {
           "year": "2026",
@@ -1027,6 +1030,9 @@
       "editionsPlayed": 5,
       "totalWon": 12,
       "totalLost": 4,
+      "longMatches": 7,
+      "longMatchesPlayed": 16,
+      "longMatchPct": 44,
       "years": [
         {
           "year": "2026",
@@ -1147,6 +1153,15 @@
               "result": "3 - 0"
             }
           ]
+        },
+        {
+          "year": "2022",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2021",
@@ -1795,6 +1810,9 @@
       "editionsPlayed": 3,
       "totalWon": 9,
       "totalLost": 2,
+      "longMatches": 7,
+      "longMatchesPlayed": 11,
+      "longMatchPct": 64,
       "years": [
         {
           "year": "2026",
@@ -1906,6 +1924,9 @@
       "editionsPlayed": 5,
       "totalWon": 7,
       "totalLost": 4,
+      "longMatches": 7,
+      "longMatchesPlayed": 11,
+      "longMatchPct": 64,
       "years": [
         {
           "year": "2026",
@@ -1998,6 +2019,15 @@
               "result": "0 - 3"
             }
           ]
+        },
+        {
+          "year": "2022",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2021",
@@ -2818,6 +2848,9 @@
       "editionsPlayed": 6,
       "totalWon": 25,
       "totalLost": 4,
+      "longMatches": 12,
+      "longMatchesPlayed": 29,
+      "longMatchPct": 41,
       "years": [
         {
           "year": "2026",
@@ -3082,6 +3115,9 @@
       "editionsPlayed": 6,
       "totalWon": 36,
       "totalLost": 3,
+      "longMatches": 19,
+      "longMatchesPlayed": 38,
+      "longMatchPct": 50,
       "years": [
         {
           "year": "2026",
