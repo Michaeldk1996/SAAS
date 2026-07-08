@@ -150,8 +150,15 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return null;
+  // Exclude pure exhibitions (e.g. Six Kings Slam, tagged "Exhibition Men" by
+  // this API) — confirmed live these are NOT part of official ATP head-to-head
+  // records. Laver Cup / United Cup matches are correctly tagged "Atp Singles"
+  // by this API and DO count toward official H2H (confirmed), so they're kept.
+  // Same event_type_type === 'Atp Singles' check already used and proven
+  // correct in buildRecentFormData() below — applied here for consistency.
+  const officialH2H = (data.result.H2H || []).filter(m => m.event_type_type === 'Atp Singles');
   return {
-    headToHead: data.result.H2H,
+    headToHead: officialH2H,
     p1RecentResults: data.result.firstPlayerResults,
     p2RecentResults: data.result.secondPlayerResults,
   };
