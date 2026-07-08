@@ -145,6 +145,33 @@ async function fetchApiTennisFixtures(dateStartStr, dateStopStr) {
   return data.result;
 }
 
+// get_H2H is confirmed live to sometimes OMIT real completed matches that
+// DO exist in the underlying fixtures database — e.g. the 2022 Wimbledon QF
+// and 2023 Wimbledon SF between Sinner/Djokovic are both absent from
+// get_H2H's response but present via get_fixtures?player_key=<key>, fully
+// scored with a real winner. This backfills those gaps: get_fixtures
+// accepts a player_key param that returns one player's full match list
+// across a date range in a single request (confirmed live: 185 real Sinner
+// matches for 2021-2023 in one call), so we scope it to firstPlayerKey and
+// filter locally for matches against secondPlayerKey — one extra request
+// per H2H lookup, not a monthly ATP-wide scan. Reuses the same PROFILE_YEARS_BACK
+// lookback window already established elsewhere in this file as the
+// earliest reliably-covered period for this API.
+async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
+  const currentYear = new Date().getFullYear();
+  const start = `${currentYear - PROFILE_YEARS_BACK + 1}-01-01`;
+  const stop = new Date().toISOString().split('T')[0];
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${start}&date_stop=${stop}&event_type_key=265&player_key=${firstPlayerKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) return [];
+  return (data.result || []).filter(f =>
+    (String(f.first_player_key) === String(secondPlayerKey) || String(f.second_player_key) === String(secondPlayerKey)) &&
+    (f.event_winner === 'First Player' || f.event_winner === 'Second Player') &&
+    f.event_qualification === 'False'
+  );
+}
+
 async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const url = `${API_TENNIS_BASE}?method=get_H2H&APIkey=${API_TENNIS_KEY}&first_player_key=${firstPlayerKey}&second_player_key=${secondPlayerKey}`;
   const res = await fetch(url);
@@ -157,6 +184,18 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   // Same event_type_type === 'Atp Singles' check already used and proven
   // correct in buildRecentFormData() below — applied here for consistency.
   const officialH2H = (data.result.H2H || []).filter(m => m.event_type_type === 'Atp Singles');
+
+  // Backfill matches get_H2H omitted but the fixtures database actually has,
+  // deduped by event_key so nothing already present gets double-counted.
+  const seenKeys = new Set(officialH2H.map(m => m.event_key));
+  const supplement = await fetchH2HSupplement(firstPlayerKey, secondPlayerKey);
+  for (const m of supplement) {
+    if (!seenKeys.has(m.event_key) && m.event_type_type === 'Atp Singles') {
+      officialH2H.push(m);
+      seenKeys.add(m.event_key);
+    }
+  }
+
   return {
     headToHead: officialH2H,
     p1RecentResults: data.result.firstPlayerResults,

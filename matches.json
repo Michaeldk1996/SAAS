@@ -1635,8 +1635,8 @@
     "tournamentRound": "ATP Wimbledon - Semi-finals",
     "h2h": {
       "p1Wins": 6,
-      "p2Wins": 2,
-      "record": "6-2",
+      "p2Wins": 4,
+      "record": "6-4",
       "matches": [
         {
           "date": "2026-01-30",
@@ -1701,6 +1701,22 @@
           "surface": "hard",
           "p1Won": true,
           "result": "2 - 1"
+        },
+        {
+          "date": "2023-07-14",
+          "tournament": "ATP Wimbledon",
+          "round": "ATP Wimbledon - Semi-finals",
+          "surface": "grass",
+          "p1Won": false,
+          "result": "0 - 3"
+        },
+        {
+          "date": "2022-07-05",
+          "tournament": "Wimbledon",
+          "round": "Wimbledon - Quarter-finals",
+          "surface": "grass",
+          "p1Won": false,
+          "result": "2 - 3"
         }
       ]
     },
