@@ -1137,6 +1137,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   const match = {
     id: oddsEvent.id,
     day: computeDay(oddsEvent.commence_time),
+    date: new Date(oddsEvent.commence_time).toISOString().slice(0, 10),
     time: new Date(oddsEvent.commence_time).toISOString().slice(11, 16),
     p1: oddsEvent.home_team,
     p2: oddsEvent.away_team,

@@ -131,7 +131,8 @@
   .matchcard .metabar .surfacetag.grass{ background:var(--court-grass-dim); color:var(--court-grass); }
   .matchcard .metabar .surfacetag.hard{ background:var(--court-hard-dim); color:var(--court-hard); }
   .matchcard .metabar .tourname{ font-size:13px; color:var(--text-dim); }
-  .matchcard .metabar .time{ font-size:12px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace; }
+  .matchcard .metabar .roundbadge{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; background:var(--panel-2); border:1px solid var(--border); color:var(--text-dim); }
+  .matchcard .metabar .datetext, .matchcard .metabar .time{ font-size:12px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace; }
   .matchcard .metabar .statusbadge{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:6px; background:var(--panel-2); color:var(--text-dim); }
   .matchcard .metabar .statusbadge.live{ background:#3A2015; color:#E28B4A; }
   .matchcard .metabar .fav{ margin-left:auto; cursor:pointer; color:var(--text-faint); font-size:16px; }
@@ -146,11 +147,18 @@
   .matchcard .playerpanel .oddsbadge .lbl{ font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; }
   .matchcard .playerpanel .oddsbadge .val{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:15px; }
   .matchcard .playerpanel .comingsoon{ font-size:12px; color:var(--text-faint); }
+  .matchcard .playerpanel .formrow{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .matchcard .playerpanel .formdots{ display:inline-flex; gap:3px; }
+  .matchcard .playerpanel .formdot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+  .matchcard .playerpanel .formdot.win{ background:var(--value-pos); }
+  .matchcard .playerpanel .formdot.loss{ background:var(--text-faint); }
+  .matchcard .playerpanel .formpct{ font-size:11px; font-weight:600; color:#E2A945; white-space:nowrap; }
   .matchcard .playerpanel .favoribadge{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--value-pos); margin-top:10px; }
   .matchcard .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:12px; align-self:center; padding-top:24px; }
   .matchcard .h2hrow{ padding:0 18px 16px 18px; font-size:12px; color:var(--text-faint); }
-  .matchcard .footer{ display:flex; justify-content:flex-end; padding:12px 18px; border-top:1px solid var(--border); }
-  .matchcard .footer a{ font-size:12px; color:var(--accent); text-decoration:none; cursor:pointer; }
+  .matchcard .footer{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 18px; border-top:1px solid var(--border); }
+  .matchcard .footer .bookmakernote{ font-size:11px; color:var(--text-faint); }
+  .matchcard .footer a{ font-size:12px; color:var(--accent); text-decoration:none; cursor:pointer; white-space:nowrap; }
   @media (max-width: 640px){
     .matchcard .vsrow{ grid-template-columns:1fr; }
     .matchcard .vslabel{ display:none; }
@@ -778,6 +786,34 @@ function formatLiveScore(m){
   return m.liveGameScore ? `${sets} (${m.liveGameScore})` : sets;
 }
 
+// Short round-badge abbreviation (e.g. "QF") from the same raw
+// tournament_round string already used elsewhere (h2hRoundLabel strips it
+// down to just the round segment, e.g. "Quarter-finals"). Falls back to the
+// raw label if it's not one of the standard round names, and to null (no
+// badge rendered) if there's no round on file for this match.
+function roundBadgeText(round){
+  const label = h2hRoundLabel(round);
+  if (!label) return null;
+  const map = {
+    'Final': 'F',
+    'Semi-finals': 'SF',
+    'Quarter-finals': 'QF',
+    '1/4-finals': 'QF',
+    '1/8-finals': 'R16',
+    '1/16-finals': 'R32',
+    '1/32-finals': 'R64',
+    '1/64-finals': 'R128',
+    'Round Robin': 'RR',
+  };
+  return map[label] || label;
+}
+// Compact 5-dot form sparkline, oldest-to-newest left-to-right, reusing the
+// exact same recent-form match data (m.p1RecentFormMatches/p2...) already
+// powering the modal's Form tab — just condensed for the card.
+function formDotsHtml(recentMatches){
+  const last5 = (recentMatches || []).slice(0, 5).reverse();
+  return last5.map(x => `<span class="formdot ${x.won ? 'win' : 'loss'}" title="${x.won ? 'Win' : 'Loss'} vs ${x.opponent || 'opponent'} (${x.date || 'date unknown'})"></span>`).join('');
+}
 function renderMatches(){
   const list = document.getElementById('matchlist');
   const filtered = getFiltered();
@@ -795,12 +831,30 @@ function renderMatches(){
     const bookmakerLine = (m.bestOdds?.p1?.bookmaker && m.bestOdds?.p2?.bookmaker)
       ? `best odds via ${m.bestOdds.p1.bookmaker} / ${m.bestOdds.p2.bookmaker}`
       : 'odds not yet pulled for this match';
+    const roundBadge = roundBadgeText(m.tournamentRound);
+    // Overall + surface-specific H2H — same summarized h2h object and the
+    // same surface-filter approach already used in buildH2HSection's tiles,
+    // just condensed into one line for the card. Omitted entirely (not a
+    // placeholder) when there's no H2H data on file for this pairing.
+    let h2hLineHtml = '';
+    if (m.h2h && (m.h2h.p1Wins + m.h2h.p2Wins) > 0) {
+      const surfaceMatches = (m.h2h.matches || []).filter(x => x.surface === m.surface);
+      let surfacePart = '';
+      if (surfaceMatches.length) {
+        const surfP1Wins = surfaceMatches.filter(x => x.p1Won).length;
+        const surfLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
+        surfacePart = ` · H2H ${surfLabel}: ${surfP1Wins}-${surfaceMatches.length - surfP1Wins}`;
+      }
+      h2hLineHtml = `<div class="h2hrow">H2H: ${m.h2h.record}${surfacePart}</div>`;
+    }
     return `
     <div class="matchcard">
       <div class="metabar">
         <span class="surfacetag ${m.surface}">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}</span>
         <span class="tourname">${m.tour}</span>
-        <span class="time">${m.time || '—'}</span>
+        ${roundBadge ? `<span class="roundbadge">${roundBadge}</span>` : ''}
+        <span class="datetext">📅 ${m.date || '—'}</span>
+        <span class="time">🕐 ${m.time || '—'}</span>
         <span class="statusbadge${m.live ? ' live' : ''}">${statusLabel(m)}</span>
         <span class="fav" data-id="${m.id}" onclick="toggleFav('${m.id}')">${state.favorites.has(m.id) ? '★' : '☆'}</span>
       </div>
@@ -811,7 +865,7 @@ function renderMatches(){
             <div class="pname">${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
             <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p1OddsDisplay}</div></div>
           </div>
-          <div class="comingsoon">Style · Elo · form — coming soon</div>
+          ${m.p1RecentFormMatches && m.p1RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p1RecentFormMatches)}</span>${m.p1RecentForm !== null ? `<span class="formpct">⚡ ${m.p1RecentForm}%</span>` : ''}</div>` : ''}
           ${p1IsFavorite ? '<div class="favoribadge">★ Favorite</div>' : ''}
         </div>
         <div class="vslabel">VS</div>
@@ -820,12 +874,15 @@ function renderMatches(){
             <div class="pname">${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="serveddot" title="Serving">•</span>' : ''}</div>
             <div class="oddsbadge"><div class="lbl">Odds</div><div class="val">${p2OddsDisplay}</div></div>
           </div>
-          <div class="comingsoon">Style · Elo · form — coming soon</div>
+          ${m.p2RecentFormMatches && m.p2RecentFormMatches.length ? `<div class="formrow"><span class="formdots">${formDotsHtml(m.p2RecentFormMatches)}</span>${m.p2RecentForm !== null ? `<span class="formpct">⚡ ${m.p2RecentForm}%</span>` : ''}</div>` : ''}
           ${(hasOdds && !p1IsFavorite) ? '<div class="favoribadge">★ Favorite</div>' : ''}
         </div>
       </div>
-      <div class="h2hrow">H2H — coming soon · ${bookmakerLine}</div>
-      <div class="footer"><a onclick="openAnalysisModal('${m.id}')">See full analysis →</a></div>
+      ${h2hLineHtml}
+      <div class="footer">
+        <span class="bookmakernote">${bookmakerLine}</span>
+        <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
+      </div>
     </div>
   `;
   }).join('');
