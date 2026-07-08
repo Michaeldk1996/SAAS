@@ -257,36 +257,56 @@ function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-// Year-by-year record at THIS specific tournament, reused straight from the
-// tournament-profile match data already fetched/cached by
-// loadTournamentProfiles() (allEditionMatches) — no new API calls needed,
-// same principle as seasonRowFromFixtures reusing real match results instead
-// of a separate aggregate. CONFIRMED GAP: qualifying-round matches are
-// explicitly excluded when tournament profiles are built (see the
-// `event_qualification === 'True'` filter in loadTournamentProfiles), so a
-// separate qualifying-round record can't be derived from this data — would
-// need its own fetch path per player/tournament, left out entirely rather
-// than faked or half-built.
+// Year-by-year record at THIS specific tournament, for ONE player.
+//
+// Deliberately NOT sourced from loadTournamentProfiles()'s allEditionMatches
+// — that whole-tour month-by-month scan is capped at PROFILE_YEARS_BACK
+// because it has to see every player's matches per edition to work out the
+// champion/draw size. A single player's OWN record doesn't need that: same
+// player_key + wide-date-range pattern already proven for the H2H backfill
+// (fetchH2HSupplement) returns one player's entire fixture history in a
+// single call regardless of how far back it goes (confirmed live: 425 real
+// Fritz fixtures spanning 2015-2026 in one call) — no cost reason to cap
+// this the way the whole-tour scan has to be. CONFIRMED GAP: qualifying-round
+// matches are excluded (`event_qualification === 'True'`), so a separate
+// qualifying-round record can't be derived from this data.
 function roundLabel(round) {
   if (!round) return null;
   const parts = round.split(' - ');
   return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
 }
-function buildTournamentHistory(profile, playerKey) {
-  if (!profile || !profile.allEditionMatches) return null;
+async function fetchPlayerTournamentMatches(playerKey, hintKey) {
+  const stop = new Date().toISOString().split('T')[0];
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=2000-01-01&date_stop=${stop}&event_type_key=265&player_key=${playerKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) return [];
+  return (data.result || [])
+    .filter(f =>
+      f.tournament_name && f.tournament_name.includes(hintKey) &&
+      f.tournament_round && f.event_qualification !== 'True' &&
+      (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
+    )
+    .map(trimFixture);
+}
+function buildTournamentHistory(matches, playerKey) {
+  if (!matches || matches.length === 0) return null;
+  const bySeason = {};
+  for (const m of matches) {
+    const season = m.season || m.date.slice(0, 4);
+    if (!bySeason[season]) bySeason[season] = [];
+    bySeason[season].push(m);
+  }
   const years = [];
-  for (const edition of profile.allEditionMatches) {
-    const playerMatches = (edition.matches || []).filter(m =>
-      String(m.p1Key) === String(playerKey) || String(m.p2Key) === String(playerKey));
-    if (playerMatches.length === 0) continue;
+  for (const [season, seasonMatches] of Object.entries(bySeason)) {
     let won = 0, lost = 0;
-    for (const m of playerMatches) {
+    for (const m of seasonMatches) {
       const isP1 = String(m.p1Key) === String(playerKey);
       const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
       if (didWin) won++; else lost++;
     }
-    const latest = playerMatches.reduce((a, b) => (b.date > a.date ? b : a));
-    years.push({ year: edition.season, matchCount: playerMatches.length, won, lost, roundReached: roundLabel(latest.round) });
+    const latest = seasonMatches.reduce((a, b) => (b.date > a.date ? b : a));
+    years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round) });
   }
   if (years.length === 0) return null;
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
@@ -1049,7 +1069,7 @@ function computeModelProbability() {
   return null;
 }
 
-async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueMap, tournamentProfiles) {
+async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueMap) {
   const surface = surfaceFromEvent(oddsEvent);
   const tour = oddsEvent.sport_key.includes('atp') ? 'ATP' : 'WTA';
 
@@ -1187,11 +1207,17 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // full 52-week coverage.
   match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures);
 
-  // Year-by-year record at this specific tournament — reused from the
-  // tournament-profile match data (allEditionMatches), no new API calls.
-  const profile = hintKey ? tournamentProfiles?.[hintKey] : null;
-  match.p1TournamentHistory = buildTournamentHistory(profile, p1Key);
-  match.p2TournamentHistory = buildTournamentHistory(profile, p2Key);
+  // Year-by-year record at this specific tournament — one dedicated
+  // per-player query each (see fetchPlayerTournamentMatches), covering each
+  // player's full career at this tournament, not capped at PROFILE_YEARS_BACK.
+  if (hintKey) {
+    const [p1TournMatches, p2TournMatches] = await Promise.all([
+      fetchPlayerTournamentMatches(p1Key, hintKey),
+      fetchPlayerTournamentMatches(p2Key, hintKey),
+    ]);
+    match.p1TournamentHistory = buildTournamentHistory(p1TournMatches, p1Key);
+    match.p2TournamentHistory = buildTournamentHistory(p2TournMatches, p2Key);
+  }
 
   return match;
 }
@@ -1216,17 +1242,18 @@ async function runPipeline() {
   const surfaceMap = await loadTournamentSurfaceMap();
   const venueMap = await loadTournamentVenueMap();
 
-  // Loaded before match-building (moved up from its old post-matches spot) so
-  // buildMatchObject() can reuse allEditionMatches for each match's real
-  // year-by-year record at that specific tournament — no new API calls.
-  console.log('Loading tournament profiles (draw size / champion / palmarès / per-edition match history — cached for 30 days)...');
+  // Draw size / champion / palmarès per tournament edition — not used for a
+  // player's own tournament record (that's fetched per-player directly in
+  // buildMatchObject via fetchPlayerTournamentMatches), kept for its own
+  // sake as future reference data.
+  console.log('Loading tournament profiles (draw size / champion / palmarès — cached for 30 days)...');
   const tournamentProfiles = await loadTournamentProfiles();
   const profileCount = Object.values(tournamentProfiles.profiles).filter(Boolean).length;
   console.log(`Tournament profiles ready: ${profileCount}/${Object.keys(tournamentProfiles.profiles).length} tournaments have historical data on record.`);
 
   const matches = [];
   for (const event of oddsEvents) {
-    matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap, tournamentProfiles.profiles));
+    matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap));
   }
 
   fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));

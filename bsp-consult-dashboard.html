@@ -1200,19 +1200,15 @@ function buildTournamentSection(m){
       ${m.tournamentRound ? `<span class="atourn-loctag">Round: ${m.tournamentRound}</span>` : ''}
     </div>
   `;
-  // NOT a full career record — bsp-pipeline.js only builds tournament
-  // profiles from the last PROFILE_YEARS_BACK seasons (currently 6, i.e.
-  // 2021-present), confirmed real gap for long-tenured players (e.g.
-  // Djokovic's actual Wimbledon career goes back to 2005, but only his
-  // 2021-2026 editions are on file here). Label with the real earliest
-  // year actually present in this match's own data, not a fixed/assumed
-  // year, so the caveat stays accurate if the lookback window ever changes.
-  const allYears = [
-    ...((m.p1TournamentHistory && m.p1TournamentHistory.years) || []),
-    ...((m.p2TournamentHistory && m.p2TournamentHistory.years) || []),
-  ].map(y => parseInt(y.year, 10)).filter(y => !isNaN(y));
-  const earliestYear = allYears.length ? Math.min(...allYears) : null;
-  const callout = `<div class="atourn-callout">Record for <b>${m.p1}</b> and <b>${m.p2}</b> at <b>${m.tour}</b>${earliestYear ? ` since ${earliestYear}` : ''}, based on every tour-level match on file for these editions. Not a full career record — earlier editions aren't tracked by this data source.</div>`;
+  // bsp-pipeline.js now fetches each player's full career at this
+  // tournament directly (fetchPlayerTournamentMatches, one player_key query
+  // per player, no PROFILE_YEARS_BACK cap) — so this is a real career
+  // record, not just a recent-seasons snapshot. Still framed as "on file"
+  // rather than an absolute claim: confirmed live (same as the H2H tab)
+  // that this data provider's database can have real gaps for specific
+  // older matches even within a player's career, so it may not be 100%
+  // complete for every player in every edge case.
+  const callout = `<div class="atourn-callout">Career record for <b>${m.p1}</b> and <b>${m.p2}</b> at <b>${m.tour}</b>, based on every tour-level match on file with this data source. Reflects what our provider has on record, not necessarily every match ever played — check ATP Tour's official tournament history to confirm the complete record.</div>`;
   return `
     ${callout}
     ${locTags}
