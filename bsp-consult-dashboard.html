@@ -2419,7 +2419,7 @@ function showTournamentMore(colPrefix){
   const link = document.getElementById('atournShowMore-' + colPrefix);
   if (link) link.style.display = 'none';
 }
-function atournPlayerColumn(name, history, colPrefix){
+function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   if (!history) {
     return `
       <div class="atourn-col">
@@ -2446,7 +2446,10 @@ function atournPlayerColumn(name, history, colPrefix){
   const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3))}</div>`).join('');
   const showMoreHtml = extra.length ? `<div class="atourn-showmore" id="atournShowMore-${colPrefix}" onclick="showTournamentMore('${colPrefix}')">Show ${extra.length} earlier edition${extra.length === 1 ? '' : 's'}</div>` : '';
 
-  const longBlock = history.longMatchesPlayed ? `
+  // "Went the distance (4+ sets)" is only meaningful in best-of-five, i.e.
+  // Grand Slams. Every other ATP event is best-of-three, where 4+ sets is
+  // impossible — so the stat is hidden entirely for those (Task 2).
+  const longBlock = !isGrandSlam ? '' : (history.longMatchesPlayed ? `
     <div class="longblock">
       <div class="longstat">
         <span class="lpct" style="color:${longAccentColor};">${history.longMatchPct}%</span>
@@ -2454,7 +2457,7 @@ function atournPlayerColumn(name, history, colPrefix){
       </div>
       <div class="longtrack"><div style="width:${history.longMatchPct}%;background:${rgba(0.55)};"></div></div>
     </div>
-  ` : `<div class="longblock empty">No scored matches on file to compute set length</div>`;
+  ` : `<div class="longblock empty">No scored matches on file to compute set length</div>`);
 
   return `
     <div class="atourn-col">
@@ -2484,6 +2487,9 @@ function buildTournamentSection(m){
       <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}${m.tournamentRound ? ' · ' + m.tournamentRound : ''}</div>
     `;
   }
+  // Grand Slams are best-of-five; every other ATP event is best-of-three.
+  // Drives format-aware stats below (e.g. the 4+ set "went the distance" row).
+  const isGrandSlam = (m.venue && m.venue.category === 'Grand Slam');
   // Premium tournament banner (Design 11) — built entirely from real match
   // fields: clean tournament name, venue location, category, environment,
   // surface (colour-coded), and the round (stripped of its tournament prefix).
@@ -2502,6 +2508,18 @@ function buildTournamentSection(m){
   const venueSub = m.venue
     ? [m.venue.city, m.venue.country].filter(Boolean).join(', ')
     : '';
+  // Task 2 (items 4-5): the Environment cell now shows the venue's court speed
+  // (Abstract Speed value + category, e.g. "1.00 · Medium") and the Surface cell
+  // shows real venue altitude (e.g. "1,050 m"). Both come from m.courtSpeed
+  // (COURT_CONDITIONS). When a venue has no court-conditions data we fall back to
+  // the original Environment/Surface labels rather than render an empty cell.
+  const cs2 = m.courtSpeed;
+  const courtSpeedCell = (cs2 && cs2.abstractSpeed != null)
+    ? `<div class="atourn-metacell"><div class="k">Court speed</div><div class="v">${cs2.abstractSpeed.toFixed(2)}${cs2.category ? ` · ${cs2.category}` : ''}</div></div>`
+    : (m.venue ? `<div class="atourn-metacell"><div class="k">Environment</div><div class="v">${m.venue.indoor ? 'Indoor' : 'Outdoor'}</div></div>` : '');
+  const altitudeCell = (cs2 && cs2.altitude != null)
+    ? `<div class="atourn-metacell"><div class="k">Altitude</div><div class="v">${cs2.altitude.toLocaleString('en-US')} m</div></div>`
+    : `<div class="atourn-metacell"><div class="k">Surface</div><div class="v" style="color:${surfHex};">${surfLabel}</div></div>`;
   const banner = `
     <div class="atourn-banner">
       <div class="atourn-banner-head">
@@ -2514,8 +2532,8 @@ function buildTournamentSection(m){
       </div>
       <div class="atourn-metagrid">
         ${m.venue && m.venue.category ? `<div class="atourn-metacell"><div class="k">Category</div><div class="v">${m.venue.category}</div></div>` : ''}
-        ${m.venue ? `<div class="atourn-metacell"><div class="k">Environment</div><div class="v">${m.venue.indoor ? 'Indoor' : 'Outdoor'}</div></div>` : ''}
-        <div class="atourn-metacell"><div class="k">Surface</div><div class="v" style="color:${surfHex};">${surfLabel}</div></div>
+        ${courtSpeedCell}
+        ${altitudeCell}
         ${roundName ? `<div class="atourn-metacell"><div class="k">Round</div><div class="v">${roundName}</div></div>` : ''}
       </div>
       <div class="atourn-bannerdesc">Career record for <b>${m.p1}</b> and <b>${m.p2}</b> at <b>${cleanTourName}</b>, based on every tour-level match on file with this data source. Reflects what our provider has on record, not necessarily every match ever played — check ATP Tour's official tournament history to confirm the complete record.</div>
@@ -2529,26 +2547,16 @@ function buildTournamentSection(m){
   // that this data provider's database can have real gaps for specific
   // older matches even within a player's career, so it may not be 100%
   // complete for every player in every edge case.
-  // Court-speed comparison — only rendered when the venue has real court-
-  // conditions data AND at least one player has a non-zero sample of last-
-  // 52-weeks matches at that speed category (reuses fixtures already
-  // fetched for extraStats.last52Weeks, no new API calls, no fabricated 0%).
-  const csr = m.extraStats && m.extraStats.courtSpeedRecord;
-  const courtSpeedHtml = (m.courtSpeed && csr && (csr.p1 || csr.p2)) ? `
-    <div class="atourn-callout">Record on <b>${m.courtSpeed.category}</b> courts (last 52 weeks)</div>
-    <div class="yr-grid">
-      <div class="wx-stat"><div class="wx-num">${csr.p1 ? `${csr.p1.wins}-${csr.p1.losses}` : '—'}</div><div class="wx-lbl">${m.p1}${csr.p1 ? ` · ${csr.p1.pct}%` : ' · No matches on record'}</div></div>
-      <div class="wx-stat"><div class="wx-num">${csr.p2 ? `${csr.p2.wins}-${csr.p2.losses}` : '—'}</div><div class="wx-lbl">${m.p2}${csr.p2 ? ` · ${csr.p2.pct}%` : ' · No matches on record'}</div></div>
-    </div>
-  ` : '';
+  // Task 2 (item 6): the "Record on <speed> courts (last 52 weeks)" block was
+  // removed entirely at the user's direction — it surfaced per-court-speed
+  // records that aren't finalised for now.
 
   return `
     ${banner}
     <div class="yr-grid">
-      ${atournPlayerColumn(m.p1, m.p1TournamentHistory, 'p1')}
-      ${atournPlayerColumn(m.p2, m.p2TournamentHistory, 'p2')}
+      ${atournPlayerColumn(m.p1, m.p1TournamentHistory, 'p1', isGrandSlam)}
+      ${atournPlayerColumn(m.p2, m.p2TournamentHistory, 'p2', isGrandSlam)}
     </div>
-    ${courtSpeedHtml}
   `;
 }
 
