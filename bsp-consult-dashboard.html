@@ -2025,10 +2025,13 @@ function weatherWeekSummary(week, surface){
 function buildWeatherSection(m){
   const w = m.weather;
   if (!w) {
-    return `<div class="acomingsoon">Weather forecast not available for this match — either the venue isn't mapped yet, or the match is too far out/in the past for Open-Meteo's forecast window.</div>`;
+    return `<div class="acomingsoon">Weather not available for this match — either the venue isn't mapped yet, or conditions couldn't be retrieved for this date.</div>`;
   }
+  // Task 3: completed matches carry real historical conditions (w.historical),
+  // labelled "Weather on match day"; upcoming matches keep the forecast wording.
+  const wxLabel = w.historical ? 'Weather on match day' : 'Forecast at match time';
   const forecastCard = `
-    <div class="wx-cardlabel">Forecast at match time</div>
+    <div class="wx-cardlabel">${wxLabel}</div>
     <div class="wx-stats">
       <div class="wx-stat">
         <div class="wx-icon" style="color:#e8a05a">${BSP_ICONS.thermometer}</div>
@@ -2050,7 +2053,7 @@ function buildWeatherSection(m){
       </div>
     </div>
   `;
-  const summary = `<div class="wx-summary"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span>Forecast at match time: ${w.temperature}°C, wind ${w.windSpeed} km/h, humidity ${w.humidity}%. ${weatherImpactPhrase(w, m.surface)}</span></div>`;
+  const summary = `<div class="wx-summary"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span>${wxLabel}: ${w.temperature}°C, wind ${w.windSpeed} km/h, humidity ${w.humidity}%. ${weatherImpactPhrase(w, m.surface)}</span></div>`;
 
   // Section 2 — tournament-week Mon–Sun strip (only when the real week is on file).
   let weekSection = '';
