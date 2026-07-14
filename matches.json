@@ -1518,16 +1518,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
-        "p1": 3,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 3,
+        "p1": 6,
         "p2": 4
       }
     ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p2",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/388_j-m-cerundolo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/384_z-kolar.jpg",
     "oddsMovement": {
@@ -7226,17 +7236,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "30 - 40",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1775_p-martinez.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "oddsMovement": {
@@ -11649,7 +11653,22 @@
       "bookmaker": "1xBet",
       "at": "2026-07-13T08:25:56.526Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(6), 1-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12145199",
@@ -23479,17 +23498,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "40 - A",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/55163_n-budkov-kjaer.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2001_a-pellegrino.jpg",
     "oddsMovement": {
@@ -26884,7 +26897,22 @@
       "bookmaker": "1xBet",
       "at": "2026-07-12T13:04:40.474Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 2-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12145361",
@@ -32567,17 +32595,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/359_s-ofner.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "oddsMovement": {
@@ -33722,7 +33744,22 @@
       "bookmaker": "1xBet",
       "at": "2026-07-13T08:10:49.007Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 4-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12145365",
@@ -35273,11 +35310,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1754_d-svrcina.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2384_g-dimitrov.jpg",
     "oddsMovement": {
@@ -36305,7 +36348,8 @@
       "p2": 1.46,
       "bookmaker": "1xBet",
       "at": "2026-07-13T08:17:55.330Z"
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12145366",
@@ -62264,11 +62308,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1209_m-damas.jpg",
     "oddsMovement": {
@@ -62752,7 +62802,8 @@
           ]
         }
       }
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12145730",
@@ -64009,11 +64060,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2002_f-diaz-acosta.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10018_l-midon.jpg",
     "oddsMovement": {
@@ -64369,7 +64431,8 @@
           ]
         }
       }
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12145725",
