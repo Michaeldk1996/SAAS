@@ -2329,9 +2329,6 @@ function buildH2HSection(m){
     return `<div class="acomingsoon">No head-to-head data found for this pairing (data source connected, but no match record on file).</div>`;
   }
   const totalMatches = h2h.p1Wins + h2h.p2Wins;
-  const smallSample = totalMatches > 0 && totalMatches <= 2
-    ? `<span class="ah2h-smallsample">Only ${totalMatches} meeting${totalMatches === 1 ? '' : 's'} on record — take this record with caution.</span>`
-    : '';
 
   const leaderColor = h2h.p1Wins > h2h.p2Wins ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const leaderText = h2h.p1Wins === h2h.p2Wins
@@ -2340,11 +2337,6 @@ function buildH2HSection(m){
   const callout = `
     <div class="ah2h-callout">
       <b>${m.p1}</b> and <b>${m.p2}</b> have met ${totalMatches} time${totalMatches === 1 ? '' : 's'} on record, ${leaderText}.
-      ${smallSample}
-    </div>
-    <div class="ah2h-caveat">
-      <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-      <span>This record reflects what our data provider has on file, not necessarily every professional meeting between them — long-running rivalries in particular may include older matches the provider doesn't carry. Check ATP Tour's official H2H page to confirm the complete record.</span>
     </div>
   `;
 
