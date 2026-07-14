@@ -985,8 +985,6 @@
 </head>
 <body>
 
-<div id="pipelineHealthBanner" class="phbanner" style="display:none" role="status"></div>
-
 <div class="topnav">
   <div class="topnav-left">
     <div class="brand">
@@ -6331,54 +6329,8 @@ function renderH2H(){
 document.getElementById('h2hP1').addEventListener('change', renderH2H);
 document.getElementById('h2hP2').addEventListener('change', renderH2H);
 
-/* ---------- PIPELINE HEALTH ---------- */
-// Reads pipeline-health.json (written by run-pipeline.js after every run) so a
-// missed or failing automated run is immediately visible instead of silently
-// serving stale data. Stays hidden when everything is current.
-function phAgo(ms){
-  const m = Math.floor(ms/60000), h = Math.floor(m/60);
-  if (h >= 24) return `${Math.floor(h/24)}d ${h%24}h ago`;
-  if (h >= 1) return `${h}h ${m%60}m ago`;
-  return `${m}m ago`;
-}
-async function loadPipelineHealth(){
-  const el = document.getElementById('pipelineHealthBanner');
-  if (!el) return;
-  let h;
-  try {
-    const res = await fetch('./pipeline-health.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('no health file');
-    h = await res.json();
-  } catch { el.style.display = 'none'; return; }  // no health data yet — stay quiet
-
-  const now = Date.now();
-  const lastOk = h.lastSuccess ? new Date(h.lastSuccess).getTime() : null;
-  const ageMs = lastOk ? now - lastOk : Infinity;
-  const fails = h.consecutiveFailures || 0;
-  const STALE_MS = 90 * 60 * 1000; // data should refresh well within 90 min during play
-
-  let cls = null, msg = '', detail = '';
-  if (fails >= 2){
-    cls = 'phb-error';
-    msg = `Automated updates are failing — ${fails} runs in a row errored.`;
-    detail = (lastOk ? `Last good update ${phAgo(ageMs)}. ` : 'No successful run on record. ')
-      + (h.lastError ? `(${h.lastError})` : '');
-  } else if (ageMs > STALE_MS){
-    cls = 'phb-warn';
-    msg = `Scores & reports may be behind — data last refreshed ${lastOk ? phAgo(ageMs) : 'never'}.`;
-    detail = fails > 0 ? `Last automated run failed; a retry is scheduled.` : `The scheduled pipeline hasn't completed recently.`;
-  }
-
-  if (!cls){ el.style.display = 'none'; return; }
-  el.className = `phbanner ${cls}`;
-  el.innerHTML = `<span class="phb-dot"></span><span>${msg}</span>` + (detail ? ` <span class="phb-detail">${detail}</span>` : '');
-  el.style.display = 'flex';
-}
-
 /* ---------- INITIAL LOAD ---------- */
 loadMatches();
-loadPipelineHealth();
-setInterval(loadPipelineHealth, 3 * 60 * 1000);
 // tournament-profiles.json is historical/curated data (30-day server-side
 // cache) — loaded once on page load, not on the 3-minute matches refresh.
 loadTournamentProfiles();
