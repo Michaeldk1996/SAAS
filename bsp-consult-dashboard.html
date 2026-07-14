@@ -6194,6 +6194,13 @@ function tourxRoundViewHtml(T){
   // winner can't be inferred until the following round produces box scores.
   const renderRound = (rIdx) => {
     const roundLabel = tourxActiveLabels[rIdx] || rounds[rIdx] || `Round ${rIdx + 1}`;
+    // Round hasn't been played yet — nothing exists beyond the frontier round, so
+    // selecting e.g. R16 while only R32 has been played must show no data (not the
+    // R32 numbers). Tell the user those matches haven't been played yet.
+    if (rIdx > frontierIdx){
+      const latest = frontierIdx >= 0 ? (tourxActiveLabels[frontierIdx] || rounds[frontierIdx]) : null;
+      return filterBar + dnaCard(`<b style="color:#c3ccdb;">${roundLabel}</b> hasn't been played yet at ${T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:#c3ccdb;">${latest}</b>.` : ''}`);
+    }
     const lastIdx = tourxActiveLabels.length - 1;
     let players, advancersOnly;
     if (rIdx === lastIdx && rounds.length >= tourxActiveLabels.length){
@@ -6250,7 +6257,9 @@ function tourxRoundViewHtml(T){
     return renderRound(frontierIdx);
   }
 
-  return renderRound(Math.min(selIdx, rounds.length - 1));
+  // Clamp to the display ladder (NOT the ingested-round count): a selected round
+  // beyond the frontier is handled inside renderRound as "not played yet".
+  return renderRound(Math.min(selIdx, tourxActiveLabels.length - 1));
 }
 
 // Player view. Controls: a shared player chip search (cap 4) + a round highlight
@@ -6279,11 +6288,24 @@ function tourxPlayerViewHtml(T){
     return controls + `<div style="margin-top:22px;">${legend}${callout}${tourxCompareCardsHtml(selPlayers, TOURX_METRICS, field, 'progress')}</div>`;
   }
 
-  // No player selected → the progression area stays empty. Nothing pre-populates
-  // from the tournament draw; content appears only once a player is searched and
-  // picked (comparison branch above).
-  const emptyState = `<div style="margin-top:28px;color:#6b7280;font-size:13.5px;">Search for a player to view their progression.</div>`;
-  return controls + emptyState;
+  // No manual selection → auto-populate from the second round onward. Any player
+  // who has played 2+ matches gets a progression line automatically (a chart needs
+  // at least two points to show a trend), so the report is useful without picking
+  // players first. The search above still narrows to specific players afterwards.
+  const progressable = T.players.filter(p => p.data && p.nRounds >= 2)
+    .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.nRounds - a.nRounds));
+  if (!progressable.length){
+    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">The player progression chart is only available once players have played <b style="color:#c3ccdb;">2 matches</b>. No player at <b style="color:#c3ccdb;">${T.name}</b> has completed a second round yet — the chart appears here automatically from the second round onward. You can still search for a player above once they've played twice.</div>`;
+    return controls + msg;
+  }
+  const autoPlayers = progressable.slice(0, TOURX_PP_CAP);
+  const legend = tourxPPLegendHtml(autoPlayers);
+  const autoNames = autoPlayers.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
+  const autoNote = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
+      <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">Auto-showing <b style="color:#eef2f8;">${autoPlayers.length} player${autoPlayers.length === 1 ? '' : 's'}</b> who've played 2+ matches (<b style="color:#eef2f8;">${autoNames}</b>) — progression appears automatically from the second round onward. <b style="color:#eef2f8;">Search above</b> to focus on specific players. Figures beside each chart are each player's average across all rounds; <b style="color:#eef2f8;">tap a name</b> to spotlight or mute them across every chart.</span>
+    </div>`;
+  return controls + `<div style="margin-top:22px;">${legend}${autoNote}${tourxCompareCardsHtml(autoPlayers, TOURX_METRICS, field, 'progress')}</div>`;
 }
 
 /* ---------- Head-to-head: two players, six metrics, dual-line charts ---------- */
