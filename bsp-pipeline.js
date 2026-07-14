@@ -1325,10 +1325,17 @@ async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
   mon.setUTCDate(mon.getUTCDate() - ((mon.getUTCDay() + 6) % 7)); // back to Monday
   const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
   const ymd = d => d.toISOString().slice(0, 10);
+  // The ERA5 archive only serves dates up to today; a match played earlier this
+  // week has a Sunday-of-week end_date in the future, which returns HTTP 400 and
+  // wipes the whole fetch. Clamp end_date to today so the request always
+  // succeeds — the match day itself is always in range, so the hourly lookup
+  // still resolves; later days of the week simply render "—".
+  const todayYmd = new Date().toISOString().slice(0, 10);
+  const endYmd = ymd(sun) > todayYmd ? todayYmd : ymd(sun);
   const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
     + `&hourly=temperature_2m,windspeed_10m,relative_humidity_2m`
     + `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max`
-    + `&start_date=${ymd(mon)}&end_date=${ymd(sun)}&timezone=UTC`;
+    + `&start_date=${ymd(mon)}&end_date=${endYmd}&timezone=UTC`;
   try {
     const data = await (await fetch(archiveUrl)).json();
     // The archive has no precipitation_probability_max (a forecast-only field);
@@ -1873,7 +1880,45 @@ async function buildTournamentProgression(tourName) {
   };
 }
 
-async function buildPastMatchObject(fixture, surfaceMap) {
+// Task 4: api-tennis' get_odds carries real per-book Home/Away prices for BOTH
+// finished matches (prices survive after the match ends, unlike the-odds-api
+// which drops completed events) and upcoming ones — so completed cards can show
+// odds like upcoming cards, and upcoming cards keep odds even when the-odds-api
+// has no active tennis market. Home = event_first_player (= match.p1), Away =
+// event_second_player (= match.p2). We pick a reference bookmaker for the
+// headline `odds` and the highest price per side for `bestOdds`, mirroring the
+// odds-event shape so the dashboard renders them identically.
+async function fetchApiTennisMatchOdds(eventKey) {
+  try {
+    const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
+    const data = await (await fetch(url)).json();
+    const ha = data && data.result && data.result[eventKey] && data.result[eventKey]['Home/Away'];
+    if (!ha || !ha.Home || !ha.Away) return null;
+    const books = Object.keys(ha.Home).filter(b => ha.Away[b] != null);
+    if (!books.length) return null;
+    const prefer = ['bet365', 'Pncl', 'Betfair', 'Unibet', 'WilliamHill', 'Marathon'];
+    const ref = prefer.find(b => books.includes(b)) || books[0];
+    const p1 = parseFloat(ha.Home[ref]);
+    const p2 = parseFloat(ha.Away[ref]);
+    if (!(p1 > 0) || !(p2 > 0)) return null;
+    // bestOdds mirrors the upcoming-match shape: { price, bookmaker } per side,
+    // the single highest price on offer across the books (best value for a bettor).
+    const bestSide = side => {
+      let bestBook = null, bestPrice = 0;
+      for (const b of books) { const v = parseFloat(ha[side][b]); if (v > bestPrice) { bestPrice = v; bestBook = b; } }
+      return bestBook ? { price: bestPrice, bookmaker: bestBook } : null;
+    };
+    return {
+      odds: { p1, p2, bookmaker: ref },
+      bestOdds: { p1: bestSide('Home'), p2: bestSide('Away') },
+    };
+  } catch (e) {
+    console.error('Finished-match odds fetch failed for', eventKey, '-', e.message);
+    return null;
+  }
+}
+
+async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
   // Same real, already-provided-by-the-API string format used by h2hRoundLabel()
   // client-side ("ATP <Name> - <Round>") — take the tournament-name segment.
@@ -1898,7 +1943,8 @@ async function buildPastMatchObject(fixture, surfaceMap) {
     surface,
     style: 'TBD',
     value: null,
-    // No betting markets exist for an already-finished match.
+    // Default null; populated below from api-tennis get_odds (Task 4 — finished
+    // matches keep their pre-match markets, so completed cards show odds too).
     odds: { p1: null, p2: null, bookmaker: null },
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
@@ -1920,11 +1966,10 @@ async function buildPastMatchObject(fixture, surfaceMap) {
     extraStats: null,
     venue: null,
     courtSpeed: null,
-    // Confirmed empirically this session: Open-Meteo's /v1/forecast endpoint
-    // (as called by fetchMatchWeather, no past_days param) only returns data
-    // starting at today 00:00 UTC onward — it never covers a 2-days-ago match
-    // time. Skipped outright rather than making a network call known to
-    // always return null.
+    // Default null; populated below via fetchMatchWeather, which falls back to
+    // Open-Meteo's historical archive (ERA5) for past match dates outside the
+    // forecast window (Task 3 — completed matches show the real weather on the
+    // day they were played, flagged `historical`).
     weather: null,
     live: false,
     liveStatus: null,
@@ -1943,6 +1988,20 @@ async function buildPastMatchObject(fixture, surfaceMap) {
   match.courtSpeed = courtConditions
     ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
     : null;
+
+  // Task 3 — real weather on the day the match was played (historical archive
+  // fallback lives inside fetchMatchWeather). Task 4 — pre-match odds recovered
+  // from api-tennis get_odds so completed cards show odds like upcoming ones.
+  const pastMatchDateTime = `${fixture.event_date}T${(fixture.event_time || '12:00')}:00Z`;
+  const [pastWeather, pastOdds] = await Promise.all([
+    venueMap ? fetchMatchWeather(tour, pastMatchDateTime, venueMap) : Promise.resolve(null),
+    fetchApiTennisMatchOdds(fixture.event_key),
+  ]);
+  match.weather = pastWeather;
+  if (pastOdds) {
+    match.odds = pastOdds.odds;
+    match.bestOdds = pastOdds.bestOdds;
+  }
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
@@ -2065,6 +2124,15 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
 
   // Weather is forward-looking here (unlike past matches), so it's fetched.
   match.weather = await fetchMatchWeather(tour, commence, venueMap);
+
+  // Odds from api-tennis get_odds — a fixture-only card has no the-odds-api
+  // event, but api-tennis usually already carries a pre-match Home/Away market.
+  // Keeps odds visible even when the-odds-api has no active tennis sport.
+  const upOdds = await fetchApiTennisMatchOdds(fixture.event_key);
+  if (upOdds) {
+    match.odds = upOdds.odds;
+    match.bestOdds = upOdds.bestOdds;
+  }
 
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
@@ -2849,7 +2917,7 @@ async function runPipeline() {
   );
   console.log(`Found ${finishedPastFixtures.length} finished matches in the 3-day trailing window (incl. today).`);
   for (const fixture of finishedPastFixtures) {
-    const pastMatch = await buildPastMatchObject(fixture, surfaceMap);
+    const pastMatch = await buildPastMatchObject(fixture, surfaceMap, venueMap);
     // A match that finished TODAY may already be present as a scoreless
     // odds-driven or fixture-only card (built above before the result landed).
     // Drop that placeholder so there's exactly one card for the matchup — the

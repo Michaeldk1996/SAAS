@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-14T02:57:22.829Z",
+  "fetchedAt": "2026-07-14T13:30:14.132Z",
   "tournaments": {
     "Gstaad": {
       "rounds": [
@@ -39,6 +39,46 @@
                 "firstServePct": 63,
                 "firstServeWonPct": 70.6,
                 "secondServeWonPct": 55,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Z. Kolar",
+          "playerKey": "384",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "J. M. Cerundolo",
+              "resultDisplay": "2 - 1",
+              "metrics": {
+                "firstServePct": 62,
+                "firstServeWonPct": 69.1,
+                "secondServeWonPct": 61.8,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "J. M. Cerundolo",
+          "playerKey": "388",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "Z. Kolar",
+              "resultDisplay": "2 - 1",
+              "metrics": {
+                "firstServePct": 48,
+                "firstServeWonPct": 81.8,
+                "secondServeWonPct": 59.6,
                 "winnersPct": null,
                 "unforcedErrorsPct": null,
                 "winnersUnforcedRatio": null
@@ -119,6 +159,46 @@
                 "firstServePct": 66,
                 "firstServeWonPct": 71.7,
                 "secondServeWonPct": 64.5,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Y. Hanfmann",
+          "playerKey": "1764",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "P. Martinez",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 68,
+                "firstServeWonPct": 93.8,
+                "secondServeWonPct": 73.3,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "P. Martinez",
+          "playerKey": "1775",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "Y. Hanfmann",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 59,
+                "firstServeWonPct": 65.1,
+                "secondServeWonPct": 50,
                 "winnersPct": null,
                 "unforcedErrorsPct": null,
                 "winnersUnforcedRatio": null
@@ -213,13 +293,13 @@
         ],
         "metrics": {
           "firstServePct": [
-            65.3
+            63.57
           ],
           "firstServeWonPct": [
-            67.79
+            70.55
           ],
           "secondServeWonPct": [
-            53.76
+            55.88
           ],
           "winnersPct": [
             null
@@ -232,7 +312,7 @@
           ]
         },
         "sampleSize": [
-          10
+          14
         ]
       }
     },
@@ -241,6 +321,46 @@
         "R1"
       ],
       "players": [
+        {
+          "name": "S. Ofner",
+          "playerKey": "359",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "T. A. Tirante",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 47,
+                "firstServeWonPct": 70.3,
+                "secondServeWonPct": 48.8,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "T. A. Tirante",
+          "playerKey": "366",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "S. Ofner",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 73,
+                "firstServeWonPct": 82.9,
+                "secondServeWonPct": 66.7,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
         {
           "name": "J. De Jong",
           "playerKey": "412",
@@ -254,6 +374,166 @@
                 "firstServePct": 61,
                 "firstServeWonPct": 83,
                 "secondServeWonPct": 53.3,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "M. Damas",
+          "playerKey": "1209",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "D. Vallejo",
+              "resultDisplay": "2 - 0",
+              "metrics": {
+                "firstServePct": 71,
+                "firstServeWonPct": 47.8,
+                "secondServeWonPct": 52.6,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "D. Svrcina",
+          "playerKey": "1754",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "G. Dimitrov",
+              "resultDisplay": "1 - 2",
+              "metrics": {
+                "firstServePct": 60,
+                "firstServeWonPct": 69,
+                "secondServeWonPct": 39.5,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "A. Pellegrino",
+          "playerKey": "2001",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "N. Budkov Kjaer",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 52,
+                "firstServeWonPct": 75,
+                "secondServeWonPct": 48.3,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "F. Diaz Acosta",
+          "playerKey": "2002",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "L. Midon",
+              "resultDisplay": "1 - 2",
+              "metrics": {
+                "firstServePct": 69,
+                "firstServeWonPct": 57.1,
+                "secondServeWonPct": 50,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "G. Dimitrov",
+          "playerKey": "2384",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "D. Svrcina",
+              "resultDisplay": "1 - 2",
+              "metrics": {
+                "firstServePct": 58,
+                "firstServeWonPct": 56.4,
+                "secondServeWonPct": 45,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "T. Daniel",
+          "playerKey": "2406",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "B. Van De Zandschulp",
+              "resultDisplay": "2 - 0",
+              "metrics": {
+                "firstServePct": 65,
+                "firstServeWonPct": 62.2,
+                "secondServeWonPct": 54.2,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "B. Van De Zandschulp",
+          "playerKey": "2972",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "T. Daniel",
+              "resultDisplay": "2 - 0",
+              "metrics": {
+                "firstServePct": 62,
+                "firstServeWonPct": 78,
+                "secondServeWonPct": 48.4,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "D. Vallejo",
+          "playerKey": "9217",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "M. Damas",
+              "resultDisplay": "2 - 0",
+              "metrics": {
+                "firstServePct": 55,
+                "firstServeWonPct": 60.7,
+                "secondServeWonPct": 69.6,
                 "winnersPct": null,
                 "unforcedErrorsPct": null,
                 "winnersUnforcedRatio": null
@@ -280,6 +560,46 @@
               }
             }
           ]
+        },
+        {
+          "name": "L. Midon",
+          "playerKey": "10018",
+          "eliminated": false,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "F. Diaz Acosta",
+              "resultDisplay": "1 - 2",
+              "metrics": {
+                "firstServePct": 62,
+                "firstServeWonPct": 68.6,
+                "secondServeWonPct": 58.1,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "N. Budkov Kjaer",
+          "playerKey": "55163",
+          "eliminated": true,
+          "rounds": [
+            {
+              "round": "R1",
+              "opponent": "A. Pellegrino",
+              "resultDisplay": "0 - 2",
+              "metrics": {
+                "firstServePct": 60,
+                "firstServeWonPct": 51.6,
+                "secondServeWonPct": 52.4,
+                "winnersPct": null,
+                "unforcedErrorsPct": null,
+                "winnersUnforcedRatio": null
+              }
+            }
+          ]
         }
       ],
       "fieldAverage": {
@@ -288,13 +608,13 @@
         ],
         "metrics": {
           "firstServePct": [
-            59
+            60.86
           ],
           "firstServeWonPct": [
-            75.8
+            66.51
           ],
           "secondServeWonPct": [
-            51.65
+            52.64
           ],
           "winnersPct": [
             null
@@ -307,7 +627,7 @@
           ]
         },
         "sampleSize": [
-          2
+          14
         ]
       }
     },

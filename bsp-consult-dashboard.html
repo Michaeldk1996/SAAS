@@ -644,6 +644,7 @@
   .modal-analysis .msheet-row:last-child{ border-bottom:none; }
   .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
   .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
+  .modal-analysis .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
   .modal-analysis .tprogress-legend{ display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin:0 0 16px; font-family:'Hanken Grotesk', sans-serif; }
@@ -2669,12 +2670,33 @@ const MSHEET_FRACTION_KEYS = new Set([
   'Points:Total Points Won',
 ]);
 
+// Stats the user always wants to SEE, even when the data source returns no
+// value for this particular match. Rather than silently dropping the row
+// (which reads as "we removed it"), we keep it and flag the cell "N/A". The
+// api-tennis feed does not carry Winners/Unforced Errors for every fixture.
+const MSHEET_ALWAYS_SHOW = new Set([
+  'Points:Winners',
+  'Points:Unforced errors',
+]);
+
 // Grouped stat-sheet table row (no bars). Both values render in the same
 // neutral style regardless of who leads — no winner highlight, no per-value
 // colour coding. Fraction stats additionally show the real "(won/total)"
 // before the percentage when the raw counts are on file.
-function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw){
-  if (p1Val == null && p2Val == null) return '';
+function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
+  if (p1Val == null && p2Val == null) {
+    if (!alwaysShow) return '';
+    // Data source didn't supply this stat for this match — keep the row so the
+    // user still sees it, but flag it honestly rather than dropping or faking it.
+    const na = `<span class="msheet-na" title="Not provided by the data source for this match">N/A</span>`;
+    return `
+    <div class="msheet-row">
+      <span class="msheet-val">${na}</span>
+      <span class="msheet-label">${label}</span>
+      <span class="msheet-val">${na}</span>
+    </div>
+  `;
+  }
   const fmt = (v, raw) => {
     if (v == null) return '—';
     if (kind !== 'pct') return v;
@@ -2703,7 +2725,8 @@ function buildMatchStatsSection(m){
         const wantFraction = MSHEET_FRACTION_KEYS.has(key);
         const p1Raw = wantFraction && m.matchStats.p1.raw ? m.matchStats.p1.raw[key] : null;
         const p2Raw = wantFraction && m.matchStats.p2.raw ? m.matchStats.p2.raw[key] : null;
-        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw);
+        const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
+        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw, alwaysShow);
       })
       .filter(Boolean)
       .join('');
@@ -5058,10 +5081,13 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 // Round-aware progression state (Task 6). Derived from how many rounds of
 // box-score data each player has in this tournament — NOT from hardcoded
 // round names — so it works across every format:
-//   pts <= 1  → 'hidden'  first round, one data point: nothing to trend, hide the tab
-//   pts === 2 → 'bars'    second round, one prior match: side-by-side bar comparison
-//   pts >= 3  → 'chart'   third round+, two+ prior matches: full line chart (as built)
+//   pts <= 0  → 'hidden'  no round on record: nothing to show, hide the tab
+//   pts 1–2   → 'bars'    one or two prior matches: side-by-side bar comparison
+//   pts >= 3  → 'chart'   three+ rounds on record: full line trend (as built)
 //   no draw   → 'none'    no tournament data on file at all
+// A player with a single completed round (e.g. a next-round card where both
+// players have already won their opener) has real box-score data to compare —
+// show bars rather than hiding the tab, since a one/two-point line reads as noise.
 function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
   const data = tournamentProgression.tournaments[bareTour];
@@ -5069,7 +5095,7 @@ function progressionRoundState(m){
   const p2Data = data ? data.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
   if (!data || (!p1Data && !p2Data)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
   const pts = Math.max(p1Data ? p1Data.rounds.length : 0, p2Data ? p2Data.rounds.length : 0);
-  const state = pts <= 1 ? 'hidden' : (pts === 2 ? 'bars' : 'chart');
+  const state = pts <= 0 ? 'hidden' : (pts <= 2 ? 'bars' : 'chart');
   return { state, data, p1Data, p2Data, bareTour, pts };
 }
 
@@ -5125,7 +5151,7 @@ function buildMatchProgressionSection(m){
     const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
     return `
       <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at their latest round in this draw, compared side by side.">ⓘ</span></div>
-      <div class="tprogress-legend"><div class="note" style="margin:0;">Round ${pts} — ${pts - 1} match${pts - 1 === 1 ? '' : 'es'} played. Side-by-side comparison until enough rounds exist to trend a line.</div></div>
+      <div class="tprogress-legend"><div class="note" style="margin:0;">${pts} round${pts === 1 ? '' : 's'} on record — side-by-side comparison of each player's latest box score. A line trend appears once three+ rounds exist.</div></div>
       <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
     `;
   }
@@ -6115,65 +6141,78 @@ function tourxRoundViewHtml(T){
       </div>`;
   const barBlock = (label, note, entries, roundAvgByKey) => filterBar + `<div style="margin-top:26px;">${header(label)}<div style="font-size:12.5px;color:#6b7280;margin-bottom:18px;">${note}</div>${tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey)}</div>`;
 
+  // Latest round index that actually has an ingested box score for anyone, plus
+  // a test for whether a given round's NEXT round has been played yet. Early in a
+  // live event only R1 exists — nobody has "advanced" — so we must show every
+  // player who PLAYED the round (their box scores) rather than gating on advancers.
+  const key0 = TOURX_METRICS[0].key;
+  const hasBox = (p, i) => p.data && p.data[key0] && p.data[key0][i] != null;
+  let frontierIdx = -1;
+  for (let i = 0; i < rounds.length; i++) if (T.players.some(p => hasBox(p, i))) frontierIdx = i;
+  const nextRoundPlayed = i => T.players.some(p => hasBox(p, i + 1));
+
+  // Renders the per-round box-score comparison grid for one round. A round whose
+  // NEXT round has already been played shows just the winners (players who
+  // advanced); the current frontier round shows everyone who played it, since a
+  // winner can't be inferred until the following round produces box scores.
+  const renderRound = (rIdx) => {
+    const roundLabel = rounds[rIdx] || TOURX_ROUND_LABELS[rIdx] || `Round ${rIdx + 1}`;
+    let players, advancersOnly;
+    if (rIdx === 6 && rounds.length >= 7){
+      // 128-draw final: no "next round", so the champion is cross-referenced from profiles.
+      const champ = (typeof tournamentProfiles !== 'undefined' && tournamentProfiles[T.name] && tournamentProfiles[T.name].defendingChampion && tournamentProfiles[T.name].defendingChampion.name) || null;
+      const finalists = T.players.filter(p => p.nRounds >= 7 && hasBox(p, 6));
+      players = champ ? finalists.filter(p => tourxNameMatch(p.name, champ)) : [];
+      advancersOnly = true;
+      if (!players.length) return filterBar + dnaCard('Data not available for the final — no champion could be matched to a player with an ingested final box score.');
+    } else if (nextRoundPlayed(rIdx)){
+      players = T.players.filter(p => p.nRounds >= rIdx + 2 && hasBox(p, rIdx)); // advanced to next round
+      advancersOnly = true;
+    } else {
+      players = T.players.filter(p => hasBox(p, rIdx)); // frontier round: everyone who played it
+      advancersOnly = false;
+    }
+    let entries = players.map(w => {
+      const values = {};
+      TOURX_METRICS.forEach(m => { values[m.key] = w.data[m.key][rIdx]; });
+      return { name: w.name, last: w.name.split(' ').slice(-1)[0], values };
+    });
+    const nAll = entries.length;
+    if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
+    if (!entries.length){
+      return filterBar + dnaCard(nAll
+        ? `None of the selected players are among the ${nAll} ${roundLabel} ${advancersOnly ? 'winner' : 'player'}${nAll === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
+        : `No ${roundLabel} box scores have been ingested for ${T.name} yet.`);
+    }
+    // Dashed line = field average across ALL players who played this round
+    // (tournament-progression.json fieldAverage.metrics[key][rIdx]).
+    const roundAvgByKey = {};
+    TOURX_METRICS.forEach(m => {
+      const arr = T.field && T.field.metrics && T.field.metrics[m.key];
+      roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
+    });
+    const titleLabel = advancersOnly ? `Round view · ${roundLabel} winners` : `Round view · ${roundLabel}`;
+    const baseNote = advancersOnly
+      ? `Showing ${entries.length} ${roundLabel} winner${entries.length === 1 ? '' : 's'} (players who advanced to the next round) — first serve, return and the rest are their box scores from this round. The dashed line is the field average across all players in this round.`
+      : `Showing all ${nAll} player${nAll === 1 ? '' : 's'} who played ${roundLabel} — first serve, return and the rest are their box scores from this round. Winners aren't marked yet because the next round hasn't been played. The dashed line is the field average across all players in this round.`;
+    const note = selNames.length ? `Filtered to ${entries.length} selected player${entries.length === 1 ? '' : 's'}. ${baseNote}` : baseNote;
+    return barBlock(titleLabel, note, entries, roundAvgByKey);
+  };
+
   // "All rounds" → the selected player(s) plotted across every round they played.
   if (selIdx == null){
-    if (!selPlayers.length){
-      return filterBar + dnaCard(`<b style="color:#cfd6e6;">Pick a player above</b> to see their round-by-round data across all rounds of ${T.name}. Add a second player to compare the two head-to-head.`);
+    if (selPlayers.length){
+      const legend = tourxCmpLegendHtml(selPlayers);
+      const note = `<div style="font-size:12.5px;color:#6b7280;margin:0 0 4px;">Full round-by-round progression for the selected player${selPlayers.length === 1 ? '' : 's'} — every round with an ingested box score is shown; nothing is estimated.</div>`;
+      return filterBar + `<div style="margin-top:26px;">${header('Round view · All rounds')}${legend}${note}${tourxCompareCardsHtml(selPlayers, shownMetrics, T.field, 'rounds')}</div>`;
     }
-    const legend = tourxCmpLegendHtml(selPlayers);
-    const note = `<div style="font-size:12.5px;color:#6b7280;margin:0 0 4px;">Full round-by-round progression for the selected player${selPlayers.length === 1 ? '' : 's'} — every round with an ingested box score is shown; nothing is estimated.</div>`;
-    return filterBar + `<div style="margin-top:26px;">${header('Round view · All rounds')}${legend}${note}${tourxCompareCardsHtml(selPlayers, shownMetrics, T.field, 'rounds')}</div>`;
+    // No player picked yet → default to the most-recent round with box scores so
+    // the report shows real per-match data immediately (first serve, return, …).
+    if (frontierIdx < 0) return filterBar + dnaCard(`No box scores have been ingested for ${T.name} yet — check back once the first round has been played.`);
+    return renderRound(frontierIdx);
   }
 
-  // Specific round: its winners. A player won round rIdx iff they advanced to the
-  // next round, i.e. they have a box score for round rIdx+1 (nRounds ≥ rIdx+2) —
-  // the reliable signal (resultDisplay is stored inconsistently). The final (rIdx
-  // 6) has no "next round", so the champion is cross-referenced from profiles.
-  const rIdx = Math.min(selIdx, rounds.length - 1);
-  const roundLabel = TOURX_ROUND_LABELS[rIdx];
-  const totW = TOURX_TOTAL_WINNERS[rIdx];
-  let winners;
-  if (rIdx === 6){
-    const champ = (typeof tournamentProfiles !== 'undefined' && tournamentProfiles[T.name] && tournamentProfiles[T.name].defendingChampion && tournamentProfiles[T.name].defendingChampion.name) || null;
-    const finalists = T.players.filter(p => p.nRounds >= 7 && p.data[TOURX_METRICS[0].key][6] != null);
-    winners = champ ? finalists.filter(p => tourxNameMatch(p.name, champ)) : [];
-    if (!winners.length){
-      return filterBar + dnaCard('Data not available for the final — no champion could be matched to a player with an ingested final box score.');
-    }
-  } else {
-    winners = T.players.filter(p => p.nRounds >= rIdx + 2 && p.data[TOURX_METRICS[0].key][rIdx] != null);
-  }
-  const nW = winners.length;
-  let entries = winners.map(w => {
-    const values = {};
-    TOURX_METRICS.forEach(m => { values[m.key] = w.data[m.key][rIdx]; });
-    return { name: w.name, last: w.name.split(' ').slice(-1)[0], values };
-  });
-  if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
-  if (!entries.length){
-    return filterBar + dnaCard(nW
-      ? `None of the selected players are among the ${nW} ${roundLabel} winner${nW === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
-      : `Showing 0 of ${totW} ${roundLabel} winner${totW === 1 ? '' : 's'} — no per-match data available.`);
-  }
-  // Dashed line = field average across ALL players who played this round
-  // (tournament-progression.json fieldAverage.metrics[key][rIdx]), not the mean
-  // of the shown winners. Null where the field average isn't available.
-  const roundAvgByKey = {};
-  TOURX_METRICS.forEach(m => {
-    const arr = T.field && T.field.metrics && T.field.metrics[m.key];
-    roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
-  });
-  const titleLabel = rIdx === 6 ? 'Round view · Champion' : 'Round view · ' + roundLabel + ' winners';
-  let baseNote;
-  if (rIdx === 6){
-    baseNote = `Showing the champion — ${entries.map(e => e.last).join(', ')}. Values are from the final; the dashed line is the field average across all players in this round.`;
-  } else {
-    baseNote = nW >= totW
-      ? `Showing all ${totW} ${roundLabel} winner${totW === 1 ? '' : 's'} (players who advanced to the next round) — the dashed line is the field average across all players in this round.`
-      : `Showing ${nW} of ${totW} ${roundLabel} winners — remaining players have no per-match data available. The dashed line is the field average across all players in this round.`;
-  }
-  const note = selNames.length ? `Filtered to ${entries.length} selected player${entries.length === 1 ? '' : 's'}. ${baseNote}` : baseNote;
-  return barBlock(titleLabel, note, entries, roundAvgByKey);
+  return renderRound(Math.min(selIdx, rounds.length - 1));
 }
 
 // Player view. Controls: a shared player chip search (cap 4) + a round highlight
