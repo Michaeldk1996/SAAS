@@ -3030,19 +3030,49 @@ function buildOddsSection(m){
 
 function buildOddsReduced(m){
   const marketLabel = 'Match Winner';
-  const note = `
-    <div class="aodds-note">
-      <span class="aon-ico">${AODDS_WARN_ICON}</span>
-      <div>
-        <div class="aon-h">Why this tab is a reduced view</div>
-        <p class="aon-p">The design's inline sparklines and dual-scale movement chart need <b>timestamped historical odds per bookmaker, opening to now</b>. The current feed only exposes <b>live prices</b> for the <b>Match Winner</b> market from a limited set of books — no opening snapshot and no per-book timeline. Movement charts, the Opening/Now toggle, and other markets are therefore omitted rather than shown with invented data. They can be enabled once a per-book odds history feed is wired in.</p>
-      </div>
+
+  // Opening & closing pre-match snapshots — real stored odds timeline
+  // (m.openingOdds = first snapshot, m.closingOdds = last before start).
+  // Rendered in the standard bookmaker-row format. Shown only when the
+  // snapshots are genuinely stored; otherwise omitted (no placeholder).
+  const ocSnapAt = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
+      + ' ' + d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+  };
+  const ocRow = (label, snap) => {
+    if (!snap || (snap.p1 == null && snap.p2 == null)) return '';
+    const a = snap.p1 != null ? snap.p1.toFixed(2) : '·';
+    const b = snap.p2 != null ? snap.p2.toFixed(2) : '·';
+    const meta = [snap.bookmaker, ocSnapAt(snap.at)].filter(Boolean).join(' · ');
+    return `<div class="aodds-brow">
+      <span class="aob-name"><b>${label}</b>${meta ? `<span style="color:#5b6472;font-size:11px;font-family:'IBM Plex Mono',monospace;margin-left:7px;">${meta}</span>` : ''}</span>
+      <span class="aob-cell"><span class="aodds-price">${a}</span></span>
+      <span class="aob-cell"><span class="aodds-price">${b}</span></span>
     </div>`;
+  };
+  const openingRow = ocRow('Opening', m.openingOdds);
+  const closingRow = ocRow('Closing', m.closingOdds);
+  const ocPanel = (openingRow || closingRow) ? `<div>
+    <div class="aodds-sechead">
+      <span class="aodds-badge">PRE-MATCH</span>
+      <div><div class="aoh-title">Opening &amp; closing odds</div><div class="aoh-sub">First and last stored ${marketLabel} snapshot before the match.</div></div>
+    </div>
+    <div class="aodds-card">
+      <div class="aodds-chead">
+        <span class="aoc-book">Snapshot</span>
+        <span class="aoc-p a"><span class="aoc-nm">${m.p1}</span></span>
+        <span class="aoc-p b"><span class="aoc-nm">${m.p2}</span></span>
+      </div>
+      ${openingRow}${closingRow}
+    </div>
+  </div>` : '';
 
   const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
   if (!hasOdds){
     const msg = m.finalScore ? 'No market odds — this fixture is completed.' : 'Odds not pulled yet for this match.';
-    return `<div class="aodds-tab"><div class="acomingsoon" style="padding:18px 0;">${msg}</div>${note}</div>`;
+    return `<div class="aodds-tab">${ocPanel || `<div class="acomingsoon" style="padding:18px 0;">${msg}</div>`}</div>`;
   }
 
   // Favourite = lower decimal price (real market signal, not fabricated).
@@ -3132,7 +3162,7 @@ function buildOddsReduced(m){
     ${table}
   </div>`;
 
-  return `<div class="aodds-tab">${summary}${fairPanel}${bookSec}${note}</div>`;
+  return `<div class="aodds-tab">${summary}${fairPanel}${ocPanel}${bookSec}</div>`;
 }
 
 function buildKeyFactorsCards(m){
