@@ -1266,33 +1266,80 @@ function buildForecastWeek(daily, hourly, matchDateStr) {
   return { weekRange, days: week };
 }
 
+// Task 3: completed matches now show the REAL weather on the day they were
+// played, not a "forecast not available" fallback. The /v1/forecast endpoint
+// only spans today ±7 days, so for anything older we pull the actual conditions
+// from Open-Meteo's historical archive (ERA5, same hourly/daily schema). The
+// returned object carries `historical` so the dashboard can label it "Weather
+// on match day" instead of "Forecast". A future match with no forecast still
+// returns null (genuine no-data) — we only reach the archive for past matches.
 async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
   const key = Object.keys(venueMap).find(k => tournamentName.includes(k));
   if (!key) return null;
   const { lat, lon } = venueMap[key];
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    + `&hourly=temperature_2m,windspeed_10m,relative_humidity_2m`
-    + `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max`
-    + `&past_days=7&forecast_days=7&timezone=UTC`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const matchHour = new Date(matchDateTimeISO).toISOString().slice(0, 13) + ':00';
+  const matchTime = new Date(matchDateTimeISO);
+  const matchHour = matchTime.toISOString().slice(0, 13) + ':00';
+  const matchDateStr = matchTime.toISOString().slice(0, 10);
+  const isPast = matchTime.getTime() < Date.now();
+
+  // Build the weather payload from an Open-Meteo response. Both /v1/forecast and
+  // the archive endpoint expose the same hourly/daily arrays, so this is shared.
+  const buildPayload = (data, historical) => {
+    if (!data || !data.hourly || !data.hourly.time) return null;
     const hourIndex = data.hourly.time.indexOf(matchHour);
     if (hourIndex === -1) return null;
-    const matchDateStr = new Date(matchDateTimeISO).toISOString().slice(0, 10);
     const forecast = buildForecastWeek(data.daily, data.hourly, matchDateStr);
     return {
       temperature: data.hourly.temperature_2m[hourIndex],
       windSpeed: data.hourly.windspeed_10m[hourIndex],
       humidity: data.hourly.relative_humidity_2m[hourIndex],
       source: 'Open-Meteo',
+      historical,
       weekRange: forecast ? forecast.weekRange : null,
       week: forecast ? forecast.days : null,
     };
+  };
+
+  // 1) Forecast endpoint — covers today ±7 days. `past_days` returns real
+  //    measured values for recent past days, so a match played this week is
+  //    still real data; `historical` is keyed off whether the match is past,
+  //    not off which endpoint answered.
+  const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&hourly=temperature_2m,windspeed_10m,relative_humidity_2m`
+    + `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max`
+    + `&past_days=7&forecast_days=7&timezone=UTC`;
+  try {
+    const data = await (await fetch(forecastUrl)).json();
+    const payload = buildPayload(data, isPast);
+    if (payload) return payload;
   } catch (err) {
-    console.error('Weather fetch failed:', err);
+    console.error('Weather forecast fetch failed:', err);
+  }
+
+  // 2) Match sits outside the forecast window. If it already happened, pull the
+  //    real conditions on the day from the historical archive. A future match
+  //    with no forecast stays null rather than inventing data.
+  if (!isPast) return null;
+  const mon = new Date(matchDateStr + 'T00:00:00Z');
+  mon.setUTCDate(mon.getUTCDate() - ((mon.getUTCDay() + 6) % 7)); // back to Monday
+  const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+  const ymd = d => d.toISOString().slice(0, 10);
+  const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
+    + `&hourly=temperature_2m,windspeed_10m,relative_humidity_2m`
+    + `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max`
+    + `&start_date=${ymd(mon)}&end_date=${ymd(sun)}&timezone=UTC`;
+  try {
+    const data = await (await fetch(archiveUrl)).json();
+    // The archive has no precipitation_probability_max (a forecast-only field);
+    // expose a null array so buildForecastWeek renders "—" for rain, not a crash.
+    if (data && data.daily && !data.daily.precipitation_probability_max) {
+      const n = (data.daily.time || []).length;
+      data.daily.precipitation_probability_max = new Array(n).fill(null);
+    }
+    return buildPayload(data, true);
+  } catch (err) {
+    console.error('Weather archive fetch failed:', err);
     return null;
   }
 }
