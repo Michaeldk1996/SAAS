@@ -1,133 +1,193 @@
-# BSP Consult — Tennis Dashboard Project
+# CLAUDE.md — BSP Consult Tennis Edge
+## Agent briefing — read this fully before touching any file
 
-Read this whole file before doing anything. It's the full context from a long
-planning conversation with the project owner (Michael, who runs BSP Consult,
-a tennis betting analysis business). He has no developer — you are it.
+---
 
-## The one rule that matters most
+## What this project is
 
-**Never fabricate data.** Every number shown in the dashboard must be either
-(a) real, from a tested API response, or (b) honestly labeled "coming soon."
-This was enforced repeatedly during planning — a fake Track Record tab and an
-invented match were both caught and removed. Keep this standard. If you can't
-get real data for something, show an honest "not connected yet" state instead
-of a placeholder number.
+BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious ATP bettors. It tracks matches across Grand Slams, ATP 1000s, 500s, 250s, Challengers, and ITF. Members use it daily to analyse matches, odds, and player data for betting decisions.
 
-## What this business is
+**Owner:** Michael (BSP Consult) — Belgian, francophone, digital nomad  
+**Repo:** `michaeldk1996/SAAS`  
+**Live URL:** `michaeldk1996.github.io/SAAS/`  
+**App domain (future):** `bspconsult.app`  
+**Reference competitor:** matchup-tennis.fr (structure reference only — never copy their data or copy)
 
-BSP Consult is a real, existing tennis betting analysis service (400+ paying
-members via TikTok/Instagram/Telegram). This project is a NEW subscription
-dashboard product, structurally similar to a competitor (matchup-tennis.fr)
-but with BSP Consult's own branding, data, and methodology — never their
-copyrighted content, never their locked/paid data.
+---
 
-## API keys the user has (get these from him, don't hardcode in committed files)
+## Tech stack
 
-- **The Odds API** key: works, free tier, EU region odds tested and confirmed live
-- **API-Tennis.com** key: works, trial tier, confirmed live for fixtures/H2H/player stats
-- Ask him for both keys and put them in a `.env` file (already referenced in
-  `bsp-pipeline.js` via `process.env`). Never commit `.env` to git.
+| Layer | Detail |
+|---|---|
+| Frontend | Single HTML file: `bsp-consult-dashboard.html` |
+| Pipeline | `bsp-pipeline.js` (Node.js) — runs every 15 min via GitHub Actions |
+| Data files | `matches.json`, `tournament-profiles.json`, `tournament-progression.json`, `player-profiles.json` |
+| Odds | The Odds API (Grand Slams, 1000s, 500s) + OddsAPI + Oddsapi (ATP 250 and broader coverage) |
+| Tennis data | api-tennis.com (fixtures, results, H2H, surface stats, box scores) |
+| Historical | Jeff Sackmann tennis_atp + MatchChartingProject (CC BY-NC-SA — internal use only, never serve to paying members) |
+| Automation | GitHub Actions cron `*/15 * * * *` |
+| Backtest tools | `backtest_elo.py`, `backtest_demo.py`, `demo_matches.csv` (Elo research, internal only) |
 
-## Files in this folder
+---
 
-- `bsp-consult-dashboard.html` — production dashboard. Fetches live from
-  `./matches.json`. **Must be served via a real HTTP server** (`python3 -m
-  http.server`, `npx serve`, or similar) — opening it via `file://` will
-  always fail due to browser CORS rules. This is expected, not a bug.
-- `bsp-consult-dashboard-preview.html` — same UI but with data embedded
-  directly, works via plain double-click. Good for quick visual checks only.
-- `bsp-consult-website.html` — marketing landing page. **OUT OF DATE**: still
-  says "value bets" and shows a fake mockup from before the pivot to an
-  honest odds-only product. Needs a copy/content update to match reality.
-- `bsp-pipeline.js` — the real data pipeline. Pulls odds from The Odds API,
-  merges with API-Tennis.com data (H2H, surface win rates, rank, tournament
-  round, and now Open-Meteo weather), matched by player last name across
-  APIs. Outputs `matches.json` in the shape the dashboard expects.
-  **This has been tested piece-by-piece against real API responses during
-  planning, but has never been run as a complete script end-to-end** — your
-  first job is to actually run it and fix whatever breaks.
-- `api-tennis-integration.js` — standalone reference for the API-Tennis
-  endpoints (already merged into bsp-pipeline.js, kept for reference).
-- `matches.json` — currently contains 3 REAL matches from July 7, 2026
-  (Lehecka/Zverev, Auger-Aliassime/Djokovic, Sinner/Struff) with real odds,
-  H2H, and surface stats manually verified during planning. This is a
-  snapshot, not live — running the pipeline will regenerate it with
-  whatever's actually happening when you run it.
-- `backtest_elo.py` / `backtest_demo.py` / `demo_matches.csv` — Elo rating
-  research tool for Jeff Sackmann's tennis_atp dataset (github.com/
-  JeffSackmann/tennis_atp). **LICENSE WARNING: that dataset is CC BY-NC-SA
-  (non-commercial only)**. Use it only for internal model R&D — never serve
-  it or a model trained on it to paying members. `backtest_demo.py` has
-  been run and confirmed working on 15 real matches; `backtest_elo.py` is
-  the full version for the real dataset, untested at scale.
+## Current state snapshot
+*As of July 2026*
 
-## What's real vs. still missing (as of end of planning)
+### ✅ Built and working
 
-**Real and working:**
-- Live odds (The Odds API), best-price-across-bookmakers comparison
-- Vig-removed implied win probability
-- H2H record (via API-Tennis get_H2H)
-- Surface-specific win rate, singles only (bug was found and fixed: the raw
-  API mixes doubles/mixed_doubles into the same stats array — filter by
-  `type === 'singles'`, and handle `""` empty-string values as 0, not NaN)
-- Tournament round, current rank
+- **Today's Matches page** — live odds, match cards, form indicators, tournament filters, player search, day tabs (Today / Tomorrow / Live & Past)
+- **Match Analysis modal** — tabs: Key Factors, Playing Style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds, Extra Stats
+- **Player Profile page** — radar chart (Player DNA), serve/return stat cards, surface performance, recent form, key insights, season win rate chart
+- **Tournament Profile page** — built
+- **Tournament Reports page** — built
+- **Head-to-Head page** — built (known surface filter bug, see below)
+- **Playing Styles page** — partially built / placeholder
+- **Track Record page** — partially built / placeholder
+- **Methodology page** — partially built / placeholder
+- **GitHub Actions pipeline** — running every 15 min, health monitoring, email alerts on failure
+- **Opening and closing odds preservation** — closing odds survive pipeline rebuilds correctly
+- **Live odds** — The Odds API, best-price-across-bookmakers comparison
+- **Vig-removed implied win probability** — working
+- **H2H record** — via API-Tennis get_H2H, working
+- **Surface-specific win rate** — working (filter by `type === 'singles'`, handle `""` as 0 not NaN — bug was found and fixed)
+- **Name-matching logic** — between The Odds API and API-Tennis, tested on 4 real player pairs including hyphenated names (Auger-Aliassime, Struff), reasonably solid
 
-**Wired in code but UNTESTED live:**
-- Open-Meteo weather integration (`fetchMatchWeather` in bsp-pipeline.js) —
-  built from their official docs, never actually called successfully (their
-  site blocks automated fetches from the environment used during planning).
-  Coordinates only added for Wimbledon so far (`VENUE_COORDS` object) — add
-  more venues as needed. **Test this first thing**, it's the newest, least
-  proven piece.
-- Note: Open-Meteo's free tier is for non-commercial use; the data itself is
-  CC BY 4.0. Check their commercial API pricing before high-volume production
-  use.
+### ⚠️ Built but untested / fragile
 
-**Not started at all — this is BSP Consult's actual product differentiator:**
-- The scoring methodology (W/UE-equivalent, surface form weighting, fatigue)
-  that would populate the `value %` field. This is deliberately left `null`
-  everywhere rather than faked. Building this requires Michael's own
-  expertise/decisions about what factors matter — don't invent it yourself,
-  ask him.
-- Playing-style classification (e.g. "Aggressive" vs "Defensive baseliner").
-  No vendor sells this. Same deal — needs his input on categories.
-- The name-matching logic between The Odds API and API-Tennis (matches by
-  last name) has been tested against 4 real player pairs across 2 different
-  days with no failures, including hyphenated names (Auger-Aliassime,
-  Jan-Lennard Struff) — reasonably solid, but not exhaustively tested against
-  a really busy match day. Watch for silent match-merge failures.
+- **Weather integration** — `fetchMatchWeather` in `bsp-pipeline.js` via Open-Meteo. Built from official docs, never successfully called in production. Coordinates only added for Wimbledon so far in `VENUE_COORDS` object. **Test this before relying on it.** Open-Meteo free tier is non-commercial — check commercial API pricing before scaling.
+- **H2H page surface filter** — known bug, surface filter does not work correctly
 
-## Your step-by-step plan
+### ❌ Not started — these are the remaining priorities
 
-1. **Get both API keys from Michael**, create a `.env` file:
-   ```
-   ODDS_API_KEY=...
-   API_TENNIS_KEY=...
-   ```
-2. **Run `node bsp-pipeline.js`** (needs `npm install dotenv` first). Fix
-   whatever breaks — this has never been run as a complete script before.
-3. **Test the Open-Meteo integration specifically** — it's the least proven
-   part. Confirm it returns sane temperature/wind/humidity numbers for a real
-   match.
-4. **Serve the dashboard properly**: put `matches.json` next to
-   `bsp-consult-dashboard.html`, serve both via a real HTTP server, confirm
-   it loads real data (green "Live" status, not the red error).
-5. **Set up a scheduled run** (cron, or whatever's simplest for how Michael
-   wants to host this) so `matches.json` refreshes automatically — right now
-   nothing regenerates it on its own.
-6. **Fix the landing page** (`bsp-consult-website.html`) to match the honest
-   odds-only product instead of the old fake "value bets" messaging.
-7. **Talk to Michael** about the scoring methodology and playing-style
-   categories before building either — these are business decisions, not
-   engineering ones.
-8. Once steps 1-6 are solid, help him figure out actual deployment (hosting,
-   domain, etc.) if he wants this properly live for members.
+1. **Value % scoring methodology** — the `value %` field is `null` everywhere intentionally. This is BSP Consult's actual product differentiator (W/UE ratio, surface form weighting, fatigue scoring). **Do not invent or approximate this — ask Michael for his scoring logic before building it.**
+2. **Playing-style classification** — "Aggressive", "Defensive baseliner", etc. No vendor provides this. Needs Michael's category definitions.
+3. **Sackmann tennis_atp integration** — historical match results, W/L splits, surface splits, tournament records. Being integrated, not complete.
+4. **Sackmann MatchChartingProject integration** — shot-by-shot data, serve/return stats, rally length. Being integrated, not complete.
+5. **Subscription / paywall layer** — no auth or paywall logic exists yet
+6. **Mobile responsiveness** — not addressed
 
-## Things to NOT do
+---
 
-- Don't fabricate any stat, ever, even temporarily "to make it look nice" —
-  ask Michael or leave it honestly blank.
-- Don't use the Sackmann dataset for anything customer-facing.
-- Don't copy matchup-tennis.fr's actual copy, images, or locked content —
-  UI/layout inspiration is fine, their content is not.
-- Don't commit API keys to git.
+## File structure
+
+```
+/
+├── bsp-consult-dashboard.html     ← Main frontend (single file, all pages)
+├── bsp-pipeline.js                ← Node.js data pipeline (runs on cron)
+├── matches.json                   ← Output: today's matches + odds
+├── tournament-profiles.json       ← Output: tournament data
+├── tournament-progression.json    ← Output: draw/bracket data
+├── player-profiles.json           ← Output: player stats cache
+├── api-tennis-integration.js      ← Reference: API-Tennis endpoint shapes
+├── backtest_elo.py                ← Internal Elo research tool (not production)
+├── backtest_demo.py               ← Demo version, tested on 15 matches
+├── demo_matches.csv               ← Test data for backtest
+└── .github/
+    └── workflows/                 ← GitHub Actions pipeline config
+```
+
+---
+
+## Architecture rules — follow these on every task
+
+1. **Never fabricate data.** Every stat, number, or chart must come from a confirmed real data source. If a field isn't available, show nothing or flag it — never approximate or invent.
+2. **Feasibility before UI.** For any new data field, confirm it exists in the pipeline before writing display code. Flag gaps rather than filling them.
+3. **Atomic writes only.** All pipeline output must use temp file + rename pattern — never write directly to live JSON files.
+4. **Global fixes over local patches.** If a bug exists in multiple places, fix it at the source, not per-instance.
+5. **Scope discipline.** Every task specifies what to keep unchanged — respect those boundaries exactly. Do not refactor, redesign, or touch anything outside the stated scope.
+6. **Real data sources only.** Sackmann datasets are flat files, not live APIs — any integration must download, parse, and cache them locally, not query at runtime.
+7. **ATP only.** No WTA content anywhere — filter it out at the pipeline level (`tourBadge === 'ATP'`).
+
+---
+
+## Data sources — confirmed status
+
+| Source | What it provides | Status |
+|---|---|---|
+| api-tennis.com | Fixtures, results, H2H, surface stats, box scores | Live |
+| The Odds API | Pre-match odds, Grand Slams / 1000s / 500s | Live |
+| OddsAPI | Odds for ATP 250 and broader coverage | Live |
+| Oddsapi | Additional odds depending on coverage | Live |
+| Open-Meteo | Weather at venue | Built, untested in prod |
+| Sackmann tennis_atp | Historical W/L, surface splits, tournament records | Integration in progress |
+| Sackmann MatchCharting | Shot-by-shot, serve/return, rally length | Integration in progress |
+
+**License warning — Sackmann datasets:** CC BY-NC-SA (non-commercial). Use for internal model R&D only. Never serve this data or a model trained on it directly to paying members.
+
+**Name matching note:** The Odds API and API-Tennis use different name formats. Current matching is by last name — tested against 4 real pairs. Watch for silent match-merge failures on busy match days.
+
+---
+
+## Design system — never deviate from this
+
+- **Aesthetic:** Dark dashboard, near-black backgrounds, flat surfaces, hairline borders only. No gradients, no shadows, no decorative backgrounds.
+- **Style reference:** Linear, Vercel dashboard, Stripe settings pages — confident typography, generous whitespace, clear hierarchy
+- **Typography:** Two font weights only — regular and medium (500). Never bold or heavy. Hierarchy through size and weight only, not colour.
+- **Case:** Sentence case everywhere — never title case or all caps
+- **Spacing:** Generous — data-dense but never cramped
+- **Stat display:** Neutral only — never use colour to indicate which player has the better stat
+- **Expandable panels:** All must have a visible close/dismiss control
+- **Charts:** Preferred over tables for comparison views where possible
+
+---
+
+## Non-negotiables — these are hard rules
+
+- Never show a pipeline health banner or infrastructure warnings to end users
+- Never highlight the better stat between two players with colour — neutral display only
+- Never show "went the distance (4+ sets)" stat for best-of-three format tournaments
+- Recent form calculations always include Challenger and ITF matches — never ATP-only
+- All tournament records must reflect full career history, not a truncated date range
+- Closing odds must be preserved through pipeline rebuilds — never recomputed at display time
+- The Clay surface tag must never render in green (it's orange/terracotta)
+- Confidence percentage: no decimals (show 88%, not 88.5%), white colour not orange
+- Player names in match lists must never be truncated — use flex-grow layout
+
+---
+
+## Known bugs to fix (in priority order)
+
+1. **H2H surface filter** — does not work correctly on the H2H page
+2. **Weather integration** — `fetchMatchWeather` has never successfully run in production, needs live test
+3. **Form bars** — confirmed to have had rendering issues on Today's Matches page (check current state before touching)
+4. **Filter pills on Match Analysis modal** — should show tournament names with "All surfaces" dropdown, not surface type pills (Clay/Hard/Grass)
+
+---
+
+## How tasks arrive
+
+Michael uploads task documents to Google Drive and shares them. Each document is a self-contained brief specifying:
+- What to build or fix
+- What not to touch
+- Which data source to use
+- Any feasibility checks required before writing UI
+
+**Read the task document fully before writing any code. Complete any feasibility checks first and report back before implementing.**
+
+---
+
+## Agent roles
+
+### Claude Code agent (developer)
+You write and edit code. You do not design. When a task requires visual judgment, flag it rather than guessing. Your two core files are `bsp-pipeline.js` and `bsp-consult-dashboard.html` — treat them as a production system.
+
+### Claude Design agent (visual/UI)
+You produce design direction, annotated mockups, and UI specifications. You do not write implementation code. When Michael sends a task you will receive: a screenshot of the current state, a description of what needs to change, and sometimes a reference design. Your output must be specific enough for Claude Code to implement without guessing.
+
+**Claude Design must never:**
+- Suggest fabricated data or placeholder charts — flag data availability gaps instead
+- Propose designs requiring new data sources not already confirmed available
+- Redesign sections outside the stated task scope
+
+---
+
+## Context on BSP Consult as a business
+
+- 400+ paying members
+- Channels: TikTok, Instagram (~22K followers), Telegram, ClickFunnels email list, bspconsult.app
+- Affiliate partnership: bet105 (crypto bookmaker)
+- Analytical framework: W/UE ratios, first-serve %, surface-specific records, Grand Slam experience differentials, physical fatigue, altitude/court speed conditions
+- Focus: ATP 250 and above only
+- Preferred players (positive framing): Alcaraz, Musetti, Fils
+- Less favourable framing: Zverev
+- TikTok compliance: avoid raw sportsbook UI visuals and direct betting terminology in algorithmically surfaced content
