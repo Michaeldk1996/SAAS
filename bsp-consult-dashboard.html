@@ -3345,6 +3345,11 @@ function openAnalysisModal(matchId){
   document.getElementById('aSectionMatchStats').innerHTML = buildMatchStatsSection(m);
 
   document.getElementById('aSectionProgression').innerHTML = buildMatchProgressionSection(m);
+  // Task 6: hide the Progression tab entirely in the first round (only one
+  // data point — nothing to trend). Reset display each open so it reappears
+  // for later-round matches.
+  const progNav = document.querySelector('#aTabs .asidenav-item[data-atab="progression"]');
+  if (progNav) progNav.style.display = progressionRoundState(m).state === 'hidden' ? 'none' : '';
 
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
 
@@ -5027,13 +5032,33 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 // gradient and readout are simply omitted rather than fabricated. Player
 // line colors are fixed (not the app's generic accent/court-clay pair) to
 // match the design spec exactly.
-function buildMatchProgressionSection(m){
+// Round-aware progression state (Task 6). Derived from how many rounds of
+// box-score data each player has in this tournament — NOT from hardcoded
+// round names — so it works across every format:
+//   pts <= 1  → 'hidden'  first round, one data point: nothing to trend, hide the tab
+//   pts === 2 → 'bars'    second round, one prior match: side-by-side bar comparison
+//   pts >= 3  → 'chart'   third round+, two+ prior matches: full line chart (as built)
+//   no draw   → 'none'    no tournament data on file at all
+function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
   const data = tournamentProgression.tournaments[bareTour];
   const p1Data = data ? data.players.find(p => String(p.playerKey) === String(m.p1Key)) : null;
   const p2Data = data ? data.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
-  if (!data || (!p1Data && !p2Data)) {
+  if (!data || (!p1Data && !p2Data)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
+  const pts = Math.max(p1Data ? p1Data.rounds.length : 0, p2Data ? p2Data.rounds.length : 0);
+  const state = pts <= 1 ? 'hidden' : (pts === 2 ? 'bars' : 'chart');
+  return { state, data, p1Data, p2Data, bareTour, pts };
+}
+
+function buildMatchProgressionSection(m){
+  const st = progressionRoundState(m);
+  const { data, p1Data, p2Data, bareTour, pts } = st;
+  if (st.state === 'none') {
     return `<div class="acomingsoon">No live tournament draw data on file for this match yet.</div>`;
+  }
+  if (st.state === 'hidden') {
+    // Tab is hidden from the sidebar in this state; content is a safe fallback only.
+    return `<div class="acomingsoon">Progression opens once a player has more than one match on record in this event.</div>`;
   }
 
   const P1_COLOR = '#3E7BFA', P2_COLOR = '#E8934B';
@@ -5041,6 +5066,46 @@ function buildMatchProgressionSection(m){
   const p2Surname = (m.p2 || '').trim().split(' ').pop().toUpperCase();
   const p1Latest = p1Data && p1Data.rounds.length ? p1Data.rounds[p1Data.rounds.length - 1] : null;
   const p2Latest = p2Data && p2Data.rounds.length ? p2Data.rounds[p2Data.rounds.length - 1] : null;
+
+  // Second round (one prior match): a line "trend" over two points reads as
+  // noise, so show a side-by-side bar comparison at the latest round instead.
+  if (st.state === 'bars') {
+    const lastIdx = data.rounds.length - 1;
+    const bar = (val, color, isRatio) => {
+      const max = isRatio ? Math.max(val || 0, 1) * 1.3 : 100;
+      const w = val == null ? 0 : Math.max(2, Math.min(100, (val / max) * 100));
+      return `<div style="flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,0.05);overflow:hidden;"><div style="height:100%;width:${w}%;background:${color};border-radius:5px;"></div></div>`;
+    };
+    const barCards = PROGRESSION_METRIC_ORDER.map(([metricKey, label]) => {
+      const isRatio = metricKey === 'winnersUnforcedRatio';
+      const fmt = v => v == null ? '—' : (isRatio ? v.toFixed(2) : `${v}%`);
+      const p1v = p1Latest ? p1Latest.metrics[metricKey] : null;
+      const p2v = p2Latest ? p2Latest.metrics[metricKey] : null;
+      const fieldArr = data.fieldAverage.metrics[metricKey];
+      const fieldV = Array.isArray(fieldArr) ? fieldArr[lastIdx] : null;
+      const row = (name, val, color) => `
+        <div style="display:flex;align-items:center;gap:10px;margin:5px 0;">
+          <span style="width:74px;flex:0 0 auto;font-size:11px;color:#8b93a3;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;">${name}</span>
+          ${bar(val, color, isRatio)}
+          <span style="width:46px;flex:0 0 auto;text-align:right;font-size:12.5px;font-weight:700;color:${color};font-family:'IBM Plex Mono',monospace;">${fmt(val)}</span>
+        </div>`;
+      return `
+        <div class="tprogress-card">
+          <div class="tphead"><div class="tptitle">${label}</div></div>
+          <div style="padding:4px 2px 2px;">
+            ${p1Data ? row(p1Surname, p1v, P1_COLOR) : ''}
+            ${p2Data ? row(p2Surname, p2v, P2_COLOR) : ''}
+            ${fieldV != null ? `<div style="font-size:10.5px;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin-top:6px;">Field avg ${fmt(fieldV)}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
+    return `
+      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at their latest round in this draw, compared side by side.">ⓘ</span></div>
+      <div class="tprogress-legend"><div class="note" style="margin:0;">Round ${pts} — ${pts - 1} match${pts - 1 === 1 ? '' : 'es'} played. Side-by-side comparison until enough rounds exist to trend a line.</div></div>
+      <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
+    `;
+  }
 
   const legendHtml = `
     <div class="item"><span class="dot" style="background:${P1_COLOR}"></span>${m.p1}</div>
