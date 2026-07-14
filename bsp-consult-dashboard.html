@@ -642,7 +642,7 @@
   .modal-analysis .msheet-row{ display:grid; grid-template-columns:110px 1fr 110px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }
   .modal-analysis .msheet-row:hover{ background:rgba(255,255,255,0.015); }
   .modal-analysis .msheet-row:last-child{ border-bottom:none; }
-  .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; }
+  .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
   .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
@@ -2659,27 +2659,32 @@ const MATCH_STAT_ORDER = [
   ]],
 ];
 
-// Grouped stat-sheet table row (no bars): leader's cell gets a tinted
-// background + bold colored value, mirroring the mock's dec() step.
-// `lowerBetter` flips the comparison for stats where fewer is better
-// (double faults, unforced errors).
-function msheetRowHtml(label, kind, p1Val, p2Val, lowerBetter){
+// Stats that show the real underlying fraction alongside the percentage
+// (e.g. Break Points Saved "(1/1) 100%"), when the raw won/total is on file.
+// Uses real data only — never derives a fraction from the percentage.
+const MSHEET_FRACTION_KEYS = new Set([
+  'Service:Break Points Saved',
+  'Return:Break Points Converted',
+  'Points:Total Points Won',
+]);
+
+// Grouped stat-sheet table row (no bars). Both values render in the same
+// neutral style regardless of who leads — no winner highlight, no per-value
+// colour coding. Fraction stats additionally show the real "(won/total)"
+// before the percentage when the raw counts are on file.
+function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw){
   if (p1Val == null && p2Val == null) return '';
-  const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
-  const bothPresent = p1Val != null && p2Val != null;
-  const aLeads = bothPresent && (lowerBetter ? p1Val < p2Val : p1Val > p2Val);
-  const bLeads = bothPresent && !aLeads;
-  const aColor = aLeads ? '#7ba4ff' : '#5b6472';
-  const bColor = bLeads ? '#f0a95f' : '#8a7a68';
-  const aCellBg = aLeads ? 'rgba(62,123,250,0.12)' : 'transparent';
-  const bCellBg = bLeads ? 'rgba(232,147,75,0.12)' : 'transparent';
-  const aWeight = aLeads ? 700 : 600;
-  const bWeight = bLeads ? 700 : 600;
+  const fmt = (v, raw) => {
+    if (v == null) return '—';
+    if (kind !== 'pct') return v;
+    const pct = `${v}%`;
+    return (raw && raw.total > 0) ? `(${raw.won}/${raw.total}) ${pct}` : pct;
+  };
   return `
     <div class="msheet-row">
-      <span class="msheet-val" style="font-weight:${aWeight};color:${aColor};background:${aCellBg};">${fmt(p1Val)}</span>
+      <span class="msheet-val">${fmt(p1Val, p1Raw)}</span>
       <span class="msheet-label">${label}</span>
-      <span class="msheet-val" style="font-weight:${bWeight};color:${bColor};background:${bCellBg};">${fmt(p2Val)}</span>
+      <span class="msheet-val">${fmt(p2Val, p2Raw)}</span>
     </div>
   `;
 }
@@ -2693,7 +2698,12 @@ function buildMatchStatsSection(m){
   }
   const groups = MATCH_STAT_ORDER.map(([, groupLabel, rows]) => {
     const rowsHtml = rows
-      .map(([key, label, kind, lowerBetter]) => msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], lowerBetter))
+      .map(([key, label, kind]) => {
+        const wantFraction = MSHEET_FRACTION_KEYS.has(key);
+        const p1Raw = wantFraction && m.matchStats.p1.raw ? m.matchStats.p1.raw[key] : null;
+        const p2Raw = wantFraction && m.matchStats.p2.raw ? m.matchStats.p2.raw[key] : null;
+        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw);
+      })
       .filter(Boolean)
       .join('');
     if (!rowsHtml) return '';

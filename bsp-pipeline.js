@@ -1588,12 +1588,22 @@ function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
 
   const extractFor = playerKey => {
     const out = {};
+    // Raw won/total counts behind the ratio-based (`pct`) stats, kept so the
+    // UI can show the real fraction (e.g. Break Points Saved "(1/1) 100%")
+    // instead of only the derived percentage. Only populated when the API
+    // actually returns both stat_won and stat_total for that stat.
+    const raw = {};
     for (const def of MATCH_STAT_DEFS) {
       const stat = findMatchStat(matchStats, playerKey, def.type, def.name);
       if (!stat) continue;
       const key = `${def.type}:${def.name}`;
       if (def.kind === 'pct') {
         out[key] = stat.stat_total > 0 ? Math.round((stat.stat_won / stat.stat_total) * 1000) / 10 : null;
+        const won = parseInt(stat.stat_won, 10);
+        const total = parseInt(stat.stat_total, 10);
+        if (Number.isFinite(won) && Number.isFinite(total) && total > 0) {
+          raw[key] = { won, total };
+        }
       } else if (def.kind === 'pctDirect') {
         const n = parseFloat(stat.stat_value);
         out[key] = Number.isFinite(n) ? n : null;
@@ -1601,6 +1611,7 @@ function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
         out[key] = parseInt(stat.stat_value, 10) || 0;
       }
     }
+    if (Object.keys(raw).length > 0) out.raw = raw;
     return out;
   };
 
