@@ -150,13 +150,31 @@ def main():
         sys.exit(1)
 
     matches = json.load(open(MATCHES))
-    upcoming = [m for m in matches if not m.get('finalScore') and m.get('date')]
-    if not upcoming:
-        print('No upcoming dated matches — nothing to capture.')
+    # Targets = every dated match we still need movement for. Upcoming matches are
+    # (re)captured every run so their lines stay live. A completed match's opening
+    # -> closing timeline is frozen the moment it finishes, so we capture it ONCE
+    # (only when it has no movement yet) and let the pipeline preserve it forever
+    # after that. This is what makes completed matches render the same per-book
+    # breakdown + movement chart as upcoming ones instead of the reduced view.
+    def has_movement(m):
+        om = m.get('oddsMovement') or {}
+        return bool(om.get('books'))
+
+    targets = []
+    for m in matches:
+        if not m.get('date'):
+            continue
+        if m.get('finalScore'):
+            if not has_movement(m):
+                targets.append(m)          # completed & missing -> capture once
+        else:
+            targets.append(m)              # upcoming -> always refresh
+    if not targets:
+        print('No dated matches need movement capture — nothing to do.')
         return
 
-    start = min(m['date'] for m in upcoming)
-    stop = max(m['date'] for m in upcoming)
+    start = min(m['date'] for m in targets)
+    stop = max(m['date'] for m in targets)
     frm = f'{start}T00:00:00Z'
     to = (datetime.strptime(stop, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%dT00:00:00Z')
 
@@ -167,9 +185,9 @@ def main():
         sys.exit(1)
     fixtures = fixtures if isinstance(fixtures, list) else (fixtures.get('data') or [])
 
-    # join oddspapi fixtures to our upcoming matches by date + both surnames
+    # join oddspapi fixtures to our target matches by date + both surnames
     joined = {}   # id(m) -> {fixtureId, orient}
-    for m in upcoming:
+    for m in targets:
         for f in fixtures:
             if (f.get('startTime') or '')[:10] != m['date']:
                 continue
@@ -180,7 +198,7 @@ def main():
             break
 
     if not joined:
-        print('No oddspapi fixtures matched our upcoming matches by name/date — '
+        print('No oddspapi fixtures matched our target matches by name/date — '
               'left matches.json untouched.')
         return
 
@@ -191,7 +209,7 @@ def main():
     gap_no_history = []     # fixture resolved but no book returned a series
     now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    for m in upcoming:
+    for m in targets:
         j = joined.get(id(m))
         if not j:
             gap_no_history.append(m)

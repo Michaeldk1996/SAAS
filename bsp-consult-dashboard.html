@@ -5356,8 +5356,6 @@ const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'seas
 // and the comparison line charts so a player keeps one colour across the view.
 const TOURX_CMP_COLORS = ['#3E7BFA', '#E8934B', '#3ECF8E', '#B98BFF'];
 const TOURX_RV_CAP = 4, TOURX_PP_CAP = 4;
-// Deepest round a player appears in (playedIdx over data rounds R1..SF) → human "reached" label.
-const TOURX_REACHED_BY_PLAYEDIDX = ['Round of 128', 'Round of 64', 'Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
 
 // Six metrics, keyed to tournament-progression.json field names, in the
 // same order as the match-analysis Progression tab. All metrics rank
@@ -5376,6 +5374,39 @@ const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const TOURX_TOTAL_WINNERS = [64, 32, 16, 8, 4, 2, 1];
 const TOURX_SURF_COLOR = { grass: '#3ECF8E', clay: '#eda869', hard: '#7ba4ff' };
 const TOURX_ACC = '#3E7BFA', TOURX_MUT = 'rgba(62,123,250,0.32)';
+
+// Round labels are drawn PER TOURNAMENT from the real draw size. A Grand Slam
+// opens at R128; a 28/32-draw ATP 250/500 opens at the Round of 32 (byes fill
+// the spare slots) — so its report ladder is R32 → R16 → QF → SF → F, not the
+// fixed 128 ladder. `tourxActiveLabels` is set to the active tournament's ladder
+// at the top of every reports render and read by the chip row, charts and tables.
+let tourxActiveLabels = TOURX_ROUND_LABELS;
+const TOURX_REACHED_PHRASE = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', F: 'Final' };
+
+// Authoritative event tier for a progression tournament (bare-city key, e.g.
+// "Gstaad"). The live matches carry venue.category for the current draws, which
+// is the reliable source; unknown tournaments fall back to the played-round
+// count below, then to the ATP 32-draw ladder.
+function tourxTournamentCategory(tourName){
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
+  const key = norm(tourName);
+  if (key){
+    const hit = (matches || []).find(m => m.venue && m.venue.category &&
+      (norm(m.tour).indexOf(key) >= 0 || norm(m.venue.city) === key));
+    if (hit) return hit.venue.category;
+  }
+  return null;
+}
+// Display ladder sized to the draw, anchored at the Final. Never fewer slots
+// than rounds actually played, so a fully-completed event whose live fixtures
+// have aged out of matches.json still gets its full ladder.
+function tourxRoundLabelsFor(tourName, playedRounds){
+  const cat = tourxTournamentCategory(tourName);
+  let n = cat === 'Grand Slam' ? 7 : cat === 'ATP Masters 1000' ? 6 : 5;
+  n = Math.max(n, (playedRounds || []).length);
+  n = Math.min(Math.max(n, 1), TOURX_ROUND_LABELS.length);
+  return TOURX_ROUND_LABELS.slice(TOURX_ROUND_LABELS.length - n);
+}
 
 function tourxHexA(hex, a){ const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
 function tourxCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -5662,6 +5693,8 @@ function tourxBuildTournament(name){
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
   if (!t) return null;
   const rounds = t.rounds || [];
+  // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam).
+  const roundLabels = tourxRoundLabelsFor(name, rounds);
   const players = (t.players || []).map(p => {
     const data = {};
     TOURX_METRICS.forEach(m => { data[m.key] = (p.rounds || []).map(r => r.metrics ? r.metrics[m.key] : null); });
@@ -5679,15 +5712,17 @@ function tourxBuildTournament(name){
     const wonLast = maxWonIdx === playedIdx && playedIdx >= 0;
     // finishRound: the round they exited at (lost), or the next round they
     // advanced to if they won their last recorded match.
+    // finishRound is a DRAW-SIZED display label (R32/R16/QF/…), so an ATP 250
+    // player who lost their opener reads "Round of 32", not "Round of 128".
     let finishRound;
-    if (wonLast){ finishRound = TOURX_ROUND_LABELS[Math.min(rounds.indexOf(rounds[playedIdx]) + 1, TOURX_ROUND_LABELS.length - 1)]; }
-    else { finishRound = rounds[playedIdx]; }
+    if (wonLast){ finishRound = roundLabels[Math.min(playedIdx + 1, roundLabels.length - 1)]; }
+    else { finishRound = roundLabels[playedIdx] || rounds[playedIdx]; }
     // "reached" — human label for the deepest round the player has data for
     // (used by the Head-to-head pickers); advance one round if they won it.
-    const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_BY_PLAYEDIDX[playedIdx] || '—';
+    const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_PHRASE[finishRound] || '—';
     return { name: p.name, playerKey: p.playerKey, data, opponents, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
   });
-  return { name, rounds, players, field: t.fieldAverage || null };
+  return { name, rounds, roundLabels, players, field: t.fieldAverage || null };
 }
 // Map a finish round to a player-view group + "Reached" label. Rounds earlier
 // than R16 are not shown individually (return null), matching the design.
@@ -5696,7 +5731,7 @@ function tourxGroupFor(finishRound){
     case 'F':  return { group: 'Finalist',          reached: 'Final' };
     case 'SF': return { group: 'Semi-finalists',    reached: 'Semi-final' };
     case 'QF': return { group: 'Quarter-finalists', reached: 'Quarter-final' };
-    case 'R4': return { group: 'Round of 16',       reached: 'Round of 16' };
+    case 'R16': return { group: 'Round of 16',      reached: 'Round of 16' };
     default:   return null;
   }
 }
@@ -5710,6 +5745,8 @@ function renderTourxReports(){
   }
   if (!tourxState.tour || !available.includes(tourxState.tour)) tourxState.tour = available[0];
   const T = tourxBuildTournament(tourxState.tour);
+  // Every reports sub-view reads the active tournament's draw-sized ladder.
+  tourxActiveLabels = (T && T.roundLabels) || TOURX_ROUND_LABELS;
   const rounds = T.rounds;
 
   // --- filter bar: tournament selector ---
@@ -5756,7 +5793,7 @@ function renderTourxReports(){
 // Round selector — used by Round comparison ("Compare at round") and Player
 // progression ("Highlight round"); both drive the shared tourxState.roundIdx.
 function tourxRoundChipRowHtml(label){
-  const chips = [{ label: 'All rounds', idx: null }].concat(TOURX_ROUND_LABELS.map((r, i) => ({ label: r, idx: i })))
+  const chips = [{ label: 'All rounds', idx: null }].concat(tourxActiveLabels.map((r, i) => ({ label: r, idx: i })))
     .map(rc => {
       const active = (rc.idx === tourxState.roundIdx) || (rc.idx == null && tourxState.roundIdx == null);
       const color = active ? '#eef2f8' : '#8b93a3';
@@ -5769,7 +5806,7 @@ function tourxRoundChipRowHtml(label){
       <div style="display:inline-flex;gap:5px;flex-wrap:wrap;">${chips}</div>
     </div>`;
 }
-function tourxSelectTour(name){ tourxState.tour = name; renderTourxReports(); }
+function tourxSelectTour(name){ tourxState.tour = name; tourxState.roundIdx = null; renderTourxReports(); }
 function tourxSetRound(idx){ tourxState.roundIdx = idx; renderTourxReports(); }
 function tourxSetView(v){ tourxState.view = v; renderTourxReports(); }
 // Player-progression "spotlight": tapping a player's name-chip beside any chart
@@ -5988,8 +6025,8 @@ function tourxProgressionGridHtml(players, shownMetrics, field){
       return `<span onclick="tourxTogglePP('${tourxEsc(p.name)}')" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:400;cursor:pointer;opacity:${on ? 1 : 0.32};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:${c};flex:none;"></span><span style="color:#9aa3b2;">${tourxEsc(lastName(p.name))}</span><span style="font-family:'IBM Plex Mono',monospace;color:#cfd6e6;">${val}</span></span>`;
     }).join('');
     const series = players.map((p, i) => ({ name: p.name, color: TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length], vals: p.data[m.key] || [], opps: p.opponents || [], on: !off[p.name] }));
-    const svg = tourxMultiLineChartSvg(series, fld, m.kind, TOURX_ROUND_LABELS, hi);
-    const table = tourxCmpTableHtml(series, fld, m.kind, TOURX_ROUND_LABELS, hi);
+    const svg = tourxMultiLineChartSvg(series, fld, m.kind, tourxActiveLabels, hi);
+    const table = tourxCmpTableHtml(series, fld, m.kind, tourxActiveLabels, hi);
     return `<div style="min-width:0;">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:2px;">
           <span style="font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#7c8496;white-space:nowrap;flex:none;">${m.label}</span>
@@ -6035,14 +6072,14 @@ function tourxCompareCardsHtml(players, shownMetrics, field, mode){
     if (mode === 'rounds' && players.length === 2){
       const a = players[0], b = players[1];
       const fl = fld.slice(0, Math.max(a.data[m.key].length, b.data[m.key].length));
-      svg = tourxH2HChartSvg(a.data[m.key], b.data[m.key], fl, a.opponents, b.opponents, m.kind, TOURX_ROUND_LABELS, 'cmp' + Math.random().toString(36).slice(2, 7));
+      svg = tourxH2HChartSvg(a.data[m.key], b.data[m.key], fl, a.opponents, b.opponents, m.kind, tourxActiveLabels, 'cmp' + Math.random().toString(36).slice(2, 7));
     } else if (mode === 'rounds' && players.length === 1){
       const vals = (players[0].data[m.key] || []).filter(v => v != null);
-      svg = tourxLineChartSvg(vals, fld.slice(0, vals.length), TOURX_CMP_COLORS[0], m.kind, TOURX_ROUND_LABELS.slice(0, vals.length), null);
+      svg = tourxLineChartSvg(vals, fld.slice(0, vals.length), TOURX_CMP_COLORS[0], m.kind, tourxActiveLabels.slice(0, vals.length), null);
     } else {
       const series = players.map((p, i) => ({ name: p.name, color: TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length], vals: p.data[m.key] || [], opps: p.opponents || [] }));
-      svg = tourxMultiLineChartSvg(series, fld, m.kind, TOURX_ROUND_LABELS, hi)
-          + tourxCmpTableHtml(series, fld, m.kind, TOURX_ROUND_LABELS, hi);
+      svg = tourxMultiLineChartSvg(series, fld, m.kind, tourxActiveLabels, hi)
+          + tourxCmpTableHtml(series, fld, m.kind, tourxActiveLabels, hi);
     }
     return `<div style="border:1px solid rgba(255,255,255,0.06);border-radius:13px;background:#0b1017;padding:14px 15px 8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;">
@@ -6156,12 +6193,13 @@ function tourxRoundViewHtml(T){
   // advanced); the current frontier round shows everyone who played it, since a
   // winner can't be inferred until the following round produces box scores.
   const renderRound = (rIdx) => {
-    const roundLabel = rounds[rIdx] || TOURX_ROUND_LABELS[rIdx] || `Round ${rIdx + 1}`;
+    const roundLabel = tourxActiveLabels[rIdx] || rounds[rIdx] || `Round ${rIdx + 1}`;
+    const lastIdx = tourxActiveLabels.length - 1;
     let players, advancersOnly;
-    if (rIdx === 6 && rounds.length >= 7){
-      // 128-draw final: no "next round", so the champion is cross-referenced from profiles.
+    if (rIdx === lastIdx && rounds.length >= tourxActiveLabels.length){
+      // Draw's final round: no "next round", so the champion is cross-referenced from profiles.
       const champ = (typeof tournamentProfiles !== 'undefined' && tournamentProfiles[T.name] && tournamentProfiles[T.name].defendingChampion && tournamentProfiles[T.name].defendingChampion.name) || null;
-      const finalists = T.players.filter(p => p.nRounds >= 7 && hasBox(p, 6));
+      const finalists = T.players.filter(p => p.nRounds >= tourxActiveLabels.length && hasBox(p, lastIdx));
       players = champ ? finalists.filter(p => tourxNameMatch(p.name, champ)) : [];
       advancersOnly = true;
       if (!players.length) return filterBar + dnaCard('Data not available for the final — no champion could be matched to a player with an ingested final box score.');
@@ -6313,7 +6351,7 @@ function tourxH2HViewHtml(T){
     const fld = (field[m.key] || []).slice(0, Math.max(av.length, bv.length));
     const aLast = lastNN(av), bLast = lastNN(bv);
     const uid = 'h2h' + Math.random().toString(36).slice(2, 7);
-    const svg = tourxH2HChartSvg(av, bv, fld, pa.opponents, pb.opponents, m.kind, TOURX_ROUND_LABELS, uid);
+    const svg = tourxH2HChartSvg(av, bv, fld, pa.opponents, pb.opponents, m.kind, tourxActiveLabels, uid);
     return `<div style="border:1px solid rgba(255,255,255,0.06);border-radius:13px;background:#0b1017;padding:14px 15px 8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;">
           <span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-weight:600;font-family:'IBM Plex Mono',monospace;">${m.label}</span>
