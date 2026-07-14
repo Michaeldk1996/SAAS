@@ -3674,6 +3674,16 @@ let ppTourAverage = { dna: {}, stats: {} };
 // ladder for the Serve / Return & rally cards). Written by
 // tools/apply-radar-recalibration.js into player-profiles.json.
 let radarCalibration = { cardBenchmarks: {} };
+// Task 12 — career + last-52-week splits (Jeff Sackmann ATP data via
+// tennisabstract), keyed by profile key. Loaded lazily; the profile page shows
+// the sections only for players that were ingested.
+let careerSplits = {};
+async function loadCareerSplits(){
+  try {
+    const res = await fetch('./career-splits.json', { cache: 'no-store' });
+    if (res.ok){ const d = await res.json(); careerSplits = d.players || {}; }
+  } catch (err) { /* additive; absence just hides the sections */ }
+}
 async function loadPlayerProfiles(){
   try {
     const res = await fetch('./player-profiles.json', { cache: 'no-store' });
@@ -3693,7 +3703,60 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All' };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', splitsOpen: { career: false, last52: false } };
+// Task 12 — expand/collapse the Career splits / Last 52 weeks reference tables.
+function togglePpSplits(which){
+  ppState.splitsOpen[which] = !ppState.splitsOpen[which];
+  const profile = playerProfiles[ppState.key];
+  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+}
+// One splits table (Career or Last 52 weeks). Rows with zero matches were
+// dropped at ingest, so we render exactly what exists; sections with no data at
+// all are omitted by the caller. Columns: M, W, L, Win%, Set W-L, Set%.
+function ppSplitsTableHtml(rows){
+  const order = ['Hard','Clay','Grass','Grand Slams','Masters','Other Tours','Best of 5','Best of 3','Finals','Semi-finals','Quarter-finals','vs. Righties','vs. Lefties','vs. Top 10'];
+  const head = `<div style="display:grid;grid-template-columns:1.4fr repeat(6,1fr);gap:8px;padding:0 4px 8px;font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">
+    <span></span><span style="text-align:right;">M</span><span style="text-align:right;">W</span><span style="text-align:right;">L</span><span style="text-align:right;">Win%</span><span style="text-align:right;">Set W-L</span><span style="text-align:right;">Set%</span></div>`;
+  const body = order.filter(k => rows[k]).map(k => {
+    const r = rows[k];
+    const wr = r.winPct != null ? r.winPct + '%' : '—';
+    const sp = r.setPct != null ? r.setPct + '%' : '—';
+    return `<div style="display:grid;grid-template-columns:1.4fr repeat(6,1fr);gap:8px;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.05);align-items:center;">
+      <span style="font-size:12.5px;color:#cfd4de;font-weight:600;">${k}</span>
+      <span style="text-align:right;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#aab2c0;">${r.M}</span>
+      <span style="text-align:right;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#8fe4bd;">${r.W}</span>
+      <span style="text-align:right;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#E8607A;">${r.L}</span>
+      <span style="text-align:right;font-size:12.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#e7e9ee;">${wr}</span>
+      <span style="text-align:right;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;">${r.setW}-${r.setL}</span>
+      <span style="text-align:right;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#aab2c0;">${sp}</span>
+    </div>`;
+  }).join('');
+  return head + body;
+}
+function ppSplitsSection(title, which, rows, subtitle){
+  const open = ppState.splitsOpen[which];
+  const caret = open ? '▾' : '▸';
+  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;overflow:hidden;">
+    <div onclick="togglePpSplits('${which}')" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;cursor:pointer;user-select:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="color:#7ba4ff;font-size:13px;width:14px;">${caret}</span>
+        <div><div style="font-size:15px;font-weight:700;">${title}</div><div style="font-size:11.5px;color:#8b93a3;margin-top:2px;">${subtitle}</div></div>
+      </div>
+      <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${open?'Hide':'Show'}</span>
+    </div>
+    ${open ? `<div style="padding:4px 18px 20px;">${ppSplitsTableHtml(rows)}</div>` : ''}
+  </div>`;
+}
+function ppCareerSplitsHtml(p){
+  const s = careerSplits[String(p.key)];
+  if (!s) return '';
+  const career = s.career && Object.keys(s.career).length ? ppSplitsSection('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches`) : '';
+  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitsSection('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches`) : '';
+  if (!career && !last52) return '';
+  return `<div style="display:flex;flex-direction:column;gap:16px;">
+    <div style="font-size:12.5px;color:#5b6472;">Career & recent splits · source: Jeff Sackmann ATP match data</div>
+    ${career}${last52}</div>`;
+}
 const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
 
 function ppHexA(hex, a){
@@ -4455,6 +4518,9 @@ function buildPlayerProfileHtml(p){
         <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Key insights</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
       </div>
+
+      <!-- CAREER & LAST-52-WEEK SPLITS (Task 12) -->
+      ${ppCareerSplitsHtml(p)}
 
     </div>
 
@@ -6638,6 +6704,7 @@ loadTournamentProgression();
 // player-profiles.json powers the dedicated Player Profile page (opened from
 // the Players tab). Loaded once on page load like the other profile datasets.
 loadPlayerProfiles();
+loadCareerSplits();
 // Refresh automatically every 3 minutes while the page is open — cheap
 // since it's just re-reading the local matches.json, not re-calling
 // the paid APIs (that only happens when bsp-pipeline.js itself runs).
