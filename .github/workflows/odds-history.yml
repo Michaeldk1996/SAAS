@@ -1,0 +1,80 @@
+name: BSP odds-movement capture
+
+# Laptop-independent capture of each upcoming match's opening -> now odds
+# timeline (m.oddsMovement). Once a match finishes, its opening/closing odds are
+# derived from this stored real series — so a match must be captured at least
+# once WHILE it is still upcoming or its open/close are lost forever.
+#
+# This runs on its own cadence (independent of the main data pipeline) and is
+# the ONLY workflow that commits matches.json back to the repo. The main
+# pipeline (pipeline.yml) reads that committed file, preserves oddsMovement, and
+# derives openingOdds/closingOdds on its next run, then publishes to Pages — so
+# open/close reach the live site within one pipeline cycle of each capture.
+#
+# Cost: refresh-odds-history.py draws exactly ONE oddspapi quota unit per run
+# (the single /v4/fixtures lookup); the /v4/historical-odds calls are free. At
+# every 3 hours that is ~240 units/month, just under the free 250/month tier.
+# To go tighter (e.g. hourly, ~720/month) the paid tier must be active first.
+#
+# SETUP REQUIRED: add repo secret ODDSPAPI_KEY
+# (Settings -> Secrets and variables -> Actions -> New repository secret).
+# Without it the run fails fast with a clear error.
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # every 3 hours (UTC). ~240 runs/month, under free tier.
+  workflow_dispatch:          # allow manual "Run workflow" from the Actions tab
+
+# Never let two capture runs overlap — they both write/push matches.json.
+concurrency:
+  group: bsp-odds-history
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # needed to commit the refreshed matches.json back
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Capture odds-movement timelines
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+        run: |
+          if [ -z "$ODDSPAPI_KEY" ]; then
+            echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          python3 refresh-odds-history.py
+
+      - name: Commit refreshed matches.json (only if changed)
+        run: |
+          if git diff --quiet -- matches.json; then
+            echo "No odds-movement changes to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-odds-bot"
+          git config user.email "bsp-odds-bot@users.noreply.github.com"
+          git add matches.json
+          git commit -m "chore(odds): capture opening->now odds movement [skip ci]"
+          # Another run (or a manual commit) may have advanced main since checkout;
+          # rebase and retry so the capture is never lost to a benign race.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed matches.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push matches.json after 3 attempts."
+          exit 1

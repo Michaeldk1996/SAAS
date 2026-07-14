@@ -2895,6 +2895,68 @@ async function runPipeline() {
     // No prior matches.json (first run) — nothing to preserve.
   }
 
+  // First-observed-finished timestamp. The tennis API gives no real match end
+  // time, so the first run that sees a match as finished stamps finishedAt=now
+  // (accurate to the ~15-min run cadence); later runs carry the original value
+  // forward. The dashboard's "Past" filter drops a match 24h after finishedAt.
+  const priorFinishedAt = new Map();
+  try {
+    const priorFa = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
+    for (const pm of priorFa) {
+      if (!pm.finishedAt) continue;
+      priorFinishedAt.set(`id:${pm.id}`, pm.finishedAt);
+      priorFinishedAt.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm.finishedAt);
+    }
+  } catch (e) {
+    // No prior matches.json (first run) — every finished match is newly seen.
+  }
+  const nowIso = new Date().toISOString();
+  for (const m of matches) {
+    if (!m.finalScore) continue;
+    m.finishedAt = priorFinishedAt.get(`id:${m.id}`)
+      || priorFinishedAt.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`)
+      || nowIso;
+  }
+
+  // Opening / closing odds, derived (no extra API calls) from the real
+  // opening->now timeline the odds-history refresher already stored in
+  // m.oddsMovement. openingOdds = the first captured point; closingOdds = the
+  // last point at/before the match start time. Both come from a single
+  // reference book (the one already headlining m.odds if present, else the book
+  // with the most points) so the two values are directly comparable. Because
+  // oddsMovement is preserved across rebuilds by the block above, these derive
+  // correctly for finished matches too — no separate preservation needed. A
+  // match with no timeline simply gets neither field (honest omission).
+  let derivedOC = 0;
+  for (const m of matches) {
+    const books = m.oddsMovement && m.oddsMovement.books;
+    if (!books || !Object.keys(books).length) continue;
+    const preferred = m.odds && m.odds.bookmaker;
+    const ref = (preferred && books[preferred]) ? preferred
+      : Object.keys(books).reduce((best, n) => {
+          const len = (books[n].p1 || []).length + (books[n].p2 || []).length;
+          const bl = best ? (books[best].p1 || []).length + (books[best].p2 || []).length : -1;
+          return len > bl ? n : best;
+        }, null);
+    const s = ref && books[ref];
+    const p1 = (s && s.p1) || [];
+    const p2 = (s && s.p2) || [];
+    if (!p1.length || !p2.length) continue;
+    const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time || '') ? m.time : '00:00'}:00Z`);
+    const lastBeforeStart = arr => {
+      if (!Number.isFinite(startMs)) return arr[arr.length - 1];
+      let chosen = null;
+      for (const pt of arr) { if (Date.parse(pt[0]) <= startMs) chosen = pt; }
+      return chosen || arr[arr.length - 1];
+    };
+    const o1 = p1[0], o2 = p2[0];
+    const c1 = lastBeforeStart(p1), c2 = lastBeforeStart(p2);
+    m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
+    m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
+    derivedOC++;
+  }
+  console.log(`Derived opening/closing odds for ${derivedOC} match(es) from stored oddsMovement.`);
+
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
   const enriched = matches.filter(m => m.h2h !== null).length;

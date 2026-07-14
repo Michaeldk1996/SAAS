@@ -233,6 +233,14 @@
   [data-page="matches"] .mx-col2{ display:flex; align-items:baseline; gap:9px; justify-content:flex-end; }
   [data-page="matches"] .mx-odds{ font-family:var(--mx-font-mono); font-size:27px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
   [data-page="matches"] .mx-implied{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--mx-text-tertiary); width:38px; text-align:right; }
+  [data-page="matches"] .mx-scorelabel{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); }
+  [data-page="matches"] .mx-finodds{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; line-height:1.1; align-self:center; }
+  [data-page="matches"] .mx-finodds .fo-pair{ display:flex; align-items:baseline; gap:5px; }
+  [data-page="matches"] .mx-finodds .fo-v{ font-family:var(--mx-font-mono); font-size:13px; font-weight:600; color:var(--mx-text-secondary); }
+  [data-page="matches"] .mx-finodds .fo-pair.open .fo-v{ color:var(--mx-text-faint); font-weight:500; }
+  [data-page="matches"] .mx-finodds .fo-l{ font-family:var(--mx-font-ui); font-size:8.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); min-width:34px; text-align:left; }
+  [data-page="matches"] .mx-chip-x{ color:var(--mx-text-faint); font-weight:600; margin-left:3px; }
+  [data-page="matches"] .mx-chip.active .mx-chip-x{ color:#fff; }
   [data-page="matches"] .mx-col3{ display:flex; gap:10px; justify-content:flex-end; align-items:center; font-family:var(--mx-font-mono); }
   [data-page="matches"] .mx-form{ font-size:12.5px; color:var(--mx-text-primary); min-width:34px; text-align:right; }
   [data-page="matches"] .mx-form.empty{ color:var(--mx-text-faint); }
@@ -1042,7 +1050,7 @@
           <button data-day="tomorrow">Tomorrow<span class="dbottom" id="tomorrowBottom"></span></button>
           <button data-day="day2" id="day2Tab"><span id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
           <button class="mx-daypill" data-day="all">All days</button>
-          <button class="mx-daypill" data-day="past">Live &amp; past</button>
+          <button class="mx-daypill" data-day="past">Past</button>
         </div>
       </div>
       <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">▶</button>
@@ -1391,11 +1399,19 @@ async function loadMatches(){
 function buildTournamentFilters(){
   const group = document.getElementById('tournamentGroup');
   if (!group) return;
-  const tournaments = [...new Set(matches.map(m => m.tour).filter(Boolean))].sort();
+  // Only tournaments still in play get a chip. Once every match for a tournament
+  // is finished it's complete, so its chip is dropped — even though its finished
+  // cards still linger in the match list for 48h (only the filter chip goes).
+  const tournaments = [...new Set(
+    matches.filter(isUpcomingOrLive).map(m => m.tour).filter(Boolean)
+  )].sort();
   if (state.tournament !== 'all' && !tournaments.includes(state.tournament)) state.tournament = 'all';
-  group.innerHTML = tournaments.map(t =>
-    `<button class="mx-chip${state.tournament === t ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}">${t}</button>`
-  ).join('');
+  group.innerHTML = tournaments.map(t => {
+    const active = state.tournament === t;
+    // The × on the active chip is a second way to clear the filter; clicking
+    // anywhere on the active chip already toggles it back to "all".
+    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}">${t}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
+  }).join('');
 }
 
 // Real numbers computed from matches.json — no hardcoded placeholders.
@@ -1433,7 +1449,13 @@ function getFiltered(){
         const isPast = bucket === 'past' || bucket === 'yesterday' || bucket === 'daymin2';
         if (isPast && !m.live) return false;
       } else if (state.day === 'past') {
-        if (bucket !== 'past' && !m.live) return false;
+        // "Past" = finished matches only, kept for 24h after they finished.
+        // finishedAt is stamped by the pipeline on the first run it sees the
+        // result (accurate to the ~15-min run cadence). Live/in-progress
+        // matches stay on the Today view and never appear here.
+        if (!isFinishedMatch(m)) return false;
+        if (!m.finishedAt) return false;
+        if (Date.now() - new Date(m.finishedAt).getTime() > 86400000) return false;
       } else if (bucket !== state.day) return false;
     }
     if (state.tour !== 'all' && m.tourBadge !== state.tour) return false;
@@ -1513,6 +1535,18 @@ function statusLabel(m){
   if (day === 'tomorrow') return 'Tomorrow';
   if (day === 'day2') return day2Label;
   return 'Upcoming';
+}
+
+// A match is "finished" once it's decided (real final score) and not live.
+function isFinishedMatch(m){
+  return !m.live && !!m.finalScore;
+}
+// A match still to be played (or in progress) — the opposite of "in the past".
+// Used to decide which tournaments are still active for the filter bar.
+function isUpcomingOrLive(m){
+  if (m.live) return true;
+  const b = matchDayBucket(m);
+  return b === 'today' || b === 'tomorrow' || b === 'day2' || b === 'later';
 }
 
 // Real live score only — built from m.liveScore (per-set games, from the API-Tennis
@@ -1628,7 +1662,7 @@ function renderMatches(){
     if (m.live) {
       scoreLineHtml = `<div class="mx-livescore">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (finalScore) {
-      scoreLineHtml = `<div class="mx-livescore">${finalScore.display}<span class="note">Final score</span></div>`;
+      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${finalScore.display}<span class="note">Final score</span></div>`;
     } else if (isPastDay) {
       scoreLineHtml = `<div class="mx-livescore">Score pending<span class="note">not yet returned by the data provider</span></div>`;
     }
@@ -1644,6 +1678,24 @@ function renderMatches(){
     const p1SubDisplay = finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p1?.price) : (isPastDay ? 'Sets' : ''));
     const p2MainDisplay = finalScore ? String(finalScore.p2Sets) : (hasOdds ? p2OddsDisplay : (isPastDay ? '—' : ''));
     const p2SubDisplay = finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p2?.price) : (isPastDay ? 'Sets' : ''));
+    // Opening/closing odds on a finished card. Both are derived by the pipeline
+    // from the real stored odds timeline (m.openingOdds = first snapshot,
+    // m.closingOdds = last snapshot before start). Closing falls back to the
+    // last plain odds (bestOdds/odds) when no timeline was captured, so a match
+    // that only ever had a single price still shows a closing line. Any value
+    // that was never recorded is simply omitted — never a placeholder.
+    const p1Open  = finalScore ? (m.openingOdds?.p1 ?? null) : null;
+    const p2Open  = finalScore ? (m.openingOdds?.p2 ?? null) : null;
+    const p1Close = finalScore ? (m.closingOdds?.p1 ?? m.bestOdds?.p1?.price ?? m.odds?.p1 ?? null) : null;
+    const p2Close = finalScore ? (m.closingOdds?.p2 ?? m.bestOdds?.p2?.price ?? m.odds?.p2 ?? null) : null;
+    const finOddsCell = (open, close) => {
+      const rows = [];
+      if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${open.toFixed(2)}</span></span>`);
+      if (close != null) rows.push(`<span class="fo-pair"><span class="fo-l">${open != null ? 'Close' : 'Odds'}</span><span class="fo-v">${close.toFixed(2)}</span></span>`);
+      return rows.length ? `<span class="mx-finodds">${rows.join('')}</span>` : '';
+    };
+    const p1OddsCell = finOddsCell(p1Open, p1Close);
+    const p2OddsCell = finOddsCell(p2Open, p2Close);
     return `
     <div class="mx-match">
       <div class="mx-meta">
@@ -1666,6 +1718,7 @@ function renderMatches(){
           ${p1IsFavorite ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
         <div class="mx-col2">
+          ${p1OddsCell}
           <span class="mx-odds" style="color:${p1Color}">${p1MainDisplay}</span>
           <span class="mx-implied">${p1SubDisplay}</span>
         </div>
@@ -1680,6 +1733,7 @@ function renderMatches(){
           ${(hasOdds && !p1IsFavorite) ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
         <div class="mx-col2">
+          ${p2OddsCell}
           <span class="mx-odds" style="color:${p2Color}">${p2MainDisplay}</span>
           <span class="mx-implied">${p2SubDisplay}</span>
         </div>
@@ -3349,9 +3403,10 @@ document.addEventListener('click', e => {
 document.getElementById('tournamentGroup').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tournament]'); if (!btn) return;
   const value = btn.dataset.tournament;
-  const next = state.tournament === value ? 'all' : value;
-  state.tournament = next;
-  document.querySelectorAll('#tournamentGroup .mx-chip').forEach(b => b.classList.toggle('active', next !== 'all' && b.dataset.tournament === next));
+  // Re-clicking the already-selected tournament (or clicking its × chip, which
+  // lives inside that same button) deselects it and returns to all tournaments.
+  state.tournament = state.tournament === value ? 'all' : value;
+  buildTournamentFilters();
   renderMatches();
 });
 document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
