@@ -1,0 +1,78 @@
+name: BSP score + odds refresh
+
+# Laptop-independent replacement for the local com.bsp.refresh-scores launchd
+# job. Runs refresh-scores.py, which patches ONLY the score/live fields
+# (finalScore, live, liveStatus, liveScore, liveGameScore, liveServer) and, for
+# upcoming ATP 250 matches that have no line yet, the headline odds
+# (m.odds / m.bestOdds) from API-Tennis. Everything else the pipeline wrote is
+# left intact. It then commits matches.json back so the change persists and the
+# main pipeline (pipeline.yml) publishes it to the live site on its next run.
+#
+# Cadence: every 10 minutes. GitHub Actions cron is best-effort and often runs
+# late under load, so real-world spacing is ~10-20 min — fresher than the 15-min
+# pipeline rebuild but not the punctual 5-min the local job gave. Commits happen
+# only when a score/odds field actually changes, so churn tracks match activity.
+#
+# Cost: API-Tennis calls only (1 get_fixtures + a few get_odds per run); no
+# oddspapi quota. Uses the existing API_TENNIS_KEY secret.
+#
+# SETUP: repo secret API_TENNIS_KEY (already required by the main pipeline).
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes (UTC); Actions may delay under load.
+  workflow_dispatch:          # allow manual "Run workflow" from the Actions tab
+
+# Never let two refresh runs overlap — they both write/push matches.json.
+concurrency:
+  group: bsp-scores
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # needed to commit the refreshed matches.json back
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh scores + ATP-250 headline odds
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          if [ -z "$API_TENNIS_KEY" ]; then
+            echo "::error::API_TENNIS_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          python3 refresh-scores.py
+
+      - name: Commit refreshed matches.json (only if changed)
+        run: |
+          if git diff --quiet -- matches.json; then
+            echo "No score/odds changes to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-odds-bot"
+          git config user.email "bsp-odds-bot@users.noreply.github.com"
+          git add matches.json
+          git commit -m "chore(scores): refresh scores + ATP-250 headline odds [skip ci]"
+          # Another workflow (odds capture) may have advanced main since checkout;
+          # rebase and retry so the refresh is never lost to a benign race.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed matches.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push matches.json after 3 attempts."
+          exit 1
