@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSP Consult · Account settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#0b0c10; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  a{ color:#3E7BFA; text-decoration:none; }
+  a:hover{ color:#7ba4ff; }
+  select,input{ font-family:'Hanken Grotesk',sans-serif; }
+  select{ -webkit-appearance:none; appearance:none; cursor:pointer; }
+  input::placeholder{ color:#4a515f; }
+  ::selection{ background:rgba(62,123,250,0.35); }
+
+  .page{ display:flex; justify-content:center; padding:56px 40px; }
+  .shell{ width:920px; max-width:100%; display:flex; flex-direction:column; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .topbar h1{ margin:0; font-size:24px; font-weight:700; letter-spacing:-0.02em; color:#f4f6fa; }
+  .topbar .actions{ display:flex; align-items:center; gap:18px; }
+  .topbar .actions a, .topbar .actions button{ font-size:13px; font-weight:600; cursor:pointer; background:transparent; border:none; font-family:inherit; }
+  .backlink{ color:#3E7BFA; }
+  .signout{ color:#8b93a3; }
+  .signout:hover{ color:#cfd4de; }
+
+  .container{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:#08090C; overflow:hidden; display:grid; grid-template-columns:220px 1fr; }
+
+  .sidebar{ border-right:1px solid rgba(255,255,255,0.07); padding:22px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar .cap{ font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; padding:4px 10px 10px; }
+  .nav-item{ font-size:13px; font-weight:500; color:#8b93a3; background:transparent; border:none; text-align:left; border-radius:8px; padding:9px 10px; cursor:pointer; font-family:inherit; }
+  .nav-item:hover{ color:#e7e9ee; }
+  .nav-item.active{ font-weight:600; color:#fff; background:rgba(255,255,255,0.06); }
+
+  .panel{ padding:28px 32px; min-height:580px; }
+  .panel h2{ margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:-0.02em; color:#f4f6fa; }
+  .panel .desc{ margin:0 0 28px; font-size:12.5px; color:#7a8496; }
+
+  .section{ display:none; }
+  .section.active{ display:block; }
+
+  /* profile */
+  .profile-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .profile-id{ display:flex; align-items:center; gap:14px; }
+  .avatar{ width:48px; height:48px; border-radius:50%; flex:none; background:#141824; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#cfd4de; font-family:'IBM Plex Mono',monospace; }
+  .profile-id .nm{ font-size:14px; font-weight:600; color:#e7e9ee; }
+  .profile-id .em{ font-size:12px; color:#7a8496; }
+  .editlink{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; background:transparent; border:none; font-family:inherit; }
+  .editlink:hover{ color:#7ba4ff; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+  .fld{ display:flex; flex-direction:column; gap:6px; }
+  .fld.tz{ max-width:340px; margin-bottom:18px; }
+  .fld .lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
+  .fld input, .fld select{ background:rgba(255,255,255,0.02); color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; width:100%; }
+  .fld.editing input, .fld.editing select{ background:#0b0d12; border-color:rgba(62,123,250,0.4); }
+  .fld select{ padding-right:32px; }
+  .selwrap{ position:relative; }
+  .selwrap .caret{ position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#6f7ba0; font-size:10px; pointer-events:none; }
+  .helper{ font-size:11.5px; color:#5b6472; margin-top:6px; }
+
+  /* odds */
+  .oddstrack{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; border:1px solid rgba(255,255,255,0.1); border-radius:11px; padding:5px; background:#0e1015; max-width:460px; }
+  .oddsopt{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; }
+  .oddsopt.active{ background:rgba(62,123,250,0.12); border-color:rgba(62,123,250,0.55); }
+  .oddsopt .ol{ font-size:14px; font-weight:700; color:#aeb4c0; }
+  .oddsopt.active .ol{ color:#fff; }
+  .oddsopt .oe{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6b7280; }
+  .oddsopt.active .oe{ color:#7ba4ff; }
+
+  /* subscription */
+  .subwrap{ display:flex; flex-direction:column; gap:16px; max-width:500px; }
+  .subcard{ border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:#0e1015; overflow:hidden; }
+  .subtop{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .subtop .planline{ display:flex; align-items:center; gap:9px; }
+  .subtop .pname{ font-size:14.5px; font-weight:700; color:#f4f6fa; }
+  .badge-active{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#8fe4bd; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.28); border-radius:5px; padding:2px 7px; }
+  .subtop .renew{ font-size:12.5px; color:#7a8496; }
+  .subtop .price{ text-align:right; }
+  .subtop .price .amt{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; color:#f4f6fa; }
+  .subtop .price .per{ font-size:12px; color:#7a8496; }
+  .subpay{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; }
+  .subpay .left{ display:flex; align-items:center; gap:11px; }
+  .visachip{ width:34px; height:22px; border-radius:5px; background:#1a1f2b; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:700; color:#cfd4de; }
+  .subpay .card{ font-size:13px; color:#cfd4de; }
+  .subpay .exp{ font-size:12.5px; color:#7a8496; }
+  .sublinks{ display:flex; align-items:center; gap:20px; }
+  .sublinks span{ font-size:13px; font-weight:600; cursor:pointer; }
+  .sublinks .lk{ color:#3E7BFA; }
+  .sublinks .lk:hover{ color:#7ba4ff; }
+  .sublinks .cancel{ color:#8b93a3; }
+  .sublinks .cancel:hover{ color:#cfd4de; }
+
+  /* notifications */
+  .notifwrap{ display:flex; flex-direction:column; max-width:540px; }
+  .notifrow{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .notifrow .nl{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .notifrow .nd{ font-size:12px; color:#7a8496; }
+  .switch{ width:38px; height:22px; border-radius:12px; flex:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); position:relative; cursor:pointer; }
+  .switch .knob{ position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .12s; }
+  .switch.on{ background:#3E7BFA; border-color:#3E7BFA; }
+  .switch.on .knob{ left:18px; }
+  .switch.disabled{ opacity:0.5; cursor:not-allowed; }
+  .switch.disabled .knob{ background:#5b6472; }
+
+  /* security */
+  .secwrap{ display:flex; flex-direction:column; gap:20px; max-width:500px; }
+  .secblock{ display:flex; flex-direction:column; gap:12px; }
+  .secblock .h{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .secblock input{ background:#0b0d12; color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; outline:none; }
+  .secblock input:focus{ border-color:rgba(62,123,250,0.5); }
+  .updatepw{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; align-self:flex-start; background:transparent; border:none; font-family:inherit; }
+  .updatepw:hover{ color:#7ba4ff; }
+  .sec-msg{ font-size:12px; min-height:0; }
+  .sec-msg.err{ color:#E8607A; }
+  .sec-msg.ok{ color:#8fe4bd; }
+  .twofa{ display:flex; align-items:center; justify-content:space-between; padding-top:20px; border-top:1px solid rgba(255,255,255,0.06); }
+  .twofa .head{ display:flex; align-items:center; gap:9px; }
+  .twofa .tl{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .soon{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; color:#7a8496; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:5px; padding:2px 7px; }
+  .twofa .td{ font-size:12px; color:#7a8496; }
+
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0e1015; border:1px solid rgba(62,207,142,0.3); color:#8fe4bd; font-size:13px; padding:10px 18px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .2s; }
+  .toast.show{ opacity:1; }
+
+  @media (max-width:720px){
+    .page{ padding:28px 16px; }
+    .container{ grid-template-columns:1fr; }
+    .sidebar{ border-right:none; border-bottom:1px solid rgba(255,255,255,0.07); flex-direction:row; flex-wrap:wrap; gap:6px; padding:14px; }
+    .sidebar .cap{ width:100%; padding-bottom:4px; }
+    .grid2{ grid-template-columns:1fr; }
+    .oddstrack{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <section class="shell">
+      <div class="topbar">
+        <h1>Account settings</h1>
+        <div class="actions">
+          <a class="backlink" href="bsp-consult-dashboard.html">← Back to dashboard</a>
+          <button class="signout" onclick="doSignOut()">Sign out</button>
+        </div>
+      </div>
+
+      <div class="container">
+        <!-- sidebar -->
+        <div class="sidebar">
+          <span class="cap">Settings</span>
+          <button class="nav-item active" data-nav="profile" onclick="setNav('profile')">Profile</button>
+          <button class="nav-item" data-nav="odds" onclick="setNav('odds')">Odds format</button>
+          <button class="nav-item" data-nav="billing" onclick="setNav('billing')">Subscription</button>
+          <button class="nav-item" data-nav="notif" onclick="setNav('notif')">Notifications</button>
+          <button class="nav-item" data-nav="security" onclick="setNav('security')">Security</button>
+        </div>
+
+        <!-- panel -->
+        <div class="panel">
+          <h2 id="panelTitle">Profile</h2>
+          <p class="desc" id="panelDesc">Your identity across BSP Consult.</p>
+
+          <!-- profile -->
+          <div class="section active" id="sec-profile">
+            <div class="profile-head">
+              <div class="profile-id">
+                <span class="avatar" id="avatar">AB</span>
+                <div>
+                  <div class="nm" id="pName">—</div>
+                  <div class="em" id="pEmail">—</div>
+                </div>
+              </div>
+              <button class="editlink" id="editBtn" onclick="toggleEdit()">Edit</button>
+            </div>
+            <div class="grid2">
+              <label class="fld" id="fldName">
+                <span class="lbl">Full name</span>
+                <input type="text" id="inName" disabled>
+              </label>
+              <label class="fld" id="fldEmail">
+                <span class="lbl">Email address</span>
+                <input type="email" id="inEmail" disabled>
+              </label>
+            </div>
+            <label class="fld tz" id="fldTz">
+              <span class="lbl">Timezone</span>
+              <span class="selwrap">
+                <select id="inTz" disabled>
+                  <option>(GMT+00:00) London</option>
+                  <option>(GMT+01:00) Amsterdam</option>
+                  <option>(GMT+01:00) Paris</option>
+                  <option>(GMT+02:00) Athens</option>
+                  <option>(GMT-05:00) New York</option>
+                  <option>(GMT-08:00) Los Angeles</option>
+                  <option>(GMT+10:00) Sydney</option>
+                </select>
+                <span class="caret">▾</span>
+              </span>
+              <span class="helper">Sets the time on every match card, alert and report.</span>
+            </label>
+          </div>
+
+          <!-- odds -->
+          <div class="section" id="sec-odds">
+            <div class="oddstrack">
+              <button class="oddsopt" data-fmt="decimal" onclick="setOdds('decimal')"><span class="ol">Decimal</span><span class="oe">2.62</span></button>
+              <button class="oddsopt" data-fmt="fractional" onclick="setOdds('fractional')"><span class="ol">Fractional</span><span class="oe">13/8</span></button>
+              <button class="oddsopt" data-fmt="american" onclick="setOdds('american')"><span class="ol">American</span><span class="oe">+162</span></button>
+            </div>
+          </div>
+
+          <!-- subscription -->
+          <div class="section" id="sec-billing">
+            <div class="subwrap">
+              <div class="subcard">
+                <div class="subtop">
+                  <div>
+                    <div class="planline">
+                      <span class="pname" id="subPlan">Pro</span>
+                      <span class="badge-active">ACTIVE</span>
+                    </div>
+                    <span class="renew" id="subRenew">Renews 14 August 2026</span>
+                  </div>
+                  <div class="price">
+                    <span class="amt" id="subPrice">€99</span><span class="per"> / month</span>
+                  </div>
+                </div>
+                <div class="subpay">
+                  <div class="left">
+                    <span class="visachip">VISA</span>
+                    <span class="card">Visa ending 4291</span>
+                  </div>
+                  <span class="exp">Expires 08/28</span>
+                </div>
+              </div>
+              <div class="sublinks">
+                <span class="lk" onclick="alert('Plan changes are coming soon.')">Upgrade plan</span>
+                <span class="lk" onclick="alert('Invoices are coming soon.')">View invoices</span>
+                <span class="cancel" onclick="alert('To cancel, contact support before your trial ends.')">Cancel subscription</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- notifications -->
+          <div class="section" id="sec-notif">
+            <div class="notifwrap">
+              <div class="notifrow">
+                <div><div class="nl">Match alerts</div><div class="nd">Value flags and line moves on matches you follow.</div></div>
+                <div class="switch" id="sw-matches" onclick="toggleNotif('matches')"><span class="knob"></span></div>
+              </div>
+              <div class="notifrow">
+                <div><div class="nl">Weekly digest</div><div class="nd">A Monday summary of model performance and edges.</div></div>
+                <div class="switch" id="sw-digest" onclick="toggleNotif('digest')"><span class="knob"></span></div>
+              </div>
+              <div class="notifrow" style="border-bottom:none;">
+                <div><div class="nl">Billing emails</div><div class="nd">Receipts, renewals and payment issues.</div></div>
+                <div class="switch" id="sw-billing" onclick="toggleNotif('billing')"><span class="knob"></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- security -->
+          <div class="section" id="sec-security">
+            <div class="secwrap">
+              <div class="secblock">
+                <span class="h">Change password</span>
+                <input type="password" id="pwCurrent" placeholder="Current password" autocomplete="current-password">
+                <div class="grid2" style="margin-bottom:0;">
+                  <input type="password" id="pwNew" placeholder="New password" autocomplete="new-password">
+                  <input type="password" id="pwConfirm" placeholder="Confirm new password" autocomplete="new-password">
+                </div>
+                <span class="sec-msg" id="pwMsg"></span>
+                <button class="updatepw" onclick="updatePassword()">Update password</button>
+              </div>
+              <div class="twofa">
+                <div>
+                  <div class="head">
+                    <span class="tl">Two-factor authentication</span>
+                    <span class="soon">COMING SOON</span>
+                  </div>
+                  <span class="td">Add an authenticator app for a second layer of security.</span>
+                </div>
+                <div class="switch disabled"><span class="knob"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="auth.js"></script>
+  <script>
+    var user = BSP.requireAuth('auth.html');
+    var editing = false;
+
+    var navMeta = {
+      profile:  { title: 'Profile',                desc: 'Your identity across BSP Consult.' },
+      odds:     { title: 'Odds format',            desc: 'Applies to every price shown across the platform.' },
+      billing:  { title: 'Subscription & billing', desc: 'Manage your plan and payment method.' },
+      notif:    { title: 'Notifications',          desc: 'Choose what lands in your inbox.' },
+      security: { title: 'Security',               desc: 'Keep your account protected.' }
+    };
+
+    function toast(msg){
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._h);
+      t._h = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+    }
+
+    function initials(name){
+      return String(name || '').split(/\s+/).map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+    }
+
+    function setNav(key){
+      document.querySelectorAll('.nav-item').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-nav') === key);
+      });
+      document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+      document.getElementById('sec-' + key).classList.add('active');
+      document.getElementById('panelTitle').textContent = navMeta[key].title;
+      document.getElementById('panelDesc').textContent = navMeta[key].desc;
+    }
+
+    /* ---- profile ---- */
+    function renderProfile(){
+      document.getElementById('avatar').textContent = initials(user.name);
+      document.getElementById('pName').textContent = user.name;
+      document.getElementById('pEmail').textContent = user.email;
+      document.getElementById('inName').value = user.name;
+      document.getElementById('inEmail').value = user.email;
+      document.getElementById('inTz').value = user.timezone;
+    }
+
+    function toggleEdit(){
+      if (!editing){
+        editing = true;
+        document.getElementById('editBtn').textContent = 'Save';
+        ['fldName','fldEmail','fldTz'].forEach(function(id){ document.getElementById(id).classList.add('editing'); });
+        document.getElementById('inName').disabled = false;
+        document.getElementById('inEmail').disabled = false;
+        document.getElementById('inTz').disabled = false;
+      } else {
+        var name = document.getElementById('inName').value.trim();
+        var email = document.getElementById('inEmail').value.trim();
+        var tz = document.getElementById('inTz').value;
+        if (!name){ toast('Name cannot be empty.'); return; }
+        if (!BSP.isValidEmail(email)){ toast('Enter a valid email.'); return; }
+        var updated = BSP.updateProfile({ name: name, email: email, timezone: tz });
+        if (!updated){ toast('Could not save.'); return; }
+        user = updated;
+        editing = false;
+        document.getElementById('editBtn').textContent = 'Edit';
+        ['fldName','fldEmail','fldTz'].forEach(function(id){ document.getElementById(id).classList.remove('editing'); });
+        document.getElementById('inName').disabled = true;
+        document.getElementById('inEmail').disabled = true;
+        document.getElementById('inTz').disabled = true;
+        renderProfile();
+        toast('Profile saved.');
+      }
+    }
+
+    /* ---- odds ---- */
+    function renderOdds(){
+      document.querySelectorAll('.oddsopt').forEach(function(o){
+        o.classList.toggle('active', o.getAttribute('data-fmt') === user.oddsFormat);
+      });
+    }
+    function setOdds(fmt){
+      user = BSP.setOddsFormat(fmt) || user;
+      renderOdds();
+      toast('Odds format set to ' + fmt + '.');
+    }
+
+    /* ---- subscription ---- */
+    function renderSubscription(){
+      var isPro = user.plan === 'pro';
+      document.getElementById('subPlan').textContent = isPro ? 'Pro' : 'Edge';
+      document.getElementById('subPrice').textContent = isPro ? '€99' : '€49';
+      // Derive a renewal date 30 days out for a realistic, stable-ish display.
+      var d = new Date();
+      d.setDate(d.getDate() + 30);
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('subRenew').textContent = 'Renews ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    /* ---- notifications ---- */
+    function renderNotif(){
+      ['matches','digest','billing'].forEach(function(k){
+        document.getElementById('sw-' + k).classList.toggle('on', !!user.notif[k]);
+      });
+    }
+    function toggleNotif(key){
+      var next = Object.assign({}, user.notif);
+      next[key] = !next[key];
+      user = BSP.setNotif(next) || user;
+      renderNotif();
+    }
+
+    /* ---- security ---- */
+    function updatePassword(){
+      var cur = document.getElementById('pwCurrent').value;
+      var nw = document.getElementById('pwNew').value;
+      var cf = document.getElementById('pwConfirm').value;
+      var msg = document.getElementById('pwMsg');
+      msg.className = 'sec-msg';
+      if (nw.length < 8){ msg.className = 'sec-msg err'; msg.textContent = 'New password must be at least 8 characters.'; return; }
+      if (nw !== cf){ msg.className = 'sec-msg err'; msg.textContent = 'New passwords do not match.'; return; }
+      BSP.changePassword(cur, nw).then(function(){
+        msg.className = 'sec-msg ok';
+        msg.textContent = 'Password updated.';
+        document.getElementById('pwCurrent').value = '';
+        document.getElementById('pwNew').value = '';
+        document.getElementById('pwConfirm').value = '';
+      }).catch(function(err){
+        msg.className = 'sec-msg err';
+        msg.textContent = err.message;
+      });
+    }
+
+    function doSignOut(){
+      BSP.signOut();
+      location.href = 'auth.html';
+    }
+
+    // Initial render (only if authed — requireAuth redirects otherwise).
+    if (user){
+      renderProfile();
+      renderOdds();
+      renderSubscription();
+      renderNotif();
+    }
+  </script>
+</body>
+</html>

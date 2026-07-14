@@ -1006,11 +1006,44 @@
       <button data-tab="metho">Methodology</button>
     </div>
   </div>
-  <div class="account">
-    <span class="account-label">Account</span>
-    <span class="account-avatar">A</span>
+  <div class="account" id="acctBox" style="cursor:pointer;gap:10px;">
+    <a id="acctMain" href="account.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+      <span class="account-label" id="acctLabel">Account</span>
+      <span class="account-avatar" id="acctAvatar">A</span>
+    </a>
+    <span id="acctSignout" onclick="BSP&&BSP.signOut&&(BSP.signOut(),location.href='funnel.html')" title="Sign out" style="display:none;cursor:pointer;color:#8b93a3;font-size:12px;font-weight:600;padding:4px 8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;">Sign out</span>
   </div>
 </div>
+<script src="./auth.js"></script>
+<script>
+// Reflect the BSP auth session in the top-nav account chip (soft — the dashboard
+// is not hard-gated so direct review still works; the funnel → auth → dashboard
+// flow lands a signed-in user here).
+(function(){
+  function initAcct(){
+    try{
+      var u = (window.BSP && BSP.currentUser) ? BSP.currentUser() : null;
+      var label = document.getElementById('acctLabel');
+      var avatar = document.getElementById('acctAvatar');
+      var signout = document.getElementById('acctSignout');
+      var main = document.getElementById('acctMain');
+      if (u){
+        var initials = (u.name||u.email||'A').split(/\s+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+        if (avatar) avatar.textContent = initials;
+        if (label) label.textContent = u.name || u.email;
+        if (signout) signout.style.display = '';
+        if (main) main.href = 'account.html';
+      } else {
+        if (label) label.textContent = 'Sign in';
+        if (main) main.href = 'auth.html?mode=signin';
+        if (signout) signout.style.display = 'none';
+      }
+    }catch(e){}
+  }
+  if (document.readyState !== 'loading') initAcct();
+  else document.addEventListener('DOMContentLoaded', initAcct);
+})();
+</script>
 
 <!-- MATCHES TAB -->
 <div class="tabpage active" data-page="matches">
@@ -3636,6 +3669,11 @@ document.addEventListener('click', e => {
 // changes per player, the layout/components/UX stay identical (per the spec).
 let playerProfiles = {};
 let ppTourAverage = { dna: {}, stats: {} };
+// Task 11 — empirical Match Charting Project calibration (radar percentiles are
+// injected per player; cardBenchmarks give the tour-wide median + percentile
+// ladder for the Serve / Return & rally cards). Written by
+// tools/apply-radar-recalibration.js into player-profiles.json.
+let radarCalibration = { cardBenchmarks: {} };
 async function loadPlayerProfiles(){
   try {
     const res = await fetch('./player-profiles.json', { cache: 'no-store' });
@@ -3643,6 +3681,7 @@ async function loadPlayerProfiles(){
     const data = await res.json();
     playerProfiles = data.players || {};
     ppTourAverage = data.tourAverage || { dna: {}, stats: {} };
+    radarCalibration = data.radarCalibration || { cardBenchmarks: {} };
   } catch (err) {
     console.error('Could not load player-profiles.json:', err);
     playerProfiles = {};
@@ -3789,13 +3828,38 @@ const PP_RETURN_DEFS = [
   { label: 'Winners / point',    key: 'Points:Winners',                max: 100, suffix: '%' },
   { label: 'Service pts won',    key: 'Points:Service Points Won',     max: 100, suffix: '%' },
 ];
+// Task 11 Part 3 — percentile of a value against the MCP breakpoint ladder, so
+// a player sitting at tour median renders a bar at exactly the midpoint.
+function ppPercentileOf(value, bp){
+  if (value == null || !bp || !bp.length) return null;
+  if (value <= bp[0]) return 0;
+  if (value >= bp[bp.length - 1]) return 100;
+  for (let i = 1; i < bp.length; i++){
+    if (value <= bp[i]){ const span = bp[i] - bp[i-1] || 1; return Math.round(i - 1 + (value - bp[i-1]) / span); }
+  }
+  return 100;
+}
 function ppStatRows(defs, stats, color){
+  const bench = (radarCalibration && radarCalibration.cardBenchmarks) || {};
   return defs.map(d => {
     const v = stats ? stats[d.key] : null;
     if (v == null) return '';
-    const avg = ppTourAverage.stats ? ppTourAverage.stats[d.key] : null;
-    const barW = Math.max(3, Math.min(100, Math.round(v / d.max * 100)));
-    const avgText = avg != null ? `Tour avg ${avg}${d.suffix}` : '';
+    // Prefer the empirical Match Charting Project benchmark: tour avg = MCP
+    // median, and the bar is the player's percentile in that distribution
+    // (tour-median → 50%). Stats MCP can't derive (e.g. Break Points Converted)
+    // fall back to the built player-pool average with an absolute-scaled bar.
+    const b = bench[d.key];
+    let barW, avgText;
+    if (b && b.breakpoints){
+      const pctPos = ppPercentileOf(v, b.breakpoints);
+      barW = Math.max(3, Math.min(100, pctPos));
+      const med = d.suffix === '%' ? Math.round(b.median) : Math.round(b.median * 10) / 10;
+      avgText = `Tour avg ${med}${d.suffix}`;
+    } else {
+      const avg = ppTourAverage.stats ? ppTourAverage.stats[d.key] : null;
+      barW = Math.max(3, Math.min(100, Math.round(v / d.max * 100)));
+      avgText = avg != null ? `Tour avg ${avg}${d.suffix}` : '';
+    }
     return `
       <div>
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px;">
@@ -4078,8 +4142,12 @@ function buildPlayerProfileHtml(p){
       <div style="font-size:11.5px;color:#6b7280;">${k.sub}</div>
     </div>`).join('');
 
-  // Player DNA
+  // Player DNA — Task 11: percentiles are calibrated against the Match Charting
+  // Project pool (dnaSource==='mcp'). Under-charted players (<10 charted
+  // matches) degrade to an explicit "limited data" state rather than drawing a
+  // confident shape from a couple of matches. Movement is a long-rally proxy.
   const names = ['Serve','Return','Baseline','Movement','Net play','Clutch'];
+  const dnaMcp = p.dnaSource === 'mcp';
   const vals = ppDnaVals(p.dna ? p.dna[surf] : null);
   const avg = ppDnaVals(ppTourAverage.dna);
   const radar = ppRadarSvg(vals, avg, BLUE);
@@ -4093,6 +4161,23 @@ function buildPlayerProfileHtml(p){
         <span style="justify-self:end;font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#e7e9ee;">${v}</span>
       </div>`;
   }).join('');
+  // The DNA card body: real radar when MCP-calibrated, else a limited-data card.
+  const dnaMatches = p.dnaMatches || 0;
+  const dnaBodyHtml = dnaMcp
+    ? `<div style="display:grid;grid-template-columns:0.82fr 1fr;gap:14px;padding:20px 22px;align-items:center;">
+         <div style="display:flex;align-items:center;justify-content:center;padding:4px;">${radar}</div>
+         <div style="display:flex;flex-direction:column;gap:13px;">${attrsHtml}</div>
+       </div>
+       <div style="padding:0 22px 16px;font-size:11px;color:#5b6472;line-height:1.5;">Calibrated against ${(radarCalibration.cardBenchmarks && radarCalibration.minMatches)||10}+ charted-match ATP players (Match Charting Project). ${dnaMatches} charted matches for ${pesc(p.name.split(' ').pop())}. Movement / Defense is estimated from long-rally (7+ shot) win rate.</div>`
+    : `<div style="padding:22px;">
+         <div style="border:1px dashed rgba(255,255,255,0.14);border-radius:14px;background:#0b1017;padding:22px;display:flex;gap:14px;align-items:flex-start;">
+           <span style="color:#7ba4ff;display:flex;flex:none;margin-top:1px;width:16px;height:16px;">${BSP_ICONS.info}</span>
+           <div style="font-size:13px;color:#aeb6c4;line-height:1.6;">
+             <b style="color:#e7e9ee;">Limited data — DNA radar hidden.</b><br>
+             ${pesc(p.name)} has ${dnaMatches ? `only ${dnaMatches} charted match${dnaMatches===1?'':'es'}` : 'no charted matches'} in the Match Charting Project — below the 10-match threshold needed to place them accurately against the tour. Rather than show a misleading shape, the radar is withheld until enough charted data exists.
+           </div>
+         </div>
+       </div>`;
 
   // Serve & Return
   const serveHtml = ppStatRows(PP_SERVE_DEFS, p.statsAll, BLUE);
@@ -4259,6 +4344,7 @@ function buildPlayerProfileHtml(p){
             <h1 style="margin:0;font-size:30px;font-weight:800;letter-spacing:-0.02em;">${p.name}</h1>
             <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#7ba4ff;background:rgba(62,123,250,0.12);border:1px solid rgba(62,123,250,0.3);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'\u2014'}</span>
           </div>
+          ${p.archetype ? `<div style="margin-top:7px;font-size:12.5px;color:#8b93a3;">Playing style \u00b7 <span style="color:#c3ccdb;font-weight:600;">${p.archetype}</span></div>` : ''}
           <div style="display:flex;align-items:center;gap:14px;margin-top:10px;font-size:12.5px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
         </div>
       </div>
@@ -4307,15 +4393,12 @@ function buildPlayerProfileHtml(p){
             <div style="font-size:15px;font-weight:700;">Player DNA</div>
             <div style="font-size:12.5px;color:#8b93a3;margin-top:3px;">Six game dimensions rated as a tour-wide percentile. The dashed shape is the tour average.</div>
           </div>
-          <div style="display:flex;align-items:center;gap:14px;font-size:11.5px;flex:none;padding-top:2px;">
+          <div style="display:${dnaMcp?'flex':'none'};align-items:center;gap:14px;font-size:11.5px;flex:none;padding-top:2px;">
             <span style="display:flex;align-items:center;gap:6px;color:#9cc0ff;"><span style="width:8px;height:8px;border-radius:50%;background:#3E7BFA;"></span>${p.name.split(' ').pop()}</span>
             <span style="display:flex;align-items:center;gap:6px;color:#8b93a3;"><span style="width:12px;height:0;border-top:1.5px dashed #8b93a3;"></span>Tour avg</span>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:0.82fr 1fr;gap:14px;padding:20px 22px;align-items:center;">
-          <div style="display:flex;align-items:center;justify-content:center;padding:4px;">${radar}</div>
-          <div style="display:flex;flex-direction:column;gap:13px;">${attrsHtml}</div>
-        </div>
+        ${dnaBodyHtml}
       </div>
 
       <!-- SERVE & RETURN -->

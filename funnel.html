@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSP Consult · Tennis Edge — Find the edge the bookmakers miss</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:#0b0c10; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  a{ color:#7ba4ff; text-decoration:none; }
+  a:hover{ color:#a9c4ff; }
+  ::selection{ background:rgba(62,123,250,0.35); }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+
+  /* nav */
+  .nav{ position:sticky; top:0; z-index:20; background:rgba(11,12,16,0.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,0.06); }
+  .nav-inner{ max-width:1180px; margin:0 auto; padding:0 32px; height:70px; display:flex; align-items:center; justify-content:space-between; }
+  .brand{ display:flex; align-items:center; gap:11px; }
+  .brand img{ width:36px; height:36px; border-radius:10px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); box-shadow:0 0 0 3px rgba(62,123,250,0.12); }
+  .brand .wm{ display:flex; flex-direction:column; gap:1px; }
+  .brand .wm b{ font-weight:800; letter-spacing:0.02em; font-size:15px; line-height:1; }
+  .brand .wm small{ font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6f7ba0; font-family:'IBM Plex Mono',monospace; }
+  .nav-links{ display:flex; align-items:center; gap:28px; }
+  .nav-links a.link{ font-size:13.5px; color:#8b93a3; }
+  .nav-links a.link:hover{ color:#cfd4de; }
+  .btn-primary{ font-size:13.5px; font-weight:700; color:#0b0d12; background:#3E7BFA; border-radius:9px; padding:9px 17px; cursor:pointer; }
+  .btn-primary:hover{ background:#5a90ff; color:#0b0d12; }
+  .nav-toggle{ display:none; }
+
+  /* hero */
+  .hero{ position:relative; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .hero .glow{ position:absolute; inset:0; background:radial-gradient(1100px 500px at 70% -10%, rgba(62,123,250,0.16), transparent 60%); pointer-events:none; }
+  .hero-inner{ position:relative; max-width:1180px; margin:0 auto; padding:84px 32px 72px; display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; letter-spacing:0.06em; color:#8fe4bd; background:rgba(62,207,142,0.1); border:1px solid rgba(62,207,142,0.25); border-radius:999px; padding:6px 13px; }
+  .pill .dot{ width:6px; height:6px; border-radius:50%; background:#3ECF8E; box-shadow:0 0 8px #3ECF8E; }
+  h1.hero-h{ margin:22px 0 0; font-size:52px; line-height:1.04; font-weight:800; letter-spacing:-0.03em; }
+  .hero-sub{ margin:22px 0 0; font-size:16.5px; line-height:1.6; color:#9aa3b2; max-width:520px; }
+  .hero-cta{ display:flex; align-items:center; gap:14px; margin-top:30px; flex-wrap:wrap; }
+  .btn-lg{ font-size:15px; font-weight:700; color:#0b0d12; background:#3E7BFA; border-radius:11px; padding:13px 24px; }
+  .btn-lg:hover{ background:#5a90ff; color:#0b0d12; }
+  .btn-ghost{ font-size:15px; font-weight:600; color:#cfd4de; border:1px solid rgba(255,255,255,0.14); border-radius:11px; padding:13px 22px; cursor:pointer; background:transparent; font-family:inherit; }
+  .btn-ghost:hover{ background:rgba(255,255,255,0.05); }
+  .hero-stats{ display:flex; gap:30px; margin-top:38px; flex-wrap:wrap; }
+  .stat .v{ font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:#f4f6fa; letter-spacing:-0.02em; }
+  .stat .l{ font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; margin-top:5px; }
+
+  .snapshot{ border:1px solid rgba(255,255,255,0.09); border-radius:18px; background:linear-gradient(180deg,#0e1119,#0a0c11); box-shadow:0 40px 90px -50px rgba(0,0,0,0.9); overflow:hidden; }
+  .snap-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.015); }
+  .snap-head .cap{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
+  .snap-head .ev{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8fe4bd; }
+  .snap-body{ padding:20px 18px; }
+  .snap-players{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px; }
+  .snap-players .nm{ font-size:16px; font-weight:800; }
+  .snap-players .elo{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; margin-top:3px; }
+  .snap-bar{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,0.05); margin-top:16px; }
+  .snap-pct{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; margin-top:7px; }
+  .snap-flag{ margin-top:16px; padding:12px 14px; border-radius:11px; background:rgba(62,207,142,0.06); border:1px solid rgba(62,207,142,0.22); border-left:3px solid #6ed3a3; }
+  .snap-flag span{ font-size:12.5px; color:#bfe6d3; line-height:1.5; }
+
+  /* credibility */
+  .cred{ border-bottom:1px solid rgba(255,255,255,0.06); }
+  .cred-inner{ max-width:1180px; margin:0 auto; padding:22px 32px; display:flex; align-items:center; justify-content:center; gap:38px; flex-wrap:wrap; }
+  .cred .cap{ font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; }
+  .cred .book{ font-size:15px; font-weight:700; color:#6f7788; }
+
+  /* sections */
+  .sec-head{ text-align:center; max-width:640px; margin:0 auto; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:0.12em; text-transform:uppercase; color:#7ba4ff; }
+  .sec-head h2{ margin:12px 0 0; font-size:34px; font-weight:800; letter-spacing:-0.025em; }
+  .sec-head p{ margin:14px 0 0; font-size:15.5px; line-height:1.6; color:#9aa3b2; }
+
+  .features-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:44px; }
+  .fcard{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:#0d0f14; padding:24px 22px; }
+  .fcard:hover{ border-color:rgba(62,123,250,0.35); }
+  .fic{ display:flex; width:40px; height:40px; border-radius:11px; align-items:center; justify-content:center; background:rgba(62,123,250,0.1); border:1px solid rgba(62,123,250,0.25); color:#7ba4ff; }
+  .fcard .ft{ font-size:16.5px; font-weight:700; margin-top:16px; }
+  .fcard .fb{ font-size:13.5px; line-height:1.6; color:#8b93a3; margin-top:8px; }
+
+  .how-panel{ border:1px solid rgba(255,255,255,0.08); border-radius:18px; background:linear-gradient(180deg,#0e1119,#0a0c11); padding:44px 40px; }
+  .how-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:30px; }
+  .step{ display:flex; flex-direction:column; gap:10px; }
+  .step .n{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#0b0d12; background:#7ba4ff; width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; }
+  .step .t{ font-size:16px; font-weight:700; margin-top:6px; }
+  .step .b{ font-size:13.5px; line-height:1.6; color:#8b93a3; }
+
+  .price-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:840px; margin:44px auto 0; align-items:start; }
+  .pcard{ border-radius:18px; padding:30px 28px; position:relative; overflow:hidden; }
+  .badge-pop{ position:absolute; top:18px; right:18px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.06em; color:#0b0d12; background:#3ECF8E; border-radius:6px; padding:3px 9px; }
+  .pcard .pname{ font-size:18px; font-weight:800; }
+  .pcard .ptag{ font-size:13px; color:#8b93a3; margin-top:6px; min-height:38px; }
+  .pcard .prow{ display:flex; align-items:baseline; gap:6px; margin-top:14px; }
+  .pcard .pprice{ font-family:'IBM Plex Mono',monospace; font-size:44px; font-weight:600; color:#f4f6fa; letter-spacing:-0.02em; }
+  .pcard .pmo{ font-size:14px; color:#8b93a3; }
+  .pcta{ display:block; margin-top:20px; text-align:center; font-size:14.5px; font-weight:700; border-radius:11px; padding:12px; cursor:pointer; }
+  .pdiv{ height:1px; background:rgba(255,255,255,0.08); margin:24px 0; }
+  .pfeats{ display:flex; flex-direction:column; gap:12px; }
+  .pfeat{ display:flex; align-items:flex-start; gap:10px; }
+  .pfeat .ic{ display:flex; margin-top:1px; flex:none; }
+  .pfeat .lb{ font-size:13.5px; line-height:1.5; }
+
+  .testimonial-wrap{ max-width:900px; margin:0 auto; padding:50px 32px; }
+  .testimonial{ border:1px solid rgba(255,255,255,0.08); border-radius:18px; background:#0d0f14; padding:40px 44px; text-align:center; }
+  .testimonial .q{ font-size:22px; line-height:1.5; font-weight:600; letter-spacing:-0.01em; color:#e7ebf1; }
+  .testimonial .a{ margin-top:22px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8b93a3; }
+
+  .faq-wrap{ max-width:820px; margin:0 auto; padding:40px 32px 20px; }
+  .faq-wrap h2{ text-align:center; margin:0 0 32px; font-size:28px; font-weight:800; letter-spacing:-0.025em; }
+  .faq-list{ display:flex; flex-direction:column; gap:10px; }
+  .faq{ border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:#0d0f14; padding:18px 20px; }
+  .faq .q{ font-size:14.5px; font-weight:700; }
+  .faq .a{ font-size:13.5px; line-height:1.6; color:#8b93a3; margin-top:8px; }
+
+  .cta-wrap{ max-width:1180px; margin:0 auto; padding:60px 32px 80px; }
+  .cta-band{ position:relative; border:1px solid rgba(62,123,250,0.25); border-radius:20px; background:radial-gradient(700px 300px at 50% 0%, rgba(62,123,250,0.16), transparent 65%), #0d0f14; padding:56px 40px; text-align:center; overflow:hidden; }
+  .cta-band h2{ margin:0; font-size:34px; font-weight:800; letter-spacing:-0.03em; }
+  .cta-band p{ margin:14px auto 0; max-width:520px; font-size:15.5px; line-height:1.6; color:#9aa3b2; }
+  .cta-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:28px; flex-wrap:wrap; }
+  .cta-note{ font-size:13.5px; color:#6f7788; font-family:'IBM Plex Mono',monospace; }
+
+  .footer{ border-top:1px solid rgba(255,255,255,0.06); }
+  .footer-inner{ max-width:1180px; margin:0 auto; padding:28px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+  .footer-brand{ display:flex; align-items:center; gap:10px; }
+  .footer-brand img{ width:28px; height:28px; border-radius:8px; object-fit:cover; border:1px solid rgba(62,123,250,0.3); }
+  .footer-brand span{ font-size:12.5px; color:#6f7788; }
+  .footer .disc{ font-size:11.5px; color:#5b6472; max-width:520px; text-align:right; }
+
+  /* responsive */
+  @media (max-width:900px){
+    .hero-inner{ grid-template-columns:1fr; gap:40px; padding:56px 32px 56px; }
+    h1.hero-h{ font-size:40px; }
+    .features-grid{ grid-template-columns:1fr 1fr; }
+    .how-grid{ grid-template-columns:1fr; gap:24px; }
+    .price-grid{ grid-template-columns:1fr; }
+    .nav-links a.link{ display:none; }
+  }
+  @media (max-width:640px){
+    .wrap, .nav-inner, .hero-inner, .cred-inner, .footer-inner{ padding-left:20px; padding-right:20px; }
+    h1.hero-h{ font-size:32px; }
+    .features-grid{ grid-template-columns:1fr; }
+    .sec-head h2{ font-size:27px; }
+    .footer .disc{ text-align:left; }
+    .how-panel{ padding:32px 22px; }
+    .cta-band{ padding:40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- nav -->
+  <div class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <img src="assets/bsp-logo.jpg" alt="BSP Consult">
+        <div class="wm">
+          <b>BSP CONSULT</b>
+          <small>Tennis edge</small>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="link" href="#features">Features</a>
+        <a class="link" href="#how">How it works</a>
+        <a class="link" href="#pricing">Pricing</a>
+        <a class="link" href="#faq">FAQ</a>
+        <a class="btn-primary" href="auth.html?mode=signup&plan=pro">Start free trial</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- hero -->
+  <div class="hero">
+    <div class="glow"></div>
+    <div class="hero-inner">
+      <div>
+        <span class="pill"><span class="dot"></span>Elo-driven fair odds · updated daily</span>
+        <h1 class="hero-h">Find the edge the<br>bookmakers miss.</h1>
+        <p class="hero-sub">BSP Consult turns raw ATP data into fair prices. Our Elo model rates every player by surface, compares the line to the market, and flags where the value sits — before you place the bet.</p>
+        <div class="hero-cta">
+          <a class="btn-lg" href="#pricing">See plans</a>
+          <button class="btn-ghost" type="button" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Watch the model live →</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><div class="v">62</div><div class="l">Players rated</div></div>
+          <div class="stat"><div class="v">3</div><div class="l">Surfaces modelled</div></div>
+          <div class="stat"><div class="v">Daily</div><div class="l">Ratings refresh</div></div>
+        </div>
+      </div>
+      <!-- hero card: model snapshot -->
+      <div class="snapshot">
+        <div class="snap-head">
+          <span class="cap">Model vs market</span>
+          <span class="ev">Clay · ATP Gstaad</span>
+        </div>
+        <div class="snap-body">
+          <div class="snap-players">
+            <div>
+              <div class="nm">D. Stricker</div>
+              <div class="elo" style="color:#7ba4ff;">Elo blend 1798</div>
+            </div>
+            <span class="mono" style="font-size:12px; color:#5b6472;">vs</span>
+            <div style="text-align:right;">
+              <div class="nm">J. Munar</div>
+              <div class="elo" style="color:#f0a95f;">Elo blend 1926</div>
+            </div>
+          </div>
+          <div class="snap-bar">
+            <div style="width:33%; background:linear-gradient(90deg,#2f5fc4,#3E7BFA);"></div>
+            <div style="width:67%; background:linear-gradient(90deg,#c9722f,#E8934B);"></div>
+          </div>
+          <div class="snap-pct"><span style="color:#7ba4ff;">33.0% · 3.03</span><span style="color:#f0a95f;">67.0% · 1.49</span></div>
+          <div class="snap-flag">
+            <span><strong style="color:#8fe4bd;">Value flag:</strong> market prices Stricker at 3.30 — model fair line is 3.03, a <strong style="color:#fff;">+8.9%</strong> edge.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- credibility strip -->
+  <div class="cred">
+    <div class="cred-inner">
+      <span class="cap">Prices compared across</span>
+      <span class="book">Pinnacle</span>
+      <span class="book">bet365</span>
+      <span class="book">Betfair</span>
+      <span class="book">1xBet</span>
+      <span class="book">GTbets</span>
+    </div>
+  </div>
+
+  <!-- features -->
+  <div id="features" class="wrap" style="padding-top:82px; padding-bottom:20px;">
+    <div class="sec-head">
+      <span class="eyebrow">Everything in one board</span>
+      <h2>Built for people who bet on the numbers</h2>
+      <p>Every tool feeds the same engine — the ratings that price a match are the same ones behind the leaderboards and the value flags.</p>
+    </div>
+    <div class="features-grid">
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13l4-4"/><path d="M4 16a8 8 0 1 1 16 0"/><circle cx="12" cy="13" r="1.4"/></svg></span>
+        <div class="ft">Elo odds engine</div>
+        <div class="fb">Every player rated overall and per surface. Fair win probability and decimal, fractional and American odds for any matchup — the same math you can audit yourself.</div>
+      </div>
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></svg></span>
+        <div class="ft">Value flags</div>
+        <div class="fb">We line the model up against the bookmaker and Pinnacle prices and surface the edge: back it, or leave it. Green means the market is paying more than the true price.</div>
+      </div>
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M9 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span>
+        <div class="ft">Today's matches board</div>
+        <div class="fb">Live odds across bookmakers for every ATP match, filterable by day, surface and tournament. Completed matches show the score and how the line moved from open to close.</div>
+      </div>
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-4"/></svg></span>
+        <div class="ft">Stats leaderboards</div>
+        <div class="fb">Serve, return and under-pressure ratings from ATP data, split by surface and over the last 52 weeks or career — the inputs behind every projection.</div>
+      </div>
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7 7M4 8V4h4M14 14l6 6M20 16v4h-4"/><path d="M20 4l-7 7M20 8V4h-4M10 14l-6 6M4 16v4h4"/></svg></span>
+        <div class="ft">Head-to-head &amp; match analysis</div>
+        <div class="fb">Full matchup breakdowns: surface splits, meeting history, form, tale-of-the-tape and point-by-point — so you know why a number is what it is.</div>
+      </div>
+      <div class="fcard">
+        <span class="fic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13h5M9.5 16.5h5"/></svg></span>
+        <div class="ft">Downloadable reports</div>
+        <div class="fb">Export any match analysis as a clean report to keep, share, or bring to your own model.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- how it works -->
+  <div id="how" class="wrap" style="padding-top:70px; padding-bottom:70px;">
+    <div class="how-panel">
+      <div class="sec-head" style="max-width:620px; margin-bottom:40px;">
+        <span class="eyebrow">How it works</span>
+        <h2 style="font-size:30px;">From rating to edge in three steps</h2>
+      </div>
+      <div class="how-grid">
+        <div class="step">
+          <span class="n">1</span>
+          <div class="t">We rate the field</div>
+          <div class="b">Elo ratings updated daily from ATP results, weighted by surface and recency across 62 tour players.</div>
+        </div>
+        <div class="step">
+          <span class="n">2</span>
+          <div class="t">We price the match</div>
+          <div class="b">The rating gap becomes a fair win probability and a fair odds line for both players, on the surface being played.</div>
+        </div>
+        <div class="step">
+          <span class="n">3</span>
+          <div class="t">You spot the value</div>
+          <div class="b">Fair line meets the market. Where the bookmaker overpays, the board flags a positive edge — you decide.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pricing -->
+  <div id="pricing" class="wrap" style="padding-top:20px; padding-bottom:40px;">
+    <div class="sec-head" style="max-width:600px;">
+      <span class="eyebrow">Pricing</span>
+      <h2>One edge. Two ways in.</h2>
+      <p>Cancel anytime. Both plans start with a 7-day free trial — no card charged until it ends.</p>
+    </div>
+    <div class="price-grid">
+      <!-- Edge -->
+      <div class="pcard" style="border:1px solid rgba(255,255,255,0.1); background:#0d0f14;">
+        <div class="pname">Edge</div>
+        <div class="ptag">The core board and model for the serious follower.</div>
+        <div class="prow"><span class="pprice">€49</span><span class="pmo">/ month</span></div>
+        <a class="pcta" href="auth.html?mode=signup&plan=edge" style="color:#e7e9ee; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14);" onmouseover="this.style.background='rgba(255,255,255,0.09)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">Start free trial</a>
+        <div class="pdiv"></div>
+        <div class="pfeats">
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Elo fair odds for every ATP match</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Today's matches board, all surfaces</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Serve / return / under-pressure leaderboards</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Head-to-head &amp; full match analysis</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Point-by-point and match stats</span></div>
+          <div class="pfeat"><span class="ic" style="color:#5b6472;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg></span><span class="lb" style="color:#6b7280;">Value flags vs bookmaker &amp; Pinnacle</span></div>
+          <div class="pfeat"><span class="ic" style="color:#5b6472;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg></span><span class="lb" style="color:#6b7280;">Downloadable reports</span></div>
+          <div class="pfeat"><span class="ic" style="color:#5b6472;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg></span><span class="lb" style="color:#6b7280;">Priority same-day data refresh</span></div>
+        </div>
+      </div>
+      <!-- Pro (featured) -->
+      <div class="pcard" style="border:1px solid rgba(62,123,250,0.5); background:linear-gradient(180deg,rgba(62,123,250,0.08),#0d0f14);">
+        <span class="badge-pop">MOST POPULAR</span>
+        <div class="pname">Pro</div>
+        <div class="ptag">The full edge — value detection and exports for bettors.</div>
+        <div class="prow"><span class="pprice">€99</span><span class="pmo">/ month</span></div>
+        <a class="pcta" href="auth.html?mode=signup&plan=pro" style="color:#0b0d12; background:#3E7BFA; border:1px solid #3E7BFA;" onmouseover="this.style.background='#5a90ff'" onmouseout="this.style.background='#3E7BFA'">Start free trial</a>
+        <div class="pdiv"></div>
+        <div class="pfeats">
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Everything in Edge</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Value flags vs bookmaker &amp; Pinnacle prices</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Model edge % on every matchup</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Opening → closing line movement</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Downloadable match reports</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Priority same-day data refresh</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Odds calculator — any two players</span></div>
+          <div class="pfeat"><span class="ic" style="color:#3ECF8E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb" style="color:#cfd4de;">Email alerts on new value signals</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- testimonial -->
+  <div class="testimonial-wrap">
+    <div class="testimonial">
+      <div class="q">“I stopped guessing which underdog was overpriced. The value flags pay for the subscription in a weekend of clay.”</div>
+      <div class="a">— Matthijs, Pro subscriber since 2025</div>
+    </div>
+  </div>
+
+  <!-- faq -->
+  <div id="faq" class="faq-wrap">
+    <h2>Questions, answered</h2>
+    <div class="faq-list">
+      <div class="faq"><div class="q">Do you place bets or take my money to bet?</div><div class="a">No. BSP Consult is an analytics tool. We show fair prices and where the market disagrees — you place your own bets with your own bookmaker.</div></div>
+      <div class="faq"><div class="q">Where does the data come from?</div><div class="a">ATP match results and Infosys ATP serve/return/under-pressure stats, plus market prices from the major bookmakers. Ratings refresh daily.</div></div>
+      <div class="faq"><div class="q">What is the difference between Edge and Pro?</div><div class="a">Edge gives you the full board, ratings and analysis. Pro adds the value engine — model-vs-market edge, line movement, the odds calculator, reports and alerts.</div></div>
+      <div class="faq"><div class="q">Can I cancel anytime?</div><div class="a">Yes. Both plans are month-to-month with a 7-day free trial. Cancel before the trial ends and you are never charged.</div></div>
+    </div>
+  </div>
+
+  <!-- final CTA -->
+  <div class="cta-wrap">
+    <div class="cta-band">
+      <h2>Start finding value tonight</h2>
+      <p>Seven days free. Full board, all surfaces, every ATP match. See a green flag before you commit.</p>
+      <div class="cta-row">
+        <a class="btn-lg" href="auth.html?mode=signup&plan=pro">Start free trial</a>
+        <span class="cta-note">No card until day 7</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/bsp-logo.jpg" alt="BSP Consult">
+        <span>© 2026 BSP Consult · Tennis edge</span>
+      </div>
+      <span class="disc">Model insights are informational only and not betting advice. Please gamble responsibly.</span>
+    </div>
+  </div>
+
+</body>
+</html>

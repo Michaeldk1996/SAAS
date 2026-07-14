@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSP Consult · Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#0b0c10; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  a{ color:#7ba4ff; text-decoration:none; }
+  a:hover{ color:#a9c4ff; }
+  input{ font-family:'Hanken Grotesk',sans-serif; }
+  input::placeholder{ color:#4a515f; }
+  ::selection{ background:rgba(62,123,250,0.35); }
+
+  .page{ display:flex; justify-content:center; padding:48px; min-height:100vh; }
+  .shell{ width:1040px; max-width:100%; display:flex; flex-direction:column; gap:14px; }
+  .modeSub{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8b93a3; }
+
+  .card{ border:1px solid rgba(255,255,255,0.08); border-radius:20px; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; box-shadow:0 40px 90px -55px rgba(0,0,0,0.9); }
+
+  /* brand panel */
+  .brand-panel{ position:relative; background:linear-gradient(180deg,#101a33,#0a0c11); padding:44px 40px; display:flex; flex-direction:column; justify-content:space-between; border-right:1px solid rgba(255,255,255,0.06); min-height:600px; }
+  .brand-panel .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, rgba(62,123,250,0.18), transparent 60%); pointer-events:none; }
+  .brand-top{ position:relative; }
+  .brand-id{ display:flex; align-items:center; gap:11px; }
+  .brand-id img{ width:38px; height:38px; border-radius:10px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); box-shadow:0 0 0 3px rgba(62,123,250,0.12); }
+  .brand-id .wm{ display:flex; flex-direction:column; gap:1px; }
+  .brand-id .wm b{ font-weight:800; letter-spacing:0.02em; font-size:15px; line-height:1; }
+  .brand-id .wm small{ font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6f7ba0; font-family:'IBM Plex Mono',monospace; }
+  .brand-title{ margin:38px 0 0; font-size:27px; font-weight:800; letter-spacing:-0.02em; line-height:1.2; }
+  .brand-body{ margin:16px 0 0; font-size:14.5px; line-height:1.6; color:#9aa3b2; max-width:340px; }
+
+  .mini{ position:relative; border:1px solid rgba(255,255,255,0.09); border-radius:13px; background:rgba(13,15,20,0.7); overflow:hidden; margin-top:32px; }
+  .mini-head{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .mini-head .cap{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
+  .mini-head .live{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8fe0b8; }
+  .mini-row{ display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .mini-row .m{ font-size:12.5px; font-weight:600; white-space:nowrap; }
+  .mini-row .o{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#cfd4de; }
+  .mini-row .fl{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; border-radius:6px; padding:3px 8px; width:62px; text-align:center; }
+
+  /* form panel */
+  .form-panel{ background:#0b0c10; padding:44px 44px; display:flex; flex-direction:column; }
+  .toggle{ display:inline-flex; align-self:flex-start; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:11px; padding:4px; gap:3px; margin-bottom:30px; }
+  .toggle button{ font-family:inherit; font-size:13px; font-weight:600; color:#8b93a3; background:transparent; border:1px solid transparent; border-radius:8px; padding:8px 20px; cursor:pointer; }
+  .toggle button.active{ color:#fff; background:rgba(62,123,250,0.16); border-color:rgba(62,123,250,0.4); }
+
+  .form-title{ margin:0; font-size:24px; font-weight:800; letter-spacing:-0.02em; }
+  .form-sub{ margin:8px 0 0; font-size:13.5px; color:#8b93a3; }
+
+  .social{ display:flex; gap:10px; margin-top:26px; }
+  .social button{ flex:1; display:flex; align-items:center; justify-content:center; gap:9px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px; font-size:13.5px; font-weight:600; color:#e7e9ee; cursor:pointer; background:transparent; font-family:inherit; }
+  .social button:hover{ background:rgba(255,255,255,0.05); }
+
+  .divider{ display:flex; align-items:center; gap:14px; margin:22px 0; }
+  .divider span.line{ flex:1; height:1px; background:rgba(255,255,255,0.08); }
+  .divider span.txt{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; }
+
+  label.field{ display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
+  label.field .lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
+  label.field .lblrow{ display:flex; align-items:center; justify-content:space-between; }
+  .forgot{ font-size:12px; color:#7ba4ff; cursor:pointer; }
+  .forgot:hover{ color:#a9c4ff; }
+  input.inp{ background:#0d0f14; color:#e7ebf1; font-size:14px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; padding:11px 13px; outline:none; }
+  input.inp:focus{ border-color:rgba(62,123,250,0.5); }
+  input.inp.err{ border-color:rgba(232,96,122,0.6); }
+
+  .field-err{ font-size:11.5px; color:#E8607A; min-height:0; }
+
+  .plans-lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
+  .plan-choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .plan-choice{ border:1px solid rgba(255,255,255,0.1); background:#0d0f14; border-radius:11px; padding:13px 14px; cursor:pointer; display:flex; flex-direction:column; gap:3px; }
+  .plan-choice.active{ border-color:rgba(62,123,250,0.55); background:rgba(62,123,250,0.1); }
+  .plan-choice .top{ display:flex; align-items:center; justify-content:space-between; }
+  .plan-choice .nm{ font-size:13.5px; font-weight:700; color:#cfd4de; }
+  .plan-choice.active .nm{ color:#fff; }
+  .plan-choice .pr{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b93a3; }
+  .plan-choice.active .pr{ color:#7ba4ff; }
+  .plan-choice .tg{ font-size:11px; color:#7a8496; }
+
+  .checkline{ display:flex; align-items:flex-start; gap:9px; margin-bottom:20px; cursor:pointer; }
+  .checkline.center{ align-items:center; }
+  .checkbox{ width:17px; height:17px; border-radius:5px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.04); flex:none; margin-top:1px; display:flex; align-items:center; justify-content:center; }
+  .checkbox.on{ background:#3E7BFA; border-color:#3E7BFA; }
+  .checkbox svg{ display:none; }
+  .checkbox.on svg{ display:block; }
+  .checkline .txt{ font-size:12px; line-height:1.5; color:#8b93a3; }
+  .checkline.center .txt{ font-size:12.5px; }
+
+  .submit{ display:block; width:100%; text-align:center; font-size:15px; font-weight:700; color:#0b0d12; background:#3E7BFA; border:none; border-radius:11px; padding:13px; cursor:pointer; font-family:inherit; }
+  .submit:hover{ background:#5a90ff; }
+
+  .form-err{ margin:14px 0 0; font-size:12.5px; color:#E8607A; text-align:center; min-height:0; }
+
+  .switch{ text-align:center; font-size:13px; color:#8b93a3; margin:20px 0 0; }
+  .switch a{ color:#7ba4ff; font-weight:600; cursor:pointer; }
+  .switch a:hover{ color:#a9c4ff; }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width:860px){
+    .page{ padding:24px 16px; }
+    .card{ grid-template-columns:1fr; }
+    .brand-panel{ min-height:auto; border-right:none; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .brand-panel .mini{ display:none; }
+    .form-panel{ padding:32px 24px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <section class="shell">
+      <div class="modeSub" id="modeSub">Sign in</div>
+
+      <div class="card">
+        <!-- brand panel -->
+        <div class="brand-panel">
+          <div class="glow"></div>
+          <div class="brand-top">
+            <div class="brand-id">
+              <img src="assets/bsp-logo.jpg" alt="BSP Consult">
+              <div class="wm">
+                <b>BSP CONSULT</b>
+                <small>Tennis edge</small>
+              </div>
+            </div>
+            <h2 class="brand-title" id="brandTitle">Welcome back to the edge.</h2>
+            <p class="brand-body" id="brandBody">Pick up where you left off: fair odds, value flags and match analysis across the tour.</p>
+          </div>
+
+          <div class="mini">
+            <div class="mini-head">
+              <span class="cap">Model vs market</span>
+              <span class="live">● live</span>
+            </div>
+            <div class="mini-row">
+              <span class="m">Stricker vs Munar</span>
+              <span class="o">3.30</span>
+              <span class="fl" style="color:#3ECF8E; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.3);">+8.9%</span>
+            </div>
+            <div class="mini-row">
+              <span class="m">Fils vs Ruud</span>
+              <span class="o">2.05</span>
+              <span class="fl" style="color:#3ECF8E; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.3);">+4.4%</span>
+            </div>
+            <div class="mini-row" style="border-bottom:none;">
+              <span class="m">Sinner vs Djokovic</span>
+              <span class="o">1.26</span>
+              <span class="fl" style="color:#E8607A; background:rgba(232,96,122,0.12); border:1px solid rgba(232,96,122,0.3);">−2.1%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- form panel -->
+        <div class="form-panel">
+          <div class="toggle">
+            <button type="button" id="tabSignin" class="active" onclick="setMode('signin')">Sign in</button>
+            <button type="button" id="tabSignup" onclick="setMode('signup')">Sign up</button>
+          </div>
+
+          <h1 class="form-title" id="formTitle">Sign in to BSP Consult</h1>
+          <p class="form-sub" id="formSub">Enter your details to reach your board.</p>
+
+          <div class="social">
+            <button type="button" onclick="socialStub()">
+              <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.6-.1-1.2-.2-1.8H12v3.5h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.7 9.4 6.1 12 6.1z"/></svg>
+              Google
+            </button>
+            <button type="button" onclick="socialStub()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.7c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-1 2.4-2 .5-.7.7-1.4.7-1.4s-1.5-.6-1.5-2.4z"/><path d="M14.5 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9 0 1.8-.5 2.3-1.1z"/></svg>
+              Apple
+            </button>
+          </div>
+          <div class="divider"><span class="line"></span><span class="txt">or with email</span><span class="line"></span></div>
+
+          <form id="authForm" onsubmit="return submitAuth(event)" novalidate>
+            <!-- full name (signup only) -->
+            <label class="field" id="nameField">
+              <span class="lbl">Full name</span>
+              <input class="inp" type="text" id="fullName" placeholder="Alex Bekkers" autocomplete="name">
+              <span class="field-err" id="nameErr"></span>
+            </label>
+
+            <label class="field">
+              <span class="lbl">Email address</span>
+              <input class="inp" type="email" id="email" placeholder="you@email.com" autocomplete="email">
+              <span class="field-err" id="emailErr"></span>
+            </label>
+
+            <label class="field">
+              <span class="lblrow">
+                <span class="lbl">Password</span>
+                <span class="forgot" id="forgotLink" onclick="forgotStub()">Forgot?</span>
+              </span>
+              <input class="inp" type="password" id="password" placeholder="Your password" autocomplete="current-password">
+              <span class="field-err" id="pwErr"></span>
+            </label>
+
+            <!-- plan picker (signup only) -->
+            <div id="planField" style="margin-bottom:16px;">
+              <span class="plans-lbl">Choose your plan</span>
+              <div class="plan-choices">
+                <div class="plan-choice" id="planEdge" onclick="setPlan('edge')">
+                  <span class="top"><span class="nm">Edge</span><span class="pr">€49</span></span>
+                  <span class="tg">Board &amp; analysis</span>
+                </div>
+                <div class="plan-choice active" id="planPro" onclick="setPlan('pro')">
+                  <span class="top"><span class="nm">Pro</span><span class="pr">€99</span></span>
+                  <span class="tg">Full value engine</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- terms (signup only) -->
+            <div class="checkline" id="termsField" onclick="toggleCheck('terms')">
+              <span class="checkbox" id="termsBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="txt">I agree to the <a href="#" onclick="event.stopPropagation();event.preventDefault();alert('Terms coming soon.');">terms</a> and understand model insights are informational only, not betting advice.</span>
+            </div>
+
+            <!-- keep signed in (signin only) -->
+            <div class="checkline center hidden" id="keepField" onclick="toggleCheck('keep')">
+              <span class="checkbox on" id="keepBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="txt">Keep me signed in on this device</span>
+            </div>
+
+            <button type="submit" class="submit" id="submitBtn">Sign in</button>
+            <p class="form-err" id="formErr"></p>
+          </form>
+
+          <p class="switch" id="switchLine">
+            <span id="switchText">New to BSP Consult?</span>
+            <a id="switchLink" onclick="setMode(mode==='signup'?'signin':'signup')">Create one free</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    var mode = 'signin';
+    var plan = 'pro';
+    var checks = { terms: false, keep: true };
+
+    function qp(name){
+      var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    function setPlan(p){
+      plan = (p === 'edge') ? 'edge' : 'pro';
+      document.getElementById('planEdge').classList.toggle('active', plan === 'edge');
+      document.getElementById('planPro').classList.toggle('active', plan === 'pro');
+    }
+
+    function toggleCheck(which){
+      checks[which] = !checks[which];
+      var box = document.getElementById(which + 'Box');
+      box.classList.toggle('on', checks[which]);
+    }
+
+    function setMode(m){
+      mode = (m === 'signup') ? 'signup' : 'signin';
+      var isSignup = mode === 'signup';
+
+      document.getElementById('tabSignin').classList.toggle('active', !isSignup);
+      document.getElementById('tabSignup').classList.toggle('active', isSignup);
+
+      document.getElementById('modeSub').textContent = isSignup ? 'Sign up' : 'Sign in';
+      document.getElementById('brandTitle').textContent = isSignup ? 'Start finding value tonight.' : 'Welcome back to the edge.';
+      document.getElementById('brandBody').textContent = isSignup
+        ? 'Seven days free. Full board, all surfaces, every ATP match — see a green flag before you commit.'
+        : 'Pick up where you left off: fair odds, value flags and match analysis across the tour.';
+      document.getElementById('formTitle').textContent = isSignup ? 'Create your account' : 'Sign in to BSP Consult';
+      document.getElementById('formSub').textContent = isSignup
+        ? 'Free for 7 days — no card charged until the trial ends.'
+        : 'Enter your details to reach your board.';
+      document.getElementById('password').placeholder = isSignup ? 'At least 8 characters' : 'Your password';
+      document.getElementById('password').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+      document.getElementById('submitBtn').textContent = isSignup ? 'Start free trial' : 'Sign in';
+      document.getElementById('switchText').textContent = isSignup ? 'Already have an account?' : 'New to BSP Consult?';
+      document.getElementById('switchLink').textContent = isSignup ? 'Sign in' : 'Create one free';
+      document.title = isSignup ? 'BSP Consult · Create account' : 'BSP Consult · Sign in';
+
+      // Field visibility
+      document.getElementById('nameField').classList.toggle('hidden', !isSignup);
+      document.getElementById('planField').classList.toggle('hidden', !isSignup);
+      document.getElementById('termsField').classList.toggle('hidden', !isSignup);
+      document.getElementById('keepField').classList.toggle('hidden', isSignup);
+      document.getElementById('forgotLink').classList.toggle('hidden', isSignup);
+
+      clearErrors();
+    }
+
+    function clearErrors(){
+      ['nameErr','emailErr','pwErr','formErr'].forEach(function(id){ document.getElementById(id).textContent=''; });
+      ['fullName','email','password'].forEach(function(id){ document.getElementById(id).classList.remove('err'); });
+    }
+
+    function socialStub(){ alert('Social sign-in coming soon.'); }
+    function forgotStub(){ alert('Password reset is coming soon. For now, create a new account or contact support.'); }
+
+    function submitAuth(e){
+      e.preventDefault();
+      clearErrors();
+      var isSignup = mode === 'signup';
+      var email = document.getElementById('email').value.trim();
+      var password = document.getElementById('password').value;
+      var ok = true;
+
+      if (!BSP.isValidEmail(email)){
+        document.getElementById('emailErr').textContent = 'Enter a valid email address.';
+        document.getElementById('email').classList.add('err');
+        ok = false;
+      }
+
+      if (isSignup){
+        var name = document.getElementById('fullName').value.trim();
+        if (!name){
+          document.getElementById('nameErr').textContent = 'Enter your full name.';
+          document.getElementById('fullName').classList.add('err');
+          ok = false;
+        }
+        if (password.length < 8){
+          document.getElementById('pwErr').textContent = 'At least 8 characters.';
+          document.getElementById('password').classList.add('err');
+          ok = false;
+        }
+        if (!checks.terms){
+          document.getElementById('formErr').textContent = 'Please accept the terms to continue.';
+          ok = false;
+        }
+        if (!ok) return false;
+
+        BSP.signUp({ name: name, email: email, password: password, plan: plan })
+          .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+          .catch(function(err){ document.getElementById('formErr').textContent = err.message; });
+      } else {
+        if (!password){
+          document.getElementById('pwErr').textContent = 'Enter your password.';
+          document.getElementById('password').classList.add('err');
+          ok = false;
+        }
+        if (!ok) return false;
+
+        BSP.signIn(email, password)
+          .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+          .catch(function(err){
+            document.getElementById('formErr').textContent = err.message;
+            if (/password/i.test(err.message)) document.getElementById('password').classList.add('err');
+            if (/account/i.test(err.message)) document.getElementById('email').classList.add('err');
+          });
+      }
+      return false;
+    }
+
+    // Init from query params.
+    (function init(){
+      var qplan = qp('plan');
+      if (qplan === 'edge' || qplan === 'pro') plan = qplan;
+      setPlan(plan);
+      var qmode = qp('mode');
+      setMode(qmode === 'signup' ? 'signup' : 'signin');
+    })();
+  </script>
+</body>
+</html>
