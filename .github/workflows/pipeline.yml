@@ -1,0 +1,102 @@
+name: BSP data pipeline
+
+# Laptop-independent scheduler. Runs the same pipeline the local machine runs,
+# but in GitHub's cloud so it fires whether or not the laptop is awake/online.
+# It rebuilds the data, then publishes the dashboard + its JSON to GitHub Pages
+# (Pages artifacts are ephemeral, so the 44 MB player-profiles.json does NOT
+# bloat git history — unlike committing it back every run would).
+#
+# SETUP REQUIRED (see AUTOMATION.md): add repo secrets ODDS_API_KEY and
+# API_TENNIS_KEY, and enable Pages (Settings → Pages → Source: GitHub Actions).
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 minutes (UTC). GitHub may delay under load.
+  workflow_dispatch:          # allow manual "Run workflow" from the Actions tab
+
+# Never let two runs overlap; cancel an in-progress run if a newer one starts.
+concurrency:
+  group: bsp-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Persist the heavy derived caches + TML archive between runs so each run
+      # is fast and makes minimal API calls (matches how the local run reuses
+      # them). Keyed per-day so it refreshes but still restores older caches.
+      - name: Restore pipeline caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            player-profiles-cache.json
+            player-profiles.json
+            player-tournament-history.json
+            historical-match-stats.json
+            tournament-profiles.json
+            tml-cache
+          key: bsp-caches-${{ github.run_id }}
+          restore-keys: |
+            bsp-caches-
+
+      - name: Run pipeline (with retry + health tracking)
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          DOTENV_CONFIG_QUIET: 'true'
+        run: node run-pipeline.js github-actions
+
+      # Assemble the static site: the dashboard as index.html + the four JSON
+      # files it fetches (all same-origin, relative paths) + the health file.
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp bsp-consult-dashboard.html _site/index.html
+          cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
+          cp pipeline-health.json _site/ 2>/dev/null || true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      # Surface failures loudly: if the pipeline could not produce a fresh
+      # success, fail the job so GitHub emails/notifies (and the health file
+      # published above shows the banner on the live dashboard).
+      - name: Assert pipeline freshness
+        run: |
+          node -e '
+            const h = require("./pipeline-health.json");
+            const ageMin = (Date.now() - new Date(h.lastSuccess).getTime()) / 60000;
+            if (!h.lastSuccess || ageMin > 30) {
+              console.error("Pipeline health stale/failed:", JSON.stringify(h));
+              process.exit(1);
+            }
+            console.log("Pipeline healthy; last success", Math.round(ageMin), "min ago");
+          '

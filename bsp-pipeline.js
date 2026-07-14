@@ -30,6 +30,19 @@
 
 require('dotenv').config();
 const fs = require('fs');
+const { backfillProfilesHistory, backfillMatchesTournamentHistory } = require('./career-backfill');
+
+// Atomic JSON write: write to a temp file in the same directory, then rename
+// over the target. rename(2) is atomic on the same filesystem, so a reader
+// (e.g. the dashboard's 3-minute refresh) always sees either the old complete
+// file or the new complete file — never a half-written one. This eliminates the
+// intermittent "Unexpected end of JSON / Expected ',' or '}'" parse errors the
+// dashboard hit when it fetched matches.json mid-write.
+function writeJsonAtomic(file, data) {
+  const tmp = `${file}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, file);
+}
 
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
@@ -192,8 +205,8 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   // this API) — confirmed live these are NOT part of official ATP head-to-head
   // records. Laver Cup / United Cup matches are correctly tagged "Atp Singles"
   // by this API and DO count toward official H2H (confirmed), so they're kept.
-  // Same event_type_type === 'Atp Singles' check already used and proven
-  // correct in buildRecentFormData() below — applied here for consistency.
+  // Same event_type_type === 'Atp Singles' check used to scope official
+  // head-to-head records — applied here for consistency.
   const officialH2H = (data.result.H2H || []).filter(m => m.event_type_type === 'Atp Singles');
 
   // Backfill matches get_H2H omitted but the fixtures database actually has,
@@ -239,7 +252,7 @@ function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
       const p1Won = p1WasFirst ? winnerIsFirst : !winnerIsFirst;
       // event_final_result is always "player1 sets - player2 sets" in RAW
       // fixture order, NOT self-first — same reordering already applied in
-      // buildRecentFormData/loadTournamentProfiles for the same raw quirk.
+      // recentFormFromFixtures/loadTournamentProfiles for the same raw quirk.
       let result = m.event_final_result;
       if (!p1WasFirst && result && result.includes('-')) {
         const parts = result.split('-').map(s => s.trim());
@@ -379,41 +392,6 @@ function buildTournamentHistory(matches, playerKey) {
 // limit of this data source), and raw entries mix in Exhibition/Challenger/
 // ITF/qualifying matches alongside real ATP Singles results — filtered out
 // below to keep "recent form" meaning real tour-level form.
-function buildRecentFormData(recentResults, playerKey) {
-  const hintKeys = Object.keys(TOURNAMENT_VENUE_HINTS);
-  const clean = (recentResults || [])
-    .filter(m => m.event_type_type === 'Atp Singles' && m.event_qualification === 'False')
-    .slice()
-    .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
-
-  const matches = clean.map(m => {
-    const isFirst = String(m.first_player_key) === String(playerKey);
-    const opponent = isFirst ? m.event_second_player : m.event_first_player;
-    const opponentKey = isFirst ? m.second_player_key : m.first_player_key;
-    const won = isFirst ? m.event_winner === 'First Player' : m.event_winner === 'Second Player';
-    // event_final_result is always "player1 sets - player2 sets", NOT
-    // self-first — same raw-order quirk already fixed for tournament
-    // champions. Reorder so it always reads as this player's own score first.
-    let result = m.event_final_result;
-    if (!isFirst && result && result.includes('-')) {
-      const parts = result.split('-').map(s => s.trim());
-      if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
-    }
-    const surfaceKey = hintKeys.find(k => m.tournament_name && m.tournament_name.includes(k));
-    return {
-      opponent, opponentKey,
-      date: m.event_date,
-      tournament: m.tournament_name,
-      round: m.tournament_round,
-      surface: surfaceKey ? TOURNAMENT_VENUE_HINTS[surfaceKey].surface : null,
-      result, won,
-    };
-  });
-
-  const pct = matches.length ? Math.round((matches.filter(m => m.won).length / matches.length) * 1000) / 10 : null;
-  return { pct, matches };
-}
-
 async function fetchPlayerStats(playerKey) {
   const url = `${API_TENNIS_BASE}?method=get_players&APIkey=${API_TENNIS_KEY}&player_key=${playerKey}`;
   const res = await fetch(url);
@@ -540,7 +518,36 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return data.result;
+  // API returns success with no `result` field for a player who has no
+  // fixtures in the range (confirmed live for a player's prior-year window).
+  // Callers spread this directly, so always hand back an array.
+  return data.result || [];
+}
+
+// Recent-form fixtures — deliberately BROADER than the ATP-only aggregates
+// above. "Recent form" is meant to reflect a player's actual last-N completed
+// singles matches across ALL tours (ATP + Challenger + ITF), because lower-
+// ranked players play mostly Challenger/ITF events that event_type_key=265
+// would hide entirely (leaving them with 0 recent matches). So we drop the
+// type filter and pull a wide multi-year window in ONE get_fixtures call, then
+// filter to singles client-side (recentFormFromFixtures). Used ONLY for
+// recentForm — every other stat on the profile stays strictly ATP-tour-level.
+// Memoized per run: the same player often appears in more than one match AND
+// also gets a full profile built, and finished fixtures don't change mid-run,
+// so each player's wide fixtures window is fetched from the API at most once.
+const _recentSinglesFixturesCache = new Map();
+async function fetchRecentSinglesFixtures(playerKey) {
+  const cacheKey = String(playerKey);
+  if (_recentSinglesFixturesCache.has(cacheKey)) return _recentSinglesFixturesCache.get(cacheKey);
+  const stop = new Date().toISOString().split('T')[0];
+  const start = `${new Date().getFullYear() - 5}-01-01`; // 5-yr window: plenty for a last-10 even for inactive players
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${start}&date_stop=${stop}&player_key=${playerKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) return []; // transient failure: don't cache, so a later call can retry
+  const result = data.result || [];
+  _recentSinglesFixturesCache.set(cacheKey, result);
+  return result;
 }
 
 // Builds one season's { total, clay, hard, grass } row straight from real,
@@ -1209,9 +1216,54 @@ async function loadTournamentProfiles() {
     sinceYear: years[years.length - 1],
     profiles,
   };
-  fs.writeFileSync(TOURNAMENT_PROFILE_CACHE_PATH, JSON.stringify(output, null, 2));
+  writeJsonAtomic(TOURNAMENT_PROFILE_CACHE_PATH, output);
   console.log('Tournament profiles rebuilt.');
   return output;
+}
+
+// Builds the Mon–Sun forecast week that the match falls in, from the SAME
+// Open-Meteo response (daily block + hourly humidity), so it costs no extra
+// API call. Every value is a real forecast number; days that fall outside
+// Open-Meteo's window are marked { available:false } rather than invented.
+function buildForecastWeek(daily, hourly, matchDateStr) {
+  if (!daily || !daily.time) return null;
+  const mon = new Date(matchDateStr + 'T00:00:00Z');
+  mon.setUTCDate(mon.getUTCDate() - ((mon.getUTCDay() + 6) % 7)); // back to Monday
+  const ymd = d => d.toISOString().slice(0, 10);
+  const week = [];
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(mon); day.setUTCDate(mon.getUTCDate() + i);
+    const ds = ymd(day);
+    const di = daily.time.indexOf(ds);
+    if (di === -1) { week.push({ date: ds, available: false }); continue; }
+    let hSum = 0, hN = 0; // daily-mean humidity from the hourly series
+    if (hourly && hourly.time) {
+      for (let h = 0; h < hourly.time.length; h++) {
+        if (hourly.time[h].slice(0, 10) === ds && hourly.relative_humidity_2m[h] != null) {
+          hSum += hourly.relative_humidity_2m[h]; hN++;
+        }
+      }
+    }
+    const hi = daily.temperature_2m_max[di], lo = daily.temperature_2m_min[di], wd = daily.windspeed_10m_max[di];
+    week.push({
+      date: ds,
+      dow: day.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
+      label: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+      code: daily.weathercode[di],
+      hi: hi != null ? Math.round(hi) : null,
+      lo: lo != null ? Math.round(lo) : null,
+      rain: daily.precipitation_probability_max[di],
+      wind: wd != null ? Math.round(wd) : null,
+      humidity: hN ? Math.round(hSum / hN) : null,
+      isMatch: ds === matchDateStr,
+      available: true,
+    });
+  }
+  const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+  const weekRange = mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+    + ' \u2013 ' + sun.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })
+    + ', ' + sun.getUTCFullYear();
+  return { weekRange, days: week };
 }
 
 async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
@@ -1219,18 +1271,25 @@ async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
   if (!key) return null;
   const { lat, lon } = venueMap[key];
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,windspeed_10m,relative_humidity_2m&timezone=UTC`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&hourly=temperature_2m,windspeed_10m,relative_humidity_2m`
+    + `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max`
+    + `&past_days=7&forecast_days=7&timezone=UTC`;
   try {
     const res = await fetch(url);
     const data = await res.json();
     const matchHour = new Date(matchDateTimeISO).toISOString().slice(0, 13) + ':00';
     const hourIndex = data.hourly.time.indexOf(matchHour);
     if (hourIndex === -1) return null;
+    const matchDateStr = new Date(matchDateTimeISO).toISOString().slice(0, 10);
+    const forecast = buildForecastWeek(data.daily, data.hourly, matchDateStr);
     return {
       temperature: data.hourly.temperature_2m[hourIndex],
       windSpeed: data.hourly.windspeed_10m[hourIndex],
       humidity: data.hourly.relative_humidity_2m[hourIndex],
       source: 'Open-Meteo',
+      weekRange: forecast ? forecast.weekRange : null,
+      week: forecast ? forecast.days : null,
     };
   } catch (err) {
     console.error('Weather fetch failed:', err);
@@ -1291,6 +1350,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     bestOdds: { p1: bestP1, p2: bestP2 },
     // New: enriched from API-Tennis if a matching fixture was found
     tournamentRound: null,
+    p1Key: null,
+    p2Key: null,
     h2h: null,
     p1SurfaceWinRate: null,
     p2SurfaceWinRate: null,
@@ -1305,6 +1366,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p1TournamentHistory: null,
     p2TournamentHistory: null,
     extraStats: null,
+    matchStats: null,
     venue: null,
     courtSpeed: null,
     weather: null, // from Open-Meteo, independent of API-Tennis fixture match
@@ -1351,6 +1413,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   const p1IsFixtureFirst = lastName(fixture.event_first_player) === lastName(oddsEvent.home_team);
   const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
   const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
+  match.p1Key = p1Key;
+  match.p2Key = p2Key;
 
   // Real headshot URLs from the API-Tennis fixture (confirmed live this session:
   // event_first_player_logo / event_second_player_logo). Reuses p1IsFixtureFirst
@@ -1380,8 +1444,10 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   if (h2hData) {
     match.h2h = summarizeH2H(h2hData.headToHead, oddsEvent.home_team);
     match.h2h.matches = buildH2HMatchList(h2hData.headToHead, oddsEvent.home_team, surfaceMap);
-    const p1Form = buildRecentFormData(h2hData.p1RecentResults, p1Key);
-    const p2Form = buildRecentFormData(h2hData.p2RecentResults, p2Key);
+    const [p1Form, p2Form] = await Promise.all([
+      buildRecentFormForMatch(p1Key, surfaceMap),
+      buildRecentFormForMatch(p2Key, surfaceMap),
+    ]);
     match.p1RecentForm = p1Form.pct;
     match.p2RecentForm = p2Form.pct;
     match.p1RecentFormMatches = p1Form.matches;
@@ -1480,6 +1546,275 @@ function buildFinalScore(fixture) {
   };
 }
 
+// Real per-match box-score stats (distinct from EXTRA_STAT_DEFS above, which
+// aggregates across many matches for a season-level view). These come from
+// the same fixture's own `statistics` array, filtered to stat_period==='match'
+// (the API also returns per-set rows under the same stat names, which must be
+// excluded here to avoid mixing set-level and match-level numbers). Matched
+// case-insensitively since the API's stat_name casing is inconsistent
+// (confirmed live: '1st serve percentage' lowercase vs 'Break Points Saved'
+// capitalized).
+const MATCH_STAT_DEFS = [
+  { type: 'Service', name: 'Aces', kind: 'count' },
+  { type: 'Service', name: 'Double Faults', kind: 'count' },
+  { type: 'Service', name: '1st serve percentage', kind: 'pctDirect' },
+  { type: 'Service', name: '1st serve points won', kind: 'pct' },
+  { type: 'Service', name: '2nd serve points won', kind: 'pct' },
+  { type: 'Service', name: 'Break Points Saved', kind: 'pct' },
+  { type: 'Return', name: '1st return points won', kind: 'pct' },
+  { type: 'Return', name: '2nd return points won', kind: 'pct' },
+  { type: 'Return', name: 'Break Points Converted', kind: 'pct' },
+  { type: 'Points', name: 'Winners', kind: 'count' },
+  { type: 'Points', name: 'Unforced errors', kind: 'count' },
+  { type: 'Points', name: 'Total Points Won', kind: 'pct' },
+];
+
+// Shared by buildMatchStatsFromFixture() and buildTournamentProgression() —
+// finds one player's raw stat row for a given stat_type/stat_name within an
+// already stat_period==='match'-filtered list, matched case-insensitively
+// (API casing is inconsistent — confirmed live).
+function findMatchStat(matchStats, playerKey, type, name) {
+  return matchStats.find(s =>
+    String(s.player_key) === String(playerKey) &&
+    s.stat_type === type &&
+    String(s.stat_name).toLowerCase() === name.toLowerCase()
+  );
+}
+
+function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
+  if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
+  const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
+  if (matchStats.length === 0) return null;
+
+  const extractFor = playerKey => {
+    const out = {};
+    for (const def of MATCH_STAT_DEFS) {
+      const stat = findMatchStat(matchStats, playerKey, def.type, def.name);
+      if (!stat) continue;
+      const key = `${def.type}:${def.name}`;
+      if (def.kind === 'pct') {
+        out[key] = stat.stat_total > 0 ? Math.round((stat.stat_won / stat.stat_total) * 1000) / 10 : null;
+      } else if (def.kind === 'pctDirect') {
+        const n = parseFloat(stat.stat_value);
+        out[key] = Number.isFinite(n) ? n : null;
+      } else {
+        out[key] = parseInt(stat.stat_value, 10) || 0;
+      }
+    }
+    return out;
+  };
+
+  const p1 = extractFor(p1Key);
+  const p2 = extractFor(p2Key);
+  if (Object.keys(p1).length === 0 && Object.keys(p2).length === 0) return null;
+  return { p1, p2 };
+}
+
+// =================================================================
+// HISTORICAL MATCH STATS — real per-match box scores for the Form-tab
+// recent-form matches (not just the small set of top-level tracked
+// matches). Finished matches never change, so this cache has no TTL:
+// once an eventKey is fetched (success or genuine provider miss), it's
+// never re-fetched.
+// =================================================================
+const HISTORICAL_STATS_CACHE_PATH = 'historical-match-stats.json';
+
+function loadHistoricalStatsCache() {
+  if (fs.existsSync(HISTORICAL_STATS_CACHE_PATH)) {
+    return JSON.parse(fs.readFileSync(HISTORICAL_STATS_CACHE_PATH, 'utf8'));
+  }
+  return {};
+}
+
+async function fetchFixtureByMatchKey(matchKey) {
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${matchKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) return null;
+  return data.result?.[0] || null;
+}
+
+// =================================================================
+// PLAYER TOURNAMENT PROGRESSION — round-by-round stat trend for players
+// in the currently active tournament(s), plus a per-round field-average
+// benchmark computed across every finished match in the draw. Distinct
+// from both MATCH_STAT_DEFS (one match's box score) and EXTRA_STAT_DEFS
+// (season-level aggregate): this tracks ONE tournament edition's real
+// per-round numbers, consumed by the Match Analysis modal's Progression
+// tab for the two players in whichever match is being analyzed.
+// =================================================================
+const PROGRESSION_WINDOW_DAYS = 15; // longest real ATP main draw runs ~13 days (Slam R1->F), confirmed elsewhere in this file
+
+function isFinalRoundLabel(round) { return isFinalRound(round); }
+
+// Labels a chronologically-sorted list of distinct round strings as
+// R1, R2, R3... / QF / SF / F, without assuming a fixed draw size. Walks
+// from the end so it works whether this tournament ever has 5 rounds
+// (ATP 250, 32-draw) or 7 rounds (Slam, 128-draw).
+function labelRounds(sortedRoundStrings) {
+  const labels = new Array(sortedRoundStrings.length);
+  let i = sortedRoundStrings.length - 1;
+  if (i >= 0 && isFinalRoundLabel(sortedRoundStrings[i])) { labels[i] = 'F'; i--; }
+  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('semi')) { labels[i] = 'SF'; i--; }
+  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('quarter')) { labels[i] = 'QF'; i--; }
+  let n = 1;
+  for (let j = 0; j <= i; j++) labels[j] = `R${n++}`;
+  return labels;
+}
+
+const PROGRESSION_METRIC_DEFS = [
+  { key: 'firstServePct', type: 'Service', name: '1st serve percentage', kind: 'pctDirect' },
+  { key: 'firstServeWonPct', type: 'Service', name: '1st serve points won', kind: 'pct' },
+  { key: 'secondServeWonPct', type: 'Service', name: '2nd serve points won', kind: 'pct' },
+  { key: 'winners', type: 'Points', name: 'Winners', kind: 'count' },
+  { key: 'unforcedErrors', type: 'Points', name: 'Unforced errors', kind: 'count' },
+  { key: 'totalPointsWonPct', type: 'Points', name: 'Total Points Won', kind: 'pct' },
+];
+
+const PROGRESSION_DERIVED_METRIC_KEYS = [
+  'firstServePct', 'firstServeWonPct', 'secondServeWonPct',
+  'winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio',
+];
+
+// Extracts the 6 derived progression metrics for one player from one
+// match's already stat_period==='match'-filtered statistics list. Shared
+// by the per-player round loop and the per-round field-average aggregator
+// below so both use exactly the same derivation logic.
+function extractProgressionMetrics(matchStats, playerKey) {
+  const metrics = {};
+  for (const def of PROGRESSION_METRIC_DEFS) {
+    const stat = findMatchStat(matchStats, playerKey, def.type, def.name);
+    if (!stat) { metrics[def.key] = null; continue; }
+    if (def.kind === 'pct') {
+      metrics[def.key] = stat.stat_total > 0 ? Math.round((stat.stat_won / stat.stat_total) * 1000) / 10 : null;
+    } else if (def.kind === 'pctDirect') {
+      const n = parseFloat(stat.stat_value);
+      metrics[def.key] = Number.isFinite(n) ? n : null;
+    } else {
+      metrics[def.key] = parseInt(stat.stat_value, 10) || 0;
+    }
+  }
+  const totalPoints = metrics.winners != null && metrics.unforcedErrors != null
+    ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
+    : null;
+  const totalPointsPlayed = totalPoints && totalPoints.stat_total > 0 ? totalPoints.stat_total : null;
+  return {
+    firstServePct: metrics.firstServePct,
+    firstServeWonPct: metrics.firstServeWonPct,
+    secondServeWonPct: metrics.secondServeWonPct,
+    winnersPct: totalPointsPlayed ? Math.round((metrics.winners / totalPointsPlayed) * 1000) / 10 : null,
+    unforcedErrorsPct: totalPointsPlayed ? Math.round((metrics.unforcedErrors / totalPointsPlayed) * 1000) / 10 : null,
+    winnersUnforcedRatio: (metrics.unforcedErrors != null && metrics.unforcedErrors > 0 && metrics.winners != null)
+      ? Math.round((metrics.winners / metrics.unforcedErrors) * 100) / 100
+      : null,
+  };
+}
+
+function average(nums) {
+  const real = nums.filter(n => n != null && Number.isFinite(n));
+  if (real.length === 0) return null;
+  return Math.round((real.reduce((a, b) => a + b, 0) / real.length) * 100) / 100;
+}
+
+async function buildTournamentProgression(tourName) {
+  const bareName = tourName.replace(/^ATP\s+/, '').trim();
+  const today = new Date();
+  const windowStart = new Date(today.getTime() - PROGRESSION_WINDOW_DAYS * 86400000);
+  const dateStr = d => d.toISOString().split('T')[0];
+
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(windowStart)}&date_stop=${dateStr(today)}&event_type_key=265`;
+  let fixtures;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    fixtures = data.result || [];
+  } catch (err) {
+    console.error(`get_fixtures failed for tournament progression (${tourName}):`, err);
+    return null;
+  }
+
+  const played = fixtures.filter(f =>
+    f.tournament_name && f.tournament_name.includes(bareName) &&
+    f.event_qualification !== 'True' &&
+    (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
+  );
+  if (played.length === 0) return null;
+
+  const roundOrder = [...new Set(played.map(f => f.tournament_round))]
+    .map(round => ({ round, minDate: played.filter(f => f.tournament_round === round).reduce((min, f) => f.event_date < min ? f.event_date : min, '9999-99-99') }))
+    .sort((a, b) => a.minDate < b.minDate ? -1 : a.minDate > b.minDate ? 1 : 0)
+    .map(r => r.round);
+  const roundLabels = labelRounds(roundOrder);
+  const roundLabelByName = {};
+  roundOrder.forEach((round, i) => { roundLabelByName[round] = roundLabels[i]; });
+
+  // Group each player's matches by player_key, tracking whether they've lost.
+  const byPlayer = {}; // playerKey -> { name, matches: [...], eliminated: bool }
+  for (const f of played) {
+    const p1Key = f.first_player_key, p2Key = f.second_player_key;
+    const p1Won = f.event_winner === 'First Player';
+    for (const [key, name, won] of [[p1Key, f.event_first_player, p1Won], [p2Key, f.event_second_player, !p1Won]]) {
+      if (!byPlayer[key]) byPlayer[key] = { name, matches: [], eliminated: false };
+      byPlayer[key].matches.push({ fixture: f, won, opponent: key === p1Key ? f.event_second_player : f.event_first_player });
+      if (!won) byPlayer[key].eliminated = true;
+    }
+  }
+
+  const players = [];
+  for (const [playerKey, info] of Object.entries(byPlayer)) {
+    // Include eliminated players too — the Match Analysis modal's Progression
+    // tab needs both match participants even if one already lost.
+    const sortedMatches = [...info.matches].sort((a, b) => a.fixture.event_date < b.fixture.event_date ? -1 : 1);
+    const rounds = [];
+    for (const { fixture, opponent } of sortedMatches) {
+      if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) continue;
+      const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
+      if (matchStats.length === 0) continue;
+      const metrics = extractProgressionMetrics(matchStats, playerKey);
+      rounds.push({
+        round: roundLabelByName[fixture.tournament_round] || fixture.tournament_round,
+        opponent,
+        resultDisplay: fixture.event_final_result || null,
+        metrics,
+      });
+    }
+    if (rounds.length > 0) players.push({ name: info.name, playerKey, eliminated: info.eliminated, rounds });
+  }
+  if (players.length === 0) return null;
+
+  // Field average: for every round, average the 6 derived metrics across
+  // BOTH players of every finished fixture at that round (real full-draw
+  // aggregate — `played` already contains every finished match, not just
+  // still-alive players, so no extra fetching is needed).
+  const fieldAverageMetrics = {};
+  for (const key of PROGRESSION_DERIVED_METRIC_KEYS) fieldAverageMetrics[key] = [];
+  const fieldSampleSize = [];
+  for (const round of roundOrder) {
+    const roundFixtures = played.filter(f => f.tournament_round === round);
+    const perMetricValues = {};
+    for (const key of PROGRESSION_DERIVED_METRIC_KEYS) perMetricValues[key] = [];
+    let sampleCount = 0;
+    for (const f of roundFixtures) {
+      if (!Array.isArray(f.statistics) || f.statistics.length === 0) continue;
+      const matchStats = f.statistics.filter(s => s.stat_period === 'match');
+      if (matchStats.length === 0) continue;
+      for (const key of [f.first_player_key, f.second_player_key]) {
+        const m = extractProgressionMetrics(matchStats, key);
+        for (const metricKey of PROGRESSION_DERIVED_METRIC_KEYS) perMetricValues[metricKey].push(m[metricKey]);
+        sampleCount++;
+      }
+    }
+    for (const key of PROGRESSION_DERIVED_METRIC_KEYS) fieldAverageMetrics[key].push(average(perMetricValues[key]));
+    fieldSampleSize.push(sampleCount);
+  }
+
+  return {
+    rounds: roundLabels,
+    players,
+    fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
+  };
+}
+
 async function buildPastMatchObject(fixture, surfaceMap) {
   const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
   // Same real, already-provided-by-the-API string format used by h2hRoundLabel()
@@ -1509,6 +1844,8 @@ async function buildPastMatchObject(fixture, surfaceMap) {
     odds: { p1: null, p2: null, bookmaker: null },
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
+    p1Key,
+    p2Key,
     h2h: null,
     p1SurfaceWinRate: null,
     p2SurfaceWinRate: null,
@@ -1537,6 +1874,7 @@ async function buildPastMatchObject(fixture, surfaceMap) {
     liveGameScore: null,
     liveServer: null,
     finalScore: buildFinalScore(fixture),
+    matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
   };
 
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
@@ -1552,8 +1890,10 @@ async function buildPastMatchObject(fixture, surfaceMap) {
   if (h2hData) {
     match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
     match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
-    const p1Form = buildRecentFormData(h2hData.p1RecentResults, p1Key);
-    const p2Form = buildRecentFormData(h2hData.p2RecentResults, p2Key);
+    const [p1Form, p2Form] = await Promise.all([
+      buildRecentFormForMatch(p1Key, surfaceMap),
+      buildRecentFormForMatch(p2Key, surfaceMap),
+    ]);
     match.p1RecentForm = p1Form.pct;
     match.p2RecentForm = p2Form.pct;
     match.p1RecentFormMatches = p1Form.matches;
@@ -1595,6 +1935,778 @@ async function buildPastMatchObject(fixture, surfaceMap) {
 }
 
 // =================================================================
+// UPCOMING fixture-only matches — scheduled matches that exist in
+// API-Tennis get_fixtures but have NO betting-odds event yet (a bookmaker
+// hasn't opened markets). The odds-driven Today/Tomorrow tabs are built
+// only from fetchAllTennisEvents(), so these would otherwise never appear
+// until odds are published. This forward-looking sibling of
+// buildPastMatchObject() surfaces them the moment they're in the fixtures
+// feed (odds stay null → the UI renders them "coming soon", same as any
+// odds-driven match with no markets yet, see buildMatchObject). No
+// finalScore/matchStats since the match hasn't been played.
+// =================================================================
+async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
+  const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
+  const tour = fixture.tournament_round
+    ? fixture.tournament_round.split(' - ')[0].trim()
+    : `ATP ${fixture.tournament_name}`;
+
+  const p1Key = fixture.first_player_key;
+  const p2Key = fixture.second_player_key;
+
+  // Combine event_date + event_time so computeDay() gets a real datetime.
+  // Passing date-only would land a not-yet-played match at 00:00, which
+  // computeDay classifies as 'past' (matchDate < now) for today's fixtures.
+  const commence = `${fixture.event_date}T${fixture.event_time || '00:00'}:00`;
+
+  const match = {
+    id: `upcoming-${fixture.event_key}`,
+    day: computeDay(commence),
+    date: fixture.event_date,
+    time: fixture.event_time || null,
+    p1: fixture.event_first_player,
+    p2: fixture.event_second_player,
+    tour,
+    tourBadge: 'ATP', // event_type_key=265 = ATP Singles only
+    surface,
+    style: 'TBD',
+    value: null,
+    // No betting markets exist yet for this fixture — same null shape a
+    // no-market odds event produces, which the UI already handles.
+    odds: { p1: null, p2: null, bookmaker: null },
+    bestOdds: { p1: null, p2: null },
+    tournamentRound: fixture.tournament_round,
+    p1Key,
+    p2Key,
+    h2h: null,
+    p1SurfaceWinRate: null,
+    p2SurfaceWinRate: null,
+    p1Rank: null,
+    p2Rank: null,
+    p1RecentForm: null,
+    p2RecentForm: null,
+    p1RecentFormMatches: null,
+    p2RecentFormMatches: null,
+    p1Yearly: null,
+    p2Yearly: null,
+    p1TournamentHistory: null,
+    p2TournamentHistory: null,
+    extraStats: null,
+    matchStats: null,
+    venue: null,
+    courtSpeed: null,
+    weather: null,
+    live: false,
+    liveStatus: null,
+    liveScore: null,
+    liveGameScore: null,
+    liveServer: null,
+    p1PhotoUrl: fixture.event_first_player_logo || null,
+    p2PhotoUrl: fixture.event_second_player_logo || null,
+  };
+
+  // Weather is forward-looking here (unlike past matches), so it's fetched.
+  match.weather = await fetchMatchWeather(tour, commence, venueMap);
+
+  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
+  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
+  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
+
+  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
+  match.courtSpeed = courtConditions
+    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
+    : null;
+
+  const h2hData = await fetchH2H(p1Key, p2Key);
+  if (h2hData) {
+    match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
+    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
+    const [p1Form, p2Form] = await Promise.all([
+      buildRecentFormForMatch(p1Key, surfaceMap),
+      buildRecentFormForMatch(p2Key, surfaceMap),
+    ]);
+    match.p1RecentForm = p1Form.pct;
+    match.p2RecentForm = p2Form.pct;
+    match.p1RecentFormMatches = p1Form.matches;
+    match.p2RecentFormMatches = p2Form.matches;
+  }
+
+  const [p1Stats, p2Stats] = await Promise.all([
+    fetchPlayerStats(p1Key),
+    fetchPlayerStats(p2Key),
+  ]);
+  match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
+  match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
+  match.p1Rank = currentSinglesRank(p1Stats);
+  match.p2Rank = currentSinglesRank(p2Stats);
+
+  const currentYear = new Date().getFullYear();
+  const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
+    fetchPlayerFixturesForYear(p1Key, currentYear),
+    fetchPlayerFixturesForYear(p2Key, currentYear),
+  ]);
+  const p1CurrentRow = seasonRowFromFixtures(p1CurrentFixtures, p1Key, currentYear, surfaceMap);
+  const p2CurrentRow = seasonRowFromFixtures(p2CurrentFixtures, p2Key, currentYear, surfaceMap);
+
+  match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
+  match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures, match.courtSpeed ? match.courtSpeed.category : null);
+
+  if (hintKey) {
+    const [p1TournMatches, p2TournMatches] = await Promise.all([
+      fetchPlayerTournamentMatches(p1Key, hintKey),
+      fetchPlayerTournamentMatches(p2Key, hintKey),
+    ]);
+    match.p1TournamentHistory = buildTournamentHistory(p1TournMatches, p1Key);
+    match.p2TournamentHistory = buildTournamentHistory(p2TournMatches, p2Key);
+  }
+
+  return match;
+}
+
+// =================================================================
+// PLAYER PROFILES — a player-shaped (not match-shaped) view of the same
+// real data already fetched for matches.json, built for the dedicated
+// Player Profile page. Built once per pipeline run, for every player who
+// appears in at least one match in this run's matches.json — same scope
+// the rest of the app already uses (there is no standalone full-ATP-tour
+// player roster endpoint at this API tier, confirmed).
+//
+// SCOPE, confirmed honestly rather than fabricated:
+// - Ranking points, handedness/plays, and turned-pro year have no real
+//   data source at this API tier (get_standings is schema-documented but
+//   returns empty; no other endpoint carries these) — omitted entirely,
+//   never guessed.
+// - Player DNA has six axes to match the reference design's shape, but
+//   only Serve/Return/Baseline/Clutch are backed by real per-match stats.
+//   Net play and Movement have no real data source for the full tour at
+//   this tier (confirmed against API-Tennis, Sportradar, Matchstat.com,
+//   and open charted datasets) — both are always null here and rendered
+//   client-side as an explicit "N/A" state, never a fabricated number.
+// =================================================================
+const DNA_AXES = ['serve', 'return', 'baseline', 'clutch']; // movement/netPlay excluded — no real values to average
+const RAW_STAT_KEYS = [
+  'Service:Aces', 'Service:Double Faults', 'Service:1st Serve Points Won',
+  'Service:2nd Serve Points Won', 'Service:Break Points Saved',
+  'Return:Break Points Converted', 'Points:Winners', 'Points:Unforced Errors',
+  'Points:Service Points Won', 'Points:Return Points Won',
+];
+
+function clampPct(x) {
+  return Math.max(0, Math.min(100, x));
+}
+
+// Fixed linear-bound normalization: maps a real stat value from [lo, hi]
+// onto a 0-100 scale, clamped at the edges. Returns null (not 0) when the
+// underlying stat itself is unavailable — never a fabricated score.
+function scale(v, lo, hi) {
+  if (v === null || v === undefined) return null;
+  return clampPct(((v - lo) / (hi - lo)) * 100);
+}
+
+// Averages whichever of the given [value, lo, hi] triples have real
+// (non-null) data; returns null only if every input is unavailable.
+function blendScale(parts) {
+  const scaled = parts.map(([v, lo, hi]) => scale(v, lo, hi)).filter(v => v !== null);
+  if (scaled.length === 0) return null;
+  return Math.round(scaled.reduce((a, b) => a + b, 0) / scaled.length);
+}
+
+function meanOf(values) {
+  const nums = values.filter(v => v !== null && v !== undefined && !Number.isNaN(v));
+  if (nums.length === 0) return null;
+  return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
+}
+
+// Maps real per-match aggregate stats (aggregateStatsFromFixtures output)
+// to the reference design's 0-100 "Player DNA" percentile axes. Bounds are
+// fixed, hand-set from realistic ATP tour ranges — consistent with the
+// reference design's own disclaimer that these are "BSP model estimates":
+// every input is a real, fetched stat, only the 0-100 scaling is modeled.
+//   Serve   = blend of 1st-serve-won% [55-85], 2nd-serve-won% [35-60], aces/match [2-18]
+//   Return  = blend of return-points-won% [25-45], break-points-converted% [25-55]
+//   Baseline = blend of winners/match [10-35] and inverted unforced-errors/match [10-35]
+//   Clutch  = blend of break-points-saved% [50-75], break-points-converted% [25-55]
+//   Movement / Net play = always null (no real data source, rendered as N/A)
+function computeDnaScores(aggStats) {
+  const s = aggStats?.stats || null;
+  if (!s) return { serve: null, return: null, baseline: null, movement: null, netPlay: null, clutch: null };
+
+  const winnersScore = scale(s['Points:Winners'], 10, 35);
+  const ueScore = scale(s['Points:Unforced Errors'], 10, 35);
+  const baselineParts = [winnersScore, ueScore === null ? null : 100 - ueScore].filter(v => v !== null);
+  const baseline = baselineParts.length
+    ? Math.round(baselineParts.reduce((a, b) => a + b, 0) / baselineParts.length)
+    : null;
+
+  return {
+    serve: blendScale([
+      [s['Service:1st Serve Points Won'], 55, 85],
+      [s['Service:2nd Serve Points Won'], 35, 60],
+      [s['Service:Aces'], 2, 18],
+    ]),
+    return: blendScale([
+      [s['Points:Return Points Won'], 25, 45],
+      [s['Return:Break Points Converted'], 25, 55],
+    ]),
+    baseline,
+    movement: null,
+    netPlay: null,
+    clutch: blendScale([
+      [s['Service:Break Points Saved'], 50, 75],
+      [s['Return:Break Points Converted'], 25, 55],
+    ]),
+  };
+}
+
+// Career (all-seasons) singles record for one surface — same singles-only,
+// blank-vs-zero handling as surfaceWinRate(), but also exposes raw won/lost
+// counts for the surface-performance cards' "267-62" style display.
+function surfaceRecord(playerStats, surface) {
+  const wonKey = `${surface}_won`;
+  const lostKey = `${surface}_lost`;
+  let won = 0, lost = 0;
+  for (const season of playerStats?.stats || []) {
+    if (season.type !== 'singles') continue;
+    won += parseInt(season[wonKey], 10) || 0;
+    lost += parseInt(season[lostKey], 10) || 0;
+  }
+  const total = won + lost;
+  return { won, lost, winRate: total > 0 ? Math.round((won / total) * 1000) / 10 : null };
+}
+
+// Recent-form list for a single player, built from their own real fixtures
+// across every tour tier (ATP + Challenger + ITF, see fetchRecentSinglesFixtures).
+// This is the SINGLE source of truth for recent form everywhere: player
+// profiles call it directly, and every match's Form tab reaches it through
+// buildRecentFormForMatch(). get_H2H isn't used here because a standalone
+// profile has no natural "opponent" to pair against; the wide fetch carries no
+// event_type_key, so tour-tier scoping and the decided-match / qualifying-round
+// filters are all applied client-side below.
+function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
+  // Singles across every tour tier (Atp/Challenger/Itf "... Singles"), never
+  // doubles. The wide recent-form fetch carries no event_type_key, so this is
+  // where tour-tier scoping happens. Main-draw, decided matches only.
+  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const clean = (fixtures || [])
+    .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status) && f.event_qualification === 'False')
+    .slice()
+    .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+
+  const matches = clean.map(f => {
+    const isFirst = String(f.first_player_key) === String(playerKey);
+    const opponent = isFirst ? f.event_second_player : f.event_first_player;
+    const opponentKey = isFirst ? f.second_player_key : f.first_player_key;
+    const won = isFirst ? f.event_winner === 'First Player' : f.event_winner === 'Second Player';
+    let result = f.event_final_result;
+    if (!isFirst && result && result.includes('-')) {
+      const parts = result.split('-').map(s => s.trim());
+      if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
+    }
+    return {
+      opponent, opponentKey,
+      date: f.event_date,
+      tournament: f.tournament_name,
+      round: f.tournament_round,
+      surface: surfaceMap.get(String(f.tournament_key)) || null,
+      result, won,
+      eventKey: f.event_key,
+    };
+  });
+
+  const pct = matches.length ? Math.round((matches.filter(m => m.won).length / matches.length) * 1000) / 10 : null;
+  return { pct, matches };
+}
+
+// Per-match recent form for the Match Analysis modal. Uses the SAME broad
+// all-tier source as the profile's recentForm (ATP + Challenger + ITF, see
+// fetchRecentSinglesFixtures) so lower-ranked players who play mostly
+// Challenger/ITF still get real recent form — this is the single source of
+// truth for recent form across the whole dashboard. Capped to the last N the
+// modal actually displays so matches.json stays lean and the historical-stats
+// enrichment below only fetches box scores for shown matches; pct is over the
+// capped window to match the modal's "last N completed matches" wording.
+const RECENT_FORM_MODAL_CAP = 10;
+async function buildRecentFormForMatch(playerKey, surfaceMap) {
+  const full = recentFormFromFixtures(await fetchRecentSinglesFixtures(playerKey), playerKey, surfaceMap);
+  const matches = full.matches.slice(0, RECENT_FORM_MODAL_CAP);
+  const pct = matches.length ? Math.round((matches.filter(m => m.won).length / matches.length) * 1000) / 10 : null;
+  return { pct, matches };
+}
+
+// API-Tennis player_bday is "DD.MM.YYYY" (confirmed live).
+function computeAgeFromBday(bday) {
+  if (!bday || typeof bday !== 'string') return null;
+  const parts = bday.split('.');
+  if (parts.length !== 3) return null;
+  const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
+  if (!dd || !mm || !yyyy) return null;
+  const birth = new Date(yyyy, mm - 1, dd);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const hadBirthdayThisYear = (now.getMonth() > birth.getMonth())
+    || (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
+  if (!hadBirthdayThisYear) age--;
+  return age;
+}
+
+function titlesForYear(playerStats, year) {
+  const season = (playerStats?.stats || []).find(s => s.type === 'singles' && s.season === String(year));
+  return season ? (parseInt(season.titles, 10) || 0) : 0;
+}
+
+function titlesCareer(playerStats) {
+  return (playerStats?.stats || [])
+    .filter(s => s.type === 'singles')
+    .reduce((sum, s) => sum + (parseInt(s.titles, 10) || 0), 0);
+}
+
+// Real mean across every player built in this run's player-profiles.json —
+// not a hardcoded constant. Used for every player's "vs tour avg" sublabels
+// and the radar's dashed baseline polygon. Movement/Net play excluded (no
+// values to average).
+function computeTourAverage(profiles) {
+  const all = Object.values(profiles);
+  const dna = {};
+  for (const axis of DNA_AXES) dna[axis] = meanOf(all.map(p => p.dna.All[axis]));
+  dna.movement = null;
+  dna.netPlay = null;
+
+  const stats = {};
+  for (const key of RAW_STAT_KEYS) {
+    stats[key] = meanOf(all.map(p => (p.statsAll ? p.statsAll[key] : null)));
+  }
+
+  return { dna, stats };
+}
+
+const DNA_AXIS_LABELS = { serve: 'Serve', return: 'Return', baseline: 'Baseline play', clutch: 'Clutch performance' };
+
+// Narrative bullets, following the same honest-threshold pattern already
+// used by abstractSpeedInsight()/trendInsight()/buildProgressionAiSummary():
+// each bullet is independently gated on a real signal clearing a real
+// threshold, and is omitted (never invented) when it doesn't qualify.
+function buildPlayerInsights(profile, tourAverage) {
+  const insights = [];
+
+  let bestAxis = null, bestGap = 0;
+  for (const axis of DNA_AXES) {
+    const val = profile.dna.All[axis];
+    const avg = tourAverage.dna[axis];
+    if (val === null || avg === null) continue;
+    const gap = val - avg;
+    if (gap > bestGap) { bestGap = gap; bestAxis = axis; }
+  }
+  if (bestAxis && bestGap >= 8) {
+    const label = DNA_AXIS_LABELS[bestAxis];
+    insights.push({
+      title: `${label} is a standout strength`,
+      text: `${profile.name}'s ${label.toLowerCase()} score (${profile.dna.All[bestAxis]}) is ${Math.round(bestGap)} points above the tour average.`,
+      accent: 'blue',
+    });
+  }
+
+  let bestSurface = null, bestWinRate = -1;
+  for (const surface of ['Grass', 'Hard', 'Clay']) {
+    const rec = profile.surfaces[surface]?.record;
+    if (!rec || rec.winRate === null || (rec.won + rec.lost) < 5) continue;
+    if (rec.winRate > bestWinRate) { bestWinRate = rec.winRate; bestSurface = surface; }
+  }
+  if (bestSurface) {
+    const rec = profile.surfaces[bestSurface].record;
+    insights.push({
+      title: `${bestSurface} is the strongest surface`,
+      text: `${profile.name} wins ${rec.winRate}% of matches on ${bestSurface.toLowerCase()} (${rec.won}-${rec.lost} career).`,
+      accent: 'green',
+    });
+  }
+
+  const form = profile.recentForm;
+  if (form && form.matches.length >= 3) {
+    const last = form.matches.slice(0, 9);
+    const wins = last.filter(m => m.won).length;
+    const ratio = wins / last.length;
+    insights.push({
+      title: ratio >= 0.6 ? 'In strong recent form' : ratio <= 0.4 ? 'Struggling for recent form' : 'Mixed recent form',
+      text: `${wins}-${last.length - wins} across the last ${last.length} tour matches (${form.pct}% recent win rate).`,
+      accent: 'gold',
+    });
+  }
+
+  return insights.slice(0, 3);
+}
+
+// Orchestrates the full per-player build for every unique player appearing
+// in this run's matches[], then computes a real tour average across the
+// resulting set. Players with no real fetchPlayerStats() result are
+// skipped entirely — no fabricated profile is ever created.
+// Builds ONE player's profile object from real API-Tennis data (the same
+// fields the profile page reads), plus the set of opponents discovered in that
+// player's own fixtures. Returns { profile:null } when get_players yields
+// nothing — an honest skip, never a fabricated profile. `insights` is left
+// empty here and filled by the caller once the tour average is known.
+async function buildOneProfile(key, name, surfaceMap) {
+  const currentYear = new Date().getFullYear();
+  const playerStats = await fetchPlayerStats(key);
+  if (!playerStats) return { profile: null, opponents: [] };
+
+  const [currentFixtures, prevFixtures] = await Promise.all([
+    fetchPlayerFixturesForYear(key, currentYear),
+    fetchPlayerFixturesForYear(key, currentYear - 1),
+  ]);
+  const allFixtures = [...currentFixtures, ...prevFixtures];
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 371); // 53 weeks, safely covers a full 52-week window
+  const last52WeeksFixtures = allFixtures.filter(f => new Date(f.event_date) >= cutoff);
+
+  const aggBySurface = { All: aggregateStatsFromFixtures(last52WeeksFixtures, key) };
+  for (const surface of ['grass', 'hard', 'clay']) {
+    const label = surface[0].toUpperCase() + surface.slice(1);
+    const onSurface = allFixtures.filter(f => surfaceMap.get(String(f.tournament_key)) === surface);
+    aggBySurface[label] = aggregateStatsFromFixtures(onSurface, key);
+  }
+
+  const dna = {};
+  for (const label of ['All', 'Grass', 'Hard', 'Clay']) dna[label] = computeDnaScores(aggBySurface[label]);
+
+  const currentRow = seasonRowFromFixtures(currentFixtures, key, currentYear, surfaceMap);
+  const currentYearRecord = currentRow?.total || { won: 0, lost: 0 };
+  const currentYearWinRate = (currentYearRecord.won + currentYearRecord.lost) > 0
+    ? Math.round((currentYearRecord.won / (currentYearRecord.won + currentYearRecord.lost)) * 1000) / 10
+    : null;
+
+  const surfaces = {};
+  for (const surface of ['grass', 'hard', 'clay']) {
+    const label = surface[0].toUpperCase() + surface.slice(1);
+    surfaces[label] = { record: surfaceRecord(playerStats, surface), agg: aggBySurface[label] };
+  }
+
+  const seasonTrend = [currentRow, ...yearlyBreakdown(playerStats)]
+    .filter(Boolean)
+    .filter(row => parseInt(row.year, 10) >= currentYear - 5)
+    .sort((a, b) => parseInt(a.year, 10) - parseInt(b.year, 10))
+    .map(row => ({
+      year: row.year,
+      winRate: (row.total.won + row.total.lost) > 0
+        ? Math.round((row.total.won / (row.total.won + row.total.lost)) * 1000) / 10
+        : null,
+    }));
+
+  const profile = {
+    key,
+    name,
+    country: playerStats.player_country || null,
+    age: computeAgeFromBday(playerStats.player_bday),
+    rank: currentSinglesRank(playerStats),
+    titlesThisYear: titlesForYear(playerStats, currentYear),
+    titlesCareer: titlesCareer(playerStats),
+    kpis: {
+      All: { record: currentYearRecord, winRate: currentYearWinRate },
+      Grass: { record: surfaces.Grass.record, winRate: surfaces.Grass.record.winRate },
+      Hard: { record: surfaces.Hard.record, winRate: surfaces.Hard.record.winRate },
+      Clay: { record: surfaces.Clay.record, winRate: surfaces.Clay.record.winRate },
+    },
+    dna,
+    statsAll: aggBySurface.All?.stats || null,
+    surfaces,
+    // Recent form uses its own broad all-tier fetch (see fetchRecentSinglesFixtures),
+    // NOT the ATP-only allFixtures used for the season/DNA/surface aggregates above.
+    recentForm: recentFormFromFixtures(await fetchRecentSinglesFixtures(key), key, surfaceMap),
+    seasonTrend,
+    insights: [], // filled in by the caller, once tourAverage is known
+  };
+
+  // Opponents this player has actually faced (1st-degree only, no recursion),
+  // taken straight from the fixtures we already fetched — keyed by their real
+  // player_key, named from the fixture. Used to widen the searchable pool.
+  const opponents = [];
+  for (const f of allFixtures) {
+    const isFirst = String(f.first_player_key) === String(key);
+    const oppKey = isFirst ? f.second_player_key : f.first_player_key;
+    const oppName = isFirst ? f.event_second_player : f.event_first_player;
+    if (oppKey && oppName) opponents.push([String(oppKey), oppName]);
+  }
+
+  return { profile, opponents };
+}
+
+// Opponent-profile cache. Seed players (today's matches) are always rebuilt
+// fresh; their 1st-degree opponents — a much larger, slow-changing pool — are
+// profiled once and reused for OPPONENT_PROFILE_MAX_AGE_MS. Because a built
+// opponent is cached (and not rebuilt until it expires), its build cost is a
+// one-time cost, NOT a per-run cost — so the per-run cap is set high enough to
+// backfill the whole current opponent set in a single run. That way every
+// player a seed player has faced becomes searchable right away instead of
+// trickling in over several runs; the cap now only guards against a
+// pathologically large opponent set appearing at once.
+const PLAYER_PROFILE_CACHE_PATH = 'player-profiles-cache.json';
+const OPPONENT_PROFILE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+const MAX_OPPONENT_BUILDS_PER_RUN = 400;
+
+// Full-career tournament history. Each player's entire ATP-singles history is
+// fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
+// per-tournament career record. Cached in its own file with a 7-day TTL shared
+// across all players so seed players (rebuilt every 30-min run) don't refetch;
+// only up to MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN new/stale players are pulled
+// per run so the pool backfills over a few runs instead of one huge burst.
+const TOURNAMENT_HISTORY_CACHE_PATH = 'player-tournament-history.json';
+const TOURNAMENT_HISTORY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
+
+// Round depth ranking (higher = deeper run). Used to derive each player's best
+// result at a tournament. Covers both the word forms ("Quarter-finals") and the
+// fraction forms ("1/4-finals") the API returns across seasons.
+const ROUND_RANK = {
+  F: 7, SF: 6, QF: 5, R16: 4, R32: 3, R64: 2, R128: 1, R256: 0,
+};
+// Full-word labels for a finish/round code (used for edition finish badges and
+// the tournament-level "best result").
+const ROUND_FULL = {
+  F: 'Final', SF: 'Semi-final', QF: 'Quarter-final',
+  R16: 'Round of 16', R32: 'Round of 32', R64: 'Round of 64',
+  R128: 'Round of 128', R256: 'Round of 256',
+};
+function careerRoundShort(round) {
+  if (!round) return '';
+  let r = String(round);
+  if (r.includes(' - ')) r = r.split(' - ').pop();
+  r = r.trim();
+  const frac = r.match(/1\/(\d+)/);
+  if (frac) {
+    const map = { '2': 'SF', '4': 'QF', '8': 'R16', '16': 'R32', '32': 'R64', '64': 'R128', '128': 'R256' };
+    return map[frac[1]] || r;
+  }
+  if (/semi[-\s]?final/i.test(r)) return 'SF';
+  if (/quarter[-\s]?final/i.test(r)) return 'QF';
+  const ro = r.match(/round of (\d+)/i);
+  if (ro) {
+    const m = { '16': 'R16', '32': 'R32', '64': 'R64', '128': 'R128', '256': 'R256' };
+    return m[ro[1]] || ('R' + ro[1]);
+  }
+  if (/final/i.test(r)) return 'F';
+  return r;
+}
+function normalizeTournamentName(name) {
+  return String(name || '').replace(/^(ATP|WTA|ITF|Challenger)\s+/i, '').trim();
+}
+
+// Fetches a player's entire ATP-singles career in one get_fixtures call and
+// reduces it to a per-tournament career record with a round-by-round path for
+// every edition (who he beat / lost to, with scores). Returns an array sorted
+// by total matches desc, or null if the API gave nothing. No fabrication: only
+// completed matches with a real winner and round are counted. Each entry:
+//   { name, won, lost, firstYear, lastYear, titles, bestResult, bestYears[],
+//     editions: [ { year, finish, finishWon,
+//       matches: [ { res:'W'|'L', round, opp, oppKey, score } ] } ] }  // newest first
+async function fetchPlayerCareerHistory(playerKey) {
+  const stop = new Date().toISOString().split('T')[0];
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=2000-01-01&date_stop=${stop}&event_type_key=265&player_key=${playerKey}`;
+  let data;
+  try {
+    const res = await fetch(url);
+    data = await res.json();
+  } catch (e) { return null; }
+  if (!data || !data.success || !Array.isArray(data.result)) return null;
+
+  const byTournament = {};
+  for (const f of data.result) {
+    if (!f.tournament_name || !f.tournament_round) continue;
+    if (f.event_qualification === 'True') continue;
+    if (f.event_winner !== 'First Player' && f.event_winner !== 'Second Player') continue;
+    const isP1 = String(f.first_player_key) === String(playerKey);
+    if (!isP1 && String(f.second_player_key) !== String(playerKey)) continue;
+    const didWin = (f.event_winner === 'First Player' && isP1)
+      || (f.event_winner === 'Second Player' && !isP1);
+    const name = normalizeTournamentName(f.tournament_name);
+    if (!name) continue;
+    const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
+    if (!year) continue;
+    const code = careerRoundShort(f.tournament_round);
+    const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';
+    const oppKey = isP1 ? f.second_player_key : f.first_player_key;
+    const score = f.event_final_result || '';
+
+    let t = byTournament[name];
+    if (!t) {
+      t = byTournament[name] = {
+        name, won: 0, lost: 0, firstYear: year, lastYear: year, _byEdition: {},
+      };
+    }
+    if (didWin) t.won++; else t.lost++;
+    if (year < t.firstYear) t.firstYear = year;
+    if (year > t.lastYear) t.lastYear = year;
+    if (!t._byEdition[year]) t._byEdition[year] = [];
+    t._byEdition[year].push({
+      res: didWin ? 'W' : 'L', round: code, opp,
+      oppKey: oppKey != null ? String(oppKey) : '', score,
+      _rank: ROUND_RANK[code] != null ? ROUND_RANK[code] : -1, _won: didWin,
+    });
+  }
+
+  const list = Object.values(byTournament);
+  if (!list.length) return null;
+
+  for (const t of list) {
+    const years = Object.keys(t._byEdition).map(Number).sort((a, b) => b - a);
+    let titles = 0;
+    let bestScore = -1, bestResult = '', bestYears = [];
+    t.editions = years.map((y) => {
+      // Order a year's matches earliest round → latest (final last).
+      const ms = t._byEdition[y].slice().sort((a, b) => a._rank - b._rank);
+      // The deepest-round match is where the player exited (or the final won).
+      const deepest = ms.reduce((best, m) => (m._rank > best._rank ? m : best), ms[0]);
+      const finishWon = deepest._won && deepest.round === 'F';
+      if (finishWon) titles++;
+      const finish = finishWon ? 'Won' : (ROUND_FULL[deepest.round] || deepest.round);
+      // finishScore ranks a title (Won final) above a lost final.
+      const finishScore = finishWon ? 8 : deepest._rank;
+      if (finishScore > bestScore) { bestScore = finishScore; bestResult = finish; bestYears = [y]; }
+      else if (finishScore === bestScore) { bestYears.push(y); }
+      return {
+        year: y, finish, finishWon,
+        matches: ms.map((m) => ({ res: m.res, round: m.round, opp: m.opp, oppKey: m.oppKey, score: m.score })),
+      };
+    });
+    t.titles = titles;
+    t.bestResult = bestResult;
+    t.bestYears = bestYears; // newest-first (years array already desc)
+    delete t._byEdition;
+  }
+
+  list.sort((a, b) => (b.won + b.lost) - (a.won + a.lost));
+  return list;
+}
+
+// Orchestrates the full per-player build. Seed = every unique player in this
+// run's matches[] (built fresh). Then every 1st-degree opponent of those seed
+// players is added to the searchable pool via a TTL cache, so player search can
+// reach players well beyond today's fixtures. The tour average is computed over
+// the seed set only, preserving its meaning as "the current field's average".
+// Players with no real fetchPlayerStats() result are skipped — never fabricated.
+async function buildPlayerProfiles(matches, surfaceMap) {
+  const seedPlayers = new Map(); // key -> name (today's fixtures)
+  for (const m of matches) {
+    if (m.p1Key && m.p1) seedPlayers.set(String(m.p1Key), m.p1);
+    if (m.p2Key && m.p2) seedPlayers.set(String(m.p2Key), m.p2);
+  }
+
+  let cachedPlayers = {}; // key -> { builtAt, profile|null }
+  try {
+    const cache = JSON.parse(fs.readFileSync(PLAYER_PROFILE_CACHE_PATH, 'utf8'));
+    cachedPlayers = cache.players || {};
+  } catch (e) { /* first run — no cache yet */ }
+
+  const profiles = {};
+  const opponentPool = new Map(); // key -> name (discovered, non-seed)
+
+  // Pass 1 — seed players, always fresh. Collect their opponents along the way.
+  for (const [key, name] of seedPlayers) {
+    const { profile, opponents } = await buildOneProfile(key, name, surfaceMap);
+    if (profile) profiles[key] = profile;
+    for (const [oppKey, oppName] of opponents) {
+      if (!seedPlayers.has(oppKey) && !opponentPool.has(oppKey)) opponentPool.set(oppKey, oppName);
+    }
+  }
+
+  // Pass 2 — opponents, TTL-cached and throttled. Fresh cache entries are
+  // reused as-is (including negatively-cached nulls); stale/missing ones are
+  // rebuilt up to MAX_OPPONENT_BUILDS_PER_RUN, and any not reached this run
+  // fall back to their stale cached profile so they stay searchable meanwhile.
+  const now = Date.now();
+  let built = 0, reused = 0, skippedNull = 0;
+  for (const [key, name] of opponentPool) {
+    const cached = cachedPlayers[key];
+    const fresh = cached && cached.builtAt
+      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
+    if (fresh) {
+      if (cached.profile) { profiles[key] = cached.profile; reused++; } else skippedNull++;
+      continue;
+    }
+    if (built >= MAX_OPPONENT_BUILDS_PER_RUN) {
+      if (cached && cached.profile) { profiles[key] = cached.profile; reused++; }
+      continue;
+    }
+    const { profile } = await buildOneProfile(key, name, surfaceMap);
+    cachedPlayers[key] = { builtAt: new Date().toISOString(), profile: profile || null };
+    built++;
+    if (profile) profiles[key] = profile; else skippedNull++;
+  }
+
+  // Full-career tournament history — attach to every profile so the player
+  // profile page can answer "what's his record at <tournament>?" over his whole
+  // career (not just the 2-season recentForm window). One get_fixtures call per
+  // player, shared across runs via a 7-day-TTL cache; throttled so the pool
+  // backfills over a few runs rather than one big burst. Stale/unreached players
+  // keep their previously-cached history so they stay answerable meanwhile.
+  let historyCache = {}; // key -> { builtAt, history|null }
+  try {
+    const hc = JSON.parse(fs.readFileSync(TOURNAMENT_HISTORY_CACHE_PATH, 'utf8'));
+    historyCache = hc.players || {};
+  } catch (e) { /* first run — no history cache yet */ }
+
+  let histFetched = 0, histReused = 0, histEmpty = 0;
+  for (const key of Object.keys(profiles)) {
+    const cached = historyCache[key];
+    const fresh = cached && cached.builtAt
+      && (now - new Date(cached.builtAt).getTime() < TOURNAMENT_HISTORY_MAX_AGE_MS);
+    if (fresh) {
+      if (cached.history) { profiles[key].tournamentHistory = cached.history; histReused++; }
+      else histEmpty++;
+      continue;
+    }
+    if (histFetched >= MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN) {
+      if (cached && cached.history) { profiles[key].tournamentHistory = cached.history; histReused++; }
+      continue;
+    }
+    const history = await fetchPlayerCareerHistory(key);
+    historyCache[key] = { builtAt: new Date().toISOString(), history: history || null };
+    histFetched++;
+    if (history) profiles[key].tournamentHistory = history; else histEmpty++;
+  }
+
+  fs.writeFileSync(TOURNAMENT_HISTORY_CACHE_PATH,
+    JSON.stringify({ fetchedAt: new Date().toISOString(), players: historyCache }, null, 2));
+  console.log(`Tournament history: fetched ${histFetched}, reused ${histReused}, `
+    + `no-data ${histEmpty} → ${Object.keys(profiles).filter(k => profiles[k].tournamentHistory).length} players with career history.`);
+
+  // Backfill pre-2021 editions the API-Tennis feed can't reach (its fixture
+  // history stops ~2021), so per-tournament career records span each player's
+  // whole career. Merges the open TML-Database archive (same schema as Jeff
+  // Sackmann's tennis_atp) into tournamentHistory in place — API years always
+  // win, TML only fills missing pre-2021 years. Idempotent and network-tolerant
+  // (a TML outage just logs and skips, leaving the 2021+ records intact).
+  console.log('Backfilling pre-2021 career history from TML-Database archive...');
+  await backfillProfilesHistory(profiles, { log: (m) => console.log(m) });
+
+  // Tour average over the seed set only (falls back to the whole pool if, on
+  // some odd run, no seed profile built), so existing "vs tour avg" insights
+  // for the current field don't shift as the opponent pool grows.
+  const seedProfiles = {};
+  for (const key of seedPlayers.keys()) if (profiles[key]) seedProfiles[key] = profiles[key];
+  const tourAverage = computeTourAverage(
+    Object.keys(seedProfiles).length ? seedProfiles : profiles);
+
+  for (const key of Object.keys(profiles)) {
+    profiles[key].insights = buildPlayerInsights(profiles[key], tourAverage);
+  }
+
+  fs.writeFileSync(PLAYER_PROFILE_CACHE_PATH,
+    JSON.stringify({ fetchedAt: new Date().toISOString(), players: cachedPlayers }, null, 2));
+  console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
+    + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}] `
+    + `→ ${Object.keys(profiles).length} searchable.`);
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    players: profiles,
+    tourAverage,
+  };
+}
+
+// =================================================================
 // MAIN
 // =================================================================
 async function runPipeline() {
@@ -1628,34 +2740,209 @@ async function runPipeline() {
     matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap));
   }
 
-  // Yesterday / 2-days-ago day-tabs: a 2-day trailing window only (not a full
-  // archive), sourced directly from get_fixtures since finished matches have
-  // no betting-odds event to build from. Same 'Finished'/'Retired'/
-  // 'Walk Over' filter already used elsewhere (courtSpeedRecordFromFixtures,
-  // seasonRowFromFixtures) for a genuinely decided match, plus excluding
-  // qualifying-round matches to match the main-tour-only scope the odds-driven
-  // Today/Tomorrow tabs already have.
+  // Fixture-driven upcoming matches: scheduled fixtures in the today→+2-day
+  // window (apiTennisFixtures, already fetched above) that have NO odds event
+  // yet — so buildMatchObject never created them. Surfaces them anyway (e.g. a
+  // freshly-drawn final before bookmakers open markets). Deduped against the
+  // odds-driven matches by the same last-name pairing findApiTennisFixture uses,
+  // and among themselves by event_key. Only genuinely still-scheduled fixtures
+  // (not Finished/Retired/Walk Over/live, not qualifying) are included; day-tab
+  // placement is left to computeDay (anything past the day-after lands under
+  // 'later' → visible only via "All days").
+  const pairKey = (a, b) => [lastName(a), lastName(b)].sort().join('|');
+  const oddsMatchKeys = new Set(matches.map(m => pairKey(m.p1, m.p2)));
+  const seenUpcomingKeys = new Set();
+  const upcomingFixtures = apiTennisFixtures.filter(f => {
+    if (['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) return false;
+    if (f.event_live === '1') return false;
+    if (f.event_qualification === 'True') return false;
+    if (f.event_winner === 'First Player' || f.event_winner === 'Second Player') return false;
+    // A fixture with a not-yet-assigned player (TBD / awaiting-qualifier slot)
+    // has no player key, so none of the per-player enrichment can run — skip it
+    // until both players are set.
+    if (!f.first_player_key || !f.second_player_key) return false;
+    if (oddsMatchKeys.has(pairKey(f.event_first_player, f.event_second_player))) return false;
+    const key = String(f.event_key);
+    if (seenUpcomingKeys.has(key)) return false;
+    seenUpcomingKeys.add(key);
+    return true;
+  });
+  console.log(`Found ${upcomingFixtures.length} scheduled fixture(s) with no odds event yet — adding them from the fixtures feed.`);
+  for (const fixture of upcomingFixtures) {
+    matches.push(await buildUpcomingMatchObject(fixture, surfaceMap, venueMap));
+  }
+
+  // Completed matches for the Today / Yesterday / 2-days-ago tabs: a 3-day
+  // trailing window that now INCLUDES today, so a match that finishes today
+  // gets its real score + box-score stats on the very next run instead of
+  // waiting until it rolls into "yesterday". Sourced directly from get_fixtures
+  // since finished matches have no betting-odds event to build from. Same
+  // 'Finished'/'Retired'/'Walk Over' filter already used elsewhere
+  // (courtSpeedRecordFromFixtures, seasonRowFromFixtures) for a genuinely
+  // decided match, plus excluding qualifying-round matches to match the
+  // main-tour-only scope the odds-driven Today/Tomorrow tabs already have.
   const dayMs = 86400000;
   const dateStr = d => d.toISOString().split('T')[0];
   const twoDaysAgo = dateStr(new Date(Date.now() - 2 * dayMs));
-  const yesterday = dateStr(new Date(Date.now() - dayMs));
-  console.log(`Fetching past fixtures (${twoDaysAgo} to ${yesterday}) for the Yesterday / 2-days-ago tabs...`);
-  const pastFixtures = await fetchApiTennisFixtures(twoDaysAgo, yesterday);
+  console.log(`Fetching finished fixtures (${twoDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
+  const pastFixtures = await fetchApiTennisFixtures(twoDaysAgo, today);
   const finishedPastFixtures = pastFixtures.filter(f =>
     ['Finished', 'Retired', 'Walk Over'].includes(f.event_status) && f.event_qualification !== 'True'
   );
-  console.log(`Found ${finishedPastFixtures.length} finished past matches for the 2-day trailing window.`);
+  console.log(`Found ${finishedPastFixtures.length} finished matches in the 3-day trailing window (incl. today).`);
   for (const fixture of finishedPastFixtures) {
-    matches.push(await buildPastMatchObject(fixture, surfaceMap));
+    const pastMatch = await buildPastMatchObject(fixture, surfaceMap);
+    // A match that finished TODAY may already be present as a scoreless
+    // odds-driven or fixture-only card (built above before the result landed).
+    // Drop that placeholder so there's exactly one card for the matchup — the
+    // scored one. Only ever removes entries that carry no finalScore, so real
+    // past results (which never share this matchup+window) are left untouched.
+    const key = pairKey(pastMatch.p1, pastMatch.p2);
+    for (let i = matches.length - 1; i >= 0; i--) {
+      if (!matches[i].finalScore && pairKey(matches[i].p1, matches[i].p2) === key) {
+        matches.splice(i, 1);
+      }
+    }
+    matches.push(pastMatch);
   }
 
-  fs.writeFileSync('matches.json', JSON.stringify(matches, null, 2));
+  // -----------------------------------------------------------------
+  // HISTORICAL MATCH STATS for Form-tab recent-form matches — real
+  // per-match box scores fetched via get_fixtures?match_key=<eventKey>,
+  // reusing the same parser (buildMatchStatsFromFixture) already used
+  // for the small set of top-level tracked past matches. Deduped across
+  // every player's recent-form list (many matches repeat), cached
+  // indefinitely in HISTORICAL_STATS_CACHE_PATH since finished matches
+  // never change — only uncached eventKeys are actually fetched here.
+  // -----------------------------------------------------------------
+  const uniqueEventKeys = new Set();
+  for (const m of matches) {
+    for (const entry of [...(m.p1RecentFormMatches || []), ...(m.p2RecentFormMatches || [])]) {
+      if (entry.eventKey) uniqueEventKeys.add(String(entry.eventKey));
+    }
+  }
+  const historicalStatsCache = loadHistoricalStatsCache();
+  const uncachedEventKeys = [...uniqueEventKeys].filter(k => !(k in historicalStatsCache));
+  console.log(`Fetching real stats for ${uncachedEventKeys.length} uncached historical match(es) (${uniqueEventKeys.size - uncachedEventKeys.length} already cached)...`);
+  for (const eventKey of uncachedEventKeys) {
+    const fixture = await fetchFixtureByMatchKey(eventKey);
+    await new Promise(r => setTimeout(r, 150));
+    if (fixture && fixture.first_player_key && fixture.second_player_key) {
+      const matchStats = buildMatchStatsFromFixture(fixture, fixture.first_player_key, fixture.second_player_key);
+      historicalStatsCache[eventKey] = matchStats
+        ? { p1Key: fixture.first_player_key, p2Key: fixture.second_player_key, matchStats }
+        : { matchStats: null };
+    } else {
+      historicalStatsCache[eventKey] = { matchStats: null };
+    }
+  }
+  fs.writeFileSync(HISTORICAL_STATS_CACHE_PATH, JSON.stringify(historicalStatsCache, null, 2));
+
+  let historicalStatsAttached = 0;
+  for (const m of matches) {
+    for (const [entries, ownKey] of [[m.p1RecentFormMatches, m.p1Key], [m.p2RecentFormMatches, m.p2Key]]) {
+      if (!entries) continue;
+      for (const entry of entries) {
+        const cached = entry.eventKey ? historicalStatsCache[String(entry.eventKey)] : null;
+        if (!cached || !cached.matchStats) continue;
+        const isOwnFirst = String(cached.p1Key) === String(ownKey);
+        entry.matchStats = isOwnFirst
+          ? { own: cached.matchStats.p1, opp: cached.matchStats.p2 }
+          : { own: cached.matchStats.p2, opp: cached.matchStats.p1 };
+        historicalStatsAttached++;
+      }
+    }
+  }
+  const historicalStatsSuccessCount = [...uniqueEventKeys].filter(k => historicalStatsCache[k]?.matchStats).length;
+  console.log(`${historicalStatsSuccessCount}/${uniqueEventKeys.size} unique historical matches got real stats from API-Tennis (rest not available from provider). Attached to ${historicalStatsAttached} Form-tab row(s).`);
+
+  // Preserve odds/bestOdds/oddsMovement patched in by the refreshers between
+  // pipeline runs. The pipeline's own odds source (The Odds API) has no ATP 250
+  // coverage (Bastad/Gstaad/Umag); refresh-scores.py and refresh-odds.py write
+  // odds/bestOdds straight into matches.json, and refresh-odds-history.py writes
+  // the per-book opening->now oddsMovement timeline. None of these are produced
+  // by a full rebuild, so carry the prior values forward for any match this run
+  // produced none for.
+  const hasOdds = m => m && m.odds && m.odds.p1 && m.odds.p2;
+  const hasMovement = m => m && m.oddsMovement && m.oddsMovement.books
+    && Object.keys(m.oddsMovement.books).length > 0;
+  try {
+    const prior = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
+    const priorIndex = new Map();
+    for (const pm of prior) {
+      if (!hasOdds(pm) && !hasMovement(pm)) continue;
+      priorIndex.set(`id:${pm.id}`, pm);
+      priorIndex.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm);
+    }
+    let preserved = 0, preservedMv = 0;
+    for (const m of matches) {
+      const pm = priorIndex.get(`id:${m.id}`)
+        || priorIndex.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
+      if (!pm) continue;
+      if (!hasOdds(m) && hasOdds(pm)) {
+        m.odds = pm.odds;
+        m.bestOdds = pm.bestOdds;
+        preserved++;
+      }
+      if (!hasMovement(m) && hasMovement(pm)) {
+        m.oddsMovement = pm.oddsMovement;
+        preservedMv++;
+      }
+    }
+    if (preserved) console.log(`Preserved odds on ${preserved} match(es) from the previous matches.json (refresher-patched, no rebuild coverage).`);
+    if (preservedMv) console.log(`Preserved odds-movement history on ${preservedMv} match(es) from the previous matches.json.`);
+  } catch (e) {
+    // No prior matches.json (first run) — nothing to preserve.
+  }
+
+  writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
   const enriched = matches.filter(m => m.h2h !== null).length;
   console.log(`${enriched}/${matches.length} matches got real H2H/stats data (rest had no API-Tennis fixture match).`);
+
+  console.log('Building player profiles for every player in this run...');
+  const playerProfiles = await buildPlayerProfiles(matches, surfaceMap);
+  writeJsonAtomic('player-profiles.json', playerProfiles);
+  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+
+  // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
+  // with the same pre-2021 archive used for the profiles, so the Today's Matches
+  // detail agrees with the profile page (e.g. Zverev's full Wimbledon record, not
+  // just the API's 2021+ slice). Reconciles by API player key via the profiles
+  // just built. Idempotent + network-tolerant, then re-writes matches.json.
+  console.log('Backfilling pre-2021 tournament history into match cards...');
+  const matchBf = await backfillMatchesTournamentHistory(matches, playerProfiles.players, { log: (m) => console.log(m) });
+  if (matchBf.patched > 0) {
+    writeJsonAtomic('matches.json', matches);
+    console.log(`Re-wrote matches.json with backfilled tournament history (${matchBf.patched} match-sides, ${matchBf.addedEditions} editions).`);
+  }
+
+  // Player Tournament Progression — round-by-round real stats for still-alive
+  // players in whichever tournament(s) actually have matches this run (one
+  // extra get_fixtures call per active tournament, full draw with statistics).
+  const activeTournamentNames = [...new Set(matches.map(m => m.tour).filter(Boolean))];
+  console.log(`Building tournament progression for ${activeTournamentNames.length} active tournament(s): ${activeTournamentNames.join(', ')}`);
+  const progressionTournaments = {};
+  for (const tourName of activeTournamentNames) {
+    const progression = await buildTournamentProgression(tourName);
+    // Keyed by the bare tournament name (stripping "ATP ") to match
+    // TOURNAMENT_CATALOG's own `name` field, e.g. "Wimbledon" not "ATP
+    // Wimbledon" — that's the key showTournamentProfile(key) actually
+    // receives client-side, confirmed by reading TOURNAMENT_CATALOG.
+    if (progression) progressionTournaments[tourName.replace(/^ATP\s+/, '').trim()] = progression;
+  }
+  writeJsonAtomic('tournament-progression.json', {
+    fetchedAt: new Date().toISOString(),
+    tournaments: progressionTournaments,
+  });
+  console.log(`Wrote tournament-progression.json (${Object.keys(progressionTournaments).length}/${activeTournamentNames.length} tournaments had enough finished rounds for a progression chart).`);
 }
 
-runPipeline().catch(err => {
-  console.error('Pipeline failed:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  runPipeline().catch(err => {
+    console.error('Pipeline failed:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures };
