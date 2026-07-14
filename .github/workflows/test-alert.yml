@@ -1,0 +1,11 @@
+name: TEST alert (delete me)
+on:
+  workflow_dispatch:
+jobs:
+  fail-on-purpose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Intentionally fail to test email alerts
+        run: |
+          echo "Deliberate test of GitHub failure email notifications."
+          exit 1
