@@ -1411,7 +1411,7 @@ let matchesLoadedOnce = false;
 // this 3-minute refresh lands — is caught here as a parse error rather than
 // silently yielding garbage.
 async function fetchMatchesOnce(){
-  const res = await fetch('./matches.json', { cache: 'no-store' });
+  const res = await fetch('./matches.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
   return JSON.parse(text); // throws on a truncated mid-write read
@@ -3777,13 +3777,13 @@ let radarCalibration = { cardBenchmarks: {} };
 let careerSplits = {};
 async function loadCareerSplits(){
   try {
-    const res = await fetch('./career-splits.json', { cache: 'no-store' });
+    const res = await fetch('./career-splits.json', { cache: 'no-cache' });
     if (res.ok){ const d = await res.json(); careerSplits = d.players || {}; }
   } catch (err) { /* additive; absence just hides the sections */ }
 }
 async function loadPlayerProfiles(){
   try {
-    const res = await fetch('./player-profiles.json', { cache: 'no-store' });
+    const res = await fetch('./player-profiles.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     playerProfiles = data.players || {};
@@ -4826,7 +4826,7 @@ let tournamentProfiles = {};
 let tournamentProfilesSinceYear = null;
 async function loadTournamentProfiles(){
   try {
-    const res = await fetch('./tournament-profiles.json', { cache: 'no-store' });
+    const res = await fetch('./tournament-profiles.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     tournamentProfiles = data.profiles || {};
@@ -4845,7 +4845,7 @@ async function loadTournamentProfiles(){
 let tournamentProgression = { tournaments: {} };
 async function loadTournamentProgression(){
   try {
-    const res = await fetch('./tournament-progression.json', { cache: 'no-store' });
+    const res = await fetch('./tournament-progression.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     tournamentProgression = await res.json();
   } catch (err) {
@@ -6804,15 +6804,19 @@ document.getElementById('h2hP1').addEventListener('change', renderH2H);
 document.getElementById('h2hP2').addEventListener('change', renderH2H);
 
 /* ---------- INITIAL LOAD ---------- */
+// Critical path: the match list. matches.json (+ the tiny progression file)
+// load first so Today's Matches paints immediately.
 loadMatches();
-// tournament-profiles.json is historical/curated data (30-day server-side
-// cache) — loaded once on page load, not on the 3-minute matches refresh.
-loadTournamentProfiles();
 loadTournamentProgression();
-// player-profiles.json powers the dedicated Player Profile page (opened from
-// the Players tab). Loaded once on page load like the other profile datasets.
-loadPlayerProfiles();
-loadCareerSplits();
+// Heavy profile datasets are NOT needed for the initial match list:
+// tournament-profiles.json (~5MB) powers the Tournament page; player-profiles.json
+// (~21MB) powers the Player Profile page and makes cards clickable/searchable.
+// Defer them off the critical path so those large downloads don't compete with
+// first paint — each re-renders its own view when it finishes loading. (Cards
+// become clickable and search populates a beat later, which is fine.)
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); };
+if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
+else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap
 // since it's just re-reading the local matches.json, not re-calling
 // the paid APIs (that only happens when bsp-pipeline.js itself runs).
