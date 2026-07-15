@@ -754,6 +754,22 @@
   .yr-atponly{ display:inline-block; margin-left:6px; font-size:8.5px; font-weight:700; letter-spacing:0.04em; color:#7f8a9c; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:4px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
   .yr-legend{ margin-top:12px; font-size:11px; color:#6b7280; line-height:1.5; }
   .yr-legend .yr-atponly{ margin:0 2px; }
+  .yr-table td.yr-clickable{ cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,0.18); text-underline-offset:2px; }
+  .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration-color:rgba(123,164,255,0.7); }
+  .yr-drill{ margin-top:2px; }
+  .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:#c3ccdb; padding:9px 2px 7px; border-top:1px solid rgba(255,255,255,0.06); }
+  .yr-drill-head b{ color:#eef2f8; font-family:'IBM Plex Mono',monospace; }
+  .yr-drill-close{ margin-left:auto; cursor:pointer; color:#6b7280; font-size:12px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:5px; }
+  .yr-drill-close:hover{ background:rgba(255,255,255,0.06); color:#c3ccdb; }
+  .yr-drill-note{ font-size:11.5px; color:#5b6472; padding:7px 2px; }
+  .yr-drill-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:5px 2px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:11.5px; }
+  .yr-drill-row:last-child{ border-bottom:none; }
+  .yr-drill-wl{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; text-align:center; }
+  .yr-drill-wl.win{ color:#3ECF8E; }
+  .yr-drill-wl.loss{ color:#E8607A; }
+  .yr-drill-opp{ color:#cfd6e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .yr-drill-sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; white-space:nowrap; }
+  .yr-drill-meta{ grid-column:2 / 4; font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
@@ -1921,7 +1937,20 @@ function toggleSeasonMatches(id){
   const rec = document.getElementById(`seasonRec-${id}`);
   if (rec) rec.classList.toggle('expanded');
 }
-function buildYearlyTable(name, rows, colPrefix, seasonSurface){
+// A year-table cell. All-tier rows (2021+) are clickable to drill into that
+// year+surface's matches (TennisExplorer-style); older/ATP-only or empty cells
+// stay plain. `surf` 'total' drills into all surfaces that year.
+function yrSurfCell(r, surf, colPrefix, playerKey){
+  const cell = r[surf];
+  const cls = cellClass(cell, surf);
+  const txt = cellText(cell);
+  if (cell && r.allTier && playerKey){
+    const drillSurf = surf === 'total' ? 'all' : surf;
+    return `<td class="${cls} yr-clickable" onclick="showYearSurfaceMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}')">${txt}</td>`;
+  }
+  return `<td class="${cls}">${txt}</td>`;
+}
+function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey){
   if (!rows || rows.length === 0) {
     return `
       <div class="yr-col">
@@ -1950,10 +1979,10 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface){
     return `
     <tr>
       <td class="yr-year">${r.year}${r.allTier === false ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
-      <td class="${cellClass(r.total, 'total')}">${cellText(r.total)}</td>
-      <td class="${cellClass(r.clay, 'clay')}">${cellText(r.clay)}</td>
-      <td class="${cellClass(r.hard, 'hard')}">${cellText(r.hard)}</td>
-      <td class="${cellClass(r.grass, 'grass')}">${cellText(r.grass)}</td>
+      ${yrSurfCell(r, 'total', colPrefix, playerKey)}
+      ${yrSurfCell(r, 'clay', colPrefix, playerKey)}
+      ${yrSurfCell(r, 'hard', colPrefix, playerKey)}
+      ${yrSurfCell(r, 'grass', colPrefix, playerKey)}
     </tr>
   `;
   }).join('');
@@ -1994,8 +2023,54 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface){
           <td class="${cellClass(totals.grass, 'grass')}">${cellText(totals.grass)}</td>
         </tr></tfoot>
       </table>
+      <div class="yr-drill" id="yrDrill-${colPrefix}"></div>
     </div>
   `;
+}
+// ---- Year-table drill-down (TennisExplorer-style): click a year+surface number
+// to list those matches below. Data is player-histories.json — a small side file
+// loaded lazily on modal open, so the homepage payload is never affected. ----
+let playerHistories = null;
+let _playerHistoriesPromise = null;
+function loadPlayerHistories(){
+  if (playerHistories) return Promise.resolve(playerHistories);
+  if (_playerHistoriesPromise) return _playerHistoriesPromise;
+  _playerHistoriesPromise = fetch('./player-histories.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : {})
+    .then(d => { playerHistories = d || {}; return playerHistories; })
+    .catch(err => { console.warn('player-histories.json load failed:', err.message); playerHistories = {}; return playerHistories; });
+  return _playerHistoriesPromise;
+}
+async function showYearSurfaceMatches(playerKey, year, surface, colPrefix){
+  const container = document.getElementById(`yrDrill-${colPrefix}`);
+  if (!container) return;
+  const token = `${playerKey}|${year}|${surface}`;
+  if (container.dataset.token === token && container.innerHTML){ container.innerHTML = ''; container.dataset.token = ''; return; } // toggle off
+  container.dataset.token = token;
+  container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
+  await loadPlayerHistories();
+  if (container.dataset.token !== token) return; // superseded by a newer click
+  const all = (playerHistories && playerHistories[String(playerKey)]) || [];
+  const list = all.filter(mm => String(mm.year) === String(year) && (surface === 'all' || mm.surface === surface));
+  const surfLabel = surface === 'all' ? 'All surfaces' : surface.charAt(0).toUpperCase() + surface.slice(1);
+  const won = list.filter(mm => mm.won).length, lost = list.length - won;
+  const closeBtn = `<span class="yr-drill-close" onclick="showYearSurfaceMatches('${playerKey}','${year}','${surface}','${colPrefix}')" title="Close">✕</span>`;
+  if (!list.length){
+    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
+    return;
+  }
+  const rows = list.map(mm => {
+    const w = mm.won;
+    const dateStr = mm.date ? formatShortDate(new Date(mm.date + 'T00:00:00')) : '';
+    const meta = [mm.tournament || '', mm.round || ''].filter(Boolean).join(' · ');
+    return `<div class="yr-drill-row">
+      <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
+      <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
+      <span class="yr-drill-sc">${escapeHtml(mm.result || '')}</span>
+      <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
+    </div>`;
+  }).join('');
+  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
 }
 // Pads both players' year lists to a single shared year span so the two
 // tables line up row-for-row (per the design). Each player keeps their real
@@ -2031,10 +2106,11 @@ function buildYearlyTables(m){
   const legend = hasAtpOnly
     ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
     : '';
+  loadPlayerHistories(); // warm the lazy drill-down side file while the modal opens
   return `
     <div class="yr-grid">
-      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface)}
-      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface)}
+      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface, m.p1Key)}
+      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface, m.p2Key)}
     </div>${legend}
   `;
 }

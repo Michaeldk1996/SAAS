@@ -514,6 +514,42 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
 }
 
+// Flat all-tier match list (currentYear-5..now) for the Overview year-table
+// drill-down: click a year+surface number -> see those matches (tournament,
+// date, opponent, score). Powers the lazily-loaded player-histories.json side
+// file. Newest-first; only matches with a known surface (the drill-down is
+// surface-scoped). No matchStats — kept lean so the side file stays small.
+function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
+  const cutoff = currentYear - 5;
+  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const out = [];
+  for (const f of (fixtures || [])) {
+    if (!isSingles(f)) continue;
+    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (f.event_qualification !== 'False') continue;
+    if (!f.event_winner) continue;
+    const isFirst = String(f.first_player_key) === String(playerKey);
+    const isSecond = String(f.second_player_key) === String(playerKey);
+    if (!isFirst && !isSecond) continue;
+    const year = String(f.event_date || '').slice(0, 4);
+    if (!/^\d{4}$/.test(year) || parseInt(year, 10) < cutoff) continue;
+    const surface = surfaceMap.get(String(f.tournament_key));
+    if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
+    const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    const opponent = isFirst ? f.event_second_player : f.event_first_player;
+    let result = f.event_final_result;
+    if (isSecond && result && result.includes('-')) {
+      const p = result.split('-').map(s => s.trim());
+      if (p.length === 2) result = `${p[1]} - ${p[0]}`;
+    }
+    let round = f.tournament_round || '';
+    if (round.includes(' - ')) round = round.split(' - ').pop().trim();
+    out.push({ year, surface, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won });
+  }
+  out.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return out;
+}
+
 // =================================================================
 // TOURNAMENT SURFACE LOOKUP + LIVE CURRENT-SEASON COMPUTATION
 // get_tournaments returns a `tournament_sourface` field per tournament_key,
@@ -3326,6 +3362,20 @@ async function runPipeline() {
   const playerProfiles = await buildPlayerProfiles(matches, surfaceMap);
   writeJsonAtomic('player-profiles.json', playerProfiles, true);
   console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+
+  // Drill-down match history (all-tier, ~5 seasons) for TODAY'S players only —
+  // a small side file the Overview year-table drill-down loads lazily when a
+  // match modal opens, so it never touches the homepage/critical-path payload.
+  // Keyed by player key; reuses the memoized recent-form fetch (no extra calls).
+  const histYear = new Date().getFullYear();
+  const histKeys = new Set();
+  for (const mm of matches) { if (mm.p1Key) histKeys.add(String(mm.p1Key)); if (mm.p2Key) histKeys.add(String(mm.p2Key)); }
+  const playerHistories = {};
+  for (const hk of histKeys) {
+    playerHistories[hk] = playerMatchHistory(await fetchRecentSinglesFixtures(hk), hk, histYear, surfaceMap);
+  }
+  writeJsonAtomic('player-histories.json', playerHistories, true);
+  console.log(`Wrote player-histories.json (${Object.keys(playerHistories).length} player(s), year-table drill-down).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
