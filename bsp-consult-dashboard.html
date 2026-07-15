@@ -5869,7 +5869,7 @@ function tourxBuildTournament(name){
     // "reached" — human label for the deepest round the player has data for
     // (used by the Head-to-head pickers); advance one round if they won it.
     const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_PHRASE[finishRound] || '—';
-    return { name: p.name, playerKey: p.playerKey, data, opponents, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
+    return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, data, opponents, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
   });
   return { name, rounds, roundLabels, players, field: t.fieldAverage || null };
 }
@@ -6327,15 +6327,13 @@ function tourxRoundViewHtml(T){
       </div>`;
   const barBlock = (label, note, entries, roundAvgByKey) => filterBar + `<div style="margin-top:26px;">${header(label)}<div style="font-size:12.5px;color:#6b7280;margin-bottom:18px;">${note}</div>${tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey)}</div>`;
 
-  // Latest round index that actually has an ingested box score for anyone, plus
-  // a test for whether a given round's NEXT round has been played yet. Early in a
-  // live event only R1 exists — nobody has "advanced" — so we must show every
-  // player who PLAYED the round (their box scores) rather than gating on advancers.
+  // Latest round index that actually has an ingested box score for anyone. Bounds
+  // the round selector and drives "hasn't been played yet" for rounds beyond it.
+  // Per-round winners are decided by the wonRound() test inside renderRound.
   const key0 = TOURX_METRICS[0].key;
   const hasBox = (p, i) => p.data && p.data[key0] && p.data[key0][i] != null;
   let frontierIdx = -1;
   for (let i = 0; i < rounds.length; i++) if (T.players.some(p => hasBox(p, i))) frontierIdx = i;
-  const nextRoundPlayed = i => T.players.some(p => hasBox(p, i + 1));
 
   // Renders the per-round box-score comparison grid for one round. A round whose
   // NEXT round has already been played shows just the winners (players who
@@ -6351,20 +6349,24 @@ function tourxRoundViewHtml(T){
       return filterBar + dnaCard(`<b style="color:#c3ccdb;">${roundLabel}</b> hasn't been played yet at ${T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:#c3ccdb;">${latest}</b>.` : ''}`);
     }
     const lastIdx = tourxActiveLabels.length - 1;
-    let players, advancersOnly;
-    if (rIdx === lastIdx && rounds.length >= tourxActiveLabels.length){
-      // Draw's final round: no "next round", so the champion is cross-referenced from profiles.
+    // A player is shown in a round iff they WON that round — independent of
+    // whether the next round has started. "Won round i" = they have a box score
+    // there AND either they went on to a later round (they advanced) OR that
+    // round is their latest and they're not eliminated (they won their most
+    // recent match). So Collignon appears in R2 the moment his R2 finishes, even
+    // while the rest of R2 is still being played, and Altmaier is never shown in
+    // the R2 he lost. (resultDisplay can't tell who won — it's oriented to the
+    // fixture's first player — so the eliminated flag from event_winner is used.)
+    const wonRound = (p, i) => hasBox(p, i) && (hasBox(p, i + 1) || !p.eliminated);
+    let players = T.players.filter(p => wonRound(p, rIdx));
+    const advancersOnly = true;
+    // Final: if the champion's final box score isn't ingested yet, cross-reference
+    // the champion from tournament profiles so the Final still resolves to a row.
+    if (rIdx === lastIdx && rounds.length >= tourxActiveLabels.length && !players.length){
       const champ = (typeof tournamentProfiles !== 'undefined' && tournamentProfiles[T.name] && tournamentProfiles[T.name].defendingChampion && tournamentProfiles[T.name].defendingChampion.name) || null;
       const finalists = T.players.filter(p => p.nRounds >= tourxActiveLabels.length && hasBox(p, lastIdx));
       players = champ ? finalists.filter(p => tourxNameMatch(p.name, champ)) : [];
-      advancersOnly = true;
       if (!players.length) return filterBar + dnaCard('Data not available for the final — no champion could be matched to a player with an ingested final box score.');
-    } else if (nextRoundPlayed(rIdx)){
-      players = T.players.filter(p => p.nRounds >= rIdx + 2 && hasBox(p, rIdx)); // advanced to next round
-      advancersOnly = true;
-    } else {
-      players = T.players.filter(p => hasBox(p, rIdx)); // frontier round: everyone who played it
-      advancersOnly = false;
     }
     let entries = players.map(w => {
       const values = {};
@@ -6385,23 +6387,18 @@ function tourxRoundViewHtml(T){
       const arr = T.field && T.field.metrics && T.field.metrics[m.key];
       roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
     });
-    const titleLabel = advancersOnly ? `Round view · ${roundLabel} winners` : `Round view · ${roundLabel}`;
-    const baseNote = advancersOnly
-      ? `Showing ${entries.length} ${roundLabel} winner${entries.length === 1 ? '' : 's'} (players who advanced to the next round) — first serve, return and the rest are their box scores from this round. The dashed line is the field average across all players in this round.`
-      : `Showing all ${nAll} player${nAll === 1 ? '' : 's'} who played ${roundLabel} — first serve, return and the rest are their box scores from this round. Winners aren't marked yet because the next round hasn't been played. The dashed line is the field average across all players in this round.`;
+    const titleLabel = `Round view · ${roundLabel} winners`;
+    const baseNote = `Showing ${entries.length} ${roundLabel} winner${entries.length === 1 ? '' : 's'} — first serve, return and the rest are their box scores from the match they won this round. The dashed line is the field average across all players in this round.`;
     const note = selNames.length ? `Filtered to ${entries.length} selected player${entries.length === 1 ? '' : 's'}. ${baseNote}` : baseNote;
     return barBlock(titleLabel, note, entries, roundAvgByKey);
   };
 
-  // "All rounds" → the selected player(s) plotted across every round they played.
+  // Round comparison is bar-only by design: it ranks each round's winners on
+  // their box-score metrics. For a player's round-by-round TREND (line charts),
+  // use the Player progression view — that's the deliberate split. "All rounds"
+  // here means "the latest played round" (pick any specific round from the chips
+  // above); selected players are filtered into that round's bars by renderRound.
   if (selIdx == null){
-    if (selPlayers.length){
-      const legend = tourxCmpLegendHtml(selPlayers);
-      const note = `<div style="font-size:12.5px;color:#6b7280;margin:0 0 4px;">Full round-by-round progression for the selected player${selPlayers.length === 1 ? '' : 's'} — every round with an ingested box score is shown; nothing is estimated.</div>`;
-      return filterBar + `<div style="margin-top:26px;">${header('Round view · All rounds')}${legend}${note}${tourxCompareCardsHtml(selPlayers, shownMetrics, T.field, 'rounds')}</div>`;
-    }
-    // No player picked yet → default to the most-recent round with box scores so
-    // the report shows real per-match data immediately (first serve, return, …).
     if (frontierIdx < 0) return filterBar + dnaCard(`No box scores have been ingested for ${T.name} yet — check back once the first round has been played.`);
     return renderRound(frontierIdx);
   }
@@ -6428,13 +6425,27 @@ function tourxPlayerViewHtml(T){
   // Comparison mode — one or more players selected: the Handoff #15 progression
   // grid (six panels, spotlight toggles). Legend + averages callout above it.
   if (selPlayers.length){
-    const legend = tourxPPLegendHtml(selPlayers);
-    const names = selPlayers.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
+    // Progression needs at least two data points, so a player is only chartable
+    // once they've played 2+ matches. Drop any selected player with a single
+    // match; if none qualify, show the "needs 2 matches" message instead of a
+    // meaningless one-point chart.
+    const eligible = selPlayers.filter(p => p.data && p.nRounds >= 2);
+    if (!eligible.length){
+      const who = selPlayers.length === 1
+        ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> has only played one match so far`
+        : `None of the selected players have played 2 matches yet`;
+      const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once a player has played at least <b style="color:#c3ccdb;">2 matches</b> in the tournament — a single match is one data point, so there's no trend to plot. ${who}; the progression chart appears here automatically once they've played their second match.</div>`;
+      return controls + msg;
+    }
+    const legend = tourxPPLegendHtml(eligible);
+    const names = eligible.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
+    const dropped = selPlayers.length - eligible.length;
+    const droppedNote = dropped ? ` <b style="color:#eef2f8;">${dropped} selected player${dropped === 1 ? '' : 's'}</b> with a single match ${dropped === 1 ? 'is' : 'are'} hidden until they've played twice.` : '';
     const callout = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
         <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
-        <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">The <b style="color:#eef2f8;">${names}</b> figures beside each chart title are each player's <b style="color:#eef2f8;">average across all rounds they played</b> — not a single round's value. <b style="color:#eef2f8;">Tap a player's name</b> beside any chart to spotlight or mute them across every chart.</span>
+        <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">The <b style="color:#eef2f8;">${names}</b> figures beside each chart title are each player's <b style="color:#eef2f8;">average across all rounds they played</b> — not a single round's value. <b style="color:#eef2f8;">Tap a player's name</b> beside any chart to spotlight or mute them across every chart.${droppedNote}</span>
       </div>`;
-    return controls + `<div style="margin-top:22px;">${legend}${callout}${tourxCompareCardsHtml(selPlayers, TOURX_METRICS, field, 'progress')}</div>`;
+    return controls + `<div style="margin-top:22px;">${legend}${callout}${tourxCompareCardsHtml(eligible, TOURX_METRICS, field, 'progress')}</div>`;
   }
 
   // No manual selection → auto-populate from the second round onward. Any player
