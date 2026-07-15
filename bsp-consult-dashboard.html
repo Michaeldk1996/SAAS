@@ -754,6 +754,11 @@
   .yr-atponly{ display:inline-block; margin-left:6px; font-size:8.5px; font-weight:700; letter-spacing:0.04em; color:#7f8a9c; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:4px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
   .yr-legend{ margin-top:12px; font-size:11px; color:#6b7280; line-height:1.5; }
   .yr-legend .yr-atponly{ margin:0 2px; }
+  .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 14px; flex-wrap:wrap; }
+  .yr-tierlbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
+  .yr-tiertoggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
+  .yr-tiertoggle .opt{ font-size:11px; font-weight:600; color:#8b93a3; padding:4px 11px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
+  .yr-tiertoggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
   .yr-table td.yr-clickable{ cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,0.18); text-underline-offset:2px; }
   .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration-color:rgba(123,164,255,0.7); }
   .yr-drill{ margin-top:2px; }
@@ -1937,20 +1942,40 @@ function toggleSeasonMatches(id){
   const rec = document.getElementById(`seasonRec-${id}`);
   if (rec) rec.classList.toggle('expanded');
 }
-// A year-table cell. All-tier rows (2021+) are clickable to drill into that
-// year+surface's matches (TennisExplorer-style); older/ATP-only or empty cells
-// stay plain. `surf` 'total' drills into all surfaces that year.
-function yrSurfCell(r, surf, colPrefix, playerKey){
-  const cell = r[surf];
+// Career-overview tier filter: 'all' (ATP + Challenger&ITF combined, default),
+// 'atp', or 'chitf'. Selecting a tier re-renders the whole Overview table +
+// career total for that tier. Challenger/ITF only exists 2021+, so older rows
+// show — under that tab.
+let overviewTier = 'all';
+let _overviewMatch = null;
+function cellForTier(r, surf, tier){
+  if (tier === 'all') return r[surf] || null;
+  const t = r[tier];
+  return (t && t[surf]) || null;
+}
+function sumCellsTier(rows, key, tier){
+  let won = 0, lost = 0, has = false;
+  for (const r of rows){ const c = cellForTier(r, key, tier); if (c){ won += c.won; lost += c.lost; has = true; } }
+  return has ? { won, lost } : null;
+}
+function setOverviewTier(t){
+  overviewTier = t;
+  const el = document.getElementById('aSectionOverview');
+  if (el && _overviewMatch) el.innerHTML = buildYearlyTables(_overviewMatch);
+}
+// A year-table cell for the active tier. All-tier rows (2021+) are clickable to
+// drill into that year+surface's matches; older/empty cells stay plain.
+function yrSurfCell(r, surf, colPrefix, playerKey, tier){
+  const cell = cellForTier(r, surf, tier);
   const cls = cellClass(cell, surf);
   const txt = cellText(cell);
   if (cell && r.allTier && playerKey){
     const drillSurf = surf === 'total' ? 'all' : surf;
-    return `<td class="${cls} yr-clickable" onclick="showYearSurfaceMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}')">${txt}</td>`;
+    return `<td class="${cls} yr-clickable" onclick="showYearSurfaceMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}','${tier}')">${txt}</td>`;
   }
   return `<td class="${cls}">${txt}</td>`;
 }
-function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey){
+function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier){
   if (!rows || rows.length === 0) {
     return `
       <div class="yr-col">
@@ -1979,14 +2004,14 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey){
     return `
     <tr>
       <td class="yr-year">${r.year}${r.allTier === false ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
-      ${yrSurfCell(r, 'total', colPrefix, playerKey)}
-      ${yrSurfCell(r, 'clay', colPrefix, playerKey)}
-      ${yrSurfCell(r, 'hard', colPrefix, playerKey)}
-      ${yrSurfCell(r, 'grass', colPrefix, playerKey)}
+      ${yrSurfCell(r, 'total', colPrefix, playerKey, tier)}
+      ${yrSurfCell(r, 'clay', colPrefix, playerKey, tier)}
+      ${yrSurfCell(r, 'hard', colPrefix, playerKey, tier)}
+      ${yrSurfCell(r, 'grass', colPrefix, playerKey, tier)}
     </tr>
   `;
   }).join('');
-  const totals = { total: sumCells(rows, 'total'), clay: sumCells(rows, 'clay'), hard: sumCells(rows, 'hard'), grass: sumCells(rows, 'grass') };
+  const totals = { total: sumCellsTier(rows, 'total', tier), clay: sumCellsTier(rows, 'clay', tier), hard: sumCellsTier(rows, 'hard', tier), grass: sumCellsTier(rows, 'grass', tier) };
   const surfBarHtml = (cell, cls, label) => {
     const pct = cell && (cell.won + cell.lost) > 0 ? Math.round(cell.won / (cell.won + cell.lost) * 100) : null;
     const vHtml = pct != null ? `${cell.won}-${cell.lost}<span class="v-pct"> · ${pct}%</span>` : '—';
@@ -2041,22 +2066,24 @@ function loadPlayerHistories(){
     .catch(err => { console.warn('player-histories.json load failed:', err.message); playerHistories = {}; return playerHistories; });
   return _playerHistoriesPromise;
 }
-async function showYearSurfaceMatches(playerKey, year, surface, colPrefix){
+async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
+  tier = tier || 'all';
   const container = document.getElementById(`yrDrill-${colPrefix}`);
   if (!container) return;
-  const token = `${playerKey}|${year}|${surface}`;
+  const token = `${playerKey}|${year}|${surface}|${tier}`;
   if (container.dataset.token === token && container.innerHTML){ container.innerHTML = ''; container.dataset.token = ''; return; } // toggle off
   container.dataset.token = token;
   container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
   await loadPlayerHistories();
   if (container.dataset.token !== token) return; // superseded by a newer click
   const all = (playerHistories && playerHistories[String(playerKey)]) || [];
-  const list = all.filter(mm => String(mm.year) === String(year) && (surface === 'all' || mm.surface === surface));
+  const list = all.filter(mm => String(mm.year) === String(year) && (surface === 'all' || mm.surface === surface) && (tier === 'all' || mm.level === tier));
   const surfLabel = surface === 'all' ? 'All surfaces' : surface.charAt(0).toUpperCase() + surface.slice(1);
+  const tierLabel = tier === 'all' ? '' : (tier === 'atp' ? ' · ATP' : ' · Challenger & ITF');
   const won = list.filter(mm => mm.won).length, lost = list.length - won;
-  const closeBtn = `<span class="yr-drill-close" onclick="showYearSurfaceMatches('${playerKey}','${year}','${surface}','${colPrefix}')" title="Close">✕</span>`;
+  const closeBtn = `<span class="yr-drill-close" onclick="showYearSurfaceMatches('${playerKey}','${year}','${surface}','${colPrefix}','${tier}')" title="Close">✕</span>`;
   if (!list.length){
-    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
+    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
     requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
     return;
   }
@@ -2071,7 +2098,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix){
       <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
     </div>`;
   }).join('');
-  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
+  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
   requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
 }
 // Pads both players' year lists to a single shared year span so the two
@@ -2103,16 +2130,28 @@ function buildYearlyTables(m){
   if (!hasYearly) {
     return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
   }
+  _overviewMatch = m;
+  const tier = overviewTier;
   const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
   const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false);
-  const legend = hasAtpOnly
+  const legend = (tier === 'all' && hasAtpOnly)
     ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
-    : '';
+    : (tier === 'chitf'
+      ? `<div class="yr-legend">Challenger &amp; ITF results are tracked from 2021 onward; earlier seasons show —.</div>`
+      : '');
+  const tierToggle = ['all', 'atp', 'chitf'].map(t => {
+    const label = t === 'all' ? 'All' : (t === 'atp' ? 'ATP' : 'Challenger & ITF');
+    return `<span class="opt${tier === t ? ' active' : ''}" onclick="setOverviewTier('${t}')">${label}</span>`;
+  }).join('');
   loadPlayerHistories(); // warm the lazy drill-down side file while the modal opens
   return `
+    <div class="yr-tierhead">
+      <span class="yr-tierlbl">Career records by tier</span>
+      <div class="yr-tiertoggle">${tierToggle}</div>
+    </div>
     <div class="yr-grid">
-      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface, m.p1Key)}
-      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface, m.p2Key)}
+      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface, m.p1Key, tier)}
+      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface, m.p2Key, tier)}
     </div>${legend}
   `;
 }

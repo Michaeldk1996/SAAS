@@ -484,8 +484,10 @@ function yearlyBreakdown(playerStats) {
 function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfaceMap) {
   const cutoff = currentYear - 5;
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const tierOf = f => /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
   const blank = () => ({ won: 0, lost: 0 });
-  const byYear = {};
+  const blankTier = () => ({ total: blank(), clay: blank(), hard: blank(), grass: blank() });
+  const byYear = {}; // year -> { atp: {...}, chitf: {...} }
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
     if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
@@ -497,18 +499,34 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     const year = String(f.event_date || '').slice(0, 4);
     if (!/^\d{4}$/.test(year) || parseInt(year, 10) < cutoff) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
-    if (!byYear[year]) byYear[year] = { year, total: blank(), clay: blank(), hard: blank(), grass: blank() };
-    byYear[year].total[won ? 'won' : 'lost']++;
+    if (!byYear[year]) byYear[year] = { atp: blankTier(), chitf: blankTier() };
+    const bucket = byYear[year][tierOf(f)];
+    bucket.total[won ? 'won' : 'lost']++;
     const surface = surfaceMap.get(String(f.tournament_key));
-    if (surface && byYear[year][surface]) byYear[year][surface][won ? 'won' : 'lost']++;
+    if (surface && bucket[surface]) bucket[surface][won ? 'won' : 'lost']++;
   }
   const nn = b => (b.won + b.lost > 0 ? b : null);
-  const allTierRows = Object.values(byYear).map(r => ({
-    year: r.year, total: nn(r.total), clay: nn(r.clay), hard: nn(r.hard), grass: nn(r.grass), allTier: true,
-  }));
+  const sum = (a, b) => ((a || b) ? { won: (a ? a.won : 0) + (b ? b.won : 0), lost: (a ? a.lost : 0) + (b ? b.lost : 0) } : null);
+  const tierObj = t => ({ total: nn(t.total), clay: nn(t.clay), hard: nn(t.hard), grass: nn(t.grass) });
+  const hasAny = t => t.total || t.clay || t.hard || t.grass;
+  // 2021+ rows carry per-tier (atp / chitf) splits AND a combined all-tier view
+  // (total/clay/hard/grass) so the default "All" render is unchanged.
+  const allTierRows = Object.entries(byYear).map(([year, tiers]) => {
+    const atp = tierObj(tiers.atp), chitf = tierObj(tiers.chitf);
+    return {
+      year, allTier: true,
+      total: sum(atp.total, chitf.total), clay: sum(atp.clay, chitf.clay), hard: sum(atp.hard, chitf.hard), grass: sum(atp.grass, chitf.grass),
+      atp: hasAny(atp) ? atp : null, chitf: hasAny(chitf) ? chitf : null,
+    };
+  });
+  // Pre-window rows: ATP-only provider aggregates (no all-tier data that far back).
   const preRows = yearlyBreakdown(playerStats)
     .filter(r => parseInt(r.year, 10) < cutoff)
-    .map(r => ({ year: r.year, total: r.total, clay: r.clay, hard: r.hard, grass: r.grass, allTier: false }));
+    .map(r => ({
+      year: r.year, allTier: false,
+      total: r.total, clay: r.clay, hard: r.hard, grass: r.grass,
+      atp: { total: r.total, clay: r.clay, hard: r.hard, grass: r.grass }, chitf: null,
+    }));
   return [...allTierRows, ...preRows]
     .filter(r => r.total || r.clay || r.hard || r.grass)
     .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
@@ -544,7 +562,8 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     }
     let round = f.tournament_round || '';
     if (round.includes(' - ')) round = round.split(' - ').pop().trim();
-    out.push({ year, surface, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won });
+    const level = /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won });
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;
