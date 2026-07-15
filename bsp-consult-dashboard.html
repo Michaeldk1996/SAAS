@@ -751,6 +751,37 @@
   .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
   .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
   .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
+  .yr-season{ margin-bottom:11px; }
+  .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
+  .yr-season-toggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:2px; }
+  .yr-season-toggle .opt{ font-size:10px; font-weight:600; color:#8b93a3; padding:3px 8px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
+  .yr-season-toggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
+  .yr-season-view.hidden{ display:none; }
+  .yr-season-empty{ font-size:11.5px; color:#5b6472; padding:6px 2px; }
+  .yr-surfrec{ display:flex; align-items:center; gap:10px; padding:7px 10px; border:1px solid rgba(255,255,255,0.06); border-radius:8px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
+  .yr-surfrec:hover{ background:#0e1015; }
+  .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
+  .yr-surfrec.disabled:hover{ background:transparent; }
+  .yr-surfrec .yr-surf{ font-size:11px; font-weight:600; min-width:40px; }
+  .yr-surfrec .yr-surf.clay{ color:var(--court-clay); }
+  .yr-surfrec .yr-surf.hard{ color:var(--court-hard); }
+  .yr-surfrec .yr-surf.grass{ color:var(--court-grass); }
+  .yr-surfrec .rec{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#cfd6e6; }
+  .yr-surfrec .rpct{ font-size:10.5px; color:#6b7280; font-family:'IBM Plex Mono',monospace; }
+  .yr-surfrec .chev{ margin-left:auto; font-size:10px; color:#5b6472; transition:transform .15s; }
+  .yr-surfrec.expanded .chev{ transform:rotate(90deg); }
+  .yr-surfmatches{ margin:0 0 7px 8px; border-left:2px solid rgba(255,255,255,0.06); padding-left:10px; }
+  .yr-surfmatches.hidden{ display:none; }
+  .yr-matchrow{ padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+  .yr-matchrow:last-child{ border-bottom:none; }
+  .yr-matchrow .top{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
+  .yr-matchrow .mw{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; width:14px; text-align:center; flex:none; }
+  .yr-matchrow .mw.win{ color:#3ECF8E; }
+  .yr-matchrow .mw.loss{ color:#E8607A; }
+  .yr-matchrow .opp{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfd6e6; flex:1; min-width:0; }
+  .yr-matchrow .sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; flex:none; }
+  .yr-matchrow .btm{ font-size:10px; color:#6b7280; margin-top:2px; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
   .yr-table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; font-weight:600; padding:9px 8px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.06); font-family:'Hanken Grotesk', sans-serif; }
   .yr-table th:first-child{ color:#6b7280; }
@@ -1821,7 +1852,73 @@ function currentSeasonSummary(latestYear){
   if (latestYear.grass) parts.push(`<span class="yr-surf grass">Grass ${latestYear.grass.won}/${latestYear.grass.lost}</span>`);
   return parts.length ? parts.join(' · ') : '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
 }
-function buildYearlyTable(name, rows, colPrefix){
+// Current-season surface record with an ATP / Challenger & ITF tier filter, each
+// surface record clickable to reveal the underlying matches (opponent, score,
+// tournament, date). Driven by m.p{1,2}SeasonSurface (all-tier, per-surface match
+// lists). Falls back to the ATP-only text summary if that field isn't present
+// (e.g. a matches.json written before this field existed).
+function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
+  const surfaces = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
+  const total = surfaces.reduce((n, [s]) => n + ((tierData[s]?.won || 0) + (tierData[s]?.lost || 0)), 0);
+  if (total === 0) {
+    return `<div class="yr-season-empty">No ${tier === 'atp' ? 'ATP' : 'Challenger / ITF'} singles matches recorded this season.</div>`;
+  }
+  return surfaces.map(([s, label]) => {
+    const rec = tierData[s] || { won: 0, lost: 0, matches: [] };
+    const n = rec.won + rec.lost;
+    if (n === 0) {
+      return `<div class="yr-surfrec disabled"><span class="yr-surf ${s}">${label}</span><span class="rec">—</span></div>`;
+    }
+    const id = `${tier}-${s}-${colPrefix}`;
+    const pct = Math.round(rec.won / n * 100);
+    const matchRows = (rec.matches || []).map(mm => `
+        <div class="yr-matchrow">
+          <div class="top"><span class="mw ${mm.won ? 'win' : 'loss'}">${mm.won ? 'W' : 'L'}</span><span class="opp">${escapeHtml(mm.opponent)}</span><span class="sc">${escapeHtml(mm.result || '')}</span></div>
+          <div class="btm">${escapeHtml(mm.tournament || '')}${mm.date ? ' · ' + formatShortDate(mm.date) : ''}</div>
+        </div>`).join('');
+    return `
+        <div class="yr-surfrec" id="seasonRec-${id}" onclick="toggleSeasonMatches('${id}')">
+          <span class="yr-surf ${s}">${label}</span>
+          <span class="rec">${rec.won}-${rec.lost}</span>
+          <span class="rpct">${pct}%</span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="yr-surfmatches hidden" id="seasonMatches-${id}">${matchRows}</div>`;
+  }).join('');
+}
+function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow){
+  const has = seasonSurface && (seasonSurface.atp || seasonSurface.chitf);
+  if (!has) return `<div class="yr-summary">${currentSeasonSummary(latestYearRow)}</div>`;
+  const atp = seasonSurface.atp || { clay: {}, hard: {}, grass: {} };
+  const chitf = seasonSurface.chitf || { clay: {}, hard: {}, grass: {} };
+  return `
+    <div class="yr-season">
+      <div class="yr-season-head">
+        <span class="yr-season-lbl">This season · by surface</span>
+        <div class="yr-season-toggle">
+          <span class="opt active" id="seasonTier-atp-${colPrefix}" onclick="setSeasonTier('${colPrefix}','atp')">ATP</span>
+          <span class="opt" id="seasonTier-chitf-${colPrefix}" onclick="setSeasonTier('${colPrefix}','chitf')">Challenger &amp; ITF</span>
+        </div>
+      </div>
+      <div class="yr-season-view" id="seasonView-atp-${colPrefix}">${seasonSurfaceTierViewHtml(atp, 'atp', colPrefix)}</div>
+      <div class="yr-season-view hidden" id="seasonView-chitf-${colPrefix}">${seasonSurfaceTierViewHtml(chitf, 'chitf', colPrefix)}</div>
+    </div>`;
+}
+function setSeasonTier(colPrefix, tier){
+  for (const t of ['atp', 'chitf']){
+    const view = document.getElementById(`seasonView-${t}-${colPrefix}`);
+    if (view) view.classList.toggle('hidden', t !== tier);
+    const opt = document.getElementById(`seasonTier-${t}-${colPrefix}`);
+    if (opt) opt.classList.toggle('active', t === tier);
+  }
+}
+function toggleSeasonMatches(id){
+  const panel = document.getElementById(`seasonMatches-${id}`);
+  if (panel) panel.classList.toggle('hidden');
+  const rec = document.getElementById(`seasonRec-${id}`);
+  if (rec) rec.classList.toggle('expanded');
+}
+function buildYearlyTable(name, rows, colPrefix, seasonSurface){
   if (!rows || rows.length === 0) {
     return `
       <div class="yr-col">
@@ -1882,7 +1979,7 @@ function buildYearlyTable(name, rows, colPrefix){
     <div class="yr-col">
       <div class="yr-name">${name}</div>
       ${heroHtml}
-      <div class="yr-summary">${currentSeasonSummary(rows[0])}</div>
+      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0])}
       <table class="yr-table">
         <thead><tr><th>Year</th><th class="h-total">Total</th><th class="h-clay">Clay</th><th class="h-hard">Hard</th><th class="h-grass">Grass</th></tr></thead>
         <tbody>${bodyRows}</tbody>
@@ -1929,8 +2026,8 @@ function buildYearlyTables(m){
   const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
   return `
     <div class="yr-grid">
-      ${buildYearlyTable(m.p1, p1Rows, 'p1')}
-      ${buildYearlyTable(m.p2, p2Rows, 'p2')}
+      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface)}
+      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface)}
     </div>
   `;
 }

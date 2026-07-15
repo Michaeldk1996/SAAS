@@ -529,6 +529,49 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
   return Array.isArray(data.result) ? data.result : [];
 }
 
+// Current-season per-surface record split by tier (ATP vs Challenger & ITF),
+// retaining every contributing match so the Overview record can be expanded on
+// click. Singles, main-draw, decided matches in the given season only — mirrors
+// seasonRowFromFixtures but keeps the match list and separates tiers via
+// event_type_type. Fed the same all-tier fixtures already fetched for recent
+// form (fetchRecentSinglesFixtures — memoized, so no extra API calls), filtered
+// to `year`. Each surface bucket: { won, lost, matches:[{opponent, result,
+// tournament, date, won}] }.
+function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
+  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const tierOf = f => /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
+  const blank = () => ({ clay: { won: 0, lost: 0, matches: [] }, hard: { won: 0, lost: 0, matches: [] }, grass: { won: 0, lost: 0, matches: [] } });
+  const out = { atp: blank(), chitf: blank() };
+  for (const f of (fixtures || [])) {
+    if (!isSingles(f)) continue;
+    if (String(f.event_date || '').slice(0, 4) !== String(year)) continue;
+    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (f.event_qualification !== 'False') continue;
+    if (!f.event_winner) continue;
+    const isFirst = String(f.first_player_key) === String(playerKey);
+    const isSecond = String(f.second_player_key) === String(playerKey);
+    if (!isFirst && !isSecond) continue;
+    const surface = surfaceMap.get(String(f.tournament_key));
+    if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
+    const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    const opponent = isFirst ? f.event_second_player : f.event_first_player;
+    let result = f.event_final_result;
+    if (isSecond && result && result.includes('-')) {
+      const parts = result.split('-').map(s => s.trim());
+      if (parts.length === 2) result = `${parts[1]} - ${parts[0]}`;
+    }
+    const bucket = out[tierOf(f)][surface];
+    bucket[won ? 'won' : 'lost']++;
+    bucket.matches.push({ opponent, result, tournament: f.tournament_name, date: f.event_date, won });
+  }
+  for (const tier of ['atp', 'chitf']) {
+    for (const s of ['clay', 'hard', 'grass']) {
+      out[tier][s].matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+  }
+  return out;
+}
+
 // Recent-form fixtures — deliberately BROADER than the ATP-only aggregates
 // above. "Recent form" is meant to reflect a player's actual last-N completed
 // singles matches across ALL tours (ATP + Challenger + ITF), because lower-
@@ -1420,6 +1463,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2RecentForm: null,
     p1RecentFormMatches: null,
     p2RecentFormMatches: null,
+    p1SeasonSurface: null,
+    p2SeasonSurface: null,
     p1Yearly: null,
     p2Yearly: null,
     p1TournamentHistory: null,
@@ -1532,6 +1577,13 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
   match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  // All-tier current-season surface record (ATP vs Challenger&ITF) with each
+  // surface's match list, for the Overview season-surface tier filter + click
+  // drill-down. Reuses the memoized all-tier recent-form fetch (no extra API
+  // calls), filtered to the current season.
+  match.p1SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p1Key), p1Key, currentYear, surfaceMap);
+  match.p2SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p2Key), p2Key, currentYear, surfaceMap);
 
   // Real per-match serve/return/point stats — reuses p1CurrentFixtures/
   // p2CurrentFixtures already fetched above for the season row, plus one
@@ -1992,6 +2044,8 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     p2RecentForm: null,
     p1RecentFormMatches: null,
     p2RecentFormMatches: null,
+    p1SeasonSurface: null,
+    p2SeasonSurface: null,
     p1Yearly: null,
     p2Yearly: null,
     p1TournamentHistory: null,
@@ -2070,6 +2124,13 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
   match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
 
+  // All-tier current-season surface record (ATP vs Challenger&ITF) with each
+  // surface's match list, for the Overview season-surface tier filter + click
+  // drill-down. Reuses the memoized all-tier recent-form fetch (no extra API
+  // calls), filtered to the current season.
+  match.p1SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p1Key), p1Key, currentYear, surfaceMap);
+  match.p2SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p2Key), p2Key, currentYear, surfaceMap);
+
   match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures, match.courtSpeed ? match.courtSpeed.category : null);
 
   if (hintKey) {
@@ -2137,6 +2198,8 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     p2RecentForm: null,
     p1RecentFormMatches: null,
     p2RecentFormMatches: null,
+    p1SeasonSurface: null,
+    p2SeasonSurface: null,
     p1Yearly: null,
     p2Yearly: null,
     p1TournamentHistory: null,
@@ -2209,6 +2272,13 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
 
   match.p1Yearly = [p1CurrentRow, ...yearlyBreakdown(p1Stats)].filter(Boolean);
   match.p2Yearly = [p2CurrentRow, ...yearlyBreakdown(p2Stats)].filter(Boolean);
+
+  // All-tier current-season surface record (ATP vs Challenger&ITF) with each
+  // surface's match list, for the Overview season-surface tier filter + click
+  // drill-down. Reuses the memoized all-tier recent-form fetch (no extra API
+  // calls), filtered to the current season.
+  match.p1SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p1Key), p1Key, currentYear, surfaceMap);
+  match.p2SeasonSurface = seasonSurfaceByTier(await fetchRecentSinglesFixtures(p2Key), p2Key, currentYear, surfaceMap);
 
   match.extraStats = await buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentFixtures, p2CurrentFixtures, match.courtSpeed ? match.courtSpeed.category : null);
 
