@@ -38,9 +38,12 @@ const { backfillProfilesHistory, backfillMatchesTournamentHistory } = require('.
 // file or the new complete file — never a half-written one. This eliminates the
 // intermittent "Unexpected end of JSON / Expected ',' or '}'" parse errors the
 // dashboard hit when it fetched matches.json mid-write.
-function writeJsonAtomic(file, data) {
+function writeJsonAtomic(file, data, compact) {
   const tmp = `${file}.tmp-${process.pid}`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  // `compact` (no indentation) for large machine-consumed files served to the
+  // browser (e.g. player-profiles.json) — pretty-printing them is ~2.4x wasted
+  // bytes over the wire. Human-diffed/committed files (matches.json) stay pretty.
+  fs.writeFileSync(tmp, compact ? JSON.stringify(data) : JSON.stringify(data, null, 2));
   fs.renameSync(tmp, file);
 }
 
@@ -2624,6 +2627,19 @@ async function buildOneProfile(key, name, surfaceMap) {
         : null,
     }));
 
+  // The Player Profile page only reads current-season matches (season tiles +
+  // the expandable "all results this season" list) and the last 10 (form % and
+  // form dots) from recentForm — never older history. So cap the stored match
+  // list to current-year + the last 10 instead of the full ~5-year all-tier
+  // window. This is the single biggest driver of player-profiles.json size
+  // (~68% of the file); capping it trims the file dramatically with zero UI
+  // change. matches.json's Form tab uses its own separate field, untouched.
+  const _recentForm = recentFormFromFixtures(await fetchRecentSinglesFixtures(key), key, surfaceMap);
+  const recentFormCapped = {
+    ..._recentForm,
+    matches: (_recentForm.matches || []).filter((m, i) => i < 10 || String(m.date || '').slice(0, 4) === String(currentYear)),
+  };
+
   const profile = {
     key,
     name,
@@ -2643,7 +2659,8 @@ async function buildOneProfile(key, name, surfaceMap) {
     surfaces,
     // Recent form uses its own broad all-tier fetch (see fetchRecentSinglesFixtures),
     // NOT the ATP-only allFixtures used for the season/DNA/surface aggregates above.
-    recentForm: recentFormFromFixtures(await fetchRecentSinglesFixtures(key), key, surfaceMap),
+    // Capped above to current-year + last-10 (all the profile UI reads).
+    recentForm: recentFormCapped,
     seasonTrend,
     insights: [], // filled in by the caller, once tourAverage is known
   };
@@ -2862,6 +2879,20 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     cachedPlayers[key] = { builtAt: new Date().toISOString(), profile: profile || null };
     built++;
     if (profile) profiles[key] = profile; else skippedNull++;
+  }
+
+  // Cap EVERY served profile's recentForm to current-year + last-10 — the only
+  // slice the Player Profile page reads. buildOneProfile already caps freshly
+  // built profiles, but opponents reused from the 14-day cache (built before
+  // this cap existed) still carry the full ~5-year list, so re-apply it to every
+  // profile here. This is the single biggest driver of player-profiles.json size.
+  // Idempotent; mutates the shared cached objects so the cache shrinks too.
+  const _capYear = String(new Date().getFullYear());
+  for (const key of Object.keys(profiles)) {
+    const rf = profiles[key] && profiles[key].recentForm;
+    if (rf && Array.isArray(rf.matches) && rf.matches.length) {
+      rf.matches = rf.matches.filter((m, i) => i < 10 || String(m.date || '').slice(0, 4) === _capYear);
+    }
   }
 
   // Full-career tournament history — attach to every profile so the player
@@ -3236,7 +3267,7 @@ async function runPipeline() {
 
   console.log('Building player profiles for every player in this run...');
   const playerProfiles = await buildPlayerProfiles(matches, surfaceMap);
-  writeJsonAtomic('player-profiles.json', playerProfiles);
+  writeJsonAtomic('player-profiles.json', playerProfiles, true);
   console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
