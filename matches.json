@@ -49240,22 +49240,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 0,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "0 - 40",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2842_a-davidovich-fokina.jpg",
     "oddsMovement": {
@@ -50180,7 +50169,22 @@
       "bookmaker": "bet365",
       "at": "2026-07-14T01:11:12.151Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "4-6, 5-7",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 5,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12146136",
@@ -91676,7 +91680,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(1), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -148530,7 +148534,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "6-7, 6-1, 4-6",
+      "display": "6-7(5), 6-1, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -151452,7 +151456,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(0), 6-4",
       "sets": [
         {
           "p1": 7,
