@@ -1786,25 +1786,50 @@ function average(nums) {
   return Math.round((real.reduce((a, b) => a + b, 0) / real.length) * 100) / 100;
 }
 
+// The bulk get_fixtures endpoint hard-caps any single query at a 7-day date
+// range — an over-wide range returns the error STRING "Maximum date range for
+// odds is 7 days." as `result` (not an array). PROGRESSION_WINDOW_DAYS is
+// deliberately wider (a ~2-week main draw), so fetch the window in <=7-day
+// chunks and merge, deduped by event_key. Memoized per (start,stop) so the
+// several per-tournament progression builds in one run share one set of calls.
+// Returns null only if EVERY chunk failed (so the caller can bail); an empty
+// array means "queried fine, no fixtures".
+const _progressionFixturesCache = new Map();
+async function fetchProgressionFixtures(windowStart, today) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const cacheKey = `${dateStr(windowStart)}|${dateStr(today)}`;
+  if (_progressionFixturesCache.has(cacheKey)) return _progressionFixturesCache.get(cacheKey);
+  const CHUNK_MS = 7 * 86400000; // API hard limit: 7-day max range per call
+  const byKey = new Map();
+  let anySuccess = false;
+  for (let s = new Date(windowStart); s < today; s = new Date(s.getTime() + CHUNK_MS + 86400000)) {
+    const e = new Date(Math.min(s.getTime() + CHUNK_MS, today.getTime()));
+    const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(s)}&date_stop=${dateStr(e)}&event_type_key=265`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (Array.isArray(data.result)) {
+        anySuccess = true;
+        for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
+      } else {
+        console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} returned non-array:`, JSON.stringify(data.result).slice(0, 80));
+      }
+    } catch (err) {
+      console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} failed:`, err.message);
+    }
+  }
+  const merged = anySuccess ? [...byKey.values()] : null;
+  _progressionFixturesCache.set(cacheKey, merged);
+  return merged;
+}
+
 async function buildTournamentProgression(tourName) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
   const today = new Date();
   const windowStart = new Date(today.getTime() - PROGRESSION_WINDOW_DAYS * 86400000);
-  const dateStr = d => d.toISOString().split('T')[0];
 
-  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(windowStart)}&date_stop=${dateStr(today)}&event_type_key=265`;
-  let fixtures;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    // API-Tennis returns `result` as a non-array (object/string) for some
-    // no-data/error responses; `|| []` only guards falsy values, so coerce
-    // any non-array to [] before the .filter below (was the pipeline crash).
-    fixtures = Array.isArray(data.result) ? data.result : [];
-  } catch (err) {
-    console.error(`get_fixtures failed for tournament progression (${tourName}):`, err);
-    return null;
-  }
+  const fixtures = await fetchProgressionFixtures(windowStart, today);
+  if (!fixtures) return null;
 
   const played = fixtures.filter(f =>
     f.tournament_name && f.tournament_name.includes(bareName) &&
