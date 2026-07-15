@@ -43484,11 +43484,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "15 - 15",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1762_c-tabur.jpg",
     "oddsMovement": {
@@ -44581,7 +44581,26 @@
       "bookmaker": "bet365",
       "at": "2026-07-13T18:08:40.987Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(9), 7-6(5), 7-5",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 5
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12145726",
@@ -49221,11 +49240,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 0,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2842_a-davidovich-fokina.jpg",
     "oddsMovement": {
@@ -50149,7 +50179,8 @@
       "p2": 1.28,
       "bookmaker": "bet365",
       "at": "2026-07-14T01:11:12.151Z"
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12146136",
@@ -56165,22 +56196,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "A - 40",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "oddsMovement": {
@@ -57329,7 +57349,26 @@
         }
       }
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "6-4, 3-6, 4-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12146203",
