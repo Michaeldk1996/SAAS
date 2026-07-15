@@ -43484,11 +43484,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 1",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1762_c-tabur.jpg",
     "oddsMovement": {
@@ -46796,7 +46796,8 @@
       "p2": 2.62,
       "bookmaker": "bet365",
       "at": "2026-07-13T18:08:40.987Z"
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12145726",
@@ -93476,7 +93477,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "7-6(1), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -150330,7 +150331,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "6-7(5), 6-1, 4-6",
+      "display": "6-7, 6-1, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -153252,7 +153253,7 @@
     "liveGameScore": null,
     "liveServer": null,
     "finalScore": {
-      "display": "7-6(0), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
