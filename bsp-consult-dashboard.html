@@ -751,6 +751,9 @@
   .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
   .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
   .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
+  .yr-atponly{ display:inline-block; margin-left:6px; font-size:8.5px; font-weight:700; letter-spacing:0.04em; color:#7f8a9c; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:4px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
+  .yr-legend{ margin-top:12px; font-size:11px; color:#6b7280; line-height:1.5; }
+  .yr-legend .yr-atponly{ margin:0 2px; }
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
@@ -1946,7 +1949,7 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface){
     }
     return `
     <tr>
-      <td class="yr-year">${r.year}</td>
+      <td class="yr-year">${r.year}${r.allTier === false ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
       <td class="${cellClass(r.total, 'total')}">${cellText(r.total)}</td>
       <td class="${cellClass(r.clay, 'clay')}">${cellText(r.clay)}</td>
       <td class="${cellClass(r.hard, 'hard')}">${cellText(r.hard)}</td>
@@ -2024,11 +2027,15 @@ function buildYearlyTables(m){
     return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
   }
   const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
+  const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false);
+  const legend = hasAtpOnly
+    ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
+    : '';
   return `
     <div class="yr-grid">
       ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface)}
       ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface)}
-    </div>
+    </div>${legend}
   `;
 }
 
