@@ -1874,7 +1874,7 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
     const matchRows = (rec.matches || []).map(mm => `
         <div class="yr-matchrow">
           <div class="top"><span class="mw ${mm.won ? 'win' : 'loss'}">${mm.won ? 'W' : 'L'}</span><span class="opp">${escapeHtml(mm.opponent)}</span><span class="sc">${escapeHtml(mm.result || '')}</span></div>
-          <div class="btm">${escapeHtml(mm.tournament || '')}${mm.date ? ' · ' + formatShortDate(mm.date) : ''}</div>
+          <div class="btm">${escapeHtml(mm.tournament || '')}${mm.date ? ' · ' + formatShortDate(new Date(mm.date + 'T00:00:00')) : ''}</div>
         </div>`).join('');
     return `
         <div class="yr-surfrec" id="seasonRec-${id}" onclick="toggleSeasonMatches('${id}')">
