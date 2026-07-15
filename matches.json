@@ -46032,10 +46032,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "-",
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/825_r-collignon.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
@@ -47381,7 +47381,22 @@
       "bookmaker": "bet365",
       "at": "2026-07-13T20:20:57.145Z"
     },
-    "finalScore": null
+    "finalScore": {
+      "display": "7-6(2), 7-6(5)",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12145919",
