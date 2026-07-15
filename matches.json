@@ -43485,10 +43485,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1762_c-tabur.jpg",
     "oddsMovement": {
@@ -58141,11 +58141,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "oddsMovement": {
@@ -59169,7 +59180,8 @@
           ]
         }
       }
-    }
+    },
+    "finalScore": null
   },
   {
     "id": "upcoming-12146203",
