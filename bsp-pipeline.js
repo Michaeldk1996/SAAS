@@ -155,7 +155,7 @@ async function fetchApiTennisFixtures(dateStartStr, dateStopStr) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return data.result;
+  return Array.isArray(data.result) ? data.result : [];
 }
 
 // get_H2H is confirmed live to sometimes OMIT real completed matches that
@@ -184,7 +184,7 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return (data.result || []).filter(f =>
+  return (Array.isArray(data.result) ? data.result : []).filter(f =>
     (String(f.first_player_key) === String(secondPlayerKey) || String(f.second_player_key) === String(secondPlayerKey)) &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player') &&
     // Team events (Laver Cup, United Cup, ATP Cup) come back with
@@ -201,13 +201,18 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return null;
+  // get_H2H returns `result` as an object { H2H, firstPlayerResults, ... }, but
+  // can hand back a non-object (or omit it) on a no-data/error response; treat
+  // anything that isn't a plain object as empty so the accesses below can't throw.
+  const result = (data.result && typeof data.result === 'object' && !Array.isArray(data.result))
+    ? data.result : {};
   // Exclude pure exhibitions (e.g. Six Kings Slam, tagged "Exhibition Men" by
   // this API) — confirmed live these are NOT part of official ATP head-to-head
   // records. Laver Cup / United Cup matches are correctly tagged "Atp Singles"
   // by this API and DO count toward official H2H (confirmed), so they're kept.
   // Same event_type_type === 'Atp Singles' check used to scope official
   // head-to-head records — applied here for consistency.
-  const officialH2H = (data.result.H2H || []).filter(m => m.event_type_type === 'Atp Singles');
+  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => m.event_type_type === 'Atp Singles');
 
   // Backfill matches get_H2H omitted but the fixtures database actually has,
   // deduped by event_key so nothing already present gets double-counted.
@@ -222,8 +227,8 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
 
   return {
     headToHead: officialH2H,
-    p1RecentResults: data.result.firstPlayerResults,
-    p2RecentResults: data.result.secondPlayerResults,
+    p1RecentResults: result.firstPlayerResults,
+    p2RecentResults: result.secondPlayerResults,
   };
 }
 
@@ -294,7 +299,7 @@ async function fetchPlayerTournamentMatches(playerKey, hintKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return (data.result || [])
+  return (Array.isArray(data.result) ? data.result : [])
     .filter(f =>
       f.tournament_name && f.tournament_name.includes(hintKey) &&
       f.tournament_round && f.event_qualification !== 'True' &&
@@ -491,7 +496,7 @@ async function fetchAllTournaments() {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return data.result;
+  return Array.isArray(data.result) ? data.result : [];
 }
 
 async function loadTournamentSurfaceMap() {
@@ -521,7 +526,7 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
   // API returns success with no `result` field for a player who has no
   // fixtures in the range (confirmed live for a player's prior-year window).
   // Callers spread this directly, so always hand back an array.
-  return data.result || [];
+  return Array.isArray(data.result) ? data.result : [];
 }
 
 // Recent-form fixtures — deliberately BROADER than the ATP-only aggregates
@@ -545,7 +550,7 @@ async function fetchRecentSinglesFixtures(playerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return []; // transient failure: don't cache, so a later call can retry
-  const result = data.result || [];
+  const result = Array.isArray(data.result) ? data.result : [];
   _recentSinglesFixturesCache.set(cacheKey, result);
   return result;
 }
@@ -1047,7 +1052,7 @@ async function fetchAtpFixturesForMonth(year, month) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    return data.result || [];
+    return Array.isArray(data.result) ? data.result : [];
   } catch (err) {
     console.error(`get_fixtures failed for ${year}-${month}:`, err);
     return [];
@@ -1792,7 +1797,10 @@ async function buildTournamentProgression(tourName) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    fixtures = data.result || [];
+    // API-Tennis returns `result` as a non-array (object/string) for some
+    // no-data/error responses; `|| []` only guards falsy values, so coerce
+    // any non-array to [] before the .filter below (was the pipeline crash).
+    fixtures = Array.isArray(data.result) ? data.result : [];
   } catch (err) {
     console.error(`get_fixtures failed for tournament progression (${tourName}):`, err);
     return null;
@@ -3044,17 +3052,50 @@ async function runPipeline() {
       || nowIso;
   }
 
-  // Opening / closing odds, derived (no extra API calls) from the real
-  // opening->now timeline the odds-history refresher already stored in
-  // m.oddsMovement. openingOdds = the first captured point; closingOdds = the
-  // last point at/before the match start time. Both come from a single
-  // reference book (the one already headlining m.odds if present, else the book
-  // with the most points) so the two values are directly comparable. Because
-  // oddsMovement is preserved across rebuilds by the block above, these derive
-  // correctly for finished matches too — no separate preservation needed. A
-  // match with no timeline simply gets neither field (honest omission).
-  let derivedOC = 0;
+  // Opening / closing odds, derived from the real opening->now timeline the
+  // odds-history refresher stored in m.oddsMovement — then PINNED into
+  // matches.json and carried forward verbatim on every later rebuild.
+  //
+  // Persistence rule (CLAUDE.md non-negotiable: "closing odds must be preserved
+  // through pipeline rebuilds — never recomputed at display time"): each value
+  // is derived exactly ONCE and then frozen. On subsequent runs a match that
+  // already carries an openingOdds/closingOdds inherits it unchanged rather than
+  // being re-derived.
+  //
+  // Upcoming vs completed separation (display spec):
+  //   openingOdds — first captured snapshot (reference book). Set for BOTH
+  //                 upcoming and completed matches.
+  //   closingOdds — last snapshot at/before match start. Set ONLY once a match
+  //                 is completed (has a finalScore); an upcoming match NEVER
+  //                 carries a closingOdds, so its Odds tab shows opening + the
+  //                 movement-to-now trajectory only. closingOdds is stamped on
+  //                 the first rebuild after the match finishes, then frozen.
+  //
+  // Reference book = whichever one already headlines m.odds (if it has a
+  // timeline), else the book with the most captured points.
+  const priorOdds = new Map();
+  try {
+    const priorO = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
+    for (const pm of priorO) {
+      if (!pm.openingOdds && !pm.closingOdds) continue;
+      const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null };
+      priorOdds.set(`id:${pm.id}`, rec);
+      priorOdds.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, rec);
+    }
+  } catch (e) {
+    // No prior matches.json (first run) — nothing pinned to carry forward.
+  }
+
+  let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0;
   for (const m of matches) {
+    const carried = priorOdds.get(`id:${m.id}`)
+      || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
+    // Carry forward already-pinned values without recomputing them. A pinned
+    // closing is only inherited for a completed match, so an upcoming match can
+    // never resurrect a stale closing written by an earlier pipeline version.
+    if (carried && carried.openingOdds) { m.openingOdds = carried.openingOdds; openPreserved++; }
+    if (carried && carried.closingOdds && m.finalScore) { m.closingOdds = carried.closingOdds; closePreserved++; }
+
     const books = m.oddsMovement && m.oddsMovement.books;
     if (!books || !Object.keys(books).length) continue;
     const preferred = m.odds && m.odds.bookmaker;
@@ -3068,20 +3109,30 @@ async function runPipeline() {
     const p1 = (s && s.p1) || [];
     const p2 = (s && s.p2) || [];
     if (!p1.length || !p2.length) continue;
-    const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time || '') ? m.time : '00:00'}:00Z`);
-    const lastBeforeStart = arr => {
-      if (!Number.isFinite(startMs)) return arr[arr.length - 1];
-      let chosen = null;
-      for (const pt of arr) { if (Date.parse(pt[0]) <= startMs) chosen = pt; }
-      return chosen || arr[arr.length - 1];
-    };
-    const o1 = p1[0], o2 = p2[0];
-    const c1 = lastBeforeStart(p1), c2 = lastBeforeStart(p2);
-    m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
-    m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
-    derivedOC++;
+
+    // openingOdds: first captured point. Pin once (skip if already inherited).
+    if (!m.openingOdds) {
+      const o1 = p1[0], o2 = p2[0];
+      m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
+      openDerived++;
+    }
+
+    // closingOdds: last point at/before match start — completed matches only,
+    // and only if not already pinned from an earlier run.
+    if (m.finalScore && !m.closingOdds) {
+      const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time || '') ? m.time : '00:00'}:00Z`);
+      const lastBeforeStart = arr => {
+        if (!Number.isFinite(startMs)) return arr[arr.length - 1];
+        let chosen = null;
+        for (const pt of arr) { if (Date.parse(pt[0]) <= startMs) chosen = pt; }
+        return chosen || arr[arr.length - 1];
+      };
+      const c1 = lastBeforeStart(p1), c2 = lastBeforeStart(p2);
+      m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
+      closeDerived++;
+    }
   }
-  console.log(`Derived opening/closing odds for ${derivedOC} match(es) from stored oddsMovement.`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved.`);
 
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
