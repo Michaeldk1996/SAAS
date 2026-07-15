@@ -136,6 +136,20 @@ function parseCsv(text) {
 // Downloads the pre-2021 year files and indexes every match by TML player id.
 //   byId:     Map(tmlId -> [ { tourney, year, round, oppName, score, won } ])
 //   identity: Map(tmlId -> { key: nameKey, names: Map(name->count), iocs: Set })
+function tmlSurface(raw) {
+  const s = String(raw || '').toLowerCase();
+  if (s.includes('clay')) return 'clay';
+  if (s.includes('grass')) return 'grass';
+  if (s.includes('hard')) return 'hard';
+  return null; // carpet/unknown — excluded from the surface-scoped drill-down
+}
+function tmlDate(raw) {
+  const d = String(raw || '').trim();
+  return /^\d{8}$/.test(d) ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : null;
+}
+function flipSets(s) {
+  return (typeof s === 'string' && s.includes('-')) ? s.split('-').map((x) => x.trim()).reverse().join(' - ') : s;
+}
 async function buildTmlIndex(log) {
   const byId = new Map();
   const identity = new Map();
@@ -157,11 +171,13 @@ async function buildTmlIndex(log) {
       if (!wId || !lId) continue;
       rowCount++;
 
+      // surface/date/display-name carried for the Overview year-table drill-down.
+      const meta = { surface: tmlSurface(r.surface), date: tmlDate(r.tourney_date), tournamentName: r.tourney_name };
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc);
     }
   }
@@ -211,6 +227,40 @@ function reconcile(profiles, identity, countryToIoc, log) {
   }
   if (log) log(`  Reconciled ${matched} players to TML (collisions ${collided}, unmatched ${unmatched}).`);
   return apiToTml;
+}
+
+// Per-player ATP match list from the Sackmann archive for [minYear, maxYear],
+// shaped for the Overview year-table drill-down (surface, date, opponent, score).
+// Reuses the same TML index + reconciliation as the tournament-history backfill.
+// Returns { apiKey: [ {year, surface, level:'atp', date, tournament, round,
+// opponent, result, won} ] } — only players reconciled to a TML identity.
+async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
+  const log = opts.log || (() => {});
+  const countryToIoc = opts.countryToIoc || {};
+  const index = await buildTmlIndex(log);
+  const apiToTml = reconcile(profiles, index.identity, countryToIoc, log);
+  const out = {};
+  for (const [apiKey, tmlId] of apiToTml) {
+    const ms = index.byId.get(tmlId) || [];
+    const list = [];
+    for (const m of ms) {
+      if (m.year < minYear || m.year > maxYear) continue;
+      if (!m.surface) continue; // drill-down is surface-scoped
+      list.push({
+        year: String(m.year), surface: m.surface, level: 'atp', date: m.date,
+        tournament: m.tournamentName || m.tourney, round: m.round,
+        // scoreDisplay renders opponentSets - playerSets; the live drill-down uses
+        // playerSets - oppSets, so flip to keep both consistent.
+        opponent: m.oppName, result: flipSets(m.score), won: m.won,
+      });
+    }
+    if (list.length) {
+      list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      out[apiKey] = list;
+    }
+  }
+  if (log) log(`  Archive drill-down: ${Object.keys(out).length} players with ${minYear}-${maxYear} matches.`);
+  return out;
 }
 
 // Recompute a tournament record from a {year -> matches[]} map, mirroring
@@ -466,6 +516,7 @@ async function backfillProfilesHistory(profiles, opts = {}) {
 module.exports = {
   backfillProfilesHistory,
   backfillMatchesTournamentHistory,
+  buildArchiveHistories,
   // exported for testing
   _internal: { buildTmlIndex, reconcile, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
 };

@@ -30,7 +30,7 @@
 
 require('dotenv').config();
 const fs = require('fs');
-const { backfillProfilesHistory, backfillMatchesTournamentHistory } = require('./career-backfill');
+const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
 
 // Atomic JSON write: write to a temp file in the same directory, then rename
 // over the target. rename(2) is atomic on the same filesystem, so a reader
@@ -3410,6 +3410,30 @@ async function runPipeline() {
   for (const hk of histKeys) {
     playerHistories[hk] = playerMatchHistory(await fetchRecentSinglesFixtures(hk), hk, histYear, surfaceMap);
   }
+
+  // Pre-2021 ATP drill-down from the Sackmann archive: reconcile today's players
+  // to their archive identity, pull their 2015..(cutoff-1) ATP matches, merge
+  // into the lazy histories, and flag those year rows clickable. Same
+  // reconciliation as the tournament-history backfill; no extra API calls.
+  const archiveProfiles = {};
+  for (const hk of histKeys) { const pp = playerProfiles.players[hk]; if (pp) archiveProfiles[hk] = { name: pp.name, country: pp.country }; }
+  let archiveHistories = {};
+  try {
+    archiveHistories = await buildArchiveHistories(archiveProfiles, 2015, histYear - 6, { log: (m) => console.log(m) });
+  } catch (e) { console.error('Archive drill-down build failed (non-fatal):', e.message); }
+  for (const key of Object.keys(archiveHistories)) {
+    playerHistories[key] = [...(playerHistories[key] || []), ...archiveHistories[key]];
+  }
+  let archiveFlagged = 0;
+  for (const mm of matches) {
+    for (const [key, field] of [[mm.p1Key, 'p1Yearly'], [mm.p2Key, 'p2Yearly']]) {
+      if (key && archiveHistories[String(key)] && Array.isArray(mm[field])) {
+        for (const r of mm[field]) if (r && r.allTier === false) { r.archive = true; archiveFlagged++; }
+      }
+    }
+  }
+  if (archiveFlagged) { writeJsonAtomic('matches.json', matches); console.log(`Archive drill-down: flagged ${archiveFlagged} pre-2021 row(s) clickable; re-wrote matches.json.`); }
+
   writeJsonAtomic('player-histories.json', playerHistories, true);
   console.log(`Wrote player-histories.json (${Object.keys(playerHistories).length} player(s), year-table drill-down).`);
 
