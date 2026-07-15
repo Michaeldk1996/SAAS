@@ -2057,6 +2057,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix){
   const closeBtn = `<span class="yr-drill-close" onclick="showYearSurfaceMatches('${playerKey}','${year}','${surface}','${colPrefix}')" title="Close">✕</span>`;
   if (!list.length){
     container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
+    requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
     return;
   }
   const rows = list.map(mm => {
@@ -2071,6 +2072,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix){
     </div>`;
   }).join('');
   container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
+  requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
 }
 // Pads both players' year lists to a single shared year span so the two
 // tables line up row-for-row (per the design). Each player keeps their real

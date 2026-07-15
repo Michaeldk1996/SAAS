@@ -569,6 +569,23 @@ function normalizeSurface(raw) {
   return null; // covers "", null, and non-surface values like "- Qualification"
 }
 
+// A few tournaments carry the wrong surface in API-Tennis's metadata. Verified
+// against the real draws and corrected here so surface tallies/records are right.
+// Keyed by exact lowercase name, optionally scoped by tour (event_type_type).
+const SURFACE_CORRECTIONS = [
+  // Mallorca Championships (ATP 250, the week before Wimbledon) is GRASS; the
+  // API reports it as clay on the ATP singles/doubles entries.
+  { name: 'mallorca', tour: 'atp', surface: 'grass' },
+];
+function correctTournamentSurface(t) {
+  const name = String(t.tournament_name || '').trim().toLowerCase();
+  const type = String(t.event_type_type || '').toLowerCase();
+  for (const c of SURFACE_CORRECTIONS) {
+    if (name === c.name && (!c.tour || type.startsWith(c.tour))) return c.surface;
+  }
+  return normalizeSurface(t.tournament_sourface);
+}
+
 async function fetchAllTournaments() {
   const url = `${API_TENNIS_BASE}?method=get_tournaments&APIkey=${API_TENNIS_KEY}`;
   const res = await fetch(url);
@@ -588,7 +605,7 @@ async function loadTournamentSurfaceMap() {
   const tournaments = await fetchAllTournaments();
   const surfaces = {};
   for (const t of tournaments) {
-    surfaces[t.tournament_key] = normalizeSurface(t.tournament_sourface);
+    surfaces[t.tournament_key] = correctTournamentSurface(t);
   }
   fs.writeFileSync(TOURNAMENT_SURFACE_CACHE_PATH, JSON.stringify({ fetchedAt: new Date().toISOString(), surfaces }, null, 2));
   return new Map(Object.entries(surfaces));
