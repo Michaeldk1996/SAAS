@@ -645,6 +645,19 @@
   .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
   .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
   .modal-analysis .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
+  /* Point-by-point (Task 4) — per-game rows with an inline point sequence */
+  .modal-analysis .pbp-set .msheet-row{ grid-template-columns:120px 1fr 92px; }
+  .modal-analysis .pbp-set .msheet-grouphead{ grid-template-columns:120px 1fr 92px; }
+  .modal-analysis .pbp-game{ font-family:'IBM Plex Mono', monospace; font-size:13px; text-align:left; padding:11px 0 11px 16px; color:#c7cdd6; font-weight:600; display:flex; align-items:center; gap:7px; }
+  .modal-analysis .pbp-points{ display:flex; flex-wrap:wrap; gap:5px; padding:9px 8px; }
+  .modal-analysis .pbp-pt{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#9aa3b2; background:rgba(255,255,255,0.04); border-radius:5px; padding:2px 6px; white-space:nowrap; }
+  .modal-analysis .pbp-pt.bp{ color:#ffd27a; background:rgba(232,147,75,0.16); }
+  .modal-analysis .pbp-pt.sp{ color:#8fd0ff; background:rgba(62,123,250,0.16); }
+  .modal-analysis .pbp-pt.mp{ color:#8affc0; background:rgba(46,204,113,0.18); font-weight:700; }
+  .modal-analysis .pbp-score{ font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center; padding:11px 16px 11px 0; color:#c7cdd6; font-weight:600; }
+  .modal-analysis .pbp-brk{ display:inline-block; font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.08em; color:#E8934B; border:1px solid rgba(232,147,75,0.5); border-radius:4px; padding:0 4px; margin-left:5px; vertical-align:middle; }
+  .modal-analysis .pbp-legend{ display:flex; flex-wrap:wrap; gap:16px; margin:12px 2px 0; font-size:11px; color:#8b93a3; }
+  .modal-analysis .pbp-legend .k{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:middle; }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
   .modal-analysis .tprogress-legend{ display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin:0 0 16px; font-family:'Hanken Grotesk', sans-serif; }
@@ -1376,6 +1389,7 @@
         <div class="asidenav-item" data-atab="form"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Form</span></div>
         <div class="asidenav-item" data-atab="h2h"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>H2H</span></div>
         <div class="asidenav-item" data-atab="matchstats"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg></span><span>Match Stats</span></div>
+        <div class="asidenav-item" data-atab="pointbypoint"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="14" y2="18"></line></svg></span><span>Point by point</span></div>
         <div class="asidenav-item" data-atab="progression"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Progression</span></div>
         <div class="asidenav-item" data-atab="overview"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span>Overview</span></div>
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
@@ -1390,6 +1404,7 @@
         <div class="asection" data-asection="form" id="aSectionForm"></div>
         <div class="asection" data-asection="h2h" id="aSectionH2H"></div>
         <div class="asection" data-asection="matchstats" id="aSectionMatchStats"></div>
+        <div class="asection" data-asection="pointbypoint" id="aSectionPointByPoint"></div>
         <div class="asection" data-asection="progression" id="aSectionProgression"></div>
         <div class="asection" data-asection="overview" id="aSectionOverview"></div>
         <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
@@ -2088,6 +2103,71 @@ function loadPlayerHistories(){
     .then(d => { playerHistories = d || {}; return playerHistories; })
     .catch(err => { console.warn('player-histories.json load failed:', err.message); playerHistories = {}; return playerHistories; });
   return _playerHistoriesPromise;
+}
+// Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
+// user opens the "Point by point" tab), memoised, and keyed by m.id. Finished
+// matches only — the sidecar has no entry for upcoming/live matches.
+let pointByPoint = null;
+let _pointByPointPromise = null;
+function loadPointByPoint(){
+  if (pointByPoint) return Promise.resolve(pointByPoint);
+  if (_pointByPointPromise) return _pointByPointPromise;
+  _pointByPointPromise = fetch('./point-by-point.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : {})
+    .then(d => { pointByPoint = d || {}; return pointByPoint; })
+    .catch(err => { console.warn('point-by-point.json load failed:', err.message); pointByPoint = {}; return pointByPoint; });
+  return _pointByPointPromise;
+}
+function buildPointByPointHtml(m, entry){
+  if (!entry || !Array.isArray(entry.sets) || !entry.sets.length){
+    return `<div class="acomingsoon">No point-by-point log on file for this match.</div>`;
+  }
+  const dotFor = side => side === 'p1' ? '<span class="mstat-dot p1"></span>'
+                       : side === 'p2' ? '<span class="mstat-dot p2"></span>' : '';
+  let html = `<div class="msheet-head"><div class="msheet-title">Point by point</div>`
+    + `<div class="msheet-sets">${m.finalScore ? escapeHtml(m.finalScore.display) : ''}</div></div>`;
+  html += `<div class="msheet-names"><span>${dotFor('p1')}${escapeHtml(m.p1)}</span>`
+        + `<span>${escapeHtml(m.p2)}${dotFor('p2')}</span></div>`;
+  for (const s of entry.sets){
+    html += `<div class="msheet-table pbp-set">`;
+    html += `<div class="msheet-grouphead"><span>Set ${escapeHtml(s.set)}</span><span>Points</span><span>Game</span></div>`;
+    for (const g of (s.games || [])){
+      const broken = g.winner && g.server && g.winner !== g.server; // serve broken
+      const pts = (g.points || []).map(p => {
+        const cls = p.mp ? 'pbp-pt mp' : p.sp ? 'pbp-pt sp' : p.bp ? 'pbp-pt bp' : 'pbp-pt';
+        return `<span class="${cls}">${escapeHtml(p.s)}</span>`;
+      }).join('');
+      html += `<div class="msheet-row">`
+        + `<span class="pbp-game">${dotFor(g.server)}Game ${escapeHtml(g.g)}</span>`
+        + `<span class="pbp-points">${pts}</span>`
+        + `<span class="pbp-score">${escapeHtml(g.score)}${broken ? '<span class="pbp-brk">BREAK</span>' : ''}</span>`
+        + `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div class="pbp-legend">`
+    + `<span><span class="k" style="background:rgba(232,147,75,0.5)"></span>Break point</span>`
+    + `<span><span class="k" style="background:rgba(62,123,250,0.5)"></span>Set point</span>`
+    + `<span><span class="k" style="background:rgba(46,204,113,0.5)"></span>Match point</span>`
+    + `<span>Coloured dot = server</span></div>`;
+  return html;
+}
+// Fill the Point-by-point section for the currently open match, fetching the
+// sidecar on first use. Guarded by the section's matchId so a fast re-open on a
+// different match can't paint stale data.
+function ensurePointByPoint(){
+  const container = document.getElementById('aSectionPointByPoint');
+  if (!container || !_aPbpMatch) return;
+  const m = _aPbpMatch;
+  if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
+  container.dataset.matchId = m.id;
+  container.dataset.loaded = '';
+  container.innerHTML = `<div class="acomingsoon">Loading point-by-point…</div>`;
+  loadPointByPoint().then(data => {
+    if (container.dataset.matchId !== m.id) return; // superseded by a newer open
+    container.innerHTML = buildPointByPointHtml(m, data && data[m.id]);
+    container.dataset.loaded = '1';
+  });
 }
 async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
   tier = tier || 'all';
@@ -3140,6 +3220,7 @@ const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 // flagged "no data" rather than faked, per the design's data-honesty requirement.
 const AODDS_MARKETS = ['Match Winner','Set 1 Winner','Handicap \u22121.5 sets','Handicap \u22123.5 games','Total Games O/U 22.5'];
 let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
+let _aPbpMatch = null; // match whose Point-by-point tab is currently open (Task 4)
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function aOddsDash(book, idx){ return (book in AODDS_DASH) ? AODDS_DASH[book] : AODDS_DASHCYCLE[idx % AODDS_DASHCYCLE.length]; }
@@ -3682,6 +3763,15 @@ function openAnalysisModal(matchId){
   const progNav = document.querySelector('#aTabs .asidenav-item[data-atab="progression"]');
   if (progNav) progNav.style.display = progressionRoundState(m).state === 'hidden' ? 'none' : '';
 
+  // Task 4: Point-by-point tab only exists for finished matches (the sidecar has
+  // no upcoming/live logs). Reset the section so it re-loads for this match; the
+  // actual fetch is deferred until the tab is opened.
+  _aPbpMatch = m;
+  const pbpNav = document.querySelector('#aTabs .asidenav-item[data-atab="pointbypoint"]');
+  if (pbpNav) pbpNav.style.display = m.finalScore ? '' : 'none';
+  const pbpSection = document.getElementById('aSectionPointByPoint');
+  if (pbpSection){ pbpSection.dataset.loaded = ''; pbpSection.dataset.matchId = ''; pbpSection.innerHTML = ''; }
+
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
@@ -3708,6 +3798,7 @@ document.getElementById('aTabs').addEventListener('click', e => {
   btn.classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
+  if (btn.dataset.atab === 'pointbypoint') ensurePointByPoint(); // Task 4: lazy-load on open
 });
 
 // Download report — scoped print of the modal's current content. Shows every

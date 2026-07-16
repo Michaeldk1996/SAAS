@@ -56,6 +56,7 @@ jobs:
             player-tournament-history.json
             historical-match-stats.json
             tournament-profiles.json
+            point-by-point-cache.json
             tml-cache
           key: bsp-caches-${{ github.run_id }}
           restore-keys: |
@@ -68,14 +69,23 @@ jobs:
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
 
-      # Assemble the static site: the dashboard as index.html + the four JSON
-      # files it fetches (all same-origin, relative paths) + the health file.
+      # Point-by-point sidecar (Task 4): lazy companion the dashboard fetches on
+      # demand for finished matches. Best-effort — never block the deploy: a
+      # failure here leaves the previous point-by-point.json (from cache) or none.
+      - name: Build point-by-point sidecar (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node build-point-by-point.js || true
+
+      # Assemble the static site: the dashboard as index.html + the JSON files it
+      # fetches (all same-origin, relative paths) + the health file.
       - name: Assemble site
         run: |
           mkdir -p _site
           cp bsp-consult-dashboard.html _site/index.html
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp player-histories.json _site/ 2>/dev/null || true
+          cp point-by-point.json _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
 
       - name: Upload Pages artifact
