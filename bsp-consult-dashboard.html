@@ -967,7 +967,15 @@
   .aform-panel-row{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; padding:4px 0; font-family:'IBM Plex Mono', monospace; font-size:12px; }
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-foot{ font-size:11.5px; color:#5b6472; margin-top:14px; font-family:'Hanken Grotesk', sans-serif; }
-  @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } }
+  /* Task 7 — Season results tabs, sitting under Recent matches in the Form tab. */
+  .aform-seasonhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:22px 0 8px 0; }
+  .aform-seasontabs{ display:flex; gap:3px; flex-wrap:wrap; justify-content:flex-end; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
+  .aform-seasontabs .opt{ font-size:11px; font-weight:600; color:#8b93a3; padding:4px 10px; border-radius:6px; border:1px solid transparent; cursor:pointer; font-family:'IBM Plex Mono', monospace; }
+  .aform-seasontabs .opt.active{ color:#e7e9ee; }
+  .aform-seasonrec{ font-size:11.5px; font-family:'IBM Plex Mono', monospace; color:#8b93a3; padding:0 2px 8px 2px; }
+  .aform-seasonrec b{ color:#dfe4ec; font-weight:700; }
+  .aform-seasonnote{ font-size:11px; color:#5b6472; padding:8px 2px 0 2px; }
+  @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } .aform-seasonhead{ flex-direction:column; align-items:flex-start; } .aform-seasontabs{ justify-content:flex-start; } }
 
   /* H2H tab (full match-history expansion) */
   .ah2h-callout{ font-size:15.5px; color:#dfe3ea; line-height:1.55; margin-bottom:14px; font-family:'Hanken Grotesk', sans-serif; }
@@ -2717,7 +2725,7 @@ function formRowHtml(match, idPrefix, playerKey, playerName){
 // (colPrefix, e.g. "p1") closes any other open row in that same column.
 const formOpenPanel = {};
 function toggleFormPanel(idPrefix){
-  const colPrefix = idPrefix.replace(/(main|surf)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   if (!chev || !wrap) return;
@@ -2812,6 +2820,84 @@ function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, col
     : b.html).join('');
   return { html, hiddenCount };
 }
+// Task 7 — Season results. "Recent matches" above is capped at the last 10 on
+// record; this section is the full season, one tab per season the player has
+// history for. Matches come from player-histories.json, the same lazily-fetched
+// sidecar the Overview year tables drill into — so this costs nothing on first
+// paint and adds no weight to matches.json.
+const formSeasonState = {};   // colPrefix -> selected year
+const _formSeasonCtx = {};    // colPrefix -> {playerKey, name}
+
+// Rows in the sidecar carry `year` but buildFormGroupedList only needs
+// tournament/date/surface/won/opponent/result, which they already have.
+function seasonYearsOf(hist){
+  return [...new Set((hist || []).map(m => String(m.year)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+}
+
+function buildSeasonResultsBody(colPrefix, year){
+  const ctx = _formSeasonCtx[colPrefix];
+  if (!ctx) return '';
+  const hist = (playerHistories && playerHistories[String(ctx.playerKey)]) || [];
+  const ms = hist.filter(m => String(m.year) === String(year));
+  if (!ms.length) return `<div class="acomingsoon" style="padding:14px 0;">No matches on record for this season.</div>`;
+  // Sidecar order isn't guaranteed; the grouper wants newest-first like the
+  // recent-matches list, and dedupes editions off the date gaps.
+  const sorted = ms.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const won = sorted.filter(m => m.won).length;
+  const lost = sorted.length - won;
+  const pct = sorted.length ? Math.round(won / sorted.length * 1000) / 10 : 0;
+  const grouped = buildFormGroupedList(sorted, colPrefix, ctx.playerKey, ctx.name, 'season', false);
+  const rec = `<div class="aform-seasonrec"><b>${won}–${lost}</b> · ${pct}% · ${sorted.length} match${sorted.length === 1 ? '' : 'es'} · all tiers</div>`;
+  return rec + grouped.html;
+}
+
+function renderSeasonResults(colPrefix){
+  const el = document.getElementById(`formSeason-${colPrefix}`);
+  if (!el) return;
+  const ctx = _formSeasonCtx[colPrefix];
+  const hist = (playerHistories && playerHistories[String(ctx && ctx.playerKey)]) || [];
+  const years = seasonYearsOf(hist);
+  if (!years.length){
+    el.innerHTML = `<div class="acomingsoon" style="padding:14px 0;">No season history on record for this player.</div>`;
+    return;
+  }
+  let year = formSeasonState[colPrefix];
+  if (!years.includes(year)){ year = years[0]; formSeasonState[colPrefix] = year; }
+  const isP1 = colPrefix === 'p1';
+  const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
+  const tabs = years.map(y => {
+    const active = y === year;
+    return `<span class="opt${active ? ' active' : ''}" onclick="setFormSeason('${colPrefix}','${y}')" style="${active ? `background:${rgba(0.18)}; border-color:${rgba(0.3)};` : ''}">${y}</span>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="aform-seasonhead">
+      <span class="aform-filterlbl">Season results</span>
+      <div class="aform-seasontabs">${tabs}</div>
+    </div>
+    <div class="aform-list" id="formSeasonList-${colPrefix}">${buildSeasonResultsBody(colPrefix, year)}</div>
+  `;
+}
+
+function setFormSeason(colPrefix, year){
+  formSeasonState[colPrefix] = String(year);
+  renderSeasonResults(colPrefix);
+}
+
+// Called once per modal open, after the Form section is in the DOM. The fetch is
+// memoised by loadPlayerHistories, so the second column doesn't re-download it.
+function hydrateFormSeasons(m){
+  const cols = [['p1', m.p1Key, m.p1], ['p2', m.p2Key, m.p2]];
+  cols.forEach(([cp, key, nm]) => { _formSeasonCtx[cp] = { playerKey: key, name: nm }; });
+  const token = `${m.p1Key}|${m.p2Key}`;
+  _formSeasonToken = token;
+  loadPlayerHistories().then(() => {
+    // A different match may have been opened while the sidecar was in flight.
+    if (_formSeasonToken !== token) return;
+    cols.forEach(([cp]) => renderSeasonResults(cp));
+  });
+}
+let _formSeasonToken = null;
+
 function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix, playerKey){
   if (!allMatches || allMatches.length === 0) {
     return `
@@ -2878,6 +2964,7 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
       </div>
       <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
       <div class="aform-list${allActive ? ' hidden' : ''}" id="formList-surf-${colPrefix}">${surfaceRows}</div>
+      <div id="formSeason-${colPrefix}"><div class="aform-seasonhead"><span class="aform-filterlbl">Season results</span></div><div class="yr-drill-note">Loading seasons…</div></div>
     </div>
   `;
 }
@@ -4109,6 +4196,7 @@ function openAnalysisModal(matchId){
   _aPbpMatch = m;
 
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
+  hydrateFormSeasons(m);
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
 
