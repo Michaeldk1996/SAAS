@@ -657,6 +657,16 @@
   .modal-analysis .ms-subtab.active{ color:#fff; background:var(--accent); }
   .modal-analysis .ms-pane{ display:none; }
   .modal-analysis .ms-pane.active{ display:block; }
+  /* Set filter (Task 9) — secondary row beneath the Stats/Point-by-point pills.
+     Deliberately quieter than .ms-subtab (hairline outline, no accent fill) so
+     the primary view toggle stays the dominant control. */
+  .modal-analysis .ms-setsel{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 auto 20px; width:max-content; max-width:100%; }
+  /* width:auto + flex:0 0 auto override the global `.modal button{width:100%}`,
+     which would otherwise stretch each pill to full width and wrap it onto its
+     own line instead of laying them out as a row. */
+  .modal-analysis .ms-setbtn{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:500; letter-spacing:0.02em; color:#8b93a3; background:none; border:1px solid rgba(255,255,255,0.10); padding:5px 14px; border-radius:999px; cursor:pointer; width:auto; flex:0 0 auto; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .modal-analysis .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.22); }
+  .modal-analysis .ms-setbtn.active{ color:#e7e9ee; border-color:rgba(255,255,255,0.30); background:rgba(255,255,255,0.06); }
   /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
   .modal-analysis .pbp-wrap{ max-width:560px; margin:0 auto; }
   .modal-analysis .pbp-sethdr{ display:flex; align-items:center; justify-content:center; gap:12px; margin:20px 0 8px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280; font-weight:700; }
@@ -928,6 +938,12 @@
   .aform-toggle .opt.active{ color:#e7e9ee; }
   .aform-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; margin-bottom:6px; }
   .aform-list.hidden{ display:none; }
+  .aform-tgroup{ display:flex; align-items:center; gap:8px; padding:8px 13px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.05); }
+  .aform-tgroup + .aform-row{ border-top:none; }
+  .aform-tgroup .tname{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:700; color:#dfe4ec; }
+  .aform-tgroup .trange{ font-size:10.5px; color:#5b6472; white-space:nowrap; }
+  .aform-tgroup .tspacer{ flex:1; }
+  .aform-tgroup .trec{ font-size:11.5px; font-family:'IBM Plex Mono', monospace; color:#8b93a3; white-space:nowrap; }
   .aform-row{ display:grid; grid-template-columns:26px minmax(0,1fr) 46px 56px 12px; align-items:center; gap:10px; padding:11px 13px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:background .12s; }
   .aform-row:hover{ background:#0e1015; }
   .aform-row:last-child{ border-bottom:none; }
@@ -948,10 +964,26 @@
   .aform-panel{ padding:12px 13px 14px 49px; background:rgba(255,255,255,0.02); }
   .aform-panel-meta{ font-size:11px; color:#6b7280; font-family:'IBM Plex Mono', monospace; margin-bottom:10px; }
   .aform-panel-names{ display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#9aa3b2; margin-bottom:6px; }
+  /* Tasks 10-12 — Stats / Point by point tabs inside an expanded form row.
+     Same pill vocabulary as the modal's set selector (.ms-setbtn). */
+  .aform-tabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .aform-tabs.hidden{ display:none; }
+  .aform-tab{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:500; letter-spacing:0.02em; color:#8b93a3; background:none; border:1px solid rgba(255,255,255,0.10); padding:5px 14px; border-radius:999px; cursor:pointer; width:auto; flex:0 0 auto; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .aform-tab:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.22); }
+  .aform-tab.active{ color:#e7e9ee; border-color:rgba(255,255,255,0.30); background:rgba(255,255,255,0.06); }
+  .aform-panel > div.hidden{ display:none; }
   .aform-panel-row{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; padding:4px 0; font-family:'IBM Plex Mono', monospace; font-size:12px; }
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-foot{ font-size:11.5px; color:#5b6472; margin-top:14px; font-family:'Hanken Grotesk', sans-serif; }
-  @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } }
+  /* Task 7 — Season results tabs, sitting under Recent matches in the Form tab. */
+  .aform-seasonhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:22px 0 8px 0; }
+  .aform-seasontabs{ display:flex; gap:3px; flex-wrap:wrap; justify-content:flex-end; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
+  .aform-seasontabs .opt{ font-size:11px; font-weight:600; color:#8b93a3; padding:4px 10px; border-radius:6px; border:1px solid transparent; cursor:pointer; font-family:'IBM Plex Mono', monospace; }
+  .aform-seasontabs .opt.active{ color:#e7e9ee; }
+  .aform-seasonrec{ font-size:11.5px; font-family:'IBM Plex Mono', monospace; color:#8b93a3; padding:0 2px 8px 2px; }
+  .aform-seasonrec b{ color:#dfe4ec; font-weight:700; }
+  .aform-seasonnote{ font-size:11px; color:#5b6472; padding:8px 2px 0 2px; }
+  @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } .aform-seasonhead{ flex-direction:column; align-items:flex-start; } .aform-seasontabs{ justify-content:flex-start; } }
 
   /* H2H tab (full match-history expansion) */
   .ah2h-callout{ font-size:15.5px; color:#dfe3ea; line-height:1.55; margin-bottom:14px; font-family:'Hanken Grotesk', sans-serif; }
@@ -2161,18 +2193,71 @@ function loadPlayerHistories(){
   return _playerHistoriesPromise;
 }
 // Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
-// user opens the "Point by point" tab), memoised, and keyed by m.id. Finished
-// matches only — the sidecar has no entry for upcoming/live matches.
+// user opens the "Point by point" tab), memoised, and keyed by api-tennis event
+// key. Finished matches only — the sidecar has no entry for upcoming/live
+// matches.
 let pointByPoint = null;
 let _pointByPointPromise = null;
+// The stable half of a dashboard match id: "upcoming-12145200" -> "12145200".
+// The prefix tracks the day bucket and flips when a match rolls out of the
+// fixtures window, so only the trailing event key identifies a match across
+// pipeline rebuilds.
+function pbpEventKey(id){
+  const last = String(id || '').split('-').pop();
+  return /^\d+$/.test(last) ? last : null;
+}
+// Re-key the sidecar to event keys on load. Entries are keyed by event key since
+// the builder was fixed, but a deploy can still serve a sidecar built before it
+// (prefixed keys), so normalising both shapes here keeps point logs reachable
+// across that rollout instead of blanking the tab for a cycle.
+function pbpIndexByEventKey(raw){
+  const out = {};
+  for (const k of Object.keys(raw || {})){
+    const ek = pbpEventKey(k);
+    if (ek) out[ek] = raw[k];
+  }
+  return out;
+}
 function loadPointByPoint(){
   if (pointByPoint) return Promise.resolve(pointByPoint);
   if (_pointByPointPromise) return _pointByPointPromise;
   _pointByPointPromise = fetch('./point-by-point.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : {})
-    .then(d => { pointByPoint = d || {}; return pointByPoint; })
+    .then(d => { pointByPoint = pbpIndexByEventKey(d); return pointByPoint; })
     .catch(err => { console.warn('point-by-point.json load failed:', err.message); pointByPoint = {}; return pointByPoint; });
   return _pointByPointPromise;
+}
+// --- Per-match point-by-point shards (Tasks 10-12) -------------------------
+// The Form tab's recent-form rows reach ~600 matches, far outside the fixtures
+// window that point-by-point.json covers. Bundling them all would be a ~2.9 MB
+// fetch to read one match's log, so each match is its own shard and a row pulls
+// only its own. Both files stay lazy: nothing here loads until a row is opened.
+let _pbpIndex = null, _pbpIndexPromise = null;
+const _pbpShards = {}, _pbpShardPromises = {};
+
+// The set of event keys that have a point log on file. Fetched once, so a row
+// knows whether to offer a Point-by-point tab before it paints it.
+function loadPbpIndex(){
+  if (_pbpIndex) return Promise.resolve(_pbpIndex);
+  if (_pbpIndexPromise) return _pbpIndexPromise;
+  _pbpIndexPromise = fetch('./pbp-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _pbpIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _pbpIndex; })
+    .catch(err => { console.warn('pbp-index.json load failed:', err.message); _pbpIndex = new Set(); return _pbpIndex; });
+  return _pbpIndexPromise;
+}
+// One match's point log. Resolves to null when there is no shard — the caller
+// shows nothing rather than inventing a log.
+function loadPbpShard(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek) return Promise.resolve(null);
+  if (ek in _pbpShards) return Promise.resolve(_pbpShards[ek]);
+  if (_pbpShardPromises[ek]) return _pbpShardPromises[ek];
+  _pbpShardPromises[ek] = fetch(`./pbp/${ek}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { _pbpShards[ek] = d || null; return _pbpShards[ek]; })
+    .catch(err => { console.warn(`pbp shard ${ek} load failed:`, err.message); _pbpShards[ek] = null; return null; });
+  return _pbpShardPromises[ek];
 }
 // Parse an api-tennis "a - b" integer score into [a, b] (null if not integers).
 function pbpParseScore(sc){
@@ -2214,17 +2299,29 @@ function pbpPointList(points){
 // icon on that player's side, point sequence beneath) and, for tiebreak sets, a
 // dedicated "TIEBREAK · SET n" section with one row per point — running score,
 // serve indicator, LOST SERVE on a lost serve (mini-break) and SP/MP badges.
-function buildPointByPointHtml(m, entry){
+// `setNo` null = every set; a number = only that set (what the pane always asks
+// for — it opens on set 1 and every pill picks a set). The set
+// filter narrows what is DISPLAYED — it never changes how a set is interpreted:
+// `isLastSet` (which decides whether a tiebreak's pending-point badge reads MP
+// or SP) is still resolved against the full match, so filtering to the decider
+// can't demote its match points to set points.
+function buildPointByPointHtml(m, entry, setNo){
   if (!entry || !Array.isArray(entry.sets) || !entry.sets.length){
     return `<div class="acomingsoon">No point-by-point log on file for this match.</div>`;
   }
   const ball = `<span class="pbp-ball">${BSP_ICONS.ball}</span>`;
   const gap = `<span class="pbp-ball-sp"></span>`;
-  const totalSets = entry.sets.length;
+  const allSets = entry.sets;
+  const totalSets = allSets.length;
+  const shownSets = setNo == null ? allSets : allSets.filter(s => Number(s.set) === Number(setNo));
+  if (!shownSets.length){
+    return `<div class="acomingsoon">No point-by-point log on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   let html = `<div class="pbp-wrap">`;
   html += `<div class="msheet-names"><span><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
         + `<span>${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
-  entry.sets.forEach((s, si) => {
+  shownSets.forEach(s => {
+    const si = allSets.indexOf(s);
     const { real, tbPts } = pbpSplitSet(s);
     const isLastSet = si === totalSets - 1;
     // Set header + final score (tiebreak points as superscripts, e.g. 7⁷ · 6⁴).
@@ -2293,12 +2390,35 @@ function ensurePointByPoint(){
   if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
   container.dataset.matchId = m.id;
   container.dataset.loaded = '';
+  _aPbpEntry = null;
   container.innerHTML = `<div class="acomingsoon">Loading point-by-point…</div>`;
   loadPointByPoint().then(data => {
     if (container.dataset.matchId !== m.id) return; // superseded by a newer open
-    container.innerHTML = buildPointByPointHtml(m, data && data[m.id]);
+    const entry = data && data[pbpEventKey(m.id)];
+    _aPbpEntry = entry || null;
+    // The set filter comes from the point log itself (not m.setStats): the two
+    // are independent feeds, and a match can have a point log for a set whose
+    // box score is missing, or vice versa.
+    const setNos = (entry && Array.isArray(entry.sets))
+      ? entry.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b)
+      : [];
+    // Open on the first set rather than the whole match: one set is the unit a
+    // reader actually reads. null (= every set) only survives when there is no
+    // set data at all, where it resolves to the "no log on file" message.
+    const firstSet = setNos.length ? setNos[0] : null;
+    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', null)
+      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, firstSet)}</div>`;
     container.dataset.loaded = '1';
   });
+}
+// Repaint the point log for the chosen set from the already-fetched sidecar
+// entry — the set filter never triggers another fetch.
+function switchPbpSet(el, setNo){
+  const pane = document.getElementById('msPbpPane');
+  const body = document.getElementById('msPbpBody');
+  if (!pane || !body || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  body.innerHTML = buildPointByPointHtml(_aPbpMatch, _aPbpEntry, setNo);
 }
 async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
   tier = tier || 'all';
@@ -2640,16 +2760,70 @@ function formPanelHtml(match, idPrefix, playerKey, playerName){
       ${rows}
     `;
   }
+  // The tab bar is painted on first expand, not here: whether this match has a
+  // point log is only known once the availability index has loaded, and a tab
+  // that appears and then vanishes is worse than one that arrives with content.
   return `
-    <div class="aform-panel-wrap" id="formPanelWrap-${idPrefix}">
+    <div class="aform-panel-wrap" id="formPanelWrap-${idPrefix}" data-ek="${match.eventKey || ''}">
       <div class="aform-panel-inner">
         <div class="aform-panel">
           <div class="aform-panel-meta">${meta}</div>
-          ${body}
+          <div class="aform-tabs hidden" id="formTabs-${idPrefix}"></div>
+          <div id="formPaneStats-${idPrefix}">${body}</div>
+          <div class="hidden" id="formPanePbp-${idPrefix}"></div>
         </div>
       </div>
     </div>
   `;
+}
+
+// Adds the Stats / Point by point tabs to a row's panel, but only for a match
+// that actually has a point log on file. Rows without one keep the bare stats
+// panel they have always had, so tabs vary row to row by design.
+function ensureFormPanelTabs(idPrefix){
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  const tabs = document.getElementById('formTabs-' + idPrefix);
+  if (!wrap || !tabs || tabs.dataset.ready === '1') return;
+  const ek = wrap.dataset.ek;
+  if (!ek) return;
+  tabs.dataset.ready = '1';
+  loadPbpIndex().then(index => {
+    if (!index.has(String(ek))) return;      // no log — no tab, no empty state
+    tabs.innerHTML = `
+      <button class="aform-tab active" id="formTab-stats-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','stats')">Stats</button>
+      <button class="aform-tab" id="formTab-pbp-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','pbp')">Point by point</button>
+    `;
+    tabs.classList.remove('hidden');
+  });
+}
+
+// Swap panes, fetching the point log on first view of the Point by point tab.
+function switchFormTab(idPrefix, tab){
+  const statsPane = document.getElementById('formPaneStats-' + idPrefix);
+  const pbpPane = document.getElementById('formPanePbp-' + idPrefix);
+  const statsTab = document.getElementById('formTab-stats-' + idPrefix);
+  const pbpTab = document.getElementById('formTab-pbp-' + idPrefix);
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  if (!statsPane || !pbpPane || !wrap) return;
+  const showPbp = tab === 'pbp';
+  statsPane.classList.toggle('hidden', showPbp);
+  pbpPane.classList.toggle('hidden', !showPbp);
+  if (statsTab) statsTab.classList.toggle('active', !showPbp);
+  if (pbpTab) pbpTab.classList.toggle('active', showPbp);
+  if (!showPbp || pbpPane.dataset.loaded === '1') return;
+  pbpPane.dataset.loaded = '1';
+  pbpPane.innerHTML = `<div class="acomingsoon" style="padding:10px 0 2px;">Loading point-by-point…</div>`;
+  loadPbpShard(wrap.dataset.ek).then(shard => {
+    if (!shard || !shard.sets || !shard.sets.length){
+      pbpPane.dataset.loaded = '';   // let a retry re-fetch rather than freezing the failure
+      pbpPane.innerHTML = `<div class="acomingsoon" style="padding:10px 0 2px;">No point-by-point log on file for this match.</div>`;
+      return;
+    }
+    // Rendered against the shard's OWN p1/p2 — the names api-tennis labelled
+    // first/second, which is what the log's server/winner sides refer to. The
+    // row only knows "profile player vs opponent" and cannot supply that order.
+    pbpPane.innerHTML = buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, null);
+  });
 }
 
 function formRowHtml(match, idPrefix, playerKey, playerName){
@@ -2671,7 +2845,7 @@ function formRowHtml(match, idPrefix, playerKey, playerName){
 // (colPrefix, e.g. "p1") closes any other open row in that same column.
 const formOpenPanel = {};
 function toggleFormPanel(idPrefix){
-  const colPrefix = idPrefix.replace(/(main|surf)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   if (!chev || !wrap) return;
@@ -2686,6 +2860,7 @@ function toggleFormPanel(idPrefix){
   chev.classList.toggle('open', !isOpen);
   wrap.classList.toggle('open', !isOpen);
   formOpenPanel[colPrefix] = isOpen ? null : idPrefix;
+  if (!isOpen) ensureFormPanelTabs(idPrefix);   // opening: decide this row's tabs
 }
 function showFormMore(colPrefix){
   document.querySelectorAll('.aform-extra-' + colPrefix).forEach(el => { el.style.display = ''; });
@@ -2713,6 +2888,137 @@ function setFormFilter(colPrefix, filter, playerKey){
     btn.style.borderColor = isActive ? btn.dataset.activeBorder : 'transparent';
   });
 }
+// Task 7 — Recent matches are grouped under the tournament they were played at
+// rather than listed flat. Reuses ppGroupMatchesByTournament (the same splitter
+// the profile card uses), so an event played twice in the window shows as two
+// editions rather than one merged block.
+//
+// Progressive disclosure is applied per group, not per row: whole tournaments
+// stay together, and the first groups covering FORM_VISIBLE_MATCHES are shown
+// up front. Anything a group can't attribute to a tournament (no name or no
+// date) is dropped by the grouper, so those rows are appended ungrouped rather
+// than silently disappearing from the list.
+const FORM_VISIBLE_MATCHES = 5;
+function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, collapse){
+  const groups = ppGroupMatchesByTournament(matches);
+  const grouped = new Set(groups.flatMap(g => g.matches));
+  const ungrouped = matches.filter(m => !grouped.has(m));
+
+  let shown = 0;
+  let idx = 0;
+  const blocks = groups.map(g => {
+    const hidden = collapse && shown >= FORM_VISIBLE_MATCHES;
+    shown += g.matches.length;
+    const surf = String(g.surface || '').toLowerCase();
+    const surfTag = g.surface
+      ? `<span class="surfacetag ${surf}" style="flex:none;">${g.surface}</span>`
+      : '';
+    const header = `<div class="aform-tgroup">
+        <span class="tname">${g.label}</span>${surfTag}
+        <span class="trange">${g.range}</span>
+        <span class="tspacer"></span>
+        <span class="trec">${g.won}–${g.lost}</span>
+      </div>`;
+    const rows = g.matches.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name)).join('');
+    return { hidden, count: g.matches.length, html: header + rows };
+  });
+
+  if (ungrouped.length){
+    const hidden = collapse && shown >= FORM_VISIBLE_MATCHES;
+    shown += ungrouped.length;
+    const header = `<div class="aform-tgroup">
+        <span class="tname" style="color:#8b93a3;font-weight:600;">Other matches</span>
+        <span class="tspacer"></span>
+        <span class="trec">${ungrouped.filter(m => m.won).length}–${ungrouped.filter(m => !m.won).length}</span>
+      </div>`;
+    const rows = ungrouped.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name)).join('');
+    blocks.push({ hidden, count: ungrouped.length, html: header + rows });
+  }
+
+  const hiddenCount = blocks.filter(b => b.hidden).reduce((n, b) => n + b.count, 0);
+  const html = blocks.map(b => b.hidden
+    ? `<div class="aform-extra-${colPrefix}" style="display:none;">${b.html}</div>`
+    : b.html).join('');
+  return { html, hiddenCount };
+}
+// Task 7 — Season results. "Recent matches" above is capped at the last 10 on
+// record; this section is the full season, one tab per season the player has
+// history for. Matches come from player-histories.json, the same lazily-fetched
+// sidecar the Overview year tables drill into — so this costs nothing on first
+// paint and adds no weight to matches.json.
+const formSeasonState = {};   // colPrefix -> selected year
+const _formSeasonCtx = {};    // colPrefix -> {playerKey, name}
+
+// Rows in the sidecar carry `year` but buildFormGroupedList only needs
+// tournament/date/surface/won/opponent/result, which they already have.
+function seasonYearsOf(hist){
+  return [...new Set((hist || []).map(m => String(m.year)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+}
+
+function buildSeasonResultsBody(colPrefix, year){
+  const ctx = _formSeasonCtx[colPrefix];
+  if (!ctx) return '';
+  const hist = (playerHistories && playerHistories[String(ctx.playerKey)]) || [];
+  const ms = hist.filter(m => String(m.year) === String(year));
+  if (!ms.length) return `<div class="acomingsoon" style="padding:14px 0;">No matches on record for this season.</div>`;
+  // Sidecar order isn't guaranteed; the grouper wants newest-first like the
+  // recent-matches list, and dedupes editions off the date gaps.
+  const sorted = ms.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const won = sorted.filter(m => m.won).length;
+  const lost = sorted.length - won;
+  const pct = sorted.length ? Math.round(won / sorted.length * 1000) / 10 : 0;
+  const grouped = buildFormGroupedList(sorted, colPrefix, ctx.playerKey, ctx.name, 'season', false);
+  const rec = `<div class="aform-seasonrec"><b>${won}–${lost}</b> · ${pct}% · ${sorted.length} match${sorted.length === 1 ? '' : 'es'} · all tiers</div>`;
+  return rec + grouped.html;
+}
+
+function renderSeasonResults(colPrefix){
+  const el = document.getElementById(`formSeason-${colPrefix}`);
+  if (!el) return;
+  const ctx = _formSeasonCtx[colPrefix];
+  const hist = (playerHistories && playerHistories[String(ctx && ctx.playerKey)]) || [];
+  const years = seasonYearsOf(hist);
+  if (!years.length){
+    el.innerHTML = `<div class="acomingsoon" style="padding:14px 0;">No season history on record for this player.</div>`;
+    return;
+  }
+  let year = formSeasonState[colPrefix];
+  if (!years.includes(year)){ year = years[0]; formSeasonState[colPrefix] = year; }
+  const isP1 = colPrefix === 'p1';
+  const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
+  const tabs = years.map(y => {
+    const active = y === year;
+    return `<span class="opt${active ? ' active' : ''}" onclick="setFormSeason('${colPrefix}','${y}')" style="${active ? `background:${rgba(0.18)}; border-color:${rgba(0.3)};` : ''}">${y}</span>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="aform-seasonhead">
+      <span class="aform-filterlbl">Season results</span>
+      <div class="aform-seasontabs">${tabs}</div>
+    </div>
+    <div class="aform-list" id="formSeasonList-${colPrefix}">${buildSeasonResultsBody(colPrefix, year)}</div>
+  `;
+}
+
+function setFormSeason(colPrefix, year){
+  formSeasonState[colPrefix] = String(year);
+  renderSeasonResults(colPrefix);
+}
+
+// Called once per modal open, after the Form section is in the DOM. The fetch is
+// memoised by loadPlayerHistories, so the second column doesn't re-download it.
+function hydrateFormSeasons(m){
+  const cols = [['p1', m.p1Key, m.p1], ['p2', m.p2Key, m.p2]];
+  cols.forEach(([cp, key, nm]) => { _formSeasonCtx[cp] = { playerKey: key, name: nm }; });
+  const token = `${m.p1Key}|${m.p2Key}`;
+  _formSeasonToken = token;
+  loadPlayerHistories().then(() => {
+    // A different match may have been opened while the sidecar was in flight.
+    if (_formSeasonToken !== token) return;
+    cols.forEach(([cp]) => renderSeasonResults(cp));
+  });
+}
+let _formSeasonToken = null;
+
 function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix, playerKey){
   if (!allMatches || allMatches.length === 0) {
     return `
@@ -2723,15 +3029,17 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
     `;
   }
   const pillsHtml = allMatches.map(m => `<span class="aform-pill ${m.won ? 'win' : 'loss'}"></span>`).join('');
-  const visible = allMatches.slice(0, 5);
-  const extra = allMatches.slice(5);
-  const visibleRows = visible.map((m, i) => formRowHtml(m, `${colPrefix}main${i}`, playerKey, name)).join('');
-  const extraRows = extra.map((m, i) => `<div class="aform-extra-${colPrefix}" style="display:none;">${formRowHtml(m, `${colPrefix}main${i + 5}`, playerKey, name)}</div>`).join('');
-  const showMoreHtml = extra.length ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${extra.length} more match${extra.length === 1 ? '' : 'es'}</div>` : '';
+  const allGrouped = buildFormGroupedList(allMatches, colPrefix, playerKey, name, 'main', true);
+  const visibleRows = allGrouped.html;
+  const showMoreHtml = allGrouped.hiddenCount
+    ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${allGrouped.hiddenCount} more match${allGrouped.hiddenCount === 1 ? '' : 'es'}</div>`
+    : '';
 
   const surfaceMatches = allMatches.filter(m => m.surface === currentSurface);
+  // The surface list is short enough to show in full, so it groups without
+  // any show-more; its groups are never collapsed.
   const surfaceRows = surfaceMatches.length
-    ? surfaceMatches.map((m, i) => formRowHtml(m, `${colPrefix}surf${i}`, playerKey, name)).join('')
+    ? buildFormGroupedList(surfaceMatches, colPrefix, playerKey, name, 'surf', false).html
     : `<div class="acomingsoon" style="padding:14px 0;">No matches on record on this surface in their recent history.</div>`;
   const surfaceLabel = currentSurface.charAt(0).toUpperCase() + currentSurface.slice(1);
 
@@ -2775,8 +3083,9 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
           <span class="opt${allActive ? '' : ' active'}" id="formToggle-surf-${colPrefix}" onclick="setFormFilter('${colPrefix}','surf',${JSON.stringify(playerKey)})" data-active-bg="${activeToggleBg}" data-active-border="${activeToggleBorder}" style="${allActive ? '' : `background:${activeToggleBg}; border-color:${activeToggleBorder};`}">${surfaceLabel}</span>
         </div>
       </div>
-      <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${extraRows}${showMoreHtml}</div>
+      <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
       <div class="aform-list${allActive ? ' hidden' : ''}" id="formList-surf-${colPrefix}">${surfaceRows}</div>
+      <div id="formSeason-${colPrefix}"><div class="aform-seasonhead"><span class="aform-filterlbl">Season results</span></div><div class="yr-drill-note">Loading seasons…</div></div>
     </div>
   `;
 }
@@ -3067,6 +3376,7 @@ const EXTRA_STAT_ORDER = [
   ['Points:Unforced Errors', 'Unforced Errors', 'count'],
   ['Points:Service Points Won', 'Service Points Won', 'pct'],
   ['Points:Return Points Won', 'Return Points Won', 'pct'],
+  ['Points:Total Points Won', 'Total Points Won', 'pct'],
 ];
 
 function extraStatRowHtml(label, kind, p1Val, p2Val){
@@ -3207,16 +3517,53 @@ function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
   const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
-  const stats = buildMatchStatsSheet(m);
+  const stats = buildMatchStatsSheet(m, null);
   if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
   return `
     <div class="ms-subtabs" role="tablist">
       <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
       <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
     </div>
-    <div class="ms-pane active" id="msStatsPane">${stats}</div>
+    <div class="ms-pane active" id="msStatsPane">
+      ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Whole match')}
+      <div id="msStatsSheet">${stats}</div>
+    </div>
     <div class="ms-pane" id="msPbpPane"></div>
   `;
+}
+// Shared set-filter pill row for both panes: one pill per set that actually has
+// data, optionally preceded by an "<allLabel>" pill for the whole-match view.
+// Rendered only when there are 2+ sets to choose between — a one-set match has
+// nothing to filter, so the control would be noise. `handler` is the global fn
+// name the pills call with the set number (null = the all/whole-match view).
+//
+// `allLabel` null = no whole-match pill, and the first set starts active. The
+// point-by-point pane opts out this way: its whole-match view concatenates every
+// game of every set (50+ rows on a long three-setter), which is more scrolling
+// than it is insight. The box score has no such problem — a whole-match sheet is
+// the same handful of rows as a per-set one — so it keeps its "Match" pill.
+function buildSetSelectorHtml(setNos, handler, allLabel){
+  if (!setNos || setNos.length < 2) return '';
+  const pills = setNos.map((n, i) =>
+    `<button class="ms-setbtn${allLabel == null && i === 0 ? ' active' : ''}" onclick="${handler}(this,${n})">Set ${n}</button>`
+  ).join('');
+  const allPill = allLabel == null ? ''
+    : `<button class="ms-setbtn active" onclick="${handler}(this,null)">${escapeHtml(allLabel)}</button>`;
+  return `
+    <div class="ms-setsel" role="group" aria-label="Filter by set">
+      ${allPill}
+      ${pills}
+    </div>
+  `;
+}
+// Repaint the stat sheet for the chosen set. Reads the already-loaded match
+// object — no refetch, the per-set box scores ship inline with the match.
+function switchStatsSet(el, setNo){
+  const pane = document.getElementById('msStatsPane');
+  const sheet = document.getElementById('msStatsSheet');
+  if (!pane || !sheet || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  sheet.innerHTML = buildMatchStatsSheet(_aPbpMatch, setNo);
 }
 function switchMatchStatsTab(el, which){
   document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
@@ -3228,7 +3575,22 @@ function switchMatchStatsTab(el, which){
   pbpPane.classList.toggle('active', showPbp);
   if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
 }
-function buildMatchStatsSheet(m){
+// Set numbers (ascending) with a real per-set box score on file, or [] when the
+// feed carried no per-set rows for this match. Drives whether the set filter is
+// offered at all — a match with no set-level data shows no selector rather than
+// an empty one.
+function msheetSetNumbers(m){
+  // No match sheet means the pane is showing a "no stats"/"not finished yet"
+  // message, so a set filter over it would be offering to filter nothing.
+  if (!m.setStats || !m.matchStats) return [];
+  return Object.keys(m.setStats)
+    .map(Number)
+    .filter(n => Number.isFinite(n) && n >= 1)
+    .sort((a, b) => a - b);
+}
+// `setNo` null = whole match (the default view, unchanged); a number = that
+// set's own box score, read from the same-shaped m.setStats[n] entry.
+function buildMatchStatsSheet(m, setNo){
   // An interrupted match is the one case with real stats but no result: the feed
   // returns the full statistics block up to the moment play stopped. Show it,
   // flagged as a snapshot — everything else still waits for a final score.
@@ -3238,6 +3600,10 @@ function buildMatchStatsSheet(m){
   if (!m.matchStats) {
     return `<div class="acomingsoon">No match statistics on file for this match.</div>`;
   }
+  const stats = setNo == null ? m.matchStats : (m.setStats || {})[String(setNo)];
+  if (!stats) {
+    return `<div class="acomingsoon">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   const suspendedNote = m.interrupted
     ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
     : '';
@@ -3245,24 +3611,33 @@ function buildMatchStatsSheet(m){
     const rowsHtml = rows
       .map(([key, label, kind]) => {
         const wantFraction = MSHEET_FRACTION_KEYS.has(key);
-        const p1Raw = wantFraction && m.matchStats.p1.raw ? m.matchStats.p1.raw[key] : null;
-        const p2Raw = wantFraction && m.matchStats.p2.raw ? m.matchStats.p2.raw[key] : null;
+        const p1Raw = wantFraction && stats.p1.raw ? stats.p1.raw[key] : null;
+        const p2Raw = wantFraction && stats.p2.raw ? stats.p2.raw[key] : null;
         const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
-        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw, alwaysShow);
+        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow);
       })
       .filter(Boolean)
       .join('');
     if (!rowsHtml) return '';
     return `<div class="msheet-grouphead"><span></span><span>${groupLabel}</span><span></span></div>${rowsHtml}`;
   }).filter(Boolean).join('');
-  // Score shown beside "Stat comparison": the final score, or for a suspended
-  // match the partial score. Read defensively — an interrupted match reaches
-  // this function with finalScore null by design, so `m.finalScore.display`
-  // would throw and blank the entire sheet.
-  const headScore = (m.finalScore || m.partialScore || {}).display || '';
+  // Score shown beside the title: the final score, or for a suspended match the
+  // partial score. Read defensively — an interrupted match reaches this function
+  // with finalScore null by design, so `m.finalScore.display` would throw and
+  // blank the entire sheet. When one set is selected, show that set's own score
+  // instead of the match score, so the header can never contradict the numbers
+  // beneath it (the score array is 0-indexed; sets are 1-indexed).
+  const score = m.finalScore || m.partialScore || {};
+  let headScore = score.display || '';
+  let headTitle = 'Stat comparison';
+  if (setNo != null) {
+    headTitle = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
+    const sc = (score.sets || [])[setNo - 1];
+    headScore = sc ? `${sc.p1}-${sc.p2}` : '';
+  }
   const statHeader = headScore ? `
     <div class="msheet-head">
-      <div class="msheet-title">Stat comparison</div>
+      <div class="msheet-title">${headTitle}</div>
       <div class="msheet-sets">${headScore}</div>
     </div>
   ` : '';
@@ -3391,7 +3766,8 @@ const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 // flagged "no data" rather than faked, per the design's data-honesty requirement.
 const AODDS_MARKETS = ['Match Winner','Set 1 Winner','Handicap \u22121.5 sets','Handicap \u22123.5 games','Total Games O/U 22.5'];
 let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
-let _aPbpMatch = null; // match whose Point-by-point tab is currently open (Task 4)
+let _aPbpMatch = null; // match whose Match Stats section is currently open (Task 4; also backs the Task 9 set filter on both panes)
+let _aPbpEntry = null; // that match's already-fetched point log, kept so the Task 9 set filter can repaint without refetching
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function aOddsDash(book, idx){ return (book in AODDS_DASH) ? AODDS_DASH[book] : AODDS_DASHCYCLE[idx % AODDS_DASHCYCLE.length]; }
@@ -3949,6 +4325,7 @@ function openAnalysisModal(matchId){
   _aPbpMatch = m;
 
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
+  hydrateFormSeasons(m);
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
 
@@ -4221,7 +4598,15 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', splitsOpen: { career: false, last52: false } };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', formSeason: null, splitsOpen: { career: false, last52: false } };
+
+// Upstream match history (recentForm.matches) is only complete from 2023 on.
+// Measured across all 437 players carrying form data: 2023-2026 hold a median
+// of 45-49 matches per player per season, while 2021 and 2022 hold 9 and 11 —
+// sparse across every month, not truncated at a date boundary (e.g. Djokovic's
+// 2022 is missing his Rome and Turin titles entirely). Season tabs below this
+// year are labelled as partial rather than presented as a full season record.
+const PP_FULL_HISTORY_FROM = 2023;
 // Task 12 — expand/collapse the Career splits / Last 52 weeks reference tables.
 function togglePpSplits(which){
   ppState.splitsOpen[which] = !ppState.splitsOpen[which];
@@ -4276,6 +4661,101 @@ function ppCareerSplitsHtml(p){
     ${career}${last52}</div>`;
 }
 const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
+const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Match surfaces arrive lowercase ('clay'); map to the capitalised key used by
+// PP_SURF_COLORS. Returns null for anything unrecognised so callers can omit the
+// tag rather than render an untinted or mislabelled one.
+function ppSurfName(s){
+  const k = String(s || '').trim().toLowerCase();
+  if (!k) return null;
+  const name = k.charAt(0).toUpperCase() + k.slice(1);
+  return PP_SURF_COLORS[name] ? name : null;
+}
+
+// Date range for a tournament group, formatted from the raw ISO strings rather
+// than via Date parsing, which would shift days across timezones.
+function ppFmtDateRange(dates){
+  const sorted = dates.filter(Boolean).slice().sort();
+  if (!sorted.length) return '';
+  const part = s => { const [, m, d] = s.split('-'); return { d: String(Number(d)), m: PP_MONTHS[Number(m) - 1] || '' }; };
+  const a = part(sorted[0]), b = part(sorted[sorted.length - 1]);
+  if (sorted[0] === sorted[sorted.length - 1]) return `${a.d} ${a.m}`;
+  return a.m === b.m ? `${a.d}–${b.d} ${a.m}` : `${a.d} ${a.m} – ${b.d} ${b.m}`;
+}
+
+// Task 7 — group a season's matches by tournament. Upstream names the same event
+// inconsistently across seasons ("Brisbane" vs "ATP Brisbane" — 22 such splits
+// measured in the current profile data), so matches are grouped on a normalised
+// key and the cleanest name variant is displayed. Groups come back ordered by
+// their most recent match, so the newest tournament leads the list.
+function ppTournamentGroupKey(name){
+  return String(name || '').replace(/^(ATP|WTA|Challenger|ITF)\s+/i, '').trim().toLowerCase();
+}
+// One name in one calendar year can still cover two separate editions: the ATP
+// season turns over mid-week, so Brisbane/Hong Kong appear in both January and
+// late December of the same year, and a city can host two distinct events (Banja
+// Luka ran an ATP event in April 2023 and a Challenger that August). Merging
+// those would invent a single record that was never played, so a group is split
+// wherever consecutive matches sit further apart than any single tournament
+// runs. No event exceeds ~15 days, so 21 leaves headroom without merging.
+const PP_TOURNAMENT_EDITION_GAP_DAYS = 21;
+function ppDaysBetween(a, b){
+  return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+}
+function ppGroupMatchesByTournament(matches){
+  const byName = new Map();
+  (matches || []).forEach(m => {
+    const key = ppTournamentGroupKey(m.tournament);
+    if (!key || !m.date) return;
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(m);
+  });
+
+  // Canonical display name is resolved per tournament, not per edition, so two
+  // editions of one event can't surface under two different names.
+  const labelByKey = new Map();
+  byName.forEach((ms, key) => {
+    labelByKey.set(key, ms.map(m => String(m.tournament || '').trim()).filter(Boolean)
+      .sort((a, b) => a.length - b.length)[0] || '—');
+  });
+
+  const editions = [];
+  byName.forEach((ms, key) => {
+    // Walk each name's matches oldest-first so a gap marks an edition boundary.
+    const asc = ms.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    let current = [];
+    asc.forEach(m => {
+      const prev = current[current.length - 1];
+      if (prev && ppDaysBetween(prev.date, m.date) > PP_TOURNAMENT_EDITION_GAP_DAYS){
+        editions.push({ key, matches: current });
+        current = [];
+      }
+      current.push(m);
+    });
+    if (current.length) editions.push({ key, matches: current });
+  });
+
+  return editions.map(e => {
+    // Shortest variant across the tournament — the one without the tour prefix.
+    const label = labelByKey.get(e.key) || '—';
+    const won = e.matches.filter(m => m.won).length;
+    const surfaces = [...new Set(e.matches.map(m => ppSurfName(m.surface)).filter(Boolean))];
+    const dates = e.matches.map(m => m.date);
+    return {
+      key: e.key,
+      label,
+      // Present each edition newest-first, matching the rest of the form card.
+      matches: e.matches.slice().reverse(),
+      won,
+      lost: e.matches.length - won,
+      // A tournament is played on one surface; only tag when the data agrees.
+      surface: surfaces.length === 1 ? surfaces[0] : null,
+      range: ppFmtDateRange(dates),
+      latest: dates.slice().sort()[dates.length - 1],
+    };
+  }).sort((a, b) => String(b.latest).localeCompare(String(a.latest)));
+}
 
 function ppHexA(hex, a){
   const h = hex.replace('#','');
@@ -4355,6 +4835,7 @@ function showPlayerProfile(key){
   ppState.tournamentPicked = null;
   ppState.formExpanded = false;
   ppState.formSurface = 'All';
+  ppState.formSeason = null;
   document.getElementById('playerListView').style.display = 'none';
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
@@ -4391,6 +4872,15 @@ function togglePpFormExpanded(){
 function setPpFormSurface(s){
   ppState.formSurface = s;
   ppState.formExpanded = false;
+  ppState.formSeason = null;
+  const profile = playerProfiles[ppState.key];
+  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+}
+// Season Results tab selection inside the Recent form card. Null means "let the
+// card pick the newest season that actually has matches for the current surface
+// filter", so the tabs never open on an empty season.
+function setPpFormSeason(y){
+  ppState.formSeason = String(y);
   const profile = playerProfiles[ppState.key];
   if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
 }
@@ -4408,6 +4898,10 @@ const PP_RETURN_DEFS = [
   { label: 'Break pts converted',key: 'Return:Break Points Converted', max: 100, suffix: '%' },
   { label: 'Winners / point',    key: 'Points:Winners',                max: 100, suffix: '%' },
   { label: 'Service pts won',    key: 'Points:Service Points Won',     max: 100, suffix: '%' },
+  // Overall share of points won — sits with the service/return halves that
+  // compose it. No MCP cardBenchmark exists for this key, so ppStatRows
+  // falls back to the built player-pool average + absolute-scaled bar.
+  { label: 'Total pts won',      key: 'Points:Total Points Won',       max: 100, suffix: '%' },
 ];
 // Task 11 Part 3 — percentile of a value against the MCP breakpoint ladder, so
 // a player sitting at tour median renders a bar at exactly the midpoint.
@@ -4828,18 +5322,18 @@ function buildPlayerProfileHtml(p){
   }).join('') || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
-  // Expandable full current-season results. recentMatches is newest-first, so the
-  // filtered season slice (seasonMatches, computed above) is already
-  // reverse-chronological. Count/label use the real match count from the data
-  // (never a fixed cap) so we never mislabel a partial list as "all results".
+  // Row builder for the grouped season list. recentMatches is newest-first, so
+  // each tournament group is already reverse-chronological (latest round first).
+  // The tournament name lives on the group header, so the row carries the round
+  // only. Counts/labels use the real match count from the data (never a fixed
+  // cap) so we never mislabel a partial list as "all results".
   const buildFormRow = m => {
     const w = m.won;
     // `round` is stored as "{event} - {roundName}" (event may carry an "ATP "/
-    // "Challenger" prefix), so keep only the trailing round descriptor to avoid
-    // repeating the event name next to the tournament column.
+    // "Challenger" prefix), so keep only the trailing round descriptor.
     let roundName = m.round || '';
     if (roundName.includes(' - ')) roundName = roundName.split(' - ').pop().trim();
-    const meta = [m.tournament || '', roundName].filter(Boolean).join(' \u00b7 ');
+    const meta = roundName;
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
@@ -4848,23 +5342,69 @@ function buildPlayerProfileHtml(p){
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
       </div>`;
   };
-  // Season slice honours the Recent form surface filter too, so the expandable
-  // list and its count only cover the chosen surface's current-season matches.
-  const formSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(seasonYear));
-  const formSeasonCount = formSeasonMatches.length;
-  const seasonRowsHtml = formSeasonMatches.map(buildFormRow).join('');
-  // Only offer expansion when the season holds more than the 5 already shown.
-  const showFormTrigger = !ppState.formExpanded && formSeasonCount > 5;
+  // Season results (Task 7) \u2014 the expandable list is organised into per-season
+  // tabs, and each season's matches are grouped by tournament rather than shown
+  // as one flat run of rows. Every season slice honours the Recent form surface
+  // filter, so tabs, counts and groups all describe the chosen surface only.
+  const formSeasons = [...new Set(formMatches.map(m => String(m.date || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
+  // Null formSeason means "newest season that actually has matches", so the tabs
+  // never open on an empty season after a surface filter change.
+  const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason))
+    ? ppState.formSeason
+    : (formSeasons[0] || seasonYear);
+  const activeSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
+  const activeSeasonCount = activeSeasonMatches.length;
+
+  const seasonTabsHtml = formSeasons.map(y => {
+    const on = y === activeSeason;
+    const partial = Number(y) < PP_FULL_HISTORY_FROM;
+    return `<span onclick="setPpFormSeason('${y}')" title="${partial ? 'Partial history \u2014 upstream coverage begins ' + PP_FULL_HISTORY_FROM : y + ' season'}" style="font-size:11.5px;font-weight:${on?700:600};font-family:'IBM Plex Mono',monospace;color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${y}${partial?'<span style="color:#6b7280;"> \u00b7 partial</span>':''}</span>`;
+  }).join('');
+
+  // Coverage before 2023 is sparse across the whole year, so an early-season tab
+  // is flagged rather than presented as that player's complete season record.
+  const partialNoteHtml = Number(activeSeason) < PP_FULL_HISTORY_FROM
+    ? `<div style="margin-top:10px;padding:8px 11px;border:1px solid rgba(232,179,65,0.28);background:rgba(232,179,65,0.07);border-radius:9px;font-size:11.5px;color:#c9a153;line-height:1.5;">Partial history \u2014 match coverage for ${activeSeason} is incomplete, so this is not a full season record.</div>`
+    : '';
+
+  const groups = ppGroupMatchesByTournament(activeSeasonMatches);
+  const groupsHtml = groups.map(g => {
+    const sColor = g.surface ? PP_SURF_COLORS[g.surface] : null;
+    const surfTag = g.surface
+      ? `<span style="font-size:10px;font-weight:600;color:${sColor};background:${ppHexA(sColor,0.13)};border:1px solid ${ppHexA(sColor,0.32)};border-radius:5px;padding:2px 7px;flex:none;">${g.surface}</span>`
+      : '';
+    return `
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;">
+          <span style="font-size:12.5px;font-weight:700;color:#e7e9ee;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.label}</span>
+          ${surfTag}
+          <span style="font-size:10.5px;color:#5b6472;white-space:nowrap;">${g.range}</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;white-space:nowrap;">${g.won}\u2013${g.lost}</span>
+        </div>
+        ${g.matches.map(buildFormRow).join('')}
+      </div>`;
+  }).join('') || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No ${formEmptyLabel} matches in ${activeSeason}.</div>`;
+
+  // Offer expansion whenever there is more on record than the 5 rows already
+  // shown \u2014 either more matches this season, or any earlier season to tab into.
+  const newestSeason = formSeasons[0];
+  const newestSeasonCount = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)).length : 0;
+  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 5 || formSeasons.length > 1);
   const formTriggerHtml = showFormTrigger
-    ? `<button onclick="togglePpFormExpanded()" style="margin-top:10px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:#7ba4ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(62,123,250,0.08)';this.style.borderColor='rgba(62,123,250,0.28)';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';">See all ${formSeasonCount} results this season</button>`
+    ? `<button onclick="togglePpFormExpanded()" style="margin-top:10px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:#7ba4ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(62,123,250,0.08)';this.style.borderColor='rgba(62,123,250,0.28)';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';">See all ${newestSeasonCount} results \u00b7 ${newestSeason} season</button>`
     : '';
   const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='#c3cad6';this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='transparent';this.style.color='#6b7280';this.style.borderColor='rgba(255,255,255,0.1)';">\u2715</button>`;
+  const groupNoun = groups.length === 1 ? 'tournament' : 'tournaments';
   const formExpandedHtml = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
-      <span style="font-size:12px;font-weight:700;color:#c3cad6;">All ${formSeasonCount} results \u00b7 ${seasonYear} season${formSurf === 'All' ? '' : ' \u00b7 ' + formSurf}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
+      <span style="font-size:12px;font-weight:700;color:#c3cad6;">Season results${formSurf === 'All' ? '' : ' \u00b7 ' + formSurf}</span>
       ${formDismissBtn}
     </div>
-    <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${seasonRowsHtml}</div>`;
+    <div style="display:flex;gap:6px;margin:10px 0 2px;flex-wrap:wrap;">${seasonTabsHtml}</div>
+    ${partialNoteHtml}
+    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} \u00b7 ${groups.length} ${groupNoun}</div>
+    <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${groupsHtml}</div>`;
   const formBodyHtml = ppState.formExpanded
     ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
     : `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formTriggerHtml}`;
@@ -5437,6 +5977,7 @@ const PROGRESSION_METRIC_ORDER = [
   ['winnersPct', 'Winners (% of Points)'],
   ['unforcedErrorsPct', 'Errors (% of Points)'],
   ['winnersUnforcedRatio', 'W/UE Ratio'],
+  ['totalPointsWonPct', 'Total Points Won %'],
 ];
 
 // Up to 2 named player line-series (solid, gradient area fill down to the
@@ -5593,6 +6134,7 @@ const AI_SUMMARY_METRIC_CONTEXT = {
   winnersPct: 'aggressive, point ending shot making',
   unforcedErrorsPct: 'how often free points are handed over through unforced mistakes',
   winnersUnforcedRatio: 'the balance between aggression and risk, essentially how efficiently winners are being traded against unforced errors',
+  totalPointsWonPct: 'the overall share of points won across the match, the broadest single measure of who controlled play rather than just who took the big moments',
 };
 // Realistic ATP level floors and ceilings per metric, used so a genuinely
 // solid number (like 73% on 1st serve points won) is never mislabeled as a
@@ -5606,6 +6148,10 @@ const AI_SUMMARY_ABS_BOUNDS = {
   secondServeWonPct: { weak: 45, strong: 55 },
   winnersPct: { weak: 12, strong: 25 },
   unforcedErrorsPct: { weak: 18, strong: 8 },
+  // totalPointsWonPct is deliberately absent: it hugs 50% by construction (the
+  // two players' shares sum to 100), so there is no honest ATP-wide "strong" or
+  // "weak" floor for it. With no bounds it can never be picked as sentence 1/2's
+  // strength or weakness — it still charts, trends, and can carry sentence 4.
 };
 function aiSummaryDirection(metricKey, v){
   return AI_SUMMARY_LOWER_BETTER.has(metricKey) ? -v : v;
@@ -5645,7 +6191,7 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
   const otherSurname = (surname) => surname === p1Surname ? p2Surname : p1Surname;
 
   // One candidate list of {surname, metricKey, label, val, avg, goodness}
-  // across both players x the 5 ranked (same-scale) metrics, for
+  // across both players x the 6 ranked (same-scale) metrics, for
   // strength/weakness ranking against the field average.
   const candidates = [];
   [[p1Data, p1Latest, p1Surname], [p2Data, p2Latest, p2Surname]].forEach(([pData, latest, surname]) => {
@@ -5731,7 +6277,7 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
     }
   }
 
-  // Sentence 4, head to head gap: all 6 metrics (including the ratio),
+  // Sentence 4, head to head gap: all 7 metrics (including the ratio),
   // compared player to player directly rather than vs. field average, as a
   // concluding synthesis (no bet or winner call).
   if (p1Latest && p2Latest) {
