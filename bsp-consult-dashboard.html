@@ -5437,6 +5437,7 @@ const PROGRESSION_METRIC_ORDER = [
   ['winnersPct', 'Winners (% of Points)'],
   ['unforcedErrorsPct', 'Errors (% of Points)'],
   ['winnersUnforcedRatio', 'W/UE Ratio'],
+  ['totalPointsWonPct', 'Total Points Won %'],
 ];
 
 // Up to 2 named player line-series (solid, gradient area fill down to the
@@ -5577,6 +5578,7 @@ const AI_SUMMARY_METRIC_CONTEXT = {
   winnersPct: 'aggressive, point ending shot making',
   unforcedErrorsPct: 'how often free points are handed over through unforced mistakes',
   winnersUnforcedRatio: 'the balance between aggression and risk, essentially how efficiently winners are being traded against unforced errors',
+  totalPointsWonPct: 'the overall share of points won across the match, the broadest single measure of who controlled play rather than just who took the big moments',
 };
 // Realistic ATP level floors and ceilings per metric, used so a genuinely
 // solid number (like 73% on 1st serve points won) is never mislabeled as a
@@ -5590,6 +5592,10 @@ const AI_SUMMARY_ABS_BOUNDS = {
   secondServeWonPct: { weak: 45, strong: 55 },
   winnersPct: { weak: 12, strong: 25 },
   unforcedErrorsPct: { weak: 18, strong: 8 },
+  // totalPointsWonPct is deliberately absent: it hugs 50% by construction (the
+  // two players' shares sum to 100), so there is no honest ATP-wide "strong" or
+  // "weak" floor for it. With no bounds it can never be picked as sentence 1/2's
+  // strength or weakness — it still charts, trends, and can carry sentence 4.
 };
 function aiSummaryDirection(metricKey, v){
   return AI_SUMMARY_LOWER_BETTER.has(metricKey) ? -v : v;
@@ -5625,7 +5631,7 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
   const otherSurname = (surname) => surname === p1Surname ? p2Surname : p1Surname;
 
   // One candidate list of {surname, metricKey, label, val, avg, goodness}
-  // across both players x the 5 ranked (same-scale) metrics, for
+  // across both players x the 6 ranked (same-scale) metrics, for
   // strength/weakness ranking against the field average.
   const candidates = [];
   [[p1Data, p1Latest, p1Surname], [p2Data, p2Latest, p2Surname]].forEach(([pData, latest, surname]) => {
@@ -5711,7 +5717,7 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
     }
   }
 
-  // Sentence 4, head to head gap: all 6 metrics (including the ratio),
+  // Sentence 4, head to head gap: all 7 metrics (including the ratio),
   // compared player to player directly rather than vs. field average, as a
   // concluding synthesis (no bet or winner call).
   if (p1Latest && p2Latest) {
