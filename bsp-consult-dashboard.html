@@ -652,7 +652,10 @@
   .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
   .modal-analysis .ms-subtabs{ display:flex; gap:4px; justify-content:center; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:999px; padding:3px; width:max-content; max-width:100%; margin:0 auto 22px; }
-  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#8b93a3; background:none; border:none; padding:6px 18px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease; }
+  /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
+     (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
+     other and wraps "Point by point" onto two lines, spilling it out of the capsule. */
+  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#8b93a3; background:none; border:none; padding:6px 18px; border-radius:999px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease; }
   .modal-analysis .ms-subtab:hover{ color:#cfd4de; }
   .modal-analysis .ms-subtab.active{ color:#fff; background:var(--accent); }
   .modal-analysis .ms-pane{ display:none; }
