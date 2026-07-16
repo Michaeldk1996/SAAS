@@ -5755,15 +5755,57 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 // A player with a single completed round (e.g. a next-round card where both
 // players have already won their opener) has real box-score data to compare —
 // show bars rather than hiding the tab, since one point cannot form a trend.
+// How deep a player is in THIS draw, in rounds survived (Task 13 board rule).
+// Wins and byes advance you; a loss does not. Derived per player:
+//
+//   roundsWon — the feed carries no per-match win flag, and resultDisplay is NOT
+//     player-relative: both players of a match carry the SAME string (verified
+//     53/53 matches on the live feed, 0 mirrored), so parts[0]>parts[1] cannot
+//     tell who won. The `eliminated` flag can: this is single elimination, so an
+//     active player won every round on record, and an eliminated player lost
+//     exactly their last one. (See maxWonIdx in buildTourxModel — same feed, same
+//     trap; that caller is Tournament Reports' scope, not this one.)
+//   byes — a bye never appears in the feed; it is the ABSENCE of a match at a
+//     round the rest of the draw played, before the player's first appearance.
+//     Same derivation the Tournament Reports model uses.
+//
+// depth = roundsWon + byes, so a bye recipient with one win sits level with a
+// player who won two, which is the board's rule for Vacherot.
+function progressionPlayerDepth(p, rounds){
+  if (!p) return null;
+  const n = (p.rounds || []).length;
+  const roundsWon = Math.max(0, p.eliminated ? n - 1 : n);
+  let firstIdx = -1;
+  (p.rounds || []).forEach(r => { const i = rounds.indexOf(r.round); if (i >= 0 && (firstIdx < 0 || i < firstIdx)) firstIdx = i; });
+  const byes = firstIdx > 0 ? firstIdx : 0;
+  // The player's last WON round — the round whose box score represents them at
+  // their best-surviving level. For an eliminated player this deliberately skips
+  // the match that knocked them out (Sonego shows his R1 win, not his R2 loss).
+  const wonRounds = p.eliminated ? (p.rounds || []).slice(0, -1) : (p.rounds || []).slice();
+  const lastWon = wonRounds.length ? wonRounds[wonRounds.length - 1] : null;
+  return { roundsWon, byes, depth: roundsWon + byes, lastWon, firstIdx };
+}
+
 function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
   const data = tournamentProgression.tournaments[bareTour];
   const p1Data = data ? data.players.find(p => String(p.playerKey) === String(m.p1Key)) : null;
   const p2Data = data ? data.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
   if (!data || (!p1Data && !p2Data)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
+  const d1 = progressionPlayerDepth(p1Data, data.rounds);
+  const d2 = progressionPlayerDepth(p2Data, data.rounds);
+  const present = [d1, d2].filter(Boolean);
+  // Gate on the SHALLOWER player: the section draws both players on one shared
+  // chart, so it can only plot a trend where BOTH have one to plot. A card with
+  // a two-win player against a one-win player therefore compares box scores in
+  // bars rather than drawing one line against a stub.
+  const depth = Math.min(...present.map(d => d.depth));
+  // `hidden` stays a data-existence test (unchanged): a player who lost their
+  // opener still has a real box score worth comparing, so only the bars/chart
+  // line moves to the rounds-survived rule.
   const pts = Math.max(p1Data ? p1Data.rounds.length : 0, p2Data ? p2Data.rounds.length : 0);
-  const state = pts <= 0 ? 'hidden' : (pts <= 1 ? 'bars' : 'chart');
-  return { state, data, p1Data, p2Data, bareTour, pts };
+  const state = pts <= 0 ? 'hidden' : (depth <= 1 ? 'bars' : 'chart');
+  return { state, data, p1Data, p2Data, bareTour, pts, d1, d2, depth };
 }
 
 function buildMatchProgressionSection(m){
@@ -5780,13 +5822,29 @@ function buildMatchProgressionSection(m){
   const P1_COLOR = '#3E7BFA', P2_COLOR = '#E8934B';
   const p1Surname = (m.p1 || '').trim().split(' ').pop().toUpperCase();
   const p2Surname = (m.p2 || '').trim().split(' ').pop().toUpperCase();
-  const p1Latest = p1Data && p1Data.rounds.length ? p1Data.rounds[p1Data.rounds.length - 1] : null;
-  const p2Latest = p2Data && p2Data.rounds.length ? p2Data.rounds[p2Data.rounds.length - 1] : null;
+  // Each player is represented by their last WON round rather than their last
+  // played one: an eliminated player's final match is the one they lost, and the
+  // board asked for the box score they posted while still advancing — Sonego
+  // shows his R1 win, not his R2 defeat. A player who lost their opener has no
+  // won round, so fall back to that opener as their only box score on file.
+  const lastShown = (pData, d) => {
+    if (!pData || !pData.rounds.length) return null;
+    return (d && d.lastWon) || pData.rounds[pData.rounds.length - 1];
+  };
+  const p1Latest = lastShown(p1Data, st.d1);
+  const p2Latest = lastShown(p2Data, st.d2);
 
-  // Single round on record: one point cannot form a trend, so degrade to a
-  // side-by-side bar comparison of that round's box score instead of a line.
+  // Fewer than two rounds survived by at least one player: no shared trend to
+  // draw, so degrade to a side-by-side bar comparison of that round's box score.
   if (st.state === 'bars') {
-    const lastIdx = data.rounds.length - 1;
+    // Field average is indexed by the round actually on show, not the draw's
+    // latest — the two players can now be at different rounds (a beaten player
+    // shows an earlier win than his surviving opponent), and one field-average
+    // number cannot describe two rounds at once. When they differ, the line is
+    // omitted rather than compared against the wrong round.
+    const p1Idx = p1Latest ? data.rounds.indexOf(p1Latest.round) : -1;
+    const p2Idx = p2Latest ? data.rounds.indexOf(p2Latest.round) : -1;
+    const shownIdx = p1Idx >= 0 && p2Idx >= 0 ? (p1Idx === p2Idx ? p1Idx : -1) : Math.max(p1Idx, p2Idx);
     const bar = (val, color, isRatio) => {
       const max = isRatio ? Math.max(val || 0, 1) * 1.3 : 100;
       const w = val == null ? 0 : Math.max(2, Math.min(100, (val / max) * 100));
@@ -5798,7 +5856,7 @@ function buildMatchProgressionSection(m){
       const p1v = p1Latest ? p1Latest.metrics[metricKey] : null;
       const p2v = p2Latest ? p2Latest.metrics[metricKey] : null;
       const fieldArr = data.fieldAverage.metrics[metricKey];
-      const fieldV = Array.isArray(fieldArr) ? fieldArr[lastIdx] : null;
+      const fieldV = Array.isArray(fieldArr) && shownIdx >= 0 ? fieldArr[shownIdx] : null;
       const row = (name, val, color) => `
         <div style="display:flex;align-items:center;gap:10px;margin:5px 0;">
           <span style="width:74px;flex:0 0 auto;font-size:11px;color:#8b93a3;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;">${name}</span>
@@ -5816,17 +5874,33 @@ function buildMatchProgressionSection(m){
         </div>`;
     }).join('');
     const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
+    // Name the round each player is shown at, so a card comparing one player's
+    // R1 against another's R2 says so rather than implying a like-for-like round.
+    const shownAt = [
+      p1Data && p1Latest ? `${p1Surname} ${p1Latest.round}` : null,
+      p2Data && p2Latest ? `${p2Surname} ${p2Latest.round}` : null,
+    ].filter(Boolean).join(' · ');
+    const barsNote = `Each player at the deepest round they won${shownAt ? ` (${shownAt})` : ''}. A line trend appears once both players have won two rounds.`;
     return `
-      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at their latest round in this draw, compared side by side.">ⓘ</span></div>
-      <div class="tprogress-legend"><div class="note" style="margin:0;">One round on record — side-by-side comparison of each player's box score. A line trend appears once a second round exists.</div></div>
+      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at the deepest round each of them won in this draw, compared side by side.">ⓘ</span></div>
+      <div class="tprogress-legend"><div class="note" style="margin:0;">${barsNote}</div></div>
       <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
     `;
   }
+
+  // A bye leaves a real gap in the line: the player advanced without posting a
+  // box score, so the round plots as null. Say so on the chart rather than
+  // leaving the reader to read the gap as missing data.
+  const byeNote = [
+    st.d1 && st.d1.byes > 0 ? m.p1 : null,
+    st.d2 && st.d2.byes > 0 ? m.p2 : null,
+  ].filter(Boolean).map(n => `${n} — first round bye`).join(' · ');
 
   const legendHtml = `
     <div class="item"><span class="dot" style="background:${P1_COLOR}"></span>${m.p1}</div>
     <div class="item"><span class="dot" style="background:${P2_COLOR}"></span>${m.p2}</div>
     <div class="item"><span class="dash"></span>Field average</div>
+    ${byeNote ? `<div class="item" style="color:#8b93a3;">${byeNote}</div>` : ''}
     <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form.</div>
   `;
 
