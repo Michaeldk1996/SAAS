@@ -1969,10 +1969,10 @@ function yrSurfCell(r, surf, colPrefix, playerKey, tier){
   const cell = cellForTier(r, surf, tier);
   const cls = cellClass(cell, surf);
   const txt = cellText(cell);
-  // Clickable when there's match-level data: all-tier rows (2021+) or archive-
-  // backed pre-2021 rows. Archive is ATP-only, so its cells aren't clickable on
-  // the Challenger&ITF tab (cellForTier already returns null there).
-  if (cell && playerKey && (r.allTier || r.archive)){
+  // Clickable only for 2021+ rows, whose full all-tier match list we actually
+  // have. Pre-2021 numbers include Challenger/ITF results that no archive we have
+  // covers, so those rows stay non-clickable rather than show a misleading subset.
+  if (cell && r.allTier && playerKey){
     const drillSurf = surf === 'total' ? 'all' : surf;
     return `<td class="${cls} yr-clickable" onclick="showYearSurfaceMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}','${tier}')">${txt}</td>`;
   }
