@@ -5756,16 +5756,16 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 // gradient and readout are simply omitted rather than fabricated. Player
 // line colors are fixed (not the app's generic accent/court-clay pair) to
 // match the design spec exactly.
-// Round-aware progression state (Task 6). Derived from how many rounds of
-// box-score data each player has in this tournament — NOT from hardcoded
-// round names — so it works across every format:
+// Round-aware progression state (Task 6, threshold revised by Task 13).
+// Derived from how many rounds of box-score data each player has in this
+// tournament — NOT from hardcoded round names — so it works across every format:
 //   pts <= 0  → 'hidden'  no round on record: nothing to show, hide the tab
-//   pts 1–2   → 'bars'    one or two prior matches: side-by-side bar comparison
-//   pts >= 3  → 'chart'   three+ rounds on record: full line trend (as built)
+//   pts == 1  → 'bars'    a single round: no trend to draw, so compare box scores
+//   pts >= 2  → 'chart'   two+ rounds on record: line trend over time
 //   no draw   → 'none'    no tournament data on file at all
 // A player with a single completed round (e.g. a next-round card where both
 // players have already won their opener) has real box-score data to compare —
-// show bars rather than hiding the tab, since a one/two-point line reads as noise.
+// show bars rather than hiding the tab, since one point cannot form a trend.
 function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
   const data = tournamentProgression.tournaments[bareTour];
@@ -5773,13 +5773,13 @@ function progressionRoundState(m){
   const p2Data = data ? data.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
   if (!data || (!p1Data && !p2Data)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
   const pts = Math.max(p1Data ? p1Data.rounds.length : 0, p2Data ? p2Data.rounds.length : 0);
-  const state = pts <= 0 ? 'hidden' : (pts <= 2 ? 'bars' : 'chart');
+  const state = pts <= 0 ? 'hidden' : (pts <= 1 ? 'bars' : 'chart');
   return { state, data, p1Data, p2Data, bareTour, pts };
 }
 
 function buildMatchProgressionSection(m){
   const st = progressionRoundState(m);
-  const { data, p1Data, p2Data, bareTour, pts } = st;
+  const { data, p1Data, p2Data, bareTour } = st;
   if (st.state === 'none') {
     return `<div class="acomingsoon">No live tournament draw data on file for this match yet.</div>`;
   }
@@ -5794,8 +5794,8 @@ function buildMatchProgressionSection(m){
   const p1Latest = p1Data && p1Data.rounds.length ? p1Data.rounds[p1Data.rounds.length - 1] : null;
   const p2Latest = p2Data && p2Data.rounds.length ? p2Data.rounds[p2Data.rounds.length - 1] : null;
 
-  // Second round (one prior match): a line "trend" over two points reads as
-  // noise, so show a side-by-side bar comparison at the latest round instead.
+  // Single round on record: one point cannot form a trend, so degrade to a
+  // side-by-side bar comparison of that round's box score instead of a line.
   if (st.state === 'bars') {
     const lastIdx = data.rounds.length - 1;
     const bar = (val, color, isRatio) => {
@@ -5829,7 +5829,7 @@ function buildMatchProgressionSection(m){
     const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
     return `
       <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at their latest round in this draw, compared side by side.">ⓘ</span></div>
-      <div class="tprogress-legend"><div class="note" style="margin:0;">${pts} round${pts === 1 ? '' : 's'} on record — side-by-side comparison of each player's latest box score. A line trend appears once three+ rounds exist.</div></div>
+      <div class="tprogress-legend"><div class="note" style="margin:0;">One round on record — side-by-side comparison of each player's box score. A line trend appears once a second round exists.</div></div>
       <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
     `;
   }
