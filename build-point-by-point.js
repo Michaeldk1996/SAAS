@@ -30,7 +30,17 @@ const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 const MATCHES_PATH = 'matches.json';
 const OUT_PATH = 'point-by-point.json';
 const CACHE_PATH = 'point-by-point-cache.json';
+const SHARD_DIR = 'pbp';
+const INDEX_PATH = 'pbp-index.json';
 const PACE_MS = 150;
+
+// Ceiling on NEW point logs fetched per run. The Form tab's recent-form rows
+// reference ~600 distinct matches that have never been fetched, and doing them
+// all in one run would add ~90s of paced calls to a job that runs every 15 min.
+// The cache is permanent and restored between runs, so the backfill converges
+// over a few runs instead of arriving in one spike. Rows whose log has not been
+// reached yet simply have no Point-by-point tab (never a fabricated one).
+const MAX_FETCHES_PER_RUN = Number(process.env.PBP_MAX_FETCHES || 250);
 
 // api-tennis labels the two players "First Player" / "Second Player", which map
 // to the dashboard's p1 / p2 respectively.
@@ -68,6 +78,13 @@ function compactPbp(raw) {
   return { sets };
 }
 
+// Returns { raw, p1, p2 } — the point log plus api-tennis's OWN names for the
+// two sides. The names matter: a point log labels each game's server/winner
+// "First Player"/"Second Player", so a log is only meaningful next to the names
+// those labels refer to. Window matches could borrow m.p1/m.p2 from the
+// dashboard, but a recent-form row only knows "the profile player vs opponent"
+// and NOT which of them api-tennis called first — so the log is stored with the
+// names the API itself used, and rendered against those. No orientation guess.
 async function fetchPbp(eventKey) {
   const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
   const res = await fetch(url);
@@ -75,7 +92,16 @@ async function fetchPbp(eventKey) {
   const data = await res.json();
   const result = Array.isArray(data.result) ? data.result : [];
   if (!result.length) return null;
-  return result[0].pointbypoint || null;
+  const r = result[0];
+  return { raw: r.pointbypoint || null, p1: r.event_first_player || null, p2: r.event_second_player || null };
+}
+
+// Temp file + rename: a reader (or a half-finished job) never sees a partial
+// file, per the pipeline's atomic-write rule.
+function writeAtomic(path, contents) {
+  const tmp = `${path}.tmp`;
+  fs.writeFileSync(tmp, contents);
+  fs.renameSync(tmp, path);
 }
 
 function eventKeyOf(id) {
@@ -104,6 +130,31 @@ async function main() {
   const out = {};
   let fetched = 0, reused = 0, skipped = 0;
 
+  // Resolve one event key to { p1, p2, sets }, from cache when possible.
+  // `names` is the dashboard's own p1/p2 for a window match, used only to
+  // backfill legacy cache entries (written before names were stored) without
+  // spending a refetch. It is never used for a recent-form-only key, where the
+  // dashboard cannot know which side api-tennis called first.
+  async function resolve(ek, { provisional = false, names = null } = {}) {
+    let entry = provisional ? null : cache[ek];
+    if (entry && !entry.p1 && names) entry = cache[ek] = { ...names, ...entry };  // adopt known names
+    if (entry && (entry.p1 || !entry.sets || !entry.sets.length)) return entry;   // named, or a cached negative
+    if (entry && !entry.p1 && !names) entry = null;                               // unnamed log, form-only: refetch for names
+    if (entry) return entry;
+    if (fetched >= MAX_FETCHES_PER_RUN) return null;                              // budget spent — try again next run
+    fetched++;   // counted BEFORE the call: a throwing API must still burn budget,
+                 // or a run where every fetch fails would never reach the cap and
+                 // would hammer ~600 requests every 15 minutes instead of 250.
+    const got = await fetchPbp(ek);
+    await new Promise(r => setTimeout(r, PACE_MS));
+    const compact = got ? compactPbp(got.raw) : null;
+    const built = compact
+      ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact }
+      : { sets: [] };
+    if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
+    return built;
+  }
+
   for (const m of matches) {
     // An interrupted match has a real point log frozen at the suspension, so it
     // gets one too — but it is still growing, so it never touches the cache in
@@ -115,32 +166,74 @@ async function main() {
     const ek = eventKeyOf(m.id);
     if (!ek) { skipped++; continue; }
 
-    let compact = provisional ? null : cache[ek];  // immutable once captured
-    if (!compact) {
-      try {
-        const raw = await fetchPbp(ek);
-        compact = compactPbp(raw);
-        if (!provisional) cache[ek] = compact || { sets: [] };  // cache the negative too, avoid refetching
-        fetched++;
-        await new Promise(r => setTimeout(r, PACE_MS));
-      } catch (e) {
-        console.error(`point-by-point: fetch failed for ${m.id} (${ek}): ${e.message}`);
-        skipped++;
-        continue;
-      }
-    } else {
-      reused++;
+    let compact;
+    const before = fetched;
+    try {
+      compact = await resolve(ek, { provisional, names: { p1: m.p1, p2: m.p2 } });
+    } catch (e) {
+      console.error(`point-by-point: fetch failed for ${m.id} (${ek}): ${e.message}`);
+      skipped++;
+      continue;
     }
+    if (fetched === before) reused++;
 
     if (compact && compact.sets && compact.sets.length) {
-      out[ek] = { p1: m.p1, p2: m.p2, ...compact };
+      // The window sidecar keeps the dashboard's own p1/p2 (they align with the
+      // API's first/second for these, and the modal renders against m.p1/m.p2).
+      out[ek] = { p1: m.p1, p2: m.p2, sets: compact.sets };
     }
   }
 
-  fs.writeFileSync(CACHE_PATH, JSON.stringify(cache));
-  fs.writeFileSync(OUT_PATH, JSON.stringify(out));
+  // Recent-form rows (Task 10-12): every match behind the Form tab's rows, which
+  // reach far outside the fixtures window. Deduped — a match commonly appears in
+  // both players' form lists, and across several cards.
+  const formKeys = new Set();
+  for (const m of matches) {
+    for (const side of ['p1RecentFormMatches', 'p2RecentFormMatches']) {
+      for (const f of (m[side] || [])) {
+        if (f && f.eventKey != null) formKeys.add(String(f.eventKey));
+      }
+    }
+  }
+
+  let formResolved = 0, formDeferred = 0;
+  for (const ek of formKeys) {
+    if (out[ek]) continue;                       // already covered by the window pass
+    try {
+      const entry = await resolve(ek);
+      if (!entry) { formDeferred++; continue; }  // fetch budget spent this run
+      if (entry.sets && entry.sets.length && entry.p1) formResolved++;
+    } catch (e) {
+      console.error(`point-by-point: form-row fetch failed for ${ek}: ${e.message}`);
+      skipped++;
+    }
+  }
+
+  // One shard per match, so opening a single row fetches a single small file
+  // instead of a multi-megabyte bundle. Written for every event key that has a
+  // real, named log — window matches included.
+  fs.mkdirSync(SHARD_DIR, { recursive: true });
+  const index = [];
+  for (const ek of Object.keys(cache)) {
+    const e = cache[ek];
+    if (!e || !e.sets || !e.sets.length || !e.p1) continue;   // no log, or unnamed legacy entry
+    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets: e.sets }));
+    index.push(ek);
+  }
+  // Which rows get a Point-by-point tab at all. The dashboard needs this BEFORE
+  // it renders a row's tabs, and a 404 per logless row is not an answer it can
+  // render against — so availability ships as data, not as a failed request.
+  writeAtomic(INDEX_PATH, JSON.stringify(index));
+
+  writeAtomic(CACHE_PATH, JSON.stringify(cache));
+  writeAtomic(OUT_PATH, JSON.stringify(out));
   const kb = (fs.statSync(OUT_PATH).size / 1024).toFixed(0);
   console.log(`point-by-point: ${Object.keys(out).length} matches with point logs (${fetched} fetched, ${reused} cached, ${skipped} skipped) -> ${OUT_PATH} (${kb} KB)`);
+  console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
+  if (formDeferred) {
+    // Say it out loud rather than letting partial coverage read as complete.
+    console.log(`point-by-point: ${formDeferred} recent-form matches deferred — hit the ${MAX_FETCHES_PER_RUN}-fetch/run cap; they resolve on later runs (cache is persistent).`);
+  }
 }
 
 main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });

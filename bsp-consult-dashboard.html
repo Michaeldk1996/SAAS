@@ -964,6 +964,14 @@
   .aform-panel{ padding:12px 13px 14px 49px; background:rgba(255,255,255,0.02); }
   .aform-panel-meta{ font-size:11px; color:#6b7280; font-family:'IBM Plex Mono', monospace; margin-bottom:10px; }
   .aform-panel-names{ display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#9aa3b2; margin-bottom:6px; }
+  /* Tasks 10-12 — Stats / Point by point tabs inside an expanded form row.
+     Same pill vocabulary as the modal's set selector (.ms-setbtn). */
+  .aform-tabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .aform-tabs.hidden{ display:none; }
+  .aform-tab{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:500; letter-spacing:0.02em; color:#8b93a3; background:none; border:1px solid rgba(255,255,255,0.10); padding:5px 14px; border-radius:999px; cursor:pointer; width:auto; flex:0 0 auto; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .aform-tab:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.22); }
+  .aform-tab.active{ color:#e7e9ee; border-color:rgba(255,255,255,0.30); background:rgba(255,255,255,0.06); }
+  .aform-panel > div.hidden{ display:none; }
   .aform-panel-row{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; padding:4px 0; font-family:'IBM Plex Mono', monospace; font-size:12px; }
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-foot{ font-size:11.5px; color:#5b6472; margin-top:14px; font-family:'Hanken Grotesk', sans-serif; }
@@ -2219,6 +2227,38 @@ function loadPointByPoint(){
     .catch(err => { console.warn('point-by-point.json load failed:', err.message); pointByPoint = {}; return pointByPoint; });
   return _pointByPointPromise;
 }
+// --- Per-match point-by-point shards (Tasks 10-12) -------------------------
+// The Form tab's recent-form rows reach ~600 matches, far outside the fixtures
+// window that point-by-point.json covers. Bundling them all would be a ~2.9 MB
+// fetch to read one match's log, so each match is its own shard and a row pulls
+// only its own. Both files stay lazy: nothing here loads until a row is opened.
+let _pbpIndex = null, _pbpIndexPromise = null;
+const _pbpShards = {}, _pbpShardPromises = {};
+
+// The set of event keys that have a point log on file. Fetched once, so a row
+// knows whether to offer a Point-by-point tab before it paints it.
+function loadPbpIndex(){
+  if (_pbpIndex) return Promise.resolve(_pbpIndex);
+  if (_pbpIndexPromise) return _pbpIndexPromise;
+  _pbpIndexPromise = fetch('./pbp-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _pbpIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _pbpIndex; })
+    .catch(err => { console.warn('pbp-index.json load failed:', err.message); _pbpIndex = new Set(); return _pbpIndex; });
+  return _pbpIndexPromise;
+}
+// One match's point log. Resolves to null when there is no shard — the caller
+// shows nothing rather than inventing a log.
+function loadPbpShard(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek) return Promise.resolve(null);
+  if (ek in _pbpShards) return Promise.resolve(_pbpShards[ek]);
+  if (_pbpShardPromises[ek]) return _pbpShardPromises[ek];
+  _pbpShardPromises[ek] = fetch(`./pbp/${ek}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { _pbpShards[ek] = d || null; return _pbpShards[ek]; })
+    .catch(err => { console.warn(`pbp shard ${ek} load failed:`, err.message); _pbpShards[ek] = null; return null; });
+  return _pbpShardPromises[ek];
+}
 // Parse an api-tennis "a - b" integer score into [a, b] (null if not integers).
 function pbpParseScore(sc){
   const m = /^(\d+)\s*-\s*(\d+)$/.exec(String(sc || '').trim());
@@ -2720,16 +2760,70 @@ function formPanelHtml(match, idPrefix, playerKey, playerName){
       ${rows}
     `;
   }
+  // The tab bar is painted on first expand, not here: whether this match has a
+  // point log is only known once the availability index has loaded, and a tab
+  // that appears and then vanishes is worse than one that arrives with content.
   return `
-    <div class="aform-panel-wrap" id="formPanelWrap-${idPrefix}">
+    <div class="aform-panel-wrap" id="formPanelWrap-${idPrefix}" data-ek="${match.eventKey || ''}">
       <div class="aform-panel-inner">
         <div class="aform-panel">
           <div class="aform-panel-meta">${meta}</div>
-          ${body}
+          <div class="aform-tabs hidden" id="formTabs-${idPrefix}"></div>
+          <div id="formPaneStats-${idPrefix}">${body}</div>
+          <div class="hidden" id="formPanePbp-${idPrefix}"></div>
         </div>
       </div>
     </div>
   `;
+}
+
+// Adds the Stats / Point by point tabs to a row's panel, but only for a match
+// that actually has a point log on file. Rows without one keep the bare stats
+// panel they have always had, so tabs vary row to row by design.
+function ensureFormPanelTabs(idPrefix){
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  const tabs = document.getElementById('formTabs-' + idPrefix);
+  if (!wrap || !tabs || tabs.dataset.ready === '1') return;
+  const ek = wrap.dataset.ek;
+  if (!ek) return;
+  tabs.dataset.ready = '1';
+  loadPbpIndex().then(index => {
+    if (!index.has(String(ek))) return;      // no log — no tab, no empty state
+    tabs.innerHTML = `
+      <button class="aform-tab active" id="formTab-stats-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','stats')">Stats</button>
+      <button class="aform-tab" id="formTab-pbp-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','pbp')">Point by point</button>
+    `;
+    tabs.classList.remove('hidden');
+  });
+}
+
+// Swap panes, fetching the point log on first view of the Point by point tab.
+function switchFormTab(idPrefix, tab){
+  const statsPane = document.getElementById('formPaneStats-' + idPrefix);
+  const pbpPane = document.getElementById('formPanePbp-' + idPrefix);
+  const statsTab = document.getElementById('formTab-stats-' + idPrefix);
+  const pbpTab = document.getElementById('formTab-pbp-' + idPrefix);
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  if (!statsPane || !pbpPane || !wrap) return;
+  const showPbp = tab === 'pbp';
+  statsPane.classList.toggle('hidden', showPbp);
+  pbpPane.classList.toggle('hidden', !showPbp);
+  if (statsTab) statsTab.classList.toggle('active', !showPbp);
+  if (pbpTab) pbpTab.classList.toggle('active', showPbp);
+  if (!showPbp || pbpPane.dataset.loaded === '1') return;
+  pbpPane.dataset.loaded = '1';
+  pbpPane.innerHTML = `<div class="acomingsoon" style="padding:10px 0 2px;">Loading point-by-point…</div>`;
+  loadPbpShard(wrap.dataset.ek).then(shard => {
+    if (!shard || !shard.sets || !shard.sets.length){
+      pbpPane.dataset.loaded = '';   // let a retry re-fetch rather than freezing the failure
+      pbpPane.innerHTML = `<div class="acomingsoon" style="padding:10px 0 2px;">No point-by-point log on file for this match.</div>`;
+      return;
+    }
+    // Rendered against the shard's OWN p1/p2 — the names api-tennis labelled
+    // first/second, which is what the log's server/winner sides refer to. The
+    // row only knows "profile player vs opponent" and cannot supply that order.
+    pbpPane.innerHTML = buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, null);
+  });
 }
 
 function formRowHtml(match, idPrefix, playerKey, playerName){
@@ -2766,6 +2860,7 @@ function toggleFormPanel(idPrefix){
   chev.classList.toggle('open', !isOpen);
   wrap.classList.toggle('open', !isOpen);
   formOpenPanel[colPrefix] = isOpen ? null : idPrefix;
+  if (!isOpen) ensureFormPanelTabs(idPrefix);   // opening: decide this row's tabs
 }
 function showFormMore(colPrefix){
   document.querySelectorAll('.aform-extra-' + colPrefix).forEach(el => { el.style.display = ''; });

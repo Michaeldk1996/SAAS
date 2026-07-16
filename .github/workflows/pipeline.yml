@@ -86,6 +86,8 @@ jobs:
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp player-histories.json _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
+          cp pbp-index.json _site/ 2>/dev/null || true
+          cp -r pbp _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
 
       - name: Upload Pages artifact

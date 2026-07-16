@@ -6,3 +6,10 @@ node_modules/
 .claude/
 *.log
 *.bak
+
+# Point-by-point shards + their availability index: pure derived output, rebuilt
+# from point-by-point-cache.json (the tracked seed) on every pipeline run and
+# published straight to _site. One file per match, so committing them would add
+# hundreds of churning blobs that nothing reads from git.
+pbp/
+pbp-index.json
