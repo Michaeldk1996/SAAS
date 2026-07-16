@@ -6404,16 +6404,17 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 // gradient and readout are simply omitted rather than fabricated. Player
 // line colors are fixed (not the app's generic accent/court-clay pair) to
 // match the design spec exactly.
-// Round-aware progression state (Task 6, threshold revised by Task 13).
-// Derived from how many rounds of box-score data each player has in this
-// tournament — NOT from hardcoded round names — so it works across every format:
-//   pts <= 0  → 'hidden'  no round on record: nothing to show, hide the tab
-//   pts == 1  → 'bars'    a single round: no trend to draw, so compare box scores
-//   pts >= 2  → 'chart'   two+ rounds on record: line trend over time
+// Round-aware progression state (Task 6, revised by Task 13).
+// Everything below is measured over the PRE-MATCH window only — the rounds each
+// player completed BEFORE the match on this card (see progressionPreMatchScope).
+// Derived from how many rounds of box-score data each player has in that window
+// — NOT from hardcoded round names — so it works across every draw format:
+//   pts <= 0  → 'hidden'  nothing played before this match: hide the tab
+//   depth<=1  → 'bars'    one round survived: no trend to draw, compare box scores
+//   depth>=2  → 'chart'   two+ rounds survived: line trend over time
 //   no draw   → 'none'    no tournament data on file at all
-// A player with a single completed round (e.g. a next-round card where both
-// players have already won their opener) has real box-score data to compare —
-// show bars rather than hiding the tab, since one point cannot form a trend.
+// A player with a single prior round has real box-score data to compare — show
+// bars rather than hiding the tab, since one point cannot form a trend.
 // How deep a player is in THIS draw, in rounds survived (Task 13 board rule).
 // Wins and byes advance you; a loss does not. Derived per player:
 //
@@ -6455,12 +6456,64 @@ function progressionShownRound(pData, d){
   return (d && d.lastWon) || pData.rounds[pData.rounds.length - 1];
 }
 
+// The progression section answers "what did each man bring INTO this match?", so
+// it has to stop at the card's own match. On the Collignon v Sonego R2 card,
+// Collignon's R2 box score IS that match: showing it lets the result leak into
+// the form guide that is supposed to precede it, and it flattered him with a
+// two-round line when he had only won one match going in (board call, TEN-16).
+//
+// The card's match is found by OPPONENT, not by mapping the fixture's round name
+// onto the draw axis. Round labels are derived per tournament from the rounds
+// actually played (labelRounds in bsp-pipeline.js), so "1/8-finals" is R2 at
+// Gstaad today and would be R3 in a deeper draw — a name map would drift as the
+// event grows. Single elimination guarantees a player meets a given opponent at
+// most once, so the opponent is an exact, drift-proof key for the round.
+//
+// Everything from that round onward is dropped in one place: the axis, both
+// players' rounds and the field-average series (metrics AND sampleSize, which
+// are parallel arrays) are sliced to the same prefix. Downstream surfaces — bars,
+// lines, readouts and the written summary — then all see one consistent window
+// without each needing its own copy of the rule.
+function progressionPreMatchScope(m, data, p1Data, p2Data){
+  const surname = n => String(n || '').trim().split(/\s+/).pop().toLowerCase();
+  const cutFor = (pData, oppName) => {
+    if (!pData || !oppName) return -1;
+    const hit = (pData.rounds || []).find(r => surname(r.opponent) && surname(r.opponent) === surname(oppName));
+    return hit ? data.rounds.indexOf(hit.round) : -1;
+  };
+  const found = [cutFor(p1Data, m.p2), cutFor(p2Data, m.p1)].filter(i => i >= 0);
+  // No meeting on record means this card is a fixture they have not played yet,
+  // so their whole draw so far is legitimately pre-match and nothing is trimmed.
+  const cut = found.length ? Math.min(...found) : data.rounds.length;
+  if (cut >= data.rounds.length) return { data, p1Data, p2Data, cutIdx: -1 };
+  const rounds = data.rounds.slice(0, cut);
+  const sliceArr = v => Array.isArray(v) ? v.slice(0, cut) : v;
+  const scoped = pData => pData && ({
+    ...pData,
+    // A player had to win every round before this match to arrive at it, so
+    // inside this window nobody is eliminated — their exit, if any, is the
+    // card's match or later, and that is exactly what has been sliced away.
+    eliminated: false,
+    rounds: (pData.rounds || []).filter(r => rounds.indexOf(r.round) >= 0),
+  });
+  const fieldAverage = {
+    ...data.fieldAverage,
+    rounds,
+    sampleSize: sliceArr(data.fieldAverage.sampleSize),
+    metrics: Object.fromEntries(Object.entries(data.fieldAverage.metrics).map(([k, v]) => [k, sliceArr(v)])),
+  };
+  return { data: { ...data, rounds, fieldAverage }, p1Data: scoped(p1Data), p2Data: scoped(p2Data), cutIdx: cut };
+}
+
 function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
-  const data = tournamentProgression.tournaments[bareTour];
-  const p1Data = data ? data.players.find(p => String(p.playerKey) === String(m.p1Key)) : null;
-  const p2Data = data ? data.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
-  if (!data || (!p1Data && !p2Data)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
+  const rawData = tournamentProgression.tournaments[bareTour];
+  const rawP1 = rawData ? rawData.players.find(p => String(p.playerKey) === String(m.p1Key)) : null;
+  const rawP2 = rawData ? rawData.players.find(p => String(p.playerKey) === String(m.p2Key)) : null;
+  if (!rawData || (!rawP1 && !rawP2)) return { state: 'none', data: null, p1Data: null, p2Data: null, bareTour, pts: 0 };
+  // Scope to the pre-match window before anything is measured off this data.
+  const scope = progressionPreMatchScope(m, rawData, rawP1, rawP2);
+  const { data, p1Data, p2Data } = scope;
   const d1 = progressionPlayerDepth(p1Data, data.rounds);
   const d2 = progressionPlayerDepth(p2Data, data.rounds);
   const present = [d1, d2].filter(Boolean);
@@ -6470,13 +6523,13 @@ function progressionRoundState(m){
   // the other's bar — Collignon's two wins chart while Sonego's single win bars
   // on the same plot. The card enters the chart layout as soon as EITHER player
   // qualifies; only when neither does does it fall back to the bars layout.
-  const depth = Math.max(...present.map(d => d.depth));
-  // `hidden` stays a data-existence test (unchanged): a player who lost their
-  // opener still has a real box score worth comparing, so only the bars/chart
-  // line moves to the rounds-survived rule.
+  const depth = present.length ? Math.max(...present.map(d => d.depth)) : 0;
+  // `hidden` stays a data-existence test, but it is now asked of the pre-match
+  // window rather than the whole draw: on an opening-round card neither man has
+  // played this event yet, so there is no prior form to show and the tab hides.
   const pts = Math.max(p1Data ? p1Data.rounds.length : 0, p2Data ? p2Data.rounds.length : 0);
   const state = pts <= 0 ? 'hidden' : (depth <= 1 ? 'bars' : 'chart');
-  return { state, data, p1Data, p2Data, bareTour, pts, d1, d2, depth };
+  return { state, data, p1Data, p2Data, bareTour, pts, d1, d2, depth, cutIdx: scope.cutIdx };
 }
 
 function buildMatchProgressionSection(m){
@@ -6487,7 +6540,9 @@ function buildMatchProgressionSection(m){
   }
   if (st.state === 'hidden') {
     // Tab is hidden from the sidebar in this state; content is a safe fallback only.
-    return `<div class="acomingsoon">Progression opens once a player has more than one match on record in this event.</div>`;
+    // Reached on an opening-round card: this section only ever shows form built
+    // BEFORE the match on the card, and neither man has played this event yet.
+    return `<div class="acomingsoon">Progression opens once a player has completed an earlier match in this event.</div>`;
   }
 
   const P1_COLOR = '#3E7BFA', P2_COLOR = '#E8934B';
@@ -6549,9 +6604,9 @@ function buildMatchProgressionSection(m){
       p1Data && p1Latest ? `${p1Surname} ${p1Latest.round}` : null,
       p2Data && p2Latest ? `${p2Surname} ${p2Latest.round}` : null,
     ].filter(Boolean).join(' · ');
-    const barsNote = `Each player at the deepest round they won${shownAt ? ` (${shownAt})` : ''}. A line trend appears once both players have won two rounds.`;
+    const barsNote = `Form going into this match${shownAt ? ` (${shownAt})` : ''} — this match's own stats are excluded. A line trend appears once a player has survived two rounds beforehand.`;
     return `
-      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats at the deepest round each of them won in this draw, compared side by side.">ⓘ</span></div>
+      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats from the rounds they completed BEFORE this match, compared side by side. The match on this card is excluded.">ⓘ</span></div>
       <div class="tprogress-legend"><div class="note" style="margin:0;">${barsNote}</div></div>
       <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
     `;
@@ -6578,7 +6633,7 @@ function buildMatchProgressionSection(m){
     <div class="item"><span class="dash"></span>Field average</div>
     ${byeNote ? `<div class="item" style="color:#8b93a3;">${byeNote}</div>` : ''}
     ${barNote ? `<div class="item" style="color:#8b93a3;">${barNote}</div>` : ''}
-    <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form. A player is charted once they have survived two rounds; until then their one box score shows as a bar.</div>
+    <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form. Shows form built BEFORE this match; the match on this card is excluded. A player is charted once they have survived two rounds; until then their one box score shows as a bar.</div>
   `;
 
   const chartsHtml = PROGRESSION_METRIC_ORDER.map(([metricKey, label]) => {
@@ -6627,7 +6682,7 @@ function buildMatchProgressionSection(m){
   const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
 
   return `
-    <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players this match, through the current draw, vs. the field average for each round.">ⓘ</span></div>
+    <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players from the rounds they completed BEFORE this match, vs. the field average for each round. The match on this card is excluded.">ⓘ</span></div>
     <div class="tprogress-legend">${legendHtml}</div>
     <div class="tprogress-grid">${chartsHtml}${aiSummaryHtml}</div>
   `;
