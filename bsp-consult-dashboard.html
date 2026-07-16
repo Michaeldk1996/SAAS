@@ -1714,6 +1714,10 @@ function avatarFallback(img, initials){
 // views WITHIN that tabpage, so without the switch nothing visible would happen).
 function openPlayerProfileFromMatch(key){
   if (key == null || !playerProfiles[String(key)]) return;
+  // The analysis modal (if open, e.g. clicking a face in the match detail header)
+  // sits on top of everything — close it first, otherwise the Players tab switch
+  // happens behind the overlay and looks like nothing happened. (T2 fix)
+  if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
   document.querySelector('#mainNav button[data-tab="players"]').click();
   showPlayerProfile(key);
 }
@@ -3727,8 +3731,8 @@ function openAnalysisModal(matchId){
     if (p2Pill.textContent) p2Pill.className = 'aodds p2';
     setLine.innerHTML = '';
   }
-  document.getElementById('aP1Avatar').innerHTML = playerAvatarHtml(m.p1PhotoUrl, m.p1);
-  document.getElementById('aP2Avatar').innerHTML = playerAvatarHtml(m.p2PhotoUrl, m.p2);
+  document.getElementById('aP1Avatar').innerHTML = playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key);
+  document.getElementById('aP2Avatar').innerHTML = playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key);
   document.querySelector('#aP1Avatar img, #aP1Avatar .avatar-fallback').style.borderColor = 'rgba(62,123,250,0.55)';
   document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(232,147,75,0.6)';
 
