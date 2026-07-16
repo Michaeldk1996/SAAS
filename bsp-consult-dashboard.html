@@ -3204,9 +3204,11 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
 // point lives HERE (a sub-tab of Match Stats) rather than as its own sidebar
 // nav item; the pane is empty until opened, then lazy-loads the sidecar.
 function buildMatchStatsSection(m){
-  const finished = !!m.finalScore && !m.live;
+  // An interrupted match has no result but does have a point log up to the
+  // moment play stopped, so it gets the sub-tab too.
+  const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
   const stats = buildMatchStatsSheet(m);
-  if (!finished) return stats;   // no point-by-point log for upcoming/live matches
+  if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
   return `
     <div class="ms-subtabs" role="tablist">
       <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>

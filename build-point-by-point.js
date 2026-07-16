@@ -98,16 +98,22 @@ async function main() {
   let fetched = 0, reused = 0, skipped = 0;
 
   for (const m of matches) {
-    if (!m.finalScore) continue;                 // finished matches only
+    // An interrupted match has a real point log frozen at the suspension, so it
+    // gets one too — but it is still growing, so it never touches the cache in
+    // either direction. Caching a partial log would freeze it there for good:
+    // once play resumed and the match finished, the cache hit would keep
+    // serving the suspended-at points forever.
+    const provisional = !m.finalScore && m.interrupted;
+    if (!m.finalScore && !provisional) continue;
     const ek = eventKeyOf(m.id);
     if (!ek) { skipped++; continue; }
 
-    let compact = cache[ek];                      // immutable once captured
+    let compact = provisional ? null : cache[ek];  // immutable once captured
     if (!compact) {
       try {
         const raw = await fetchPbp(ek);
         compact = compactPbp(raw);
-        cache[ek] = compact || { sets: [] };      // cache the negative too, avoid refetching
+        if (!provisional) cache[ek] = compact || { sets: [] };  // cache the negative too, avoid refetching
         fetched++;
         await new Promise(r => setTimeout(r, PACE_MS));
       } catch (e) {
