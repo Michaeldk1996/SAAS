@@ -1688,12 +1688,32 @@ function avatarFallback(img, initials){
   const div = document.createElement('div');
   div.className = 'avatar-fallback';
   div.textContent = initials;
+  // Carry the click-to-profile behaviour across the img→div swap (attributes aren't
+  // copied automatically), so a broken photo still links to the profile. (T2)
+  const oc = img.getAttribute('onclick');
+  if (oc){ div.setAttribute('onclick', oc); div.style.cursor = 'pointer'; const t = img.getAttribute('title'); if (t) div.title = t; }
   img.replaceWith(div);
 }
-function playerAvatarHtml(photoUrl, name){
+// Open a player's profile from a match card. Only wired for players that actually
+// have a profile; switches to the Players tab first (showPlayerProfile only toggles
+// views WITHIN that tabpage, so without the switch nothing visible would happen).
+function openPlayerProfileFromMatch(key){
+  if (key == null || !playerProfiles[String(key)]) return;
+  document.querySelector('#mainNav button[data-tab="players"]').click();
+  showPlayerProfile(key);
+}
+function playerAvatarHtml(photoUrl, name, playerKey){
   const initials = playerInitials(name);
-  if (!photoUrl) return `<div class="avatar-fallback">${initials}</div>`;
-  return `<img class="avatar" src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
+  // Avatar (and only the avatar) is a clickable link to the player's profile, but
+  // only when a profile exists. stopPropagation keeps it independent of any card-level
+  // handler; the onclick lives on BOTH branches because avatarFallback() swaps the
+  // <img> for a <div> on load error and doesn't copy attributes. (T2)
+  const clickable = playerKey != null && typeof playerProfiles !== 'undefined' && playerProfiles[String(playerKey)];
+  const attrs = clickable
+    ? ` onclick="event.stopPropagation();openPlayerProfileFromMatch('${playerKey}')" style="cursor:pointer;" title="View ${name} profile"`
+    : '';
+  if (!photoUrl) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
+  return `<img class="avatar"${attrs} src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
 }
 
 // Implied win probability from a decimal odds price, rounded to a whole
@@ -1801,7 +1821,7 @@ function renderMatches(){
       ${scoreLineHtml}
       <div class="mx-playerrow">
         <div class="mx-col1">
-          ${playerAvatarHtml(m.p1PhotoUrl, m.p1)}
+          ${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}
           <span class="mx-name">${p1IsWinner ? '✓ ' : ''}${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
           ${p1IsFavorite ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
@@ -1816,7 +1836,7 @@ function renderMatches(){
       </div>
       <div class="mx-playerrow last">
         <div class="mx-col1">
-          ${playerAvatarHtml(m.p2PhotoUrl, m.p2)}
+          ${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}
           <span class="mx-name">${p2IsWinner ? '✓ ' : ''}${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
           ${(hasOdds && !p1IsFavorite) ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
@@ -3225,6 +3245,14 @@ function buildOddsSection(m){
   const hasHist = om && om.books && Object.keys(om.books).length;
   if(!hasHist) return buildOddsReduced(m);
 
+  // CLOSING odds = last pre-match snapshot. The captured timeline keeps recording IN-PLAY prices
+  // after a match starts, so for in-progress/completed matches we must cap every book's series to
+  // points at or before match start (mirrors the pipeline's lastBeforeStart in bsp-pipeline.js,
+  // which treats m.time as UTC). Upcoming matches have no in-play points, so startMs sits in the
+  // future and preMatch() keeps the whole series unchanged.
+  const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time||'') ? m.time : '00:00'}:00Z`);
+  const preMatch = pts => (Number.isFinite(startMs) ? (pts||[]).filter(p=>Date.parse(p[0])<=startMs) : (pts||[]));
+
   // Colour by player identity to stay consistent with the modal header and every other tab:
   // player 1 = blue (left/top panel), player 2 = orange (right/bottom panel). Each panel is
   // still auto-scaled to its own player, which is the whole point of the split view.
@@ -3237,7 +3265,7 @@ function buildOddsSection(m){
   // as books toggle). Downsample to <=30 columns for readable hover bands, always keeping ends.
   const allBooks = Object.keys(om.books);
   const tset = new Set();
-  allBooks.forEach(bk=>{ ['p1','p2'].forEach(sd=>{ (om.books[bk][sd]||[]).forEach(pt=>tset.add(pt[0])); }); });
+  allBooks.forEach(bk=>{ ['p1','p2'].forEach(sd=>{ preMatch(om.books[bk][sd]).forEach(pt=>tset.add(pt[0])); }); });
   let grid = Array.from(tset).sort();
   const MAX=30;
   if(grid.length>MAX){ const step=(grid.length-1)/(MAX-1); const g=[]; for(let k=0;k<MAX;k++) g.push(grid[Math.round(k*step)]); grid=Array.from(new Set(g)); }
@@ -3253,10 +3281,10 @@ function buildOddsSection(m){
   }
   const off=_aOdds.off||{};
   const bookObjs = allBooks.map((bk,idx)=>{
-    const favReal=(om.books[bk][favSide]||[]), dogReal=(om.books[bk][dogSide]||[]);
+    const favReal=preMatch(om.books[bk][favSide]), dogReal=preMatch(om.books[bk][dogSide]);
     return {
       name:bk, dash:aOddsDash(bk,idx), off:!!off[bk],
-      favVals:aOddsStep(om.books[bk][favSide], grid), dogVals:aOddsStep(om.books[bk][dogSide], grid),
+      favVals:aOddsStep(favReal, grid), dogVals:aOddsStep(dogReal, grid),
       favReal:favReal.map(p=>p[1]), dogReal:dogReal.map(p=>p[1]),
       favOpen:favReal.length?favReal[0][1]:null, favNow:favReal.length?favReal[favReal.length-1][1]:null,
       dogOpen:dogReal.length?dogReal[0][1]:null, dogNow:dogReal.length?dogReal[dogReal.length-1][1]:null,
@@ -3288,14 +3316,14 @@ function buildOddsSection(m){
 
   // ---- per-book movement table ----
   const cell = (open, sparkVals, now, best, side) => {
-    if(now==null && open==null) return '<div class="aomv-cell"><span class="aomv-now na">\u00b7</span></div>';
+    if(now==null && open==null) return '<div class="aomv-cell"><span class="aomv-now na">\u2014</span></div>';
     const net = (now!=null && open!=null) ? (now-open) : null;
     const netCls = net==null ? 'flat' : (net>0.001?'up':(net<-0.001?'down':'flat'));
     const netTxt = net==null ? '' : (net>0?'+':'')+net.toFixed(2);
     return '<div class="aomv-cell">'
       +'<span class="aomv-open">'+(open!=null?open.toFixed(2):'')+'</span>'
       +'<span class="aomv-spark">'+aOddsSpark(sparkVals)+'</span>'
-      +'<span class="aomv-now'+(now!=null&&now===best?' best':'')+'">'+(now!=null?now.toFixed(2):'\u00b7')+'</span>'
+      +'<span class="aomv-now'+(now!=null&&now===best?' best':'')+'">'+(now!=null?now.toFixed(2):'\u2014')+'</span>'
       +'<span class="aomv-net '+netCls+'">'+netTxt+'</span></div>';
   };
   const rowsHtml = bookObjs.map(b=>{
@@ -6069,10 +6097,20 @@ function tourxBuildTournament(name){
   // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam).
   const roundLabels = tourxRoundLabelsFor(name, rounds);
   const players = (t.players || []).map(p => {
+    // Place every match at the index of its OWN round label, not its position in
+    // p.rounds. A bye recipient's first match is labelled e.g. R16, so it must land
+    // at the R16 slot (leaving the R32 slot empty) rather than at slot 0. For a
+    // player with no byes this is identical to positional placement (their rounds
+    // run contiguously from the opener), so the common case is unchanged.
     const data = {};
-    TOURX_METRICS.forEach(m => { data[m.key] = (p.rounds || []).map(r => r.metrics ? r.metrics[m.key] : null); });
-    // Opponent beaten/faced per played round, index-aligned to the metric arrays.
-    const opponents = (p.rounds || []).map(r => r.opponent || null);
+    TOURX_METRICS.forEach(m => { data[m.key] = new Array(rounds.length).fill(null); });
+    const opponents = new Array(rounds.length).fill(null);
+    (p.rounds || []).forEach(r => {
+      const idx = rounds.indexOf(r.round);
+      if (idx < 0) return;
+      TOURX_METRICS.forEach(m => { data[m.key][idx] = r.metrics ? r.metrics[m.key] : null; });
+      opponents[idx] = r.opponent || null;   // opponent faced in that round, index-aligned to metrics
+    });
     let maxWonIdx = -1;
     (p.rounds || []).forEach(r => {
       const parts = String(r.resultDisplay || '').split('-').map(s => parseInt(s.trim(), 10));
@@ -6081,7 +6119,11 @@ function tourxBuildTournament(name){
         if (idx > maxWonIdx) maxWonIdx = idx;
       }
     });
-    const playedIdx = (p.rounds || []).length - 1;
+    // Deepest round the player actually has a match at (label-based, so a bye
+    // recipient's finishRound reflects R16, not R32). Equals length-1 for the
+    // no-bye contiguous case.
+    let playedIdx = -1;
+    (p.rounds || []).forEach(r => { const idx = rounds.indexOf(r.round); if (idx > playedIdx) playedIdx = idx; });
     const wonLast = maxWonIdx === playedIdx && playedIdx >= 0;
     // finishRound: the round they exited at (lost), or the next round they
     // advanced to if they won their last recorded match.
@@ -6638,7 +6680,10 @@ function tourxRoundViewHtml(T){
 // (players who reached R16 or deeper, each with six player-vs-field charts).
 function tourxPlayerViewHtml(T){
   const rounds = T.rounds, field = T.field;
-  const allNames = T.players.filter(p => p.data && p.nRounds > 0).map(p => p.name).sort();
+  // Progression charts show ACTIVE players only — a player is eliminated the moment
+  // they have a loss recorded, and is then dropped from the chart, legend, banner and
+  // search entirely (no orphaned line/point/name). Byes are not losses. (T3)
+  const allNames = T.players.filter(p => p.data && p.nRounds > 0 && !p.eliminated).map(p => p.name).sort();
   const selNames = tourxState.cmpPlayers.filter(n => allNames.includes(n)).slice(0, TOURX_PP_CAP);
   const selPlayers = selNames.map(n => T.players.find(p => p.name === n));
   const controls = `<div style="margin-top:20px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
@@ -6653,7 +6698,7 @@ function tourxPlayerViewHtml(T){
     // once they've played 2+ matches. Drop any selected player with a single
     // match; if none qualify, show the "needs 2 matches" message instead of a
     // meaningless one-point chart.
-    const eligible = selPlayers.filter(p => p.data && p.nRounds >= 2);
+    const eligible = selPlayers.filter(p => p.data && p.nRounds >= 2 && !p.eliminated);
     if (!eligible.length){
       const who = selPlayers.length === 1
         ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> has only played one match so far`
@@ -6676,7 +6721,7 @@ function tourxPlayerViewHtml(T){
   // who has played 2+ matches gets a progression line automatically (a chart needs
   // at least two points to show a trend), so the report is useful without picking
   // players first. The search above still narrows to specific players afterwards.
-  const progressable = T.players.filter(p => p.data && p.nRounds >= 2)
+  const progressable = T.players.filter(p => p.data && p.nRounds >= 2 && !p.eliminated)
     .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.nRounds - a.nRounds));
   if (!progressable.length){
     const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">The player progression chart is only available once players have played <b style="color:#c3ccdb;">2 matches</b>. No player at <b style="color:#c3ccdb;">${T.name}</b> has completed a second round yet — the chart appears here automatically from the second round onward. You can still search for a player above once they've played twice.</div>`;
