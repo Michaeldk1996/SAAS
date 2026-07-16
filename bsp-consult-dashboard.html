@@ -4221,7 +4221,15 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', splitsOpen: { career: false, last52: false } };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', formSeason: null, splitsOpen: { career: false, last52: false } };
+
+// Upstream match history (recentForm.matches) is only complete from 2023 on.
+// Measured across all 437 players carrying form data: 2023-2026 hold a median
+// of 45-49 matches per player per season, while 2021 and 2022 hold 9 and 11 —
+// sparse across every month, not truncated at a date boundary (e.g. Djokovic's
+// 2022 is missing his Rome and Turin titles entirely). Season tabs below this
+// year are labelled as partial rather than presented as a full season record.
+const PP_FULL_HISTORY_FROM = 2023;
 // Task 12 — expand/collapse the Career splits / Last 52 weeks reference tables.
 function togglePpSplits(which){
   ppState.splitsOpen[which] = !ppState.splitsOpen[which];
@@ -4276,6 +4284,101 @@ function ppCareerSplitsHtml(p){
     ${career}${last52}</div>`;
 }
 const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
+const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Match surfaces arrive lowercase ('clay'); map to the capitalised key used by
+// PP_SURF_COLORS. Returns null for anything unrecognised so callers can omit the
+// tag rather than render an untinted or mislabelled one.
+function ppSurfName(s){
+  const k = String(s || '').trim().toLowerCase();
+  if (!k) return null;
+  const name = k.charAt(0).toUpperCase() + k.slice(1);
+  return PP_SURF_COLORS[name] ? name : null;
+}
+
+// Date range for a tournament group, formatted from the raw ISO strings rather
+// than via Date parsing, which would shift days across timezones.
+function ppFmtDateRange(dates){
+  const sorted = dates.filter(Boolean).slice().sort();
+  if (!sorted.length) return '';
+  const part = s => { const [, m, d] = s.split('-'); return { d: String(Number(d)), m: PP_MONTHS[Number(m) - 1] || '' }; };
+  const a = part(sorted[0]), b = part(sorted[sorted.length - 1]);
+  if (sorted[0] === sorted[sorted.length - 1]) return `${a.d} ${a.m}`;
+  return a.m === b.m ? `${a.d}–${b.d} ${a.m}` : `${a.d} ${a.m} – ${b.d} ${b.m}`;
+}
+
+// Task 7 — group a season's matches by tournament. Upstream names the same event
+// inconsistently across seasons ("Brisbane" vs "ATP Brisbane" — 22 such splits
+// measured in the current profile data), so matches are grouped on a normalised
+// key and the cleanest name variant is displayed. Groups come back ordered by
+// their most recent match, so the newest tournament leads the list.
+function ppTournamentGroupKey(name){
+  return String(name || '').replace(/^(ATP|WTA|Challenger|ITF)\s+/i, '').trim().toLowerCase();
+}
+// One name in one calendar year can still cover two separate editions: the ATP
+// season turns over mid-week, so Brisbane/Hong Kong appear in both January and
+// late December of the same year, and a city can host two distinct events (Banja
+// Luka ran an ATP event in April 2023 and a Challenger that August). Merging
+// those would invent a single record that was never played, so a group is split
+// wherever consecutive matches sit further apart than any single tournament
+// runs. No event exceeds ~15 days, so 21 leaves headroom without merging.
+const PP_TOURNAMENT_EDITION_GAP_DAYS = 21;
+function ppDaysBetween(a, b){
+  return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+}
+function ppGroupMatchesByTournament(matches){
+  const byName = new Map();
+  (matches || []).forEach(m => {
+    const key = ppTournamentGroupKey(m.tournament);
+    if (!key || !m.date) return;
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(m);
+  });
+
+  // Canonical display name is resolved per tournament, not per edition, so two
+  // editions of one event can't surface under two different names.
+  const labelByKey = new Map();
+  byName.forEach((ms, key) => {
+    labelByKey.set(key, ms.map(m => String(m.tournament || '').trim()).filter(Boolean)
+      .sort((a, b) => a.length - b.length)[0] || '—');
+  });
+
+  const editions = [];
+  byName.forEach((ms, key) => {
+    // Walk each name's matches oldest-first so a gap marks an edition boundary.
+    const asc = ms.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    let current = [];
+    asc.forEach(m => {
+      const prev = current[current.length - 1];
+      if (prev && ppDaysBetween(prev.date, m.date) > PP_TOURNAMENT_EDITION_GAP_DAYS){
+        editions.push({ key, matches: current });
+        current = [];
+      }
+      current.push(m);
+    });
+    if (current.length) editions.push({ key, matches: current });
+  });
+
+  return editions.map(e => {
+    // Shortest variant across the tournament — the one without the tour prefix.
+    const label = labelByKey.get(e.key) || '—';
+    const won = e.matches.filter(m => m.won).length;
+    const surfaces = [...new Set(e.matches.map(m => ppSurfName(m.surface)).filter(Boolean))];
+    const dates = e.matches.map(m => m.date);
+    return {
+      key: e.key,
+      label,
+      // Present each edition newest-first, matching the rest of the form card.
+      matches: e.matches.slice().reverse(),
+      won,
+      lost: e.matches.length - won,
+      // A tournament is played on one surface; only tag when the data agrees.
+      surface: surfaces.length === 1 ? surfaces[0] : null,
+      range: ppFmtDateRange(dates),
+      latest: dates.slice().sort()[dates.length - 1],
+    };
+  }).sort((a, b) => String(b.latest).localeCompare(String(a.latest)));
+}
 
 function ppHexA(hex, a){
   const h = hex.replace('#','');
@@ -4355,6 +4458,7 @@ function showPlayerProfile(key){
   ppState.tournamentPicked = null;
   ppState.formExpanded = false;
   ppState.formSurface = 'All';
+  ppState.formSeason = null;
   document.getElementById('playerListView').style.display = 'none';
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
@@ -4391,6 +4495,15 @@ function togglePpFormExpanded(){
 function setPpFormSurface(s){
   ppState.formSurface = s;
   ppState.formExpanded = false;
+  ppState.formSeason = null;
+  const profile = playerProfiles[ppState.key];
+  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+}
+// Season Results tab selection inside the Recent form card. Null means "let the
+// card pick the newest season that actually has matches for the current surface
+// filter", so the tabs never open on an empty season.
+function setPpFormSeason(y){
+  ppState.formSeason = String(y);
   const profile = playerProfiles[ppState.key];
   if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
 }
@@ -4828,18 +4941,18 @@ function buildPlayerProfileHtml(p){
   }).join('') || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
-  // Expandable full current-season results. recentMatches is newest-first, so the
-  // filtered season slice (seasonMatches, computed above) is already
-  // reverse-chronological. Count/label use the real match count from the data
-  // (never a fixed cap) so we never mislabel a partial list as "all results".
+  // Row builder for the grouped season list. recentMatches is newest-first, so
+  // each tournament group is already reverse-chronological (latest round first).
+  // The tournament name lives on the group header, so the row carries the round
+  // only. Counts/labels use the real match count from the data (never a fixed
+  // cap) so we never mislabel a partial list as "all results".
   const buildFormRow = m => {
     const w = m.won;
     // `round` is stored as "{event} - {roundName}" (event may carry an "ATP "/
-    // "Challenger" prefix), so keep only the trailing round descriptor to avoid
-    // repeating the event name next to the tournament column.
+    // "Challenger" prefix), so keep only the trailing round descriptor.
     let roundName = m.round || '';
     if (roundName.includes(' - ')) roundName = roundName.split(' - ').pop().trim();
-    const meta = [m.tournament || '', roundName].filter(Boolean).join(' \u00b7 ');
+    const meta = roundName;
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
@@ -4848,23 +4961,69 @@ function buildPlayerProfileHtml(p){
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
       </div>`;
   };
-  // Season slice honours the Recent form surface filter too, so the expandable
-  // list and its count only cover the chosen surface's current-season matches.
-  const formSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(seasonYear));
-  const formSeasonCount = formSeasonMatches.length;
-  const seasonRowsHtml = formSeasonMatches.map(buildFormRow).join('');
-  // Only offer expansion when the season holds more than the 5 already shown.
-  const showFormTrigger = !ppState.formExpanded && formSeasonCount > 5;
+  // Season results (Task 7) \u2014 the expandable list is organised into per-season
+  // tabs, and each season's matches are grouped by tournament rather than shown
+  // as one flat run of rows. Every season slice honours the Recent form surface
+  // filter, so tabs, counts and groups all describe the chosen surface only.
+  const formSeasons = [...new Set(formMatches.map(m => String(m.date || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
+  // Null formSeason means "newest season that actually has matches", so the tabs
+  // never open on an empty season after a surface filter change.
+  const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason))
+    ? ppState.formSeason
+    : (formSeasons[0] || seasonYear);
+  const activeSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
+  const activeSeasonCount = activeSeasonMatches.length;
+
+  const seasonTabsHtml = formSeasons.map(y => {
+    const on = y === activeSeason;
+    const partial = Number(y) < PP_FULL_HISTORY_FROM;
+    return `<span onclick="setPpFormSeason('${y}')" title="${partial ? 'Partial history \u2014 upstream coverage begins ' + PP_FULL_HISTORY_FROM : y + ' season'}" style="font-size:11.5px;font-weight:${on?700:600};font-family:'IBM Plex Mono',monospace;color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${y}${partial?'<span style="color:#6b7280;"> \u00b7 partial</span>':''}</span>`;
+  }).join('');
+
+  // Coverage before 2023 is sparse across the whole year, so an early-season tab
+  // is flagged rather than presented as that player's complete season record.
+  const partialNoteHtml = Number(activeSeason) < PP_FULL_HISTORY_FROM
+    ? `<div style="margin-top:10px;padding:8px 11px;border:1px solid rgba(232,179,65,0.28);background:rgba(232,179,65,0.07);border-radius:9px;font-size:11.5px;color:#c9a153;line-height:1.5;">Partial history \u2014 match coverage for ${activeSeason} is incomplete, so this is not a full season record.</div>`
+    : '';
+
+  const groups = ppGroupMatchesByTournament(activeSeasonMatches);
+  const groupsHtml = groups.map(g => {
+    const sColor = g.surface ? PP_SURF_COLORS[g.surface] : null;
+    const surfTag = g.surface
+      ? `<span style="font-size:10px;font-weight:600;color:${sColor};background:${ppHexA(sColor,0.13)};border:1px solid ${ppHexA(sColor,0.32)};border-radius:5px;padding:2px 7px;flex:none;">${g.surface}</span>`
+      : '';
+    return `
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;">
+          <span style="font-size:12.5px;font-weight:700;color:#e7e9ee;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.label}</span>
+          ${surfTag}
+          <span style="font-size:10.5px;color:#5b6472;white-space:nowrap;">${g.range}</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;white-space:nowrap;">${g.won}\u2013${g.lost}</span>
+        </div>
+        ${g.matches.map(buildFormRow).join('')}
+      </div>`;
+  }).join('') || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No ${formEmptyLabel} matches in ${activeSeason}.</div>`;
+
+  // Offer expansion whenever there is more on record than the 5 rows already
+  // shown \u2014 either more matches this season, or any earlier season to tab into.
+  const newestSeason = formSeasons[0];
+  const newestSeasonCount = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)).length : 0;
+  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 5 || formSeasons.length > 1);
   const formTriggerHtml = showFormTrigger
-    ? `<button onclick="togglePpFormExpanded()" style="margin-top:10px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:#7ba4ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(62,123,250,0.08)';this.style.borderColor='rgba(62,123,250,0.28)';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';">See all ${formSeasonCount} results this season</button>`
+    ? `<button onclick="togglePpFormExpanded()" style="margin-top:10px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:#7ba4ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(62,123,250,0.08)';this.style.borderColor='rgba(62,123,250,0.28)';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';">See all ${newestSeasonCount} results \u00b7 ${newestSeason} season</button>`
     : '';
   const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='#c3cad6';this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='transparent';this.style.color='#6b7280';this.style.borderColor='rgba(255,255,255,0.1)';">\u2715</button>`;
+  const groupNoun = groups.length === 1 ? 'tournament' : 'tournaments';
   const formExpandedHtml = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
-      <span style="font-size:12px;font-weight:700;color:#c3cad6;">All ${formSeasonCount} results \u00b7 ${seasonYear} season${formSurf === 'All' ? '' : ' \u00b7 ' + formSurf}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
+      <span style="font-size:12px;font-weight:700;color:#c3cad6;">Season results${formSurf === 'All' ? '' : ' \u00b7 ' + formSurf}</span>
       ${formDismissBtn}
     </div>
-    <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${seasonRowsHtml}</div>`;
+    <div style="display:flex;gap:6px;margin:10px 0 2px;flex-wrap:wrap;">${seasonTabsHtml}</div>
+    ${partialNoteHtml}
+    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} \u00b7 ${groups.length} ${groupNoun}</div>
+    <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${groupsHtml}</div>`;
   const formBodyHtml = ppState.formExpanded
     ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
     : `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formTriggerHtml}`;
