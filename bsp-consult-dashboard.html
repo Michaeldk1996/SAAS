@@ -657,6 +657,16 @@
   .modal-analysis .ms-subtab.active{ color:#fff; background:var(--accent); }
   .modal-analysis .ms-pane{ display:none; }
   .modal-analysis .ms-pane.active{ display:block; }
+  /* Set filter (Task 9) — secondary row beneath the Stats/Point-by-point pills.
+     Deliberately quieter than .ms-subtab (hairline outline, no accent fill) so
+     the primary view toggle stays the dominant control. */
+  .modal-analysis .ms-setsel{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 auto 20px; width:max-content; max-width:100%; }
+  /* width:auto + flex:0 0 auto override the global `.modal button{width:100%}`,
+     which would otherwise stretch each pill to full width and wrap it onto its
+     own line instead of laying them out as a row. */
+  .modal-analysis .ms-setbtn{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:500; letter-spacing:0.02em; color:#8b93a3; background:none; border:1px solid rgba(255,255,255,0.10); padding:5px 14px; border-radius:999px; cursor:pointer; width:auto; flex:0 0 auto; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .modal-analysis .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.22); }
+  .modal-analysis .ms-setbtn.active{ color:#e7e9ee; border-color:rgba(255,255,255,0.30); background:rgba(255,255,255,0.06); }
   /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
   .modal-analysis .pbp-wrap{ max-width:560px; margin:0 auto; }
   .modal-analysis .pbp-sethdr{ display:flex; align-items:center; justify-content:center; gap:12px; margin:20px 0 8px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280; font-weight:700; }
@@ -2214,17 +2224,28 @@ function pbpPointList(points){
 // icon on that player's side, point sequence beneath) and, for tiebreak sets, a
 // dedicated "TIEBREAK · SET n" section with one row per point — running score,
 // serve indicator, LOST SERVE on a lost serve (mini-break) and SP/MP badges.
-function buildPointByPointHtml(m, entry){
+// `setNo` null = every set (the default); a number = only that set. The set
+// filter narrows what is DISPLAYED — it never changes how a set is interpreted:
+// `isLastSet` (which decides whether a tiebreak's pending-point badge reads MP
+// or SP) is still resolved against the full match, so filtering to the decider
+// can't demote its match points to set points.
+function buildPointByPointHtml(m, entry, setNo){
   if (!entry || !Array.isArray(entry.sets) || !entry.sets.length){
     return `<div class="acomingsoon">No point-by-point log on file for this match.</div>`;
   }
   const ball = `<span class="pbp-ball">${BSP_ICONS.ball}</span>`;
   const gap = `<span class="pbp-ball-sp"></span>`;
-  const totalSets = entry.sets.length;
+  const allSets = entry.sets;
+  const totalSets = allSets.length;
+  const shownSets = setNo == null ? allSets : allSets.filter(s => Number(s.set) === Number(setNo));
+  if (!shownSets.length){
+    return `<div class="acomingsoon">No point-by-point log on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   let html = `<div class="pbp-wrap">`;
   html += `<div class="msheet-names"><span><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
         + `<span>${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
-  entry.sets.forEach((s, si) => {
+  shownSets.forEach(s => {
+    const si = allSets.indexOf(s);
     const { real, tbPts } = pbpSplitSet(s);
     const isLastSet = si === totalSets - 1;
     // Set header + final score (tiebreak points as superscripts, e.g. 7⁷ · 6⁴).
@@ -2293,12 +2314,31 @@ function ensurePointByPoint(){
   if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
   container.dataset.matchId = m.id;
   container.dataset.loaded = '';
+  _aPbpEntry = null;
   container.innerHTML = `<div class="acomingsoon">Loading point-by-point…</div>`;
   loadPointByPoint().then(data => {
     if (container.dataset.matchId !== m.id) return; // superseded by a newer open
-    container.innerHTML = buildPointByPointHtml(m, data && data[m.id]);
+    const entry = data && data[m.id];
+    _aPbpEntry = entry || null;
+    // The set filter comes from the point log itself (not m.setStats): the two
+    // are independent feeds, and a match can have a point log for a set whose
+    // box score is missing, or vice versa.
+    const setNos = (entry && Array.isArray(entry.sets))
+      ? entry.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b)
+      : [];
+    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', 'All sets')
+      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, null)}</div>`;
     container.dataset.loaded = '1';
   });
+}
+// Repaint the point log for the chosen set from the already-fetched sidecar
+// entry — the set filter never triggers another fetch.
+function switchPbpSet(el, setNo){
+  const pane = document.getElementById('msPbpPane');
+  const body = document.getElementById('msPbpBody');
+  if (!pane || !body || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  body.innerHTML = buildPointByPointHtml(_aPbpMatch, _aPbpEntry, setNo);
 }
 async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
   tier = tier || 'all';
@@ -3208,16 +3248,45 @@ function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
   const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
-  const stats = buildMatchStatsSheet(m);
+  const stats = buildMatchStatsSheet(m, null);
   if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
   return `
     <div class="ms-subtabs" role="tablist">
       <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
       <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
     </div>
-    <div class="ms-pane active" id="msStatsPane">${stats}</div>
+    <div class="ms-pane active" id="msStatsPane">
+      ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Whole match')}
+      <div id="msStatsSheet">${stats}</div>
+    </div>
     <div class="ms-pane" id="msPbpPane"></div>
   `;
+}
+// Shared set-filter pill row for both panes: "<allLabel>" + one pill per set
+// that actually has data. Rendered only when there are 2+ sets to choose
+// between — a one-set match has nothing to filter, so the control would be
+// noise. `handler` is the global fn name the pills call with the set number
+// (null = the all/whole-match view).
+function buildSetSelectorHtml(setNos, handler, allLabel){
+  if (!setNos || setNos.length < 2) return '';
+  const pills = setNos.map(n =>
+    `<button class="ms-setbtn" onclick="${handler}(this,${n})">Set ${n}</button>`
+  ).join('');
+  return `
+    <div class="ms-setsel" role="group" aria-label="Filter by set">
+      <button class="ms-setbtn active" onclick="${handler}(this,null)">${escapeHtml(allLabel)}</button>
+      ${pills}
+    </div>
+  `;
+}
+// Repaint the stat sheet for the chosen set. Reads the already-loaded match
+// object — no refetch, the per-set box scores ship inline with the match.
+function switchStatsSet(el, setNo){
+  const pane = document.getElementById('msStatsPane');
+  const sheet = document.getElementById('msStatsSheet');
+  if (!pane || !sheet || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  sheet.innerHTML = buildMatchStatsSheet(_aPbpMatch, setNo);
 }
 function switchMatchStatsTab(el, which){
   document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
@@ -3229,7 +3298,22 @@ function switchMatchStatsTab(el, which){
   pbpPane.classList.toggle('active', showPbp);
   if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
 }
-function buildMatchStatsSheet(m){
+// Set numbers (ascending) with a real per-set box score on file, or [] when the
+// feed carried no per-set rows for this match. Drives whether the set filter is
+// offered at all — a match with no set-level data shows no selector rather than
+// an empty one.
+function msheetSetNumbers(m){
+  // No match sheet means the pane is showing a "no stats"/"not finished yet"
+  // message, so a set filter over it would be offering to filter nothing.
+  if (!m.setStats || !m.matchStats) return [];
+  return Object.keys(m.setStats)
+    .map(Number)
+    .filter(n => Number.isFinite(n) && n >= 1)
+    .sort((a, b) => a - b);
+}
+// `setNo` null = whole match (the default view, unchanged); a number = that
+// set's own box score, read from the same-shaped m.setStats[n] entry.
+function buildMatchStatsSheet(m, setNo){
   // An interrupted match is the one case with real stats but no result: the feed
   // returns the full statistics block up to the moment play stopped. Show it,
   // flagged as a snapshot — everything else still waits for a final score.
@@ -3239,6 +3323,10 @@ function buildMatchStatsSheet(m){
   if (!m.matchStats) {
     return `<div class="acomingsoon">No match statistics on file for this match.</div>`;
   }
+  const stats = setNo == null ? m.matchStats : (m.setStats || {})[String(setNo)];
+  if (!stats) {
+    return `<div class="acomingsoon">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   const suspendedNote = m.interrupted
     ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
     : '';
@@ -3246,24 +3334,33 @@ function buildMatchStatsSheet(m){
     const rowsHtml = rows
       .map(([key, label, kind]) => {
         const wantFraction = MSHEET_FRACTION_KEYS.has(key);
-        const p1Raw = wantFraction && m.matchStats.p1.raw ? m.matchStats.p1.raw[key] : null;
-        const p2Raw = wantFraction && m.matchStats.p2.raw ? m.matchStats.p2.raw[key] : null;
+        const p1Raw = wantFraction && stats.p1.raw ? stats.p1.raw[key] : null;
+        const p2Raw = wantFraction && stats.p2.raw ? stats.p2.raw[key] : null;
         const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
-        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw, alwaysShow);
+        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow);
       })
       .filter(Boolean)
       .join('');
     if (!rowsHtml) return '';
     return `<div class="msheet-grouphead"><span></span><span>${groupLabel}</span><span></span></div>${rowsHtml}`;
   }).filter(Boolean).join('');
-  // Score shown beside "Stat comparison": the final score, or for a suspended
-  // match the partial score. Read defensively — an interrupted match reaches
-  // this function with finalScore null by design, so `m.finalScore.display`
-  // would throw and blank the entire sheet.
-  const headScore = (m.finalScore || m.partialScore || {}).display || '';
+  // Score shown beside the title: the final score, or for a suspended match the
+  // partial score. Read defensively — an interrupted match reaches this function
+  // with finalScore null by design, so `m.finalScore.display` would throw and
+  // blank the entire sheet. When one set is selected, show that set's own score
+  // instead of the match score, so the header can never contradict the numbers
+  // beneath it (the score array is 0-indexed; sets are 1-indexed).
+  const score = m.finalScore || m.partialScore || {};
+  let headScore = score.display || '';
+  let headTitle = 'Stat comparison';
+  if (setNo != null) {
+    headTitle = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
+    const sc = (score.sets || [])[setNo - 1];
+    headScore = sc ? `${sc.p1}-${sc.p2}` : '';
+  }
   const statHeader = headScore ? `
     <div class="msheet-head">
-      <div class="msheet-title">Stat comparison</div>
+      <div class="msheet-title">${headTitle}</div>
       <div class="msheet-sets">${headScore}</div>
     </div>
   ` : '';
@@ -3392,7 +3489,8 @@ const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 // flagged "no data" rather than faked, per the design's data-honesty requirement.
 const AODDS_MARKETS = ['Match Winner','Set 1 Winner','Handicap \u22121.5 sets','Handicap \u22123.5 games','Total Games O/U 22.5'];
 let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
-let _aPbpMatch = null; // match whose Point-by-point tab is currently open (Task 4)
+let _aPbpMatch = null; // match whose Match Stats section is currently open (Task 4; also backs the Task 9 set filter on both panes)
+let _aPbpEntry = null; // that match's already-fetched point log, kept so the Task 9 set filter can repaint without refetching
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function aOddsDash(book, idx){ return (book in AODDS_DASH) ? AODDS_DASH[book] : AODDS_DASHCYCLE[idx % AODDS_DASHCYCLE.length]; }

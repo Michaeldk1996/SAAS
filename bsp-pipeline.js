@@ -1589,6 +1589,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2TournamentHistory: null,
     extraStats: null,
     matchStats: null,
+    setStats: null,
     venue: null,
     courtSpeed: null,
     weather: null, // from Open-Meteo, independent of API-Tennis fixture match
@@ -1827,11 +1828,11 @@ function findMatchStat(matchStats, playerKey, type, name) {
   );
 }
 
-function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
-  if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
-  const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
-  if (matchStats.length === 0) return null;
-
+// Extracts both players' box scores out of an already period-filtered list of
+// raw `statistics` rows. Period-agnostic on purpose: the match sheet and each
+// per-set sheet are the identical shape built from identical stat defs, so
+// they share one extractor rather than two drifting copies.
+function extractStatPairFromRows(rows, p1Key, p2Key) {
   const extractFor = playerKey => {
     const out = {};
     // Raw won/total counts behind the ratio-based (`pct`) stats, kept so the
@@ -1840,7 +1841,7 @@ function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
     // actually returns both stat_won and stat_total for that stat.
     const raw = {};
     for (const def of MATCH_STAT_DEFS) {
-      const stat = findMatchStat(matchStats, playerKey, def.type, def.name);
+      const stat = findMatchStat(rows, playerKey, def.type, def.name);
       if (!stat) continue;
       const key = `${def.type}:${def.name}`;
       if (def.kind === 'pct') {
@@ -1865,6 +1866,46 @@ function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
   const p2 = extractFor(p2Key);
   if (Object.keys(p1).length === 0 && Object.keys(p2).length === 0) return null;
   return { p1, p2 };
+}
+
+function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
+  if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
+  const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
+  if (matchStats.length === 0) return null;
+  return extractStatPairFromRows(matchStats, p1Key, p2Key);
+}
+
+// Per-set box scores, from the same fixture's `statistics` array — the rows the
+// match sheet deliberately drops. Confirmed live against api-tennis: alongside
+// stat_period 'match' the feed emits 'set1', 'set2', ... carrying the same
+// stat names (and the same stat_won/stat_total behind the ratio stats), and
+// the per-set counts reconcile exactly to the match totals (verified on real
+// fixtures: aces 4+3+4=11; winners 18+11=29). Two real gaps, flagged rather
+// than filled: 'Points:Last 10 balls' is match-only (it has no per-set
+// meaning), and a set still in progress is simply absent until the feed
+// publishes it.
+//
+// Returns { '1': {p1,p2}, '2': {p1,p2}, ... } keyed by set number, or null when
+// the feed carries no per-set rows for this match (older/lower-tier fixtures) —
+// null is the signal for the UI to hide the set selector rather than invent one.
+function buildSetStatsFromFixture(fixture, p1Key, p2Key) {
+  if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
+  const bySet = new Map();
+  for (const s of fixture.statistics) {
+    const m = /^set\s*(\d+)$/i.exec(String(s.stat_period || '').trim());
+    if (!m) continue;
+    const setNo = parseInt(m[1], 10);
+    if (!Number.isFinite(setNo) || setNo < 1) continue;
+    if (!bySet.has(setNo)) bySet.set(setNo, []);
+    bySet.get(setNo).push(s);
+  }
+  if (bySet.size === 0) return null;
+  const out = {};
+  for (const setNo of [...bySet.keys()].sort((a, b) => a - b)) {
+    const pair = extractStatPairFromRows(bySet.get(setNo), p1Key, p2Key);
+    if (pair) out[String(setNo)] = pair;
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 // =================================================================
@@ -2217,6 +2258,7 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     partialScore: interrupted ? (sc => sc && { ...sc, winner: null })(buildFinalScore(fixture)) : null,
     finalScore: interrupted ? null : buildFinalScore(fixture),
     matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
+    setStats: buildSetStatsFromFixture(fixture, p1Key, p2Key),
   };
 
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
@@ -2364,6 +2406,7 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     p2TournamentHistory: null,
     extraStats: null,
     matchStats: null,
+    setStats: null,
     venue: null,
     courtSpeed: null,
     weather: null,
