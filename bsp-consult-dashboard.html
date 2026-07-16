@@ -5985,6 +5985,7 @@ const TOURX_METRICS = [
   { key: 'winnersPct',           label: 'Winners (% of total points)',         short: 'Winners',         kind: 'pct' },
   { key: 'unforcedErrorsPct',    label: 'Unforced errors (% of total points)', short: 'Unforced Errors', kind: 'pct' },
   { key: 'winnersUnforcedRatio', label: 'Winners / Unforced Errors Ratio',     short: 'W/UE Ratio',      kind: 'ratio' },
+  { key: 'totalPointsWonPct',    label: 'Total Points Won %',                  short: 'Total Points Won', kind: 'pct' },
 ];
 // Human round labels for a 128-draw; data rounds are R1..SF (index-aligned).
 const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
@@ -6340,6 +6341,19 @@ function tourxBuildTournament(name){
     // no-bye contiguous case.
     let playedIdx = -1;
     (p.rounds || []).forEach(r => { const idx = rounds.indexOf(r.round); if (idx > playedIdx) playedIdx = idx; });
+    // A bye never appears in the feed — it is the ABSENCE of a match at a round the
+    // tournament did play, before the player's first appearance. Round labels are
+    // tournament-wide (R1 is the opener the rest of the draw played), so a player
+    // whose first match is labelled R2 sat out R1 on a bye. Flag those leading slots
+    // so the report can print "bye" instead of an ambiguous blank.
+    let firstIdx = -1;
+    (p.rounds || []).forEach(r => { const idx = rounds.indexOf(r.round); if (idx >= 0 && (firstIdx < 0 || idx < firstIdx)) firstIdx = idx; });
+    const byes = new Array(rounds.length).fill(false);
+    for (let i = 0; i < firstIdx; i++) byes[i] = true;
+    // Draw depth counts byes as rounds survived: a bye recipient who has won once is
+    // two rounds deep, exactly like a player who won two matches. nRounds (matches
+    // actually played) stays untouched for every other caller.
+    const drawDepth = playedIdx + 1;
     const wonLast = maxWonIdx === playedIdx && playedIdx >= 0;
     // finishRound: the round they exited at (lost), or the next round they
     // advanced to if they won their last recorded match.
@@ -6351,7 +6365,7 @@ function tourxBuildTournament(name){
     // "reached" — human label for the deepest round the player has data for
     // (used by the Head-to-head pickers); advance one round if they won it.
     const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_PHRASE[finishRound] || '—';
-    return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, data, opponents, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
+    return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, data, opponents, byes, drawDepth, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
   });
   return { name, rounds, roundLabels, players, field: t.fieldAverage || null };
 }
@@ -6569,25 +6583,43 @@ function tourxMultiLineChartSvg(series, field, kind, roundLabels, hi){
     if (field[li] != null) s += `<text x="${X(li) - 1}" y="${Y(field[li]) - 5}" text-anchor="end" font-size="8" font-family="${mono}" fill="rgba(255,255,255,0.32)">Field avg</text>`;
   }
 
+  // A player's plotted span runs from the FIRST round they have a value for to the
+  // last. Leading nulls are byes — the player entered the draw a round late — so
+  // plotting must not stop dead at index 0 for them; a null AFTER they've started is
+  // a round not played yet and still ends the line. For a player with no bye startI
+  // is 0, which is exactly the previous behaviour.
+  const spanOf = sr => {
+    let startI = -1;
+    for (let i = 0; i < n; i++){ if (sr.vals[i] != null){ startI = i; break; } }
+    if (startI < 0) return null;
+    let lastI = startI;
+    for (let i = startI; i < n; i++){ if (sr.vals[i] == null) break; lastI = i; }
+    return { startI, lastI };
+  };
+
   // Player areas (selected only) + lines (bold if selected, thin/faint if not).
   series.forEach((sr, si) => {
-    let lastI = -1;
+    const sp = spanOf(sr);
+    if (!sp) return;
+    const startI = sp.startI, lastI = sp.lastI;
     const pts = [];
-    for (let i = 0; i < n; i++){ if (sr.vals[i] == null) break; pts.push(X(i) + ',' + Y(sr.vals[i])); lastI = i; }
-    if (lastI < 0) return;
+    for (let i = startI; i <= lastI; i++) pts.push(X(i) + ',' + Y(sr.vals[i]));
     if (sr.on){
-      let d = 'M ' + X(0) + ' ' + Y(sr.vals[0]);
-      for (let i = 0; i <= lastI; i++) d += ' L ' + X(i) + ' ' + Y(sr.vals[i]);
-      d += ' L ' + X(lastI) + ' ' + baseY + ' L ' + X(0) + ' ' + baseY + ' Z';
+      let d = 'M ' + X(startI) + ' ' + Y(sr.vals[startI]);
+      for (let i = startI; i <= lastI; i++) d += ' L ' + X(i) + ' ' + Y(sr.vals[i]);
+      d += ' L ' + X(lastI) + ' ' + baseY + ' L ' + X(startI) + ' ' + baseY + ' Z';
       s += `<path d="${d}" fill="${sr.color}" fill-opacity="0.06"/>`;
     }
     s += `<polyline points="${pts.join(' ')}" fill="none" stroke="${sr.color}" stroke-width="${sr.on ? 2 : 1}" opacity="${sr.on ? 1 : 0.3}" stroke-linecap="round" stroke-linejoin="round"/>`;
   });
 
-  // Markers — selected players only.
+  // Markers — selected players only. A bye recipient's first tournament is a single
+  // point until they play again; the marker is what makes them visible on the chart.
   series.forEach((sr, si) => {
     if (!sr.on) return;
-    for (let i = 0; i < n; i++){ if (sr.vals[i] == null) break; s += `<circle cx="${X(i)}" cy="${Y(sr.vals[i])}" r="2.4" fill="${sr.color}" stroke="#0b0c10" stroke-width="1"/>`; }
+    const sp = spanOf(sr);
+    if (!sp) return;
+    for (let i = sp.startI; i <= sp.lastI; i++) s += `<circle cx="${X(i)}" cy="${Y(sr.vals[i])}" r="2.4" fill="${sr.color}" stroke="#0b0c10" stroke-width="1"/>`;
   });
 
   // X-axis round labels — R128 (and any app-highlighted round) emphasised.
@@ -6600,8 +6632,9 @@ function tourxMultiLineChartSvg(series, field, kind, roundLabels, hi){
   series.forEach((sr, si) => {
     if (!sr.on) return;
     const opp = sr.opps || [];
-    for (let i = 0; i < n; i++){
-      if (sr.vals[i] == null) break;
+    const sp = spanOf(sr);
+    if (!sp) return;
+    for (let i = sp.startI; i <= sp.lastI; i++){
       const tid = `${uid}_s${si}_${i}`;
       s += `<circle cx="${X(i)}" cy="${Y(sr.vals[i])}" r="11" fill="transparent" style="cursor:pointer;" onmouseenter="tourxTipShow('${tid}')" onmouseleave="tourxTipHide('${tid}')" onclick="tourxTipPin('${tid}')"/>`;
       const txt = 'vs ' + (opp[i] ? opp[i] : '—');
@@ -6626,12 +6659,22 @@ function tourxCmpTableHtml(series, field, kind, roundLabels, hi){
   const head = `<div style="display:grid;grid-template-columns:82px repeat(${n},minmax(0,1fr));column-gap:4px;padding:0 2px 5px;">
       <span></span>${roundLabels.map((r, i) => `<span style="text-align:right;font-size:9.5px;font-weight:${(i === 0 || i === hi) ? 700 : 400};font-family:'IBM Plex Mono',monospace;color:${(i === 0 || i === hi) ? '#9aa3b2' : '#5b6472'};background:${tint(i)};border-radius:4px;padding:2px 4px;">${r}</span>`).join('')}
     </div>`;
-  const rowHtml = (name, nameColor, nameWeight, vals, valColor) => `<div style="display:grid;grid-template-columns:82px repeat(${n},minmax(0,1fr));column-gap:4px;padding:2.5px 2px;">
+  // A bye slot reads "bye", not "·". The two mean different things: "·" is a round
+  // with no data (not played yet, or a missing stat sheet), while "bye" is a round
+  // the player was never scheduled for — so the gap before their opener is explained
+  // rather than looking like a hole in the data.
+  const cellHtml = (i, vals, valColor, byes) => {
+    const bye = !!(byes && byes[i]);
+    const txt = bye ? 'bye' : (vals[i] == null ? '·' : tourxFmt(vals[i], kind));
+    const col = bye ? '#5b6472' : valColor;
+    return `<span style="text-align:right;font-size:11px;font-family:'IBM Plex Mono',monospace;color:${col};${bye ? 'font-style:italic;' : ''}background:${tint(i)};border-radius:4px;padding:2px 4px;">${txt}</span>`;
+  };
+  const rowHtml = (name, nameColor, nameWeight, vals, valColor, byes) => `<div style="display:grid;grid-template-columns:82px repeat(${n},minmax(0,1fr));column-gap:4px;padding:2.5px 2px;">
       <span style="font-size:11px;font-weight:${nameWeight};color:${nameColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tourxEsc(name)}</span>
-      ${Array.from({ length: n }, (_, i) => `<span style="text-align:right;font-size:11px;font-family:'IBM Plex Mono',monospace;color:${valColor};background:${tint(i)};border-radius:4px;padding:2px 4px;">${vals[i] == null ? '·' : tourxFmt(vals[i], kind)}</span>`).join('')}
+      ${Array.from({ length: n }, (_, i) => cellHtml(i, vals, valColor, byes)).join('')}
     </div>`;
-  const rows = series.map(sr => rowHtml(lastName(sr.name), sr.color, 600, sr.vals, '#8b93a3')).join('');
-  const fieldRow = field.length ? rowHtml('Field avg', '#5b6472', 500, field, '#5b6472') : '';
+  const rows = series.map(sr => rowHtml(lastName(sr.name), sr.color, 600, sr.vals, '#8b93a3', sr.byes)).join('');
+  const fieldRow = field.length ? rowHtml('Field avg', '#5b6472', 500, field, '#5b6472', null) : '';
   return `<div style="margin-top:8px;">${head}${rows}${fieldRow}</div>`;
 }
 
@@ -6655,7 +6698,7 @@ function tourxProgressionGridHtml(players, shownMetrics, field){
       const val = avg != null ? tourxFmt(avg, m.kind) : '·';
       return `<span onclick="tourxTogglePP('${tourxEsc(p.name)}')" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:400;cursor:pointer;opacity:${on ? 1 : 0.32};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:${c};flex:none;"></span><span style="color:#9aa3b2;">${tourxEsc(lastName(p.name))}</span><span style="font-family:'IBM Plex Mono',monospace;color:#cfd6e6;">${val}</span></span>`;
     }).join('');
-    const series = players.map((p, i) => ({ name: p.name, color: TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length], vals: p.data[m.key] || [], opps: p.opponents || [], on: !off[p.name] }));
+    const series = players.map((p, i) => ({ name: p.name, color: TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length], vals: p.data[m.key] || [], opps: p.opponents || [], byes: p.byes || null, on: !off[p.name] }));
     const svg = tourxMultiLineChartSvg(series, fld, m.kind, tourxActiveLabels, hi);
     const table = tourxCmpTableHtml(series, fld, m.kind, tourxActiveLabels, hi);
     return `<div style="min-width:0;">
@@ -6910,22 +6953,21 @@ function tourxPlayerViewHtml(T){
   // Comparison mode — one or more players selected: the Handoff #15 progression
   // grid (six panels, spotlight toggles). Legend + averages callout above it.
   if (selPlayers.length){
-    // Progression needs at least two data points, so a player is only chartable
-    // once they've played 2+ matches. Drop any selected player with a single
-    // match; if none qualify, show the "needs 2 matches" message instead of a
-    // meaningless one-point chart.
-    const eligible = selPlayers.filter(p => p.data && p.nRounds >= 2 && !p.eliminated);
+    // Chartable once a player is two rounds INTO THE DRAW — which a bye recipient is
+    // after a single win, so depth is measured by drawDepth (byes counted), not by
+    // matches played. Their bye round is printed as "bye" rather than plotted.
+    const eligible = selPlayers.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated);
     if (!eligible.length){
       const who = selPlayers.length === 1
-        ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> has only played one match so far`
-        : `None of the selected players have played 2 matches yet`;
-      const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once a player has played at least <b style="color:#c3ccdb;">2 matches</b> in the tournament — a single match is one data point, so there's no trend to plot. ${who}; the progression chart appears here automatically once they've played their second match.</div>`;
+        ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> is only one round in so far`
+        : `None of the selected players have reached the second round yet`;
+      const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once a player is <b style="color:#c3ccdb;">2 rounds</b> into the tournament — a single round is one data point, so there's no trend to plot. ${who}; the progression chart appears here automatically once they've come through their next round. Players who received a first-round <b style="color:#c3ccdb;">bye</b> are included, with "bye" shown in place of that round's figure.</div>`;
       return controls + msg;
     }
     const legend = tourxPPLegendHtml(eligible);
     const names = eligible.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
     const dropped = selPlayers.length - eligible.length;
-    const droppedNote = dropped ? ` <b style="color:#eef2f8;">${dropped} selected player${dropped === 1 ? '' : 's'}</b> with a single match ${dropped === 1 ? 'is' : 'are'} hidden until they've played twice.` : '';
+    const droppedNote = dropped ? ` <b style="color:#eef2f8;">${dropped} selected player${dropped === 1 ? '' : 's'}</b> only one round in ${dropped === 1 ? 'is' : 'are'} hidden until they've come through the next round.` : '';
     const callout = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
         <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
         <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">The <b style="color:#eef2f8;">${names}</b> figures beside each chart title are each player's <b style="color:#eef2f8;">average across all rounds they played</b> — not a single round's value. <b style="color:#eef2f8;">Tap a player's name</b> beside any chart to spotlight or mute them across every chart.${droppedNote}</span>
@@ -6937,10 +6979,10 @@ function tourxPlayerViewHtml(T){
   // who has played 2+ matches gets a progression line automatically (a chart needs
   // at least two points to show a trend), so the report is useful without picking
   // players first. The search above still narrows to specific players afterwards.
-  const progressable = T.players.filter(p => p.data && p.nRounds >= 2 && !p.eliminated)
-    .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.nRounds - a.nRounds));
+  const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated)
+    .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.drawDepth - a.drawDepth));
   if (!progressable.length){
-    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">The player progression chart is only available once players have played <b style="color:#c3ccdb;">2 matches</b>. No player at <b style="color:#c3ccdb;">${T.name}</b> has completed a second round yet — the chart appears here automatically from the second round onward. You can still search for a player above once they've played twice.</div>`;
+    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">The player progression chart is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the chart appears here automatically from the second round onward. You can still search for a player above once they have.</div>`;
     return controls + msg;
   }
   const autoPlayers = progressable.slice(0, TOURX_PP_CAP);
@@ -6948,7 +6990,7 @@ function tourxPlayerViewHtml(T){
   const autoNames = autoPlayers.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
   const autoNote = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
       <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
-      <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">Auto-showing <b style="color:#eef2f8;">${autoPlayers.length} player${autoPlayers.length === 1 ? '' : 's'}</b> who've played 2+ matches (<b style="color:#eef2f8;">${autoNames}</b>) — progression appears automatically from the second round onward. <b style="color:#eef2f8;">Search above</b> to focus on specific players. Figures beside each chart are each player's average across all rounds; <b style="color:#eef2f8;">tap a name</b> to spotlight or mute them across every chart.</span>
+      <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">Auto-showing <b style="color:#eef2f8;">${autoPlayers.length} player${autoPlayers.length === 1 ? '' : 's'}</b> who are 2+ rounds into the draw (<b style="color:#eef2f8;">${autoNames}</b>) — progression appears automatically from the second round onward. <b style="color:#eef2f8;">Search above</b> to focus on specific players. Figures beside each chart are each player's average across all rounds; <b style="color:#eef2f8;">tap a name</b> to spotlight or mute them across every chart.</span>
     </div>`;
   return controls + `<div style="margin-top:22px;">${legend}${autoNote}${tourxCompareCardsHtml(autoPlayers, TOURX_METRICS, field, 'progress')}</div>`;
 }

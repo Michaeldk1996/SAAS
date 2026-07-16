@@ -1916,6 +1916,7 @@ const PROGRESSION_METRIC_DEFS = [
 const PROGRESSION_DERIVED_METRIC_KEYS = [
   'firstServePct', 'firstServeWonPct', 'secondServeWonPct',
   'winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio',
+  'totalPointsWonPct',
 ];
 
 // Extracts the 6 derived progression metrics for one player from one
@@ -1949,6 +1950,10 @@ function extractProgressionMetrics(matchStats, playerKey) {
     winnersUnforcedRatio: (metrics.unforcedErrors != null && metrics.unforcedErrors > 0 && metrics.winners != null)
       ? Math.round((metrics.winners / metrics.unforcedErrors) * 100) / 100
       : null,
+    // Share of all points played that the player won — already derived from the
+    // feed's own won/total, so it needs no winners/UE data (which this feed is
+    // routinely missing) and is populated for every match that has a stat sheet.
+    totalPointsWonPct: metrics.totalPointsWonPct,
   };
 }
 
