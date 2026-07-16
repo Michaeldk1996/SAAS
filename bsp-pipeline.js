@@ -1759,6 +1759,17 @@ function formatSetScore(scoreFirst, scoreSecond) {
 // Builds the final-score summary for a finished fixture from its real
 // `scores` array. Returns null (shown as "pending" client-side, never
 // blank/guessed) if the fixture has no usable scores data.
+// A match the API has stopped mid-play: play is suspended (rain, bad light,
+// curfew) but no result exists yet. The feed marks these `event_status:
+// "Interrupted"` with `event_live: 0` — NOT live (nothing is being played right
+// now) and NOT finished (no event_winner). They still carry the full
+// `statistics` block up to the moment play stopped, so the box score is real —
+// it's simply frozen until play resumes. Deliberately kept OUT of the
+// Finished/Retired/Walk Over lists used by the career-record aggregates: an
+// undecided match must never count toward a win/loss record.
+const INTERRUPTED_STATUSES = ['Interrupted', 'Suspended'];
+const isInterruptedFixture = f => INTERRUPTED_STATUSES.includes(f.event_status);
+
 function buildFinalScore(fixture) {
   if (!Array.isArray(fixture.scores) || fixture.scores.length === 0) return null;
   const sorted = [...fixture.scores].sort((a, b) => Number(a.score_set) - Number(b.score_set));
@@ -2130,6 +2141,13 @@ async function fetchApiTennisMatchOdds(eventKey) {
 
 async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
+  // Task 6: the same builder also handles suspended matches. Everything about
+  // them is identical to a completed match (real stats, real per-set score, real
+  // odds) EXCEPT that there's no result — so the score goes on `partialScore`
+  // and `finalScore` stays null. That split is load-bearing: `finalScore` is what
+  // every "this match is decided" code path keys off (winner tick, Past tab,
+  // point-by-point, career records), and none of those may fire without a result.
+  const interrupted = isInterruptedFixture(fixture);
   // Same real, already-provided-by-the-API string format used by h2hRoundLabel()
   // client-side ("ATP <Name> - <Round>") — take the tournament-name segment.
   const tour = fixture.tournament_round
@@ -2184,11 +2202,16 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     // day they were played, flagged `historical`).
     weather: null,
     live: false,
-    liveStatus: null,
+    liveStatus: interrupted ? fixture.event_status : null,
     liveScore: null,
     liveGameScore: null,
     liveServer: null,
-    finalScore: buildFinalScore(fixture),
+    interrupted,
+    // Score at the moment play stopped, same shape/format as finalScore (so the
+    // card and modal render it identically) but with winner forced null — the
+    // feed leaves event_winner unset for a suspended match and we never infer one.
+    partialScore: interrupted ? (sc => sc && { ...sc, winner: null })(buildFinalScore(fixture)) : null,
+    finalScore: interrupted ? null : buildFinalScore(fixture),
     matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
   };
 
@@ -3148,6 +3171,10 @@ async function runPipeline() {
   const seenUpcomingKeys = new Set();
   const upcomingFixtures = apiTennisFixtures.filter(f => {
     if (['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) return false;
+    // An interrupted match is already in play — it's built by the completed-match
+    // builder below (with its partial score + stats), so it must not also be
+    // surfaced here as a still-scheduled fixture.
+    if (isInterruptedFixture(f)) return false;
     if (f.event_live === '1') return false;
     if (f.event_qualification === 'True') return false;
     if (f.event_winner === 'First Player' || f.event_winner === 'Second Player') return false;
@@ -3181,9 +3208,12 @@ async function runPipeline() {
   console.log(`Fetching finished fixtures (${twoDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
   const pastFixtures = await fetchApiTennisFixtures(twoDaysAgo, today);
   const finishedPastFixtures = pastFixtures.filter(f =>
-    ['Finished', 'Retired', 'Walk Over'].includes(f.event_status) && f.event_qualification !== 'True'
+    (['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || isInterruptedFixture(f))
+    && f.event_qualification !== 'True'
   );
-  console.log(`Found ${finishedPastFixtures.length} finished matches in the 3-day trailing window (incl. today).`);
+  const interruptedCount = finishedPastFixtures.filter(isInterruptedFixture).length;
+  console.log(`Found ${finishedPastFixtures.length} played matches in the 3-day trailing window (incl. today)`
+    + ` — ${interruptedCount} of them interrupted/suspended (partial score + stats, no result).`);
   for (const fixture of finishedPastFixtures) {
     const pastMatch = await buildPastMatchObject(fixture, surfaceMap, venueMap);
     // A match that finished TODAY may already be present as a scoreless
@@ -3193,7 +3223,10 @@ async function runPipeline() {
     // past results (which never share this matchup+window) are left untouched.
     const key = pairKey(pastMatch.p1, pastMatch.p2);
     for (let i = matches.length - 1; i >= 0; i--) {
-      if (!matches[i].finalScore && pairKey(matches[i].p1, matches[i].p2) === key) {
+      // `!finalScore` alone would also match an interrupted card (which
+      // deliberately has none) and delete the very card just built for it, so
+      // suspended matches are explicitly exempt from placeholder cleanup.
+      if (!matches[i].finalScore && !matches[i].interrupted && pairKey(matches[i].p1, matches[i].p2) === key) {
         matches.splice(i, 1);
       }
     }

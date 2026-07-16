@@ -27,6 +27,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MATCHES = os.path.join(HERE, 'matches.json')
 API_BASE = 'https://api.api-tennis.com/tennis/'
 FINISHED = ('Finished', 'Retired', 'Walk Over')
+# Suspended mid-play (rain/light/curfew): not live, not decided. Mirrors
+# INTERRUPTED_STATUSES in bsp-pipeline.js — keep the two in step.
+INTERRUPTED = ('Interrupted', 'Suspended')
 # Preferred single bookmaker for the headline (m.odds) line, in order.
 BOOKMAKER_PREF = ('bet365', 'Betano', '1xBet', 'Pinnacle', 'Marathonbet',
                   'Unibet', '888sport', 'William Hill', 'Betfair')
@@ -212,7 +215,7 @@ def main():
             continue
         index[(f.get('event_date'), frozenset({str(fk), str(sk)}))] = f
 
-    finals = lives = unchanged = odds_added = 0
+    finals = lives = unchanged = odds_added = interrupted_n = 0
     for m in matches:
         p1k, p2k = m.get('p1Key'), m.get('p2Key')
         if p1k is None or p2k is None:
@@ -237,6 +240,8 @@ def main():
 
         if f.get('event_live') == '1':
             m['live'] = True
+            m['interrupted'] = False
+            m['partialScore'] = None
             m['liveStatus'] = f.get('event_status')
             m['liveScore'] = build_live_score(f, p1_is_first)
             m['liveGameScore'] = f.get('event_game_result') or None
@@ -251,10 +256,31 @@ def main():
             if fs:
                 m['finalScore'] = fs
                 m['live'] = False
+                # A suspended match that has now resumed and finished: clear the
+                # interruption state in the SAME pass that writes the result.
+                # Otherwise the card would carry a final score while still
+                # labelled "Interrupted" until the next pipeline run (this
+                # refresher runs every 10 min, the pipeline every 15).
+                m['interrupted'] = False
+                m['partialScore'] = None
                 m['liveStatus'] = m['liveScore'] = m['liveGameScore'] = m['liveServer'] = None
                 finals += 1
             else:
                 unchanged += 1
+        elif f.get('event_status') in INTERRUPTED:
+            # Play is suspended: no result to write, but the partial score is
+            # real and keeps moving whenever play resumes. Refresh it from the
+            # fixture we already fetched (no extra call). Stats stay whatever the
+            # pipeline last wrote — this refresher never touches them.
+            ps = build_final_score(f, p1_is_first)
+            if ps:
+                ps['winner'] = None   # never infer a winner for an undecided match
+                m['partialScore'] = ps
+            m['interrupted'] = True
+            m['live'] = False
+            m['liveStatus'] = f.get('event_status')
+            m['finalScore'] = None
+            interrupted_n += 1
         else:
             unchanged += 1
 
@@ -262,7 +288,7 @@ def main():
         json.dump(matches, fh, indent=2, ensure_ascii=False)
 
     print(f'Refreshed matches.json: {finals} final scores, {lives} live, '
-          f'{odds_added} odds added, '
+          f'{interrupted_n} interrupted/suspended, {odds_added} odds added, '
           f'{unchanged} without a returned result (left as-is).')
 
 

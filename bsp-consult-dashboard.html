@@ -646,6 +646,10 @@
   .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
   .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
   .modal-analysis .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
+  /* Banner above the stat sheet of a suspended match: these numbers are real but
+     frozen mid-match, so they must never be read as a completed box score. */
+  .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,0.08); border-left:2px solid #8b93a3; border-radius:10px; background:rgba(255,255,255,0.025); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#cfd4de; }
+  .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
   .modal-analysis .ms-subtabs{ display:flex; gap:4px; justify-content:center; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:999px; padding:3px; width:max-content; max-width:100%; margin:0 auto 22px; }
   .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#8b93a3; background:none; border:none; padding:6px 18px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease; }
@@ -1639,6 +1643,11 @@ function matchDayBucket(m){
   if (matchDay === twoDaysAgo) return 'daymin2';
   if (matchDay === yesterday) return 'yesterday';
   if (matchDay === today) {
+    // A suspended match is still today's match, in progress — it belongs on the
+    // Today tab. Without this it falls through to the start-time check below,
+    // buckets to 'past' the moment its start time passes, and then vanishes: the
+    // Past tab only admits finished matches, so nothing would render it at all.
+    if (m.interrupted) return 'today';
     if (m.live) return 'past';
     const matchDateTime = new Date(`${m.date}T${m.time || '00:00'}:00Z`);
     return matchDateTime < now ? 'past' : 'today';
@@ -1650,6 +1659,11 @@ function matchDayBucket(m){
 }
 
 function statusLabel(m){
+  // Suspended mid-play: the feed's own word for it ("Interrupted"/"Suspended"),
+  // in the same label slot as "Match completed" / "Yesterday". Checked before
+  // m.live because an interrupted match is explicitly NOT live — nothing is
+  // being played while it's suspended.
+  if (m.interrupted) return m.liveStatus || 'Interrupted';
   if (m.live) return `LIVE${m.liveStatus ? ' · ' + m.liveStatus : ''}`;
   const day = matchDayBucket(m);
   if (day === 'past') return 'Finished';
@@ -1787,7 +1801,14 @@ function renderMatches(){
     const dayBucket = matchDayBucket(m);
     const isPastDay = dayBucket === 'daymin2' || dayBucket === 'yesterday';
     const finalScore = m.finalScore || null;
-    const bookmakerLine = finalScore
+    // Score at the point of suspension. Same shape as finalScore, so it renders
+    // through the same code paths — but it is NEVER a result, so it must not
+    // reach anything that marks a winner. Null for every other match, which is
+    // what keeps the completed-card layout below byte-identical.
+    const partialScore = (m.interrupted && m.partialScore) ? m.partialScore : null;
+    const bookmakerLine = partialScore
+      ? 'Match suspended · no result yet'
+      : finalScore
       ? 'Match completed'
       : isPastDay
         ? 'Result pending'
@@ -1811,7 +1832,9 @@ function renderMatches(){
       h2hInlineHtml = `<span class="mx-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
     }
     let scoreLineHtml = '';
-    if (m.live) {
+    if (partialScore) {
+      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
+    } else if (m.live) {
       scoreLineHtml = `<div class="mx-livescore">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (finalScore) {
       scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${finalScore.display}<span class="note">Final score</span></div>`;
@@ -1824,12 +1847,16 @@ function renderMatches(){
     // number (winner in the accent colour), regardless of whether the fixture
     // also has pre-match odds. Odds/implied % stay available in "See full
     // analysis". Only genuinely upcoming matches lead with the odds.
-    const p1Color = finalScore ? (p1IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
-    const p2Color = finalScore ? (p2IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (!p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
-    const p1MainDisplay = finalScore ? String(finalScore.p1Sets) : (hasOdds ? p1OddsDisplay : (isPastDay ? '—' : ''));
-    const p1SubDisplay = finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p1?.price) : (isPastDay ? 'Sets' : ''));
-    const p2MainDisplay = finalScore ? String(finalScore.p2Sets) : (hasOdds ? p2OddsDisplay : (isPastDay ? '—' : ''));
-    const p2SubDisplay = finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p2?.price) : (isPastDay ? 'Sets' : ''));
+    // Suspended match: lead with the sets score (same as a completed card), but
+    // in the neutral colour on BOTH sides — tinting one side accent would read as
+    // "this player won", which is exactly what must not be shown until there's a
+    // confirmed result.
+    const p1Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p1IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
+    const p2Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p2IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (!p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
+    const p1MainDisplay = partialScore ? String(partialScore.p1Sets) : finalScore ? String(finalScore.p1Sets) : (hasOdds ? p1OddsDisplay : (isPastDay ? '—' : ''));
+    const p1SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p1?.price) : (isPastDay ? 'Sets' : ''));
+    const p2MainDisplay = partialScore ? String(partialScore.p2Sets) : finalScore ? String(finalScore.p2Sets) : (hasOdds ? p2OddsDisplay : (isPastDay ? '—' : ''));
+    const p2SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p2?.price) : (isPastDay ? 'Sets' : ''));
     // Opening/closing odds on a finished card. Both are derived by the pipeline
     // from the real stored odds timeline (m.openingOdds = first snapshot,
     // m.closingOdds = last snapshot before start). Closing falls back to the
@@ -3200,12 +3227,18 @@ function switchMatchStatsTab(el, which){
   if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
 }
 function buildMatchStatsSheet(m){
-  if (m.live || !m.finalScore) {
+  // An interrupted match is the one case with real stats but no result: the feed
+  // returns the full statistics block up to the moment play stopped. Show it,
+  // flagged as a snapshot — everything else still waits for a final score.
+  if (m.live || (!m.finalScore && !m.interrupted)) {
     return `<div class="acomingsoon">Box score isn't available until the match finishes.</div>`;
   }
   if (!m.matchStats) {
     return `<div class="acomingsoon">No match statistics on file for this match.</div>`;
   }
+  const suspendedNote = m.interrupted
+    ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
+    : '';
   const groups = MATCH_STAT_ORDER.map(([, groupLabel, rows]) => {
     const rowsHtml = rows
       .map(([key, label, kind]) => {
@@ -3220,13 +3253,19 @@ function buildMatchStatsSheet(m){
     if (!rowsHtml) return '';
     return `<div class="msheet-grouphead"><span></span><span>${groupLabel}</span><span></span></div>${rowsHtml}`;
   }).filter(Boolean).join('');
-  const statHeader = m.finalScore.display ? `
+  // Score shown beside "Stat comparison": the final score, or for a suspended
+  // match the partial score. Read defensively — an interrupted match reaches
+  // this function with finalScore null by design, so `m.finalScore.display`
+  // would throw and blank the entire sheet.
+  const headScore = (m.finalScore || m.partialScore || {}).display || '';
+  const statHeader = headScore ? `
     <div class="msheet-head">
       <div class="msheet-title">Stat comparison</div>
-      <div class="msheet-sets">${m.finalScore.display}</div>
+      <div class="msheet-sets">${headScore}</div>
     </div>
   ` : '';
   return `
+    ${suspendedNote}
     <div class="msheet-names"><span><span class="mstat-dot p1"></span>${m.p1}</span><span>${m.p2}<span class="mstat-dot p2"></span></span></div>
     ${statHeader}
     ${groups ? `<div class="msheet-table">${groups}</div>` : '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
@@ -3842,6 +3881,12 @@ function openAnalysisModal(matchId){
     if (m.finalScore.winner === 'p1') p1Pill.className = 'aodds p1';
     else if (m.finalScore.winner === 'p2') p2Pill.className = 'aodds p2';
     setLine.innerHTML = setSpans(m.finalScore.sets);
+  } else if (m.interrupted && m.partialScore) {
+    // Suspended match — sets won so far + per-set line. Both pills stay neutral
+    // (no p1/p2 tint): tinting is the winner cue, and there's no winner yet.
+    p1Pill.textContent = String(m.partialScore.p1Sets);
+    p2Pill.textContent = String(m.partialScore.p2Sets);
+    setLine.innerHTML = setSpans(m.partialScore.sets);
   } else if (m.live && (m.liveScore || []).length) {
     // Live match — sets won so far + per-set line.
     const p1Won = m.liveScore.filter(s => s.p1 > s.p2).length;
@@ -3867,7 +3912,10 @@ function openAnalysisModal(matchId){
 
   const liveBar = document.getElementById('aLiveBar');
   liveBar.classList.remove('completed');
-  if (m.live) {
+  if (m.interrupted) {
+    liveBar.style.display = '';
+    liveBar.innerHTML = `⏸ ${m.liveStatus || 'Interrupted'}${m.partialScore ? ' · ' + m.partialScore.display : ''} <span class="anote" style="margin:0;">match suspended · no result yet</span>`;
+  } else if (m.live) {
     liveBar.style.display = '';
     liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
   } else if (m.finalScore) {
