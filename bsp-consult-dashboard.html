@@ -5476,6 +5476,22 @@ function progressionPlot(rounds, series, formatValue){
     });
     if (!path) return;
 
+    // A player who has not survived two rounds is drawn as a bar at the single
+    // round they posted, while their opponent may still be a line on the same
+    // plot: one point is a reading, not a trend, and drawing it as a stub line
+    // would claim a direction the data does not have.
+    if (s.bar) {
+      const w = 6;
+      pts.filter(Boolean).forEach(p => {
+        pathsHtml += `<rect x="${p.x - w / 2}" y="${p.y}" width="${w}" height="${Math.max(0, 100 - p.y)}" fill="${s.color}" fill-opacity="${s.fillOpacity}"/>`;
+        pathsHtml += `<line x1="${p.x - w / 2}" y1="${p.y}" x2="${p.x + w / 2}" y2="${p.y}" stroke="${s.color}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+        const tip = p.opp ? `<div class="tptip" style="${p.y <= 50 ? 'top:26px;' : 'bottom:26px;'}">vs ${p.opp}</div>` : '';
+        overlayHtml += `<div class="tpdot" style="left:${p.x}%; top:${p.y}%;">${tip}</div>`;
+      });
+      solid.push({ dashed: false, color: s.color, pts: pts.filter(Boolean) });
+      return;
+    }
+
     if (s.dashed) {
       pathsHtml += `<path d="${path.trim()}" fill="none" stroke="${s.color}" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>`;
       solid.push({ dashed: true, pts: pts.filter(Boolean) });
@@ -5619,8 +5635,12 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
   const RANKED = PROGRESSION_METRIC_ORDER.filter(([key]) => key !== 'winnersUnforcedRatio');
   const p1Surname = (m.p1 || '').trim().split(' ').pop();
   const p2Surname = (m.p2 || '').trim().split(' ').pop();
-  const p1Latest = p1Data && p1Data.rounds.length ? p1Data.rounds[p1Data.rounds.length - 1] : null;
-  const p2Latest = p2Data && p2Data.rounds.length ? p2Data.rounds[p2Data.rounds.length - 1] : null;
+  // Same round the charts and bars plot for each player — their deepest WIN, not
+  // their last match. Reading the last match here made the prose quote Sonego's
+  // losing R2 (54% / 71.4%) while the chart beside it plotted his winning R1
+  // (59% / 75%): two different numbers for one player on one card.
+  const p1Latest = progressionShownRound(p1Data, progressionPlayerDepth(p1Data, data.rounds));
+  const p2Latest = progressionShownRound(p2Data, progressionPlayerDepth(p2Data, data.rounds));
   const latestBySurname = { [p1Surname]: p1Latest, [p2Surname]: p2Latest };
   const otherSurname = (surname) => surname === p1Surname ? p2Surname : p1Surname;
 
@@ -5786,6 +5806,16 @@ function progressionPlayerDepth(p, rounds){
   return { roundsWon, byes, depth: roundsWon + byes, lastWon, firstIdx };
 }
 
+// The single round that represents a player anywhere in this section — the
+// deepest one they WON. Every surface that names a number for a player (chart
+// readouts, bars, and the written summary) must agree on this, or the prose
+// quotes one round while the chart plots another. A player who lost their
+// opener never won a round, so fall back to that opener as their only box score.
+function progressionShownRound(pData, d){
+  if (!pData || !pData.rounds.length) return null;
+  return (d && d.lastWon) || pData.rounds[pData.rounds.length - 1];
+}
+
 function progressionRoundState(m){
   const bareTour = (m.tour || '').replace(/^ATP\s+/, '').trim();
   const data = tournamentProgression.tournaments[bareTour];
@@ -5795,11 +5825,13 @@ function progressionRoundState(m){
   const d1 = progressionPlayerDepth(p1Data, data.rounds);
   const d2 = progressionPlayerDepth(p2Data, data.rounds);
   const present = [d1, d2].filter(Boolean);
-  // Gate on the SHALLOWER player: the section draws both players on one shared
-  // chart, so it can only plot a trend where BOTH have one to plot. A card with
-  // a two-win player against a one-win player therefore compares box scores in
-  // bars rather than drawing one line against a stub.
-  const depth = Math.min(...present.map(d => d.depth));
+  // The chart/bars decision is per PLAYER, not per card (board call on TEN-16):
+  // each player is charted once THEY have survived two rounds, regardless of
+  // where their opponent is. A card can therefore mix one player's line with
+  // the other's bar — Collignon's two wins chart while Sonego's single win bars
+  // on the same plot. The card enters the chart layout as soon as EITHER player
+  // qualifies; only when neither does does it fall back to the bars layout.
+  const depth = Math.max(...present.map(d => d.depth));
   // `hidden` stays a data-existence test (unchanged): a player who lost their
   // opener still has a real box score worth comparing, so only the bars/chart
   // line moves to the rounds-survived rule.
@@ -5827,15 +5859,13 @@ function buildMatchProgressionSection(m){
   // board asked for the box score they posted while still advancing — Sonego
   // shows his R1 win, not his R2 defeat. A player who lost their opener has no
   // won round, so fall back to that opener as their only box score on file.
-  const lastShown = (pData, d) => {
-    if (!pData || !pData.rounds.length) return null;
-    return (d && d.lastWon) || pData.rounds[pData.rounds.length - 1];
-  };
-  const p1Latest = lastShown(p1Data, st.d1);
-  const p2Latest = lastShown(p2Data, st.d2);
+  const p1Latest = progressionShownRound(p1Data, st.d1);
+  const p2Latest = progressionShownRound(p2Data, st.d2);
 
-  // Fewer than two rounds survived by at least one player: no shared trend to
-  // draw, so degrade to a side-by-side bar comparison of that round's box score.
+  // NEITHER player has survived two rounds: there is no line to draw on this
+  // card at all, so the whole section degrades to the side-by-side bar layout.
+  // (A card where only ONE of them qualifies stays in the chart layout below and
+  // mixes that player's line with the other's bar.)
   if (st.state === 'bars') {
     // Field average is indexed by the round actually on show, not the draw's
     // latest — the two players can now be at different rounds (a beaten player
@@ -5896,45 +5926,43 @@ function buildMatchProgressionSection(m){
     st.d2 && st.d2.byes > 0 ? m.p2 : null,
   ].filter(Boolean).map(n => `${n} — first round bye`).join(' · ');
 
+  // Name any player shown as a bar rather than a line, so the mixed card reads
+  // as a deliberate rule and not a half-drawn chart.
+  const barNote = [
+    p1Data && st.d1 && st.d1.depth <= 1 ? m.p1 : null,
+    p2Data && st.d2 && st.d2.depth <= 1 ? m.p2 : null,
+  ].filter(Boolean).map(n => `${n} — one round won, shown as a bar`).join(' · ');
+
   const legendHtml = `
     <div class="item"><span class="dot" style="background:${P1_COLOR}"></span>${m.p1}</div>
     <div class="item"><span class="dot" style="background:${P2_COLOR}"></span>${m.p2}</div>
     <div class="item"><span class="dash"></span>Field average</div>
     ${byeNote ? `<div class="item" style="color:#8b93a3;">${byeNote}</div>` : ''}
-    <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form.</div>
+    ${barNote ? `<div class="item" style="color:#8b93a3;">${barNote}</div>` : ''}
+    <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form. A player is charted once they have survived two rounds; until then their one box score shows as a bar.</div>
   `;
 
   const chartsHtml = PROGRESSION_METRIC_ORDER.map(([metricKey, label]) => {
     const formatValue = metricKey === 'winnersUnforcedRatio' ? (v => v.toFixed(2)) : (v => `${v}%`);
-    const series = [];
-    if (p1Data) {
-      series.push({
-        color: P1_COLOR,
-        fillOpacity: 0.30,
-        values: data.rounds.map(round => {
-          const r = p1Data.rounds.find(x => x.round === round);
-          return r ? r.metrics[metricKey] : null;
-        }),
-        opponents: data.rounds.map(round => {
-          const r = p1Data.rounds.find(x => x.round === round);
-          return r ? r.opponent : null;
-        }),
-      });
-    }
-    if (p2Data) {
-      series.push({
-        color: P2_COLOR,
-        fillOpacity: 0.26,
-        values: data.rounds.map(round => {
-          const r = p2Data.rounds.find(x => x.round === round);
-          return r ? r.metrics[metricKey] : null;
-        }),
-        opponents: data.rounds.map(round => {
-          const r = p2Data.rounds.find(x => x.round === round);
-          return r ? r.opponent : null;
-        }),
-      });
-    }
+    // Each player is plotted on their own terms: a player who has survived two
+    // rounds gets a line over every round they played, while one who has not is
+    // reduced to a bar at the single round they won. Both share this plot's axes
+    // and field-average line, so the comparison still reads left to right.
+    const playerSeries = (pData, d, color, fillOpacity) => {
+      if (!pData) return null;
+      const asBar = !d || d.depth <= 1;
+      const shown = asBar ? [progressionShownRound(pData, d)].filter(Boolean) : pData.rounds;
+      const at = round => shown.find(x => x && x.round === round) || null;
+      return {
+        color, fillOpacity, bar: asBar,
+        values: data.rounds.map(round => { const r = at(round); return r ? r.metrics[metricKey] : null; }),
+        opponents: data.rounds.map(round => { const r = at(round); return r ? r.opponent : null; }),
+      };
+    };
+    const series = [
+      playerSeries(p1Data, st.d1, P1_COLOR, 0.30),
+      playerSeries(p2Data, st.d2, P2_COLOR, 0.26),
+    ].filter(Boolean);
     series.push({ color: 'var(--text-faint)', dashed: true, values: data.fieldAverage.metrics[metricKey] });
 
     const p1Val = p1Latest && p1Latest.metrics[metricKey] != null ? p1Latest.metrics[metricKey] : null;
