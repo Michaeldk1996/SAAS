@@ -646,18 +646,40 @@
   .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
   .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
   .modal-analysis .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
-  /* Point-by-point (Task 4) — per-game rows with an inline point sequence */
-  .modal-analysis .pbp-set .msheet-row{ grid-template-columns:120px 1fr 92px; }
-  .modal-analysis .pbp-set .msheet-grouphead{ grid-template-columns:120px 1fr 92px; }
-  .modal-analysis .pbp-game{ font-family:'IBM Plex Mono', monospace; font-size:13px; text-align:left; padding:11px 0 11px 16px; color:#c7cdd6; font-weight:600; display:flex; align-items:center; gap:7px; }
-  .modal-analysis .pbp-points{ display:flex; flex-wrap:wrap; gap:5px; padding:9px 8px; }
-  .modal-analysis .pbp-pt{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#9aa3b2; background:rgba(255,255,255,0.04); border-radius:5px; padding:2px 6px; white-space:nowrap; }
-  .modal-analysis .pbp-pt.bp{ color:#ffd27a; background:rgba(232,147,75,0.16); }
-  .modal-analysis .pbp-pt.sp{ color:#8fd0ff; background:rgba(62,123,250,0.16); }
-  .modal-analysis .pbp-pt.mp{ color:#8affc0; background:rgba(46,204,113,0.18); font-weight:700; }
-  .modal-analysis .pbp-score{ font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center; padding:11px 16px 11px 0; color:#c7cdd6; font-weight:600; }
-  .modal-analysis .pbp-brk{ display:inline-block; font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.08em; color:#E8934B; border:1px solid rgba(232,147,75,0.5); border-radius:4px; padding:0 4px; margin-left:5px; vertical-align:middle; }
-  .modal-analysis .pbp-legend{ display:flex; flex-wrap:wrap; gap:16px; margin:12px 2px 0; font-size:11px; color:#8b93a3; }
+  /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
+  .modal-analysis .ms-subtabs{ display:flex; gap:4px; justify-content:center; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:999px; padding:3px; width:max-content; max-width:100%; margin:0 auto 22px; }
+  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#8b93a3; background:none; border:none; padding:6px 18px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease; }
+  .modal-analysis .ms-subtab:hover{ color:#cfd4de; }
+  .modal-analysis .ms-subtab.active{ color:#fff; background:var(--accent); }
+  .modal-analysis .ms-pane{ display:none; }
+  .modal-analysis .ms-pane.active{ display:block; }
+  /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
+  .modal-analysis .pbp-wrap{ max-width:560px; margin:0 auto; }
+  .modal-analysis .pbp-sethdr{ display:flex; align-items:center; justify-content:center; gap:12px; margin:20px 0 8px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280; font-weight:700; }
+  .modal-analysis .pbp-setscore{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#e7e9ee; letter-spacing:normal; text-transform:none; }
+  .modal-analysis .pbp-setscore sup{ font-size:9px; color:#8b93a3; }
+  .modal-analysis .pbp-grow{ text-align:center; padding:9px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .pbp-gscore{ display:flex; align-items:center; justify-content:center; gap:10px; }
+  .modal-analysis .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:600; color:#cfd4de; min-width:58px; }
+  .modal-analysis .pbp-grow.broke .pbp-gnum{ color:#ffcf8a; }
+  .modal-analysis .pbp-ball{ display:inline-flex; align-items:center; width:14px; height:14px; color:#c7d43f; }
+  .modal-analysis .pbp-ball svg{ width:14px; height:14px; }
+  .modal-analysis .pbp-ball-sp{ display:inline-block; width:14px; height:14px; }
+  .modal-analysis .pbp-gpts{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#7f8794; margin-top:4px; line-height:1.5; }
+  .modal-analysis .pbp-pt.bp{ color:#ffb865; }
+  .modal-analysis .pbp-pt.sp{ color:#8fd0ff; }
+  .modal-analysis .pbp-pt.mp{ color:#8affc0; font-weight:700; }
+  .modal-analysis .pbp-tbhdr{ text-align:center; background:rgba(255,255,255,0.05); border-radius:6px; padding:7px 0; margin:14px 0 4px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#aeb6c2; font-weight:700; }
+  .modal-analysis .pbp-tbrow{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .pbp-tbside{ display:flex; align-items:center; gap:8px; }
+  .modal-analysis .pbp-tbside.left{ justify-content:flex-end; }
+  .modal-analysis .pbp-tbside.right{ justify-content:flex-start; }
+  .modal-analysis .pbp-tbscore{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:#e7e9ee; padding:0 18px; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .modal-analysis .pbp-lost{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.05em; color:#f0a0a0; background:rgba(217,105,90,0.14); border:1px solid rgba(217,105,90,0.35); border-radius:4px; padding:2px 5px; white-space:nowrap; }
+  .modal-analysis .pbp-badge{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.05em; font-weight:700; border-radius:4px; padding:2px 5px; }
+  .modal-analysis .pbp-badge.sp{ color:#8fd0ff; background:rgba(62,123,250,0.16); border:1px solid rgba(62,123,250,0.4); }
+  .modal-analysis .pbp-badge.mp{ color:#8affc0; background:rgba(46,204,113,0.16); border:1px solid rgba(46,204,113,0.4); }
+  .modal-analysis .pbp-legend{ display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:16px 2px 0; font-size:11px; color:#8b93a3; }
   .modal-analysis .pbp-legend .k{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:middle; }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
@@ -1390,7 +1412,6 @@
         <div class="asidenav-item" data-atab="form"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Form</span></div>
         <div class="asidenav-item" data-atab="h2h"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>H2H</span></div>
         <div class="asidenav-item" data-atab="matchstats"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg></span><span>Match Stats</span></div>
-        <div class="asidenav-item" data-atab="pointbypoint"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="14" y2="18"></line></svg></span><span>Point by point</span></div>
         <div class="asidenav-item" data-atab="progression"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Progression</span></div>
         <div class="asidenav-item" data-atab="overview"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span>Overview</span></div>
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
@@ -1405,7 +1426,6 @@
         <div class="asection" data-asection="form" id="aSectionForm"></div>
         <div class="asection" data-asection="h2h" id="aSectionH2H"></div>
         <div class="asection" data-asection="matchstats" id="aSectionMatchStats"></div>
-        <div class="asection" data-asection="pointbypoint" id="aSectionPointByPoint"></div>
         <div class="asection" data-asection="progression" id="aSectionProgression"></div>
         <div class="asection" data-asection="overview" id="aSectionOverview"></div>
         <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
@@ -2127,45 +2147,120 @@ function loadPointByPoint(){
     .catch(err => { console.warn('point-by-point.json load failed:', err.message); pointByPoint = {}; return pointByPoint; });
   return _pointByPointPromise;
 }
+// Parse an api-tennis "a - b" integer score into [a, b] (null if not integers).
+function pbpParseScore(sc){
+  const m = /^(\d+)\s*-\s*(\d+)$/.exec(String(sc || '').trim());
+  return m ? [ +m[1], +m[2] ] : null;
+}
+// A set's raw game list mixes three kinds of entry: real games (points scored
+// 15/30/40/A), tiebreak POINTS (api-tennis emits each tiebreak point as its own
+// pseudo-"game" with an empty points array and a running integer score like
+// "1 - 0"), and a single set-summary junk entry (integer score, one blank
+// point). Split them so the tiebreak can be rendered as its own section.
+function pbpSplitSet(s){
+  const games = s.games || [];
+  const real = [], tbPts = [];
+  for (const g of games){
+    const hasTennisPts = (g.points || []).some(p => /15|30|40|A/.test(p.s || ''));
+    if (hasTennisPts){ real.push(g); continue; }
+    const sc = pbpParseScore(g.score);
+    if (!sc) continue;                                   // unknown junk — drop
+    if ((g.points || []).length === 0) tbPts.push(Object.assign({ a: sc[0], b: sc[1] }, g));
+    // else: set-summary entry (blank point) — dropped
+  }
+  // Only treat as a tiebreak when there's a real sequence (guards a stray
+  // pointless game in a normal set from being mistaken for a tiebreak).
+  if (tbPts.length >= 3){
+    tbPts.sort((x, y) => (x.a + x.b) - (y.a + y.b));     // running total = play order
+    return { real, tbPts };
+  }
+  return { real, tbPts: [] };
+}
+function pbpPointList(points){
+  return (points || []).map(p => {
+    const cls = p.mp ? 'pbp-pt mp' : p.sp ? 'pbp-pt sp' : p.bp ? 'pbp-pt bp' : 'pbp-pt';
+    const s = escapeHtml(String(p.s || '').replace(/\s*-\s*/, ':'));   // "0 - 15" -> "0:15"
+    return `<span class="${cls}">${s}</span>`;
+  }).join(', ');
+}
+// Flashscore-style point-by-point: centered per-game rows (server = tennis-ball
+// icon on that player's side, point sequence beneath) and, for tiebreak sets, a
+// dedicated "TIEBREAK · SET n" section with one row per point — running score,
+// serve indicator, LOST SERVE on a lost serve (mini-break) and SP/MP badges.
 function buildPointByPointHtml(m, entry){
   if (!entry || !Array.isArray(entry.sets) || !entry.sets.length){
     return `<div class="acomingsoon">No point-by-point log on file for this match.</div>`;
   }
-  const dotFor = side => side === 'p1' ? '<span class="mstat-dot p1"></span>'
-                       : side === 'p2' ? '<span class="mstat-dot p2"></span>' : '';
-  let html = `<div class="msheet-head"><div class="msheet-title">Point by point</div>`
-    + `<div class="msheet-sets">${m.finalScore ? escapeHtml(m.finalScore.display) : ''}</div></div>`;
-  html += `<div class="msheet-names"><span>${dotFor('p1')}${escapeHtml(m.p1)}</span>`
-        + `<span>${escapeHtml(m.p2)}${dotFor('p2')}</span></div>`;
-  for (const s of entry.sets){
-    html += `<div class="msheet-table pbp-set">`;
-    html += `<div class="msheet-grouphead"><span>Set ${escapeHtml(s.set)}</span><span>Points</span><span>Game</span></div>`;
-    for (const g of (s.games || [])){
-      const broken = g.winner && g.server && g.winner !== g.server; // serve broken
-      const pts = (g.points || []).map(p => {
-        const cls = p.mp ? 'pbp-pt mp' : p.sp ? 'pbp-pt sp' : p.bp ? 'pbp-pt bp' : 'pbp-pt';
-        return `<span class="${cls}">${escapeHtml(p.s)}</span>`;
-      }).join('');
-      html += `<div class="msheet-row">`
-        + `<span class="pbp-game">${dotFor(g.server)}Game ${escapeHtml(g.g)}</span>`
-        + `<span class="pbp-points">${pts}</span>`
-        + `<span class="pbp-score">${escapeHtml(g.score)}${broken ? '<span class="pbp-brk">BREAK</span>' : ''}</span>`
+  const ball = `<span class="pbp-ball">${BSP_ICONS.ball}</span>`;
+  const gap = `<span class="pbp-ball-sp"></span>`;
+  const totalSets = entry.sets.length;
+  let html = `<div class="pbp-wrap">`;
+  html += `<div class="msheet-names"><span><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
+        + `<span>${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
+  entry.sets.forEach((s, si) => {
+    const { real, tbPts } = pbpSplitSet(s);
+    const isLastSet = si === totalSets - 1;
+    // Set header + final score (tiebreak points as superscripts, e.g. 7⁷ · 6⁴).
+    const finalSc = real.length ? pbpParseScore(real[real.length - 1].score) : null;
+    let scoreLine = '';
+    if (finalSc){
+      let a = finalSc[0], b = finalSc[1], supA = '', supB = '';
+      if (tbPts.length){
+        // A tiebreak set finishes 7-6 (or 6-7): the winner is whoever won the
+        // tiebreak; show each side's tiebreak points as a superscript.
+        const last = tbPts[tbPts.length - 1];
+        supA = String(last.a); supB = String(last.b);
+        if (last.a > last.b){ a = 7; b = 6; } else { a = 6; b = 7; }
+      }
+      scoreLine = `<span class="pbp-setscore">${a}${supA !== '' ? `<sup>${supA}</sup>` : ''} · ${b}${supB !== '' ? `<sup>${supB}</sup>` : ''}</span>`;
+    }
+    html += `<div class="pbp-sethdr"><span>Set ${escapeHtml(s.set)}</span>${scoreLine}</div>`;
+    // Normal games.
+    for (const g of real){
+      const srvP1 = g.server === 'p1', srvP2 = g.server === 'p2';
+      const broken = g.winner && g.server && g.winner !== g.server;
+      const sc = pbpParseScore(g.score) || ['', ''];
+      html += `<div class="pbp-grow${broken ? ' broke' : ''}">`
+        + `<div class="pbp-gscore">${srvP1 ? ball : gap}<span class="pbp-gnum">${sc[0]} · ${sc[1]}</span>${srvP2 ? ball : gap}</div>`
+        + (g.points && g.points.length ? `<div class="pbp-gpts">${pbpPointList(g.points)}</div>` : '')
         + `</div>`;
     }
-    html += `</div>`;
-  }
+    // Tiebreak section.
+    if (tbPts.length){
+      const last = tbPts[tbPts.length - 1];
+      const target = Math.max(7, Math.max(last.a, last.b));   // 7-pt TB, or a super-TB to 10
+      const label = isLastSet ? 'MP' : 'SP';
+      const badgeCls = isLastSet ? 'mp' : 'sp';
+      html += `<div class="pbp-tbhdr">Tiebreak · Set ${escapeHtml(s.set)}</div>`;
+      for (const p of tbPts){
+        const srvP1 = p.server === 'p1', srvP2 = p.server === 'p2';
+        const lost = p.winner && p.server && p.winner !== p.server;   // mini-break
+        const mx = Math.max(p.a, p.b), mn = Math.min(p.a, p.b);
+        const pending = mx >= target - 1 && mx > mn && mx < target;   // set/match point on next serve
+        const badge = pending ? `<span class="pbp-badge ${badgeCls}">${label}</span>` : '';
+        const leftLost = (lost && srvP1) ? '<span class="pbp-lost">LOST SERVE</span>' : '';
+        const rightLost = (lost && srvP2) ? '<span class="pbp-lost">LOST SERVE</span>' : '';
+        html += `<div class="pbp-tbrow">`
+          + `<div class="pbp-tbside left">${leftLost}${srvP1 ? ball : ''}</div>`
+          + `<div class="pbp-tbscore">${badge}<span>${p.a} · ${p.b}</span></div>`
+          + `<div class="pbp-tbside right">${srvP2 ? ball : ''}${rightLost}</div>`
+          + `</div>`;
+      }
+    }
+  });
   html += `<div class="pbp-legend">`
     + `<span><span class="k" style="background:rgba(232,147,75,0.5)"></span>Break point</span>`
     + `<span><span class="k" style="background:rgba(62,123,250,0.5)"></span>Set point</span>`
     + `<span><span class="k" style="background:rgba(46,204,113,0.5)"></span>Match point</span>`
-    + `<span>Coloured dot = server</span></div>`;
+    + `<span><span class="pbp-ball" style="vertical-align:middle;margin-right:4px;">${BSP_ICONS.ball}</span>Server</span></div>`;
+  html += `</div>`;
   return html;
 }
-// Fill the Point-by-point section for the currently open match, fetching the
-// sidecar on first use. Guarded by the section's matchId so a fast re-open on a
-// different match can't paint stale data.
+// Fill the Point-by-point pane (inside Match Stats) for the currently open
+// match, fetching the sidecar on first use. Guarded by the pane's matchId so a
+// fast re-open on a different match can't paint stale data.
 function ensurePointByPoint(){
-  const container = document.getElementById('aSectionPointByPoint');
+  const container = document.getElementById('msPbpPane');
   if (!container || !_aPbpMatch) return;
   const m = _aPbpMatch;
   if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
@@ -3078,7 +3173,33 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   `;
 }
 
+// Wrap the stat sheet + point-by-point in a Flashscore-style toggle. Point by
+// point lives HERE (a sub-tab of Match Stats) rather than as its own sidebar
+// nav item; the pane is empty until opened, then lazy-loads the sidecar.
 function buildMatchStatsSection(m){
+  const finished = !!m.finalScore && !m.live;
+  const stats = buildMatchStatsSheet(m);
+  if (!finished) return stats;   // no point-by-point log for upcoming/live matches
+  return `
+    <div class="ms-subtabs" role="tablist">
+      <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
+      <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
+    </div>
+    <div class="ms-pane active" id="msStatsPane">${stats}</div>
+    <div class="ms-pane" id="msPbpPane"></div>
+  `;
+}
+function switchMatchStatsTab(el, which){
+  document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
+  const statsPane = document.getElementById('msStatsPane');
+  const pbpPane = document.getElementById('msPbpPane');
+  if (!statsPane || !pbpPane) return;
+  const showPbp = which === 'pbp';
+  statsPane.classList.toggle('active', !showPbp);
+  pbpPane.classList.toggle('active', showPbp);
+  if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
+}
+function buildMatchStatsSheet(m){
   if (m.live || !m.finalScore) {
     return `<div class="acomingsoon">Box score isn't available until the match finishes.</div>`;
   }
@@ -3772,14 +3893,10 @@ function openAnalysisModal(matchId){
   const progNav = document.querySelector('#aTabs .asidenav-item[data-atab="progression"]');
   if (progNav) progNav.style.display = progressionRoundState(m).state === 'hidden' ? 'none' : '';
 
-  // Task 4: Point-by-point tab only exists for finished matches (the sidecar has
-  // no upcoming/live logs). Reset the section so it re-loads for this match; the
-  // actual fetch is deferred until the tab is opened.
+  // Task 4: Point-by-point is a sub-tab of Match Stats (finished matches only).
+  // buildMatchStatsSection already rendered a fresh, empty #msPbpPane above; the
+  // sidecar fetch is deferred until the user opens that sub-tab.
   _aPbpMatch = m;
-  const pbpNav = document.querySelector('#aTabs .asidenav-item[data-atab="pointbypoint"]');
-  if (pbpNav) pbpNav.style.display = m.finalScore ? '' : 'none';
-  const pbpSection = document.getElementById('aSectionPointByPoint');
-  if (pbpSection){ pbpSection.dataset.loaded = ''; pbpSection.dataset.matchId = ''; pbpSection.innerHTML = ''; }
 
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
 
@@ -3807,7 +3924,6 @@ document.getElementById('aTabs').addEventListener('click', e => {
   btn.classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
-  if (btn.dataset.atab === 'pointbypoint') ensurePointByPoint(); // Task 4: lazy-load on open
 });
 
 // Download report — scoped print of the modal's current content. Shows every
