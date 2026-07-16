@@ -777,6 +777,10 @@ const EXTRA_STAT_DEFS = [
   { type: 'Points', name: 'Unforced Errors', kind: 'count' },
   { type: 'Points', name: 'Service Points Won', kind: 'pct' },
   { type: 'Points', name: 'Return Points Won', kind: 'pct' },
+  // Confirmed live: the feed carries 'Points'/'Total Points Won' with real
+  // stat_won/stat_total per match, so this is the provider's own number —
+  // never derived from the service/return percentages.
+  { type: 'Points', name: 'Total Points Won', kind: 'pct' },
 ];
 
 // Aggregates real per-match `statistics` entries for one player across a
@@ -2480,6 +2484,9 @@ const RAW_STAT_KEYS = [
   'Service:2nd Serve Points Won', 'Service:Break Points Saved',
   'Return:Break Points Converted', 'Points:Winners', 'Points:Unforced Errors',
   'Points:Service Points Won', 'Points:Return Points Won',
+  // Mirrors EXTRA_STAT_DEFS — a key missing here still renders on the profile
+  // card, just with no "Tour avg" next to it, unlike every neighbouring row.
+  'Points:Total Points Won',
 ];
 
 function clampPct(x) {
@@ -3492,4 +3499,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures };
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression };

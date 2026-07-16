@@ -3067,6 +3067,7 @@ const EXTRA_STAT_ORDER = [
   ['Points:Unforced Errors', 'Unforced Errors', 'count'],
   ['Points:Service Points Won', 'Service Points Won', 'pct'],
   ['Points:Return Points Won', 'Return Points Won', 'pct'],
+  ['Points:Total Points Won', 'Total Points Won', 'pct'],
 ];
 
 function extraStatRowHtml(label, kind, p1Val, p2Val){
@@ -4408,6 +4409,10 @@ const PP_RETURN_DEFS = [
   { label: 'Break pts converted',key: 'Return:Break Points Converted', max: 100, suffix: '%' },
   { label: 'Winners / point',    key: 'Points:Winners',                max: 100, suffix: '%' },
   { label: 'Service pts won',    key: 'Points:Service Points Won',     max: 100, suffix: '%' },
+  // Overall share of points won — sits with the service/return halves that
+  // compose it. No MCP cardBenchmark exists for this key, so ppStatRows
+  // falls back to the built player-pool average + absolute-scaled bar.
+  { label: 'Total pts won',      key: 'Points:Total Points Won',       max: 100, suffix: '%' },
 ];
 // Task 11 Part 3 — percentile of a value against the MCP breakpoint ladder, so
 // a player sitting at tour median renders a bar at exactly the midpoint.
@@ -5437,6 +5442,7 @@ const PROGRESSION_METRIC_ORDER = [
   ['winnersPct', 'Winners (% of Points)'],
   ['unforcedErrorsPct', 'Errors (% of Points)'],
   ['winnersUnforcedRatio', 'W/UE Ratio'],
+  ['totalPointsWonPct', 'Total Points Won %'],
 ];
 
 // Up to 2 named player line-series (solid, gradient area fill down to the
