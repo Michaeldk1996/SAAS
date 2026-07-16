@@ -229,6 +229,7 @@
   [data-page="matches"] .mx-playerrow.last{ padding:13px 18px 17px; }
   [data-page="matches"] .mx-col1{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mx-name{ font-family:var(--mx-font-ui); font-size:15px; font-weight:600; color:var(--mx-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mx-name[onclick]:hover, [data-page="matches"] .avatar[onclick]:hover, [data-page="matches"] .avatar-fallback[onclick]:hover{ color:var(--accent); text-decoration:underline; }
   [data-page="matches"] .mx-favtag{ font-size:9px; font-weight:600; color:var(--mx-text-tertiary); letter-spacing:0.09em; flex-shrink:0; border:1px solid var(--mx-hairline); border-radius:4px; padding:1px 5px; }
   [data-page="matches"] .mx-col2{ display:flex; align-items:baseline; gap:9px; justify-content:flex-end; }
   [data-page="matches"] .mx-odds{ font-family:var(--mx-font-mono); font-size:27px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
@@ -1721,16 +1722,20 @@ function openPlayerProfileFromMatch(key){
   document.querySelector('#mainNav button[data-tab="players"]').click();
   showPlayerProfile(key);
 }
-function playerAvatarHtml(photoUrl, name, playerKey){
-  const initials = playerInitials(name);
-  // Avatar (and only the avatar) is a clickable link to the player's profile, but
-  // only when a profile exists. stopPropagation keeps it independent of any card-level
-  // handler; the onclick lives on BOTH branches because avatarFallback() swaps the
-  // <img> for a <div> on load error and doesn't copy attributes. (T2)
+// Shared clickable-to-profile wiring (avatar AND name). Returns the onclick/
+// style/title attrs when a profile exists for this key, else ''. stopPropagation
+// keeps it independent of any card-level handler. (T2)
+function profileLinkAttrs(playerKey, name){
   const clickable = playerKey != null && typeof playerProfiles !== 'undefined' && playerProfiles[String(playerKey)];
-  const attrs = clickable
+  return clickable
     ? ` onclick="event.stopPropagation();openPlayerProfileFromMatch('${playerKey}')" style="cursor:pointer;" title="View ${name} profile"`
     : '';
+}
+function playerAvatarHtml(photoUrl, name, playerKey){
+  const initials = playerInitials(name);
+  // The onclick lives on BOTH branches because avatarFallback() swaps the
+  // <img> for a <div> on load error and doesn't copy attributes. (T2)
+  const attrs = profileLinkAttrs(playerKey, name);
   if (!photoUrl) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
   return `<img class="avatar"${attrs} src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
 }
@@ -1841,7 +1846,7 @@ function renderMatches(){
       <div class="mx-playerrow">
         <div class="mx-col1">
           ${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}
-          <span class="mx-name">${p1IsWinner ? '✓ ' : ''}${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
+          <span class="mx-name"${profileLinkAttrs(m.p1Key, m.p1)}>${p1IsWinner ? '✓ ' : ''}${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
           ${p1IsFavorite ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
         <div class="mx-col2">
@@ -1856,7 +1861,7 @@ function renderMatches(){
       <div class="mx-playerrow last">
         <div class="mx-col1">
           ${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}
-          <span class="mx-name">${p2IsWinner ? '✓ ' : ''}${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
+          <span class="mx-name"${profileLinkAttrs(m.p2Key, m.p2)}>${p2IsWinner ? '✓ ' : ''}${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
           ${(hasOdds && !p1IsFavorite) ? '<span class="mx-favtag">FAV</span>' : ''}
         </div>
         <div class="mx-col2">
