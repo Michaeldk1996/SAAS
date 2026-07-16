@@ -7,8 +7,15 @@
 //
 // Data source: api-tennis get_fixtures?match_key=<eventKey> returns a
 // `pointbypoint` array of game entries; each game carries the running score and
-// a `points` list. We compact that to p1/p2 terms keyed by the dashboard's
-// match id (e.g. "past-12145200"), matching how the dashboard keys matches.
+// a `points` list. We compact that to p1/p2 terms keyed by the api-tennis event
+// key (e.g. "12145200") — the stable half of the dashboard's match id.
+//
+// Keyed by event key, NOT by the dashboard's `m.id`: that id carries a
+// day-bucket prefix, and the same match is "upcoming-12145200" while it sits in
+// the fixtures window and "past-12145200" once it rolls out. A prefixed key goes
+// stale the moment a match changes bucket, and the dashboard's lookup then
+// silently misses a point log that was fetched successfully. The event key never
+// changes.
 //
 // Decoupled from the main pipeline on purpose: if this fails, the site still
 // deploys (the workflow runs it best-effort). It reuses a persistent cache so
@@ -126,7 +133,7 @@ async function main() {
     }
 
     if (compact && compact.sets && compact.sets.length) {
-      out[m.id] = { p1: m.p1, p2: m.p2, ...compact };
+      out[ek] = { p1: m.p1, p2: m.p2, ...compact };
     }
   }
 
