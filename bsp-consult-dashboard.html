@@ -2251,7 +2251,8 @@ function pbpPointList(points){
 // icon on that player's side, point sequence beneath) and, for tiebreak sets, a
 // dedicated "TIEBREAK · SET n" section with one row per point — running score,
 // serve indicator, LOST SERVE on a lost serve (mini-break) and SP/MP badges.
-// `setNo` null = every set (the default); a number = only that set. The set
+// `setNo` null = every set; a number = only that set (what the pane always asks
+// for — it opens on set 1 and every pill picks a set). The set
 // filter narrows what is DISPLAYED — it never changes how a set is interpreted:
 // `isLastSet` (which decides whether a tiebreak's pending-point badge reads MP
 // or SP) is still resolved against the full match, so filtering to the decider
@@ -2353,8 +2354,12 @@ function ensurePointByPoint(){
     const setNos = (entry && Array.isArray(entry.sets))
       ? entry.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b)
       : [];
-    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', 'All sets')
-      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, null)}</div>`;
+    // Open on the first set rather than the whole match: one set is the unit a
+    // reader actually reads. null (= every set) only survives when there is no
+    // set data at all, where it resolves to the "no log on file" message.
+    const firstSet = setNos.length ? setNos[0] : null;
+    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', null)
+      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, firstSet)}</div>`;
     container.dataset.loaded = '1';
   });
 }
@@ -3344,19 +3349,27 @@ function buildMatchStatsSection(m){
     <div class="ms-pane" id="msPbpPane"></div>
   `;
 }
-// Shared set-filter pill row for both panes: "<allLabel>" + one pill per set
-// that actually has data. Rendered only when there are 2+ sets to choose
-// between — a one-set match has nothing to filter, so the control would be
-// noise. `handler` is the global fn name the pills call with the set number
-// (null = the all/whole-match view).
+// Shared set-filter pill row for both panes: one pill per set that actually has
+// data, optionally preceded by an "<allLabel>" pill for the whole-match view.
+// Rendered only when there are 2+ sets to choose between — a one-set match has
+// nothing to filter, so the control would be noise. `handler` is the global fn
+// name the pills call with the set number (null = the all/whole-match view).
+//
+// `allLabel` null = no whole-match pill, and the first set starts active. The
+// point-by-point pane opts out this way: its whole-match view concatenates every
+// game of every set (50+ rows on a long three-setter), which is more scrolling
+// than it is insight. The box score has no such problem — a whole-match sheet is
+// the same handful of rows as a per-set one — so it keeps its "Match" pill.
 function buildSetSelectorHtml(setNos, handler, allLabel){
   if (!setNos || setNos.length < 2) return '';
-  const pills = setNos.map(n =>
-    `<button class="ms-setbtn" onclick="${handler}(this,${n})">Set ${n}</button>`
+  const pills = setNos.map((n, i) =>
+    `<button class="ms-setbtn${allLabel == null && i === 0 ? ' active' : ''}" onclick="${handler}(this,${n})">Set ${n}</button>`
   ).join('');
+  const allPill = allLabel == null ? ''
+    : `<button class="ms-setbtn active" onclick="${handler}(this,null)">${escapeHtml(allLabel)}</button>`;
   return `
     <div class="ms-setsel" role="group" aria-label="Filter by set">
-      <button class="ms-setbtn active" onclick="${handler}(this,null)">${escapeHtml(allLabel)}</button>
+      ${allPill}
       ${pills}
     </div>
   `;
