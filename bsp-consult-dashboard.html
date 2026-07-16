@@ -938,6 +938,12 @@
   .aform-toggle .opt.active{ color:#e7e9ee; }
   .aform-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; margin-bottom:6px; }
   .aform-list.hidden{ display:none; }
+  .aform-tgroup{ display:flex; align-items:center; gap:8px; padding:8px 13px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.05); }
+  .aform-tgroup + .aform-row{ border-top:none; }
+  .aform-tgroup .tname{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:700; color:#dfe4ec; }
+  .aform-tgroup .trange{ font-size:10.5px; color:#5b6472; white-space:nowrap; }
+  .aform-tgroup .tspacer{ flex:1; }
+  .aform-tgroup .trec{ font-size:11.5px; font-family:'IBM Plex Mono', monospace; color:#8b93a3; white-space:nowrap; }
   .aform-row{ display:grid; grid-template-columns:26px minmax(0,1fr) 46px 56px 12px; align-items:center; gap:10px; padding:11px 13px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:background .12s; }
   .aform-row:hover{ background:#0e1015; }
   .aform-row:last-child{ border-bottom:none; }
@@ -2753,6 +2759,59 @@ function setFormFilter(colPrefix, filter, playerKey){
     btn.style.borderColor = isActive ? btn.dataset.activeBorder : 'transparent';
   });
 }
+// Task 7 — Recent matches are grouped under the tournament they were played at
+// rather than listed flat. Reuses ppGroupMatchesByTournament (the same splitter
+// the profile card uses), so an event played twice in the window shows as two
+// editions rather than one merged block.
+//
+// Progressive disclosure is applied per group, not per row: whole tournaments
+// stay together, and the first groups covering FORM_VISIBLE_MATCHES are shown
+// up front. Anything a group can't attribute to a tournament (no name or no
+// date) is dropped by the grouper, so those rows are appended ungrouped rather
+// than silently disappearing from the list.
+const FORM_VISIBLE_MATCHES = 5;
+function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, collapse){
+  const groups = ppGroupMatchesByTournament(matches);
+  const grouped = new Set(groups.flatMap(g => g.matches));
+  const ungrouped = matches.filter(m => !grouped.has(m));
+
+  let shown = 0;
+  let idx = 0;
+  const blocks = groups.map(g => {
+    const hidden = collapse && shown >= FORM_VISIBLE_MATCHES;
+    shown += g.matches.length;
+    const surf = String(g.surface || '').toLowerCase();
+    const surfTag = g.surface
+      ? `<span class="surfacetag ${surf}" style="flex:none;">${g.surface}</span>`
+      : '';
+    const header = `<div class="aform-tgroup">
+        <span class="tname">${g.label}</span>${surfTag}
+        <span class="trange">${g.range}</span>
+        <span class="tspacer"></span>
+        <span class="trec">${g.won}–${g.lost}</span>
+      </div>`;
+    const rows = g.matches.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name)).join('');
+    return { hidden, count: g.matches.length, html: header + rows };
+  });
+
+  if (ungrouped.length){
+    const hidden = collapse && shown >= FORM_VISIBLE_MATCHES;
+    shown += ungrouped.length;
+    const header = `<div class="aform-tgroup">
+        <span class="tname" style="color:#8b93a3;font-weight:600;">Other matches</span>
+        <span class="tspacer"></span>
+        <span class="trec">${ungrouped.filter(m => m.won).length}–${ungrouped.filter(m => !m.won).length}</span>
+      </div>`;
+    const rows = ungrouped.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name)).join('');
+    blocks.push({ hidden, count: ungrouped.length, html: header + rows });
+  }
+
+  const hiddenCount = blocks.filter(b => b.hidden).reduce((n, b) => n + b.count, 0);
+  const html = blocks.map(b => b.hidden
+    ? `<div class="aform-extra-${colPrefix}" style="display:none;">${b.html}</div>`
+    : b.html).join('');
+  return { html, hiddenCount };
+}
 function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix, playerKey){
   if (!allMatches || allMatches.length === 0) {
     return `
@@ -2763,15 +2822,17 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
     `;
   }
   const pillsHtml = allMatches.map(m => `<span class="aform-pill ${m.won ? 'win' : 'loss'}"></span>`).join('');
-  const visible = allMatches.slice(0, 5);
-  const extra = allMatches.slice(5);
-  const visibleRows = visible.map((m, i) => formRowHtml(m, `${colPrefix}main${i}`, playerKey, name)).join('');
-  const extraRows = extra.map((m, i) => `<div class="aform-extra-${colPrefix}" style="display:none;">${formRowHtml(m, `${colPrefix}main${i + 5}`, playerKey, name)}</div>`).join('');
-  const showMoreHtml = extra.length ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${extra.length} more match${extra.length === 1 ? '' : 'es'}</div>` : '';
+  const allGrouped = buildFormGroupedList(allMatches, colPrefix, playerKey, name, 'main', true);
+  const visibleRows = allGrouped.html;
+  const showMoreHtml = allGrouped.hiddenCount
+    ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${allGrouped.hiddenCount} more match${allGrouped.hiddenCount === 1 ? '' : 'es'}</div>`
+    : '';
 
   const surfaceMatches = allMatches.filter(m => m.surface === currentSurface);
+  // The surface list is short enough to show in full, so it groups without
+  // any show-more; its groups are never collapsed.
   const surfaceRows = surfaceMatches.length
-    ? surfaceMatches.map((m, i) => formRowHtml(m, `${colPrefix}surf${i}`, playerKey, name)).join('')
+    ? buildFormGroupedList(surfaceMatches, colPrefix, playerKey, name, 'surf', false).html
     : `<div class="acomingsoon" style="padding:14px 0;">No matches on record on this surface in their recent history.</div>`;
   const surfaceLabel = currentSurface.charAt(0).toUpperCase() + currentSurface.slice(1);
 
@@ -2815,7 +2876,7 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
           <span class="opt${allActive ? '' : ' active'}" id="formToggle-surf-${colPrefix}" onclick="setFormFilter('${colPrefix}','surf',${JSON.stringify(playerKey)})" data-active-bg="${activeToggleBg}" data-active-border="${activeToggleBorder}" style="${allActive ? '' : `background:${activeToggleBg}; border-color:${activeToggleBorder};`}">${surfaceLabel}</span>
         </div>
       </div>
-      <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${extraRows}${showMoreHtml}</div>
+      <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
       <div class="aform-list${allActive ? ' hidden' : ''}" id="formList-surf-${colPrefix}">${surfaceRows}</div>
     </div>
   `;
