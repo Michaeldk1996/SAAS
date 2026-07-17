@@ -226,10 +226,17 @@ async function main() {
   // reach far outside the fixtures window. Deduped — a match commonly appears in
   // both players' form lists, and across several cards.
   const formKeys = new Set();
+  const formRowDate = new Map();   // event key -> match date, drives the backfill order below
   for (const m of matches) {
     for (const side of ['p1RecentFormMatches', 'p2RecentFormMatches']) {
       for (const f of (m[side] || [])) {
-        if (f && f.eventKey != null) formKeys.add(String(f.eventKey));
+        if (f && f.eventKey != null) {
+          const ek = String(f.eventKey);
+          formKeys.add(ek);
+          // The same match sits in both players' lists; the date is identical, so
+          // first writer wins and a row without one simply sorts last.
+          if (f.date && !formRowDate.has(ek)) formRowDate.set(ek, String(f.date));
+        }
       }
     }
   }
@@ -260,8 +267,25 @@ async function main() {
   // 250/run adds ~2 min to a ~2 min job — the same total API cost either way,
   // just front-loaded so the filter reaches every row in a couple of runs
   // instead of half a day. Lower it if this job ever needs to be quick again.
+  // Ordered by what a visitor can actually see, NOT by the cache's own key order.
+  // Event keys are integer-like strings, and JS enumerates those in ASCENDING
+  // NUMERIC order ahead of insertion order — so Object.keys(cache) came out
+  // oldest-match-first, and a capped backfill spent its whole budget there and
+  // reached the current board's form rows last. With ~600 pending, March/April
+  // sat at 100% while June/July — months the Form tab actually lists — sat at
+  // 0%. The filter looked broken on exactly the rows it was built for.
+  // A form row on today's board comes first, newest first (that is the order
+  // the rows are read in); everything else keeps its old relative order behind
+  // them. Same total API cost and the same convergence — only the order moves.
   const MAX_BACKFILL_PER_RUN = Number(process.env.SETSTATS_MAX_BACKFILL || 250);
-  const pending = Object.keys(cache).filter(k => cache[k] && !('stats' in cache[k]));
+  const pending = Object.keys(cache)
+    .filter(k => cache[k] && !('stats' in cache[k]))
+    .sort((a, b) => {
+      const aVis = formKeys.has(a), bVis = formKeys.has(b);
+      if (aVis !== bVis) return aVis ? -1 : 1;       // visible rows first
+      if (!aVis) return 0;                            // neither visible: keep cache order
+      return (formRowDate.get(b) || '').localeCompare(formRowDate.get(a) || '');  // newest first
+    });
   let backfilled = 0, backfillFailed = 0;
   for (const ek of pending.slice(0, MAX_BACKFILL_PER_RUN)) {
     backfilled++;
