@@ -114,6 +114,29 @@ function get(url) {
 // Scanning row-by-row with /\[[^\[\]]*\]/ looks equivalent but is NOT: a super
 // tiebreak score ("6-7 [10-7]") contains its own brackets, so that regex tears
 // the row in half and silently drops a real match from every total.
+// One player's serve counters for a match, read from `cells` starting at `base`.
+// Returns null unless the block is complete and internally consistent — a match
+// with no stats recorded carries empty strings here, and a serve column built
+// over those would report a real 0% instead of "not measured".
+function serveCounters(cells, base) {
+  const n = k => {
+    const v = cells[base + k];
+    if (v === '' || v == null) return null;
+    const x = Number(v);
+    return Number.isFinite(x) && x >= 0 ? x : null;
+  };
+  const o = {
+    aces: n(0), dfs: n(1), pts: n(2), firstIn: n(3), firstWon: n(4),
+    secondWon: n(5), svGames: n(6), bpSaved: n(7), bpFaced: n(8),
+  };
+  if (Object.values(o).some(v => v === null)) return null;
+  // A serve block with no points played is a placeholder, not a real 0.
+  if (!o.pts || !o.svGames) return null;
+  if (o.firstIn > o.pts || o.firstWon > o.firstIn) return null;
+  if (o.bpSaved > o.bpFaced) return null;
+  return o;
+}
+
 function parseMatches(html) {
   const i = html.indexOf('var matchmx');
   if (i < 0) return [];
@@ -136,6 +159,12 @@ function parseMatches(html) {
     if (wl !== 'W' && wl !== 'L') continue;
     out.push({
       date, surface, level, wl, round, score,
+      // Cells 21-38 are the per-match serve counters for both players, in
+      // Sackmann's atp_matches order. Older matches carry none — serve() returns
+      // null for those and they are excluded from MS and every serve column,
+      // rather than being averaged in as zeros.
+      srv: serveCounters(cells, 21),
+      opp: serveCounters(cells, 30),
       // Strictly the source's own best-of field. Inferring 5 from a Grand Slam
       // over-counts: a walkover carries no best-of, which is why TA shows one
       // more Grand Slam match than Best of 5.
@@ -176,6 +205,43 @@ function setRecord(m) {
   return m.wl === 'W' ? { w: winnerSets, l: loserSets } : { w: loserSets, l: winnerSets };
 }
 
+// The scored sets of a match, winner-oriented, after dropping the trailing
+// incomplete set of a RET/DEF. Shared by the set, game and tiebreak columns so
+// all three agree on what actually counts as played.
+function scoredSets(m) {
+  const sc = (m.score || '').trim();
+  if (!sc || !/\d-\d/.test(sc)) return [];
+  const toks = sc.split(/\s+/).filter(t => /^\d+-\d+(\(\d+\))?$/.test(t));
+  if (/RET|DEF/i.test(sc) && toks.length) {
+    const last = toks[toks.length - 1].match(/^(\d+)-(\d+)/);
+    if (last && !completedSet(+last[1], +last[2])) toks.pop();
+  }
+  return toks.map(t => {
+    const mm = t.match(/^(\d+)-(\d+)(?:\((\d+)\))?$/);
+    return { a: +mm[1], b: +mm[2], tb: mm[3] !== undefined };
+  });
+}
+
+// Games won/lost from the player's perspective. Unlike sets, every game of an
+// abandoned set is still a game that was played, but TA drops the whole
+// incomplete set, so scoredSets is the shared source of truth.
+function gameRecord(m) {
+  let w = 0, l = 0;
+  for (const s of scoredSets(m)) { w += s.a; l += s.b; }
+  return m.wl === 'W' ? { w, l } : { w: l, l: w };
+}
+
+// Tiebreaks won/lost. A tiebreak set is won by whoever won the set, so the
+// tiebreak follows the set's winner.
+function tbRecord(m) {
+  let w = 0, l = 0;
+  for (const s of scoredSets(m)) {
+    if (!s.tb) continue;
+    if (s.a > s.b) w++; else if (s.b > s.a) l++;
+  }
+  return m.wl === 'W' ? { w, l } : { w: l, l: w };
+}
+
 // Tour level: Grand Slams, Masters, ATP tour ("A"), Tour Finals, Davis Cup.
 // Challengers and ITF futures are NOT tour level and must be excluded, or every
 // row inflates. F and D count toward the surface rows but get no level row of
@@ -212,17 +278,70 @@ function splits(matches) {
   for (const [label, pred] of CATEGORIES) {
     const sub = matches.filter(pred);
     if (!sub.length) continue; // zero-match categories dropped (dashboard hides)
-    let W = 0, setW = 0, setL = 0;
+    let W = 0, setW = 0, setL = 0, gameW = 0, gameL = 0, tbW = 0, tbL = 0;
+    // Serve totals accumulate ONLY over matches that carry stats, so the
+    // denominator of every serve column is MS, not M.
+    let MS = 0;
+    const t = {
+      aces: 0, dfs: 0, pts: 0, firstIn: 0, firstWon: 0, secondWon: 0,
+      svGames: 0, bpSaved: 0, bpFaced: 0,
+      opts: 0, ofirstWon: 0, osecondWon: 0, osvGames: 0, obpSaved: 0, obpFaced: 0,
+    };
     for (const m of sub) {
       if (m.wl === 'W') W++;
       const sr = setRecord(m); setW += sr.w; setL += sr.l;
+      const gr = gameRecord(m); gameW += gr.w; gameL += gr.l;
+      const tr = tbRecord(m); tbW += tr.w; tbL += tr.l;
+      // Both blocks are required: RPW and DR are computed off the opponent's
+      // serve, so a match with only one side recorded cannot be counted.
+      if (!m.srv || !m.opp) continue;
+      MS++;
+      t.aces += m.srv.aces; t.dfs += m.srv.dfs; t.pts += m.srv.pts;
+      t.firstIn += m.srv.firstIn; t.firstWon += m.srv.firstWon;
+      t.secondWon += m.srv.secondWon; t.svGames += m.srv.svGames;
+      t.bpSaved += m.srv.bpSaved; t.bpFaced += m.srv.bpFaced;
+      t.opts += m.opp.pts; t.ofirstWon += m.opp.firstWon;
+      t.osecondWon += m.opp.secondWon; t.osvGames += m.opp.svGames;
+      t.obpSaved += m.opp.bpSaved; t.obpFaced += m.opp.bpFaced;
     }
-    const M = sub.length, L = M - W, setTot = setW + setL;
+    const M = sub.length, L = M - W;
+    const setTot = setW + setL, gameTot = gameW + gameL, tbTot = tbW + tbL;
+    const pct = (num, den) => den ? Math.round(num / den * 1000) / 10 : null;
+
+    // Tennis Abstract publishes these formulas in makeSplitStatRow() on the same
+    // page as the data — they are lifted from there, not derived, so the columns
+    // agree with TA's own tables cell for cell.
+    const secondPts = t.pts - t.firstIn;                 // 2nd serve points = every point where the 1st missed
+    const svWon = t.firstWon + t.secondWon;
+    const oSvWon = t.ofirstWon + t.osecondWon;
+    const spw = t.pts ? svWon / t.pts : null;            // serve points won
+    const rpw = t.opts ? 1 - oSvWon / t.opts : null;     // return points won = the rest of the opponent's serve
+    const r1 = v => v == null ? null : Math.round(v * 1000) / 10;
+    const serve = !MS ? null : {
+      MS,
+      // Hold% = service games minus the ones broken. Break% is the mirror,
+      // computed off the opponent's service games.
+      hldPct: pct(t.svGames - (t.bpFaced - t.bpSaved), t.svGames),
+      brkPct: pct(t.obpFaced - t.obpSaved, t.osvGames),
+      aPct: r1(t.pts ? t.aces / t.pts : null),
+      dfPct: r1(t.pts ? t.dfs / t.pts : null),
+      firstInPct: r1(t.pts ? t.firstIn / t.pts : null),
+      firstWonPct: r1(t.firstIn ? t.firstWon / t.firstIn : null),
+      secondWonPct: r1(secondPts > 0 ? t.secondWon / secondPts : null),
+      spwPct: r1(spw),
+      rpwPct: r1(rpw),
+      tpwPct: r1((t.pts + t.opts) ? (svWon + (t.opts - oSvWon)) / (t.pts + t.opts) : null),
+      // Dominance Ratio: return points won per serve point lost. Above 1.0 means
+      // he does more damage on return than he concedes on serve.
+      dr: (rpw != null && spw != null && spw < 1) ? Math.round(rpw / (1 - spw) * 100) / 100 : null,
+    };
     rows[label] = {
       M, W, L,
-      winPct: Math.round(W / M * 1000) / 10,
-      setW, setL,
-      setPct: setTot ? Math.round(setW / setTot * 1000) / 10 : null,
+      winPct: pct(W, M),
+      setW, setL, setPct: pct(setW, setTot),
+      gameW, gameL, gamePct: pct(gameW, gameTot),
+      tbW, tbL, tbPct: pct(tbW, tbTot),
+      ...(serve || { MS: 0 }),
     };
   }
   return rows;
@@ -342,7 +461,15 @@ async function main() {
     source: 'Jeff Sackmann ATP match data via tennisabstract.com player-classic (matchmx)',
     window52Rule: 'per player: 364 days before that player\'s most recent tour match (matches tennisabstract)',
     categories: CATEGORIES.map(c => c[0]),
-    columns: ['M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct'],
+    columns: [
+      'M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct', 'gameW', 'gameL', 'gamePct',
+      'tbW', 'tbL', 'tbPct', 'MS', 'hldPct', 'brkPct', 'aPct', 'dfPct', 'firstInPct',
+      'firstWonPct', 'secondWonPct', 'spwPct', 'rpwPct', 'tpwPct', 'dr',
+    ],
+    // Serve columns are measured over MS, not M: they exist only for matches
+    // where the source recorded serve counters (~98% since 2025, ~74% career).
+    // A row with MS=0 carries no serve keys at all and must render as dashes.
+    statsRule: 'serve/return columns are averaged over MS (matches with recorded stats), never over M; absent = no stats recorded, not zero',
     coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length, fetched, fromCache: cached, staleFallback },
     players,
   };
