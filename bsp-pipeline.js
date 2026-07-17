@@ -2904,6 +2904,16 @@ const PLAYER_PROFILE_CACHE_PATH = 'player-profiles-cache.json';
 const OPPONENT_PROFILE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 
+// Bump whenever a change alters the CONTENT of a built profile (a stat formula,
+// a new/removed field, a cap). The TTL above only answers "is this data old?" —
+// it cannot answer "was this built by the current code?", so without this a
+// cached opponent keeps serving numbers from the old formula for up to 14 days
+// while seed players (rebuilt every run) show the new ones. That split is what
+// hid the doubled ace counts: fixing the aggregator moved today's players and
+// left ~370 cached profiles wrong, with nothing to signal why.
+// v2 = match-level-only stat aggregation (count stats were doubled before).
+const PROFILE_SCHEMA_VERSION = 2;
+
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
 // per-tournament career record. Cached in its own file with a 7-day TTL shared
@@ -3078,6 +3088,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   for (const [key, name] of opponentPool) {
     const cached = cachedPlayers[key];
     const fresh = cached && cached.builtAt
+      && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
     if (fresh) {
       if (cached.profile) { profiles[key] = cached.profile; reused++; } else skippedNull++;
@@ -3088,7 +3099,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       continue;
     }
     const { profile } = await buildOneProfile(key, name, surfaceMap);
-    cachedPlayers[key] = { builtAt: new Date().toISOString(), profile: profile || null };
+    cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile: profile || null };
     built++;
     if (profile) profiles[key] = profile; else skippedNull++;
   }
