@@ -766,6 +766,10 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
 //   style classification system, which is explicitly out of scope
 //   (needs Michael's own methodology).
 // =================================================================
+// Matched case-insensitively (like MATCH_STAT_DEFS below) — the feed changed
+// its casing at the 2025/2026 boundary ('1st Serve Points Won' -> '1st serve
+// points won'), and a 52-week window spans both. `name` here stays the
+// canonical casing: it builds the output key, so it must not follow the feed.
 const EXTRA_STAT_DEFS = [
   { type: 'Service', name: 'Aces', kind: 'count' },
   { type: 'Service', name: 'Double Faults', kind: 'count' },
@@ -804,7 +808,9 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
       // (verified live: aces match:16 + set1:4 + set2:6 + set3:6 = 32).
       if (stat.stat_period !== 'match') continue;
       if (String(stat.player_key) !== String(playerKey)) continue;
-      const def = EXTRA_STAT_DEFS.find(d => d.type === stat.stat_type && d.name === stat.stat_name);
+      const def = EXTRA_STAT_DEFS.find(d =>
+        d.type === stat.stat_type &&
+        d.name.toLowerCase() === String(stat.stat_name).toLowerCase());
       if (!def) continue;
       matchHadStats = true;
       const key = `${def.type}:${def.name}`;
@@ -2912,7 +2918,9 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 // hid the doubled ace counts: fixing the aggregator moved today's players and
 // left ~370 cached profiles wrong, with nothing to signal why.
 // v2 = match-level-only stat aggregation (count stats were doubled before).
-const PROFILE_SCHEMA_VERSION = 2;
+// v3 = case-insensitive stat-name matching (1st/2nd Serve Points Won and
+//      Unforced Errors silently dropped every 2026 match before).
+const PROFILE_SCHEMA_VERSION = 3;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
