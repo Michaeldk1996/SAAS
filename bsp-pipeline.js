@@ -798,6 +798,11 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
     if (!isFirst && !isSecond) continue;
     let matchHadStats = false;
     for (const stat of f.statistics) {
+      // Match-level rows only. The feed emits the same stat names again under
+      // stat_period 'set1', 'set2', ... and the per-set counts reconcile exactly
+      // to the match total, so counting every row doubled every count stat
+      // (verified live: aces match:16 + set1:4 + set2:6 + set3:6 = 32).
+      if (stat.stat_period !== 'match') continue;
       if (String(stat.player_key) !== String(playerKey)) continue;
       const def = EXTRA_STAT_DEFS.find(d => d.type === stat.stat_type && d.name === stat.stat_name);
       if (!def) continue;
