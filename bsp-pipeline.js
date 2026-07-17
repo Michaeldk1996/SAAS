@@ -791,7 +791,12 @@ const EXTRA_STAT_DEFS = [
 // set of fixtures. Percentage stats (kind: 'pct') are weighted by summing
 // each match's real stat_won/stat_total (not averaging pre-rounded
 // percentages, which would skew toward short matches). Count stats
-// (kind: 'count') are reported as a per-match average.
+// (kind: 'count') are reported as an average over the matches that actually
+// carry THAT stat — the feed's coverage is per-stat, not per-match (Aces are
+// on 100% of match sheets, Winners/Unforced Errors only ~66%, and the gap is
+// concentrated at ATP 250s), so a single shared denominator divided by
+// matches the numerator never saw and read up to 75% low for 250-level
+// players while the headline names looked correct.
 function aggregateStatsFromFixtures(fixtures, playerKey) {
   const totals = {};
   let matchCount = 0;
@@ -800,7 +805,17 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
-    let matchHadStats = false;
+    // One entry per stat per MATCH, not per row. A stat must contribute at
+    // most once to its own denominator, and the feed cannot be trusted to
+    // emit it once: verified live on Burruchaga (Costa do Sauipe 2025-10-23
+    // and 2025-10-25), where `statistics` carries the real match block AND a
+    // trailing fragment block for both players — a second full set of
+    // match-period rows totalling 6 points against the real 99. Summing every
+    // row read those fragments as extra tennis (Total Points Won became 60/105
+    // instead of 58/99), and counting every row would inflate the denominator
+    // past the number of matches played. First block wins: it is the real
+    // match, the fragment trails it.
+    const seen = new Map();
     for (const stat of f.statistics) {
       // Match-level rows only. The feed emits the same stat names again under
       // stat_period 'set1', 'set2', ... and the per-set counts reconcile exactly
@@ -812,24 +827,54 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
         d.type === stat.stat_type &&
         d.name.toLowerCase() === String(stat.stat_name).toLowerCase());
       if (!def) continue;
-      matchHadStats = true;
       const key = `${def.type}:${def.name}`;
-      if (!totals[key]) totals[key] = { won: 0, total: 0, sum: 0, kind: def.kind };
+      if (seen.has(key)) continue;
+      seen.set(key, stat);
+    }
+    if (seen.size > 0) matchCount++;
+    for (const [key, stat] of seen) {
+      const def = EXTRA_STAT_DEFS.find(d => `${d.type}:${d.name}` === key);
+      // `n` = matches carrying THIS stat. It is the only correct denominator
+      // for a count average; `matchCount` above stays the "matches on file"
+      // sample size shown to the user and is deliberately not used to divide.
+      if (!totals[key]) totals[key] = { won: 0, total: 0, sum: 0, n: 0, kind: def.kind };
       if (def.kind === 'pct') {
-        totals[key].won += Number(stat.stat_won) || 0;
-        totals[key].total += Number(stat.stat_total) || 0;
+        const won = Number(stat.stat_won);
+        const total = Number(stat.stat_total);
+        if (!Number.isFinite(won) || !Number.isFinite(total)) continue;
+        // The feed does emit impossible rows: verified live on M. H. Rehberg,
+        // Geneva 2026-05-17, Break Points Saved "2/0" — 2 saved out of 0
+        // faced. One such row poisons the whole window (that player read 300%
+        // Break Points Saved on the live site, because won=3 summed against
+        // total=1). A row claiming more won than were played is corrupt, not
+        // an extreme performance, so drop it rather than let it skew a real
+        // average — the remaining matches still produce an honest number.
+        if (won < 0 || total < 0 || won > total) continue;
+        totals[key].won += won;
+        totals[key].total += total;
+        totals[key].n++;
       } else {
-        totals[key].sum += parseInt(stat.stat_value, 10) || 0;
+        const value = parseInt(stat.stat_value, 10);
+        if (!Number.isFinite(value)) continue;
+        totals[key].sum += value;
+        totals[key].n++;
       }
     }
-    if (matchHadStats) matchCount++;
   }
   if (matchCount === 0) return null;
   const stats = {};
   for (const [key, v] of Object.entries(totals)) {
-    stats[key] = v.kind === 'pct'
-      ? (v.total > 0 ? Math.round((v.won / v.total) * 1000) / 10 : null)
-      : Math.round((v.sum / matchCount) * 10) / 10;
+    if (v.kind === 'pct') {
+      const pct = v.total > 0 ? Math.round((v.won / v.total) * 1000) / 10 : null;
+      // Corrupt rows are already dropped above, so this cannot currently fire.
+      // It stays as the last line of defence: nothing else in the codebase
+      // validates a percentage before it reaches a card, and an impossible
+      // number should never render. Null flags it as "no data" rather than
+      // clamping to a plausible-looking 100%.
+      stats[key] = (pct !== null && (pct < 0 || pct > 100)) ? null : pct;
+    } else {
+      stats[key] = v.n > 0 ? Math.round((v.sum / v.n) * 10) / 10 : null;
+    }
   }
   return { matchCount, stats };
 }
@@ -2920,7 +2965,10 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 // v2 = match-level-only stat aggregation (count stats were doubled before).
 // v3 = case-insensitive stat-name matching (1st/2nd Serve Points Won and
 //      Unforced Errors silently dropped every 2026 match before).
-const PROFILE_SCHEMA_VERSION = 3;
+// v4 = per-stat denominator for count averages (Winners/Unforced Errors were
+//      divided by every match on file, not just the ~66% that carry them) plus
+//      rejection of impossible feed rows (won > total).
+const PROFILE_SCHEMA_VERSION = 4;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
