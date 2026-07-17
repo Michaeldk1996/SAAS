@@ -33,7 +33,7 @@ const fs = require('fs');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 // Importing the pipeline is side-effect free — it only self-runs under
 // `require.main === module`.
-const { buildSetStatsFromFixture } = require('./bsp-pipeline.js');
+const { buildSetStatsFromFixture, buildMatchStatsFromFixture } = require('./bsp-pipeline.js');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -50,6 +50,13 @@ const INDEX_PATH = 'pbp-index.json';
 const SETSTATS_DIR = 'setstats';
 const FORM_DIR = 'form';   // per-player recent-form shards, written by bsp-pipeline.js
 const SETSTATS_INDEX_PATH = 'setstats-index.json';
+// The whole-match box score rides IN the set-stats shard rather than in a file
+// of its own — same match, same fetch, and a row that opens its Stats pane wants
+// both. It needs its own index though: the feed publishes match rows from
+// 2024-03 and per-set rows only from 2024-11, so a match can have a match box
+// score and no per-set one. One index cannot answer for both without lying about
+// one of them.
+const MATCHSTATS_INDEX_PATH = 'matchstats-index.json';
 const PACE_MS = 150;
 
 // Ceiling on NEW point logs fetched per run. The Form tab's recent-form rows
@@ -127,6 +134,15 @@ function parseFixture(r) {
     // row's player key to p1Key. Names would need fuzzy matching.
     p1Key, p2Key,
     stats: (p1Key != null && p2Key != null) ? buildSetStatsFromFixture(r, p1Key, p2Key) : null,
+    // The SAME `statistics` array also carries the stat_period 'match' rows —
+    // the whole-match box score. This reader kept only the per-set rows and
+    // dropped them, which is why every drill-down row outside the Form tab had
+    // nothing to open a Stats pane on: the Form tab gets its `matchStats` from
+    // the pipeline's own per-match cache, and no other surface has one. Keeping
+    // them here costs ZERO extra calls (same bytes, already downloaded) and is
+    // what makes H2H / Overview / Tournament rows expandable on real stats
+    // rather than on a per-set approximation.
+    matchStats: (p1Key != null && p2Key != null) ? buildMatchStatsFromFixture(r, p1Key, p2Key) : null,
   };
 }
 
@@ -136,10 +152,11 @@ function parseFixture(r) {
 function buildCacheEntry(got, names = null) {
   const compact = got ? compactPbp(got.raw) : null;
   const stats = (got && got.stats) || null;
+  const matchStats = (got && got.matchStats) || null;
   const keys = { p1Key: (got && got.p1Key) ?? null, p2Key: (got && got.p2Key) ?? null };
   return compact
-    ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact, ...keys, stats }
-    : { sets: [], ...keys, stats };
+    ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact, ...keys, stats, matchStats }
+    : { sets: [], ...keys, stats, matchStats };
 }
 
 async function fetchFixture(eventKey) {
@@ -329,6 +346,7 @@ async function main() {
       // Written in place: the entry's point log and names are already correct and
       // must survive a fixture that comes back without one.
       e.stats = (got && got.stats) || null;   // key present even when null — asked once, never again
+      e.matchStats = (got && got.matchStats) || null;   // same response, same rule
       if (got && got.p1Key != null) { e.p1Key = got.p1Key; e.p2Key = got.p2Key; }
       if (got && !e.p1 && got.p1) { e.p1 = got.p1; e.p2 = got.p2; }
     } catch (err) {
@@ -359,14 +377,29 @@ async function main() {
   // independent feeds), so one index cannot answer for both.
   fs.mkdirSync(SETSTATS_DIR, { recursive: true });
   const setIndex = [];
+  const matchIndex = [];
   for (const ek of Object.keys(cache)) {
     const e = cache[ek];
-    if (!e || !e.stats || !Object.keys(e.stats).length) continue;
+    if (!e) continue;
     if (e.p1Key == null || e.p2Key == null) continue;   // unorientable — a row could not tell which side is its own
-    writeAtomic(`${SETSTATS_DIR}/${ek}.json`, JSON.stringify({ p1Key: e.p1Key, p2Key: e.p2Key, sets: e.stats }));
-    setIndex.push(ek);
+    const hasSets = !!(e.stats && Object.keys(e.stats).length);
+    const hasMatch = !!(e.matchStats && (Object.keys(e.matchStats.p1 || {}).length || Object.keys(e.matchStats.p2 || {}).length));
+    // Either half is worth a shard on its own. This used to require per-set
+    // stats, which silently withheld the whole-match box score for every match
+    // played between 2024-03 and 2024-11 — the window where the feed publishes
+    // match rows but no set rows.
+    if (!hasSets && !hasMatch) continue;
+    writeAtomic(`${SETSTATS_DIR}/${ek}.json`, JSON.stringify({
+      p1Key: e.p1Key, p2Key: e.p2Key, sets: e.stats || null, match: e.matchStats || null,
+    }));
+    if (hasSets) setIndex.push(ek);
+    if (hasMatch) matchIndex.push(ek);
   }
   writeAtomic(SETSTATS_INDEX_PATH, JSON.stringify(setIndex));
+  // Which rows can open a whole-match Stats pane. Same contract as pbp-index:
+  // availability ships as data, so a row knows whether to show an expander
+  // BEFORE it renders — never as a 404 it has to render against.
+  writeAtomic(MATCHSTATS_INDEX_PATH, JSON.stringify(matchIndex));
 
   writeAtomic(CACHE_PATH, JSON.stringify(cache));
   writeAtomic(OUT_PATH, JSON.stringify(out));
@@ -374,6 +407,16 @@ async function main() {
   console.log(`point-by-point: ${Object.keys(out).length} matches with point logs (${fetched} fetched, ${reused} cached, ${skipped} skipped) -> ${OUT_PATH} (${kb} KB)`);
   console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
   console.log(`set-stats: ${setIndex.length} shards -> ${SETSTATS_DIR}/ (${backfilled} backfilled this run${backfillFailed ? `, ${backfillFailed} failed` : ''})`);
+  console.log(`match-stats: ${matchIndex.length} matches carry a whole-match box score -> ${MATCHSTATS_INDEX_PATH}`);
+  // Entries that predate the match box score are refilled by the PLAYER-WINDOW
+  // path in backfill-history-shards.js (one call per player), NOT by the
+  // per-match loop above — whose `pending` filter is deliberately left on
+  // `stats` alone. Widening it to matchStats would turn a ~48-call convergence
+  // into thousands of serial per-match fetches for data the window already has.
+  const awaitingMatchStats = Object.keys(cache).filter(k => !('matchStats' in cache[k])).length;
+  if (awaitingMatchStats) {
+    console.log(`match-stats: ${awaitingMatchStats} cached matches predate the match box score — the history backfill refills them (window path, ~1 call/player).`);
+  }
   // The backfill is capped per run, so early runs cover only part of the cache.
   // Report the remainder rather than letting a partial rollout read as complete.
   const awaitingStats = Object.keys(cache).filter(k => !('stats' in cache[k])).length;

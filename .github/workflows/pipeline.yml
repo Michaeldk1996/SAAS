@@ -110,6 +110,7 @@ jobs:
           cp pbp-index.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
           cp setstats-index.json _site/ 2>/dev/null || true
+          cp matchstats-index.json _site/ 2>/dev/null || true
           cp -r setstats _site/ 2>/dev/null || true
           cp form-index.json _site/ 2>/dev/null || true
           cp -r form _site/ 2>/dev/null || true

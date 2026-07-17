@@ -71,6 +71,10 @@ function mergeEntry(existing, built) {
   if (out.p1Key == null && built.p1Key != null) { out.p1Key = built.p1Key; out.p2Key = built.p2Key; }
   // `stats` present-but-null means "asked, feed had none" — don't ask again.
   if (!('stats' in out) || (out.stats == null && built.stats)) out.stats = built.stats;
+  // Same rule for the whole-match box score, and the same reason it can't just
+  // overwrite: a window fixture that comes back without statistics must not
+  // blank a box score an earlier per-match fetch already resolved.
+  if (!('matchStats' in out) || (out.matchStats == null && built.matchStats)) out.matchStats = built.matchStats;
   return out;
 }
 
@@ -87,9 +91,14 @@ async function main() {
   const histories = JSON.parse(fs.readFileSync(HISTORIES_PATH, 'utf8'));
   const cache = fs.existsSync(CACHE_PATH) ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')) : {};
 
-  // An entry is only "done" once it has been asked for stats — `stats` present
-  // (even null) is the marker build-point-by-point.js uses for the same reason.
-  const resolved = ek => cache[ek] && ('stats' in cache[ek]);
+  // An entry is only "done" once it has been asked for BOTH box scores —
+  // present-even-when-null is the marker build-point-by-point.js uses for the
+  // same reason. matchStats joined the entry after the cache was already
+  // populated, so requiring it here is what re-opens the ~48 player windows once
+  // to fill it and then closes them again. It is safe to widen HERE and nowhere
+  // else: this path costs one call per PLAYER regardless of how many of their
+  // matches are missing it, whereas the per-match loop would pay per match.
+  const resolved = ek => cache[ek] && ('stats' in cache[ek]) && ('matchStats' in cache[ek]);
 
   // Rank players by how many of their drill-down rows are still unbacked. A
   // player with nothing pending is skipped WITHOUT a call, so this both aims the
