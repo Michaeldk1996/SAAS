@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSP Consult — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #08090C;
@@ -632,59 +632,103 @@
   .modal-analysis .mstat-row .mstat-track .mstat-seg{ height:100%; }
   .modal-analysis .mstat-row .mstat-track .mstat-seg.p1{ background:var(--accent); }
   .modal-analysis .mstat-row .mstat-track .mstat-seg.p2{ background:var(--court-clay); }
-  .modal-analysis .msheet-names{ display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#e7e9ee; margin-bottom:12px; }
-  .modal-analysis .msheet-head{ text-align:center; margin-bottom:16px; }
-  .modal-analysis .msheet-head .msheet-title{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6b7280; }
-  .modal-analysis .msheet-head .msheet-sets{ font-family:'IBM Plex Mono', monospace; font-size:13.5px; font-weight:600; color:#cfd4de; margin-top:4px; }
-  .modal-analysis .msheet-table{ border:1px solid rgba(255,255,255,0.06); border-radius:14px; overflow:hidden; }
-  .modal-analysis .msheet-table + .msheet-table{ margin-top:14px; }
-  .modal-analysis .msheet-grouphead{ display:grid; grid-template-columns:110px 1fr 110px; padding:8px 16px; background:rgba(255,255,255,0.025); border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05); }
-  .modal-analysis .msheet-grouphead span:nth-child(2){ font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#8b93a3; font-weight:600; text-align:center; }
-  .modal-analysis .msheet-row{ display:grid; grid-template-columns:110px 1fr 110px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }
-  .modal-analysis .msheet-row:hover{ background:rgba(255,255,255,0.015); }
-  .modal-analysis .msheet-row:last-child{ border-bottom:none; }
-  .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center; padding:11px 0; color:#c7cdd6; font-weight:600; }
-  .modal-analysis .msheet-label{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:#9aa3b2; text-align:center; }
+  .modal-analysis .msheet-names{ display:flex; align-items:center; justify-content:space-between; font-size:14px; font-weight:700; color:#e7e9ee; margin-bottom:14px; }
+  .modal-analysis .msheet-head{ text-align:center; margin-bottom:6px; }
+  .modal-analysis .msheet-head .msheet-title{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:#5b6472; }
+  .modal-analysis .msheet-head .msheet-sets{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#cfd4de; margin-top:4px; }
+  /* Section band (SERVICE / RETURN / POINTS) — a centred mono caption on a faint
+     tint, not a table header: the rows beneath it are free-standing, separated by
+     hairlines rather than boxed in a bordered table. */
+  .modal-analysis .msheet-grouphead{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#7f8798; text-align:center; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; margin-top:16px; }
+  .modal-analysis .msheet-row{ padding:13px 6px 15px; border-bottom:1px solid rgba(255,255,255,0.045); }
+  .modal-analysis .msheet-vals{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; margin-bottom:9px; }
+  .modal-analysis .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:#e7ebf1; }
+  .modal-analysis .msheet-val.p2{ text-align:right; }
+  /* The fraction is a quiet companion to the value, so it hugs the outside edge:
+     before the number on the left, after it on the right. */
+  .modal-analysis .msheet-frac{ font-size:11px; color:#6b7280; }
+  .modal-analysis .msheet-val.p1 .msheet-frac{ margin-right:6px; }
+  .modal-analysis .msheet-val.p2 .msheet-frac{ margin-left:6px; }
+  .modal-analysis .msheet-label{ font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#8b93a3; text-align:center; padding:0 14px; white-space:nowrap; }
   .modal-analysis .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
+  /* Diverging bar: two tracks meeting at the centre. The left fill is anchored to
+     the centre (justify-content:flex-end) and grows leftward, the right grows
+     rightward, so each side's length reads as its share of the raw stat. Colour
+     is the player's side — never who is winning. */
+  .modal-analysis .msheet-bar{ display:flex; gap:5px; height:8px; }
+  .modal-analysis .msheet-bar .msheet-half{ flex:1; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
+  .modal-analysis .msheet-bar .msheet-half.p1{ display:flex; justify-content:flex-end; }
+  .modal-analysis .msheet-bar .msheet-fill{ height:100%; border-radius:4px; display:block; }
+  .modal-analysis .msheet-bar .msheet-fill.p1{ background:linear-gradient(90deg,rgba(62,123,250,0.35),#3E7BFA); }
+  .modal-analysis .msheet-bar .msheet-fill.p2{ background:linear-gradient(90deg,#E8934B,rgba(232,147,75,0.35)); }
   /* Banner above the stat sheet of a suspended match: these numbers are real but
      frozen mid-match, so they must never be read as a completed box score. */
   .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,0.08); border-left:2px solid #8b93a3; border-radius:10px; background:rgba(255,255,255,0.025); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#cfd4de; }
   .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
+  /* Inset result banner, drawn at the top of the Match Stats panel per the
+     design handoff. The modal's own #aLiveBar carries the same sentence for
+     every other tab, so it is hidden while this one is on screen — see
+     syncAnalysisLiveBar(). */
+  .modal-analysis .ms-final{ display:flex; align-items:center; gap:12px; background:rgba(62,207,142,0.07); border:1px solid rgba(62,207,142,0.25); border-radius:12px; padding:13px 18px; margin-bottom:22px; }
+  .modal-analysis .ms-final-chk{ width:20px; height:20px; border-radius:5px; background:#2fbf7e; display:flex; align-items:center; justify-content:center; color:#07130d; font-size:12px; font-weight:800; flex-shrink:0; }
+  .modal-analysis .ms-final-score{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#e7ebf1; }
+  .modal-analysis .ms-final-note{ font-size:12.5px; color:#8b93a3; }
+  /* Suspended play has no result, so it reuses the layout in the amber the rest
+     of the app already uses for an interrupted match rather than the green. */
+  .modal-analysis .ms-final.interrupted{ background:rgba(226,139,74,0.07); border-color:rgba(226,139,74,0.25); }
+  .modal-analysis .ms-final.interrupted .ms-final-chk{ background:#E28B4A; }
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
-  .modal-analysis .ms-subtabs{ display:flex; gap:4px; justify-content:center; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:999px; padding:3px; width:max-content; max-width:100%; margin:0 auto 22px; }
-  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#8b93a3; background:none; border:none; padding:6px 18px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease; }
+  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:5px; width:max-content; max-width:100%; margin:0 auto 16px; }
+  .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
+  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:700; color:#8b93a3; background:none; border:none; padding:10px 22px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; transition:background .15s ease, color .15s ease; }
   .modal-analysis .ms-subtab:hover{ color:#cfd4de; }
-  .modal-analysis .ms-subtab.active{ color:#fff; background:var(--accent); }
+  .modal-analysis .ms-subtab.active{ color:#fff; background:#3E7BFA; }
   .modal-analysis .ms-pane{ display:none; }
   .modal-analysis .ms-pane.active{ display:block; }
+  /* Scope selector — mono pills beneath the view toggle. Quieter than .ms-subtab
+     (no accent fill) so the primary Stats/Point-by-point toggle stays dominant.
+     width:auto + flex:0 0 auto override the global `.modal button{width:100%}`,
+     which would otherwise stretch each pill full-width onto its own line. */
+  .modal-analysis .ms-setsel{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:0 auto 22px; width:max-content; max-width:100%; }
+  .modal-analysis .ms-setbtn{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; color:#8b93a3; background:transparent; border:1px solid rgba(255,255,255,0.08); padding:8px 17px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .modal-analysis .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.16); }
+  .modal-analysis .ms-setbtn.active{ color:#fff; border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); }
   /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
   .modal-analysis .pbp-wrap{ max-width:560px; margin:0 auto; }
-  .modal-analysis .pbp-sethdr{ display:flex; align-items:center; justify-content:center; gap:12px; margin:20px 0 8px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280; font-weight:700; }
-  .modal-analysis .pbp-setscore{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#e7e9ee; letter-spacing:normal; text-transform:none; }
+  /* Set band + tiebreak band share the section-band treatment of the Stats view. */
+  .modal-analysis .pbp-sethdr,
+  .modal-analysis .pbp-tbhdr{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#7f8798; text-align:center; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:center; gap:12px; }
+  .modal-analysis .pbp-sethdr{ margin-top:14px; }
+  /* The tiebreak band closes out the set it belongs to, so it sits tighter to the
+     games above it than a new set band would. */
+  .modal-analysis .pbp-tbhdr{ margin-top:6px; }
+  .modal-analysis .pbp-setscore{ color:#e7ebf1; letter-spacing:normal; text-transform:none; }
   .modal-analysis .pbp-setscore sup{ font-size:9px; color:#8b93a3; }
-  .modal-analysis .pbp-grow{ text-align:center; padding:9px 0; border-top:1px solid rgba(255,255,255,0.05); }
-  .modal-analysis .pbp-gscore{ display:flex; align-items:center; justify-content:center; gap:10px; }
-  .modal-analysis .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:600; color:#cfd4de; min-width:58px; }
-  .modal-analysis .pbp-grow.broke .pbp-gnum{ color:#ffcf8a; }
-  .modal-analysis .pbp-ball{ display:inline-flex; align-items:center; width:14px; height:14px; color:#c7d43f; }
-  .modal-analysis .pbp-ball svg{ width:14px; height:14px; }
-  .modal-analysis .pbp-ball-sp{ display:inline-block; width:14px; height:14px; }
-  .modal-analysis .pbp-gpts{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#7f8794; margin-top:4px; line-height:1.5; }
-  .modal-analysis .pbp-pt.bp{ color:#ffb865; }
-  .modal-analysis .pbp-pt.sp{ color:#8fd0ff; }
-  .modal-analysis .pbp-pt.mp{ color:#8affc0; font-weight:700; }
-  .modal-analysis .pbp-tbhdr{ text-align:center; background:rgba(255,255,255,0.05); border-radius:6px; padding:7px 0; margin:14px 0 4px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#aeb6c2; font-weight:700; }
-  .modal-analysis .pbp-tbrow{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
-  .modal-analysis .pbp-tbside{ display:flex; align-items:center; gap:8px; }
-  .modal-analysis .pbp-tbside.left{ justify-content:flex-end; }
-  .modal-analysis .pbp-tbside.right{ justify-content:flex-start; }
-  .modal-analysis .pbp-tbscore{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:#e7e9ee; padding:0 18px; display:flex; align-items:center; gap:8px; white-space:nowrap; }
-  .modal-analysis .pbp-lost{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.05em; color:#f0a0a0; background:rgba(217,105,90,0.14); border:1px solid rgba(217,105,90,0.35); border-radius:4px; padding:2px 5px; white-space:nowrap; }
-  .modal-analysis .pbp-badge{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; letter-spacing:0.05em; font-weight:700; border-radius:4px; padding:2px 5px; }
-  .modal-analysis .pbp-badge.sp{ color:#8fd0ff; background:rgba(62,123,250,0.16); border:1px solid rgba(62,123,250,0.4); }
-  .modal-analysis .pbp-badge.mp{ color:#8affc0; background:rgba(46,204,113,0.16); border:1px solid rgba(46,204,113,0.4); }
-  .modal-analysis .pbp-legend{ display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:16px 2px 0; font-size:11px; color:#8b93a3; }
-  .modal-analysis .pbp-legend .k{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+  /* Every row — game or tiebreak point — is the same 5-column grid, so the ball,
+     score and tags line up in one column down the whole set. */
+  .modal-analysis .pbp-grow{ padding:12px 6px; border-bottom:1px solid rgba(255,255,255,0.045); }
+  .modal-analysis .pbp-tbrow{ padding:10px 6px; border-bottom:1px solid rgba(255,255,255,0.045); }
+  .modal-analysis .pbp-line{ display:grid; grid-template-columns:1fr auto auto auto 1fr; align-items:center; column-gap:10px; }
+  .modal-analysis .pbp-tags{ display:flex; gap:7px; }
+  .modal-analysis .pbp-tags.left{ justify-content:flex-end; }
+  .modal-analysis .pbp-tags.right{ justify-content:flex-start; }
+  .modal-analysis .pbp-ballcell{ width:22px; display:flex; justify-content:center; }
+  .modal-analysis .pbp-ball{ display:flex; color:#8b93a3; }
+  .modal-analysis .pbp-ball svg{ width:15px; height:15px; display:block; }
+  .modal-analysis .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  /* The digit of whoever just won the point carries that player's colour; the
+     other stays neutral, so the lead is readable without reading the numbers. */
+  .modal-analysis .pbp-gnum .won-p1{ color:#5b93ff; }
+  .modal-analysis .pbp-gnum .won-p2{ color:#f0a95f; }
+  .modal-analysis .pbp-gnum .neutral{ color:#8b93a3; }
+  .modal-analysis .pbp-gnum .dot{ color:#5b6472; font-weight:400; }
+  .modal-analysis .pbp-gpts{ display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:8px; }
+  .modal-analysis .pbp-pt{ display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#6f7787; }
+  .modal-analysis .pbp-bp{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:700; color:#E8934B; background:rgba(232,147,75,0.14); border:1px solid rgba(232,147,75,0.32); border-radius:4px; padding:1px 5px; }
+  .modal-analysis .pbp-tag{ font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:700; letter-spacing:0.05em; border-radius:5px; padding:2px 7px; white-space:nowrap; }
+  .modal-analysis .pbp-tag.lost{ color:#E8607A; background:rgba(232,96,122,0.12); border:1px solid rgba(232,96,122,0.3); }
+  .modal-analysis .pbp-tag.sp{ color:#5b93ff; background:rgba(62,123,250,0.16); border:1px solid rgba(62,123,250,0.4); }
+  .modal-analysis .pbp-tag.mp{ color:#2fbf7e; background:rgba(62,207,142,0.16); border:1px solid rgba(62,207,142,0.4); }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
   .modal-analysis .tprogress-legend{ display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin:0 0 16px; font-family:'Hanken Grotesk', sans-serif; }
@@ -1279,6 +1323,48 @@
   #tourxReports .tourx-chartgrid{ grid-template-columns:1fr !important; }
   #tourxReports .tourx-ppgrid{ grid-template-columns:1fr !important; row-gap:34px !important; }
 }
+
+/* ---------- PLAYING STYLES ---------- */
+[data-page="styles"] .ps-matrixwrap{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:12px; }
+[data-page="styles"] .ps-grid{ display:grid; gap:3px; min-width:760px; }
+[data-page="styles"] .ps-corner{ font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:flex-end; padding:4px 6px; }
+[data-page="styles"] .ps-colhead, [data-page="styles"] .ps-rowhead{ font-size:11px; font-weight:600; color:var(--text-dim); display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; cursor:default; }
+[data-page="styles"] .ps-rowhead{ justify-content:flex-start; padding-left:8px; }
+[data-page="styles"] .ps-cell{ aspect-ratio:1/1; min-height:46px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:13px; font-weight:600; color:#eef2f8; font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-diag{ background:repeating-linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04) 5px, transparent 5px, transparent 10px); border-radius:6px; }
+[data-page="styles"] .ps-legend{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:var(--text-faint); }
+[data-page="styles"] .ps-legendbar{ display:flex; height:10px; border-radius:3px; overflow:hidden; }
+[data-page="styles"] .ps-legendbar span{ width:22px; height:100%; }
+[data-page="styles"] .ps-sectionhead{ display:flex; align-items:baseline; gap:12px; margin:30px 0 16px; }
+[data-page="styles"] .ps-sectionhead h2{ margin:0; font-size:20px; font-weight:800; letter-spacing:-0.02em; color:var(--text); }
+[data-page="styles"] .ps-sectionmeta{ font-size:12px; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-cardgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:16px; }
+[data-page="styles"] .ps-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+[data-page="styles"] .ps-cardhead{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+[data-page="styles"] .ps-cardname{ margin:0; font-size:16px; font-weight:700; color:var(--text); }
+[data-page="styles"] .ps-count{ font-size:11.5px; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); white-space:nowrap; }
+[data-page="styles"] .ps-desc{ margin:8px 0 14px; font-size:12.5px; line-height:1.5; color:var(--text-dim); }
+[data-page="styles"] .ps-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+[data-page="styles"] .ps-badge{ font-size:11.5px; padding:5px 9px; border-radius:6px; display:flex; align-items:center; gap:6px; }
+[data-page="styles"] .ps-badge.strong{ background:rgba(46,160,90,0.12); color:#57c98a; }
+[data-page="styles"] .ps-badge.weak{ background:rgba(214,77,77,0.12); color:#e07a7a; }
+[data-page="styles"] .ps-badgekey{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; opacity:0.7; }
+[data-page="styles"] .ps-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+[data-page="styles"] .ps-chip{ display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; color:var(--text); }
+[data-page="styles"] .ps-chip .ps-rank{ font-size:10.5px; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-more{ font-size:11.5px; color:var(--text-faint); align-self:center; }
+[data-page="styles"] .ps-pending{ font-size:12px; color:var(--text-faint); font-style:italic; margin-bottom:14px; }
+[data-page="styles"] .ps-matchups{ border-top:1px solid var(--border); padding-top:12px; }
+[data-page="styles"] .ps-matchupstitle{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-faint); margin-bottom:10px; }
+[data-page="styles"] .ps-mrow{ display:grid; grid-template-columns:118px 1fr 34px 40px; align-items:center; gap:8px; margin-bottom:5px; }
+[data-page="styles"] .ps-mname{ font-size:11.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-track{ height:7px; background:var(--panel-2); border-radius:4px; overflow:hidden; }
+[data-page="styles"] .ps-fill{ height:100%; border-radius:4px; }
+[data-page="styles"] .ps-mpct{ font-size:11.5px; text-align:right; color:var(--text); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-mn{ font-size:11px; text-align:right; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+@media (max-width:720px){
+  [data-page="styles"] .ps-cardgrid{ grid-template-columns:1fr; }
+}
 </style>
 <div class="tabpage" data-page="tournaments">
   <div class="pagewrap">
@@ -1315,13 +1401,15 @@
 <div class="tabpage" data-page="styles">
   <div class="pagewrap">
     <div class="pagehead">
-      <h1>Playing Styles</h1>
-      <p>Not live yet — archetypes require a real stats source (currently blocked on the Flashscore scraper).</p>
+      <h1>The 12 ATP tennis playing styles</h1>
+      <p>Matchup matrix computed over 150,000+ ATP matches since 2010. Each cell shows the win percentage of the row against the column. Player rosters are classified from Jeff Sackmann match data (2010–2026 career aggregate).</p>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;color:var(--text-dim);font-size:13px;max-width:480px;">
-      <div style="font-size:24px;margin-bottom:12px;">🚧</div>
-      Playing-style classification needs player stats (W/UE, first serve, etc.) that aren't connected yet. This page will populate once that source is fixed.
+    <div id="psMatrix" class="ps-matrixwrap"></div>
+    <div class="ps-sectionhead">
+      <h2>Archetypes in detail</h2>
+      <span class="ps-sectionmeta" id="psSectionMeta">12 styles</span>
     </div>
+    <div id="psCards" class="ps-cardgrid"></div>
   </div>
 </div>
 
@@ -1458,7 +1546,150 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // stale open profile from a previous visit.
   if (tab === 'players') showPlayerList();
   if (tab === 'tournaments') { showTournamentList(); renderTournamentsTab(); }
+  if (tab === 'styles') renderPlayingStyles();
 });
+
+/* ---------- PLAYING STYLES ---------- */
+// Self-contained: 12-archetype matchup matrix (transcribed from the
+// MatchUpTennis reference, "Solide Offensif Retourneur" dropped) plus player
+// rosters classified from Jeff Sackmann match data (classify-archetypes.js).
+const PS_ARCHETYPES = [
+  { id:'allcourt', short:'All-Court', name:'All-Court Elite',
+    description:'The best players in the world. Able to do everything: defend, attack, come to the net. Dominate every style.',
+    count:6, players:[{name:'Alcaraz',rank:1},{name:'Sinner',rank:2},{name:'Zverev',rank:3},{name:'Djokovic',rank:4},{name:'Ruud',rank:12},{name:'Medvedev',rank:13}] },
+  { id:'attirreg', short:'Inconsist.', name:'Inconsistent Attacker',
+    description:'Players with high offensive potential but inconsistent. Capable of the best and the worst in the same match.',
+    count:7, players:[{name:'Taberner',rank:98},{name:'Mochizuki',rank:130},{name:'Nardi',rank:151},{name:'Basavareddy',rank:154},{name:'Ymer',rank:171},{name:'Gombos',rank:296},{name:'Vavassori',rank:334}] },
+  { id:'attlift', short:'Topspin', name:'Baseline Attacker (Topspin)',
+    description:'Baseline game built on topspin and heavy rotation. Construct points with patience and angles.',
+    count:3, players:[{name:'Cobolli',rank:22},{name:'Kubler',rank:195},{name:'Brouwer',rank:1067}] },
+  { id:'attpower', short:'Power', name:'Baseline Attacker (Power)',
+    description:'Baseline game built on power. Flat, heavy strikes aimed at suffocating the opponent.',
+    count:2, players:[{name:'Rune',rank:15},{name:'Machac',rank:41}] },
+  { id:'bigsrv', short:'Big Srv', name:'Big Server',
+    description:'The serve as the main weapon. Quick points, few rallies. Dangerous on fast surfaces.',
+    count:9, players:[{name:'Shelton',rank:9},{name:'Rinderknech',rank:27},{name:'Mpetshi Perricard',rank:58},{name:'Opelka',rank:60},{name:'Medjedovic',rank:67},{name:'Jarry',rank:133},{name:'Eubanks',rank:182},{name:'Gojo',rank:293},{name:'Kyrgios',rank:670}] },
+  { id:'bsbl', short:'BS+BL', name:'Big Server + Baseliner',
+    description:'Big serve combined with a solid baseline game. More complete than pure Big Servers.',
+    count:29, players:[{name:'Auger-Aliassime',rank:5},{name:'Fritz',rank:9},{name:'Draper',rank:10},{name:'Bublik',rank:11},{name:'Mensik',rank:18},{name:'Griekspoor',rank:25},{name:'Nakashima',rank:33},{name:'Shapovalov',rank:37},{name:'Diallo',rank:40},{name:'Cilic',rank:47}] },
+  { id:'counter', short:'Counter P.', name:'Offensive Counter-Puncher',
+    description:"Defenders who turn defense into attack. Use the opponent's pace against them.",
+    count:15, players:[{name:'De Minaur',rank:6},{name:'Musetti',rank:7},{name:'Davidovich Fokina',rank:14},{name:'Paul',rank:20},{name:'Norrie',rank:28},{name:'Van De Zandschulp',rank:54},{name:'Fucsovics',rank:57},{name:'Brooksby',rank:63},{name:'Goffin',rank:119},{name:'Gasquet',rank:182}] },
+  { id:'sv', short:'S&V', name:'Serve & Volleyer',
+    description:'Classic style: serve-and-volley. Very rare on the current tour. Not identifiable from Sackmann match statistics alone.',
+    count:null, players:[] },
+  { id:'soldef', short:'Sol. Def.', name:'Solid Defensive',
+    description:'Ultra-consistent baseliners. Few errors, lots of balls returned. Wear the opponent down mentally.',
+    count:18, players:[{name:'Moutet',rank:35},{name:'Mannarino',rank:45},{name:'Prizmic',rank:79},{name:'Dzumhur',rank:87},{name:'Muller',rank:105},{name:'Nishioka',rank:116},{name:'Basilashvili',rank:117},{name:'Gaston',rank:118},{name:'McDonald',rank:129},{name:'Koepfer',rank:147}] },
+  { id:'soloffsrv', short:'Off. Srv', name:'Solid Offensive - Server',
+    description:'Complete players whose serve is the main advantage (ace rate \u2265 7%). Solid baseline game but take the initiative through the serve.',
+    count:46, players:[{name:'Rublev',rank:16},{name:'Khachanov',rank:17},{name:'Lehecka',rank:19},{name:'Fils',rank:21},{name:'Fonseca',rank:29},{name:'Tiafoe',rank:30},{name:'Vacherot',rank:31},{name:'Tabilo',rank:35},{name:'Humbert',rank:36},{name:'Bergs',rank:39}] },
+  { id:'soloff', short:'Sol. Off.', name:'Solid Offensive - Core',
+    description:'Solid, complete players with no marked weakness or dominant weapon. The backbone of the tour.',
+    count:22, players:[{name:'Tien',rank:26},{name:'Michelsen',rank:42},{name:'Marozsan',rank:49},{name:'Borges',rank:52},{name:'Majchrzak',rank:59},{name:'Kecmanovic',rank:70},{name:'Giron',rank:77},{name:'Shevchenko',rank:85},{name:'Svajda',rank:90},{name:'Hijikata',rank:96}] },
+  { id:'terrien', short:'Clay', name:'Pure Clay-Courter',
+    description:'Clay-court specialists. Sliding, endurance and topspin. Fearsome on clay, struggling on fast surfaces.',
+    count:30, players:[{name:'Cerundolo',rank:21},{name:'Darderi',rank:25},{name:'Munar',rank:38},{name:'Navone',rank:44},{name:'Kopriva',rank:55},{name:'Hanfmann',rank:59},{name:'Ugo Carabelli',rank:61},{name:'Baez',rank:65},{name:'Trungelliti',rank:78},{name:'Misolic',rank:79}] },
+];
+const PS_MATRIX = [
+  [null,84,76,77,81,78,77,81,78,84,90,89],
+  [16,null,47,47,44,51,43,50,42,55,60,57],
+  [24,53,null,49,49,52,50,52,52,58,68,62],
+  [23,53,51,null,46,50,49,59,49,55,61,57],
+  [19,56,52,54,null,51,51,58,49,57,63,59],
+  [22,49,49,50,49,null,49,47,45,51,63,57],
+  [24,57,50,51,49,51,null,51,48,55,71,61],
+  [19,50,48,41,42,53,49,null,41,50,60,59],
+  [22,58,48,51,51,55,52,59,null,56,64,57],
+  [16,45,42,45,43,49,45,50,44,null,60,53],
+  [10,40,32,39,37,37,29,40,36,40,null,40],
+  [11,43,38,43,41,43,39,41,43,47,60,null],
+];
+const PS_KNOWN_COUNTS = {
+  0:[null,424,356,448,221,468,328,64,188,220,61,171],
+  1:[424,null,936,1211,577,1336,866,153,397,758,518,1027],
+  2:[356,936,null,1919,400,1537,987,105,614,808,567,2688],
+  3:[448,1211,1919,null,545,2394,1519,139,672,1428,1037,2248],
+  6:[328,866,987,1519,400,1560,null,104,454,781,542,944],
+  7:[64,153,105,139,99,180,104,null,61,104,45,63],
+};
+function psCount(i,j){
+  if (i===j) return null;
+  const d = PS_KNOWN_COUNTS[i] ? PS_KNOWN_COUNTS[i][j] : null;
+  if (d != null) return d;
+  const m = PS_KNOWN_COUNTS[j] ? PS_KNOWN_COUNTS[j][i] : null;
+  return m != null ? m : null;
+}
+function psCellColor(v){
+  const hue = Math.max(0, Math.min(135, ((v-35)/(70-35))*130));
+  const light = 26 + Math.max(0, Math.min(14, (v-50)*0.32));
+  return 'hsl(' + hue + ', 46%, ' + light + '%)';
+}
+function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+let psRendered = false;
+function renderPlayingStyles(){
+  if (psRendered) return;
+  const A = PS_ARCHETYPES, n = A.length;
+  // ----- matrix -----
+  const mx = document.getElementById('psMatrix');
+  let g = '<div class="ps-grid" style="grid-template-columns:132px repeat(' + n + ', minmax(0,1fr));">';
+  g += '<div class="ps-corner">Row beats column</div>';
+  A.forEach(a => { g += '<div class="ps-colhead" title="' + psEsc(a.name) + '">' + psEsc(a.short) + '</div>'; });
+  A.forEach((rowA, i) => {
+    g += '<div class="ps-rowhead" title="' + psEsc(rowA.name) + '">' + psEsc(rowA.short) + '</div>';
+    A.forEach((colA, j) => {
+      const v = PS_MATRIX[i][j];
+      if (v == null){ g += '<div class="ps-diag"></div>'; return; }
+      const c = psCount(i,j);
+      const tip = rowA.name + ' beats ' + colA.name + ': ' + v + '%' + (c != null ? ' (' + c + ' matches)' : '');
+      g += '<div class="ps-cell" style="background:' + psCellColor(v) + ';" title="' + psEsc(tip) + '">' + v + '</div>';
+    });
+  });
+  g += '</div>';
+  g += '<div class="ps-legend"><span>Unfavorable</span><div class="ps-legendbar">';
+  [20,30,40,50,60,70,80].forEach(v => { g += '<span style="background:' + psCellColor(v) + ';"></span>'; });
+  g += '</div><span>Favorable</span></div>';
+  mx.innerHTML = g;
+  // ----- cards -----
+  const meta = document.getElementById('psSectionMeta');
+  if (meta) meta.textContent = n + ' styles';
+  const cards = document.getElementById('psCards');
+  let html = '';
+  A.forEach((a, i) => {
+    const mus = A.map((b, j) => ({ name:b.name, pct:PS_MATRIX[i][j], n:psCount(i,j) }))
+      .filter((_, j) => j !== i)
+      .sort((x, y) => y.pct - x.pct);
+    const best = mus[0], worst = mus[mus.length-1];
+    const extra = a.count != null ? a.count - a.players.length : 0;
+    html += '<div class="ps-card">';
+    html += '<div class="ps-cardhead"><h3 class="ps-cardname">' + psEsc(a.name) + '</h3>' +
+      (a.count != null ? '<span class="ps-count">' + a.count + ' players</span>' : '') + '</div>';
+    html += '<p class="ps-desc">' + psEsc(a.description) + '</p>';
+    html += '<div class="ps-badges">' +
+      '<span class="ps-badge strong"><span class="ps-badgekey">Strong vs</span>' + psEsc(best.name) + ' \u00b7 ' + best.pct + '%</span>' +
+      '<span class="ps-badge weak"><span class="ps-badgekey">Weak vs</span>' + psEsc(worst.name) + ' \u00b7 ' + worst.pct + '%</span>' +
+      '</div>';
+    if (a.players.length){
+      html += '<div class="ps-chips">';
+      a.players.forEach(p => { html += '<span class="ps-chip">' + psEsc(p.name) + '<span class="ps-rank">#' + p.rank + '</span></span>'; });
+      if (extra > 0) html += '<span class="ps-more">+' + extra + ' more</span>';
+      html += '</div>';
+    } else {
+      html += '<div class="ps-pending">Not identifiable from Sackmann match stats.</div>';
+    }
+    html += '<div class="ps-matchups"><div class="ps-matchupstitle">Matchups vs all styles</div>';
+    mus.forEach(m => {
+      const col = m.pct >= 50 ? '#3ba76a' : '#d05a5a';
+      html += '<div class="ps-mrow"><span class="ps-mname" title="' + psEsc(m.name) + '">' + psEsc(m.name) + '</span>' +
+        '<div class="ps-track"><div class="ps-fill" style="width:' + m.pct + '%;background:' + col + ';"></div></div>' +
+        '<span class="ps-mpct">' + m.pct + '%</span>' +
+        '<span class="ps-mn">' + (m.n != null ? m.n : '\u2014') + '</span></div>';
+    });
+    html += '</div></div>';
+  });
+  cards.innerHTML = html;
+  psRendered = true;
+}
 
 /* ---------- MATCHES ---------- */
 // Fetched from matches.json — the file bsp-pipeline.js writes when run.
@@ -2161,16 +2392,37 @@ function loadPlayerHistories(){
   return _playerHistoriesPromise;
 }
 // Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
-// user opens the "Point by point" tab), memoised, and keyed by m.id. Finished
-// matches only — the sidecar has no entry for upcoming/live matches.
+// user opens the "Point by point" tab), memoised, and keyed by api-tennis event
+// key. Finished matches only — the sidecar has no entry for upcoming/live
+// matches.
 let pointByPoint = null;
 let _pointByPointPromise = null;
+// The stable half of a dashboard match id: "upcoming-12145200" -> "12145200".
+// The prefix tracks the day bucket and flips when a match rolls from the
+// fixtures window into the past, so only the trailing event key identifies a
+// match across rebuilds.
+function pbpEventKey(id){
+  const last = String(id || '').split('-').pop();
+  return /^\d+$/.test(last) ? last : null;
+}
+// Re-key whatever the sidecar shipped to event keys. Entries are keyed by event
+// key since the keying fix, but a deploy can serve a sidecar built before it
+// (prefixed keys) — normalising both here keeps lookups working across that
+// rollout rather than silently losing point logs for a cycle.
+function pbpIndexByEventKey(raw){
+  const out = {};
+  for (const k of Object.keys(raw || {})){
+    const ek = pbpEventKey(k);
+    if (ek) out[ek] = raw[k];
+  }
+  return out;
+}
 function loadPointByPoint(){
   if (pointByPoint) return Promise.resolve(pointByPoint);
   if (_pointByPointPromise) return _pointByPointPromise;
   _pointByPointPromise = fetch('./point-by-point.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : {})
-    .then(d => { pointByPoint = d || {}; return pointByPoint; })
+    .then(d => { pointByPoint = pbpIndexByEventKey(d); return pointByPoint; })
     .catch(err => { console.warn('point-by-point.json load failed:', err.message); pointByPoint = {}; return pointByPoint; });
   return _pointByPointPromise;
 }
@@ -2203,28 +2455,63 @@ function pbpSplitSet(s){
   }
   return { real, tbPts: [] };
 }
+// The running point sequence under a game. A break point carries a small amber
+// BP chip; set/match points are not chipped here because they're already stated
+// by the SP/MP tag on the row itself.
 function pbpPointList(points){
   return (points || []).map(p => {
-    const cls = p.mp ? 'pbp-pt mp' : p.sp ? 'pbp-pt sp' : p.bp ? 'pbp-pt bp' : 'pbp-pt';
     const s = escapeHtml(String(p.s || '').replace(/\s*-\s*/, ':'));   // "0 - 15" -> "0:15"
-    return `<span class="${cls}">${s}</span>`;
-  }).join(', ');
+    return `<span class="pbp-pt">${s}${p.bp ? '<span class="pbp-bp">BP</span>' : ''}</span>`;
+  }).join('');
 }
+// The point log draws its own tennis ball rather than reusing BSP_ICONS.ball:
+// the shared token is a side-on ball (vertical seams) sized for the stat tiles,
+// where this one is the face-on ball the point log is designed around, at the
+// row's own 15px/1.7 stroke weight.
+const PBP_BALL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M4 8c5 1 11 1 16 0"></path><path d="M4 16c5-1 11-1 16 0"></path></svg>`;
+// One row of the point log. Games and tiebreak points share a single 5-column
+// grid (leftTags · leftBall · score · rightBall · rightTags) so the ball, score
+// and tags hold the same columns down the whole set. The digit of whoever won
+// the point/game takes that player's colour; the other stays neutral.
+function pbpRowHtml(cls, server, winner, a, b, leftTags, rightTags, pointsHtml){
+  const ballCell = (on) => `<span class="pbp-ballcell">${on ? `<span class="pbp-ball">${PBP_BALL}</span>` : ''}</span>`;
+  const digit = (v, side) => `<span class="${winner === side ? 'won-' + side : 'neutral'}">${v}</span>`;
+  return `<div class="${cls}">`
+    + `<div class="pbp-line">`
+    + `<span class="pbp-tags left">${leftTags}</span>`
+    + ballCell(server === 'p1')
+    + `<span class="pbp-gnum">${digit(a, 'p1')}<span class="dot"> · </span>${digit(b, 'p2')}</span>`
+    + ballCell(server === 'p2')
+    + `<span class="pbp-tags right">${rightTags}</span>`
+    + `</div>`
+    + (pointsHtml || '')
+    + `</div>`;
+}
+const PBP_LOST_TAG = '<span class="pbp-tag lost">LOST SERVE</span>';
 // Flashscore-style point-by-point: centered per-game rows (server = tennis-ball
 // icon on that player's side, point sequence beneath) and, for tiebreak sets, a
 // dedicated "TIEBREAK · SET n" section with one row per point — running score,
 // serve indicator, LOST SERVE on a lost serve (mini-break) and SP/MP badges.
-function buildPointByPointHtml(m, entry){
+// `setNo` null = every set (the default); a number = only that set. The set
+// filter narrows what is DISPLAYED — it never changes how a set is interpreted:
+// `isLastSet` (which decides whether a tiebreak's pending-point badge reads MP
+// or SP) is still resolved against the full match, so filtering to the decider
+// can't demote its match points to set points.
+function buildPointByPointHtml(m, entry, setNo){
   if (!entry || !Array.isArray(entry.sets) || !entry.sets.length){
     return `<div class="acomingsoon">No point-by-point log on file for this match.</div>`;
   }
-  const ball = `<span class="pbp-ball">${BSP_ICONS.ball}</span>`;
-  const gap = `<span class="pbp-ball-sp"></span>`;
-  const totalSets = entry.sets.length;
+  const allSets = entry.sets;
+  const totalSets = allSets.length;
+  const shownSets = setNo == null ? allSets : allSets.filter(s => Number(s.set) === Number(setNo));
+  if (!shownSets.length){
+    return `<div class="acomingsoon">No point-by-point log on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   let html = `<div class="pbp-wrap">`;
   html += `<div class="msheet-names"><span><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
         + `<span>${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
-  entry.sets.forEach((s, si) => {
+  shownSets.forEach(s => {
+    const si = allSets.indexOf(s);
     const { real, tbPts } = pbpSplitSet(s);
     const isLastSet = si === totalSets - 1;
     // Set header + final score (tiebreak points as superscripts, e.g. 7⁷ · 6⁴).
@@ -2239,18 +2526,18 @@ function buildPointByPointHtml(m, entry){
         supA = String(last.a); supB = String(last.b);
         if (last.a > last.b){ a = 7; b = 6; } else { a = 6; b = 7; }
       }
-      scoreLine = `<span class="pbp-setscore">${a}${supA !== '' ? `<sup>${supA}</sup>` : ''} · ${b}${supB !== '' ? `<sup>${supB}</sup>` : ''}</span>`;
+      // "7-6 (7-2)" — games, then the tiebreak points in brackets.
+      scoreLine = `<span class="pbp-setscore">${a}-${b}${supA !== '' ? ` (${supA}-${supB})` : ''}</span>`;
     }
     html += `<div class="pbp-sethdr"><span>Set ${escapeHtml(s.set)}</span>${scoreLine}</div>`;
     // Normal games.
     for (const g of real){
-      const srvP1 = g.server === 'p1', srvP2 = g.server === 'p2';
-      const broken = g.winner && g.server && g.winner !== g.server;
+      const broken = g.winner && g.server && g.winner !== g.server;   // serve lost
       const sc = pbpParseScore(g.score) || ['', ''];
-      html += `<div class="pbp-grow${broken ? ' broke' : ''}">`
-        + `<div class="pbp-gscore">${srvP1 ? ball : gap}<span class="pbp-gnum">${sc[0]} · ${sc[1]}</span>${srvP2 ? ball : gap}</div>`
-        + (g.points && g.points.length ? `<div class="pbp-gpts">${pbpPointList(g.points)}</div>` : '')
-        + `</div>`;
+      html += pbpRowHtml('pbp-grow', g.server, g.winner, sc[0], sc[1],
+        (broken && g.server === 'p1') ? PBP_LOST_TAG : '',
+        (broken && g.server === 'p2') ? PBP_LOST_TAG : '',
+        (g.points && g.points.length) ? `<div class="pbp-gpts">${pbpPointList(g.points)}</div>` : '');
     }
     // Tiebreak section.
     if (tbPts.length){
@@ -2260,26 +2547,19 @@ function buildPointByPointHtml(m, entry){
       const badgeCls = isLastSet ? 'mp' : 'sp';
       html += `<div class="pbp-tbhdr">Tiebreak · Set ${escapeHtml(s.set)}</div>`;
       for (const p of tbPts){
-        const srvP1 = p.server === 'p1', srvP2 = p.server === 'p2';
         const lost = p.winner && p.server && p.winner !== p.server;   // mini-break
         const mx = Math.max(p.a, p.b), mn = Math.min(p.a, p.b);
         const pending = mx >= target - 1 && mx > mn && mx < target;   // set/match point on next serve
-        const badge = pending ? `<span class="pbp-badge ${badgeCls}">${label}</span>` : '';
-        const leftLost = (lost && srvP1) ? '<span class="pbp-lost">LOST SERVE</span>' : '';
-        const rightLost = (lost && srvP2) ? '<span class="pbp-lost">LOST SERVE</span>' : '';
-        html += `<div class="pbp-tbrow">`
-          + `<div class="pbp-tbside left">${leftLost}${srvP1 ? ball : ''}</div>`
-          + `<div class="pbp-tbscore">${badge}<span>${p.a} · ${p.b}</span></div>`
-          + `<div class="pbp-tbside right">${srvP2 ? ball : ''}${rightLost}</div>`
-          + `</div>`;
+        // The tag belongs to whoever is one point away — i.e. the leader.
+        const leader = p.a > p.b ? 'p1' : (p.b > p.a ? 'p2' : null);
+        const badge = (pending && leader) ? `<span class="pbp-tag ${badgeCls}">${label}</span>` : '';
+        html += pbpRowHtml('pbp-tbrow', p.server, p.winner, p.a, p.b,
+          ((lost && p.server === 'p1') ? PBP_LOST_TAG : '') + (leader === 'p1' ? badge : ''),
+          ((lost && p.server === 'p2') ? PBP_LOST_TAG : '') + (leader === 'p2' ? badge : ''),
+          '');
       }
     }
   });
-  html += `<div class="pbp-legend">`
-    + `<span><span class="k" style="background:rgba(232,147,75,0.5)"></span>Break point</span>`
-    + `<span><span class="k" style="background:rgba(62,123,250,0.5)"></span>Set point</span>`
-    + `<span><span class="k" style="background:rgba(46,204,113,0.5)"></span>Match point</span>`
-    + `<span><span class="pbp-ball" style="vertical-align:middle;margin-right:4px;">${BSP_ICONS.ball}</span>Server</span></div>`;
   html += `</div>`;
   return html;
 }
@@ -2293,12 +2573,34 @@ function ensurePointByPoint(){
   if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
   container.dataset.matchId = m.id;
   container.dataset.loaded = '';
+  _aPbpEntry = null;
   container.innerHTML = `<div class="acomingsoon">Loading point-by-point…</div>`;
   loadPointByPoint().then(data => {
     if (container.dataset.matchId !== m.id) return; // superseded by a newer open
-    container.innerHTML = buildPointByPointHtml(m, data && data[m.id]);
+    const entry = data && data[pbpEventKey(m.id)];
+    _aPbpEntry = entry || null;
+    // The set filter comes from the point log itself (not m.setStats): the two
+    // are independent feeds, and a match can have a point log for a set whose
+    // box score is missing, or vice versa.
+    const setNos = (entry && Array.isArray(entry.sets))
+      ? entry.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b)
+      : [];
+    // The point log is always scoped to a single set, so it opens on the first
+    // set on file rather than on an "all sets" concatenation.
+    const firstSet = setNos.length ? setNos[0] : null;
+    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', null)
+      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, firstSet)}</div>`;
     container.dataset.loaded = '1';
   });
+}
+// Repaint the point log for the chosen set from the already-fetched sidecar
+// entry — the set filter never triggers another fetch.
+function switchPbpSet(el, setNo){
+  const pane = document.getElementById('msPbpPane');
+  const body = document.getElementById('msPbpBody');
+  if (!pane || !body || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  body.innerHTML = buildPointByPointHtml(_aPbpMatch, _aPbpEntry, setNo);
 }
 async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
   tier = tier || 'all';
@@ -3149,15 +3451,6 @@ const MATCH_STAT_ORDER = [
   ]],
 ];
 
-// Stats that show the real underlying fraction alongside the percentage
-// (e.g. Break Points Saved "(1/1) 100%"), when the raw won/total is on file.
-// Uses real data only — never derives a fraction from the percentage.
-const MSHEET_FRACTION_KEYS = new Set([
-  'Service:Break Points Saved',
-  'Return:Break Points Converted',
-  'Points:Total Points Won',
-]);
-
 // Stats the user always wants to SEE, even when the data source returns no
 // value for this particular match. Rather than silently dropping the row
 // (which reads as "we removed it"), we keep it and flag the cell "N/A". The
@@ -3167,35 +3460,47 @@ const MSHEET_ALWAYS_SHOW = new Set([
   'Points:Unforced errors',
 ]);
 
-// Grouped stat-sheet table row (no bars). Both values render in the same
-// neutral style regardless of who leads — no winner highlight, no per-value
-// colour coding. Fraction stats additionally show the real "(won/total)"
-// before the percentage when the raw counts are on file.
+// Grouped stat-sheet row: the two values with the real "(won/total)" fraction on
+// the outside edge (before the number on the left, after it on the right), and a
+// diverging bar beneath. Both values render in the same neutral style regardless
+// of who leads — the bar carries the comparison, and its colour is the player's
+// side, never who is ahead.
 function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   if (p1Val == null && p2Val == null) {
     if (!alwaysShow) return '';
     // Data source didn't supply this stat for this match — keep the row so the
     // user still sees it, but flag it honestly rather than dropping or faking it.
+    // No bar: there is no magnitude to draw, and a pair of empty tracks would
+    // read as a genuine 0-0 rather than as missing data.
     const na = `<span class="msheet-na" title="Not provided by the data source for this match">N/A</span>`;
     return `
     <div class="msheet-row">
-      <span class="msheet-val">${na}</span>
-      <span class="msheet-label">${label}</span>
-      <span class="msheet-val">${na}</span>
+      <div class="msheet-vals">
+        <span class="msheet-val p1">${na}</span>
+        <span class="msheet-label">${label}</span>
+        <span class="msheet-val p2">${na}</span>
+      </div>
     </div>
   `;
   }
-  const fmt = (v, raw) => {
-    if (v == null) return '—';
-    if (kind !== 'pct') return v;
-    const pct = `${v}%`;
-    return (raw && raw.total > 0) ? `(${raw.won}/${raw.total}) ${pct}` : pct;
-  };
+  const frac = (raw) => (raw && raw.total > 0) ? `<span class="msheet-frac">(${raw.won}/${raw.total})</span>` : '';
+  const num = (v) => v == null ? '—' : (kind === 'pct' ? `${v}%` : String(v));
+  // Bar magnitude = the raw stat itself (a count, or the percentage for rate
+  // stats). A missing side contributes nothing rather than distorting the split.
+  const mag = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const a = mag(p1Val), b = mag(p2Val), sum = a + b;
+  const pct = (n) => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
     <div class="msheet-row">
-      <span class="msheet-val">${fmt(p1Val, p1Raw)}</span>
-      <span class="msheet-label">${label}</span>
-      <span class="msheet-val">${fmt(p2Val, p2Raw)}</span>
+      <div class="msheet-vals">
+        <span class="msheet-val p1">${frac(p1Raw)}${num(p1Val)}</span>
+        <span class="msheet-label">${label}</span>
+        <span class="msheet-val p2">${num(p2Val)}${frac(p2Raw)}</span>
+      </div>
+      <div class="msheet-bar">
+        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
+        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
+      </div>
     </div>
   `;
 }
@@ -3203,20 +3508,87 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
 // Wrap the stat sheet + point-by-point in a Flashscore-style toggle. Point by
 // point lives HERE (a sub-tab of Match Stats) rather than as its own sidebar
 // nav item; the pane is empty until opened, then lazy-loads the sidecar.
+// The design insets the result banner into the panel itself. It only reaches
+// matches that have a point log, so the states are "finished" and "suspended" —
+// live and upcoming never get here and keep using #aLiveBar alone.
+function buildMatchStatsBannerHtml(m){
+  const interrupted = !m.finalScore && m.interrupted;
+  const score = (m.finalScore || m.partialScore || {}).display || '';
+  const label = interrupted
+    ? `${m.liveStatus || 'Interrupted'}${score ? ' · ' + score : ''}`
+    : `Final${score ? ' · ' + score : ''}`;
+  return `
+    <div class="ms-final${interrupted ? ' interrupted' : ''}">
+      <span class="ms-final-chk">${interrupted ? '⏸' : '✓'}</span>
+      <span class="ms-final-score">${escapeHtml(label)}</span>
+      <span class="ms-final-note">${interrupted ? 'match suspended · no result yet' : 'completed match'}</span>
+    </div>
+  `;
+}
+
+// Hide the modal's own result bar while the Match Stats panel is showing its
+// inset copy, otherwise the same sentence renders twice inches apart. Every
+// other tab still gets the bar. _aLiveBarOn is what openAnalysisModal decided
+// this match warrants; this only ever suppresses it, never forces it on.
+function syncAnalysisLiveBar(tab){
+  const liveBar = document.getElementById('aLiveBar');
+  if (!liveBar) return;
+  const insetHere = tab === 'matchstats' && _aMsInsetBanner;
+  liveBar.style.display = (_aLiveBarOn && !insetHere) ? '' : 'none';
+}
+
 function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
   const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
-  const stats = buildMatchStatsSheet(m);
+  const stats = buildMatchStatsSheet(m, null);
   if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
   return `
-    <div class="ms-subtabs" role="tablist">
-      <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
-      <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
+    ${buildMatchStatsBannerHtml(m)}
+    <div class="ms-subtabs-wrap">
+      <div class="ms-subtabs" role="tablist">
+        <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
+        <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
+      </div>
     </div>
-    <div class="ms-pane active" id="msStatsPane">${stats}</div>
+    <div class="ms-pane active" id="msStatsPane">
+      ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Whole match')}
+      <div id="msStatsSheet">${stats}</div>
+    </div>
     <div class="ms-pane" id="msPbpPane"></div>
   `;
+}
+// Shared set-scope pill row for both panes: an optional "<allLabel>" pill plus
+// one per set that actually has data. Rendered only when there are 2+ sets to
+// choose between — a one-set match has nothing to filter, so the control would
+// be noise. `handler` is the global fn name the pills call with the set number
+// (null = the all/whole-match view).
+//
+// `allLabel` null = no aggregate pill, and the first set starts selected. Point
+// by point uses this: a whole-match point log is just every set concatenated,
+// which is a wall of rows rather than a view anyone reads, so that pane is
+// always scoped to exactly one set.
+function buildSetSelectorHtml(setNos, handler, allLabel){
+  if (!setNos || setNos.length < 2) return '';
+  const hasAll = !!allLabel;
+  const pills = setNos.map((n, i) =>
+    `<button class="ms-setbtn${!hasAll && i === 0 ? ' active' : ''}" onclick="${handler}(this,${n})">Set ${n}</button>`
+  ).join('');
+  return `
+    <div class="ms-setsel" role="group" aria-label="Filter by set">
+      ${hasAll ? `<button class="ms-setbtn active" onclick="${handler}(this,null)">${escapeHtml(allLabel)}</button>` : ''}
+      ${pills}
+    </div>
+  `;
+}
+// Repaint the stat sheet for the chosen set. Reads the already-loaded match
+// object — no refetch, the per-set box scores ship inline with the match.
+function switchStatsSet(el, setNo){
+  const pane = document.getElementById('msStatsPane');
+  const sheet = document.getElementById('msStatsSheet');
+  if (!pane || !sheet || !_aPbpMatch) return;
+  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  sheet.innerHTML = buildMatchStatsSheet(_aPbpMatch, setNo);
 }
 function switchMatchStatsTab(el, which){
   document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
@@ -3228,7 +3600,22 @@ function switchMatchStatsTab(el, which){
   pbpPane.classList.toggle('active', showPbp);
   if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
 }
-function buildMatchStatsSheet(m){
+// Set numbers (ascending) with a real per-set box score on file, or [] when the
+// feed carried no per-set rows for this match. Drives whether the set filter is
+// offered at all — a match with no set-level data shows no selector rather than
+// an empty one.
+function msheetSetNumbers(m){
+  // No match sheet means the pane is showing a "no stats"/"not finished yet"
+  // message, so a set filter over it would be offering to filter nothing.
+  if (!m.setStats || !m.matchStats) return [];
+  return Object.keys(m.setStats)
+    .map(Number)
+    .filter(n => Number.isFinite(n) && n >= 1)
+    .sort((a, b) => a - b);
+}
+// `setNo` null = whole match (the default view, unchanged); a number = that
+// set's own box score, read from the same-shaped m.setStats[n] entry.
+function buildMatchStatsSheet(m, setNo){
   // An interrupted match is the one case with real stats but no result: the feed
   // returns the full statistics block up to the moment play stopped. Show it,
   // flagged as a snapshot — everything else still waits for a final score.
@@ -3238,31 +3625,46 @@ function buildMatchStatsSheet(m){
   if (!m.matchStats) {
     return `<div class="acomingsoon">No match statistics on file for this match.</div>`;
   }
+  const stats = setNo == null ? m.matchStats : (m.setStats || {})[String(setNo)];
+  if (!stats) {
+    return `<div class="acomingsoon">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
   const suspendedNote = m.interrupted
     ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
     : '';
   const groups = MATCH_STAT_ORDER.map(([, groupLabel, rows]) => {
     const rowsHtml = rows
       .map(([key, label, kind]) => {
-        const wantFraction = MSHEET_FRACTION_KEYS.has(key);
-        const p1Raw = wantFraction && m.matchStats.p1.raw ? m.matchStats.p1.raw[key] : null;
-        const p2Raw = wantFraction && m.matchStats.p2.raw ? m.matchStats.p2.raw[key] : null;
+        // Show the fraction wherever the feed carried real won/total counts —
+        // it never derives one from the percentage, so a row without raw counts
+        // (Aces, 1st Serve %) simply shows the value alone.
+        const p1Raw = stats.p1.raw ? stats.p1.raw[key] : null;
+        const p2Raw = stats.p2.raw ? stats.p2.raw[key] : null;
         const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
-        return msheetRowHtml(label, kind, m.matchStats.p1[key], m.matchStats.p2[key], p1Raw, p2Raw, alwaysShow);
+        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow);
       })
       .filter(Boolean)
       .join('');
     if (!rowsHtml) return '';
-    return `<div class="msheet-grouphead"><span></span><span>${groupLabel}</span><span></span></div>${rowsHtml}`;
+    return `<div class="msheet-grouphead">${groupLabel}</div>${rowsHtml}`;
   }).filter(Boolean).join('');
-  // Score shown beside "Stat comparison": the final score, or for a suspended
-  // match the partial score. Read defensively — an interrupted match reaches
-  // this function with finalScore null by design, so `m.finalScore.display`
-  // would throw and blank the entire sheet.
-  const headScore = (m.finalScore || m.partialScore || {}).display || '';
+  // Score shown beside the title: the final score, or for a suspended match the
+  // partial score. Read defensively — an interrupted match reaches this function
+  // with finalScore null by design, so `m.finalScore.display` would throw and
+  // blank the entire sheet. When one set is selected, show that set's own score
+  // instead of the match score, so the header can never contradict the numbers
+  // beneath it (the score array is 0-indexed; sets are 1-indexed).
+  const score = m.finalScore || m.partialScore || {};
+  let headScore = score.display || '';
+  let headTitle = 'Stat comparison';
+  if (setNo != null) {
+    headTitle = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
+    const sc = (score.sets || [])[setNo - 1];
+    headScore = sc ? `${sc.p1}-${sc.p2}` : '';
+  }
   const statHeader = headScore ? `
     <div class="msheet-head">
-      <div class="msheet-title">Stat comparison</div>
+      <div class="msheet-title">${headTitle}</div>
       <div class="msheet-sets">${headScore}</div>
     </div>
   ` : '';
@@ -3270,7 +3672,7 @@ function buildMatchStatsSheet(m){
     ${suspendedNote}
     <div class="msheet-names"><span><span class="mstat-dot p1"></span>${m.p1}</span><span>${m.p2}<span class="mstat-dot p2"></span></span></div>
     ${statHeader}
-    ${groups ? `<div class="msheet-table">${groups}</div>` : '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
+    ${groups || '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
   `;
 }
 
@@ -3391,7 +3793,10 @@ const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 // flagged "no data" rather than faked, per the design's data-honesty requirement.
 const AODDS_MARKETS = ['Match Winner','Set 1 Winner','Handicap \u22121.5 sets','Handicap \u22123.5 games','Total Games O/U 22.5'];
 let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
-let _aPbpMatch = null; // match whose Point-by-point tab is currently open (Task 4)
+let _aPbpMatch = null; // match whose Match Stats section is currently open (Task 4; also backs the Task 9 set filter on both panes)
+let _aLiveBarOn = false;      // whether the open match warrants #aLiveBar at all
+let _aMsInsetBanner = false;  // whether Match Stats draws its own inset banner (TEN-21)
+let _aPbpEntry = null; // that match's already-fetched point log, kept so the Task 9 set filter can repaint without refetching
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function aOddsDash(book, idx){ return (book in AODDS_DASH) ? AODDS_DASH[book] : AODDS_DASHCYCLE[idx % AODDS_DASHCYCLE.length]; }
@@ -3915,18 +4320,21 @@ function openAnalysisModal(matchId){
   const liveBar = document.getElementById('aLiveBar');
   liveBar.classList.remove('completed');
   if (m.interrupted) {
-    liveBar.style.display = '';
+    _aLiveBarOn = true;
     liveBar.innerHTML = `⏸ ${m.liveStatus || 'Interrupted'}${m.partialScore ? ' · ' + m.partialScore.display : ''} <span class="anote" style="margin:0;">match suspended · no result yet</span>`;
   } else if (m.live) {
-    liveBar.style.display = '';
+    _aLiveBarOn = true;
     liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
   } else if (m.finalScore) {
-    liveBar.style.display = '';
+    _aLiveBarOn = true;
     liveBar.classList.add('completed');
     liveBar.innerHTML = `✅ Final · ${m.finalScore.display} <span class="anote" style="margin:0;">completed match</span>`;
   } else {
-    liveBar.style.display = 'none';
+    _aLiveBarOn = false;
   }
+  // Mirrors buildMatchStatsSection's own gate: the inset banner exists exactly
+  // when that panel renders the sub-tabs.
+  _aMsInsetBanner = (!!m.finalScore || !!m.interrupted) && !m.live;
 
   document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
 
@@ -3963,6 +4371,7 @@ function openAnalysisModal(matchId){
   document.querySelector('#aTabs .asidenav-item[data-atab="key"]').classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   document.querySelector('.asection[data-asection="key"]').classList.add('active');
+  syncAnalysisLiveBar('key');
 
   document.getElementById('analysisModal').classList.add('open');
 }
@@ -3974,6 +4383,7 @@ document.getElementById('aTabs').addEventListener('click', e => {
   btn.classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
+  syncAnalysisLiveBar(btn.dataset.atab);
 });
 
 // Download report — scoped print of the modal's current content. Shows every
