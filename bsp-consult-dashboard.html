@@ -1624,12 +1624,14 @@ function buildTournamentFilters(){
   const tournaments = [...new Set(
     matches.filter(isUpcomingOrLive).map(m => m.tour).filter(Boolean)
   )].sort();
-  if (state.tournament !== 'all' && !tournaments.includes(state.tournament)) state.tournament = 'all';
+  // Drop selections whose tournament has since finished, else a stale name would
+  // filter every card away with no chip left to clear it.
+  for (const sel of state.tournaments) if (!tournaments.includes(sel)) state.tournaments.delete(sel);
   group.innerHTML = tournaments.map(t => {
-    const active = state.tournament === t;
-    // The × on the active chip is a second way to clear the filter; clicking
-    // anywhere on the active chip already toggles it back to "all".
-    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}">${t}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
+    const active = state.tournaments.has(t);
+    // The × on a selected chip removes just that tournament; clicking anywhere
+    // on the chip toggles it the same way. No selections at all = show every one.
+    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}" aria-pressed="${active}">${t}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
   }).join('');
 }
 
@@ -1647,7 +1649,9 @@ function renderHeaderStats(){
   document.getElementById('statBookmakersCompared').textContent = bookmakers.size;
 }
 
-const state = { day:"today", tour:"all", surface:"all", tournament:"all", search:"", sort:"time", favorites:new Set() };
+// tournaments = the set of selected tournament chips. Empty means no filter, so
+// "all" needs no sentinel value of its own.
+const state = { day:"today", tour:"all", surface:"all", tournaments:new Set(), search:"", sort:"time", favorites:new Set() };
 
 function oddsGap(m){
   // Gap in implied win probability between the two players — a real,
@@ -1679,7 +1683,7 @@ function getFiltered(){
     }
     if (state.tour !== 'all' && m.tourBadge !== state.tour) return false;
     if (state.surface !== 'all' && m.surface !== state.surface) return false;
-    if (state.tournament !== 'all' && m.tour !== state.tournament) return false;
+    if (state.tournaments.size && !state.tournaments.has(m.tour)) return false;
     if (state.search){
       const q = state.search.toLowerCase();
       if (!m.p1.toLowerCase().includes(q) && !m.p2.toLowerCase().includes(q)) return false;
@@ -4721,9 +4725,11 @@ document.addEventListener('click', e => {
 document.getElementById('tournamentGroup').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tournament]'); if (!btn) return;
   const value = btn.dataset.tournament;
-  // Re-clicking the already-selected tournament (or clicking its × chip, which
-  // lives inside that same button) deselects it and returns to all tournaments.
-  state.tournament = state.tournament === value ? 'all' : value;
+  // Each chip toggles independently — several can be selected at once. Clicking a
+  // selected chip (or its ×, which lives inside that same button) removes only it.
+  // Removing the last one empties the set, which reads as "all tournaments".
+  if (state.tournaments.has(value)) state.tournaments.delete(value);
+  else state.tournaments.add(value);
   buildTournamentFilters();
   renderMatches();
 });
