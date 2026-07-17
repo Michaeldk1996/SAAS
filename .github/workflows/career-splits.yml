@@ -16,10 +16,19 @@ name: BSP career-splits refresh
 #
 # No API key needed — the source is public HTML.
 
+# The daily schedule is DISABLED, and must stay disabled until the builder has a
+# host tennisabstract.com will actually serve.
+#
+# Measured 2026-07-17 on a GitHub-hosted runner: the static jsplayers/*.js files
+# return 200, but every cgi-bin/player-classic.cgi request returns 403 — 160 of
+# 160. The same requests, same User-Agent, return 200 from a residential IP, so
+# TA blocks datacenter ranges on its dynamic endpoint on purpose. Re-enabling the
+# cron here just fails at 06:30 daily; the fix is to run the builder somewhere TA
+# serves, not to retry harder or disguise the requests.
 on:
-  schedule:
-    - cron: '30 6 * * *'    # daily, 06:30 UTC
-  workflow_dispatch:         # allow manual "Run workflow" from the Actions tab
+  # schedule:
+  #   - cron: '30 6 * * *'    # daily, 06:30 UTC — re-enable only once TA serves this runner
+  workflow_dispatch:         # manual "Run workflow" only, so the 403 is reproducible on demand
 
 # Never let two builds overlap — they both write/push career-splits.json.
 concurrency:
