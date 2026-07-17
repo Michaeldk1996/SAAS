@@ -273,6 +273,10 @@ function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
         surface: surfaceMap.get(String(m.tournament_key)) || null,
         p1Won,
         result,
+        // The row's identity, and the only way it can reach its own
+        // setstats/{ek}.json and pbp/{ek}.json shards — without it an H2H row is
+        // text with nothing to join to.
+        eventKey: m.event_key,
       };
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
