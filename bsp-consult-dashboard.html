@@ -1029,6 +1029,9 @@
   .aform-tab.active{ color:#e7e9ee; border-color:rgba(255,255,255,0.30); background:rgba(255,255,255,0.06); }
   .aform-panel > div.hidden{ display:none; }
   .aform-panel-row{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; padding:4px 0; font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .aform-panel-stat{ padding:3px 0 7px; }
+  /* The panel's group bands sit tighter than the full-width sheet's. */
+  .aform-panel .msheet-grouphead{ margin-top:11px; margin-bottom:5px; padding:7px; font-size:9.5px; }
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-foot{ font-size:11.5px; color:#5b6472; margin-top:14px; font-family:'Hanken Grotesk', sans-serif; }
   @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } }
@@ -2873,6 +2876,10 @@ function formRowHtml(match, idPrefix, playerKey, playerName){
   `;
 }
 
+// A stat row inside an expanded recent-match panel. Same diverging-bar
+// component as the main Match Stats sheet (.msheet-bar): value left, label
+// centred, value right, and a bar whose halves show each player's share of the
+// stat — the tracked player reads left/blue, the opponent right/amber.
 function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
@@ -2883,11 +2890,22 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   const oppColor = oppLeads ? '#f0a95f' : '#8b93a3';
   const ownWeight = ownLeads ? 700 : 500;
   const oppWeight = oppLeads ? 700 : 500;
+  // Bar magnitude = the stat itself (count, or the rate for pct stats); a
+  // missing side contributes nothing rather than distorting the split.
+  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const a = mag(ownVal), b = mag(oppVal), sum = a + b;
+  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
-    <div class="aform-panel-row">
-      <span style="text-align:left;color:${ownColor};font-weight:${ownWeight};">${fmt(ownVal)}</span>
-      <span style="color:#5b6472;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">${label}</span>
-      <span style="text-align:right;color:${oppColor};font-weight:${oppWeight};">${fmt(oppVal)}</span>
+    <div class="aform-panel-stat">
+      <div class="aform-panel-row">
+        <span style="text-align:left;color:${ownColor};font-weight:${ownWeight};">${fmt(ownVal)}</span>
+        <span style="color:#5b6472;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">${label}</span>
+        <span style="text-align:right;color:${oppColor};font-weight:${oppWeight};">${fmt(oppVal)}</span>
+      </div>
+      <div class="msheet-bar">
+        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
+        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
+      </div>
     </div>
   `;
 }
@@ -2899,9 +2917,15 @@ function formPanelHtml(match, idPrefix, playerKey, playerName){
   if (!joined) {
     body = `<div class="acomingsoon" style="padding:10px 0 2px;">Stats not available for this match.</div>`;
   } else {
-    const rows = MATCH_STAT_ORDER.flatMap(([, , statRows]) =>
-      statRows.map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter))
-    ).filter(Boolean).join('');
+    // Grouped SERVICE / RETURN / POINTS, same bands as the Match Stats sheet. A
+    // group whose stats the feed didn't send for this match drops out entirely
+    // rather than leaving a heading over nothing.
+    const rows = MATCH_STAT_ORDER.map(([, groupLabel, statRows]) => {
+      const body = statRows
+        .map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter))
+        .filter(Boolean).join('');
+      return body ? `<div class="msheet-grouphead">${groupLabel}</div>${body}` : '';
+    }).filter(Boolean).join('');
     body = `
       <div class="aform-panel-names"><span>${playerName}</span><span>${surnameFirstName(match.opponent)}</span></div>
       ${rows}
