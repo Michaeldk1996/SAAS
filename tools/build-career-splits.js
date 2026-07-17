@@ -264,6 +264,11 @@ async function main() {
 
   const players = {};
   let ok = 0, miss = 0, empty = 0, cached = 0, fetched = 0, staleFallback = 0;
+  // Why fetches failed, tallied by reason. Without this a total failure just
+  // reports "ingested 0" and gives no way to tell a TA block (403) from a
+  // rate-limit (429) from a network fault — they need opposite fixes.
+  const why = new Map();
+  const note = r => why.set(r, (why.get(r) || 0) + 1);
   let cursor = 0;
   async function worker() {
     while (cursor < targets.length) {
@@ -281,10 +286,10 @@ async function main() {
           for (let attempt = 0; attempt < 4 && !html; attempt++) {
             await sleep(BASE_DELAY_MS + attempt * 1200);
             let status, body;
-            try { ({ status, body } = await get(url)); } catch (e) { continue; }
+            try { ({ status, body } = await get(url)); } catch (e) { note(`net:${e.code || e.message}`); continue; }
             if (status === 200 && body.includes('var matchmx')) { html = body; fs.writeFileSync(cacheFile, body); fetched++; }
-            else if (status === 429) { await sleep(2500 * (attempt + 1)); }
-            else break; // real 404 (name mismatch) — don't hammer
+            else if (status === 429) { note('429'); await sleep(2500 * (attempt + 1)); }
+            else { note(status === 200 ? '200-no-matchmx' : `http:${status}`); break; } // real 404 (name mismatch) — don't hammer
           }
           // TA throttles sustained fetching, so a refetch can fail for a player
           // we already have a page for. Serving that stale page keeps his splits
@@ -320,7 +325,13 @@ async function main() {
   };
   // A run where every fetch failed (egress blocked, TA down) must not overwrite
   // a good file with an empty one.
-  if (!ok) { console.error(`ERROR: ingested 0 of ${targets.length} players — leaving ${path.basename(OUT)} untouched.`); process.exit(1); }
+  const whyStr = [...why.entries()].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} x${n}`).join(', ') || 'none';
+  if (!ok) {
+    console.error(`ERROR: ingested 0 of ${targets.length} players — leaving ${path.basename(OUT)} untouched.`);
+    console.error(`Fetch failures: ${whyStr}`);
+    process.exit(1);
+  }
+  if (why.size) console.log(`Fetch failures: ${whyStr}`);
   fs.writeFileSync(OUT, JSON.stringify(out));
   console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty (${fetched} fetched, ${cached} cached, ${staleFallback} served stale after failed refetch). 52wk window is per-player.`);
   // A build that fetched nothing is a replay of the cache, not a refresh.
