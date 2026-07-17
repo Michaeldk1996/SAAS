@@ -257,7 +257,10 @@ async function main() {
   // since the backfill has hundreds of candidates it won, starving matches that
   // finished today of their point log entirely. Old set stats are never worth
   // more than a new point log, so the backfill only ever spends its own budget.
-  const MAX_BACKFILL_PER_RUN = Number(process.env.SETSTATS_MAX_BACKFILL || 120);
+  // 250/run adds ~2 min to a ~2 min job — the same total API cost either way,
+  // just front-loaded so the filter reaches every row in a couple of runs
+  // instead of half a day. Lower it if this job ever needs to be quick again.
+  const MAX_BACKFILL_PER_RUN = Number(process.env.SETSTATS_MAX_BACKFILL || 250);
   const pending = Object.keys(cache).filter(k => cache[k] && !('stats' in cache[k]));
   let backfilled = 0, backfillFailed = 0;
   for (const ek of pending.slice(0, MAX_BACKFILL_PER_RUN)) {
