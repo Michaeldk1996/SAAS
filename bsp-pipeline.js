@@ -787,6 +787,19 @@ const EXTRA_STAT_DEFS = [
   { type: 'Points', name: 'Total Points Won', kind: 'pct' },
 ];
 
+// Minimum sample a percentage needs before it is presented as a rate.
+// Break Points Converted is the only stat here with a genuinely small
+// denominator: a player faces a handful of break points in a match, so one
+// converted chance reads "100%" and sits beside Alcaraz's honest 44% (verified
+// live: 15 of 357 players read exactly 0% or 100%, e.g. A. Ritschard 100%).
+// Every other percentage is drawn from dozens of points per match and cannot
+// be distorted this way. The number is arithmetically true, so it is not
+// dropped — it is held back from being read as a rate, and the sample is shown
+// instead. Mirrored in the dashboard's PP_MIN_SAMPLE.
+const MIN_STAT_SAMPLE = {
+  'Return:Break Points Converted': 5,
+};
+
 // Aggregates real per-match `statistics` entries for one player across a
 // set of fixtures. Percentage stats (kind: 'pct') are weighted by summing
 // each match's real stat_won/stat_total (not averaging pre-rounded
@@ -876,7 +889,16 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
       stats[key] = v.n > 0 ? Math.round((v.sum / v.n) * 10) / 10 : null;
     }
   }
-  return { matchCount, stats };
+  // Sample size behind each number, so a card can tell an honest 44% off 55
+  // break points from a "100%" off one. For a percentage that is the attempts
+  // actually played (break points faced); for a count average it is the number
+  // of matches carrying that stat. Never inferred from matchCount — the feed's
+  // coverage is per-stat, so a stat's own denominator is the only true sample.
+  const samples = {};
+  for (const [key, v] of Object.entries(totals)) {
+    samples[key] = v.kind === 'pct' ? v.total : v.n;
+  }
+  return { matchCount, stats, samples };
 }
 
 // Buckets a player's real last-52-weeks fixtures by court-speed category
@@ -2771,7 +2793,15 @@ function computeTourAverage(profiles) {
 
   const stats = {};
   for (const key of RAW_STAT_KEYS) {
-    stats[key] = meanOf(all.map(p => (p.statsAll ? p.statsAll[key] : null)));
+    // A player below the minimum sample cannot help define the benchmark he is
+    // about to be measured against: a 100%-off-one-break-point player would
+    // drag the tour average up and make every honest converter look worse than
+    // he is. Same rule as the card, applied one level earlier.
+    const min = MIN_STAT_SAMPLE[key];
+    const eligible = min
+      ? all.filter(p => (p.samplesAll ? p.samplesAll[key] : 0) >= min)
+      : all;
+    stats[key] = meanOf(eligible.map(p => (p.statsAll ? p.statsAll[key] : null)));
   }
 
   return { dna, stats };
@@ -2919,6 +2949,7 @@ async function buildOneProfile(key, name, surfaceMap) {
     },
     dna,
     statsAll: aggBySurface.All?.stats || null,
+    samplesAll: aggBySurface.All?.samples || null,
     surfaces,
     // Recent form uses its own broad all-tier fetch (see fetchRecentSinglesFixtures),
     // NOT the ATP-only allFixtures used for the season/DNA/surface aggregates above.
@@ -2968,7 +2999,11 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 // v4 = per-stat denominator for count averages (Winners/Unforced Errors were
 //      divided by every match on file, not just the ~66% that carry them) plus
 //      rejection of impossible feed rows (won > total).
-const PROFILE_SCHEMA_VERSION = 4;
+// v5 = per-stat sample sizes (samplesAll) persisted alongside the numbers, so a
+//      percentage off a handful of attempts can be held back instead of read as
+//      a rate. Load-bearing: computeTourAverage now filters on samplesAll, and a
+//      cached v4 profile has none — it would silently drop out of the benchmark.
+const PROFILE_SCHEMA_VERSION = 5;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a

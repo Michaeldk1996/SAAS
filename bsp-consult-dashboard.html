@@ -3347,17 +3347,28 @@ const EXTRA_STAT_ORDER = [
   ['Points:Total Points Won', 'Total Points Won', 'pct'],
 ];
 
-function extraStatRowHtml(label, kind, p1Val, p2Val){
+function extraStatRowHtml(label, kind, p1Val, p2Val, key, p1Samples, p2Samples){
   if (p1Val == null && p2Val == null) return '';
-  const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
-  const a = p1Val ?? 0;
-  const b = p2Val ?? 0;
+  // Same minimum-sample rule as the profile card (PP_MIN_SAMPLE). Here it also
+  // protects the head-to-head bar: one player converting his only break point
+  // would otherwise render as a 100%-vs-44% rout against Alcaraz. An unrated
+  // side shows its sample instead of a percentage, and the bar is withheld
+  // rather than drawn at a fake 50/50, which would imply a real dead heat.
+  const ms = PP_MIN_SAMPLE[key];
+  const nOf = s => (s ? s[key] : null);
+  const lowOf = s => !!ms && nOf(s) != null && nOf(s) < ms.min;
+  const p1Low = lowOf(p1Samples), p2Low = lowOf(p2Samples);
+  const fmt = (v, low, s) => low
+    ? `<span style="color:#8a7b3f;">— <span style="font-size:10px;">(${nOf(s)} ${ms.noun}${nOf(s) === 1 ? '' : 's'})</span></span>`
+    : (v == null ? '—' : (kind === 'pct' ? `${v}%` : v));
+  const a = p1Low ? 0 : (p1Val ?? 0);
+  const b = p2Low ? 0 : (p2Val ?? 0);
   const total = a + b;
-  const width = total > 0 ? Math.round((a / total) * 100) : 50;
+  const width = (p1Low || p2Low) ? 0 : (total > 0 ? Math.round((a / total) * 100) : 50);
   return `
     <div class="arow">
       <div class="albl"><span>${label}</span></div>
-      <div class="aval"><span>${fmt(p1Val)}</span><span>${fmt(p2Val)}</span></div>
+      <div class="aval"><span>${fmt(p1Val, p1Low, p1Samples)}</span><span>${fmt(p2Val, p2Low, p2Samples)}</span></div>
       <div class="atrack"><div style="width:${width}%"></div></div>
     </div>
   `;
@@ -3374,8 +3385,10 @@ function extraStatsWindowHtml(m, windowData, windowLabel){
   }
   const p1Stats = windowData.p1 ? windowData.p1.stats : {};
   const p2Stats = windowData.p2 ? windowData.p2.stats : {};
+  const p1Samples = windowData.p1 ? windowData.p1.samples : null;
+  const p2Samples = windowData.p2 ? windowData.p2.samples : null;
   const rows = EXTRA_STAT_ORDER
-    .map(([key, label, kind]) => extraStatRowHtml(label, kind, p1Stats[key], p2Stats[key]))
+    .map(([key, label, kind]) => extraStatRowHtml(label, kind, p1Stats[key], p2Stats[key], key, p1Samples, p2Samples))
     .filter(Boolean)
     .join('');
   const countsNote = `<div class="anote">${m.p1}: ${windowData.p1 ? windowData.p1.matchCount + ' matches' : 'no data'} · ${m.p2}: ${windowData.p2 ? windowData.p2.matchCount + ' matches' : 'no data'} on file</div>`;
@@ -4894,6 +4907,16 @@ function setPpFormSeason(y){
   if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
 }
 
+// Minimum sample before a percentage is presented as a rate — mirrors
+// MIN_STAT_SAMPLE in bsp-pipeline.js. Break Points Converted is the only stat
+// with a small enough denominator to be distorted this way: a player faces a
+// handful of break points, so one taken chance reads "100%" beside Alcaraz's
+// honest 44%. The sample behind each number arrives as profile.samplesAll
+// (pipeline v5); an older profile without it renders exactly as it does today.
+const PP_MIN_SAMPLE = {
+  'Return:Break Points Converted': { min: 5, noun: 'break point' },
+};
+
 // Fixed tour-average baseline for the serve/return bars is read from
 // ppTourAverage.stats; serve bars are blue, return bars green (per spec).
 const PP_SERVE_DEFS = [
@@ -4923,11 +4946,27 @@ function ppPercentileOf(value, bp){
   }
   return 100;
 }
-function ppStatRows(defs, stats, color){
+function ppStatRows(defs, stats, color, samples){
   const bench = (radarCalibration && radarCalibration.cardBenchmarks) || {};
   return defs.map(d => {
     const v = stats ? stats[d.key] : null;
     if (v == null) return '';
+    // Too few attempts to be a rate yet. The number is real, so it is not
+    // dropped and not clamped — it is just not a percentage a bettor can lean
+    // on, so the sample goes in its place and the bar is withheld. A bar here
+    // would invite comparison against players with fifty times the evidence.
+    const ms = PP_MIN_SAMPLE[d.key];
+    const n = samples ? samples[d.key] : null;
+    if (ms && n != null && n < ms.min){
+      return `
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px;">
+          <span style="font-size:12.5px;color:#cfd4de;">${d.label}</span>
+          <span style="display:flex;align-items:baseline;gap:9px;"><span style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5b6472;">—</span><span style="font-size:10.5px;color:#8a7b3f;font-family:'IBM Plex Mono',monospace;">${n} ${ms.noun}${n === 1 ? '' : 's'} · too few to rate</span></span>
+        </div>
+        <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"></span>
+      </div>`;
+    }
     // Prefer the empirical Match Charting Project benchmark: tour avg = MCP
     // median, and the bar is the player's percentile in that distribution
     // (tour-median → 50%). Stats MCP can't derive (e.g. Break Points Converted)
@@ -5264,8 +5303,8 @@ function buildPlayerProfileHtml(p){
        </div>`;
 
   // Serve & Return
-  const serveHtml = ppStatRows(PP_SERVE_DEFS, p.statsAll, BLUE);
-  const returnHtml = ppStatRows(PP_RETURN_DEFS, p.statsAll, '#3ECF8E');
+  const serveHtml = ppStatRows(PP_SERVE_DEFS, p.statsAll, BLUE, p.samplesAll);
+  const returnHtml = ppStatRows(PP_RETURN_DEFS, p.statsAll, '#3ECF8E', p.samplesAll);
 
   // Surface performance — career win rate (big) plus this season's win rate on
   // that surface (from seasonSurfRec, all tiers). Season figure is honest: it
