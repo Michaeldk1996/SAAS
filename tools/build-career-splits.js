@@ -36,7 +36,11 @@ const PROFILES = path.join(ROOT, 'player-profiles.json');
 const OUT = path.join(ROOT, 'career-splits.json');
 const CACHE = process.env.SPLITS_CACHE_DIR || '/tmp/ta-cache';
 const RANK_MAX = parseInt(process.argv[2], 10) || 250;
-const MAX_PLAYERS = parseInt(process.argv[3], 10) || 160;
+// No cap by default: RANK_MAX is the intended scope, and a second numeric cap
+// silently dropped everyone past it (it held coverage at 160 of the 236
+// profiles that pass rank<=250). Pass a number to cap deliberately, e.g. when
+// smoke-testing against a cold cache.
+const MAX_PLAYERS = parseInt(process.argv[3], 10) || Infinity;
 // tennisabstract rate-limits bursts (HTTP 429), so we pace: low concurrency, a
 // base delay per request, and exponential backoff on 429. Cached pages skip the
 // network entirely, so re-runs only pay for players not yet fetched.
@@ -238,12 +242,22 @@ async function main() {
 
   // index currRank by (initial, surname)
   const idx = new Map();
+  // Secondary index on EVERY given-name initial, not just the first. The tour
+  // abbreviates some players by a middle name -- Adolfo Daniel Vallejo (rank 71)
+  // plays as "D. Vallejo" -- so a first-initial-only join misses them entirely.
+  const altIdx = new Map();
   for (const [full, rk] of Object.entries(currRank)) {
     const t = normKey(full).split(' ');
     if (t.length < 2) continue;
-    const key = t[0][0] + '|' + t[t.length - 1];
+    const surname = t[t.length - 1];
+    const key = t[0][0] + '|' + surname;
     if (!idx.has(key)) idx.set(key, []);
     idx.get(key).push({ full, rank: +rk });
+    for (const given of t.slice(0, -1)) {
+      const aKey = given[0] + '|' + surname;
+      if (!altIdx.has(aKey)) altIdx.set(aKey, []);
+      altIdx.get(aKey).push({ full, rank: +rk });
+    }
   }
 
   // build the work list: profile -> matched full name + rank, filtered/sorted
@@ -251,8 +265,17 @@ async function main() {
   for (const [pkey, p] of Object.entries(profiles)) {
     const t = normKey(String(p.name).replace(/\./g, ' ')).split(' ').filter(Boolean);
     if (t.length < 2) continue;
-    const cands = idx.get(t[0][0] + '|' + t[t.length - 1]);
-    if (!cands || !cands.length) continue;
+    const lookup = t[0][0] + '|' + t[t.length - 1];
+    let cands = idx.get(lookup);
+    if (!cands || !cands.length) {
+      // Fall back to the middle-name index, but only when it names exactly one
+      // player. Two same-surname candidates (A. Zverev / M. Zverev) would be a
+      // guess, and a wrong join silently shows another man's career.
+      const alt = altIdx.get(lookup) || [];
+      const uniq = [...new Map(alt.map(c => [c.full, c])).values()];
+      if (uniq.length !== 1) continue;
+      cands = uniq;
+    }
     cands.sort((a, b) => a.rank - b.rank);
     const hit = cands[0];
     if (hit.rank > RANK_MAX) continue;
