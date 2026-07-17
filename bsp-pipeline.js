@@ -2701,6 +2701,41 @@ function surfaceRecord(playerStats, surface) {
 // profile has no natural "opponent" to pair against; the wide fetch carries no
 // event_type_key, so tour-tier scoping and the decided-match / qualifying-round
 // filters are all applied client-side below.
+// Per-set games for a recent-form row, oriented to the tracked player (`p`)
+// rather than to the fixture's first player, so both Form columns read left to
+// right as "my games vs theirs" regardless of which slot the player occupied.
+// event_final_result only carries SETS won ("2 - 1"), so the set-by-set line the
+// Form tab draws has to come from the fixture's own `scores` array — which the
+// wide recent-form fetch already returns, so this costs no extra API call.
+// Tiebreaks arrive encoded as "<games>.<tiebreakPoints>" (see formatSetScore);
+// both sides' tiebreak points are kept here, since the Form tab superscripts
+// each player's own. Returns null (never a partial line) when a fixture has no
+// usable scores — walkovers have none at all.
+function formSetsFromFixture(fixture, isFirst) {
+  if (!Array.isArray(fixture.scores) || fixture.scores.length === 0) return null;
+  const sorted = [...fixture.scores].sort((a, b) => Number(a.score_set) - Number(b.score_set));
+  const sets = sorted.map(s => {
+    const mine = isFirst ? s.score_first : s.score_second;
+    const theirs = isFirst ? s.score_second : s.score_first;
+    const [pG, pTb] = String(mine ?? '').split('.');
+    const [oG, oTb] = String(theirs ?? '').split('.');
+    const p = Number(pG), o = Number(oG);
+    if (!Number.isFinite(p) || !Number.isFinite(o)) return null;
+    const set = { p, o };
+    if (pTb !== undefined) set.pTb = Number(pTb);
+    if (oTb !== undefined) set.oTb = Number(oTb);
+    return set;
+  });
+  if (sets.some(s => s === null)) return null;
+  // A 0-0 "set" is never a real set — it's what the feed carries for a match
+  // that was never played (a walkover reports one 0-0 set and no final result)
+  // or for the unplayed remainder of a retirement. Dropping them stops the Form
+  // tab drawing a 0-0 scoreline for a match nobody hit a ball in; a walkover is
+  // then left with no set list at all and shows only its w/o marker.
+  const played = sets.filter(s => !(s.p === 0 && s.o === 0));
+  return played.length ? played : null;
+}
+
 function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // Singles across every tour tier (Atp/Challenger/Itf "... Singles"), never
   // doubles. The wide recent-form fetch carries no event_type_key, so this is
@@ -2728,6 +2763,9 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
       round: f.tournament_round,
       surface: surfaceMap.get(String(f.tournament_key)) || null,
       result, won,
+      sets: formSetsFromFixture(f, isFirst),
+      retired: f.event_status === 'Retired',
+      walkover: f.event_status === 'Walk Over',
       eventKey: f.event_key,
     };
   });

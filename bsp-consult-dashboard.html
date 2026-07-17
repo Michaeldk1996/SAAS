@@ -476,6 +476,12 @@
   .modal-analysis .aodds.p2{ background:rgba(232,147,75,0.12); border-color:rgba(232,147,75,0.34); color:#f0a95f; }
   .modal-analysis .aodds:empty{ display:none; }
   .modal-analysis .avslabel2{ color:var(--text-faint); font-weight:500; font-size:11px; font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
+  /* The score is stated ONCE in the header: sets in the matchup pills, then this
+     row. The compact FINAL pill replaces the old full-width green banner, which
+     repeated a score the two rows above it already carried. */
+  .modal-analysis .ascorerow{ display:flex; align-items:center; gap:11px; }
+  .modal-analysis .afinalpill{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:#4fd190; background:rgba(62,207,142,0.10); border:1px solid rgba(62,207,142,0.30); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .modal-analysis .afinalpill::before{ content:''; width:5px; height:5px; border-radius:50%; background:#4fd190; }
   .modal-analysis .asetline{ display:flex; align-items:center; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:#aeb6c4; }
   .modal-analysis .asetline span{ white-space:nowrap; }
   .modal-analysis .asetline:empty{ display:none; }
@@ -954,7 +960,10 @@
   }
 
   /* Form tab (last-10-results form, per player) */
-  .aform-callout{ border:1px solid rgba(255,255,255,0.07); border-radius:12px; background:rgba(255,255,255,0.02); padding:14px 18px; font-size:13.5px; color:#aab2c0; line-height:1.5; margin-bottom:18px; font-family:'Hanken Grotesk', sans-serif; }
+  /* Slim one-line info strip — an icon and a sentence, not a paragraph block. */
+  .aform-callout{ display:flex; align-items:center; gap:11px; border:1px solid rgba(255,255,255,0.07); border-radius:12px; background:rgba(255,255,255,0.02); padding:11px 16px; font-size:13px; color:#aab2c0; line-height:1.45; margin-bottom:18px; font-family:'Hanken Grotesk', sans-serif; }
+  .aform-callout-icon{ flex:none; width:16px; height:16px; color:#6f7787; display:inline-flex; }
+  .aform-callout-icon svg{ width:100%; height:100%; }
   .aform-col{ min-width:0; }
   .aform-hero{ border-radius:16px; padding:18px 20px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; }
   .aform-head{ display:flex; align-items:center; gap:9px; margin-bottom:14px; }
@@ -971,31 +980,40 @@
   .aform-pill.loss{ background:#E8607A; }
   .aform-filterhead{ display:flex; align-items:center; justify-content:space-between; margin:18px 0 8px 0; }
   .aform-filterlbl{ font-size:11px; color:#9aa3b2; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
-  .aform-toggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
-  .aform-toggle .opt{ font-size:11px; font-weight:600; color:#8b93a3; padding:4px 11px; border-radius:6px; border:1px solid transparent; cursor:pointer; font-family:'Hanken Grotesk', sans-serif; }
-  .aform-toggle .opt.active{ color:#e7e9ee; }
   .aform-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; margin-bottom:6px; }
   .aform-list.hidden{ display:none; }
   .aform-tgroup{ display:flex; align-items:center; gap:8px; padding:8px 13px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.05); }
-  .aform-tgroup + .aform-row{ border-top:none; }
+  .aform-tgroup + .fsm{ border-top:none; }
   .aform-tgroup .tname{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:700; color:#dfe4ec; }
-  .aform-tgroup .trange{ font-size:10.5px; color:#5b6472; white-space:nowrap; }
   .aform-tgroup .tspacer{ flex:1; }
   .aform-tgroup .trec{ font-size:11.5px; font-family:'IBM Plex Mono', monospace; color:#8b93a3; white-space:nowrap; }
-  .aform-row{ display:grid; grid-template-columns:26px minmax(0,1fr) 46px 56px 12px; align-items:center; gap:10px; padding:11px 13px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:background .12s; }
-  .aform-row:hover{ background:#0e1015; }
-  .aform-row:last-child{ border-bottom:none; }
-  .aform-row .res{ width:24px; height:24px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:11px; }
-  .aform-row .res.win{ background:rgba(62,207,142,0.14); color:#3ECF8E; }
-  .aform-row .res.loss{ background:rgba(232,96,122,0.14); color:#E8607A; }
-  .aform-row .opp{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; font-weight:600; color:#e7ebf1; }
-  .aform-row .score{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#cfd4de; }
-  .aform-row .surfacetag{ font-size:10.5px; font-weight:600; border-radius:6px; padding:2px 8px; text-align:center; }
-  .aform-row .surfacetag.hard{ color:#7ba4ff; background:rgba(123,164,255,0.12); border:1px solid rgba(123,164,255,0.25); }
-  .aform-row .surfacetag.grass{ color:#6ed3a3; background:rgba(110,211,163,0.12); border:1px solid rgba(110,211,163,0.25); }
-  .aform-row .surfacetag.clay{ color:#eda869; background:rgba(237,168,105,0.12); border:1px solid rgba(237,168,105,0.25); }
-  .aform-row .chev{ color:#4b5361; font-size:13px; transition:transform 0.15s; }
-  .aform-row .chev.open{ transform:rotate(90deg); }
+  /* Recent-match block (Flashscore layout): date | two player rows | W-L badge.
+     Both player rows share one grid template, so the sets-won column, the
+     divider and the first set score hold the same x down the entire list —
+     only the NUMBER of set columns varies between matches. */
+  .fsm{ display:grid; grid-template-columns:44px minmax(0,1fr) 26px 12px; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:background .12s; }
+  .fsm:hover{ background:#0e1015; }
+  .fsm:last-child{ border-bottom:none; }
+  .fsm.open{ background:#0e1015; }
+  .fsm-date{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#6f7787; text-align:center; line-height:1.3; }
+  .fsm-note{ display:block; font-size:9px; color:#5b6472; letter-spacing:0.02em; }
+  .fsm-players{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .fsm-prow{ display:grid; grid-template-columns:20px minmax(0,1fr) 14px 1px auto; align-items:center; gap:9px; min-width:0; }
+  .fsm-av{ width:20px; height:20px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:8px; font-weight:700; color:#c3cad6; flex:none; }
+  .fsm-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px; font-weight:500; color:#8b93a3; font-family:'Hanken Grotesk', sans-serif; }
+  .fsm-name.w{ font-weight:700; color:#f2f4f8; }
+  .fsm-sets{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:500; color:#8b93a3; text-align:center; }
+  .fsm-sets.w{ font-weight:700; color:#f2f4f8; }
+  .fsm-div{ width:1px; height:15px; background:rgba(255,255,255,0.10); }
+  .fsm-games{ display:flex; }
+  .fsm-g{ width:19px; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:400; color:#6f7787; }
+  .fsm-g.w{ font-weight:700; color:#e7ebf1; }
+  .fsm-g sup{ font-size:8px; line-height:0; margin-left:0.5px; }
+  .fsm-badge{ width:22px; height:22px; border-radius:7px; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; }
+  .fsm-badge.win{ background:rgba(62,207,142,0.14); border-color:rgba(62,207,142,0.32); color:#4fd190; }
+  .fsm-badge.loss{ background:rgba(232,96,122,0.14); border-color:rgba(232,96,122,0.32); color:#e8607a; }
+  .fsm-chev{ color:#4b5361; font-size:13px; transition:transform 0.15s; }
+  .fsm-chev.open{ transform:rotate(90deg); }
   .aform-panel-wrap{ display:grid; grid-template-rows:0fr; transition:grid-template-rows 150ms ease; }
   .aform-panel-wrap.open{ grid-template-rows:1fr; }
   .aform-panel-inner{ overflow:hidden; }
@@ -1465,7 +1483,10 @@
             <span class="aodds" id="aP2Odds"></span>
           </div>
         </div>
-        <div class="asetline" id="aSetLine"></div>
+        <div class="ascorerow">
+          <span class="afinalpill" id="aFinalPill" style="display:none;">FINAL</span>
+          <div class="asetline" id="aSetLine"></div>
+        </div>
       </div>
       <div class="ahead-spacer"></div>
       <div class="close" onclick="closeAnalysisModal()">✕</div>
@@ -2773,6 +2794,85 @@ function matchStatsForFormRow(match){
   return match.matchStats ? { own: match.matchStats.own, opp: match.matchStats.opp } : null;
 }
 
+// Monogram for a form-row avatar: first + last initial ("Kecmanovic M." -> KM,
+// "J. M. Cerundolo" -> JC). Falls back to the first two characters for a
+// single-token name, so there's always a monogram rather than a blank disc.
+function formIni(name){
+  const parts = String(name || '').replace(/\./g, '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+// "2026-07-15" -> "15.07". Left as-is if it isn't an ISO date.
+function formShortDate(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ''));
+  return m ? `${m[3]}.${m[2]}` : (d || '');
+}
+// One player's set-by-set games. `side` picks which half of each set to read
+// ('p' = tracked player, 'o' = opponent); the other side decides the weight, so
+// the winner of each set is the bright/bold one on both rows. A set that went to
+// a tiebreak superscripts that player's own tiebreak points (7⁷ / 6⁴).
+function formGamesHtml(sets, side){
+  const other = side === 'p' ? 'o' : 'p';
+  return (sets || []).map(s => {
+    const mine = s[side], theirs = s[other];
+    const won = Number(mine) > Number(theirs);
+    const tb = s[side + 'Tb'];
+    const sup = tb != null ? `<sup>${escapeHtml(String(tb))}</sup>` : '';
+    return `<span class="fsm-g${won ? ' w' : ''}">${escapeHtml(String(mine))}${sup}</span>`;
+  }).join('');
+}
+// A recent-match block, Flashscore-style: opponent on top, the tracked player
+// below, date on the left and a W/L badge (from the tracked player's view) on
+// the right. Both player rows share one grid, so the sets-won column and the
+// divider line up down the whole list and the set scores all start at the same
+// x — only their count changes.
+// `sets` comes from the pipeline (formSetsFromFixture) and is tracked-oriented.
+// It's absent on walkovers and on any match built before that field existed, so
+// the set columns simply don't render there rather than blocking the row.
+function formRowHtml(match, idPrefix, playerKey, playerName){
+  const sets = Array.isArray(match.sets) ? match.sets : null;
+  // Sets won: derived from the real set list when present, else from `result`,
+  // which the pipeline already flips to read "tracked - opponent".
+  let pSets, oSets;
+  if (sets) {
+    pSets = sets.filter(s => s.p > s.o).length;
+    oSets = sets.filter(s => s.o > s.p).length;
+  } else {
+    const parts = String(match.result || '').split('-').map(x => parseInt(x.trim(), 10));
+    pSets = Number.isFinite(parts[0]) ? parts[0] : '–';
+    oSets = Number.isFinite(parts[1]) ? parts[1] : '–';
+  }
+  const oppName = surnameFirstName(match.opponent) || '—';
+  const isP1 = idPrefix.startsWith('p1');
+  const tint = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
+  const note = match.retired ? 'ret.' : (match.walkover ? 'w/o' : '');
+
+  // The tracked player's own row is the one that carries the coloured ring, so
+  // each column stays visually anchored to its player.
+  const prow = (name, ini, setsWon, isWinner, gamesHtml, tracked) => `
+    <div class="fsm-prow">
+      <span class="fsm-av" style="background:${tracked ? tint(0.16) : 'rgba(255,255,255,0.05)'};border-color:${tracked ? tint(0.4) : 'rgba(255,255,255,0.12)'};">${escapeHtml(ini)}</span>
+      <span class="fsm-name${isWinner ? ' w' : ''}" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+      <span class="fsm-sets${isWinner ? ' w' : ''}">${setsWon}</span>
+      <span class="fsm-div"></span>
+      <span class="fsm-games">${gamesHtml}</span>
+    </div>`;
+
+  return `
+    <div class="fsm" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
+      <span class="fsm-date">${escapeHtml(formShortDate(match.date))}${note ? `<span class="fsm-note">${note}</span>` : ''}</span>
+      <span class="fsm-players">
+        ${prow(oppName, formIni(oppName), oSets, oSets > pSets, formGamesHtml(sets, 'o'), false)}
+        ${prow(playerName, formIni(playerName), pSets, pSets > oSets, formGamesHtml(sets, 'p'), true)}
+      </span>
+      <span class="fsm-badge ${match.won ? 'win' : 'loss'}">${match.won ? 'W' : 'L'}</span>
+      <span class="fsm-chev" id="formChev-${idPrefix}">▸</span>
+    </div>
+    ${formPanelHtml(match, idPrefix, playerKey, playerName)}
+  `;
+}
+
 function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
@@ -2873,21 +2973,6 @@ function switchFormTab(idPrefix, tab){
   });
 }
 
-function formRowHtml(match, idPrefix, playerKey, playerName){
-  const surfaceTag = match.surface ? `<span class="surfacetag ${match.surface}">${match.surface.charAt(0).toUpperCase()+match.surface.slice(1)}</span>` : '';
-  const displayName = surnameFirstName(match.opponent);
-  return `
-    <div class="aform-row" onclick="toggleFormPanel('${idPrefix}')">
-      <span class="res ${match.won ? 'win' : 'loss'}">${match.won ? 'W' : 'L'}</span>
-      <span class="opp" title="${match.opponent}">${displayName}</span>
-      <span class="score">${match.result || '—'}</span>
-      ${surfaceTag}
-      <span class="chev" id="formChev-${idPrefix}">▸</span>
-    </div>
-    ${formPanelHtml(match, idPrefix, playerKey, playerName)}
-  `;
-}
-
 // Single-open-per-column accordion: opening a row in a given player column
 // (colPrefix, e.g. "p1") closes any other open row in that same column.
 const formOpenPanel = {};
@@ -2895,17 +2980,21 @@ function toggleFormPanel(idPrefix){
   const colPrefix = idPrefix.replace(/(main|surf|season)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  const row = document.getElementById('formRow-' + idPrefix);
   if (!chev || !wrap) return;
   const isOpen = wrap.classList.contains('open');
   const prevId = formOpenPanel[colPrefix];
   if (prevId && prevId !== idPrefix) {
     const prevChev = document.getElementById('formChev-' + prevId);
     const prevWrap = document.getElementById('formPanelWrap-' + prevId);
+    const prevRow = document.getElementById('formRow-' + prevId);
     if (prevChev) prevChev.classList.remove('open');
     if (prevWrap) prevWrap.classList.remove('open');
+    if (prevRow) prevRow.classList.remove('open');
   }
   chev.classList.toggle('open', !isOpen);
   wrap.classList.toggle('open', !isOpen);
+  if (row) row.classList.toggle('open', !isOpen);
   formOpenPanel[colPrefix] = isOpen ? null : idPrefix;
   if (!isOpen) ensureFormPanelTabs(idPrefix);   // opening: decide this row's tabs
 }
@@ -2914,28 +3003,7 @@ function showFormMore(colPrefix){
   const link = document.getElementById('formShowMore-' + colPrefix);
   if (link) link.style.display = 'none';
 }
-// Persists the last selected surface filter per player (by playerKey, since
-// a player's own key is stable while p1/p2 side swaps between matches).
-// In-memory only — resets on page reload by design.
-const formFilterState = {};
-function setFormFilter(colPrefix, filter, playerKey){
-  const all = document.getElementById(`formList-all-${colPrefix}`);
-  const surf = document.getElementById(`formList-surf-${colPrefix}`);
-  const btnAll = document.getElementById(`formToggle-all-${colPrefix}`);
-  const btnSurf = document.getElementById(`formToggle-surf-${colPrefix}`);
-  if (!all || !surf) return;
-  if (playerKey != null) formFilterState[playerKey] = filter;
-  all.classList.toggle('hidden', filter !== 'all');
-  surf.classList.toggle('hidden', filter !== 'surf');
-  [btnAll, btnSurf].forEach(btn => {
-    if (!btn) return;
-    const isActive = btn === (filter === 'all' ? btnAll : btnSurf);
-    btn.classList.toggle('active', isActive);
-    btn.style.background = isActive ? btn.dataset.activeBg : '';
-    btn.style.borderColor = isActive ? btn.dataset.activeBorder : 'transparent';
-  });
-}
-// Task 7 — Recent matches are grouped under the tournament they were played at
+// Recent matches are grouped under the tournament they were played at
 // rather than listed flat. Reuses ppGroupMatchesByTournament (the same splitter
 // the profile card uses), so an event played twice in the window shows as two
 // editions rather than one merged block.
@@ -2960,9 +3028,10 @@ function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, col
     const surfTag = g.surface
       ? `<span class="surfacetag ${surf}" style="flex:none;">${g.surface}</span>`
       : '';
+    // Name + surface + the player's record at that event. No date range: every
+    // row underneath already carries its own date, so the range only repeated it.
     const header = `<div class="aform-tgroup">
         <span class="tname">${g.label}</span>${surfTag}
-        <span class="trange">${g.range}</span>
         <span class="tspacer"></span>
         <span class="trec">${g.won}–${g.lost}</span>
       </div>`;
@@ -3005,14 +3074,6 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
     ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${allGrouped.hiddenCount} more match${allGrouped.hiddenCount === 1 ? '' : 'es'}</div>`
     : '';
 
-  const surfaceMatches = allMatches.filter(m => m.surface === currentSurface);
-  // The surface list is short enough to show in full, so it groups without
-  // any show-more; its groups are never collapsed.
-  const surfaceRows = surfaceMatches.length
-    ? buildFormGroupedList(surfaceMatches, colPrefix, playerKey, name, 'surf', false).html
-    : `<div class="acomingsoon" style="padding:14px 0;">No matches on record on this surface in their recent history.</div>`;
-  const surfaceLabel = currentSurface.charAt(0).toUpperCase() + currentSurface.slice(1);
-
   const isP1 = colPrefix === 'p1';
   const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
@@ -3020,12 +3081,8 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
   const captionColor = isP1 ? '#93a8cf' : '#cfa77f';
   const recordColor = isP1 ? '#cfd6e6' : '#e6d3c2';
   const recordSubColor = isP1 ? '#6b7f9c' : '#9c8670';
-  const activeToggleBg = rgba(0.18);
-  const activeToggleBorder = rgba(0.3);
   const wins = allMatches.filter(x => x.won).length;
   const losses = allMatches.length - wins;
-  const savedFilter = formFilterState[playerKey] || 'all';
-  const allActive = savedFilter === 'all';
 
   return `
     <div class="aform-col">
@@ -3048,13 +3105,8 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
       </div>
       <div class="aform-filterhead">
         <span class="aform-filterlbl">Recent matches</span>
-        <div class="aform-toggle">
-          <span class="opt${allActive ? ' active' : ''}" id="formToggle-all-${colPrefix}" onclick="setFormFilter('${colPrefix}','all',${JSON.stringify(playerKey)})" data-active-bg="${activeToggleBg}" data-active-border="${activeToggleBorder}" style="${allActive ? `background:${activeToggleBg}; border-color:${activeToggleBorder};` : ''}">All</span>
-          <span class="opt${allActive ? '' : ' active'}" id="formToggle-surf-${colPrefix}" onclick="setFormFilter('${colPrefix}','surf',${JSON.stringify(playerKey)})" data-active-bg="${activeToggleBg}" data-active-border="${activeToggleBorder}" style="${allActive ? '' : `background:${activeToggleBg}; border-color:${activeToggleBorder};`}">${surfaceLabel}</span>
-        </div>
       </div>
-      <div class="aform-list${allActive ? '' : ' hidden'}" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
-      <div class="aform-list${allActive ? ' hidden' : ''}" id="formList-surf-${colPrefix}">${surfaceRows}</div>
+      <div class="aform-list" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
     </div>
   `;
 }
@@ -3062,7 +3114,7 @@ function buildFormSection(m){
   if (!m.p1RecentFormMatches && !m.p2RecentFormMatches) {
     return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
   }
-  const callout = `<div class="aform-callout">Form reflects who's playing better right now, based on each player's last 10 completed matches on record (fewer if less history exists on file) — most recent results shown first.</div>`;
+  const callout = `<div class="aform-callout"><span class="aform-callout-icon">${BSP_ICONS.info}</span><span>Form reflects who's playing better right now — each player's last 10 completed matches on record (fewer if less history exists), most recent first.</span></div>`;
   return `
     ${callout}
     <div class="yr-grid">
@@ -4219,7 +4271,7 @@ function buildKeyPanels(m){
 // p2RecentFormMatches data already used for the Form tab's win-rate %,
 // just rendered as a real match list instead of collapsed to a number.
 // Distinct filled-square W/L badge row style (not the Form tab's expandable
-// .aform-row), no click-to-expand — flatter list to match the reference.
+// .fsm block), no click-to-expand — flatter list to match the reference.
 function recentResultRowHtml(match){
   const badge = `<span class="arr-badge ${match.won ? 'w' : 'l'}">${match.won ? 'W' : 'L'}</span>`;
   const meta = [match.tournament, match.round].filter(Boolean).join(' · ');
@@ -4269,6 +4321,8 @@ function openAnalysisModal(matchId){
   const p1Pill = document.getElementById('aP1Odds');
   const p2Pill = document.getElementById('aP2Odds');
   const setLine = document.getElementById('aSetLine');
+  const finalPill = document.getElementById('aFinalPill');
+  finalPill.style.display = m.finalScore ? '' : 'none';
   p1Pill.className = 'aodds'; p2Pill.className = 'aodds';
   const setSpans = sets => (sets || []).map(s => `<span>${s.p1}-${s.p2}</span>`).join('');
   if (m.finalScore) {
@@ -4316,9 +4370,9 @@ function openAnalysisModal(matchId){
     _aLiveBarOn = true;
     liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
   } else if (m.finalScore) {
-    _aLiveBarOn = true;
-    liveBar.classList.add('completed');
-    liveBar.innerHTML = `✅ Final · ${m.finalScore.display} <span class="anote" style="margin:0;">completed match</span>`;
+    // No bar for a completed match: the header's FINAL pill + set-by-set line
+    // already state the result, and this bar was a third copy of the same score.
+    _aLiveBarOn = false;
   } else {
     _aLiveBarOn = false;
   }
