@@ -2317,6 +2317,52 @@ function loadPbpShard(eventKey){
     .catch(err => { console.warn(`pbp shard ${ek} load failed:`, err.message); _pbpShards[ek] = null; return null; });
   return _pbpShardPromises[ek];
 }
+
+// Per-set box scores for a recent-form match, sharded and lazy for the same
+// reason as the point log: inlining them would put ~2.5 MB of set stats on the
+// initial page load to serve a filter that is only read once a row is expanded.
+// The match-level stats a row opens on still ship inline with the match, so the
+// panel paints immediately and only the per-set views wait on a fetch.
+let _setStatsIndex = null, _setStatsIndexPromise = null;
+const _setStatsShards = {}, _setStatsShardPromises = {};
+
+// Event keys that have a per-set box score on file. Separate from the pbp index
+// on purpose: stats and point logs are independent feeds, and a match can have
+// either without the other.
+function loadSetStatsIndex(){
+  if (_setStatsIndex) return Promise.resolve(_setStatsIndex);
+  if (_setStatsIndexPromise) return _setStatsIndexPromise;
+  _setStatsIndexPromise = fetch('./setstats-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _setStatsIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _setStatsIndex; })
+    .catch(err => { console.warn('setstats-index.json load failed:', err.message); _setStatsIndex = new Set(); return _setStatsIndex; });
+  return _setStatsIndexPromise;
+}
+// One match's per-set box scores: { p1Key, p2Key, sets:{ "1":{p1,p2}, … } }.
+function loadSetStatsShard(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek) return Promise.resolve(null);
+  if (ek in _setStatsShards) return Promise.resolve(_setStatsShards[ek]);
+  if (_setStatsShardPromises[ek]) return _setStatsShardPromises[ek];
+  _setStatsShardPromises[ek] = fetch(`./setstats/${ek}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { _setStatsShards[ek] = d || null; return _setStatsShards[ek]; })
+    .catch(err => { console.warn(`setstats shard ${ek} load failed:`, err.message); _setStatsShards[ek] = null; return null; });
+  return _setStatsShardPromises[ek];
+}
+// Orient one set's box score to a row's own player. Returns null when the row's
+// player key is on NEITHER side of the shard: without a match there is no way to
+// tell which half is "own", and a 50/50 guess would silently swap the two
+// players' numbers. No filter is better than a wrong one.
+function setStatsForFormRow(shard, playerKey, setNo){
+  if (!shard || !shard.sets) return null;
+  const pair = shard.sets[String(setNo)];
+  if (!pair) return null;
+  const pk = String(playerKey);
+  if (pk === String(shard.p1Key)) return { own: pair.p1, opp: pair.p2 };
+  if (pk === String(shard.p2Key)) return { own: pair.p2, opp: pair.p1 };
+  return null;
+}
 // Parse an api-tennis "a - b" integer score into [a, b] (null if not integers).
 function pbpParseScore(sc){
   const m = /^(\d+)\s*-\s*(\d+)$/.exec(String(sc || '').trim());
@@ -2914,37 +2960,55 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   `;
 }
 
+// The stat sheet for one scope of a recent match — `joined` is {own, opp},
+// either the whole-match box score or a single set's. Split out from
+// formPanelHtml so the set filter can repaint just this part.
+function formPanelStatsBodyHtml(joined, playerName, opponentName, setNo){
+  if (!joined) {
+    return setNo == null
+      ? `<div class="acomingsoon" style="padding:10px 0 2px;">Stats not available for this match.</div>`
+      : `<div class="acomingsoon" style="padding:10px 0 2px;">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
+  }
+  // Grouped SERVICE / RETURN / POINTS, same bands as the Match Stats sheet. A
+  // group whose stats the feed didn't send for this match drops out entirely
+  // rather than leaving a heading over nothing.
+  const rows = MATCH_STAT_ORDER.map(([, groupLabel, statRows]) => {
+    const body = statRows
+      .map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter))
+      .filter(Boolean).join('');
+    return body ? `<div class="msheet-grouphead">${groupLabel}</div>${body}` : '';
+  }).filter(Boolean).join('');
+  return `
+    <div class="aform-panel-names"><span>${playerName}</span><span>${opponentName}</span></div>
+    ${rows}
+  `;
+}
+
+// Per-row context for the set filters, keyed by the row's id prefix. The pills
+// are rendered as HTML strings and call back by global fn name, so the match
+// object, player key and names have to be reachable from that callback — and a
+// row cannot look its own match up any other way.
+const formPanelCtx = {};
+
 function formPanelHtml(match, idPrefix, playerKey, playerName){
   const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}`;
-  const joined = matchStatsForFormRow(match);
-  let body;
-  if (!joined) {
-    body = `<div class="acomingsoon" style="padding:10px 0 2px;">Stats not available for this match.</div>`;
-  } else {
-    // Grouped SERVICE / RETURN / POINTS, same bands as the Match Stats sheet. A
-    // group whose stats the feed didn't send for this match drops out entirely
-    // rather than leaving a heading over nothing.
-    const rows = MATCH_STAT_ORDER.map(([, groupLabel, statRows]) => {
-      const body = statRows
-        .map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter))
-        .filter(Boolean).join('');
-      return body ? `<div class="msheet-grouphead">${groupLabel}</div>${body}` : '';
-    }).filter(Boolean).join('');
-    body = `
-      <div class="aform-panel-names"><span>${playerName}</span><span>${surnameFirstName(match.opponent)}</span></div>
-      ${rows}
-    `;
-  }
-  // The tab bar is painted on first expand, not here: whether this match has a
-  // point log is only known once the availability index has loaded, and a tab
-  // that appears and then vanishes is worse than one that arrives with content.
+  const opponentName = surnameFirstName(match.opponent);
+  formPanelCtx[idPrefix] = { match, playerKey, playerName, opponentName };
+  const body = formPanelStatsBodyHtml(matchStatsForFormRow(match), playerName, opponentName, null);
+  // The tab bar and the set filter are painted on first expand, not here:
+  // whether this match has a point log or per-set stats is only known once the
+  // availability indexes have loaded, and a control that appears and then
+  // vanishes is worse than one that arrives with content.
   return `
     <div class="aform-panel-wrap" id="formPanelWrap-${idPrefix}" data-ek="${match.eventKey || ''}">
       <div class="aform-panel-inner">
         <div class="aform-panel">
           <div class="aform-panel-meta">${meta}</div>
           <div class="aform-tabs hidden" id="formTabs-${idPrefix}"></div>
-          <div id="formPaneStats-${idPrefix}">${body}</div>
+          <div id="formPaneStats-${idPrefix}">
+            <div id="formStatsSel-${idPrefix}"></div>
+            <div id="formStatsBody-${idPrefix}">${body}</div>
+          </div>
           <div class="hidden" id="formPanePbp-${idPrefix}"></div>
         </div>
       </div>
@@ -2970,6 +3034,51 @@ function ensureFormPanelTabs(idPrefix){
     `;
     tabs.classList.remove('hidden');
   });
+  ensureFormStatsSetFilter(idPrefix, ek);
+}
+
+// Paints the Stats pane's set filter once the row's per-set box score is known
+// to exist. Independent of the tab bar above: a match can have set stats without
+// a point log, and the Stats pane is there either way.
+function ensureFormStatsSetFilter(idPrefix, ek){
+  const sel = document.getElementById('formStatsSel-' + idPrefix);
+  const ctx = formPanelCtx[idPrefix];
+  if (!sel || !ctx || sel.dataset.ready === '1') return;
+  sel.dataset.ready = '1';
+  loadSetStatsIndex().then(index => {
+    if (!index.has(String(ek))) return;                // no per-set rows for this match
+    return loadSetStatsShard(ek).then(shard => {
+      if (!shard || !shard.sets) return;
+      // Only sets this row can actually be oriented against — a shard whose keys
+      // don't include this player yields nothing rather than a swapped sheet.
+      const setNos = Object.keys(shard.sets)
+        .map(Number)
+        .filter(n => Number.isFinite(n) && n >= 1 && setStatsForFormRow(shard, ctx.playerKey, n))
+        .sort((a, b) => a - b);
+      // buildSetSelectorHtml already withholds itself below 2 sets — a one-set
+      // match has nothing to filter.
+      sel.innerHTML = buildSetSelectorHtml(setNos, 'switchFormStatsSet', 'Match');
+    });
+  });
+}
+
+// Repaint one row's stat sheet for the chosen set. The pills resolve their own
+// row from the DOM rather than carrying its id, so the shared selector helper
+// stays untouched — the modal renders from the same one.
+function switchFormStatsSet(el, setNo){
+  const wrap = el.closest('.aform-panel-wrap');
+  if (!wrap) return;
+  const idPrefix = wrap.id.replace('formPanelWrap-', '');
+  const ctx = formPanelCtx[idPrefix];
+  const body = document.getElementById('formStatsBody-' + idPrefix);
+  if (!ctx || !body) return;
+  wrap.querySelectorAll('#formStatsSel-' + idPrefix + ' .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  // null = the whole match, which ships inline with the row; a set number reads
+  // the already-fetched shard. Neither path refetches.
+  const joined = setNo == null
+    ? matchStatsForFormRow(ctx.match)
+    : setStatsForFormRow(_setStatsShards[String(ctx.match.eventKey || '')], ctx.playerKey, setNo);
+  body.innerHTML = formPanelStatsBodyHtml(joined, ctx.playerName, ctx.opponentName, setNo);
 }
 
 // Swap panes, fetching the point log on first view of the Point by point tab.
@@ -2997,8 +3106,28 @@ function switchFormTab(idPrefix, tab){
     // Rendered against the shard's OWN p1/p2 — the names api-tennis labelled
     // first/second, which is what the log's server/winner sides refer to. The
     // row only knows "profile player vs opponent" and cannot supply that order.
-    pbpPane.innerHTML = buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, null);
+    //
+    // Scoped to one set at a time, like the modal's point log: no aggregate pill
+    // and set 1 selected, because a whole-match point log is every set
+    // concatenated — a wall of rows rather than something anyone reads.
+    const setNos = shard.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b);
+    const firstSet = setNos.length ? setNos[0] : null;
+    pbpPane.innerHTML = buildSetSelectorHtml(setNos, 'switchFormPbpSet', null)
+      + `<div id="formPbpBody-${idPrefix}">${buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, firstSet)}</div>`;
   });
+}
+
+// Repaint one row's point log for the chosen set, from the shard already fetched
+// for this row — the set filter never triggers another request.
+function switchFormPbpSet(el, setNo){
+  const wrap = el.closest('.aform-panel-wrap');
+  if (!wrap) return;
+  const idPrefix = wrap.id.replace('formPanelWrap-', '');
+  const body = document.getElementById('formPbpBody-' + idPrefix);
+  const shard = _pbpShards[String(wrap.dataset.ek || '')];
+  if (!body || !shard) return;
+  wrap.querySelectorAll('#formPanePbp-' + idPrefix + ' .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
+  body.innerHTML = buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, setNo);
 }
 
 // Single-open-per-column accordion: opening a row in a given player column

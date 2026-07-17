@@ -1,9 +1,17 @@
-// Point-by-point sidecar generator (Task 4).
+// Match sidecar generator (Task 4): point logs, and the per-set box scores that
+// back the set filters.
 //
 // Produces `point-by-point.json` — a lazy-loaded companion the dashboard fetches
 // ONLY when the user opens a match's "Point by point" view, so it never touches
 // the initial page load. Covers FINISHED matches only (a completed match's
 // point log is immutable, so it is fetched once and cached forever).
+//
+// Also produces `setstats/{eventKey}.json` + `setstats-index.json`: the per-set
+// box score behind the Form tab's set filter. It lives here rather than in the
+// main pipeline because api-tennis returns the per-set `statistics` rows in the
+// SAME fixture as the point log — so this generator already holds the data, and
+// keeping it costs no extra API call. Same lazy shard shape as the point log,
+// for the same reason (see SETSTATS_DIR).
 //
 // Data source: api-tennis get_fixtures?match_key=<eventKey> returns a
 // `pointbypoint` array of game entries; each game carries the running score and
@@ -23,6 +31,9 @@
 
 const fs = require('fs');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
+// Importing the pipeline is side-effect free — it only self-runs under
+// `require.main === module`.
+const { buildSetStatsFromFixture } = require('./bsp-pipeline.js');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -32,6 +43,12 @@ const OUT_PATH = 'point-by-point.json';
 const CACHE_PATH = 'point-by-point-cache.json';
 const SHARD_DIR = 'pbp';
 const INDEX_PATH = 'pbp-index.json';
+// Per-set box scores ride the same shard-plus-index shape as the point log, and
+// for the same reason: ~3.5 KB of set stats per match across ~730 recent-form
+// rows would add ~2.5 MB to matches.json (3.4 MB today) on every page load, to
+// serve a filter that is only read after a row is expanded.
+const SETSTATS_DIR = 'setstats';
+const SETSTATS_INDEX_PATH = 'setstats-index.json';
 const PACE_MS = 150;
 
 // Ceiling on NEW point logs fetched per run. The Form tab's recent-form rows
@@ -78,14 +95,22 @@ function compactPbp(raw) {
   return { sets };
 }
 
-// Returns { raw, p1, p2 } — the point log plus api-tennis's OWN names for the
-// two sides. The names matter: a point log labels each game's server/winner
-// "First Player"/"Second Player", so a log is only meaningful next to the names
-// those labels refer to. Window matches could borrow m.p1/m.p2 from the
-// dashboard, but a recent-form row only knows "the profile player vs opponent"
-// and NOT which of them api-tennis called first — so the log is stored with the
-// names the API itself used, and rendered against those. No orientation guess.
-async function fetchPbp(eventKey) {
+// Returns { raw, p1, p2, stats, p1Key, p2Key } — the point log plus api-tennis's
+// OWN names for the two sides. The names matter: a point log labels each game's
+// server/winner "First Player"/"Second Player", so a log is only meaningful next
+// to the names those labels refer to. Window matches could borrow m.p1/m.p2 from
+// the dashboard, but a recent-form row only knows "the profile player vs
+// opponent" and NOT which of them api-tennis called first — so the log is stored
+// with the names the API itself used, and rendered against those. No orientation
+// guess.
+//
+// The same fixture also carries the per-set box score (`statistics` rows tagged
+// stat_period "set1"/"set2"/…, alongside the "match" rows the main pipeline
+// already reads). Keeping it here costs ZERO extra API calls, which is the whole
+// reason the set filter lives in this generator rather than in the pipeline.
+// Parsed with the pipeline's OWN parser rather than a copy: the feed has quietly
+// changed stat naming before, and one parser means one place to fix it.
+async function fetchFixture(eventKey) {
   const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${eventKey}`);
@@ -93,7 +118,16 @@ async function fetchPbp(eventKey) {
   const result = Array.isArray(data.result) ? data.result : [];
   if (!result.length) return null;
   const r = result[0];
-  return { raw: r.pointbypoint || null, p1: r.event_first_player || null, p2: r.event_second_player || null };
+  const p1Key = r.first_player_key ?? null, p2Key = r.second_player_key ?? null;
+  return {
+    raw: r.pointbypoint || null,
+    p1: r.event_first_player || null,
+    p2: r.event_second_player || null,
+    // Keys, not names: the dashboard orients a set box score by comparing the
+    // row's player key to p1Key. Names would need fuzzy matching.
+    p1Key, p2Key,
+    stats: (p1Key != null && p2Key != null) ? buildSetStatsFromFixture(r, p1Key, p2Key) : null,
+  };
 }
 
 // Temp file + rename: a reader (or a half-finished job) never sees a partial
@@ -145,12 +179,16 @@ async function main() {
     fetched++;   // counted BEFORE the call: a throwing API must still burn budget,
                  // or a run where every fetch fails would never reach the cap and
                  // would hammer ~600 requests every 15 minutes instead of 250.
-    const got = await fetchPbp(ek);
+    const got = await fetchFixture(ek);
     await new Promise(r => setTimeout(r, PACE_MS));
     const compact = got ? compactPbp(got.raw) : null;
+    // The per-set box score rides along in the same fixture, so a match resolved
+    // from here needs no backfill pass below.
+    const stats = (got && got.stats) || null;
+    const keys = { p1Key: (got && got.p1Key) ?? null, p2Key: (got && got.p2Key) ?? null };
     const built = compact
-      ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact }
-      : { sets: [] };
+      ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact, ...keys, stats }
+      : { sets: [], ...keys, stats };
     if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
     return built;
   }
@@ -209,6 +247,37 @@ async function main() {
     }
   }
 
+  // Set-stats backfill for matches cached before the set filter existed. This
+  // cache is permanent, so those entries are never re-resolved above and would
+  // otherwise never gain a `stats` key — the filter would only ever appear on
+  // matches played from today on.
+  //
+  // Deliberately LAST and on its OWN budget. Folding it into resolve() above
+  // made the backfill compete with new matches for the same 250 fetches, and
+  // since the backfill has hundreds of candidates it won, starving matches that
+  // finished today of their point log entirely. Old set stats are never worth
+  // more than a new point log, so the backfill only ever spends its own budget.
+  const MAX_BACKFILL_PER_RUN = Number(process.env.SETSTATS_MAX_BACKFILL || 120);
+  const pending = Object.keys(cache).filter(k => cache[k] && !('stats' in cache[k]));
+  let backfilled = 0, backfillFailed = 0;
+  for (const ek of pending.slice(0, MAX_BACKFILL_PER_RUN)) {
+    backfilled++;
+    try {
+      const got = await fetchFixture(ek);
+      await new Promise(r => setTimeout(r, PACE_MS));
+      const e = cache[ek];
+      // Written in place: the entry's point log and names are already correct and
+      // must survive a fixture that comes back without one.
+      e.stats = (got && got.stats) || null;   // key present even when null — asked once, never again
+      if (got && got.p1Key != null) { e.p1Key = got.p1Key; e.p2Key = got.p2Key; }
+      if (got && !e.p1 && got.p1) { e.p1 = got.p1; e.p2 = got.p2; }
+    } catch (err) {
+      // Leave the key absent so a transient failure retries next run.
+      backfillFailed++;
+      console.error(`set-stats: backfill failed for ${ek}: ${err.message}`);
+    }
+  }
+
   // One shard per match, so opening a single row fetches a single small file
   // instead of a multi-megabyte bundle. Written for every event key that has a
   // real, named log — window matches included.
@@ -225,11 +294,32 @@ async function main() {
   // render against — so availability ships as data, not as a failed request.
   writeAtomic(INDEX_PATH, JSON.stringify(index));
 
+  // Per-set box scores, same shard-and-index shape, separate files: a match can
+  // have a point log with no set stats or set stats with no log (they are two
+  // independent feeds), so one index cannot answer for both.
+  fs.mkdirSync(SETSTATS_DIR, { recursive: true });
+  const setIndex = [];
+  for (const ek of Object.keys(cache)) {
+    const e = cache[ek];
+    if (!e || !e.stats || !Object.keys(e.stats).length) continue;
+    if (e.p1Key == null || e.p2Key == null) continue;   // unorientable — a row could not tell which side is its own
+    writeAtomic(`${SETSTATS_DIR}/${ek}.json`, JSON.stringify({ p1Key: e.p1Key, p2Key: e.p2Key, sets: e.stats }));
+    setIndex.push(ek);
+  }
+  writeAtomic(SETSTATS_INDEX_PATH, JSON.stringify(setIndex));
+
   writeAtomic(CACHE_PATH, JSON.stringify(cache));
   writeAtomic(OUT_PATH, JSON.stringify(out));
   const kb = (fs.statSync(OUT_PATH).size / 1024).toFixed(0);
   console.log(`point-by-point: ${Object.keys(out).length} matches with point logs (${fetched} fetched, ${reused} cached, ${skipped} skipped) -> ${OUT_PATH} (${kb} KB)`);
   console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
+  console.log(`set-stats: ${setIndex.length} shards -> ${SETSTATS_DIR}/ (${backfilled} backfilled this run${backfillFailed ? `, ${backfillFailed} failed` : ''})`);
+  // The backfill is capped per run, so early runs cover only part of the cache.
+  // Report the remainder rather than letting a partial rollout read as complete.
+  const awaitingStats = Object.keys(cache).filter(k => !('stats' in cache[k])).length;
+  if (awaitingStats) {
+    console.log(`set-stats: ${awaitingStats} cached matches still predate the set box score — they backfill on later runs (${MAX_BACKFILL_PER_RUN}/run cap).`);
+  }
   if (formDeferred) {
     // Say it out loud rather than letting partial coverage read as complete.
     console.log(`point-by-point: ${formDeferred} recent-form matches deferred — hit the ${MAX_FETCHES_PER_RUN}-fetch/run cap; they resolve on later runs (cache is persistent).`);

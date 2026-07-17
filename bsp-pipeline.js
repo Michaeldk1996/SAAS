@@ -3687,4 +3687,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression };
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture };

@@ -97,6 +97,8 @@ jobs:
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
+          cp setstats-index.json _site/ 2>/dev/null || true
+          cp -r setstats _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
 
       # Fail loudly if a file the pages reference is missing from the artifact.
