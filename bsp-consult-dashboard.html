@@ -869,6 +869,14 @@
   .yr-drill-opp{ color:#cfd6e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-drill-sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; white-space:nowrap; }
   .yr-drill-meta{ grid-column:2 / 4; font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* A row that has a box score or a point log on file gets a fourth column for
+     the chevron. Rows with neither keep the plain 3-column grid above, so the
+     affordance never appears over an empty panel. */
+  .yr-drill-row.yr-drill-open{ grid-template-columns:16px minmax(0,1fr) auto 14px; cursor:pointer; border-radius:5px; }
+  .yr-drill-row.yr-drill-open:hover{ background:rgba(62,123,250,0.06); }
+  .yr-drill-chev{ grid-column:4; grid-row:1; color:#5b6472; font-size:10px; transition:transform 150ms ease; }
+  .yr-drill-row.open .yr-drill-chev{ transform:rotate(90deg); }
+  .yr-drill-row.open{ background:rgba(62,123,250,0.06); }
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
@@ -2392,6 +2400,32 @@ function loadSetStatsIndex(){
     .catch(err => { console.warn('setstats-index.json load failed:', err.message); _setStatsIndex = new Set(); return _setStatsIndex; });
   return _setStatsIndexPromise;
 }
+// Event keys with a WHOLE-MATCH box score on file. A third index rather than a
+// reuse of the set-stats one: the two halves ship in the same shard but are
+// independent — the feed publishes match rows from 2024-03 and set rows only
+// from 2024-11, so thousands of matches have one without the other.
+let _matchStatsIndex = null, _matchStatsIndexPromise = null;
+function loadMatchStatsIndex(){
+  if (_matchStatsIndex) return Promise.resolve(_matchStatsIndex);
+  if (_matchStatsIndexPromise) return _matchStatsIndexPromise;
+  _matchStatsIndexPromise = fetch('./matchstats-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _matchStatsIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _matchStatsIndex; })
+    .catch(err => { console.warn('matchstats-index.json load failed:', err.message); _matchStatsIndex = new Set(); return _matchStatsIndex; });
+  return _matchStatsIndexPromise;
+}
+// Orient a shard's whole-match box score to a row's own player. Same contract as
+// setStatsForFormRow: a player key on neither side returns null rather than a
+// coin-flip that would swap the two players' numbers.
+function matchStatsFromShard(shard, playerKey){
+  if (!shard || !shard.match) return null;
+  const m = shard.match;
+  if (!m.p1 && !m.p2) return null;
+  const pk = String(playerKey);
+  if (pk === String(shard.p1Key)) return { own: m.p1 || {}, opp: m.p2 || {} };
+  if (pk === String(shard.p2Key)) return { own: m.p2 || {}, opp: m.p1 || {} };
+  return null;
+}
 // One match's per-set box scores: { p1Key, p2Key, sets:{ "1":{p1,p2}, … } }.
 function loadSetStatsShard(eventKey){
   const ek = String(eventKey || '');
@@ -2616,16 +2650,39 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
     requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
     return;
   }
-  const rows = list.map(mm => {
+  // Which of these rows can open, decided BEFORE any row is painted: the chevron
+  // is a promise that something is there, so it is only drawn where a box score
+  // or a point log is actually on file. Two ~25-100KB indexes, fetched once per
+  // session and shared with the Form tab — the per-row shards stay unfetched
+  // until a row is clicked.
+  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
+  if (container.dataset.token !== token) return;   // superseded while the indexes loaded
+  const playerName = (_overviewMatch && _overviewMatch[colPrefix]) || '';
+  const rows = list.map((mm, i) => {
     const w = mm.won;
     const dateStr = mm.date ? formatShortDate(new Date(mm.date + 'T00:00:00')) : '';
     const meta = [mm.tournament || '', mm.round || ''].filter(Boolean).join(' · ');
-    return `<div class="yr-drill-row">
+    const ek = String(mm.eventKey || '');
+    const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
+    if (!canOpen){
+      return `<div class="yr-drill-row">
+        <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
+        <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
+        <span class="yr-drill-sc">${escapeHtml(mm.result || '')}</span>
+        <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
+      </div>`;
+    }
+    // Suffix must stay `ovw<i>` — toggleFormPanel strips it to derive the
+    // accordion group, so every row in this drill-down shares one group and
+    // opening a second row closes the first.
+    const idPrefix = `ovd${colPrefix}ovw${i}`;
+    return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
       <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
       <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
       <span class="yr-drill-sc">${escapeHtml(mm.result || '')}</span>
       <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-    </div>`;
+      <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
+    </div>${formPanelHtml(mm, idPrefix, playerKey, playerName)}`;
   }).join('');
   container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
   requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
@@ -2901,6 +2958,18 @@ function matchStatsForFormRow(match){
   return match.matchStats ? { own: match.matchStats.own, opp: match.matchStats.opp } : null;
 }
 
+// The whole-match box score for one expanded row, from whichever source the
+// surface has. Form rows carry it inline (zero fetch); every other surface —
+// the Overview drill-down — has only an eventKey and joins it from the shard.
+// Sync on purpose: it reads the shard cache, so callers that need the shard
+// fetched first go through ensureFormStatsBody and the set filter repaint can
+// stay a pure function of what is already in memory.
+function matchStatsForRow(ctx){
+  if (!ctx || !ctx.match) return null;
+  return matchStatsForFormRow(ctx.match)
+      || matchStatsFromShard(_setStatsShards[String(ctx.match.eventKey || '')], ctx.playerKey);
+}
+
 // Monogram for a form-row avatar: first + last initial ("Kecmanovic M." -> KM,
 // "J. M. Cerundolo" -> JC). Falls back to the first two characters for a
 // single-token name, so there's always a monogram rather than a blank disc.
@@ -3048,7 +3117,16 @@ function formPanelHtml(match, idPrefix, playerKey, playerName){
   const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}`;
   const opponentName = surnameFirstName(match.opponent);
   formPanelCtx[idPrefix] = { match, playerKey, playerName, opponentName };
-  const body = formPanelStatsBodyHtml(matchStatsForFormRow(match), playerName, opponentName, null);
+  // A row whose box score ships inline paints immediately. A row that has to
+  // join one from its shard opens on a loading line instead of "Stats not
+  // available" — the latter is a claim about the data, and at this point we
+  // have not looked yet.
+  const inline = matchStatsForFormRow(match);
+  const body = inline
+    ? formPanelStatsBodyHtml(inline, playerName, opponentName, null)
+    : (match.eventKey
+        ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
+        : formPanelStatsBodyHtml(null, playerName, opponentName, null));
   // The tab bar and the set filter are painted on first expand, not here:
   // whether this match has a point log or per-set stats is only known once the
   // availability indexes have loaded, and a control that appears and then
@@ -3080,15 +3158,53 @@ function ensureFormPanelTabs(idPrefix){
   const ek = wrap.dataset.ek;
   if (!ek) return;
   tabs.dataset.ready = '1';
-  loadPbpIndex().then(index => {
-    if (!index.has(String(ek))) return;      // no log — no tab, no empty state
+  const ctx = formPanelCtx[idPrefix];
+  const inlineStats = !!(ctx && matchStatsForFormRow(ctx.match));
+  Promise.all([loadPbpIndex(), loadMatchStatsIndex(), loadSetStatsIndex()]).then(([pbpIdx, msIdx, ssIdx]) => {
+    const hasPbp = pbpIdx.has(String(ek));
+    // "Has a Stats pane worth opening" is a question about THIS match, answered
+    // from the indexes rather than by rendering the pane and seeing. A row can
+    // hold a point log and no box score (5.7k of the Overview's rows do) — those
+    // get the point log alone rather than a Stats tab over an empty state.
+    const hasStats = inlineStats || msIdx.has(String(ek)) || ssIdx.has(String(ek));
+    if (!hasPbp && !hasStats) return;
+    if (hasPbp && !hasStats){
+      // Point log only: no tab bar to choose between one thing, just the log.
+      switchFormTab(idPrefix, 'pbp');
+      return;
+    }
+    if (!hasPbp) return;                     // stats only — the bare panel it has always had
     tabs.innerHTML = `
       <button class="aform-tab active" id="formTab-stats-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','stats')">Stats</button>
       <button class="aform-tab" id="formTab-pbp-${idPrefix}" onclick="event.stopPropagation();switchFormTab('${idPrefix}','pbp')">Point by point</button>
     `;
     tabs.classList.remove('hidden');
   });
+  ensureFormStatsBody(idPrefix, ek);
   ensureFormStatsSetFilter(idPrefix, ek);
+}
+
+// Fills the Stats pane for a row that does not carry its box score inline —
+// i.e. every surface other than the Form tab. One ~4KB shard per opened row,
+// fetched on the click that opens it and cached for the rest of the session, so
+// a drill-down of 60 rows costs nothing until a row is actually opened.
+function ensureFormStatsBody(idPrefix, ek){
+  const ctx = formPanelCtx[idPrefix];
+  const body = document.getElementById('formStatsBody-' + idPrefix);
+  if (!ctx || !body || matchStatsForFormRow(ctx.match)) return;   // inline rows already painted
+  if (body.dataset.ready === '1') return;
+  body.dataset.ready = '1';
+  loadMatchStatsIndex().then(index => {
+    if (!index.has(String(ek))){
+      // Asked and answered: this match has no whole-match box score on file.
+      body.innerHTML = formPanelStatsBodyHtml(null, ctx.playerName, ctx.opponentName, null);
+      return;
+    }
+    return loadSetStatsShard(ek).then(shard => {
+      body.innerHTML = formPanelStatsBodyHtml(
+        matchStatsFromShard(shard, ctx.playerKey), ctx.playerName, ctx.opponentName, null);
+    });
+  });
 }
 
 // Paints the Stats pane's set filter once the row's per-set box score is known
@@ -3130,7 +3246,7 @@ function switchFormStatsSet(el, setNo){
   // null = the whole match, which ships inline with the row; a set number reads
   // the already-fetched shard. Neither path refetches.
   const joined = setNo == null
-    ? matchStatsForFormRow(ctx.match)
+    ? matchStatsForRow(ctx)
     : setStatsForFormRow(_setStatsShards[String(ctx.match.eventKey || '')], ctx.playerKey, setNo);
   body.innerHTML = formPanelStatsBodyHtml(joined, ctx.playerName, ctx.opponentName, setNo);
 }
@@ -3188,7 +3304,10 @@ function switchFormPbpSet(el, setNo){
 // (colPrefix, e.g. "p1") closes any other open row in that same column.
 const formOpenPanel = {};
 function toggleFormPanel(idPrefix){
-  const colPrefix = idPrefix.replace(/(main|surf|season)\d+$/, '');
+  // The suffix is the row's index within its list; stripping it leaves the list's
+  // own id, which is the accordion group. A keyspace missing from this alternation
+  // makes every row its own group, so they all open at once — add new callers here.
+  const colPrefix = idPrefix.replace(/(main|surf|season|ovw)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   const row = document.getElementById('formRow-' + idPrefix);

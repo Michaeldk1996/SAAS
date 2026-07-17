@@ -328,8 +328,13 @@ async function main() {
   // the rows are read in); everything else keeps its old relative order behind
   // them. Same total API cost and the same convergence — only the order moves.
   const MAX_BACKFILL_PER_RUN = Number(process.env.SETSTATS_MAX_BACKFILL || 250);
+  // Both keys are asked for, because they arrived in different releases. An entry
+  // backfilled before `matchStats` existed already has `stats`, so a filter on
+  // `stats` alone considered it done and it could never gain a box score — the
+  // whole-match half of the same fixture response was withheld forever, on ~2,982
+  // matches. They come from ONE response, so re-resolving costs nothing extra.
   const pending = Object.keys(cache)
-    .filter(k => cache[k] && !('stats' in cache[k]))
+    .filter(k => cache[k] && !('stats' in cache[k] && 'matchStats' in cache[k]))
     .sort((a, b) => {
       const aVis = formKeys.has(a), bVis = formKeys.has(b);
       if (aVis !== bVis) return aVis ? -1 : 1;       // visible rows first
