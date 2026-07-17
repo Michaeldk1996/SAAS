@@ -79,16 +79,36 @@ jobs:
 
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
+      #
+      # Every file the browser can ask for must be copied here explicitly — the
+      # repo is NOT the document root, only _site is. Anything committed but not
+      # copied 404s silently at runtime, which is how sign-in stayed broken.
       - name: Assemble site
         run: |
           mkdir -p _site
           cp bsp-consult-dashboard.html _site/index.html
+          # The auth pages link to the dashboard by its repo filename, so publish
+          # it under that name too, not just as index.html.
+          cp bsp-consult-dashboard.html _site/bsp-consult-dashboard.html
+          cp auth.html account.html funnel.html auth.js _site/
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
+          cp career-splits.json _site/
           cp player-histories.json _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
+
+      # Fail loudly if a file the pages reference is missing from the artifact.
+      # A 404 on auth.js only shows up as a dead button in the browser, so catch
+      # it here where it is still a build error.
+      - name: Assert site completeness
+        run: |
+          for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html \
+                   matches.json player-profiles.json career-splits.json; do
+            [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
+          done
+          echo "All referenced files present in _site."
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
