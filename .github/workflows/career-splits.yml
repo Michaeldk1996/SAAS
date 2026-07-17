@@ -1,0 +1,110 @@
+name: BSP career-splits refresh
+
+# Rebuilds career-splits.json (the Career / Last-52-Weeks splits behind the
+# player profile tables) from Tennis Abstract and commits it back to main. The
+# main pipeline (pipeline.yml) already copies the committed file into _site, so
+# a refresh reaches the live site on the next pipeline cycle — this workflow
+# only has to keep the committed file current.
+#
+# Why this exists: career-splits.json is built by tools/build-career-splits.js,
+# which nothing ran on a schedule. The committed file was frozen at its build
+# date and drifted a match at a time as players kept playing.
+#
+# Why daily and not every 15 minutes: tennisabstract.com is a courtesy host that
+# rate-limits bursts (HTTP 429), and these splits can only change once per
+# player per day anyway. 06:30 UTC is after the previous day's play everywhere.
+#
+# No API key needed — the source is public HTML.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'    # daily, 06:30 UTC
+  workflow_dispatch:         # allow manual "Run workflow" from the Actions tab
+
+# Never let two builds overlap — they both write/push career-splits.json.
+concurrency:
+  group: bsp-career-splits
+  cancel-in-progress: false
+
+permissions:
+  contents: write            # needed to commit the rebuilt career-splits.json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60      # a local 160-player run took ~15 min; TA throttles partway through, so leave headroom
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore the Tennis Abstract page cache
+        # TA throttles sustained fetching, so a cold cache is both slow and
+        # lossy: a player whose fetch keeps failing would be dropped from the
+        # file. Carrying yesterday's pages over lets the builder serve a stale
+        # page for anyone it can't refetch, so a throttled run degrades to
+        # slightly-old numbers instead of missing players. The daily TTL still
+        # forces a refetch attempt for everyone.
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ta-cache
+          key: ta-pages-${{ github.run_id }}   # unique per run => always saved back
+          restore-keys: ta-pages-              # => restores the most recent previous run
+
+      - name: Record the committed file's player count
+        # Captured before the rebuild overwrites it, so the next step can tell a
+        # real refresh from a build that quietly lost players to a TA outage.
+        run: |
+          echo "PREV_PLAYERS=$(node -e 'console.log(Object.keys(require("./career-splits.json").players || {}).length)')" >> "$GITHUB_ENV"
+
+      - name: Rebuild career splits
+        # Every restored page is past its TTL by the next daily run, so all 160
+        # are refetched; anyone TA refuses falls back to his cached page. The
+        # builder exits non-zero if it ingested nobody at all.
+        run: node tools/build-career-splits.js
+
+      - name: Sanity-check the rebuilt file
+        # A truncated or half-empty build must never be committed over a good
+        # file — the dashboard would render empty split tables. The stale
+        # fallback should make a dropped player rare (it needs a failed refetch
+        # AND no cached page), so a count regression means something is wrong.
+        run: |
+          node -e '
+            const d = require("./career-splits.json");
+            const n = Object.keys(d.players || {}).length;
+            const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
+            if (!d.coverage || !d.coverage.fetched) { console.error("::error::no pages were fetched — this is a cache replay, not a refresh"); process.exit(1); }
+            if (n < Math.floor(prev * 0.95)) { console.error(`::error::player count regressed ${prev} -> ${n} (TA likely rate-limited this run) — refusing to commit`); process.exit(1); }
+            console.log(`OK: ${n} players (was ${prev}), fetchedAt ${d.fetchedAt}, ${d.coverage.fetched} pages fetched.`);
+          '
+
+      - name: Commit refreshed career-splits.json
+        # In practice this commits every day even when no player's splits moved,
+        # because `fetchedAt` carries the run date — which is what makes the
+        # file's freshness auditable from the repo. The guard below is just a
+        # backstop for the identical-file case (e.g. a same-day re-run).
+        run: |
+          if git diff --quiet -- career-splits.json; then
+            echo "File is byte-identical — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-splits-bot"
+          git config user.email "bsp-splits-bot@users.noreply.github.com"
+          git add career-splits.json
+          git commit -m "chore(splits): refresh career / last-52 splits [skip ci]"
+          # Another workflow may have advanced main since checkout; rebase and
+          # retry so the refresh is never lost to a benign race.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed career-splits.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push career-splits.json after 3 attempts."
+          exit 1

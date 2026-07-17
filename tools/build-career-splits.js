@@ -19,8 +19,12 @@
 // from the data is simply absent.
 //
 // Usage: node tools/build-career-splits.js [rankMax] [maxPlayers]
-//   Re-runnable; pages cached in /tmp/ta-cache. Extend coverage by raising the
-//   caps (default rankMax=250, maxPlayers=160 — the current relevant ATP field).
+//   Re-runnable; pages cached in /tmp/ta-cache and refetched once older than
+//   SPLITS_CACHE_TTL_HOURS (default 20). Extend coverage by raising the caps
+//   (default rankMax=250, maxPlayers=160 — the current relevant ATP field).
+//   Env: SPLITS_CACHE_DIR, SPLITS_CACHE_TTL_HOURS, SPLITS_TODAY (pin fetchedAt).
+//   Rebuilt daily by .github/workflows/career-splits.yml, which commits the
+//   result; pipeline.yml then copies the committed file to the live site.
 // =============================================================================
 
 const fs = require('fs');
@@ -30,7 +34,7 @@ const https = require('https');
 const ROOT = path.join(__dirname, '..');
 const PROFILES = path.join(ROOT, 'player-profiles.json');
 const OUT = path.join(ROOT, 'career-splits.json');
-const CACHE = '/tmp/ta-cache';
+const CACHE = process.env.SPLITS_CACHE_DIR || '/tmp/ta-cache';
 const RANK_MAX = parseInt(process.argv[2], 10) || 250;
 const MAX_PLAYERS = parseInt(process.argv[3], 10) || 160;
 // tennisabstract rate-limits bursts (HTTP 429), so we pace: low concurrency, a
@@ -39,9 +43,21 @@ const MAX_PLAYERS = parseInt(process.argv[3], 10) || 160;
 const CONCURRENCY = 2;
 const BASE_DELAY_MS = 600;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-// Reference "today" — the last-52-weeks window. Kept explicit (no Date.now in
-// the artifact) so re-runs on the same day are deterministic.
-const TODAY = '20260714';
+// A cached page older than this is refetched. Without expiry a re-run reads
+// yesterday's HTML back and reproduces the stale file exactly, which looks like
+// a successful refresh while changing nothing.
+const CACHE_TTL_MS = (parseFloat(process.env.SPLITS_CACHE_TTL_HOURS) || 20) * 3600 * 1000;
+// Run date, as YYYYMMDD. Only stamps `fetchedAt` and backstops a player with no
+// matches — the real last-52 window is anchored per player (see cutoff52).
+// SPLITS_TODAY pins it for a reproducible build.
+function todayStamp() {
+  const pin = (process.env.SPLITS_TODAY || '').trim();
+  if (/^\d{8}$/.test(pin)) return pin;
+  const dt = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(dt.getUTCDate())}`;
+}
+const TODAY = todayStamp();
 function daysAgoStamp(stamp, cutoff) { return stamp >= cutoff; }
 // 364 days before a YYYYMMDD stamp, as YYYYMMDD.
 function minus364(stamp) {
@@ -247,7 +263,7 @@ async function main() {
   console.log(`Resolved ${work.length} profiles to current ATP; ingesting ${targets.length} (rank<=${RANK_MAX}).`);
 
   const players = {};
-  let ok = 0, miss = 0, empty = 0;
+  let ok = 0, miss = 0, empty = 0, cached = 0, fetched = 0, staleFallback = 0;
   let cursor = 0;
   async function worker() {
     while (cursor < targets.length) {
@@ -255,18 +271,26 @@ async function main() {
       const cacheFile = path.join(CACHE, t.id + '.html');
       let html = null;
       try {
-        if (fs.existsSync(cacheFile) && fs.statSync(cacheFile).size > 5000) {
+        const st = fs.existsSync(cacheFile) ? fs.statSync(cacheFile) : null;
+        const usable = st && st.size > 5000;
+        if (usable && Date.now() - st.mtimeMs < CACHE_TTL_MS) {
           html = fs.readFileSync(cacheFile, 'utf8');
+          cached++;
         } else {
           const url = `https://www.tennisabstract.com/cgi-bin/player-classic.cgi?p=${t.id}`;
           for (let attempt = 0; attempt < 4 && !html; attempt++) {
             await sleep(BASE_DELAY_MS + attempt * 1200);
             let status, body;
             try { ({ status, body } = await get(url)); } catch (e) { continue; }
-            if (status === 200 && body.includes('var matchmx')) { html = body; fs.writeFileSync(cacheFile, body); }
+            if (status === 200 && body.includes('var matchmx')) { html = body; fs.writeFileSync(cacheFile, body); fetched++; }
             else if (status === 429) { await sleep(2500 * (attempt + 1)); }
             else break; // real 404 (name mismatch) — don't hammer
           }
+          // TA throttles sustained fetching, so a refetch can fail for a player
+          // we already have a page for. Serving that stale page keeps his splits
+          // one day old; dropping him removes his table from the site entirely.
+          // Stale beats missing.
+          if (!html && usable) { html = fs.readFileSync(cacheFile, 'utf8'); staleFallback++; }
         }
       } catch (e) { /* network */ }
       if (!html) { miss++; continue; }
@@ -291,11 +315,16 @@ async function main() {
     window52Rule: 'per player: 364 days before that player\'s most recent tour match (matches tennisabstract)',
     categories: CATEGORIES.map(c => c[0]),
     columns: ['M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct'],
-    coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length },
+    coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length, fetched, fromCache: cached, staleFallback },
     players,
   };
+  // A run where every fetch failed (egress blocked, TA down) must not overwrite
+  // a good file with an empty one.
+  if (!ok) { console.error(`ERROR: ingested 0 of ${targets.length} players — leaving ${path.basename(OUT)} untouched.`); process.exit(1); }
   fs.writeFileSync(OUT, JSON.stringify(out));
-  console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty. 52wk window is per-player.`);
+  console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty (${fetched} fetched, ${cached} cached, ${staleFallback} served stale after failed refetch). 52wk window is per-player.`);
+  // A build that fetched nothing is a replay of the cache, not a refresh.
+  if (ok && !fetched) console.warn('WARNING: every page came from cache — no fresh data. Check SPLITS_CACHE_TTL_HOURS.');
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
