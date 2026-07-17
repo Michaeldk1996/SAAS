@@ -43,15 +43,25 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // the artifact) so re-runs on the same day are deterministic.
 const TODAY = '20260714';
 function daysAgoStamp(stamp, cutoff) { return stamp >= cutoff; }
-function cutoff52() {
-  // 364 days before TODAY, as YYYYMMDD.
-  const y = +TODAY.slice(0, 4), m = +TODAY.slice(4, 6), d = +TODAY.slice(6, 8);
+// 364 days before a YYYYMMDD stamp, as YYYYMMDD.
+function minus364(stamp) {
+  const y = +stamp.slice(0, 4), m = +stamp.slice(4, 6), d = +stamp.slice(6, 8);
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() - 364);
   const p = n => String(n).padStart(2, '0');
   return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(dt.getUTCDate())}`;
 }
-const CUT52 = cutoff52();
+// Tennis Abstract anchors "Last 52 Weeks" to the player's OWN most recent match,
+// not to today. Verified by solving for the cutoff that reproduces TA's rendered
+// table: Rune (last played Oct 2025) only matches with an Oct 2024 cutoff, while
+// Alcaraz needs Apr 2025 — no single global date fits both. So for a player who
+// is out injured this shows his last 52 active weeks rather than a near-empty
+// window, which is also the more useful read of recent form.
+function cutoff52(matches) {
+  let last = '';
+  for (const m of matches) if (m.date > last) last = m.date;
+  return last ? minus364(last) : minus364(TODAY);
+}
 
 function stripAccents(s) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -80,23 +90,36 @@ function get(url) {
 }
 
 // ---- parse one matchmx into normalized match objects ------------------------
+// matchmx is a JSON array literal, so we brace-match it and JSON.parse it.
+// Scanning row-by-row with /\[[^\[\]]*\]/ looks equivalent but is NOT: a super
+// tiebreak score ("6-7 [10-7]") contains its own brackets, so that regex tears
+// the row in half and silently drops a real match from every total.
 function parseMatches(html) {
   const i = html.indexOf('var matchmx');
   if (i < 0) return [];
-  const semi = html.indexOf('];', i);
-  const arr = html.slice(html.indexOf('[', i), semi + 1);
-  const rows = arr.match(/\[[^\[\]]*\]/g) || [];
+  const s = html.indexOf('[', i);
+  let depth = 0, end = -1;
+  for (let k = s; k < html.length; k++) {
+    const c = html[k];
+    if (c === '[') depth++;
+    else if (c === ']') { depth--; if (!depth) { end = k + 1; break; } }
+  }
+  if (end < 0) return [];
+  let rows;
+  try { rows = JSON.parse(html.slice(s, end)); } catch (e) { return []; }
   const out = [];
-  for (const r of rows) {
-    const cells = (r.match(/"((?:[^"\\]|\\.)*)"/g) || []).map(s => s.slice(1, -1));
-    if (cells.length < 16) continue;
+  for (const cells of rows) {
+    if (!Array.isArray(cells) || cells.length < 16) continue;
     const date = cells[0], surface = cells[2], level = cells[3], wl = cells[4],
       round = cells[8], score = cells[9], bestofRaw = cells[10],
       oppRank = cells[12], oppHand = cells[15];
     if (wl !== 'W' && wl !== 'L') continue;
     out.push({
       date, surface, level, wl, round, score,
-      bestof: (bestofRaw === '5' || bestofRaw === '3') ? +bestofRaw : (level === 'G' ? 5 : 3),
+      // Strictly the source's own best-of field. Inferring 5 from a Grand Slam
+      // over-counts: a walkover carries no best-of, which is why TA shows one
+      // more Grand Slam match than Best of 5.
+      bestof: bestofRaw === '5' ? 5 : bestofRaw === '3' ? 3 : null,
       oppRank: /^\d+$/.test(oppRank) ? +oppRank : null,
       oppHand: (oppHand === 'R' || oppHand === 'L') ? oppHand : null,
     });
@@ -104,12 +127,26 @@ function parseMatches(html) {
   return out;
 }
 
-// player-perspective set W/L from a winner-first score string
+// A set counts only once it is complete: 6+ with a 2-game margin, or 7-5 / 7-6.
+function completedSet(a, b) {
+  const hi = Math.max(a, b), lo = Math.min(a, b);
+  return (hi >= 6 && hi - lo >= 2) || (hi === 7 && lo >= 5);
+}
+
+// player-perspective set W/L from a winner-first score string.
+// A walkover has no score at all: it counts as a match and a win, but no sets.
+// A match ending RET/DEF was abandoned mid-set — Tennis Abstract drops that
+// trailing incomplete set rather than awarding it to either player.
 function setRecord(m) {
   const sc = (m.score || '').trim();
-  if (!sc || /w\/o|def|walkover/i.test(sc)) return { w: 0, l: 0 };
+  if (!sc || !/\d-\d/.test(sc)) return { w: 0, l: 0 };
+  let toks = sc.split(/\s+/).filter(t => /^\d+-\d+(\(\d+\))?$/.test(t));
+  if (/RET|DEF/i.test(sc) && toks.length) {
+    const last = toks[toks.length - 1].match(/^(\d+)-(\d+)/);
+    if (last && !completedSet(+last[1], +last[2])) toks.pop();
+  }
   let winnerSets = 0, loserSets = 0;
-  for (const tok of sc.split(/\s+/)) {
+  for (const tok of toks) {
     const mm = tok.replace(/\(.*?\)/g, '').match(/^(\d+)-(\d+)$/);
     if (!mm) continue;
     const a = +mm[1], b = +mm[2];
@@ -119,13 +156,27 @@ function setRecord(m) {
   return m.wl === 'W' ? { w: winnerSets, l: loserSets } : { w: loserSets, l: winnerSets };
 }
 
+// Tour level: Grand Slams, Masters, ATP tour ("A"), Tour Finals, Davis Cup.
+// Challengers and ITF futures are NOT tour level and must be excluded, or every
+// row inflates. F and D count toward the surface rows but get no level row of
+// their own, which is why the three level rows do not re-add to the total.
+const TOUR_LEVELS = new Set(['G', 'M', 'A', 'F', 'D']);
+// Real qualifying is Q1/Q2/Q3 only. Matching /^Q/ would also swallow QF.
+const QUALIFYING = /^Q[123]$/;
+function isTourLevel(m) {
+  return TOUR_LEVELS.has(m.level) && !QUALIFYING.test(m.round);
+}
+
 const CATEGORIES = [
   ['Hard', m => m.surface === 'Hard'],
   ['Clay', m => m.surface === 'Clay'],
   ['Grass', m => m.surface === 'Grass'],
+  // Carpet died out around 2009, so only long-career players (Djokovic) have a
+  // Carpet row at all. Zero-match categories are dropped, so it self-hides.
+  ['Carpet', m => m.surface === 'Carpet'],
   ['Grand Slams', m => m.level === 'G'],
   ['Masters', m => m.level === 'M'],
-  ['Other Tours', m => m.level !== 'G' && m.level !== 'M'],
+  ['Other Tours', m => m.level === 'A'],
   ['Best of 5', m => m.bestof === 5],
   ['Best of 3', m => m.bestof === 3],
   ['Finals', m => m.round === 'F'],
@@ -219,12 +270,13 @@ async function main() {
         }
       } catch (e) { /* network */ }
       if (!html) { miss++; continue; }
-      const matches = parseMatches(html);
+      const matches = parseMatches(html).filter(isTourLevel);
       if (!matches.length) { empty++; continue; }
-      const last52 = matches.filter(m => daysAgoStamp(m.date, CUT52));
+      const cut52 = cutoff52(matches);
+      const last52 = matches.filter(m => daysAgoStamp(m.date, cut52));
       players[t.pkey] = {
         taId: t.id, fullName: t.full, rank: t.rank,
-        matchesParsed: matches.length, last52Count: last52.length,
+        matchesParsed: matches.length, last52Count: last52.length, cutoff52: cut52,
         career: splits(matches),
         last52: splits(last52),
       };
@@ -236,14 +288,14 @@ async function main() {
   const out = {
     fetchedAt: TODAY,
     source: 'Jeff Sackmann ATP match data via tennisabstract.com player-classic (matchmx)',
-    window52Cutoff: CUT52,
+    window52Rule: 'per player: 364 days before that player\'s most recent tour match (matches tennisabstract)',
     categories: CATEGORIES.map(c => c[0]),
     columns: ['M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct'],
     coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length },
     players,
   };
   fs.writeFileSync(OUT, JSON.stringify(out));
-  console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty. 52wk cutoff ${CUT52}.`);
+  console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty. 52wk window is per-player.`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

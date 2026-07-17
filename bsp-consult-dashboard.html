@@ -5052,13 +5052,13 @@ function togglePpSplits(which){
 // dropped at ingest, so we render exactly what exists; sections with no data at
 // all are omitted by the caller. Columns: M, W, L, Win%, Set W-L, Set%.
 function ppSplitsTableHtml(rows){
-  const order = ['Hard','Clay','Grass','Grand Slams','Masters','Other Tours','Best of 5','Best of 3','Finals','Semi-finals','Quarter-finals','vs. Righties','vs. Lefties','vs. Top 10'];
+  const order = ['Hard','Clay','Grass','Carpet','Grand Slams','Masters','Other Tours','Best of 5','Best of 3','Finals','Semi-finals','Quarter-finals','vs. Righties','vs. Lefties','vs. Top 10'];
   const head = `<div style="display:grid;grid-template-columns:1.4fr repeat(6,1fr);gap:8px;padding:0 4px 8px;font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">
     <span></span><span style="text-align:right;">M</span><span style="text-align:right;">W</span><span style="text-align:right;">L</span><span style="text-align:right;">Win%</span><span style="text-align:right;">Set W-L</span><span style="text-align:right;">Set%</span></div>`;
   const body = order.filter(k => rows[k]).map(k => {
     const r = rows[k];
-    const wr = r.winPct != null ? r.winPct + '%' : '—';
-    const sp = r.setPct != null ? r.setPct + '%' : '—';
+    const wr = r.winPct != null ? r.winPct.toFixed(1) + '%' : '—';
+    const sp = r.setPct != null ? r.setPct.toFixed(1) + '%' : '—';
     return `<div style="display:grid;grid-template-columns:1.4fr repeat(6,1fr);gap:8px;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.05);align-items:center;">
       <span style="font-size:12.5px;color:#cfd4de;font-weight:600;">${k}</span>
       <span style="text-align:right;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#aab2c0;">${r.M}</span>
