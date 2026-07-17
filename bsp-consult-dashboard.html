@@ -752,6 +752,7 @@
   .modal-analysis .tprogress-card .tpvlabel{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600; color:#eef1f6; padding:2px 5px; border-radius:6px; white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpavgtag{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#aab2c0; padding:2px 8px; border-radius:20px; border:1px dashed rgba(255,255,255,0.22); background:rgba(0,0,0,0.35); white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpround{ position:absolute; bottom:2px; transform:translateX(-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); pointer-events:none; }
+  .modal-analysis .tprogress-card .tpbye{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:600; font-style:italic; letter-spacing:0.02em; padding:1.5px 6px; border-radius:6px; border:1px dashed; white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpdot{ position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; cursor:default; z-index:5; }
   .modal-analysis .tprogress-card .tpdot:hover{ z-index:25; }
   .modal-analysis .tprogress-card .tpnode{ position:absolute; left:50%; top:50%; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; border:2px solid #0b0d12; }
@@ -6145,6 +6146,27 @@ function progressionPlot(rounds, series, formatValue){
     overlayHtml += `<div class="tpavgtag" style="left:${chosen.x}%; top:${chosen.y}%;">Field avg</div>`;
   }
 
+  // Byes, marked at the round the player sat out. The round keeps its own tick —
+  // the axis is shared with an opponent who may have played a real match there —
+  // so the bye is drawn as a chip in the player's own colour above that tick, and
+  // no data point is plotted. Without it the gap before a bye recipient's line is
+  // indistinguishable from data we simply do not have.
+  const byeRows = {};
+  series.forEach(s => (s.byes || []).forEach((isBye, i) => {
+    if (isBye) (byeRows[i] = byeRows[i] || []).push(s.color);
+  }));
+  // Two bye recipients can meet, so a round can carry more than one chip; stack
+  // them upward, and step over any value label already occupying the slot.
+  Object.keys(byeRows).forEach(i => {
+    byeRows[i].forEach((color, k) => {
+      const x = xs[i];
+      const taken = y => labelPositions.some(lp => Math.abs(lp.x - x) < 6 && Math.abs(lp.y - y) < 12);
+      let top = 90 - k * 14;
+      while (top > 20 && taken(top)) top -= 14;
+      overlayHtml += `<div class="tpbye" style="left:${x}%; top:${top}%; color:${color}; border-color:${color}66; background:${color}1f;">Bye</div>`;
+    });
+  });
+
   const roundsHtml = rounds.map((r, i) => `<span class="tpround" style="left:${xs[i]}%;">${r}</span>`).join('');
 
   return `
@@ -6370,6 +6392,36 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 //   no draw   → 'none'    no tournament data on file at all
 // A player with a single prior round has real box-score data to compare — show
 // bars rather than hiding the tab, since one point cannot form a trend.
+// How many players the feed carries a match record for at a given round.
+function progressionRoundRecordCount(t, round){
+  return ((t && t.players) || []).reduce((n, p) => n + ((p.rounds || []).some(r => r.round === round) ? 1 : 0), 0);
+}
+
+// A bye is inferred from the ABSENCE of an opening-round match — but a round the
+// feed never delivered is absent in exactly the same way, and the inference cannot
+// tell the two apart on its own. Draw arithmetic can: every bye recipient advances
+// to meet the winner of a real opening match, so a draw can never hand out more
+// byes than it played opening matches.
+//
+// This is not hypothetical. The API serves a 7-day window, so once a Grand Slam
+// reaches its second week its R1 drops out while the later rounds remain. A stored
+// Wimbledon draw shows the failure exactly: 6 opening-round records against 64 at
+// R2, which makes the naive rule brand 61 of 67 survivors — Sinner and Djokovic
+// among them — as first-round bye recipients at a 128-draw that has no byes at all.
+// When the count fails this test the round is missing, not byed, and no bye is
+// claimed for anybody in that draw.
+function progressionByesCredible(t){
+  const rounds = (t && t.rounds) || [];
+  if (rounds.length < 2) return true;
+  const openMatches = progressionRoundRecordCount(t, rounds[0]) / 2;
+  const flagged = ((t.players) || []).filter(p => {
+    let first = -1;
+    (p.rounds || []).forEach(r => { const i = rounds.indexOf(r.round); if (i >= 0 && (first < 0 || i < first)) first = i; });
+    return first > 0;
+  }).length;
+  return flagged <= openMatches;
+}
+
 // How deep a player is in THIS draw, in rounds survived (Task 13 board rule).
 // Wins and byes advance you; a loss does not. Derived per player:
 //
@@ -6386,13 +6438,15 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
 //
 // depth = roundsWon + byes, so a bye recipient with one win sits level with a
 // player who won two, which is the board's rule for Vacherot.
-function progressionPlayerDepth(p, rounds){
+function progressionPlayerDepth(p, rounds, byesCredible){
   if (!p) return null;
   const n = (p.rounds || []).length;
   const roundsWon = Math.max(0, p.eliminated ? n - 1 : n);
   let firstIdx = -1;
   (p.rounds || []).forEach(r => { const i = rounds.indexOf(r.round); if (i >= 0 && (firstIdx < 0 || i < firstIdx)) firstIdx = i; });
-  const byes = firstIdx > 0 ? firstIdx : 0;
+  // A missing round is not a bye, and must not advance a player's depth: with the
+  // round absent the player simply has one win on record, which bars — not a line.
+  const byes = (byesCredible !== false && firstIdx > 0) ? firstIdx : 0;
   // The player's last WON round — the round whose box score represents them at
   // their best-surviving level. For an eliminated player this deliberately skips
   // the match that knocked them out (Sonego shows his R1 win, not his R2 loss).
@@ -6469,8 +6523,11 @@ function progressionRoundState(m){
   // Scope to the pre-match window before anything is measured off this data.
   const scope = progressionPreMatchScope(m, rawData, rawP1, rawP2);
   const { data, p1Data, p2Data } = scope;
-  const d1 = progressionPlayerDepth(p1Data, data.rounds);
-  const d2 = progressionPlayerDepth(p2Data, data.rounds);
+  // Asked of the WHOLE draw, not the pre-match slice: the slice can legitimately
+  // end up holding a single round, which would fail the arithmetic on its own.
+  const byesCredible = progressionByesCredible(rawData);
+  const d1 = progressionPlayerDepth(p1Data, data.rounds, byesCredible);
+  const d2 = progressionPlayerDepth(p2Data, data.rounds, byesCredible);
   const present = [d1, d2].filter(Boolean);
   // The chart/bars decision is per PLAYER, not per card (board call on TEN-16):
   // each player is charted once THEY have survived two rounds, regardless of
@@ -6606,6 +6663,13 @@ function buildMatchProgressionSection(m){
         color, fillOpacity, bar: asBar,
         values: data.rounds.map(round => { const r = at(round); return r ? r.metrics[metricKey] : null; }),
         opponents: data.rounds.map(round => { const r = at(round); return r ? r.opponent : null; }),
+        // The rounds this player sat out on a bye — every slot before their first
+        // appearance. Marked per PLAYER rather than by relabelling the round tick,
+        // because the axis is shared: at Gstaad, Vacherot's R1 bye sits on the same
+        // tick as Collignon's real R1 match, so "Bye" is true of one man and a lie
+        // about the other. A null here is a bye; a null in `values` at a round the
+        // player did play is a missing box score, and stays an unexplained gap.
+        byes: data.rounds.map((round, i) => !!(d && d.byes > 0 && i < d.firstIdx)),
       };
     };
     const series = [
