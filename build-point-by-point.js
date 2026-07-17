@@ -111,14 +111,13 @@ function compactPbp(raw) {
 // reason the set filter lives in this generator rather than in the pipeline.
 // Parsed with the pipeline's OWN parser rather than a copy: the feed has quietly
 // changed stat naming before, and one parser means one place to fix it.
-async function fetchFixture(eventKey) {
-  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${eventKey}`);
-  const data = await res.json();
-  const result = Array.isArray(data.result) ? data.result : [];
-  if (!result.length) return null;
-  const r = result[0];
+// Pull the point log, names and per-set box score out of ONE raw fixture object.
+// Split out from fetchFixture because the per-match `match_key=` call is not the
+// only way a fixture reaches us: the history backfill gets the very same objects
+// (statistics and pointbypoint included) from the player-keyed window fetch the
+// pipeline already makes. One reader means one place for the feed to surprise us.
+function parseFixture(r) {
+  if (!r) return null;
   const p1Key = r.first_player_key ?? null, p2Key = r.second_player_key ?? null;
   return {
     raw: r.pointbypoint || null,
@@ -129,6 +128,28 @@ async function fetchFixture(eventKey) {
     p1Key, p2Key,
     stats: (p1Key != null && p2Key != null) ? buildSetStatsFromFixture(r, p1Key, p2Key) : null,
   };
+}
+
+// The one cache-entry shape. Both writers (the per-match resolve below and the
+// history backfill) go through here, so a shard can never depend on which of
+// them happened to reach the match first.
+function buildCacheEntry(got, names = null) {
+  const compact = got ? compactPbp(got.raw) : null;
+  const stats = (got && got.stats) || null;
+  const keys = { p1Key: (got && got.p1Key) ?? null, p2Key: (got && got.p2Key) ?? null };
+  return compact
+    ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact, ...keys, stats }
+    : { sets: [], ...keys, stats };
+}
+
+async function fetchFixture(eventKey) {
+  const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${eventKey}`);
+  const data = await res.json();
+  const result = Array.isArray(data.result) ? data.result : [];
+  if (!result.length) return null;
+  return parseFixture(result[0]);
 }
 
 // Temp file + rename: a reader (or a half-finished job) never sees a partial
@@ -182,14 +203,9 @@ async function main() {
                  // would hammer ~600 requests every 15 minutes instead of 250.
     const got = await fetchFixture(ek);
     await new Promise(r => setTimeout(r, PACE_MS));
-    const compact = got ? compactPbp(got.raw) : null;
     // The per-set box score rides along in the same fixture, so a match resolved
     // from here needs no backfill pass below.
-    const stats = (got && got.stats) || null;
-    const keys = { p1Key: (got && got.p1Key) ?? null, p2Key: (got && got.p2Key) ?? null };
-    const built = compact
-      ? { p1: (got && got.p1) || (names && names.p1) || null, p2: (got && got.p2) || (names && names.p2) || null, ...compact, ...keys, stats }
-      : { sets: [], ...keys, stats };
+    const built = buildCacheEntry(got, names);
     if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
     return built;
   }
@@ -370,4 +386,11 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
+// Self-run only as a script, so the history backfill can require the shared
+// fixture parser without kicking off a full shard build — the same guard
+// bsp-pipeline.js uses, and the reason requiring it here is safe.
+if (require.main === module) {
+  main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
+}
+
+module.exports = { compactPbp, parseFixture, buildCacheEntry };

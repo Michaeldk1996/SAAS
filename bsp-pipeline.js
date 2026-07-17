@@ -563,7 +563,13 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     let round = f.tournament_round || '';
     if (round.includes(' - ')) round = round.split(' - ').pop().trim();
     const level = /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
-    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won });
+    // eventKey is the row's identity: without it a drill-down row is a string of
+    // text with nothing to join to, so the per-match shards (setstats/{ek}.json,
+    // pbp/{ek}.json) are unreachable from here no matter how many exist. The
+    // "kept lean" note above predates sharding — the cost is ~13 bytes on a row
+    // in a lazily-loaded side file, against the alternative of fuzzy-matching a
+    // date, a tournament name and an abbreviated opponent back to a fixture.
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key });
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;

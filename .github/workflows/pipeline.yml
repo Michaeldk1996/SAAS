@@ -69,6 +69,18 @@ jobs:
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
 
+      # Backfill the stats + point logs behind the Overview / Career-record
+      # drill-down, ONE call per tracked player (the player-keyed fixture window
+      # already carries both inline). Runs BEFORE the shard build on purpose:
+      # it only fills point-by-point-cache.json, and every match it caches is one
+      # the next step then does NOT have to fetch per-match — so it speeds that
+      # job up rather than competing with it. Self-terminating: once every
+      # tracked player's rows are cached it makes no calls at all.
+      - name: Backfill history match shards (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node backfill-history-shards.js || true
+
       # Point-by-point sidecar (Task 4): lazy companion the dashboard fetches on
       # demand for finished matches. Best-effort — never block the deploy: a
       # failure here leaves the previous point-by-point.json (from cache) or none.
