@@ -1280,10 +1280,6 @@
       <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">▶</button>
     </div>
     <div class="mx-filterbar">
-      <div class="mx-pilltoggle" id="tourGroup">
-        <button class="active" data-tour="all">All</button>
-        <button data-tour="ATP">ATP</button>
-      </div>
       <div class="mx-surfacedd" id="surfaceDropdown">
         <button class="mx-surfacesbtn" id="surfaceAllBtn"><span id="surfaceAllLabel">All surfaces</span> <span class="chev">▾</span></button>
         <div class="mx-surfacemenu" id="surfaceMenu">
@@ -1659,7 +1655,7 @@ function renderHeaderStats(){
 
 // tournaments = the set of selected tournament chips. Empty means no filter, so
 // "all" needs no sentinel value of its own.
-const state = { day:"today", tour:"all", surface:"all", tournaments:new Set(), search:"", sort:"time", favorites:new Set() };
+const state = { day:"today", surface:"all", tournaments:new Set(), search:"", sort:"time", favorites:new Set() };
 
 function oddsGap(m){
   // Gap in implied win probability between the two players — a real,
@@ -1689,7 +1685,6 @@ function getFiltered(){
         if (Date.now() - new Date(m.finishedAt).getTime() > 86400000) return false;
       } else if (bucket !== state.day) return false;
     }
-    if (state.tour !== 'all' && m.tourBadge !== state.tour) return false;
     if (state.surface !== 'all' && m.surface !== state.surface) return false;
     if (state.tournaments.size && !state.tournaments.has(m.tour)) return false;
     if (state.search){
@@ -4816,10 +4811,6 @@ function setActiveButton(groupEl, clickedBtn){
 document.getElementById('dayTabs').addEventListener('click', e => {
   const btn = e.target.closest('button[data-day]'); if (!btn) return;
   setActiveButton(document.getElementById('dayTabs'), btn); state.day = btn.dataset.day; renderMatches();
-});
-document.getElementById('tourGroup').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-tour]'); if (!btn) return;
-  setActiveButton(document.getElementById('tourGroup'), btn); state.tour = btn.dataset.tour; renderMatches();
 });
 // Surface is now a dropdown menu (All surfaces / Grass / Hard / Clay).
 const surfaceLabels = { all:'All surfaces', grass:'Grass', hard:'Hard', clay:'Clay' };
