@@ -980,6 +980,7 @@
   .aform-pill.loss{ background:#E8607A; }
   .aform-filterhead{ display:flex; align-items:center; justify-content:space-between; margin:18px 0 8px 0; }
   .aform-filterlbl{ font-size:11px; color:#9aa3b2; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
+  .aform-filtercount{ font-size:11px; color:#6b7280; font-family:'Hanken Grotesk', sans-serif; }
   .aform-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; margin-bottom:6px; }
   .aform-list.hidden{ display:none; }
   .aform-tgroup{ display:flex; align-items:center; gap:8px; padding:8px 13px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.05); }
@@ -2323,6 +2324,55 @@ function loadPbpShard(eventKey){
 // initial page load to serve a filter that is only read once a row is expanded.
 // The match-level stats a row opens on still ship inline with the match, so the
 // panel paints immediately and only the per-set views wait on a fetch.
+// Recent-form rows: one lazy shard per PLAYER (form/{playerKey}.json), fetched
+// the first time a match modal opens. They used to ride along in matches.json —
+// 975 KB, 27.7% of the file — even though nothing on the page-load path reads
+// them: the card shows the scalar m.p1RecentForm pct, and every row reader (the
+// Form tab, Recent Results) is behind openAnalysisModal. Sharded per player, so
+// two cards sharing a player share one fetch.
+let _formIndex = null, _formIndexPromise = null;
+const _formShards = {}, _formShardPromises = {};
+
+// Which players have form rows on file, so a formless player renders its empty
+// state directly instead of via a failed request.
+function loadFormIndex(){
+  if (_formIndex) return Promise.resolve(_formIndex);
+  if (_formIndexPromise) return _formIndexPromise;
+  _formIndexPromise = fetch('./form-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _formIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _formIndex; })
+    .catch(err => { console.warn('form-index.json load failed:', err.message); _formIndex = new Set(); return _formIndex; });
+  return _formIndexPromise;
+}
+// One player's recent-form rows, most recent first.
+function loadFormShard(playerKey){
+  const pk = String(playerKey || '');
+  if (!pk) return Promise.resolve(null);
+  if (pk in _formShards) return Promise.resolve(_formShards[pk]);
+  if (_formShardPromises[pk]) return _formShardPromises[pk];
+  _formShardPromises[pk] = loadFormIndex()
+    .then(idx => idx.has(pk)
+      ? fetch(`./form/${pk}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)
+      : null)
+    .then(d => { _formShards[pk] = (d && Array.isArray(d.matches)) ? d.matches : null; return _formShards[pk]; })
+    .catch(err => { console.warn(`form shard ${pk} load failed:`, err.message); _formShards[pk] = null; return null; });
+  return _formShardPromises[pk];
+}
+// Hydrate a match's two row arrays from the shards, then hand back whether
+// anything landed. The rows are written onto the match object under the field
+// names they have always had, so every reader downstream is unchanged — they
+// just have to run after this resolves. Memoised per player, so reopening a
+// modal is synchronous-fast and costs no second fetch.
+function ensureFormRows(m){
+  if (m._formLoaded) return Promise.resolve(m);
+  return Promise.all([loadFormShard(m.p1Key), loadFormShard(m.p2Key)]).then(([p1, p2]) => {
+    m.p1RecentFormMatches = p1;
+    m.p2RecentFormMatches = p2;
+    m._formLoaded = true;
+    return m;
+  });
+}
+
 let _setStatsIndex = null, _setStatsIndexPromise = null;
 const _setStatsShards = {}, _setStatsShardPromises = {};
 
@@ -3171,6 +3221,10 @@ function showFormMore(colPrefix){
 // date) is dropped by the grouper, so those rows are appended ungrouped rather
 // than silently disappearing from the list.
 const FORM_VISIBLE_MATCHES = 5;
+// Must stay in lockstep with RECENT_FORM_PCT_WINDOW in bsp-pipeline.js: that is
+// the window the form score on the card is computed over, and this is the
+// window the hero's W–L and pills beside it are drawn from.
+const FORM_SCORE_WINDOW = 10;
 function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, collapse){
   const groups = ppGroupMatchesByTournament(matches);
   const grouped = new Set(groups.flatMap(g => g.matches));
@@ -3224,7 +3278,13 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
       </div>
     `;
   }
-  const pillsHtml = allMatches.map(m => `<span class="aform-pill ${m.won ? 'win' : 'loss'}"></span>`).join('');
+  // The hero (form score, W–L, pills) is "how is he playing RIGHT NOW", so it
+  // stays on the last FORM_SCORE_WINDOW matches no matter how deep the list
+  // below goes — and that window has to match the one the pipeline computes
+  // `pct` over (RECENT_FORM_PCT_WINDOW), or the score and the W–L beside it
+  // would describe different sets of matches. The list is the full shard.
+  const scored = allMatches.slice(0, FORM_SCORE_WINDOW);
+  const pillsHtml = scored.map(m => `<span class="aform-pill ${m.won ? 'win' : 'loss'}"></span>`).join('');
   const allGrouped = buildFormGroupedList(allMatches, colPrefix, playerKey, name, 'main', true);
   const visibleRows = allGrouped.html;
   const showMoreHtml = allGrouped.hiddenCount
@@ -3238,8 +3298,8 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
   const captionColor = isP1 ? '#93a8cf' : '#cfa77f';
   const recordColor = isP1 ? '#cfd6e6' : '#e6d3c2';
   const recordSubColor = isP1 ? '#6b7f9c' : '#9c8670';
-  const wins = allMatches.filter(x => x.won).length;
-  const losses = allMatches.length - wins;
+  const wins = scored.filter(x => x.won).length;
+  const losses = scored.length - wins;
 
   return `
     <div class="aform-col">
@@ -3255,23 +3315,30 @@ function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix,
           </div>
           <div>
             <div class="aform-record" style="color:${recordColor};">${wins}–${losses}</div>
-            <div class="aform-recordsub" style="color:${recordSubColor};">last ${allMatches.length} · W–L</div>
+            <div class="aform-recordsub" style="color:${recordSubColor};">last ${scored.length} · W–L</div>
           </div>
         </div>
         <div class="aform-pills">${pillsHtml}</div>
       </div>
       <div class="aform-filterhead">
         <span class="aform-filterlbl">Recent matches</span>
+        <span class="aform-filtercount">${allMatches.length} on record</span>
       </div>
       <div class="aform-list" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
     </div>
   `;
 }
 function buildFormSection(m){
+  // The rows arrive from a lazy per-player shard, so "not loaded yet" and "no
+  // data" are different answers and must not share a message — otherwise every
+  // modal would flash "not connected" before its rows land.
+  if (!m._formLoaded) {
+    return `<div class="acomingsoon">Loading recent form…</div>`;
+  }
   if (!m.p1RecentFormMatches && !m.p2RecentFormMatches) {
     return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
   }
-  const callout = `<div class="aform-callout"><span class="aform-callout-icon">${BSP_ICONS.info}</span><span>Form reflects who's playing better right now — each player's last 10 completed matches on record (fewer if less history exists), most recent first.</span></div>`;
+  const callout = `<div class="aform-callout"><span class="aform-callout-icon">${BSP_ICONS.info}</span><span>Form reflects who's playing better right now — the score, W–L and pills cover each player's last ${FORM_SCORE_WINDOW} completed matches (fewer if less history exists). The list below goes back further, most recent first.</span></div>`;
   return `
     ${callout}
     <div class="yr-grid">
@@ -3993,6 +4060,7 @@ const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const AODDS_MARKETS = ['Match Winner','Set 1 Winner','Handicap \u22121.5 sets','Handicap \u22123.5 games','Total Games O/U 22.5'];
 let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
 let _aPbpMatch = null; // match whose Match Stats section is currently open (Task 4; also backs the Task 9 set filter on both panes)
+let _aFormMatch = null; // match the modal is currently showing — guards the async recent-form repaint against a modal reopened on another match meanwhile
 let _aLiveBarOn = false;      // whether the open match warrants #aLiveBar at all
 let _aMsInsetBanner = false;  // whether Match Stats draws its own inset banner (TEN-21)
 let _aPbpEntry = null; // that match's already-fetched point log, kept so the Task 9 set filter can repaint without refetching
@@ -4556,8 +4624,25 @@ function openAnalysisModal(matchId){
   // buildMatchStatsSection already rendered a fresh, empty #msPbpPane above; the
   // sidecar fetch is deferred until the user opens that sub-tab.
   _aPbpMatch = m;
+  _aFormMatch = m;
 
+  // Recent-form rows are a lazy per-player shard, so these two sections render
+  // twice: once now (Form shows a loading line, Recent Results is simply absent)
+  // and again the moment the rows land. Everything else on the modal — the form
+  // score itself included — comes from matches.json and paints immediately, so
+  // the modal is never held on the network.
+  //
+  // Both sections are rebuilt, not just the Form tab: Recent Results lives on
+  // the Key tab, which is the one that opens by default.
   document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
+  ensureFormRows(m).then(() => {
+    // The user can close this modal and open another while the shard is in
+    // flight; without this guard the late rows would repaint the new match's
+    // sections with the old match's form.
+    if (_aFormMatch !== m) return;
+    document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
+    document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
+  });
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
 

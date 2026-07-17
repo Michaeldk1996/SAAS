@@ -99,6 +99,8 @@ jobs:
           cp -r pbp _site/ 2>/dev/null || true
           cp setstats-index.json _site/ 2>/dev/null || true
           cp -r setstats _site/ 2>/dev/null || true
+          cp form-index.json _site/ 2>/dev/null || true
+          cp -r form _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
 
       # Fail loudly if a file the pages reference is missing from the artifact.
@@ -106,8 +108,12 @@ jobs:
       # it here where it is still a build error.
       - name: Assert site completeness
         run: |
+          # form-index.json gates the Form tab: the dashboard reads it before it
+          # will fetch a single form shard, so if it 404s the tab is empty for
+          # every match and nothing else complains. bsp-pipeline.js writes it on
+          # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html \
-                   matches.json player-profiles.json career-splits.json; do
+                   matches.json player-profiles.json career-splits.json form-index.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           echo "All referenced files present in _site."

@@ -48,6 +48,7 @@ const INDEX_PATH = 'pbp-index.json';
 // rows would add ~2.5 MB to matches.json (3.4 MB today) on every page load, to
 // serve a filter that is only read after a row is expanded.
 const SETSTATS_DIR = 'setstats';
+const FORM_DIR = 'form';   // per-player recent-form shards, written by bsp-pipeline.js
 const SETSTATS_INDEX_PATH = 'setstats-index.json';
 const PACE_MS = 150;
 
@@ -225,21 +226,37 @@ async function main() {
   // Recent-form rows (Task 10-12): every match behind the Form tab's rows, which
   // reach far outside the fixtures window. Deduped — a match commonly appears in
   // both players' form lists, and across several cards.
+  //
+  // These rows used to live on the match objects in matches.json. They now ship
+  // as one lazy shard per player (form/{playerKey}.json, written by
+  // bsp-pipeline.js immediately before matches.json) to keep 975 KB of
+  // modal-only data off the page-load path — so this reads them from there.
+  // Best-effort: if the form pass didn't run, the window pass above has already
+  // done the work that matters and this job stays non-fatal.
   const formKeys = new Set();
   const formRowDate = new Map();   // event key -> match date, drives the backfill order below
-  for (const m of matches) {
-    for (const side of ['p1RecentFormMatches', 'p2RecentFormMatches']) {
-      for (const f of (m[side] || [])) {
-        if (f && f.eventKey != null) {
-          const ek = String(f.eventKey);
-          formKeys.add(ek);
-          // The same match sits in both players' lists; the date is identical, so
-          // first writer wins and a row without one simply sorts last.
-          if (f.date && !formRowDate.has(ek)) formRowDate.set(ek, String(f.date));
-        }
-      }
+  let formShardCount = 0;
+  for (const file of (fs.existsSync(FORM_DIR) ? fs.readdirSync(FORM_DIR) : [])) {
+    if (!file.endsWith('.json')) continue;
+    let rows;
+    try {
+      rows = (JSON.parse(fs.readFileSync(`${FORM_DIR}/${file}`, 'utf8')) || {}).matches;
+    } catch (e) {
+      console.error(`point-by-point: unreadable form shard ${file}: ${e.message}`);
+      continue;
+    }
+    if (!Array.isArray(rows)) continue;
+    formShardCount++;
+    for (const f of rows) {
+      if (!f || f.eventKey == null) continue;
+      const ek = String(f.eventKey);
+      formKeys.add(ek);
+      // The same match sits in both players' lists; the date is identical, so
+      // first writer wins and a row without one simply sorts last.
+      if (f.date && !formRowDate.has(ek)) formRowDate.set(ek, String(f.date));
     }
   }
+  console.log(`point-by-point: ${formKeys.size} distinct recent-form matches across ${formShardCount} player shard(s).`);
 
   let formResolved = 0, formDeferred = 0;
   for (const ek of formKeys) {

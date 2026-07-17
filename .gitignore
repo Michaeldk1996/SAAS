@@ -15,3 +15,9 @@ pbp/
 pbp-index.json
 setstats/
 setstats-index.json
+
+# Recent-form shards + their availability index: same story — one file per
+# player, rebuilt by bsp-pipeline.js on every run from the fixture window it
+# already fetches, and served straight from _site.
+form/
+form-index.json

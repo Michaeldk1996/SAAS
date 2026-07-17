@@ -2778,16 +2778,73 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
 // all-tier source as the profile's recentForm (ATP + Challenger + ITF, see
 // fetchRecentSinglesFixtures) so lower-ranked players who play mostly
 // Challenger/ITF still get real recent form — this is the single source of
-// truth for recent form across the whole dashboard. Capped to the last N the
-// modal actually displays so matches.json stays lean and the historical-stats
-// enrichment below only fetches box scores for shown matches; pct is over the
-// capped window to match the modal's "last N completed matches" wording.
-const RECENT_FORM_MODAL_CAP = 10;
+// truth for recent form across the whole dashboard.
+//
+// Two DIFFERENT windows, and the split is load-bearing:
+//
+//  * RECENT_FORM_PCT_WINDOW — what "form" MEANS. The form score, the hero
+//    W–L and the pills are all "how is he playing right now", so they stay on
+//    the last 10 and must not drift when the row cap moves. This is the number
+//    on the match card (m.p1RecentForm), so changing it changes the product.
+//  * RECENT_FORM_ROW_CAP — how many rows the Form tab can LIST. Rows are cheap
+//    (246 B each) and cost no API call: fetchRecentSinglesFixtures already
+//    pulls a 5-year window per player in one memoized call and we were throwing
+//    all but 10 of it away. The real cost of a row is the box score attached to
+//    it below (1,230 B + one fetch), which is why that enrichment carries its
+//    own per-run budget rather than scaling silently with this number.
+//
+// Env-tunable so the cap can be raised without a code change once we've seen a
+// few runs' API volume at the new value. 5 years of history is ~200 rows per
+// player; going straight there would queue ~9.6k one-time box-score fetches.
+const RECENT_FORM_PCT_WINDOW = 10;
+const RECENT_FORM_ROW_CAP = Number(process.env.RECENT_FORM_ROW_CAP || 40);
 async function buildRecentFormForMatch(playerKey, surfaceMap) {
   const full = recentFormFromFixtures(await fetchRecentSinglesFixtures(playerKey), playerKey, surfaceMap);
-  const matches = full.matches.slice(0, RECENT_FORM_MODAL_CAP);
-  const pct = matches.length ? Math.round((matches.filter(m => m.won).length / matches.length) * 1000) / 10 : null;
+  const matches = full.matches.slice(0, RECENT_FORM_ROW_CAP);
+  const scored = matches.slice(0, RECENT_FORM_PCT_WINDOW);
+  const pct = scored.length ? Math.round((scored.filter(m => m.won).length / scored.length) * 1000) / 10 : null;
   return { pct, matches };
+}
+
+// Lift every match's recent-form rows into one shard per player and blank the
+// fields on the match objects, so matches.json ships the scalar form pct and
+// nothing else. Called immediately before matches.json is written — by then the
+// rows carry their attached box scores, which is the whole point of the shard.
+//
+// The rows for a given player are identical across that player's cards (same
+// player key, same memoized fixture window), so the first card to carry them
+// wins and the rest are dropped as duplicates.
+const FORM_SHARD_DIR = 'form';
+const FORM_INDEX_PATH = 'form-index.json';
+function extractFormShards(matches) {
+  const byPlayer = new Map();
+  for (const m of matches) {
+    for (const [field, keyField] of [['p1RecentFormMatches', 'p1Key'], ['p2RecentFormMatches', 'p2Key']]) {
+      const rows = m[field];
+      const key = m[keyField];
+      if (rows && rows.length && key != null && !byPlayer.has(String(key))) {
+        byPlayer.set(String(key), rows);
+      }
+      m[field] = null;   // out of the critical path — the modal fetches the shard
+    }
+  }
+
+  fs.mkdirSync(FORM_SHARD_DIR, { recursive: true });
+  const index = [];
+  let bytes = 0;
+  for (const [key, rows] of byPlayer) {
+    const file = `${FORM_SHARD_DIR}/${key}.json`;
+    writeJsonAtomic(file, { key, matches: rows }, true);
+    bytes += fs.statSync(file).size;
+    index.push(key);
+  }
+  // Which players have form rows at all. The modal needs this BEFORE it renders,
+  // and a 404 per formless player is not an answer it can render against — so
+  // availability ships as data, not as a failed request (same reasoning as
+  // pbp-index.json).
+  writeJsonAtomic(FORM_INDEX_PATH, index, true);
+  const rowCount = [...byPlayer.values()].reduce((n, r) => n + r.length, 0);
+  console.log(`Wrote ${index.length} recent-form shard(s) to ${FORM_SHARD_DIR}/ (${rowCount} rows, ${(bytes / 1024).toFixed(0)} KB total, lazy — off the matches.json critical path).`);
 }
 
 // API-Tennis player_bday is "DD.MM.YYYY" (confirmed live).
@@ -3438,14 +3495,38 @@ async function runPipeline() {
   // never change — only uncached eventKeys are actually fetched here.
   // -----------------------------------------------------------------
   const uniqueEventKeys = new Set();
+  const formRowDate = new Map();   // event key -> match date, drives the fetch order below
   for (const m of matches) {
     for (const entry of [...(m.p1RecentFormMatches || []), ...(m.p2RecentFormMatches || [])]) {
-      if (entry.eventKey) uniqueEventKeys.add(String(entry.eventKey));
+      if (!entry.eventKey) continue;
+      const ek = String(entry.eventKey);
+      uniqueEventKeys.add(ek);
+      // The same match sits in both players' lists; the date is identical, so
+      // first writer wins and a row without one simply sorts last.
+      if (entry.date && !formRowDate.has(ek)) formRowDate.set(ek, String(entry.date));
     }
   }
   const historicalStatsCache = loadHistoricalStatsCache();
-  const uncachedEventKeys = [...uniqueEventKeys].filter(k => !(k in historicalStatsCache));
-  console.log(`Fetching real stats for ${uncachedEventKeys.length} uncached historical match(es) (${uniqueEventKeys.size - uncachedEventKeys.length} already cached)...`);
+  // Budgeted, newest-first, on a permanent cache. This loop used to fetch every
+  // uncached row in one run, which was fine at a 10-row cap (~426 keys, nearly
+  // all long cached) and is not at a higher one: the cap is the multiplier on
+  // this number, so an uncapped loop would turn a cap raise into thousands of
+  // serial 150ms-paced fetches in a single run and blow the pipeline's runtime.
+  // Deferred keys are simply absent from the cache and retried next run, and a
+  // row whose box score hasn't landed yet renders without its stat panel rather
+  // than not at all — so coverage converges over a few runs instead of the site
+  // waiting for all of it. Same total API cost, spread out.
+  // Newest first because that is the order the Form tab lists rows in: the
+  // months a visitor actually looks at should fill in first (the set-stats
+  // backfill in build-point-by-point.js learned this the hard way — ascending
+  // key order left June/July at 0% while March sat at 100%).
+  const MAX_HISTORICAL_STATS_FETCHES = Number(process.env.FORM_STATS_MAX_FETCHES || 250);
+  const allUncached = [...uniqueEventKeys]
+    .filter(k => !(k in historicalStatsCache))
+    .sort((a, b) => (formRowDate.get(b) || '').localeCompare(formRowDate.get(a) || ''));
+  const uncachedEventKeys = allUncached.slice(0, MAX_HISTORICAL_STATS_FETCHES);
+  const deferredStats = allUncached.length - uncachedEventKeys.length;
+  console.log(`Fetching real stats for ${uncachedEventKeys.length} uncached historical match(es) (${uniqueEventKeys.size - allUncached.length} already cached)...`);
   for (const eventKey of uncachedEventKeys) {
     const fixture = await fetchFixtureByMatchKey(eventKey);
     await new Promise(r => setTimeout(r, 150));
@@ -3477,6 +3558,10 @@ async function runPipeline() {
   }
   const historicalStatsSuccessCount = [...uniqueEventKeys].filter(k => historicalStatsCache[k]?.matchStats).length;
   console.log(`${historicalStatsSuccessCount}/${uniqueEventKeys.size} unique historical matches got real stats from API-Tennis (rest not available from provider). Attached to ${historicalStatsAttached} Form-tab row(s).`);
+  if (deferredStats) {
+    // Say it out loud rather than letting partial coverage read as complete.
+    console.log(`${deferredStats} Form-tab row(s) deferred — hit the ${MAX_HISTORICAL_STATS_FETCHES}-fetch/run cap; they resolve on later runs (cache is permanent).`);
+  }
 
   // Preserve odds/bestOdds/oddsMovement patched in by the refreshers between
   // pipeline runs. The pipeline's own odds source (The Odds API) has no ATP 250
@@ -3622,6 +3707,22 @@ async function runPipeline() {
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved.`);
 
+  // Recent-form rows move OUT of matches.json into one lazy shard per player.
+  //
+  // Measured on the live file before this change: the two row arrays were
+  // 975 KB — 27.7% of a 3.5 MB matches.json — and NOTHING on the page-load path
+  // read a single one of them. Every reader (the Form tab, Recent Results) sits
+  // behind openAnalysisModal, and the match card needs only the scalar
+  // m.p1RecentForm pct, which stays right here. So a visitor was downloading a
+  // quarter of the critical path to render nothing, on every visit.
+  //
+  // Sharded per PLAYER, not per match: a player appears on ~1.5 cards, and the
+  // same rows were serialised once per card. Per-player means each row ships
+  // once, and opening a second match with a shared player is a cache hit.
+  // Same shape/convention as the pbp + setstats shards: derived output, rebuilt
+  // every run from data already in hand, gitignored, published to _site.
+  extractFormShards(matches);
+
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
   const enriched = matches.filter(m => m.h2h !== null).length;
@@ -3687,4 +3788,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture };
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture, extractFormShards, buildRecentFormForMatch };
