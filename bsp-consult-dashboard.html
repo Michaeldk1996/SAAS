@@ -1434,6 +1434,68 @@
   [data-page="styles"] .ps-clutchwrap{ overflow-x:auto; }
   [data-page="styles"] .ps-crow{ min-width:560px; }
 }
+/* ===== Playing Styles redesign (signed-edge grid + archetype rows) ===== */
+[data-page="styles"] .ps-block{ margin-bottom:44px; }
+[data-page="styles"] .ps-eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:#5b6472; }
+[data-page="styles"] .ps-blocktitle{ margin:8px 0 0; font-size:26px; font-weight:800; letter-spacing:-0.02em; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; }
+[data-page="styles"] .ps-blocklead{ margin:10px 0 0; max-width:640px; font-size:13px; line-height:1.6; color:#8b93a3; }
+[data-page="styles"] .ps-key{ display:flex; gap:20px; margin:16px 0 18px; }
+[data-page="styles"] .ps-keyitem{ display:inline-flex; align-items:center; gap:8px; font-size:11.5px; color:#8b93a3; }
+[data-page="styles"] .ps-kdash{ width:16px; height:2px; border-radius:2px; display:inline-block; }
+[data-page="styles"] .ps-bdot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+[data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0b0f; overflow-x:auto; }
+[data-page="styles"] .ps-grid2{ display:grid; grid-template-columns:190px repeat(6,minmax(72px,1fr)); min-width:640px; }
+[data-page="styles"] .ps-gcorner{ padding:16px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; display:flex; align-items:flex-end; border-bottom:1px solid rgba(255,255,255,0.08); }
+[data-page="styles"] .ps-gcol{ padding:16px 8px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; letter-spacing:0.1em; color:#8b93a3; border-bottom:1px solid rgba(255,255,255,0.08); border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
+[data-page="styles"] .ps-grow-h{ padding:14px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; justify-content:center; transition:opacity .12s ease; cursor:default; }
+[data-page="styles"] .ps-grow-name{ font-size:13.5px; font-weight:700; color:#e7e9ee; white-space:nowrap; }
+[data-page="styles"] .ps-grow-code{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.12em; color:#5b6472; margin-top:3px; }
+[data-page="styles"] .ps-cell2{ padding:13px 6px; border-top:1px solid rgba(255,255,255,0.05); border-left:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; transition:opacity .12s ease, background .12s ease; }
+[data-page="styles"] .ps-edge{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; line-height:1; }
+[data-page="styles"] .ps-edge-g{ color:#3ECF8E; } [data-page="styles"] .ps-edge-r{ color:#E8607A; } [data-page="styles"] .ps-edge-n{ color:#9aa3b2; }
+[data-page="styles"] .ps-diag2 .ps-edge-n{ color:#3a4150; }
+[data-page="styles"] .ps-wr{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6472; }
+[data-page="styles"] .ps-grid2.ps-iso .ps-cell2, [data-page="styles"] .ps-grid2.ps-iso .ps-gcol, [data-page="styles"] .ps-grid2.ps-iso .ps-grow-h{ opacity:0.18; }
+[data-page="styles"] .ps-grid2.ps-iso .ps-lit{ opacity:1; }
+[data-page="styles"] .ps-grid2 .ps-hl{ background:rgba(255,255,255,0.045); }
+[data-page="styles"] .ps-rows{ border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0b0f; overflow:hidden; margin-top:16px; }
+[data-page="styles"] .ps-arow{ border-top:1px solid rgba(255,255,255,0.06); }
+[data-page="styles"] .ps-arow:first-child{ border-top:none; }
+[data-page="styles"] .ps-arow-head{ display:grid; grid-template-columns:1fr 300px 26px; gap:20px; align-items:center; padding:18px 22px; cursor:pointer; transition:background .12s ease; }
+[data-page="styles"] .ps-arow-head:hover{ background:rgba(255,255,255,0.02); }
+[data-page="styles"] .ps-arow-left{ display:flex; gap:16px; align-items:baseline; min-width:0; }
+[data-page="styles"] .ps-arow-idx{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6472; flex:none; }
+[data-page="styles"] .ps-arow-txt{ min-width:0; }
+[data-page="styles"] .ps-arow-title{ display:flex; align-items:baseline; gap:11px; }
+[data-page="styles"] .ps-arow-name{ font-size:16px; font-weight:700; color:#e7e9ee; }
+[data-page="styles"] .ps-arow-count{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; }
+[data-page="styles"] .ps-arow-desc{ margin:5px 0 0; font-size:12.5px; line-height:1.5; color:#8b93a3; max-width:560px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+[data-page="styles"] .ps-arow.open .ps-arow-desc{ white-space:normal; }
+[data-page="styles"] .ps-arow-bars{ display:flex; flex-direction:column; gap:9px; }
+[data-page="styles"] .ps-bar{ display:grid; grid-template-columns:1fr 96px 34px; gap:10px; align-items:center; }
+[data-page="styles"] .ps-barlabel{ font-size:11px; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-barkey{ display:block; font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; margin-bottom:1px; }
+[data-page="styles"] .ps-bartrack{ height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+[data-page="styles"] .ps-barfill{ height:100%; border-radius:4px; }
+[data-page="styles"] .ps-barfill-dom{ background:#3E7BFA; } [data-page="styles"] .ps-barfill-weak{ background:#5b6472; }
+[data-page="styles"] .ps-barpct{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#e7e9ee; text-align:right; }
+[data-page="styles"] .ps-arow-chev{ color:#5b6472; display:flex; justify-content:center; transition:transform .22s ease; }
+[data-page="styles"] .ps-arow.open .ps-arow-chev{ transform:rotate(180deg); }
+[data-page="styles"] .ps-arow-panel{ display:none; }
+[data-page="styles"] .ps-arow.open .ps-arow-panel{ display:block; }
+[data-page="styles"] .ps-rostertitle{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; padding:4px 22px 12px; }
+[data-page="styles"] .ps-roster{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 22px 22px; }
+[data-page="styles"] .ps-rplayer{ display:flex; align-items:center; gap:9px; padding:9px 12px; border:1px solid rgba(255,255,255,0.06); border-radius:9px; background:#0e1015; }
+[data-page="styles"] .ps-rdot{ width:7px; height:7px; border-radius:50%; flex:none; }
+[data-page="styles"] .ps-rname{ font-size:12.5px; color:#e7e9ee; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-relo{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#8b93a3; }
+[data-page="styles"] .ps-rempty{ padding:0 22px 20px; font-size:12px; color:#5b6472; }
+[data-page="styles"] .ps-rowlegend{ display:flex; gap:18px; margin-top:14px; }
+@media (max-width:720px){
+  [data-page="styles"] .ps-arow-head{ grid-template-columns:1fr 26px; }
+  [data-page="styles"] .ps-arow-bars{ grid-column:1 / -1; margin-top:12px; }
+  [data-page="styles"] .ps-roster{ grid-template-columns:1fr; }
+}
 </style>
 <div class="tabpage" data-page="tournaments">
   <div class="pagewrap">
@@ -1469,16 +1531,29 @@
 <!-- PLAYING STYLES TAB -->
 <div class="tabpage" data-page="styles">
   <div class="pagewrap">
-    <div class="pagehead">
-      <h1>The 6 ATP tennis playing styles</h1>
-      <p>Each cell is the win percentage of the row archetype against the column archetype, computed from real ATP results (2010–present) where both players fall in our classified pool — hover any cell for its match count. Rosters are classified from Jeff Sackmann match data and refresh automatically from the classifier; each name shows the player's current Elo rating (Tennis Abstract, refreshed weekly). Pairings with too few matches show "—" rather than an unreliable number.</p>
+        <!-- MATCHUP GRID -->
+    <div class="ps-block">
+      <span class="ps-eyebrow">Style vs style</span>
+      <h2 class="ps-blocktitle">The matchup grid</h2>
+      <p class="ps-blocklead">Read row beats column. The big figure is the edge — how far above or below an even 50% split the row style wins; the raw win rate sits beneath. Green is a strong matchup, red is weak. Hover to isolate a row or column.</p>
+      <div class="ps-key">
+        <span class="ps-keyitem"><i class="ps-kdash" style="background:#3ECF8E;"></i>Strong</span>
+        <span class="ps-keyitem"><i class="ps-kdash" style="background:#5b6472;"></i>~ Even</span>
+        <span class="ps-keyitem"><i class="ps-kdash" style="background:#E8607A;"></i>Weak</span>
+      </div>
+      <div id="psMatrix" class="ps-gridwrap"></div>
     </div>
-    <div id="psMatrix" class="ps-matrixwrap"></div>
-    <div class="ps-sectionhead">
-      <h2>Archetypes in detail</h2>
-      <span class="ps-sectionmeta" id="psSectionMeta">12 styles</span>
+    <!-- ARCHETYPE ROWS -->
+    <div class="ps-block">
+      <span class="ps-eyebrow">Six archetypes</span>
+      <h2 class="ps-blocktitle">The styles behind the grid</h2>
+      <div id="psCards" class="ps-rows"></div>
+      <div class="ps-rowlegend">
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#E8934B;"></i>Inconsistent Attacker</span>
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#3ECF8E;"></i>Pressure Player</span>
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#5b6472;"></i>Neither</span>
+      </div>
     </div>
-    <div id="psCards" class="ps-cardgrid"></div>
     <div class="ps-sectionhead">
       <h2>Clutch rating — under pressure</h2>
       <span class="ps-sectionmeta" id="psClutchMeta"></span>
@@ -1632,23 +1707,23 @@ document.getElementById('mainNav').addEventListener('click', e => {
 // matrix are computed from our own data (classify-styles.js -> playing-styles.json
 // + matchup-matrix.json); descriptions are our own. Order sets the matrix axes.
 const PS_ARCHETYPES = [
-  { id:'big_server', short:'Big Srv', name:'Big Server',
-    description:'The serve is the primary weapon \u2014 aces, unreturned serves and serve-plus-one. Quick points, few rallies, most dangerous on fast surfaces.',
+  { id:'big_server', code:'SRV', name:'Big Server',
+    description:'The serve is the weapon. Wins points in the first two shots through aces, unreturned serves, and serve + one winners.',
     count:null, players:[] },
-  { id:'solid_baseliner', short:'Solid BL', name:'Solid Baseliner',
-    description:'A balanced, consistent baseline game. Holds serve reliably, makes few errors and wins the long exchanges through steadiness rather than a single weapon.',
+  { id:'solid_baseliner', code:'SLB', name:'Solid Baseliner',
+    description:'Consistent and reliable from the back. High hold rate, low double faults, wins through steady dominance rather than flair.',
     count:null, players:[] },
-  { id:'counter_puncher', short:'Counter', name:'Counter Puncher',
-    description:'Turns defence into attack \u2014 elite return and break rate. Absorbs the opponent\u2019s pace, redirects it, and wins by breaking rather than blasting.',
+  { id:'counter_puncher', code:'CTR', name:'Counter Puncher',
+    description:'Returns everything and turns defence into attack. Thrives on long exchanges, neutralises opponents and strikes at the right moment.',
     count:null, players:[] },
-  { id:'all_court', short:'All-Court', name:'All-Court Player',
-    description:'Comfortable everywhere with no single dominant trait. Can serve, rally, defend and attack in equal measure \u2014 the mark of the most complete players.',
+  { id:'all_court', code:'ACP', name:'All-Court Player',
+    description:'No dominant weakness. Comfortable serving, returning, and at the net. Adapts to any opponent and any surface.',
     count:null, players:[] },
-  { id:'attacking_baseliner', short:'Attack BL', name:'Attacking Baseliner',
-    description:'Dictates from the baseline. Short points, aggressive returns and second-serve pressure \u2014 takes time away from the opponent and ends rallies early.',
+  { id:'attacking_baseliner', code:'ATB', name:'Attacking Baseliner',
+    description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
     count:null, players:[] },
-  { id:'solid_defender', short:'Defender', name:'Solid Defender',
-    description:'Wins through relentless defence. Extreme consistency, long rallies and very few winners \u2014 wears opponents down until they miss. Rare on the modern tour.',
+  { id:'solid_defender', code:'SLD', name:'Solid Defender',
+    description:'Extreme defensive specialist. Wins almost entirely through opponent errors. Absorbs everything, rarely takes the initiative, mentally wears opponents down.',
     count:null, players:[] },
 ];
 // Matchup matrix is COMPUTED from our own classification x real TML match results
@@ -1707,9 +1782,13 @@ async function renderPlayingStyles(){
       PS_ARCHETYPES.forEach(a => {
         const list = byArch[a.id];
         if (list && list.length){
-          list.sort((x, y) => (x.rank || 9999) - (y.rank || 9999));
           a.count = list.length;
-          a.players = list.slice(0, 12).map(p => ({ name: psShortName(p.name), elo: psEloFor(eloData, p.name) }));
+          a.players = list.map(p => {
+            const badges = p.badges || [];
+            const badge = badges.indexOf('inconsistent_attacker') !== -1 ? 'a'
+                        : badges.indexOf('pressure_player') !== -1 ? 'p' : '';
+            return { name: psShortName(p.name), elo: psEloFor(eloData, p.name), badge };
+          }).sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
         }
       });
     }
@@ -1719,76 +1798,83 @@ async function renderPlayingStyles(){
 }
 function psRenderMatrixAndCards(){
   const A = PS_ARCHETYPES, n = A.length;
-  // ----- matrix -----
+  // ---------- signed-edge matchup grid ----------
   const mx = document.getElementById('psMatrix');
-  let g = '<div class="ps-grid" style="grid-template-columns:132px repeat(' + n + ', minmax(0,1fr));">';
-  g += '<div class="ps-corner">Row beats column</div>';
-  A.forEach(a => { g += '<div class="ps-colhead" title="' + psEsc(a.name) + '">' + psEsc(a.short) + '</div>'; });
+  const edgeClass = pct => pct >= 55 ? 'ps-edge-g' : pct <= 45 ? 'ps-edge-r' : 'ps-edge-n';
+  const signed = pct => { const e = pct - 50; return (e > 0 ? '+' : e < 0 ? '−' : '') + Math.abs(e); };
+  let g = '<div class="ps-grid2" id="psGrid2">';
+  g += '<div class="ps-gcorner">Row beats col ▸</div>';
+  A.forEach((a, j) => { g += '<div class="ps-gcol" data-c="' + j + '" title="' + psEsc(a.name) + '">' + psEsc(a.code) + '</div>'; });
   A.forEach((rowA, i) => {
-    g += '<div class="ps-rowhead" title="' + psEsc(rowA.name) + '">' + psEsc(rowA.short) + '</div>';
+    g += '<div class="ps-grow-h" data-r="' + i + '"><span class="ps-grow-name">' + psEsc(rowA.name) + '</span><span class="ps-grow-code">' + psEsc(rowA.code) + '</span></div>';
     A.forEach((colA, j) => {
-      if (i === j){ g += '<div class="ps-diag"></div>'; return; }
+      if (i === j){ g += '<div class="ps-cell2 ps-diag2" data-r="' + i + '" data-c="' + j + '"><span class="ps-edge ps-edge-n">—</span></div>'; return; }
       const cell = psCellFor(i, j);
       if (!cell || cell.pct == null){
-        const nTxt = cell ? (cell.n + ' matches — too few to rate') : 'no data yet';
-        g += '<div class="ps-cell ps-cell-na" title="' + psEsc(rowA.name + ' vs ' + colA.name + ': ' + nTxt) + '">—</div>';
+        g += '<div class="ps-cell2" data-r="' + i + '" data-c="' + j + '" title="' + psEsc(rowA.name + ' vs ' + colA.name + ': ' + (cell ? cell.n + ' matches — too few to rate' : 'no data')) + '"><span class="ps-edge ps-edge-n">—</span></div>';
         return;
       }
       const tip = rowA.name + ' beats ' + colA.name + ': ' + cell.pct + '% (' + cell.n + ' matches)';
-      g += '<div class="ps-cell" style="background:' + psCellColor(cell.pct) + ';" title="' + psEsc(tip) + '">' + cell.pct + '</div>';
+      g += '<div class="ps-cell2" data-r="' + i + '" data-c="' + j + '" title="' + psEsc(tip) + '">' +
+        '<span class="ps-edge ' + edgeClass(cell.pct) + '">' + signed(cell.pct) + '</span>' +
+        '<span class="ps-wr">' + cell.pct + '%</span></div>';
     });
   });
   g += '</div>';
-  g += '<div class="ps-legend"><span>Unfavorable</span><div class="ps-legendbar">';
-  [20,30,40,50,60,70,80].forEach(v => { g += '<span style="background:' + psCellColor(v) + ';"></span>'; });
-  g += '</div><span>Favorable</span></div>';
   mx.innerHTML = g;
-  // ----- cards -----
-  const meta = document.getElementById('psSectionMeta');
-  if (meta) meta.textContent = n + ' styles';
-  const cards = document.getElementById('psCards');
+  psWireGridHover(document.getElementById('psGrid2'));
+
+  // ---------- archetype rows ----------
+  const rowsEl = document.getElementById('psCards');
   let html = '';
   A.forEach((a, i) => {
-    const mus = A.map((b, j) => { const cell = j === i ? null : psCellFor(i, j); return { name:b.name, self:(j === i), pct: cell ? cell.pct : null, n: cell ? cell.n : 0 }; })
-      .filter(m => !m.self);
-    const rated = mus.filter(m => m.pct != null).sort((x, y) => y.pct - x.pct);
-    const best = rated[0], worst = rated[rated.length - 1];
-    const extra = a.count != null ? a.count - a.players.length : 0;
-    html += '<div class="ps-card">';
-    html += '<div class="ps-cardhead"><h3 class="ps-cardname">' + psEsc(a.name) + '</h3>' +
-      (a.count != null ? '<span class="ps-count">' + a.count + (a.count === 1 ? ' player' : ' players') + '</span>' : '') + '</div>';
-    html += '<p class="ps-desc">' + psEsc(a.description) + '</p>';
-    if (best){
-      html += '<div class="ps-badges">' +
-        '<span class="ps-badge strong"><span class="ps-badgekey">Strong vs</span>' + psEsc(best.name) + ' \u00b7 ' + best.pct + '%</span>' +
-        (worst && worst !== best ? '<span class="ps-badge weak"><span class="ps-badgekey">Weak vs</span>' + psEsc(worst.name) + ' \u00b7 ' + worst.pct + '%</span>' : '') +
-        '</div>';
-    }
+    const mus = A.map((b, j) => ({ name: b.name, pct: j === i ? null : (psCellFor(i, j) || {}).pct }))
+      .filter((m, j) => j !== i && m.pct != null).sort((x, y) => y.pct - x.pct);
+    const dom = mus[0], weak = mus[mus.length - 1];
+    const cnt = a.count != null ? a.count : a.players.length;
+    const bar = (m, cls) => m
+      ? '<div class="ps-bar"><span class="ps-barlabel"><span class="ps-barkey">' + (cls === 'dom' ? 'Dom vs' : 'Weak vs') + '</span>' + psEsc(m.name) + '</span>' +
+        '<div class="ps-bartrack"><div class="ps-barfill ps-barfill-' + cls + '" style="width:' + m.pct + '%;"></div></div>' +
+        '<span class="ps-barpct">' + m.pct + '%</span></div>'
+      : '';
+    html += '<div class="ps-arow" id="psArow' + i + '">';
+    html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
+    html += '<div class="ps-arow-left"><span class="ps-arow-idx">' + String(i + 1).padStart(2, '0') + '</span>' +
+      '<div class="ps-arow-txt"><div class="ps-arow-title"><span class="ps-arow-name">' + psEsc(a.name) + '</span>' +
+      '<span class="ps-arow-count">' + cnt + ' player' + (cnt === 1 ? '' : 's') + '</span></div>' +
+      '<p class="ps-arow-desc">' + psEsc(a.description) + '</p></div></div>';
+    html += '<div class="ps-arow-bars">' + bar(dom, 'dom') + bar(weak, 'weak') + '</div>';
+    html += '<span class="ps-arow-chev">' + PS_CHEV + '</span></div>';
+    html += '<div class="ps-arow-panel"><div class="ps-arow-panelin"><div class="ps-rostertitle">Roster · by Elo</div><div class="ps-roster">';
     if (a.players.length){
-      html += '<div class="ps-chips">';
-      a.players.forEach(p => { const badge = p.elo != null ? p.elo : '\u2014'; html += '<span class="ps-chip">' + psEsc(p.name) + '<span class="ps-rank">' + badge + '</span></span>'; });
-      if (extra > 0) html += '<span class="ps-more">+' + extra + ' more</span>';
-      html += '</div>';
-    } else {
-      html += '<div class="ps-pending">Not identifiable from Sackmann match stats.</div>';
-    }
-    html += '<div class="ps-matchups"><div class="ps-matchupstitle">Matchups vs all styles</div>';
-    rated.concat(mus.filter(m => m.pct == null)).forEach(m => {
-      if (m.pct == null){
-        html += '<div class="ps-mrow ps-mrow-na"><span class="ps-mname" title="' + psEsc(m.name) + '">' + psEsc(m.name) + '</span>' +
-          '<div class="ps-track"></div><span class="ps-mpct">\u2014</span>' +
-          '<span class="ps-mn">' + (m.n || 0) + '</span></div>';
-        return;
-      }
-      const col = m.pct >= 50 ? '#3ba76a' : '#d05a5a';
-      html += '<div class="ps-mrow"><span class="ps-mname" title="' + psEsc(m.name) + '">' + psEsc(m.name) + '</span>' +
-        '<div class="ps-track"><div class="ps-fill" style="width:' + m.pct + '%;background:' + col + ';"></div></div>' +
-        '<span class="ps-mpct">' + m.pct + '%</span>' +
-        '<span class="ps-mn">' + m.n + '</span></div>';
-    });
-    html += '</div></div>';
+      a.players.forEach(p => {
+        const dot = p.badge === 'a' ? '#E8934B' : p.badge === 'p' ? '#3ECF8E' : '#5b6472';
+        html += '<div class="ps-rplayer"><span class="ps-rdot" style="background:' + dot + ';"></span>' +
+          '<span class="ps-rname" title="' + psEsc(p.name) + '">' + psEsc(p.name) + '</span>' +
+          '<span class="ps-relo">' + (p.elo != null ? p.elo : '—') + '</span></div>';
+      });
+    } else html += '<div class="ps-rempty">No qualified players.</div>';
+    html += '</div></div></div></div>';
   });
-  cards.innerHTML = html;
+  rowsEl.innerHTML = html;
+}
+const PS_CHEV = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+function psToggleRow(i){ const el = document.getElementById('psArow' + i); if (el) el.classList.toggle('open'); }
+function psWireGridHover(grid){
+  if (!grid) return;
+  const clear = () => { grid.classList.remove('ps-iso'); grid.querySelectorAll('.ps-lit,.ps-hl').forEach(e => e.classList.remove('ps-lit', 'ps-hl')); };
+  grid.addEventListener('mouseover', e => {
+    const t = e.target.closest('[data-r],[data-c]'); if (!t) return;
+    const r = t.getAttribute('data-r'), c = t.getAttribute('data-c');
+    grid.classList.add('ps-iso');
+    grid.querySelectorAll('.ps-lit,.ps-hl').forEach(el => el.classList.remove('ps-lit', 'ps-hl'));
+    grid.querySelectorAll('[data-r],[data-c]').forEach(el => {
+      const er = el.getAttribute('data-r'), ec = el.getAttribute('data-c');
+      if ((r != null && er === r) || (c != null && ec === c)) el.classList.add('ps-lit');
+    });
+    if (r != null && c != null) t.classList.add('ps-hl');
+  });
+  grid.addEventListener('mouseleave', clear);
 }
 // ----- clutch / under-pressure leaderboard (clutch-rating.js output) -----
 let clutchRendered = false;
