@@ -115,6 +115,13 @@ jobs:
           cp form-index.json _site/ 2>/dev/null || true
           cp -r form _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
+          # Playing Styles + Player Profile redesign data: Elo pill, clutch rating,
+          # archetype rosters, and the self-computed matchup matrix. Committed but
+          # not copied = silent 404 (Elo pill degrades; the Styles tab goes empty).
+          cp elo-ratings.json _site/ 2>/dev/null || true
+          cp clutch-rating.json _site/ 2>/dev/null || true
+          cp archetypes-classified.json _site/ 2>/dev/null || true
+          cp matchup-matrix.json _site/ 2>/dev/null || true
 
       # Fail loudly if a file the pages reference is missing from the artifact.
       # A 404 on auth.js only shows up as a dead button in the browser, so catch
