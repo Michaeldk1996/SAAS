@@ -6096,33 +6096,47 @@ function ppCareerYears(p){
   for (let y = debut - 1; y >= debut - 2; y--) rows.push({ onTour: false, year: String(y) });
   return { rows, total: tot };
 }
-// Illustrative closing-line odds model. NOT real betting data — the odds feed
-// carries no historical closing prices, so every number here is derived
-// deterministically from the player's REAL surface win rates purely to wire the
-// block's structure. The footnote and badge label it illustrative. The ordering
-// is meaningful (a clay-strong player shows clay as his value pocket); the
-// magnitudes are indicative only.
-function ppOddsModel(p){
-  const wrOf = s => { const k = p.kpis && p.kpis[s]; return k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0; };
-  let cw = 0, cl = 0;
-  ['Grass','Hard','Clay'].forEach(s => { const k = p.kpis && p.kpis[s]; if (k && k.record){ cw += k.record.won||0; cl += k.record.lost||0; } });
-  const careerWR = (cw + cl) ? (cw / (cw + cl) * 100) : 50;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const r1 = v => Math.round(v * 10) / 10;
-  const surfWR = { Clay: wrOf('Clay'), Hard: wrOf('Hard'), Grass: wrOf('Grass') };
-  const roiBySurface = ['Clay','Hard','Grass'].map(s => ({ s, roi: clamp(r1((surfWR[s] - careerWR) * 0.9), -18, 18) }));
-  const best = roiBySurface.slice().sort((a,b) => b.roi - a.roi)[0];
-  const edge = clamp(r1((surfWR[best.s] - careerWR) * 0.25), 1, 8);
-  const impliedWR = r1(careerWR - edge);
-  const actualVsImplied = r1(careerWR - impliedWR);
-  const flat = r1((careerWR - 58) * 0.55 + edge * 0.4);
-  const roiDog = r1(clamp(edge * 1.9 + 3, 2, 22));
-  const roiFav = r1((careerWR - 68) * 0.15);
-  const underpriced = flat >= 0;
-  return {
-    careerWR: r1(careerWR), impliedWR, actualVsImplied, flat, roiDog, roiFav,
-    roiBySurface, valueSurface: best.s, underpriced,
-  };
+// ---- Market performance: real closing prices, lazily sharded -------------------
+//
+// Built by build-odds-performance.js from odds-archive/ (tennis-data.co.uk closing
+// prices, 2004-present, mirrored into the repo). The index is small and loads with
+// the other heavy datasets; the per-player detail is a shard fetched on first open.
+//
+// Two rules this block must not break:
+//   1. A player with fewer than the builder's minimum priced matches gets NO shard
+//      and NO block. The archive is tour-level only, so most players outside the
+//      top ~150 have too thin a sample to say anything — showing a confident number
+//      off 5 matches is worse than showing nothing.
+//   2. There are no opening prices in this source, so nothing here is closing line
+//      value. It is performance against the CLOSING market, and the copy says so.
+let oddsPerfIndex = {};
+const _oddsPerfShards = {};
+const _oddsPerfPromises = {};
+async function loadOddsPerfIndex(){
+  try {
+    const res = await fetch('./odds-performance-index.json', { cache: 'no-cache' });
+    if (res.ok){ const d = await res.json(); oddsPerfIndex = d.players || {}; }
+  } catch (err){ console.warn('odds performance index load failed:', err.message); }
+}
+function loadOddsPerfShard(playerKey){
+  const pk = String(playerKey || '');
+  if (!pk) return Promise.resolve(null);
+  if (pk in _oddsPerfShards) return Promise.resolve(_oddsPerfShards[pk]);
+  if (_oddsPerfPromises[pk]) return _oddsPerfPromises[pk];
+  _oddsPerfPromises[pk] = fetch(`./odds-performance/${pk}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { _oddsPerfShards[pk] = d || null; return _oddsPerfShards[pk]; })
+    .catch(err => { console.warn(`odds performance shard ${pk} load failed:`, err.message); _oddsPerfShards[pk] = null; return null; });
+  return _oddsPerfPromises[pk];
+}
+// Re-render the open profile once the shard lands, so the block fills in place.
+function loadOddsPerfShardThenRerender(playerKey){
+  loadOddsPerfShard(playerKey).then(() => {
+    if (String(ppState.key) !== String(playerKey)) return;
+    const view = document.getElementById('playerProfileView');
+    const profile = playerProfiles[String(playerKey)];
+    if (view && profile && view.style.display !== 'none') view.innerHTML = buildPlayerProfileHtml(profile);
+  });
 }
 
 function buildPlayerProfileHtml(p){
@@ -6233,46 +6247,73 @@ function buildPlayerProfileHtml(p){
       </div>`;
   }).join('');
 
-  // ---- Odds performance (illustrative — see ppOddsModel) ----
-  const odds = ppOddsModel(p);
-  const gcol = '#3ECF8E', rcol = '#E8607A';
+  // ---- Market performance (real closing prices — see loadOddsPerfShard) ----
+  const gcol = '#3ECF8E', rcol = '#E8607A', ncol = '#8b93a3';
   const signed = (v, unit) => (v >= 0 ? '+' : '−') + Math.abs(v) + (unit || '');
+  const perfIndexed = oddsPerfIndex[String(p.key)];
+  const perf = _oddsPerfShards[String(p.key)];
+  if (perfIndexed && perf === undefined) loadOddsPerfShardThenRerender(p.key);
+  const oddsHtml = !perfIndexed ? '' : (!perf ? `
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;padding:22px 24px;">
+      <div style="font-size:12.5px;color:#6b7280;font-family:'IBM Plex Mono',monospace;">Loading market performance…</div>
+    </div>` : (() => {
+  const o = perf.overall;
+  // The verdict only makes a claim when the interval actually excludes zero. Most
+  // players sit inside the noise band, and "priced about right" is the honest
+  // headline for them — the old block asserted an edge for every single player.
+  const beats = o.ci95[0] > 0, trails = o.ci95[1] < 0;
+  const verdictColor = beats ? gcol : (trails ? rcol : ncol);
+  const verdictLabel = beats ? '↑ BEATS THE MARKET' : (trails ? '↓ MARKET OVERRATES' : '≈ PRICED ABOUT RIGHT');
+  const role = perf.byRole || {};
+  const roleTile = (k, label, sub) => {
+    const r = role[k];
+    return r
+      ? { label, value: signed(r.vsMarket, 'pt'), color: r.vsMarket >= 0 ? gcol : rcol, sub: `${r.matches} matches · ${sub} · ROI ${signed(r.roi, '%')}` }
+      : { label, value: '—', color: ncol, sub: 'Too few matches to measure' };
+  };
   const oddsTiles = [
-    { label: 'Flat-stake ROI', value: signed(odds.flat, '%'), color: odds.flat >= 0 ? gcol : rcol, sub: 'Backing every match at closing odds' },
-    { label: 'Actual vs implied', value: signed(odds.actualVsImplied, 'pt'), color: odds.actualVsImplied >= 0 ? gcol : rcol, sub: `${odds.careerWR}% won vs ${odds.impliedWR}% implied` },
-    { label: 'ROI as underdog', value: signed(odds.roiDog, '%'), color: odds.roiDog >= 0 ? gcol : rcol, sub: 'When priced above 2.00' },
-    { label: 'ROI as favourite', value: signed(odds.roiFav, '%'), color: odds.roiFav >= 0 ? gcol : rcol, sub: 'When priced below 2.00' },
+    { label: 'Vs market expectation', value: signed(o.vsMarket, 'pt'), color: beats ? gcol : (trails ? rcol : ncol),
+      sub: `Won ${o.actualWinRate}% · closing odds implied ${o.expectedWinRate}%` },
+    { label: 'Flat-stake ROI', value: signed(o.roi, '%'), color: o.roi >= 0 ? gcol : rcol,
+      sub: `1u every match at average closing price · ${signed(o.roiBest, '%')} at best price` },
+    roleTile('underdog', 'As underdog', 'priced above evens'),
+    roleTile('favourite', 'As favourite', 'priced below evens'),
   ].map(o => `
     <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:15px 16px;">
       <div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:9px;">${o.label}</div>
       <div style="font-size:23px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.02em;color:${o.color};line-height:1;">${o.value}</div>
       <div style="font-size:11px;color:#6b7280;margin-top:7px;line-height:1.4;">${o.sub}</div>
     </div>`).join('');
-  const oddsBars = odds.roiBySurface.map(b => {
-    const color = PP_SURF_COLORS[b.s];
-    const barColor = b.roi >= 0 ? gcol : rcol;
-    const w = Math.min(Math.abs(b.roi), 25) / 25 * 50;
-    const left = b.roi >= 0 ? '50%' : (50 - w) + '%';
+  // Surfaces the builder had enough priced matches to measure. A surface the player
+  // has barely played simply does not appear, rather than showing a bar built on 3 matches.
+  const surfaceRows = ['Clay','Hard','Grass'].map(s => ({ s, r: (perf.bySurface || {})[s] })).filter(x => x.r);
+  const oddsBars = surfaceRows.map(({ s, r }) => {
+    const color = PP_SURF_COLORS[s];
+    const barColor = r.vsMarket >= 0 ? gcol : rcol;
+    const w = Math.min(Math.abs(r.vsMarket), 15) / 15 * 50;
+    const left = r.vsMarket >= 0 ? '50%' : (50 - w) + '%';
     return `
       <div style="display:grid;grid-template-columns:52px 1fr 56px;align-items:center;gap:12px;">
-        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#cfd4de;"><span style="width:8px;height:8px;border-radius:50%;background:${color};"></span>${b.s}</span>
-        <span style="position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;display:block;">
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#cfd4de;"><span style="width:8px;height:8px;border-radius:50%;background:${color};"></span>${s}</span>
+        <span style="position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;display:block;" title="${r.matches} priced matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied">
           <span style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,0.18);"></span>
           <span style="position:absolute;top:0;bottom:0;left:${left};width:${w}%;background:${barColor};border-radius:5px;"></span>
         </span>
-        <span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${barColor};text-align:right;">${signed(b.roi, '%')}</span>
+        <span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${barColor};text-align:right;">${signed(r.vsMarket, 'pt')}</span>
       </div>`;
   }).join('');
-  const verdictColor = odds.underpriced ? gcol : rcol;
-  const verdictLabel = odds.underpriced ? '↑ UNDERPRICED' : '↓ OVERPRICED';
-  const oddsHtml = `
+  const bestSurface = surfaceRows.slice().sort((a, b) => b.r.vsMarket - a.r.vsMarket)[0];
+  const readout = beats || trails
+    ? `Over <strong style="color:#dcefe4;">${o.matches}</strong> priced matches the closing market has ${beats ? 'underrated' : 'overrated'} ${pesc(surname0(p))} by <strong style="color:#dcefe4;">${signed(o.vsMarket, 'pt')}</strong>${bestSurface ? `, most clearly on <strong style="color:#dcefe4;">${bestSurface.s.toLowerCase()}</strong>` : ''}. The 95% range is ${o.ci95[0]} to ${o.ci95[1]}pt, so the gap holds up as more than sampling noise.`
+    : `Across <strong style="color:#dcefe4;">${o.matches}</strong> priced matches ${pesc(surname0(p))} has finished within the closing market's expectation (${signed(o.vsMarket, 'pt')}, 95% range ${o.ci95[0]} to ${o.ci95[1]}pt). That range spans zero, so there is no measurable edge either way — the market prices him about right.`;
+  return `
     <div style="border:1px solid rgba(62,123,250,0.22);border-radius:16px;background:linear-gradient(180deg,rgba(62,123,250,0.05),rgba(62,123,250,0.01));padding:22px 24px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:11px;min-width:0;">
           <span style="width:34px;height:34px;border-radius:10px;background:rgba(62,123,250,0.14);border:1px solid rgba(62,123,250,0.32);display:flex;align-items:center;justify-content:center;color:#7ba4ff;flex:none;"><span style="width:18px;height:18px;display:flex;">${BSP_ICONS.target}</span></span>
           <div style="min-width:0;">
-            <div style="font-size:16px;font-weight:700;">Odds performance</div>
-            <div style="font-size:12.5px;color:#8b93a3;margin-top:2px;">How ${pesc(surname0(p))} performs against the market's implied probability — is he historically over- or under-priced?</div>
+            <div style="font-size:16px;font-weight:700;">Market performance</div>
+            <div style="font-size:12.5px;color:#8b93a3;margin-top:2px;">How ${pesc(surname0(p))} has performed against the closing market's implied probability, over ${o.matches} priced matches since ${Object.keys(perf.bySeason || {}).sort()[0] || '2004'}.</div>
           </div>
         </div>
         <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:${verdictColor};background:${ppHexA(verdictColor,0.12)};border:1px solid ${ppHexA(verdictColor,0.35)};border-radius:9px;padding:8px 14px;white-space:nowrap;flex:none;">${verdictLabel}</span>
@@ -6280,19 +6321,20 @@ function buildPlayerProfileHtml(p){
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" class="pp-odds-tiles">${oddsTiles}</div>
       <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px;" class="pp-odds-lower">
         <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;">
-          <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Flat-stake ROI by surface</div>
-          <div style="display:flex;flex-direction:column;gap:13px;">${oddsBars}</div>
+          <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Vs market expectation by surface</div>
+          <div style="display:flex;flex-direction:column;gap:13px;">${oddsBars || '<span style="font-size:12px;color:#5b6472;">No surface has enough priced matches to break out.</span>'}</div>
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;background:${ppHexA(verdictColor,0.06)};border:1px solid ${ppHexA(verdictColor,0.2)};border-left:3px solid ${ppHexA(verdictColor,0.55)};border-radius:12px;padding:16px 18px;">
           <span style="color:${verdictColor};display:flex;flex:none;margin-top:1px;width:15px;height:15px;">${BSP_ICONS.bulb}</span>
           <div>
-            <div style="font-size:13px;font-weight:700;color:#e7e9ee;margin-bottom:5px;">Where the value is</div>
-            <div style="font-size:12.5px;color:#b7c4bd;line-height:1.55;">The market ${odds.underpriced ? 'tends to underprice' : 'tends to overprice'} ${pesc(surname0(p))} — most sharply on <strong style="color:#dcefe4;">${odds.valueSurface.toLowerCase()}</strong>, where flat-staking has returned <strong style="color:#dcefe4;">${signed(odds.roiBySurface.find(b=>b.s===odds.valueSurface).roi,'%')}</strong> in this illustrative model.</div>
+            <div style="font-size:13px;font-weight:700;color:#e7e9ee;margin-bottom:5px;">${beats || trails ? 'Where the value is' : 'Read on the market'}</div>
+            <div style="font-size:12.5px;color:#b7c4bd;line-height:1.55;">${readout}</div>
           </div>
         </div>
       </div>
-      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;">Illustrative only — derived from surface win rates, not real closing-line history. ROI = return per 1u flat stake.</div>
+      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake.</div>
     </div>`;
+  })());
 
   // ---- Recent form card (carries its own surface filter, expandable season list) ----
   const formSurf = ppState.formSurface || 'All';
@@ -9046,7 +9088,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadPlayerStyles(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap
