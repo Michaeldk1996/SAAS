@@ -1,0 +1,61 @@
+name: BSP weekly Elo refresh
+
+# Refreshes elo-ratings.json from the Tennis Abstract ATP Elo report, which
+# itself updates weekly (Mondays). fetch-elo.js downloads + parses + caches the
+# ratings locally so the dashboard never hits tennisabstract.com at runtime; it
+# then commits elo-ratings.json back so the Playing Styles page shows current
+# Elo on its next publish. No API keys or npm dependencies (uses Node's built-in
+# fetch + fs).
+#
+# Cadence: Monday evening UTC, after Tennis Abstract has posted the week's update.
+# Adjust the cron if the source's timing drifts. workflow_dispatch allows a manual
+# refresh from the Actions tab any time.
+
+on:
+  schedule:
+    - cron: '0 20 * * 1'    # Mondays 20:00 UTC (after TA's weekly update lands)
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-elo
+  cancel-in-progress: false
+
+permissions:
+  contents: write            # needed to commit the refreshed elo-ratings.json
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch + parse Tennis Abstract Elo
+        run: node fetch-elo.js
+
+      - name: Commit refreshed elo-ratings.json (only if changed)
+        run: |
+          if git diff --quiet -- elo-ratings.json; then
+            echo "No Elo changes to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-elo-bot"
+          git config user.email "bsp-elo-bot@users.noreply.github.com"
+          git add elo-ratings.json
+          git commit -m "chore(elo): weekly Tennis Abstract Elo refresh [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed elo-ratings.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push elo-ratings.json after 3 attempts."
+          exit 1

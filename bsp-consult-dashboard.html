@@ -1362,8 +1362,26 @@
 [data-page="styles"] .ps-fill{ height:100%; border-radius:4px; }
 [data-page="styles"] .ps-mpct{ font-size:11.5px; text-align:right; color:var(--text); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
 [data-page="styles"] .ps-mn{ font-size:11px; text-align:right; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-clutchnote{ font-size:12px; line-height:1.5; color:var(--text-dim); margin:0 0 14px; max-width:720px; }
+[data-page="styles"] .ps-clutchwrap{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); overflow:hidden; }
+[data-page="styles"] .ps-cscroll{ max-height:560px; overflow-y:auto; }
+[data-page="styles"] .ps-crow{ display:grid; grid-template-columns:30px minmax(96px,1.3fr) 88px 42px 52px 52px 46px 48px; align-items:center; gap:8px; padding:7px 14px; border-bottom:1px solid var(--border); }
+[data-page="styles"] .ps-crow:last-child{ border-bottom:none; }
+[data-page="styles"] .ps-chead{ position:sticky; top:0; background:var(--panel-2,var(--panel)); z-index:1; }
+[data-page="styles"] .ps-chead > span{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); }
+[data-page="styles"] .ps-crank{ font-size:11px; color:var(--text-faint); font-family:var(--mx-font-mono,'Space Grotesk',monospace); text-align:right; }
+[data-page="styles"] .ps-cname{ font-size:12.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-cname .ps-clow{ font-size:9px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); border:1px solid var(--border); border-radius:3px; padding:0 4px; margin-left:6px; }
+[data-page="styles"] .ps-ctrack{ height:7px; background:var(--panel-2); border-radius:4px; overflow:hidden; }
+[data-page="styles"] .ps-cfill{ height:100%; border-radius:4px; background:var(--accent,#5b8def); }
+[data-page="styles"] .ps-cidx{ font-size:12.5px; font-weight:600; text-align:right; color:var(--text); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-ccomp{ font-size:11px; text-align:right; color:var(--text-dim); font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
+[data-page="styles"] .ps-crow.dim .ps-cname, [data-page="styles"] .ps-crow.dim .ps-cidx{ color:var(--text-dim); }
+[data-page="styles"] .ps-crow.dim .ps-ccomp{ color:var(--text-faint); }
 @media (max-width:720px){
   [data-page="styles"] .ps-cardgrid{ grid-template-columns:1fr; }
+  [data-page="styles"] .ps-clutchwrap{ overflow-x:auto; }
+  [data-page="styles"] .ps-crow{ min-width:560px; }
 }
 </style>
 <div class="tabpage" data-page="tournaments">
@@ -1402,7 +1420,7 @@
   <div class="pagewrap">
     <div class="pagehead">
       <h1>The 12 ATP tennis playing styles</h1>
-      <p>Matchup matrix computed over 150,000+ ATP matches since 2010. Each cell shows the win percentage of the row against the column. Player rosters are classified from Jeff Sackmann match data (2010–2026 career aggregate).</p>
+      <p>Matchup matrix computed over 150,000+ ATP matches since 2010. Each cell shows the win percentage of the row against the column. Player rosters are classified from Jeff Sackmann match data (2010–2026 career aggregate) and refresh automatically from the classifier — each name shows the player's current Elo rating (Tennis Abstract, refreshed weekly).</p>
     </div>
     <div id="psMatrix" class="ps-matrixwrap"></div>
     <div class="ps-sectionhead">
@@ -1410,6 +1428,12 @@
       <span class="ps-sectionmeta" id="psSectionMeta">12 styles</span>
     </div>
     <div id="psCards" class="ps-cardgrid"></div>
+    <div class="ps-sectionhead">
+      <h2>Clutch rating — under pressure</h2>
+      <span class="ps-sectionmeta" id="psClutchMeta"></span>
+    </div>
+    <p class="ps-clutchnote">Self-derived from the same match data — no ATP/Infosys feed. Index is the mean pool-percentile of four under-pressure components: break points saved and converted, tiebreaks won, and deciding sets won. Players below the sample floor on a component are marked low-confidence, not guessed.</p>
+    <div id="psClutch" class="ps-clutchwrap"></div>
   </div>
 </div>
 
@@ -1556,40 +1580,40 @@ document.getElementById('mainNav').addEventListener('click', e => {
 const PS_ARCHETYPES = [
   { id:'allcourt', short:'All-Court', name:'All-Court Elite',
     description:'The best players in the world. Able to do everything: defend, attack, come to the net. Dominate every style.',
-    count:6, players:[{name:'Alcaraz',rank:1},{name:'Sinner',rank:2},{name:'Zverev',rank:3},{name:'Djokovic',rank:4},{name:'Ruud',rank:12},{name:'Medvedev',rank:13}] },
+    count:6, players:[{name:"Sinner",elo:2332},{name:"Alcaraz",elo:2157},{name:"Zverev",elo:2115},{name:"Djokovic",elo:2076},{name:"Medvedev",elo:1971},{name:"Ruud",elo:1969}] },
   { id:'attirreg', short:'Inconsist.', name:'Inconsistent Attacker',
     description:'Players with high offensive potential but inconsistent. Capable of the best and the worst in the same match.',
-    count:7, players:[{name:'Taberner',rank:98},{name:'Mochizuki',rank:130},{name:'Nardi',rank:151},{name:'Basavareddy',rank:154},{name:'Ymer',rank:171},{name:'Gombos',rank:296},{name:'Vavassori',rank:334}] },
+    count:7, players:[{name:"Basavareddy",elo:1722},{name:"Vavassori",elo:1688},{name:"Taberner",elo:1610},{name:"Nardi",elo:1587},{name:"Mochizuki",elo:1575},{name:"Ymer",elo:1551},{name:"Gombos",elo:1463}] },
   { id:'attlift', short:'Topspin', name:'Baseline Attacker (Topspin)',
     description:'Baseline game built on topspin and heavy rotation. Construct points with patience and angles.',
-    count:3, players:[{name:'Cobolli',rank:22},{name:'Kubler',rank:195},{name:'Brouwer',rank:1067}] },
+    count:3, players:[{name:"Cobolli",elo:1916},{name:"Kubler",elo:1685},{name:"Brouwer",elo:null}] },
   { id:'attpower', short:'Power', name:'Baseline Attacker (Power)',
     description:'Baseline game built on power. Flat, heavy strikes aimed at suffocating the opponent.',
-    count:2, players:[{name:'Rune',rank:15},{name:'Machac',rank:41}] },
+    count:2, players:[{name:"Machac",elo:1866},{name:"Rune",elo:1757}] },
   { id:'bigsrv', short:'Big Srv', name:'Big Server',
     description:'The serve as the main weapon. Quick points, few rallies. Dangerous on fast surfaces.',
-    count:9, players:[{name:'Shelton',rank:9},{name:'Rinderknech',rank:27},{name:'Mpetshi Perricard',rank:58},{name:'Opelka',rank:60},{name:'Medjedovic',rank:67},{name:'Jarry',rank:133},{name:'Eubanks',rank:182},{name:'Gojo',rank:293},{name:'Kyrgios',rank:670}] },
+    count:9, players:[{name:"Shelton",elo:1939},{name:"Medjedovic",elo:1822},{name:"Rinderknech",elo:1789},{name:"Opelka",elo:1749},{name:"Mpetshi Perricard",elo:1725},{name:"Gojo",elo:1676},{name:"Jarry",elo:1648},{name:"Eubanks",elo:1523},{name:"Kyrgios",elo:null}] },
   { id:'bsbl', short:'BS+BL', name:'Big Server + Baseliner',
     description:'Big serve combined with a solid baseline game. More complete than pure Big Servers.',
-    count:29, players:[{name:'Auger-Aliassime',rank:5},{name:'Fritz',rank:9},{name:'Draper',rank:10},{name:'Bublik',rank:11},{name:'Mensik',rank:18},{name:'Griekspoor',rank:25},{name:'Nakashima',rank:33},{name:'Shapovalov',rank:37},{name:'Diallo',rank:40},{name:'Cilic',rank:47}] },
+    count:29, players:[{name:"Auger-Aliassime",elo:1973},{name:"Fritz",elo:1927},{name:"Mensik",elo:1917},{name:"Bublik",elo:1903},{name:"Berrettini",elo:1840},{name:"Nakashima",elo:1828},{name:"Draper",elo:1822},{name:"Hurkacz",elo:1822},{name:"Monfils",elo:1803},{name:"Cilic",elo:1796}] },
   { id:'counter', short:'Counter P.', name:'Offensive Counter-Puncher',
     description:"Defenders who turn defense into attack. Use the opponent's pace against them.",
-    count:15, players:[{name:'De Minaur',rank:6},{name:'Musetti',rank:7},{name:'Davidovich Fokina',rank:14},{name:'Paul',rank:20},{name:'Norrie',rank:28},{name:'Van De Zandschulp',rank:54},{name:'Fucsovics',rank:57},{name:'Brooksby',rank:63},{name:'Goffin',rank:119},{name:'Gasquet',rank:182}] },
+    count:15, players:[{name:"De Minaur",elo:1961},{name:"Paul",elo:1943},{name:"Davidovich Fokina",elo:1906},{name:"Musetti",elo:1864},{name:"Norrie",elo:1816},{name:"Fucsovics",elo:1771},{name:"Van De Zandschulp",elo:1740},{name:"Brooksby",elo:1726},{name:"Nishikori",elo:1714},{name:"Goffin",elo:1654}] },
   { id:'sv', short:'S&V', name:'Serve & Volleyer',
     description:'Classic style: serve-and-volley. Very rare on the current tour. Not identifiable from Sackmann match statistics alone.',
     count:null, players:[] },
   { id:'soldef', short:'Sol. Def.', name:'Solid Defensive',
     description:'Ultra-consistent baseliners. Few errors, lots of balls returned. Wear the opponent down mentally.',
-    count:18, players:[{name:'Moutet',rank:35},{name:'Mannarino',rank:45},{name:'Prizmic',rank:79},{name:'Dzumhur',rank:87},{name:'Muller',rank:105},{name:'Nishioka',rank:116},{name:'Basilashvili',rank:117},{name:'Gaston',rank:118},{name:'McDonald',rank:129},{name:'Koepfer',rank:147}] },
+    count:18, players:[{name:"Prizmic",elo:1840},{name:"Kwon",elo:1768},{name:"Moutet",elo:1733},{name:"Nishioka",elo:1689},{name:"Mannarino",elo:1676},{name:"Muller",elo:1661},{name:"Gaston",elo:1658},{name:"Basilashvili",elo:1636},{name:"Dzumhur",elo:1625},{name:"McDonald",elo:1618}] },
   { id:'soloffsrv', short:'Off. Srv', name:'Solid Offensive - Server',
     description:'Complete players whose serve is the main advantage (ace rate \u2265 7%). Solid baseline game but take the initiative through the serve.',
-    count:46, players:[{name:'Rublev',rank:16},{name:'Khachanov',rank:17},{name:'Lehecka',rank:19},{name:'Fils',rank:21},{name:'Fonseca',rank:29},{name:'Tiafoe',rank:30},{name:'Vacherot',rank:31},{name:'Tabilo',rank:35},{name:'Humbert',rank:36},{name:'Bergs',rank:39}] },
+    count:46, players:[{name:"Fils",elo:2009},{name:"Lehecka",elo:1935},{name:"Fonseca",elo:1918},{name:"Tiafoe",elo:1916},{name:"Rublev",elo:1890},{name:"Collignon",elo:1883},{name:"Humbert",elo:1856},{name:"Tsitsipas",elo:1833},{name:"Khachanov",elo:1831},{name:"Bergs",elo:1817}] },
   { id:'soloff', short:'Sol. Off.', name:'Solid Offensive - Core',
     description:'Solid, complete players with no marked weakness or dominant weapon. The backbone of the tour.',
-    count:22, players:[{name:'Tien',rank:26},{name:'Michelsen',rank:42},{name:'Marozsan',rank:49},{name:'Borges',rank:52},{name:'Majchrzak',rank:59},{name:'Kecmanovic',rank:70},{name:'Giron',rank:77},{name:'Shevchenko',rank:85},{name:'Svajda',rank:90},{name:'Hijikata',rank:96}] },
+    count:22, players:[{name:"Tien",elo:1922},{name:"Majchrzak",elo:1799},{name:"Michelsen",elo:1797},{name:"Marozsan",elo:1787},{name:"Borges",elo:1774},{name:"Kecmanovic",elo:1768},{name:"Shang",elo:1746},{name:"Svajda",elo:1743},{name:"Giron",elo:1737},{name:"Hijikata",elo:1734}] },
   { id:'terrien', short:'Clay', name:'Pure Clay-Courter',
     description:'Clay-court specialists. Sliding, endurance and topspin. Fearsome on clay, struggling on fast surfaces.',
-    count:30, players:[{name:'Cerundolo',rank:21},{name:'Darderi',rank:25},{name:'Munar',rank:38},{name:'Navone',rank:44},{name:'Kopriva',rank:55},{name:'Hanfmann',rank:59},{name:'Ugo Carabelli',rank:61},{name:'Baez',rank:65},{name:'Trungelliti',rank:78},{name:'Misolic',rank:79}] },
+    count:30, players:[{name:"Cerundolo",elo:1915},{name:"Darderi",elo:1821},{name:"Navone",elo:1812},{name:"Hanfmann",elo:1781},{name:"Munar",elo:1780},{name:"Molcan",elo:1747},{name:"Ugo Carabelli",elo:1747},{name:"Baez",elo:1745},{name:"Kopriva",elo:1727},{name:"Djere",elo:1697}] },
 ];
 const PS_MATRIX = [
   [null,84,76,77,81,78,77,81,78,84,90,89],
@@ -1627,8 +1651,52 @@ function psCellColor(v){
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 let psRendered = false;
-function renderPlayingStyles(){
+function psShortName(name){ return String(name || '').replace(/^[A-Z]\.\s*/, '').trim(); }
+// Elo lookup — mirrors fetch-elo.js's key logic (last surname token + first initial,
+// with a unique-last-token fallback). Keep the two in sync.
+function psEloNorm(name){
+  return String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function psEloFor(elo, name){
+  if (!elo) return null;
+  const p = psEloNorm(name).split(' ').filter(Boolean);
+  if (p.length < 2) return null;
+  const key = p[p.length - 1] + '|' + p[0][0], tok = p[p.length - 1];
+  if (elo.ratings && elo.ratings[key] != null) return elo.ratings[key];
+  if (elo.bySurname && elo.bySurname[tok] != null) return elo.bySurname[tok];
+  return null;
+}
+async function renderPlayingStyles(){
   if (psRendered) return;
+  psRendered = true;
+  // Live Elo ratings (fetch-elo.js output, refreshed weekly from Tennis Abstract).
+  let eloData = null;
+  try { const er = await fetch('./elo-ratings.json', { cache:'no-cache' }); if (er.ok) eloData = await er.json(); }
+  catch(err){ console.warn('elo-ratings.json load failed:', err.message); }
+  // Overlay live rosters from archetypes-classified.json (classify-archetypes.js output).
+  // Descriptions + the matchup matrix stay built-in; only rosters/counts refresh. Falls
+  // back to the built-in rosters if the file can't be loaded.
+  try {
+    const res = await fetch('./archetypes-classified.json', { cache:'no-cache' });
+    if (res.ok){
+      const data = await res.json();
+      const byArch = {};
+      (data.players || []).forEach(p => { (byArch[p.archetype] = byArch[p.archetype] || []).push(p); });
+      PS_ARCHETYPES.forEach(a => {
+        const list = byArch[a.id];
+        if (list && list.length){
+          list.sort((x, y) => (x.rank || 9999) - (y.rank || 9999));
+          a.count = list.length;
+          a.players = list.slice(0, 12).map(p => ({ name: psShortName(p.name), elo: psEloFor(eloData, p.name) }));
+        }
+      });
+    }
+  } catch(err){ console.warn('archetypes-classified.json load failed, using built-in rosters:', err.message); }
+  psRenderMatrixAndCards();
+  renderClutchRating();
+}
+function psRenderMatrixAndCards(){
   const A = PS_ARCHETYPES, n = A.length;
   // ----- matrix -----
   const mx = document.getElementById('psMatrix');
@@ -1663,7 +1731,7 @@ function renderPlayingStyles(){
     const extra = a.count != null ? a.count - a.players.length : 0;
     html += '<div class="ps-card">';
     html += '<div class="ps-cardhead"><h3 class="ps-cardname">' + psEsc(a.name) + '</h3>' +
-      (a.count != null ? '<span class="ps-count">' + a.count + ' players</span>' : '') + '</div>';
+      (a.count != null ? '<span class="ps-count">' + a.count + (a.count === 1 ? ' player' : ' players') + '</span>' : '') + '</div>';
     html += '<p class="ps-desc">' + psEsc(a.description) + '</p>';
     html += '<div class="ps-badges">' +
       '<span class="ps-badge strong"><span class="ps-badgekey">Strong vs</span>' + psEsc(best.name) + ' \u00b7 ' + best.pct + '%</span>' +
@@ -1671,7 +1739,7 @@ function renderPlayingStyles(){
       '</div>';
     if (a.players.length){
       html += '<div class="ps-chips">';
-      a.players.forEach(p => { html += '<span class="ps-chip">' + psEsc(p.name) + '<span class="ps-rank">#' + p.rank + '</span></span>'; });
+      a.players.forEach(p => { const badge = p.elo != null ? p.elo : '\u2014'; html += '<span class="ps-chip">' + psEsc(p.name) + '<span class="ps-rank">' + badge + '</span></span>'; });
       if (extra > 0) html += '<span class="ps-more">+' + extra + ' more</span>';
       html += '</div>';
     } else {
@@ -1688,7 +1756,46 @@ function renderPlayingStyles(){
     html += '</div></div>';
   });
   cards.innerHTML = html;
-  psRendered = true;
+}
+// ----- clutch / under-pressure leaderboard (clutch-rating.js output) -----
+let clutchRendered = false;
+async function renderClutchRating(){
+  if (clutchRendered) return;
+  const wrap = document.getElementById('psClutch');
+  const meta = document.getElementById('psClutchMeta');
+  if (!wrap) return;
+  let players = null;
+  try {
+    const res = await fetch('./clutch-rating.json', { cache:'no-cache' });
+    if (res.ok){ players = (await res.json()).players || []; }
+  } catch(err){ console.warn('clutch-rating.json load failed:', err.message); }
+  if (!players || !players.length){
+    wrap.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--text-faint);">Clutch rating unavailable — run clutch-rating.js to generate clutch-rating.json.</div>';
+    return;
+  }
+  clutchRendered = true;
+  const ranked = players.filter(p => p.clutchIndex != null).sort((a, b) => b.clutchIndex - a.clutchIndex);
+  if (meta) meta.textContent = ranked.length + ' players';
+  const num = (v, suf) => v == null ? '—' : (v.toFixed(0) + (suf || ''));
+  let h = '<div class="ps-crow ps-chead"><span></span><span>Player</span><span>Under-pressure index</span><span></span>' +
+    '<span style="text-align:right">BP svd</span><span style="text-align:right">BP cnv</span><span style="text-align:right">TB won</span><span style="text-align:right">Dec won</span></div>';
+  h += '<div class="ps-cscroll">';
+  ranked.forEach((p, i) => {
+    const low = p.confidence === 'low' || p.confidence === 'med';
+    const flag = low ? '<span class="ps-clow" title="Below sample floor on one or more components">low n</span>' : '';
+    h += '<div class="ps-crow' + (low ? ' dim' : '') + '">' +
+      '<span class="ps-crank">' + (i + 1) + '</span>' +
+      '<span class="ps-cname" title="' + psEsc(p.name) + '">' + psEsc(psShortName(p.name)) + flag + '</span>' +
+      '<span class="ps-ctrack"><span class="ps-cfill" style="width:' + Math.max(2, Math.min(100, p.clutchIndex)) + '%;"></span></span>' +
+      '<span class="ps-cidx">' + p.clutchIndex.toFixed(0) + '</span>' +
+      '<span class="ps-ccomp">' + num(p.bpSavedPct, '%') + '</span>' +
+      '<span class="ps-ccomp">' + num(p.bpConvPct, '%') + '</span>' +
+      '<span class="ps-ccomp">' + num(p.tbWinPct, '%') + '</span>' +
+      '<span class="ps-ccomp">' + num(p.decWinPct, '%') + '</span>' +
+      '</div>';
+  });
+  h += '</div>';
+  wrap.innerHTML = h;
 }
 
 /* ---------- MATCHES ---------- */

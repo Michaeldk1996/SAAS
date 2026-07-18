@@ -1,0 +1,3195 @@
+{
+  "generatedAt": "2026-07-18T02:09:29.003Z",
+  "source": "Self-derived from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database) — no ATP/Infosys data",
+  "window": "2010-2026 (career aggregate)",
+  "method": "ATP Under-Pressure components: BP saved %, BP converted %, tiebreak win %, deciding-set win %. atpStyleRating = raw sum of the four (ATP board method); clutchIndex = mean pool-percentile 0-100.",
+  "floors": {
+    "minMatches": 20,
+    "minSvpt": 400,
+    "minBpFaced": 50,
+    "minBpChances": 50,
+    "minTiebreaks": 10,
+    "minDecidingSets": 8
+  },
+  "players": [
+    {
+      "name": "C. Alcaraz",
+      "rank": 1,
+      "clutchIndex": 92,
+      "atpStyleRating": 240.3,
+      "confidence": "high",
+      "bpSavedPct": 64.3,
+      "bpConvPct": 41.7,
+      "tbWinPct": 62.3,
+      "decWinPct": 72,
+      "sample": {
+        "bpFaced": 1855,
+        "bpChances": 3189,
+        "tbPlayed": 151,
+        "decPlayed": 93
+      }
+    },
+    {
+      "name": "J. Sinner",
+      "rank": 2,
+      "clutchIndex": 97.3,
+      "atpStyleRating": 241.9,
+      "confidence": "high",
+      "bpSavedPct": 66.9,
+      "bpConvPct": 43.2,
+      "tbWinPct": 63.8,
+      "decWinPct": 68,
+      "sample": {
+        "bpFaced": 2087,
+        "bpChances": 3213,
+        "tbPlayed": 163,
+        "decPlayed": 103
+      }
+    },
+    {
+      "name": "A. Zverev",
+      "rank": 3,
+      "clutchIndex": 79.9,
+      "atpStyleRating": 222.5,
+      "confidence": "high",
+      "bpSavedPct": 61.7,
+      "bpConvPct": 40.8,
+      "tbWinPct": 59.9,
+      "decWinPct": 60.2,
+      "sample": {
+        "bpFaced": 3926,
+        "bpChances": 5599,
+        "tbPlayed": 359,
+        "decPlayed": 241
+      }
+    },
+    {
+      "name": "N. Djokovic",
+      "rank": 4,
+      "clutchIndex": 97.8,
+      "atpStyleRating": 248.2,
+      "confidence": "high",
+      "bpSavedPct": 65.8,
+      "bpConvPct": 44.1,
+      "tbWinPct": 64.9,
+      "decWinPct": 73.4,
+      "sample": {
+        "bpFaced": 4965,
+        "bpChances": 9337,
+        "tbPlayed": 388,
+        "decPlayed": 222
+      }
+    },
+    {
+      "name": "F. Auger-Aliassime",
+      "rank": 5,
+      "clutchIndex": 71.6,
+      "atpStyleRating": 218.2,
+      "confidence": "high",
+      "bpSavedPct": 64.2,
+      "bpConvPct": 36.7,
+      "tbWinPct": 59.3,
+      "decWinPct": 58,
+      "sample": {
+        "bpFaced": 2390,
+        "bpChances": 2840,
+        "tbPlayed": 243,
+        "decPlayed": 131
+      }
+    },
+    {
+      "name": "A. De Minaur",
+      "rank": 6,
+      "clutchIndex": 69.9,
+      "atpStyleRating": 213.9,
+      "confidence": "high",
+      "bpSavedPct": 60.9,
+      "bpConvPct": 42.4,
+      "tbWinPct": 56.1,
+      "decWinPct": 54.6,
+      "sample": {
+        "bpFaced": 2965,
+        "bpChances": 3519,
+        "tbPlayed": 189,
+        "decPlayed": 141
+      }
+    },
+    {
+      "name": "L. Musetti",
+      "rank": 7,
+      "clutchIndex": 64.7,
+      "atpStyleRating": 214,
+      "confidence": "high",
+      "bpSavedPct": 58.8,
+      "bpConvPct": 40.1,
+      "tbWinPct": 54.1,
+      "decWinPct": 61,
+      "sample": {
+        "bpFaced": 1905,
+        "bpChances": 2241,
+        "tbPlayed": 135,
+        "decPlayed": 100
+      }
+    },
+    {
+      "name": "T. Fritz",
+      "rank": 9,
+      "clutchIndex": 66.9,
+      "atpStyleRating": 212.7,
+      "confidence": "high",
+      "bpSavedPct": 64.1,
+      "bpConvPct": 37.9,
+      "tbWinPct": 55.9,
+      "decWinPct": 54.8,
+      "sample": {
+        "bpFaced": 2982,
+        "bpChances": 3659,
+        "tbPlayed": 320,
+        "decPlayed": 188
+      }
+    },
+    {
+      "name": "B. Shelton",
+      "rank": 9,
+      "clutchIndex": 68.5,
+      "atpStyleRating": 214.1,
+      "confidence": "high",
+      "bpSavedPct": 69,
+      "bpConvPct": 38.8,
+      "tbWinPct": 51.8,
+      "decWinPct": 54.5,
+      "sample": {
+        "bpFaced": 1078,
+        "bpChances": 1041,
+        "tbPlayed": 141,
+        "decPlayed": 66
+      }
+    },
+    {
+      "name": "J. Draper",
+      "rank": 10,
+      "clutchIndex": 72.7,
+      "atpStyleRating": 211.1,
+      "confidence": "high",
+      "bpSavedPct": 65.4,
+      "bpConvPct": 41.5,
+      "tbWinPct": 52.1,
+      "decWinPct": 52.1,
+      "sample": {
+        "bpFaced": 911,
+        "bpChances": 1224,
+        "tbPlayed": 71,
+        "decPlayed": 48
+      }
+    },
+    {
+      "name": "A. Bublik",
+      "rank": 11,
+      "clutchIndex": 63.3,
+      "atpStyleRating": 211.6,
+      "confidence": "high",
+      "bpSavedPct": 63.2,
+      "bpConvPct": 38.5,
+      "tbWinPct": 50,
+      "decWinPct": 59.8,
+      "sample": {
+        "bpFaced": 2277,
+        "bpChances": 2084,
+        "tbPlayed": 164,
+        "decPlayed": 117
+      }
+    },
+    {
+      "name": "C. Ruud",
+      "rank": 12,
+      "clutchIndex": 80.3,
+      "atpStyleRating": 221.5,
+      "confidence": "high",
+      "bpSavedPct": 63.6,
+      "bpConvPct": 40,
+      "tbWinPct": 55.2,
+      "decWinPct": 62.6,
+      "sample": {
+        "bpFaced": 2437,
+        "bpChances": 3093,
+        "tbPlayed": 181,
+        "decPlayed": 123
+      }
+    },
+    {
+      "name": "D. Medvedev",
+      "rank": 13,
+      "clutchIndex": 84.7,
+      "atpStyleRating": 222.6,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 42.6,
+      "tbWinPct": 57.4,
+      "decWinPct": 59.2,
+      "sample": {
+        "bpFaced": 3271,
+        "bpChances": 4682,
+        "tbPlayed": 242,
+        "decPlayed": 174
+      }
+    },
+    {
+      "name": "A. Davidovich Fokina",
+      "rank": 14,
+      "clutchIndex": 51.4,
+      "atpStyleRating": 198.4,
+      "confidence": "high",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 41.9,
+      "tbWinPct": 45.9,
+      "decWinPct": 50.5,
+      "sample": {
+        "bpFaced": 2288,
+        "bpChances": 2309,
+        "tbPlayed": 157,
+        "decPlayed": 101
+      }
+    },
+    {
+      "name": "H. Rune",
+      "rank": 15,
+      "clutchIndex": 75.2,
+      "atpStyleRating": 215.8,
+      "confidence": "high",
+      "bpSavedPct": 64.1,
+      "bpConvPct": 40.4,
+      "tbWinPct": 59.2,
+      "decWinPct": 52.1,
+      "sample": {
+        "bpFaced": 1597,
+        "bpChances": 1816,
+        "tbPlayed": 130,
+        "decPlayed": 96
+      }
+    },
+    {
+      "name": "A. Rublev",
+      "rank": 16,
+      "clutchIndex": 69.2,
+      "atpStyleRating": 214.1,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 39.1,
+      "tbWinPct": 51.1,
+      "decWinPct": 60.7,
+      "sample": {
+        "bpFaced": 3267,
+        "bpChances": 4259,
+        "tbPlayed": 274,
+        "decPlayed": 178
+      }
+    },
+    {
+      "name": "K. Khachanov",
+      "rank": 17,
+      "clutchIndex": 61.4,
+      "atpStyleRating": 203.3,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 40.3,
+      "tbWinPct": 51.3,
+      "decWinPct": 48.4,
+      "sample": {
+        "bpFaced": 3279,
+        "bpChances": 3650,
+        "tbPlayed": 298,
+        "decPlayed": 190
+      }
+    },
+    {
+      "name": "J. Mensik",
+      "rank": 18,
+      "clutchIndex": 72.3,
+      "atpStyleRating": 214.6,
+      "confidence": "high",
+      "bpSavedPct": 63.8,
+      "bpConvPct": 39,
+      "tbWinPct": 58.1,
+      "decWinPct": 53.7,
+      "sample": {
+        "bpFaced": 680,
+        "bpChances": 715,
+        "tbPlayed": 74,
+        "decPlayed": 41
+      }
+    },
+    {
+      "name": "J. Lehecka",
+      "rank": 19,
+      "clutchIndex": 63.4,
+      "atpStyleRating": 209.2,
+      "confidence": "high",
+      "bpSavedPct": 63.4,
+      "bpConvPct": 38.3,
+      "tbWinPct": 55.1,
+      "decWinPct": 52.5,
+      "sample": {
+        "bpFaced": 1201,
+        "bpChances": 1239,
+        "tbPlayed": 89,
+        "decPlayed": 61
+      }
+    },
+    {
+      "name": "T. Paul",
+      "rank": 20,
+      "clutchIndex": 59.4,
+      "atpStyleRating": 204.6,
+      "confidence": "high",
+      "bpSavedPct": 61.9,
+      "bpConvPct": 40.3,
+      "tbWinPct": 47.5,
+      "decWinPct": 55,
+      "sample": {
+        "bpFaced": 2259,
+        "bpChances": 2714,
+        "tbPlayed": 158,
+        "decPlayed": 120
+      }
+    },
+    {
+      "name": "F. Cerundolo",
+      "rank": 21,
+      "clutchIndex": 61,
+      "atpStyleRating": 204.6,
+      "confidence": "high",
+      "bpSavedPct": 61.8,
+      "bpConvPct": 41.8,
+      "tbWinPct": 49.5,
+      "decWinPct": 51.5,
+      "sample": {
+        "bpFaced": 1905,
+        "bpChances": 1987,
+        "tbPlayed": 105,
+        "decPlayed": 97
+      }
+    },
+    {
+      "name": "A. Fils",
+      "rank": 21,
+      "clutchIndex": 68,
+      "atpStyleRating": 213.6,
+      "confidence": "high",
+      "bpSavedPct": 62.7,
+      "bpConvPct": 39,
+      "tbWinPct": 59.4,
+      "decWinPct": 52.5,
+      "sample": {
+        "bpFaced": 833,
+        "bpChances": 887,
+        "tbPlayed": 69,
+        "decPlayed": 40
+      }
+    },
+    {
+      "name": "F. Cobolli",
+      "rank": 22,
+      "clutchIndex": 67,
+      "atpStyleRating": 214.4,
+      "confidence": "high",
+      "bpSavedPct": 62.6,
+      "bpConvPct": 38.9,
+      "tbWinPct": 50.6,
+      "decWinPct": 62.3,
+      "sample": {
+        "bpFaced": 1035,
+        "bpChances": 1016,
+        "tbPlayed": 79,
+        "decPlayed": 53
+      }
+    },
+    {
+      "name": "T. Griekspoor",
+      "rank": 25,
+      "clutchIndex": 54.9,
+      "atpStyleRating": 204.4,
+      "confidence": "high",
+      "bpSavedPct": 64.6,
+      "bpConvPct": 34.9,
+      "tbWinPct": 53,
+      "decWinPct": 51.9,
+      "sample": {
+        "bpFaced": 1428,
+        "bpChances": 1302,
+        "tbPlayed": 164,
+        "decPlayed": 106
+      }
+    },
+    {
+      "name": "L. Darderi",
+      "rank": 25,
+      "clutchIndex": 68.4,
+      "atpStyleRating": 221.2,
+      "confidence": "high",
+      "bpSavedPct": 60.6,
+      "bpConvPct": 38.1,
+      "tbWinPct": 60,
+      "decWinPct": 62.5,
+      "sample": {
+        "bpFaced": 723,
+        "bpChances": 711,
+        "tbPlayed": 50,
+        "decPlayed": 32
+      }
+    },
+    {
+      "name": "L. Tien",
+      "rank": 26,
+      "clutchIndex": 81,
+      "atpStyleRating": 226.4,
+      "confidence": "high",
+      "bpSavedPct": 62.2,
+      "bpConvPct": 40.2,
+      "tbWinPct": 62.8,
+      "decWinPct": 61.1,
+      "sample": {
+        "bpFaced": 580,
+        "bpChances": 492,
+        "tbPlayed": 43,
+        "decPlayed": 18
+      }
+    },
+    {
+      "name": "A. Rinderknech",
+      "rank": 27,
+      "clutchIndex": 49.5,
+      "atpStyleRating": 199.4,
+      "confidence": "high",
+      "bpSavedPct": 65.5,
+      "bpConvPct": 35.3,
+      "tbWinPct": 43.2,
+      "decWinPct": 55.4,
+      "sample": {
+        "bpFaced": 1272,
+        "bpChances": 1198,
+        "tbPlayed": 125,
+        "decPlayed": 74
+      }
+    },
+    {
+      "name": "C. Norrie",
+      "rank": 28,
+      "clutchIndex": 66.8,
+      "atpStyleRating": 208.1,
+      "confidence": "high",
+      "bpSavedPct": 63.2,
+      "bpConvPct": 41.6,
+      "tbWinPct": 46,
+      "decWinPct": 57.3,
+      "sample": {
+        "bpFaced": 2889,
+        "bpChances": 3082,
+        "tbPlayed": 187,
+        "decPlayed": 150
+      }
+    },
+    {
+      "name": "J. Fonseca",
+      "rank": 29,
+      "clutchIndex": 50.4,
+      "atpStyleRating": 205.7,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 35.6,
+      "tbWinPct": 51.2,
+      "decWinPct": 57.9,
+      "sample": {
+        "bpFaced": 336,
+        "bpChances": 469,
+        "tbPlayed": 41,
+        "decPlayed": 19
+      }
+    },
+    {
+      "name": "F. Tiafoe",
+      "rank": 30,
+      "clutchIndex": 53.1,
+      "atpStyleRating": 199.5,
+      "confidence": "high",
+      "bpSavedPct": 62.4,
+      "bpConvPct": 37.7,
+      "tbWinPct": 54.9,
+      "decWinPct": 44.5,
+      "sample": {
+        "bpFaced": 2888,
+        "bpChances": 2994,
+        "tbPlayed": 277,
+        "decPlayed": 164
+      }
+    },
+    {
+      "name": "V. Vacherot",
+      "rank": 31,
+      "clutchIndex": 59.4,
+      "atpStyleRating": 200.2,
+      "confidence": "high",
+      "bpSavedPct": 62.4,
+      "bpConvPct": 40.1,
+      "tbWinPct": 33.3,
+      "decWinPct": 64.3,
+      "sample": {
+        "bpFaced": 149,
+        "bpChances": 157,
+        "tbPlayed": 15,
+        "decPlayed": 14
+      }
+    },
+    {
+      "name": "B. Nakashima",
+      "rank": 33,
+      "clutchIndex": 53.3,
+      "atpStyleRating": 200.3,
+      "confidence": "high",
+      "bpSavedPct": 64.1,
+      "bpConvPct": 36,
+      "tbWinPct": 53.9,
+      "decWinPct": 46.4,
+      "sample": {
+        "bpFaced": 1253,
+        "bpChances": 1453,
+        "tbPlayed": 167,
+        "decPlayed": 69
+      }
+    },
+    {
+      "name": "C. Moutet",
+      "rank": 35,
+      "clutchIndex": 51.4,
+      "atpStyleRating": 205.7,
+      "confidence": "high",
+      "bpSavedPct": 59.7,
+      "bpConvPct": 38.5,
+      "tbWinPct": 52.7,
+      "decWinPct": 54.7,
+      "sample": {
+        "bpFaced": 1779,
+        "bpChances": 1666,
+        "tbPlayed": 91,
+        "decPlayed": 64
+      }
+    },
+    {
+      "name": "A. Tabilo",
+      "rank": 35,
+      "clutchIndex": 39.7,
+      "atpStyleRating": 187.4,
+      "confidence": "high",
+      "bpSavedPct": 62.4,
+      "bpConvPct": 38.6,
+      "tbWinPct": 43.3,
+      "decWinPct": 43.1,
+      "sample": {
+        "bpFaced": 942,
+        "bpChances": 891,
+        "tbPlayed": 67,
+        "decPlayed": 51
+      }
+    },
+    {
+      "name": "U. Humbert",
+      "rank": 36,
+      "clutchIndex": 45.7,
+      "atpStyleRating": 193.2,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 36.5,
+      "tbWinPct": 49.1,
+      "decWinPct": 44.3,
+      "sample": {
+        "bpFaced": 1866,
+        "bpChances": 2078,
+        "tbPlayed": 171,
+        "decPlayed": 122
+      }
+    },
+    {
+      "name": "D. Shapovalov",
+      "rank": 37,
+      "clutchIndex": 57.2,
+      "atpStyleRating": 202.4,
+      "confidence": "high",
+      "bpSavedPct": 65,
+      "bpConvPct": 38.7,
+      "tbWinPct": 46,
+      "decWinPct": 52.7,
+      "sample": {
+        "bpFaced": 2602,
+        "bpChances": 2834,
+        "tbPlayed": 226,
+        "decPlayed": 148
+      }
+    },
+    {
+      "name": "J. Munar",
+      "rank": 38,
+      "clutchIndex": 24.7,
+      "atpStyleRating": 174,
+      "confidence": "high",
+      "bpSavedPct": 58,
+      "bpConvPct": 38.1,
+      "tbWinPct": 45.5,
+      "decWinPct": 32.4,
+      "sample": {
+        "bpFaced": 2132,
+        "bpChances": 2225,
+        "tbPlayed": 123,
+        "decPlayed": 102
+      }
+    },
+    {
+      "name": "Z. Bergs",
+      "rank": 39,
+      "clutchIndex": 41.1,
+      "atpStyleRating": 192.5,
+      "confidence": "high",
+      "bpSavedPct": 61.2,
+      "bpConvPct": 37,
+      "tbWinPct": 50.8,
+      "decWinPct": 43.5,
+      "sample": {
+        "bpFaced": 762,
+        "bpChances": 748,
+        "tbPlayed": 63,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "G. Diallo",
+      "rank": 40,
+      "clutchIndex": 41.1,
+      "atpStyleRating": 191.2,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 38.6,
+      "tbWinPct": 47.5,
+      "decWinPct": 44,
+      "sample": {
+        "bpFaced": 457,
+        "bpChances": 484,
+        "tbPlayed": 40,
+        "decPlayed": 25
+      }
+    },
+    {
+      "name": "T. Machac",
+      "rank": 41,
+      "clutchIndex": 74.6,
+      "atpStyleRating": 216,
+      "confidence": "high",
+      "bpSavedPct": 61.5,
+      "bpConvPct": 42.5,
+      "tbWinPct": 53.2,
+      "decWinPct": 58.7,
+      "sample": {
+        "bpFaced": 852,
+        "bpChances": 905,
+        "tbPlayed": 62,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "A. Michelsen",
+      "rank": 42,
+      "clutchIndex": 47.4,
+      "atpStyleRating": 199.5,
+      "confidence": "high",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 38.5,
+      "tbWinPct": 53.1,
+      "decWinPct": 47.8,
+      "sample": {
+        "bpFaced": 863,
+        "bpChances": 899,
+        "tbPlayed": 81,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "M. Navone",
+      "rank": 44,
+      "clutchIndex": 35.6,
+      "atpStyleRating": 178.7,
+      "confidence": "high",
+      "bpSavedPct": 57.6,
+      "bpConvPct": 42.7,
+      "tbWinPct": 45,
+      "decWinPct": 33.3,
+      "sample": {
+        "bpFaced": 713,
+        "bpChances": 681,
+        "tbPlayed": 20,
+        "decPlayed": 30
+      }
+    },
+    {
+      "name": "A. Mannarino",
+      "rank": 45,
+      "clutchIndex": 45.4,
+      "atpStyleRating": 195.3,
+      "confidence": "high",
+      "bpSavedPct": 59.7,
+      "bpConvPct": 41.1,
+      "tbWinPct": 44.5,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 4649,
+        "bpChances": 4300,
+        "tbPlayed": 290,
+        "decPlayed": 212
+      }
+    },
+    {
+      "name": "S. Korda",
+      "rank": 46,
+      "clutchIndex": 61.2,
+      "atpStyleRating": 206.6,
+      "confidence": "high",
+      "bpSavedPct": 63.1,
+      "bpConvPct": 39.6,
+      "tbWinPct": 49.6,
+      "decWinPct": 54.3,
+      "sample": {
+        "bpFaced": 1533,
+        "bpChances": 1768,
+        "tbPlayed": 125,
+        "decPlayed": 81
+      }
+    },
+    {
+      "name": "M. Cilic",
+      "rank": 47,
+      "clutchIndex": 72.7,
+      "atpStyleRating": 215.2,
+      "confidence": "high",
+      "bpSavedPct": 64.4,
+      "bpConvPct": 38.8,
+      "tbWinPct": 54.5,
+      "decWinPct": 57.5,
+      "sample": {
+        "bpFaced": 4368,
+        "bpChances": 5541,
+        "tbPlayed": 387,
+        "decPlayed": 247
+      }
+    },
+    {
+      "name": "G. Dimitrov",
+      "rank": 47,
+      "clutchIndex": 70.1,
+      "atpStyleRating": 215.5,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 38.7,
+      "tbWinPct": 53.6,
+      "decWinPct": 59.9,
+      "sample": {
+        "bpFaced": 4424,
+        "bpChances": 5440,
+        "tbPlayed": 379,
+        "decPlayed": 247
+      }
+    },
+    {
+      "name": "E. Quinn",
+      "rank": 48,
+      "clutchIndex": 43.9,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 61.5,
+      "bpConvPct": 40.1,
+      "tbWinPct": 35.3,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 283,
+        "bpChances": 197,
+        "tbPlayed": 17,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "F. Marozsan",
+      "rank": 49,
+      "clutchIndex": 43,
+      "atpStyleRating": 200.6,
+      "confidence": "high",
+      "bpSavedPct": 58.7,
+      "bpConvPct": 37.8,
+      "tbWinPct": 46.9,
+      "decWinPct": 57.1,
+      "sample": {
+        "bpFaced": 795,
+        "bpChances": 827,
+        "tbPlayed": 64,
+        "decPlayed": 42
+      }
+    },
+    {
+      "name": "T. Atmane",
+      "rank": 51,
+      "clutchIndex": 18.3,
+      "atpStyleRating": 151.6,
+      "confidence": "high",
+      "bpSavedPct": 60.3,
+      "bpConvPct": 36.8,
+      "tbWinPct": 27.3,
+      "decWinPct": 27.3,
+      "sample": {
+        "bpFaced": 209,
+        "bpChances": 182,
+        "tbPlayed": 11,
+        "decPlayed": 11
+      }
+    },
+    {
+      "name": "N. Borges",
+      "rank": 52,
+      "clutchIndex": 55.3,
+      "atpStyleRating": 212.8,
+      "confidence": "high",
+      "bpSavedPct": 60.3,
+      "bpConvPct": 36.2,
+      "tbWinPct": 52.1,
+      "decWinPct": 64.2,
+      "sample": {
+        "bpFaced": 1045,
+        "bpChances": 977,
+        "tbPlayed": 96,
+        "decPlayed": 53
+      }
+    },
+    {
+      "name": "H. Hurkacz",
+      "rank": 53,
+      "clutchIndex": 62.3,
+      "atpStyleRating": 209,
+      "confidence": "high",
+      "bpSavedPct": 65.9,
+      "bpConvPct": 36.8,
+      "tbWinPct": 51.3,
+      "decWinPct": 55,
+      "sample": {
+        "bpFaced": 2046,
+        "bpChances": 2396,
+        "tbPlayed": 263,
+        "decPlayed": 151
+      }
+    },
+    {
+      "name": "B. Van De Zandschulp",
+      "rank": 54,
+      "clutchIndex": 56.7,
+      "atpStyleRating": 207.8,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 38.6,
+      "tbWinPct": 52,
+      "decWinPct": 56.3,
+      "sample": {
+        "bpFaced": 1621,
+        "bpChances": 1568,
+        "tbPlayed": 102,
+        "decPlayed": 71
+      }
+    },
+    {
+      "name": "V. Kopriva",
+      "rank": 55,
+      "clutchIndex": 63.8,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 57.8,
+      "bpConvPct": 41,
+      "tbWinPct": null,
+      "decWinPct": 63.6,
+      "sample": {
+        "bpFaced": 325,
+        "bpChances": 261,
+        "tbPlayed": 6,
+        "decPlayed": 11
+      }
+    },
+    {
+      "name": "M. Fucsovics",
+      "rank": 57,
+      "clutchIndex": 42.2,
+      "atpStyleRating": 190.4,
+      "confidence": "high",
+      "bpSavedPct": 60.6,
+      "bpConvPct": 39.9,
+      "tbWinPct": 43.3,
+      "decWinPct": 46.5,
+      "sample": {
+        "bpFaced": 2498,
+        "bpChances": 2654,
+        "tbPlayed": 157,
+        "decPlayed": 129
+      }
+    },
+    {
+      "name": "G. Mpetshi Perricard",
+      "rank": 58,
+      "clutchIndex": 61.8,
+      "atpStyleRating": 212.1,
+      "confidence": "high",
+      "bpSavedPct": 68.9,
+      "bpConvPct": 35,
+      "tbWinPct": 56.4,
+      "decWinPct": 51.7,
+      "sample": {
+        "bpFaced": 412,
+        "bpChances": 274,
+        "tbPlayed": 78,
+        "decPlayed": 29
+      }
+    },
+    {
+      "name": "K. Majchrzak",
+      "rank": 59,
+      "clutchIndex": 36.5,
+      "atpStyleRating": 183.7,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 37.6,
+      "tbWinPct": 49,
+      "decWinPct": 36,
+      "sample": {
+        "bpFaced": 678,
+        "bpChances": 646,
+        "tbPlayed": 49,
+        "decPlayed": 25
+      }
+    },
+    {
+      "name": "Y. Hanfmann",
+      "rank": 59,
+      "clutchIndex": 41.6,
+      "atpStyleRating": 196.8,
+      "confidence": "high",
+      "bpSavedPct": 60.2,
+      "bpConvPct": 36.2,
+      "tbWinPct": 34.2,
+      "decWinPct": 66.1,
+      "sample": {
+        "bpFaced": 1136,
+        "bpChances": 1163,
+        "tbPlayed": 73,
+        "decPlayed": 62
+      }
+    },
+    {
+      "name": "R. Opelka",
+      "rank": 60,
+      "clutchIndex": 52.5,
+      "atpStyleRating": 203.3,
+      "confidence": "high",
+      "bpSavedPct": 69.5,
+      "bpConvPct": 30.8,
+      "tbWinPct": 51.8,
+      "decWinPct": 51.2,
+      "sample": {
+        "bpFaced": 1072,
+        "bpChances": 992,
+        "tbPlayed": 224,
+        "decPlayed": 82
+      }
+    },
+    {
+      "name": "A. Popyrin",
+      "rank": 60,
+      "clutchIndex": 46.9,
+      "atpStyleRating": 190.2,
+      "confidence": "high",
+      "bpSavedPct": 65.5,
+      "bpConvPct": 32.2,
+      "tbWinPct": 54.6,
+      "decWinPct": 37.9,
+      "sample": {
+        "bpFaced": 1665,
+        "bpChances": 1560,
+        "tbPlayed": 163,
+        "decPlayed": 87
+      }
+    },
+    {
+      "name": "C. Ugo Carabelli",
+      "rank": 61,
+      "clutchIndex": 53.9,
+      "atpStyleRating": 207.2,
+      "confidence": "high",
+      "bpSavedPct": 57.7,
+      "bpConvPct": 41.9,
+      "tbWinPct": 40.9,
+      "decWinPct": 66.7,
+      "sample": {
+        "bpFaced": 478,
+        "bpChances": 353,
+        "tbPlayed": 22,
+        "decPlayed": 15
+      }
+    },
+    {
+      "name": "A. Cazaux",
+      "rank": 63,
+      "clutchIndex": 53.2,
+      "atpStyleRating": 203.3,
+      "confidence": "high",
+      "bpSavedPct": 65.2,
+      "bpConvPct": 35.5,
+      "tbWinPct": 45.5,
+      "decWinPct": 57.1,
+      "sample": {
+        "bpFaced": 414,
+        "bpChances": 375,
+        "tbPlayed": 33,
+        "decPlayed": 21
+      }
+    },
+    {
+      "name": "J. Brooksby",
+      "rank": 63,
+      "clutchIndex": 73.8,
+      "atpStyleRating": 223,
+      "confidence": "high",
+      "bpSavedPct": 59.1,
+      "bpConvPct": 41.7,
+      "tbWinPct": 62.2,
+      "decWinPct": 60,
+      "sample": {
+        "bpFaced": 814,
+        "bpChances": 868,
+        "tbPlayed": 37,
+        "decPlayed": 30
+      }
+    },
+    {
+      "name": "D. Altmaier",
+      "rank": 64,
+      "clutchIndex": 33,
+      "atpStyleRating": 182,
+      "confidence": "high",
+      "bpSavedPct": 61.8,
+      "bpConvPct": 37.2,
+      "tbWinPct": 44.4,
+      "decWinPct": 38.6,
+      "sample": {
+        "bpFaced": 1344,
+        "bpChances": 1070,
+        "tbPlayed": 90,
+        "decPlayed": 57
+      }
+    },
+    {
+      "name": "S. Baez",
+      "rank": 65,
+      "clutchIndex": 44.8,
+      "atpStyleRating": 195.4,
+      "confidence": "high",
+      "bpSavedPct": 59.2,
+      "bpConvPct": 41,
+      "tbWinPct": 43.5,
+      "decWinPct": 51.8,
+      "sample": {
+        "bpFaced": 1684,
+        "bpChances": 1731,
+        "tbPlayed": 69,
+        "decPlayed": 85
+      }
+    },
+    {
+      "name": "L. Sonego",
+      "rank": 66,
+      "clutchIndex": 50.7,
+      "atpStyleRating": 196.8,
+      "confidence": "high",
+      "bpSavedPct": 63.7,
+      "bpConvPct": 37.4,
+      "tbWinPct": 50.8,
+      "decWinPct": 44.8,
+      "sample": {
+        "bpFaced": 2140,
+        "bpChances": 2051,
+        "tbPlayed": 193,
+        "decPlayed": 116
+      }
+    },
+    {
+      "name": "H. Medjedovic",
+      "rank": 67,
+      "clutchIndex": 63.8,
+      "atpStyleRating": 210.6,
+      "confidence": "high",
+      "bpSavedPct": 65.4,
+      "bpConvPct": 36.1,
+      "tbWinPct": 53.1,
+      "decWinPct": 56,
+      "sample": {
+        "bpFaced": 434,
+        "bpChances": 407,
+        "tbPlayed": 49,
+        "decPlayed": 25
+      }
+    },
+    {
+      "name": "G. Monfils",
+      "rank": 68,
+      "clutchIndex": 75.3,
+      "atpStyleRating": 216,
+      "confidence": "high",
+      "bpSavedPct": 62.7,
+      "bpConvPct": 40.7,
+      "tbWinPct": 57.7,
+      "decWinPct": 54.9,
+      "sample": {
+        "bpFaced": 4251,
+        "bpChances": 5261,
+        "tbPlayed": 317,
+        "decPlayed": 235
+      }
+    },
+    {
+      "name": "M. Kecmanovic",
+      "rank": 70,
+      "clutchIndex": 39.4,
+      "atpStyleRating": 188.6,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 38.9,
+      "tbWinPct": 44.4,
+      "decWinPct": 44.1,
+      "sample": {
+        "bpFaced": 2271,
+        "bpChances": 2329,
+        "tbPlayed": 180,
+        "decPlayed": 111
+      }
+    },
+    {
+      "name": "V. Royer",
+      "rank": 71,
+      "clutchIndex": 54.9,
+      "atpStyleRating": 197.1,
+      "confidence": "high",
+      "bpSavedPct": 66.2,
+      "bpConvPct": 39.7,
+      "tbWinPct": 41.2,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 148,
+        "bpChances": 136,
+        "tbPlayed": 17,
+        "decPlayed": 8
+      }
+    },
+    {
+      "name": "S. Tsitsipas",
+      "rank": 75,
+      "clutchIndex": 81,
+      "atpStyleRating": 220.6,
+      "confidence": "high",
+      "bpSavedPct": 65.1,
+      "bpConvPct": 39.3,
+      "tbWinPct": 57.8,
+      "decWinPct": 58.4,
+      "sample": {
+        "bpFaced": 2702,
+        "bpChances": 3586,
+        "tbPlayed": 306,
+        "decPlayed": 178
+      }
+    },
+    {
+      "name": "M. Giron",
+      "rank": 77,
+      "clutchIndex": 39.1,
+      "atpStyleRating": 191.4,
+      "confidence": "high",
+      "bpSavedPct": 60.4,
+      "bpConvPct": 37.8,
+      "tbWinPct": 50.4,
+      "decWinPct": 42.9,
+      "sample": {
+        "bpFaced": 1838,
+        "bpChances": 1776,
+        "tbPlayed": 139,
+        "decPlayed": 105
+      }
+    },
+    {
+      "name": "M. Trungelliti",
+      "rank": 78,
+      "clutchIndex": 54.7,
+      "atpStyleRating": 204.9,
+      "confidence": "high",
+      "bpSavedPct": 60.3,
+      "bpConvPct": 40.1,
+      "tbWinPct": 50,
+      "decWinPct": 54.5,
+      "sample": {
+        "bpFaced": 385,
+        "bpChances": 282,
+        "tbPlayed": 12,
+        "decPlayed": 11
+      }
+    },
+    {
+      "name": "F. Misolic",
+      "rank": 79,
+      "clutchIndex": 84.4,
+      "atpStyleRating": 235.2,
+      "confidence": "high",
+      "bpSavedPct": 63.5,
+      "bpConvPct": 40.1,
+      "tbWinPct": 70,
+      "decWinPct": 61.5,
+      "sample": {
+        "bpFaced": 318,
+        "bpChances": 217,
+        "tbPlayed": 20,
+        "decPlayed": 13
+      }
+    },
+    {
+      "name": "D. Prizmic",
+      "rank": 79,
+      "clutchIndex": 48.1,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 55.4,
+      "bpConvPct": 42.7,
+      "tbWinPct": null,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 157,
+        "bpChances": 131,
+        "tbPlayed": 7,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "M. Bellucci",
+      "rank": 80,
+      "clutchIndex": 32.5,
+      "atpStyleRating": 169.1,
+      "confidence": "high",
+      "bpSavedPct": 65.7,
+      "bpConvPct": 33.3,
+      "tbWinPct": 45,
+      "decWinPct": 25,
+      "sample": {
+        "bpFaced": 321,
+        "bpChances": 267,
+        "tbPlayed": 20,
+        "decPlayed": 8
+      }
+    },
+    {
+      "name": "S. Ofner",
+      "rank": 82,
+      "clutchIndex": 49.7,
+      "atpStyleRating": 198.5,
+      "confidence": "high",
+      "bpSavedPct": 61.6,
+      "bpConvPct": 39.5,
+      "tbWinPct": 47.4,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 863,
+        "bpChances": 692,
+        "tbPlayed": 57,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "J-L. Struff",
+      "rank": 83,
+      "clutchIndex": 36.5,
+      "atpStyleRating": 189.9,
+      "confidence": "high",
+      "bpSavedPct": 61.5,
+      "bpConvPct": 35.9,
+      "tbWinPct": 46,
+      "decWinPct": 46.4,
+      "sample": {
+        "bpFaced": 3123,
+        "bpChances": 3258,
+        "tbPlayed": 287,
+        "decPlayed": 183
+      }
+    },
+    {
+      "name": "R. Collignon",
+      "rank": 84,
+      "clutchIndex": 56.3,
+      "atpStyleRating": 206.8,
+      "confidence": "high",
+      "bpSavedPct": 66.5,
+      "bpConvPct": 34.7,
+      "tbWinPct": 50,
+      "decWinPct": 55.6,
+      "sample": {
+        "bpFaced": 200,
+        "bpChances": 170,
+        "tbPlayed": 10,
+        "decPlayed": 9
+      }
+    },
+    {
+      "name": "A. Shevchenko",
+      "rank": 85,
+      "clutchIndex": 53.6,
+      "atpStyleRating": 205.9,
+      "confidence": "high",
+      "bpSavedPct": 57.3,
+      "bpConvPct": 39.7,
+      "tbWinPct": 56.4,
+      "decWinPct": 52.5,
+      "sample": {
+        "bpFaced": 900,
+        "bpChances": 726,
+        "tbPlayed": 55,
+        "decPlayed": 40
+      }
+    },
+    {
+      "name": "J. Duckworth",
+      "rank": 86,
+      "clutchIndex": 39.2,
+      "atpStyleRating": 184.7,
+      "confidence": "high",
+      "bpSavedPct": 63.5,
+      "bpConvPct": 35.9,
+      "tbWinPct": 48.7,
+      "decWinPct": 36.6,
+      "sample": {
+        "bpFaced": 1469,
+        "bpChances": 1079,
+        "tbPlayed": 113,
+        "decPlayed": 71
+      }
+    },
+    {
+      "name": "D. Dzumhur",
+      "rank": 87,
+      "clutchIndex": 49.3,
+      "atpStyleRating": 200.5,
+      "confidence": "high",
+      "bpSavedPct": 56.6,
+      "bpConvPct": 43.1,
+      "tbWinPct": 47.2,
+      "decWinPct": 53.6,
+      "sample": {
+        "bpFaced": 2426,
+        "bpChances": 2246,
+        "tbPlayed": 108,
+        "decPlayed": 110
+      }
+    },
+    {
+      "name": "Z. Svajda",
+      "rank": 90,
+      "clutchIndex": 34,
+      "atpStyleRating": 180.8,
+      "confidence": "high",
+      "bpSavedPct": 55.6,
+      "bpConvPct": 38,
+      "tbWinPct": 57.1,
+      "decWinPct": 30,
+      "sample": {
+        "bpFaced": 241,
+        "bpChances": 192,
+        "tbPlayed": 14,
+        "decPlayed": 10
+      }
+    },
+    {
+      "name": "Q. Halys",
+      "rank": 91,
+      "clutchIndex": 30.5,
+      "atpStyleRating": 169.3,
+      "confidence": "high",
+      "bpSavedPct": 64.5,
+      "bpConvPct": 35.1,
+      "tbWinPct": 40,
+      "decWinPct": 29.8,
+      "sample": {
+        "bpFaced": 924,
+        "bpChances": 773,
+        "tbPlayed": 90,
+        "decPlayed": 47
+      }
+    },
+    {
+      "name": "R. Safiullin",
+      "rank": 94,
+      "clutchIndex": 27.9,
+      "atpStyleRating": 169.7,
+      "confidence": "high",
+      "bpSavedPct": 61.3,
+      "bpConvPct": 37.9,
+      "tbWinPct": 35.8,
+      "decWinPct": 34.8,
+      "sample": {
+        "bpFaced": 883,
+        "bpChances": 922,
+        "tbPlayed": 67,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "L. Pouille",
+      "rank": 94,
+      "clutchIndex": 69.3,
+      "atpStyleRating": 213.6,
+      "confidence": "high",
+      "bpSavedPct": 62.9,
+      "bpConvPct": 38.9,
+      "tbWinPct": 54.1,
+      "decWinPct": 57.6,
+      "sample": {
+        "bpFaced": 2058,
+        "bpChances": 1857,
+        "tbPlayed": 146,
+        "decPlayed": 85
+      }
+    },
+    {
+      "name": "L. Djere",
+      "rank": 95,
+      "clutchIndex": 42.7,
+      "atpStyleRating": 193.4,
+      "confidence": "high",
+      "bpSavedPct": 61.9,
+      "bpConvPct": 38.2,
+      "tbWinPct": 42.8,
+      "decWinPct": 50.5,
+      "sample": {
+        "bpFaced": 2203,
+        "bpChances": 2131,
+        "tbPlayed": 173,
+        "decPlayed": 107
+      }
+    },
+    {
+      "name": "A. Kovacevic",
+      "rank": 95,
+      "clutchIndex": 27.2,
+      "atpStyleRating": 175.3,
+      "confidence": "high",
+      "bpSavedPct": 63.2,
+      "bpConvPct": 32.5,
+      "tbWinPct": 36.4,
+      "decWinPct": 43.2,
+      "sample": {
+        "bpFaced": 560,
+        "bpChances": 486,
+        "tbPlayed": 44,
+        "decPlayed": 37
+      }
+    },
+    {
+      "name": "R. Hijikata",
+      "rank": 96,
+      "clutchIndex": 54.1,
+      "atpStyleRating": 208.2,
+      "confidence": "high",
+      "bpSavedPct": 59.9,
+      "bpConvPct": 37.4,
+      "tbWinPct": 53.1,
+      "decWinPct": 57.7,
+      "sample": {
+        "bpFaced": 769,
+        "bpChances": 601,
+        "tbPlayed": 32,
+        "decPlayed": 26
+      }
+    },
+    {
+      "name": "L. van Assche",
+      "rank": 97,
+      "clutchIndex": 34.5,
+      "atpStyleRating": 188.9,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 34.9,
+      "tbWinPct": 48.9,
+      "decWinPct": 44,
+      "sample": {
+        "bpFaced": 522,
+        "bpChances": 435,
+        "tbPlayed": 45,
+        "decPlayed": 25
+      }
+    },
+    {
+      "name": "T. Schoolkate",
+      "rank": 97,
+      "clutchIndex": 39.6,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 34.5,
+      "tbWinPct": 53.8,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 158,
+        "bpChances": 119,
+        "tbPlayed": 13,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "C. Taberner",
+      "rank": 98,
+      "clutchIndex": 38.4,
+      "atpStyleRating": 184.4,
+      "confidence": "high",
+      "bpSavedPct": 58.5,
+      "bpConvPct": 43.1,
+      "tbWinPct": 42.9,
+      "decWinPct": 40,
+      "sample": {
+        "bpFaced": 366,
+        "bpChances": 304,
+        "tbPlayed": 14,
+        "decPlayed": 15
+      }
+    },
+    {
+      "name": "A. Vukic",
+      "rank": 99,
+      "clutchIndex": 43.6,
+      "atpStyleRating": 195.2,
+      "confidence": "high",
+      "bpSavedPct": 61.5,
+      "bpConvPct": 35,
+      "tbWinPct": 54.8,
+      "decWinPct": 43.9,
+      "sample": {
+        "bpFaced": 957,
+        "bpChances": 779,
+        "tbPlayed": 84,
+        "decPlayed": 57
+      }
+    },
+    {
+      "name": "M. Berrettini",
+      "rank": 100,
+      "clutchIndex": 71.3,
+      "atpStyleRating": 217.8,
+      "confidence": "high",
+      "bpSavedPct": 68.7,
+      "bpConvPct": 37,
+      "tbWinPct": 56.3,
+      "decWinPct": 55.8,
+      "sample": {
+        "bpFaced": 1570,
+        "bpChances": 2017,
+        "tbPlayed": 197,
+        "decPlayed": 95
+      }
+    },
+    {
+      "name": "B. Bonzi",
+      "rank": 101,
+      "clutchIndex": 38.4,
+      "atpStyleRating": 181.4,
+      "confidence": "high",
+      "bpSavedPct": 62.7,
+      "bpConvPct": 38.1,
+      "tbWinPct": 45.7,
+      "decWinPct": 34.9,
+      "sample": {
+        "bpFaced": 961,
+        "bpChances": 890,
+        "tbPlayed": 70,
+        "decPlayed": 43
+      }
+    },
+    {
+      "name": "J. De Jong",
+      "rank": 102,
+      "clutchIndex": 57.9,
+      "atpStyleRating": 207.9,
+      "confidence": "high",
+      "bpSavedPct": 59.3,
+      "bpConvPct": 40.6,
+      "tbWinPct": 48,
+      "decWinPct": 60,
+      "sample": {
+        "bpFaced": 280,
+        "bpChances": 239,
+        "tbPlayed": 25,
+        "decPlayed": 10
+      }
+    },
+    {
+      "name": "A. Walton",
+      "rank": 103,
+      "clutchIndex": 39.3,
+      "atpStyleRating": 183.2,
+      "confidence": "high",
+      "bpSavedPct": 62.6,
+      "bpConvPct": 36.4,
+      "tbWinPct": 30.3,
+      "decWinPct": 53.8,
+      "sample": {
+        "bpFaced": 329,
+        "bpChances": 280,
+        "tbPlayed": 33,
+        "decPlayed": 13
+      }
+    },
+    {
+      "name": "C. Garin",
+      "rank": 104,
+      "clutchIndex": 57.5,
+      "atpStyleRating": 206.8,
+      "confidence": "high",
+      "bpSavedPct": 60.3,
+      "bpConvPct": 39.6,
+      "tbWinPct": 51.3,
+      "decWinPct": 55.7,
+      "sample": {
+        "bpFaced": 1914,
+        "bpChances": 1921,
+        "tbPlayed": 117,
+        "decPlayed": 88
+      }
+    },
+    {
+      "name": "A. Muller",
+      "rank": 105,
+      "clutchIndex": 52.6,
+      "atpStyleRating": 203.2,
+      "confidence": "high",
+      "bpSavedPct": 58.6,
+      "bpConvPct": 40.5,
+      "tbWinPct": 48.5,
+      "decWinPct": 55.6,
+      "sample": {
+        "bpFaced": 948,
+        "bpChances": 760,
+        "tbPlayed": 66,
+        "decPlayed": 36
+      }
+    },
+    {
+      "name": "M. Arnaldi",
+      "rank": 106,
+      "clutchIndex": 60.4,
+      "atpStyleRating": 204.6,
+      "confidence": "high",
+      "bpSavedPct": 64.2,
+      "bpConvPct": 37.7,
+      "tbWinPct": 56.2,
+      "decWinPct": 46.6,
+      "sample": {
+        "bpFaced": 1035,
+        "bpChances": 947,
+        "tbPlayed": 73,
+        "decPlayed": 58
+      }
+    },
+    {
+      "name": "B. Coric",
+      "rank": 107,
+      "clutchIndex": 57.1,
+      "atpStyleRating": 206,
+      "confidence": "high",
+      "bpSavedPct": 62,
+      "bpConvPct": 38.1,
+      "tbWinPct": 53.2,
+      "decWinPct": 52.8,
+      "sample": {
+        "bpFaced": 2561,
+        "bpChances": 2657,
+        "tbPlayed": 205,
+        "decPlayed": 142
+      }
+    },
+    {
+      "name": "E. Nava",
+      "rank": 108,
+      "clutchIndex": 28.7,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 57.1,
+      "bpConvPct": 34.2,
+      "tbWinPct": 52.9,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 240,
+        "bpChances": 155,
+        "tbPlayed": 17,
+        "decPlayed": 6
+      }
+    },
+    {
+      "name": "J. Thompson",
+      "rank": 113,
+      "clutchIndex": 45.2,
+      "atpStyleRating": 200.3,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 36.2,
+      "tbWinPct": 52.7,
+      "decWinPct": 50.4,
+      "sample": {
+        "bpFaced": 2274,
+        "bpChances": 2162,
+        "tbPlayed": 150,
+        "decPlayed": 115
+      }
+    },
+    {
+      "name": "F. Comesana",
+      "rank": 114,
+      "clutchIndex": 29.4,
+      "atpStyleRating": 185.7,
+      "confidence": "high",
+      "bpSavedPct": 59.4,
+      "bpConvPct": 37.1,
+      "tbWinPct": 45.5,
+      "decWinPct": 43.8,
+      "sample": {
+        "bpFaced": 389,
+        "bpChances": 329,
+        "tbPlayed": 33,
+        "decPlayed": 16
+      }
+    },
+    {
+      "name": "Y. Nishioka",
+      "rank": 116,
+      "clutchIndex": 58.9,
+      "atpStyleRating": 210.2,
+      "confidence": "high",
+      "bpSavedPct": 58.4,
+      "bpConvPct": 39.1,
+      "tbWinPct": 55.5,
+      "decWinPct": 57.3,
+      "sample": {
+        "bpFaced": 2317,
+        "bpChances": 2079,
+        "tbPlayed": 110,
+        "decPlayed": 103
+      }
+    },
+    {
+      "name": "N. Basilashvili",
+      "rank": 117,
+      "clutchIndex": 49.8,
+      "atpStyleRating": 204,
+      "confidence": "high",
+      "bpSavedPct": 57.9,
+      "bpConvPct": 38.8,
+      "tbWinPct": 57.8,
+      "decWinPct": 49.5,
+      "sample": {
+        "bpFaced": 2554,
+        "bpChances": 2263,
+        "tbPlayed": 135,
+        "decPlayed": 109
+      }
+    },
+    {
+      "name": "H. Gaston",
+      "rank": 118,
+      "clutchIndex": 70.3,
+      "atpStyleRating": 215.9,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 39.7,
+      "tbWinPct": 55.1,
+      "decWinPct": 60,
+      "sample": {
+        "bpFaced": 1199,
+        "bpChances": 875,
+        "tbPlayed": 49,
+        "decPlayed": 40
+      }
+    },
+    {
+      "name": "D. Goffin",
+      "rank": 119,
+      "clutchIndex": 59.8,
+      "atpStyleRating": 209.9,
+      "confidence": "high",
+      "bpSavedPct": 59.4,
+      "bpConvPct": 40.8,
+      "tbWinPct": 47.9,
+      "decWinPct": 61.8,
+      "sample": {
+        "bpFaced": 4288,
+        "bpChances": 4993,
+        "tbPlayed": 238,
+        "decPlayed": 191
+      }
+    },
+    {
+      "name": "J. Fearnley",
+      "rank": 123,
+      "clutchIndex": 39.4,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 58,
+      "bpConvPct": 41.5,
+      "tbWinPct": 42.1,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 288,
+        "bpChances": 246,
+        "tbPlayed": 19,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "S. Wawrinka",
+      "rank": 125,
+      "clutchIndex": 69.3,
+      "atpStyleRating": 213.2,
+      "confidence": "high",
+      "bpSavedPct": 64.9,
+      "bpConvPct": 38.5,
+      "tbWinPct": 55,
+      "decWinPct": 54.8,
+      "sample": {
+        "bpFaced": 4242,
+        "bpChances": 5061,
+        "tbPlayed": 391,
+        "decPlayed": 239
+      }
+    },
+    {
+      "name": "O. Virtanen",
+      "rank": 127,
+      "clutchIndex": 42.8,
+      "atpStyleRating": 185.8,
+      "confidence": "high",
+      "bpSavedPct": 62,
+      "bpConvPct": 36.3,
+      "tbWinPct": 54.2,
+      "decWinPct": 33.3,
+      "sample": {
+        "bpFaced": 250,
+        "bpChances": 212,
+        "tbPlayed": 24,
+        "decPlayed": 12
+      }
+    },
+    {
+      "name": "R. Carballes Baena",
+      "rank": 128,
+      "clutchIndex": 47.5,
+      "atpStyleRating": 197,
+      "confidence": "high",
+      "bpSavedPct": 58.4,
+      "bpConvPct": 41.6,
+      "tbWinPct": 48.2,
+      "decWinPct": 48.9,
+      "sample": {
+        "bpFaced": 2223,
+        "bpChances": 1961,
+        "tbPlayed": 110,
+        "decPlayed": 90
+      }
+    },
+    {
+      "name": "M. McDonald",
+      "rank": 129,
+      "clutchIndex": 35.4,
+      "atpStyleRating": 180.3,
+      "confidence": "high",
+      "bpSavedPct": 59,
+      "bpConvPct": 40.5,
+      "tbWinPct": 45.2,
+      "decWinPct": 35.6,
+      "sample": {
+        "bpFaced": 1816,
+        "bpChances": 1729,
+        "tbPlayed": 104,
+        "decPlayed": 90
+      }
+    },
+    {
+      "name": "S. Mochizuki",
+      "rank": 130,
+      "clutchIndex": 4.1,
+      "atpStyleRating": 146.1,
+      "confidence": "high",
+      "bpSavedPct": 53.9,
+      "bpConvPct": 34.1,
+      "tbWinPct": 30.8,
+      "decWinPct": 27.3,
+      "sample": {
+        "bpFaced": 269,
+        "bpChances": 205,
+        "tbPlayed": 13,
+        "decPlayed": 11
+      }
+    },
+    {
+      "name": "D. Lajovic",
+      "rank": 132,
+      "clutchIndex": 37.6,
+      "atpStyleRating": 189.7,
+      "confidence": "high",
+      "bpSavedPct": 59.7,
+      "bpConvPct": 39.1,
+      "tbWinPct": 43.5,
+      "decWinPct": 47.3,
+      "sample": {
+        "bpFaced": 3356,
+        "bpChances": 3114,
+        "tbPlayed": 186,
+        "decPlayed": 150
+      }
+    },
+    {
+      "name": "N. Jarry",
+      "rank": 133,
+      "clutchIndex": 48.8,
+      "atpStyleRating": 197.4,
+      "confidence": "high",
+      "bpSavedPct": 65,
+      "bpConvPct": 35.3,
+      "tbWinPct": 50,
+      "decWinPct": 47.1,
+      "sample": {
+        "bpFaced": 1525,
+        "bpChances": 1424,
+        "tbPlayed": 168,
+        "decPlayed": 102
+      }
+    },
+    {
+      "name": "H. Dellien",
+      "rank": 133,
+      "clutchIndex": 23.6,
+      "atpStyleRating": 174.8,
+      "confidence": "high",
+      "bpSavedPct": 57.9,
+      "bpConvPct": 36.4,
+      "tbWinPct": 48.1,
+      "decWinPct": 32.3,
+      "sample": {
+        "bpFaced": 839,
+        "bpChances": 642,
+        "tbPlayed": 27,
+        "decPlayed": 31
+      }
+    },
+    {
+      "name": "T. Barrios Vera",
+      "rank": 134,
+      "clutchIndex": 48,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 61.2,
+      "bpConvPct": 33.6,
+      "tbWinPct": 57.1,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 276,
+        "bpChances": 149,
+        "tbPlayed": 14,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "P. Martinez",
+      "rank": 136,
+      "clutchIndex": 40.5,
+      "atpStyleRating": 195,
+      "confidence": "high",
+      "bpSavedPct": 58.8,
+      "bpConvPct": 39.1,
+      "tbWinPct": 47.1,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 1671,
+        "bpChances": 1436,
+        "tbPlayed": 68,
+        "decPlayed": 62
+      }
+    },
+    {
+      "name": "F. Fognini",
+      "rank": 138,
+      "clutchIndex": 67.9,
+      "atpStyleRating": 215.6,
+      "confidence": "high",
+      "bpSavedPct": 57.3,
+      "bpConvPct": 42.7,
+      "tbWinPct": 57.4,
+      "decWinPct": 58.2,
+      "sample": {
+        "bpFaced": 5608,
+        "bpChances": 5479,
+        "tbPlayed": 258,
+        "decPlayed": 244
+      }
+    },
+    {
+      "name": "F. Passaro",
+      "rank": 138,
+      "clutchIndex": 30.3,
+      "atpStyleRating": 191.8,
+      "confidence": "high",
+      "bpSavedPct": 55.3,
+      "bpConvPct": 36.4,
+      "tbWinPct": 50,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 206,
+        "bpChances": 173,
+        "tbPlayed": 18,
+        "decPlayed": 12
+      }
+    },
+    {
+      "name": "L. Klein",
+      "rank": 141,
+      "clutchIndex": 24.1,
+      "atpStyleRating": 158.1,
+      "confidence": "high",
+      "bpSavedPct": 61.3,
+      "bpConvPct": 28.6,
+      "tbWinPct": 48.1,
+      "decWinPct": 20,
+      "sample": {
+        "bpFaced": 186,
+        "bpChances": 213,
+        "tbPlayed": 27,
+        "decPlayed": 15
+      }
+    },
+    {
+      "name": "S. Travaglia",
+      "rank": 141,
+      "clutchIndex": 25.2,
+      "atpStyleRating": 167.8,
+      "confidence": "high",
+      "bpSavedPct": 56.4,
+      "bpConvPct": 40.5,
+      "tbWinPct": 33.3,
+      "decWinPct": 37.5,
+      "sample": {
+        "bpFaced": 633,
+        "bpChances": 550,
+        "tbPlayed": 51,
+        "decPlayed": 24
+      }
+    },
+    {
+      "name": "D. Koepfer",
+      "rank": 147,
+      "clutchIndex": 64.4,
+      "atpStyleRating": 213.8,
+      "confidence": "high",
+      "bpSavedPct": 60.3,
+      "bpConvPct": 38.9,
+      "tbWinPct": 54.5,
+      "decWinPct": 60,
+      "sample": {
+        "bpFaced": 1088,
+        "bpChances": 935,
+        "tbPlayed": 66,
+        "decPlayed": 45
+      }
+    },
+    {
+      "name": "B. Harris",
+      "rank": 148,
+      "clutchIndex": 30.7,
+      "atpStyleRating": 176,
+      "confidence": "high",
+      "bpSavedPct": 65,
+      "bpConvPct": 29.8,
+      "tbWinPct": 41.2,
+      "decWinPct": 40,
+      "sample": {
+        "bpFaced": 200,
+        "bpChances": 171,
+        "tbPlayed": 17,
+        "decPlayed": 10
+      }
+    },
+    {
+      "name": "C. O'Connell",
+      "rank": 150,
+      "clutchIndex": 39.2,
+      "atpStyleRating": 184.7,
+      "confidence": "high",
+      "bpSavedPct": 63.7,
+      "bpConvPct": 33.8,
+      "tbWinPct": 51.7,
+      "decWinPct": 35.6,
+      "sample": {
+        "bpFaced": 1063,
+        "bpChances": 909,
+        "tbPlayed": 89,
+        "decPlayed": 45
+      }
+    },
+    {
+      "name": "C. Wong",
+      "rank": 150,
+      "clutchIndex": 80,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 64.9,
+      "bpConvPct": 39.7,
+      "tbWinPct": 57.1,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 168,
+        "bpChances": 146,
+        "tbPlayed": 14,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "L. Nardi",
+      "rank": 151,
+      "clutchIndex": 14.7,
+      "atpStyleRating": 166,
+      "confidence": "high",
+      "bpSavedPct": 59,
+      "bpConvPct": 34.7,
+      "tbWinPct": 33.3,
+      "decWinPct": 38.9,
+      "sample": {
+        "bpFaced": 442,
+        "bpChances": 291,
+        "tbPlayed": 24,
+        "decPlayed": 18
+      }
+    },
+    {
+      "name": "Y. Bu",
+      "rank": 152,
+      "clutchIndex": 23,
+      "atpStyleRating": 153.8,
+      "confidence": "high",
+      "bpSavedPct": 63,
+      "bpConvPct": 35.5,
+      "tbWinPct": 28.6,
+      "decWinPct": 26.7,
+      "sample": {
+        "bpFaced": 341,
+        "bpChances": 349,
+        "tbPlayed": 35,
+        "decPlayed": 15
+      }
+    },
+    {
+      "name": "F. Coria",
+      "rank": 153,
+      "clutchIndex": 60.7,
+      "atpStyleRating": 209.4,
+      "confidence": "high",
+      "bpSavedPct": 55.6,
+      "bpConvPct": 42.9,
+      "tbWinPct": 52.8,
+      "decWinPct": 58.1,
+      "sample": {
+        "bpFaced": 1152,
+        "bpChances": 990,
+        "tbPlayed": 36,
+        "decPlayed": 43
+      }
+    },
+    {
+      "name": "G. Zeppieri",
+      "rank": 154,
+      "clutchIndex": 12.9,
+      "atpStyleRating": 152,
+      "confidence": "high",
+      "bpSavedPct": 60,
+      "bpConvPct": 34.7,
+      "tbWinPct": 30,
+      "decWinPct": 27.3,
+      "sample": {
+        "bpFaced": 215,
+        "bpChances": 190,
+        "tbPlayed": 10,
+        "decPlayed": 11
+      }
+    },
+    {
+      "name": "P. Herbert",
+      "rank": 154,
+      "clutchIndex": 37,
+      "atpStyleRating": 187.3,
+      "confidence": "high",
+      "bpSavedPct": 62,
+      "bpConvPct": 37.2,
+      "tbWinPct": 44.9,
+      "decWinPct": 43.2,
+      "sample": {
+        "bpFaced": 1582,
+        "bpChances": 1362,
+        "tbPlayed": 136,
+        "decPlayed": 81
+      }
+    },
+    {
+      "name": "N. Basavareddy",
+      "rank": 154,
+      "clutchIndex": 31.3,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 58,
+      "bpConvPct": 39.6,
+      "tbWinPct": 38.9,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 174,
+        "bpChances": 139,
+        "tbPlayed": 18,
+        "decPlayed": 4
+      }
+    },
+    {
+      "name": "Y. Watanuki",
+      "rank": 161,
+      "clutchIndex": 34.2,
+      "atpStyleRating": 189.1,
+      "confidence": "high",
+      "bpSavedPct": 62.5,
+      "bpConvPct": 34.4,
+      "tbWinPct": 42.3,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 277,
+        "bpChances": 291,
+        "tbPlayed": 26,
+        "decPlayed": 16
+      }
+    },
+    {
+      "name": "H. Mayot",
+      "rank": 167,
+      "clutchIndex": 31.2,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 33.8,
+      "tbWinPct": 38.5,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 188,
+        "bpChances": 145,
+        "tbPlayed": 13,
+        "decPlayed": 6
+      }
+    },
+    {
+      "name": "N. Mejia",
+      "rank": 168,
+      "clutchIndex": 44.4,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 52.1,
+      "bpConvPct": 41.8,
+      "tbWinPct": null,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 94,
+        "bpChances": 55,
+        "tbPlayed": 8,
+        "decPlayed": 6
+      }
+    },
+    {
+      "name": "E. Ymer",
+      "rank": 171,
+      "clutchIndex": 29.5,
+      "atpStyleRating": 185.8,
+      "confidence": "high",
+      "bpSavedPct": 57.6,
+      "bpConvPct": 38.5,
+      "tbWinPct": 44.2,
+      "decWinPct": 45.5,
+      "sample": {
+        "bpFaced": 912,
+        "bpChances": 729,
+        "tbPlayed": 43,
+        "decPlayed": 44
+      }
+    },
+    {
+      "name": "T. Monteiro",
+      "rank": 172,
+      "clutchIndex": 42.5,
+      "atpStyleRating": 188.2,
+      "confidence": "high",
+      "bpSavedPct": 61.9,
+      "bpConvPct": 38.8,
+      "tbWinPct": 48,
+      "decWinPct": 39.6,
+      "sample": {
+        "bpFaced": 1504,
+        "bpChances": 1242,
+        "tbPlayed": 123,
+        "decPlayed": 91
+      }
+    },
+    {
+      "name": "H. Grenier",
+      "rank": 175,
+      "clutchIndex": 26.9,
+      "atpStyleRating": 168,
+      "confidence": "high",
+      "bpSavedPct": 57.5,
+      "bpConvPct": 38.3,
+      "tbWinPct": 50,
+      "decWinPct": 22.2,
+      "sample": {
+        "bpFaced": 221,
+        "bpChances": 167,
+        "tbPlayed": 16,
+        "decPlayed": 9
+      }
+    },
+    {
+      "name": "Y. Wu",
+      "rank": 179,
+      "clutchIndex": 66,
+      "atpStyleRating": 210.5,
+      "confidence": "high",
+      "bpSavedPct": 62.3,
+      "bpConvPct": 39.9,
+      "tbWinPct": 51.7,
+      "decWinPct": 56.5,
+      "sample": {
+        "bpFaced": 470,
+        "bpChances": 356,
+        "tbPlayed": 29,
+        "decPlayed": 23
+      }
+    },
+    {
+      "name": "F. Diaz Acosta",
+      "rank": 179,
+      "clutchIndex": 27.8,
+      "atpStyleRating": 174.7,
+      "confidence": "high",
+      "bpSavedPct": 58.8,
+      "bpConvPct": 39.1,
+      "tbWinPct": 36.8,
+      "decWinPct": 40,
+      "sample": {
+        "bpFaced": 364,
+        "bpChances": 358,
+        "tbPlayed": 19,
+        "decPlayed": 20
+      }
+    },
+    {
+      "name": "C. Eubanks",
+      "rank": 182,
+      "clutchIndex": 42.6,
+      "atpStyleRating": 191.7,
+      "confidence": "high",
+      "bpSavedPct": 64.5,
+      "bpConvPct": 33.9,
+      "tbWinPct": 49.4,
+      "decWinPct": 43.9,
+      "sample": {
+        "bpFaced": 673,
+        "bpChances": 507,
+        "tbPlayed": 79,
+        "decPlayed": 41
+      }
+    },
+    {
+      "name": "R. Gasquet",
+      "rank": 182,
+      "clutchIndex": 69.5,
+      "atpStyleRating": 215.6,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 39.9,
+      "tbWinPct": 56,
+      "decWinPct": 58.9,
+      "sample": {
+        "bpFaced": 4127,
+        "bpChances": 4990,
+        "tbPlayed": 302,
+        "decPlayed": 192
+      }
+    },
+    {
+      "name": "D. Evans",
+      "rank": 185,
+      "clutchIndex": 47.2,
+      "atpStyleRating": 194,
+      "confidence": "high",
+      "bpSavedPct": 60.9,
+      "bpConvPct": 40.1,
+      "tbWinPct": 48,
+      "decWinPct": 45,
+      "sample": {
+        "bpFaced": 2392,
+        "bpChances": 2358,
+        "tbPlayed": 150,
+        "decPlayed": 120
+      }
+    },
+    {
+      "name": "B. Tomic",
+      "rank": 194,
+      "clutchIndex": 56.7,
+      "atpStyleRating": 205.8,
+      "confidence": "high",
+      "bpSavedPct": 63.6,
+      "bpConvPct": 36.3,
+      "tbWinPct": 52.7,
+      "decWinPct": 53.1,
+      "sample": {
+        "bpFaced": 2407,
+        "bpChances": 2124,
+        "tbPlayed": 201,
+        "decPlayed": 113
+      }
+    },
+    {
+      "name": "J. Kubler",
+      "rank": 195,
+      "clutchIndex": 51.4,
+      "atpStyleRating": 201.5,
+      "confidence": "high",
+      "bpSavedPct": 57.9,
+      "bpConvPct": 43.2,
+      "tbWinPct": 44.8,
+      "decWinPct": 55.6,
+      "sample": {
+        "bpFaced": 437,
+        "bpChances": 391,
+        "tbPlayed": 29,
+        "decPlayed": 18
+      }
+    },
+    {
+      "name": "J. Rodionov",
+      "rank": 195,
+      "clutchIndex": 29.2,
+      "atpStyleRating": 184.9,
+      "confidence": "high",
+      "bpSavedPct": 59.9,
+      "bpConvPct": 32.4,
+      "tbWinPct": 36.4,
+      "decWinPct": 56.3,
+      "sample": {
+        "bpFaced": 269,
+        "bpChances": 247,
+        "tbPlayed": 22,
+        "decPlayed": 16
+      }
+    },
+    {
+      "name": "C. Lestienne",
+      "rank": 197,
+      "clutchIndex": 45.2,
+      "atpStyleRating": 193,
+      "confidence": "high",
+      "bpSavedPct": 56.1,
+      "bpConvPct": 40.7,
+      "tbWinPct": 55,
+      "decWinPct": 41.2,
+      "sample": {
+        "bpFaced": 558,
+        "bpChances": 378,
+        "tbPlayed": 20,
+        "decPlayed": 17
+      }
+    },
+    {
+      "name": "A. Molcan",
+      "rank": 202,
+      "clutchIndex": 73.4,
+      "atpStyleRating": 222.6,
+      "confidence": "high",
+      "bpSavedPct": 59.9,
+      "bpConvPct": 40.5,
+      "tbWinPct": 61.5,
+      "decWinPct": 60.6,
+      "sample": {
+        "bpFaced": 704,
+        "bpChances": 657,
+        "tbPlayed": 39,
+        "decPlayed": 33
+      }
+    },
+    {
+      "name": "M. Krueger",
+      "rank": 203,
+      "clutchIndex": 19.1,
+      "atpStyleRating": 150.4,
+      "confidence": "high",
+      "bpSavedPct": 58.3,
+      "bpConvPct": 38.8,
+      "tbWinPct": 33.3,
+      "decWinPct": 20,
+      "sample": {
+        "bpFaced": 259,
+        "bpChances": 209,
+        "tbPlayed": 12,
+        "decPlayed": 10
+      }
+    },
+    {
+      "name": "L. Harris",
+      "rank": 220,
+      "clutchIndex": 47.8,
+      "atpStyleRating": 196.7,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 38.9,
+      "tbWinPct": 39.6,
+      "decWinPct": 57.1,
+      "sample": {
+        "bpFaced": 962,
+        "bpChances": 922,
+        "tbPlayed": 91,
+        "decPlayed": 42
+      }
+    },
+    {
+      "name": "M. Cecchinato",
+      "rank": 228,
+      "clutchIndex": 35.3,
+      "atpStyleRating": 191.6,
+      "confidence": "high",
+      "bpSavedPct": 57.5,
+      "bpConvPct": 36.7,
+      "tbWinPct": 53.5,
+      "decWinPct": 43.9,
+      "sample": {
+        "bpFaced": 1489,
+        "bpChances": 1233,
+        "tbPlayed": 86,
+        "decPlayed": 66
+      }
+    },
+    {
+      "name": "K. Coppejans",
+      "rank": 235,
+      "clutchIndex": 14.2,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 56.8,
+      "bpConvPct": 35.8,
+      "tbWinPct": null,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 169,
+        "bpChances": 106,
+        "tbPlayed": 9,
+        "decPlayed": 5
+      }
+    },
+    {
+      "name": "K. Nishikori",
+      "rank": 238,
+      "clutchIndex": 79.4,
+      "atpStyleRating": 233.2,
+      "confidence": "high",
+      "bpSavedPct": 61.2,
+      "bpConvPct": 40.4,
+      "tbWinPct": 59,
+      "decWinPct": 72.5,
+      "sample": {
+        "bpFaced": 3929,
+        "bpChances": 5059,
+        "tbPlayed": 234,
+        "decPlayed": 204
+      }
+    },
+    {
+      "name": "Z. Zhang",
+      "rank": 239,
+      "clutchIndex": 39.9,
+      "atpStyleRating": 197.7,
+      "confidence": "high",
+      "bpSavedPct": 59.7,
+      "bpConvPct": 37.1,
+      "tbWinPct": 48,
+      "decWinPct": 52.9,
+      "sample": {
+        "bpFaced": 761,
+        "bpChances": 750,
+        "tbPlayed": 75,
+        "decPlayed": 51
+      }
+    },
+    {
+      "name": "D. Stricker",
+      "rank": 243,
+      "clutchIndex": 41.9,
+      "atpStyleRating": 200.7,
+      "confidence": "high",
+      "bpSavedPct": 56.6,
+      "bpConvPct": 30.5,
+      "tbWinPct": 57.4,
+      "decWinPct": 56.3,
+      "sample": {
+        "bpFaced": 304,
+        "bpChances": 338,
+        "tbPlayed": 47,
+        "decPlayed": 16
+      }
+    },
+    {
+      "name": "M. Huesler",
+      "rank": 244,
+      "clutchIndex": 46.3,
+      "atpStyleRating": 179.5,
+      "confidence": "high",
+      "bpSavedPct": 63.7,
+      "bpConvPct": 41,
+      "tbWinPct": 41.5,
+      "decWinPct": 33.3,
+      "sample": {
+        "bpFaced": 512,
+        "bpChances": 393,
+        "tbPlayed": 53,
+        "decPlayed": 36
+      }
+    },
+    {
+      "name": "H. Habib",
+      "rank": 244,
+      "clutchIndex": 52.6,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 61.6,
+      "bpConvPct": 33.9,
+      "tbWinPct": null,
+      "decWinPct": 62.5,
+      "sample": {
+        "bpFaced": 86,
+        "bpChances": 56,
+        "tbPlayed": 8,
+        "decPlayed": 8
+      }
+    },
+    {
+      "name": "T. Seyboth Wild",
+      "rank": 247,
+      "clutchIndex": 33.8,
+      "atpStyleRating": 185.9,
+      "confidence": "high",
+      "bpSavedPct": 61.7,
+      "bpConvPct": 36.2,
+      "tbWinPct": 39.5,
+      "decWinPct": 48.6,
+      "sample": {
+        "bpFaced": 679,
+        "bpChances": 575,
+        "tbPlayed": 38,
+        "decPlayed": 35
+      }
+    },
+    {
+      "name": "S. Kwon",
+      "rank": 252,
+      "clutchIndex": 47.7,
+      "atpStyleRating": 203.2,
+      "confidence": "high",
+      "bpSavedPct": 59.8,
+      "bpConvPct": 37.5,
+      "tbWinPct": 53,
+      "decWinPct": 52.9,
+      "sample": {
+        "bpFaced": 923,
+        "bpChances": 921,
+        "tbPlayed": 66,
+        "decPlayed": 51
+      }
+    },
+    {
+      "name": "B. Hassan",
+      "rank": 259,
+      "clutchIndex": 77.5,
+      "atpStyleRating": 214.6,
+      "confidence": "high",
+      "bpSavedPct": 64.3,
+      "bpConvPct": 45.9,
+      "tbWinPct": 60,
+      "decWinPct": 44.4,
+      "sample": {
+        "bpFaced": 98,
+        "bpChances": 98,
+        "tbPlayed": 10,
+        "decPlayed": 9
+      }
+    },
+    {
+      "name": "A. Martin",
+      "rank": 269,
+      "clutchIndex": 43,
+      "atpStyleRating": 190.8,
+      "confidence": "high",
+      "bpSavedPct": 59.3,
+      "bpConvPct": 42.4,
+      "tbWinPct": 39.1,
+      "decWinPct": 50,
+      "sample": {
+        "bpFaced": 550,
+        "bpChances": 451,
+        "tbPlayed": 23,
+        "decPlayed": 18
+      }
+    },
+    {
+      "name": "S. Nagal",
+      "rank": 275,
+      "clutchIndex": 14.1,
+      "atpStyleRating": 168,
+      "confidence": "high",
+      "bpSavedPct": 57.7,
+      "bpConvPct": 33.6,
+      "tbWinPct": 45.5,
+      "decWinPct": 31.3,
+      "sample": {
+        "bpFaced": 428,
+        "bpChances": 333,
+        "tbPlayed": 11,
+        "decPlayed": 16
+      }
+    },
+    {
+      "name": "M. Kukushkin",
+      "rank": 281,
+      "clutchIndex": 42.7,
+      "atpStyleRating": 189.2,
+      "confidence": "high",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 41.3,
+      "tbWinPct": 45.6,
+      "decWinPct": 42.2,
+      "sample": {
+        "bpFaced": 2969,
+        "bpChances": 2464,
+        "tbPlayed": 171,
+        "decPlayed": 109
+      }
+    },
+    {
+      "name": "M. Mmoh",
+      "rank": 285,
+      "clutchIndex": 56.7,
+      "atpStyleRating": 205.4,
+      "confidence": "high",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 40.2,
+      "tbWinPct": 52.9,
+      "decWinPct": 52.2,
+      "sample": {
+        "bpFaced": 617,
+        "bpChances": 503,
+        "tbPlayed": 34,
+        "decPlayed": 23
+      }
+    },
+    {
+      "name": "B. Gojo",
+      "rank": 293,
+      "clutchIndex": 36.1,
+      "atpStyleRating": 185.6,
+      "confidence": "high",
+      "bpSavedPct": 63.3,
+      "bpConvPct": 31.1,
+      "tbWinPct": 48.3,
+      "decWinPct": 42.9,
+      "sample": {
+        "bpFaced": 259,
+        "bpChances": 302,
+        "tbPlayed": 29,
+        "decPlayed": 21
+      }
+    },
+    {
+      "name": "N. Gombos",
+      "rank": 296,
+      "clutchIndex": 23.5,
+      "atpStyleRating": 175.8,
+      "confidence": "high",
+      "bpSavedPct": 60.5,
+      "bpConvPct": 35.1,
+      "tbWinPct": 44.4,
+      "decWinPct": 35.7,
+      "sample": {
+        "bpFaced": 597,
+        "bpChances": 498,
+        "tbPlayed": 45,
+        "decPlayed": 28
+      }
+    },
+    {
+      "name": "Y. Uchiyama",
+      "rank": 306,
+      "clutchIndex": 19,
+      "atpStyleRating": 167.4,
+      "confidence": "high",
+      "bpSavedPct": 61.1,
+      "bpConvPct": 30.3,
+      "tbWinPct": 37.5,
+      "decWinPct": 38.5,
+      "sample": {
+        "bpFaced": 257,
+        "bpChances": 244,
+        "tbPlayed": 16,
+        "decPlayed": 13
+      }
+    },
+    {
+      "name": "T. Daniel",
+      "rank": 330,
+      "clutchIndex": 33.1,
+      "atpStyleRating": 186.2,
+      "confidence": "high",
+      "bpSavedPct": 56.9,
+      "bpConvPct": 39.3,
+      "tbWinPct": 48,
+      "decWinPct": 42,
+      "sample": {
+        "bpFaced": 1865,
+        "bpChances": 1480,
+        "tbPlayed": 100,
+        "decPlayed": 81
+      }
+    },
+    {
+      "name": "A. Vavassori",
+      "rank": 334,
+      "clutchIndex": 72.3,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 64.1,
+      "bpConvPct": 44.7,
+      "tbWinPct": 46.2,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 184,
+        "bpChances": 114,
+        "tbPlayed": 13,
+        "decPlayed": 6
+      }
+    },
+    {
+      "name": "D. Schwartzman",
+      "rank": 340,
+      "clutchIndex": 53,
+      "atpStyleRating": 203.3,
+      "confidence": "high",
+      "bpSavedPct": 56.8,
+      "bpConvPct": 43.7,
+      "tbWinPct": 47,
+      "decWinPct": 55.7,
+      "sample": {
+        "bpFaced": 3701,
+        "bpChances": 4099,
+        "tbPlayed": 151,
+        "decPlayed": 149
+      }
+    },
+    {
+      "name": "M. Polmans",
+      "rank": 391,
+      "clutchIndex": 18.4,
+      "atpStyleRating": 152.4,
+      "confidence": "high",
+      "bpSavedPct": 58.3,
+      "bpConvPct": 33,
+      "tbWinPct": 50,
+      "decWinPct": 11.1,
+      "sample": {
+        "bpFaced": 242,
+        "bpChances": 194,
+        "tbPlayed": 12,
+        "decPlayed": 9
+      }
+    },
+    {
+      "name": "J. Shang",
+      "rank": 406,
+      "clutchIndex": 42.7,
+      "atpStyleRating": 193.7,
+      "confidence": "high",
+      "bpSavedPct": 62.4,
+      "bpConvPct": 35.6,
+      "tbWinPct": 52.4,
+      "decWinPct": 43.3,
+      "sample": {
+        "bpFaced": 529,
+        "bpChances": 534,
+        "tbPlayed": 42,
+        "decPlayed": 30
+      }
+    },
+    {
+      "name": "R. Albot",
+      "rank": 430,
+      "clutchIndex": 30.7,
+      "atpStyleRating": 189.9,
+      "confidence": "high",
+      "bpSavedPct": 56.8,
+      "bpConvPct": 37,
+      "tbWinPct": 48.6,
+      "decWinPct": 47.4,
+      "sample": {
+        "bpFaced": 1866,
+        "bpChances": 1748,
+        "tbPlayed": 111,
+        "decPlayed": 78
+      }
+    },
+    {
+      "name": "F. Bagnis",
+      "rank": 431,
+      "clutchIndex": 27,
+      "atpStyleRating": 173.4,
+      "confidence": "high",
+      "bpSavedPct": 61,
+      "bpConvPct": 37.6,
+      "tbWinPct": 32.8,
+      "decWinPct": 42.1,
+      "sample": {
+        "bpFaced": 1071,
+        "bpChances": 798,
+        "tbPlayed": 58,
+        "decPlayed": 38
+      }
+    },
+    {
+      "name": "G. Barrere",
+      "rank": 435,
+      "clutchIndex": 24.6,
+      "atpStyleRating": 182.6,
+      "confidence": "high",
+      "bpSavedPct": 58.6,
+      "bpConvPct": 36.2,
+      "tbWinPct": 42.6,
+      "decWinPct": 45.2,
+      "sample": {
+        "bpFaced": 783,
+        "bpChances": 699,
+        "tbPlayed": 61,
+        "decPlayed": 31
+      }
+    },
+    {
+      "name": "M. Marterer",
+      "rank": 446,
+      "clutchIndex": 20.4,
+      "atpStyleRating": 169.5,
+      "confidence": "high",
+      "bpSavedPct": 60.1,
+      "bpConvPct": 35.9,
+      "tbWinPct": 32.1,
+      "decWinPct": 41.4,
+      "sample": {
+        "bpFaced": 813,
+        "bpChances": 588,
+        "tbPlayed": 53,
+        "decPlayed": 29
+      }
+    },
+    {
+      "name": "P. Kotov",
+      "rank": 454,
+      "clutchIndex": 55.5,
+      "atpStyleRating": 200.7,
+      "confidence": "high",
+      "bpSavedPct": 61.8,
+      "bpConvPct": 40.9,
+      "tbWinPct": 44.4,
+      "decWinPct": 53.6,
+      "sample": {
+        "bpFaced": 615,
+        "bpChances": 489,
+        "tbPlayed": 36,
+        "decPlayed": 28
+      }
+    },
+    {
+      "name": "T. Kokkinakis",
+      "rank": 454,
+      "clutchIndex": 59.6,
+      "atpStyleRating": 207.6,
+      "confidence": "high",
+      "bpSavedPct": 65.3,
+      "bpConvPct": 35.2,
+      "tbWinPct": 53.7,
+      "decWinPct": 53.4,
+      "sample": {
+        "bpFaced": 1154,
+        "bpChances": 1009,
+        "tbPlayed": 123,
+        "decPlayed": 73
+      }
+    },
+    {
+      "name": "J. Kovalik",
+      "rank": 515,
+      "clutchIndex": 37.6,
+      "atpStyleRating": 183.4,
+      "confidence": "high",
+      "bpSavedPct": 59.9,
+      "bpConvPct": 38.7,
+      "tbWinPct": 29.3,
+      "decWinPct": 55.6,
+      "sample": {
+        "bpFaced": 669,
+        "bpChances": 525,
+        "tbPlayed": 41,
+        "decPlayed": 27
+      }
+    },
+    {
+      "name": "M. Ymer",
+      "rank": 617,
+      "clutchIndex": 35.9,
+      "atpStyleRating": 182.4,
+      "confidence": "high",
+      "bpSavedPct": 56.4,
+      "bpConvPct": 41.5,
+      "tbWinPct": 32.6,
+      "decWinPct": 51.9,
+      "sample": {
+        "bpFaced": 1196,
+        "bpChances": 1157,
+        "tbPlayed": 46,
+        "decPlayed": 54
+      }
+    },
+    {
+      "name": "H. Chung",
+      "rank": 639,
+      "clutchIndex": 49.9,
+      "atpStyleRating": 199.7,
+      "confidence": "high",
+      "bpSavedPct": 56.8,
+      "bpConvPct": 42.7,
+      "tbWinPct": 41.5,
+      "decWinPct": 58.7,
+      "sample": {
+        "bpFaced": 902,
+        "bpChances": 1063,
+        "tbPlayed": 65,
+        "decPlayed": 46
+      }
+    },
+    {
+      "name": "A. Dougaz",
+      "rank": 664,
+      "clutchIndex": 53.7,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 58.5,
+      "bpConvPct": 41.6,
+      "tbWinPct": null,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 118,
+        "bpChances": 89,
+        "tbPlayed": 9,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "N. Kyrgios",
+      "rank": 670,
+      "clutchIndex": 82.6,
+      "atpStyleRating": 222.4,
+      "confidence": "high",
+      "bpSavedPct": 67.1,
+      "bpConvPct": 39.3,
+      "tbWinPct": 57.6,
+      "decWinPct": 58.5,
+      "sample": {
+        "bpFaced": 1475,
+        "bpChances": 1798,
+        "tbPlayed": 238,
+        "decPlayed": 94
+      }
+    },
+    {
+      "name": "B. Balleret",
+      "rank": 697,
+      "clutchIndex": 4.7,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 54.7,
+      "bpConvPct": null,
+      "tbWinPct": 35.7,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 75,
+        "bpChances": 49,
+        "tbPlayed": 14,
+        "decPlayed": 7
+      }
+    },
+    {
+      "name": "I. Ivashka",
+      "rank": 772,
+      "clutchIndex": 49,
+      "atpStyleRating": 197.3,
+      "confidence": "high",
+      "bpSavedPct": 60.4,
+      "bpConvPct": 39,
+      "tbWinPct": 52.6,
+      "decWinPct": 45.3,
+      "sample": {
+        "bpFaced": 1254,
+        "bpChances": 1309,
+        "tbPlayed": 76,
+        "decPlayed": 64
+      }
+    },
+    {
+      "name": "G. Brouwer",
+      "rank": 1067,
+      "clutchIndex": 42.8,
+      "atpStyleRating": null,
+      "confidence": "low",
+      "bpSavedPct": 63.9,
+      "bpConvPct": 32.7,
+      "tbWinPct": null,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 144,
+        "bpChances": 171,
+        "tbPlayed": 9,
+        "decPlayed": 6
+      }
+    },
+    {
+      "name": "D. King",
+      "rank": 1183,
+      "clutchIndex": 63.3,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "bpSavedPct": 56.6,
+      "bpConvPct": 43.8,
+      "tbWinPct": 57.1,
+      "decWinPct": null,
+      "sample": {
+        "bpFaced": 219,
+        "bpChances": 235,
+        "tbPlayed": 14,
+        "decPlayed": 6
+      }
+    }
+  ]
+}
