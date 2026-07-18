@@ -5313,6 +5313,10 @@ async function loadCareerSplits(){
 // up synchronously via ppEloFor(). Absence just falls back to a deterministic
 // illustrative estimate so the pill is never empty.
 let eloRatings = { ratings: {} };
+let playerStyles = { byKey: {} };
+function styleKey(name){ const p = (typeof psEloNorm === 'function' ? psEloNorm(name) : String(name || '').toLowerCase()).split(' ').filter(Boolean); return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0]; }
+function ppStyleFor(name){ const k = styleKey(name); return k ? (playerStyles.byKey || {})[k] : null; }
+async function loadPlayerStyles(){ try { const res = await fetch('./player-styles.json', { cache: 'no-cache' }); if (res.ok){ const d = await res.json(); const byKey = {}; (d.players || []).forEach(pl => { const k = styleKey(pl.name); if (k) byKey[k] = pl; }); playerStyles = { data: d, byKey }; } } catch (e) { /* additive */ } }
 let _ppEloSorted = null;
 async function loadEloRatings(){
   try {
@@ -5610,6 +5614,51 @@ function ppRadarSvg(vals, avg, color){
     parts += `<text x="${p[0].toFixed(1)}" y="${(p[1]+14).toFixed(1)}" fill="${color}" font-size="10" font-family="'IBM Plex Mono',monospace" font-weight="600" text-anchor="${anchor}">${vals[i]}</text>`;
   });
   return `<svg viewBox="0 0 264 246" style="width:100%;height:auto;overflow:visible;">${parts}</svg>`;
+}
+
+// Six-axis playing-style radar (classify-styles.js scores). Dashed overlay = tour
+// average (50). Axes whose score leans on limited shot-charting coverage are greyed
+// and marked with * (confidence indicator), never plotted as if fully computed.
+const PP_STYLE_AXES = [['big_server', 'Big Server'], ['solid_baseliner', 'Solid Base'], ['counter_puncher', 'Counter'], ['all_court', 'All-Court'], ['attacking_baseliner', 'Attacking'], ['solid_defender', 'Defender']];
+function ppStyleRadarSvg(scores, partial){
+  const cx = 132, cy = 120, R = 80, n = 6, color = '#3E7BFA';
+  const ang = i => (-90 + 360 / n * i) * Math.PI / 180, pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  const vals = PP_STYLE_AXES.map(a => Math.max(0, Math.min(100, scores[a[0]] || 0)));
+  const poly = arr => arr.map((v, i) => { const p = pt(i, v / 100 * R); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+  const isP = k => partial && partial.indexOf(k) !== -1;
+  let s = '';
+  [0.25, 0.5, 0.75, 1].forEach(f => { s += `<polygon points="${vals.map((_, i) => { const p = pt(i, f * R); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ')}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`; });
+  for (let i = 0; i < n; i++){ const p = pt(i, R); s += `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`; }
+  s += `<polygon points="${poly([50, 50, 50, 50, 50, 50])}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.2" stroke-dasharray="3 3" stroke-linejoin="round"/>`;
+  s += `<polygon points="${poly(vals)}" fill="${ppHexA(color, 0.20)}" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  vals.forEach((v, i) => { const p = pt(i, v / 100 * R); s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="${isP(PP_STYLE_AXES[i][0]) ? '#5b6472' : color}" stroke="#0b0d12" stroke-width="1.6"/>`; });
+  PP_STYLE_AXES.forEach((a, i) => {
+    const p = pt(i, R + 18), c = Math.cos(ang(i));
+    const anchor = c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle';
+    s += `<text x="${p[0].toFixed(1)}" y="${(p[1] + 1).toFixed(1)}" fill="${isP(a[0]) ? '#5b6472' : '#aab2c0'}" font-size="10" font-family="'Hanken Grotesk',sans-serif" font-weight="600" text-anchor="${anchor}">${a[1]}${isP(a[0]) ? ' *' : ''}</text>`;
+    s += `<text x="${p[0].toFixed(1)}" y="${(p[1] + 13).toFixed(1)}" fill="${isP(a[0]) ? '#5b6472' : color}" font-size="9.5" font-family="'IBM Plex Mono',monospace" font-weight="600" text-anchor="${anchor}">${vals[i]}</text>`;
+  });
+  return `<svg viewBox="0 0 264 246" style="width:100%;height:auto;overflow:visible;">${s}</svg>`;
+}
+function ppStyleCard(p){
+  const st = ppStyleFor(p && p.name);
+  if (!st) return '';
+  const badges = (st.badges || []).map(b => {
+    if (b === 'pressure_player') return `<span style="font-size:10.5px;font-weight:700;color:#3ECF8E;background:rgba(62,207,142,0.12);border:1px solid rgba(62,207,142,0.35);border-radius:7px;padding:4px 9px;">Pressure Player</span>`;
+    if (b === 'inconsistent_attacker') return `<span style="font-size:10.5px;font-weight:700;color:#E8973A;background:rgba(232,151,58,0.12);border:1px solid rgba(232,151,58,0.35);border-radius:7px;padding:4px 9px;">Inconsistent Attacker</span>`;
+    return '';
+  }).join('');
+  const partial = st.partial_axes || [];
+  const covNote = st.archetype_data_coverage === 'partial'
+    ? `<div style="font-size:10px;color:#6b7280;margin-top:6px;line-height:1.4;">* rally/winner axes use limited shot-charting coverage (${st.mcp_charted || 0} charted matches) — greyed, not fully computed.</div>` : '';
+  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:16px 18px;">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Playing style</span>
+    <div style="font-size:15px;font-weight:800;color:#dbe6ff;margin:4px 0 8px;">${pesc(st.archetype_label)}</div>
+    ${badges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${badges}</div>` : ''}
+    ${ppStyleRadarSvg(st.archetype_scores, partial)}
+    <div style="font-size:10px;color:#5b6472;text-align:center;margin-top:2px;">Dashed line = tour average (50 on each axis)</div>
+    ${covNote}
+  </div>`;
 }
 
 // Season win-rate line/area chart with value + year labels.
@@ -6420,7 +6469,8 @@ function buildPlayerProfileHtml(p){
   const surfForStyle = surfData.filter(d => { const k = p.kpis[d.s]; const n = k && k.record ? (k.record.won + k.record.lost) : 0; return n >= 20; });
   const bestSurf = surfForStyle[0];
   const specialist = (bestSurf && careerWR != null && (bestSurf.wr - careerWR) >= 5) ? bestSurf.s + ' Specialist' : null;
-  const styleLine = [p.archetype, specialist].filter(Boolean).join(' · ');
+  const _ppStyle = ppStyleFor(p.name);
+  const styleLine = [(_ppStyle && _ppStyle.archetype_label) || p.archetype, specialist].filter(Boolean).join(' · ');
   const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
   const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:12px;background:rgba(255,255,255,0.12);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
@@ -6469,6 +6519,7 @@ function buildPlayerProfileHtml(p){
           <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${tilesHtml}</div>
+        ${ppStyleCard(p)}
         <div style="display:flex;flex-direction:column;gap:9px;">
           <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
           ${surfHtml}
@@ -8968,7 +9019,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadPlayerStyles(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

@@ -1,0 +1,3928 @@
+{
+  "generatedAt": "2026-07-18T05:27:53.252Z",
+  "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
+  "window": "2010-2026",
+  "note": "Each axis is a 0-100 percentile within the qualified pool (50 = tour-typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
+  "tourAverage": 50,
+  "mcpMinCharted": 10,
+  "players": [
+    {
+      "name": "C. Alcaraz",
+      "rank": 1,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 54,
+        "solid_baseliner": 91,
+        "counter_puncher": 85,
+        "attacking_baseliner": 83,
+        "solid_defender": 67,
+        "all_court": 56
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 94,
+      "mcp_charted": 222
+    },
+    {
+      "name": "J. Sinner",
+      "rank": 2,
+      "archetype_label": "Solid Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 64,
+        "solid_baseliner": 95,
+        "counter_puncher": 89,
+        "attacking_baseliner": 75,
+        "solid_defender": 80,
+        "all_court": 64
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 97,
+      "mcp_charted": 298
+    },
+    {
+      "name": "A. Zverev",
+      "rank": 3,
+      "archetype_label": "All-Court Player / Big Server",
+      "archetype_scores": {
+        "big_server": 86,
+        "solid_baseliner": 79,
+        "counter_puncher": 82,
+        "attacking_baseliner": 53,
+        "solid_defender": 71,
+        "all_court": 57
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 87,
+      "mcp_charted": 196
+    },
+    {
+      "name": "N. Djokovic",
+      "rank": 4,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 73,
+        "solid_baseliner": 94,
+        "counter_puncher": 96,
+        "attacking_baseliner": 68,
+        "solid_defender": 89,
+        "all_court": 67
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 99,
+      "mcp_charted": 553
+    },
+    {
+      "name": "F. Auger-Aliassime",
+      "rank": 5,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 87,
+        "solid_baseliner": 75,
+        "counter_puncher": 46,
+        "attacking_baseliner": 61,
+        "solid_defender": 50,
+        "all_court": 41
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 67,
+      "mcp_charted": 102
+    },
+    {
+      "name": "A. De Minaur",
+      "rank": 6,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 32,
+        "solid_baseliner": 74,
+        "counter_puncher": 93,
+        "attacking_baseliner": 64,
+        "solid_defender": 84,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 81,
+      "mcp_charted": 140
+    },
+    {
+      "name": "L. Musetti",
+      "rank": 7,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 39,
+        "solid_baseliner": 76,
+        "counter_puncher": 81,
+        "attacking_baseliner": 63,
+        "solid_defender": 74,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 77,
+      "mcp_charted": 125
+    },
+    {
+      "name": "T. Fritz",
+      "rank": 9,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 90,
+        "counter_puncher": 47,
+        "attacking_baseliner": 67,
+        "solid_defender": 52,
+        "all_court": 43
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 63,
+      "mcp_charted": 128
+    },
+    {
+      "name": "B. Shelton",
+      "rank": 9,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 89,
+        "solid_baseliner": 74,
+        "counter_puncher": 11,
+        "attacking_baseliner": 63,
+        "solid_defender": 36,
+        "all_court": 13
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 58,
+      "mcp_charted": 44
+    },
+    {
+      "name": "J. Draper",
+      "rank": 10,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 78,
+        "solid_baseliner": 85,
+        "counter_puncher": 78,
+        "attacking_baseliner": 64,
+        "solid_defender": 69,
+        "all_court": 64
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 68,
+      "mcp_charted": 29
+    },
+    {
+      "name": "A. Bublik",
+      "rank": 11,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 50,
+        "counter_puncher": 24,
+        "attacking_baseliner": 42,
+        "solid_defender": 28,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 58,
+      "mcp_charted": 99
+    },
+    {
+      "name": "C. Ruud",
+      "rank": 12,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 62,
+        "solid_baseliner": 88,
+        "counter_puncher": 76,
+        "attacking_baseliner": 70,
+        "solid_defender": 70,
+        "all_court": 60
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 80,
+      "mcp_charted": 171
+    },
+    {
+      "name": "D. Medvedev",
+      "rank": 13,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 76,
+        "solid_baseliner": 77,
+        "counter_puncher": 94,
+        "attacking_baseliner": 55,
+        "solid_defender": 82,
+        "all_court": 58
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 89,
+      "mcp_charted": 286
+    },
+    {
+      "name": "A. Davidovich Fokina",
+      "rank": 14,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 29,
+        "solid_baseliner": 60,
+        "counter_puncher": 83,
+        "attacking_baseliner": 63,
+        "solid_defender": 63,
+        "all_court": 34
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 57,
+      "mcp_charted": 56
+    },
+    {
+      "name": "H. Rune",
+      "rank": 15,
+      "archetype_label": "Attacking Baseliner / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 55,
+        "solid_baseliner": 73,
+        "counter_puncher": 58,
+        "attacking_baseliner": 74,
+        "solid_defender": 54,
+        "all_court": 50
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 76,
+      "mcp_charted": 66
+    },
+    {
+      "name": "A. Rublev",
+      "rank": 16,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 70,
+        "solid_baseliner": 84,
+        "counter_puncher": 71,
+        "attacking_baseliner": 75,
+        "solid_defender": 56,
+        "all_court": 58
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 65,
+      "mcp_charted": 176
+    },
+    {
+      "name": "K. Khachanov",
+      "rank": 17,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 74,
+        "solid_baseliner": 80,
+        "counter_puncher": 69,
+        "attacking_baseliner": 61,
+        "solid_defender": 66,
+        "all_court": 60
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 59,
+      "mcp_charted": 80
+    },
+    {
+      "name": "J. Mensik",
+      "rank": 18,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 80,
+        "solid_baseliner": 68,
+        "counter_puncher": 47,
+        "attacking_baseliner": 46,
+        "solid_defender": 50,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 71,
+      "mcp_charted": 31
+    },
+    {
+      "name": "J. Lehecka",
+      "rank": 19,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 71,
+        "solid_baseliner": 74,
+        "counter_puncher": 31,
+        "attacking_baseliner": 67,
+        "solid_defender": 35,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 61,
+      "mcp_charted": 61
+    },
+    {
+      "name": "T. Paul",
+      "rank": 20,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 46,
+        "solid_baseliner": 81,
+        "counter_puncher": 80,
+        "attacking_baseliner": 73,
+        "solid_defender": 65,
+        "all_court": 50
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 58,
+      "mcp_charted": 77
+    },
+    {
+      "name": "F. Cerundolo",
+      "rank": 21,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 26,
+        "solid_baseliner": 57,
+        "counter_puncher": 91,
+        "attacking_baseliner": 52,
+        "solid_defender": 67,
+        "all_court": 27
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 63,
+      "mcp_charted": 42
+    },
+    {
+      "name": "A. Fils",
+      "rank": 21,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 63,
+        "solid_baseliner": 69,
+        "counter_puncher": 48,
+        "attacking_baseliner": 62,
+        "solid_defender": 44,
+        "all_court": 43
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 71,
+      "mcp_charted": 70
+    },
+    {
+      "name": "F. Cobolli",
+      "rank": 22,
+      "archetype_label": "Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 36,
+        "solid_baseliner": 51,
+        "counter_puncher": 59,
+        "attacking_baseliner": 70,
+        "solid_defender": 55,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 64,
+      "mcp_charted": 24
+    },
+    {
+      "name": "T. Griekspoor",
+      "rank": 25,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 78,
+        "solid_baseliner": 60,
+        "counter_puncher": 7,
+        "attacking_baseliner": 58,
+        "solid_defender": 34,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 45,
+      "mcp_charted": 116
+    },
+    {
+      "name": "L. Darderi",
+      "rank": 25,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 48,
+        "solid_baseliner": 54,
+        "counter_puncher": 58,
+        "attacking_baseliner": 56,
+        "solid_defender": 53,
+        "all_court": 49
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 76,
+      "mcp_charted": 12
+    },
+    {
+      "name": "L. Tien",
+      "rank": 26,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 29,
+        "solid_baseliner": 31,
+        "counter_puncher": 72,
+        "attacking_baseliner": 46,
+        "solid_defender": 61,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 87,
+      "mcp_charted": 23
+    },
+    {
+      "name": "A. Rinderknech",
+      "rank": 27,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 86,
+        "solid_baseliner": 64,
+        "counter_puncher": 8,
+        "attacking_baseliner": 43,
+        "solid_defender": 29,
+        "all_court": 5
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 31,
+      "mcp_charted": 22
+    },
+    {
+      "name": "C. Norrie",
+      "rank": 28,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 50,
+        "solid_baseliner": 71,
+        "counter_puncher": 80,
+        "attacking_baseliner": 55,
+        "solid_defender": 72,
+        "all_court": 49
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 63,
+      "mcp_charted": 48
+    },
+    {
+      "name": "J. Fonseca",
+      "rank": 29,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 64,
+        "solid_baseliner": 86,
+        "counter_puncher": 54,
+        "attacking_baseliner": 78,
+        "solid_defender": 49,
+        "all_court": 45
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 49,
+      "mcp_charted": 53
+    },
+    {
+      "name": "F. Tiafoe",
+      "rank": 30,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 61,
+        "solid_baseliner": 71,
+        "counter_puncher": 44,
+        "attacking_baseliner": 62,
+        "solid_defender": 52,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 53,
+      "mcp_charted": 66
+    },
+    {
+      "name": "V. Vacherot",
+      "rank": 31,
+      "archetype_label": "Solid Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 63,
+        "solid_baseliner": 67,
+        "counter_puncher": 61,
+        "attacking_baseliner": 53,
+        "solid_defender": 65,
+        "all_court": 55
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 51,
+      "mcp_charted": 10
+    },
+    {
+      "name": "B. Nakashima",
+      "rank": 33,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 92,
+        "counter_puncher": 36,
+        "attacking_baseliner": 54,
+        "solid_defender": 55,
+        "all_court": 33
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 40
+    },
+    {
+      "name": "C. Moutet",
+      "rank": 35,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 24,
+        "solid_baseliner": 37,
+        "counter_puncher": 81,
+        "attacking_baseliner": 47,
+        "solid_defender": 65,
+        "all_court": 21
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 58,
+      "mcp_charted": 22
+    },
+    {
+      "name": "A. Tabilo",
+      "rank": 35,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 64,
+        "solid_baseliner": 63,
+        "counter_puncher": 50,
+        "attacking_baseliner": 39,
+        "solid_defender": 56,
+        "all_court": 41
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 32,
+      "mcp_charted": 23
+    },
+    {
+      "name": "U. Humbert",
+      "rank": 36,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 68,
+        "solid_baseliner": 77,
+        "counter_puncher": 41,
+        "attacking_baseliner": 65,
+        "solid_defender": 43,
+        "all_court": 37
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 37,
+      "mcp_charted": 58
+    },
+    {
+      "name": "D. Shapovalov",
+      "rank": 37,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 72,
+        "solid_baseliner": 68,
+        "counter_puncher": 42,
+        "attacking_baseliner": 71,
+        "solid_defender": 41,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 45,
+      "mcp_charted": 90
+    },
+    {
+      "name": "J. Munar",
+      "rank": 38,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 34,
+        "solid_baseliner": 47,
+        "counter_puncher": 88,
+        "attacking_baseliner": 36,
+        "solid_defender": 73,
+        "all_court": 24
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 38
+    },
+    {
+      "name": "Z. Bergs",
+      "rank": 39,
+      "archetype_label": "Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 56,
+        "solid_baseliner": 54,
+        "counter_puncher": 38,
+        "attacking_baseliner": 71,
+        "solid_defender": 38,
+        "all_court": 33
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 40,
+      "mcp_charted": 18
+    },
+    {
+      "name": "G. Diallo",
+      "rank": 40,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 80,
+        "solid_baseliner": 71,
+        "counter_puncher": 29,
+        "attacking_baseliner": 55,
+        "solid_defender": 37,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 40,
+      "mcp_charted": 14
+    },
+    {
+      "name": "T. Machac",
+      "rank": 41,
+      "archetype_label": "Attacking Baseliner / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 48,
+        "solid_baseliner": 69,
+        "counter_puncher": 62,
+        "attacking_baseliner": 79,
+        "solid_defender": 49,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 81,
+      "mcp_charted": 31
+    },
+    {
+      "name": "A. Michelsen",
+      "rank": 42,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 50,
+        "solid_baseliner": 64,
+        "counter_puncher": 59,
+        "attacking_baseliner": 60,
+        "solid_defender": 54,
+        "all_court": 50
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 54,
+      "mcp_charted": 17
+    },
+    {
+      "name": "M. Navone",
+      "rank": 44,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 20,
+        "solid_baseliner": 47,
+        "counter_puncher": 98,
+        "attacking_baseliner": 43,
+        "solid_defender": 76,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 12
+    },
+    {
+      "name": "A. Mannarino",
+      "rank": 45,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 36,
+        "solid_baseliner": 50,
+        "counter_puncher": 71,
+        "attacking_baseliner": 52,
+        "solid_defender": 66,
+        "all_court": 36
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 50,
+      "mcp_charted": 70
+    },
+    {
+      "name": "S. Korda",
+      "rank": 46,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 68,
+        "solid_baseliner": 80,
+        "counter_puncher": 66,
+        "attacking_baseliner": 75,
+        "solid_defender": 59,
+        "all_court": 59
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 57,
+      "mcp_charted": 49
+    },
+    {
+      "name": "M. Cilic",
+      "rank": 47,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 77,
+        "solid_baseliner": 83,
+        "counter_puncher": 62,
+        "attacking_baseliner": 80,
+        "solid_defender": 54,
+        "all_court": 54
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 68,
+      "mcp_charted": 84
+    },
+    {
+      "name": "G. Dimitrov",
+      "rank": 47,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 72,
+        "solid_baseliner": 76,
+        "counter_puncher": 70,
+        "attacking_baseliner": 63,
+        "solid_defender": 66,
+        "all_court": 63
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 68,
+      "mcp_charted": 174
+    },
+    {
+      "name": "E. Quinn",
+      "rank": 48,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 51,
+        "solid_baseliner": 32,
+        "counter_puncher": 22,
+        "attacking_baseliner": 51,
+        "solid_defender": 34,
+        "all_court": 21
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 10
+    },
+    {
+      "name": "F. Marozsan",
+      "rank": 49,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 48,
+        "solid_baseliner": 63,
+        "counter_puncher": 48,
+        "attacking_baseliner": 62,
+        "solid_defender": 39,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 47,
+      "mcp_charted": 24
+    },
+    {
+      "name": "T. Atmane",
+      "rank": 51,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 65,
+        "solid_baseliner": 24,
+        "counter_puncher": 30,
+        "attacking_baseliner": 14,
+        "solid_defender": 31,
+        "all_court": 7
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 12,
+      "mcp_charted": 1
+    },
+    {
+      "name": "N. Borges",
+      "rank": 52,
+      "archetype_label": "Solid Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 53,
+        "solid_baseliner": 58,
+        "counter_puncher": 41,
+        "attacking_baseliner": 49,
+        "solid_defender": 57,
+        "all_court": 42
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 57,
+      "mcp_charted": 18
+    },
+    {
+      "name": "H. Hurkacz",
+      "rank": 53,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 89,
+        "solid_baseliner": 90,
+        "counter_puncher": 29,
+        "attacking_baseliner": 61,
+        "solid_defender": 47,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 50,
+      "mcp_charted": 320
+    },
+    {
+      "name": "B. Van De Zandschulp",
+      "rank": 54,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 55,
+        "solid_baseliner": 45,
+        "counter_puncher": 74,
+        "attacking_baseliner": 36,
+        "solid_defender": 64,
+        "all_court": 35
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 60,
+      "mcp_charted": 111
+    },
+    {
+      "name": "V. Kopriva",
+      "rank": 55,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 20,
+        "solid_baseliner": 9,
+        "counter_puncher": 78,
+        "attacking_baseliner": 38,
+        "solid_defender": 45,
+        "all_court": 2
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3
+    },
+    {
+      "name": "T. M. Etcheverry",
+      "rank": 57,
+      "archetype_label": "Solid Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 60,
+        "solid_baseliner": 75,
+        "counter_puncher": 66,
+        "attacking_baseliner": 39,
+        "solid_defender": 71,
+        "all_court": 43
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 25,
+      "mcp_charted": 24
+    },
+    {
+      "name": "M. Fucsovics",
+      "rank": 57,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 32,
+        "solid_baseliner": 57,
+        "counter_puncher": 87,
+        "attacking_baseliner": 52,
+        "solid_defender": 76,
+        "all_court": 32
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 42,
+      "mcp_charted": 42
+    },
+    {
+      "name": "G. Mpetshi Perricard",
+      "rank": 58,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 97,
+        "solid_baseliner": 41,
+        "counter_puncher": 0,
+        "attacking_baseliner": 66,
+        "solid_defender": 25,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 51,
+      "mcp_charted": 29
+    },
+    {
+      "name": "K. Majchrzak",
+      "rank": 59,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 48,
+        "solid_baseliner": 61,
+        "counter_puncher": 52,
+        "attacking_baseliner": 55,
+        "solid_defender": 54,
+        "all_court": 48
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 35,
+      "mcp_charted": 6
+    },
+    {
+      "name": "Y. Hanfmann",
+      "rank": 59,
+      "archetype_label": "Attacking Baseliner / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 49,
+        "solid_baseliner": 61,
+        "counter_puncher": 49,
+        "attacking_baseliner": 69,
+        "solid_defender": 42,
+        "all_court": 39
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 36,
+      "mcp_charted": 15
+    },
+    {
+      "name": "R. Opelka",
+      "rank": 60,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 93,
+        "solid_baseliner": 62,
+        "counter_puncher": 1,
+        "attacking_baseliner": 69,
+        "solid_defender": 26,
+        "all_court": 1
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 37,
+      "mcp_charted": 57
+    },
+    {
+      "name": "A. Popyrin",
+      "rank": 60,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 76,
+        "solid_baseliner": 53,
+        "counter_puncher": 12,
+        "attacking_baseliner": 47,
+        "solid_defender": 29,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 35,
+      "mcp_charted": 34
+    },
+    {
+      "name": "C. Ugo Carabelli",
+      "rank": 61,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 19,
+        "solid_baseliner": 16,
+        "counter_puncher": 69,
+        "attacking_baseliner": 35,
+        "solid_defender": 43,
+        "all_court": 8
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 62,
+      "mcp_charted": 9
+    },
+    {
+      "name": "A. Cazaux",
+      "rank": 63,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 70,
+        "solid_baseliner": 61,
+        "counter_puncher": 27,
+        "attacking_baseliner": 24,
+        "solid_defender": 48,
+        "all_court": 19
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 37,
+      "mcp_charted": 12
+    },
+    {
+      "name": "J. Brooksby",
+      "rank": 63,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 26,
+        "solid_baseliner": 68,
+        "counter_puncher": 92,
+        "attacking_baseliner": 55,
+        "solid_defender": 78,
+        "all_court": 30
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 91,
+      "mcp_charted": 30
+    },
+    {
+      "name": "D. Altmaier",
+      "rank": 64,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 51,
+        "solid_baseliner": 32,
+        "counter_puncher": 31,
+        "attacking_baseliner": 31,
+        "solid_defender": 38,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 26,
+      "mcp_charted": 22
+    },
+    {
+      "name": "S. Baez",
+      "rank": 65,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 22,
+        "solid_baseliner": 60,
+        "counter_puncher": 93,
+        "attacking_baseliner": 58,
+        "solid_defender": 73,
+        "all_court": 26
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 50,
+      "mcp_charted": 50
+    },
+    {
+      "name": "L. Sonego",
+      "rank": 66,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 70,
+        "solid_baseliner": 75,
+        "counter_puncher": 21,
+        "attacking_baseliner": 61,
+        "solid_defender": 37,
+        "all_court": 22
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 43,
+      "mcp_charted": 44
+    },
+    {
+      "name": "H. Medjedovic",
+      "rank": 67,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 83,
+        "solid_baseliner": 63,
+        "counter_puncher": 16,
+        "attacking_baseliner": 59,
+        "solid_defender": 31,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 53,
+      "mcp_charted": 10
+    },
+    {
+      "name": "G. Monfils",
+      "rank": 68,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 73,
+        "solid_baseliner": 70,
+        "counter_puncher": 85,
+        "attacking_baseliner": 48,
+        "solid_defender": 74,
+        "all_court": 52
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 79,
+      "mcp_charted": 134
+    },
+    {
+      "name": "T. A. Tirante",
+      "rank": 69,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 44,
+        "solid_baseliner": 51,
+        "counter_puncher": 35,
+        "attacking_baseliner": 49,
+        "solid_defender": 42,
+        "all_court": 36
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 53,
+      "mcp_charted": 3
+    },
+    {
+      "name": "M. Kecmanovic",
+      "rank": 70,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 36,
+        "solid_baseliner": 68,
+        "counter_puncher": 72,
+        "attacking_baseliner": 59,
+        "solid_defender": 70,
+        "all_court": 41
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 36,
+      "mcp_charted": 48
+    },
+    {
+      "name": "V. Royer",
+      "rank": 71,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 69,
+        "solid_baseliner": 80,
+        "counter_puncher": 22,
+        "attacking_baseliner": 61,
+        "solid_defender": 53,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 40,
+      "mcp_charted": 5
+    },
+    {
+      "name": "J. M. Cerundolo",
+      "rank": 72,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 19,
+        "solid_baseliner": 18,
+        "counter_puncher": 73,
+        "attacking_baseliner": 46,
+        "solid_defender": 46,
+        "all_court": 10
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 73,
+      "mcp_charted": 7
+    },
+    {
+      "name": "S. Tsitsipas",
+      "rank": 75,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 75,
+        "solid_baseliner": 91,
+        "counter_puncher": 51,
+        "attacking_baseliner": 71,
+        "solid_defender": 56,
+        "all_court": 47
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 78,
+      "mcp_charted": 200
+    },
+    {
+      "name": "M. Giron",
+      "rank": 77,
+      "archetype_label": "Solid Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 47,
+        "solid_baseliner": 62,
+        "counter_puncher": 48,
+        "attacking_baseliner": 42,
+        "solid_defender": 58,
+        "all_court": 40
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 41,
+      "mcp_charted": 30
+    },
+    {
+      "name": "M. Trungelliti",
+      "rank": 78,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 16,
+        "solid_baseliner": 11,
+        "counter_puncher": 72,
+        "attacking_baseliner": 40,
+        "solid_defender": 35,
+        "all_court": 2
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 59,
+      "mcp_charted": 2
+    },
+    {
+      "name": "F. Misolic",
+      "rank": 79,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 31,
+        "solid_baseliner": 31,
+        "counter_puncher": 42,
+        "attacking_baseliner": 26,
+        "solid_defender": 35,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 87,
+      "mcp_charted": 5
+    },
+    {
+      "name": "D. Prizmic",
+      "rank": 79,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 29,
+        "solid_baseliner": 33,
+        "counter_puncher": 78,
+        "attacking_baseliner": 42,
+        "solid_defender": 50,
+        "all_court": 20
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 5
+    },
+    {
+      "name": "M. Bellucci",
+      "rank": 80,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 62,
+        "solid_baseliner": 43,
+        "counter_puncher": 27,
+        "attacking_baseliner": 42,
+        "solid_defender": 50,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 14,
+      "mcp_charted": 10
+    },
+    {
+      "name": "S. Ofner",
+      "rank": 82,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 59,
+        "solid_baseliner": 39,
+        "counter_puncher": 31,
+        "attacking_baseliner": 30,
+        "solid_defender": 33,
+        "all_court": 22
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 48,
+      "mcp_charted": 9
+    },
+    {
+      "name": "J-L. Struff",
+      "rank": 83,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 73,
+        "solid_baseliner": 58,
+        "counter_puncher": 29,
+        "attacking_baseliner": 58,
+        "solid_defender": 32,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 30,
+      "mcp_charted": 47
+    },
+    {
+      "name": "R. Collignon",
+      "rank": 84,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 70,
+        "solid_baseliner": 28,
+        "counter_puncher": 28,
+        "attacking_baseliner": 10,
+        "solid_defender": 37,
+        "all_court": 5
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 41,
+      "mcp_charted": 6
+    },
+    {
+      "name": "A. Shevchenko",
+      "rank": 85,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 33,
+        "solid_baseliner": 25,
+        "counter_puncher": 49,
+        "attacking_baseliner": 42,
+        "solid_defender": 45,
+        "all_court": 26
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 70,
+      "mcp_charted": 20
+    },
+    {
+      "name": "J. Duckworth",
+      "rank": 86,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 59,
+        "solid_baseliner": 36,
+        "counter_puncher": 7,
+        "attacking_baseliner": 58,
+        "solid_defender": 26,
+        "all_court": 8
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 10
+    },
+    {
+      "name": "D. Dzumhur",
+      "rank": 87,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 19,
+        "solid_baseliner": 36,
+        "counter_puncher": 94,
+        "attacking_baseliner": 43,
+        "solid_defender": 69,
+        "all_court": 13
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 63,
+      "mcp_charted": 12
+    },
+    {
+      "name": "Z. Svajda",
+      "rank": 90,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 34,
+        "solid_baseliner": 30,
+        "counter_puncher": 44,
+        "attacking_baseliner": 38,
+        "solid_defender": 30,
+        "all_court": 27
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 50,
+      "mcp_charted": 3
+    },
+    {
+      "name": "P. Carreno-Busta",
+      "rank": 91,
+      "archetype_label": "Counter Puncher / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 42,
+        "solid_baseliner": 73,
+        "counter_puncher": 81,
+        "attacking_baseliner": 62,
+        "solid_defender": 68,
+        "all_court": 45
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 63,
+      "mcp_charted": 42
+    },
+    {
+      "name": "Q. Halys",
+      "rank": 91,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 45,
+        "counter_puncher": 4,
+        "attacking_baseliner": 41,
+        "solid_defender": 23,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 12,
+      "mcp_charted": 13
+    },
+    {
+      "name": "R. Safiullin",
+      "rank": 94,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 64,
+        "solid_baseliner": 65,
+        "counter_puncher": 53,
+        "attacking_baseliner": 59,
+        "solid_defender": 53,
+        "all_court": 51
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 20,
+      "mcp_charted": 15
+    },
+    {
+      "name": "L. Pouille",
+      "rank": 94,
+      "archetype_label": "Attacking Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 57,
+        "solid_baseliner": 44,
+        "counter_puncher": 41,
+        "attacking_baseliner": 58,
+        "solid_defender": 34,
+        "all_court": 33
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 69,
+      "mcp_charted": 32
+    },
+    {
+      "name": "L. Djere",
+      "rank": 95,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 46,
+        "solid_baseliner": 49,
+        "counter_puncher": 58,
+        "attacking_baseliner": 46,
+        "solid_defender": 56,
+        "all_court": 43
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 35,
+      "mcp_charted": 31
+    },
+    {
+      "name": "A. Kovacevic",
+      "rank": 95,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 73,
+        "solid_baseliner": 38,
+        "counter_puncher": 7,
+        "attacking_baseliner": 37,
+        "solid_defender": 32,
+        "all_court": 6
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 11,
+      "mcp_charted": 12
+    },
+    {
+      "name": "R. Hijikata",
+      "rank": 96,
+      "archetype_label": "Attacking Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 23,
+        "solid_baseliner": 18,
+        "counter_puncher": 42,
+        "attacking_baseliner": 46,
+        "solid_defender": 31,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 60,
+      "mcp_charted": 12
+    },
+    {
+      "name": "L. van Assche",
+      "rank": 97,
+      "archetype_label": "Attacking Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 25,
+        "solid_baseliner": 28,
+        "counter_puncher": 43,
+        "attacking_baseliner": 45,
+        "solid_defender": 40,
+        "all_court": 24
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 30,
+      "mcp_charted": 7
+    },
+    {
+      "name": "T. Schoolkate",
+      "rank": 97,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 74,
+        "solid_baseliner": 31,
+        "counter_puncher": 7,
+        "attacking_baseliner": 11,
+        "solid_defender": 29,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3
+    },
+    {
+      "name": "C. Taberner",
+      "rank": 98,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 22,
+        "solid_baseliner": 21,
+        "counter_puncher": 79,
+        "attacking_baseliner": 39,
+        "solid_defender": 44,
+        "all_court": 9
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 2
+    },
+    {
+      "name": "R. Bautista-Agut",
+      "rank": 98,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 38,
+        "solid_baseliner": 82,
+        "counter_puncher": 90,
+        "attacking_baseliner": 63,
+        "solid_defender": 81,
+        "all_court": 43
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player",
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 67,
+      "mcp_charted": 79
+    },
+    {
+      "name": "A. Vukic",
+      "rank": 99,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 68,
+        "solid_baseliner": 51,
+        "counter_puncher": 15,
+        "attacking_baseliner": 42,
+        "solid_defender": 32,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 42,
+      "mcp_charted": 14
+    },
+    {
+      "name": "M. Berrettini",
+      "rank": 100,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 91,
+        "solid_baseliner": 95,
+        "counter_puncher": 26,
+        "attacking_baseliner": 68,
+        "solid_defender": 39,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 63,
+      "mcp_charted": 94
+    },
+    {
+      "name": "B. Bonzi",
+      "rank": 101,
+      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 55,
+        "solid_baseliner": 66,
+        "counter_puncher": 40,
+        "attacking_baseliner": 65,
+        "solid_defender": 49,
+        "all_court": 40
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 30,
+      "mcp_charted": 11
+    },
+    {
+      "name": "J. De Jong",
+      "rank": 102,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 58,
+        "solid_baseliner": 45,
+        "counter_puncher": 36,
+        "attacking_baseliner": 46,
+        "solid_defender": 45,
+        "all_court": 35
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 65,
+      "mcp_charted": 34
+    },
+    {
+      "name": "A. Walton",
+      "rank": 103,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 59,
+        "solid_baseliner": 54,
+        "counter_puncher": 14,
+        "attacking_baseliner": 39,
+        "solid_defender": 39,
+        "all_court": 17
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 26,
+      "mcp_charted": 2
+    },
+    {
+      "name": "C. Garin",
+      "rank": 104,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 33,
+        "solid_baseliner": 50,
+        "counter_puncher": 81,
+        "attacking_baseliner": 49,
+        "solid_defender": 65,
+        "all_court": 31
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 62,
+      "mcp_charted": 27
+    },
+    {
+      "name": "A. Muller",
+      "rank": 105,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 31,
+        "solid_baseliner": 37,
+        "counter_puncher": 57,
+        "attacking_baseliner": 46,
+        "solid_defender": 51,
+        "all_court": 30
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 61,
+      "mcp_charted": 13
+    },
+    {
+      "name": "M. Arnaldi",
+      "rank": 106,
+      "archetype_label": "Attacking Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 44,
+        "solid_baseliner": 52,
+        "counter_puncher": 55,
+        "attacking_baseliner": 59,
+        "solid_defender": 50,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 56,
+      "mcp_charted": 21
+    },
+    {
+      "name": "B. Coric",
+      "rank": 107,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 57,
+        "solid_baseliner": 72,
+        "counter_puncher": 52,
+        "attacking_baseliner": 60,
+        "solid_defender": 60,
+        "all_court": 50
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 57,
+      "mcp_charted": 52
+    },
+    {
+      "name": "E. Nava",
+      "rank": 108,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 58,
+        "solid_baseliner": 10,
+        "counter_puncher": 3,
+        "attacking_baseliner": 2,
+        "solid_defender": 13,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 5
+    },
+    {
+      "name": "J. Thompson",
+      "rank": 113,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 57,
+        "solid_baseliner": 61,
+        "counter_puncher": 43,
+        "attacking_baseliner": 49,
+        "solid_defender": 49,
+        "all_court": 42
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 29
+    },
+    {
+      "name": "F. Comesana",
+      "rank": 114,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 69,
+        "solid_baseliner": 43,
+        "counter_puncher": 27,
+        "attacking_baseliner": 23,
+        "solid_defender": 41,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 30,
+      "mcp_charted": 9
+    },
+    {
+      "name": "Y. Nishioka",
+      "rank": 116,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 19,
+        "solid_baseliner": 42,
+        "counter_puncher": 72,
+        "attacking_baseliner": 60,
+        "solid_defender": 64,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 72,
+      "mcp_charted": 41
+    },
+    {
+      "name": "N. Basilashvili",
+      "rank": 117,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 24,
+        "solid_baseliner": 19,
+        "counter_puncher": 59,
+        "attacking_baseliner": 57,
+        "solid_defender": 41,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 65,
+      "mcp_charted": 32
+    },
+    {
+      "name": "H. Gaston",
+      "rank": 118,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 7,
+        "solid_baseliner": 21,
+        "counter_puncher": 64,
+        "attacking_baseliner": 55,
+        "solid_defender": 51,
+        "all_court": 7
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 76,
+      "mcp_charted": 12
+    },
+    {
+      "name": "D. Goffin",
+      "rank": 119,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 43,
+        "solid_baseliner": 57,
+        "counter_puncher": 89,
+        "attacking_baseliner": 52,
+        "solid_defender": 69,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 66,
+      "mcp_charted": 75
+    },
+    {
+      "name": "J. Fearnley",
+      "rank": 123,
+      "archetype_label": "Counter Puncher / Big Server",
+      "archetype_scores": {
+        "big_server": 48,
+        "solid_baseliner": 25,
+        "counter_puncher": 53,
+        "attacking_baseliner": 27,
+        "solid_defender": 40,
+        "all_court": 22
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3
+    },
+    {
+      "name": "S. Wawrinka",
+      "rank": 125,
+      "archetype_label": "Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 64,
+        "solid_baseliner": 88,
+        "counter_puncher": 62,
+        "attacking_baseliner": 72,
+        "solid_defender": 62,
+        "all_court": 55
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 64,
+      "mcp_charted": 138
+    },
+    {
+      "name": "O. Virtanen",
+      "rank": 127,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 59,
+        "solid_baseliner": 25,
+        "counter_puncher": 21,
+        "attacking_baseliner": 40,
+        "solid_defender": 28,
+        "all_court": 14
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 41,
+      "mcp_charted": 11
+    },
+    {
+      "name": "R. Carballes Baena",
+      "rank": 128,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 20,
+        "solid_baseliner": 37,
+        "counter_puncher": 86,
+        "attacking_baseliner": 39,
+        "solid_defender": 73,
+        "all_court": 14
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 58,
+      "mcp_charted": 24
+    },
+    {
+      "name": "M. McDonald",
+      "rank": 129,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 43,
+        "solid_baseliner": 53,
+        "counter_puncher": 64,
+        "attacking_baseliner": 56,
+        "solid_defender": 60,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 41,
+      "mcp_charted": 25
+    },
+    {
+      "name": "S. Mochizuki",
+      "rank": 130,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 15,
+        "solid_baseliner": 4,
+        "counter_puncher": 37,
+        "attacking_baseliner": 23,
+        "solid_defender": 26,
+        "all_court": 4
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 5,
+      "mcp_charted": 2
+    },
+    {
+      "name": "D. Lajovic",
+      "rank": 132,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 35,
+        "solid_baseliner": 52,
+        "counter_puncher": 64,
+        "attacking_baseliner": 51,
+        "solid_defender": 60,
+        "all_court": 37
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 40,
+      "mcp_charted": 42
+    },
+    {
+      "name": "N. Jarry",
+      "rank": 133,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 72,
+        "counter_puncher": 11,
+        "attacking_baseliner": 64,
+        "solid_defender": 29,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 36,
+      "mcp_charted": 48
+    },
+    {
+      "name": "H. Dellien",
+      "rank": 133,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 21,
+        "solid_baseliner": 23,
+        "counter_puncher": 63,
+        "attacking_baseliner": 37,
+        "solid_defender": 40,
+        "all_court": 14
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 9
+    },
+    {
+      "name": "T. Barrios Vera",
+      "rank": 134,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 22,
+        "solid_baseliner": 21,
+        "counter_puncher": 15,
+        "attacking_baseliner": 17,
+        "solid_defender": 15,
+        "all_court": 14
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 4
+    },
+    {
+      "name": "P. Martinez",
+      "rank": 136,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 21,
+        "solid_baseliner": 22,
+        "counter_puncher": 83,
+        "attacking_baseliner": 35,
+        "solid_defender": 68,
+        "all_court": 8
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 30
+    },
+    {
+      "name": "F. Fognini",
+      "rank": 138,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 18,
+        "solid_baseliner": 34,
+        "counter_puncher": 84,
+        "attacking_baseliner": 49,
+        "solid_defender": 58,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 88,
+      "mcp_charted": 47
+    },
+    {
+      "name": "F. Passaro",
+      "rank": 138,
+      "archetype_label": "Attacking Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 39,
+        "solid_baseliner": 26,
+        "counter_puncher": 20,
+        "attacking_baseliner": 43,
+        "solid_defender": 28,
+        "all_court": 18
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 40,
+      "mcp_charted": 2
+    },
+    {
+      "name": "L. Klein",
+      "rank": 141,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 69,
+        "solid_baseliner": 68,
+        "counter_puncher": 17,
+        "attacking_baseliner": 61,
+        "solid_defender": 52,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 17,
+      "mcp_charted": 3
+    },
+    {
+      "name": "S. Travaglia",
+      "rank": 141,
+      "archetype_label": "Big Server / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 51,
+        "solid_baseliner": 23,
+        "counter_puncher": 51,
+        "attacking_baseliner": 24,
+        "solid_defender": 29,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 33,
+      "mcp_charted": 1
+    },
+    {
+      "name": "D. Koepfer",
+      "rank": 147,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 31,
+        "solid_baseliner": 32,
+        "counter_puncher": 58,
+        "attacking_baseliner": 53,
+        "solid_defender": 51,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 71,
+      "mcp_charted": 11
+    },
+    {
+      "name": "B. Harris",
+      "rank": 148,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 58,
+        "solid_baseliner": 43,
+        "counter_puncher": 2,
+        "attacking_baseliner": 30,
+        "solid_defender": 35,
+        "all_court": 6
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 11,
+      "mcp_charted": 3
+    },
+    {
+      "name": "C. O'Connell",
+      "rank": 150,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 58,
+        "solid_baseliner": 52,
+        "counter_puncher": 24,
+        "attacking_baseliner": 31,
+        "solid_defender": 47,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 16
+    },
+    {
+      "name": "C. Wong",
+      "rank": 150,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 79,
+        "solid_baseliner": 64,
+        "counter_puncher": 38,
+        "attacking_baseliner": 24,
+        "solid_defender": 46,
+        "all_court": 21
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3
+    },
+    {
+      "name": "L. Nardi",
+      "rank": 151,
+      "archetype_label": "Big Server / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 16,
+        "solid_baseliner": 6,
+        "counter_puncher": 16,
+        "attacking_baseliner": 10,
+        "solid_defender": 13,
+        "all_court": 6
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 10,
+      "mcp_charted": 8
+    },
+    {
+      "name": "Y. Bu",
+      "rank": 152,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 62,
+        "solid_baseliner": 66,
+        "counter_puncher": 31,
+        "attacking_baseliner": 42,
+        "solid_defender": 49,
+        "all_court": 31
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 8,
+      "mcp_charted": 0
+    },
+    {
+      "name": "F. Coria",
+      "rank": 153,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 23,
+        "solid_baseliner": 29,
+        "counter_puncher": 93,
+        "attacking_baseliner": 36,
+        "solid_defender": 72,
+        "all_court": 10
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 80,
+      "mcp_charted": 10
+    },
+    {
+      "name": "G. Zeppieri",
+      "rank": 154,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 47,
+        "solid_baseliner": 36,
+        "counter_puncher": 20,
+        "attacking_baseliner": 42,
+        "solid_defender": 31,
+        "all_court": 21
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 6,
+      "mcp_charted": 3
+    },
+    {
+      "name": "P. Herbert",
+      "rank": 154,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 67,
+        "solid_baseliner": 40,
+        "counter_puncher": 14,
+        "attacking_baseliner": 53,
+        "solid_defender": 24,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 15
+    },
+    {
+      "name": "N. Basavareddy",
+      "rank": 154,
+      "archetype_label": "Solid Defender / Big Server",
+      "archetype_scores": {
+        "big_server": 36,
+        "solid_baseliner": 18,
+        "counter_puncher": 32,
+        "attacking_baseliner": 31,
+        "solid_defender": 41,
+        "all_court": 20
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 20
+    },
+    {
+      "name": "D. E. Galan",
+      "rank": 155,
+      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_scores": {
+        "big_server": 38,
+        "solid_baseliner": 44,
+        "counter_puncher": 68,
+        "attacking_baseliner": 33,
+        "solid_defender": 63,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 59,
+      "mcp_charted": 14
+    },
+    {
+      "name": "Y. Watanuki",
+      "rank": 161,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 74,
+        "solid_baseliner": 54,
+        "counter_puncher": 27,
+        "attacking_baseliner": 45,
+        "solid_defender": 50,
+        "all_court": 27
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 22,
+      "mcp_charted": 3
+    },
+    {
+      "name": "H. Mayot",
+      "rank": 167,
+      "archetype_label": "Attacking Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 37,
+        "solid_baseliner": 36,
+        "counter_puncher": 17,
+        "attacking_baseliner": 40,
+        "solid_defender": 30,
+        "all_court": 20
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 2
+    },
+    {
+      "name": "N. Mejia",
+      "rank": 168,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 23,
+        "solid_baseliner": 15,
+        "counter_puncher": 9,
+        "attacking_baseliner": 4,
+        "solid_defender": 4,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 4
+    },
+    {
+      "name": "C. H. Tseng",
+      "rank": 169,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 14,
+        "solid_baseliner": 13,
+        "counter_puncher": 25,
+        "attacking_baseliner": 25,
+        "solid_defender": 19,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 12,
+      "mcp_charted": 3
+    },
+    {
+      "name": "E. Ymer",
+      "rank": 171,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 30,
+        "solid_baseliner": 18,
+        "counter_puncher": 55,
+        "attacking_baseliner": 30,
+        "solid_defender": 36,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 35,
+      "mcp_charted": 2
+    },
+    {
+      "name": "T. Monteiro",
+      "rank": 172,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 59,
+        "solid_baseliner": 53,
+        "counter_puncher": 19,
+        "attacking_baseliner": 55,
+        "solid_defender": 37,
+        "all_court": 22
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 39,
+      "mcp_charted": 13
+    },
+    {
+      "name": "H. Grenier",
+      "rank": 175,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 57,
+        "solid_baseliner": 12,
+        "counter_puncher": 19,
+        "attacking_baseliner": 8,
+        "solid_defender": 20,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 36,
+      "mcp_charted": 3
+    },
+    {
+      "name": "Y. Wu",
+      "rank": 179,
+      "archetype_label": "Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 27,
+        "solid_baseliner": 41,
+        "counter_puncher": 37,
+        "attacking_baseliner": 57,
+        "solid_defender": 37,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 66,
+      "mcp_charted": 6
+    },
+    {
+      "name": "F. Diaz Acosta",
+      "rank": 179,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 24,
+        "solid_baseliner": 39,
+        "counter_puncher": 81,
+        "attacking_baseliner": 63,
+        "solid_defender": 58,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 4
+    },
+    {
+      "name": "C. Eubanks",
+      "rank": 182,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 88,
+        "solid_baseliner": 45,
+        "counter_puncher": 1,
+        "attacking_baseliner": 58,
+        "solid_defender": 26,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 29,
+      "mcp_charted": 17
+    },
+    {
+      "name": "R. Gasquet",
+      "rank": 182,
+      "archetype_label": "All-Court Player / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 52,
+        "solid_baseliner": 78,
+        "counter_puncher": 75,
+        "attacking_baseliner": 70,
+        "solid_defender": 69,
+        "all_court": 55
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 77,
+      "mcp_charted": 95
+    },
+    {
+      "name": "D. Evans",
+      "rank": 185,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 37,
+        "solid_baseliner": 56,
+        "counter_puncher": 75,
+        "attacking_baseliner": 52,
+        "solid_defender": 64,
+        "all_court": 38
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 50,
+      "mcp_charted": 32
+    },
+    {
+      "name": "B. Tomic",
+      "rank": 194,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 70,
+        "solid_baseliner": 60,
+        "counter_puncher": 26,
+        "attacking_baseliner": 37,
+        "solid_defender": 40,
+        "all_court": 23
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 49,
+      "mcp_charted": 31
+    },
+    {
+      "name": "J. Kubler",
+      "rank": 195,
+      "archetype_label": "Counter Puncher / Big Server",
+      "archetype_scores": {
+        "big_server": 46,
+        "solid_baseliner": 33,
+        "counter_puncher": 54,
+        "attacking_baseliner": 37,
+        "solid_defender": 44,
+        "all_court": 32
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 62,
+      "mcp_charted": 6
+    },
+    {
+      "name": "J. Rodionov",
+      "rank": 195,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 49,
+        "solid_baseliner": 42,
+        "counter_puncher": 21,
+        "attacking_baseliner": 37,
+        "solid_defender": 38,
+        "all_court": 24
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 23,
+      "mcp_charted": 2
+    },
+    {
+      "name": "C. Lestienne",
+      "rank": 197,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 21,
+        "solid_baseliner": 8,
+        "counter_puncher": 63,
+        "attacking_baseliner": 29,
+        "solid_defender": 35,
+        "all_court": 4
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 64,
+      "mcp_charted": 3
+    },
+    {
+      "name": "A. Molcan",
+      "rank": 202,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 28,
+        "solid_baseliner": 51,
+        "counter_puncher": 87,
+        "attacking_baseliner": 52,
+        "solid_defender": 75,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 87,
+      "mcp_charted": 11
+    },
+    {
+      "name": "M. Krueger",
+      "rank": 203,
+      "archetype_label": "Attacking Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 38,
+        "solid_baseliner": 28,
+        "counter_puncher": 34,
+        "attacking_baseliner": 43,
+        "solid_defender": 29,
+        "all_court": 26
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 20,
+      "mcp_charted": 2
+    },
+    {
+      "name": "L. Harris",
+      "rank": 220,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 85,
+        "solid_baseliner": 62,
+        "counter_puncher": 22,
+        "attacking_baseliner": 20,
+        "solid_defender": 43,
+        "all_court": 9
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 44,
+      "mcp_charted": 8
+    },
+    {
+      "name": "M. Cecchinato",
+      "rank": 228,
+      "archetype_label": "Attacking Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 39,
+        "solid_baseliner": 27,
+        "counter_puncher": 37,
+        "attacking_baseliner": 41,
+        "solid_defender": 33,
+        "all_court": 28
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 46,
+      "mcp_charted": 18
+    },
+    {
+      "name": "K. Coppejans",
+      "rank": 235,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 32,
+        "solid_baseliner": 20,
+        "counter_puncher": 11,
+        "attacking_baseliner": 18,
+        "solid_defender": 10,
+        "all_court": 6
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 1
+    },
+    {
+      "name": "K. Nishikori",
+      "rank": 238,
+      "archetype_label": "All-Court Player / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 31,
+        "solid_baseliner": 76,
+        "counter_puncher": 81,
+        "attacking_baseliner": 79,
+        "solid_defender": 69,
+        "all_court": 39
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 87,
+      "mcp_charted": 72
+    },
+    {
+      "name": "Z. Zhang",
+      "rank": 239,
+      "archetype_label": "Big Server / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 68,
+        "solid_baseliner": 62,
+        "counter_puncher": 15,
+        "attacking_baseliner": 60,
+        "solid_defender": 31,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 42,
+      "mcp_charted": 26
+    },
+    {
+      "name": "D. Stricker",
+      "rank": 243,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 74,
+        "solid_baseliner": 59,
+        "counter_puncher": 11,
+        "attacking_baseliner": 36,
+        "solid_defender": 43,
+        "all_court": 13
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": 54,
+      "mcp_charted": 3
+    },
+    {
+      "name": "M. Huesler",
+      "rank": 244,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 67,
+        "solid_baseliner": 55,
+        "counter_puncher": 8,
+        "attacking_baseliner": 49,
+        "solid_defender": 40,
+        "all_court": 14
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 37,
+      "mcp_charted": 7
+    },
+    {
+      "name": "H. Habib",
+      "rank": 244,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 76,
+        "solid_baseliner": 29,
+        "counter_puncher": 2,
+        "attacking_baseliner": 44,
+        "solid_defender": 23,
+        "all_court": 0
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 1
+    },
+    {
+      "name": "T. Seyboth Wild",
+      "rank": 247,
+      "archetype_label": "Attacking Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 41,
+        "solid_baseliner": 35,
+        "counter_puncher": 35,
+        "attacking_baseliner": 43,
+        "solid_defender": 43,
+        "all_court": 34
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 24,
+      "mcp_charted": 16
+    },
+    {
+      "name": "S. Kwon",
+      "rank": 252,
+      "archetype_label": "Attacking Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 35,
+        "solid_baseliner": 44,
+        "counter_puncher": 57,
+        "attacking_baseliner": 61,
+        "solid_defender": 50,
+        "all_court": 36
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 54,
+      "mcp_charted": 6
+    },
+    {
+      "name": "J. P. Varillas",
+      "rank": 255,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 26,
+        "solid_baseliner": 51,
+        "counter_puncher": 72,
+        "attacking_baseliner": 71,
+        "solid_defender": 54,
+        "all_court": 30
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 53,
+      "mcp_charted": 9
+    },
+    {
+      "name": "B. Hassan",
+      "rank": 259,
+      "archetype_label": "All-Court Player / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 39,
+        "solid_baseliner": 74,
+        "counter_puncher": 71,
+        "attacking_baseliner": 77,
+        "solid_defender": 77,
+        "all_court": 46
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 80,
+      "mcp_charted": 1
+    },
+    {
+      "name": "A. Martin",
+      "rank": 269,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 15,
+        "solid_baseliner": 34,
+        "counter_puncher": 95,
+        "attacking_baseliner": 60,
+        "solid_defender": 54,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 48,
+      "mcp_charted": 4
+    },
+    {
+      "name": "S. Nagal",
+      "rank": 275,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 20,
+        "solid_baseliner": 15,
+        "counter_puncher": 52,
+        "attacking_baseliner": 36,
+        "solid_defender": 29,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 16,
+      "mcp_charted": 4
+    },
+    {
+      "name": "M. Kukushkin",
+      "rank": 281,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 16,
+        "solid_baseliner": 41,
+        "counter_puncher": 76,
+        "attacking_baseliner": 48,
+        "solid_defender": 63,
+        "all_court": 18
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 47,
+      "mcp_charted": 17
+    },
+    {
+      "name": "M. Mmoh",
+      "rank": 285,
+      "archetype_label": "Big Server / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 52,
+        "solid_baseliner": 24,
+        "counter_puncher": 46,
+        "attacking_baseliner": 23,
+        "solid_defender": 36,
+        "all_court": 19
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 65,
+      "mcp_charted": 5
+    },
+    {
+      "name": "B. Gojo",
+      "rank": 293,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 90,
+        "solid_baseliner": 68,
+        "counter_puncher": 18,
+        "attacking_baseliner": 31,
+        "solid_defender": 50,
+        "all_court": 13
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 24,
+      "mcp_charted": 1
+    },
+    {
+      "name": "N. Gombos",
+      "rank": 296,
+      "archetype_label": "Big Server / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 43,
+        "solid_baseliner": 22,
+        "counter_puncher": 34,
+        "attacking_baseliner": 20,
+        "solid_defender": 31,
+        "all_court": 17
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 18,
+      "mcp_charted": 3
+    },
+    {
+      "name": "Y. Uchiyama",
+      "rank": 306,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 65,
+        "solid_baseliner": 51,
+        "counter_puncher": 9,
+        "attacking_baseliner": 40,
+        "solid_defender": 34,
+        "all_court": 12
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 9,
+      "mcp_charted": 3
+    },
+    {
+      "name": "T. Daniel",
+      "rank": 330,
+      "archetype_label": "Solid Defender / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 26,
+        "solid_baseliner": 21,
+        "counter_puncher": 55,
+        "attacking_baseliner": 28,
+        "solid_defender": 56,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 43,
+      "mcp_charted": 12
+    },
+    {
+      "name": "A. Vavassori",
+      "rank": 334,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 46,
+        "solid_baseliner": 21,
+        "counter_puncher": 14,
+        "attacking_baseliner": 10,
+        "solid_defender": 25,
+        "all_court": 4
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 6
+    },
+    {
+      "name": "D. Schwartzman",
+      "rank": 340,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 16,
+        "solid_baseliner": 52,
+        "counter_puncher": 98,
+        "attacking_baseliner": 44,
+        "solid_defender": 76,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 66,
+      "mcp_charted": 49
+    },
+    {
+      "name": "M. Polmans",
+      "rank": 391,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 26,
+        "solid_baseliner": 13,
+        "counter_puncher": 56,
+        "attacking_baseliner": 36,
+        "solid_defender": 43,
+        "all_court": 13
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 22,
+      "mcp_charted": 5
+    },
+    {
+      "name": "J. Shang",
+      "rank": 406,
+      "archetype_label": "Solid Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 40,
+        "solid_baseliner": 57,
+        "counter_puncher": 49,
+        "attacking_baseliner": 46,
+        "solid_defender": 57,
+        "all_court": 40
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 38,
+      "mcp_charted": 11
+    },
+    {
+      "name": "R. Albot",
+      "rank": 430,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 21,
+        "solid_baseliner": 26,
+        "counter_puncher": 70,
+        "attacking_baseliner": 50,
+        "solid_defender": 57,
+        "all_court": 17
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 39,
+      "mcp_charted": 18
+    },
+    {
+      "name": "F. Bagnis",
+      "rank": 431,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 31,
+        "solid_baseliner": 21,
+        "counter_puncher": 44,
+        "attacking_baseliner": 40,
+        "solid_defender": 35,
+        "all_court": 22
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 20,
+      "mcp_charted": 5
+    },
+    {
+      "name": "G. Barrere",
+      "rank": 435,
+      "archetype_label": "Attacking Baseliner / Solid Defender",
+      "archetype_scores": {
+        "big_server": 37,
+        "solid_baseliner": 38,
+        "counter_puncher": 34,
+        "attacking_baseliner": 50,
+        "solid_defender": 44,
+        "all_court": 32
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 25,
+      "mcp_charted": 12
+    },
+    {
+      "name": "M. Marterer",
+      "rank": 446,
+      "archetype_label": "Big Server / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 50,
+        "solid_baseliner": 31,
+        "counter_puncher": 6,
+        "attacking_baseliner": 45,
+        "solid_defender": 20,
+        "all_court": 6
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 14,
+      "mcp_charted": 7
+    },
+    {
+      "name": "P. Kotov",
+      "rank": 454,
+      "archetype_label": "Big Server / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 37,
+        "solid_baseliner": 35,
+        "counter_puncher": 36,
+        "attacking_baseliner": 23,
+        "solid_defender": 35,
+        "all_court": 25
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 52,
+      "mcp_charted": 7
+    },
+    {
+      "name": "T. Kokkinakis",
+      "rank": 454,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 81,
+        "solid_baseliner": 58,
+        "counter_puncher": 11,
+        "attacking_baseliner": 43,
+        "solid_defender": 36,
+        "all_court": 11
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 49,
+      "mcp_charted": 28
+    },
+    {
+      "name": "J. Kovalik",
+      "rank": 515,
+      "archetype_label": "Counter Puncher / Attacking Baseliner",
+      "archetype_scores": {
+        "big_server": 18,
+        "solid_baseliner": 22,
+        "counter_puncher": 50,
+        "attacking_baseliner": 44,
+        "solid_defender": 32,
+        "all_court": 15
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 35,
+      "mcp_charted": 5
+    },
+    {
+      "name": "M. Ymer",
+      "rank": 617,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 23,
+        "solid_baseliner": 34,
+        "counter_puncher": 92,
+        "attacking_baseliner": 36,
+        "solid_defender": 73,
+        "all_court": 12
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 44,
+      "mcp_charted": 14
+    },
+    {
+      "name": "H. Chung",
+      "rank": 639,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 37,
+        "solid_baseliner": 59,
+        "counter_puncher": 91,
+        "attacking_baseliner": 49,
+        "solid_defender": 76,
+        "all_court": 34
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": 60,
+      "mcp_charted": 12
+    },
+    {
+      "name": "A. Dougaz",
+      "rank": 664,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 28,
+        "solid_baseliner": 9,
+        "counter_puncher": 61,
+        "attacking_baseliner": 31,
+        "solid_defender": 38,
+        "all_court": 8
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 0
+    },
+    {
+      "name": "N. Kyrgios",
+      "rank": 670,
+      "archetype_label": "Big Server",
+      "archetype_scores": {
+        "big_server": 96,
+        "solid_baseliner": 79,
+        "counter_puncher": 11,
+        "attacking_baseliner": 67,
+        "solid_defender": 29,
+        "all_court": 9
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [
+        "pressure_player"
+      ],
+      "pressure_score": 78,
+      "mcp_charted": 118
+    },
+    {
+      "name": "B. Balleret",
+      "rank": 697,
+      "archetype_label": "Attacking Baseliner / Counter Puncher",
+      "archetype_scores": {
+        "big_server": 14,
+        "solid_baseliner": 18,
+        "counter_puncher": 45,
+        "attacking_baseliner": 54,
+        "solid_defender": 24,
+        "all_court": 7
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 1
+    },
+    {
+      "name": "I. Ivashka",
+      "rank": 772,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 51,
+        "solid_baseliner": 57,
+        "counter_puncher": 79,
+        "attacking_baseliner": 50,
+        "solid_defender": 64,
+        "all_court": 44
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 54,
+      "mcp_charted": 9
+    },
+    {
+      "name": "G. Brouwer",
+      "rank": 1067,
+      "archetype_label": "Solid Baseliner / Big Server",
+      "archetype_scores": {
+        "big_server": 65,
+        "solid_baseliner": 73,
+        "counter_puncher": 33,
+        "attacking_baseliner": 49,
+        "solid_defender": 56,
+        "all_court": 35
+      },
+      "archetype_data_coverage": "full",
+      "partial_axes": [],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 16
+    },
+    {
+      "name": "D. King",
+      "rank": 1183,
+      "archetype_label": "Counter Puncher",
+      "archetype_scores": {
+        "big_server": 18,
+        "solid_baseliner": 48,
+        "counter_puncher": 99,
+        "attacking_baseliner": 62,
+        "solid_defender": 54,
+        "all_court": 17
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "attacking_baseliner",
+        "solid_defender"
+      ],
+      "badges": [
+        "inconsistent_attacker"
+      ],
+      "pressure_score": null,
+      "mcp_charted": 1
+    }
+  ]
+}
