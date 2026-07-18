@@ -56,35 +56,52 @@ function lastToken(name) {
     else { console.error('Fetch failed and no cache available. Aborting.'); process.exit(1); }
   }
 
-  // Row shape: ...player.cgi?p=ID">First&nbsp;Last</a></td><td align=right>AGE</td><td align=right>ELO</td>
-  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>([\d.]+)<\/td>/g;
-  const ratings = {};                 // "lastToken|firstInitial" -> elo
+  // Row shape (columns in order): ...player.cgi?p=ID">First&nbsp;Last</a></td>
+  //   <td>AGE</td><td>ELO</td><td></td>       (overall Elo, then a spacer cell)
+  //   <td>hRank</td><td>hElo</td>             (hard Elo rank + rating)
+  //   <td>cRank</td><td>cElo</td>             (clay Elo rank + rating)
+  //   <td>gRank</td><td>gElo</td>             (grass Elo rank + rating)
+  // The report is sorted by overall Elo descending, so overall rank == row order.
+  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>([\d.]+)<\/td><td>\s*<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td>/g;
+  const ratings = {};                 // "lastToken|firstInitial" -> overall elo (back-compat)
+  const elo = {};                     // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
   const tokCount = {};                // lastToken -> count (for unique fallback)
-  const tokElo = {};                  // lastToken -> elo (last seen)
+  const tokElo = {};                  // lastToken -> overall elo (last seen)
+  const tokSurface = {};              // lastToken -> surface record (last seen)
   let m, rows = 0;
+  const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? Math.round(n) : null; };
   while ((m = re.exec(html))) {
     const name = m[2].replace(/&nbsp;/g, ' ').trim();
-    const elo = parseFloat(m[4]);
-    if (!Number.isFinite(elo)) continue;
-    const k = eloKey(name);
-    if (k) ratings[k] = Math.round(elo);
-    const t = lastToken(name);
-    if (t) { tokCount[t] = (tokCount[t] || 0) + 1; tokElo[t] = Math.round(elo); }
+    const overall = parseFloat(m[4]);
+    if (!Number.isFinite(overall)) continue;
     rows++;
+    const rank = rows;                 // overall Elo rank = position in the sorted report
+    const rec = {
+      all:   { rating: Math.round(overall), rank },
+      hard:  { rating: num(m[6]), rank: num(m[5]) },
+      clay:  { rating: num(m[8]), rank: num(m[7]) },
+      grass: { rating: num(m[10]), rank: num(m[9]) },
+    };
+    const k = eloKey(name);
+    if (k) { ratings[k] = Math.round(overall); elo[k] = rec; }
+    const t = lastToken(name);
+    if (t) { tokCount[t] = (tokCount[t] || 0) + 1; tokElo[t] = Math.round(overall); tokSurface[t] = rec; }
   }
-  // last-token-only fallback, ONLY for tokens unique in the report (avoids Cerundolo x2 collisions)
-  const bySurname = {};
-  for (const t in tokCount) if (tokCount[t] === 1) bySurname[t] = tokElo[t];
+  // last-token-only fallbacks, ONLY for tokens unique in the report (avoids Cerundolo x2 collisions)
+  const bySurname = {}, bySurnameElo = {};
+  for (const t in tokCount) if (tokCount[t] === 1) { bySurname[t] = tokElo[t]; bySurnameElo[t] = tokSurface[t]; }
 
-  console.log(`Parsed ${rows} Elo rows -> ${Object.keys(ratings).length} keyed, ${Object.keys(bySurname).length} unique-token fallbacks.`);
+  console.log(`Parsed ${rows} Elo rows -> ${Object.keys(ratings).length} keyed (overall + surface), ${Object.keys(bySurname).length} unique-token fallbacks.`);
 
   const out = {
     generatedAt: new Date().toISOString(),
     source: 'tennisabstract.com/reports/atp_elo_ratings.html',
     refresh: 'weekly (Mondays)',
     count: rows,
-    ratings,     // primary lookup: "lastToken|firstInitial" -> Elo (integer)
-    bySurname,   // fallback: unique last-token -> Elo
+    ratings,       // back-compat: "lastToken|firstInitial" -> overall Elo (integer)
+    bySurname,     // back-compat: unique last-token -> overall Elo
+    elo,           // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
+    bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass}: {rating,rank}
   };
   const tmp = OUT + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2));

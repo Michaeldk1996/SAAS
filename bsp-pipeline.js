@@ -2958,11 +2958,31 @@ function buildPlayerInsights(profile, tourAverage) {
     const last = form.matches.slice(0, 9);
     const wins = last.filter(m => m.won).length;
     const ratio = wins / last.length;
-    insights.push({
-      title: ratio >= 0.6 ? 'In strong recent form' : ratio <= 0.4 ? 'Struggling for recent form' : 'Mixed recent form',
-      text: `${wins}-${last.length - wins} across the last ${last.length} tour matches (${form.pct}% recent win rate).`,
-      accent: 'gold',
-    });
+    if (ratio >= 0.6) {
+      insights.push({ title: 'In strong recent form', text: `${wins}-${last.length - wins} across the last ${last.length} tour matches (${form.pct}% recent win rate).`, accent: 'gold' });
+    } else if (ratio <= 0.4) {
+      insights.push({ title: 'Struggling for recent form', text: `${wins}-${last.length - wins} across the last ${last.length} tour matches (${form.pct}% recent win rate).`, accent: 'gold' });
+    } else {
+      // Overall form is even (40-60%). Rather than a vague "mixed form" label,
+      // surface the actionable read: which surface has he been sharpest on in
+      // this run? Real per-match surface data, no fabrication.
+      const bySurf = {};
+      last.forEach(m => {
+        const s = (m.surface || '').toLowerCase();
+        if (!['clay', 'hard', 'grass'].includes(s)) return;
+        (bySurf[s] = bySurf[s] || { won: 0, lost: 0 })[m.won ? 'won' : 'lost']++;
+      });
+      const ranked = Object.entries(bySurf)
+        .filter(([, r]) => (r.won + r.lost) >= 2)
+        .sort((a, b) => (b[1].won / (b[1].won + b[1].lost)) - (a[1].won / (a[1].won + a[1].lost)));
+      if (ranked.length) {
+        const [s, r] = ranked[0];
+        const label = s[0].toUpperCase() + s.slice(1);
+        insights.push({ title: `Sharpest on ${label} recently`, text: `${r.won}-${r.lost} on ${s} in his last ${last.length} matches — his most productive surface in an otherwise even run (${form.pct}% overall).`, accent: 'gold' });
+      } else {
+        insights.push({ title: 'Evenly-matched recent run', text: `${wins}-${last.length - wins} across the last ${last.length} tour matches (${form.pct}% win rate) — no clear hot or cold streak.`, accent: 'gold' });
+      }
+    }
   }
 
   return insights.slice(0, 3);
@@ -3025,6 +3045,16 @@ async function buildOneProfile(key, name, surfaceMap) {
         : null,
     }));
 
+  // Full-career year-by-year W-L (per surface + total) for the Player Profile
+  // "Career record" table. recentForm.matches is capped below to current-year +
+  // last-10, so the table CANNOT be derived from it (that collapses every
+  // player's career to the current season) — it reads this field instead.
+  // currentRow covers the live season; yearlyBreakdown covers all prior seasons.
+  const careerByYear = [currentRow, ...yearlyBreakdown(playerStats)]
+    .filter(Boolean)
+    .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10))
+    .map(row => ({ year: String(row.year), total: row.total || null, clay: row.clay || null, hard: row.hard || null, grass: row.grass || null }));
+
   // The Player Profile page only reads current-season matches (season tiles +
   // the expandable "all results this season" list) and the last 10 (form % and
   // form dots) from recentForm — never older history. So cap the stored match
@@ -3061,6 +3091,7 @@ async function buildOneProfile(key, name, surfaceMap) {
     // Capped above to current-year + last-10 (all the profile UI reads).
     recentForm: recentFormCapped,
     seasonTrend,
+    careerByYear,
     insights: [], // filled in by the caller, once tourAverage is known
   };
 
@@ -3108,7 +3139,14 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      percentage off a handful of attempts can be held back instead of read as
 //      a rate. Load-bearing: computeTourAverage now filters on samplesAll, and a
 //      cached v4 profile has none — it would silently drop out of the benchmark.
-const PROFILE_SCHEMA_VERSION = 5;
+// v6 = careerByYear (full-career year-by-year W-L) plus the surface-specific
+//      recent-form insight. Both are built in buildOneProfile, so a cached v5
+//      opponent carries neither: its Career-record table falls back to the
+//      recentForm path (capped to the current season → collapses to one row,
+//      the "no data" report) and it keeps the old vague "Mixed recent form".
+//      Seed players rebuild every run so they were already correct; without
+//      this bump the other ~370 stayed wrong for up to 14 days.
+const PROFILE_SCHEMA_VERSION = 6;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
