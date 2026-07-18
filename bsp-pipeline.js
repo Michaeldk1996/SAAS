@@ -3139,7 +3139,14 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      percentage off a handful of attempts can be held back instead of read as
 //      a rate. Load-bearing: computeTourAverage now filters on samplesAll, and a
 //      cached v4 profile has none — it would silently drop out of the benchmark.
-const PROFILE_SCHEMA_VERSION = 5;
+// v6 = careerByYear (full-career year-by-year W-L) plus the surface-specific
+//      recent-form insight. Both are built in buildOneProfile, so a cached v5
+//      opponent carries neither: its Career-record table falls back to the
+//      recentForm path (capped to the current season → collapses to one row,
+//      the "no data" report) and it keeps the old vague "Mixed recent form".
+//      Seed players rebuild every run so they were already correct; without
+//      this bump the other ~370 stayed wrong for up to 14 days.
+const PROFILE_SCHEMA_VERSION = 6;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
