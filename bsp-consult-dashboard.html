@@ -5470,7 +5470,6 @@ function ppCareerSplitsHtml(p){
   const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitsSection('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches`) : '';
   if (!career && !last52) return '';
   return `<div style="display:flex;flex-direction:column;gap:16px;">
-    <div style="font-size:12.5px;color:#5b6472;">Career &amp; recent splits · source: Jeff Sackmann ATP match data · serve columns are averaged over MS, the matches carrying serve data; a dash means no data recorded, not zero · scroll sideways for all 22 columns</div>
     ${career}${last52}</div>`;
 }
 const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
@@ -5978,6 +5977,26 @@ function ppEloFor(p){
   const elo = Math.max(1350, Math.round(2100 - Math.log2(rk + 1) * 96));
   return { elo, rank: rk, illustrative: true };
 }
+// Surface-aware Elo for the ranking tile. surf: 'All' -> general Elo + general
+// Elo rank; 'Clay'/'Hard'/'Grass' -> that surface's Elo + surface Elo rank (both
+// straight from tennisabstract's report via elo-ratings.json's `elo` map). Uses
+// the same surname|initial name-join as psEloFor. Degrades to the general Elo
+// when a surface rating is missing, and to ppEloFor's illustrative estimate when
+// the player isn't on the report at all.
+function ppEloForSurface(p, surf){
+  const e = eloRatings || {};
+  const parts = (typeof psEloNorm === 'function' ? psEloNorm(p && p.name) : String(p && p.name || '').toLowerCase()).split(' ').filter(Boolean);
+  const rec = parts.length >= 2
+    ? ((e.elo && e.elo[parts[parts.length - 1] + '|' + parts[0][0]]) || (e.bySurnameElo && e.bySurnameElo[parts[parts.length - 1]]) || null)
+    : null;
+  if (rec){
+    const slot = surf === 'All' ? rec.all : rec[surf.toLowerCase()];
+    if (slot && slot.rating != null) return { rating: slot.rating, rank: slot.rank, illustrative: false, surface: surf };
+    if (rec.all && rec.all.rating != null) return { rating: rec.all.rating, rank: rec.all.rank, illustrative: false, surface: 'All', degraded: true };
+  }
+  const est = ppEloFor(p); // illustrative fallback
+  return { rating: est.elo, rank: est.rank, illustrative: true, surface: 'All' };
+}
 // Navigate the Recent-form card to a chosen season and expand it (the Career
 // record table's clickable year rows call this). Clears the card-local surface
 // filter so the season always has matches to show, then scrolls the card in.
@@ -5998,17 +6017,30 @@ function ppOpenSeason(y){
 // tour"; in-range years with no match data on record render muted (coverage is
 // sparse before PP_FULL_HISTORY_FROM, so those are gaps, not absences).
 function ppCareerYears(p){
-  const matches = (p.recentForm && p.recentForm.matches) || [];
   const byYear = {};
-  matches.forEach(m => {
-    const y = String(m.date || '').slice(0, 4);
-    if (!/^\d{4}$/.test(y)) return;
-    const s = (m.surface || '').toLowerCase();
-    if (!byYear[y]) byYear[y] = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
-    const i = m.won ? 0 : 1;
-    byYear[y].total[i]++;
-    if (byYear[y][s]) byYear[y][s][i]++;
-  });
+  // Preferred source: the pipeline's full-career year-by-year breakdown
+  // (per surface + total W-L). recentForm.matches is capped to current-year +
+  // last-10, so it can only be a fallback for older data lacking careerByYear.
+  const cby = Array.isArray(p.careerByYear) ? p.careerByYear : null;
+  if (cby && cby.length){
+    const cell = r => (r && (r.won != null || r.lost != null)) ? [r.won || 0, r.lost || 0] : [0, 0];
+    cby.forEach(row => {
+      const y = String(row.year || '');
+      if (!/^\d{4}$/.test(y)) return;
+      byYear[y] = { total: cell(row.total), clay: cell(row.clay), hard: cell(row.hard), grass: cell(row.grass) };
+    });
+  } else {
+    const matches = (p.recentForm && p.recentForm.matches) || [];
+    matches.forEach(m => {
+      const y = String(m.date || '').slice(0, 4);
+      if (!/^\d{4}$/.test(y)) return;
+      const s = (m.surface || '').toLowerCase();
+      if (!byYear[y]) byYear[y] = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
+      const i = m.won ? 0 : 1;
+      byYear[y].total[i]++;
+      if (byYear[y][s]) byYear[y][s][i]++;
+    });
+  }
   const trendYears = (p.seasonTrend || []).map(t => String(t.year)).filter(y => /^\d{4}$/.test(y));
   const matchYears = Object.keys(byYear);
   const onTourYears = [...new Set([...matchYears, ...trendYears])].map(Number).filter(Boolean);
@@ -6071,7 +6103,11 @@ function buildPlayerProfileHtml(p){
   const fmt = n => (Math.round(n * 10) / 10);
 
   // Surface chips (drive the whole page via setPpSurface -> full re-render).
-  const chips = ['All','Grass','Hard','Clay'].map(s => {
+  // Order the three surfaces by this player's best career win rate first (dynamic
+  // per player); "All surfaces" always leads.
+  const surfWrOf = s => { const k = p.kpis && p.kpis[s]; return k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0; };
+  const ppSurfOrder = ['Grass','Hard','Clay'].slice().sort((a, b) => surfWrOf(b) - surfWrOf(a));
+  const chips = ['All', ...ppSurfOrder].map(s => {
     const active = s === surf;
     return `<span onclick="setPpSurface('${s}')" style="font-size:12px;font-weight:${active?700:600};color:${active?'#dbe6ff':'#8b93a3'};background:${active?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${active?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:8px;padding:6px 13px;cursor:pointer;">${s==='All'?'All surfaces':s}</span>`;
   }).join('');
@@ -6117,8 +6153,15 @@ function buildPlayerProfileHtml(p){
   const winRateSub = isAll ? 'This season · all tiers' : 'Career on ' + surf;
 
   // ---- Left-rail stat tiles (2-col mini grid, handoff order) ----
+  // Elo tile tracks the active surface filter: All -> general Elo + rank; a
+  // surface -> that surface's Elo + rank (from tennisabstract via elo-ratings).
+  const eloTile = ppEloForSurface(p, surf);
+  const eloTileLabel = isAll ? 'Elo Rating' : surf + ' Elo';
+  const eloTileSub = eloTile.illustrative
+    ? `Illustrative · ATP #${p.rank||'—'}`
+    : (isAll ? `Elo rank #${eloTile.rank} · ATP #${p.rank||'—'}` : (eloTile.degraded ? `No ${surf.toLowerCase()} Elo · general #${eloTile.rank}` : `${surf} Elo rank #${eloTile.rank}`));
   const tileDefs = [
-    { label: 'ATP Ranking', value: '#'+(p.rank||'—'), sub: `${p.titlesCareer||0} career titles`, accent: BLUE, icon: BSP_ICONS.trophy },
+    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: BLUE, icon: BSP_ICONS.trophy },
     { label: careerLabel, value: careerValue, sub: careerSub, accent: '#E8934B', icon: BSP_ICONS.chart },
     { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: '#7ba4ff', icon: AKC_ICONS.form },
     { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#3ECF8E', icon: AKC_ICONS.form },
@@ -6142,7 +6185,8 @@ function buildPlayerProfileHtml(p){
     const rc = k && k.record ? `${k.record.won}–${k.record.lost}` : '—';
     const sr = seasonSurfRec[s];
     const seasonWr = sr.total ? Math.round(sr.won / sr.total * 1000) / 10 : null;
-    return { s, wr, rc, color: PP_SURF_COLORS[s], seasonWr };
+    const seasonRc = sr.total ? `${sr.won}–${sr.lost}` : null;
+    return { s, wr, rc, color: PP_SURF_COLORS[s], seasonWr, seasonRc };
   }).sort((a, b) => b.wr - a.wr);
   const surfHtml = surfData.map(d => {
     const active = surf !== 'All' && surf === d.s;
@@ -6153,7 +6197,8 @@ function buildPlayerProfileHtml(p){
           <span style="font-size:14px;font-weight:800;font-family:'IBM Plex Mono',monospace;">${d.wr}%</span>
         </div>
         <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
-        <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">${d.rc} career · <span style="color:${d.color};">${d.seasonWr != null ? d.seasonWr+'%' : '—'}</span> in ${seasonYear}</div>
+        <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;">${d.rc} career · ${d.wr}%</div>
+        <div style="margin-top:2px;font-size:9.5px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">${d.seasonRc ? `${d.seasonRc} · <span style="color:${d.color};">${d.seasonWr}%</span> in ${seasonYear}` : `No matches in ${seasonYear}`}</div>
       </div>`;
   }).join('');
 
