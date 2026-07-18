@@ -357,7 +357,7 @@ function buildTournamentHistory(matches, playerKey) {
             if (nums[0] + nums[1] > 3.5) longMatches++;
           }
         }
-        return { date: m.date, opponent, round: roundLabel(m.round), won: won2, result };
+        return { date: m.date, opponent, round: roundLabel(m.round), won: won2, result, eventKey: m.eventKey || null };
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
@@ -1322,6 +1322,11 @@ function trimFixture(f) {
     result: f.event_final_result,
     round: f.tournament_round,
     season: f.tournament_season,
+    // The row's identity. Without it a tournament-history row is a string of
+    // text with nothing to join its setstats/{ek}.json and pbp/{ek}.json
+    // shards from, which is what kept the Tournament tab's match rows from
+    // expanding (Task 11).
+    eventKey: f.event_key,
   };
 }
 

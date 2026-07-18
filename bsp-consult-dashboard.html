@@ -1139,6 +1139,13 @@
   .atourn-matchlist{ padding:2px 0 8px 0; }
   .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 22px; border-bottom:1px dashed rgba(255,255,255,0.06); font-size:11px; }
   .atourn-matchrow:last-child{ border-bottom:none; }
+  /* Task 11 — a year's match row only becomes clickable once the availability
+     indexes confirm it has a box score or a point log on file. */
+  .atourn-matchrow.atourn-open{ cursor:pointer; transition:background .12s; }
+  .atourn-matchrow.atourn-open:hover{ background:rgba(62,123,250,0.06); }
+  .atourn-matchrow.atourn-open.open{ background:rgba(62,123,250,0.08); }
+  .atourn-chev{ color:#6b7280; font-size:10px; flex:0 0 auto; transition:transform .16s; }
+  .atourn-chev.open{ transform:rotate(90deg); color:#9aa3b2; }
   .atourn-matchrow .d{ color:#6b7280; font-family:'IBM Plex Mono', monospace; flex:0 0 auto; }
   .atourn-matchrow .opp{ color:#9aa3b2; flex:1 1 auto; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-matchrow .opp.win{ color:#3ECF8E; }
@@ -3720,7 +3727,7 @@ function toggleFormPanel(idPrefix){
   // The suffix is the row's index within its list; stripping it leaves the list's
   // own id, which is the accordion group. A keyspace missing from this alternation
   // makes every row its own group, so they all open at once — add new callers here.
-  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h|tourn)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   const row = document.getElementById('formRow-' + idPrefix);
@@ -4040,15 +4047,54 @@ function buildH2HSection(m){
 // Note: deliberately does not include anything derived from "court speed
 // index" or win% by court-speed category — that classification needs
 // Michael's own methodology and isn't built here, per explicit scope.
-function atournMatchRowHtml(x){
-  return `
-    <div class="atourn-matchrow">
+// One match inside a year group. `opts` is what makes the row expandable —
+// omit it (or pass canOpen:false) and the row renders exactly as it always
+// has, minus a chevron. Same contract as the H2H list (Task 10): a row only
+// becomes clickable once the availability indexes say this event key actually
+// has a box score or a point log, because a chevron opening an empty panel is
+// a worse answer than no chevron.
+function atournMatchRowHtml(x, opts){
+  const cells = `
       <span class="d">${x.date || '—'}</span>
       <span class="opp ${x.won ? 'win' : 'loss'}">${x.won ? 'def.' : 'Lost to'} ${x.opponent || 'Unknown'}</span>
       <span class="rd">${x.round || ''}</span>
-      <span class="sc">${x.result || '—'}</span>
+      <span class="sc">${x.result || '—'}</span>`;
+  if (!opts || !opts.canOpen) {
+    return `<div class="atourn-matchrow">${cells}</div>`;
+  }
+  const idPrefix = opts.idPrefix;
+  // formPanelHtml is written against a form-row shape. The tournament name is
+  // implied by the tab (every row is this event), so it's passed in rather than
+  // carried per row. Orientation is the column's own player — matchStatsFromShard
+  // returns null off-side rather than guessing, so a wrong key shows nothing
+  // instead of silently swapping the two players' numbers.
+  const asFormRow = {
+    date: x.date,
+    tournament: opts.tournament,
+    round: x.round,
+    result: x.result,
+    won: !!x.won,
+    opponent: x.opponent,
+    eventKey: x.eventKey,
+  };
+  return `
+    <div class="atourn-matchrow atourn-open" id="formRow-${idPrefix}" onclick="toggleTournamentMatch('${idPrefix}')">
+      ${cells}
+      <span class="atourn-chev" id="formChev-${idPrefix}">▸</span>
     </div>
+    ${formPanelHtml(asFormRow, idPrefix, opts.playerKey, opts.playerName)}
   `;
+}
+// Task 11 asks for the modal to scroll the expanded content into view rather
+// than leaving the user to find it. Only on open — collapsing a row shouldn't
+// move the page under them.
+function toggleTournamentMatch(idPrefix){
+  toggleFormPanel(idPrefix);
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  if (!wrap || !wrap.classList.contains('open')) return;
+  setTimeout(() => {
+    try { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { /* older engines */ }
+  }, 180);   // after the panel's own expand transition, or it scrolls to the collapsed height
 }
 function toggleTournamentYear(id){
   const el = document.getElementById(id);
@@ -4058,7 +4104,7 @@ function toggleTournamentYear(id){
 function atournYearRowHtml(y, colPrefix, color, hoverColor){
   const matches = Array.isArray(y.matches) ? y.matches : [];
   const listId = `atournMatches-${colPrefix}-${y.year}`;
-  const rows = matches.map(atournMatchRowHtml).join('');
+  const rows = matches.map(x => atournMatchRowHtml(x)).join('');
   return `
     <div class="atourn-yearrow${matches.length ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''} onmouseenter="this.style.borderColor='${hoverColor}';" onmouseleave="this.style.borderColor='';">
       <span class="bar" style="background:${color};"></span>
@@ -4135,6 +4181,60 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
     </div>
   `;
 }
+// Task 11 — turns the static year-by-year match rows into expandable rows once
+// the two availability indexes resolve. Repaints each year's list in place
+// rather than the whole section, so a year the user already opened stays open.
+//
+// The token guard is the H2H/Overview one: opening a different match while the
+// indexes are in flight must not let a stale response repaint the new match.
+let _atournToken = 0;
+function upgradeTournamentRows(m, token, tourName){
+  const cols = [
+    { colPrefix: 'p1', history: m.p1TournamentHistory, playerKey: m.p1Key, playerName: m.p1 },
+    { colPrefix: 'p2', history: m.p2TournamentHistory, playerKey: m.p2Key, playerName: m.p2 },
+  ].filter(c => c.history && Array.isArray(c.history.years));
+  if (!cols.length) return;
+  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
+    const grid = document.getElementById('atournGrid');
+    if (!grid || grid.dataset.token !== String(token)) return;
+    let openable = 0, total = 0, n = 0;
+    for (const c of cols) {
+      for (const y of c.history.years) {
+        const matches = Array.isArray(y.matches) ? y.matches : [];
+        if (!matches.length) continue;
+        const list = document.getElementById(`atournMatches-${c.colPrefix}-${y.year}`);
+        if (!list) continue;
+        list.innerHTML = matches.map(x => {
+          total++;
+          const ek = String(x.eventKey || '');
+          const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
+          if (canOpen) openable++;
+          // Suffix must stay `tourn<n>` — toggleFormPanel strips it to derive the
+          // accordion group, so both columns share ONE group and opening a second
+          // match anywhere in this tab closes the first.
+          return atournMatchRowHtml(x, {
+            canOpen,
+            idPrefix: `atourntourn${n++}`,
+            playerKey: c.playerKey,
+            playerName: c.playerName,
+            tournament: tourName,
+          });
+        }).join('');
+      }
+    }
+    const note = document.getElementById('atournNote');
+    if (!note) return;
+    // The doc's standing rule — report the gap — answered with a live count off
+    // the real indexes rather than a static caveat.
+    note.textContent = total === 0
+      ? ''
+      : (openable === total
+        ? `All ${total} matches on file expand to the full box score and point log.`
+        : (openable === 0
+          ? `These editions predate our provider's per-match coverage, so no match row carries a stat breakdown or point log.`
+          : `${openable} of ${total} match rows expand to a stat breakdown or point log — the remaining ${total - openable} predate our provider's per-match coverage.`));
+  });
+}
 function buildTournamentSection(m){
   if (!m.p1TournamentHistory && !m.p2TournamentHistory) {
     return `
@@ -4206,12 +4306,19 @@ function buildTournamentSection(m){
   // removed entirely at the user's direction — it surfaced per-court-speed
   // records that aren't finalised for now.
 
+  // Painted static first, then upgraded to expandable rows by
+  // upgradeTournamentRows once the availability indexes resolve (Task 11).
+  // Rendering twice keeps the tab's first paint free of a network wait, and
+  // means a row never looks clickable before we know it has something to show.
+  const token = ++_atournToken;
+  upgradeTournamentRows(m, token, cleanTourName);
   return `
     ${banner}
-    <div class="yr-grid">
+    <div class="yr-grid" id="atournGrid" data-token="${token}">
       ${atournPlayerColumn(m.p1, m.p1TournamentHistory, 'p1', isGrandSlam)}
       ${atournPlayerColumn(m.p2, m.p2TournamentHistory, 'p2', isGrandSlam)}
     </div>
+    <div class="anote" id="atournNote" style="margin-top:14px;">Checking which matches have a stat breakdown on file…</div>
   `;
 }
 
@@ -8376,6 +8483,15 @@ function tourxBuildTournament(name){
   const rounds = t.rounds || [];
   // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam).
   const roundLabels = tourxRoundLabelsFor(name, rounds);
+  // Same draw-arithmetic guard the modal's Progression chart got in bb4e1e6.
+  // Absence of an opening-round match reads as a bye, and a round the 7-day feed
+  // window has dropped is absent in exactly the same way — which is how a stored
+  // Wimbledon draw brands 61 of 67 survivors (Sinner and Djokovic included) as
+  // first-round bye recipients in a 128-draw with no byes at all. A draw can
+  // never hand out more byes than it played opening matches; when the count
+  // fails that test the round is missing, not byed, and this table prints a
+  // blank rather than the word "bye" for anybody in the draw.
+  const byesCredible = progressionByesCredible(t);
   const players = (t.players || []).map(p => {
     // Place every match at the index of its OWN round label, not its position in
     // p.rounds. A bye recipient's first match is labelled e.g. R16, so it must land
@@ -8412,7 +8528,7 @@ function tourxBuildTournament(name){
     let firstIdx = -1;
     (p.rounds || []).forEach(r => { const idx = rounds.indexOf(r.round); if (idx >= 0 && (firstIdx < 0 || idx < firstIdx)) firstIdx = idx; });
     const byes = new Array(rounds.length).fill(false);
-    for (let i = 0; i < firstIdx; i++) byes[i] = true;
+    if (byesCredible) for (let i = 0; i < firstIdx; i++) byes[i] = true;
     // Draw depth counts byes as rounds survived: a bye recipient who has won once is
     // two rounds deep, exactly like a player who won two matches. nRounds (matches
     // actually played) stays untouched for every other caller.
