@@ -2631,18 +2631,44 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
   `;
 }
 // ---- Year-table drill-down (TennisExplorer-style): click a year+surface number
-// to list those matches below. Data is player-histories.json — a small side file
-// loaded lazily on modal open, so the homepage payload is never affected. ----
-let playerHistories = null;
-let _playerHistoriesPromise = null;
-function loadPlayerHistories(){
-  if (playerHistories) return Promise.resolve(playerHistories);
-  if (_playerHistoriesPromise) return _playerHistoriesPromise;
-  _playerHistoriesPromise = fetch('./player-histories.json', { cache: 'no-cache' })
+// to list those matches below.
+//
+// Data is career-history/{playerKey}.json — one lazy shard per player, holding
+// that player's WHOLE career: the all-tier fixture window (currentYear-5..now)
+// plus the pre-window ATP archive. It replaced player-histories.json, a single
+// file that carried only the ~48 players on today's board over 5 seasons, which
+// is why every older year and every off-board player used to drill open empty.
+//
+// Per player rather than one file because full career for ~480 players is ~10 MB
+// and exactly one player is ever open. Same convention as the form/pbp/odds
+// shards. The index says who has rows, so a player with none costs no request.
+let careerHistoryIndex = null;
+let _careerHistoryIndexPromise = null;
+const _careerHistoryShards = {};
+const _careerHistoryPromises = {};
+function loadCareerHistoryIndex(){
+  if (careerHistoryIndex) return Promise.resolve(careerHistoryIndex);
+  if (_careerHistoryIndexPromise) return _careerHistoryIndexPromise;
+  _careerHistoryIndexPromise = fetch('./career-history-index.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : {})
-    .then(d => { playerHistories = d || {}; return playerHistories; })
-    .catch(err => { console.warn('player-histories.json load failed:', err.message); playerHistories = {}; return playerHistories; });
-  return _playerHistoriesPromise;
+    .then(d => { careerHistoryIndex = (d && d.players) || {}; return careerHistoryIndex; })
+    .catch(err => { console.warn('career-history index load failed:', err.message); careerHistoryIndex = {}; return careerHistoryIndex; });
+  return _careerHistoryIndexPromise;
+}
+// Resolves to that player's career match rows (newest-first), or [] — never
+// rejects, so a missing shard degrades to an empty drill-down rather than a
+// stuck "Loading matches…".
+function loadCareerHistory(playerKey){
+  const pk = String(playerKey || '');
+  if (!pk) return Promise.resolve([]);
+  if (pk in _careerHistoryShards) return Promise.resolve(_careerHistoryShards[pk]);
+  if (_careerHistoryPromises[pk]) return _careerHistoryPromises[pk];
+  _careerHistoryPromises[pk] = loadCareerHistoryIndex()
+    .then(idx => (idx && idx[pk] ? fetch(`./career-history/${pk}.json`, { cache: 'no-cache' }) : null))
+    .then(r => (r && r.ok) ? r.json() : null)
+    .then(d => { const rows = (d && d.matches) || []; _careerHistoryShards[pk] = rows; return rows; })
+    .catch(err => { console.warn('career history load failed:', err.message); _careerHistoryShards[pk] = []; return []; });
+  return _careerHistoryPromises[pk];
 }
 // Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
 // user opens the "Point by point" tab), memoised, and keyed by api-tennis event
@@ -3067,9 +3093,8 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
   if (container.dataset.token === token && container.innerHTML){ container.innerHTML = ''; container.dataset.token = ''; return; } // toggle off
   container.dataset.token = token;
   container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
-  await loadPlayerHistories();
+  const all = await loadCareerHistory(playerKey);
   if (container.dataset.token !== token) return; // superseded by a newer click
-  const all = (playerHistories && playerHistories[String(playerKey)]) || [];
   const list = all.filter(mm => String(mm.year) === String(year) && (surface === 'all' || mm.surface === surface) && (tier === 'all' || mm.level === tier));
   const surfLabel = surface === 'all' ? 'All surfaces' : surface.charAt(0).toUpperCase() + surface.slice(1);
   const tierLabel = tier === 'all' ? '' : (tier === 'atp' ? ' · ATP' : ' · Challenger & ITF');
@@ -3159,7 +3184,9 @@ function buildYearlyTables(m){
     const label = t === 'all' ? 'All' : (t === 'atp' ? 'ATP' : 'Challenger & ITF');
     return `<span class="opt${tier === t ? ' active' : ''}" onclick="setOverviewTier('${t}')">${label}</span>`;
   }).join('');
-  loadPlayerHistories(); // warm the lazy drill-down side file while the modal opens
+  // Warm the drill-down shards for the two players on this card while the modal
+  // paints, so the first cell click renders without a visible fetch.
+  [m.p1Key, m.p2Key].forEach(k => { if (k != null) loadCareerHistory(k); });
   return `
     <div class="yr-tierhead">
       <span class="yr-tierlbl">Career records by tier</span>
@@ -6389,15 +6416,17 @@ function ppOpenSeason(y){
 // year + surface, listed under the year's row and expandable to the box score
 // and point log like every other match list in the app.
 //
-// Two sources, because neither alone covers it. player-histories.json carries a
-// full career (year, surface, eventKey) but is only built for the current
-// field — 48 players. recentForm.matches covers every profiled player but is
-// capped to the current season. They are merged on eventKey, histories first.
+// One source: career-history/{key}.json, the player's whole career. For every
+// year inside the fixture window the row count here EQUALS the number in the
+// table, because the pipeline tallies careerByYear from the same fixtures it
+// turns into these rows (buildAllTierYearly / playerMatchHistory).
 //
-// The counts in the table come from a third source, careerByYear, which is the
-// fuller record: Rublev's 2022 clay reads 14-6 there but only 9 of those
-// matches have a row on file. Rather than silently showing a shorter list than
-// the number the user just clicked, the header states the shortfall.
+// Pre-window years are the one place a gap survives, and it is a real one, not a
+// plumbing artefact: those rows come from the ATP tour-level archive while the
+// count is the provider's all-tier season total, so a season with Challenger or
+// ITF results lists fewer matches than it counts (Rublev 2017: 39 rows against
+// 78). careerByYear carries `rows` and `atpOnly` per year so that is stated in
+// words below rather than left to look like missing data.
 async function ppShowYearSurface(year, surface, expWon, expLost){
   const key = String(ppState.key || '');
   const container = document.getElementById('ppYrDrill-' + year);
@@ -6412,19 +6441,9 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   });
   container.dataset.token = token;
   container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
-  await loadPlayerHistories();
+  const pool = await loadCareerHistory(key);
   if (container.dataset.token !== token) return;   // superseded by a newer click
   const profile = playerProfiles[key] || {};
-  const hist = (playerHistories && playerHistories[key]) || [];
-  const seen = new Set();
-  const pool = [];
-  hist.forEach(m => { const ek = String(m.eventKey || ''); if (ek) seen.add(ek); pool.push(m); });
-  ((profile.recentForm && profile.recentForm.matches) || []).forEach(m => {
-    const ek = String(m.eventKey || '');
-    if (ek && seen.has(ek)) return;
-    if (ek) seen.add(ek);
-    pool.push(Object.assign({}, m, { year: String(m.date || '').slice(0, 4) }));
-  });
   const surf = String(surface || 'all').toLowerCase();
   const list = pool
     .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
@@ -6433,17 +6452,19 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   const surfLabel = surf === 'all' ? 'All surfaces' : surf.charAt(0).toUpperCase() + surf.slice(1);
   const won = list.filter(m => m.won).length, lost = list.length - won;
   const closeBtn = `<span class="yr-drill-close" onclick="ppShowYearSurface('${year}','${surface}')" title="Close">✕</span>`;
-  // The summary numbers and the match list come from different builders and
-  // genuinely disagree in both directions — Rublev's 2022 clay is 14-6 in the
-  // summary against 9 matches on file, while his 2025 clay is 8-6 in the summary
-  // against 16 matches on file. Neither source is authoritative, so state the
-  // difference instead of letting the list quietly contradict the number the
-  // user just clicked.
+  // Inside the fixture window the count and the list are two views of one set of
+  // matches, so there is nothing to explain and no note is drawn. Outside it the
+  // rows are ATP tour-level only against an all-tier count — say which, so a
+  // season that legitimately lists fewer matches than it counts doesn't read as
+  // a bug.
   const expTotal = (Number(expWon) || 0) + (Number(expLost) || 0);
   const surfWord = surf === 'all' ? '' : surf + ' ';
+  const yrMeta = (profile.careerByYear || []).find(r => String(r.year) === String(year)) || {};
   let gapNote = '';
   if (expTotal && list.length < expTotal){
-    gapNote = `<div class="yr-drill-note">Showing the ${list.length} of ${expTotal} ${year} ${surfWord}matches that have an individual record on file.</div>`;
+    gapNote = yrMeta.atpOnly
+      ? `<div class="yr-drill-note">${list.length} tour-level ${year} ${surfWord}matches. The ${expTotal} above is his full season — Challenger and ITF results before ${new Date().getFullYear() - 5} aren't in the historical archive.</div>`
+      : `<div class="yr-drill-note">Showing the ${list.length} of ${expTotal} ${year} ${surfWord}matches that have an individual record on file.</div>`;
   } else if (expTotal && list.length > expTotal){
     gapNote = `<div class="yr-drill-note">${list.length} ${year} ${surfWord}matches on file — more than the ${expTotal} in the summary above, which undercounts this season.</div>`;
   }

@@ -28,5 +28,11 @@ form-index.json
 # matches.json, where refresh-odds-history.py writes it.
 odds/
 odds-index.json
+
+# Career-record drill-down shards + their index: one file per player, rebuilt
+# every run from the all-tier fixture window plus the TML archive. ~10 MB across
+# ~480 players — derived output that would churn the whole set on every run.
+career-history/
+career-history-index.json
 mcp-cache/
 tml-cache/
