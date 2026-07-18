@@ -1063,9 +1063,16 @@
   .ah2h-tile .sub{ font-size:12px; color:#6b7280; margin-top:9px; font-family:'Hanken Grotesk', sans-serif; }
   .ah2h-listhead{ font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; margin:18px 0 8px 0; font-family:'Hanken Grotesk', sans-serif; }
   .ah2h-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; }
-  .ah2h-row{ display:grid; grid-template-columns:96px minmax(0,1fr) auto 52px 64px; align-items:center; gap:16px; padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; transition:background .12s; }
+  .ah2h-row{ display:grid; grid-template-columns:96px minmax(0,1fr) auto 52px 64px 18px; align-items:center; gap:16px; padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; transition:background .12s; }
   .ah2h-row:hover{ background:#0e1015; }
   .ah2h-row:last-child{ border-bottom:none; }
+  /* Only a meeting with a box score or a point log on file gets the pointer and
+     the chevron. The 18px column is reserved on every row regardless, so the
+     openable and closed-out rows stay aligned down the list. */
+  .ah2h-row.ah2h-open{ cursor:pointer; }
+  .ah2h-row.ah2h-open.open{ background:#0e1015; }
+  .ah2h-chev{ color:#6b7280; font-size:11px; transition:transform .16s; justify-self:center; }
+  .ah2h-chev.open{ transform:rotate(90deg); color:#9aa3b2; }
   .ah2h-row .date{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#7a8496; }
   .ah2h-row .result{ font-size:13.5px; font-weight:600; color:#e7ebf1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ah2h-row .winner{ color:#3ECF8E; }
@@ -3627,7 +3634,7 @@ function toggleFormPanel(idPrefix){
   // The suffix is the row's index within its list; stripping it leaves the list's
   // own id, which is the accordion group. A keyspace missing from this alternation
   // makes every row its own group, so they all open at once — add new callers here.
-  const colPrefix = idPrefix.replace(/(main|surf|season|ovw)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   const row = document.getElementById('formRow-' + idPrefix);
@@ -3797,20 +3804,82 @@ function h2hRoundLabel(round){
   const parts = round.split(' - ');
   return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
 }
-function h2hRowHtml(match, p1, p2){
+// One past meeting. `opts` carries what the row needs to expand — omit it (or
+// pass canOpen:false) and the row renders exactly as it always has, minus a
+// chevron. A meeting only becomes expandable once the availability indexes say
+// this event key actually has a box score or a point log on file: a chevron
+// that opens an empty panel is a worse answer than no chevron.
+function h2hRowHtml(match, p1, p2, opts){
   const surfaceTag = match.surface ? `<span class="surfacetag ${match.surface}">${match.surface.charAt(0).toUpperCase()+match.surface.slice(1)}</span>` : '';
   const roundText = h2hRoundLabel(match.round);
   const winner = match.p1Won ? p1 : p2;
   const loser = match.p1Won ? p2 : p1;
-  return `
-    <div class="ah2h-row">
+  const cells = `
       <span class="date">${match.date || 'Date unknown'}</span>
       <span class="result"><span class="winner">${winner}</span> def. ${loser}</span>
       <span class="meta">${match.tournament || 'Tournament unknown'}${roundText ? ' · ' + roundText : ''}</span>
       <span class="score">${match.result || '—'}</span>
-      ${surfaceTag}
+      ${surfaceTag}`;
+  if (!opts || !opts.canOpen) {
+    return `<div class="ah2h-row">${cells}<span></span></div>`;
+  }
+  const idPrefix = opts.idPrefix;
+  // The panel is written against a form-row shape: own player + named opponent,
+  // and an eventKey it can join its shards from. The H2H list is always read
+  // from p1's side (blue, left) so the sheet's orientation matches every other
+  // surface in this modal rather than flipping row to row with the winner.
+  const asFormRow = {
+    date: match.date,
+    tournament: match.tournament,
+    round: roundText,
+    result: match.result,
+    won: !!match.p1Won,
+    opponent: p2,
+    eventKey: match.eventKey,
+  };
+  return `
+    <div class="ah2h-row ah2h-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
+      ${cells}
+      <span class="ah2h-chev" id="formChev-${idPrefix}">▸</span>
     </div>
+    ${formPanelHtml(asFormRow, idPrefix, opts.playerKey, p1)}
   `;
+}
+
+// Turns the static meeting list into expandable rows once the two availability
+// indexes have loaded. Runs after buildH2HSection's HTML is already in the DOM
+// (innerHTML is assigned synchronously on return, this resolves a task later).
+//
+// The token guard is the same one the Overview drill-down uses: opening a
+// different match while these indexes are in flight must not let a stale
+// response repaint the new match's list.
+let _h2hToken = 0;
+function upgradeH2HRows(m, token){
+  const matchesList = Array.isArray(m.h2h && m.h2h.matches) ? m.h2h.matches : [];
+  if (!matchesList.length) return;
+  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
+    const list = document.getElementById('ah2hList');
+    if (!list || list.dataset.token !== String(token)) return;
+    let openable = 0;
+    const rows = matchesList.map((x, i) => {
+      const ek = String(x.eventKey || '');
+      const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
+      if (canOpen) openable++;
+      // Suffix must stay `h2h<i>` — toggleFormPanel strips it to derive the
+      // accordion group, so the whole list shares one group and opening a
+      // second meeting closes the first.
+      return h2hRowHtml(x, m.p1, m.p2, { canOpen, idPrefix: `ah2hh2h${i}`, playerKey: m.p1Key });
+    }).join('');
+    list.innerHTML = rows;
+    const note = document.getElementById('ah2hNote');
+    if (note) {
+      note.innerHTML = openable === matchesList.length
+        ? `All ${matchesList.length} meeting${matchesList.length === 1 ? '' : 's'} expand to the full box score and point log.`
+        : (openable === 0
+          ? `These meetings predate our provider's per-match coverage, so none carry a stat breakdown or point log.`
+          : `${openable} of ${matchesList.length} meetings expand to a stat breakdown or point log — the remaining ${matchesList.length - openable} predate our provider's per-match coverage.`);
+    }
+  });
 }
 function buildH2HSection(m){
   const h2h = m.h2h;
@@ -3860,14 +3929,23 @@ function buildH2HSection(m){
     </div>
   `;
 
+  // Painted static first, then upgraded to expandable rows by upgradeH2HRows
+  // once the availability indexes resolve. Rendering the list twice keeps the
+  // modal's first paint free of a network wait, and means a row never appears
+  // clickable before we know it has anything to show.
+  const token = ++_h2hToken;
   const historyList = matchesList.length
     ? `
       <div class="ah2h-listhead">Full match history</div>
-      <div class="ah2h-list">${matchesList.map(x => h2hRowHtml(x, m.p1, m.p2)).join('')}</div>
+      <div class="ah2h-list" id="ah2hList" data-token="${token}">${matchesList.map(x => h2hRowHtml(x, m.p1, m.p2)).join('')}</div>
     `
     : `<div class="acomingsoon">Overall record is on file, but the individual match-by-match history isn't available for this pairing.</div>`;
 
-  const cta = `<div class="ah2h-cta">These are the meetings on file with our data provider — no per-match stat breakdown (serve %, break points, etc.) available yet.</div>`;
+  const cta = matchesList.length
+    ? `<div class="ah2h-cta" id="ah2hNote">Checking which meetings have a stat breakdown on file…</div>`
+    : '';
+
+  if (matchesList.length) upgradeH2HRows(m, token);
 
   return `${callout}${tiles}${historyList}${cta}`;
 }
