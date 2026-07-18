@@ -1380,6 +1380,9 @@
 [data-page="styles"] .ps-rowhead{ justify-content:flex-start; padding-left:8px; }
 [data-page="styles"] .ps-cell{ aspect-ratio:1/1; min-height:46px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:13px; font-weight:600; color:#eef2f8; font-family:var(--mx-font-mono,'Space Grotesk',monospace); }
 [data-page="styles"] .ps-diag{ background:repeating-linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04) 5px, transparent 5px, transparent 10px); border-radius:6px; }
+[data-page="styles"] .ps-cell.ps-cell-na{ background:rgba(255,255,255,0.03); color:var(--text-faint); font-weight:500; }
+[data-page="styles"] .ps-mrow-na .ps-mname, [data-page="styles"] .ps-mrow-na .ps-mpct{ color:var(--text-faint); }
+[data-page="styles"] .ps-mrow-na .ps-track{ background:transparent; }
 [data-page="styles"] .ps-legend{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:var(--text-faint); }
 [data-page="styles"] .ps-legendbar{ display:flex; height:10px; border-radius:3px; overflow:hidden; }
 [data-page="styles"] .ps-legendbar span{ width:22px; height:100%; }
@@ -1468,7 +1471,7 @@
   <div class="pagewrap">
     <div class="pagehead">
       <h1>The 12 ATP tennis playing styles</h1>
-      <p>Matchup matrix computed over 150,000+ ATP matches since 2010. Each cell shows the win percentage of the row against the column. Player rosters are classified from Jeff Sackmann match data (2010–2026 career aggregate) and refresh automatically from the classifier — each name shows the player's current Elo rating (Tennis Abstract, refreshed weekly).</p>
+      <p>Each cell is the win percentage of the row archetype against the column archetype, computed from real ATP results (2010–present) where both players fall in our classified pool — hover any cell for its match count. Rosters are classified from Jeff Sackmann match data and refresh automatically from the classifier; each name shows the player's current Elo rating (Tennis Abstract, refreshed weekly). Pairings with too few matches show "—" rather than an unreliable number.</p>
     </div>
     <div id="psMatrix" class="ps-matrixwrap"></div>
     <div class="ps-sectionhead">
@@ -1666,34 +1669,16 @@ const PS_ARCHETYPES = [
     description:'Clay-court specialists. Sliding, endurance and topspin. Fearsome on clay, struggling on fast surfaces.',
     count:30, players:[{name:"Cerundolo",elo:1915},{name:"Darderi",elo:1821},{name:"Navone",elo:1812},{name:"Hanfmann",elo:1781},{name:"Munar",elo:1780},{name:"Molcan",elo:1747},{name:"Ugo Carabelli",elo:1747},{name:"Baez",elo:1745},{name:"Kopriva",elo:1727},{name:"Djere",elo:1697}] },
 ];
-const PS_MATRIX = [
-  [null,84,76,77,81,78,77,81,78,84,90,89],
-  [16,null,47,47,44,51,43,50,42,55,60,57],
-  [24,53,null,49,49,52,50,52,52,58,68,62],
-  [23,53,51,null,46,50,49,59,49,55,61,57],
-  [19,56,52,54,null,51,51,58,49,57,63,59],
-  [22,49,49,50,49,null,49,47,45,51,63,57],
-  [24,57,50,51,49,51,null,51,48,55,71,61],
-  [19,50,48,41,42,53,49,null,41,50,60,59],
-  [22,58,48,51,51,55,52,59,null,56,64,57],
-  [16,45,42,45,43,49,45,50,44,null,60,53],
-  [10,40,32,39,37,37,29,40,36,40,null,40],
-  [11,43,38,43,41,43,39,41,43,47,60,null],
-];
-const PS_KNOWN_COUNTS = {
-  0:[null,424,356,448,221,468,328,64,188,220,61,171],
-  1:[424,null,936,1211,577,1336,866,153,397,758,518,1027],
-  2:[356,936,null,1919,400,1537,987,105,614,808,567,2688],
-  3:[448,1211,1919,null,545,2394,1519,139,672,1428,1037,2248],
-  6:[328,866,987,1519,400,1560,null,104,454,781,542,944],
-  7:[64,153,105,139,99,180,104,null,61,104,45,63],
-};
-function psCount(i,j){
-  if (i===j) return null;
-  const d = PS_KNOWN_COUNTS[i] ? PS_KNOWN_COUNTS[i][j] : null;
-  if (d != null) return d;
-  const m = PS_KNOWN_COUNTS[j] ? PS_KNOWN_COUNTS[j][i] : null;
-  return m != null ? m : null;
+// Matchup matrix is COMPUTED from our own classification x real TML match results
+// (classify-archetypes.js -> matchup-matrix.json), fetched at render time — not
+// transcribed from any competitor. psCellFor returns { pct, n } for row-i vs col-j
+// (pct is null when the pairing has fewer than the sample floor of real matches).
+let psMatrixData = null;
+function psCellFor(i, j){
+  if (i === j) return null;
+  const idI = PS_ARCHETYPES[i] && PS_ARCHETYPES[i].id, idJ = PS_ARCHETYPES[j] && PS_ARCHETYPES[j].id;
+  const row = psMatrixData && psMatrixData.matrix && psMatrixData.matrix[idI];
+  return (row && row[idJ]) ? row[idJ] : null;   // { pct:number|null, n:number } or null
 }
 function psCellColor(v){
   const hue = Math.max(0, Math.min(135, ((v-35)/(70-35))*130));
@@ -1725,6 +1710,9 @@ async function renderPlayingStyles(){
   let eloData = null;
   try { const er = await fetch('./elo-ratings.json', { cache:'no-cache' }); if (er.ok) eloData = await er.json(); }
   catch(err){ console.warn('elo-ratings.json load failed:', err.message); }
+  // Computed matchup matrix (archetype-vs-archetype win% from real match results).
+  try { const mr = await fetch('./matchup-matrix.json', { cache:'no-cache' }); if (mr.ok) psMatrixData = await mr.json(); }
+  catch(err){ console.warn('matchup-matrix.json load failed:', err.message); }
   // Overlay live rosters from archetypes-classified.json (classify-archetypes.js output).
   // Descriptions + the matchup matrix stay built-in; only rosters/counts refresh. Falls
   // back to the built-in rosters if the file can't be loaded.
@@ -1757,11 +1745,15 @@ function psRenderMatrixAndCards(){
   A.forEach((rowA, i) => {
     g += '<div class="ps-rowhead" title="' + psEsc(rowA.name) + '">' + psEsc(rowA.short) + '</div>';
     A.forEach((colA, j) => {
-      const v = PS_MATRIX[i][j];
-      if (v == null){ g += '<div class="ps-diag"></div>'; return; }
-      const c = psCount(i,j);
-      const tip = rowA.name + ' beats ' + colA.name + ': ' + v + '%' + (c != null ? ' (' + c + ' matches)' : '');
-      g += '<div class="ps-cell" style="background:' + psCellColor(v) + ';" title="' + psEsc(tip) + '">' + v + '</div>';
+      if (i === j){ g += '<div class="ps-diag"></div>'; return; }
+      const cell = psCellFor(i, j);
+      if (!cell || cell.pct == null){
+        const nTxt = cell ? (cell.n + ' matches — too few to rate') : 'no data yet';
+        g += '<div class="ps-cell ps-cell-na" title="' + psEsc(rowA.name + ' vs ' + colA.name + ': ' + nTxt) + '">—</div>';
+        return;
+      }
+      const tip = rowA.name + ' beats ' + colA.name + ': ' + cell.pct + '% (' + cell.n + ' matches)';
+      g += '<div class="ps-cell" style="background:' + psCellColor(cell.pct) + ';" title="' + psEsc(tip) + '">' + cell.pct + '</div>';
     });
   });
   g += '</div>';
@@ -1775,19 +1767,21 @@ function psRenderMatrixAndCards(){
   const cards = document.getElementById('psCards');
   let html = '';
   A.forEach((a, i) => {
-    const mus = A.map((b, j) => ({ name:b.name, pct:PS_MATRIX[i][j], n:psCount(i,j) }))
-      .filter((_, j) => j !== i)
-      .sort((x, y) => y.pct - x.pct);
-    const best = mus[0], worst = mus[mus.length-1];
+    const mus = A.map((b, j) => { const cell = j === i ? null : psCellFor(i, j); return { name:b.name, self:(j === i), pct: cell ? cell.pct : null, n: cell ? cell.n : 0 }; })
+      .filter(m => !m.self);
+    const rated = mus.filter(m => m.pct != null).sort((x, y) => y.pct - x.pct);
+    const best = rated[0], worst = rated[rated.length - 1];
     const extra = a.count != null ? a.count - a.players.length : 0;
     html += '<div class="ps-card">';
     html += '<div class="ps-cardhead"><h3 class="ps-cardname">' + psEsc(a.name) + '</h3>' +
       (a.count != null ? '<span class="ps-count">' + a.count + (a.count === 1 ? ' player' : ' players') + '</span>' : '') + '</div>';
     html += '<p class="ps-desc">' + psEsc(a.description) + '</p>';
-    html += '<div class="ps-badges">' +
-      '<span class="ps-badge strong"><span class="ps-badgekey">Strong vs</span>' + psEsc(best.name) + ' \u00b7 ' + best.pct + '%</span>' +
-      '<span class="ps-badge weak"><span class="ps-badgekey">Weak vs</span>' + psEsc(worst.name) + ' \u00b7 ' + worst.pct + '%</span>' +
-      '</div>';
+    if (best){
+      html += '<div class="ps-badges">' +
+        '<span class="ps-badge strong"><span class="ps-badgekey">Strong vs</span>' + psEsc(best.name) + ' \u00b7 ' + best.pct + '%</span>' +
+        (worst && worst !== best ? '<span class="ps-badge weak"><span class="ps-badgekey">Weak vs</span>' + psEsc(worst.name) + ' \u00b7 ' + worst.pct + '%</span>' : '') +
+        '</div>';
+    }
     if (a.players.length){
       html += '<div class="ps-chips">';
       a.players.forEach(p => { const badge = p.elo != null ? p.elo : '\u2014'; html += '<span class="ps-chip">' + psEsc(p.name) + '<span class="ps-rank">' + badge + '</span></span>'; });
@@ -1797,12 +1791,18 @@ function psRenderMatrixAndCards(){
       html += '<div class="ps-pending">Not identifiable from Sackmann match stats.</div>';
     }
     html += '<div class="ps-matchups"><div class="ps-matchupstitle">Matchups vs all styles</div>';
-    mus.forEach(m => {
+    rated.concat(mus.filter(m => m.pct == null)).forEach(m => {
+      if (m.pct == null){
+        html += '<div class="ps-mrow ps-mrow-na"><span class="ps-mname" title="' + psEsc(m.name) + '">' + psEsc(m.name) + '</span>' +
+          '<div class="ps-track"></div><span class="ps-mpct">\u2014</span>' +
+          '<span class="ps-mn">' + (m.n || 0) + '</span></div>';
+        return;
+      }
       const col = m.pct >= 50 ? '#3ba76a' : '#d05a5a';
       html += '<div class="ps-mrow"><span class="ps-mname" title="' + psEsc(m.name) + '">' + psEsc(m.name) + '</span>' +
         '<div class="ps-track"><div class="ps-fill" style="width:' + m.pct + '%;background:' + col + ';"></div></div>' +
         '<span class="ps-mpct">' + m.pct + '%</span>' +
-        '<span class="ps-mn">' + (m.n != null ? m.n : '\u2014') + '</span></div>';
+        '<span class="ps-mn">' + m.n + '</span></div>';
     });
     html += '</div></div>';
   });

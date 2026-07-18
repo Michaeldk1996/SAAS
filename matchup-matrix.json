@@ -1,0 +1,624 @@
+{
+  "generatedAt": "2026-07-18T03:31:00.991Z",
+  "source": "Computed from BSP classification (classify-archetypes.js) x Tennismylife/TML-Database match results",
+  "window": "2010-2026",
+  "note": "Win% of row archetype vs column archetype, over matches where BOTH players are in the current-ATP classified pool. Cells below the sample floor report n but no pct.",
+  "minSampleN": 15,
+  "matchesCounted": 12329,
+  "archetypes": {
+    "allcourt": {
+      "en": "All-Court Elite",
+      "fr": "All-Court Élite"
+    },
+    "bigsrv": {
+      "en": "Big Server",
+      "fr": "Big Server"
+    },
+    "bsbl": {
+      "en": "Big Server + Baseliner",
+      "fr": "Big Server + Baseliner"
+    },
+    "attpower": {
+      "en": "Baseline Attacker (Power)",
+      "fr": "Attaquant de Fond (Power)"
+    },
+    "attlift": {
+      "en": "Baseline Attacker (Topspin)",
+      "fr": "Attaquant de Fond (Lift)"
+    },
+    "counter": {
+      "en": "Offensive Counter-Puncher",
+      "fr": "Counter Puncher Offensif"
+    },
+    "soldef": {
+      "en": "Solid Defensive",
+      "fr": "Solide Défensif"
+    },
+    "terrien": {
+      "en": "Pure Clay-Courter",
+      "fr": "Pur Terrien"
+    },
+    "sv": {
+      "en": "Serve & Volleyer",
+      "fr": "Serve and volleyeur"
+    },
+    "soloffsrv": {
+      "en": "Solid Offensive - Server",
+      "fr": "Solide Offensif Serveur"
+    },
+    "soloff": {
+      "en": "Solid Offensive - Core",
+      "fr": "Solide Offensif Core"
+    },
+    "attirreg": {
+      "en": "Inconsistent Attacker",
+      "fr": "Attaquant Irrégulier"
+    }
+  },
+  "matrix": {
+    "allcourt": {
+      "allcourt": null,
+      "bigsrv": {
+        "pct": 72,
+        "n": 109
+      },
+      "bsbl": {
+        "pct": 78,
+        "n": 467
+      },
+      "attpower": {
+        "pct": 70,
+        "n": 44
+      },
+      "attlift": {
+        "pct": 71,
+        "n": 118
+      },
+      "counter": {
+        "pct": 79,
+        "n": 318
+      },
+      "soldef": {
+        "pct": 87,
+        "n": 151
+      },
+      "terrien": {
+        "pct": 82,
+        "n": 235
+      },
+      "sv": {
+        "pct": null,
+        "n": 11
+      },
+      "soloffsrv": {
+        "pct": 76,
+        "n": 467
+      },
+      "soloff": {
+        "pct": 85,
+        "n": 117
+      },
+      "attirreg": {
+        "pct": 94,
+        "n": 17
+      }
+    },
+    "bigsrv": {
+      "allcourt": {
+        "pct": 28,
+        "n": 109
+      },
+      "bigsrv": null,
+      "bsbl": {
+        "pct": 44,
+        "n": 186
+      },
+      "attpower": {
+        "pct": 44,
+        "n": 18
+      },
+      "attlift": {
+        "pct": 50,
+        "n": 60
+      },
+      "counter": {
+        "pct": 42,
+        "n": 113
+      },
+      "soldef": {
+        "pct": 69,
+        "n": 97
+      },
+      "terrien": {
+        "pct": 61,
+        "n": 126
+      },
+      "sv": {
+        "pct": null,
+        "n": 5
+      },
+      "soloffsrv": {
+        "pct": 47,
+        "n": 229
+      },
+      "soloff": {
+        "pct": 54,
+        "n": 84
+      },
+      "attirreg": {
+        "pct": 75,
+        "n": 16
+      }
+    },
+    "bsbl": {
+      "allcourt": {
+        "pct": 22,
+        "n": 467
+      },
+      "bigsrv": {
+        "pct": 56,
+        "n": 186
+      },
+      "bsbl": null,
+      "attpower": {
+        "pct": 50,
+        "n": 68
+      },
+      "attlift": {
+        "pct": 45,
+        "n": 196
+      },
+      "counter": {
+        "pct": 47,
+        "n": 571
+      },
+      "soldef": {
+        "pct": 59,
+        "n": 335
+      },
+      "terrien": {
+        "pct": 67,
+        "n": 432
+      },
+      "sv": {
+        "pct": 56,
+        "n": 48
+      },
+      "soloffsrv": {
+        "pct": 52,
+        "n": 986
+      },
+      "soloff": {
+        "pct": 60,
+        "n": 313
+      },
+      "attirreg": {
+        "pct": 70,
+        "n": 44
+      }
+    },
+    "attpower": {
+      "allcourt": {
+        "pct": 30,
+        "n": 44
+      },
+      "bigsrv": {
+        "pct": 56,
+        "n": 18
+      },
+      "bsbl": {
+        "pct": 50,
+        "n": 68
+      },
+      "attpower": null,
+      "attlift": {
+        "pct": 67,
+        "n": 18
+      },
+      "counter": {
+        "pct": 61,
+        "n": 38
+      },
+      "soldef": {
+        "pct": 60,
+        "n": 25
+      },
+      "terrien": {
+        "pct": 64,
+        "n": 33
+      },
+      "sv": {
+        "pct": null,
+        "n": 2
+      },
+      "soloffsrv": {
+        "pct": 65,
+        "n": 72
+      },
+      "soloff": {
+        "pct": 74,
+        "n": 31
+      },
+      "attirreg": {
+        "pct": null,
+        "n": 3
+      }
+    },
+    "attlift": {
+      "allcourt": {
+        "pct": 29,
+        "n": 118
+      },
+      "bigsrv": {
+        "pct": 50,
+        "n": 60
+      },
+      "bsbl": {
+        "pct": 55,
+        "n": 196
+      },
+      "attpower": {
+        "pct": 33,
+        "n": 18
+      },
+      "attlift": null,
+      "counter": {
+        "pct": 68,
+        "n": 96
+      },
+      "soldef": {
+        "pct": 74,
+        "n": 74
+      },
+      "terrien": {
+        "pct": 69,
+        "n": 113
+      },
+      "sv": {
+        "pct": null,
+        "n": 10
+      },
+      "soloffsrv": {
+        "pct": 56,
+        "n": 222
+      },
+      "soloff": {
+        "pct": 57,
+        "n": 60
+      },
+      "attirreg": {
+        "pct": null,
+        "n": 14
+      }
+    },
+    "counter": {
+      "allcourt": {
+        "pct": 21,
+        "n": 318
+      },
+      "bigsrv": {
+        "pct": 58,
+        "n": 113
+      },
+      "bsbl": {
+        "pct": 53,
+        "n": 571
+      },
+      "attpower": {
+        "pct": 39,
+        "n": 38
+      },
+      "attlift": {
+        "pct": 32,
+        "n": 96
+      },
+      "counter": null,
+      "soldef": {
+        "pct": 66,
+        "n": 264
+      },
+      "terrien": {
+        "pct": 65,
+        "n": 301
+      },
+      "sv": {
+        "pct": 56,
+        "n": 27
+      },
+      "soloffsrv": {
+        "pct": 56,
+        "n": 644
+      },
+      "soloff": {
+        "pct": 65,
+        "n": 186
+      },
+      "attirreg": {
+        "pct": 83,
+        "n": 24
+      }
+    },
+    "soldef": {
+      "allcourt": {
+        "pct": 13,
+        "n": 151
+      },
+      "bigsrv": {
+        "pct": 31,
+        "n": 97
+      },
+      "bsbl": {
+        "pct": 41,
+        "n": 335
+      },
+      "attpower": {
+        "pct": 40,
+        "n": 25
+      },
+      "attlift": {
+        "pct": 26,
+        "n": 74
+      },
+      "counter": {
+        "pct": 34,
+        "n": 264
+      },
+      "soldef": null,
+      "terrien": {
+        "pct": 48,
+        "n": 238
+      },
+      "sv": {
+        "pct": 54,
+        "n": 28
+      },
+      "soloffsrv": {
+        "pct": 44,
+        "n": 432
+      },
+      "soloff": {
+        "pct": 50,
+        "n": 151
+      },
+      "attirreg": {
+        "pct": 52,
+        "n": 25
+      }
+    },
+    "terrien": {
+      "allcourt": {
+        "pct": 18,
+        "n": 235
+      },
+      "bigsrv": {
+        "pct": 39,
+        "n": 126
+      },
+      "bsbl": {
+        "pct": 33,
+        "n": 432
+      },
+      "attpower": {
+        "pct": 36,
+        "n": 33
+      },
+      "attlift": {
+        "pct": 31,
+        "n": 113
+      },
+      "counter": {
+        "pct": 35,
+        "n": 301
+      },
+      "soldef": {
+        "pct": 52,
+        "n": 238
+      },
+      "terrien": null,
+      "sv": {
+        "pct": 30,
+        "n": 20
+      },
+      "soloffsrv": {
+        "pct": 43,
+        "n": 563
+      },
+      "soloff": {
+        "pct": 49,
+        "n": 222
+      },
+      "attirreg": {
+        "pct": 63,
+        "n": 41
+      }
+    },
+    "sv": {
+      "allcourt": {
+        "pct": null,
+        "n": 11
+      },
+      "bigsrv": {
+        "pct": null,
+        "n": 5
+      },
+      "bsbl": {
+        "pct": 44,
+        "n": 48
+      },
+      "attpower": {
+        "pct": null,
+        "n": 2
+      },
+      "attlift": {
+        "pct": null,
+        "n": 10
+      },
+      "counter": {
+        "pct": 44,
+        "n": 27
+      },
+      "soldef": {
+        "pct": 46,
+        "n": 28
+      },
+      "terrien": {
+        "pct": 70,
+        "n": 20
+      },
+      "sv": null,
+      "soloffsrv": {
+        "pct": 47,
+        "n": 62
+      },
+      "soloff": {
+        "pct": null,
+        "n": 14
+      },
+      "attirreg": {
+        "pct": null,
+        "n": 1
+      }
+    },
+    "soloffsrv": {
+      "allcourt": {
+        "pct": 24,
+        "n": 467
+      },
+      "bigsrv": {
+        "pct": 53,
+        "n": 229
+      },
+      "bsbl": {
+        "pct": 48,
+        "n": 986
+      },
+      "attpower": {
+        "pct": 35,
+        "n": 72
+      },
+      "attlift": {
+        "pct": 44,
+        "n": 222
+      },
+      "counter": {
+        "pct": 44,
+        "n": 644
+      },
+      "soldef": {
+        "pct": 56,
+        "n": 432
+      },
+      "terrien": {
+        "pct": 57,
+        "n": 563
+      },
+      "sv": {
+        "pct": 53,
+        "n": 62
+      },
+      "soloffsrv": null,
+      "soloff": {
+        "pct": 60,
+        "n": 376
+      },
+      "attirreg": {
+        "pct": 67,
+        "n": 45
+      }
+    },
+    "soloff": {
+      "allcourt": {
+        "pct": 15,
+        "n": 117
+      },
+      "bigsrv": {
+        "pct": 46,
+        "n": 84
+      },
+      "bsbl": {
+        "pct": 40,
+        "n": 313
+      },
+      "attpower": {
+        "pct": 26,
+        "n": 31
+      },
+      "attlift": {
+        "pct": 43,
+        "n": 60
+      },
+      "counter": {
+        "pct": 35,
+        "n": 186
+      },
+      "soldef": {
+        "pct": 50,
+        "n": 151
+      },
+      "terrien": {
+        "pct": 51,
+        "n": 222
+      },
+      "sv": {
+        "pct": null,
+        "n": 14
+      },
+      "soloffsrv": {
+        "pct": 40,
+        "n": 376
+      },
+      "soloff": null,
+      "attirreg": {
+        "pct": 63,
+        "n": 30
+      }
+    },
+    "attirreg": {
+      "allcourt": {
+        "pct": 6,
+        "n": 17
+      },
+      "bigsrv": {
+        "pct": 25,
+        "n": 16
+      },
+      "bsbl": {
+        "pct": 30,
+        "n": 44
+      },
+      "attpower": {
+        "pct": null,
+        "n": 3
+      },
+      "attlift": {
+        "pct": null,
+        "n": 14
+      },
+      "counter": {
+        "pct": 17,
+        "n": 24
+      },
+      "soldef": {
+        "pct": 48,
+        "n": 25
+      },
+      "terrien": {
+        "pct": 37,
+        "n": 41
+      },
+      "sv": {
+        "pct": null,
+        "n": 1
+      },
+      "soloffsrv": {
+        "pct": 33,
+        "n": 45
+      },
+      "soloff": {
+        "pct": 37,
+        "n": 30
+      },
+      "attirreg": null
+    }
+  }
+}

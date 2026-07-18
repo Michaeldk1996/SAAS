@@ -215,6 +215,7 @@ function classify(r, P, seedSV) {
 
   // aggregate TML matches by player id, tracking a canonical name
   const byId = new Map();
+  const allMatches = [];   // [winnerId, loserId] per match, for the matchup matrix
   let totalRows = 0, statRows = 0;
   for (let y = FROM_YEAR; y <= TO_YEAR; y++) {
     const text = await getCsv(y);
@@ -229,6 +230,7 @@ function classify(r, P, seedSV) {
       const wName = c[ix.winner_name], lName = c[ix.loser_name];
       if (!wId || !lId) continue;
       totalRows++;
+      allMatches.push([wId, lId]);
       const w = {
         svpt: n(c[ix.w_svpt]), ace: n(c[ix.w_ace]), df: n(c[ix.w_df]), firstIn: n(c[ix.w_1stIn]),
         firstWon: n(c[ix.w_1stWon]), secondWon: n(c[ix.w_2ndWon]), svGms: n(c[ix.w_SvGms]),
@@ -312,6 +314,46 @@ function classify(r, P, seedSV) {
     const s = perArch[id]; if (!s) continue;
     console.log(`    ${ARCHETYPES[id].en.padEnd(30)} ${s.hit}/${s.inPool}`);
   }
+
+  // ---- matchup matrix: archetype-vs-archetype win% from OUR classification x real matches ----
+  // Only matches where BOTH players are in the classified pool count (the opponent's archetype
+  // must be known). Directed tally: winsByPair[A][B] = number of times an A-player beat a B-player.
+  const idToArch = new Map();
+  for (const r of finals) idToArch.set(r.id, r.archetype);
+  const archIds = Object.keys(ARCHETYPES);
+  const winsByPair = {};
+  for (const A of archIds) { winsByPair[A] = {}; for (const B of archIds) winsByPair[A][B] = 0; }
+  let matrixMatches = 0;
+  for (const [wId, lId] of allMatches) {
+    const aw = idToArch.get(wId), al = idToArch.get(lId);
+    if (!aw || !al) continue;              // need both players classified
+    winsByPair[aw][al]++;
+    matrixMatches++;
+  }
+  const MATRIX_MIN_N = 15;                  // below this a cell is too thin to report a %
+  const matrix = {};                        // matrix[A][B] = { pct: A's win% vs B, n } | null on diagonal
+  for (const A of archIds) {
+    matrix[A] = {};
+    for (const B of archIds) {
+      if (A === B) { matrix[A][B] = null; continue; }
+      const aWins = winsByPair[A][B], bWins = winsByPair[B][A], nAB = aWins + bWins;
+      matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aWins / nAB * 100).toFixed(0) : null, n: nAB };
+    }
+  }
+  const matrixOut = {
+    generatedAt: new Date().toISOString(),
+    source: 'Computed from BSP classification (classify-archetypes.js) x Tennismylife/TML-Database match results',
+    window: `${FROM_YEAR}-${TO_YEAR}`,
+    note: 'Win% of row archetype vs column archetype, over matches where BOTH players are in the current-ATP classified pool. Cells below the sample floor report n but no pct.',
+    minSampleN: MATRIX_MIN_N,
+    matchesCounted: matrixMatches,
+    archetypes: ARCHETYPES,
+    matrix,
+  };
+  const mtmp = path.join(__dirname, 'matchup-matrix.json.tmp');
+  fs.writeFileSync(mtmp, JSON.stringify(matrixOut, null, 2));
+  fs.renameSync(mtmp, path.join(__dirname, 'matchup-matrix.json'));
+  console.log(`\nWrote matchup-matrix.json (${matrixMatches} intra-pool matches counted).`);
 
   // write output
   finals.sort((a, b) => a.rank - b.rank);
