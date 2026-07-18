@@ -122,6 +122,7 @@ jobs:
           cp clutch-rating.json _site/ 2>/dev/null || true
           cp archetypes-classified.json _site/ 2>/dev/null || true
           cp matchup-matrix.json _site/ 2>/dev/null || true
+          cp playing-styles.json _site/ 2>/dev/null || true
 
       # Fail loudly if a file the pages reference is missing from the artifact.
       # A 404 on auth.js only shows up as a dead button in the browser, so catch
@@ -133,7 +134,8 @@ jobs:
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html \
-                   matches.json player-profiles.json career-splits.json form-index.json; do
+                   matches.json player-profiles.json career-splits.json form-index.json \
+                   matchup-matrix.json playing-styles.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           echo "All referenced files present in _site."
