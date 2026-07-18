@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-18T05:27:53.253Z",
+  "generatedAt": "2026-07-18T06:17:45.387Z",
   "source": "Computed from BSP 6-axis classification x TML match results",
   "window": "2010-2026",
   "note": "Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.",
   "minSampleN": 20,
-  "matchesCounted": 12126,
+  "matchesCounted": 29384,
   "archetypes": {
     "big_server": {
       "en": "Big Server"
@@ -29,138 +29,138 @@
     "big_server": {
       "big_server": null,
       "solid_baseliner": {
-        "pct": 39,
-        "n": 1329
+        "pct": 36,
+        "n": 2927
       },
       "counter_puncher": {
-        "pct": 47,
-        "n": 1539
+        "pct": 46,
+        "n": 4689
       },
       "all_court": {
-        "pct": 32,
-        "n": 877
+        "pct": 27,
+        "n": 2932
       },
       "attacking_baseliner": {
-        "pct": 46,
-        "n": 312
+        "pct": 47,
+        "n": 1228
       },
       "solid_defender": {
-        "pct": 55,
-        "n": 42
+        "pct": 54,
+        "n": 74
       }
     },
     "solid_baseliner": {
       "big_server": {
-        "pct": 61,
-        "n": 1329
+        "pct": 64,
+        "n": 2927
       },
       "solid_baseliner": null,
       "counter_puncher": {
-        "pct": 57,
-        "n": 1660
+        "pct": 60,
+        "n": 2681
       },
       "all_court": {
-        "pct": 43,
-        "n": 1055
+        "pct": 44,
+        "n": 1985
       },
       "attacking_baseliner": {
-        "pct": 59,
-        "n": 291
+        "pct": 62,
+        "n": 589
       },
       "solid_defender": {
-        "pct": 70,
-        "n": 30
+        "pct": 69,
+        "n": 35
       }
     },
     "counter_puncher": {
       "big_server": {
-        "pct": 53,
-        "n": 1539
+        "pct": 54,
+        "n": 4689
       },
       "solid_baseliner": {
-        "pct": 43,
-        "n": 1660
+        "pct": 40,
+        "n": 2681
       },
       "counter_puncher": null,
       "all_court": {
-        "pct": 32,
-        "n": 1306
+        "pct": 31,
+        "n": 2851
       },
       "attacking_baseliner": {
-        "pct": 53,
-        "n": 380
+        "pct": 51,
+        "n": 1117
       },
       "solid_defender": {
         "pct": 73,
-        "n": 49
+        "n": 70
       }
     },
     "all_court": {
       "big_server": {
-        "pct": 68,
-        "n": 877
+        "pct": 73,
+        "n": 2932
       },
       "solid_baseliner": {
-        "pct": 57,
-        "n": 1055
+        "pct": 56,
+        "n": 1985
       },
       "counter_puncher": {
-        "pct": 68,
-        "n": 1306
+        "pct": 69,
+        "n": 2851
       },
       "all_court": null,
       "attacking_baseliner": {
-        "pct": 64,
-        "n": 205
+        "pct": 69,
+        "n": 640
       },
       "solid_defender": {
-        "pct": 72,
-        "n": 25
+        "pct": 77,
+        "n": 35
       }
     },
     "attacking_baseliner": {
       "big_server": {
-        "pct": 54,
-        "n": 312
+        "pct": 53,
+        "n": 1228
       },
       "solid_baseliner": {
-        "pct": 41,
-        "n": 291
+        "pct": 38,
+        "n": 589
       },
       "counter_puncher": {
-        "pct": 47,
-        "n": 380
+        "pct": 49,
+        "n": 1117
       },
       "all_court": {
-        "pct": 36,
-        "n": 205
+        "pct": 31,
+        "n": 640
       },
       "attacking_baseliner": null,
       "solid_defender": {
         "pct": null,
-        "n": 7
+        "n": 13
       }
     },
     "solid_defender": {
       "big_server": {
-        "pct": 45,
-        "n": 42
+        "pct": 46,
+        "n": 74
       },
       "solid_baseliner": {
-        "pct": 30,
-        "n": 30
+        "pct": 31,
+        "n": 35
       },
       "counter_puncher": {
         "pct": 27,
-        "n": 49
+        "n": 70
       },
       "all_court": {
-        "pct": 28,
-        "n": 25
+        "pct": 23,
+        "n": 35
       },
       "attacking_baseliner": {
         "pct": null,
-        "n": 7
+        "n": 13
       },
       "solid_defender": null
     }

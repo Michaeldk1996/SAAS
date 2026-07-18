@@ -92,11 +92,14 @@ function pctOf(arr, v) {
 }
 
 (async () => {
-  // ---- pool of current-ATP players ----
+  // ---- current-ATP identity map (name -> rank). Used to (a) pick display name/rank
+  //      and (b) decide which classified players get written to player-styles.json.
+  //      Classification itself runs over EVERY qualified player so the matchup matrix
+  //      can count matches against retired opponents too. ----
   const prof = require('./player-profiles.json').players;
-  const pool = new Map();
-  for (const k in prof) { const nm = prof[k].name; if (!nm) continue; const nk = nameKey(nm); if (!nk) continue; if (!pool.has(nk)) pool.set(nk, { name: nm, rank: parseInt(prof[k].rank, 10) || 9999 }); }
-  console.log(`Pool: ${pool.size} current-ATP name keys.`);
+  const currentInfo = new Map();
+  for (const k in prof) { const nm = prof[k].name; if (!nm) continue; const nk = nameKey(nm); if (!nk) continue; if (!currentInfo.has(nk)) currentInfo.set(nk, { name: nm, rank: parseInt(prof[k].rank, 10) || 9999 }); }
+  console.log(`Current-ATP: ${currentInfo.size} name keys.`);
 
   // ---- TML base stats + matches ----
   const byId = new Map();
@@ -177,15 +180,15 @@ function pctOf(arr, v) {
   }
   console.log(`MCP: ${mcp.size} charted players.`);
 
-  // ---- reconcile pool -> best TML id, build player rows ----
+  // ---- build a row for EVERY qualified player (by name key), current or retired ----
   const keyToIds = new Map();
   for (const [id, a] of byId) { const nk = nameKey(a.name); if (!nk) continue; (keyToIds.get(nk) || keyToIds.set(nk, []).get(nk)).push(id); }
   const rows = [];
-  for (const [nk, meta] of pool) {
-    const ids = keyToIds.get(nk); if (!ids || !ids.length) continue;
+  for (const [nk, ids] of keyToIds) {
     ids.sort((x, y) => byId.get(y).matches - byId.get(x).matches);
     const a = byId.get(ids[0]);
     if (a.matches < MIN_MATCHES || a.svpt < MIN_SVPT) continue;
+    const meta = currentInfo.get(nk) || { name: a.name, rank: 9999 };
     // base rates
     const SPW = (a.firstWon + a.secondWon) / a.svpt;
     const RPW = a.retPts ? (a.retFirstWonBy + a.ret2ndWonBy) / a.retPts : 0;
@@ -196,7 +199,7 @@ function pctOf(arr, v) {
     const tvals = []; for (const t of a.tourneys.values()) if (t.w + t.l >= 3) tvals.push(t.w / (t.w + t.l));
     const tourneyStd = tvals.length >= 3 ? Math.sqrt(tvals.reduce((s, v) => s + (v - tvals.reduce((x, y) => x + y, 0) / tvals.length) ** 2, 0) / tvals.length) : null;
     rows.push({
-      nk, id: a.id, name: meta.name, rank: meta.rank, matches: a.matches,
+      nk, ids, isCurrent: currentInfo.has(nk), name: meta.name, rank: meta.rank, matches: a.matches,
       aceR: a.ace / a.svpt, firstInPct: a.firstIn / a.svpt, firstWonPct: a.firstIn ? a.firstWon / a.firstIn : 0,
       secondWonPct: (a.svpt - a.firstIn) ? a.secondWon / (a.svpt - a.firstIn) : 0,
       dfR: a.df / a.svpt, holdPct: a.svGms ? (1 - a.breaksSuffered / a.svGms) : 0,
@@ -210,13 +213,18 @@ function pctOf(arr, v) {
       winnerRate: hasMcp ? m.winners / m.pts : null,
     });
   }
-  console.log(`Qualified: ${rows.length} players.`);
+  console.log(`Classified: ${rows.length} players (${rows.filter(r => r.isCurrent).length} current-ATP, rest retired/historical for the matrix).`);
 
-  // ---- percentile helpers over the pool ----
+  // ---- percentile helpers ----
+  // Normalise against the CURRENT-ATP field only, so displayed radar scores + badges
+  // are relative to today's tour (unchanged from before this pool expansion). Retired
+  // players are scored against those same current-tour cutoffs purely to assign them a
+  // primary label for the matrix — they are never displayed.
   const sortNum = a => a.slice().sort((x, y) => x - y);
+  const currentRows = rows.filter(r => r.isCurrent);
   const cols = {};
   for (const key of ['aceR', 'firstInPct', 'firstWonPct', 'secondWonPct', 'dfR', 'holdPct', 'RPW', 'TPW', 'DR', 'breakPct', 'rallyLen', 'winnerRate', 'tbWin', 'bpConv', 'decWin', 'upsetRate', 'tourneyStd']) {
-    cols[key] = sortNum(rows.map(r => r[key]).filter(v => v != null));
+    cols[key] = sortNum(currentRows.map(r => r[key]).filter(v => v != null));
   }
   const P = (key, v) => v == null ? null : pctOf(cols[key], v);      // 0-100 percentile
   const Pi = (key, v) => v == null ? null : 100 - pctOf(cols[key], v); // inverted
@@ -286,7 +294,7 @@ function pctOf(arr, v) {
 
   // ---- matchup matrix on 6 primaries (reliable labels only) ----
   const idToPrimary = new Map();
-  for (const r of rows) if (r.reliableLabel) idToPrimary.set(r.id, r.primary);
+  for (const r of rows) if (r.reliableLabel) for (const id of r.ids) idToPrimary.set(id, r.primary);
   const winsByPair = {}; for (const A of ARCH6) { winsByPair[A] = {}; for (const B of ARCH6) winsByPair[A][B] = 0; }
   let matrixMatches = 0;
   for (const [wId, lId] of allMatches) { const aw = idToPrimary.get(wId), al = idToPrimary.get(lId); if (!aw || !al) continue; winsByPair[aw][al]++; matrixMatches++; }
@@ -295,14 +303,16 @@ function pctOf(arr, v) {
 
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
-  rows.sort((a, b) => a.rank - b.rank);
+  // player-styles.json holds only the current-ATP players (what the dashboard displays);
+  // retired players were classified purely to enrich the matchup matrix above.
+  const outRows = rows.filter(r => r.isCurrent).sort((a, b) => a.rank - b.rank);
   const stylesOut = {
     generatedAt: new Date().toISOString(),
     source: 'tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)',
     window: `${FROM_YEAR}-${TO_YEAR}`,
-    note: 'Each axis is a 0-100 percentile within the qualified pool (50 = tour-typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < ' + MCP_MIN + ' charted matches.',
+    note: 'Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < ' + MCP_MIN + ' charted matches.',
     tourAverage: 50, mcpMinCharted: MCP_MIN,
-    players: rows.map(r => ({
+    players: outRows.map(r => ({
       name: r.name, rank: r.rank, primary: r.primary, archetype_label: r.archetype_label,
       archetype_scores: r.scores, archetype_data_coverage: r.coverage,
       partial_axes: Object.keys(r.partial), badges: r.badges,
@@ -310,7 +320,7 @@ function pctOf(arr, v) {
     })),
   };
   writeAtomic('player-styles.json', stylesOut);
-  console.log(`Wrote player-styles.json (${rows.length} players).`);
+  console.log(`Wrote player-styles.json (${outRows.length} current players).`);
 
   const matrixOut = {
     generatedAt: new Date().toISOString(),
@@ -324,13 +334,13 @@ function pctOf(arr, v) {
   writeAtomic('matchup-matrix.json', matrixOut);
   console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 6 primaries).`);
 
-  // ---- console sanity ----
-  const counts = {}; rows.forEach(r => counts[r.primary] = (counts[r.primary] || 0) + 1);
-  console.log('\nPrimary archetype counts:'); for (const k of ARCH6) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
-  const cov = { full: 0, partial: 0 }; rows.forEach(r => cov[r.coverage]++); console.log(`Coverage: ${cov.full} full / ${cov.partial} partial`);
-  console.log('Badges: pressure', rows.filter(r => r.badges.includes('pressure_player')).length, '| inconsistent', rows.filter(r => r.badges.includes('inconsistent_attacker')).length);
+  // ---- console sanity (current-ATP players = what the dashboard shows) ----
+  const counts = {}; outRows.forEach(r => counts[r.primary] = (counts[r.primary] || 0) + 1);
+  console.log('\nPrimary archetype counts (current-ATP):'); for (const k of ARCH6) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
+  const cov = { full: 0, partial: 0 }; outRows.forEach(r => cov[r.coverage]++); console.log(`Coverage: ${cov.full} full / ${cov.partial} partial`);
+  console.log('Badges: pressure', outRows.filter(r => r.badges.includes('pressure_player')).length, '| inconsistent', outRows.filter(r => r.badges.includes('inconsistent_attacker')).length);
   console.log('\nSpot-checks:');
-  for (const nm of ['Djokovic', 'Alcaraz', 'Sinner', 'Medvedev', 'Opelka', 'De Minaur', 'Nadal']) { const r = rows.find(x => x.name.includes(nm)); if (r) console.log(`  ${nm.padEnd(10)} ${r.archetype_label.padEnd(38)} [${r.coverage}] badges:${r.badges.join(',') || '-'}  scores: BS${r.scores.big_server} SB${r.scores.solid_baseliner} CP${r.scores.counter_puncher} AC${r.scores.all_court} AB${r.scores.attacking_baseliner} SD${r.scores.solid_defender}`); }
+  for (const nm of ['Djokovic', 'Alcaraz', 'Sinner', 'Medvedev', 'Opelka', 'De Minaur', 'Federer', 'Nadal']) { const r = rows.find(x => x.name.includes(nm)); if (r) console.log(`  ${nm.padEnd(10)} ${r.archetype_label.padEnd(38)} [${r.coverage}] badges:${r.badges.join(',') || '-'}  scores: BS${r.scores.big_server} SB${r.scores.solid_baseliner} CP${r.scores.counter_puncher} AC${r.scores.all_court} AB${r.scores.attacking_baseliner} SD${r.scores.solid_defender}`); }
 
   function writeAtomic(name, obj) { const dest = path.join(__dirname, name), tmp = dest + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(obj, null, 2)); fs.renameSync(tmp, dest); }
   function avg2() {}
