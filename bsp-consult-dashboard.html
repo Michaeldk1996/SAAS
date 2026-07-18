@@ -1629,7 +1629,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
 
 /* ---------- PLAYING STYLES ---------- */
 // 6-axis ATP-aligned playing-style system. Rosters, counts and the matchup
-// matrix are computed from our own data (classify-styles.js -> player-styles.json
+// matrix are computed from our own data (classify-styles.js -> playing-styles.json
 // + matchup-matrix.json); descriptions are our own. Order sets the matrix axes.
 const PS_ARCHETYPES = [
   { id:'big_server', short:'Big Srv', name:'Big Server',
@@ -1699,7 +1699,7 @@ async function renderPlayingStyles(){
   // Descriptions + the matchup matrix stay built-in; only rosters/counts refresh. Falls
   // back to the built-in rosters if the file can't be loaded.
   try {
-    const res = await fetch('./player-styles.json', { cache:'no-cache' });
+    const res = await fetch('./playing-styles.json', { cache:'no-cache' });
     if (res.ok){
       const data = await res.json();
       const byArch = {};
@@ -1713,7 +1713,7 @@ async function renderPlayingStyles(){
         }
       });
     }
-  } catch(err){ console.warn('player-styles.json load failed:', err.message); }
+  } catch(err){ console.warn('playing-styles.json load failed:', err.message); }
   psRenderMatrixAndCards();
   renderClutchRating();
 }
@@ -5298,7 +5298,7 @@ let eloRatings = { ratings: {} };
 let playerStyles = { byKey: {} };
 function styleKey(name){ const p = (typeof psEloNorm === 'function' ? psEloNorm(name) : String(name || '').toLowerCase()).split(' ').filter(Boolean); return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0]; }
 function ppStyleFor(name){ const k = styleKey(name); return k ? (playerStyles.byKey || {})[k] : null; }
-async function loadPlayerStyles(){ try { const res = await fetch('./player-styles.json', { cache: 'no-cache' }); if (res.ok){ const d = await res.json(); const byKey = {}; (d.players || []).forEach(pl => { const k = styleKey(pl.name); if (k) byKey[k] = pl; }); playerStyles = { data: d, byKey }; } } catch (e) { /* additive */ } }
+async function loadPlayerStyles(){ try { const res = await fetch('./playing-styles.json', { cache: 'no-cache' }); if (res.ok){ const d = await res.json(); const byKey = {}; (d.players || []).forEach(pl => { const k = styleKey(pl.name); if (k) byKey[k] = pl; }); playerStyles = { data: d, byKey }; } } catch (e) { /* additive */ } }
 let _ppEloSorted = null;
 async function loadEloRatings(){
   try {

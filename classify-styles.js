@@ -15,7 +15,7 @@
 //   axes are computed only where a player has >= MCP_MIN charted matches;
 //   otherwise they fall back to the non-MCP components and are flagged partial.
 //
-// Outputs: player-styles.json, matchup-matrix.json
+// Outputs: playing-styles.json, matchup-matrix.json
 // =================================================================
 const fs = require('fs');
 const path = require('path');
@@ -93,7 +93,7 @@ function pctOf(arr, v) {
 
 (async () => {
   // ---- current-ATP identity map (name -> rank). Used to (a) pick display name/rank
-  //      and (b) decide which classified players get written to player-styles.json.
+  //      and (b) decide which classified players get written to playing-styles.json.
   //      Classification itself runs over EVERY qualified player so the matchup matrix
   //      can count matches against retired opponents too. ----
   const prof = require('./player-profiles.json').players;
@@ -303,7 +303,7 @@ function pctOf(arr, v) {
 
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
-  // player-styles.json holds only the current-ATP players (what the dashboard displays);
+  // playing-styles.json holds only the current-ATP players (what the dashboard displays);
   // retired players were classified purely to enrich the matchup matrix above.
   const outRows = rows.filter(r => r.isCurrent).sort((a, b) => a.rank - b.rank);
   const stylesOut = {
@@ -319,8 +319,8 @@ function pctOf(arr, v) {
       pressure_score: r.pressureScore, mcp_charted: r.mcpCharted,
     })),
   };
-  writeAtomic('player-styles.json', stylesOut);
-  console.log(`Wrote player-styles.json (${outRows.length} current players).`);
+  writeAtomic('playing-styles.json', stylesOut);
+  console.log(`Wrote playing-styles.json (${outRows.length} current players).`);
 
   const matrixOut = {
     generatedAt: new Date().toISOString(),
