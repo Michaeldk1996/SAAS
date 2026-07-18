@@ -2049,12 +2049,17 @@ function isFinalRoundLabel(round) { return isFinalRound(round); }
 // R1, R2, R3... / QF / SF / F, without assuming a fixed draw size. Walks
 // from the end so it works whether this tournament ever has 5 rounds
 // (ATP 250, 32-draw) or 7 rounds (Slam, 128-draw).
+// The feed reports tournament_round as null or '' for team events (Davis Cup,
+// BJK Cup), UTS exhibitions and some ITF draws, so never call a string method
+// on it directly.
+function roundText(round) { return typeof round === 'string' ? round.toLowerCase() : ''; }
+
 function labelRounds(sortedRoundStrings) {
   const labels = new Array(sortedRoundStrings.length);
   let i = sortedRoundStrings.length - 1;
   if (i >= 0 && isFinalRoundLabel(sortedRoundStrings[i])) { labels[i] = 'F'; i--; }
-  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('semi')) { labels[i] = 'SF'; i--; }
-  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('quarter')) { labels[i] = 'QF'; i--; }
+  if (i >= 0 && roundText(sortedRoundStrings[i]).includes('semi')) { labels[i] = 'SF'; i--; }
+  if (i >= 0 && roundText(sortedRoundStrings[i]).includes('quarter')) { labels[i] = 'QF'; i--; }
   let n = 1;
   for (let j = 0; j <= i; j++) labels[j] = `R${n++}`;
   return labels;
@@ -2166,6 +2171,9 @@ async function buildTournamentProgression(tourName) {
 
   const played = fixtures.filter(f =>
     f.tournament_name && f.tournament_name.includes(bareName) &&
+    // A round-less fixture cannot sit anywhere on the ladder; keeping it would
+    // add a phantom leading round and shift every real label by one.
+    typeof f.tournament_round === 'string' && f.tournament_round.trim() !== '' &&
     f.event_qualification !== 'True' &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
   );
