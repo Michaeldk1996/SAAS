@@ -5308,6 +5308,18 @@ async function loadCareerSplits(){
     if (res.ok){ const d = await res.json(); careerSplits = d.players || {}; }
   } catch (err) { /* additive; absence just hides the sections */ }
 }
+// Player-profile redesign — live Elo ratings (fetch-elo.js output, same file the
+// Playing Styles tab reads). Loaded once; the profile header's Elo pill looks it
+// up synchronously via ppEloFor(). Absence just falls back to a deterministic
+// illustrative estimate so the pill is never empty.
+let eloRatings = { ratings: {} };
+let _ppEloSorted = null;
+async function loadEloRatings(){
+  try {
+    const res = await fetch('./elo-ratings.json', { cache: 'no-cache' });
+    if (res.ok){ eloRatings = await res.json(); _ppEloSorted = null; }
+  } catch (err) { /* additive; the Elo pill degrades to an illustrative value */ }
+}
 async function loadPlayerProfiles(){
   try {
     const res = await fetch('./player-profiles.json', { cache: 'no-cache' });
@@ -5946,43 +5958,138 @@ function dismissPpTournament(){
   if (dd) dd.style.display = 'none';
 }
 
+// ---- Player-profile redesign helpers (sidebar workspace layout) ----------
+// Live Elo lookup for the header pill. Reuses psEloFor (defined for the Playing
+// Styles tab) for the name->key match, then derives the player's Elo *rank* as
+// their position in the full sorted ratings table. Real data when the player is
+// in elo-ratings.json; deterministic illustrative estimate otherwise.
+function ppEloFor(p){
+  const name = p && p.name;
+  const real = (typeof psEloFor === 'function') ? psEloFor(eloRatings, name) : null;
+  if (real != null && eloRatings && eloRatings.ratings){
+    if (!_ppEloSorted) _ppEloSorted = Object.values(eloRatings.ratings).filter(v => typeof v === 'number').sort((a,b) => b - a);
+    let rank = 1;
+    for (const r of _ppEloSorted){ if (r > real) rank++; else break; }
+    return { elo: real, rank, illustrative: false };
+  }
+  // Fallback: deterministic estimate anchored on ATP rank so the pill is never
+  // empty. Clearly flagged illustrative in its tooltip.
+  const rk = Number(p && p.rank) || 250;
+  const elo = Math.max(1350, Math.round(2100 - Math.log2(rk + 1) * 96));
+  return { elo, rank: rk, illustrative: true };
+}
+// Navigate the Recent-form card to a chosen season and expand it (the Career
+// record table's clickable year rows call this). Clears the card-local surface
+// filter so the season always has matches to show, then scrolls the card in.
+function ppOpenSeason(y){
+  ppState.formSurface = 'All';
+  ppState.formSeason = String(y);
+  ppState.formExpanded = true;
+  const profile = playerProfiles[ppState.key];
+  if (profile){
+    document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+    const card = document.getElementById('ppRecentFormCard');
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+// Year-by-year career W/L, split by surface, derived from the player's tour
+// match history (recentForm.matches — the app's canonical match record). Returns
+// rows newest-first plus a summed Total. Pre-debut years render as "not yet on
+// tour"; in-range years with no match data on record render muted (coverage is
+// sparse before PP_FULL_HISTORY_FROM, so those are gaps, not absences).
+function ppCareerYears(p){
+  const matches = (p.recentForm && p.recentForm.matches) || [];
+  const byYear = {};
+  matches.forEach(m => {
+    const y = String(m.date || '').slice(0, 4);
+    if (!/^\d{4}$/.test(y)) return;
+    const s = (m.surface || '').toLowerCase();
+    if (!byYear[y]) byYear[y] = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
+    const i = m.won ? 0 : 1;
+    byYear[y].total[i]++;
+    if (byYear[y][s]) byYear[y][s][i]++;
+  });
+  const trendYears = (p.seasonTrend || []).map(t => String(t.year)).filter(y => /^\d{4}$/.test(y));
+  const matchYears = Object.keys(byYear);
+  const onTourYears = [...new Set([...matchYears, ...trendYears])].map(Number).filter(Boolean);
+  if (!onTourYears.length) return null;
+  const debut = Math.min.apply(null, onTourYears);
+  const nowYear = new Date().getFullYear();
+  const tot = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
+  const rows = [];
+  for (let y = nowYear; y >= debut; y--){
+    const key = String(y);
+    const d = byYear[key];
+    if (d){
+      ['total','clay','hard','grass'].forEach(k => { tot[k][0] += d[k][0]; tot[k][1] += d[k][1]; });
+      rows.push({ onTour: true, hasData: true, year: key, tag: (y === debut ? 'ATP' : ''),
+        total: d.total, clay: d.clay, hard: d.hard, grass: d.grass });
+    } else {
+      // On tour that season (seasonTrend) but no match-level rows on record.
+      rows.push({ onTour: true, hasData: false, year: key, tag: (y === debut ? 'ATP' : '') });
+    }
+  }
+  // Two pre-debut context rows, matching the reference's "not yet on tour" rows.
+  for (let y = debut - 1; y >= debut - 2; y--) rows.push({ onTour: false, year: String(y) });
+  return { rows, total: tot };
+}
+// Illustrative closing-line odds model. NOT real betting data — the odds feed
+// carries no historical closing prices, so every number here is derived
+// deterministically from the player's REAL surface win rates purely to wire the
+// block's structure. The footnote and badge label it illustrative. The ordering
+// is meaningful (a clay-strong player shows clay as his value pocket); the
+// magnitudes are indicative only.
+function ppOddsModel(p){
+  const wrOf = s => { const k = p.kpis && p.kpis[s]; return k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0; };
+  let cw = 0, cl = 0;
+  ['Grass','Hard','Clay'].forEach(s => { const k = p.kpis && p.kpis[s]; if (k && k.record){ cw += k.record.won||0; cl += k.record.lost||0; } });
+  const careerWR = (cw + cl) ? (cw / (cw + cl) * 100) : 50;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const r1 = v => Math.round(v * 10) / 10;
+  const surfWR = { Clay: wrOf('Clay'), Hard: wrOf('Hard'), Grass: wrOf('Grass') };
+  const roiBySurface = ['Clay','Hard','Grass'].map(s => ({ s, roi: clamp(r1((surfWR[s] - careerWR) * 0.9), -18, 18) }));
+  const best = roiBySurface.slice().sort((a,b) => b.roi - a.roi)[0];
+  const edge = clamp(r1((surfWR[best.s] - careerWR) * 0.25), 1, 8);
+  const impliedWR = r1(careerWR - edge);
+  const actualVsImplied = r1(careerWR - impliedWR);
+  const flat = r1((careerWR - 58) * 0.55 + edge * 0.4);
+  const roiDog = r1(clamp(edge * 1.9 + 3, 2, 22));
+  const roiFav = r1((careerWR - 68) * 0.15);
+  const underpriced = flat >= 0;
+  return {
+    careerWR: r1(careerWR), impliedWR, actualVsImplied, flat, roiDog, roiFav,
+    roiBySurface, valueSurface: best.s, underpriced,
+  };
+}
+
 function buildPlayerProfileHtml(p){
   const BLUE = '#3E7BFA';
   const surf = ppState.surface || 'All';
   const initials = playerInitials(p.name);
-  const contextLabel = surf === 'All' ? 'Full season \u00b7 all surfaces' : `Career ${surf.toLowerCase()}-court profile`;
+  const seasonYear = String(new Date().getFullYear());
+  const contextLabel = surf === 'All' ? 'Full season · all surfaces' : `Career ${surf.toLowerCase()}-court profile`;
+  const fmt = n => (Math.round(n * 10) / 10);
 
-  // Surface chips
+  // Surface chips (drive the whole page via setPpSurface -> full re-render).
   const chips = ['All','Grass','Hard','Clay'].map(s => {
     const active = s === surf;
     return `<span onclick="setPpSurface('${s}')" style="font-size:12px;font-weight:${active?700:600};color:${active?'#dbe6ff':'#8b93a3'};background:${active?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${active?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:8px;padding:6px 13px;cursor:pointer;">${s==='All'?'All surfaces':s}</span>`;
   }).join('');
 
-  // Recent form — shared source for both the KPI tile below and the lower
-  // "Recent form" panel, so the two always show the same last-10 figure.
+  // ---- Recent-form-derived figures (shared by the Recent Form tile + card) ----
   const rf = p.recentForm || { pct: 0, matches: [] };
   const recentMatches = rf.matches || [];
   const last10 = recentMatches.slice(0, 10);
   const last10Pct = last10.length ? Math.round((last10.filter(m => m.won).length / last10.length) * 1000) / 10 : null;
   const last10Sub = last10.length >= 10 ? 'Last 10 matches' : (last10.length ? `Last ${last10.length} match${last10.length === 1 ? '' : 'es'}` : 'No recent matches');
 
-  // Career records. Per-surface career (Grass/Hard/Clay) is stored in kpis; the
-  // all-surface career total isn't, so we sum the three tracked surface careers.
-  // The all-surface career figure is only surfaced on the "All surfaces" tab —
-  // each surface tab shows that surface's own career record instead.
+  // ---- Career + season records ----
   let careerWon = 0, careerLost = 0;
   ['Grass','Hard','Clay'].forEach(s => { const k = p.kpis && p.kpis[s]; if (k && k.record){ careerWon += k.record.won||0; careerLost += k.record.lost||0; } });
   const careerTotal = careerWon + careerLost;
   const careerWR = careerTotal ? Math.round(careerWon / careerTotal * 1000) / 10 : null;
 
-  // Current-season records, all tiers (ATP + Challenger + ITF), derived straight
-  // from recentForm's 2026 matches so the season tiles agree with the Recent
-  // form tile and the "all results this season" list (same source, same tiers).
-  // No per-surface season split is stored, so we tally it here honestly from the
-  // real match surfaces.
-  const seasonYear = String(new Date().getFullYear());
   const seasonMatches = recentMatches.filter(m => String(m.date || '').startsWith(seasonYear));
-  const seasonCount = seasonMatches.length;
   const tallyRec = ms => { const w = ms.filter(m => m.won).length; return { won: w, lost: ms.length - w, total: ms.length }; };
   const seasonAllRec = tallyRec(seasonMatches);
   const seasonSurfRec = {
@@ -5993,213 +6100,181 @@ function buildPlayerProfileHtml(p){
   const seasonWinRate = seasonAllRec.total ? Math.round(seasonAllRec.won / seasonAllRec.total * 1000) / 10 : null;
 
   const isAll = surf === 'All';
-  const recStrOf = r => {
-    if (!r) return '\u2014';
-    const total = r.total != null ? r.total : (r.won || 0) + (r.lost || 0);
-    return total ? `${r.won}\u2013${r.lost}` : '\u2014';
-  };
+  const recStrOf = r => { if (!r) return '—'; const total = r.total != null ? r.total : (r.won || 0) + (r.lost || 0); return total ? `${r.won}–${r.lost}` : '—'; };
 
-  // Career tile — all-surface total on the All tab, this surface's career on a
-  // surface tab (the existing "Grass/Hard/Clay record" the surface tabs show).
   const surfCareer = (!isAll && p.kpis[surf] && p.kpis[surf].record) ? p.kpis[surf].record : null;
   const careerValue = isAll ? recStrOf({ won: careerWon, lost: careerLost, total: careerTotal }) : recStrOf(surfCareer);
-  const careerLabel = isAll ? 'Career record' : surf + ' record';
-  const careerSub = isAll
-    ? (careerWR != null ? `${careerWR}% all-time \u00b7 all surfaces` : 'All-time \u00b7 all surfaces')
-    : `Career on ${surf.toLowerCase()}`;
+  const careerLabel = isAll ? 'Career Record' : surf + ' Record';
+  const careerSub = isAll ? (careerWR != null ? `${careerWR}% all-time · all surfaces` : 'All-time · all surfaces') : `Career on ${surf.toLowerCase()}`;
 
-  // Season tile — all-surface season on the All tab, this surface's season on a
-  // surface tab.
   const seasonRec = isAll ? seasonAllRec : seasonSurfRec[surf];
   const seasonValue = recStrOf(seasonRec);
-  const seasonSub = isAll
-    ? `${seasonYear} season \u00b7 all surfaces`
-    : (seasonRec.total ? `${seasonYear} on ${surf.toLowerCase()}` : `No ${surf.toLowerCase()} matches in ${seasonYear}`);
+  const seasonSub = isAll ? `${seasonYear} season · all surfaces` : (seasonRec.total ? `${seasonYear} on ${surf.toLowerCase()}` : `No ${surf.toLowerCase()} matches in ${seasonYear}`);
 
-  // Win-rate tile — season win rate on the All tab (all tiers, matches the
-  // season record), this surface's career win rate on a surface tab.
-  const surfCareerWR = (!isAll && p.kpis[surf])
-    ? (p.kpis[surf].winRate != null ? p.kpis[surf].winRate : (p.kpis[surf].record && p.kpis[surf].record.winRate != null ? p.kpis[surf].record.winRate : 0))
-    : 0;
+  const surfCareerWR = (!isAll && p.kpis[surf]) ? (p.kpis[surf].winRate != null ? p.kpis[surf].winRate : (p.kpis[surf].record && p.kpis[surf].record.winRate != null ? p.kpis[surf].record.winRate : 0)) : 0;
   const winRateValue = isAll ? (seasonWinRate != null ? seasonWinRate : 0) : surfCareerWR;
-  const winRateLabel = isAll ? 'Win rate' : surf + ' win rate';
-  const winRateSub = isAll ? 'This season \u00b7 all tiers' : 'Career on ' + surf;
+  const winRateLabel = isAll ? 'Win Rate' : surf + ' Win Rate';
+  const winRateSub = isAll ? 'This season · all tiers' : 'Career on ' + surf;
 
-  // KPI cards — Career record first, Season record second, for every filter.
-  const kpiDefs = [
-    { label: 'ATP Ranking', value: '#'+(p.rank||'\u2014'), sub: `${p.titlesCareer||0} career titles`, accent: BLUE, icon: BSP_ICONS.trophy },
+  // ---- Left-rail stat tiles (2-col mini grid, handoff order) ----
+  const tileDefs = [
+    { label: 'ATP Ranking', value: '#'+(p.rank||'—'), sub: `${p.titlesCareer||0} career titles`, accent: BLUE, icon: BSP_ICONS.trophy },
     { label: careerLabel, value: careerValue, sub: careerSub, accent: '#E8934B', icon: BSP_ICONS.chart },
-    { label: 'Season record', value: seasonValue, sub: seasonSub, accent: BLUE, icon: BSP_ICONS.chart },
+    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: '#7ba4ff', icon: AKC_ICONS.form },
     { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#3ECF8E', icon: AKC_ICONS.form },
-    { label: 'Recent form', value: last10Pct != null ? last10Pct+'%' : '\u2014', sub: last10Sub, accent: '#7ba4ff', icon: AKC_ICONS.form },
+    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: '#3ECF8E', icon: AKC_ICONS.form },
     { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#E8B341', icon: BSP_ICONS.trophy },
   ];
-  const kpiHtml = kpiDefs.map(k => `
-    <div style="flex:1 1 150px;min-width:140px;background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:11px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">${k.label}</span>
-        <span style="width:30px;height:30px;border-radius:8px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:16px;height:16px;display:flex;">${k.icon}</span></span>
+  const tilesHtml = tileDefs.map(k => `
+    <div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+        <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
+        <span style="font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
       </div>
-      <div style="font-size:30px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;">${k.value}</div>
-      <div style="font-size:11.5px;color:#6b7280;">${k.sub}</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>
     </div>`).join('');
 
-  // Player DNA — Task 11: percentiles are calibrated against the Match Charting
-  // Project pool (dnaSource==='mcp'). Under-charted players (<10 charted
-  // matches) degrade to an explicit "limited data" state rather than drawing a
-  // confident shape from a couple of matches. Movement is a long-rally proxy.
-  const names = ['Serve','Return','Baseline','Movement','Net play','Clutch'];
-  const dnaMcp = p.dnaSource === 'mcp';
-  const vals = ppDnaVals(p.dna ? p.dna[surf] : null);
-  const avg = ppDnaVals(ppTourAverage.dna);
-  const radar = ppRadarSvg(vals, avg, BLUE);
-  const attrsHtml = vals.map((v,i) => {
-    const tr = ppTier(v);
-    return `
-      <div style="display:grid;grid-template-columns:88px 1fr 66px 40px;align-items:center;gap:12px;">
-        <span style="font-size:12.5px;font-weight:600;color:#cfd4de;">${names[i]}</span>
-        <span style="height:8px;border-radius:5px;background:rgba(255,255,255,0.05);overflow:hidden;display:block;"><span style="display:block;height:100%;width:${v}%;background:${tr.c};border-radius:5px;"></span></span>
-        <span style="justify-self:start;font-size:10.5px;font-weight:700;color:${tr.c};background:${ppHexA(tr.c,0.14)};border-radius:6px;padding:3px 8px;">${tr.t}</span>
-        <span style="justify-self:end;font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#e7e9ee;">${v}</span>
-      </div>`;
-  }).join('');
-  // The DNA card body: real radar when MCP-calibrated, else a limited-data card.
-  const dnaMatches = p.dnaMatches || 0;
-  const dnaBodyHtml = dnaMcp
-    ? `<div style="display:grid;grid-template-columns:0.82fr 1fr;gap:14px;padding:20px 22px;align-items:center;">
-         <div style="display:flex;align-items:center;justify-content:center;padding:4px;">${radar}</div>
-         <div style="display:flex;flex-direction:column;gap:13px;">${attrsHtml}</div>
-       </div>
-       <div style="padding:0 22px 16px;font-size:11px;color:#5b6472;line-height:1.5;">Calibrated against ${(radarCalibration.cardBenchmarks && radarCalibration.minMatches)||10}+ charted-match ATP players (Match Charting Project). ${dnaMatches} charted matches for ${pesc(p.name.split(' ').pop())}. Movement / Defense is estimated from long-rally (7+ shot) win rate.</div>`
-    : `<div style="padding:22px;">
-         <div style="border:1px dashed rgba(255,255,255,0.14);border-radius:14px;background:#0b1017;padding:22px;display:flex;gap:14px;align-items:flex-start;">
-           <span style="color:#7ba4ff;display:flex;flex:none;margin-top:1px;width:16px;height:16px;">${BSP_ICONS.info}</span>
-           <div style="font-size:13px;color:#aeb6c4;line-height:1.6;">
-             <b style="color:#e7e9ee;">Limited data — DNA radar hidden.</b><br>
-             ${pesc(p.name)} has ${dnaMatches ? `only ${dnaMatches} charted match${dnaMatches===1?'':'es'}` : 'no charted matches'} in the Match Charting Project — below the 10-match threshold needed to place them accurately against the tour. Rather than show a misleading shape, the radar is withheld until enough charted data exists.
-           </div>
-         </div>
-       </div>`;
-
-  // Serve & Return
-  const serveHtml = ppStatRows(PP_SERVE_DEFS, p.statsAll, BLUE, p.samplesAll);
-  const returnHtml = ppStatRows(PP_RETURN_DEFS, p.statsAll, '#3ECF8E', p.samplesAll);
-
-  // Surface performance — career win rate (big) plus this season's win rate on
-  // that surface (from seasonSurfRec, all tiers). Season figure is honest: it
-  // reads "no matches" when the player hasn't played that surface in 2026.
-  const surfHtml = ['Grass','Hard','Clay'].map(s => {
+  // ---- Left-rail surface performance (compact cards, best career win rate first) ----
+  const surfData = ['Grass','Hard','Clay'].map(s => {
     const k = p.kpis[s];
     const wr = k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0;
-    const rc = k && k.record ? `${k.record.won}\u2013${k.record.lost}` : '\u2014';
-    const color = PP_SURF_COLORS[s];
-    const active = surf !== 'All' && surf === s;
+    const rc = k && k.record ? `${k.record.won}–${k.record.lost}` : '—';
     const sr = seasonSurfRec[s];
     const seasonWr = sr.total ? Math.round(sr.won / sr.total * 1000) / 10 : null;
-    const seasonLine = sr.total
-      ? `<span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${color};">${seasonWr}%</span><span style="font-size:11px;color:#6b7280;">${seasonYear} \u00b7 ${sr.won}\u2013${sr.lost}</span>`
-      : `<span style="font-size:11.5px;color:#5b6472;font-style:italic;">No ${s.toLowerCase()} matches in ${seasonYear}</span>`;
+    return { s, wr, rc, color: PP_SURF_COLORS[s], seasonWr };
+  }).sort((a, b) => b.wr - a.wr);
+  const surfHtml = surfData.map(d => {
+    const active = surf !== 'All' && surf === d.s;
     return `
-      <div style="border:1px solid ${active?ppHexA(color,0.4):'rgba(255,255,255,0.07)'};background:${active?ppHexA(color,0.08):'#0e1015'};border-radius:14px;padding:18px 20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${color};"></span>${s}</span>
-          <span style="font-size:12px;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">${rc}</span>
+      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:11px;padding:12px 14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
+          <span style="font-size:14px;font-weight:800;font-family:'IBM Plex Mono',monospace;">${d.wr}%</span>
         </div>
-        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">
-          <span style="font-size:26px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.02em;">${wr}%</span>
-          <span style="font-size:11px;color:#6b7280;">career win rate</span>
-        </div>
-        <span style="height:7px;border-radius:5px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${wr}%;background:${color};border-radius:5px;"></span></span>
-        <div style="display:flex;align-items:baseline;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,0.05);">${seasonLine}</div>
+        <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
+        <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">${d.rc} career · <span style="color:${d.color};">${d.seasonWr != null ? d.seasonWr+'%' : '—'}</span> in ${seasonYear}</div>
       </div>`;
   }).join('');
 
-  // Recent form panel — carries its own surface filter (All / Grass / Hard /
-  // Clay), independent of the profile-wide surface tab. The pills, form %, the
-  // default 5 rows and the expandable season list are all derived from the
-  // surface-filtered matches so the whole card reflects the chosen surface.
+  // ---- Odds performance (illustrative — see ppOddsModel) ----
+  const odds = ppOddsModel(p);
+  const gcol = '#3ECF8E', rcol = '#E8607A';
+  const signed = (v, unit) => (v >= 0 ? '+' : '−') + Math.abs(v) + (unit || '');
+  const oddsTiles = [
+    { label: 'Flat-stake ROI', value: signed(odds.flat, '%'), color: odds.flat >= 0 ? gcol : rcol, sub: 'Backing every match at closing odds' },
+    { label: 'Actual vs implied', value: signed(odds.actualVsImplied, 'pt'), color: odds.actualVsImplied >= 0 ? gcol : rcol, sub: `${odds.careerWR}% won vs ${odds.impliedWR}% implied` },
+    { label: 'ROI as underdog', value: signed(odds.roiDog, '%'), color: odds.roiDog >= 0 ? gcol : rcol, sub: 'When priced above 2.00' },
+    { label: 'ROI as favourite', value: signed(odds.roiFav, '%'), color: odds.roiFav >= 0 ? gcol : rcol, sub: 'When priced below 2.00' },
+  ].map(o => `
+    <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:15px 16px;">
+      <div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:9px;">${o.label}</div>
+      <div style="font-size:23px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.02em;color:${o.color};line-height:1;">${o.value}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:7px;line-height:1.4;">${o.sub}</div>
+    </div>`).join('');
+  const oddsBars = odds.roiBySurface.map(b => {
+    const color = PP_SURF_COLORS[b.s];
+    const barColor = b.roi >= 0 ? gcol : rcol;
+    const w = Math.min(Math.abs(b.roi), 25) / 25 * 50;
+    const left = b.roi >= 0 ? '50%' : (50 - w) + '%';
+    return `
+      <div style="display:grid;grid-template-columns:52px 1fr 56px;align-items:center;gap:12px;">
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#cfd4de;"><span style="width:8px;height:8px;border-radius:50%;background:${color};"></span>${b.s}</span>
+        <span style="position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;display:block;">
+          <span style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,0.18);"></span>
+          <span style="position:absolute;top:0;bottom:0;left:${left};width:${w}%;background:${barColor};border-radius:5px;"></span>
+        </span>
+        <span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${barColor};text-align:right;">${signed(b.roi, '%')}</span>
+      </div>`;
+  }).join('');
+  const verdictColor = odds.underpriced ? gcol : rcol;
+  const verdictLabel = odds.underpriced ? '↑ UNDERPRICED' : '↓ OVERPRICED';
+  const oddsHtml = `
+    <div style="border:1px solid rgba(62,123,250,0.22);border-radius:16px;background:linear-gradient(180deg,rgba(62,123,250,0.05),rgba(62,123,250,0.01));padding:22px 24px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:11px;min-width:0;">
+          <span style="width:34px;height:34px;border-radius:10px;background:rgba(62,123,250,0.14);border:1px solid rgba(62,123,250,0.32);display:flex;align-items:center;justify-content:center;color:#7ba4ff;flex:none;"><span style="width:18px;height:18px;display:flex;">${BSP_ICONS.target}</span></span>
+          <div style="min-width:0;">
+            <div style="font-size:16px;font-weight:700;">Odds performance</div>
+            <div style="font-size:12.5px;color:#8b93a3;margin-top:2px;">How ${pesc(surname0(p))} performs against the market's implied probability — is he historically over- or under-priced?</div>
+          </div>
+        </div>
+        <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:${verdictColor};background:${ppHexA(verdictColor,0.12)};border:1px solid ${ppHexA(verdictColor,0.35)};border-radius:9px;padding:8px 14px;white-space:nowrap;flex:none;">${verdictLabel}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" class="pp-odds-tiles">${oddsTiles}</div>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px;" class="pp-odds-lower">
+        <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Flat-stake ROI by surface</div>
+          <div style="display:flex;flex-direction:column;gap:13px;">${oddsBars}</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;background:${ppHexA(verdictColor,0.06)};border:1px solid ${ppHexA(verdictColor,0.2)};border-left:3px solid ${ppHexA(verdictColor,0.55)};border-radius:12px;padding:16px 18px;">
+          <span style="color:${verdictColor};display:flex;flex:none;margin-top:1px;width:15px;height:15px;">${BSP_ICONS.bulb}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#e7e9ee;margin-bottom:5px;">Where the value is</div>
+            <div style="font-size:12.5px;color:#b7c4bd;line-height:1.55;">The market ${odds.underpriced ? 'tends to underprice' : 'tends to overprice'} ${pesc(surname0(p))} — most sharply on <strong style="color:#dcefe4;">${odds.valueSurface.toLowerCase()}</strong>, where flat-staking has returned <strong style="color:#dcefe4;">${signed(odds.roiBySurface.find(b=>b.s===odds.valueSurface).roi,'%')}</strong> in this illustrative model.</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;">Illustrative only — derived from surface win rates, not real closing-line history. ROI = return per 1u flat stake.</div>
+    </div>`;
+
+  // ---- Recent form card (carries its own surface filter, expandable season list) ----
   const formSurf = ppState.formSurface || 'All';
-  const formMatches = formSurf === 'All'
-    ? recentMatches
-    : recentMatches.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
+  const formMatches = formSurf === 'All' ? recentMatches : recentMatches.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
   const formLast10 = formMatches.slice(0, 10);
   const formLast10Pct = formLast10.length ? Math.round((formLast10.filter(m => m.won).length / formLast10.length) * 1000) / 10 : null;
   const formEmptyLabel = formSurf === 'All' ? 'recent' : formSurf.toLowerCase();
-
   const formChips = ['All','Grass','Hard','Clay'].map(s => {
     const activeChip = s === formSurf;
     const cc = s === 'All' ? '#7ba4ff' : PP_SURF_COLORS[s];
     return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?(s==='All'?'#dbe6ff':cc):'#8b93a3'};background:${activeChip?ppHexA(cc,0.16):'transparent'};border:1px solid ${activeChip?ppHexA(cc,0.45):'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
   }).join('');
-
   const pillsSrc = formLast10.slice().reverse();
   const pillsHtml = pillsSrc.map(m => {
     const w = m.won;
     return `<span style="flex:1;height:26px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.15)'};border:1px solid ${w?'rgba(62,207,142,0.42)':'rgba(232,96,122,0.45)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;">${w?'W':'L'}</span>`;
   }).join('') || `<span style="font-size:12px;color:#5b6472;">No ${formEmptyLabel} matches.</span>`;
-  const rowsHtml = formMatches.slice(0, 5).map(m => {
+  // Eight rows so the "See all" link roughly aligns with the Career record box.
+  const rowsHtml = formMatches.slice(0, 8).map(m => {
     const w = m.won;
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
-        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'\u2014'}</span>
+        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
         <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${m.tournament||''}</span>
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
       </div>`;
   }).join('') || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
-  // Row builder for the grouped season list. recentMatches is newest-first, so
-  // each tournament group is already reverse-chronological (latest round first).
-  // The tournament name lives on the group header, so the row carries the round
-  // only. Counts/labels use the real match count from the data (never a fixed
-  // cap) so we never mislabel a partial list as "all results".
   const buildFormRow = m => {
     const w = m.won;
-    // `round` is stored as "{event} - {roundName}" (event may carry an "ATP "/
-    // "Challenger" prefix), so keep only the trailing round descriptor.
     let roundName = m.round || '';
     if (roundName.includes(' - ')) roundName = roundName.split(' - ').pop().trim();
-    const meta = roundName;
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
-        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'\u2014'}</span>
-        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${meta}</span>
+        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
+        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${roundName}</span>
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
       </div>`;
   };
-  // Season results (Task 7) \u2014 the expandable list is organised into per-season
-  // tabs, and each season's matches are grouped by tournament rather than shown
-  // as one flat run of rows. Every season slice honours the Recent form surface
-  // filter, so tabs, counts and groups all describe the chosen surface only.
   const formSeasons = [...new Set(formMatches.map(m => String(m.date || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
-  // Null formSeason means "newest season that actually has matches", so the tabs
-  // never open on an empty season after a surface filter change.
-  const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason))
-    ? ppState.formSeason
-    : (formSeasons[0] || seasonYear);
+  const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason)) ? ppState.formSeason : (formSeasons[0] || seasonYear);
   const activeSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
   const activeSeasonCount = activeSeasonMatches.length;
-
   const seasonTabsHtml = formSeasons.map(y => {
     const on = y === activeSeason;
     const partial = Number(y) < PP_FULL_HISTORY_FROM;
-    return `<span onclick="setPpFormSeason('${y}')" title="${partial ? 'Partial history \u2014 upstream coverage begins ' + PP_FULL_HISTORY_FROM : y + ' season'}" style="font-size:11.5px;font-weight:${on?700:600};font-family:'IBM Plex Mono',monospace;color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${y}${partial?'<span style="color:#6b7280;"> \u00b7 partial</span>':''}</span>`;
+    return `<span onclick="setPpFormSeason('${y}')" title="${partial ? 'Partial history — upstream coverage begins ' + PP_FULL_HISTORY_FROM : y + ' season'}" style="font-size:11.5px;font-weight:${on?700:600};font-family:'IBM Plex Mono',monospace;color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${y}${partial?'<span style="color:#6b7280;"> · partial</span>':''}</span>`;
   }).join('');
-
-  // Coverage before 2023 is sparse across the whole year, so an early-season tab
-  // is flagged rather than presented as that player's complete season record.
   const partialNoteHtml = Number(activeSeason) < PP_FULL_HISTORY_FROM
-    ? `<div style="margin-top:10px;padding:8px 11px;border:1px solid rgba(232,179,65,0.28);background:rgba(232,179,65,0.07);border-radius:9px;font-size:11.5px;color:#c9a153;line-height:1.5;">Partial history \u2014 match coverage for ${activeSeason} is incomplete, so this is not a full season record.</div>`
+    ? `<div style="margin-top:10px;padding:8px 11px;border:1px solid rgba(232,179,65,0.28);background:rgba(232,179,65,0.07);border-radius:9px;font-size:11.5px;color:#c9a153;line-height:1.5;">Partial history — match coverage for ${activeSeason} is incomplete, so this is not a full season record.</div>`
     : '';
-
   const groups = ppGroupMatchesByTournament(activeSeasonMatches);
   const groupsHtml = groups.map(g => {
     const sColor = g.surface ? PP_SURF_COLORS[g.surface] : null;
-    const surfTag = g.surface
-      ? `<span style="font-size:10px;font-weight:600;color:${sColor};background:${ppHexA(sColor,0.13)};border:1px solid ${ppHexA(sColor,0.32)};border-radius:5px;padding:2px 7px;flex:none;">${g.surface}</span>`
-      : '';
+    const surfTag = g.surface ? `<span style="font-size:10px;font-weight:600;color:${sColor};background:${ppHexA(sColor,0.13)};border:1px solid ${ppHexA(sColor,0.32)};border-radius:5px;padding:2px 7px;flex:none;">${g.surface}</span>` : '';
     return `
       <div style="margin-top:12px;">
         <div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;">
@@ -6207,49 +6282,101 @@ function buildPlayerProfileHtml(p){
           ${surfTag}
           <span style="font-size:10.5px;color:#5b6472;white-space:nowrap;">${g.range}</span>
           <span style="flex:1;"></span>
-          <span style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;white-space:nowrap;">${g.won}\u2013${g.lost}</span>
+          <span style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;white-space:nowrap;">${g.won}–${g.lost}</span>
         </div>
         ${g.matches.map(buildFormRow).join('')}
       </div>`;
   }).join('') || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No ${formEmptyLabel} matches in ${activeSeason}.</div>`;
-
-  // Offer expansion whenever there is more on record than the 5 rows already
-  // shown \u2014 either more matches this season, or any earlier season to tab into.
   const newestSeason = formSeasons[0];
   const newestSeasonCount = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)).length : 0;
-  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 5 || formSeasons.length > 1);
+  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 8 || formSeasons.length > 1);
   const formTriggerHtml = showFormTrigger
-    ? `<button onclick="togglePpFormExpanded()" style="margin-top:10px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:#7ba4ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(62,123,250,0.08)';this.style.borderColor='rgba(62,123,250,0.28)';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)';">See all ${newestSeasonCount} results \u00b7 ${newestSeason} season</button>`
+    ? `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">See all ${newestSeasonCount} results · ${newestSeason} season</span></div>`
     : '';
-  const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='#c3cad6';this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='transparent';this.style.color='#6b7280';this.style.borderColor='rgba(255,255,255,0.1)';">\u2715</button>`;
+  const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;">✕</button>`;
   const groupNoun = groups.length === 1 ? 'tournament' : 'tournaments';
   const formExpandedHtml = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
-      <span style="font-size:12px;font-weight:700;color:#c3cad6;">Season results${formSurf === 'All' ? '' : ' \u00b7 ' + formSurf}</span>
+      <span style="font-size:12px;font-weight:700;color:#c3cad6;">Season results${formSurf === 'All' ? '' : ' · ' + formSurf}</span>
       ${formDismissBtn}
     </div>
     <div style="display:flex;gap:6px;margin:10px 0 2px;flex-wrap:wrap;">${seasonTabsHtml}</div>
     ${partialNoteHtml}
-    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} \u00b7 ${groups.length} ${groupNoun}</div>
+    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} · ${groups.length} ${groupNoun}</div>
     <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${groupsHtml}</div>`;
   const formBodyHtml = ppState.formExpanded
     ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
     : `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formTriggerHtml}`;
 
-  // Season trend
-  const series = (p.seasonTrend || []).map(t => ({ y: String(t.year).slice(2), v: Math.round(t.winRate) }));
-  const trend = ppTrendSvg(series, BLUE);
-  const trendYears = series.length ? `20${series[0].y} \u2192 20${series[series.length-1].y}` : '';
-  const trendNote = series.length >= 2
-    ? `Win rate moved from ${series[0].v}% in 20${series[0].y} to ${series[series.length-1].v}% in 20${series[series.length-1].y}.`
-    : 'Year-by-year tour-level win percentage.';
+  const recentFormCard = `
+    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="font-size:14px;font-weight:700;">Recent form</div>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">${formChips}</div>
+      <div style="display:flex;gap:5px;margin-bottom:16px;">${pillsHtml}</div>
+      ${formBodyHtml}
+    </div>`;
 
-  // Insights
-  const accentMap = {
-    blue: { c: '#7ba4ff', icon: BSP_ICONS.chart },
-    green: { c: '#3ECF8E', icon: BSP_ICONS.trophy },
-    gold: { c: '#E8B341', icon: BSP_ICONS.bulb },
+  // ---- Career record table (clickable year-by-year, derived from match history) ----
+  const cy = ppCareerYears(p);
+  const cellHtml = (rec, color, uc) => {
+    const has = rec && (rec[0] + rec[1]) > 0;
+    const val = has ? `${rec[0]}/${rec[1]}` : '—';
+    return `<span style="font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?color:'#4b5361'};text-align:right;${has?`text-decoration:underline;text-decoration-color:${uc};text-underline-offset:3px;`:''}">${val}</span>`;
   };
+  let careerRecordCard;
+  if (cy){
+    const hcol = (t, c, right) => `<span style="font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:${c};font-family:'IBM Plex Mono',monospace;text-align:${right?'right':'left'};">${t}</span>`;
+    const rowsCr = cy.rows.map(r => {
+      if (r.onTour && r.hasData){
+        return `<div onclick="ppOpenSeason('${r.year}')" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='rgba(62,123,250,0.06)';" onmouseout="this.style.background='transparent';">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#e7e9ee;">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:#8b93a3;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
+          ${cellHtml(r.total, '#e7e9ee', 'rgba(255,255,255,0.25)')}
+          ${cellHtml(r.clay, '#eda869', 'rgba(237,168,105,0.4)')}
+          ${cellHtml(r.hard, '#7ba4ff', 'rgba(123,164,255,0.4)')}
+          ${cellHtml(r.grass, '#3ECF8E', 'rgba(62,207,142,0.4)')}
+        </div>`;
+      }
+      if (r.onTour && !r.hasData){
+        return `<div style="display:grid;grid-template-columns:58px 1fr;column-gap:8px;align-items:center;padding:8px 10px;border-bottom:1px dashed rgba(255,255,255,0.05);">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#6b7280;">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:#8b93a3;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
+          <span style="font-size:12px;font-style:italic;color:#4b5361;">no match data on record</span>
+        </div>`;
+      }
+      return `<div style="display:grid;grid-template-columns:58px 1fr;column-gap:8px;align-items:center;padding:8px 10px;border-bottom:1px dashed rgba(255,255,255,0.05);">
+        <span style="font-size:13px;font-weight:600;color:#4b5361;">${r.year}</span>
+        <span style="font-size:12px;font-style:italic;color:#4b5361;">not yet on tour</span>
+      </div>`;
+    }).join('');
+    const t = cy.total;
+    const totCell = (rec, color) => `<span style="font-size:13.5px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${color};text-align:right;">${(rec[0]+rec[1])>0?`${rec[0]}/${rec[1]}`:'—'}</span>`;
+    careerRecordCard = `
+      <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <div style="font-size:14px;font-weight:700;">Career record</div>
+          <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
+        </div>
+        <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any year to browse those matches.</div>
+        <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,0.07);">
+          ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#eda869',true)}${hcol('Hard','#7ba4ff',true)}${hcol('Grass','#3ECF8E',true)}
+        </div>
+        <div>${rowsCr}</div>
+        <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
+          <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
+          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#eda869')}${totCell(t.hard,'#7ba4ff')}${totCell(t.grass,'#3ECF8E')}
+        </div>
+      </div>`;
+  } else {
+    careerRecordCard = `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Career record</div>
+      <div style="font-size:12.5px;color:#5b6472;">No year-by-year match history on record for this player yet.</div>
+    </div>`;
+  }
+
+  // ---- Key insights ----
+  const accentMap = { blue: { c: '#7ba4ff', icon: BSP_ICONS.chart }, green: { c: '#3ECF8E', icon: BSP_ICONS.trophy }, gold: { c: '#E8B341', icon: BSP_ICONS.bulb } };
   const insightsHtml = (p.insights || []).map(x => {
     const a = accentMap[x.accent] || accentMap.blue;
     return `
@@ -6260,153 +6387,105 @@ function buildPlayerProfileHtml(p){
       </div>`;
   }).join('') || `<div style="color:#5b6472;font-size:12.5px;">No insights available.</div>`;
 
-  // Follow button
-  const following = !!ppState.following[p.key];
-  const followBtn = `<button onclick="togglePpFollow()" style="display:inline-flex;align-items:center;gap:7px;background:${following?'rgba(62,123,250,0.16)':BLUE};border:1px solid ${following?'rgba(62,123,250,0.45)':BLUE};border-radius:10px;padding:10px 16px;color:${following?'#9cc0ff':'#fff'};font-size:13px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${following?'Following':'Follow player'}</button>`;
-
-  const meta = [p.country, p.age != null ? 'Age '+p.age : null].filter(Boolean);
-  const metaHtml = meta.map((m,i) => `${i>0?'<span style="width:1px;height:12px;background:rgba(255,255,255,0.12);"></span>':''}<span>${m}</span>`).join('');
-
-  // Record by tournament (whole-career history from profile.tournamentHistory)
+  // ---- Record by tournament (whole-career history) ----
   const surname = (p.name || '').split(' ').pop();
   const careerHistory = ppCareerHistory(p);
   const tournamentCount = careerHistory.length;
   const tournamentDropdownHtml = ppTournamentDropdownHtml(p, ppState.tournamentQuery || '');
   const tournamentResultHtml = ppTournamentResultHtml(p, ppState.tournamentPicked);
+  const recordSearchCard = `
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;position:relative;z-index:5;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">Record by tournament</div>
+          <div style="font-size:12.5px;color:#8b93a3;margin-top:3px;">Search a tournament to see ${pesc(surname)}'s full career win–loss record there.</div>
+        </div>
+        <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;padding-top:4px;white-space:nowrap;">${tournamentCount} tournament${tournamentCount===1?'':'s'} on record</span>
+      </div>
+      <div style="padding:16px 22px 20px;">
+        <div id="ppTournBox" style="position:relative;max-width:380px;margin-bottom:16px;">
+          <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament…" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0e1015;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
+          <div id="ppTournDropdown" style="display:${tournamentDropdownHtml?'block':'none'};position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:#111318;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,0.45);max-height:320px;overflow-y:auto;">${tournamentDropdownHtml}</div>
+        </div>
+        <div id="ppTournResult">${tournamentResultHtml}</div>
+      </div>
+    </div>`;
+
+  // ---- Header: Elo pill, playing-style line, meta ----
+  const eloInfo = ppEloFor(p);
+  const eloTitle = eloInfo.illustrative ? 'Illustrative Elo estimate (no live rating on record)' : 'Live Elo rating · tennisabstract.com';
+  const eloPill = `<span title="${eloTitle}" style="white-space:nowrap;display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:#c9b98a;background:rgba(232,179,65,0.1);border:1px solid rgba(232,179,65,0.28);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ELO ${eloInfo.elo} · No. ${eloInfo.rank}</span>`;
+  // Playing-style line: real archetype (if any) + strongest-surface specialist
+  // tag, only when that surface is clearly the player's best on a real sample.
+  const surfForStyle = surfData.filter(d => { const k = p.kpis[d.s]; const n = k && k.record ? (k.record.won + k.record.lost) : 0; return n >= 20; });
+  const bestSurf = surfForStyle[0];
+  const specialist = (bestSurf && careerWR != null && (bestSurf.wr - careerWR) >= 5) ? bestSurf.s + ' Specialist' : null;
+  const styleLine = [p.archetype, specialist].filter(Boolean).join(' · ');
+  const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
+  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:12px;background:rgba(255,255,255,0.12);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
   return `
   <div style="margin-bottom:16px;">
     <span onclick="showPlayerList()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#8b93a3;cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> Back to Players</span>
   </div>
+  <style>
+    @media (max-width: 1000px){
+      .pp-shell{ grid-template-columns:1fr !important; }
+      .pp-rail{ border-right:none !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; }
+    }
+    @media (max-width: 820px){
+      .pp-form-career{ grid-template-columns:1fr !important; }
+      .pp-odds-lower{ grid-template-columns:1fr !important; }
+      .pp-odds-tiles{ grid-template-columns:1fr 1fr !important; }
+      .pp-insights{ grid-template-columns:1fr !important; }
+    }
+  </style>
   <div style="width:100%;background:#0b0d12;border:1px solid rgba(255,255,255,0.08);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -50px rgba(0,0,0,0.95);">
 
     <!-- HERO -->
-    <div style="padding:22px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:1px solid rgba(255,255,255,0.06);">
-      <div style="display:flex;align-items:center;gap:20px;min-width:0;">
-        <div style="position:relative;flex:none;">
-          <span style="width:84px;height:84px;border-radius:22px;background:linear-gradient(135deg,#1c2333,#111623);border:2px solid rgba(62,123,250,0.55);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#dbe6ff;box-shadow:0 0 0 4px rgba(62,123,250,0.1);">${initials}</span>
-          <span style="position:absolute;bottom:-6px;right:-6px;min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:#3E7BFA;border:3px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'\u2014'}</span>
-        </div>
-        <div style="min-width:0;">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <h1 style="margin:0;font-size:30px;font-weight:800;letter-spacing:-0.02em;">${p.name}</h1>
-            <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#7ba4ff;background:rgba(62,123,250,0.12);border:1px solid rgba(62,123,250,0.3);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'\u2014'}</span>
-          </div>
-          ${p.archetype ? `<div style="margin-top:7px;font-size:12.5px;color:#8b93a3;">Playing style \u00b7 <span style="color:#c3ccdb;font-weight:600;">${p.archetype}</span></div>` : ''}
-          <div style="display:flex;align-items:center;gap:14px;margin-top:10px;font-size:12.5px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
-        </div>
+    <div style="padding:18px 26px 22px;display:flex;align-items:flex-start;gap:22px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;">
+      <div style="position:relative;flex:none;">
+        <span style="width:84px;height:84px;border-radius:22px;background:linear-gradient(135deg,#1c2333,#111623);border:2px solid rgba(62,123,250,0.55);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#dbe6ff;box-shadow:0 0 0 4px rgba(62,123,250,0.1);">${initials}</span>
+        <span style="position:absolute;bottom:-6px;right:-6px;min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:#3E7BFA;border:3px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex:none;">
-        ${followBtn}
-        <button style="display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 15px;color:#aab2c0;font-size:13px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;"><span style="display:flex;width:15px;height:15px;color:#7ba4ff;">${BSP_ICONS.chart}</span>Report</button>
+      <div style="min-width:0;flex:1;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <h1 style="margin:0;font-size:30px;font-weight:800;letter-spacing:-0.02em;">${p.name}</h1>
+          <span style="font-size:11px;font-weight:700;color:#7ba4ff;background:rgba(62,123,250,0.12);border:1px solid rgba(62,123,250,0.3);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
+          ${eloPill}
+        </div>
+        ${styleLine ? `<div style="margin-top:7px;font-size:13.5px;font-weight:600;color:#9cc0ff;">${pesc(styleLine)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:12.5px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
       </div>
     </div>
 
-    <!-- SURFACE FILTER -->
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 26px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">View by surface</span>
-        <div style="display:flex;gap:6px;">${chips}</div>
-      </div>
-      <span style="font-size:12px;color:#8b93a3;font-style:italic;">Showing: ${contextLabel}</span>
-    </div>
+    <!-- TWO-COLUMN BODY -->
+    <div class="pp-shell" style="display:grid;grid-template-columns:340px 1fr;align-items:start;">
 
-    <!-- BODY -->
-    <div style="padding:24px 26px 28px;display:flex;flex-direction:column;gap:24px;">
-
-      <div style="display:flex;gap:14px;flex-wrap:wrap;">${kpiHtml}</div>
-
-      <!-- RECORD BY TOURNAMENT -->
-      <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;position:relative;z-index:5;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;">
-          <div>
-            <div style="font-size:15px;font-weight:700;">Record by tournament</div>
-            <div style="font-size:12.5px;color:#8b93a3;margin-top:3px;">Search a tournament to see ${pesc(surname)}'s full career win\u2013loss record there.</div>
-          </div>
-          <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;padding-top:4px;white-space:nowrap;">${tournamentCount} tournament${tournamentCount===1?'':'s'} on record</span>
+      <!-- LEFT RAIL -->
+      <div class="pp-rail" style="border-right:1px solid rgba(255,255,255,0.06);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">View by surface</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
         </div>
-        <div style="padding:16px 22px 20px;">
-          <div id="ppTournBox" style="position:relative;max-width:380px;margin-bottom:16px;">
-            <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament\u2026" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0e1015;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
-            <div id="ppTournDropdown" style="display:${tournamentDropdownHtml?'block':'none'};position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:#111318;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,0.45);max-height:320px;overflow-y:auto;">${tournamentDropdownHtml}</div>
-          </div>
-          <div id="ppTournResult">${tournamentResultHtml}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${tilesHtml}</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
+          ${surfHtml}
         </div>
       </div>
 
-      <!-- PLAYER DNA -->
-      <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;overflow:hidden;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.05);">
-          <div>
-            <div style="font-size:15px;font-weight:700;">Player DNA</div>
-            <div style="font-size:12.5px;color:#8b93a3;margin-top:3px;">Six game dimensions rated as a tour-wide percentile. The dashed shape is the tour average.</div>
-          </div>
-          <div style="display:${dnaMcp?'flex':'none'};align-items:center;gap:14px;font-size:11.5px;flex:none;padding-top:2px;">
-            <span style="display:flex;align-items:center;gap:6px;color:#9cc0ff;"><span style="width:8px;height:8px;border-radius:50%;background:#3E7BFA;"></span>${p.name.split(' ').pop()}</span>
-            <span style="display:flex;align-items:center;gap:6px;color:#8b93a3;"><span style="width:12px;height:0;border-top:1.5px dashed #8b93a3;"></span>Tour avg</span>
-          </div>
-        </div>
-        ${dnaBodyHtml}
-      </div>
-
-      <!-- SERVE & RETURN -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px;">
-            <span style="width:28px;height:28px;border-radius:8px;background:rgba(62,123,250,0.14);border:1px solid rgba(62,123,250,0.3);display:flex;align-items:center;justify-content:center;color:#7ba4ff;"><span style="width:15px;height:15px;display:flex;">${AKC_ICONS.serve}</span></span>
-            <span style="font-size:14px;font-weight:700;">Serve</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:15px;">${serveHtml||'<span style="font-size:12px;color:#5b6472;">No serve data.</span>'}</div>
-        </div>
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px;">
-            <span style="width:28px;height:28px;border-radius:8px;background:rgba(62,207,142,0.14);border:1px solid rgba(62,207,142,0.3);display:flex;align-items:center;justify-content:center;color:#3ECF8E;"><span style="width:15px;height:15px;display:flex;">${AKC_ICONS.return}</span></span>
-            <span style="font-size:14px;font-weight:700;">Return &amp; rally</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:15px;">${returnHtml||'<span style="font-size:12px;color:#5b6472;">No return data.</span>'}</div>
+      <!-- RIGHT MAIN -->
+      <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
+        ${oddsHtml}
+        <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">${recentFormCard}${careerRecordCard}</div>
+        ${ppCareerSplitsHtml(p)}
+        ${recordSearchCard}
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Key insights</div>
+          <div class="pp-insights" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
         </div>
       </div>
-
-      <!-- SURFACE PERFORMANCE -->
-      <div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Surface performance <span style="font-size:12px;font-weight:500;color:#8b93a3;">\u00b7 career &amp; ${seasonYear} season win rate</span></div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${surfHtml}</div>
-      </div>
-
-      <!-- FORM + TREND -->
-      <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:16px;">
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-            <div style="font-size:14px;font-weight:700;">Recent form</div>
-            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">\u00b7 last ${pillsSrc.length}</span></span>
-          </div>
-          <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">${formChips}</div>
-          <div style="display:flex;gap:5px;margin-bottom:16px;">${pillsHtml}</div>
-          ${formBodyHtml}
-        </div>
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="font-size:14px;font-weight:700;">Season win rate</div>
-            <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${trendYears}</span>
-          </div>
-          <div style="font-size:12px;color:#8b93a3;margin-bottom:8px;">Year-by-year tour-level win percentage.</div>
-          <div style="flex:1;display:flex;align-items:center;">${trend}</div>
-          <div style="display:flex;gap:10px;padding:11px 13px;margin-top:6px;border-radius:11px;background:rgba(62,123,250,0.06);border:1px solid rgba(62,123,250,0.16);border-left:3px solid rgba(62,123,250,0.5);">
-            <span style="color:#7ba4ff;display:flex;flex:none;margin-top:1px;width:13px;height:13px;">${BSP_ICONS.info}</span>
-            <span style="font-size:12px;color:#c3cad6;line-height:1.5;">${trendNote}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- INSIGHTS -->
-      <div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Key insights</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
-      </div>
-
-      <!-- CAREER & LAST-52-WEEK SPLITS (Task 12) -->
-      ${ppCareerSplitsHtml(p)}
-
     </div>
 
     <!-- FOOTER -->
@@ -6416,6 +6495,8 @@ function buildPlayerProfileHtml(p){
     </div>
   </div>`;
 }
+// Short surname for prose (odds block copy).
+function surname0(p){ return (p && p.name ? String(p.name).split(' ').pop() : 'this player'); }
 
 /* ---------- TOURNAMENTS ---------- */
 // Curated static reference facts (category, surface, indoor/outdoor) — same
@@ -8887,7 +8968,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap
