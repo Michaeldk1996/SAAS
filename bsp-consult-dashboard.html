@@ -868,6 +868,7 @@
   .yr-drill-wl.loss{ color:#E8607A; }
   .yr-drill-opp{ color:#cfd6e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-drill-sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; white-space:nowrap; }
+  .yr-drill-end{ font-family:inherit; font-style:italic; color:#6b7280; margin-left:5px; font-size:10.5px; }
   .yr-drill-meta{ grid-column:2 / 4; font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* A row that has a box score or a point log on file gets a fourth column for
      the chevron. Rows with neither keep the plain 3-column grid above, so the
@@ -3123,7 +3124,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
       return `<div class="yr-drill-row">
         <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
         <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
-        <span class="yr-drill-sc">${escapeHtml(mm.result || '')}</span>
+        ${careerScoreHtml(mm)}
         <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
       </div>`;
     }
@@ -3134,7 +3135,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
     return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
       <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
       <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
-      <span class="yr-drill-sc">${escapeHtml(mm.result || '')}</span>
+      ${careerScoreHtml(mm)}
       <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
       <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
     </div>${formPanelHtml(mm, idPrefix, playerKey, playerName)}`;
@@ -3570,6 +3571,28 @@ function formPanelStatsBodyHtml(joined, playerName, opponentName, setNo){
 // row cannot look its own match up any other way.
 const formPanelCtx = {};
 
+// A drill-down row's score is sets-won when play STOPPED, not a final result, so
+// a retirement leaves a loser who is ahead ("L  2 - 1") and a walkover leaves no
+// score at all. Both read as a wrong result next to the W/L badge. The pipeline
+// now stamps `retired`/`walkover` from the feed's event_status; rows built before
+// that fall back to the score's shape, which is decisive on its own — a completed
+// match cannot be lost from level or ahead on sets, and cannot have a blank score.
+function careerRowEnding(m){
+  if (m.walkover) return 'w/o';
+  if (m.retired) return 'ret.';
+  const parts = String(m.result || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+  if (!parts) return 'w/o';
+  const mine = +parts[1], theirs = +parts[2];
+  return (m.won ? mine <= theirs : mine >= theirs) ? 'ret.' : '';
+}
+function careerScoreHtml(m){
+  const end = careerRowEnding(m);
+  // A walkover's `result` is the feed's empty scoreline ("-" / " - "). Printing it
+  // next to the marker reads as a broken score, so the marker replaces it.
+  const raw = String(m.result || '');
+  const score = /\d/.test(raw) ? escapeHtml(raw) : '';
+  return `<span class="yr-drill-sc">${score}${end ? `<span class="yr-drill-end">${end}</span>` : ''}</span>`;
+}
 function formPanelHtml(match, idPrefix, playerKey, playerName){
   const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}`;
   const opponentName = surnameFirstName(match.opponent);
@@ -6486,7 +6509,7 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
       return `<div class="yr-drill-row">
         <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
         <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
-        <span class="yr-drill-sc">${escapeHtml(m.result || '')}</span>
+        ${careerScoreHtml(m)}
         <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
       </div>`;
     }
@@ -6496,7 +6519,7 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
     return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
       <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
       <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
-      <span class="yr-drill-sc">${escapeHtml(m.result || '')}</span>
+      ${careerScoreHtml(m)}
       <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
       <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
     </div>${formPanelHtml(m, idPrefix, key, playerName)}`;

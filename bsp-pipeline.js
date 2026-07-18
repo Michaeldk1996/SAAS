@@ -580,7 +580,14 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // "kept lean" note above predates sharding — the cost is ~13 bytes on a row
     // in a lazily-loaded side file, against the alternative of fuzzy-matching a
     // date, a tournament name and an abbreviated opponent back to a fixture.
-    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures' });
+    // A retirement or a walkover leaves a score that contradicts the W/L badge:
+    // the score column is sets-won-at-the-moment-play-stopped, so the player who
+    // is ahead (or level, or on 0-0) can still be the loser, and a walkover has
+    // no score at all. Carrying the feed's own verdict lets the drill-down say
+    // `ret.`/`w/o` instead of rendering what reads as a wrong result.
+    const retired = f.event_status === 'Retired';
+    const walkover = f.event_status === 'Walk Over';
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures', ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;
