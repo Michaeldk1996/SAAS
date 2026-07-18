@@ -5060,8 +5060,9 @@ function togglePpSplits(which){
 // Where the source recorded none, the value is absent and renders as an em dash:
 // "not measured" and "zero" are different facts and must not look alike.
 // Each column carries a plain-English `t` explanation. Hovering the header shows
-// it as an instant custom tooltip (see initPpSplitTips) — the native browser
-// `title` is kept as a fallback but is too slow/subtle to rely on.
+// it as an instant custom tooltip (see initPpSplitTips). The native browser
+// `title` is deliberately NOT set on the header cell — having both would render
+// the same text twice, stacked, on hover.
 const PP_SPLIT_COLS = [
   { k: 'M',      t: 'M — Matches played in this split.',                              get: r => r.M,      c: '#aab2c0' },
   { k: 'W',      t: 'W — Matches won.',                                               get: r => r.W,      c: '#8fe4bd' },
@@ -5132,7 +5133,7 @@ function ppSplitsTableHtml(rows){
   const grid = `display:grid;grid-template-columns:130px repeat(${PP_SPLIT_COLS.length},minmax(52px,1fr));gap:8px;`;
   const stick = 'position:sticky;left:0;background:#0c0e13;z-index:1;';
   const head = `<div style="${grid}padding:0 4px 8px;font-size:10px;letter-spacing:0.03em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">
-    <span style="${stick}"></span>${PP_SPLIT_COLS.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" title="${escapeHtml(c.t)}" style="text-align:right;cursor:help;white-space:nowrap;">${c.k}</span>`).join('')}</div>`;
+    <span style="${stick}"></span>${PP_SPLIT_COLS.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;cursor:help;white-space:nowrap;">${c.k}</span>`).join('')}</div>`;
   const body = order.filter(k => rows[k]).map(k => {
     const r = rows[k];
     return `<div style="${grid}padding:8px 4px;border-top:1px solid rgba(255,255,255,0.05);align-items:center;">
