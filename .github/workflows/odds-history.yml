@@ -11,6 +11,13 @@ name: BSP odds-movement capture
 # derives openingOdds/closingOdds on its next run, then publishes to Pages — so
 # open/close reach the live site within one pipeline cycle of each capture.
 #
+# Note the loop that closes here: the pipeline never commits its rebuilt board,
+# so the committed matches.json only ever advances when a refresher writes it.
+# refresh-odds-history.py therefore seeds its fixture list from the PUBLISHED
+# board (Pages) rather than from the committed file. Without that seed the
+# capture freezes on the last hand-committed fixtures and reports success while
+# capturing nothing — which is exactly what it did from 15-18 July 2026.
+#
 # Cost: refresh-odds-history.py draws exactly ONE oddspapi quota unit per run
 # (the single /v4/fixtures lookup); the /v4/historical-odds calls are free. At
 # every 3 hours that is ~240 units/month, just under the free 250/month tier.
@@ -36,7 +43,9 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # A full board (~45 fixtures x 2 book batches x 5.5s) is ~9 min of pacing
+    # before retries; 20 was sized for the frozen ~1-target runs.
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4

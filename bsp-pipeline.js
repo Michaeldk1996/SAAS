@@ -2857,6 +2857,64 @@ function extractFormShards(matches) {
   console.log(`Wrote ${index.length} recent-form shard(s) to ${FORM_SHARD_DIR}/ (${rowCount} rows, ${(bytes / 1024).toFixed(0)} KB total, lazy — off the matches.json critical path).`);
 }
 
+// Per-book odds timelines move OUT of matches.json into one lazy shard per match.
+//
+// Measured on the first full capture after the refresher was fixed: 44 fixtures
+// carried 34,598 real price points, which is +1.13 MB compact on a 1.87 MB
+// board — a 60% page-load regression for data that is read only when someone
+// opens one match's Odds tab. The scalar the card needs (m.odds/m.bestOdds) and
+// the pinned m.openingOdds/m.closingOdds stay inline; they are a few bytes.
+//
+// Keyed by EVENT KEY, not m.id: the id carries an `upcoming-`/`past-` prefix
+// that flips the moment a match finishes, and the whole point of this data is
+// to survive that transition (closing odds are derived after it). Same
+// derivation build-point-by-point.js uses — split m.id on the first '-'.
+const ODDS_SHARD_DIR = 'odds';
+const ODDS_INDEX_PATH = 'odds-index.json';
+function eventKeyOf(m) {
+  const parts = String(m && m.id != null ? m.id : '').split('-');
+  return parts.length > 1 ? parts.slice(1).join('-') : '';
+}
+function extractOddsShards(matches) {
+  fs.mkdirSync(ODDS_SHARD_DIR, { recursive: true });
+  const index = [];
+  const bestPoints = new Map();
+  let bytes = 0, points = 0;
+  for (const m of matches) {
+    const om = m.oddsMovement;
+    const books = om && om.books;
+    const ek = eventKeyOf(m);
+    // Strip unconditionally, shard only what is real and addressable. A match
+    // with no event key would be unreachable from the client anyway, so leaving
+    // its timeline inline would be pure weight.
+    m.oddsMovement = null;
+    if (!ek || !books || !Object.keys(books).length) continue;
+    // Two board entries can share an event key while a fixture is resolving (the
+    // feed re-dates it, so the same match briefly exists as both upcoming- and
+    // past-). Last-write-wins would let the thinner series clobber the richer
+    // one, so keep whichever has more real points and index the key once.
+    const nPoints = Object.values(books).reduce((n, b) => n + ((b.p1 || []).length + (b.p2 || []).length), 0);
+    if (bestPoints.has(ek)) {
+      if (nPoints <= bestPoints.get(ek)) continue;
+      bytes -= fs.statSync(`${ODDS_SHARD_DIR}/${ek}.json`).size;   // this rewrite replaces it
+      points -= bestPoints.get(ek);
+    } else {
+      index.push(ek);
+    }
+    bestPoints.set(ek, nPoints);
+    const file = `${ODDS_SHARD_DIR}/${ek}.json`;
+    writeJsonAtomic(file, { eventKey: ek, market: om.market || 'Match Winner', capturedAt: om.capturedAt || null, books }, true);
+    bytes += fs.statSync(file).size;
+    points += nPoints;
+  }
+  // Availability ships as data, not as a failed request: the Odds tab must know
+  // BEFORE it renders whether to show the movement chart or the reduced view,
+  // and a 404 is not something it can render against (same reasoning as
+  // form-index.json / pbp-index.json).
+  writeJsonAtomic(ODDS_INDEX_PATH, index, true);
+  console.log(`Wrote ${index.length} odds-movement shard(s) to ${ODDS_SHARD_DIR}/ (${points} price points, ${(bytes / 1024).toFixed(0)} KB total, lazy — off the matches.json critical path).`);
+}
+
 // API-Tennis player_bday is "DD.MM.YYYY" (confirmed live).
 function computeAgeFromBday(bday) {
   if (!bday || typeof bday !== 'string') return null;
@@ -3770,6 +3828,9 @@ async function runPipeline() {
   // Same shape/convention as the pbp + setstats shards: derived output, rebuilt
   // every run from data already in hand, gitignored, published to _site.
   extractFormShards(matches);
+  // Must run AFTER the opening/closing derivation above — that block reads the
+  // timelines this one strips out.
+  extractOddsShards(matches);
 
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);

@@ -119,6 +119,37 @@ is for.
 
 ---
 
+## Odds archive (market performance)
+
+The profile "Market performance" block is built from historical **closing** prices that
+our own feed does not carry. They live in `odds-archive/*.csv` — one file per season,
+2004 to present, mirrored from tennis-data.co.uk and **committed to this repo on
+purpose**: the origin was TCP-refused on 2026-07-18, and a build must not depend on it
+being up.
+
+- **Refresh the archive** (network, run locally): `python3 mirror-odds-archive.py`
+  refreshes the current and previous season; `--all` rebuilds every season. It tries the
+  origin first and falls back to a GitHub mirror. Pre-2013 seasons are legacy `.xls` and
+  need `pip3 install --user xlrd`; 2013+ are parsed with the stdlib alone.
+- **Rebuild the shards** (no network): `node build-odds-performance.js` reads the archive
+  plus `player-profiles.json` and writes `odds-performance/{key}.json` +
+  `odds-performance-index.json`. The pipeline runs this on every run, so shards always
+  match the current profile roster.
+
+Two limits worth knowing before reading the numbers:
+
+1. **The source is tour-level only** — no Challengers, no qualifying. Coverage runs ~92%
+   of the top 50 but ~13% below rank 250. Players under 30 priced matches get no shard
+   and the block does not render for them at all.
+2. **There are no opening prices**, one price per book per match. So this measures
+   performance against the *closing* market — it is not closing line value, and nothing
+   in the UI may call it that.
+
+Coverage by rank band is printed on every builder run; that report is the fastest way to
+see whether a coverage change is real.
+
+---
+
 ## Misc
 
 - The `◇ injected env … tip:` line in logs is just **dotenv v17**'s promotional
