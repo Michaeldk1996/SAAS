@@ -539,8 +539,10 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
 // Flat all-tier match list (currentYear-5..now) for the Overview year-table
 // drill-down: click a year+surface number -> see those matches (tournament,
 // date, opponent, score). Powers the lazily-loaded player-histories.json side
-// file. Newest-first; only matches with a known surface (the drill-down is
-// surface-scoped). No matchStats — kept lean so the side file stays small.
+// file. Newest-first. Rows are the row-level twin of buildAllTierYearly's counts
+// over the same fixtures — the two MUST stay tallyable against each other, which
+// is why an unknown-surface row is kept rather than dropped (see below).
+// No matchStats — kept lean so the side file stays small.
 function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
   const cutoff = currentYear - 5;
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
@@ -555,8 +557,13 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     if (!isFirst && !isSecond) continue;
     const year = String(f.event_date || '').slice(0, 4);
     if (!/^\d{4}$/.test(year) || parseInt(year, 10) < cutoff) continue;
-    const surface = surfaceMap.get(String(f.tournament_key));
-    if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
+    // Surface may be unknown (a tournament missing from get_tournaments, or a
+    // carpet/other event). Such a row is KEPT with surface:null: buildAllTierYearly
+    // counts it in the year's Total, so dropping it here would make the row list
+    // shorter than the Total the user clicked — the exact mismatch this pair of
+    // builders exists to avoid. The surface-scoped drills filter it out anyway.
+    const rawSurface = surfaceMap.get(String(f.tournament_key));
+    const surface = ['clay', 'hard', 'grass'].includes(rawSurface) ? rawSurface : null;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
@@ -573,7 +580,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // "kept lean" note above predates sharding — the cost is ~13 bytes on a row
     // in a lazily-loaded side file, against the alternative of fuzzy-matching a
     // date, a tournament name and an abbreviated opponent back to a fixture.
-    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key });
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures' });
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;
@@ -2862,6 +2869,118 @@ function extractFormShards(matches) {
   console.log(`Wrote ${index.length} recent-form shard(s) to ${FORM_SHARD_DIR}/ (${rowCount} rows, ${(bytes / 1024).toFixed(0)} KB total, lazy — off the matches.json critical path).`);
 }
 
+// =================================================================
+// CAREER-RECORD DRILL-DOWN SHARDS
+// -----------------------------------------------------------------
+// One lazy shard per player holding every match behind the Player Profile's
+// Career-record table, so clicking any cell lists exactly the matches that cell
+// counts. Two spans, joined here because no single source covers a career:
+//
+//   currentYear-5 .. now : all-tier fixtures (ATP + Challenger + ITF), the same
+//                          rows buildAllTierYearly tallies into careerByYear.
+//                          Count == row count, by construction.
+//   .. currentYear-6     : the TML archive (buildArchiveHistories). API-Tennis's
+//                          fixture feed is effectively empty before ~2021 —
+//                          measured on Rublev, 2019 returns 8 fixtures against a
+//                          provider season of 81 matches, and 2017/2018 return
+//                          none at all — which is why every pre-window cell used
+//                          to open on "no individual match records on file".
+//
+// The archive is ATP TOUR-LEVEL ONLY, while the pre-window counts in the table
+// are the provider's all-tier season totals. Those two genuinely differ (Rublev
+// 2017: 39 tour matches on file against a 78-match season) and no available
+// source closes the gap, so the shard reports `atpOnly` per year and the UI says
+// so in words rather than letting a short list silently contradict the number.
+//
+// Sharded, not one file: full career for every profiled player is ~10 MB, and
+// this is opened by one player at a time. Same convention as the form/pbp/odds
+// shards — derived, rebuilt every run, published to _site by pipeline.yml.
+const CAREER_HISTORY_SHARD_DIR = 'career-history';
+const CAREER_HISTORY_INDEX_PATH = 'career-history-index.json';
+const CAREER_HISTORY_SCHEMA_VERSION = 1;
+
+async function writeCareerHistoryShards(profiles, opts = {}) {
+  const log = opts.log || (() => {});
+  const currentYear = new Date().getFullYear();
+  const archiveMaxYear = currentYear - 6;   // the fixture window starts at currentYear-5
+
+  // Pre-window rows from the TML archive, keyed by API player key. Network- and
+  // reconciliation-tolerant: a player who cannot be matched to a TML identity
+  // simply gets no pre-window rows (never a guessed one).
+  let archive = {};
+  try {
+    archive = await buildArchiveHistories(profiles, 2000, archiveMaxYear, { log }) || {};
+  } catch (e) {
+    log(`  Career archive unavailable (${e.message}) — shards will cover the fixture window only.`);
+  }
+
+  fs.mkdirSync(CAREER_HISTORY_SHARD_DIR, { recursive: true });
+  const index = {};
+  let bytes = 0, rowTotal = 0, archived = 0;
+
+  for (const [key, p] of Object.entries(profiles)) {
+    if (!p) continue;
+    const fixtureRows = Array.isArray(p.careerMatches) ? p.careerMatches : [];
+    const archiveRows = (archive[key] || []).map(r => ({ ...r, src: 'archive' }));
+    const rows = [...fixtureRows, ...archiveRows]
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    // careerMatches is a build-time carrier only; it must not ship inside
+    // player-profiles.json, which is on the critical path.
+    delete p.careerMatches;
+    if (!rows.length) continue;
+
+    // Per-year row counts, so the table can decide whether a cell is drillable
+    // and how to caption it WITHOUT fetching the shard first.
+    const blank = () => ({ won: 0, lost: 0 });
+    const byYear = {};
+    for (const r of rows) {
+      const y = String(r.year || '');
+      if (!/^\d{4}$/.test(y)) continue;
+      if (!byYear[y]) byYear[y] = { rows: 0, atpOnly: true, total: blank(), clay: blank(), hard: blank(), grass: blank() };
+      const b = byYear[y];
+      b.rows++;
+      if (r.src !== 'archive') b.atpOnly = false;
+      b.total[r.won ? 'won' : 'lost']++;
+      if (b[r.surface]) b[r.surface][r.won ? 'won' : 'lost']++;
+    }
+    const size = c => (c ? (c.won || 0) + (c.lost || 0) : 0);
+    for (const row of (p.careerByYear || [])) {
+      const y = byYear[String(row.year || '')];
+      row.rows = y ? y.rows : 0;
+      row.atpOnly = y ? y.atpOnly : false;
+      // Pre-window years count from the provider's season aggregate while their
+      // rows come from the tour-level archive, so the two can differ either way.
+      // When the archive is not SHORT of the aggregate it is the better source —
+      // it names every match it counts — so the cell adopts its tally and
+      // becomes exact. (Djokovic 2015 read 88 against 89 nameable matches.)
+      // When the archive IS short the aggregate stays: it is the truer count of
+      // a season that included Challenger/ITF play the archive doesn't carry
+      // (Rublev 2017, 39 tour matches in a 78-match season), and the drill-down
+      // says so in words.
+      if (y && row.allTier === false && y.rows >= size(row.total)) {
+        row.total = y.total;
+        row.clay = size(y.clay) ? y.clay : null;
+        row.hard = size(y.hard) ? y.hard : null;
+        row.grass = size(y.grass) ? y.grass : null;
+        row.atpOnly = false;   // number and rows now describe the same set
+      }
+    }
+
+    writeJsonAtomic(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`, {
+      v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows,
+    }, true);
+    bytes += fs.statSync(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`).size;
+    index[key] = rows.length;
+    rowTotal += rows.length;
+    if (archiveRows.length) archived++;
+  }
+
+  writeJsonAtomic(CAREER_HISTORY_INDEX_PATH, { v: CAREER_HISTORY_SCHEMA_VERSION, players: index }, true);
+  log(`Wrote ${Object.keys(index).length} career-history shard(s) to ${CAREER_HISTORY_SHARD_DIR}/ `
+    + `(${rowTotal} rows, ${(bytes / 1024 / 1024).toFixed(1)} MB total, ${archived} with pre-${archiveMaxYear + 1} archive rows).`);
+  return index;
+}
+
 // Per-book odds timelines move OUT of matches.json into one lazy shard per match.
 //
 // Measured on the first full capture after the refresher was fixed: 44 fixtures
@@ -3108,15 +3227,33 @@ async function buildOneProfile(key, name, surfaceMap) {
         : null,
     }));
 
+  // The broad all-tier fixture list (currentYear-5..now) that backs BOTH the
+  // Career-record counts and the Career-record drill-down rows. Memoized, and
+  // already fetched below for recentForm — this is not an extra call.
+  const allTierFixtures = await fetchRecentSinglesFixtures(key);
+
   // Full-career year-by-year W-L (per surface + total) for the Player Profile
   // "Career record" table. recentForm.matches is capped below to current-year +
   // last-10, so the table CANNOT be derived from it (that collapses every
   // player's career to the current season) — it reads this field instead.
-  // currentRow covers the live season; yearlyBreakdown covers all prior seasons.
-  const careerByYear = [currentRow, ...yearlyBreakdown(playerStats)]
-    .filter(Boolean)
-    .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10))
-    .map(row => ({ year: String(row.year), total: row.total || null, clay: row.clay || null, hard: row.hard || null, grass: row.grass || null }));
+  //
+  // These counts are tallied by buildAllTierYearly from `allTierFixtures`, the
+  // SAME fixtures playerMatchHistory turns into careerMatches below. That is the
+  // whole point: for every year in the fixture window, the number in the table
+  // equals the number of rows the drill-down lists, by construction. It used to
+  // be `[currentRow, ...yearlyBreakdown(playerStats)]` — the provider's own
+  // season aggregate — which is a different population from the rows and so
+  // disagreed with the list in both directions (Rublev 2025 clay: 8-6 in the
+  // table against 16 rows on file).
+  //
+  // Pre-window years (< currentYear-5) still fall back to the provider aggregate
+  // inside buildAllTierYearly, flagged allTier:false; their rows come from the
+  // TML archive and are attached after the fact — see attachCareerHistory().
+  const careerByYear = buildAllTierYearly(allTierFixtures, key, playerStats, currentYear, surfaceMap);
+
+  // Row-level twin of careerByYear over the same fixtures. Stripped out of the
+  // published profile and written to its own per-player shard (see writeCareerHistoryShards).
+  const careerMatches = playerMatchHistory(allTierFixtures, key, currentYear, surfaceMap);
 
   // The Player Profile page only reads current-season matches (season tiles +
   // the expandable "all results this season" list) and the last 10 (form % and
@@ -3125,7 +3262,7 @@ async function buildOneProfile(key, name, surfaceMap) {
   // window. This is the single biggest driver of player-profiles.json size
   // (~68% of the file); capping it trims the file dramatically with zero UI
   // change. matches.json's Form tab uses its own separate field, untouched.
-  const _recentForm = recentFormFromFixtures(await fetchRecentSinglesFixtures(key), key, surfaceMap);
+  const _recentForm = recentFormFromFixtures(allTierFixtures, key, surfaceMap);
   const recentFormCapped = {
     ..._recentForm,
     matches: (_recentForm.matches || []).filter((m, i) => i < 10 || String(m.date || '').slice(0, 4) === String(currentYear)),
@@ -3155,6 +3292,7 @@ async function buildOneProfile(key, name, surfaceMap) {
     recentForm: recentFormCapped,
     seasonTrend,
     careerByYear,
+    careerMatches,
     insights: [], // filled in by the caller, once tourAverage is known
   };
 
@@ -3209,7 +3347,15 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      the "no data" report) and it keeps the old vague "Mixed recent form".
 //      Seed players rebuild every run so they were already correct; without
 //      this bump the other ~370 stayed wrong for up to 14 days.
-const PROFILE_SCHEMA_VERSION = 6;
+// v7 = careerByYear re-sourced from the all-tier FIXTURES (buildAllTierYearly)
+//      instead of the provider's season aggregate, plus careerMatches — the
+//      row-level twin over the same fixtures. A v6 profile has counts from one
+//      population and rows from another, which is exactly the table-vs-list
+//      disagreement this version removes; and it has no careerMatches at all, so
+//      its Career-record drill-down would fall back to the current season only.
+//      Seed players rebuild every run; without this bump the other ~370 keep the
+//      mismatched pair for up to 14 days.
+const PROFILE_SCHEMA_VERSION = 7;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
@@ -3844,23 +3990,17 @@ async function runPipeline() {
 
   console.log('Building player profiles for every player in this run...');
   const playerProfiles = await buildPlayerProfiles(matches, surfaceMap);
+
+  // Career-record drill-down rows, for EVERY profiled player and their whole
+  // career — not the 48 on today's board over 5 seasons, which is what
+  // player-histories.json used to carry. Must run BEFORE player-profiles.json is
+  // written: it strips the build-time careerMatches carrier off each profile and
+  // stamps per-year row counts onto careerByYear.
+  console.log('Building career-record drill-down shards...');
+  await writeCareerHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
+
   writeJsonAtomic('player-profiles.json', playerProfiles, true);
   console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
-
-  // Drill-down match history (all-tier, ~5 seasons) for TODAY'S players only —
-  // a small side file the Overview year-table drill-down loads lazily when a
-  // match modal opens, so it never touches the homepage/critical-path payload.
-  // Keyed by player key; reuses the memoized recent-form fetch (no extra calls).
-  const histYear = new Date().getFullYear();
-  const histKeys = new Set();
-  for (const mm of matches) { if (mm.p1Key) histKeys.add(String(mm.p1Key)); if (mm.p2Key) histKeys.add(String(mm.p2Key)); }
-  const playerHistories = {};
-  for (const hk of histKeys) {
-    playerHistories[hk] = playerMatchHistory(await fetchRecentSinglesFixtures(hk), hk, histYear, surfaceMap);
-  }
-
-  writeJsonAtomic('player-histories.json', playerHistories, true);
-  console.log(`Wrote player-histories.json (${Object.keys(playerHistories).length} player(s), year-table drill-down).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
@@ -3902,4 +4042,8 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch };
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+  // The Career-record pair. Exported together on purpose: their whole contract
+  // is that the counts one returns are tallyable from the rows the other
+  // returns, and that is what ten8-career-verify.js asserts.
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards };

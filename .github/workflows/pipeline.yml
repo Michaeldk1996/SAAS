@@ -113,7 +113,11 @@ jobs:
           cp auth.html account.html funnel.html auth.js _site/
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
-          cp player-histories.json _site/ 2>/dev/null || true
+          # Career-record drill-down, one shard per player. The index gates every
+          # request, so if it doesn't ship, no cell in the Career-record table
+          # opens at all — publish both or neither.
+          cp career-history-index.json _site/ 2>/dev/null || true
+          cp -r career-history _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
