@@ -2050,11 +2050,15 @@ function isFinalRoundLabel(round) { return isFinalRound(round); }
 // from the end so it works whether this tournament ever has 5 rounds
 // (ATP 250, 32-draw) or 7 rounds (Slam, 128-draw).
 function labelRounds(sortedRoundStrings) {
+  // Callers are expected to filter out unlabelled rounds, but read defensively:
+  // a single null round string here used to throw and fail the entire pipeline
+  // run (all 5 retries), taking every unrelated deploy down with it.
+  const at = i => (sortedRoundStrings[i] || '').toLowerCase();
   const labels = new Array(sortedRoundStrings.length);
   let i = sortedRoundStrings.length - 1;
   if (i >= 0 && isFinalRoundLabel(sortedRoundStrings[i])) { labels[i] = 'F'; i--; }
-  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('semi')) { labels[i] = 'SF'; i--; }
-  if (i >= 0 && sortedRoundStrings[i].toLowerCase().includes('quarter')) { labels[i] = 'QF'; i--; }
+  if (i >= 0 && at(i).includes('semi')) { labels[i] = 'SF'; i--; }
+  if (i >= 0 && at(i).includes('quarter')) { labels[i] = 'QF'; i--; }
   let n = 1;
   for (let j = 0; j <= i; j++) labels[j] = `R${n++}`;
   return labels;
@@ -2164,8 +2168,14 @@ async function buildTournamentProgression(tourName) {
   const fixtures = await fetchProgressionFixtures(windowStart, today);
   if (!fixtures) return null;
 
+  // tournament_round is empty ('' or null) on team events (Davis Cup / BJK Cup
+  // Group III), exhibitions (UTS) and some ITF draws. Such a match cannot be
+  // placed on a round axis at all, so it is dropped here rather than downstream:
+  // an unlabelled round would otherwise crash labelRounds on null and, once that
+  // was survived, add a bogus ''-keyed round that skews the per-round averages.
   const played = fixtures.filter(f =>
     f.tournament_name && f.tournament_name.includes(bareName) &&
+    f.tournament_round &&
     f.event_qualification !== 'True' &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
   );
