@@ -122,6 +122,11 @@ jobs:
           cp -r setstats _site/ 2>/dev/null || true
           cp form-index.json _site/ 2>/dev/null || true
           cp -r form _site/ 2>/dev/null || true
+          # Per-book odds timelines, lazy per match. The index gates the Odds
+          # tab: without it every match silently falls back to the reduced view,
+          # which is exactly how the movement chart went missing for three days.
+          cp odds-index.json _site/ 2>/dev/null || true
+          cp -r odds _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
           # Playing Styles + Player Profile redesign data: Elo pill, clutch rating,
           # archetype rosters, and the self-computed matchup matrix. Committed but
@@ -149,7 +154,8 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html \
                    matches.json player-profiles.json career-splits.json form-index.json \
-                   matchup-matrix.json playing-styles.json odds-performance-index.json; do
+                   matchup-matrix.json playing-styles.json odds-performance-index.json \
+                   odds-index.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           echo "All referenced files present in _site."

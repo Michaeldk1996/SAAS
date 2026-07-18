@@ -45,6 +45,14 @@ HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 BOOK_BATCH = 3         # endpoint accepts at most 3 bookmaker slugs per call
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
+# The committed matches.json is written back only by the refreshers, so its
+# match SET never advances on its own — the main pipeline rebuilds today's board
+# and publishes it to Pages without ever committing it. Left alone the capture
+# freezes on whatever fixtures were last committed by hand and reports success
+# forever while capturing nothing. So take the live board as the fixture list.
+LIVE_MATCHES_URL = 'https://michaeldk1996.github.io/SAAS/matches.json'
+RETAIN_DAYS = 3        # keep committed-only matches this recent so nothing in flight is dropped
+
 
 def read_key():
     env = os.path.join(HERE, '.env')
@@ -143,13 +151,102 @@ def extract_series(book_block):
     return series(OUTCOME_P1), series(OUTCOME_P2)
 
 
+def write_matches(matches):
+    with open(MATCHES, 'w') as fh:
+        json.dump(matches, fh, indent=2, ensure_ascii=False)
+
+
+def match_keys(m):
+    """Join keys for one match, most stable first.
+
+    The event key is the only one that survives a match finishing. `id` carries an
+    `upcoming-`/`past-` prefix that flips at that moment, and the feed also
+    RE-DATES a fixture as it resolves — both observed live on 2026-07-16, where
+    `upcoming-12146136` dated 07-15 became `past-12146136` dated 07-16. With only
+    the id and date+names keys BOTH joins miss, so the finished match does not
+    inherit the timeline captured while it was still upcoming — and since closing
+    odds can only ever be derived from a pre-match series, they are then lost for
+    good. That is the exact failure this capturer exists to prevent, so it joins
+    on the event key first.
+    """
+    keys = []
+    ek = event_key(m)
+    if ek:
+        keys.append(f"ek:{ek}")
+    if m.get('id') is not None:
+        keys.append(f"id:{m['id']}")
+    keys.append(f"np:{m.get('date')}|{norm(m.get('p1'))}|{norm(m.get('p2'))}")
+    return keys
+
+
+def event_key(m):
+    """The api-tennis event key inside our id: '{upcoming|past}-<eventKey>'."""
+    parts = str(m.get('id') or '').split('-')
+    return '-'.join(parts[1:]) if len(parts) > 1 else ''
+
+
+def seed_from_live(committed):
+    """Return the fixture list to capture against: the live board, with any
+    movement we already hold carried forward, plus committed-only matches from
+    the last RETAIN_DAYS so a match still in flight is never dropped.
+
+    Fail-soft on purpose — if Pages is unreachable this falls back to the
+    committed list, i.e. exactly the old behaviour, rather than skipping a run.
+    """
+    try:
+        req = urllib.request.Request(
+            LIVE_MATCHES_URL, headers={'User-Agent': 'BSP-Consult-Dashboard/1.0'})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            live = json.load(r)
+        if not isinstance(live, list) or not live:
+            raise ValueError(f'live matches.json is not a non-empty list ({type(live).__name__})')
+    except Exception as e:
+        print(f'WARNING: could not read the live board ({e}); '
+              f'falling back to the committed matches.json.', file=sys.stderr)
+        return committed
+
+    def has_movement(m):
+        return bool((m.get('oddsMovement') or {}).get('books'))
+
+    prior = {}
+    for cm in committed:
+        if not has_movement(cm):
+            continue
+        for k in match_keys(cm):
+            prior.setdefault(k, cm)
+
+    carried = 0
+    seen = set()
+    for m in live:
+        for k in match_keys(m):
+            seen.add(k)
+        if has_movement(m):
+            continue
+        pm = next((prior[k] for k in match_keys(m) if k in prior), None)
+        if pm:
+            m['oddsMovement'] = pm['oddsMovement']
+            carried += 1
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=RETAIN_DAYS)).strftime('%Y-%m-%d')
+    retained = [cm for cm in committed
+                if has_movement(cm)
+                and (cm.get('date') or '') >= cutoff
+                and not any(k in seen for k in match_keys(cm))]
+
+    print(f'Seeded from the live board: {len(live)} match(es) '
+          f'(committed file held {len(committed)}); carried movement forward on '
+          f'{carried}; retained {len(retained)} committed-only match(es) '
+          f'newer than {cutoff}.')
+    return live + retained
+
+
 def main():
     key = read_key()
     if not key:
         print('ERROR: ODDSPAPI_KEY not found (.env or environment).', file=sys.stderr)
         sys.exit(1)
 
-    matches = json.load(open(MATCHES))
+    matches = seed_from_live(json.load(open(MATCHES)))
     # Targets = every dated match we still need movement for. Upcoming matches are
     # (re)captured every run so their lines stay live. A completed match's opening
     # -> closing timeline is frozen the moment it finishes, so we capture it ONCE
@@ -171,6 +268,7 @@ def main():
             targets.append(m)              # upcoming -> always refresh
     if not targets:
         print('No dated matches need movement capture — nothing to do.')
+        write_matches(matches)
         return
 
     start = min(m['date'] for m in targets)
@@ -199,7 +297,8 @@ def main():
 
     if not joined:
         print('No oddspapi fixtures matched our target matches by name/date — '
-              'left matches.json untouched.')
+              'no movement captured this run.')
+        write_matches(matches)
         return
 
     # 2) per-fixture historical odds, books in batches of BOOK_BATCH.
@@ -249,8 +348,7 @@ def main():
         else:
             gap_no_history.append(m)
 
-    with open(MATCHES, 'w') as fh:
-        json.dump(matches, fh, indent=2, ensure_ascii=False)
+    write_matches(matches)
 
     cov = ', '.join(f'{BOOK_LABELS[b]}:{book_hits[b]}' for b in BOOKS)
     print(f'oddspapi history capture: {captured} match(es) with movement, '
@@ -260,6 +358,12 @@ def main():
         print(f'GAP (no per-book history returned): {len(gap_no_history)} match(es):')
         for m in gap_no_history:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
+    # A run that resolves nothing is the failure mode that hid this bug for
+    # three days: green workflow, zero capture. Say it in a way the Actions UI
+    # surfaces instead of letting it read as a healthy run.
+    if targets and not captured:
+        print(f'::warning::Captured movement on 0 of {len(targets)} target match(es) '
+              f'— the odds history on the live site will not advance this run.')
 
 
 def _absorb(data, book, swap, books_out, book_hits):
