@@ -2616,6 +2616,55 @@ function loadPbpShard(eventKey){
 let _formIndex = null, _formIndexPromise = null;
 const _formShards = {}, _formShardPromises = {};
 
+// Same deal for the per-book odds timelines: 34.6k price points across a full
+// board, read only when someone opens one match's Odds tab. Sharded per match,
+// keyed by EVENT KEY (m.id minus its upcoming-/past- prefix) so a shard stays
+// addressable after a match finishes and its id flips.
+let _oddsIndex = null, _oddsIndexPromise = null;
+const _oddsShards = {}, _oddsShardPromises = {};
+
+function eventKeyOfMatch(m){
+  const parts = String((m && m.id != null) ? m.id : '').split('-');
+  return parts.length > 1 ? parts.slice(1).join('-') : '';
+}
+
+function loadOddsIndex(){
+  if (_oddsIndex) return Promise.resolve(_oddsIndex);
+  if (_oddsIndexPromise) return _oddsIndexPromise;
+  _oddsIndexPromise = fetch('./odds-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _oddsIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _oddsIndex; })
+    .catch(err => { console.warn('odds-index.json load failed:', err.message); _oddsIndex = new Set(); return _oddsIndex; });
+  return _oddsIndexPromise;
+}
+
+function loadOddsShard(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek) return Promise.resolve(null);
+  if (ek in _oddsShards) return Promise.resolve(_oddsShards[ek]);
+  if (_oddsShardPromises[ek]) return _oddsShardPromises[ek];
+  _oddsShardPromises[ek] = loadOddsIndex()
+    .then(idx => idx.has(ek)
+      ? fetch(`./odds/${ek}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)
+      : null)
+    .then(d => { _oddsShards[ek] = (d && d.books && Object.keys(d.books).length) ? d : null; return _oddsShards[ek]; })
+    .catch(err => { console.warn(`odds shard ${ek} load failed:`, err.message); _oddsShards[ek] = null; return null; });
+  return _oddsShardPromises[ek];
+}
+
+// Hydrate one match's timeline onto the field it has always lived on, so every
+// reader downstream (buildOddsSection and its re-render handlers) is unchanged —
+// they just have to run after this resolves. Memoised, so toggling a book or
+// reopening the modal costs no second fetch.
+function ensureOddsMovement(m){
+  if (!m || m._oddsLoaded) return Promise.resolve(m);
+  return loadOddsShard(eventKeyOfMatch(m)).then(d => {
+    m.oddsMovement = d ? { market: d.market, capturedAt: d.capturedAt, books: d.books } : null;
+    m._oddsLoaded = true;
+    return m;
+  });
+}
+
 // Which players have form rows on file, so a formless player renders its empty
 // state directly instead of via a failed request.
 function loadFormIndex(){
@@ -5043,7 +5092,13 @@ function openAnalysisModal(matchId){
   document.getElementById('aSectionWeather').innerHTML = buildWeatherSection(m);
 
   _aOdds = { m:m, snapshot:'now', off:null, mktOpen:false };
+  // Paint immediately from what is inline (the reduced view), then upgrade to the
+  // full per-book movement chart once the lazy timeline shard lands. Re-rendering
+  // through renderOddsSection keeps this identical to a book/snapshot toggle, and
+  // it guards on _aOdds.m so a fast reopen of a DIFFERENT match cannot be
+  // overwritten by an in-flight fetch for the previous one.
   document.getElementById('aSectionOdds').innerHTML = buildOddsSection(m);
+  ensureOddsMovement(m).then(() => { if (_aOdds.m === m) renderOddsSection(); });
 
   document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);
 

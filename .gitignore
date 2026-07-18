@@ -21,5 +21,12 @@ setstats-index.json
 # already fetches, and served straight from _site.
 form/
 form-index.json
+
+# Odds-movement shards + their availability index: one file per match, split out
+# of matches.json by bsp-pipeline.js on every run from the timelines the capturer
+# committed there. Derived output — the tracked source of truth stays inline in
+# matches.json, where refresh-odds-history.py writes it.
+odds/
+odds-index.json
 mcp-cache/
 tml-cache/
