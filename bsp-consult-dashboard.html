@@ -877,6 +877,16 @@
   .yr-drill-chev{ grid-column:4; grid-row:1; color:#5b6472; font-size:10px; transition:transform 150ms ease; }
   .yr-drill-row.open .yr-drill-chev{ transform:rotate(90deg); }
   .yr-drill-row.open{ background:rgba(62,123,250,0.06); }
+  /* Recent-form rows on the player profile: same expand affordance as the
+     drill-down rows, but laid out with the card's own inline flex styles. */
+  /* A drilled year scrolls inside the Career record card rather than growing it
+     without bound — the two cards share a height, so an unbounded drill-down
+     would stretch the Recent form box beside it into a tall empty column. */
+  .pp-yr-drill{ max-height:360px; overflow-y:auto; }
+  .pp-form-chev{ transition:transform 150ms ease; }
+  .pp-form-chev.open{ transform:rotate(90deg); }
+  #ppRecentFormCard div[data-ppek].pp-openable:hover{ background:rgba(62,123,250,0.06); }
+  #ppRecentFormCard div[data-ppek].open{ background:rgba(62,123,250,0.06); }
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
@@ -3727,7 +3737,7 @@ function toggleFormPanel(idPrefix){
   // The suffix is the row's index within its list; stripping it leaves the list's
   // own id, which is the accordion group. A keyspace missing from this alternation
   // makes every row its own group, so they all open at once — add new callers here.
-  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h|tourn)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h|tourn|ppc|pp)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   const row = document.getElementById('formRow-' + idPrefix);
@@ -5647,6 +5657,12 @@ async function loadPlayerProfiles(){
   // Re-render the today's-players grid so cards that now have a profile become
   // clickable. The grid always shows today's field; search is a separate dropdown.
   renderPlayers('');
+  // ...and the match cards too. profileLinkAttrs decides clickability at
+  // HTML-generation time against playerProfiles, but profiles load on an idle
+  // callback AFTER loadMatches() has already painted the cards — so without this
+  // the photos and names on Today's Matches keep their profile-less markup until
+  // the 3-minute refresh or a filter change happens to repaint them.
+  if (typeof renderMatches === 'function') renderMatches();
 }
 
 // Per-session UI state for the open profile: which player, which surface lens,
@@ -6009,6 +6025,7 @@ function showPlayerProfile(key){
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
   view.innerHTML = buildPlayerProfileHtml(profile);
+  ppUpgradeFormRows();
   window.scrollTo(0, 0);
 }
 function showPlayerList(){
@@ -6020,12 +6037,12 @@ function showPlayerList(){
 function setPpSurface(s){
   ppState.surface = s;
   const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  if (profile) ppRepaint();
 }
 function togglePpFollow(){
   ppState.following[ppState.key] = !ppState.following[ppState.key];
   const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  if (profile) ppRepaint();
 }
 // Expand/collapse the full current-season results list inside the Recent form
 // card. Only the card is re-rendered logically; we re-render the whole profile
@@ -6033,7 +6050,7 @@ function togglePpFollow(){
 function togglePpFormExpanded(){
   ppState.formExpanded = !ppState.formExpanded;
   const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  if (profile) ppRepaint();
 }
 // Surface filter local to the Recent form card (All / Grass / Hard / Clay).
 // Independent of the profile-wide surface tab. Collapse any open season list so
@@ -6043,7 +6060,7 @@ function setPpFormSurface(s){
   ppState.formExpanded = false;
   ppState.formSeason = null;
   const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  if (profile) ppRepaint();
 }
 // Season Results tab selection inside the Recent form card. Null means "let the
 // card pick the newest season that actually has matches for the current surface
@@ -6051,7 +6068,7 @@ function setPpFormSurface(s){
 function setPpFormSeason(y){
   ppState.formSeason = String(y);
   const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  if (profile) ppRepaint();
 }
 
 // Minimum sample before a percentage is presented as a rate — mirrors
@@ -6363,10 +6380,140 @@ function ppOpenSeason(y){
   ppState.formExpanded = true;
   const profile = playerProfiles[ppState.key];
   if (profile){
-    document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+    ppRepaint();
     const card = document.getElementById('ppRecentFormCard');
     if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+}
+// Drill a single Career-record cell open in place: the matches behind one
+// year + surface, listed under the year's row and expandable to the box score
+// and point log like every other match list in the app.
+//
+// Two sources, because neither alone covers it. player-histories.json carries a
+// full career (year, surface, eventKey) but is only built for the current
+// field — 48 players. recentForm.matches covers every profiled player but is
+// capped to the current season. They are merged on eventKey, histories first.
+//
+// The counts in the table come from a third source, careerByYear, which is the
+// fuller record: Rublev's 2022 clay reads 14-6 there but only 9 of those
+// matches have a row on file. Rather than silently showing a shorter list than
+// the number the user just clicked, the header states the shortfall.
+async function ppShowYearSurface(year, surface, expWon, expLost){
+  const key = String(ppState.key || '');
+  const container = document.getElementById('ppYrDrill-' + year);
+  if (!container) return;
+  const token = `${key}|${year}|${surface}`;
+  if (container.dataset.token === token && container.innerHTML){   // toggle off
+    container.innerHTML = ''; container.dataset.token = ''; return;
+  }
+  // One drill-down open at a time across the whole card.
+  document.querySelectorAll('#playerProfileView div[id^="ppYrDrill-"]').forEach(el => {
+    if (el !== container){ el.innerHTML = ''; el.dataset.token = ''; }
+  });
+  container.dataset.token = token;
+  container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
+  await loadPlayerHistories();
+  if (container.dataset.token !== token) return;   // superseded by a newer click
+  const profile = playerProfiles[key] || {};
+  const hist = (playerHistories && playerHistories[key]) || [];
+  const seen = new Set();
+  const pool = [];
+  hist.forEach(m => { const ek = String(m.eventKey || ''); if (ek) seen.add(ek); pool.push(m); });
+  ((profile.recentForm && profile.recentForm.matches) || []).forEach(m => {
+    const ek = String(m.eventKey || '');
+    if (ek && seen.has(ek)) return;
+    if (ek) seen.add(ek);
+    pool.push(Object.assign({}, m, { year: String(m.date || '').slice(0, 4) }));
+  });
+  const surf = String(surface || 'all').toLowerCase();
+  const list = pool
+    .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
+    .filter(m => surf === 'all' || String(m.surface || '').toLowerCase() === surf)
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const surfLabel = surf === 'all' ? 'All surfaces' : surf.charAt(0).toUpperCase() + surf.slice(1);
+  const won = list.filter(m => m.won).length, lost = list.length - won;
+  const closeBtn = `<span class="yr-drill-close" onclick="ppShowYearSurface('${year}','${surface}')" title="Close">✕</span>`;
+  // The summary numbers and the match list come from different builders and
+  // genuinely disagree in both directions — Rublev's 2022 clay is 14-6 in the
+  // summary against 9 matches on file, while his 2025 clay is 8-6 in the summary
+  // against 16 matches on file. Neither source is authoritative, so state the
+  // difference instead of letting the list quietly contradict the number the
+  // user just clicked.
+  const expTotal = (Number(expWon) || 0) + (Number(expLost) || 0);
+  const surfWord = surf === 'all' ? '' : surf + ' ';
+  let gapNote = '';
+  if (expTotal && list.length < expTotal){
+    gapNote = `<div class="yr-drill-note">Showing the ${list.length} of ${expTotal} ${year} ${surfWord}matches that have an individual record on file.</div>`;
+  } else if (expTotal && list.length > expTotal){
+    gapNote = `<div class="yr-drill-note">${list.length} ${year} ${surfWord}matches on file — more than the ${expTotal} in the summary above, which undercounts this season.</div>`;
+  }
+  if (!list.length){
+    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${closeBtn}</div>` +
+      `<div class="yr-drill-note">No individual match records on file for this selection${expTotal ? ` — the ${expWon}/${expLost} above comes from the season summary` : ''}.</div>`;
+    return;
+  }
+  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
+  if (container.dataset.token !== token) return;
+  const playerName = profile.name || '';
+  const rows = list.map((m, i) => {
+    const w = m.won;
+    const meta = [m.tournament || '', m.round || ''].filter(Boolean).join(' · ');
+    const dateStr = m.date ? formatShortDate(new Date(m.date + 'T00:00:00')) : '';
+    const ek = String(m.eventKey || '');
+    const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
+    if (!canOpen){
+      return `<div class="yr-drill-row">
+        <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
+        <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
+        <span class="yr-drill-sc">${escapeHtml(m.result || '')}</span>
+        <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
+      </div>`;
+    }
+    // Suffix must stay `ppc<i>` — toggleFormPanel strips it to derive the
+    // accordion group, so every row here shares one group.
+    const idPrefix = `ppcareerppc${i}`;
+    return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
+      <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
+      <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
+      <span class="yr-drill-sc">${escapeHtml(m.result || '')}</span>
+      <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
+      <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
+    </div>${formPanelHtml(m, idPrefix, key, playerName)}`;
+  }).join('');
+  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year} · <b>${won}-${lost}</b>${closeBtn}</div>${gapNote}${rows}`;
+}
+// Every profile-local control repaints the whole profile, which destroys the
+// form rows and any panel open inside them. Centralising the repaint keeps the
+// post-paint upgrade pass (and the stale-accordion cleanup) from being
+// forgotten at a call site.
+function ppRepaint(){
+  const profile = playerProfiles[ppState.key];
+  if (!profile) return;
+  const view = document.getElementById('playerProfileView');
+  if (!view) return;
+  formOpenPanel['ppform'] = null;
+  formOpenPanel['ppcareer'] = null;
+  view.innerHTML = buildPlayerProfileHtml(profile);
+  ppUpgradeFormRows();
+}
+// buildPlayerProfileHtml is synchronous but the chevron gate needs two indexes,
+// so the Recent form rows paint inert and are upgraded a beat later. Rows whose
+// match has neither a box score nor a point log keep no chevron and stay
+// unclickable, per the house rule that a chevron promises content.
+async function ppUpgradeFormRows(){
+  const key = ppState.key;
+  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
+  if (ppState.key !== key) return;   // profile switched while the indexes loaded
+  document.querySelectorAll('#playerProfileView div[data-ppek]').forEach(row => {
+    const ek = row.getAttribute('data-ppek');
+    if (!ek || !(msIdx.has(ek) || pbpIdx.has(ek))) return;
+    const id = row.getAttribute('data-ppid');
+    row.classList.add('pp-openable');
+    row.style.cursor = 'pointer';
+    row.onclick = () => toggleFormPanel(id);
+    const chev = document.getElementById('formChev-' + id);
+    if (chev) chev.style.visibility = '';
+  });
 }
 // Year-by-year career W/L, split by surface, derived from the player's tour
 // match history (recentForm.matches — the app's canonical match record). Returns
@@ -6461,7 +6608,7 @@ function loadOddsPerfShardThenRerender(playerKey){
     if (String(ppState.key) !== String(playerKey)) return;
     const view = document.getElementById('playerProfileView');
     const profile = playerProfiles[String(playerKey)];
-    if (view && profile && view.style.display !== 'none') view.innerHTML = buildPlayerProfileHtml(profile);
+    if (view && profile && view.style.display !== 'none'){ view.innerHTML = buildPlayerProfileHtml(profile); ppUpgradeFormRows(); }
   });
 }
 
@@ -6663,6 +6810,9 @@ function buildPlayerProfileHtml(p){
   })());
 
   // ---- Recent form card (carries its own surface filter, expandable season list) ----
+  // Computed here rather than with the Career record card below because the form
+  // card sizes its row list off the career table's length — see ppFormRowTarget.
+  const cy = ppCareerYears(p);
   const formSurf = ppState.formSurface || 'All';
   const formMatches = formSurf === 'All' ? recentMatches : recentMatches.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
   const formLast10 = formMatches.slice(0, 10);
@@ -6678,35 +6828,60 @@ function buildPlayerProfileHtml(p){
     const w = m.won;
     return `<span style="flex:1;height:26px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.15)'};border:1px solid ${w?'rgba(62,207,142,0.42)':'rgba(232,96,122,0.45)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;">${w?'W':'L'}</span>`;
   }).join('') || `<span style="font-size:12px;color:#5b6472;">No ${formEmptyLabel} matches.</span>`;
-  // Eight rows so the "See all" link roughly aligns with the Career record box.
-  const rowsHtml = formMatches.slice(0, 8).map(m => {
+  // Every form row is an expandable panel carrying the same Match Stats /
+  // Point by point tabs as the Match Analysis modal. formPanelHtml does all the
+  // work (shard join, set filter, tabs); this only has to hand it a form-row
+  // shape, which recentForm.matches already is. The chevron starts hidden and is
+  // revealed by ppUpgradeFormRows() for the rows whose match is actually in the
+  // stats/point-log indexes — the chevron is a promise that something is there.
+  const ppPlayerName = p.name || '';
+  const ppFormRow = (m, seq, metaText) => {
     const w = m.won;
+    const idPrefix = `ppformpp${seq}`;
+    const ek = String(m.eventKey || '');
     return `
-      <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
+      <div id="formRow-${idPrefix}" data-ppek="${ek}" data-ppid="${idPrefix}" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);border-radius:6px;">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
         <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
-        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${m.tournament||''}</span>
+        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${metaText}</span>
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
-      </div>`;
-  }).join('') || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
+        <span class="pp-form-chev" id="formChev-${idPrefix}" style="flex:none;width:10px;color:#5b6472;font-size:10px;visibility:hidden;transition:transform 150ms ease;">▸</span>
+      </div>${formPanelHtml(m, idPrefix, ppState.key, ppPlayerName)}`;
+  };
+  // How many rows to show is driven by the Career record box beside it, which is
+  // one row per career year and so varies a lot by player (Djokovic 14 rows,
+  // Vallejo 7). The grid already forces both boxes to a shared height; matching
+  // the row count too means the shorter box fills that height with matches
+  // instead of empty space. Bounded so a debut player still gets a useful list
+  // and a 20-year career doesn't push the box past the fold.
+  const ppFormRowTarget = Math.max(8, Math.min((cy && cy.rows ? cy.rows.length : 8), 14));
+  const shownFormMatches = formMatches.slice(0, ppFormRowTarget);
+  // The season drill-down below must not repeat these — see shownFormKeys.
+  const shownFormKeys = new Set(shownFormMatches.map(m => String(m.eventKey || '')).filter(Boolean));
+  const rowsHtml = shownFormMatches.map((m, i) => ppFormRow(m, i, m.tournament || '')).join('')
+    || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
+  // Season-results rows continue the same accordion group (shared "ppform"
+  // prefix), so opening one closes any other open row in the card. Sequence
+  // numbers start past the eight above so ids never collide.
+  let ppFormSeq = 100;
   const buildFormRow = m => {
-    const w = m.won;
     let roundName = m.round || '';
     if (roundName.includes(' - ')) roundName = roundName.split(' - ').pop().trim();
-    return `
-      <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);">
-        <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
-        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
-        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${roundName}</span>
-        <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
-      </div>`;
+    return ppFormRow(m, ppFormSeq++, roundName);
   };
   const formSeasons = [...new Set(formMatches.map(m => String(m.date || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
   const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason)) ? ppState.formSeason : (formSeasons[0] || seasonYear);
-  const activeSeasonMatches = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
+  const activeSeasonAll = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
+  // The eight rows above are already on screen, so the season list shows only
+  // what they don't — otherwise opening the current season renders a near-exact
+  // copy of the Recent form box directly beneath it. eventKey is present on
+  // every form row (74,279/74,279 across the dataset), so this is an exact
+  // match rather than a date/opponent heuristic.
+  const activeSeasonMatches = activeSeasonAll.filter(m => !shownFormKeys.has(String(m.eventKey || '')));
   const activeSeasonCount = activeSeasonMatches.length;
+  const activeSeasonHidden = activeSeasonAll.length - activeSeasonCount;
   const seasonTabsHtml = formSeasons.map(y => {
     const on = y === activeSeason;
     const partial = Number(y) < PP_FULL_HISTORY_FROM;
@@ -6730,12 +6905,15 @@ function buildPlayerProfileHtml(p){
         </div>
         ${g.matches.map(buildFormRow).join('')}
       </div>`;
-  }).join('') || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No ${formEmptyLabel} matches in ${activeSeason}.</div>`;
+  }).join('') || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">${activeSeasonHidden > 0 ? `All ${activeSeasonHidden} ${activeSeason} result${activeSeasonHidden===1?' is':'s are'} already listed above.` : `No ${formEmptyLabel} matches in ${activeSeason}.`}</div>`;
   const newestSeason = formSeasons[0];
-  const newestSeasonCount = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)).length : 0;
-  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 8 || formSeasons.length > 1);
+  const newestSeasonAll = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)) : [];
+  // The trigger counts what opening the list would actually add, not the whole
+  // season — the rows above it are already on screen.
+  const newestSeasonCount = newestSeasonAll.filter(m => !shownFormKeys.has(String(m.eventKey || ''))).length;
+  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 0 || formSeasons.length > 1);
   const formTriggerHtml = showFormTrigger
-    ? `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">See all ${newestSeasonCount} results · ${newestSeason} season</span></div>`
+    ? `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">${newestSeasonCount > 0 ? `See ${newestSeasonCount} more result${newestSeasonCount===1?'':'s'} · ${newestSeason} season` : 'See earlier seasons'}</span></div>`
     : '';
   const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;">✕</button>`;
   const groupNoun = groups.length === 1 ? 'tournament' : 'tournaments';
@@ -6746,14 +6924,17 @@ function buildPlayerProfileHtml(p){
     </div>
     <div style="display:flex;gap:6px;margin:10px 0 2px;flex-wrap:wrap;">${seasonTabsHtml}</div>
     ${partialNoteHtml}
-    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} · ${groups.length} ${groupNoun}</div>
-    <div style="display:flex;flex-direction:column;max-height:340px;overflow-y:auto;">${groupsHtml}</div>`;
+    <div style="font-size:11px;color:#5b6472;margin-top:9px;">${activeSeasonCount} result${activeSeasonCount===1?'':'s'} · ${groups.length} ${groupNoun}${activeSeasonHidden > 0 ? ` · ${activeSeasonHidden} already listed above` : ''}</div>
+    <div style="display:flex;flex-direction:column;max-height:520px;overflow-y:auto;">${groupsHtml}</div>`;
+  // flex:1 on the collapsed row list pushes the "See all" link to the bottom of
+  // the card, so it lines up with the Career record card's Total row now that
+  // the two boxes share a height.
   const formBodyHtml = ppState.formExpanded
     ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
-    : `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formTriggerHtml}`;
+    : `<div style="display:flex;flex-direction:column;flex:1;">${rowsHtml}</div>${formTriggerHtml}`;
 
   const recentFormCard = `
-    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
+    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div style="font-size:14px;font-weight:700;">Recent form</div>
         <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
@@ -6764,24 +6945,30 @@ function buildPlayerProfileHtml(p){
     </div>`;
 
   // ---- Career record table (clickable year-by-year, derived from match history) ----
-  const cy = ppCareerYears(p);
-  const cellHtml = (rec, color, uc) => {
+  // Each cell drills into its own year AND surface. The underline already
+  // advertised the cells as clickable, but only the row carried a handler and it
+  // discarded the surface — clicking clay 15/3 opened every 2022 match on every
+  // surface. stopPropagation keeps the cell from also firing the row's handler.
+  const cellHtml = (rec, color, uc, year, surfKey) => {
     const has = rec && (rec[0] + rec[1]) > 0;
     const val = has ? `${rec[0]}/${rec[1]}` : '—';
-    return `<span style="font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?color:'#4b5361'};text-align:right;${has?`text-decoration:underline;text-decoration-color:${uc};text-underline-offset:3px;`:''}">${val}</span>`;
+    const click = has && year
+      ? ` onclick="event.stopPropagation();ppShowYearSurface('${year}','${surfKey}',${rec[0]},${rec[1]})" title="${surfKey === 'all' ? 'All' : surfKey.charAt(0).toUpperCase()+surfKey.slice(1)} matches in ${year}" style="cursor:pointer;`
+      : ` style="`;
+    return `<span${click}font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?color:'#4b5361'};text-align:right;${has?`text-decoration:underline;text-decoration-color:${uc};text-underline-offset:3px;`:''}">${val}</span>`;
   };
   let careerRecordCard;
   if (cy){
     const hcol = (t, c, right) => `<span style="font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:${c};font-family:'IBM Plex Mono',monospace;text-align:${right?'right':'left'};">${t}</span>`;
     const rowsCr = cy.rows.map(r => {
       if (r.onTour && r.hasData){
-        return `<div onclick="ppOpenSeason('${r.year}')" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='rgba(62,123,250,0.06)';" onmouseout="this.style.background='transparent';">
+        return `<div onclick="ppShowYearSurface('${r.year}','all',${r.total[0]},${r.total[1]})" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='rgba(62,123,250,0.06)';" onmouseout="this.style.background='transparent';">
           <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#e7e9ee;">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:#8b93a3;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
-          ${cellHtml(r.total, '#e7e9ee', 'rgba(255,255,255,0.25)')}
-          ${cellHtml(r.clay, '#eda869', 'rgba(237,168,105,0.4)')}
-          ${cellHtml(r.hard, '#7ba4ff', 'rgba(123,164,255,0.4)')}
-          ${cellHtml(r.grass, '#3ECF8E', 'rgba(62,207,142,0.4)')}
-        </div>`;
+          ${cellHtml(r.total, '#e7e9ee', 'rgba(255,255,255,0.25)', r.year, 'all')}
+          ${cellHtml(r.clay, '#eda869', 'rgba(237,168,105,0.4)', r.year, 'clay')}
+          ${cellHtml(r.hard, '#7ba4ff', 'rgba(123,164,255,0.4)', r.year, 'hard')}
+          ${cellHtml(r.grass, '#3ECF8E', 'rgba(62,207,142,0.4)', r.year, 'grass')}
+        </div><div class="yr-drill pp-yr-drill" id="ppYrDrill-${r.year}"></div>`;
       }
       if (r.onTour && !r.hasData){
         return `<div style="display:grid;grid-template-columns:58px 1fr;column-gap:8px;align-items:center;padding:8px 10px;border-bottom:1px dashed rgba(255,255,255,0.05);">
@@ -6802,11 +6989,11 @@ function buildPlayerProfileHtml(p){
           <div style="font-size:14px;font-weight:700;">Career record</div>
           <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
         </div>
-        <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any year to browse those matches.</div>
+        <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,0.07);">
           ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#eda869',true)}${hcol('Hard','#7ba4ff',true)}${hcol('Grass','#3ECF8E',true)}
         </div>
-        <div>${rowsCr}</div>
+        <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
           <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
           ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#eda869')}${totCell(t.hard,'#7ba4ff')}${totCell(t.grass,'#3ECF8E')}
@@ -6924,7 +7111,12 @@ function buildPlayerProfileHtml(p){
       <!-- RIGHT MAIN -->
       <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
         ${oddsHtml}
-        <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">${recentFormCard}${careerRecordCard}</div>
+        <!-- align-items defaults to stretch: both cards take the row's height, so the
+             taller one (usually Career record, which renders a row per career year)
+             sets the height and the other fills to match. Previously align-items:start
+             let each card size to its own content, which is why a player with many
+             seasons on tour showed a Career record box far taller than Recent form. -->
+        <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">${recentFormCard}${careerRecordCard}</div>
         ${ppCareerSplitsHtml(p)}
         ${recordSearchCard}
         <div>
