@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T05:27:53.252Z",
+  "generatedAt": "2026-07-18T05:48:40.128Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2010-2026",
   "note": "Each axis is a 0-100 percentile within the qualified pool (50 = tour-typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -9,6 +9,7 @@
     {
       "name": "C. Alcaraz",
       "rank": 1,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 54,
@@ -30,6 +31,7 @@
     {
       "name": "J. Sinner",
       "rank": 2,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 64,
@@ -50,6 +52,7 @@
     {
       "name": "A. Zverev",
       "rank": 3,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Big Server",
       "archetype_scores": {
         "big_server": 86,
@@ -71,6 +74,7 @@
     {
       "name": "N. Djokovic",
       "rank": 4,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 73,
@@ -91,6 +95,7 @@
     {
       "name": "F. Auger-Aliassime",
       "rank": 5,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 87,
@@ -112,6 +117,7 @@
     {
       "name": "A. De Minaur",
       "rank": 6,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 32,
@@ -133,6 +139,7 @@
     {
       "name": "L. Musetti",
       "rank": 7,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 39,
@@ -154,6 +161,7 @@
     {
       "name": "T. Fritz",
       "rank": 9,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 81,
@@ -174,6 +182,7 @@
     {
       "name": "B. Shelton",
       "rank": 9,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 89,
@@ -194,6 +203,7 @@
     {
       "name": "J. Draper",
       "rank": 10,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 78,
@@ -214,6 +224,7 @@
     {
       "name": "A. Bublik",
       "rank": 11,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 81,
@@ -234,6 +245,7 @@
     {
       "name": "C. Ruud",
       "rank": 12,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 62,
@@ -255,6 +267,7 @@
     {
       "name": "D. Medvedev",
       "rank": 13,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 76,
@@ -276,6 +289,7 @@
     {
       "name": "A. Davidovich Fokina",
       "rank": 14,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 29,
@@ -294,6 +308,7 @@
     {
       "name": "H. Rune",
       "rank": 15,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Baseliner",
       "archetype_scores": {
         "big_server": 55,
@@ -315,6 +330,7 @@
     {
       "name": "A. Rublev",
       "rank": 16,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 70,
@@ -336,6 +352,7 @@
     {
       "name": "K. Khachanov",
       "rank": 17,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 74,
@@ -354,6 +371,7 @@
     {
       "name": "J. Mensik",
       "rank": 18,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 80,
@@ -375,6 +393,7 @@
     {
       "name": "J. Lehecka",
       "rank": 19,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 71,
@@ -393,6 +412,7 @@
     {
       "name": "T. Paul",
       "rank": 20,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 46,
@@ -413,6 +433,7 @@
     {
       "name": "F. Cerundolo",
       "rank": 21,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 26,
@@ -431,6 +452,7 @@
     {
       "name": "A. Fils",
       "rank": 21,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 63,
@@ -452,6 +474,7 @@
     {
       "name": "F. Cobolli",
       "rank": 22,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 36,
@@ -470,6 +493,7 @@
     {
       "name": "T. Griekspoor",
       "rank": 25,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 78,
@@ -490,6 +514,7 @@
     {
       "name": "L. Darderi",
       "rank": 25,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 48,
@@ -510,6 +535,7 @@
     {
       "name": "L. Tien",
       "rank": 26,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 29,
@@ -530,6 +556,7 @@
     {
       "name": "A. Rinderknech",
       "rank": 27,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 86,
@@ -548,6 +575,7 @@
     {
       "name": "C. Norrie",
       "rank": 28,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 50,
@@ -566,6 +594,7 @@
     {
       "name": "J. Fonseca",
       "rank": 29,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 64,
@@ -586,6 +615,7 @@
     {
       "name": "F. Tiafoe",
       "rank": 30,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 61,
@@ -606,6 +636,7 @@
     {
       "name": "V. Vacherot",
       "rank": 31,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 63,
@@ -624,6 +655,7 @@
     {
       "name": "B. Nakashima",
       "rank": 33,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 81,
@@ -642,6 +674,7 @@
     {
       "name": "C. Moutet",
       "rank": 35,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 24,
@@ -660,6 +693,7 @@
     {
       "name": "A. Tabilo",
       "rank": 35,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 64,
@@ -680,6 +714,7 @@
     {
       "name": "U. Humbert",
       "rank": 36,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 68,
@@ -700,6 +735,7 @@
     {
       "name": "D. Shapovalov",
       "rank": 37,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 72,
@@ -720,6 +756,7 @@
     {
       "name": "J. Munar",
       "rank": 38,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 34,
@@ -738,6 +775,7 @@
     {
       "name": "Z. Bergs",
       "rank": 39,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 56,
@@ -756,6 +794,7 @@
     {
       "name": "G. Diallo",
       "rank": 40,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 80,
@@ -774,6 +813,7 @@
     {
       "name": "T. Machac",
       "rank": 41,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Baseliner",
       "archetype_scores": {
         "big_server": 48,
@@ -794,6 +834,7 @@
     {
       "name": "A. Michelsen",
       "rank": 42,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 50,
@@ -814,6 +855,7 @@
     {
       "name": "M. Navone",
       "rank": 44,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 20,
@@ -832,6 +874,7 @@
     {
       "name": "A. Mannarino",
       "rank": 45,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 36,
@@ -850,6 +893,7 @@
     {
       "name": "S. Korda",
       "rank": 46,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 68,
@@ -868,6 +912,7 @@
     {
       "name": "M. Cilic",
       "rank": 47,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 77,
@@ -889,6 +934,7 @@
     {
       "name": "G. Dimitrov",
       "rank": 47,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 72,
@@ -910,6 +956,7 @@
     {
       "name": "E. Quinn",
       "rank": 48,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 51,
@@ -928,6 +975,7 @@
     {
       "name": "F. Marozsan",
       "rank": 49,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 48,
@@ -946,6 +994,7 @@
     {
       "name": "T. Atmane",
       "rank": 51,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 65,
@@ -968,6 +1017,7 @@
     {
       "name": "N. Borges",
       "rank": 52,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 53,
@@ -986,6 +1036,7 @@
     {
       "name": "H. Hurkacz",
       "rank": 53,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 89,
@@ -1006,6 +1057,7 @@
     {
       "name": "B. Van De Zandschulp",
       "rank": 54,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 55,
@@ -1024,6 +1076,7 @@
     {
       "name": "V. Kopriva",
       "rank": 55,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 20,
@@ -1046,6 +1099,7 @@
     {
       "name": "T. M. Etcheverry",
       "rank": 57,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 60,
@@ -1066,6 +1120,7 @@
     {
       "name": "M. Fucsovics",
       "rank": 57,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 32,
@@ -1084,6 +1139,7 @@
     {
       "name": "G. Mpetshi Perricard",
       "rank": 58,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 97,
@@ -1104,6 +1160,7 @@
     {
       "name": "K. Majchrzak",
       "rank": 59,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 48,
@@ -1126,6 +1183,7 @@
     {
       "name": "Y. Hanfmann",
       "rank": 59,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Baseliner",
       "archetype_scores": {
         "big_server": 49,
@@ -1144,6 +1202,7 @@
     {
       "name": "R. Opelka",
       "rank": 60,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 93,
@@ -1162,6 +1221,7 @@
     {
       "name": "A. Popyrin",
       "rank": 60,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 76,
@@ -1180,6 +1240,7 @@
     {
       "name": "C. Ugo Carabelli",
       "rank": 61,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 19,
@@ -1202,6 +1263,7 @@
     {
       "name": "A. Cazaux",
       "rank": 63,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 70,
@@ -1220,6 +1282,7 @@
     {
       "name": "J. Brooksby",
       "rank": 63,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 26,
@@ -1240,6 +1303,7 @@
     {
       "name": "D. Altmaier",
       "rank": 64,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 51,
@@ -1258,6 +1322,7 @@
     {
       "name": "S. Baez",
       "rank": 65,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 22,
@@ -1276,6 +1341,7 @@
     {
       "name": "L. Sonego",
       "rank": 66,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 70,
@@ -1294,6 +1360,7 @@
     {
       "name": "H. Medjedovic",
       "rank": 67,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 83,
@@ -1312,6 +1379,7 @@
     {
       "name": "G. Monfils",
       "rank": 68,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 73,
@@ -1333,6 +1401,7 @@
     {
       "name": "T. A. Tirante",
       "rank": 69,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 44,
@@ -1355,6 +1424,7 @@
     {
       "name": "M. Kecmanovic",
       "rank": 70,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 36,
@@ -1373,6 +1443,7 @@
     {
       "name": "V. Royer",
       "rank": 71,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 69,
@@ -1395,6 +1466,7 @@
     {
       "name": "J. M. Cerundolo",
       "rank": 72,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 19,
@@ -1419,6 +1491,7 @@
     {
       "name": "S. Tsitsipas",
       "rank": 75,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 75,
@@ -1440,6 +1513,7 @@
     {
       "name": "M. Giron",
       "rank": 77,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 47,
@@ -1458,6 +1532,7 @@
     {
       "name": "M. Trungelliti",
       "rank": 78,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 16,
@@ -1480,6 +1555,7 @@
     {
       "name": "F. Misolic",
       "rank": 79,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 31,
@@ -1504,6 +1580,7 @@
     {
       "name": "D. Prizmic",
       "rank": 79,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 29,
@@ -1526,6 +1603,7 @@
     {
       "name": "M. Bellucci",
       "rank": 80,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 62,
@@ -1544,6 +1622,7 @@
     {
       "name": "S. Ofner",
       "rank": 82,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 59,
@@ -1566,6 +1645,7 @@
     {
       "name": "J-L. Struff",
       "rank": 83,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 73,
@@ -1584,6 +1664,7 @@
     {
       "name": "R. Collignon",
       "rank": 84,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 70,
@@ -1606,6 +1687,7 @@
     {
       "name": "A. Shevchenko",
       "rank": 85,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 33,
@@ -1626,6 +1708,7 @@
     {
       "name": "J. Duckworth",
       "rank": 86,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 59,
@@ -1644,6 +1727,7 @@
     {
       "name": "D. Dzumhur",
       "rank": 87,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 19,
@@ -1662,6 +1746,7 @@
     {
       "name": "Z. Svajda",
       "rank": 90,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 34,
@@ -1684,6 +1769,7 @@
     {
       "name": "P. Carreno-Busta",
       "rank": 91,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Baseliner",
       "archetype_scores": {
         "big_server": 42,
@@ -1704,6 +1790,7 @@
     {
       "name": "Q. Halys",
       "rank": 91,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 81,
@@ -1722,6 +1809,7 @@
     {
       "name": "R. Safiullin",
       "rank": 94,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 64,
@@ -1740,6 +1828,7 @@
     {
       "name": "L. Pouille",
       "rank": 94,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 57,
@@ -1760,6 +1849,7 @@
     {
       "name": "L. Djere",
       "rank": 95,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 46,
@@ -1778,6 +1868,7 @@
     {
       "name": "A. Kovacevic",
       "rank": 95,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 73,
@@ -1798,6 +1889,7 @@
     {
       "name": "R. Hijikata",
       "rank": 96,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 23,
@@ -1816,6 +1908,7 @@
     {
       "name": "L. van Assche",
       "rank": 97,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 25,
@@ -1838,6 +1931,7 @@
     {
       "name": "T. Schoolkate",
       "rank": 97,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 74,
@@ -1860,6 +1954,7 @@
     {
       "name": "C. Taberner",
       "rank": 98,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 22,
@@ -1882,6 +1977,7 @@
     {
       "name": "R. Bautista-Agut",
       "rank": 98,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 38,
@@ -1903,6 +1999,7 @@
     {
       "name": "A. Vukic",
       "rank": 99,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 68,
@@ -1921,6 +2018,7 @@
     {
       "name": "M. Berrettini",
       "rank": 100,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 91,
@@ -1941,6 +2039,7 @@
     {
       "name": "B. Bonzi",
       "rank": 101,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 55,
@@ -1959,6 +2058,7 @@
     {
       "name": "J. De Jong",
       "rank": 102,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 58,
@@ -1977,6 +2077,7 @@
     {
       "name": "A. Walton",
       "rank": 103,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 59,
@@ -1999,6 +2100,7 @@
     {
       "name": "C. Garin",
       "rank": 104,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 33,
@@ -2017,6 +2119,7 @@
     {
       "name": "A. Muller",
       "rank": 105,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 31,
@@ -2035,6 +2138,7 @@
     {
       "name": "M. Arnaldi",
       "rank": 106,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 44,
@@ -2053,6 +2157,7 @@
     {
       "name": "B. Coric",
       "rank": 107,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 57,
@@ -2073,6 +2178,7 @@
     {
       "name": "E. Nava",
       "rank": 108,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 58,
@@ -2095,6 +2201,7 @@
     {
       "name": "J. Thompson",
       "rank": 113,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 57,
@@ -2113,6 +2220,7 @@
     {
       "name": "F. Comesana",
       "rank": 114,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 69,
@@ -2135,6 +2243,7 @@
     {
       "name": "Y. Nishioka",
       "rank": 116,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 19,
@@ -2155,6 +2264,7 @@
     {
       "name": "N. Basilashvili",
       "rank": 117,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 24,
@@ -2173,6 +2283,7 @@
     {
       "name": "H. Gaston",
       "rank": 118,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 7,
@@ -2193,6 +2304,7 @@
     {
       "name": "D. Goffin",
       "rank": 119,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 43,
@@ -2213,6 +2325,7 @@
     {
       "name": "J. Fearnley",
       "rank": 123,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Big Server",
       "archetype_scores": {
         "big_server": 48,
@@ -2235,6 +2348,7 @@
     {
       "name": "S. Wawrinka",
       "rank": 125,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 64,
@@ -2253,6 +2367,7 @@
     {
       "name": "O. Virtanen",
       "rank": 127,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 59,
@@ -2271,6 +2386,7 @@
     {
       "name": "R. Carballes Baena",
       "rank": 128,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 20,
@@ -2289,6 +2405,7 @@
     {
       "name": "M. McDonald",
       "rank": 129,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 43,
@@ -2307,6 +2424,7 @@
     {
       "name": "S. Mochizuki",
       "rank": 130,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 15,
@@ -2329,6 +2447,7 @@
     {
       "name": "D. Lajovic",
       "rank": 132,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 35,
@@ -2347,6 +2466,7 @@
     {
       "name": "N. Jarry",
       "rank": 133,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 81,
@@ -2367,6 +2487,7 @@
     {
       "name": "H. Dellien",
       "rank": 133,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 21,
@@ -2389,6 +2510,7 @@
     {
       "name": "T. Barrios Vera",
       "rank": 134,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 22,
@@ -2411,6 +2533,7 @@
     {
       "name": "P. Martinez",
       "rank": 136,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 21,
@@ -2429,6 +2552,7 @@
     {
       "name": "F. Fognini",
       "rank": 138,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 18,
@@ -2449,6 +2573,7 @@
     {
       "name": "F. Passaro",
       "rank": 138,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 39,
@@ -2471,6 +2596,7 @@
     {
       "name": "L. Klein",
       "rank": 141,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 69,
@@ -2493,6 +2619,7 @@
     {
       "name": "S. Travaglia",
       "rank": 141,
+      "primary": "big_server",
       "archetype_label": "Big Server / Counter Puncher",
       "archetype_scores": {
         "big_server": 51,
@@ -2515,6 +2642,7 @@
     {
       "name": "D. Koepfer",
       "rank": 147,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 31,
@@ -2535,6 +2663,7 @@
     {
       "name": "B. Harris",
       "rank": 148,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 58,
@@ -2557,6 +2686,7 @@
     {
       "name": "C. O'Connell",
       "rank": 150,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 58,
@@ -2575,6 +2705,7 @@
     {
       "name": "C. Wong",
       "rank": 150,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 79,
@@ -2597,6 +2728,7 @@
     {
       "name": "L. Nardi",
       "rank": 151,
+      "primary": "big_server",
       "archetype_label": "Big Server / Counter Puncher",
       "archetype_scores": {
         "big_server": 16,
@@ -2619,6 +2751,7 @@
     {
       "name": "Y. Bu",
       "rank": 152,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 62,
@@ -2641,6 +2774,7 @@
     {
       "name": "F. Coria",
       "rank": 153,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 23,
@@ -2661,6 +2795,7 @@
     {
       "name": "G. Zeppieri",
       "rank": 154,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 47,
@@ -2683,6 +2818,7 @@
     {
       "name": "P. Herbert",
       "rank": 154,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 67,
@@ -2701,6 +2837,7 @@
     {
       "name": "N. Basavareddy",
       "rank": 154,
+      "primary": "solid_defender",
       "archetype_label": "Solid Defender / Big Server",
       "archetype_scores": {
         "big_server": 36,
@@ -2719,6 +2856,7 @@
     {
       "name": "D. E. Galan",
       "rank": 155,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 38,
@@ -2737,6 +2875,7 @@
     {
       "name": "Y. Watanuki",
       "rank": 161,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 74,
@@ -2759,6 +2898,7 @@
     {
       "name": "H. Mayot",
       "rank": 167,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 37,
@@ -2781,6 +2921,7 @@
     {
       "name": "N. Mejia",
       "rank": 168,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 23,
@@ -2803,6 +2944,7 @@
     {
       "name": "C. H. Tseng",
       "rank": 169,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 14,
@@ -2825,6 +2967,7 @@
     {
       "name": "E. Ymer",
       "rank": 171,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 30,
@@ -2847,6 +2990,7 @@
     {
       "name": "T. Monteiro",
       "rank": 172,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 59,
@@ -2865,6 +3009,7 @@
     {
       "name": "H. Grenier",
       "rank": 175,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 57,
@@ -2887,6 +3032,7 @@
     {
       "name": "Y. Wu",
       "rank": 179,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 27,
@@ -2911,6 +3057,7 @@
     {
       "name": "F. Diaz Acosta",
       "rank": 179,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 24,
@@ -2933,6 +3080,7 @@
     {
       "name": "C. Eubanks",
       "rank": 182,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 88,
@@ -2951,6 +3099,7 @@
     {
       "name": "R. Gasquet",
       "rank": 182,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Solid Baseliner",
       "archetype_scores": {
         "big_server": 52,
@@ -2971,6 +3120,7 @@
     {
       "name": "D. Evans",
       "rank": 185,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 37,
@@ -2989,6 +3139,7 @@
     {
       "name": "B. Tomic",
       "rank": 194,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 70,
@@ -3007,6 +3158,7 @@
     {
       "name": "J. Kubler",
       "rank": 195,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Big Server",
       "archetype_scores": {
         "big_server": 46,
@@ -3029,6 +3181,7 @@
     {
       "name": "J. Rodionov",
       "rank": 195,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 49,
@@ -3051,6 +3204,7 @@
     {
       "name": "C. Lestienne",
       "rank": 197,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 21,
@@ -3073,6 +3227,7 @@
     {
       "name": "A. Molcan",
       "rank": 202,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 28,
@@ -3093,6 +3248,7 @@
     {
       "name": "M. Krueger",
       "rank": 203,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 38,
@@ -3115,6 +3271,7 @@
     {
       "name": "L. Harris",
       "rank": 220,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 85,
@@ -3137,6 +3294,7 @@
     {
       "name": "M. Cecchinato",
       "rank": 228,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 39,
@@ -3155,6 +3313,7 @@
     {
       "name": "K. Coppejans",
       "rank": 235,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 32,
@@ -3177,6 +3336,7 @@
     {
       "name": "K. Nishikori",
       "rank": 238,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Counter Puncher",
       "archetype_scores": {
         "big_server": 31,
@@ -3197,6 +3357,7 @@
     {
       "name": "Z. Zhang",
       "rank": 239,
+      "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
         "big_server": 68,
@@ -3215,6 +3376,7 @@
     {
       "name": "D. Stricker",
       "rank": 243,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 74,
@@ -3239,6 +3401,7 @@
     {
       "name": "M. Huesler",
       "rank": 244,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 67,
@@ -3261,6 +3424,7 @@
     {
       "name": "H. Habib",
       "rank": 244,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 76,
@@ -3283,6 +3447,7 @@
     {
       "name": "T. Seyboth Wild",
       "rank": 247,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 41,
@@ -3301,6 +3466,7 @@
     {
       "name": "S. Kwon",
       "rank": 252,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 35,
@@ -3323,6 +3489,7 @@
     {
       "name": "J. P. Varillas",
       "rank": 255,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 26,
@@ -3345,6 +3512,7 @@
     {
       "name": "B. Hassan",
       "rank": 259,
+      "primary": "all_court",
       "archetype_label": "All-Court Player / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 39,
@@ -3369,6 +3537,7 @@
     {
       "name": "A. Martin",
       "rank": 269,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 15,
@@ -3391,6 +3560,7 @@
     {
       "name": "S. Nagal",
       "rank": 275,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 20,
@@ -3413,6 +3583,7 @@
     {
       "name": "M. Kukushkin",
       "rank": 281,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 16,
@@ -3431,6 +3602,7 @@
     {
       "name": "M. Mmoh",
       "rank": 285,
+      "primary": "big_server",
       "archetype_label": "Big Server / Counter Puncher",
       "archetype_scores": {
         "big_server": 52,
@@ -3455,6 +3627,7 @@
     {
       "name": "B. Gojo",
       "rank": 293,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 90,
@@ -3477,6 +3650,7 @@
     {
       "name": "N. Gombos",
       "rank": 296,
+      "primary": "big_server",
       "archetype_label": "Big Server / Counter Puncher",
       "archetype_scores": {
         "big_server": 43,
@@ -3499,6 +3673,7 @@
     {
       "name": "Y. Uchiyama",
       "rank": 306,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 65,
@@ -3521,6 +3696,7 @@
     {
       "name": "T. Daniel",
       "rank": 330,
+      "primary": "solid_defender",
       "archetype_label": "Solid Defender / Counter Puncher",
       "archetype_scores": {
         "big_server": 26,
@@ -3539,6 +3715,7 @@
     {
       "name": "A. Vavassori",
       "rank": 334,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 46,
@@ -3561,6 +3738,7 @@
     {
       "name": "D. Schwartzman",
       "rank": 340,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 16,
@@ -3581,6 +3759,7 @@
     {
       "name": "M. Polmans",
       "rank": 391,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 26,
@@ -3603,6 +3782,7 @@
     {
       "name": "J. Shang",
       "rank": 406,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 40,
@@ -3621,6 +3801,7 @@
     {
       "name": "R. Albot",
       "rank": 430,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 21,
@@ -3639,6 +3820,7 @@
     {
       "name": "F. Bagnis",
       "rank": 431,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 31,
@@ -3661,6 +3843,7 @@
     {
       "name": "G. Barrere",
       "rank": 435,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 37,
@@ -3679,6 +3862,7 @@
     {
       "name": "M. Marterer",
       "rank": 446,
+      "primary": "big_server",
       "archetype_label": "Big Server / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 50,
@@ -3701,6 +3885,7 @@
     {
       "name": "P. Kotov",
       "rank": 454,
+      "primary": "big_server",
       "archetype_label": "Big Server / Counter Puncher",
       "archetype_scores": {
         "big_server": 37,
@@ -3723,6 +3908,7 @@
     {
       "name": "T. Kokkinakis",
       "rank": 454,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 81,
@@ -3741,6 +3927,7 @@
     {
       "name": "J. Kovalik",
       "rank": 515,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 18,
@@ -3763,6 +3950,7 @@
     {
       "name": "M. Ymer",
       "rank": 617,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 23,
@@ -3781,6 +3969,7 @@
     {
       "name": "H. Chung",
       "rank": 639,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 37,
@@ -3799,6 +3988,7 @@
     {
       "name": "A. Dougaz",
       "rank": 664,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 28,
@@ -3821,6 +4011,7 @@
     {
       "name": "N. Kyrgios",
       "rank": 670,
+      "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 96,
@@ -3841,6 +4032,7 @@
     {
       "name": "B. Balleret",
       "rank": 697,
+      "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 14,
@@ -3863,6 +4055,7 @@
     {
       "name": "I. Ivashka",
       "rank": 772,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 51,
@@ -3885,6 +4078,7 @@
     {
       "name": "G. Brouwer",
       "rank": 1067,
+      "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
         "big_server": 65,
@@ -3903,6 +4097,7 @@
     {
       "name": "D. King",
       "rank": 1183,
+      "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 18,

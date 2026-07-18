@@ -303,7 +303,7 @@ function pctOf(arr, v) {
     note: 'Each axis is a 0-100 percentile within the qualified pool (50 = tour-typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < ' + MCP_MIN + ' charted matches.',
     tourAverage: 50, mcpMinCharted: MCP_MIN,
     players: rows.map(r => ({
-      name: r.name, rank: r.rank, archetype_label: r.archetype_label,
+      name: r.name, rank: r.rank, primary: r.primary, archetype_label: r.archetype_label,
       archetype_scores: r.scores, archetype_data_coverage: r.coverage,
       partial_axes: Object.keys(r.partial), badges: r.badges,
       pressure_score: r.pressureScore, mcp_charted: r.mcpCharted,

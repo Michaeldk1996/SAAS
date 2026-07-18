@@ -1470,7 +1470,7 @@
 <div class="tabpage" data-page="styles">
   <div class="pagewrap">
     <div class="pagehead">
-      <h1>The 12 ATP tennis playing styles</h1>
+      <h1>The 6 ATP tennis playing styles</h1>
       <p>Each cell is the win percentage of the row archetype against the column archetype, computed from real ATP results (2010–present) where both players fall in our classified pool — hover any cell for its match count. Rosters are classified from Jeff Sackmann match data and refresh automatically from the classifier; each name shows the player's current Elo rating (Tennis Abstract, refreshed weekly). Pairings with too few matches show "—" rather than an unreliable number.</p>
     </div>
     <div id="psMatrix" class="ps-matrixwrap"></div>
@@ -1628,46 +1628,28 @@ document.getElementById('mainNav').addEventListener('click', e => {
 });
 
 /* ---------- PLAYING STYLES ---------- */
-// Self-contained: 12-archetype matchup matrix (transcribed from the
-// MatchUpTennis reference, "Solide Offensif Retourneur" dropped) plus player
-// rosters classified from Jeff Sackmann match data (classify-archetypes.js).
+// 6-axis ATP-aligned playing-style system. Rosters, counts and the matchup
+// matrix are computed from our own data (classify-styles.js -> player-styles.json
+// + matchup-matrix.json); descriptions are our own. Order sets the matrix axes.
 const PS_ARCHETYPES = [
-  { id:'allcourt', short:'All-Court', name:'All-Court Elite',
-    description:'The best players in the world. Able to do everything: defend, attack, come to the net. Dominate every style.',
-    count:6, players:[{name:"Sinner",elo:2332},{name:"Alcaraz",elo:2157},{name:"Zverev",elo:2115},{name:"Djokovic",elo:2076},{name:"Medvedev",elo:1971},{name:"Ruud",elo:1969}] },
-  { id:'attirreg', short:'Inconsist.', name:'Inconsistent Attacker',
-    description:'Players with high offensive potential but inconsistent. Capable of the best and the worst in the same match.',
-    count:7, players:[{name:"Basavareddy",elo:1722},{name:"Vavassori",elo:1688},{name:"Taberner",elo:1610},{name:"Nardi",elo:1587},{name:"Mochizuki",elo:1575},{name:"Ymer",elo:1551},{name:"Gombos",elo:1463}] },
-  { id:'attlift', short:'Topspin', name:'Baseline Attacker (Topspin)',
-    description:'Baseline game built on topspin and heavy rotation. Construct points with patience and angles.',
-    count:3, players:[{name:"Cobolli",elo:1916},{name:"Kubler",elo:1685},{name:"Brouwer",elo:null}] },
-  { id:'attpower', short:'Power', name:'Baseline Attacker (Power)',
-    description:'Baseline game built on power. Flat, heavy strikes aimed at suffocating the opponent.',
-    count:2, players:[{name:"Machac",elo:1866},{name:"Rune",elo:1757}] },
-  { id:'bigsrv', short:'Big Srv', name:'Big Server',
-    description:'The serve as the main weapon. Quick points, few rallies. Dangerous on fast surfaces.',
-    count:9, players:[{name:"Shelton",elo:1939},{name:"Medjedovic",elo:1822},{name:"Rinderknech",elo:1789},{name:"Opelka",elo:1749},{name:"Mpetshi Perricard",elo:1725},{name:"Gojo",elo:1676},{name:"Jarry",elo:1648},{name:"Eubanks",elo:1523},{name:"Kyrgios",elo:null}] },
-  { id:'bsbl', short:'BS+BL', name:'Big Server + Baseliner',
-    description:'Big serve combined with a solid baseline game. More complete than pure Big Servers.',
-    count:29, players:[{name:"Auger-Aliassime",elo:1973},{name:"Fritz",elo:1927},{name:"Mensik",elo:1917},{name:"Bublik",elo:1903},{name:"Berrettini",elo:1840},{name:"Nakashima",elo:1828},{name:"Draper",elo:1822},{name:"Hurkacz",elo:1822},{name:"Monfils",elo:1803},{name:"Cilic",elo:1796}] },
-  { id:'counter', short:'Counter P.', name:'Offensive Counter-Puncher',
-    description:"Defenders who turn defense into attack. Use the opponent's pace against them.",
-    count:15, players:[{name:"De Minaur",elo:1961},{name:"Paul",elo:1943},{name:"Davidovich Fokina",elo:1906},{name:"Musetti",elo:1864},{name:"Norrie",elo:1816},{name:"Fucsovics",elo:1771},{name:"Van De Zandschulp",elo:1740},{name:"Brooksby",elo:1726},{name:"Nishikori",elo:1714},{name:"Goffin",elo:1654}] },
-  { id:'sv', short:'S&V', name:'Serve & Volleyer',
-    description:'Classic style: serve-and-volley. Very rare on the current tour. Not identifiable from Sackmann match statistics alone.',
+  { id:'big_server', short:'Big Srv', name:'Big Server',
+    description:'The serve is the primary weapon \u2014 aces, unreturned serves and serve-plus-one. Quick points, few rallies, most dangerous on fast surfaces.',
     count:null, players:[] },
-  { id:'soldef', short:'Sol. Def.', name:'Solid Defensive',
-    description:'Ultra-consistent baseliners. Few errors, lots of balls returned. Wear the opponent down mentally.',
-    count:18, players:[{name:"Prizmic",elo:1840},{name:"Kwon",elo:1768},{name:"Moutet",elo:1733},{name:"Nishioka",elo:1689},{name:"Mannarino",elo:1676},{name:"Muller",elo:1661},{name:"Gaston",elo:1658},{name:"Basilashvili",elo:1636},{name:"Dzumhur",elo:1625},{name:"McDonald",elo:1618}] },
-  { id:'soloffsrv', short:'Off. Srv', name:'Solid Offensive - Server',
-    description:'Complete players whose serve is the main advantage (ace rate \u2265 7%). Solid baseline game but take the initiative through the serve.',
-    count:46, players:[{name:"Fils",elo:2009},{name:"Lehecka",elo:1935},{name:"Fonseca",elo:1918},{name:"Tiafoe",elo:1916},{name:"Rublev",elo:1890},{name:"Collignon",elo:1883},{name:"Humbert",elo:1856},{name:"Tsitsipas",elo:1833},{name:"Khachanov",elo:1831},{name:"Bergs",elo:1817}] },
-  { id:'soloff', short:'Sol. Off.', name:'Solid Offensive - Core',
-    description:'Solid, complete players with no marked weakness or dominant weapon. The backbone of the tour.',
-    count:22, players:[{name:"Tien",elo:1922},{name:"Majchrzak",elo:1799},{name:"Michelsen",elo:1797},{name:"Marozsan",elo:1787},{name:"Borges",elo:1774},{name:"Kecmanovic",elo:1768},{name:"Shang",elo:1746},{name:"Svajda",elo:1743},{name:"Giron",elo:1737},{name:"Hijikata",elo:1734}] },
-  { id:'terrien', short:'Clay', name:'Pure Clay-Courter',
-    description:'Clay-court specialists. Sliding, endurance and topspin. Fearsome on clay, struggling on fast surfaces.',
-    count:30, players:[{name:"Cerundolo",elo:1915},{name:"Darderi",elo:1821},{name:"Navone",elo:1812},{name:"Hanfmann",elo:1781},{name:"Munar",elo:1780},{name:"Molcan",elo:1747},{name:"Ugo Carabelli",elo:1747},{name:"Baez",elo:1745},{name:"Kopriva",elo:1727},{name:"Djere",elo:1697}] },
+  { id:'solid_baseliner', short:'Solid BL', name:'Solid Baseliner',
+    description:'A balanced, consistent baseline game. Holds serve reliably, makes few errors and wins the long exchanges through steadiness rather than a single weapon.',
+    count:null, players:[] },
+  { id:'counter_puncher', short:'Counter', name:'Counter Puncher',
+    description:'Turns defence into attack \u2014 elite return and break rate. Absorbs the opponent\u2019s pace, redirects it, and wins by breaking rather than blasting.',
+    count:null, players:[] },
+  { id:'all_court', short:'All-Court', name:'All-Court Player',
+    description:'Comfortable everywhere with no single dominant trait. Can serve, rally, defend and attack in equal measure \u2014 the mark of the most complete players.',
+    count:null, players:[] },
+  { id:'attacking_baseliner', short:'Attack BL', name:'Attacking Baseliner',
+    description:'Dictates from the baseline. Short points, aggressive returns and second-serve pressure \u2014 takes time away from the opponent and ends rallies early.',
+    count:null, players:[] },
+  { id:'solid_defender', short:'Defender', name:'Solid Defender',
+    description:'Wins through relentless defence. Extreme consistency, long rallies and very few winners \u2014 wears opponents down until they miss. Rare on the modern tour.',
+    count:null, players:[] },
 ];
 // Matchup matrix is COMPUTED from our own classification x real TML match results
 // (classify-archetypes.js -> matchup-matrix.json), fetched at render time — not
@@ -1717,11 +1699,11 @@ async function renderPlayingStyles(){
   // Descriptions + the matchup matrix stay built-in; only rosters/counts refresh. Falls
   // back to the built-in rosters if the file can't be loaded.
   try {
-    const res = await fetch('./archetypes-classified.json', { cache:'no-cache' });
+    const res = await fetch('./player-styles.json', { cache:'no-cache' });
     if (res.ok){
       const data = await res.json();
       const byArch = {};
-      (data.players || []).forEach(p => { (byArch[p.archetype] = byArch[p.archetype] || []).push(p); });
+      (data.players || []).forEach(p => { if (!p.primary) return; (byArch[p.primary] = byArch[p.primary] || []).push(p); });
       PS_ARCHETYPES.forEach(a => {
         const list = byArch[a.id];
         if (list && list.length){
@@ -1731,7 +1713,7 @@ async function renderPlayingStyles(){
         }
       });
     }
-  } catch(err){ console.warn('archetypes-classified.json load failed, using built-in rosters:', err.message); }
+  } catch(err){ console.warn('player-styles.json load failed:', err.message); }
   psRenderMatrixAndCards();
   renderClutchRating();
 }
