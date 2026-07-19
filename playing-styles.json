@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T02:11:57.234Z",
+  "generatedAt": "2026-07-19T02:38:32.734Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -118,8 +118,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 68,
       "mcp_charted": 102,
@@ -143,8 +142,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 81,
       "mcp_charted": 140,
@@ -169,7 +167,6 @@
       "partial_axes": [],
       "badges": [
         "pressure_player",
-        "clay_specialist",
         "high_risk_high_reward"
       ],
       "pressure_score": 77,
@@ -193,9 +190,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 64,
       "mcp_charted": 128,
       "win_pct": 61,
@@ -217,9 +212,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 58,
       "mcp_charted": 44,
       "win_pct": 59.2,
@@ -290,8 +283,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "clay_specialist"
+        "pressure_player"
       ],
       "pressure_score": 80,
       "mcp_charted": 171,
@@ -338,7 +330,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 56,
       "mcp_charted": 56,
       "win_pct": 52.3,
@@ -361,8 +355,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 76,
       "mcp_charted": 66,
@@ -385,9 +378,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 65,
       "mcp_charted": 176,
       "win_pct": 64,
@@ -432,8 +423,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 71,
       "mcp_charted": 31,
@@ -456,7 +446,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 61,
       "mcp_charted": 61,
       "win_pct": 57.1,
@@ -478,9 +470,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 57,
       "mcp_charted": 77,
       "win_pct": 59.6,
@@ -527,8 +517,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 71,
       "mcp_charted": 70,
@@ -573,9 +562,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 45,
       "mcp_charted": 116,
       "win_pct": 50.2,
@@ -668,9 +655,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 63,
       "mcp_charted": 48,
       "win_pct": 57.1,
@@ -714,9 +699,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 53,
       "mcp_charted": 66,
       "win_pct": 52.4,
@@ -738,9 +721,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 51,
       "mcp_charted": 10,
       "win_pct": 60.6,
@@ -1056,9 +1037,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 63,
       "mcp_charted": 84,
       "win_pct": 62.9,
@@ -1081,8 +1060,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 67,
       "mcp_charted": 174,
@@ -1127,7 +1105,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 47,
       "mcp_charted": 24,
       "win_pct": 48.8,
@@ -1199,9 +1179,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 50,
       "mcp_charted": 320,
       "win_pct": 60.1,
@@ -1223,7 +1201,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 60,
       "mcp_charted": 111,
       "win_pct": 50,
@@ -1315,9 +1295,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 51,
       "mcp_charted": 29,
       "win_pct": 49.4,
@@ -1387,7 +1365,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 37,
       "mcp_charted": 57,
       "win_pct": 51,
@@ -1409,7 +1389,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 36,
       "mcp_charted": 34,
       "win_pct": 44.8,
@@ -1503,7 +1485,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 26,
       "mcp_charted": 22,
       "win_pct": 37.4,
@@ -1594,8 +1578,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 81,
       "mcp_charted": 134,
@@ -1622,7 +1605,9 @@
         "attacking_baseliner",
         "solid_defender"
       ],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 53,
       "mcp_charted": 3,
       "win_pct": 43.5,
@@ -1920,7 +1905,9 @@
         "attacking_baseliner",
         "solid_defender"
       ],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 41,
       "mcp_charted": 6,
       "win_pct": 42.3,
@@ -2081,8 +2068,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 69,
       "mcp_charted": 32,
@@ -2151,9 +2137,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 11,
       "mcp_charted": 12,
       "win_pct": 36,
@@ -2250,8 +2234,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 66,
       "mcp_charted": 79,
@@ -2322,10 +2305,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist",
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 63,
       "mcp_charted": 94,
       "win_pct": 64.3,
@@ -2563,7 +2543,9 @@
         "attacking_baseliner",
         "solid_defender"
       ],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 30,
       "mcp_charted": 9,
       "win_pct": 42.9,
@@ -2635,9 +2617,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 65,
       "mcp_charted": 32,
       "win_pct": 46.5,
@@ -3888,9 +3868,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
+      "badges": [],
       "pressure_score": 42,
       "mcp_charted": 26,
       "win_pct": 46.3,
@@ -4321,8 +4299,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "high_risk_high_reward"
+        "pressure_player"
       ],
       "pressure_score": 66,
       "mcp_charted": 49,
@@ -4711,7 +4688,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": null,
       "mcp_charted": 16,
       "win_pct": 48.1,

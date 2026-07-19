@@ -30,8 +30,9 @@ const MCP_MIN = 10;                        // charted matches needed to trust ra
 const HYBRID_GAP = 10;                      // 2nd label within this many pts of the top
 const MATRIX_MIN_N = 20;                    // matchup cell needs this many real matches
 const ELITE_WINPCT = 65;                    // All-Court -> Elite gate
-// Clay Specialist badge thresholds
-const CLAY_MIN_M = 40, CLAY_GAP = 12, CLAY_WR = 52;
+// Clay Specialist badge thresholds — a REAL clay specialist wins big on clay AND is
+// clay-dependent (genuinely weak on hard), not just a big hitter who also wins on clay.
+const CLAY_MIN_M = 40, CLAY_GAP = 14, CLAY_WR = 52, CLAY_HARD_MAX = 50;
 // Elite All-Court roster verified by Michael (guarantees these even if win% dips, e.g. Wawrinka)
 const ELITE_SEED = new Set(['djokovic', 'federer', 'nadal', 'alcaraz', 'sinner', 'murray', 'wawrinka']);
 // Solid Defender seed (thin charting coverage -> not detectable on stats alone; Michael's list)
@@ -310,15 +311,17 @@ function pctOf(arr, v) {
     r.pressureScore = pv == null ? null : Math.round(pv);
     if (pv != null && pv >= 65) r.badges.push('pressure_player');   // top-third under pressure
     // Clay Specialist: wins dramatically more on clay than hard, over a real clay sample.
-    if (r.clayM >= CLAY_MIN_M && r.clayWr != null && r.hardWr != null && (r.clayWr - r.hardWr) >= CLAY_GAP && r.clayWr >= CLAY_WR) r.badges.push('clay_specialist');
+    if (r.clayM >= CLAY_MIN_M && r.clayWr != null && r.hardWr != null && (r.clayWr - r.hardWr) >= CLAY_GAP && r.clayWr >= CLAY_WR && r.hardWr <= CLAY_HARD_MAX) r.badges.push('clay_specialist');
     // High Risk / High Reward: high ceiling (beats the very best) AND high volatility (loses to
     // far-lower-ranked players, or swings wildly tournament to tournament). Both are required, so a
     // consistent grinder with a tough schedule (high upset rate alone) is NOT flagged.
     const upsetPct = r.upsetRate != null ? pctOf(cols.upsetRate, r.upsetRate) : 0;
     const stdPct = r.tourneyStd != null ? pctOf(cols.tourneyStd, r.tourneyStd) : 0;
-    const ceiling = pctOf(cols.top10Rate, r.top10Rate) >= 60;
-    const volatile = upsetPct >= 75 || stdPct >= 75;
-    if (ceiling && volatile && r.winPct < ELITE_WINPCT) r.badges.push('high_risk_high_reward');  // exclude consistent elites
+    // Genuine ceiling (beats the very best) but UNDERACHIEVES on results = boom-or-bust. Upset-loss
+    // rate is useless here (it just tracks rank — every top player's losses are to lower-ranked
+    // players); the gap between a high top-10-win ceiling and a modest win% is what isolates the
+    // erratic shot-makers (Bublik/Shapovalov/Zandschulp) from consistent top players (Fritz/De Minaur).
+    if (pctOf(cols.top10Rate, r.top10Rate) >= 72 && r.winPct < 58) r.badges.push('high_risk_high_reward');
   });
 
   // ---- matchup matrix on 6 primaries (reliable labels only) ----
