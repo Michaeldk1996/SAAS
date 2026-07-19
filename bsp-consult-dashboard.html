@@ -2078,11 +2078,13 @@ function psRenderMatrixAndCards(){
     // Two dominant + two weak: every style is weak against All-Court, so the second
     // weakness is the one that actually distinguishes it. All-Court Elite is the
     // exception — it beats every style, so its strongest matchup carries no
-    // information and we show its two weakest instead.
+    // information and we show its four weakest instead, which also keeps every row
+    // at the same height.
     const eliteOnly = a.id === 'all_court_elite';
+    const weakest = (k) => idxs.slice(Math.max(0, m - k)).reverse().map((ix) => bar(ix, 'weak')).join('');
     const bars = !m ? ''
-      : eliteOnly ? bar(idxs[m - 1], 'weak') + bar(idxs[m - 2], 'weak')
-      : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + bar(idxs[m - 1], 'weak') + bar(idxs[m - 2], 'weak');
+      : eliteOnly ? weakest(4)
+      : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + weakest(2);
 
     html += '<div class="ps-arow" id="psArow' + i + '">';
     html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
