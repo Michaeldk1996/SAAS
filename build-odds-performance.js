@@ -45,9 +45,53 @@ const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const MIN_MATCHES = 30;
 
 /** Bumping this invalidates consumers the same way PROFILE_SCHEMA_VERSION does. */
-const ODDS_PERF_SCHEMA_VERSION = 1;
+const ODDS_PERF_SCHEMA_VERSION = 2;
 
 const SURFACES = ['Hard', 'Clay', 'Grass'];
+
+/** The window for "recent form vs career". Anchored on the archive's own latest date,
+ *  NOT on today -- the mirror lags live play by months, and anchoring on today would
+ *  silently shrink the window (and eventually empty it) without anything looking broken. */
+const RECENT_MONTHS = 24;
+
+/**
+ * The source renamed its tiers twice over 22 seasons ("International" -> "ATP250",
+ * "International Gold" -> "ATP500", "Masters" -> "Masters 1000"). Bucketing on the raw
+ * string would split one player's Masters record across two labels and drop both below
+ * the sample gate, so collapse to the modern names first.
+ */
+const LEVEL_ALIASES = {
+  'Grand Slam': 'Grand Slam',
+  'Masters Cup': 'Tour Finals',
+  Masters: 'Masters 1000',
+  'Masters 1000': 'Masters 1000',
+  'International Gold': 'ATP 500',
+  ATP500: 'ATP 500',
+  International: 'ATP 250',
+  ATP250: 'ATP 250',
+};
+const LEVEL_ORDER = ['Grand Slam', 'Tour Finals', 'Masters 1000', 'ATP 500', 'ATP 250'];
+
+/** Opponent-strength bands. Rank is the opponent's ATP rank at the time of the match. */
+const OPP_BANDS = [
+  { id: 'top10', label: 'Top 10', test: (r) => r <= 10 },
+  { id: 'r11_25', label: 'Rank 11-25', test: (r) => r <= 25 },
+  { id: 'r26_50', label: 'Rank 26-50', test: (r) => r <= 50 },
+  { id: 'r51_100', label: 'Rank 51-100', test: (r) => r <= 100 },
+  { id: 'r100plus', label: 'Outside 100', test: () => true },
+];
+
+/**
+ * Favourite-reliability bands, keyed on HIS OWN de-vigged price. "How often does he lose
+ * a match he was priced to win" is only a meaningful question band by band: losing 1 in 3
+ * as a 1.90 favourite is normal, losing 1 in 3 as a 1.20 favourite is a disaster. Each
+ * band therefore carries what the market expected of it, not just what he did.
+ */
+const FAV_BANDS = [
+  { id: 'heavy', label: 'Heavy favourite', sub: 'shorter than 1.30', test: (price) => price < 1.3 },
+  { id: 'clear', label: 'Clear favourite', sub: '1.30 - 1.60', test: (price) => price < 1.6 },
+  { id: 'slight', label: 'Slight favourite', sub: '1.60 - 2.00', test: (price) => price < 2.0 },
+];
 
 // ---------------------------------------------------------------------------
 // CSV
@@ -157,7 +201,7 @@ function devig(priceFor, priceAgainst) {
 }
 
 function emptyBucket() {
-  return { matches: 0, wins: 0, expSum: 0, varSum: 0, profit: 0, profitBest: 0 };
+  return { matches: 0, wins: 0, expSum: 0, varSum: 0, profit: 0, profitBest: 0, priceSum: 0, priceBestSum: 0 };
 }
 
 function addToBucket(b, won, p, price, priceBest) {
@@ -167,6 +211,10 @@ function addToBucket(b, won, p, price, priceBest) {
   b.varSum += p * (1 - p);
   b.profit += won ? price - 1 : -1;
   b.profitBest += won ? priceBest - 1 : -1;
+  // Carried so the line-shopping block can quote a real price gap ("1.94 average vs 2.03
+  // best") rather than only the ROI difference, which is unreadable without the prices.
+  b.priceSum += price;
+  b.priceBestSum += priceBest;
 }
 
 function summarize(b, minMatches) {
@@ -190,6 +238,8 @@ function summarize(b, minMatches) {
     z: se > 0 ? Math.round((delta / se) * 100) / 100 : null,
     roi: round1((b.profit / n) * 100),
     roiBest: round1((b.profitBest / n) * 100),
+    avgPrice: Math.round((b.priceSum / n) * 100) / 100,
+    avgPriceBest: Math.round((b.priceBestSum / n) * 100) / 100,
   };
 }
 
@@ -245,14 +295,34 @@ function main() {
 
   function bucketsFor(playerKey) {
     if (!buckets.has(playerKey)) {
-      buckets.set(playerKey, { all: emptyBucket(), surface: {}, role: {}, season: {} });
+      buckets.set(playerKey, {
+        all: emptyBucket(), surface: {}, role: {}, season: {},
+        level: {}, court: {}, bestof: {}, oppRank: {}, favBand: {},
+        recent: emptyBucket(), recentSurface: {}, recentRole: {},
+      });
     }
     return buckets.get(playerKey);
   }
 
+  // The recency window is anchored on the newest row the archive actually carries, not on
+  // today. Resolved in a first pass because a season file is not guaranteed to be sorted.
+  let archiveLatest = '';
+  const parsedSeasons = new Map();
+  seasons.forEach((file) => {
+    const rows = readCsv(path.join(ARCHIVE_DIR, file));
+    parsedSeasons.set(file, rows);
+    rows.forEach((r) => { if (r.date && r.date > archiveLatest) archiveLatest = r.date; });
+  });
+  const recentFrom = (() => {
+    if (!archiveLatest) return null;
+    const d = new Date(archiveLatest + 'T00:00:00Z');
+    d.setUTCMonth(d.getUTCMonth() - RECENT_MONTHS);
+    return d.toISOString().slice(0, 10);
+  })();
+
   seasons.forEach((file) => {
     const season = file.slice(0, 4);
-    readCsv(path.join(ARCHIVE_DIR, file)).forEach((row) => {
+    parsedSeasons.get(file).forEach((row) => {
       stats.rows += 1;
       // Retirements and walkovers are ~3.5% of a season and bias the result: the price
       // was struck for a match that was never really played out.
@@ -270,25 +340,40 @@ function main() {
       const bestW = num(row.maxw) || aw;
       const bestL = num(row.maxl) || al;
       const surface = SURFACES.includes(row.surface) ? row.surface : null;
+      const level = LEVEL_ALIASES[row.series] || null;
+      const court = row.court === 'Indoor' || row.court === 'Outdoor' ? row.court : null;
+      const bestof = row.bestof === '3' || row.bestof === '5' ? row.bestof : null;
+      const isRecent = recentFrom && row.date && row.date >= recentFrom;
+      const wr = num(row.wrank);
+      const lr = num(row.lrank);
 
       [
-        { name: row.winner, won: true, p: pWin, price: aw, best: bestW, fav: aw < al },
-        { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw },
+        { name: row.winner, won: true, p: pWin, price: aw, best: bestW, fav: aw < al, oppRank: lr },
+        { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw, oppRank: wr },
       ].forEach((side) => {
         const player = resolve(side.name);
         if (!player) return;
         stats.matchedSides += 1;
         const b = bucketsFor(player.key);
-        addToBucket(b.all, side.won, side.p, side.price, side.best);
-        if (surface) {
-          b.surface[surface] = b.surface[surface] || emptyBucket();
-          addToBucket(b.surface[surface], side.won, side.p, side.price, side.best);
+        const add = (bucket) => addToBucket(bucket, side.won, side.p, side.price, side.best);
+        const into = (group, k) => { if (k == null) return; group[k] = group[k] || emptyBucket(); add(group[k]); };
+        add(b.all);
+        into(b.surface, surface);
+        into(b.role, side.fav ? 'favourite' : 'underdog');
+        into(b.season, season);
+        into(b.level, level);
+        into(b.court, court);
+        into(b.bestof, bestof);
+        // An opponent with no recorded rank is unranked/qualifier-era, not "outside 100" --
+        // folding those in would flatter the weakest band, so they are dropped instead.
+        into(b.oppRank, side.oppRank ? (OPP_BANDS.find((x) => x.test(side.oppRank)) || {}).id : null);
+        // Favourite reliability is only defined where he WAS the favourite.
+        if (side.fav) into(b.favBand, (FAV_BANDS.find((x) => x.test(side.price)) || {}).id);
+        if (isRecent) {
+          add(b.recent);
+          into(b.recentSurface, surface);
+          into(b.recentRole, side.fav ? 'favourite' : 'underdog');
         }
-        const role = side.fav ? 'favourite' : 'underdog';
-        b.role[role] = b.role[role] || emptyBucket();
-        addToBucket(b.role[role], side.won, side.p, side.price, side.best);
-        b.season[season] = b.season[season] || emptyBucket();
-        addToBucket(b.season[season], side.won, side.p, side.price, side.best);
       });
     });
   });
@@ -317,6 +402,25 @@ function main() {
     const bySeason = {};
     Object.entries(b.season).forEach(([y, v]) => { const s = summarize(v, subMin); if (s) bySeason[y] = s; });
 
+    // v2 splits. Each is gated on its own sample, so a player who has never played a
+    // Tour Final simply has no Tour Finals row -- the UI renders what is there.
+    const summarizeGroup = (group, order) => {
+      const out = {};
+      const keys = order ? order.filter((k) => group[k]) : Object.keys(group);
+      keys.forEach((k) => { const s = summarize(group[k], subMin); if (s) out[k] = s; });
+      return out;
+    };
+    const byLevel = summarizeGroup(b.level, LEVEL_ORDER);
+    const byCourt = summarizeGroup(b.court, ['Indoor', 'Outdoor']);
+    const byBestOf = summarizeGroup(b.bestof, ['3', '5']);
+    const byOppRank = summarizeGroup(b.oppRank, OPP_BANDS.map((x) => x.id));
+    const favReliability = summarizeGroup(b.favBand, FAV_BANDS.map((x) => x.id));
+    // Recent gets the sub-gate too: a 24-month window on a part-time tour player can be
+    // 6 matches, and a headline "he's gone cold" off 6 matches is noise dressed as insight.
+    const recent = summarize(b.recent, subMin);
+    const recentBySurface = recent ? summarizeGroup(b.recentSurface, SURFACES) : {};
+    const recentByRole = recent ? summarizeGroup(b.recentRole, ['underdog', 'favourite']) : {};
+
     const shard = {
       version: ODDS_PERF_SCHEMA_VERSION,
       key: playerKey,
@@ -329,6 +433,15 @@ function main() {
       bySurface,
       byRole,
       bySeason,
+      byLevel,
+      byCourt,
+      byBestOf,
+      byOppRank,
+      favReliability,
+      recent,
+      recentBySurface,
+      recentByRole,
+      recentWindow: recent ? { months: RECENT_MONTHS, from: recentFrom, to: archiveLatest } : null,
     };
     fs.writeFileSync(path.join(OUT_DIR, `${playerKey}.json`), JSON.stringify(shard));
     index[playerKey] = { matches: overall.matches, vsMarket: overall.vsMarket, roi: overall.roi };
@@ -340,6 +453,8 @@ function main() {
     builtAt: new Date().toISOString(),
     minMatches,
     seasons: seasons.map((f) => f.slice(0, 4)),
+    archiveLatest,
+    recentWindow: { months: RECENT_MONTHS, from: recentFrom, to: archiveLatest },
     players: index,
   }));
 
