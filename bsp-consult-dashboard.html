@@ -1904,25 +1904,25 @@ document.getElementById('mainNav').addEventListener('click', e => {
 // other surface that reads `primary` are untouched. `ids` lists the source labels
 // each displayed archetype absorbs; order sets the grid axes.
 const PS_ARCHETYPES = [
-  { ids:['big_server'], code:'SRV', name:'Big Server',
+  { id:'big_server', ids:['big_server'], code:'SRV', name:'Big Server',
     description:'The serve is the weapon. Wins points in the first two shots through aces, unreturned serves and serve-plus-one winners.',
     count:null, players:[] },
-  { ids:['big_server_baseliner'], code:'SRB', name:'Big Server + Baseliner',
+  { id:'big_server_baseliner', ids:['big_server_baseliner'], code:'SRB', name:'Big Server + Baseliner',
     description:'A heavy serve backed by a dependable baseline game — holds with ease, then grinds out the rest.',
     count:null, players:[] },
-  { ids:['attacking_baseliner'], code:'ATB', name:'Attacking Baseliner',
+  { id:'attacking_baseliner', ids:['attacking_baseliner'], code:'ATB', name:'Attacking Baseliner',
     description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
     count:null, players:[] },
-  { ids:['solid_baseliner'], code:'SLB', name:'Solid Baseliner',
+  { id:'solid_baseliner', ids:['solid_baseliner'], code:'SLB', name:'Solid Baseliner',
     description:'Consistent and reliable from the back. High hold rate, low double faults, wins through steady dominance.',
     count:null, players:[] },
-  { ids:['all_court','all_court_elite'], code:'ACP', name:'All-Court Player',
+  { id:'all_court', ids:['all_court','all_court_elite'], code:'ACP', name:'All-Court Player',
     description:'The complete players. Comfortable serving, returning and at the net — no exploitable weakness, elite in every phase.',
     count:null, players:[] },
-  { ids:['counter_puncher'], code:'CTR', name:'Counter Puncher',
+  { id:'counter_puncher', ids:['counter_puncher'], code:'CTR', name:'Counter Puncher',
     description:'Returns everything and turns defence into attack. Thrives on long exchanges and neutralises opponents.',
     count:null, players:[] },
-  { ids:['solid_defender'], code:'SLD', name:'Solid Defender',
+  { id:'solid_defender', ids:['solid_defender'], code:'SLD', name:'Solid Defender',
     description:'Extreme defensive specialist. Wins almost entirely through opponent errors — absorbs everything, waits for the miss.',
     count:null, players:[] },
 ];
@@ -5799,8 +5799,8 @@ function ensurePsMatrix(){
     .catch(err => { console.warn('matchup-matrix.json load failed:', err.message); return null; });
   return _psMatrixPromise;
 }
-function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => a.id === id); }
-function psArchFor(id){ return PS_ARCHETYPES.find(a => a.id === id) || null; }
+function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => (a.ids || [a.id]).includes(id)); }
+function psArchFor(id){ return PS_ARCHETYPES.find(a => (a.ids || [a.id]).includes(id)) || null; }
 
 function styleBadgesHtml(pl, align){
   const badges = (pl && pl.badges) || [];
@@ -5945,11 +5945,15 @@ function styleDimensionEdgeHtml(m, r1, r2){
 // so this is a recent-window read, not a career one; the header says so.
 function styleVsArchetypeList(rows, oppArchId, sinceIso){
   if (!Array.isArray(rows)) return null;
+  // The page merges All-Court Elite into All-Court Player, so one displayed
+  // archetype can cover several classifier ids — match on the whole set.
+  const arch = psArchFor(oppArchId);
+  const ids = arch ? (arch.ids || [arch.id]) : [oppArchId];
   const out = [];
   for (const r of rows){
     if (sinceIso && r.date && r.date < sinceIso) continue;
     const st = ppStyleFor(r.opponent);
-    if (!st || st.primary !== oppArchId) continue;
+    if (!st || !ids.includes(st.primary)) continue;
     out.push(r);
   }
   return out;
