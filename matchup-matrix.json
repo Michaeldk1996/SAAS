@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T02:38:32.736Z",
+  "generatedAt": "2026-07-19T05:13:08.125Z",
   "source": "Computed from BSP 6-axis classification x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.",
@@ -9,214 +9,276 @@
     "big_server": {
       "en": "Big Server"
     },
-    "solid_baseliner": {
-      "en": "Solid Baseliner"
-    },
-    "counter_puncher": {
-      "en": "Counter Puncher"
-    },
-    "all_court": {
-      "en": "All-Court Player"
-    },
-    "all_court_elite": {
-      "en": "All-Court Elite"
+    "big_server_baseliner": {
+      "en": "Big Server + Baseliner"
     },
     "attacking_baseliner": {
       "en": "Attacking Baseliner"
     },
+    "solid_baseliner": {
+      "en": "Solid Baseliner"
+    },
+    "all_court_elite": {
+      "en": "All-Court Elite"
+    },
+    "counter_puncher": {
+      "en": "Counter Puncher"
+    },
     "solid_defender": {
       "en": "Solid Defender"
+    },
+    "all_court": {
+      "en": "All-Court Player"
     }
   },
   "matrix": {
     "big_server": {
       "big_server": null,
-      "solid_baseliner": {
-        "pct": 36,
-        "n": 3364
-      },
-      "counter_puncher": {
-        "pct": 48,
-        "n": 12505
-      },
-      "all_court": {
+      "big_server_baseliner": {
         "pct": 32,
-        "n": 2316
-      },
-      "all_court_elite": {
-        "pct": 18,
-        "n": 1748
+        "n": 990
       },
       "attacking_baseliner": {
-        "pct": 47,
-        "n": 2639
-      },
-      "solid_defender": {
-        "pct": 47,
-        "n": 466
-      }
-    },
-    "solid_baseliner": {
-      "big_server": {
-        "pct": 64,
-        "n": 3364
-      },
-      "solid_baseliner": null,
-      "counter_puncher": {
-        "pct": 63,
-        "n": 5570
-      },
-      "all_court": {
-        "pct": 53,
-        "n": 1274
-      },
-      "all_court_elite": {
-        "pct": 27,
-        "n": 1192
-      },
-      "attacking_baseliner": {
-        "pct": 62,
-        "n": 1083
-      },
-      "solid_defender": {
-        "pct": 60,
-        "n": 278
-      }
-    },
-    "counter_puncher": {
-      "big_server": {
-        "pct": 52,
-        "n": 12505
+        "pct": 43,
+        "n": 1290
       },
       "solid_baseliner": {
-        "pct": 37,
-        "n": 5570
-      },
-      "counter_puncher": null,
-      "all_court": {
-        "pct": 34,
-        "n": 4667
+        "pct": 40,
+        "n": 1925
       },
       "all_court_elite": {
-        "pct": 19,
-        "n": 3246
+        "pct": 11,
+        "n": 489
       },
-      "attacking_baseliner": {
-        "pct": 48,
-        "n": 5411
+      "counter_puncher": {
+        "pct": 46,
+        "n": 4994
       },
       "solid_defender": {
-        "pct": 51,
-        "n": 724
+        "pct": 56,
+        "n": 1977
+      },
+      "all_court": {
+        "pct": 54,
+        "n": 841
       }
     },
-    "all_court": {
+    "big_server_baseliner": {
       "big_server": {
         "pct": 68,
-        "n": 2316
+        "n": 990
+      },
+      "big_server_baseliner": null,
+      "attacking_baseliner": {
+        "pct": 52,
+        "n": 1112
       },
       "solid_baseliner": {
-        "pct": 47,
-        "n": 1274
+        "pct": 55,
+        "n": 1356
+      },
+      "all_court_elite": {
+        "pct": 20,
+        "n": 591
       },
       "counter_puncher": {
-        "pct": 66,
-        "n": 4667
-      },
-      "all_court": null,
-      "all_court_elite": {
-        "pct": 24,
-        "n": 901
-      },
-      "attacking_baseliner": {
-        "pct": 62,
-        "n": 919
+        "pct": 61,
+        "n": 3582
       },
       "solid_defender": {
-        "pct": 73,
-        "n": 157
-      }
-    },
-    "all_court_elite": {
-      "big_server": {
-        "pct": 82,
-        "n": 1748
-      },
-      "solid_baseliner": {
-        "pct": 73,
-        "n": 1192
-      },
-      "counter_puncher": {
-        "pct": 81,
-        "n": 3246
+        "pct": 72,
+        "n": 1210
       },
       "all_court": {
-        "pct": 76,
-        "n": 901
-      },
-      "all_court_elite": null,
-      "attacking_baseliner": {
-        "pct": 81,
-        "n": 631
-      },
-      "solid_defender": {
-        "pct": 76,
-        "n": 120
+        "pct": 71,
+        "n": 481
       }
     },
     "attacking_baseliner": {
       "big_server": {
-        "pct": 53,
-        "n": 2639
+        "pct": 57,
+        "n": 1290
       },
-      "solid_baseliner": {
-        "pct": 38,
-        "n": 1083
-      },
-      "counter_puncher": {
-        "pct": 52,
-        "n": 5411
-      },
-      "all_court": {
-        "pct": 38,
-        "n": 919
-      },
-      "all_court_elite": {
-        "pct": 19,
-        "n": 631
+      "big_server_baseliner": {
+        "pct": 48,
+        "n": 1112
       },
       "attacking_baseliner": null,
+      "solid_baseliner": {
+        "pct": 52,
+        "n": 1609
+      },
+      "all_court_elite": {
+        "pct": 22,
+        "n": 599
+      },
+      "counter_puncher": {
+        "pct": 56,
+        "n": 3558
+      },
       "solid_defender": {
-        "pct": 50,
-        "n": 150
+        "pct": 64,
+        "n": 1944
+      },
+      "all_court": {
+        "pct": 64,
+        "n": 562
+      }
+    },
+    "solid_baseliner": {
+      "big_server": {
+        "pct": 60,
+        "n": 1925
+      },
+      "big_server_baseliner": {
+        "pct": 45,
+        "n": 1356
+      },
+      "attacking_baseliner": {
+        "pct": 48,
+        "n": 1609
+      },
+      "solid_baseliner": null,
+      "all_court_elite": {
+        "pct": 19,
+        "n": 961
+      },
+      "counter_puncher": {
+        "pct": 59,
+        "n": 6477
+      },
+      "solid_defender": {
+        "pct": 66,
+        "n": 2310
+      },
+      "all_court": {
+        "pct": 68,
+        "n": 921
+      }
+    },
+    "all_court_elite": {
+      "big_server": {
+        "pct": 89,
+        "n": 489
+      },
+      "big_server_baseliner": {
+        "pct": 80,
+        "n": 591
+      },
+      "attacking_baseliner": {
+        "pct": 78,
+        "n": 599
+      },
+      "solid_baseliner": {
+        "pct": 81,
+        "n": 961
+      },
+      "all_court_elite": null,
+      "counter_puncher": {
+        "pct": 85,
+        "n": 1876
+      },
+      "solid_defender": {
+        "pct": 89,
+        "n": 623
+      },
+      "all_court": {
+        "pct": 90,
+        "n": 244
+      }
+    },
+    "counter_puncher": {
+      "big_server": {
+        "pct": 54,
+        "n": 4994
+      },
+      "big_server_baseliner": {
+        "pct": 39,
+        "n": 3582
+      },
+      "attacking_baseliner": {
+        "pct": 44,
+        "n": 3558
+      },
+      "solid_baseliner": {
+        "pct": 41,
+        "n": 6477
+      },
+      "all_court_elite": {
+        "pct": 15,
+        "n": 1876
+      },
+      "counter_puncher": null,
+      "solid_defender": {
+        "pct": 61,
+        "n": 7060
+      },
+      "all_court": {
+        "pct": 58,
+        "n": 2783
       }
     },
     "solid_defender": {
       "big_server": {
-        "pct": 53,
-        "n": 466
+        "pct": 44,
+        "n": 1977
       },
-      "solid_baseliner": {
-        "pct": 40,
-        "n": 278
-      },
-      "counter_puncher": {
-        "pct": 49,
-        "n": 724
-      },
-      "all_court": {
-        "pct": 27,
-        "n": 157
-      },
-      "all_court_elite": {
-        "pct": 24,
-        "n": 120
+      "big_server_baseliner": {
+        "pct": 28,
+        "n": 1210
       },
       "attacking_baseliner": {
-        "pct": 50,
-        "n": 150
+        "pct": 36,
+        "n": 1944
       },
-      "solid_defender": null
+      "solid_baseliner": {
+        "pct": 34,
+        "n": 2310
+      },
+      "all_court_elite": {
+        "pct": 11,
+        "n": 623
+      },
+      "counter_puncher": {
+        "pct": 39,
+        "n": 7060
+      },
+      "solid_defender": null,
+      "all_court": {
+        "pct": 48,
+        "n": 1206
+      }
+    },
+    "all_court": {
+      "big_server": {
+        "pct": 46,
+        "n": 841
+      },
+      "big_server_baseliner": {
+        "pct": 29,
+        "n": 481
+      },
+      "attacking_baseliner": {
+        "pct": 36,
+        "n": 562
+      },
+      "solid_baseliner": {
+        "pct": 32,
+        "n": 921
+      },
+      "all_court_elite": {
+        "pct": 10,
+        "n": 244
+      },
+      "counter_puncher": {
+        "pct": 42,
+        "n": 2783
+      },
+      "solid_defender": {
+        "pct": 52,
+        "n": 1206
+      },
+      "all_court": null
     }
   }
 }

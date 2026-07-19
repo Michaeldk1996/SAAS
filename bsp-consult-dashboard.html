@@ -1483,7 +1483,7 @@
 [data-page="styles"] .ps-kdash{ width:16px; height:2px; border-radius:2px; display:inline-block; }
 [data-page="styles"] .ps-bdot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
 [data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0b0f; overflow-x:auto; }
-[data-page="styles"] .ps-grid2{ display:grid; grid-template-columns:190px repeat(7,minmax(68px,1fr)); min-width:720px; }
+[data-page="styles"] .ps-grid2{ display:grid; grid-template-columns:190px repeat(8,minmax(64px,1fr)); min-width:800px; }
 [data-page="styles"] .ps-gcorner{ padding:16px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; display:flex; align-items:flex-end; border-bottom:1px solid rgba(255,255,255,0.08); }
 [data-page="styles"] .ps-gcol{ padding:16px 8px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; letter-spacing:0.1em; color:#8b93a3; border-bottom:1px solid rgba(255,255,255,0.08); border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
 [data-page="styles"] .ps-grow-h{ padding:14px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; justify-content:center; transition:opacity .12s ease; cursor:default; }
@@ -1585,12 +1585,13 @@
     </div>
     <!-- ARCHETYPE ROWS -->
     <div class="ps-block">
-      <span class="ps-eyebrow">Seven archetypes</span>
+      <span class="ps-eyebrow">Eight archetypes</span>
       <h2 class="ps-blocktitle">The styles behind the grid</h2>
       <div id="psCards" class="ps-rows"></div>
       <div class="ps-rowlegend">
         <span class="ps-keyitem"><i class="ps-bdot" style="background:#3ECF8E;"></i>Pressure Player</span>
         <span class="ps-keyitem"><i class="ps-bdot" style="background:#C96A34;"></i>Clay Specialist</span>
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#5B8DEF;"></i>Grass Specialist</span>
         <span class="ps-keyitem"><i class="ps-bdot" style="background:#E8B341;"></i>High Risk / High Reward</span>
       </div>
     </div>
@@ -1750,11 +1751,14 @@ const PS_ARCHETYPES = [
   { id:'big_server', code:'SRV', name:'Big Server',
     description:'The serve is the weapon. Wins points in the first two shots through aces, unreturned serves, and serve + one winners.',
     count:null, players:[] },
+  { id:'big_server_baseliner', code:'SRB', name:'Big Server + Baseliner',
+    description:'A big serve backed by a genuine baseline game. Wins cheap points on serve, then holds up in the rallies — more complete than a pure server, more serve-reliant than a baseliner.',
+    count:null, players:[] },
+  { id:'attacking_baseliner', code:'ATB', name:'Attacking Baseliner',
+    description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
+    count:null, players:[] },
   { id:'solid_baseliner', code:'SLB', name:'Solid Baseliner',
     description:'Consistent and reliable from the back. High hold rate, low double faults, wins through steady dominance rather than flair.',
-    count:null, players:[] },
-  { id:'counter_puncher', code:'CTR', name:'Counter Puncher',
-    description:'Returns everything and turns defence into attack. Thrives on long exchanges, neutralises opponents and strikes at the right moment.',
     count:null, players:[] },
   { id:'all_court', code:'ACP', name:'All-Court Player',
     description:'No dominant weakness. Comfortable serving, returning, and at the net. Adapts to any opponent and any surface.',
@@ -1762,17 +1766,18 @@ const PS_ARCHETYPES = [
   { id:'all_court_elite', code:'ACE', name:'All-Court Elite',
     description:'The complete, generational players. No exploitable weakness and elite in every phase — they beat every style through sheer all-round quality.',
     count:null, players:[] },
-  { id:'attacking_baseliner', code:'ATB', name:'Attacking Baseliner',
-    description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
+  { id:'counter_puncher', code:'CTR', name:'Counter Puncher',
+    description:'Returns everything and turns defence into attack. Thrives on long exchanges, neutralises opponents and strikes at the right moment.',
     count:null, players:[] },
   { id:'solid_defender', code:'SLD', name:'Solid Defender',
     description:'Extreme defensive specialist. Wins almost entirely through opponent errors. Absorbs everything, rarely takes the initiative, mentally wears opponents down.',
     count:null, players:[] },
 ];
-// Badge display (classify-styles.js: pressure_player, clay_specialist, high_risk_high_reward).
+// Badge display (classify-styles.js: pressure_player, clay_specialist, grass_specialist, high_risk_high_reward).
 const PS_BADGE = {
   pressure_player:      { c:'#3ECF8E', n:'Pressure Player' },
   clay_specialist:      { c:'#C96A34', n:'Clay Specialist' },
+  grass_specialist:     { c:'#5B8DEF', n:'Grass Specialist' },
   high_risk_high_reward:{ c:'#E8B341', n:'High Risk / High Reward' },
 };
 // Matchup matrix is COMPUTED from our own classification x real TML match results
@@ -6570,9 +6575,9 @@ function ppRadarSvg(vals, avg, color){
 // Six-axis playing-style radar (classify-styles.js scores). Dashed overlay = tour
 // average (50). Axes whose score leans on limited shot-charting coverage are greyed
 // and marked with * (confidence indicator), never plotted as if fully computed.
-const PP_STYLE_AXES = [['big_server', 'Big Server'], ['solid_baseliner', 'Solid Base'], ['counter_puncher', 'Counter'], ['all_court', 'All-Court'], ['attacking_baseliner', 'Attacking'], ['solid_defender', 'Defender']];
+const PP_STYLE_AXES = [['big_server', 'Big Server'], ['big_server_baseliner', 'Serve+Base'], ['attacking_baseliner', 'Attacking'], ['solid_baseliner', 'Solid Base'], ['all_court', 'All-Court'], ['counter_puncher', 'Counter'], ['solid_defender', 'Defender']];
 function ppStyleRadarSvg(scores, partial){
-  const cx = 132, cy = 120, R = 80, n = 6, color = '#3E7BFA';
+  const cx = 132, cy = 120, R = 80, n = PP_STYLE_AXES.length, color = '#3E7BFA';
   const ang = i => (-90 + 360 / n * i) * Math.PI / 180, pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
   const vals = PP_STYLE_AXES.map(a => Math.max(0, Math.min(100, scores[a[0]] || 0)));
   const poly = arr => arr.map((v, i) => { const p = pt(i, v / 100 * R); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
@@ -6580,7 +6585,7 @@ function ppStyleRadarSvg(scores, partial){
   let s = '';
   [0.25, 0.5, 0.75, 1].forEach(f => { s += `<polygon points="${vals.map((_, i) => { const p = pt(i, f * R); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ')}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`; });
   for (let i = 0; i < n; i++){ const p = pt(i, R); s += `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`; }
-  s += `<polygon points="${poly([50, 50, 50, 50, 50, 50])}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.2" stroke-dasharray="3 3" stroke-linejoin="round"/>`;
+  s += `<polygon points="${poly(PP_STYLE_AXES.map(() => 50))}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.2" stroke-dasharray="3 3" stroke-linejoin="round"/>`;
   s += `<polygon points="${poly(vals)}" fill="${ppHexA(color, 0.20)}" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
   vals.forEach((v, i) => { const p = pt(i, v / 100 * R); s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="${isP(PP_STYLE_AXES[i][0]) ? '#5b6472' : color}" stroke="#0b0d12" stroke-width="1.6"/>`; });
   PP_STYLE_AXES.forEach((a, i) => {
@@ -6594,7 +6599,7 @@ function ppStyleRadarSvg(scores, partial){
 function ppStyleCard(p){
   const st = ppStyleFor(p && p.name);
   if (!st) return '';
-  const PP_BADGE = { pressure_player:['Pressure Player','62,207,142'], clay_specialist:['Clay Specialist','201,106,52'], high_risk_high_reward:['High Risk / High Reward','232,179,65'] };
+  const PP_BADGE = { pressure_player:['Pressure Player','62,207,142'], clay_specialist:['Clay Specialist','201,106,52'], grass_specialist:['Grass Specialist','91,141,239'], high_risk_high_reward:['High Risk / High Reward','232,179,65'] };
   const badges = (st.badges || []).map(b => {
     const d = PP_BADGE[b]; if (!d) return '';
     return `<span style="font-size:10.5px;font-weight:700;color:rgb(${d[1]});background:rgba(${d[1]},0.12);border:1px solid rgba(${d[1]},0.35);border-radius:7px;padding:4px 9px;">${d[0]}</span>`;
