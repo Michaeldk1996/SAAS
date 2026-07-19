@@ -7534,11 +7534,24 @@ function setPpSurface(s){
 // so the sample size is identical for every player). Scopes ONLY the headline
 // tiles, the surface bars and the readout -- the splits and the two reliability
 // panels below are career-wide and label themselves as such.
+// The market window is now reader-defined: 'career', or any positive match count.
+// Everything in the panel recomputes from the shard's per-match `sides` rows, so the
+// window is not limited to the two the builder happened to pre-aggregate.
 function setPpMktWindow(w){
-  ppState.mktWindow = w;
+  ppState.mktWindow = w === 'career' ? 'career' : Math.max(1, parseInt(w, 10) || 40);
   const profile = playerProfiles[ppState.key];
   if (profile) ppRepaint();
 }
+// Committed from the free-entry box. Clamped to the player's own priced-match count so
+// typing 500 shows his whole archive rather than silently reading as a bigger sample.
+function setPpMktWindowInput(el){
+  const perf = _oddsPerfShards[String(ppState.key)];
+  const max = (perf && perf.sides) ? perf.sides.length : 0;
+  const n = parseInt(el.value, 10);
+  if (!Number.isFinite(n) || n < 1) { el.value = ppState.mktWindow === 'career' ? '' : ppState.mktWindow; return; }
+  setPpMktWindow(max ? Math.min(n, max) : n);
+}
+function ppMktWindowKey(e, el){ if (e.key === 'Enter') { e.preventDefault(); setPpMktWindowInput(el); } }
 // Which split table the market block is showing (level / opp / round).
 function setPpMktSplit(s){
   ppState.mktSplit = s;
@@ -8288,17 +8301,90 @@ function buildPlayerProfileHtml(p){
   // means every player's recent number is equally trustworthy, and the span is shown
   // so the reader can see how far back 40 matches actually reaches for this player.
   const rw = perf.recentWindow;
-  const hasRecent = !!(perf.recent && rw);
-  const mktWin = (hasRecent && ppState.mktWindow === 'recent') ? 'recent' : 'career';
-  const o = mktWin === 'recent' ? perf.recent : perf.overall;
-  const winSurfaces = mktWin === 'recent' ? (perf.recentBySurface || {}) : (perf.bySurface || {});
-  const role = mktWin === 'recent' ? (perf.recentByRole || {}) : (perf.byRole || {});
-  const winLabel = mktWin === 'recent' ? `last ${rw.matches} matches` : 'whole archive';
-  const mktChips = !hasRecent ? '' : ['career','recent'].map(w => {
-    const on = w === mktWin;
-    const lab = w === 'career' ? 'Career' : `Last ${rw.matches} matches`;
-    return `<span onclick="setPpMktWindow('${w}')" style="font-size:11px;font-weight:${on?700:600};color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:5px 11px;cursor:pointer;">${lab}</span>`;
-  }).join('');
+  const sides = perf.sides || null;
+  const legend = perf.sidesLegend || null;
+  // The window is whatever the reader asked for. 'career' is the whole archive; a number
+  // is that many most-recent priced matches. Everything below — tiles, surface bars, role
+  // comparison, every split table — is recomputed inside it from `sides`, so there is no
+  // longer a set of windows the panel can and cannot answer.
+  const mktWinReq = ppState.mktWindow;
+  const sideCount = sides ? sides.length : 0;
+  const winN = (sides && mktWinReq !== 'career' && Number.isFinite(+mktWinReq))
+    ? Math.min(Math.max(1, +mktWinReq), sideCount) : null;
+  const mktWin = winN ? 'recent' : 'career';
+  const winRows = !sides ? null : (winN ? sides.slice(-winN) : sides);
+  const winLabel = winN ? `last ${winN} matches` : 'whole archive';
+  const winSpan = winRows && winRows.length ? { from: winRows[0][0], to: winRows[winRows.length - 1][0] } : null;
+
+  // Same arithmetic as build-odds-performance.js summarize(); verified to reproduce the
+  // pre-aggregated career blocks exactly on all 164 shards, so the career view is the
+  // same number by either route.
+  const mktRound1 = v => (v === null ? null : Math.round(v * 10) / 10);
+  const mktAgg = rows => {
+    const n = rows.length;
+    if (!n) return null;
+    let wins = 0, expSum = 0, varSum = 0, profit = 0, profitBest = 0, priceSum = 0, priceBestSum = 0;
+    rows.forEach(([, won, pr, price, best]) => {
+      if (won) wins += 1;
+      expSum += pr; varSum += pr * (1 - pr);
+      profit += won ? price - 1 : -1;
+      profitBest += won ? best - 1 : -1;
+      priceSum += price; priceBestSum += best;
+    });
+    const actual = wins / n * 100, expected = expSum / n * 100, delta = actual - expected;
+    const se = Math.sqrt(varSum) / n * 100;
+    return {
+      matches: n, wins, losses: n - wins,
+      actualWinRate: mktRound1(actual), expectedWinRate: mktRound1(expected), vsMarket: mktRound1(delta),
+      ci95: [mktRound1(delta - 1.96 * se), mktRound1(delta + 1.96 * se)],
+      z: se > 0 ? Math.round(delta / se * 100) / 100 : null,
+      roi: mktRound1(profit / n * 100), roiBest: mktRound1(profitBest / n * 100),
+      avgPrice: Math.round(priceSum / n * 100) / 100, avgPriceBest: Math.round(priceBestSum / n * 100) / 100,
+    };
+  };
+  // Group the window's rows by one encoded column, keeping the legend's order.
+  const mktGroup = (col, labels) => {
+    const out = {};
+    if (!winRows) return out;
+    labels.forEach((lab, i) => {
+      const rows = winRows.filter(s => s[col] === i);
+      if (rows.length) out[lab] = mktAgg(rows);
+    });
+    return out;
+  };
+  const legendLabels = (arr, key) => (arr || []).map(x => (typeof x === 'string' ? x : x[key || 'label']));
+
+  // With no `sides` (a shard built before schema v4) the panel falls back to the
+  // pre-aggregated career blocks rather than rendering empty.
+  const o = winRows ? mktAgg(winRows) : perf.overall;
+  const winSurfaces = sides
+    ? mktGroup(6, legendLabels(legend && legend.surfaces))
+    : (perf.bySurface || {});
+  const role = sides
+    ? (() => {
+        const r = {};
+        ['underdog', 'favourite'].forEach((k, i) => {
+          const rows = winRows.filter(s => s[5] === i);
+          if (rows.length) r[k] = mktAgg(rows);
+        });
+        return r;
+      })()
+    : (perf.byRole || {});
+
+  // Window control: presets plus a free entry box. The presets are the common reads;
+  // the box is there because "last 15" and "last 63" are equally legitimate questions
+  // and the old two-chip control could answer neither.
+  const mktPresets = [40, 25, 15].filter(n => n < sideCount);
+  const winChip = (val, lab, on) => `<span onclick="setPpMktWindow('${val}')" style="font-size:11px;font-weight:${on?700:600};color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:5px 11px;cursor:pointer;">${lab}</span>`;
+  const mktChips = !sides ? '' : [
+    winChip('career', `Career · ${sideCount}`, mktWin === 'career'),
+    ...mktPresets.map(n => winChip(n, `Last ${n}`, winN === n)),
+    `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#8b93a3;border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:3px 8px 3px 10px;">Last
+       <input type="number" min="1" max="${sideCount}" value="${winN && !mktPresets.includes(winN) ? winN : ''}" placeholder="n"
+         onchange="setPpMktWindowInput(this)" onkeydown="ppMktWindowKey(event, this)"
+         style="width:46px;background:#0c0e13;border:1px solid rgba(255,255,255,0.12);border-radius:5px;color:#dbe6ff;font-size:11px;font-family:'IBM Plex Mono',monospace;padding:3px 5px;text-align:center;">
+     </span>`,
+  ].join('');
   // A whole-archive claim is only made when the interval actually excludes zero.
   // That is 12 of 164 players; what happens to the other 152 is handled below.
   const beats = o.ci95[0] > 0, trails = o.ci95[1] < 0;
@@ -8339,12 +8425,21 @@ function buildPlayerProfileHtml(p){
   // Role tiles lead with the gap but now spell out both sides of it, because
   // "won 71% where the market priced him at 61%" is the fact; the +9.7pt is the
   // arithmetic on top of it.
+  // A thin sample is annotated, never withheld. "7 matches as underdog — limited sample"
+  // is a usable fact; a blank tile is not, and the reader cannot tell a blank caused by
+  // a thin sample from one caused by missing data. Below MKT_ANGLE_M the number still
+  // renders, in neutral grey rather than the red/green that reads as a finding.
+  const MKT_THIN = 'limited sample';
   const roleTile = (k, label) => {
     const r = role[k];
-    return r
-      ? { label, value: signed(r.vsMarket, 'pt'), color: r.vsMarket >= 0 ? gcol : rcol,
-          sub: `${r.matches} matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied` }
-      : { label, value: '—', color: ncol, sub: 'Too few matches to measure' };
+    if (!r) return { label, value: '—', color: ncol, sub: `No priced matches as ${label.replace(/^As /, '')} in this window` };
+    const thin = r.matches < MKT_ANGLE_M;
+    return {
+      label,
+      value: signed(r.vsMarket, 'pt'),
+      color: thin ? ncol : (r.vsMarket >= 0 ? gcol : rcol),
+      sub: `${r.matches} matches${thin ? ` · ${MKT_THIN}` : ''} · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied`,
+    };
   };
   const oddsTiles = [
     { label: 'Vs market expectation', value: signed(o.vsMarket, 'pt'), color: beats ? gcol : (trails ? rcol : ncol),
@@ -8362,14 +8457,22 @@ function buildPlayerProfileHtml(p){
   // One diverging vs-market bar row, shared by the surface breakdown and every v2 split
   // table below. `dot` is an optional colour swatch (surfaces have one, splits do not);
   // `labelPx` widens the label column for the longer split names.
+  // The sample now rides on the row itself rather than only in the hover title. Every
+  // figure here is computed on a different number of matches, and a reader comparing
+  // two bars has to know which one rests on 4 matches and which on 40 — that was only
+  // discoverable by hovering, which is not discoverable at all on a touch device.
+  const MKT_LOW_SAMPLE = 3;
   const mktBarRow = (label, r, dot, labelPx) => {
-    const barColor = r.vsMarket >= 0 ? gcol : rcol;
+    const thin = r.matches < MKT_ANGLE_M;
+    const barColor = thin ? ncol : (r.vsMarket >= 0 ? gcol : rcol);
     const w = Math.min(Math.abs(r.vsMarket), 15) / 15 * 50;
     const left = r.vsMarket >= 0 ? '50%' : (50 - w) + '%';
     const swatch = dot ? `<span style="width:8px;height:8px;border-radius:50%;background:${dot};flex:none;"></span>` : '';
+    const lowFlag = r.matches < MKT_LOW_SAMPLE
+      ? `<span style="font-size:9.5px;color:#c9a227;font-weight:700;letter-spacing:0.04em;">low sample</span>` : '';
     return `
       <div style="display:grid;grid-template-columns:${labelPx || 52}px 1fr 56px;align-items:center;gap:12px;">
-        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#cfd4de;">${swatch}${label}</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#cfd4de;min-width:0;">${swatch}<span style="min-width:0;">${label}<span style="display:block;font-size:9.5px;font-weight:600;color:#6b7280;font-family:'IBM Plex Mono',monospace;">${r.matches} ${r.matches === 1 ? 'match' : 'matches'}</span>${lowFlag}</span></span>
         <span style="position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;display:block;" title="${r.matches} priced matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied · ROI ${signed(r.roi,'%')}">
           <span style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,0.18);"></span>
           <span style="position:absolute;top:0;bottom:0;left:${left};width:${w}%;background:${barColor};border-radius:5px;"></span>
@@ -8406,8 +8509,9 @@ function buildPlayerProfileHtml(p){
   const roleCmpDefs = [
     { k: 'underdog',  label: 'As underdog',  sub: 'priced above evens' },
     { k: 'favourite', label: 'As favourite', sub: 'priced below evens' },
-  ].map(d => ({ ...d, r: role[d.k] })).filter(d => d.r && d.r.matches >= MKT_ANGLE_M);
-  const bothRoles = roleCmpDefs.length === 2 ? roleCmpDefs : null;
+  ].map(d => ({ ...d, r: role[d.k] })).filter(d => d.r);
+  const bothRoles = roleCmpDefs.length === 2 && roleCmpDefs.every(d => d.r.matches >= MKT_ANGLE_M)
+    ? roleCmpDefs : null;
   const roleVerdict = !bothRoles ? '' : (() => {
     const dog = bothRoles.find(d => d.k === 'underdog').r;
     const fav = bothRoles.find(d => d.k === 'favourite').r;
@@ -8423,10 +8527,11 @@ function buildPlayerProfileHtml(p){
       <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Favourite vs underdog reliability · ${winLabel}</div>
       <div style="display:grid;grid-template-columns:${roleCmpDefs.length === 2 ? '1fr 1fr' : '1fr'};gap:14px;">
         ${roleCmpDefs.map(d => {
-          const r = d.r, col = r.vsMarket >= 0 ? gcol : rcol;
+          const r = d.r, roleThin = r.matches < MKT_ANGLE_M;
+          const col = roleThin ? ncol : (r.vsMarket >= 0 ? gcol : rcol);
           return `
           <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:14px 15px;">
-            <div style="font-size:12.5px;font-weight:600;color:#cfd4de;">${d.label} <span style="color:#5b6472;font-weight:500;">${d.sub}</span></div>
+            <div style="font-size:12.5px;font-weight:600;color:#cfd4de;">${d.label} <span style="color:#5b6472;font-weight:500;">${d.sub}</span>${roleThin ? ` <span style="color:#c9a227;font-weight:700;font-size:10px;">${r.matches} matches · ${MKT_THIN}</span>` : ''}</div>
             <div style="display:flex;align-items:baseline;gap:9px;margin-top:10px;">
               <span style="font-size:22px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${col};line-height:1;">${r.actualWinRate}%</span>
               <span style="font-size:12px;color:#6b7280;">won</span>
@@ -8473,7 +8578,7 @@ function buildPlayerProfileHtml(p){
           // Colour is driven by vsMarket, never by the raw rate: a heavy favourite always
           // has the lowest loss rate and a big underdog the lowest win rate, so the raw
           // number would rank the bands by price rather than by performance.
-          const col = r.vsMarket >= 0 ? gcol : rcol;
+          const col = r.matches < MKT_ANGLE_M ? ncol : (r.vsMarket >= 0 ? gcol : rcol);
           return `
             <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;">
               <div style="min-width:0;">
@@ -8490,11 +8595,30 @@ function buildPlayerProfileHtml(p){
       <div style="font-size:11.5px;color:#6b7280;margin-top:13px;line-height:1.5;">${opts.foot}</div>
     </div>`;
   };
-  const favHtml = reliabilityPanel(favBandMeta, perf.favReliability, {
+  const mktPriceBands = (isFav, bands) => {
+    if (!winRows) return null;
+    const out = {};
+    bands.forEach((b, i) => {
+      const rows = winRows.filter(s => (s[5] === 1) === isFav && b.test(s[3]));
+      if (rows.length) out[b.id] = mktAgg(rows);
+    });
+    return out;
+  };
+  const favBands = mktPriceBands(true, [
+    { id: 'heavy', test: pr => pr < 1.3 },
+    { id: 'clear', test: pr => pr >= 1.3 && pr < 1.6 },
+    { id: 'slight', test: pr => pr >= 1.6 && pr < 2.0 },
+  ]) || perf.favReliability;
+  const dogBands = mktPriceBands(false, [
+    { id: 'slightdog', test: pr => pr < 2.5 },
+    { id: 'cleardog', test: pr => pr >= 2.5 && pr < 4.0 },
+    { id: 'bigdog', test: pr => pr >= 4.0 },
+  ]) || perf.dogReliability;
+  const favHtml = reliabilityPanel(favBandMeta, favBands, {
     title: 'Favourite reliability', countWins: false, verb: 'Lost', expVerb: 'lose',
     foot: 'Green means he loses these <em>less</em> often than the closing price implied; red means the short prices have been going down more than they should.',
   });
-  const dogHtml = reliabilityPanel(dogBandMeta, perf.dogReliability, {
+  const dogHtml = reliabilityPanel(dogBandMeta, dogBands, {
     title: 'Underdog reliability', countWins: true, verb: 'Won', expVerb: 'win',
     foot: 'Green means he wins from these prices <em>more</em> often than the market expected — the side of the book where the margin usually lives.',
   });
@@ -8506,11 +8630,23 @@ function buildPlayerProfileHtml(p){
   // hard" is a pricing question, and it survives the sample gate on all 164 players.
   const oppLabels = { top10: 'Top 10', r11_25: 'Rank 11–25', r26_50: 'Rank 26–50', r51_100: 'Rank 51–100', r100plus: 'Outside 100' };
   const roundLabels = { early: 'R1 – R2', middle: 'R3 – Quarter-final', late: 'Semi-final & final' };
-  const splitDefs = [
+  // Rounds are the source's own ladder (R1..R4/QF/SF/F, plus round robin), NOT R128/R64.
+  // The archive labels a round relative to its tournament — "1st Round" is R128 at a Slam
+  // and R32 at a 250 — and carries no draw size, so an absolute label would be invented
+  // for every non-Slam. Every round the player has a priced match in is shown; none are
+  // capped or dropped, with the sample on each row and a flag under MKT_LOW_SAMPLE.
+  const roundLadder = legendLabels(legend && legend.rounds);
+  const oppLadder = legendLabels(legend && legend.oppBands);
+  const levelLadder = legendLabels(legend && legend.levels);
+  const splitDefs = (sides ? [
+    { id: 'level', tab: 'Tour level', group: mktGroup(8, levelLadder), order: levelLadder, label: k => k, px: 108 },
+    { id: 'opp', tab: 'Opponent', group: mktGroup(9, oppLadder), order: oppLadder, label: k => k, px: 108 },
+    { id: 'round', tab: 'Round', group: mktGroup(7, roundLadder), order: roundLadder, label: k => k, px: 108 },
+  ] : [
     { id: 'level', tab: 'Tour level', group: perf.byLevel || {}, order: ['Grand Slam','Tour Finals','Masters 1000','ATP 500','ATP 250'], label: k => k, px: 92 },
     { id: 'opp', tab: 'Opponent', group: perf.byOppRank || {}, order: ['top10','r11_25','r26_50','r51_100','r100plus'], label: k => oppLabels[k] || k, px: 92 },
     { id: 'round', tab: 'Round', group: perf.byRound || {}, order: ['early','middle','late'], label: k => roundLabels[k] || k, px: 92 },
-  ].map(d => ({ ...d, rows: d.order.filter(k => d.group[k]) })).filter(d => d.rows.length);
+  ]).map(d => ({ ...d, rows: d.order.filter(k => d.group[k]) })).filter(d => d.rows.length);
   const activeSplit = splitDefs.find(d => d.id === ppState.mktSplit) || splitDefs[0];
   // The panel led with four tiles and then ran another three blocks deep before
   // the footnote — too tall to read at a glance. The split breakdown and the
@@ -8520,14 +8656,14 @@ function buildPlayerProfileHtml(p){
   const splitsHtml = !splitDefs.length ? '' : `
     <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;margin-top:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">Vs market expectation by split · whole archive</div>
+        <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">Vs market expectation by split · ${winLabel}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">${splitDefs.map(d => {
           const on = d.id === activeSplit.id;
           return `<span onclick="setPpMktSplit('${d.id}')" style="font-size:11px;font-weight:${on?700:600};color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${d.tab}</span>`;
         }).join('')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:13px;">${activeSplit.rows.map(k => mktBarRow(activeSplit.label(k), activeSplit.group[k], null, activeSplit.px)).join('')}</div>
-      <div style="font-size:11px;color:#5b6472;margin-top:13px;line-height:1.5;">Hover a bar for its sample and ROI. A split he has played too rarely to measure is left out rather than shown on a handful of matches.</div>
+      <div style="font-size:11px;color:#5b6472;margin-top:13px;line-height:1.5;">Every split with a priced match in this window is shown, with its own sample under the label — a bar built on ${MKT_LOW_SAMPLE - 1} matches is flagged <span style="color:#c9a227;font-weight:700;">low sample</span>, and anything under ${MKT_ANGLE_M} is drawn in grey rather than red or green because the gap is not yet separable from noise. Hover a bar for its ROI.</div>
     </div>`;
 
   const bestSurface = surfaceRows.slice().sort((a, b) => b.r.vsMarket - a.r.vsMarket)[0];
@@ -8546,7 +8682,7 @@ function buildPlayerProfileHtml(p){
           <span style="width:34px;height:34px;border-radius:10px;background:rgba(62,123,250,0.14);border:1px solid rgba(62,123,250,0.32);display:flex;align-items:center;justify-content:center;color:#7ba4ff;flex:none;"><span style="width:18px;height:18px;display:flex;">${BSP_ICONS.target}</span></span>
           <div style="min-width:0;">
             <div style="font-size:16px;font-weight:700;">Market performance</div>
-            <div style="font-size:12.5px;color:#8b93a3;margin-top:2px;">How ${pesc(surname0(p))} has performed against the closing market's implied probability, over ${o.matches} priced matches ${mktWin === 'recent' ? `between ${rw.from} and ${rw.to}` : `since ${Object.keys(perf.bySeason || {}).sort()[0] || '2004'}`}.</div>
+            <div style="font-size:12.5px;color:#8b93a3;margin-top:2px;">How ${pesc(surname0(p))} has performed against the closing market's implied probability, over ${o.matches} priced matches ${winSpan ? `between ${winSpan.from} and ${winSpan.to}` : `since ${Object.keys(perf.bySeason || {}).sort()[0] || '2004'}`}.</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex:none;">
@@ -8577,7 +8713,7 @@ function buildPlayerProfileHtml(p){
         ${dogHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the underdog often enough in any price band to measure how often he beats his price.</span></div>`}
       </div>`}
       ${mktMoreOpen ? splitsHtml : ''}
-      ${!mktMoreOpen ? '' : `<div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. &quot;Last ${rw ? rw.matches : 40} matches&quot; is a rolling count, not a date range, so every player's form number rests on the same sample size. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>`}
+      ${!mktMoreOpen ? '' : `<div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. The match window is a rolling count, not a date range, and you set it yourself — every figure in this panel, including each split, is recomputed inside whatever window you choose. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>`}
     </div>`;
   })());
 

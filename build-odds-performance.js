@@ -45,7 +45,7 @@ const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const MIN_MATCHES = 30;
 
 /** Bumping this invalidates consumers the same way PROFILE_SCHEMA_VERSION does. */
-const ODDS_PERF_SCHEMA_VERSION = 3;
+const ODDS_PERF_SCHEMA_VERSION = 4;
 
 const SURFACES = ['Hard', 'Clay', 'Grass'];
 
@@ -135,6 +135,28 @@ const ROUND_STAGES = [
   { id: 'middle', label: 'R3 - Quarter-final', test: (r) => /^(3rd|4th) Round$/.test(r) || /Quarterfinal/i.test(r) },
   { id: 'late', label: 'Semi-final and final', test: (r) => /Semifinal|The Final|Final/i.test(r) },
 ];
+
+/**
+ * The exact round ladder, kept alongside the three collapsed stages above so the profile
+ * can show every round a player actually has data for rather than three buckets.
+ *
+ * These are the source's OWN labels and they are tournament-relative, not draw positions:
+ * "1st Round" is R128 at a Slam and R32 at a 250, and the archive carries no draw size to
+ * tell them apart. So the ladder is R1..R4/QF/SF/F -- what the data actually says -- and
+ * NOT R128/R64/R32/R16, which would be a fabricated absolute position for every non-Slam.
+ */
+const ROUND_EXACT = [
+  { id: 'r1', label: 'R1', test: (r) => /^1st Round$/.test(r) },
+  { id: 'r2', label: 'R2', test: (r) => /^2nd Round$/.test(r) },
+  { id: 'r3', label: 'R3', test: (r) => /^3rd Round$/.test(r) },
+  { id: 'r4', label: 'R4', test: (r) => /^4th Round$/.test(r) },
+  { id: 'qf', label: 'QF', test: (r) => /Quarterfinal/i.test(r) },
+  { id: 'sf', label: 'SF', test: (r) => /Semifinal/i.test(r) },
+  { id: 'f', label: 'F', test: (r) => /^The Final$/.test(r) || /^Final$/i.test(r) },
+  { id: 'rr', label: 'Round robin', test: (r) => /Round Robin/i.test(r) },
+];
+const ROUND_EXACT_ORDER = ROUND_EXACT.map((x) => x.id);
+const OPP_BAND_ORDER = OPP_BANDS.map((x) => x.id);
 
 // ---------------------------------------------------------------------------
 // CSV
@@ -392,6 +414,7 @@ function main() {
       const surface = SURFACES.includes(row.surface) ? row.surface : null;
       const level = LEVEL_ALIASES[row.series] || null;
       const stage = (ROUND_STAGES.find((x) => x.test(String(row.round || ''))) || {}).id || null;
+      const roundExact = (ROUND_EXACT.find((x) => x.test(String(row.round || ''))) || {}).id || null;
       const wr = num(row.wrank);
       const lr = num(row.lrank);
 
@@ -417,7 +440,14 @@ function main() {
         // Reliability is only defined on the side of the market he was actually on.
         if (side.fav) into(b.favBand, (FAV_BANDS.find((x) => x.test(side.price)) || {}).id);
         else into(b.dogBand, (DOG_BANDS.find((x) => x.test(side.price)) || {}).id);
-        b.sides.push({ date: row.date, won: side.won, p: side.p, price: side.price, best: side.best, fav: side.fav, surface });
+        // Carries round and level as well as the aggregate inputs: the profile lets the
+        // reader pick their own match window, and every split shown has to be recomputable
+        // inside it, so a side has to be self-describing rather than pre-bucketed.
+        b.sides.push({
+          date: row.date, won: side.won, p: side.p, price: side.price, best: side.best,
+          fav: side.fav, surface, round: roundExact, level,
+          oppBand: side.oppRank ? (OPP_BANDS.find((x) => x.test(side.oppRank)) || {}).id : null,
+        });
       });
     });
   });
@@ -484,6 +514,28 @@ function main() {
     const recentByRole = recent ? summarizeGroup(recentRole, ['underdog', 'favourite']) : {};
     const recentSpan = recent && tail.length ? { from: tail[0].date, to: tail[tail.length - 1].date } : null;
 
+    // Per-match rows, chronological. The pre-aggregated blocks above stay as they are --
+    // they still drive the career view and the index -- but a reader-defined window can
+    // only be honoured by recomputing, so the raw sides ship too. Encoded as arrays
+    // against the legends below rather than objects: on the widest player that is 24KB
+    // instead of 71KB, and the shard is lazy-loaded per player either way.
+    const sideSurfaces = SURFACES;
+    const sideRow = (s) => [
+      s.date,
+      s.won ? 1 : 0,
+      // 6dp, not 4: at 4dp the recomputed career aggregate drifts 0.1pt off the
+      // pre-aggregated block on 6 of 164 players, and the two have to agree exactly --
+      // the career view is the same number by either route.
+      Math.round(s.p * 1e6) / 1e6,
+      s.price,
+      s.best,
+      s.fav ? 1 : 0,
+      sideSurfaces.indexOf(s.surface),
+      s.round ? ROUND_EXACT_ORDER.indexOf(s.round) : -1,
+      s.level ? LEVEL_ORDER.indexOf(s.level) : -1,
+      s.oppBand ? OPP_BAND_ORDER.indexOf(s.oppBand) : -1,
+    ];
+
     const shard = {
       version: ODDS_PERF_SCHEMA_VERSION,
       key: playerKey,
@@ -505,6 +557,14 @@ function main() {
       recentBySurface,
       recentByRole,
       recentWindow: recent ? { matches: RECENT_MATCHES, from: recentSpan.from, to: recentSpan.to } : null,
+      sidesLegend: {
+        fields: ['date', 'won', 'p', 'price', 'best', 'fav', 'surface', 'round', 'level', 'oppBand'],
+        surfaces: sideSurfaces,
+        rounds: ROUND_EXACT.map((x) => ({ id: x.id, label: x.label })),
+        levels: LEVEL_ORDER,
+        oppBands: OPP_BANDS.map((x) => ({ id: x.id, label: x.label })),
+      },
+      sides: ordered.map(sideRow),
     };
     fs.writeFileSync(path.join(OUT_DIR, `${playerKey}.json`), JSON.stringify(shard));
     index[playerKey] = { matches: overall.matches, vsMarket: overall.vsMarket, roi: overall.roi };
