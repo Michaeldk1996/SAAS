@@ -140,6 +140,10 @@ jobs:
           cp archetypes-classified.json _site/ 2>/dev/null || true
           cp matchup-matrix.json _site/ 2>/dev/null || true
           cp playing-styles.json _site/ 2>/dev/null || true
+          # Six-axis style radar for the Match Analysis "Playing style" tab.
+          # Percentile block only — tools/build-style-radar.js strips the raw
+          # Match Charting rates, which are internal-only and must not be served.
+          cp style-radar.json _site/ 2>/dev/null || true
           # Market performance: the index gates the profile block (no entry = no block,
           # so a missing index silently hides the feature for every player), the shards
           # carry the detail. odds-archive/ is deliberately NOT copied — it is the raw
@@ -158,8 +162,8 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html \
                    matches.json player-profiles.json career-splits.json form-index.json \
-                   matchup-matrix.json playing-styles.json odds-performance-index.json \
-                   odds-index.json; do
+                   matchup-matrix.json playing-styles.json style-radar.json \
+                   odds-performance-index.json odds-index.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           echo "All referenced files present in _site."
