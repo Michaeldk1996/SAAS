@@ -427,10 +427,11 @@ function pctOf(arr, v) {
 
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
-  // playing-styles.json holds the current-ATP players (what the dashboard displays) PLUS
-  // the retired all-time greats surfaced in the All-Court Elite tier; the remaining retired
-  // players were classified purely to enrich the matchup matrix above.
-  const outRows = rows.filter(r => r.isCurrent || ELITE_LEGENDS.has(lastName(r.name))).sort((a, b) => a.rank - b.rank);
+  // playing-styles.json holds the current-ATP players only. Retired players — including
+  // the ELITE_LEGENDS seeds — are classified so they enrich the matchup matrix above, but
+  // they are NOT written here: the dashboard presents this roster as examples of *current*
+  // archetypes, and Federer/Nadal/Murray were reading as active members of the Elite tier.
+  const outRows = rows.filter(r => r.isCurrent).sort((a, b) => a.rank - b.rank);
   const stylesOut = {
     generatedAt: new Date().toISOString(),
     source: 'tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)',

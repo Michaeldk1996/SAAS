@@ -1974,6 +1974,32 @@ function psEloFor(elo, name){
   if (elo.bySurname && elo.bySurname[tok] != null) return elo.bySurname[tok];
   return null;
 }
+// Example players per archetype. Not the full roster — the row header already
+// carries the true member count. All-Court Elite is deliberately smaller: it is a
+// three-man tier, so five would mean padding it with players who are not in it.
+const PS_EXAMPLES_N = 5, PS_EXAMPLES_ELITE = 3;
+// "Most representative" = the best combination of Elo standing and archetype fit,
+// scored as the average of the two within-archetype ranks so neither dimension can
+// dominate on its own scale (Elo is ~1400-2350, fit is 0-100). A player with no Elo
+// rating is not eligible as an example, because the tag has to show one; if that
+// leaves fewer than n, the unrated players backfill by fit so a row is never empty.
+function psPickExamples(list, n){
+  const rated = list.filter(p => p.elo != null);
+  const rank = (arr, key) => {
+    const order = arr.slice().sort((x, y) => (y[key] == null ? -Infinity : y[key]) - (x[key] == null ? -Infinity : x[key]));
+    const m = new Map(); order.forEach((p, i) => m.set(p, i)); return m;
+  };
+  const byElo = rank(rated, 'elo'), byFit = rank(rated, 'fit');
+  const picked = rated.slice()
+    .sort((x, y) => ((byElo.get(x) + byFit.get(x)) - (byElo.get(y) + byFit.get(y))) || (y.elo - x.elo))
+    .slice(0, n);
+  if (picked.length < n){
+    picked.push(...list.filter(p => p.elo == null)
+      .sort((x, y) => (y.fit == null ? -1 : y.fit) - (x.fit == null ? -1 : x.fit))
+      .slice(0, n - picked.length));
+  }
+  return picked.sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
+}
 async function renderPlayingStyles(){
   if (psRendered) return;
   psRendered = true;
@@ -2006,8 +2032,17 @@ async function renderPlayingStyles(){
         const list = a.ids.reduce((acc, id) => acc.concat(byArch[id] || []), []);
         if (list.length){
           a.count = list.length;
-          a.players = list.map(p => ({ name: displayName(p), elo: psEloFor(eloData, p.name), badges: p.badges || [] }))
-            .sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
+          a.players = psPickExamples(
+            list.map(p => ({
+              name: displayName(p),
+              elo: psEloFor(eloData, p.name),
+              // How cleanly the player fits: their own score on the archetype they
+              // were classified into, straight out of classify-styles.js.
+              fit: (p.archetype_scores && p.archetype_scores[p.primary] != null) ? p.archetype_scores[p.primary] : null,
+              badges: p.badges || [],
+            })),
+            a.id === 'all_court_elite' ? PS_EXAMPLES_ELITE : PS_EXAMPLES_N
+          );
         }
       });
     }
@@ -2075,16 +2110,12 @@ function psRenderMatrixAndCards(){
         '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + (win >= 50 ? '#3E7BFA' : '#E8607A') + ';"></span></span>' +
         '<span class="ps-barpct">' + win + '%</span></div>';
     };
-    // Two dominant + two weak: every style is weak against All-Court, so the second
-    // weakness is the one that actually distinguishes it. All-Court Elite is the
-    // exception — it beats every style, so its strongest matchup carries no
-    // information and we show its four weakest instead, which also keeps every row
-    // at the same height.
-    const eliteOnly = a.id === 'all_court_elite';
+    // Two dominant + two weak for EVERY archetype, All-Court Elite included — no
+    // special case. Its strongest matchups are less discriminating than most (it
+    // beats the field) but the row reads the same way as every other row, which is
+    // what matters more than the marginal information in the top bar.
     const weakest = (k) => idxs.slice(Math.max(0, m - k)).reverse().map((ix) => bar(ix, 'weak')).join('');
-    const bars = !m ? ''
-      : eliteOnly ? weakest(4)
-      : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + weakest(2);
+    const bars = !m ? '' : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + weakest(2);
 
     html += '<div class="ps-arow" id="psArow' + i + '">';
     html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
@@ -2125,10 +2156,10 @@ function psRenderMatrixAndCards(){
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-s">Strong against</div>' + strongList + '</div>' +
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-w">Weak against</div>' + weakList + '</div>' +
       '</div></div></div>';
-    // The full roster, not a sample — this is the page's single listing of who
-    // plays each style, so capping it hid genuine members of the archetype.
-    // Badges deliberately omitted here: they belong on the Player Profile page.
-    html += '<div><div class="ps-plabel">Players &middot; by Elo</div><div class="ps-tags">';
+    // A fixed set of examples, not the roster — the count in the row header is the
+    // real membership number. Badges deliberately omitted here: they belong on the
+    // Player Profile page.
+    html += '<div><div class="ps-plabel">Example players &middot; by Elo</div><div class="ps-tags">';
     if (a.players.length){
       a.players.forEach(p => {
         html += '<span class="ps-tag"><span class="ps-tagname">' + psEsc(p.name) + '</span>' +
