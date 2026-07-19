@@ -1058,6 +1058,14 @@
      without bound — the two cards share a height, so an unbounded drill-down
      would stretch the Recent form box beside it into a tall empty column. */
   .pp-yr-drill{ max-height:360px; overflow-y:auto; }
+  /* The collapsed Recent form list scrolls inside the locked card height. A
+     visible thin scrollbar is the affordance that says so — with the default
+     overlay bar the box reads as a truncated list rather than a scrollable one. */
+  .pp-form-scroll{ scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.18) transparent; }
+  .pp-form-scroll::-webkit-scrollbar{ width:6px; }
+  .pp-form-scroll::-webkit-scrollbar-track{ background:transparent; }
+  .pp-form-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.16); border-radius:3px; }
+  .pp-form-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,0.28); }
   .pp-form-chev{ transition:transform 150ms ease; }
   .pp-form-chev.open{ transform:rotate(90deg); }
   #ppRecentFormCard div[data-ppek].pp-openable:hover{ background:rgba(62,123,250,0.06); }
@@ -8756,16 +8764,16 @@ function buildPlayerProfileHtml(p){
         <span class="pp-form-chev" id="formChev-${idPrefix}" style="flex:none;width:10px;color:#5b6472;font-size:10px;visibility:hidden;transition:transform 150ms ease;">▸</span>
       </div>${formPanelHtml(m, idPrefix, ppState.key, ppPlayerName)}`;
   };
-  // How many rows to show is driven by the Career record box beside it, which is
-  // one row per career year and so varies a lot by player (Djokovic 14 rows,
-  // Vallejo 7). The grid already forces both boxes to a shared height; matching
-  // the row count too means the shorter box fills that height with matches
-  // instead of empty space. Bounded so a debut player still gets a useful list
-  // and a 20-year career doesn't push the box past the fold.
+  // The card renders EVERY match the surface filter admits, in both states, and
+  // the collapsed card scrolls instead of truncating. It used to render only
+  // the first ppFormRowTarget rows and clip them, which left the wheel nothing
+  // to move: browsing past the fold required clicking "See more" first.
+  //
+  // ppFormRowTarget survives only as the estimate of how many rows the locked
+  // height shows, and so of whether there is anything below the fold worth
+  // offering an expander for. It is one row per career year (Djokovic 14,
+  // Vallejo 7), bounded so a debut player still gets a useful list.
   const ppFormRowTarget = Math.max(8, Math.min((cy && cy.rows ? cy.rows.length : 8), 14));
-  const shownFormMatches = formMatches.slice(0, ppFormRowTarget);
-  // The season drill-down below must not repeat these — see shownFormKeys.
-  const shownFormKeys = new Set(shownFormMatches.map(m => String(m.eventKey || '')).filter(Boolean));
   // Once matches sit under a tournament header the tournament name is redundant
   // in the row, so the row's meta slot carries the round instead. Feed rounds
   // arrive prefixed ("ATP Gstaad - Semi-finals"); keep only the round itself.
@@ -8792,17 +8800,19 @@ function buildPlayerProfileHtml(p){
   // matches newest-first, so the visual order is unchanged from the old flat
   // list — only the headers are new.
   let ppFormSeq = 0;
-  const shownGroups = ppGroupMatchesByTournament(shownFormMatches);
+  const shownGroups = ppGroupMatchesByTournament(formMatches);
   // A match with no date or no resolvable tournament name is dropped by the
   // grouper. Collect those rather than silently losing them from the card.
   const groupedKeys = new Set(shownGroups.flatMap(g => g.matches).map(m => String(m.eventKey || '')));
-  const ungrouped = shownFormMatches.filter(m => !groupedKeys.has(String(m.eventKey || '')));
+  const ungrouped = formMatches.filter(m => !groupedKeys.has(String(m.eventKey || '')));
   const ppFormGroupHtml = (g, withRange) => `
       <div style="margin-top:12px;">
         ${ppFormGroupHeader(g, withRange)}
         ${g.matches.map(m => ppFormRow(m, ppFormSeq++, ppRoundLabel(m))).join('')}
       </div>`;
-  const rowsHtml = (shownGroups.map(g => ppFormGroupHtml(g, false)).join('')
+  // The date range is chrome the locked box has no room for; it appears once the
+  // card is expanded to full height.
+  const rowsHtml = (shownGroups.map(g => ppFormGroupHtml(g, ppState.formExpanded)).join('')
       + (ungrouped.length
         ? `<div style="margin-top:12px;">
         <div style="display:flex;align-items:center;padding-bottom:7px;"><span style="font-size:12.5px;font-weight:700;color:#e7e9ee;">Other matches</span></div>
@@ -8812,44 +8822,35 @@ function buildPlayerProfileHtml(p){
     || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
-  // Season-results rows continue the same accordion group (shared "ppform"
-  // prefix), so opening one closes any other open row in the card. They render
-  // through the same ppFormGroupHtml as the rows above, and the shared ppFormSeq
-  // counter carries on across both so ids never collide.
-  // Expanding is a continuation of the list above, not a second block: every
-  // remaining match flows in as one tournament-grouped list with no season
-  // header, no season tabs and no meta text between them. Splitting by season
-  // put a "2026" badge mid-list and read as a separate section.
+  // One list, two states. Collapsed it scrolls inside the height the Career
+  // record box sets (see ppSyncCareerHeight); expanded it flows at its natural
+  // height and the lock moves to the Career box instead. Both states hold the
+  // same rows, in the same order, through the same renderer — so scrolling the
+  // collapsed card and expanding it reach the same matches, and a row opened in
+  // one stays where it was when the other paints.
   //
-  // The rows above are already on screen, so this shows only what they don't —
-  // otherwise expanding renders a near-exact copy of the box directly beneath
-  // it. eventKey is present on every form row (74,279/74,279 across the
-  // dataset), so this is an exact match rather than a date/opponent heuristic.
-  const remainingFormMatches = formMatches.filter(m => !shownFormKeys.has(String(m.eventKey || '')));
-  // ppGroupMatchesByTournament already returns editions newest-first, so
-  // handing it every remaining season at once yields one continuous
-  // reverse-chronological list rather than a per-season restart.
-  const groups = ppGroupMatchesByTournament(remainingFormMatches);
-  const groupsHtml = groups.map(g => ppFormGroupHtml(g, true)).join('')
-    || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No further ${formEmptyLabel} matches on record.</div>`;
-  const remainingFormCount = remainingFormMatches.length;
-  const showFormTrigger = !ppState.formExpanded && remainingFormCount > 0;
-  // Collapsed, the card is height-locked to the Career record box (see
-  // ppSyncCareerHeight), so this trigger is pinned to the bottom of that box
-  // and is the only thing that may grow the card.
+  // The rows carry the shared "ppform" accordion prefix, so opening one closes
+  // any other open row in the card, and ppFormSeq is unique across the whole
+  // list so the panel ids never collide.
+  const hiddenFormCount = Math.max(0, formMatches.length - ppFormRowTarget);
+  // ppFormRowTarget is an estimate of what the locked height shows, so this is
+  // an estimate of whether anything sits below the fold. It only decides
+  // whether to OFFER the expander — every match is reachable by wheel either
+  // way, so guessing slightly wrong costs nothing.
+  const showFormTrigger = !ppState.formExpanded && hiddenFormCount > 0;
   const formTriggerHtml = showFormTrigger
-    ? `<div style="flex:none;padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">See ${remainingFormCount} more result${remainingFormCount===1?'':'s'}</span></div>`
+    ? `<div style="flex:none;padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">See all ${formMatches.length} results</span><div style="font-size:10.5px;color:#4b5361;margin-top:3px;">or scroll the list</div></div>`
     : '';
   // The collapse control sits at the FOOT of the expanded list, in the same
   // place and style as the "See more" link it replaces. A header-mounted
   // control would reintroduce exactly the mid-list chrome this task removes.
   const formCollapseHtml = `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">Show less</span></div>`;
-  const formExpandedHtml = `<div style="display:flex;flex-direction:column;">${groupsHtml}</div>${formCollapseHtml}`;
-  // Collapsed: min-height:0 lets the row list shrink inside the locked card
-  // height, and overflow:hidden makes the clip exact instead of spilling.
+  // Collapsed: min-height:0 lets the list shrink inside the locked card height,
+  // and overflow-y:auto turns the overflow into a scroll instead of a clip.
+  // overscroll-behavior:contain stops the page scrolling on from the last row.
   const formBodyHtml = ppState.formExpanded
-    ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
-    : `<div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">${rowsHtml}</div>${formTriggerHtml}`;
+    ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formCollapseHtml}`
+    : `<div class="pp-form-scroll" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;">${rowsHtml}</div>${formTriggerHtml}`;
 
   const recentFormCard = `
     <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
