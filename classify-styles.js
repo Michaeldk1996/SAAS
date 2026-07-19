@@ -300,18 +300,24 @@ function pctOf(arr, v) {
     const aceP = P('aceR', r.aceR), rpwP = P('RPW', r.RPW), spwP = P('SPW', r.SPW), brkP = P('breakPct', r.breakPct),
       drP = P('DR', r.DR), holdP = P('holdPct', r.holdPct), tpwP = P('TPW', r.TPW), scndP = P('secondWonPct', r.secondWonPct),
       firstWonP = P('firstWonPct', r.firstWonPct), firstInP = P('firstInPct', r.firstInPct), dfInvP = Pi('dfR', r.dfR);
-    const fastP = r.fastBias == null ? 50 : P('fastBias', r.fastBias);
+
     const clayVsHardP = r.clayVsHard == null ? 50 : P('clayVsHard', r.clayVsHard);
     const rallyLongP = r.hasMcp ? P('rallyLen', r.rallyLen) : null;
     const winnerLowP = r.hasMcp ? Pi('winnerRate', r.winnerRate) : null;
 
-    // 1 Big Server — A%35 1stIn15 1st%35 fastbias15, then two mandatory filters
-    let bs = 0.35 * aceP + 0.15 * firstInP + 0.35 * firstWonP + 0.15 * fastP;
-    if (r.clayWr != null && r.hardWr != null) {                     // F1: fast-surface bias must beat clay by >=8
-      const fastAvg = (r.hardWr + (r.grassWr != null ? r.grassWr : r.hardWr)) / 2;
-      if (fastAvg < r.clayWr + 8) bs *= 0.45;
-    }
-    if (rpwP > 50) bs *= 0.5;                                        // F2: true big servers are NOT above-average returners
+    // 1 Big Server — measures the SERVE, not match outcomes: A%35 1stIn10 1st%35 hold20.
+    // The old formula multiplied by 0.45 when a player's fast-surface WIN RATE didn't beat
+    // clay by 8, which scored Mpetshi Perricard 38 and Kyrgios 39 (both 99th-pct on every
+    // serve counter) below Thompson at 64. Win rate reflects opponent quality and draw, not
+    // serve size, so it does not belong in a serve axis. Surface lean is expressed through
+    // the Clay/Grass Specialist badges instead.
+    let bs = 0.35 * aceP + 0.10 * firstInP + 0.35 * firstWonP + 0.20 * holdP;
+    // Membership gate, on the serve itself: the label means a genuinely big serve, so it
+    // needs a top-30% ace rate AND an above-median hold. Without a gate the axis alone wins
+    // argmax for tour-median servers (Altmaier at 49 was landing here). This replaces the
+    // win-rate gate it used to inherit — same exclusivity, measured on the right quantity.
+    if (aceP < 70 || holdP < 50) bs *= 0.5;
+    if (rpwP > 65) bs *= 0.8;                                        // an elite returner is a complete player, not a serve-bot
     r.scores.big_server = bs;
 
     // 2 Big Server + Baseliner — big serve AND complete both ways AND doesn't collapse on clay
@@ -421,10 +427,11 @@ function pctOf(arr, v) {
 
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
-  // playing-styles.json holds the current-ATP players (what the dashboard displays) PLUS
-  // the retired all-time greats surfaced in the All-Court Elite tier; the remaining retired
-  // players were classified purely to enrich the matchup matrix above.
-  const outRows = rows.filter(r => r.isCurrent || ELITE_LEGENDS.has(lastName(r.name))).sort((a, b) => a.rank - b.rank);
+  // playing-styles.json holds the current-ATP players only. Retired players — including
+  // the ELITE_LEGENDS seeds — are classified so they enrich the matchup matrix above, but
+  // they are NOT written here: the dashboard presents this roster as examples of *current*
+  // archetypes, and Federer/Nadal/Murray were reading as active members of the Elite tier.
+  const outRows = rows.filter(r => r.isCurrent).sort((a, b) => a.rank - b.rank);
   const stylesOut = {
     generatedAt: new Date().toISOString(),
     source: 'tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)',
