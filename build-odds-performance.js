@@ -45,14 +45,26 @@ const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const MIN_MATCHES = 30;
 
 /** Bumping this invalidates consumers the same way PROFILE_SCHEMA_VERSION does. */
-const ODDS_PERF_SCHEMA_VERSION = 2;
+const ODDS_PERF_SCHEMA_VERSION = 3;
 
 const SURFACES = ['Hard', 'Clay', 'Grass'];
 
-/** The window for "recent form vs career". Anchored on the archive's own latest date,
- *  NOT on today -- the mirror lags live play by months, and anchoring on today would
- *  silently shrink the window (and eventually empty it) without anything looking broken. */
-const RECENT_MONTHS = 24;
+/**
+ * The "current form" window is his last N PRICED MATCHES, not a calendar window.
+ *
+ * A calendar window is the wrong shape for this feature: measured over the archive,
+ * "last 24 months" is 50 matches for a busy top-20 player but 12 for someone who spent
+ * a season injured -- so the same label means a solid read for one player and noise for
+ * another, and 54 of 164 players fall under the sample gate entirely. A rolling
+ * match count holds the SAMPLE fixed and lets the timespan vary, which is the honest
+ * trade: every player's number carries the same reliability.
+ *
+ * N=40 is where the two curves cross. It keeps 154/164 players (a 24-month calendar
+ * window keeps 110) at a median 95% interval of +/-14.3pp on vsMarket, and spans a
+ * median 16.7 months -- recent enough to be about current form. N=25 would cover all
+ * 164 but widens the interval to +/-18.1pp, which is too loose to call anyone hot or cold.
+ */
+const RECENT_MATCHES = 40;
 
 /**
  * The source renamed its tiers twice over 22 seasons ("International" -> "ATP250",
@@ -91,6 +103,37 @@ const FAV_BANDS = [
   { id: 'heavy', label: 'Heavy favourite', sub: 'shorter than 1.30', test: (price) => price < 1.3 },
   { id: 'clear', label: 'Clear favourite', sub: '1.30 - 1.60', test: (price) => price < 1.6 },
   { id: 'slight', label: 'Slight favourite', sub: '1.60 - 2.00', test: (price) => price < 2.0 },
+];
+
+/**
+ * Underdog reliability -- the mirror of the above, and the more valuable half. The
+ * favourite-longshot bias means the market's error is concentrated in the dogs:
+ * measured across the archive, 4.00+ shots win 14.6% against an implied 16.2%, while
+ * the 1.90-2.50 band is actually fair (45.9% vs 43.6%). "Does he beat his price when
+ * he is the one being written off" is therefore a different question band by band.
+ *
+ * Three bands, not the four the price ladder suggests: an underdog is by definition
+ * priced above his opponent, so a sub-1.90 underdog needs the opponent above 1.90 too
+ * -- that is a near-pick'em, and the median player has ZERO of them. A fourth band
+ * would render as a permanently empty row.
+ */
+const DOG_BANDS = [
+  { id: 'slightdog', label: 'Slight underdog', sub: '1.90 - 2.50', test: (price) => price < 2.5 },
+  { id: 'cleardog', label: 'Clear underdog', sub: '2.50 - 4.00', test: (price) => price < 4.0 },
+  { id: 'bigdog', label: 'Big underdog', sub: '4.00 and longer', test: () => true },
+];
+
+/**
+ * Round stage replaces the indoor/outdoor and 3-vs-5-set splits. Those two answered a
+ * question nobody asks of a betting page (a player's indoor record is a surface story,
+ * already told above it), whereas "does he hold up once the draw gets hard" is a
+ * pricing question. Collapsed to three stages because the source's round vocabulary
+ * changes across seasons and per-round buckets are far too thin to survive the gate.
+ */
+const ROUND_STAGES = [
+  { id: 'early', label: 'R1 - R2', test: (r) => /^(1st|2nd) Round$/.test(r) },
+  { id: 'middle', label: 'R3 - Quarter-final', test: (r) => /^(3rd|4th) Round$/.test(r) || /Quarterfinal/i.test(r) },
+  { id: 'late', label: 'Semi-final and final', test: (r) => /Semifinal|The Final|Final/i.test(r) },
 ];
 
 // ---------------------------------------------------------------------------
@@ -273,7 +316,7 @@ function main() {
 
   const buckets = new Map(); // our player key -> { all, surface{}, role{}, season{} }
   const ambiguous = new Map();
-  const stats = { rows: 0, priced: 0, incomplete: 0, matchedSides: 0 };
+  const stats = { rows: 0, priced: 0, incomplete: 0, impossible: 0, matchedSides: 0 };
 
   function resolve(archiveName) {
     const k = keyFromArchiveName(archiveName);
@@ -297,15 +340,18 @@ function main() {
     if (!buckets.has(playerKey)) {
       buckets.set(playerKey, {
         all: emptyBucket(), surface: {}, role: {}, season: {},
-        level: {}, court: {}, bestof: {}, oppRank: {}, favBand: {},
-        recent: emptyBucket(), recentSurface: {}, recentRole: {},
+        level: {}, oppRank: {}, favBand: {}, dogBand: {}, round: {},
+        // The rolling window needs the tail of his career in date order, which is only
+        // knowable once every season file has been read -- so keep the sides and slice
+        // them after the pass rather than accumulating a bucket during it.
+        sides: [],
       });
     }
     return buckets.get(playerKey);
   }
 
-  // The recency window is anchored on the newest row the archive actually carries, not on
-  // today. Resolved in a first pass because a season file is not guaranteed to be sorted.
+  // archiveLatest is still reported so the UI can say how stale the mirror is -- the
+  // form window no longer depends on it, because it is a match count now, not a date.
   let archiveLatest = '';
   const parsedSeasons = new Map();
   seasons.forEach((file) => {
@@ -313,12 +359,6 @@ function main() {
     parsedSeasons.set(file, rows);
     rows.forEach((r) => { if (r.date && r.date > archiveLatest) archiveLatest = r.date; });
   });
-  const recentFrom = (() => {
-    if (!archiveLatest) return null;
-    const d = new Date(archiveLatest + 'T00:00:00Z');
-    d.setUTCMonth(d.getUTCMonth() - RECENT_MONTHS);
-    return d.toISOString().slice(0, 10);
-  })();
 
   seasons.forEach((file) => {
     const season = file.slice(0, 4);
@@ -339,11 +379,19 @@ function main() {
 
       const bestW = num(row.maxw) || aw;
       const bestL = num(row.maxl) || al;
+
+      // The source carries a handful of corrupt prices, and they are not harmless: one
+      // row has Opelka beating Isner at 161.0 with a best price of 1.68, and that single
+      // cell supplied +70 of his +74.4% career ROI -- the highest figure on the whole
+      // feature was a typo. The tell is internal contradiction: the best price across
+      // books can never be SHORTER than the average across the same books. 32 sides in
+      // 55,545 fail it. Drop them rather than clamping, because when the two disagree
+      // this badly there is no way to know which of the pair is the sound one.
+      if (bestW < aw || bestL < al) { stats.impossible += 1; return; }
+
       const surface = SURFACES.includes(row.surface) ? row.surface : null;
       const level = LEVEL_ALIASES[row.series] || null;
-      const court = row.court === 'Indoor' || row.court === 'Outdoor' ? row.court : null;
-      const bestof = row.bestof === '3' || row.bestof === '5' ? row.bestof : null;
-      const isRecent = recentFrom && row.date && row.date >= recentFrom;
+      const stage = (ROUND_STAGES.find((x) => x.test(String(row.round || ''))) || {}).id || null;
       const wr = num(row.wrank);
       const lr = num(row.lrank);
 
@@ -362,18 +410,14 @@ function main() {
         into(b.role, side.fav ? 'favourite' : 'underdog');
         into(b.season, season);
         into(b.level, level);
-        into(b.court, court);
-        into(b.bestof, bestof);
+        into(b.round, stage);
         // An opponent with no recorded rank is unranked/qualifier-era, not "outside 100" --
         // folding those in would flatter the weakest band, so they are dropped instead.
         into(b.oppRank, side.oppRank ? (OPP_BANDS.find((x) => x.test(side.oppRank)) || {}).id : null);
-        // Favourite reliability is only defined where he WAS the favourite.
+        // Reliability is only defined on the side of the market he was actually on.
         if (side.fav) into(b.favBand, (FAV_BANDS.find((x) => x.test(side.price)) || {}).id);
-        if (isRecent) {
-          add(b.recent);
-          into(b.recentSurface, surface);
-          into(b.recentRole, side.fav ? 'favourite' : 'underdog');
-        }
+        else into(b.dogBand, (DOG_BANDS.find((x) => x.test(side.price)) || {}).id);
+        b.sides.push({ date: row.date, won: side.won, p: side.p, price: side.price, best: side.best, fav: side.fav, surface });
       });
     });
   });
@@ -411,15 +455,34 @@ function main() {
       return out;
     };
     const byLevel = summarizeGroup(b.level, LEVEL_ORDER);
-    const byCourt = summarizeGroup(b.court, ['Indoor', 'Outdoor']);
-    const byBestOf = summarizeGroup(b.bestof, ['3', '5']);
+    const byRound = summarizeGroup(b.round, ROUND_STAGES.map((x) => x.id));
     const byOppRank = summarizeGroup(b.oppRank, OPP_BANDS.map((x) => x.id));
     const favReliability = summarizeGroup(b.favBand, FAV_BANDS.map((x) => x.id));
-    // Recent gets the sub-gate too: a 24-month window on a part-time tour player can be
-    // 6 matches, and a headline "he's gone cold" off 6 matches is noise dressed as insight.
-    const recent = summarize(b.recent, subMin);
-    const recentBySurface = recent ? summarizeGroup(b.recentSurface, SURFACES) : {};
-    const recentByRole = recent ? summarizeGroup(b.recentRole, ['underdog', 'favourite']) : {};
+    const dogReliability = summarizeGroup(b.dogBand, DOG_BANDS.map((x) => x.id));
+
+    // Current form = his last RECENT_MATCHES priced matches. Sorted here because season
+    // files are read in order but are not guaranteed to be sorted within a file.
+    const ordered = b.sides.slice().sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
+    const tail = ordered.slice(-RECENT_MATCHES);
+    const recentBucket = emptyBucket();
+    const recentSurface = {};
+    const recentRole = {};
+    tail.forEach((s) => {
+      addToBucket(recentBucket, s.won, s.p, s.price, s.best);
+      const push = (group, k) => {
+        if (k == null) return;
+        group[k] = group[k] || emptyBucket();
+        addToBucket(group[k], s.won, s.p, s.price, s.best);
+      };
+      push(recentSurface, s.surface);
+      push(recentRole, s.fav ? 'favourite' : 'underdog');
+    });
+    // Still gated: a player who only ever had 31 priced matches has a "last 40" that is
+    // really his whole career, and labelling that "current form" would be a lie.
+    const recent = tail.length >= RECENT_MATCHES ? summarize(recentBucket, subMin) : null;
+    const recentBySurface = recent ? summarizeGroup(recentSurface, SURFACES) : {};
+    const recentByRole = recent ? summarizeGroup(recentRole, ['underdog', 'favourite']) : {};
+    const recentSpan = recent && tail.length ? { from: tail[0].date, to: tail[tail.length - 1].date } : null;
 
     const shard = {
       version: ODDS_PERF_SCHEMA_VERSION,
@@ -434,14 +497,14 @@ function main() {
       byRole,
       bySeason,
       byLevel,
-      byCourt,
-      byBestOf,
+      byRound,
       byOppRank,
       favReliability,
+      dogReliability,
       recent,
       recentBySurface,
       recentByRole,
-      recentWindow: recent ? { months: RECENT_MONTHS, from: recentFrom, to: archiveLatest } : null,
+      recentWindow: recent ? { matches: RECENT_MATCHES, from: recentSpan.from, to: recentSpan.to } : null,
     };
     fs.writeFileSync(path.join(OUT_DIR, `${playerKey}.json`), JSON.stringify(shard));
     index[playerKey] = { matches: overall.matches, vsMarket: overall.vsMarket, roi: overall.roi };
@@ -454,7 +517,7 @@ function main() {
     minMatches,
     seasons: seasons.map((f) => f.slice(0, 4)),
     archiveLatest,
-    recentWindow: { months: RECENT_MONTHS, from: recentFrom, to: archiveLatest },
+    recentWindow: { matches: RECENT_MATCHES },
     players: index,
   }));
 
@@ -466,7 +529,7 @@ function main() {
   })).filter((r) => r.rank);
 
   log(`\nParsed ${stats.rows} archive rows across ${seasons.length} seasons`);
-  log(`  ${stats.incomplete} retired/walkover excluded, ${stats.priced} priced, ${stats.matchedSides} player-sides joined`);
+  log(`  ${stats.incomplete} retired/walkover excluded, ${stats.impossible} dropped for best<avg price, ${stats.priced} priced, ${stats.matchedSides} player-sides joined`);
   log(`\nShards written: ${shipped} of ${Object.keys(profiles).length} profiled players (gate: >=${minMatches} priced matches)`);
   log('\nCoverage by rank band:');
   bands.forEach(([lo, hi]) => {

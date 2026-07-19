@@ -6500,15 +6500,16 @@ function setPpSurface(s){
   if (profile) ppRepaint();
 }
 // Market-performance window: 'career' (every priced match in the archive) or
-// 'recent' (the shard's 24-month window). Scopes ONLY the headline tiles, the
-// surface bars and the readout -- the splits, favourite-reliability and line-
-// shopping panels below are career-wide and label themselves as such.
+// 'recent' (his last N priced matches -- a rolling match count, not a date range,
+// so the sample size is identical for every player). Scopes ONLY the headline
+// tiles, the surface bars and the readout -- the splits, the two reliability
+// panels and line-shopping below are career-wide and label themselves as such.
 function setPpMktWindow(w){
   ppState.mktWindow = w;
   const profile = playerProfiles[ppState.key];
   if (profile) ppRepaint();
 }
-// Which split table the market block is showing (level / court / bestof / opp).
+// Which split table the market block is showing (level / opp / round).
 function setPpMktSplit(s){
   ppState.mktSplit = s;
   const profile = playerProfiles[ppState.key];
@@ -7257,20 +7258,22 @@ function buildPlayerProfileHtml(p){
     <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;padding:22px 24px;">
       <div style="font-size:12.5px;color:#6b7280;font-family:'IBM Plex Mono',monospace;">Loading market performance…</div>
     </div>` : (() => {
-  // ---- Window: career (everything in the archive) vs the shard's 24-month slice ----
-  // Only the headline tiles, the surface bars and the readout follow this toggle. The
-  // splits / reliability / line-shopping panels below are career-wide and say so, so a
-  // reader can never mistake which sample a number came from.
+  // ---- Window: career (everything in the archive) vs his last N priced matches ----
+  // The form window is a MATCH COUNT, not a calendar range: "last 24 months" meant 50
+  // matches for a busy player and 12 for one who missed a season, so the same label
+  // carried wildly different reliability player to player. Fixing the sample instead
+  // means every player's recent number is equally trustworthy, and the span is shown
+  // so the reader can see how far back 40 matches actually reaches for this player.
   const rw = perf.recentWindow;
   const hasRecent = !!(perf.recent && rw);
   const mktWin = (hasRecent && ppState.mktWindow === 'recent') ? 'recent' : 'career';
   const o = mktWin === 'recent' ? perf.recent : perf.overall;
   const winSurfaces = mktWin === 'recent' ? (perf.recentBySurface || {}) : (perf.bySurface || {});
   const role = mktWin === 'recent' ? (perf.recentByRole || {}) : (perf.byRole || {});
-  const winLabel = mktWin === 'recent' ? `last ${rw.months} months` : 'whole archive';
+  const winLabel = mktWin === 'recent' ? `last ${rw.matches} matches` : 'whole archive';
   const mktChips = !hasRecent ? '' : ['career','recent'].map(w => {
     const on = w === mktWin;
-    const lab = w === 'career' ? 'Career' : `Last ${rw.months} months`;
+    const lab = w === 'career' ? 'Career' : `Last ${rw.matches} matches`;
     return `<span onclick="setPpMktWindow('${w}')" style="font-size:11px;font-weight:${on?700:600};color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:5px 11px;cursor:pointer;">${lab}</span>`;
   }).join('');
   // The verdict only makes a claim when the interval actually excludes zero. Most
@@ -7354,48 +7357,74 @@ function buildPlayerProfileHtml(p){
   // Only defined where he WAS the favourite, and only meaningful band by band — losing
   // 1 in 3 at 1.90 is normal, at 1.15 it is a disaster. Each band shows the market's own
   // expectation next to the actual, so a band is never read as good or bad on its own.
+  //
+  // Underdog reliability is the mirror image and, because the favourite-longshot bias
+  // puts the market's error in the dogs, usually the more actionable half. Both sides
+  // share one renderer: the only real difference is which event you count (a favourite
+  // is judged on the matches he LOSES, an underdog on the ones he WINS) and therefore
+  // which rate the market's expectation is compared against.
   const favBandMeta = [
     { id: 'heavy', label: 'Heavy favourite', sub: 'under 1.30' },
     { id: 'clear', label: 'Clear favourite', sub: '1.30 – 1.60' },
     { id: 'slight', label: 'Slight favourite', sub: '1.60 – 2.00' },
   ];
-  const favRows = favBandMeta.map(b => ({ b, r: (perf.favReliability || {})[b.id] })).filter(x => x.r);
-  const favHtml = !favRows.length ? '' : `
+  const dogBandMeta = [
+    { id: 'slightdog', label: 'Slight underdog', sub: '1.90 – 2.50' },
+    { id: 'cleardog', label: 'Clear underdog', sub: '2.50 – 4.00' },
+    { id: 'bigdog', label: 'Big underdog', sub: '4.00 and longer' },
+  ];
+  const reliabilityPanel = (meta, group, opts) => {
+    const rows = meta.map(b => ({ b, r: (group || {})[b.id] })).filter(x => x.r);
+    if (!rows.length) return '';
+    return `
     <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;">
-      <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:13px;">Favourite reliability · whole archive</div>
+      <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:13px;">${opts.title} · whole archive</div>
       <div style="display:flex;flex-direction:column;gap:11px;">
-        ${favRows.map(({ b, r }) => {
-          const lossRate = Math.round((r.losses / r.matches) * 1000) / 10;
-          const expLossRate = Math.round((100 - r.expectedWinRate) * 10) / 10;
-          // Losing MORE often than priced is the bad direction here, so the colour is
-          // driven by vsMarket, not by the raw loss rate (a heavy favourite always has
-          // the lowest loss rate and would otherwise always look like the best band).
+        ${rows.map(({ b, r }) => {
+          // Favourites are read on their loss rate, underdogs on their win rate.
+          const n = opts.countWins ? r.wins : r.losses;
+          const rate = Math.round((n / r.matches) * 1000) / 10;
+          const expRate = opts.countWins ? r.expectedWinRate : Math.round((100 - r.expectedWinRate) * 10) / 10;
+          // Colour is driven by vsMarket, never by the raw rate: a heavy favourite always
+          // has the lowest loss rate and a big underdog the lowest win rate, so the raw
+          // number would rank the bands by price rather than by performance.
           const col = r.vsMarket >= 0 ? gcol : rcol;
           return `
             <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;">
               <div style="min-width:0;">
                 <div style="font-size:12.5px;font-weight:600;color:#cfd4de;">${b.label} <span style="color:#5b6472;font-weight:500;">${b.sub}</span></div>
-                <div style="font-size:11px;color:#6b7280;margin-top:3px;">Lost <strong style="color:${col};">${r.losses}</strong> of ${r.matches} · market priced him to lose ${expLossRate}%</div>
+                <div style="font-size:11px;color:#6b7280;margin-top:3px;">${opts.verb} <strong style="color:${col};">${n}</strong> of ${r.matches} · market priced him to ${opts.expVerb} ${expRate}%</div>
               </div>
               <div style="text-align:right;flex:none;">
-                <div style="font-size:16px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${col};line-height:1;">${lossRate}%</div>
+                <div style="font-size:16px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${col};line-height:1;">${rate}%</div>
                 <div style="font-size:10.5px;color:#6b7280;margin-top:4px;font-family:'IBM Plex Mono',monospace;">${signed(r.vsMarket,'pt')} vs priced</div>
               </div>
             </div>`;
         }).join('')}
       </div>
-      <div style="font-size:11.5px;color:#6b7280;margin-top:13px;line-height:1.5;">Green means he loses these <em>less</em> often than the closing price implied; red means the short prices have been going down more than they should.</div>
+      <div style="font-size:11.5px;color:#6b7280;margin-top:13px;line-height:1.5;">${opts.foot}</div>
     </div>`;
+  };
+  const favHtml = reliabilityPanel(favBandMeta, perf.favReliability, {
+    title: 'Favourite reliability', countWins: false, verb: 'Lost', expVerb: 'lose',
+    foot: 'Green means he loses these <em>less</em> often than the closing price implied; red means the short prices have been going down more than they should.',
+  });
+  const dogHtml = reliabilityPanel(dogBandMeta, perf.dogReliability, {
+    title: 'Underdog reliability', countWins: true, verb: 'Won', expVerb: 'win',
+    foot: 'Green means he wins from these prices <em>more</em> often than the market expected — the side of the book where the margin usually lives.',
+  });
 
   // ---- Splits the archive carried all along but nothing read ---------------------
-  // Tour level, indoor/outdoor, match format and opponent strength. Tabbed rather than
-  // stacked because four tables at once buries the headline the block exists to make.
+  // Court (indoor/outdoor) and format (best of 3/5) were dropped here: both answered a
+  // question the surface bars above already answer better, and neither is something a
+  // bettor prices off. Round stage replaces them — "does he hold up once the draw gets
+  // hard" is a pricing question, and it survives the sample gate on all 164 players.
   const oppLabels = { top10: 'Top 10', r11_25: 'Rank 11–25', r26_50: 'Rank 26–50', r51_100: 'Rank 51–100', r100plus: 'Outside 100' };
+  const roundLabels = { early: 'R1 – R2', middle: 'R3 – Quarter-final', late: 'Semi-final & final' };
   const splitDefs = [
     { id: 'level', tab: 'Tour level', group: perf.byLevel || {}, order: ['Grand Slam','Tour Finals','Masters 1000','ATP 500','ATP 250'], label: k => k, px: 92 },
-    { id: 'court', tab: 'Court', group: perf.byCourt || {}, order: ['Indoor','Outdoor'], label: k => k, px: 92 },
-    { id: 'bestof', tab: 'Format', group: perf.byBestOf || {}, order: ['3','5'], label: k => `Best of ${k}`, px: 92 },
     { id: 'opp', tab: 'Opponent', group: perf.byOppRank || {}, order: ['top10','r11_25','r26_50','r51_100','r100plus'], label: k => oppLabels[k] || k, px: 92 },
+    { id: 'round', tab: 'Round', group: perf.byRound || {}, order: ['early','middle','late'], label: k => roundLabels[k] || k, px: 92 },
   ].map(d => ({ ...d, rows: d.order.filter(k => d.group[k]) })).filter(d => d.rows.length);
   const activeSplit = splitDefs.find(d => d.id === ppState.mktSplit) || splitDefs[0];
   const splitsHtml = !splitDefs.length ? '' : `
@@ -7444,12 +7473,13 @@ function buildPlayerProfileHtml(p){
           </div>
         </div>
       </div>
+      <div style="margin-top:14px;">${shopHtml}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;" class="pp-odds-lower">
-        ${shopHtml}
         ${favHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the favourite often enough in any price band to measure how reliably he converts.</span></div>`}
+        ${dogHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the underdog often enough in any price band to measure how often he beats his price.</span></div>`}
       </div>
       ${splitsHtml}
-      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so recent windows end there, not today.</div>
+      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. &quot;Last ${rw ? rw.matches : 40} matches&quot; is a rolling count, not a date range, so every player's form number rests on the same sample size. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
     </div>`;
   })());
 
