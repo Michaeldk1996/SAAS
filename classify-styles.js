@@ -24,17 +24,27 @@ const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/ma
 const MCP_BASE = 'https://raw.githubusercontent.com/JeffSackmann/tennis_MatchChartingProject/master/';
 const TML_CACHE = path.join(__dirname, 'tml-cache');
 const MCP_CACHE = path.join(__dirname, 'mcp-cache');
-const FROM_YEAR = 2010, TO_YEAR = 2026;
+const FROM_YEAR = 2000, TO_YEAR = 2026;    // widened from 2010 for a much larger match/player pool
 const MIN_MATCHES = 20, MIN_SVPT = 400;   // base-stat reliability floor
 const MCP_MIN = 10;                        // charted matches needed to trust rally/winner axes
 const HYBRID_GAP = 10;                      // 2nd label within this many pts of the top
 const MATRIX_MIN_N = 20;                    // matchup cell needs this many real matches
+const ELITE_WINPCT = 65;                    // All-Court -> Elite gate
+// Clay Specialist badge thresholds
+const CLAY_MIN_M = 40, CLAY_GAP = 12, CLAY_WR = 52;
+// Elite All-Court roster verified by Michael (guarantees these even if win% dips, e.g. Wawrinka)
+const ELITE_SEED = new Set(['djokovic', 'federer', 'nadal', 'alcaraz', 'sinner', 'murray', 'wawrinka']);
+// Solid Defender seed (thin charting coverage -> not detectable on stats alone; Michael's list)
+const SOLID_DEFENDER_SEED = new Set(['munar', 'moutet', 'nardi', 'assche', 'schwartzman', 'fery', 'navone']);
 
+// 6 radar axes; the primary label adds a 7th (all_court_elite) split off from all_court.
 const ARCH6 = ['big_server', 'solid_baseliner', 'counter_puncher', 'all_court', 'attacking_baseliner', 'solid_defender'];
+const ARCH7 = ['big_server', 'solid_baseliner', 'counter_puncher', 'all_court', 'all_court_elite', 'attacking_baseliner', 'solid_defender'];
 const ARCH_LABEL = {
   big_server: 'Big Server', solid_baseliner: 'Solid Baseliner', counter_puncher: 'Counter Puncher',
-  all_court: 'All-Court Player', attacking_baseliner: 'Attacking Baseliner', solid_defender: 'Solid Defender',
+  all_court: 'All-Court Player', all_court_elite: 'All-Court Elite', attacking_baseliner: 'Attacking Baseliner', solid_defender: 'Solid Defender',
 };
+function lastName(nm){ const p = String(nm || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.\-]/g, ' ').trim().split(/\s+/); return p[p.length - 1] || ''; }
 
 function deaccent(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 function nameKey(name) {
@@ -77,7 +87,8 @@ function parseScore(score, bestOf) {
 
 function newAgg(id, name) {
   return {
-    id, name, matches: 0, wins: 0, losses: 0, upsetLosses: 0,
+    id, name, matches: 0, wins: 0, losses: 0, upsetLosses: 0, top10w: 0,
+    clayM: 0, clayW: 0, hardM: 0, hardW: 0,
     svpt: 0, ace: 0, df: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, breaksSuffered: 0,
     retPts: 0, retFirstWonBy: 0, ret2ndWonBy: 0, ret2ndPts: 0, retGms: 0, brkMade: 0, brkChances: 0,
     tbPlayed: 0, tbWon: 0, decPlayed: 0, decWon: 0,
@@ -131,6 +142,8 @@ function pctOf(arr, v) {
   function accum(a, me, op, won, surface, ps, tourneyKey, myRank, oppRank) {
     a.matches++; if (won) a.wins++; else a.losses++;
     if (!won && myRank != null && oppRank != null && oppRank >= myRank + 30) a.upsetLosses++;  // lost to a much lower-ranked player
+    if (won && oppRank != null && oppRank <= 10) a.top10w++;                                     // beat a top-10 player (ceiling)
+    if (surface === 'clay') { a.clayM++; if (won) a.clayW++; } else if (surface === 'hard') { a.hardM++; if (won) a.hardW++; }
     const t = a.tourneys.get(tourneyKey) || { w: 0, l: 0 }; if (won) t.w++; else t.l++; a.tourneys.set(tourneyKey, t);
     a.tbPlayed += ps.tbPlayed; a.tbWon += won ? ps.tbWonByWinner : (ps.tbPlayed - ps.tbWonByWinner);
     a.decPlayed += ps.decPlayed; a.decWon += won ? ps.decWonByWinner : (ps.decPlayed - ps.decWonByWinner);
@@ -208,6 +221,8 @@ function pctOf(arr, v) {
       tbWin: a.tbPlayed >= 10 ? a.tbWon / a.tbPlayed : null, bpConv: a.brkChances >= 50 ? a.brkMade / a.brkChances : null,
       decWin: a.decPlayed >= 8 ? a.decWon / a.decPlayed : null,
       upsetRate: a.losses >= 10 ? a.upsetLosses / a.losses : null, tourneyStd,
+      winPct: a.matches ? a.wins / a.matches * 100 : 0, top10Rate: a.matches ? a.top10w / a.matches : 0,
+      clayM: a.clayM, clayWr: a.clayM ? a.clayW / a.clayM * 100 : null, hardWr: a.hardM ? a.hardW / a.hardM * 100 : null,
       hasMcp, mcpCharted: m.charted,
       rallyLen: hasMcp ? (2 * m.b13 + 5 * m.b46 + 8 * m.b79 + 12 * m.b10) / rallyPts : null,
       winnerRate: hasMcp ? m.winners / m.pts : null,
@@ -223,7 +238,7 @@ function pctOf(arr, v) {
   const sortNum = a => a.slice().sort((x, y) => x - y);
   const currentRows = rows.filter(r => r.isCurrent);
   const cols = {};
-  for (const key of ['aceR', 'firstInPct', 'firstWonPct', 'secondWonPct', 'dfR', 'holdPct', 'RPW', 'TPW', 'DR', 'breakPct', 'rallyLen', 'winnerRate', 'tbWin', 'bpConv', 'decWin', 'upsetRate', 'tourneyStd']) {
+  for (const key of ['aceR', 'firstInPct', 'firstWonPct', 'secondWonPct', 'dfR', 'holdPct', 'RPW', 'TPW', 'DR', 'breakPct', 'rallyLen', 'winnerRate', 'tbWin', 'bpConv', 'decWin', 'upsetRate', 'tourneyStd', 'top10Rate']) {
     cols[key] = sortNum(currentRows.map(r => r[key]).filter(v => v != null));
   }
   const P = (key, v) => v == null ? null : pctOf(cols[key], v);      // 0-100 percentile
@@ -263,9 +278,20 @@ function pctOf(arr, v) {
     const spec = SPEC5.map(k => [k, r.scores[k]]).sort((a, b) => b[1] - a[1]);
     const top3mean = (spec[0][1] + spec[1][1] + spec[2][1]) / 3;
     const spread = spec[0][1] - spec[2][1];
-    if (top3mean >= 72 && spread <= 12) {
-      r.primary = 'all_court';
-      r.archetype_label = 'All-Court Player / ' + ARCH_LABEL[spec[0][0]];
+    const ln = lastName(r.name);
+    if (ELITE_SEED.has(ln)) {
+      // Michael's verified generational all-courters — forced, even if their profile is spiky.
+      r.primary = 'all_court_elite';
+      r.archetype_label = 'All-Court Elite / ' + ARCH_LABEL[spec[0][0]];
+    } else if (SOLID_DEFENDER_SEED.has(ln)) {
+      // Grinding defenders whose game isn't detectable from stats alone (thin charting) — seeded from Michael's list.
+      r.primary = 'solid_defender';
+      r.archetype_label = 'Solid Defender';
+    } else if (top3mean >= 72 && spread <= 12) {
+      // All-Court — strong AND no dominant trait. Split Elite (the very best) from regular.
+      const elite = r.winPct >= ELITE_WINPCT;
+      r.primary = elite ? 'all_court_elite' : 'all_court';
+      r.archetype_label = (elite ? 'All-Court Elite / ' : 'All-Court Player / ') + ARCH_LABEL[spec[0][0]];
     } else {
       r.primary = spec[0][0];
       const labels = [ARCH_LABEL[spec[0][0]]];
@@ -273,7 +299,7 @@ function pctOf(arr, v) {
       r.archetype_label = labels.join(' / ');
     }
     r.coverage = r.hasMcp ? 'full' : 'partial';
-    r.reliableLabel = r.hasMcp || r.primary === 'big_server' || r.primary === 'solid_baseliner';
+    r.reliableLabel = true;   // relaxed: every classified player's matches now count toward the matrix
   }
 
   // ---- Layer 2: badges ----
@@ -283,23 +309,26 @@ function pctOf(arr, v) {
     const pv = pressureVals[i];
     r.pressureScore = pv == null ? null : Math.round(pv);
     if (pv != null && pv >= 65) r.badges.push('pressure_player');   // top-third under pressure
-    // Inconsistent Attacker: an aggressive player who is genuinely erratic — flagged only on
-    // a clearly high variance signal (top-quartile), not merely "above average" (which is half
-    // the field). Upset-loss rate is the primary tell; season-to-season swing is secondary.
-    const attacking = r.scores.big_server >= 60 || r.scores.attacking_baseliner >= 60;
+    // Clay Specialist: wins dramatically more on clay than hard, over a real clay sample.
+    if (r.clayM >= CLAY_MIN_M && r.clayWr != null && r.hardWr != null && (r.clayWr - r.hardWr) >= CLAY_GAP && r.clayWr >= CLAY_WR) r.badges.push('clay_specialist');
+    // High Risk / High Reward: high ceiling (beats the very best) AND high volatility (loses to
+    // far-lower-ranked players, or swings wildly tournament to tournament). Both are required, so a
+    // consistent grinder with a tough schedule (high upset rate alone) is NOT flagged.
     const upsetPct = r.upsetRate != null ? pctOf(cols.upsetRate, r.upsetRate) : 0;
     const stdPct = r.tourneyStd != null ? pctOf(cols.tourneyStd, r.tourneyStd) : 0;
-    if (attacking && (upsetPct >= 75 || stdPct >= 85)) r.badges.push('inconsistent_attacker');
+    const ceiling = pctOf(cols.top10Rate, r.top10Rate) >= 60;
+    const volatile = upsetPct >= 75 || stdPct >= 75;
+    if (ceiling && volatile && r.winPct < ELITE_WINPCT) r.badges.push('high_risk_high_reward');  // exclude consistent elites
   });
 
   // ---- matchup matrix on 6 primaries (reliable labels only) ----
   const idToPrimary = new Map();
   for (const r of rows) if (r.reliableLabel) for (const id of r.ids) idToPrimary.set(id, r.primary);
-  const winsByPair = {}; for (const A of ARCH6) { winsByPair[A] = {}; for (const B of ARCH6) winsByPair[A][B] = 0; }
+  const winsByPair = {}; for (const A of ARCH7) { winsByPair[A] = {}; for (const B of ARCH7) winsByPair[A][B] = 0; }
   let matrixMatches = 0;
   for (const [wId, lId] of allMatches) { const aw = idToPrimary.get(wId), al = idToPrimary.get(lId); if (!aw || !al) continue; winsByPair[aw][al]++; matrixMatches++; }
   const matrix = {};
-  for (const A of ARCH6) { matrix[A] = {}; for (const B of ARCH6) { if (A === B) { matrix[A][B] = null; continue; } const aw = winsByPair[A][B], bw = winsByPair[B][A], nAB = aw + bw; matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB }; } }
+  for (const A of ARCH7) { matrix[A] = {}; for (const B of ARCH7) { if (A === B) { matrix[A][B] = null; continue; } const aw = winsByPair[A][B], bw = winsByPair[B][A], nAB = aw + bw; matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB }; } }
 
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
@@ -317,6 +346,7 @@ function pctOf(arr, v) {
       archetype_scores: r.scores, archetype_data_coverage: r.coverage,
       partial_axes: Object.keys(r.partial), badges: r.badges,
       pressure_score: r.pressureScore, mcp_charted: r.mcpCharted,
+      win_pct: +r.winPct.toFixed(1), clay_wr: r.clayWr == null ? null : +r.clayWr.toFixed(0), hard_wr: r.hardWr == null ? null : +r.hardWr.toFixed(0),
     })),
   };
   writeAtomic('playing-styles.json', stylesOut);
@@ -328,17 +358,17 @@ function pctOf(arr, v) {
     window: `${FROM_YEAR}-${TO_YEAR}`,
     note: 'Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.',
     minSampleN: MATRIX_MIN_N, matchesCounted: matrixMatches,
-    archetypes: Object.fromEntries(ARCH6.map(k => [k, { en: ARCH_LABEL[k] }])),
+    archetypes: Object.fromEntries(ARCH7.map(k => [k, { en: ARCH_LABEL[k] }])),
     matrix,
   };
   writeAtomic('matchup-matrix.json', matrixOut);
-  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 6 primaries).`);
+  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 7 primaries).`);
 
   // ---- console sanity (current-ATP players = what the dashboard shows) ----
   const counts = {}; outRows.forEach(r => counts[r.primary] = (counts[r.primary] || 0) + 1);
-  console.log('\nPrimary archetype counts (current-ATP):'); for (const k of ARCH6) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
+  console.log('\nPrimary archetype counts (current-ATP):'); for (const k of ARCH7) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
   const cov = { full: 0, partial: 0 }; outRows.forEach(r => cov[r.coverage]++); console.log(`Coverage: ${cov.full} full / ${cov.partial} partial`);
-  console.log('Badges: pressure', outRows.filter(r => r.badges.includes('pressure_player')).length, '| inconsistent', outRows.filter(r => r.badges.includes('inconsistent_attacker')).length);
+  console.log('Badges: pressure', outRows.filter(r => r.badges.includes('pressure_player')).length, '| clay', outRows.filter(r => r.badges.includes('clay_specialist')).length, '| highRisk', outRows.filter(r => r.badges.includes('high_risk_high_reward')).length);
   console.log('\nSpot-checks:');
   for (const nm of ['Djokovic', 'Alcaraz', 'Sinner', 'Medvedev', 'Opelka', 'De Minaur', 'Federer', 'Nadal']) { const r = rows.find(x => x.name.includes(nm)); if (r) console.log(`  ${nm.padEnd(10)} ${r.archetype_label.padEnd(38)} [${r.coverage}] badges:${r.badges.join(',') || '-'}  scores: BS${r.scores.big_server} SB${r.scores.solid_baseliner} CP${r.scores.counter_puncher} AC${r.scores.all_court} AB${r.scores.attacking_baseliner} SD${r.scores.solid_defender}`); }
 
