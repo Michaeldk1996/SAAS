@@ -17,9 +17,16 @@
 // player-less bulk odds query. A player-keyed window is unbounded — verified
 // live across 2024-03 -> 2026-07 in a single call.
 //
-// SCOPE: the players in player-histories.json — i.e. today's board, the only
-// players whose historical rows the dashboard can render. That set rotates, so
-// this converges continuously rather than being a one-shot import.
+// SCOPE: the players with a career-history shard — every profiled player, whose
+// drill-down rows the dashboard can render. That set rotates, so this converges
+// continuously rather than being a one-shot import.
+//
+// Only the FIXTURE rows count as work. A shard also carries pre-2021 archive
+// rows, which have no eventKey and no fixture behind them — API-Tennis's feed is
+// effectively empty that far back, which is why they come from the TML archive
+// in the first place. Counting them as pending would peg every archive-heavy
+// player at maximum pending forever, aim the cap at matches no call can resolve,
+// and stop this job from ever winding down.
 //
 // SAFETY: separate, best-effort process (never blocks the deploy), and it only
 // ever WRITES THE CACHE. Shard/index emission stays in build-point-by-point.js,
@@ -32,13 +39,15 @@ try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optiona
 const { fetchRecentSinglesFixtures } = require('./bsp-pipeline.js');
 const { buildCacheEntry, parseFixture } = require('./build-point-by-point.js');
 
-const HISTORIES_PATH = 'player-histories.json';
+const HISTORIES_DIR = 'career-history';
 const CACHE_PATH = 'point-by-point-cache.json';
 const PACE_MS = 200;
 
-// One call per player, so the cap is in players. Deliberately capped even though
-// the full 48 is only ~2 minutes: this runs on a 15-minute cron and must never
-// be the reason a deploy times out. It self-terminates — a player whose rows are
+// One call per player, so the cap is in players. The pool is now every profiled
+// player (~480, up from the 48 on today's board), so the cap matters more than
+// it did: this runs on a 15-minute cron and must never be the reason a deploy
+// times out. At 16/run the widened pool converges over a few hours of crons
+// rather than in one burst. It self-terminates — a player whose rows are
 // all cached costs NO call at all (see `pending` below) — so once the backfill
 // has converged, a steady-state run makes zero requests and this cap is inert.
 const MAX_PLAYERS_PER_RUN = Number(process.env.HISTORY_BACKFILL_MAX_PLAYERS || 16);
@@ -83,12 +92,19 @@ async function main() {
     console.error('history-backfill: API_TENNIS_KEY not set — skipping (site deploy unaffected).');
     return;
   }
-  if (!fs.existsSync(HISTORIES_PATH)) {
-    console.error(`history-backfill: ${HISTORIES_PATH} missing — skipping (pipeline writes it earlier in the run).`);
+  if (!fs.existsSync(HISTORIES_DIR)) {
+    console.error(`history-backfill: ${HISTORIES_DIR}/ missing — skipping (pipeline writes it earlier in the run).`);
     return;
   }
 
-  const histories = JSON.parse(fs.readFileSync(HISTORIES_PATH, 'utf8'));
+  const histories = {};
+  for (const file of fs.readdirSync(HISTORIES_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    try {
+      const shard = JSON.parse(fs.readFileSync(`${HISTORIES_DIR}/${file}`, 'utf8'));
+      histories[file.replace(/\.json$/, '')] = (shard.matches || []).filter(r => r && r.src !== 'archive');
+    } catch (e) { /* a half-written shard is skipped, not fatal */ }
+  }
   const cache = fs.existsSync(CACHE_PATH) ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')) : {};
 
   // An entry is only "done" once it has been asked for BOTH box scores —
