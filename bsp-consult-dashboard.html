@@ -627,6 +627,158 @@
   .modal-analysis .arow .atrack{ height:6px; background:rgba(232,147,75,0.28); border-radius:3px; overflow:hidden; }
   .modal-analysis .arow .atrack div{ height:100%; background:#3E7BFA; border-radius:3px; }
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
+  /* ---- Key Factors bento ---- */
+  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:start; }
+  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; min-width:0; }
+  .modal-analysis .akb[role="button"]{ cursor:pointer; transition:transform .12s ease, border-color .12s ease, background .12s ease; }
+  .modal-analysis .akb[role="button"]:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,0.18); background:#111420; }
+  .modal-analysis .akb[role="button"]:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
+  .modal-analysis .akb-tall{ grid-row:span 2; }
+  .modal-analysis .akb-wide{ grid-column:1 / -1; }
+  .modal-analysis .akb-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:11px; }
+  .modal-analysis .akb-label{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
+  .modal-analysis .akb-chev{ color:#5b6472; font-size:16px; line-height:1; }
+  .modal-analysis .akb[role="button"]:hover .akb-chev{ color:#8fb4ff; }
+  .modal-analysis .akb-empty{ font-size:11.5px; color:#8b93a3; line-height:1.5; padding:6px 0; }
+  .modal-analysis .aks-names{ display:flex; justify-content:space-between; gap:10px; }
+  .modal-analysis .aks-nm{ font-size:13px; font-weight:700; }
+  .modal-analysis .aks-arch{ font-size:9.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; margin-top:2px; }
+  .modal-analysis .aks-edge{ margin-top:14px; }
+  .modal-analysis .aks-split{ display:flex; justify-content:space-between; align-items:baseline; font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; }
+  .modal-analysis .aks-big{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; text-align:center; }
+  .modal-analysis .aks-vs{ font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-weight:500; }
+  .modal-analysis .aks-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:9px; }
+  .modal-analysis .aks-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .aks-verdict{ font-size:11.5px; color:#c4ccd8; line-height:1.5; margin-top:10px; }
+  .modal-analysis .aks-dims{ margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:7px; }
+  .modal-analysis .aks-dim{ display:grid; grid-template-columns:22px 1fr 62px 1fr 22px; align-items:center; gap:6px; }
+  .modal-analysis .aks-dv{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; text-align:center; }
+  .modal-analysis .aks-dt{ height:5px; border-radius:3px; background:rgba(255,255,255,0.05); overflow:hidden; display:flex; }
+  .modal-analysis .aks-dim .aks-dt:first-of-type{ justify-content:flex-end; }
+  .modal-analysis .aks-df{ height:100%; border-radius:3px; }
+  .modal-analysis .aks-df-a{ background:rgba(62,123,250,0.75); }
+  .modal-analysis .aks-df-b{ background:rgba(232,147,75,0.75); }
+  .modal-analysis .aks-dl{ font-size:9.5px; color:#8b93a3; text-align:center; white-space:nowrap; }
+  .modal-analysis .aks-nodims{ margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:11px; color:#5b6472; line-height:1.5; }
+  .modal-analysis .akf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-analysis .akf-nm{ font-size:12px; font-weight:700; margin-bottom:8px; }
+  .modal-analysis .akf-dots{ display:flex; gap:4px; margin-bottom:9px; }
+  .modal-analysis .akf-dot{ width:18px; height:18px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; }
+  .modal-analysis .akf-dot.w{ color:#3ECF8E; background:rgba(62,207,142,0.16); }
+  .modal-analysis .akf-dot.l{ color:#E8607A; background:rgba(232,96,122,0.16); }
+  .modal-analysis .akf-stat{ display:flex; justify-content:space-between; font-size:11px; color:#8b93a3; padding:3px 0; }
+  .modal-analysis .akf-stat b{ font-family:'IBM Plex Mono',monospace; color:#dbe0e8; }
+  .modal-analysis .akf-na{ font-size:11px; color:#5b6472; }
+  .modal-analysis .akh-top{ display:flex; align-items:baseline; justify-content:center; gap:8px; }
+  .modal-analysis .akh-score{ font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; line-height:1; }
+  .modal-analysis .akh-dash{ color:#5b6472; font-size:18px; }
+  .modal-analysis .akh-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:12px; }
+  .modal-analysis .akh-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .akh-legend{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:#8b93a3; margin-top:6px; }
+  .modal-analysis .akh-sub{ font-size:11px; color:#5b6472; margin-top:8px; text-align:center; }
+  .modal-analysis .akt-row{ display:grid; grid-template-columns:1fr auto auto; align-items:baseline; gap:9px; padding:5px 0; }
+  .modal-analysis .akt-nm{ font-size:12px; font-weight:700; }
+  .modal-analysis .akt-rec{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#dbe0e8; }
+  .modal-analysis .akt-best{ font-size:10px; color:#8b93a3; min-width:66px; text-align:right; }
+  .modal-analysis .akt-na{ font-size:10.5px; color:#5b6472; grid-column:2 / -1; text-align:right; }
+  .modal-analysis .akt-conds{ display:flex; flex-wrap:wrap; gap:12px; margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+  .modal-analysis .akt-cond{ font-size:10px; color:#8b93a3; display:flex; flex-direction:column; }
+  .modal-analysis .akt-cond b{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#dbe0e8; }
+  .modal-analysis .akt-condsub{ color:#5b6472; }
+  .modal-analysis .ako-prices{ display:flex; justify-content:space-between; }
+  .modal-analysis .ako-p{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; line-height:1; }
+  .modal-analysis .ako-nm{ font-size:10px; color:#8b93a3; margin-top:4px; }
+  .modal-analysis .ako-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:13px; }
+  .modal-analysis .ako-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .ako-legend{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:#8b93a3; margin-top:6px; }
+  .modal-analysis .ako-mid{ color:#5b6472; }
+  .modal-analysis .ako-sub{ font-size:11px; color:#8b93a3; margin-top:8px; }
+  .modal-analysis .akw-row{ display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
+  .modal-analysis .akw-item{ display:flex; flex-direction:column; font-size:10px; color:#8b93a3; }
+  .modal-analysis .akw-item b{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:#dbe0e8; }
+  .modal-analysis .akw-sub{ color:#5b6472; }
+  .modal-analysis .akw-read{ font-size:11.5px; color:#c4ccd8; margin-left:auto; max-width:52%; line-height:1.45; }
+  .modal-analysis .akr-list{ margin:0; padding-left:17px; display:flex; flex-direction:column; gap:6px; }
+  .modal-analysis .akr-list li{ font-size:12px; color:#c4ccd8; line-height:1.5; }
+  .modal-analysis .akr-list b{ color:#e7e9ee; }
+  .modal-analysis .akr-foot{ font-size:10px; color:#5b6472; margin-top:10px; }
+  @media (max-width:1000px){
+    .modal-analysis .akbento{ grid-template-columns:repeat(2,1fr); }
+    .modal-analysis .akb-tall{ grid-row:span 1; grid-column:1 / -1; }
+  }
+  @media (max-width:680px){
+    .modal-analysis .akbento{ grid-template-columns:1fr; }
+    .modal-analysis .akb-wide, .modal-analysis .akb-tall{ grid-column:auto; }
+    .modal-analysis .akw-read{ margin-left:0; max-width:100%; }
+  }
+  /* ---- Playing Style tab ---- */
+  .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .modal-analysis .psh-side{ display:flex; align-items:flex-start; gap:12px; }
+  .modal-analysis .psh-vs{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; margin-top:9px; }
+  .modal-analysis .psh-name{ font-size:15px; font-weight:700; }
+  .modal-analysis .psh-arch{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
+  .modal-analysis .psh-arch-none{ color:#5b6472; }
+  .modal-analysis .psh-ini{ width:36px; height:36px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; flex:none; }
+  .modal-analysis .psh-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; border:1px solid; border-radius:7px; padding:5px 9px; flex:none; align-self:flex-start; }
+  .modal-analysis .psb-row{ display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .modal-analysis .psb-chip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; border:1px solid; border-radius:6px; padding:3px 8px; white-space:nowrap; }
+  .modal-analysis .psb-dot{ width:5px; height:5px; border-radius:50%; }
+  .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:20px 0 4px; }
+  .modal-analysis .psx-card{ background:#0e1015; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:18px 20px; }
+  .modal-analysis .psx-label{ font-size:10.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
+  .modal-analysis .psx-sub{ font-size:13px; color:#c4ccd8; line-height:1.45; margin-top:9px; }
+  .modal-analysis .psx-nums{ display:flex; align-items:flex-start; justify-content:space-between; margin-top:16px; }
+  .modal-analysis .psx-pct{ font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700; line-height:0.85; }
+  .modal-analysis .psx-code{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; margin-top:5px; }
+  .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,#3E7BFA,#E8934B); opacity:0.9; }
+  .modal-analysis .psx-tick{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:rgba(255,255,255,0.45); transform:translateX(-50%); }
+  .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:#0e1015; border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,0.45); }
+  .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.04em; color:#5b6472; gap:8px; }
+  .modal-analysis .psx-tag{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; border:1px solid; border-radius:6px; padding:4px 9px; }
+  .modal-analysis .psx-n{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; line-height:1.6; }
+  .modal-analysis .psx-nmuted{ color:#5b6472; }
+  .modal-analysis .psx-note{ margin-top:10px; font-size:11px; color:#8b93a3; line-height:1.5; }
+  .modal-analysis .psx-block{ margin-top:18px; }
+  .modal-analysis .psr-svg{ width:100%; display:block; }
+  .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
+  .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:#c4ccd8; }
+  .modal-analysis .psr-swatch{ width:16px; height:10px; border-radius:2px; }
+  .modal-analysis .psr-swatch-a{ background:rgba(62,123,250,0.35); border:1.5px solid #3E7BFA; }
+  .modal-analysis .psr-swatch-b{ border:1.5px dashed #E8934B; }
+  .modal-analysis .psr-n{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; margin-top:7px; }
+  .modal-analysis .psr-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; text-align:center; font-size:12px; color:#8b93a3; line-height:1.55; padding:0 14px; }
+  .modal-analysis .psr-empty-sub{ display:block; margin-top:8px; font-size:11px; color:#5b6472; }
+  .modal-analysis .psd-list{ display:flex; flex-direction:column; gap:14px; }
+  .modal-analysis .psd-row{ display:grid; grid-template-columns:34px 1fr 160px 1fr 34px; align-items:center; gap:12px; }
+  .modal-analysis .psd-val{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; }
+  .modal-analysis .psd-track{ height:8px; border-radius:5px; background:rgba(255,255,255,0.045); display:flex; overflow:hidden; }
+  .modal-analysis .psd-track-a{ justify-content:flex-end; }
+  .modal-analysis .psd-track-b{ justify-content:flex-start; }
+  .modal-analysis .psd-fill{ height:100%; border-radius:5px; }
+  .modal-analysis .psd-mid{ text-align:center; }
+  .modal-analysis .psd-label{ font-size:11.5px; font-weight:600; color:#cfd5df; }
+  .modal-analysis .psd-edge{ font-size:9px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+  .modal-analysis .psv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .modal-analysis .psv-card{ background:#0e1015; border:1px solid; border-radius:12px; padding:15px 17px; }
+  .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .modal-analysis .psv-title{ font-size:12.5px; font-weight:700; }
+  .modal-analysis .psv-sub{ font-size:10.5px; color:#8b93a3; margin-top:2px; }
+  .modal-analysis .psv-rec{ text-align:right; white-space:nowrap; }
+  .modal-analysis .psv-wl{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:#e7e9ee; }
+  .modal-analysis .psv-pct{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#8b93a3; }
+  .modal-analysis .psv-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; }
+  .modal-analysis .psv-list{ display:flex; flex-direction:column; margin-top:8px; }
+  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto; align-items:center; gap:10px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .psv-badge{ width:20px; height:19px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; }
+  .modal-analysis .psv-opp{ font-size:12px; font-weight:600; color:#dbe0e8; }
+  .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8b93a3; }
+  .modal-analysis .psv-score{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#c4ccd8; min-width:34px; text-align:right; }
+  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); }
+  @media (max-width:900px){
+    .modal-analysis .psx-top{ grid-template-columns:1fr; }
+    .modal-analysis .psv-grid{ grid-template-columns:1fr; }
+    .modal-analysis .psd-row{ grid-template-columns:28px 1fr 110px 1fr 28px; gap:8px; }
+  }
   .modal-analysis .anote{ font-size:11px; color:var(--text-faint); text-align:center; margin-top:8px; }
 
   /* ---- Match Stats tab — single split bar per stat (Flashscore-style) ---- */
@@ -1708,7 +1860,7 @@
       </div>
       <div class="abody">
         <div class="asection active" data-asection="key" id="aSectionKey"></div>
-        <div class="asection" data-asection="style"><div class="acomingsoon">Playing-style comparison needs your own methodology — not built yet. (No vendor sells this — it's your IP to define.)</div></div>
+        <div class="asection" data-asection="style" id="aSectionStyle"></div>
         <div class="asection" data-asection="form" id="aSectionForm"></div>
         <div class="asection" data-asection="h2h" id="aSectionH2H"></div>
         <div class="asection" data-asection="matchstats" id="aSectionMatchStats"></div>
@@ -5334,8 +5486,530 @@ function buildRecentResultsSection(m){
   `;
 }
 
+/* ---------- KEY FACTORS TAB (bento command centre) ---------- */
+// Key factors is the tab the modal opens on, so it is the only one guaranteed
+// to be read. It surfaces the headline of every other tab as a clickable block
+// that jumps there, rather than repeating the old 5-card + 2-panel layout.
+//
+// Every block degrades independently and says which feed is missing, because on
+// a live board roughly a third of matches have no archetype, no tournament
+// history, or no odds. A block that silently vanishes reads as a broken tab.
+
+// Jump to another tab in this modal. The rail has no named switcher — the whole
+// linkage is data-atab -> data-asection — so clicking the nav item IS the API.
+function aGoTab(tab){
+  const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
+  if (btn) { btn.click(); const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0; }
+}
+function akBlock(tab, label, bodyHtml, opts){
+  const o = opts || {};
+  const cls = ['akb', o.wide ? 'akb-wide' : '', o.tall ? 'akb-tall' : '', tab ? '' : 'akb-static'].filter(Boolean).join(' ');
+  const attrs = tab ? ` role="button" tabindex="0" onclick="aGoTab('${tab}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aGoTab('${tab}')}"` : '';
+  const chev = tab ? `<span class="akb-chev">›</span>` : '';
+  return `<div class="${cls}"${attrs}><div class="akb-head"><span class="akb-label">${psEsc(label)}</span>${chev}</div><div class="akb-body">${bodyHtml}</div></div>`;
+}
+function akEmpty(text){ return `<div class="akb-empty">${psEsc(text)}</div>`; }
+// Altitude bands. A two-way high/sea-level split called Kitzbuhel (762 m, alpine)
+// "sea level", which is the opposite of the read a bettor needs — thinner air
+// starts mattering well below 1,000 m.
+function altitudeLabel(alt){
+  if (alt >= 1500) return 'very high — ball flies';
+  if (alt >= 800)  return 'high — ball flies';
+  if (alt >= 400)  return 'elevated — thinner air';
+  if (alt >= 150)  return 'low';
+  return 'near sea level';
+}
+
+// --- block: playing style ---
+function akStyleBlock(m){
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  if (!a1 || !a2) return akBlock('style', 'Playing style', akEmpty(`${psShortName(!a1 ? m.p1 : m.p2)} has no style classification yet — it needs a fuller tour-level record.`), { tall:true });
+  const names = `<div class="aks-names">
+      <div><div class="aks-nm" style="color:#8fb4ff;">${psEsc(psShortName(m.p1))}</div><div class="aks-arch">${psEsc(a1.code)} · ${psEsc(a1.name)}</div></div>
+      <div style="text-align:right;"><div class="aks-nm" style="color:#eaa869;">${psEsc(psShortName(m.p2))}</div><div class="aks-arch">${psEsc(a2.code)} · ${psEsc(a2.name)}</div></div>
+    </div>`;
+  let edge;
+  if (a1.id === a2.id){
+    edge = `<div class="aks-edge"><div class="aks-big" style="color:#8b93a3;">50 / 50</div>
+      <div class="aks-verdict">Mirror matchup — both are ${psEsc(a1.name)}s, so style gives neither an edge.</div></div>`;
+  } else {
+    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
+    if (!cell || cell.pct == null){
+      edge = `<div class="aks-edge"><div class="aks-verdict">Too few tour meetings between these archetypes to quote a style edge.</div></div>`;
+    } else {
+      const p1p = cell.pct, p2p = 100 - cell.pct;
+      const leadName = p1p >= p2p ? psShortName(m.p1) : psShortName(m.p2);
+      const leadArch = p1p >= p2p ? a1 : a2, offArch = p1p >= p2p ? a2 : a1;
+      const pts = Math.abs(p1p - 50);
+      edge = `<div class="aks-edge">
+        <div class="aks-split"><span style="color:#8fb4ff;">${p1p}%</span><span class="aks-vs">style edge</span><span style="color:#eaa869;">${p2p}%</span></div>
+        <div class="aks-bar"><div class="aks-bar-a" style="width:${p1p}%;"></div></div>
+        <div class="aks-verdict">${pts < 2
+          ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
+          : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — <b>${psEsc(leadName)}</b> has the style edge.`}</div>
+      </div>`;
+    }
+  }
+  // Only show dimension bars when the radar itself is drawable — same gate, so
+  // Key factors can never publish numbers the Playing style tab refuses to draw.
+  const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
+  let dims = '';
+  if (styleRadarDrawable(r1, r2)){
+    dims = `<div class="aks-dims">${STYLE_AXES.map(ax => {
+      const a = r1.radar[ax.k] ?? 50, b = r2.radar[ax.k] ?? 50;
+      return `<div class="aks-dim"><span class="aks-dv" style="color:${a>b?'#8fb4ff':'#6b7280'};">${a}</span>
+        <span class="aks-dt"><span class="aks-df aks-df-a" style="width:${a}%;"></span></span>
+        <span class="aks-dl">${psEsc(ax.label)}</span>
+        <span class="aks-dt"><span class="aks-df aks-df-b" style="width:${b}%;"></span></span>
+        <span class="aks-dv" style="color:${b>a?'#eaa869':'#6b7280'};">${b}</span></div>`;
+    }).join('')}</div>`;
+  } else {
+    dims = `<div class="aks-nodims">Six-dimension comparison needs 10+ charted matches for both players.</div>`;
+  }
+  return akBlock('style', 'Playing style', `${names}${edge}${dims}`, { tall:true });
+}
+
+// --- block: recent form ---
+function akFormBlock(m){
+  const col = (name, rows, pct, accent) => {
+    if (!Array.isArray(rows) || !rows.length){
+      return `<div class="akf-col"><div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div><div class="akf-na">no recent rows</div></div>`;
+    }
+    const last5 = rows.slice(0, 5);
+    const dots = last5.map(r => `<span class="akf-dot ${r.won ? 'w' : 'l'}">${r.won ? 'W' : 'L'}</span>`).join('');
+    const last10 = rows.slice(0, 10);
+    const w10 = last10.filter(r => r.won).length;
+    const surf = (m.surface || '').toLowerCase();
+    const surfRows = rows.filter(r => (r.surface || '').toLowerCase() === surf);
+    const sw = surfRows.filter(r => r.won).length;
+    const surfLabel = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : 'Surface';
+    return `<div class="akf-col">
+      <div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div>
+      <div class="akf-dots">${dots}</div>
+      <div class="akf-stat"><span>Last ${last10.length}</span><b>${Math.round(w10 / last10.length * 100)}%</b></div>
+      <div class="akf-stat"><span>${psEsc(surfLabel)}</span><b>${surfRows.length ? `${sw}–${surfRows.length - sw}` : '—'}</b></div>
+    </div>`;
+  };
+  const loaded = m._formLoaded;
+  if (!loaded) return akBlock('form', 'Recent form', akEmpty('Loading recent matches…'));
+  return akBlock('form', 'Recent form',
+    `<div class="akf-grid">${col(m.p1, m.p1RecentFormMatches, m.p1RecentForm, '#8fb4ff')}${col(m.p2, m.p2RecentFormMatches, m.p2RecentForm, '#eaa869')}</div>`);
+}
+
+// --- block: head to head ---
+function akH2HBlock(m){
+  const h = m.h2h;
+  const total = h ? (h.p1Wins + h.p2Wins) : 0;
+  if (!total) return akBlock('h2h', 'Head to head', akEmpty(`${psShortName(m.p1)} and ${psShortName(m.p2)} have never met on tour.`));
+  const p1pct = Math.round(h.p1Wins / total * 100);
+  return akBlock('h2h', 'Head to head', `
+    <div class="akh-top"><span class="akh-score" style="color:#8fb4ff;">${h.p1Wins}</span><span class="akh-dash">–</span><span class="akh-score" style="color:#eaa869;">${h.p2Wins}</span></div>
+    <div class="akh-bar"><div class="akh-bar-a" style="width:${p1pct}%;"></div></div>
+    <div class="akh-legend"><span>${psEsc(psShortName(m.p1))} ${p1pct}%</span><span>${psEsc(psShortName(m.p2))} ${100 - p1pct}%</span></div>
+    <div class="akh-sub">${total} career meeting${total === 1 ? '' : 's'}</div>`);
+}
+
+// --- block: tournament + conditions ---
+function akTournamentBlock(m){
+  const line = (name, th, accent) => {
+    if (!th) return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><span class="akt-na">first appearance</span></div>`;
+    const best = (th.years || []).map(y => y.roundReached).filter(Boolean)[0];
+    return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span>
+      <span class="akt-rec">${th.totalWon}–${th.totalLost}</span>
+      <span class="akt-best">${psEsc(best || '—')}</span></div>`;
+  };
+  const cs = m.courtSpeed;
+  let cond = '';
+  if (cs){
+    const bits = [];
+    if (cs.abstractSpeed != null) bits.push(`<span class="akt-cond"><b>${Number(cs.abstractSpeed).toFixed(2)}</b> court speed<span class="akt-condsub">${psEsc(cs.category || '')}</span></span>`);
+    if (cs.altitude != null) bits.push(`<span class="akt-cond"><b>${Number(cs.altitude).toLocaleString()} m</b> altitude<span class="akt-condsub">${psEsc(altitudeLabel(cs.altitude))}</span></span>`);
+    if (cs.serviceHold != null) bits.push(`<span class="akt-cond"><b>${cs.serviceHold}%</b> hold rate<span class="akt-condsub">at this event</span></span>`);
+    if (bits.length) cond = `<div class="akt-conds">${bits.join('')}</div>`;
+  }
+  const name = (m.tour || 'Tournament').replace(/^(ATP|WTA)\s+/i, '');
+  if (!m.p1TournamentHistory && !m.p2TournamentHistory && !cond){
+    return akBlock('tournament', `Tournament · ${name}`, akEmpty('No tournament history or court data on record for this event.'));
+  }
+  return akBlock('tournament', `Tournament · ${name}`,
+    `${line(m.p1, m.p1TournamentHistory, '#8fb4ff')}${line(m.p2, m.p2TournamentHistory, '#eaa869')}${cond}`);
+}
+
+// --- block: odds ---
+function akOddsBlock(m){
+  if (!m.odds || !m.odds.p1 || !m.odds.p2) return akBlock('odds', 'Odds', akEmpty('No prices in the feed for this match yet.'));
+  const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, tot = i1 + i2;
+  const f1 = (i1 / tot * 100), f2 = (i2 / tot * 100);
+  const favName = f1 >= f2 ? psShortName(m.p1) : psShortName(m.p2);
+  return akBlock('odds', 'Odds', `
+    <div class="ako-prices">
+      <div><div class="ako-p" style="color:#8fb4ff;">${Number(m.odds.p1).toFixed(2)}</div><div class="ako-nm">${psEsc(psShortName(m.p1))}</div></div>
+      <div style="text-align:right;"><div class="ako-p" style="color:#eaa869;">${Number(m.odds.p2).toFixed(2)}</div><div class="ako-nm">${psEsc(psShortName(m.p2))}</div></div>
+    </div>
+    <div class="ako-bar"><div class="ako-bar-a" style="width:${f1.toFixed(1)}%;"></div></div>
+    <div class="ako-legend"><span>${f1.toFixed(1)}%</span><span class="ako-mid">vig removed</span><span>${f2.toFixed(1)}%</span></div>
+    <div class="ako-sub"><b>${psEsc(favName)}</b> favoured${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>`);
+}
+
+// --- block: weather (slim strip) ---
+function akWeatherBlock(m){
+  const w = m.weather;
+  if (!w || w.temperature == null) return '';
+  const day = (w.week || []).find(d => d.isMatch) || null;
+  const cond = day && typeof wmoWeather === 'function' ? wmoWeather(day.code) : null;
+  const condLabel = cond && cond.label ? cond.label : (cond && cond.text ? cond.text : '');
+  const phrase = typeof weatherImpactPhrase === 'function' ? weatherImpactPhrase(w, m.surface) : '';
+  const bits = [
+    `<span class="akw-item"><b>${Math.round(w.temperature)}°C</b>${condLabel ? `<span class="akw-sub">${psEsc(condLabel)}</span>` : ''}</span>`,
+    w.windSpeed != null ? `<span class="akw-item"><b>${Math.round(w.windSpeed)} km/h</b><span class="akw-sub">wind</span></span>` : '',
+    w.humidity != null ? `<span class="akw-item"><b>${Math.round(w.humidity)}%</b><span class="akw-sub">humidity</span></span>` : '',
+    day && day.rain != null ? `<span class="akw-item"><b>${day.rain}%</b><span class="akw-sub">rain</span></span>` : '',
+  ].filter(Boolean).join('');
+  return akBlock('weather', 'Weather · match day',
+    `<div class="akw-row">${bits}${phrase ? `<span class="akw-read">${psEsc(phrase)}</span>` : ''}</div>`, { wide:true });
+}
+
+// --- block: the read (synthesis) ---
+// Generated, not editable. An editable box with no backend would silently lose
+// whatever the client typed the moment the modal closed.
+function akReadBlock(m){
+  const pts = [];
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  if (a1 && a2 && a1.id !== a2.id){
+    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
+    if (cell && cell.pct != null && Math.abs(cell.pct - 50) >= 4){
+      const lead = cell.pct > 50 ? psShortName(m.p1) : psShortName(m.p2);
+      pts.push(`Style favours <b>${psEsc(lead)}</b> — ${psEsc(cell.pct > 50 ? a1.name : a2.name)}s win ${Math.max(cell.pct, 100 - cell.pct)}% of ${cell.n.toLocaleString()} meetings with ${psEsc(cell.pct > 50 ? a2.name : a1.name)}s.`);
+    }
+  }
+  const h = m.h2h, tot = h ? h.p1Wins + h.p2Wins : 0;
+  if (tot >= 2 && h.p1Wins !== h.p2Wins){
+    pts.push(`Head to head leans <b>${psEsc(h.p1Wins > h.p2Wins ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(h.p1Wins, h.p2Wins)}–${Math.min(h.p1Wins, h.p2Wins)}.`);
+  }
+  if (m._formLoaded){
+    const w = (rows) => { const r = (rows || []).slice(0, 10); return r.length ? Math.round(r.filter(x => x.won).length / r.length * 100) : null; };
+    const f1 = w(m.p1RecentFormMatches), f2 = w(m.p2RecentFormMatches);
+    if (f1 != null && f2 != null && Math.abs(f1 - f2) >= 20){
+      pts.push(`Form gap is wide: <b>${psEsc(f1 > f2 ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(f1, f2)}% over the last 10 against ${Math.min(f1, f2)}%.`);
+    }
+  }
+  if (m.odds && m.odds.p1 && m.odds.p2){
+    const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, f = i1 / (i1 + i2) * 100;
+    if (Math.abs(f - 50) < 6) pts.push(`The market has this near a coin-flip (${f.toFixed(1)}% / ${(100 - f).toFixed(1)}% with vig removed).`);
+  }
+  if (!pts.length) return '';
+  return akBlock(null, 'The read',
+    `<ul class="akr-list">${pts.map(p => `<li>${p}</li>`).join('')}</ul>
+     <div class="akr-foot">Generated from the blocks above — signals only, not a recommendation.</div>`, { wide:true });
+}
+
 function buildKeyFactorsSection(m){
-  return `${buildKeyFactorsCards(m)}${buildKeyPanels(m)}${buildRecentResultsSection(m)}`;
+  const blocks = [
+    akStyleBlock(m),
+    akFormBlock(m),
+    akH2HBlock(m),
+    akOddsBlock(m),
+    akTournamentBlock(m),
+    akWeatherBlock(m),
+    akReadBlock(m),
+  ].filter(Boolean).join('');
+  return `<div class="akbento">${blocks}</div>`;
+}
+
+/* ---------- PLAYING STYLE TAB ---------- */
+// Head-to-head style comparison. Three independent data sources, each of which
+// can be absent for a given match, so every block degrades on its own rather
+// than taking the tab down with it:
+//   archetype + badges  playing-styles.json  (199 players — 22/35 of a live board)
+//   style-vs-style edge matchup-matrix.json  (8x8, real TML results)
+//   radar + dimensions  style-radar.json     (996 players, 29/35 present but only
+//                                             13/35 clear the 10-charted-match bar)
+// Deliberately NOT rendered: a surface-split style edge. The matrix is pooled
+// across surfaces, so a "60% on clay" line would be invented. See the follow-up.
+
+const STYLE_AXES = [
+  { k:'serve',    label:'Serve'    },
+  { k:'return',   label:'Return'   },
+  { k:'baseline', label:'Baseline' },
+  { k:'netPlay',  label:'Net play' },
+  // The calibration derives this from long-rally (7+ shot) win rate, not tracking
+  // data — its own note says to label it Movement / Defence, so we do.
+  { k:'movement', label:'Defence'  },
+  { k:'clutch',   label:'Clutch'   },
+];
+
+let styleRadarData = null, _styleRadarPromise = null;
+function loadStyleRadar(){
+  if (styleRadarData) return Promise.resolve(styleRadarData);
+  if (_styleRadarPromise) return _styleRadarPromise;
+  _styleRadarPromise = fetch('./style-radar.json', { cache:'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { styleRadarData = d || { players:{} }; return styleRadarData; })
+    .catch(err => { console.warn('style-radar.json load failed:', err.message); styleRadarData = { players:{} }; return styleRadarData; });
+  return _styleRadarPromise;
+}
+function styleRadarFor(name){
+  const k = styleKey(name);
+  return (k && styleRadarData && styleRadarData.players) ? styleRadarData.players[k] : null;
+}
+// psMatrixData is otherwise only populated when the Playing Styles page renders.
+// The modal can open before that page is ever visited, so it needs its own gate.
+let _psMatrixPromise = null;
+function ensurePsMatrix(){
+  if (psMatrixData) return Promise.resolve(psMatrixData);
+  if (_psMatrixPromise) return _psMatrixPromise;
+  _psMatrixPromise = fetch('./matchup-matrix.json', { cache:'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (d) psMatrixData = d; return psMatrixData; })
+    .catch(err => { console.warn('matchup-matrix.json load failed:', err.message); return null; });
+  return _psMatrixPromise;
+}
+function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => a.id === id); }
+function psArchFor(id){ return PS_ARCHETYPES.find(a => a.id === id) || null; }
+
+function styleBadgesHtml(pl, align){
+  const badges = (pl && pl.badges) || [];
+  if (!badges.length) return '';
+  const chips = badges.map(b => {
+    const meta = PS_BADGE[b];
+    if (!meta) return '';
+    return `<span class="psb-chip" style="color:${meta.c}; background:${hexToRgba(meta.c, 0.12)}; border-color:${hexToRgba(meta.c, 0.34)};"><span class="psb-dot" style="background:${meta.c};"></span>${psEsc(meta.n)}</span>`;
+  }).join('');
+  return `<div class="psb-row" style="justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};">${chips}</div>`;
+}
+function hexToRgba(hex, a){
+  const h = String(hex).replace('#','');
+  const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+}
+
+// Six-spoke radar, drawn as an inline SVG string (the rest of the modal builds
+// HTML strings, so no React/DOM node here). `a` is p1, `b` is p2.
+function styleRadarSvg(dims){
+  const cx = 180, cy = 152, R = 112;
+  const pt = (i, f) => {
+    const ang = (-90 + i * 60) * Math.PI / 180;
+    return [cx + R * f * Math.cos(ang), cy + R * f * Math.sin(ang)];
+  };
+  const ptStr = (i, f) => pt(i, f).map(n => n.toFixed(1)).join(',');
+  const ring = f => `<polygon points="${dims.map((_, i) => ptStr(i, f)).join(' ')}" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>`;
+  const poly = key => dims.map((d, i) => ptStr(i, Math.max(0, Math.min(100, d[key])) / 100)).join(' ');
+  const rings = [0.25, 0.5, 0.75, 1].map(ring).join('');
+  const spokes = dims.map((_, i) => {
+    const [x, y] = pt(i, 1);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
+  }).join('');
+  const labels = dims.map((d, i) => {
+    const [x, y] = pt(i, 1.2);
+    const anchor = Math.abs(x - cx) < 6 ? 'middle' : (x < cx ? 'end' : 'start');
+    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" fill="#9aa3b2" font-size="11" font-weight="600">${psEsc(d.label)}</text>`;
+  }).join('');
+  const shapeB = `<polygon points="${poly('b')}" fill="none" stroke="${ANALYSIS_P2_COLOR}" stroke-width="2" stroke-dasharray="4 3"/>`;
+  const shapeA = `<polygon points="${poly('a')}" fill="${ANALYSIS_P1_RGBA(0.22)}" stroke="${ANALYSIS_P1_COLOR}" stroke-width="2"/>`;
+  const dots = key => dims.map((d, i) => {
+    const [x, y] = pt(i, Math.max(0, Math.min(100, d[key])) / 100);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${key === 'a' ? 3 : 2.6}" fill="${key === 'a' ? '#7ba4ff' : ANALYSIS_P2_COLOR}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 360 304" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
+}
+
+function styleNoteHtml(text){
+  return `<div class="psx-note">${psEsc(text)}</div>`;
+}
+
+// The style-vs-style balance meter. Returns the matrix cell read in p1's
+// direction. A mirror matchup is 50/50 by definition, not missing data — the
+// matrix stores null on the diagonal, so it has to be handled separately or a
+// same-archetype match reads as "no data".
+function styleEdgeHtml(m, s1, s2){
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  const head = `<div class="psx-label">Style vs style edge</div>`;
+  if (!a1 || !a2){
+    const who = !a1 && !a2 ? 'Neither player has' : `${psEsc(!a1 ? m.p1 : m.p2)} has not`;
+    return `<div class="psx-card">${head}${styleNoteHtml(`${who} enough tour-level match history to classify an archetype, so there is no style matchup to read.`)}</div>`;
+  }
+  if (a1.id === a2.id){
+    return `<div class="psx-card">${head}
+      <div class="psx-sub">Mirror matchup — both play as ${psEsc(a1.name)}s</div>
+      <div class="psx-nums"><div><div class="psx-pct" style="color:#8fb4ff;">50%</div><div class="psx-code" style="color:#7ba4ff;">${psEsc(a1.code)}</div></div>
+        <div style="text-align:right;"><div class="psx-pct" style="color:#eaa869;">50%</div><div class="psx-code" style="color:#eaa869;">${psEsc(a2.code)}</div></div></div>
+      <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:50%; border-color:#8b93a3;"></div></div>
+      <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
+      <div class="psx-tag" style="color:#8b93a3; background:rgba(139,147,163,0.1); border-color:rgba(139,147,163,0.26);">▸ style gives neither player an edge</div>
+      ${styleNoteHtml('Same archetype on both sides — the edge has to come from form, surface and the market, not style.')}</div>`;
+  }
+  const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
+  if (!cell || cell.pct == null){
+    return `<div class="psx-card">${head}
+      <div class="psx-sub">${psEsc(a1.name)} vs ${psEsc(a2.name)}</div>
+      ${styleNoteHtml(`Fewer than ${(psMatrixData && psMatrixData.minSampleN) || 20} tour meetings between these two archetypes — not enough to quote a win rate.`)}</div>`;
+  }
+  const p1pct = cell.pct, p2pct = 100 - cell.pct;
+  const lead = p1pct >= p2pct ? { name:a1.name, pts:p1pct - 50, color:'#8fb4ff', bg:ANALYSIS_P1_RGBA(0.1), bd:ANALYSIS_P1_RGBA(0.26) }
+                              : { name:a2.name, pts:p2pct - 50, color:'#eaa869', bg:ANALYSIS_P2_RGBA(0.1), bd:ANALYSIS_P2_RGBA(0.26) };
+  const tag = lead.pts < 2
+    ? `<div class="psx-tag" style="color:#8b93a3; background:rgba(139,147,163,0.1); border-color:rgba(139,147,163,0.26);">▸ effectively a coin-flip on style alone</div>`
+    : `<div class="psx-tag" style="color:${lead.color}; background:${lead.bg}; border-color:${lead.bd};">▸ leans +${lead.pts} pts to the ${psEsc(lead.name.toLowerCase())}</div>`;
+  return `<div class="psx-card">${head}
+    <div class="psx-sub">${psEsc(p1pct >= p2pct ? a1.name : a2.name)}s beat ${psEsc(p1pct >= p2pct ? a2.name : a1.name)}s</div>
+    <div class="psx-nums"><div><div class="psx-pct" style="color:#8fb4ff;">${p1pct}%</div><div class="psx-code" style="color:#7ba4ff;">${psEsc(a1.code)}</div></div>
+      <div style="text-align:right;"><div class="psx-pct" style="color:#eaa869;">${p2pct}%</div><div class="psx-code" style="color:#eaa869;">${psEsc(a2.code)}</div></div></div>
+    <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
+    <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
+    ${tag}
+    <div class="psx-n">n = ${cell.n.toLocaleString()} tour meetings<br><span class="psx-nmuted">pooled across surfaces</span></div>
+  </div>`;
+}
+
+// The radar draws only when BOTH players clear the charted-match bar. This is a
+// hard gate, not a caveat: below 10 charted matches the percentiles are noise —
+// 54% of axis values sit in the tails (<=5 or >=95) versus the ~10% a genuine
+// percentile field produces, and the rate only converges to baseline at n>=10.
+// A drawn hexagon reads as measurement, so a provisional one is worse than none:
+// it would tell a bettor a top-50 player is 2nd-percentile on serve off 3 matches.
+function styleRadarDrawable(r1, r2){ return !!(r1 && r2 && r1.ok && r2.ok); }
+function styleRadarBlockHtml(m, r1, r2){
+  if (!styleRadarDrawable(r1, r2)){
+    const minN = (styleRadarData && styleRadarData.minCharted) || 10;
+    const short = (r, name) => `${psShortName(name)}${r ? ` (${r.n})` : ' (0)'}`;
+    const weak = [ (!r1 || !r1.ok) ? short(r1, m.p1) : null, (!r2 || !r2.ok) ? short(r2, m.p2) : null ].filter(Boolean);
+    return `<div class="psr-empty">Not enough charted matches to draw a reliable style radar — ${psEsc(weak.join(' and '))} ${weak.length > 1 ? 'are' : 'is'} below the ${minN}-match minimum.<br><span class="psr-empty-sub">The style edge and head-to-head records below are unaffected: they come from full tour results, not charted matches.</span></div>`;
+  }
+  const dims = STYLE_AXES.map(ax => ({ label:ax.label, a:r1.radar[ax.k] ?? 50, b:r2.radar[ax.k] ?? 50 }));
+  return `${styleRadarSvg(dims)}
+    <div class="psr-legend">
+      <span class="psr-key"><span class="psr-swatch psr-swatch-a"></span>${psEsc(psShortName(m.p1))}</span>
+      <span class="psr-key"><span class="psr-swatch psr-swatch-b"></span>${psEsc(psShortName(m.p2))}</span>
+    </div>
+    <div class="psr-n">${r1.n} · ${r2.n} charted matches · percentile vs the charted field</div>`;
+}
+
+function styleDimensionEdgeHtml(m, r1, r2){
+  // Same data as the radar, so the same gate — otherwise the bars would quietly
+  // publish the exact numbers the radar just refused to draw.
+  if (!styleRadarDrawable(r1, r2)) return '';
+  const rows = STYLE_AXES.map(ax => {
+    const a = r1.radar[ax.k] ?? 50, b = r2.radar[ax.k] ?? 50;
+    const aWins = a > b, tied = a === b;
+    const edge = tied ? { name:'level', color:'#8b93a3' }
+      : (aWins ? { name:psShortName(m.p1), color:'#8fb4ff' } : { name:psShortName(m.p2), color:'#eaa869' });
+    return `<div class="psd-row">
+      <span class="psd-val" style="color:${aWins && !tied ? '#8fb4ff' : '#6b7280'}; text-align:right;">${a}</span>
+      <span class="psd-track psd-track-a"><span class="psd-fill" style="width:${a}%; background:${aWins && !tied ? ANALYSIS_P1_COLOR : ANALYSIS_P1_RGBA(0.32)};"></span></span>
+      <div class="psd-mid"><div class="psd-label">${psEsc(ax.label)}</div><div class="psd-edge" style="color:${edge.color};">▸ ${psEsc(edge.name)}</div></div>
+      <span class="psd-track psd-track-b"><span class="psd-fill" style="width:${b}%; background:${!aWins && !tied ? ANALYSIS_P2_COLOR : ANALYSIS_P2_RGBA(0.32)};"></span></span>
+      <span class="psd-val" style="color:${!aWins && !tied ? '#eaa869' : '#6b7280'}; text-align:left;">${b}</span>
+    </div>`;
+  }).join('');
+  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:14px;">Dimension edge</div><div class="psd-list">${rows}</div></div>`;
+}
+
+// "How each has fared vs this style" — walks the player's own form shard, keys
+// every opponent back through playing-styles.json and keeps the ones whose
+// archetype matches the man across the net. Form shards are capped at 40 rows,
+// so this is a recent-window read, not a career one; the header says so.
+function styleVsArchetypeList(rows, oppArchId, sinceIso){
+  if (!Array.isArray(rows)) return null;
+  const out = [];
+  for (const r of rows){
+    if (sinceIso && r.date && r.date < sinceIso) continue;
+    const st = ppStyleFor(r.opponent);
+    if (!st || st.primary !== oppArchId) continue;
+    out.push(r);
+  }
+  return out;
+}
+function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel){
+  const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
+  const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
+    <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
+  if (!rows) return card('', styleNoteHtml('Form rows still loading.'));
+  if (!rows.length){
+    return card(`<div class="psv-rec"><span class="psv-none">no meetings</span></div>`,
+      styleNoteHtml(`No ${oppArch.name.toLowerCase()} in ${psShortName(playerName)}'s last 40 matches.`));
+  }
+  const w = rows.filter(r => r.won).length, l = rows.length - w;
+  const pct = Math.round((w / rows.length) * 100);
+  const list = rows.slice(0, 5).map(r => {
+    const res = r.won ? 'W' : 'L';
+    const rc = r.won ? '#3ECF8E' : '#E8607A';
+    const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
+    const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
+    const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/, '–'));
+    return `<div class="psv-row">
+      <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
+      <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
+      <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
+      <span class="psv-score">${psEsc(score)}</span>
+    </div>`;
+  }).join('');
+  const more = rows.length > 5 ? `<div class="psv-more">+${rows.length - 5} more</div>` : '';
+  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
+    `<div class="psv-list">${list}${more}</div>`);
+}
+
+function styleVsArchetypeHtml(m, s1, s2){
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  if (!a1 || !a2) return '';
+  // 24 months back from today, clamped by the 40-row shard cap.
+  const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
+  const r1 = styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since);
+  const r2 = styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since);
+  if (!r1 && !r2) return '';
+  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
+    <div class="psv-grid">
+      ${styleVsArchetypeCard(m.p1, r1, a2, '#8fb4ff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`)}
+      ${styleVsArchetypeCard(m.p2, r2, a1, '#eaa869', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`)}
+    </div></div>`;
+}
+
+function styleHeaderSideHtml(m, pl, name, odds, side){
+  const arch = pl && psArchFor(pl.primary);
+  const accent = side === 'p1' ? '#7ba4ff' : '#eaa869';
+  const rgba = side === 'p1' ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
+  const archLine = arch
+    ? `<div class="psh-arch" style="color:${accent};">${psEsc(arch.code)} · ${psEsc(arch.name)}</div>`
+    : `<div class="psh-arch psh-arch-none">Unclassified</div>`;
+  const ini = formIni(name);
+  const avatar = `<span class="psh-ini" style="color:${accent}; background:${rgba(0.15)}; border-color:${rgba(0.4)};">${psEsc(ini)}</span>`;
+  const oddsPill = odds ? `<span class="psh-odds" style="color:${accent}; background:${rgba(0.12)}; border-color:${rgba(0.32)};">${psEsc(odds)}</span>` : '';
+  const text = `<div class="psh-text" style="text-align:${side === 'p1' ? 'right' : 'left'};">
+      <div class="psh-name">${psEsc(name)}</div>${archLine}${styleBadgesHtml(pl, side === 'p1' ? 'right' : 'left')}</div>`;
+  return side === 'p1'
+    ? `<div class="psh-side">${text}${avatar}${oddsPill}</div>`
+    : `<div class="psh-side">${oddsPill}${avatar}${text}</div>`;
+}
+
+function buildStyleSection(m){
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
+  const o1 = m.odds && m.odds.p1 ? Number(m.odds.p1).toFixed(2) : '';
+  const o2 = m.odds && m.odds.p2 ? Number(m.odds.p2).toFixed(2) : '';
+  // Nothing at all landed — say which feed is empty rather than showing a blank tab.
+  if (!s1 && !s2 && !r1 && !r2){
+    return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history for a playing-style profile. Style classification needs a full ATP/Challenger record — it is thin at ITF and qualifying level.</div>`;
+  }
+  return `<div class="psx-wrap">
+    <div class="psh-bar">
+      ${styleHeaderSideHtml(m, s1, m.p1, o1, 'p1')}
+      <span class="psh-vs">VS</span>
+      ${styleHeaderSideHtml(m, s2, m.p2, o2, 'p2')}
+    </div>
+    <div class="psx-top">
+      <div class="psr-col">${styleRadarBlockHtml(m, r1, r2)}</div>
+      ${styleEdgeHtml(m, s1, s2)}
+    </div>
+    ${styleDimensionEdgeHtml(m, r1, r2)}
+    ${styleVsArchetypeHtml(m, s1, s2)}
+  </div>`;
+}
+
+let _aStyleMatch = null;
+function renderStyleSection(m){
+  const el = document.getElementById('aSectionStyle');
+  if (el) el.innerHTML = buildStyleSection(m);
 }
 
 function openAnalysisModal(matchId){
@@ -5409,6 +6083,16 @@ function openAnalysisModal(matchId){
 
   document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
 
+  // Playing style paints from whatever is already in memory, then repaints as
+  // the radar shard and the matchup matrix land. Same stale-guard contract as
+  // the form sections: the user can open a second match mid-flight.
+  _aStyleMatch = m;
+  renderStyleSection(m);
+  Promise.all([loadStyleRadar(), ensurePsMatrix()]).then(() => {
+    if (_aStyleMatch !== m) return;
+    renderStyleSection(m);
+  });
+
   document.getElementById('aSectionTournament').innerHTML = buildTournamentSection(m);
 
   document.getElementById('aSectionH2H').innerHTML = buildH2HSection(m);
@@ -5444,6 +6128,8 @@ function openAnalysisModal(matchId){
     if (_aFormMatch !== m) return;
     document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
     document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
+    // "vs this style" reads the same rows, so the style tab gets a third paint.
+    renderStyleSection(m);
   });
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
