@@ -627,6 +627,90 @@
   .modal-analysis .arow .atrack{ height:6px; background:rgba(232,147,75,0.28); border-radius:3px; overflow:hidden; }
   .modal-analysis .arow .atrack div{ height:100%; background:#3E7BFA; border-radius:3px; }
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
+  /* ---- Key Factors bento ---- */
+  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:start; }
+  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; min-width:0; }
+  .modal-analysis .akb[role="button"]{ cursor:pointer; transition:transform .12s ease, border-color .12s ease, background .12s ease; }
+  .modal-analysis .akb[role="button"]:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,0.18); background:#111420; }
+  .modal-analysis .akb[role="button"]:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
+  .modal-analysis .akb-tall{ grid-row:span 2; }
+  .modal-analysis .akb-wide{ grid-column:1 / -1; }
+  .modal-analysis .akb-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:11px; }
+  .modal-analysis .akb-label{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
+  .modal-analysis .akb-chev{ color:#5b6472; font-size:16px; line-height:1; }
+  .modal-analysis .akb[role="button"]:hover .akb-chev{ color:#8fb4ff; }
+  .modal-analysis .akb-empty{ font-size:11.5px; color:#8b93a3; line-height:1.5; padding:6px 0; }
+  .modal-analysis .aks-names{ display:flex; justify-content:space-between; gap:10px; }
+  .modal-analysis .aks-nm{ font-size:13px; font-weight:700; }
+  .modal-analysis .aks-arch{ font-size:9.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; margin-top:2px; }
+  .modal-analysis .aks-edge{ margin-top:14px; }
+  .modal-analysis .aks-split{ display:flex; justify-content:space-between; align-items:baseline; font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; }
+  .modal-analysis .aks-big{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; text-align:center; }
+  .modal-analysis .aks-vs{ font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-weight:500; }
+  .modal-analysis .aks-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:9px; }
+  .modal-analysis .aks-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .aks-verdict{ font-size:11.5px; color:#c4ccd8; line-height:1.5; margin-top:10px; }
+  .modal-analysis .aks-dims{ margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:7px; }
+  .modal-analysis .aks-dim{ display:grid; grid-template-columns:22px 1fr 62px 1fr 22px; align-items:center; gap:6px; }
+  .modal-analysis .aks-dv{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; text-align:center; }
+  .modal-analysis .aks-dt{ height:5px; border-radius:3px; background:rgba(255,255,255,0.05); overflow:hidden; display:flex; }
+  .modal-analysis .aks-dim .aks-dt:first-of-type{ justify-content:flex-end; }
+  .modal-analysis .aks-df{ height:100%; border-radius:3px; }
+  .modal-analysis .aks-df-a{ background:rgba(62,123,250,0.75); }
+  .modal-analysis .aks-df-b{ background:rgba(232,147,75,0.75); }
+  .modal-analysis .aks-dl{ font-size:9.5px; color:#8b93a3; text-align:center; white-space:nowrap; }
+  .modal-analysis .aks-nodims{ margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:11px; color:#5b6472; line-height:1.5; }
+  .modal-analysis .akf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-analysis .akf-nm{ font-size:12px; font-weight:700; margin-bottom:8px; }
+  .modal-analysis .akf-dots{ display:flex; gap:4px; margin-bottom:9px; }
+  .modal-analysis .akf-dot{ width:18px; height:18px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; }
+  .modal-analysis .akf-dot.w{ color:#3ECF8E; background:rgba(62,207,142,0.16); }
+  .modal-analysis .akf-dot.l{ color:#E8607A; background:rgba(232,96,122,0.16); }
+  .modal-analysis .akf-stat{ display:flex; justify-content:space-between; font-size:11px; color:#8b93a3; padding:3px 0; }
+  .modal-analysis .akf-stat b{ font-family:'IBM Plex Mono',monospace; color:#dbe0e8; }
+  .modal-analysis .akf-na{ font-size:11px; color:#5b6472; }
+  .modal-analysis .akh-top{ display:flex; align-items:baseline; justify-content:center; gap:8px; }
+  .modal-analysis .akh-score{ font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; line-height:1; }
+  .modal-analysis .akh-dash{ color:#5b6472; font-size:18px; }
+  .modal-analysis .akh-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:12px; }
+  .modal-analysis .akh-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .akh-legend{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:#8b93a3; margin-top:6px; }
+  .modal-analysis .akh-sub{ font-size:11px; color:#5b6472; margin-top:8px; text-align:center; }
+  .modal-analysis .akt-row{ display:grid; grid-template-columns:1fr auto auto; align-items:baseline; gap:9px; padding:5px 0; }
+  .modal-analysis .akt-nm{ font-size:12px; font-weight:700; }
+  .modal-analysis .akt-rec{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#dbe0e8; }
+  .modal-analysis .akt-best{ font-size:10px; color:#8b93a3; min-width:66px; text-align:right; }
+  .modal-analysis .akt-na{ font-size:10.5px; color:#5b6472; grid-column:2 / -1; text-align:right; }
+  .modal-analysis .akt-conds{ display:flex; flex-wrap:wrap; gap:12px; margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+  .modal-analysis .akt-cond{ font-size:10px; color:#8b93a3; display:flex; flex-direction:column; }
+  .modal-analysis .akt-cond b{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#dbe0e8; }
+  .modal-analysis .akt-condsub{ color:#5b6472; }
+  .modal-analysis .ako-prices{ display:flex; justify-content:space-between; }
+  .modal-analysis .ako-p{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; line-height:1; }
+  .modal-analysis .ako-nm{ font-size:10px; color:#8b93a3; margin-top:4px; }
+  .modal-analysis .ako-bar{ height:7px; border-radius:4px; background:rgba(232,147,75,0.3); overflow:hidden; margin-top:13px; }
+  .modal-analysis .ako-bar-a{ height:100%; background:#3E7BFA; }
+  .modal-analysis .ako-legend{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:#8b93a3; margin-top:6px; }
+  .modal-analysis .ako-mid{ color:#5b6472; }
+  .modal-analysis .ako-sub{ font-size:11px; color:#8b93a3; margin-top:8px; }
+  .modal-analysis .akw-row{ display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
+  .modal-analysis .akw-item{ display:flex; flex-direction:column; font-size:10px; color:#8b93a3; }
+  .modal-analysis .akw-item b{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:#dbe0e8; }
+  .modal-analysis .akw-sub{ color:#5b6472; }
+  .modal-analysis .akw-read{ font-size:11.5px; color:#c4ccd8; margin-left:auto; max-width:52%; line-height:1.45; }
+  .modal-analysis .akr-list{ margin:0; padding-left:17px; display:flex; flex-direction:column; gap:6px; }
+  .modal-analysis .akr-list li{ font-size:12px; color:#c4ccd8; line-height:1.5; }
+  .modal-analysis .akr-list b{ color:#e7e9ee; }
+  .modal-analysis .akr-foot{ font-size:10px; color:#5b6472; margin-top:10px; }
+  @media (max-width:1000px){
+    .modal-analysis .akbento{ grid-template-columns:repeat(2,1fr); }
+    .modal-analysis .akb-tall{ grid-row:span 1; grid-column:1 / -1; }
+  }
+  @media (max-width:680px){
+    .modal-analysis .akbento{ grid-template-columns:1fr; }
+    .modal-analysis .akb-wide, .modal-analysis .akb-tall{ grid-column:auto; }
+    .modal-analysis .akw-read{ margin-left:0; max-width:100%; }
+  }
   /* ---- Playing Style tab ---- */
   .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.07); }
   .modal-analysis .psh-side{ display:flex; align-items:flex-start; gap:12px; }
@@ -5402,8 +5486,236 @@ function buildRecentResultsSection(m){
   `;
 }
 
+/* ---------- KEY FACTORS TAB (bento command centre) ---------- */
+// Key factors is the tab the modal opens on, so it is the only one guaranteed
+// to be read. It surfaces the headline of every other tab as a clickable block
+// that jumps there, rather than repeating the old 5-card + 2-panel layout.
+//
+// Every block degrades independently and says which feed is missing, because on
+// a live board roughly a third of matches have no archetype, no tournament
+// history, or no odds. A block that silently vanishes reads as a broken tab.
+
+// Jump to another tab in this modal. The rail has no named switcher — the whole
+// linkage is data-atab -> data-asection — so clicking the nav item IS the API.
+function aGoTab(tab){
+  const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
+  if (btn) { btn.click(); const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0; }
+}
+function akBlock(tab, label, bodyHtml, opts){
+  const o = opts || {};
+  const cls = ['akb', o.wide ? 'akb-wide' : '', o.tall ? 'akb-tall' : '', tab ? '' : 'akb-static'].filter(Boolean).join(' ');
+  const attrs = tab ? ` role="button" tabindex="0" onclick="aGoTab('${tab}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aGoTab('${tab}')}"` : '';
+  const chev = tab ? `<span class="akb-chev">›</span>` : '';
+  return `<div class="${cls}"${attrs}><div class="akb-head"><span class="akb-label">${psEsc(label)}</span>${chev}</div><div class="akb-body">${bodyHtml}</div></div>`;
+}
+function akEmpty(text){ return `<div class="akb-empty">${psEsc(text)}</div>`; }
+// Altitude bands. A two-way high/sea-level split called Kitzbuhel (762 m, alpine)
+// "sea level", which is the opposite of the read a bettor needs — thinner air
+// starts mattering well below 1,000 m.
+function altitudeLabel(alt){
+  if (alt >= 1500) return 'very high — ball flies';
+  if (alt >= 800)  return 'high — ball flies';
+  if (alt >= 400)  return 'elevated — thinner air';
+  if (alt >= 150)  return 'low';
+  return 'near sea level';
+}
+
+// --- block: playing style ---
+function akStyleBlock(m){
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  if (!a1 || !a2) return akBlock('style', 'Playing style', akEmpty(`${psShortName(!a1 ? m.p1 : m.p2)} has no style classification yet — it needs a fuller tour-level record.`), { tall:true });
+  const names = `<div class="aks-names">
+      <div><div class="aks-nm" style="color:#8fb4ff;">${psEsc(psShortName(m.p1))}</div><div class="aks-arch">${psEsc(a1.code)} · ${psEsc(a1.name)}</div></div>
+      <div style="text-align:right;"><div class="aks-nm" style="color:#eaa869;">${psEsc(psShortName(m.p2))}</div><div class="aks-arch">${psEsc(a2.code)} · ${psEsc(a2.name)}</div></div>
+    </div>`;
+  let edge;
+  if (a1.id === a2.id){
+    edge = `<div class="aks-edge"><div class="aks-big" style="color:#8b93a3;">50 / 50</div>
+      <div class="aks-verdict">Mirror matchup — both are ${psEsc(a1.name)}s, so style gives neither an edge.</div></div>`;
+  } else {
+    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
+    if (!cell || cell.pct == null){
+      edge = `<div class="aks-edge"><div class="aks-verdict">Too few tour meetings between these archetypes to quote a style edge.</div></div>`;
+    } else {
+      const p1p = cell.pct, p2p = 100 - cell.pct;
+      const leadName = p1p >= p2p ? psShortName(m.p1) : psShortName(m.p2);
+      const leadArch = p1p >= p2p ? a1 : a2, offArch = p1p >= p2p ? a2 : a1;
+      const pts = Math.abs(p1p - 50);
+      edge = `<div class="aks-edge">
+        <div class="aks-split"><span style="color:#8fb4ff;">${p1p}%</span><span class="aks-vs">style edge</span><span style="color:#eaa869;">${p2p}%</span></div>
+        <div class="aks-bar"><div class="aks-bar-a" style="width:${p1p}%;"></div></div>
+        <div class="aks-verdict">${pts < 2
+          ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
+          : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — <b>${psEsc(leadName)}</b> has the style edge.`}</div>
+      </div>`;
+    }
+  }
+  // Only show dimension bars when the radar itself is drawable — same gate, so
+  // Key factors can never publish numbers the Playing style tab refuses to draw.
+  const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
+  let dims = '';
+  if (styleRadarDrawable(r1, r2)){
+    dims = `<div class="aks-dims">${STYLE_AXES.map(ax => {
+      const a = r1.radar[ax.k] ?? 50, b = r2.radar[ax.k] ?? 50;
+      return `<div class="aks-dim"><span class="aks-dv" style="color:${a>b?'#8fb4ff':'#6b7280'};">${a}</span>
+        <span class="aks-dt"><span class="aks-df aks-df-a" style="width:${a}%;"></span></span>
+        <span class="aks-dl">${psEsc(ax.label)}</span>
+        <span class="aks-dt"><span class="aks-df aks-df-b" style="width:${b}%;"></span></span>
+        <span class="aks-dv" style="color:${b>a?'#eaa869':'#6b7280'};">${b}</span></div>`;
+    }).join('')}</div>`;
+  } else {
+    dims = `<div class="aks-nodims">Six-dimension comparison needs 10+ charted matches for both players.</div>`;
+  }
+  return akBlock('style', 'Playing style', `${names}${edge}${dims}`, { tall:true });
+}
+
+// --- block: recent form ---
+function akFormBlock(m){
+  const col = (name, rows, pct, accent) => {
+    if (!Array.isArray(rows) || !rows.length){
+      return `<div class="akf-col"><div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div><div class="akf-na">no recent rows</div></div>`;
+    }
+    const last5 = rows.slice(0, 5);
+    const dots = last5.map(r => `<span class="akf-dot ${r.won ? 'w' : 'l'}">${r.won ? 'W' : 'L'}</span>`).join('');
+    const last10 = rows.slice(0, 10);
+    const w10 = last10.filter(r => r.won).length;
+    const surf = (m.surface || '').toLowerCase();
+    const surfRows = rows.filter(r => (r.surface || '').toLowerCase() === surf);
+    const sw = surfRows.filter(r => r.won).length;
+    const surfLabel = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : 'Surface';
+    return `<div class="akf-col">
+      <div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div>
+      <div class="akf-dots">${dots}</div>
+      <div class="akf-stat"><span>Last ${last10.length}</span><b>${Math.round(w10 / last10.length * 100)}%</b></div>
+      <div class="akf-stat"><span>${psEsc(surfLabel)}</span><b>${surfRows.length ? `${sw}–${surfRows.length - sw}` : '—'}</b></div>
+    </div>`;
+  };
+  const loaded = m._formLoaded;
+  if (!loaded) return akBlock('form', 'Recent form', akEmpty('Loading recent matches…'));
+  return akBlock('form', 'Recent form',
+    `<div class="akf-grid">${col(m.p1, m.p1RecentFormMatches, m.p1RecentForm, '#8fb4ff')}${col(m.p2, m.p2RecentFormMatches, m.p2RecentForm, '#eaa869')}</div>`);
+}
+
+// --- block: head to head ---
+function akH2HBlock(m){
+  const h = m.h2h;
+  const total = h ? (h.p1Wins + h.p2Wins) : 0;
+  if (!total) return akBlock('h2h', 'Head to head', akEmpty(`${psShortName(m.p1)} and ${psShortName(m.p2)} have never met on tour.`));
+  const p1pct = Math.round(h.p1Wins / total * 100);
+  return akBlock('h2h', 'Head to head', `
+    <div class="akh-top"><span class="akh-score" style="color:#8fb4ff;">${h.p1Wins}</span><span class="akh-dash">–</span><span class="akh-score" style="color:#eaa869;">${h.p2Wins}</span></div>
+    <div class="akh-bar"><div class="akh-bar-a" style="width:${p1pct}%;"></div></div>
+    <div class="akh-legend"><span>${psEsc(psShortName(m.p1))} ${p1pct}%</span><span>${psEsc(psShortName(m.p2))} ${100 - p1pct}%</span></div>
+    <div class="akh-sub">${total} career meeting${total === 1 ? '' : 's'}</div>`);
+}
+
+// --- block: tournament + conditions ---
+function akTournamentBlock(m){
+  const line = (name, th, accent) => {
+    if (!th) return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><span class="akt-na">first appearance</span></div>`;
+    const best = (th.years || []).map(y => y.roundReached).filter(Boolean)[0];
+    return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span>
+      <span class="akt-rec">${th.totalWon}–${th.totalLost}</span>
+      <span class="akt-best">${psEsc(best || '—')}</span></div>`;
+  };
+  const cs = m.courtSpeed;
+  let cond = '';
+  if (cs){
+    const bits = [];
+    if (cs.abstractSpeed != null) bits.push(`<span class="akt-cond"><b>${Number(cs.abstractSpeed).toFixed(2)}</b> court speed<span class="akt-condsub">${psEsc(cs.category || '')}</span></span>`);
+    if (cs.altitude != null) bits.push(`<span class="akt-cond"><b>${Number(cs.altitude).toLocaleString()} m</b> altitude<span class="akt-condsub">${psEsc(altitudeLabel(cs.altitude))}</span></span>`);
+    if (cs.serviceHold != null) bits.push(`<span class="akt-cond"><b>${cs.serviceHold}%</b> hold rate<span class="akt-condsub">at this event</span></span>`);
+    if (bits.length) cond = `<div class="akt-conds">${bits.join('')}</div>`;
+  }
+  const name = (m.tour || 'Tournament').replace(/^(ATP|WTA)\s+/i, '');
+  if (!m.p1TournamentHistory && !m.p2TournamentHistory && !cond){
+    return akBlock('tournament', `Tournament · ${name}`, akEmpty('No tournament history or court data on record for this event.'));
+  }
+  return akBlock('tournament', `Tournament · ${name}`,
+    `${line(m.p1, m.p1TournamentHistory, '#8fb4ff')}${line(m.p2, m.p2TournamentHistory, '#eaa869')}${cond}`);
+}
+
+// --- block: odds ---
+function akOddsBlock(m){
+  if (!m.odds || !m.odds.p1 || !m.odds.p2) return akBlock('odds', 'Odds', akEmpty('No prices in the feed for this match yet.'));
+  const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, tot = i1 + i2;
+  const f1 = (i1 / tot * 100), f2 = (i2 / tot * 100);
+  const favName = f1 >= f2 ? psShortName(m.p1) : psShortName(m.p2);
+  return akBlock('odds', 'Odds', `
+    <div class="ako-prices">
+      <div><div class="ako-p" style="color:#8fb4ff;">${Number(m.odds.p1).toFixed(2)}</div><div class="ako-nm">${psEsc(psShortName(m.p1))}</div></div>
+      <div style="text-align:right;"><div class="ako-p" style="color:#eaa869;">${Number(m.odds.p2).toFixed(2)}</div><div class="ako-nm">${psEsc(psShortName(m.p2))}</div></div>
+    </div>
+    <div class="ako-bar"><div class="ako-bar-a" style="width:${f1.toFixed(1)}%;"></div></div>
+    <div class="ako-legend"><span>${f1.toFixed(1)}%</span><span class="ako-mid">vig removed</span><span>${f2.toFixed(1)}%</span></div>
+    <div class="ako-sub"><b>${psEsc(favName)}</b> favoured${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>`);
+}
+
+// --- block: weather (slim strip) ---
+function akWeatherBlock(m){
+  const w = m.weather;
+  if (!w || w.temperature == null) return '';
+  const day = (w.week || []).find(d => d.isMatch) || null;
+  const cond = day && typeof wmoWeather === 'function' ? wmoWeather(day.code) : null;
+  const condLabel = cond && cond.label ? cond.label : (cond && cond.text ? cond.text : '');
+  const phrase = typeof weatherImpactPhrase === 'function' ? weatherImpactPhrase(w, m.surface) : '';
+  const bits = [
+    `<span class="akw-item"><b>${Math.round(w.temperature)}°C</b>${condLabel ? `<span class="akw-sub">${psEsc(condLabel)}</span>` : ''}</span>`,
+    w.windSpeed != null ? `<span class="akw-item"><b>${Math.round(w.windSpeed)} km/h</b><span class="akw-sub">wind</span></span>` : '',
+    w.humidity != null ? `<span class="akw-item"><b>${Math.round(w.humidity)}%</b><span class="akw-sub">humidity</span></span>` : '',
+    day && day.rain != null ? `<span class="akw-item"><b>${day.rain}%</b><span class="akw-sub">rain</span></span>` : '',
+  ].filter(Boolean).join('');
+  return akBlock('weather', 'Weather · match day',
+    `<div class="akw-row">${bits}${phrase ? `<span class="akw-read">${psEsc(phrase)}</span>` : ''}</div>`, { wide:true });
+}
+
+// --- block: the read (synthesis) ---
+// Generated, not editable. An editable box with no backend would silently lose
+// whatever the client typed the moment the modal closed.
+function akReadBlock(m){
+  const pts = [];
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  if (a1 && a2 && a1.id !== a2.id){
+    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
+    if (cell && cell.pct != null && Math.abs(cell.pct - 50) >= 4){
+      const lead = cell.pct > 50 ? psShortName(m.p1) : psShortName(m.p2);
+      pts.push(`Style favours <b>${psEsc(lead)}</b> — ${psEsc(cell.pct > 50 ? a1.name : a2.name)}s win ${Math.max(cell.pct, 100 - cell.pct)}% of ${cell.n.toLocaleString()} meetings with ${psEsc(cell.pct > 50 ? a2.name : a1.name)}s.`);
+    }
+  }
+  const h = m.h2h, tot = h ? h.p1Wins + h.p2Wins : 0;
+  if (tot >= 2 && h.p1Wins !== h.p2Wins){
+    pts.push(`Head to head leans <b>${psEsc(h.p1Wins > h.p2Wins ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(h.p1Wins, h.p2Wins)}–${Math.min(h.p1Wins, h.p2Wins)}.`);
+  }
+  if (m._formLoaded){
+    const w = (rows) => { const r = (rows || []).slice(0, 10); return r.length ? Math.round(r.filter(x => x.won).length / r.length * 100) : null; };
+    const f1 = w(m.p1RecentFormMatches), f2 = w(m.p2RecentFormMatches);
+    if (f1 != null && f2 != null && Math.abs(f1 - f2) >= 20){
+      pts.push(`Form gap is wide: <b>${psEsc(f1 > f2 ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(f1, f2)}% over the last 10 against ${Math.min(f1, f2)}%.`);
+    }
+  }
+  if (m.odds && m.odds.p1 && m.odds.p2){
+    const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, f = i1 / (i1 + i2) * 100;
+    if (Math.abs(f - 50) < 6) pts.push(`The market has this near a coin-flip (${f.toFixed(1)}% / ${(100 - f).toFixed(1)}% with vig removed).`);
+  }
+  if (!pts.length) return '';
+  return akBlock(null, 'The read',
+    `<ul class="akr-list">${pts.map(p => `<li>${p}</li>`).join('')}</ul>
+     <div class="akr-foot">Generated from the blocks above — signals only, not a recommendation.</div>`, { wide:true });
+}
+
 function buildKeyFactorsSection(m){
-  return `${buildKeyFactorsCards(m)}${buildKeyPanels(m)}${buildRecentResultsSection(m)}`;
+  const blocks = [
+    akStyleBlock(m),
+    akFormBlock(m),
+    akH2HBlock(m),
+    akOddsBlock(m),
+    akTournamentBlock(m),
+    akWeatherBlock(m),
+    akReadBlock(m),
+  ].filter(Boolean).join('');
+  return `<div class="akbento">${blocks}</div>`;
 }
 
 /* ---------- PLAYING STYLE TAB ---------- */
