@@ -1451,7 +1451,7 @@
 [data-page="styles"] .ps-kdash{ width:16px; height:2px; border-radius:2px; display:inline-block; }
 [data-page="styles"] .ps-bdot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
 [data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0b0f; overflow-x:auto; }
-[data-page="styles"] .ps-grid2{ display:grid; grid-template-columns:190px repeat(6,minmax(72px,1fr)); min-width:640px; }
+[data-page="styles"] .ps-grid2{ display:grid; grid-template-columns:190px repeat(7,minmax(68px,1fr)); min-width:720px; }
 [data-page="styles"] .ps-gcorner{ padding:16px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; display:flex; align-items:flex-end; border-bottom:1px solid rgba(255,255,255,0.08); }
 [data-page="styles"] .ps-gcol{ padding:16px 8px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; letter-spacing:0.1em; color:#8b93a3; border-bottom:1px solid rgba(255,255,255,0.08); border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
 [data-page="styles"] .ps-grow-h{ padding:14px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; justify-content:center; transition:opacity .12s ease; cursor:default; }
@@ -1493,6 +1493,7 @@
 [data-page="styles"] .ps-rostertitle{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; padding:4px 22px 12px; }
 [data-page="styles"] .ps-roster{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 22px 22px; }
 [data-page="styles"] .ps-rplayer{ display:flex; align-items:center; gap:9px; padding:9px 12px; border:1px solid rgba(255,255,255,0.06); border-radius:9px; background:#0e1015; }
+[data-page="styles"] .ps-rdots{ display:flex; gap:3px; flex:none; }
 [data-page="styles"] .ps-rdot{ width:7px; height:7px; border-radius:50%; flex:none; }
 [data-page="styles"] .ps-rname{ font-size:12.5px; color:#e7e9ee; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 [data-page="styles"] .ps-relo{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#8b93a3; }
@@ -1556,9 +1557,9 @@
       <h2 class="ps-blocktitle">The styles behind the grid</h2>
       <div id="psCards" class="ps-rows"></div>
       <div class="ps-rowlegend">
-        <span class="ps-keyitem"><i class="ps-bdot" style="background:#E8934B;"></i>Inconsistent Attacker</span>
         <span class="ps-keyitem"><i class="ps-bdot" style="background:#3ECF8E;"></i>Pressure Player</span>
-        <span class="ps-keyitem"><i class="ps-bdot" style="background:#5b6472;"></i>Neither</span>
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#C96A34;"></i>Clay Specialist</span>
+        <span class="ps-keyitem"><i class="ps-bdot" style="background:#E8B341;"></i>High Risk / High Reward</span>
       </div>
     </div>
     <div class="ps-sectionhead">
@@ -1726,6 +1727,9 @@ const PS_ARCHETYPES = [
   { id:'all_court', code:'ACP', name:'All-Court Player',
     description:'No dominant weakness. Comfortable serving, returning, and at the net. Adapts to any opponent and any surface.',
     count:null, players:[] },
+  { id:'all_court_elite', code:'ACE', name:'All-Court Elite',
+    description:'The complete, generational players. No exploitable weakness and elite in every phase — they beat every style through sheer all-round quality.',
+    count:null, players:[] },
   { id:'attacking_baseliner', code:'ATB', name:'Attacking Baseliner',
     description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
     count:null, players:[] },
@@ -1733,6 +1737,12 @@ const PS_ARCHETYPES = [
     description:'Extreme defensive specialist. Wins almost entirely through opponent errors. Absorbs everything, rarely takes the initiative, mentally wears opponents down.',
     count:null, players:[] },
 ];
+// Badge display (classify-styles.js: pressure_player, clay_specialist, high_risk_high_reward).
+const PS_BADGE = {
+  pressure_player:      { c:'#3ECF8E', n:'Pressure Player' },
+  clay_specialist:      { c:'#C96A34', n:'Clay Specialist' },
+  high_risk_high_reward:{ c:'#E8B341', n:'High Risk / High Reward' },
+};
 // Matchup matrix is COMPUTED from our own classification x real TML match results
 // (classify-archetypes.js -> matchup-matrix.json), fetched at render time — not
 // transcribed from any competitor. psCellFor returns { pct, n } for row-i vs col-j
@@ -1790,12 +1800,8 @@ async function renderPlayingStyles(){
         const list = byArch[a.id];
         if (list && list.length){
           a.count = list.length;
-          a.players = list.map(p => {
-            const badges = p.badges || [];
-            const badge = badges.indexOf('inconsistent_attacker') !== -1 ? 'a'
-                        : badges.indexOf('pressure_player') !== -1 ? 'p' : '';
-            return { name: psShortName(p.name), elo: psEloFor(eloData, p.name), badge };
-          }).sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
+          a.players = list.map(p => ({ name: psShortName(p.name), elo: psEloFor(eloData, p.name), badges: p.badges || [] }))
+            .sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
         }
       });
     }
@@ -1855,8 +1861,11 @@ function psRenderMatrixAndCards(){
     html += '<div class="ps-arow-panel"><div class="ps-arow-panelin"><div class="ps-rostertitle">Roster · by Elo</div><div class="ps-roster">';
     if (a.players.length){
       a.players.forEach(p => {
-        const dot = p.badge === 'a' ? '#E8934B' : p.badge === 'p' ? '#3ECF8E' : '#5b6472';
-        html += '<div class="ps-rplayer"><span class="ps-rdot" style="background:' + dot + ';"></span>' +
+        const bs = (p.badges || []).filter(b => PS_BADGE[b]);
+        const dots = bs.length
+          ? bs.map(b => '<span class="ps-rdot" style="background:' + PS_BADGE[b].c + ';" title="' + PS_BADGE[b].n + '"></span>').join('')
+          : '<span class="ps-rdot" style="background:#5b6472;"></span>';
+        html += '<div class="ps-rplayer"><span class="ps-rdots">' + dots + '</span>' +
           '<span class="ps-rname" title="' + psEsc(p.name) + '">' + psEsc(p.name) + '</span>' +
           '<span class="ps-relo">' + (p.elo != null ? p.elo : '—') + '</span></div>';
       });
@@ -5843,10 +5852,10 @@ function ppStyleRadarSvg(scores, partial){
 function ppStyleCard(p){
   const st = ppStyleFor(p && p.name);
   if (!st) return '';
+  const PP_BADGE = { pressure_player:['Pressure Player','62,207,142'], clay_specialist:['Clay Specialist','201,106,52'], high_risk_high_reward:['High Risk / High Reward','232,179,65'] };
   const badges = (st.badges || []).map(b => {
-    if (b === 'pressure_player') return `<span style="font-size:10.5px;font-weight:700;color:#3ECF8E;background:rgba(62,207,142,0.12);border:1px solid rgba(62,207,142,0.35);border-radius:7px;padding:4px 9px;">Pressure Player</span>`;
-    if (b === 'inconsistent_attacker') return `<span style="font-size:10.5px;font-weight:700;color:#E8973A;background:rgba(232,151,58,0.12);border:1px solid rgba(232,151,58,0.35);border-radius:7px;padding:4px 9px;">Inconsistent Attacker</span>`;
-    return '';
+    const d = PP_BADGE[b]; if (!d) return '';
+    return `<span style="font-size:10.5px;font-weight:700;color:rgb(${d[1]});background:rgba(${d[1]},0.12);border:1px solid rgba(${d[1]},0.35);border-radius:7px;padding:4px 9px;">${d[0]}</span>`;
   }).join('');
   const partial = st.partial_axes || [];
   const covNote = st.archetype_data_coverage === 'partial'
