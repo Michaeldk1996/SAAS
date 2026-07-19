@@ -712,6 +712,13 @@
     .modal-analysis .akw-read{ margin-left:0; max-width:100%; }
   }
   /* ---- Playing Style tab ---- */
+  /* The design is a 940px panel and sets Hanken Grotesk on its root, inherited
+     by every label in it. Without this the whole tab silently renders in Inter
+     (the body font) — the single largest deviation from the design file.
+     The design's own panel background/border/radius are deliberately NOT
+     reproduced: in the mock the panel is standalone, but here it sits on the
+     modal surface, and no sibling tab nests a second panel inside .abody. */
+  .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
   .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.07); }
   .modal-analysis .psh-side{ display:flex; align-items:flex-start; gap:12px; }
   .modal-analysis .psh-vs{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; margin-top:9px; }
@@ -721,7 +728,7 @@
   .modal-analysis .psh-ini{ width:36px; height:36px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; flex:none; }
   .modal-analysis .psh-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; border:1px solid; border-radius:7px; padding:5px 9px; flex:none; align-self:flex-start; }
   .modal-analysis .psb-row{ display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
-  .modal-analysis .psb-chip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; border:1px solid; border-radius:6px; padding:3px 8px; white-space:nowrap; }
+  .modal-analysis .psb-chip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; border:1px solid; border-radius:6px; padding:3px 8px; }
   .modal-analysis .psb-dot{ width:5px; height:5px; border-radius:50%; }
   .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:20px 0 4px; }
   .modal-analysis .psx-card{ background:#0e1015; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:18px 20px; }
@@ -733,12 +740,15 @@
   .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,#3E7BFA,#E8934B); opacity:0.9; }
   .modal-analysis .psx-tick{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:rgba(255,255,255,0.45); transform:translateX(-50%); }
   .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:#0e1015; border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,0.45); }
-  .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.04em; color:#5b6472; gap:8px; }
+  .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.04em; color:#5b6472; }
   .modal-analysis .psx-tag{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; border:1px solid; border-radius:6px; padding:4px 9px; }
   .modal-analysis .psx-n{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; line-height:1.6; }
   .modal-analysis .psx-nmuted{ color:#5b6472; }
   .modal-analysis .psx-note{ margin-top:10px; font-size:11px; color:#8b93a3; line-height:1.5; }
-  .modal-analysis .psx-block{ margin-top:18px; }
+  /* The design uses two different block gaps: 16px above Dimension edge, 20px
+     above "How each has fared". Not one shared 18px. */
+  .modal-analysis .psx-block{ margin-top:16px; }
+  .modal-analysis .psx-block.psx-block-vs{ margin-top:20px; }
   .modal-analysis .psr-svg{ width:100%; display:block; }
   .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
   .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:#c4ccd8; }
@@ -760,7 +770,7 @@
   .modal-analysis .psd-edge{ font-size:9px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
   .modal-analysis .psv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .modal-analysis .psv-card{ background:#0e1015; border:1px solid; border-radius:12px; padding:15px 17px; }
-  .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; }
   .modal-analysis .psv-title{ font-size:12.5px; font-weight:700; }
   .modal-analysis .psv-sub{ font-size:10.5px; color:#8b93a3; margin-top:2px; }
   .modal-analysis .psv-rec{ text-align:right; white-space:nowrap; }
@@ -768,7 +778,14 @@
   .modal-analysis .psv-pct{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#8b93a3; }
   .modal-analysis .psv-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; }
   .modal-analysis .psv-list{ display:flex; flex-direction:column; margin-top:8px; }
-  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto; align-items:center; gap:10px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  /* Expandable variant — same accordion machinery as the H2H and Form rows, so
+     a meeting here opens the same box score / point log as everywhere else. */
+  .modal-analysis .psv-row.psv-open{ cursor:pointer; transition:background .12s; margin:0 -8px; padding-left:8px; padding-right:8px; border-radius:6px; }
+  .modal-analysis .psv-row.psv-open:hover{ background:rgba(255,255,255,0.035); }
+  .modal-analysis .psv-row.psv-open.open{ background:rgba(255,255,255,0.045); }
+  .modal-analysis .psv-chev{ font-size:9px; color:#5b6472; transition:transform .15s; justify-self:end; }
+  .modal-analysis .psv-chev.open{ transform:rotate(90deg); }
   .modal-analysis .psv-badge{ width:20px; height:19px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; }
   .modal-analysis .psv-opp{ font-size:12px; font-weight:600; color:#dbe0e8; }
   .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8b93a3; }
@@ -1926,6 +1943,8 @@ const PS_ARCHETYPES = [
     count:null, players:[] },
 ];
 // Badge pills on the player tags (classify-styles.js emits these four keys).
+// NOTE: only `c` and `n` are read (styleBadgesHtml recomputes the background and
+// border from `c`). `t`, `bg` and `bd` are unused — editing them changes nothing.
 const PS_BADGE = {
   pressure_player:      { t:'P',     c:'#3ECF8E', bg:'rgba(62,207,142,0.16)',  bd:'rgba(62,207,142,0.4)',  n:'Pressure Player' },
   clay_specialist:      { t:'CLAY',  c:'#df9264', bg:'rgba(223,146,100,0.16)', bd:'rgba(223,146,100,0.42)', n:'Clay Specialist' },
@@ -4044,7 +4063,7 @@ function toggleFormPanel(idPrefix){
   // The suffix is the row's index within its list; stripping it leaves the list's
   // own id, which is the accordion group. A keyspace missing from this alternation
   // makes every row its own group, so they all open at once — add new callers here.
-  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h|tourn|ppc|pp)\d+$/, '');
+  const colPrefix = idPrefix.replace(/(main|surf|season|ovw|h2h|tourn|ppc|psv|pp)\d+$/, '');
   const chev = document.getElementById('formChev-' + idPrefix);
   const wrap = document.getElementById('formPanelWrap-' + idPrefix);
   const row = document.getElementById('formRow-' + idPrefix);
@@ -5852,7 +5871,9 @@ function styleBadgesHtml(pl, align){
   const chips = badges.map(b => {
     const meta = PS_BADGE[b];
     if (!meta) return '';
-    return `<span class="psb-chip" style="color:${meta.c}; background:${hexToRgba(meta.c, 0.12)}; border-color:${hexToRgba(meta.c, 0.34)};"><span class="psb-dot" style="background:${meta.c};"></span>${psEsc(meta.n)}</span>`;
+    // The design borders the blue chips one point tighter than the warm ones.
+    const bd = meta.c === '#3E7BFA' ? 0.32 : 0.34;
+    return `<span class="psb-chip" style="color:${meta.c}; background:${hexToRgba(meta.c, 0.12)}; border-color:${hexToRgba(meta.c, bd)};"><span class="psb-dot" style="background:${meta.c};"></span>${psEsc(meta.n)}</span>`;
   }).join('');
   return `<div class="psb-row" style="justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};">${chips}</div>`;
 }
@@ -5865,7 +5886,7 @@ function hexToRgba(hex, a){
 // Six-spoke radar, drawn as an inline SVG string (the rest of the modal builds
 // HTML strings, so no React/DOM node here). `a` is p1, `b` is p2.
 function styleRadarSvg(dims){
-  const cx = 180, cy = 152, R = 112;
+  const cx = 180, cy = 150, R = 115;
   const pt = (i, f) => {
     const ang = (-90 + i * 60) * Math.PI / 180;
     return [cx + R * f * Math.cos(ang), cy + R * f * Math.sin(ang)];
@@ -5879,9 +5900,9 @@ function styleRadarSvg(dims){
     return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
   }).join('');
   const labels = dims.map((d, i) => {
-    const [x, y] = pt(i, 1.2);
+    const [x, y] = pt(i, 1.19);
     const anchor = Math.abs(x - cx) < 6 ? 'middle' : (x < cx ? 'end' : 'start');
-    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" fill="#9aa3b2" font-size="11" font-weight="600">${psEsc(d.label)}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" fill="#9aa3b2" font-size="11" font-weight="600" font-family="'Hanken Grotesk',sans-serif">${psEsc(d.label)}</text>`;
   }).join('');
   const shapeB = `<polygon points="${poly('b')}" fill="none" stroke="${ANALYSIS_P2_COLOR}" stroke-width="2" stroke-dasharray="4 3"/>`;
   const shapeA = `<polygon points="${poly('a')}" fill="${ANALYSIS_P1_RGBA(0.22)}" stroke="${ANALYSIS_P1_COLOR}" stroke-width="2"/>`;
@@ -5889,7 +5910,7 @@ function styleRadarSvg(dims){
     const [x, y] = pt(i, Math.max(0, Math.min(100, d[key])) / 100);
     return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${key === 'a' ? 3 : 2.6}" fill="${key === 'a' ? '#7ba4ff' : ANALYSIS_P2_COLOR}"/>`;
   }).join('');
-  return `<svg viewBox="0 0 360 304" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
+  return `<svg viewBox="0 0 360 300" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
 }
 
 function styleNoteHtml(text){
@@ -6002,7 +6023,34 @@ function styleVsArchetypeList(rows, oppArchId, sinceIso){
   }
   return out;
 }
-function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel){
+// One "vs this style" meeting. Static by default; `opts.canOpen` upgrades it to
+// the same expandable row the Form / H2H / Tournament lists use, so a meeting
+// here opens the same Match Stats + Point by point panes as everywhere else.
+function styleVsArchetypeRowHtml(r, opts){
+  const res = r.won ? 'W' : 'L';
+  const rc = r.won ? '#3ECF8E' : '#E8607A';
+  const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
+  const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
+  const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/, '–'));
+  const cells = `
+      <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
+      <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
+      <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
+      <span class="psv-score">${psEsc(score)}</span>`;
+  if (!opts || !opts.canOpen) return `<div class="psv-row">${cells}<span></span></div>`;
+  const idPrefix = opts.idPrefix;
+  // The row IS already a form-row shape (it came straight off the form shard),
+  // so it needs no adapting — it carries date/tournament/round/result/won/
+  // opponent/eventKey and, for most rows, an inline box score as well.
+  return `<div class="psv-row psv-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
+      ${cells}
+      <span class="psv-chev" id="formChev-${idPrefix}">▸</span>
+    </div>
+    ${formPanelHtml(r, idPrefix, opts.playerKey, opts.playerName)}`;
+}
+
+const PSV_ROW_CAP = 5;
+function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
   const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
   const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
     <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
@@ -6013,22 +6061,12 @@ function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel)
   }
   const w = rows.filter(r => r.won).length, l = rows.length - w;
   const pct = Math.round((w / rows.length) * 100);
-  const list = rows.slice(0, 5).map(r => {
-    const res = r.won ? 'W' : 'L';
-    const rc = r.won ? '#3ECF8E' : '#E8607A';
-    const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
-    const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
-    const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/, '–'));
-    return `<div class="psv-row">
-      <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
-      <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
-      <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
-      <span class="psv-score">${psEsc(score)}</span>
-    </div>`;
-  }).join('');
-  const more = rows.length > 5 ? `<div class="psv-more">+${rows.length - 5} more</div>` : '';
+  // Rendered static here and upgraded in place by upgradeStyleVsRows once the
+  // availability indexes resolve — same two-pass contract as the H2H list.
+  const list = rows.slice(0, PSV_ROW_CAP).map(r => styleVsArchetypeRowHtml(r, null)).join('');
+  const more = rows.length > PSV_ROW_CAP ? `<div class="psv-more">+${rows.length - PSV_ROW_CAP} more</div>` : '';
   return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
-    `<div class="psv-list">${list}${more}</div>`);
+    `<div class="psv-list" id="psvList-${side}">${list}${more}</div>`);
 }
 
 function styleVsArchetypeHtml(m, s1, s2){
@@ -6039,11 +6077,53 @@ function styleVsArchetypeHtml(m, s1, s2){
   const r1 = styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since);
   const r2 = styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since);
   if (!r1 && !r2) return '';
-  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
+  return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
     <div class="psv-grid">
-      ${styleVsArchetypeCard(m.p1, r1, a2, '#8fb4ff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`)}
-      ${styleVsArchetypeCard(m.p2, r2, a1, '#eaa869', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`)}
+      ${styleVsArchetypeCard(m.p1, r1, a2, '#8fb4ff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1')}
+      ${styleVsArchetypeCard(m.p2, r2, a1, '#eaa869', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2')}
     </div></div>`;
+}
+
+// Second pass: turn the two "vs this style" lists into expandable rows once the
+// box-score / point-log availability indexes have loaded. Mirrors
+// upgradeH2HRows — render static synchronously, upgrade a task later, and guard
+// the repaint with a token so a fast reopen of a DIFFERENT match cannot paint
+// stale rows into the new one. The style tab repaints up to three times as its
+// own shards land, so every paint re-runs this.
+function upgradeStyleVsRows(m, token){
+  const a1 = ppStyleFor(m.p1) && psArchFor(ppStyleFor(m.p1).primary);
+  const a2 = ppStyleFor(m.p2) && psArchFor(ppStyleFor(m.p2).primary);
+  if (!a1 || !a2) return;
+  const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
+  const sides = [
+    { side:'p1', rows: styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since), key: m.p1Key, name: m.p1 },
+    { side:'p2', rows: styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since), key: m.p2Key, name: m.p2 },
+  ];
+  if (!sides.some(s => s.rows && s.rows.length)) return;
+  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
+    const host = document.getElementById('aSectionStyle');
+    if (!host || host.dataset.psvToken !== String(token)) return;
+    for (const s of sides){
+      if (!s.rows || !s.rows.length) continue;
+      const list = document.getElementById('psvList-' + s.side);
+      if (!list) continue;
+      const shown = s.rows.slice(0, PSV_ROW_CAP);
+      let openable = 0;
+      const html = shown.map((r, i) => {
+        const ek = String(r.eventKey || '');
+        const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
+        if (canOpen) openable++;
+        // Suffix must stay `psv<i>` — toggleFormPanel strips it to derive the
+        // accordion group. The two cards get distinct prefixes so each column
+        // is its own accordion, matching the Form tab's two-column behaviour.
+        return styleVsArchetypeRowHtml(r, canOpen
+          ? { canOpen:true, idPrefix:`psv${s.side}psv${i}`, playerKey:s.key, playerName:s.name }
+          : null);
+      }).join('');
+      const more = s.rows.length > PSV_ROW_CAP ? `<div class="psv-more">+${s.rows.length - PSV_ROW_CAP} more</div>` : '';
+      if (openable) list.innerHTML = html + more;
+    }
+  });
 }
 
 function styleHeaderSideHtml(m, pl, name, odds, side){
@@ -6054,8 +6134,10 @@ function styleHeaderSideHtml(m, pl, name, odds, side){
     ? `<div class="psh-arch" style="color:${accent};">${psEsc(arch.code)} · ${psEsc(arch.name)}</div>`
     : `<div class="psh-arch psh-arch-none">Unclassified</div>`;
   const ini = formIni(name);
-  const avatar = `<span class="psh-ini" style="color:${accent}; background:${rgba(0.15)}; border-color:${rgba(0.4)};">${psEsc(ini)}</span>`;
-  const oddsPill = odds ? `<span class="psh-odds" style="color:${accent}; background:${rgba(0.12)}; border-color:${rgba(0.32)};">${psEsc(odds)}</span>` : '';
+  // Per-side alphas are the design's, not a shared constant: the mock tints the
+  // p2 avatar one point lighter and the p1 odds pill one point darker.
+  const avatar = `<span class="psh-ini" style="color:${accent}; background:${rgba(side === 'p1' ? 0.15 : 0.14)}; border-color:${rgba(0.4)};">${psEsc(ini)}</span>`;
+  const oddsPill = odds ? `<span class="psh-odds" style="color:${accent}; background:${rgba(0.12)}; border-color:${rgba(side === 'p1' ? 0.3 : 0.32)};">${psEsc(odds)}</span>` : '';
   const text = `<div class="psh-text" style="text-align:${side === 'p1' ? 'right' : 'left'};">
       <div class="psh-name">${psEsc(name)}</div>${archLine}${styleBadgesHtml(pl, side === 'p1' ? 'right' : 'left')}</div>`;
   return side === 'p1'
@@ -6087,10 +6169,15 @@ function buildStyleSection(m){
   </div>`;
 }
 
-let _aStyleMatch = null;
+let _aStyleMatch = null, _psvToken = 0;
 function renderStyleSection(m){
   const el = document.getElementById('aSectionStyle');
-  if (el) el.innerHTML = buildStyleSection(m);
+  if (!el) return;
+  // Every repaint invalidates any in-flight row upgrade from the previous one.
+  const token = ++_psvToken;
+  el.innerHTML = buildStyleSection(m);
+  el.dataset.psvToken = String(token);
+  upgradeStyleVsRows(m, token);
 }
 
 function openAnalysisModal(matchId){
