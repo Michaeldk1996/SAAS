@@ -6169,12 +6169,107 @@ const PP_SPLIT_C = {
   dim:   '#5b6472',   // MS (a denominator, not a result)
   green: '#3ECF8E', white: '#eef2f8', red: '#E8607A',
 };
-// Win% is graded on absolute quality, not on a comparison: ≥60 green, 50–60
-// neutral, <50 red. Both tabs share this — change the cutoffs here and Career
-// splits and Last 52 weeks move together.
-function ppWinColor(v){
-  if (v == null) return PP_SPLIT_C.white;
-  return v >= 60 ? PP_SPLIT_C.green : (v >= 50 ? PP_SPLIT_C.white : PP_SPLIT_C.red);
+// Win% is graded RELATIVE TO THE PLAYER'S RANKING, not against a fixed cutoff.
+// An absolute "green above 60%" made the colour a restatement of the ranking: a
+// Top 10 player went green almost everywhere and a player outside 100 essentially
+// never did, so green marked "is good at tennis" rather than "is exceptional for
+// his level". The tour's own numbers show how far apart the levels sit — against
+// Top 10 opposition the median Top 10 player wins 40.1% while the median player
+// ranked 26–50 wins 21.4%, so no single cutoff can serve both.
+//
+// The reference is the MEDIAN PLAYER in the same ranking tier for the same split,
+// derived from career-splits.json itself. That keeps it in step with the daily
+// splits rebuild and adds no second file to load or keep fresh. Pooling matches
+// instead of taking a median was tried and rejected: pooling weights by matches
+// played, which drags the reference toward the busiest (and therefore strongest)
+// players and painted a third of the tour red.
+const PP_SPLIT_TIERS = [
+  { id: 't10',   max: 10,       label: 'in the Top 10' },
+  { id: 't25',   max: 25,       label: 'ranked 11–25' },
+  { id: 't50',   max: 50,       label: 'ranked 26–50' },
+  { id: 't100',  max: 100,      label: 'ranked 51–100' },
+  { id: 't100p', max: Infinity, label: 'ranked outside 100' },
+];
+function ppSplitTier(rank){
+  if (rank == null) return null;
+  return PP_SPLIT_TIERS.find(t => rank <= t.max) || null;
+}
+// A row needs this many matches before it may inform a baseline OR be graded:
+// both sides of the comparison have to rest on more than a handful of matches.
+const PP_SPLIT_MIN_M = 10;
+// A tier baseline needs this many contributing players, otherwise it falls back
+// to the all-tier median for that split, and failing that the cell stays neutral.
+const PP_SPLIT_MIN_BASE = 6;
+// "Meaningfully exceeds" is measured against sampling noise, never as a bare
+// percentage gap: need = max(4pp, 1.28 x standard error). A 100% row on 6
+// matches therefore stays neutral while a +5pp edge over 300 matches goes green.
+const PP_SPLIT_K = 1.28, PP_SPLIT_FLOOR = 4;
+let ppSplitBaseCache = null;
+function ppSplitBaselines(){
+  if (ppSplitBaseCache) return ppSplitBaseCache;
+  const acc = { career: {}, last52: {} };
+  Object.keys(careerSplits || {}).forEach(k => {
+    const p = careerSplits[k];
+    const tier = ppSplitTier(p && p.rank);
+    if (!tier) return;
+    ['career','last52'].forEach(which => {
+      const rows = p[which] || {};
+      Object.keys(rows).forEach(cat => {
+        const r = rows[cat];
+        if (!r || !r.M || r.M < PP_SPLIT_MIN_M || r.winPct == null) return;
+        const c = acc[which][cat] = acc[which][cat] || {};
+        (c[tier.id] = c[tier.id] || []).push(r.winPct);
+        (c.all = c.all || []).push(r.winPct);
+      });
+    });
+  });
+  const median = a => { const s = a.slice().sort((x, y) => x - y); const h = s.length >> 1;
+    return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+  const out = { career: {}, last52: {} };
+  ['career','last52'].forEach(which => Object.keys(acc[which]).forEach(cat => {
+    out[which][cat] = {};
+    Object.keys(acc[which][cat]).forEach(t => {
+      out[which][cat][t] = { exp: median(acc[which][cat][t]), n: acc[which][cat][t].length };
+    });
+  }));
+  return (ppSplitBaseCache = out);
+}
+function ppSplitExpected(which, cat, tierId){
+  const c = (ppSplitBaselines()[which] || {})[cat];
+  if (!c) return null;
+  const cell = c[tierId];
+  if (cell && cell.n >= PP_SPLIT_MIN_BASE) return cell.exp;
+  if (c.all && c.all.n >= PP_SPLIT_MIN_BASE) return c.all.exp;
+  return null;
+}
+// Returns { color, exp, gap, need }. A null `exp` means there was nothing solid
+// to judge the row against, which renders neutral rather than guessing.
+function ppSplitGrade(row, which, cat, tier){
+  const v = row && row.winPct;
+  if (v == null || !row.M) return { color: PP_SPLIT_C.white, exp: null };
+  const exp = (tier && row.M >= PP_SPLIT_MIN_M) ? ppSplitExpected(which, cat, tier.id) : null;
+  if (exp == null) return { color: PP_SPLIT_C.white, exp: null };
+  const p = v / 100;
+  // Floor the variance so a 0% or 100% row still carries a real error bar
+  // instead of a zero-width one that would colour on any gap at all.
+  const se = 100 * Math.sqrt(Math.max(p * (1 - p), 0.01) / row.M);
+  const need = Math.max(PP_SPLIT_FLOOR, PP_SPLIT_K * se);
+  const gap = v - exp;
+  return {
+    color: gap >= need ? PP_SPLIT_C.green : (gap <= -need ? PP_SPLIT_C.red : PP_SPLIT_C.white),
+    exp, gap, need,
+  };
+}
+// Hover text for a graded Win% cell: it has to say what the player was measured
+// against, or a colour that depends on his ranking looks arbitrary.
+function ppSplitGradeTip(g, tier){
+  if (g.exp == null) return 'Not graded — under ' + PP_SPLIT_MIN_M + ' matches in this split, or no tour baseline for it.';
+  const sg = (g.gap >= 0 ? '+' : '') + g.gap.toFixed(1);
+  const verdict = g.color === PP_SPLIT_C.green ? 'Clearly above that level.'
+    : (g.color === PP_SPLIT_C.red ? 'Clearly below that level.'
+    : 'Within the normal range for that level — needs ' + g.need.toFixed(1) + 'pp either way to colour.');
+  return 'The median player ' + tier.label + ' wins ' + g.exp.toFixed(1) + '% of this split. '
+    + sg + 'pp. ' + verdict;
 }
 // The 15 columns, in 5 groups. `w` is the grid track width, `bl` marks the
 // column that opens a group (it carries the thin vertical separator).
@@ -6190,7 +6285,7 @@ const PP_SPLIT_COLS = [
   { k: 'M',       w: '44px', bl: 1, t: 'M — Matches played in this split.',                              get: r => r.M, c: PP_SPLIT_C.count, b: true },
   { k: 'W',       w: '44px',        t: 'W — Matches won.',                                               get: r => r.W, c: PP_SPLIT_C.count, b: true },
   { k: 'L',       w: '44px',        t: 'L — Matches lost.',                                              get: r => r.L, c: PP_SPLIT_C.count, b: true },
-  { k: 'Win%',    w: '64px',        t: 'Win% — Match win percentage: matches won ÷ matches played. Green at 60% or better, red below 50%.', get: r => pct1(r.winPct), win: true },
+  { k: 'Win%',    w: '64px',        t: 'Win% — Match win percentage: matches won ÷ matches played. Graded against the median player of the same ranking tier in the same split, not a fixed cutoff: green means clearly better than expected for his level, red clearly worse. Hover a figure for the comparison behind it.', get: r => pct1(r.winPct), win: true },
   { k: 'Set W-L', w: '74px', bl: 1, t: 'Set W-L — Sets won and sets lost across these matches.',         get: r => wl(r.setW, r.setL),   c: PP_SPLIT_C.pair },
   { k: 'Set%',    w: '52px',        t: 'Set% — Set win percentage: sets won ÷ sets played.',             get: r => pct1(r.setPct),       c: PP_SPLIT_C.num },
   { k: 'Game W-L',w: '92px', bl: 1, t: 'Game W-L — Games won and games lost across these matches.',      get: r => wl(r.gameW, r.gameL), c: PP_SPLIT_C.pair },
@@ -6264,7 +6359,7 @@ function initPpSplitTips(){
 const PP_SPLIT_GRID = `display:grid;grid-template-columns:150px ${PP_SPLIT_COLS.map(c => c.w).join(' ')};`;
 const PP_SPLIT_SEP = '1px solid rgba(255,255,255,0.06)';
 const PP_SPLIT_MONO = `font-family:'IBM Plex Mono',monospace;`;
-function ppSplitsTableHtml(rows){
+function ppSplitsTableHtml(rows, which, tier){
   initPpSplitTips();
   const groupHead = `<div style="${PP_SPLIT_GRID}padding:6px 0 4px;"><span></span>${
     PP_SPLIT_GROUPS.map(g => `<span style="grid-column:span ${g.span};margin:0 4px;text-align:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.09);${PP_SPLIT_MONO}font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#8b93a3;">${g.label}</span>`).join('')
@@ -6284,9 +6379,12 @@ function ppSplitsTableHtml(rows){
     return label + keys.map(k => {
       const r = rows[k];
       const bg = (stripe++ % 2 === 1) ? 'rgba(255,255,255,0.022)' : 'transparent';
+      // One grade per row, reused by the Win% cell for both its colour and its
+      // hover text so the two can never disagree about why the cell is green.
+      const g = ppSplitGrade(r, which, k, tier);
       return `<div class="pp-split-row" style="${PP_SPLIT_GRID}align-items:center;background:${bg};border-radius:7px;transition:background .12s ease;">
         <span style="text-align:left;padding:13px 12px;font-family:'Hanken Grotesk',sans-serif;font-size:13px;font-weight:600;color:#e7e9ee;">${k}</span>
-        ${PP_SPLIT_COLS.map(c => `<span style="text-align:right;padding:13px 11px;${PP_SPLIT_MONO}font-size:13px;font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? ppWinColor(r.winPct) : c.c};${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}white-space:nowrap;">${c.get(r)}</span>`).join('')}
+        ${PP_SPLIT_COLS.map(c => `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding:13px 11px;${PP_SPLIT_MONO}font-size:13px;font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : c.c};${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}white-space:nowrap;">${c.get(r)}</span>`).join('')}
       </div>`;
     }).join('');
   }).join('');
@@ -6295,7 +6393,7 @@ function ppSplitsTableHtml(rows){
   return `<div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;overflow-x:auto;"><div style="min-width:984px;">${groupHead}${colHead}${body}</div></div>`;
 }
 const PP_SPLIT_CHEVRON = `<svg width="9" height="9" viewBox="0 0 8 8"><path d="M2 1 L6 4 L2 7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
-function ppSplitsSection(title, which, rows, subtitle){
+function ppSplitsSection(title, which, rows, subtitle, tier){
   const open = ppState.splitsOpen[which];
   const rot = open ? '90deg' : '0deg';
   return `<div style="background:#0a0b0f;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 26px 24px;">
@@ -6311,14 +6409,21 @@ function ppSplitsSection(title, which, rows, subtitle){
         <span style="display:inline-flex;transform:rotate(${rot});transition:transform .18s ease;">${PP_SPLIT_CHEVRON}</span>${open ? 'Hide' : 'Show'}
       </button>
     </div>
-    ${open ? ppSplitsTableHtml(rows) : ''}
+    ${open ? ppSplitsTableHtml(rows, which, tier) : ''}
   </div>`;
 }
 function ppCareerSplitsHtml(p){
   const s = careerSplits[String(p.key)];
   if (!s) return '';
-  const career = s.career && Object.keys(s.career).length ? ppSplitsSection('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches`) : '';
-  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitsSection('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches`) : '';
+  // The grading tier comes from his CURRENT ranking. On the Last 52 weeks table
+  // that is the right reference. On Career it is a deliberate approximation: a
+  // former Top 10 player now ranked 80 is judged against the rank 51–100 median,
+  // so his prime years read as exceptional. The subtitle says which ranking the
+  // comparison used rather than leaving the reader to infer it.
+  const tier = ppSplitTier(s.rank);
+  const vsTier = tier ? ` · Win% vs the median player ${tier.label}` : '';
+  const career = s.career && Object.keys(s.career).length ? ppSplitsSection('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches${vsTier}`, tier) : '';
+  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitsSection('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches${vsTier}`, tier) : '';
   if (!career && !last52) return '';
   return `<div style="display:flex;flex-direction:column;gap:16px;">
     ${career}${last52}</div>`;
@@ -7335,16 +7440,51 @@ function buildPlayerProfileHtml(p){
     const lab = w === 'career' ? 'Career' : `Last ${rw.matches} matches`;
     return `<span onclick="setPpMktWindow('${w}')" style="font-size:11px;font-weight:${on?700:600};color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:5px 11px;cursor:pointer;">${lab}</span>`;
   }).join('');
-  // The verdict only makes a claim when the interval actually excludes zero. Most
-  // players sit inside the noise band, and "priced about right" is the honest
-  // headline for them — the old block asserted an edge for every single player.
+  // A whole-archive claim is only made when the interval actually excludes zero.
+  // That is 12 of 164 players; what happens to the other 152 is handled below.
   const beats = o.ci95[0] > 0, trails = o.ci95[1] < 0;
-  const verdictColor = beats ? gcol : (trails ? rcol : ncol);
-  const verdictLabel = beats ? '↑ BEATS THE MARKET' : (trails ? '↓ MARKET OVERRATES' : '≈ PRICED ABOUT RIGHT');
-  const roleTile = (k, label, sub) => {
+  // ---- Verdict badge: name the angle, not the aggregate --------------------------
+  // "Priced about right" is gone. It was not merely vague, it was the badge for
+  // 152 of 164 players — a career-long aggregate averages a real surface or role
+  // edge against its opposite and lands on zero, so the headline said "nothing to
+  // see here" for 93% of the book. Flipping those players to BEATS/OVERRATES on the
+  // sign of a point estimate whose interval spans zero was rejected outright: that
+  // asserts an edge from noise, which is the one error this panel must not make.
+  //
+  // Instead the badge reports the largest gap the player actually has, drawn from
+  // the same two angles the blocks below show. A proven whole-archive edge still
+  // wins the badge where one exists (12 players). That takes the uninformative
+  // headline from 93% of players down to 17%, and those 17% get a plain statement
+  // that no angle cleared the bar — a conclusion a bettor can act on by skipping.
+  const MKT_ANGLE_GAP = 5, MKT_ANGLE_M = 15;
+  const angleCands = [];
+  if (!beats && !trails) {
+    ['underdog','favourite'].forEach(k => {
+      const r = role[k];
+      if (r && r.matches >= MKT_ANGLE_M) angleCands.push({ label: `as ${k}`, g: r.vsMarket });
+    });
+    // winSurfaces, not surfaceRows: that is declared further down, and reading the
+    // raw map here also keeps the badge on the same window as the blocks below.
+    Object.keys(winSurfaces).forEach(s => {
+      const r = winSurfaces[s];
+      if (r && r.matches >= MKT_ANGLE_M) angleCands.push({ label: `on ${s.toLowerCase()}`, g: r.vsMarket });
+    });
+    angleCands.sort((a, b) => Math.abs(b.g) - Math.abs(a.g));
+  }
+  const topAngle = angleCands.length && Math.abs(angleCands[0].g) >= MKT_ANGLE_GAP ? angleCands[0] : null;
+  const verdictColor = beats ? gcol : (trails ? rcol : (topAngle ? (topAngle.g > 0 ? gcol : rcol) : ncol));
+  const verdictLabel = beats ? '↑ BEATS THE MARKET'
+    : (trails ? '↓ MARKET OVERRATES'
+    : (topAngle ? `${topAngle.g > 0 ? '↑ UNDERPRICED' : '↓ OVERPRICED'} ${topAngle.label.toUpperCase()}`
+    : 'NO EDGE FOUND'));
+  // Role tiles lead with the gap but now spell out both sides of it, because
+  // "won 71% where the market priced him at 61%" is the fact; the +9.7pt is the
+  // arithmetic on top of it.
+  const roleTile = (k, label) => {
     const r = role[k];
     return r
-      ? { label, value: signed(r.vsMarket, 'pt'), color: r.vsMarket >= 0 ? gcol : rcol, sub: `${r.matches} matches · ${sub} · ROI ${signed(r.roi, '%')}` }
+      ? { label, value: signed(r.vsMarket, 'pt'), color: r.vsMarket >= 0 ? gcol : rcol,
+          sub: `${r.matches} matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied` }
       : { label, value: '—', color: ncol, sub: 'Too few matches to measure' };
   };
   const oddsTiles = [
@@ -7352,8 +7492,8 @@ function buildPlayerProfileHtml(p){
       sub: `Won ${o.actualWinRate}% · closing odds implied ${o.expectedWinRate}%` },
     { label: 'Flat-stake ROI', value: signed(o.roi, '%'), color: o.roi >= 0 ? gcol : rcol,
       sub: `1u every match at average closing price` },
-    roleTile('underdog', 'As underdog', 'priced above evens'),
-    roleTile('favourite', 'As favourite', 'priced below evens'),
+    roleTile('underdog', 'As underdog'),
+    roleTile('favourite', 'As favourite'),
   ].map(o => `
     <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:15px 16px;">
       <div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:9px;">${o.label}</div>
@@ -7382,6 +7522,63 @@ function buildPlayerProfileHtml(p){
   // has barely played simply does not appear, rather than showing a bar built on 3 matches.
   const surfaceRows = ['Clay','Hard','Grass'].map(s => ({ s, r: winSurfaces[s] })).filter(x => x.r);
   const oddsBars = surfaceRows.map(({ s, r }) => mktBarRow(s, r, PP_SURF_COLORS[s])).join('');
+  // ---- Angle 2: which surface the market gets most wrong, in both directions -----
+  // The bars above already carry the per-surface gaps, but a reader has to compare
+  // three of them by eye to find the outlier. This states the conclusion: the most
+  // underpriced surface and the most overpriced one, each with the actual and the
+  // implied rate behind it. Surfaces under the sample floor are excluded rather
+  // than allowed to win the comparison on a handful of matches.
+  const surfRanked = surfaceRows.filter(x => x.r.matches >= MKT_ANGLE_M)
+    .sort((a, b) => b.r.vsMarket - a.r.vsMarket);
+  const mispriceLine = (x, dir) => {
+    const r = x.r;
+    return `<span style="color:${dir > 0 ? gcol : rcol};font-weight:700;">${x.s}</span> — won ${r.actualWinRate}% where the market implied ${r.expectedWinRate}% <span style="color:${dir > 0 ? gcol : rcol};font-family:'IBM Plex Mono',monospace;">(${signed(r.vsMarket, 'pt')})</span> over ${r.matches} matches`;
+  };
+  const surfMisprice = surfRanked.length < 2 ? '' : `
+    <div style="margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#8b93a3;line-height:1.6;">
+      <div>Most underpriced: ${mispriceLine(surfRanked[0], 1)}</div>
+      <div style="margin-top:4px;">Most overpriced: ${mispriceLine(surfRanked[surfRanked.length - 1], -1)}</div>
+    </div>`;
+  // ---- Angle 1: favourite reliability vs underdog reliability --------------------
+  // Both roles side by side, each as actual win rate against the rate the closing
+  // price implied. The comparison is the point: a player who clears his price as an
+  // underdog but falls short of it as a favourite is a specific betting instruction,
+  // and neither half says that on its own.
+  const roleCmpDefs = [
+    { k: 'underdog',  label: 'As underdog',  sub: 'priced above evens' },
+    { k: 'favourite', label: 'As favourite', sub: 'priced below evens' },
+  ].map(d => ({ ...d, r: role[d.k] })).filter(d => d.r && d.r.matches >= MKT_ANGLE_M);
+  const bothRoles = roleCmpDefs.length === 2 ? roleCmpDefs : null;
+  const roleVerdict = !bothRoles ? '' : (() => {
+    const dog = bothRoles.find(d => d.k === 'underdog').r;
+    const fav = bothRoles.find(d => d.k === 'favourite').r;
+    const spread = dog.vsMarket - fav.vsMarket;
+    const nm = pesc(surname0(p));
+    if (Math.abs(spread) < MKT_ANGLE_GAP) return `${nm} performs about the same against his price in both roles — the gap between them is only ${Math.abs(spread).toFixed(1)}pt, so neither role is the better side of him.`;
+    return spread > 0
+      ? `${nm} beats his price as an underdog by ${signed(dog.vsMarket,'pt')} but only manages ${signed(fav.vsMarket,'pt')} as a favourite — a ${Math.abs(spread).toFixed(1)}pt swing. He is the better bet from the longer price.`
+      : `${nm} converts as a favourite by ${signed(fav.vsMarket,'pt')} but returns ${signed(dog.vsMarket,'pt')} as an underdog — a ${Math.abs(spread).toFixed(1)}pt swing. Backing him into a long price has not paid.`;
+  })();
+  const roleCmpHtml = !roleCmpDefs.length ? '' : `
+    <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;">
+      <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Favourite vs underdog reliability · ${winLabel}</div>
+      <div style="display:grid;grid-template-columns:${roleCmpDefs.length === 2 ? '1fr 1fr' : '1fr'};gap:14px;">
+        ${roleCmpDefs.map(d => {
+          const r = d.r, col = r.vsMarket >= 0 ? gcol : rcol;
+          return `
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:14px 15px;">
+            <div style="font-size:12.5px;font-weight:600;color:#cfd4de;">${d.label} <span style="color:#5b6472;font-weight:500;">${d.sub}</span></div>
+            <div style="display:flex;align-items:baseline;gap:9px;margin-top:10px;">
+              <span style="font-size:22px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${col};line-height:1;">${r.actualWinRate}%</span>
+              <span style="font-size:12px;color:#6b7280;">won</span>
+              <span style="font-size:12px;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-left:auto;">${signed(r.vsMarket,'pt')}</span>
+            </div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:7px;">Market implied <strong style="color:#b8c0cc;">${r.expectedWinRate}%</strong> · ${r.matches} matches · ROI ${signed(r.roi,'%')}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${roleVerdict ? `<div style="font-size:12px;color:#b7c4bd;margin-top:13px;line-height:1.55;">${roleVerdict}</div>` : ''}
+    </div>`;
   // ---- Favourite reliability: how often he loses matches he was priced to win ----
   // Only defined where he WAS the favourite, and only meaningful band by band — losing
   // 1 in 3 at 1.90 is normal, at 1.15 it is a disaster. Each band shows the market's own
@@ -7477,7 +7674,12 @@ function buildPlayerProfileHtml(p){
   const bestSurface = surfaceRows.slice().sort((a, b) => b.r.vsMarket - a.r.vsMarket)[0];
   const readout = beats || trails
     ? `Over <strong style="color:#dcefe4;">${o.matches}</strong> priced matches the closing market has ${beats ? 'underrated' : 'overrated'} ${pesc(surname0(p))} by <strong style="color:#dcefe4;">${signed(o.vsMarket, 'pt')}</strong>${bestSurface ? `, most clearly on <strong style="color:#dcefe4;">${bestSurface.s.toLowerCase()}</strong>` : ''}. The 95% range is ${o.ci95[0]} to ${o.ci95[1]}pt, so the gap holds up as more than sampling noise.`
-    : `Across <strong style="color:#dcefe4;">${o.matches}</strong> priced matches ${pesc(surname0(p))} has finished within the closing market's expectation (${signed(o.vsMarket, 'pt')}, 95% range ${o.ci95[0]} to ${o.ci95[1]}pt). That range spans zero, so there is no measurable edge either way — the market prices him about right.`;
+    : topAngle
+    // The aggregate is flat, so the readout hands the reader the angle instead of
+    // reporting the flat aggregate as if it were the finding. The interval is still
+    // quoted: this is a place to look, not a proven edge, and it must not read as one.
+    ? `Across all <strong style="color:#dcefe4;">${o.matches}</strong> priced matches ${pesc(surname0(p))} lands on the market's number (${signed(o.vsMarket, 'pt')}, 95% range ${o.ci95[0]} to ${o.ci95[1]}pt), but that average hides where the gaps are. His largest is <strong style="color:#dcefe4;">${signed(topAngle.g, 'pt')} ${topAngle.label}</strong> — the blocks below break that down by role and by surface.`
+    : `Across <strong style="color:#dcefe4;">${o.matches}</strong> priced matches ${pesc(surname0(p))} has finished within the closing market's expectation (${signed(o.vsMarket, 'pt')}, 95% range ${o.ci95[0]} to ${o.ci95[1]}pt), and no single role or surface separates from it by more than ${MKT_ANGLE_GAP}pt either. There is no angle on him worth taking here.`;
   return `
     <div id="ppMarketPanel" style="border:1px solid rgba(62,123,250,0.22);border-radius:16px;background:linear-gradient(180deg,rgba(62,123,250,0.05),rgba(62,123,250,0.01));padding:22px 24px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
@@ -7498,6 +7700,7 @@ function buildPlayerProfileHtml(p){
         <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;">
           <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;">Vs market expectation by surface · ${winLabel}</div>
           <div style="display:flex;flex-direction:column;gap:13px;">${oddsBars || '<span style="font-size:12px;color:#5b6472;">No surface has enough priced matches to break out.</span>'}</div>
+          ${surfMisprice}
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;background:${ppHexA(verdictColor,0.06)};border:1px solid ${ppHexA(verdictColor,0.2)};border-left:3px solid ${ppHexA(verdictColor,0.55)};border-radius:12px;padding:16px 18px;">
           <span style="color:${verdictColor};display:flex;flex:none;margin-top:1px;width:15px;height:15px;">${BSP_ICONS.bulb}</span>
@@ -7507,11 +7710,13 @@ function buildPlayerProfileHtml(p){
           </div>
         </div>
       </div>
+      ${roleCmpHtml ? `<div style="margin-top:14px;">${roleCmpHtml}</div>` : ''}
+      ${!(splitsHtml || favHtml || dogHtml) && !mktMoreOpen ? '' : `<div style="padding:12px 0 2px;margin-top:12px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;"><span onclick="togglePpMktMore()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">${mktMoreOpen ? 'Show less' : 'See more'}</span></div>`}
+      ${!mktMoreOpen ? '' : `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;" class="pp-odds-lower">
         ${favHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the favourite often enough in any price band to measure how reliably he converts.</span></div>`}
         ${dogHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the underdog often enough in any price band to measure how often he beats his price.</span></div>`}
-      </div>
-      ${!splitsHtml && !mktMoreOpen ? '' : `<div style="padding:12px 0 2px;margin-top:12px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;"><span onclick="togglePpMktMore()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">${mktMoreOpen ? 'Show less' : 'See more · by tour level, opponent and round'}</span></div>`}
+      </div>`}
       ${mktMoreOpen ? splitsHtml : ''}
       ${!mktMoreOpen ? '' : `<div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. &quot;Last ${rw ? rw.matches : 40} matches&quot; is a rolling count, not a date range, so every player's form number rests on the same sample size. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>`}
     </div>`;
