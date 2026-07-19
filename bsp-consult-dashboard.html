@@ -1619,12 +1619,12 @@
 
 /* ---- hero: 7x7 edge grid ---- */
 [data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; overflow:hidden; background:#0a0b0f; }
-[data-page="styles"] .ps-ghead{ display:grid; grid-template-columns:196px repeat(7,1fr); border-bottom:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.015); }
+[data-page="styles"] .ps-ghead{ display:grid; grid-template-columns:196px repeat(var(--ps-n,8),1fr); border-bottom:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.015); }
 [data-page="styles"] .ps-gcorner{ display:flex; align-items:center; padding:0 16px; height:52px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
 [data-page="styles"] .ps-gcol{ min-height:66px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 6px; text-align:center; border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
 [data-page="styles"] .ps-gcol-code{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; letter-spacing:0.06em; color:#e7e9ee; }
 [data-page="styles"] .ps-gcol-name{ font-size:9px; font-weight:600; letter-spacing:0.02em; color:#6b7280; line-height:1.2; }
-[data-page="styles"] .ps-grow{ display:grid; grid-template-columns:196px repeat(7,1fr); border-top:1px solid rgba(255,255,255,0.055); }
+[data-page="styles"] .ps-grow{ display:grid; grid-template-columns:196px repeat(var(--ps-n,8),1fr); border-top:1px solid rgba(255,255,255,0.055); }
 [data-page="styles"] .ps-grow-h{ display:flex; flex-direction:column; justify-content:center; padding:0 16px; height:74px; transition:opacity .12s ease; cursor:default; }
 [data-page="styles"] .ps-grow-name{ font-size:13.5px; font-weight:700; color:#e7e9ee; white-space:nowrap; }
 [data-page="styles"] .ps-grow-code{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:#5b6472; margin-top:3px; }
@@ -1650,9 +1650,6 @@
 [data-page="styles"] .ps-arow-name{ font-size:17px; font-weight:700; color:#e7e9ee; }
 [data-page="styles"] .ps-arow-count{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6b7280; }
 [data-page="styles"] .ps-arow-desc{ margin:5px 0 0; font-size:12.5px; color:#8b93a3; line-height:1.5; max-width:560px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-[data-page="styles"] .ps-arow-top{ display:flex; align-items:center; gap:9px; margin-top:10px; }
-[data-page="styles"] .ps-arow-toplabel{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
-[data-page="styles"] .ps-arow-topnames{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#7a8494; }
 [data-page="styles"] .ps-arow-bars{ display:flex; flex-direction:column; gap:9px; }
 [data-page="styles"] .ps-bar{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
 [data-page="styles"] .ps-barlabel{ min-width:120px; }
@@ -1690,7 +1687,6 @@
 [data-page="styles"] .ps-tag{ display:inline-flex; align-items:center; gap:8px; background:#0e1015; border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:6px 10px; }
 [data-page="styles"] .ps-tagname{ font-size:12.5px; font-weight:600; color:#e7e9ee; }
 [data-page="styles"] .ps-tagelo{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; }
-[data-page="styles"] .ps-chipb{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; font-weight:700; letter-spacing:0.05em; border-radius:5px; padding:2px 5px; }
 [data-page="styles"] .ps-rempty{ font-size:12px; color:#5b6472; }
 @media (max-width:900px){
   [data-page="styles"] .ps-gridwrap{ overflow-x:auto; }
@@ -1749,7 +1745,7 @@
     </div>
     <!-- SEVEN ARCHETYPES -->
     <div class="ps-block">
-      <span class="ps-eyebrow">Seven archetypes</span>
+      <span class="ps-eyebrow">Eight archetypes</span>
       <h2 class="ps-blocktitle">The styles behind the grid</h2>
       <div id="psCards" class="ps-rows" style="margin-top:22px;"></div>
     </div>
@@ -1916,14 +1912,17 @@ const PS_ARCHETYPES = [
   { id:'solid_baseliner', ids:['solid_baseliner'], code:'SLB', name:'Solid Baseliner',
     description:'Consistent and reliable from the back. High hold rate, low double faults, wins through steady dominance.',
     count:null, players:[] },
-  { id:'all_court', ids:['all_court','all_court_elite'], code:'ACP', name:'All-Court Player',
-    description:'The complete players. Comfortable serving, returning and at the net — no exploitable weakness, elite in every phase.',
-    count:null, players:[] },
   { id:'counter_puncher', ids:['counter_puncher'], code:'CTR', name:'Counter Puncher',
     description:'Returns everything and turns defence into attack. Thrives on long exchanges and neutralises opponents.',
     count:null, players:[] },
   { id:'solid_defender', ids:['solid_defender'], code:'SLD', name:'Solid Defender',
     description:'Extreme defensive specialist. Wins almost entirely through opponent errors — absorbs everything, waits for the miss.',
+    count:null, players:[] },
+  { id:'all_court', ids:['all_court'], code:'ACP', name:'All-Court Player',
+    description:'Balanced with no standout trait. Genuine all-rounders with an even profile across every phase — distinct from the Elite tier.',
+    count:null, players:[] },
+  { id:'all_court_elite', ids:['all_court_elite'], code:'ACE', name:'All-Court Elite',
+    description:'The complete, generational players. Elite serving, returning and at the net — no exploitable weakness anywhere.',
     count:null, players:[] },
 ];
 // Badge pills on the player tags (classify-styles.js emits these four keys).
@@ -1933,7 +1932,6 @@ const PS_BADGE = {
   high_risk_high_reward:{ t:'HR',    c:'#E8B341', bg:'rgba(232,179,65,0.16)',  bd:'rgba(232,179,65,0.42)', n:'High Risk / High Reward' },
   grass_specialist:     { t:'GRASS', c:'#6fbf5b', bg:'rgba(111,191,91,0.16)',  bd:'rgba(111,191,91,0.42)', n:'Grass Specialist' },
 };
-const PS_BADGE_ORDER = ['pressure_player','clay_specialist','high_risk_high_reward','grass_specialist'];
 // Matchup matrix is COMPUTED from our own classification x real TML match results
 // (classify-styles.js -> matchup-matrix.json), fetched at render time.
 let psMatrixData = null;
@@ -1994,13 +1992,21 @@ async function renderPlayingStyles(){
       const data = await res.json();
       const byArch = {};
       (data.players || []).forEach(p => { if (!p.primary) return; (byArch[p.primary] = byArch[p.primary] || []).push(p); });
+      // Dropping the initial collides real players once a full roster is shown
+      // (B./L. Harris, E./M. Ymer), so a surname claimed by more than one player
+      // keeps its initial. Scanned across every archetype, not within one row.
+      const shortSeen = {};
+      (data.players || []).forEach(p => {
+        if (!p.primary) return;
+        const s = psShortName(p.name);
+        (shortSeen[s] = shortSeen[s] || new Set()).add(p.name);
+      });
+      const displayName = p => { const s = psShortName(p.name); return shortSeen[s] && shortSeen[s].size > 1 ? p.name : s; };
       PS_ARCHETYPES.forEach(a => {
-        // Merged archetypes concatenate every source roster before the Elo sort, so
-        // All-Court Player leads with the Elite names (Sinner, Alcaraz, Djokovic).
         const list = a.ids.reduce((acc, id) => acc.concat(byArch[id] || []), []);
         if (list.length){
           a.count = list.length;
-          a.players = list.map(p => ({ name: psShortName(p.name), elo: psEloFor(eloData, p.name), badges: p.badges || [] }))
+          a.players = list.map(p => ({ name: displayName(p), elo: psEloFor(eloData, p.name), badges: p.badges || [] }))
             .sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
         }
       });
@@ -2008,7 +2014,7 @@ async function renderPlayingStyles(){
   } catch(err){ console.warn('playing-styles.json load failed:', err.message); }
   psRenderMatrixAndCards();
 }
-const PS_NUMWORD = ['zero','one','two','three','four','five','six','seven'];
+const PS_NUMWORD = ['zero','one','two','three','four','five','six','seven','eight'];
 function psFmtEdge(e){ return e > 0 ? ('+' + e) : (e < 0 ? ('−' + Math.abs(e)) : '0'); }
 function psEdgeClass(e){ return e > 0 ? 'ps-edge-g' : (e < 0 ? 'ps-edge-r' : 'ps-edge-n'); }
 function psEdgeColor(e){ return e > 0 ? '#3ECF8E' : (e < 0 ? '#E8607A' : '#8b93a3'); }
@@ -2045,10 +2051,13 @@ function psRenderMatrixAndCards(){
     g += '</div>';
   });
   const mx = document.getElementById('psMatrix');
+  // Column count drives the CSS grid so adding an archetype can never silently
+  // clip the last column the way a hardcoded repeat(7,1fr) did.
+  mx.style.setProperty('--ps-n', n);
   mx.innerHTML = g;
   psWireGridHover(mx);
 
-  // ---------- seven expandable archetype rows ----------
+  // ---------- expandable archetype rows, one per PS_ARCHETYPES entry ----------
   let html = '';
   A.forEach((a, i) => {
     // Opponents ranked by edge, best first. Pairings without a rated sample drop out
@@ -2067,17 +2076,20 @@ function psRenderMatrixAndCards(){
         '<span class="ps-barpct">' + win + '%</span></div>';
     };
     // Two dominant + two weak: every style is weak against All-Court, so the second
-    // weakness is the one that actually distinguishes it.
-    const bars = m ? bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + bar(idxs[m - 1], 'weak') + bar(idxs[m - 2], 'weak') : '';
+    // weakness is the one that actually distinguishes it. All-Court Elite is the
+    // exception — it beats every style, so its strongest matchup carries no
+    // information and we show its two weakest instead.
+    const eliteOnly = a.id === 'all_court_elite';
+    const bars = !m ? ''
+      : eliteOnly ? bar(idxs[m - 1], 'weak') + bar(idxs[m - 2], 'weak')
+      : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + bar(idxs[m - 1], 'weak') + bar(idxs[m - 2], 'weak');
 
-    const topNames = a.players.slice(0, 4).map(p => psEsc(p.name)).join('   ·   ');
     html += '<div class="ps-arow" id="psArow' + i + '">';
     html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
     html += '<span class="ps-arow-idx">' + String(i + 1).padStart(2, '0') + '</span>';
     html += '<div class="ps-arow-txt"><div class="ps-arow-title"><span class="ps-arow-name">' + psEsc(a.name) + '</span>' +
       '<span class="ps-arow-count">' + cnt + ' player' + (cnt === 1 ? '' : 's') + '</span></div>' +
       '<div class="ps-arow-desc">' + psEsc(a.description) + '</div>' +
-      (topNames ? '<div class="ps-arow-top"><span class="ps-arow-toplabel">Players</span><span class="ps-arow-topnames">' + topNames + '</span></div>' : '') +
       '</div>';
     html += '<div class="ps-arow-bars">' + bars + '</div>';
     html += '<span class="ps-arow-chev">' + PS_CHEV + '</span></div>';
@@ -2111,15 +2123,14 @@ function psRenderMatrixAndCards(){
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-s">Strong against</div>' + strongList + '</div>' +
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-w">Weak against</div>' + weakList + '</div>' +
       '</div></div></div>';
-    html += '<div><div class="ps-plabel">Example players</div><div class="ps-tags">';
+    // The full roster, not a sample — this is the page's single listing of who
+    // plays each style, so capping it hid genuine members of the archetype.
+    // Badges deliberately omitted here: they belong on the Player Profile page.
+    html += '<div><div class="ps-plabel">Players &middot; by Elo</div><div class="ps-tags">';
     if (a.players.length){
-      a.players.slice(0, 5).forEach(p => {
-        const chips = PS_BADGE_ORDER.filter(k => (p.badges || []).indexOf(k) !== -1).map(k => {
-          const b = PS_BADGE[k];
-          return '<span class="ps-chipb" title="' + psEsc(b.n) + '" style="color:' + b.c + '; background:' + b.bg + '; border:1px solid ' + b.bd + ';">' + b.t + '</span>';
-        }).join('');
+      a.players.forEach(p => {
         html += '<span class="ps-tag"><span class="ps-tagname">' + psEsc(p.name) + '</span>' +
-          '<span class="ps-tagelo">' + (p.elo != null ? p.elo : '—') + '</span>' + chips + '</span>';
+          '<span class="ps-tagelo">' + (p.elo != null ? p.elo : '—') + '</span></span>';
       });
     } else html += '<div class="ps-rempty">No qualified players.</div>';
     html += '</div></div></div></div>';
