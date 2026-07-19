@@ -451,6 +451,11 @@
   .modal .dismiss{ background:none; color:var(--text-faint); margin-top:10px; font-weight:500; }
   .modal .dismiss:hover{ background:none; color:var(--text-dim); }
 
+  /* Career splits / Last 52 weeks table. Rows carry an inline zebra background,
+     so the hover has to win with !important or the stripe overrides it. */
+  .pp-split-row:hover{ background:rgba(255,255,255,0.05) !important; }
+  .pp-split-tgl:hover{ background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.24); }
+
   .modal-analysis{ max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
 
   /* ---- Header ---- */
@@ -6123,7 +6128,7 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', formSeason: null, careerLockPx: null, splitsOpen: { career: false, last52: false }, mktWindow: 'career', mktSplit: 'level' };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', careerLockPx: null, splitsOpen: { career: true, last52: false }, mktWindow: 'career', mktSplit: 'level', mktMore: false };
 
 // Upstream match history (recentForm.matches) is only complete from 2023 on.
 // Measured across all 437 players carrying form data: 2023-2026 hold a median
@@ -6153,29 +6158,66 @@ function togglePpSplits(which){
 // it as an instant custom tooltip (see initPpSplitTips). The native browser
 // `title` is deliberately NOT set on the header cell — having both would render
 // the same text twice, stacked, on hover.
+// Column palette from the redesign. Win% is the ONLY coloured stat — it is
+// bold and graded by absolute quality, so the eye lands on match-winning first
+// and everything else stays a uniform, readable neutral. W and L are pointedly
+// NOT green/red: a green W next to a coloured Win% double-counts the same fact.
+const PP_SPLIT_C = {
+  count: '#d6dbe3',   // M / W / L
+  num:   '#b8c0cc',   // percentages
+  pair:  '#8b93a3',   // W-L pairs
+  dim:   '#5b6472',   // MS (a denominator, not a result)
+  green: '#3ECF8E', white: '#eef2f8', red: '#E8607A',
+};
+// Win% is graded on absolute quality, not on a comparison: ≥60 green, 50–60
+// neutral, <50 red. Both tabs share this — change the cutoffs here and Career
+// splits and Last 52 weeks move together.
+function ppWinColor(v){
+  if (v == null) return PP_SPLIT_C.white;
+  return v >= 60 ? PP_SPLIT_C.green : (v >= 50 ? PP_SPLIT_C.white : PP_SPLIT_C.red);
+}
+// The 15 columns, in 5 groups. `w` is the grid track width, `bl` marks the
+// column that opens a group (it carries the thin vertical separator).
+//
+// A serve column is measured over MS (matches with recorded serve data), not M.
+// Where the source recorded none, the value is absent and renders as an em dash:
+// "not measured" and "zero" are different facts and must not look alike.
+// Each column carries a plain-English `t` explanation. Hovering the header shows
+// it as an instant custom tooltip (see initPpSplitTips). The native browser
+// `title` is deliberately NOT set on the header cell — having both would render
+// the same text twice, stacked, on hover.
 const PP_SPLIT_COLS = [
-  { k: 'M',      t: 'M — Matches played in this split.',                              get: r => r.M,      c: '#aab2c0' },
-  { k: 'W',      t: 'W — Matches won.',                                               get: r => r.W,      c: '#8fe4bd' },
-  { k: 'L',      t: 'L — Matches lost.',                                              get: r => r.L,      c: '#E8607A' },
-  { k: 'Win%',   t: 'Win% — Match win percentage: matches won ÷ matches played.',     get: r => pct1(r.winPct), c: '#e7e9ee', b: true },
-  { k: 'Set W-L',t: 'Set W-L — Sets won and sets lost across these matches.',         get: r => wl(r.setW, r.setL),   c: '#8b93a3' },
-  { k: 'Set%',   t: 'Set% — Set win percentage: sets won ÷ sets played.',             get: r => pct1(r.setPct),       c: '#aab2c0' },
-  { k: 'Game W-L',t:'Game W-L — Games won and games lost across these matches.',      get: r => wl(r.gameW, r.gameL), c: '#8b93a3' },
-  { k: 'Game%',  t: 'Game% — Game win percentage: games won ÷ games played.',         get: r => pct1(r.gamePct),      c: '#aab2c0' },
-  { k: 'TB W-L', t: 'TB W-L — Tiebreaks won and tiebreaks lost.',                     get: r => wl(r.tbW, r.tbL),     c: '#8b93a3' },
-  { k: 'TB%',    t: 'TB% — Tiebreak win percentage: tiebreaks won ÷ tiebreaks played.', get: r => pct1(r.tbPct),      c: '#aab2c0' },
-  { k: 'MS',     t: 'MS — Matches with serve statistics: the sample every serve and return column to the right is measured over (may be fewer than M).', get: r => r.MS != null ? r.MS : '—', c: '#5b6472' },
-  { k: 'Hld%',   t: 'Hld% — Hold percentage: share of his own service games he held (did not get broken).', get: r => pct1(r.hldPct),       c: '#8fe4bd' },
-  { k: 'Brk%',   t: 'Brk% — Break percentage: share of the opponent\'s service games he broke.', get: r => pct1(r.brkPct),       c: '#8fe4bd' },
-  { k: 'A%',     t: 'A% — Ace percentage: aces as a share of his service points.',    get: r => pct1(r.aPct),         c: '#aab2c0' },
-  { k: 'DF%',    t: 'DF% — Double-fault percentage: double faults as a share of his service points.', get: r => pct1(r.dfPct),  c: '#aab2c0' },
-  { k: '1stIn',  t: '1stIn — First-serve in percentage: share of first serves landed in.', get: r => pct1(r.firstInPct),   c: '#aab2c0' },
-  { k: '1st%',   t: '1st% — First-serve points won: share of points won when the first serve went in.', get: r => pct1(r.firstWonPct),  c: '#aab2c0' },
-  { k: '2nd%',   t: '2nd% — Second-serve points won: share of points won on the second serve.', get: r => pct1(r.secondWonPct), c: '#aab2c0' },
-  { k: 'SPW',    t: 'SPW — Serve points won: share of all points won on his own serve.', get: r => pct1(r.spwPct),       c: '#cfd4de' },
-  { k: 'RPW',    t: 'RPW — Return points won: share of all points won on the opponent\'s serve.', get: r => pct1(r.rpwPct),  c: '#cfd4de' },
-  { k: 'TPW',    t: 'TPW — Total points won: share of all points won across serve and return.', get: r => pct1(r.tpwPct),   c: '#cfd4de' },
-  { k: 'DR',     t: 'DR — Dominance Ratio: return points won divided by serve points lost. Above 1.00 means he does more damage returning than he concedes on serve.', get: r => r.dr != null ? r.dr.toFixed(2) : '—', c: '#7ba4ff', b: true },
+  { k: 'M',       w: '44px', bl: 1, t: 'M — Matches played in this split.',                              get: r => r.M, c: PP_SPLIT_C.count, b: true },
+  { k: 'W',       w: '44px',        t: 'W — Matches won.',                                               get: r => r.W, c: PP_SPLIT_C.count, b: true },
+  { k: 'L',       w: '44px',        t: 'L — Matches lost.',                                              get: r => r.L, c: PP_SPLIT_C.count, b: true },
+  { k: 'Win%',    w: '64px',        t: 'Win% — Match win percentage: matches won ÷ matches played. Green at 60% or better, red below 50%.', get: r => pct1(r.winPct), win: true },
+  { k: 'Set W-L', w: '74px', bl: 1, t: 'Set W-L — Sets won and sets lost across these matches.',         get: r => wl(r.setW, r.setL),   c: PP_SPLIT_C.pair },
+  { k: 'Set%',    w: '52px',        t: 'Set% — Set win percentage: sets won ÷ sets played.',             get: r => pct1(r.setPct),       c: PP_SPLIT_C.num },
+  { k: 'Game W-L',w: '92px', bl: 1, t: 'Game W-L — Games won and games lost across these matches.',      get: r => wl(r.gameW, r.gameL), c: PP_SPLIT_C.pair },
+  { k: 'Game%',   w: '52px',        t: 'Game% — Game win percentage: games won ÷ games played.',         get: r => pct1(r.gamePct),      c: PP_SPLIT_C.num },
+  { k: 'TB W-L',  w: '72px', bl: 1, t: 'TB W-L — Tiebreaks won and tiebreaks lost.',                     get: r => wl(r.tbW, r.tbL),     c: PP_SPLIT_C.pair },
+  { k: 'TB%',     w: '52px',        t: 'TB% — Tiebreak win percentage: tiebreaks won ÷ tiebreaks played.', get: r => pct1(r.tbPct),      c: PP_SPLIT_C.num },
+  { k: 'MS',      w: '44px',        t: 'MS — Matches with serve statistics: the sample every serve column to the right is measured over (may be fewer than M).', get: r => r.MS != null ? r.MS : '—', c: PP_SPLIT_C.dim },
+  { k: 'Hld%',    w: '52px', bl: 1, t: 'Hld% — Hold percentage: share of his own service games he held (did not get broken).', get: r => pct1(r.hldPct), c: PP_SPLIT_C.num },
+  { k: 'Brk%',    w: '52px',        t: 'Brk% — Break percentage: share of the opponent\'s service games he broke.', get: r => pct1(r.brkPct), c: PP_SPLIT_C.num },
+  { k: 'A%',      w: '48px',        t: 'A% — Ace percentage: aces as a share of his service points.',    get: r => pct1(r.aPct),         c: PP_SPLIT_C.num },
+  { k: 'DF%',     w: '48px',        t: 'DF% — Double-fault percentage: double faults as a share of his service points.', get: r => pct1(r.dfPct), c: PP_SPLIT_C.num },
+];
+// Group headers, bracketing the columns above. The spans must sum to
+// PP_SPLIT_COLS.length or the grid silently shears.
+const PP_SPLIT_GROUPS = [
+  { label: 'Record', span: 4 }, { label: 'Sets', span: 2 }, { label: 'Games', span: 2 },
+  { label: 'Tiebreaks', span: 3 }, { label: 'Serve', span: 4 },
+];
+// Left-hand rows, grouped into labelled sections. Rows with zero matches were
+// dropped at ingest, so a section renders only the keys that actually exist and
+// a section with nothing in it is omitted entirely.
+const PP_SPLIT_SECTIONS = [
+  { label: 'Surface',  keys: ['Hard','Clay','Grass','Carpet'] },
+  { label: 'Level',    keys: ['Grand Slams','Masters','Other Tours'] },
+  { label: 'Format',   keys: ['Best of 5','Best of 3'] },
+  { label: 'By Round', keys: ['Finals','Semi-finals','Quarter-finals'] },
+  { label: 'Opponent', keys: ['vs. Righties','vs. Lefties','vs. Top 10'] },
 ];
 function pct1(v){ return v != null ? v.toFixed(1) + '%' : '—'; }
 function wl(w, l){ return (w != null && l != null) ? `${w}-${l}` : '—'; }
@@ -6217,34 +6259,59 @@ function initPpSplitTips(){
     if (el && e.target.closest && e.target.closest('.pp-split-h')) el.style.opacity = '0';
   });
 }
+// The grid track list is shared by the group header, the column header and every
+// data row — they must stay in lockstep or the columns shear apart.
+const PP_SPLIT_GRID = `display:grid;grid-template-columns:150px ${PP_SPLIT_COLS.map(c => c.w).join(' ')};`;
+const PP_SPLIT_SEP = '1px solid rgba(255,255,255,0.06)';
+const PP_SPLIT_MONO = `font-family:'IBM Plex Mono',monospace;`;
 function ppSplitsTableHtml(rows){
   initPpSplitTips();
-  const order = ['Hard','Clay','Grass','Carpet','Grand Slams','Masters','Other Tours','Best of 5','Best of 3','Finals','Semi-finals','Quarter-finals','vs. Righties','vs. Lefties','vs. Top 10'];
-  const grid = `display:grid;grid-template-columns:130px repeat(${PP_SPLIT_COLS.length},minmax(52px,1fr));gap:8px;`;
-  const stick = 'position:sticky;left:0;background:#0c0e13;z-index:1;';
-  const head = `<div style="${grid}padding:0 4px 8px;font-size:10px;letter-spacing:0.03em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">
-    <span style="${stick}"></span>${PP_SPLIT_COLS.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;cursor:help;white-space:nowrap;">${c.k}</span>`).join('')}</div>`;
-  const body = order.filter(k => rows[k]).map(k => {
-    const r = rows[k];
-    return `<div style="${grid}padding:8px 4px;border-top:1px solid rgba(255,255,255,0.05);align-items:center;">
-      <span style="${stick}font-size:12.5px;color:#cfd4de;font-weight:600;white-space:nowrap;">${k}</span>
-      ${PP_SPLIT_COLS.map(c => `<span style="text-align:right;font-size:12px;font-family:'IBM Plex Mono',monospace;color:${c.c};${c.b ? 'font-weight:700;' : ''}white-space:nowrap;">${c.get(r)}</span>`).join('')}
-    </div>`;
+  const groupHead = `<div style="${PP_SPLIT_GRID}padding:6px 0 4px;"><span></span>${
+    PP_SPLIT_GROUPS.map(g => `<span style="grid-column:span ${g.span};margin:0 4px;text-align:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.09);${PP_SPLIT_MONO}font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#8b93a3;">${g.label}</span>`).join('')
+  }</div>`;
+  const colHead = `<div style="${PP_SPLIT_GRID}padding:0 0 9px;"><span></span>${
+    PP_SPLIT_COLS.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding:0 11px;cursor:help;white-space:nowrap;${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}${PP_SPLIT_MONO}font-size:10px;font-weight:${c.win ? '600' : '500'};letter-spacing:0.04em;color:${c.win ? '#8b93a3' : '#6b7280'};">${c.k.toUpperCase()}</span>`).join('')
+  }</div>`;
+  // The zebra stripe runs continuously down the whole table rather than
+  // restarting per section, so the eye can still track a row across a divider.
+  let stripe = 0;
+  const body = PP_SPLIT_SECTIONS.map(sec => {
+    const keys = sec.keys.filter(k => rows[k]);
+    if (!keys.length) return '';
+    const label = `<div style="display:flex;align-items:center;gap:11px;padding:15px 0 6px;">
+      <span style="${PP_SPLIT_MONO}font-size:9.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5b6472;">${sec.label}</span>
+      <span style="flex:1;height:1px;background:rgba(255,255,255,0.055);"></span></div>`;
+    return label + keys.map(k => {
+      const r = rows[k];
+      const bg = (stripe++ % 2 === 1) ? 'rgba(255,255,255,0.022)' : 'transparent';
+      return `<div class="pp-split-row" style="${PP_SPLIT_GRID}align-items:center;background:${bg};border-radius:7px;transition:background .12s ease;">
+        <span style="text-align:left;padding:13px 12px;font-family:'Hanken Grotesk',sans-serif;font-size:13px;font-weight:600;color:#e7e9ee;">${k}</span>
+        ${PP_SPLIT_COLS.map(c => `<span style="text-align:right;padding:13px 11px;${PP_SPLIT_MONO}font-size:13px;font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? ppWinColor(r.winPct) : c.c};${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}white-space:nowrap;">${c.get(r)}</span>`).join('')}
+      </div>`;
+    }).join('');
   }).join('');
-  return `<div style="overflow-x:auto;">${head}${body}</div>`;
+  // 984px is the exact sum of the grid tracks; below that the table scrolls
+  // sideways rather than crushing the columns into each other.
+  return `<div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;overflow-x:auto;"><div style="min-width:984px;">${groupHead}${colHead}${body}</div></div>`;
 }
+const PP_SPLIT_CHEVRON = `<svg width="9" height="9" viewBox="0 0 8 8"><path d="M2 1 L6 4 L2 7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
 function ppSplitsSection(title, which, rows, subtitle){
   const open = ppState.splitsOpen[which];
-  const caret = open ? '▾' : '▸';
-  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;overflow:hidden;">
-    <div onclick="togglePpSplits('${which}')" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;cursor:pointer;user-select:none;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="color:#7ba4ff;font-size:13px;width:14px;">${caret}</span>
-        <div><div style="font-size:15px;font-weight:700;">${title}</div><div style="font-size:11.5px;color:#8b93a3;margin-top:2px;">${subtitle}</div></div>
+  const rot = open ? '90deg' : '0deg';
+  return `<div style="background:#0a0b0f;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 26px 24px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;">
+      <div style="display:flex;align-items:flex-start;gap:13px;">
+        <span style="display:inline-flex;margin-top:4px;color:${open ? '#3E7BFA' : '#5b6472'};transform:rotate(${rot});transition:transform .18s ease;">${PP_SPLIT_CHEVRON.replace('width="9" height="9"','width="11" height="11"')}</span>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;color:#f3f5f9;">${title}</span>
+          <span style="font-size:12.5px;color:#8b93a3;">${subtitle}</span>
+        </div>
       </div>
-      <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${open?'Hide':'Show'}</span>
+      <button class="pp-split-tgl" onclick="togglePpSplits('${which}')" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:8px 15px;border-radius:9px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.035);color:#c8cfda;${PP_SPLIT_MONO}font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;transition:background .15s ease,border-color .15s ease;">
+        <span style="display:inline-flex;transform:rotate(${rot});transition:transform .18s ease;">${PP_SPLIT_CHEVRON}</span>${open ? 'Hide' : 'Show'}
+      </button>
     </div>
-    ${open ? `<div style="padding:4px 18px 20px;">${ppSplitsTableHtml(rows)}</div>` : ''}
+    ${open ? ppSplitsTableHtml(rows) : ''}
   </div>`;
 }
 function ppCareerSplitsHtml(p){
@@ -6476,7 +6543,6 @@ function showPlayerProfile(key){
   ppState.tournamentPicked = null;
   ppState.formExpanded = false;
   ppState.formSurface = 'All';
-  ppState.formSeason = null;
   // Each player's Career record box is a different height, so the previous
   // player's lock must not carry over.
   ppState.careerLockPx = null;
@@ -6515,6 +6581,12 @@ function setPpMktSplit(s){
   const profile = playerProfiles[ppState.key];
   if (profile) ppRepaint();
 }
+// Reveals the split breakdown and the source note under the market block.
+function togglePpMktMore(){
+  ppState.mktMore = !ppState.mktMore;
+  const profile = playerProfiles[ppState.key];
+  if (profile) ppRepaint();
+}
 function togglePpFollow(){
   ppState.following[ppState.key] = !ppState.following[ppState.key];
   const profile = playerProfiles[ppState.key];
@@ -6534,15 +6606,6 @@ function togglePpFormExpanded(){
 function setPpFormSurface(s){
   ppState.formSurface = s;
   ppState.formExpanded = false;
-  ppState.formSeason = null;
-  const profile = playerProfiles[ppState.key];
-  if (profile) ppRepaint();
-}
-// Season Results tab selection inside the Recent form card. Null means "let the
-// card pick the newest season that actually has matches for the current surface
-// filter", so the tabs never open on an empty season.
-function setPpFormSeason(y){
-  ppState.formSeason = String(y);
   const profile = playerProfiles[ppState.key];
   if (profile) ppRepaint();
 }
@@ -6847,20 +6910,6 @@ function ppEloForSurface(p, surf){
   const est = ppEloFor(p); // illustrative fallback
   return { rating: est.elo, rank: est.rank, illustrative: true, surface: 'All' };
 }
-// Navigate the Recent-form card to a chosen season and expand it (the Career
-// record table's clickable year rows call this). Clears the card-local surface
-// filter so the season always has matches to show, then scrolls the card in.
-function ppOpenSeason(y){
-  ppState.formSurface = 'All';
-  ppState.formSeason = String(y);
-  ppState.formExpanded = true;
-  const profile = playerProfiles[ppState.key];
-  if (profile){
-    ppRepaint();
-    const card = document.getElementById('ppRecentFormCard');
-    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
 // Drill a single Career-record cell open in place: the matches behind one
 // year + surface, listed under the year's row and expandable to the box score
 // and point log like every other match list in the app.
@@ -6990,35 +7039,45 @@ function ppRepaint(){
   ppSyncCareerHeight();
   ppUpgradeFormRows();
 }
-// The two cards share a row height by grid stretch, which is right on first
-// paint but wrong once Recent form expands: the Career record box would grow to
-// match a list of a hundred matches and end in a column of dead space. So the
-// height is captured from the COLLAPSED state and held. Measuring only while
-// collapsed is what makes the lock stable — an expanded measurement would bake
-// in the tall height and never recover.
+// The Career record box is the reference height for the row, in both states.
+//
+// Collapsed (the locked initial state): Recent form is set to the Career record
+// box's own natural height — exactly, not taller and not shorter. Left to grid
+// stretch the taller card wins, so a player with a long form list would push
+// the Career box down into a column of dead space. Recent form clips instead,
+// and only the explicit "See more" click may grow it.
+//
+// Expanded: the roles swap. Recent form flows at its natural height and the
+// Career box holds the height measured while collapsed — an expanded
+// measurement would bake in the tall value and never recover.
 function ppSyncCareerHeight(){
   const grid = document.querySelector('#playerProfileView .pp-form-career');
   const career = document.getElementById('ppCareerRecordCard');
+  const form = document.getElementById('ppRecentFormCard');
   if (!grid || !career) return;
   // Single-column below 820px (see the .pp-form-career media query): the cards
   // are stacked, so there is no shared height to hold and a lock would just
-  // clip the table.
+  // clip one of them.
   if (window.matchMedia('(max-width:820px)').matches){
     grid.style.alignItems = '';
     career.style.height = '';
+    if (form) form.style.height = '';
     return;
   }
-  if (!ppState.formExpanded){
-    // Clear first so the natural stretch height is what gets measured, not a
-    // previously locked value.
-    grid.style.alignItems = '';
-    career.style.height = '';
-    ppState.careerLockPx = Math.round(career.getBoundingClientRect().height) || null;
-    return;
-  }
-  if (!ppState.careerLockPx) return;
-  // align-items:start stops the grid re-stretching the card past the lock.
+  // align-items:start stops the grid stretching either card past its lock, and
+  // is what lets the Career box report its own content height below.
   grid.style.alignItems = 'start';
+  if (!ppState.formExpanded){
+    // Clear first so the natural height is what gets measured, not a
+    // previously locked value.
+    career.style.height = '';
+    if (form) form.style.height = '';
+    ppState.careerLockPx = Math.round(career.getBoundingClientRect().height) || null;
+    if (form && ppState.careerLockPx) form.style.height = ppState.careerLockPx + 'px';
+    return;
+  }
+  if (form) form.style.height = '';
+  if (!ppState.careerLockPx) return;
   career.style.height = ppState.careerLockPx + 'px';
 }
 // buildPlayerProfileHtml is synchronous but the chevron gate needs two indexes,
@@ -7397,6 +7456,11 @@ function buildPlayerProfileHtml(p){
     { id: 'round', tab: 'Round', group: perf.byRound || {}, order: ['early','middle','late'], label: k => roundLabels[k] || k, px: 92 },
   ].map(d => ({ ...d, rows: d.order.filter(k => d.group[k]) })).filter(d => d.rows.length);
   const activeSplit = splitDefs.find(d => d.id === ppState.mktSplit) || splitDefs[0];
+  // The panel led with four tiles and then ran another three blocks deep before
+  // the footnote — too tall to read at a glance. The split breakdown and the
+  // source note are the parts a bettor consults rather than scans, so they sit
+  // behind a "See more" and the panel opens at roughly half its old height.
+  const mktMoreOpen = !!ppState.mktMore;
   const splitsHtml = !splitDefs.length ? '' : `
     <div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;margin-top:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
@@ -7415,7 +7479,7 @@ function buildPlayerProfileHtml(p){
     ? `Over <strong style="color:#dcefe4;">${o.matches}</strong> priced matches the closing market has ${beats ? 'underrated' : 'overrated'} ${pesc(surname0(p))} by <strong style="color:#dcefe4;">${signed(o.vsMarket, 'pt')}</strong>${bestSurface ? `, most clearly on <strong style="color:#dcefe4;">${bestSurface.s.toLowerCase()}</strong>` : ''}. The 95% range is ${o.ci95[0]} to ${o.ci95[1]}pt, so the gap holds up as more than sampling noise.`
     : `Across <strong style="color:#dcefe4;">${o.matches}</strong> priced matches ${pesc(surname0(p))} has finished within the closing market's expectation (${signed(o.vsMarket, 'pt')}, 95% range ${o.ci95[0]} to ${o.ci95[1]}pt). That range spans zero, so there is no measurable edge either way — the market prices him about right.`;
   return `
-    <div style="border:1px solid rgba(62,123,250,0.22);border-radius:16px;background:linear-gradient(180deg,rgba(62,123,250,0.05),rgba(62,123,250,0.01));padding:22px 24px;">
+    <div id="ppMarketPanel" style="border:1px solid rgba(62,123,250,0.22);border-radius:16px;background:linear-gradient(180deg,rgba(62,123,250,0.05),rgba(62,123,250,0.01));padding:22px 24px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:11px;min-width:0;">
           <span style="width:34px;height:34px;border-radius:10px;background:rgba(62,123,250,0.14);border:1px solid rgba(62,123,250,0.32);display:flex;align-items:center;justify-content:center;color:#7ba4ff;flex:none;"><span style="width:18px;height:18px;display:flex;">${BSP_ICONS.target}</span></span>
@@ -7447,8 +7511,9 @@ function buildPlayerProfileHtml(p){
         ${favHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the favourite often enough in any price band to measure how reliably he converts.</span></div>`}
         ${dogHtml || `<div style="background:#0c0e13;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;display:flex;align-items:center;"><span style="font-size:12px;color:#5b6472;line-height:1.5;">${pesc(surname0(p))} has not been the underdog often enough in any price band to measure how often he beats his price.</span></div>`}
       </div>
-      ${splitsHtml}
-      <div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. &quot;Last ${rw ? rw.matches : 40} matches&quot; is a rolling count, not a date range, so every player's form number rests on the same sample size. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
+      ${!splitsHtml && !mktMoreOpen ? '' : `<div style="padding:12px 0 2px;margin-top:12px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;"><span onclick="togglePpMktMore()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">${mktMoreOpen ? 'Show less' : 'See more · by tour level, opponent and round'}</span></div>`}
+      ${mktMoreOpen ? splitsHtml : ''}
+      ${!mktMoreOpen ? '' : `<div style="font-size:10.5px;color:#4b5361;margin-top:12px;font-family:'IBM Plex Mono',monospace;line-height:1.5;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. This source carries no opening price, so this is performance against the closing market, not closing line value. ROI = return per 1u flat stake, and it is negative for most players by design — the bookmaker margin has to be beaten before anyone shows a profit, so the players in green are the ones worth noticing. &quot;Last ${rw ? rw.matches : 40} matches&quot; is a rolling count, not a date range, so every player's form number rests on the same sample size. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>`}
     </div>`;
   })());
 
@@ -7551,60 +7616,43 @@ function buildPlayerProfileHtml(p){
   // prefix), so opening one closes any other open row in the card. They render
   // through the same ppFormGroupHtml as the rows above, and the shared ppFormSeq
   // counter carries on across both so ids never collide.
-  const formSeasons = [...new Set(formMatches.map(m => String(m.date || '').slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
-  const activeSeason = (ppState.formSeason && formSeasons.includes(ppState.formSeason)) ? ppState.formSeason : (formSeasons[0] || seasonYear);
-  const activeSeasonAll = formMatches.filter(m => String(m.date || '').startsWith(activeSeason));
-  // The eight rows above are already on screen, so the season list shows only
-  // what they don't — otherwise opening the current season renders a near-exact
-  // copy of the Recent form box directly beneath it. eventKey is present on
-  // every form row (74,279/74,279 across the dataset), so this is an exact
-  // match rather than a date/opponent heuristic.
-  const activeSeasonMatches = activeSeasonAll.filter(m => !shownFormKeys.has(String(m.eventKey || '')));
-  const activeSeasonCount = activeSeasonMatches.length;
-  const activeSeasonHidden = activeSeasonAll.length - activeSeasonCount;
-  const seasonTabsHtml = formSeasons.map(y => {
-    const on = y === activeSeason;
-    const partial = Number(y) < PP_FULL_HISTORY_FROM;
-    return `<span onclick="setPpFormSeason('${y}')" title="${partial ? 'Partial history — upstream coverage begins ' + PP_FULL_HISTORY_FROM : y + ' season'}" style="font-size:11.5px;font-weight:${on?700:600};font-family:'IBM Plex Mono',monospace;color:${on?'#dbe6ff':'#8b93a3'};background:${on?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${on?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;">${y}${partial?'<span style="color:#6b7280;"> · partial</span>':''}</span>`;
-  }).join('');
-  const partialNoteHtml = Number(activeSeason) < PP_FULL_HISTORY_FROM
-    ? `<div style="margin-top:10px;padding:8px 11px;border:1px solid rgba(232,179,65,0.28);background:rgba(232,179,65,0.07);border-radius:9px;font-size:11.5px;color:#c9a153;line-height:1.5;">Partial history — match coverage for ${activeSeason} is incomplete, so this is not a full season record.</div>`
-    : '';
-  const groups = ppGroupMatchesByTournament(activeSeasonMatches);
+  // Expanding is a continuation of the list above, not a second block: every
+  // remaining match flows in as one tournament-grouped list with no season
+  // header, no season tabs and no meta text between them. Splitting by season
+  // put a "2026" badge mid-list and read as a separate section.
+  //
+  // The rows above are already on screen, so this shows only what they don't —
+  // otherwise expanding renders a near-exact copy of the box directly beneath
+  // it. eventKey is present on every form row (74,279/74,279 across the
+  // dataset), so this is an exact match rather than a date/opponent heuristic.
+  const remainingFormMatches = formMatches.filter(m => !shownFormKeys.has(String(m.eventKey || '')));
+  // ppGroupMatchesByTournament already returns editions newest-first, so
+  // handing it every remaining season at once yields one continuous
+  // reverse-chronological list rather than a per-season restart.
+  const groups = ppGroupMatchesByTournament(remainingFormMatches);
   const groupsHtml = groups.map(g => ppFormGroupHtml(g, true)).join('')
-    || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">${activeSeasonHidden > 0 ? `All ${activeSeasonHidden} ${activeSeason} result${activeSeasonHidden===1?' is':'s are'} already listed above.` : `No ${formEmptyLabel} matches in ${activeSeason}.`}</div>`;
-  const newestSeason = formSeasons[0];
-  const newestSeasonAll = newestSeason ? formMatches.filter(m => String(m.date || '').startsWith(newestSeason)) : [];
-  // The trigger counts what opening the list would actually add, not the whole
-  // season — the rows above it are already on screen.
-  const newestSeasonCount = newestSeasonAll.filter(m => !shownFormKeys.has(String(m.eventKey || ''))).length;
-  const showFormTrigger = !ppState.formExpanded && (newestSeasonCount > 0 || formSeasons.length > 1);
+    || `<div style="padding:14px 0;font-size:12.5px;color:#5b6472;">No further ${formEmptyLabel} matches on record.</div>`;
+  const remainingFormCount = remainingFormMatches.length;
+  const showFormTrigger = !ppState.formExpanded && remainingFormCount > 0;
+  // Collapsed, the card is height-locked to the Career record box (see
+  // ppSyncCareerHeight), so this trigger is pinned to the bottom of that box
+  // and is the only thing that may grow the card.
   const formTriggerHtml = showFormTrigger
-    ? `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">${newestSeasonCount > 0 ? `See ${newestSeasonCount} more result${newestSeasonCount===1?'':'s'} · ${newestSeason} season` : 'See earlier seasons'}</span></div>`
+    ? `<div style="flex:none;padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">See ${remainingFormCount} more result${remainingFormCount===1?'':'s'}</span></div>`
     : '';
-  const formDismissBtn = `<button onclick="togglePpFormExpanded()" aria-label="Collapse season results" title="Collapse" style="flex:none;width:26px;height:26px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;font-family:'Hanken Grotesk',sans-serif;">✕</button>`;
-  // No section title and no result/tournament counts: the expanded rows are a
-  // continuation of the list above, not a separate block, so the only chrome
-  // left is the season selector and the control that collapses it again. The
-  // rows also flow at their natural height — the old max-height:520px scroller
-  // put a second scrollbar inside the page and broke that continuity.
-  const formExpandedHtml = `
-    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;">
-      ${seasonTabsHtml}
-      <span style="flex:1;"></span>
-      ${formDismissBtn}
-    </div>
-    ${partialNoteHtml}
-    <div style="display:flex;flex-direction:column;">${groupsHtml}</div>`;
-  // flex:1 on the collapsed row list pushes the "See all" link to the bottom of
-  // the card, so it lines up with the Career record card's Total row now that
-  // the two boxes share a height.
+  // The collapse control sits at the FOOT of the expanded list, in the same
+  // place and style as the "See more" link it replaces. A header-mounted
+  // control would reintroduce exactly the mid-list chrome this task removes.
+  const formCollapseHtml = `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:#3E7BFA;cursor:pointer;">Show less</span></div>`;
+  const formExpandedHtml = `<div style="display:flex;flex-direction:column;">${groupsHtml}</div>${formCollapseHtml}`;
+  // Collapsed: min-height:0 lets the row list shrink inside the locked card
+  // height, and overflow:hidden makes the clip exact instead of spilling.
   const formBodyHtml = ppState.formExpanded
     ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formExpandedHtml}`
-    : `<div style="display:flex;flex-direction:column;flex:1;">${rowsHtml}</div>${formTriggerHtml}`;
+    : `<div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">${rowsHtml}</div>${formTriggerHtml}`;
 
   const recentFormCard = `
-    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
+    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div style="font-size:14px;font-weight:700;">Recent form</div>
         <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
