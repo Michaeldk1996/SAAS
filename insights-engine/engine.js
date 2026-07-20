@@ -99,6 +99,20 @@ function insOverall(block) {
 function insPct(r) { return r.M ? (r.W / r.M) * 100 : null; }
 function insR1(x) { return Math.round(x * 10) / 10; }
 
+/* Market cards rest on a mirrored closing-price archive that stops at a fixed
+ * date (both upstream sources went quiet in Feb 2026). Every market card says
+ * so, so nobody reads "beats the market" as a statement about this week.
+ * Date comes from `archiveLatest` in odds-performance-index.json, not a
+ * constant — it re-labels itself if the archive ever moves again.
+ */
+var INS_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function insAsOfPhrase(iso) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return ' Priced to the end of the odds archive, not to today.';
+  return ' Priced to ' + Number(m[3]) + ' ' + INS_MONTHS[Number(m[2]) - 1] + ' ' + m[1] +
+         ', where the odds archive ends \u2014 not to today.';
+}
+
 /* ---------------- Tour averages ----------------
  * Pooled (sum of wins / sum of matches), not a mean of percentages, so a
  * player with 4 matches vs lefties cannot drag the tour baseline. Computed
@@ -399,7 +413,8 @@ function insCheckMarket(sp, ctx, relax) {
           (r.vsMarket >= 0 ? 'beating the market by +' + insR1(r.vsMarket) + 'pp'
                            : 'falling ' + insR1(Math.abs(r.vsMarket)) + 'pp short of the market') +
           ', against a tour median of ' + (best.tourBase >= 0 ? '+' : '') + insR1(best.tourBase) + 'pp. ' +
-          (up ? 'The market has been pricing him short.' : 'The market has been pricing him too high.'),
+          (up ? 'The market has been pricing him short.' : 'The market has been pricing him too high.') +
+          insAsOfPhrase(ctx.marketAsOf),
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(best.dev),
@@ -558,7 +573,7 @@ function insTopUp(picked, fallback) {
  * published in odds-performance-index.json; omitted it falls back to the
  * measured constants in INS_TOUR_FALLBACK.
  */
-function ppDynamicInsights(profileKey, playerName, splits, styleRec, fallback, market, marketTour, styleTourAverage) {
+function ppDynamicInsights(profileKey, playerName, splits, styleRec, fallback, market, marketTour, styleTourAverage, marketAsOf) {
   var sp = splits && splits[String(profileKey)];
   if (!sp || !sp.career) return insTopUp([], fallback);
   var overall = insOverall(sp.career);
@@ -571,6 +586,7 @@ function ppDynamicInsights(profileKey, playerName, splits, styleRec, fallback, m
     styleTourAverage: styleTourAverage,
     market: market || null,
     marketTour: marketTour || null,
+    marketAsOf: marketAsOf || null,
     last: String(playerName || '').split(' ').pop() || 'He'
   };
   return insTopUp(insSelect(sp, ctx), fallback);
