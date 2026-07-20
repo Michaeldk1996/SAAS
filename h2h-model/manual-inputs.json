@@ -1,0 +1,12 @@
+{
+  "_readme": "Michael's manual data inputs for the H2H model. Optional. Only fill what you have; the model treats anything missing as 'no data' and never fabricates. Player keys are the numeric api-tennis ids (same as p1Key/p2Key in matches.json, e.g. Kopriva = 1083).",
+  "wue": {
+    "_example_1083": {
+      "winners": 0,
+      "unforced": 0,
+      "surface": "clay",
+      "asOf": "2026-07-20",
+      "note": "Delete the leading underscore in the key to activate. Adjustment 8 uses winners/unforced as a ratio (>1 = aggressive & clean)."
+    }
+  }
+}
