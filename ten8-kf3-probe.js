@@ -26,7 +26,9 @@ const { spawn } = require('child_process');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const PORT = 9700 + (process.pid % 200);
 const TARGET_URL = process.argv[2] || 'http://127.0.0.1:8797/index.html';
-const TARGET_PORT = TARGET_URL.replace(/^https?:\/\/[^:/]+:?/, '').split('/')[0] || '80';
+// Pin on the port for a local verify server, on the host for a real origin — the old
+// port-only form computed '80' for an https URL and matched nothing.
+const TARGET_NEEDLE = (TARGET_URL.match(/^https?:\/\/([^/]+)/) || [])[1] || TARGET_URL;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1.5 : tol);
 
@@ -44,7 +46,7 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1.5 : tol);
     await sleep(400);
     try {
       const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-      const page = list.find(t => t.type === 'page' && t.webSocketDebuggerUrl && t.url.includes(TARGET_PORT));
+      const page = list.find(t => t.type === 'page' && t.webSocketDebuggerUrl && t.url.includes(TARGET_NEEDLE));
       if (page) wsUrl = page.webSocketDebuggerUrl;
     } catch (e) { /* not up yet */ }
   }
