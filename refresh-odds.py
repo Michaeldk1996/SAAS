@@ -221,6 +221,16 @@ def main():
             'p1': {'price': best_p1[0], 'bookmaker': BOOK_LABELS.get(best_p1[1], best_p1[1])},
             'p2': {'price': best_p2[0], 'bookmaker': BOOK_LABELS.get(best_p2[1], best_p2[1])},
         }
+        # Every book that quoted both sides, kept as-is. These prices are already
+        # in hand — this costs no extra request. build-model-prices.js de-vigs
+        # each book separately and takes the median as its market baseline, which
+        # it cannot do from `odds` (one book) or `bestOdds` (a max per side, so
+        # the two sides can come from different books and need not sum sanely).
+        m['books'] = {
+            BOOK_LABELS.get(bk, bk): {'p1': pr1, 'p2': pr2}
+            for bk, (pr1, pr2) in sorted(oriented.items())
+            if pr1 and pr2
+        }
         updated += 1
 
     with open(MATCHES, 'w') as fh:
