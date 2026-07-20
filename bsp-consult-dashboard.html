@@ -635,8 +635,15 @@
      match height: each .akb fills its row track, whose height is set by the
      taller sibling. The previous `start` let every block shrink-wrap, so
      Odds/Tournament and Form/H2H rendered ragged on most matches. */
-  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:stretch; }
-  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; min-width:0; display:flex; flex-direction:column; }
+  /* Geometry is the design's, not invented: 1.25fr on the first column is what
+     makes the tall Playing Style feature wider than the two stacked columns
+     beside it, and 14px is the design's gutter. Both were 3x1fr/12px before,
+     which read as "close enough" but put every block edge off by 8-20px. */
+  .modal-analysis .akbento{ display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:14px; align-items:stretch; }
+  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 19px; min-width:0; display:flex; flex-direction:column; }
+  /* The tall feature and the full-width blocks carry the design's wider 20px
+     inset; only the two stacked side cards use 19px. */
+  .modal-analysis .akb-tall, .modal-analysis .akb-wide{ padding:18px 20px; }
   /* Body takes the slack so the card's own content stays top-aligned while the
      card itself still fills the track. */
   .modal-analysis .akb-body{ flex:1 1 auto; }
@@ -645,6 +652,30 @@
   .modal-analysis .akb[role="button"]:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
   .modal-analysis .akb-tall{ grid-row:span 2; }
   .modal-analysis .akb-wide{ grid-column:1 / -1; }
+  /* Two full-width blocks are horizontal in the design — label beside the
+     content, not stacked above it. `strip` is Weather (a slim 13px band),
+     `side` is Progression (a fixed 150px label column, then the six stats,
+     then the chevron). Both keep akBlock's markup; only the flow changes. */
+  .modal-analysis .akb-strip{ flex-direction:row; align-items:center; gap:22px; flex-wrap:wrap; padding:13px 20px; }
+  .modal-analysis .akb-strip .akb-head{ margin-bottom:0; flex:none; }
+  .modal-analysis .akb-strip .akb-body{ flex:1 1 auto; }
+  .modal-analysis .akb-side{ display:grid; grid-template-columns:150px 1fr 22px; align-items:center; gap:20px; }
+  .modal-analysis .akb-side .akb-head{ margin-bottom:0; display:block; }
+  .modal-analysis .akb-side .akb-chev{ display:none; }
+  .modal-analysis .akb-side .akb-sidechev{ color:#5b6472; font-size:16px; line-height:1; justify-self:end; }
+  .modal-analysis .akb-sublabel{ font-size:10px; color:#5b6472; margin-top:4px; text-transform:none; letter-spacing:0; font-family:'Hanken Grotesk',sans-serif; }
+  /* The synthesis block sits a shade darker than the data cards, with a
+     slightly stronger border and a wider inset — the design's way of marking
+     it as commentary rather than another measured card. */
+  .modal-analysis .akb-analysis{ background:#0c0e13; border-color:rgba(255,255,255,0.09); padding:20px 22px; }
+  /* Progression bento readout: six centred T-vs-C pairs. */
+  .modal-analysis .akp-stats{ display:grid; grid-template-columns:repeat(6,1fr); gap:16px; }
+  .modal-analysis .akp-stat{ text-align:center; }
+  .modal-analysis .akp-vals{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; }
+  .modal-analysis .akp-t{ color:#7ba4ff; }
+  .modal-analysis .akp-c{ color:#eaa869; }
+  .modal-analysis .akp-slash{ color:#5b6472; }
+  .modal-analysis .akp-lbl{ font-size:9px; color:#8b93a3; margin-top:4px; line-height:1.2; }
   .modal-analysis .akb-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:11px; }
   .modal-analysis .akb-label{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
   .modal-analysis .akb-chev{ color:#5b6472; font-size:16px; line-height:1; }
@@ -706,7 +737,7 @@
   .modal-analysis .ako-sub{ font-size:11px; color:#8b93a3; margin-top:8px; }
   .modal-analysis .ako-move{ margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
   .modal-analysis .ako-movehd{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; margin-bottom:6px; }
-  .modal-analysis .akw-row{ display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
+    .modal-analysis .akw-row{ display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
   .modal-analysis .akw-item{ display:flex; flex-direction:column; font-size:10px; color:#8b93a3; }
   .modal-analysis .akw-item b{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:#dbe0e8; }
   .modal-analysis .akw-sub{ color:#5b6472; }
@@ -723,6 +754,12 @@
     .modal-analysis .akbento{ grid-template-columns:1fr; }
     .modal-analysis .akb-wide, .modal-analysis .akb-tall{ grid-column:auto; }
     .modal-analysis .akw-read{ margin-left:0; max-width:100%; }
+    /* The 150px label column and the six-across stat row both stop fitting
+       here, so Progression stacks like the other blocks. */
+    .modal-analysis .akb-side{ display:flex; flex-direction:column; align-items:stretch; gap:0; }
+    .modal-analysis .akb-side .akb-head{ margin-bottom:11px; }
+    .modal-analysis .akb-side .akb-sidechev{ display:none; }
+    .modal-analysis .akp-stats{ grid-template-columns:repeat(3,1fr); gap:12px; }
   }
   /* ---- Playing Style tab ---- */
   /* The design is a 940px panel and sets Hanken Grotesk on its root, inherited
@@ -5612,10 +5649,15 @@ function aGoTab(tab){
 }
 function akBlock(tab, label, bodyHtml, opts){
   const o = opts || {};
-  const cls = ['akb', o.wide ? 'akb-wide' : '', o.tall ? 'akb-tall' : '', tab ? '' : 'akb-static'].filter(Boolean).join(' ');
+  const cls = ['akb', o.wide ? 'akb-wide' : '', o.tall ? 'akb-tall' : '', o.strip ? 'akb-strip' : '',
+    o.side ? 'akb-side' : '', o.analysis ? 'akb-analysis' : '', tab ? '' : 'akb-static'].filter(Boolean).join(' ');
   const attrs = tab ? ` role="button" tabindex="0" onclick="aGoTab('${tab}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aGoTab('${tab}')}"` : '';
   const chev = tab ? `<span class="akb-chev">›</span>` : '';
-  return `<div class="${cls}"${attrs}><div class="akb-head"><span class="akb-label">${psEsc(label)}</span>${chev}</div><div class="akb-body">${bodyHtml}</div></div>`;
+  // The side layout puts the chevron in its own third grid column, so it is
+  // emitted after the body rather than inside the head.
+  const sideChev = (o.side && tab) ? `<span class="akb-sidechev">›</span>` : '';
+  const sub = o.sublabel ? `<div class="akb-sublabel">${psEsc(o.sublabel)}</div>` : '';
+  return `<div class="${cls}"${attrs}><div class="akb-head"><span class="akb-label">${psEsc(label)}</span>${sub}${chev}</div><div class="akb-body">${bodyHtml}</div>${sideChev}</div>`;
 }
 function akEmpty(text){ return `<div class="akb-empty">${psEsc(text)}</div>`; }
 // Altitude bands. A two-way high/sea-level split called Kitzbuhel (762 m, alpine)
@@ -5785,6 +5827,10 @@ function akTournamentBlock(m){
 // show them converging or diverging), open/now values called out at the ends.
 function akOddsMoveSvg(m){
   const om = m.oddsMovement;
+  // Empty at first paint on every match: the per-match odds shard is loaded lazily
+  // and repaints this block when it lands. Measuring here without waiting for that
+  // load reads as "no odds history" on a board where all 31 matches in fact carry
+  // six books of it.
   if (!om || !om.books || !Object.keys(om.books).length) return '';
   // Same closing-odds rule as buildOddsSection: the capture keeps running in-play, so
   // cap the series at match start or an in-progress match shows post-lock prices.
@@ -5909,7 +5955,68 @@ function akWeatherBlock(m){
     day && day.rain != null ? `<span class="akw-item"><b>${day.rain}%</b><span class="akw-sub">rain</span></span>` : '',
   ].filter(Boolean).join('');
   return akBlock('weather', 'Weather · match day',
-    `<div class="akw-row">${bits}${phrase ? `<span class="akw-read">${psEsc(phrase)}</span>` : ''}</div>`, { wide:true });
+    `<div class="akw-row">${bits}${phrase ? `<span class="akw-read">${psEsc(phrase)}</span>` : ''}</div>`,
+    { wide:true, strip:true });
+}
+
+// --- block: progression ---
+// The design carries a full-width Progression strip the bento never had. It is a
+// reduced read of the Progression tab: each player's latest pre-match round, six
+// metrics, T vs C side by side.
+//
+// Every number here comes from progressionRoundState() — the same function the
+// Progression tab and its nav item use — so the block cannot disagree with the
+// tab it links to. In particular it inherits progressionPreMatchScope's rule that
+// the card's own match is excluded, and progressionShownRound's rule that the
+// round shown is the player's deepest WIN rather than their last match.
+//
+// Six of the seven metrics, dropping winnersUnforcedRatio: it is the only one
+// that is not a percentage, so it would be the one cell in a six-across row on a
+// different scale, and it is derivable from the winners and errors already shown.
+// Built on first use, not at parse time: PROGRESSION_METRIC_ORDER is declared some
+// 3,800 lines below this block, so a top-level const here reads it inside its temporal
+// dead zone and throws — which takes down the whole script, not just this block.
+let _akProgMetrics = null;
+function akProgMetrics(){
+  if (_akProgMetrics) return _akProgMetrics;
+  _akProgMetrics = PROGRESSION_METRIC_ORDER
+  .filter(([key]) => key !== 'winnersUnforcedRatio')
+  .map(([key, label]) => [key, label
+    .replace('1st Serve Points Won %', '1st serve won')
+    .replace('2nd Serve Points Won %', '2nd serve won')
+    .replace('1st Serve %', '1st serve in')
+    .replace('Winners (% of Points)', 'winners')
+    .replace('Errors (% of Points)', 'errors')
+    .replace('Total Points Won %', 'points won')]);
+  return _akProgMetrics;
+}
+
+function akProgressionBlock(m){
+  const st = typeof progressionRoundState === 'function' ? progressionRoundState(m) : null;
+  if (!st || st.state === 'none' || st.state === 'hidden' || !st.data) return '';
+  const latest = pData => {
+    if (!pData) return null;
+    const depth = progressionPlayerDepth(pData, st.data.rounds);
+    return progressionShownRound(pData, depth);
+  };
+  const l1 = latest(st.p1Data), l2 = latest(st.p2Data);
+  if (!l1 && !l2) return '';
+  const fmt = (row, key) => {
+    const v = row && row.metrics ? row.metrics[key] : null;
+    return v == null ? '–' : `${Math.round(v)}%`;
+  };
+  const cells = akProgMetrics().map(([key, label]) =>
+    `<div class="akp-stat"><div class="akp-vals"><span class="akp-t">${fmt(l1, key)}</span> <span class="akp-slash">/</span> <span class="akp-c">${fmt(l2, key)}</span></div><div class="akp-lbl">${psEsc(label)}</div></div>`
+  ).join('');
+  // Name the round rather than saying "latest": the two players can legitimately
+  // be shown at different rounds, and a card that just says "latest round" hides
+  // that from the reader.
+  const rounds = [l1 && l1.round, l2 && l2.round].filter(Boolean);
+  const sub = rounds.length && rounds[0] === rounds[rounds.length - 1]
+    ? `${psShortName(m.p1)} vs ${psShortName(m.p2)} · ${rounds[0]}`
+    : `${psShortName(m.p1)} vs ${psShortName(m.p2)} · latest round each`;
+  return akBlock('progression', 'Progression', `<div class="akp-stats">${cells}</div>`,
+    { wide:true, side:true, sublabel:sub });
 }
 
 // --- block: the read (synthesis) ---
@@ -5944,18 +6051,25 @@ function akReadBlock(m){
   if (!pts.length) return '';
   return akBlock(null, 'The read',
     `<ul class="akr-list">${pts.map(p => `<li>${p}</li>`).join('')}</ul>
-     <div class="akr-foot">Generated from the blocks above — signals only, not a recommendation.</div>`, { wide:true });
+     <div class="akr-foot">Generated from the blocks above — signals only, not a recommendation.</div>`,
+    { wide:true, analysis:true });
 }
 
 function buildKeyFactorsSection(m){
+  // Order IS the layout — the blocks carry no explicit grid coordinates, so
+  // auto-placement fills col2/col3 of each row in emission order beside the
+  // tall Style feature. The design puts Tournament at col2 row2 and Odds at
+  // col3 row2; these two were previously emitted the other way round, which
+  // mirrored the whole lower half of the grid.
   const blocks = [
-    akStyleBlock(m),
-    akFormBlock(m),
-    akH2HBlock(m),
-    akOddsBlock(m),
-    akTournamentBlock(m),
-    akWeatherBlock(m),
-    akReadBlock(m),
+    akStyleBlock(m),       // col 1, rows 1-2 (tall)
+    akFormBlock(m),        // col 2, row 1
+    akH2HBlock(m),         // col 3, row 1
+    akTournamentBlock(m),  // col 2, row 2
+    akOddsBlock(m),        // col 3, row 2
+    akWeatherBlock(m),     // full-width strip
+    akProgressionBlock(m), // full-width
+    akReadBlock(m),        // full-width synthesis
   ].filter(Boolean).join('');
   return `<div class="akbento">${blocks}</div>`;
 }
