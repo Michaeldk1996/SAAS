@@ -730,19 +730,7 @@
      reproduced: in the mock the panel is standalone, but here it sits on the
      modal surface, and no sibling tab nests a second panel inside .abody. */
   .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
-  .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:13px; border-bottom:1px solid rgba(255,255,255,0.07); }
-  .modal-analysis .psh-who{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.06em; opacity:0.75; }
-  .modal-analysis .psh-side{ display:flex; align-items:flex-start; gap:12px; }
-  .modal-analysis .psh-vs{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; margin-top:1px; }
-  .modal-analysis .psh-name{ font-size:15px; font-weight:700; }
-  .modal-analysis .psh-arch{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
-  .modal-analysis .psh-arch-none{ color:#5b6472; }
-  .modal-analysis .psh-ini{ width:36px; height:36px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; flex:none; }
-  .modal-analysis .psh-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; border:1px solid; border-radius:7px; padding:5px 9px; flex:none; align-self:flex-start; }
-  .modal-analysis .psb-row{ display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
-  .modal-analysis .psb-chip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; border:1px solid; border-radius:6px; padding:3px 8px; }
-  .modal-analysis .psb-dot{ width:5px; height:5px; border-radius:50%; }
-  .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:20px 0 4px; }
+  .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:4px 0; }
   .modal-analysis .psx-card{ background:#0e1015; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:18px 20px; }
   .modal-analysis .psx-label{ font-size:10.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
   .modal-analysis .psx-sub{ font-size:13px; color:#c4ccd8; line-height:1.45; margin-top:9px; }
@@ -1965,8 +1953,9 @@ const PS_ARCHETYPES = [
     count:null, players:[] },
 ];
 // Badge pills on the player tags (classify-styles.js emits these four keys).
-// NOTE: only `c` and `n` are read (styleBadgesHtml recomputes the background and
-// border from `c`). `t`, `bg` and `bd` are unused — editing them changes nothing.
+// NOTE: no renderer consumes this today — the Playing Style tab's duplicate player
+// header, which was its only reader, was removed. Kept because the classifier still
+// emits `badges` and a future surface will want the labels and colours.
 const PS_BADGE = {
   pressure_player:      { t:'P',     c:'#3ECF8E', bg:'rgba(62,207,142,0.16)',  bd:'rgba(62,207,142,0.4)',  n:'Pressure Player' },
   clay_specialist:      { t:'CLAY',  c:'#df9264', bg:'rgba(223,146,100,0.16)', bd:'rgba(223,146,100,0.42)', n:'Clay Specialist' },
@@ -5781,11 +5770,30 @@ function akOddsMoveSvg(m){
   // most captured points rather than whichever happens to be first: on thin
   // matches the first book often holds a single price, which is not a movement
   // and would drop the chart entirely while a richer book sat unused.
+  // Book choice drives whether this chart shows a MOVEMENT or just an endpoint.
+  // Depth alone is the wrong score: the deepest book is often a late starter
+  // (Pinnacle opened 19h after bet365 on 12147452), so the left edge landed on an
+  // arbitrary mid-market price and the real opening odd was never drawn. Score on
+  // time span AND depth — a book that spans open→close with fewer points tells the
+  // movement story better than a dense book covering the last two hours.
   const books = Object.keys(om.books);
-  const depth = b => preMatch(om.books[b].p1).length + preMatch(om.books[b].p2).length;
-  const bk = (books.indexOf('Pinnacle') >= 0 && depth('Pinnacle') >= 4)
-    ? 'Pinnacle'
-    : books.slice().sort((a, b) => depth(b) - depth(a))[0];
+  const ptsOf = b => preMatch(om.books[b].p1).concat(preMatch(om.books[b].p2));
+  const depth = b => ptsOf(b).length;
+  const spanOf = b => {
+    const ts = ptsOf(b).map(p => Date.parse(p[0])).filter(Number.isFinite);
+    return ts.length < 2 ? 0 : Math.max.apply(null, ts) - Math.min.apply(null, ts);
+  };
+  const maxDepth = Math.max.apply(null, books.map(depth)) || 1;
+  const maxSpan = Math.max.apply(null, books.map(spanOf)) || 1;
+  const bk = books.slice().sort((a, b) =>
+    ((spanOf(b) / maxSpan) * 0.6 + (depth(b) / maxDepth) * 0.4) -
+    ((spanOf(a) / maxSpan) * 0.6 + (depth(a) / maxDepth) * 0.4))[0];
+  // The chart's first point IS the opening odd — the earliest capture of the chosen
+  // book. Deliberately NOT splicing in m.openingOdds: it comes from whichever book
+  // quoted first (usually a different one), and grafting its price onto this line
+  // would draw a step that is really a vig difference between books, not a market
+  // move. Measured against all live shards, this book's open sits a mean 1.2h after
+  // the true cross-book open on a 20-30h window, and exactly on it for 16 of 31.
   const s1 = preMatch(om.books[bk].p1), s2 = preMatch(om.books[bk].p2);
   if (s1.length < 2 && s2.length < 2) return '';
   const grid = Array.from(new Set(s1.concat(s2).map(p=>p[0]))).sort();
@@ -5796,8 +5804,17 @@ function akOddsMoveSvg(m){
   if (all.length < 2) return '';
   let mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
   const rg = (mx-mn) || 0.1; mn -= rg*0.22; mx += rg*0.22;
-  const W=300, H=104, padL=6, padR=40, padT=8, padB=16;
-  const X = i => padL + i*(W-padL-padR)/(N-1);
+  // Left pad carries the opening price text, right pad the closing one.
+  const W=300, H=104, padL=34, padR=42, padT=8, padB=18;
+  // Time-proportional x, not index-proportional: captures are irregularly spaced
+  // (a burst near lock-in, hours of nothing overnight), and evenly spacing them
+  // flattens a late plunge into a gentle slope that misreads the market.
+  const tms = grid.map(t => Date.parse(t));
+  const t0 = tms[0], tSpan = (tms[N-1] - t0) || 0;
+  const plotW = W - padL - padR;
+  const X = i => (tSpan > 0 && Number.isFinite(tms[i]))
+    ? padL + ((tms[i] - t0) / tSpan) * plotW
+    : padL + i * plotW / (N - 1);
   const Y = v => padT + (1-(v-mn)/(mx-mn))*(H-padT-padB);
   const line = (vals, col) => {
     let p=''; for (let i=0;i<N;i++){ if (vals[i]==null) continue; p += (p?' ':'') + X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); }
@@ -5805,18 +5822,35 @@ function akOddsMoveSvg(m){
     const lastI = (()=>{ for(let i=N-1;i>=0;i--) if(vals[i]!=null) return i; return -1; })();
     const firstI = (()=>{ for(let i=0;i<N;i++) if(vals[i]!=null) return i; return -1; })();
     let s = '<polyline points="'+p+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (firstI>=0) s += '<circle cx="'+X(firstI).toFixed(1)+'" cy="'+Y(vals[firstI]).toFixed(1)+'" r="2.6" fill="#0e1015" stroke="'+col+'" stroke-width="1.6"/>';
+    // Every captured snapshot gets a tick so the progression is readable as steps
+    // rather than one smooth stroke — suppressed once they would visually merge.
+    if (N <= 28){
+      for (let i=0;i<N;i++){
+        if (vals[i]==null || i===firstI || i===lastI) continue;
+        s += '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(vals[i]).toFixed(1)+'" r="1.7" fill="'+col+'" fill-opacity="0.55"/>';
+      }
+    }
+    if (firstI>=0){
+      s += '<circle cx="'+X(firstI).toFixed(1)+'" cy="'+Y(vals[firstI]).toFixed(1)+'" r="3" fill="#0e1015" stroke="'+col+'" stroke-width="1.8"/>';
+      s += '<text x="'+(X(firstI)-7).toFixed(1)+'" y="'+(Y(vals[firstI])+3.5).toFixed(1)+'" text-anchor="end" font-size="10.5" font-family="\'IBM Plex Mono\',monospace" font-weight="700" fill="'+col+'">'+vals[firstI].toFixed(2)+'</text>';
+    }
     if (lastI>=0){
       s += '<circle cx="'+X(lastI).toFixed(1)+'" cy="'+Y(vals[lastI]).toFixed(1)+'" r="3" fill="'+col+'"/>';
       s += '<text x="'+(X(lastI)+7).toFixed(1)+'" y="'+(Y(vals[lastI])+3.5).toFixed(1)+'" font-size="10.5" font-family="\'IBM Plex Mono\',monospace" font-weight="700" fill="'+col+'">'+vals[lastI].toFixed(2)+'</text>';
     }
     return s;
   };
+  // Before the match starts the right-hand point is the live market, not a close —
+  // calling it "Closing odd" then would be a factual claim the data does not support.
+  const started = !!(m.finalScore || m.partialScore || m.live)
+    || (Number.isFinite(startMs) && Date.now() >= startMs);
   let g='';
   for (let t=0;t<=2;t++){ const y = padT + (t/2)*(H-padT-padB); g += '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>'; }
-  g += '<text x="'+padL+'" y="'+(H-3)+'" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#5b6472">Open</text>';
-  g += '<text x="'+(W-padR).toFixed(1)+'" y="'+(H-3)+'" text-anchor="end" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#5b6472">Now</text>';
+  g += '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB).toFixed(1)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>';
+  g += '<line x1="'+(W-padR)+'" y1="'+padT+'" x2="'+(W-padR)+'" y2="'+(H-padB).toFixed(1)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>';
   g += line(v1, '#3E7BFA') + line(v2, '#E8934B');
+  g += '<text x="'+padL+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#8b93a3">Opening odd</text>';
+  g += '<text x="'+(W-padR).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#8b93a3">'+(started ? 'Closing odd' : 'Current odd')+'</text>';
   return `<div class="ako-move"><div class="ako-movehd">Odds movement<span>${psEsc(bk)}</span></div>`
     + '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;overflow:visible;">'+g+'</svg></div>';
 }
@@ -5824,7 +5858,6 @@ function akOddsBlock(m){
   if (!m.odds || !m.odds.p1 || !m.odds.p2) return akBlock('odds', 'Odds', akEmpty('No prices in the feed for this match yet.'));
   const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, tot = i1 + i2;
   const f1 = (i1 / tot * 100), f2 = (i2 / tot * 100);
-  const favName = f1 >= f2 ? psShortName(m.p1) : psShortName(m.p2);
   return akBlock('odds', 'Odds', `
     <div class="ako-prices">
       <div><div class="ako-p" style="color:#8fb4ff;">${Number(m.odds.p1).toFixed(2)}</div><div class="ako-nm">${psEsc(psShortName(m.p1))}</div></div>
@@ -5832,7 +5865,7 @@ function akOddsBlock(m){
     </div>
     <div class="ako-bar"><div class="ako-bar-a" style="width:${f1.toFixed(1)}%;"></div></div>
     <div class="ako-legend"><span>${f1.toFixed(1)}%</span><span class="ako-mid">vig removed</span><span>${f2.toFixed(1)}%</span></div>
-    <div class="ako-sub"><b>${psEsc(favName)}</b> favoured${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>
+    <div class="ako-sub">Implied win probability${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>
     ${akOddsMoveSvg(m)}`);
 }
 
@@ -5953,18 +5986,6 @@ function ensurePsMatrix(){
 function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => (a.ids || [a.id]).includes(id)); }
 function psArchFor(id){ return PS_ARCHETYPES.find(a => (a.ids || [a.id]).includes(id)) || null; }
 
-function styleBadgesHtml(pl, align){
-  const badges = (pl && pl.badges) || [];
-  if (!badges.length) return '';
-  const chips = badges.map(b => {
-    const meta = PS_BADGE[b];
-    if (!meta) return '';
-    // The design borders the blue chips one point tighter than the warm ones.
-    const bd = meta.c === '#3E7BFA' ? 0.32 : 0.34;
-    return `<span class="psb-chip" style="color:${meta.c}; background:${hexToRgba(meta.c, 0.12)}; border-color:${hexToRgba(meta.c, bd)};"><span class="psb-dot" style="background:${meta.c};"></span>${psEsc(meta.n)}</span>`;
-  }).join('');
-  return `<div class="psb-row" style="justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};">${chips}</div>`;
-}
 function hexToRgba(hex, a){
   const h = String(hex).replace('#','');
   const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
@@ -6239,25 +6260,6 @@ function upgradeStyleVsRows(m, token){
   });
 }
 
-function styleHeaderSideHtml(m, pl, name, side){
-  const arch = pl && psArchFor(pl.primary);
-  const accent = side === 'p1' ? '#7ba4ff' : '#eaa869';
-  const rgba = side === 'p1' ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  const archLine = arch
-    ? `<div class="psh-arch" style="color:${accent};">${psEsc(arch.code)} · ${psEsc(arch.name)}</div>`
-    : `<div class="psh-arch psh-arch-none">Unclassified</div>`;
-  // The modal header already carries both full names, the avatars and the odds
-  // pills, so this tab no longer repeats them — it kept a second 36px avatar, a
-  // 15px name and a duplicate odds pill purely to restate the header. What is
-  // NOT duplicated is the archetype and the style badges, so those stay, with a
-  // short surname as the attribution label (the accent colour alone does not
-  // reliably say which archetype belongs to which player). The reclaimed height
-  // goes to the radar and the dimension bars below.
-  const text = `<div class="psh-text" style="text-align:${side === 'p1' ? 'right' : 'left'};">
-      <div class="psh-who" style="color:${accent};">${psEsc(psShortName(name))}</div>${archLine}${styleBadgesHtml(pl, side === 'p1' ? 'right' : 'left')}</div>`;
-  return `<div class="psh-side">${text}</div>`;
-}
-
 function buildStyleSection(m){
   const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
   const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
@@ -6265,12 +6267,10 @@ function buildStyleSection(m){
   if (!s1 && !s2 && !r1 && !r2){
     return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history for a playing-style profile. Style classification needs a full ATP/Challenger record — it is thin at ITF and qualifying level.</div>`;
   }
+  // No player header here by design: the modal header directly above already carries
+  // both names, avatars and odds, and the archetype is restated inside the radar and
+  // the style-edge card. Repeating it cost a full row of vertical space for nothing.
   return `<div class="psx-wrap">
-    <div class="psh-bar">
-      ${styleHeaderSideHtml(m, s1, m.p1, 'p1')}
-      <span class="psh-vs">VS</span>
-      ${styleHeaderSideHtml(m, s2, m.p2, 'p2')}
-    </div>
     <div class="psx-top">
       <div class="psr-col">${styleRadarBlockHtml(m, r1, r2)}</div>
       ${styleEdgeHtml(m, s1, s2)}
@@ -7121,10 +7121,15 @@ const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '',
 // year are labelled as partial rather than presented as a full season record.
 const PP_FULL_HISTORY_FROM = 2023;
 // Task 12 — expand/collapse the Career splits / Last 52 weeks reference tables.
+// MUST go through ppRepaint(), never write playerProfileView.innerHTML directly.
+// A raw innerHTML write rebuilds the Recent form card too, and that card's collapsed
+// height is an inline style applied after paint by ppSyncCareerHeight() — skipping the
+// post-paint pass left it unclamped, so it sprang open every time a splits section was
+// toggled and looked like the two sections were wired together. It also dropped the
+// click handlers ppUpgradeFormRows() installs, leaving the form rows dead.
 function togglePpSplits(which){
   ppState.splitsOpen[which] = !ppState.splitsOpen[which];
-  const profile = playerProfiles[ppState.key];
-  if (profile) document.getElementById('playerProfileView').innerHTML = buildPlayerProfileHtml(profile);
+  ppRepaint();
 }
 // One splits table (Career or Last 52 weeks). Rows with zero matches were
 // dropped at ingest, so we render exactly what exists; sections with no data at
@@ -8297,7 +8302,11 @@ function loadOddsPerfShardThenRerender(playerKey){
     if (String(ppState.key) !== String(playerKey)) return;
     const view = document.getElementById('playerProfileView');
     const profile = playerProfiles[String(playerKey)];
-    if (view && profile && view.style.display !== 'none'){ view.innerHTML = buildPlayerProfileHtml(profile); ppUpgradeFormRows(); }
+    // Must be ppRepaint(), not a raw innerHTML write: this lands asynchronously AFTER
+    // showPlayerProfile() already locked the Recent form card's height, and rebuilding
+    // the markup without re-running ppSyncCareerHeight() drops that inline lock — the
+    // card then springs to its full natural height on its own, seconds after open.
+    if (view && profile && view.style.display !== 'none') ppRepaint();
   });
 }
 
