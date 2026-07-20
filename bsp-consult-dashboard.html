@@ -454,7 +454,8 @@
   /* Career splits / Last 52 weeks table. Rows carry an inline zebra background,
      so the hover has to win with !important or the stripe overrides it. */
   .pp-split-row:hover{ background:rgba(255,255,255,0.05) !important; }
-  .pp-split-tgl:hover{ background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.24); }
+  .pp-split-head:hover{ background:rgba(255,255,255,0.04); }
+  .pp-split-head:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
 
   .modal-analysis{ max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
 
@@ -628,8 +629,15 @@
   .modal-analysis .arow .atrack div{ height:100%; background:#3E7BFA; border-radius:3px; }
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
   /* ---- Key Factors bento ---- */
-  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:start; }
-  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; min-width:0; }
+  /* align-items:stretch (the grid default) is what makes side-by-side blocks
+     match height: each .akb fills its row track, whose height is set by the
+     taller sibling. The previous `start` let every block shrink-wrap, so
+     Odds/Tournament and Form/H2H rendered ragged on most matches. */
+  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:stretch; }
+  .modal-analysis .akb{ background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; min-width:0; display:flex; flex-direction:column; }
+  /* Body takes the slack so the card's own content stays top-aligned while the
+     card itself still fills the track. */
+  .modal-analysis .akb-body{ flex:1 1 auto; }
   .modal-analysis .akb[role="button"]{ cursor:pointer; transition:transform .12s ease, border-color .12s ease, background .12s ease; }
   .modal-analysis .akb[role="button"]:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,0.18); background:#111420; }
   .modal-analysis .akb[role="button"]:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
@@ -685,6 +693,7 @@
   .modal-analysis .akt-cond{ font-size:10px; color:#8b93a3; display:flex; flex-direction:column; }
   .modal-analysis .akt-cond b{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#dbe0e8; }
   .modal-analysis .akt-condsub{ color:#5b6472; }
+  .modal-analysis .akt-prose{ margin:10px 0 0; font-size:11.5px; line-height:1.55; color:#8b93a3; }
   .modal-analysis .ako-prices{ display:flex; justify-content:space-between; }
   .modal-analysis .ako-p{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; line-height:1; }
   .modal-analysis .ako-nm{ font-size:10px; color:#8b93a3; margin-top:4px; }
@@ -693,6 +702,8 @@
   .modal-analysis .ako-legend{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:#8b93a3; margin-top:6px; }
   .modal-analysis .ako-mid{ color:#5b6472; }
   .modal-analysis .ako-sub{ font-size:11px; color:#8b93a3; margin-top:8px; }
+  .modal-analysis .ako-move{ margin-top:11px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+  .modal-analysis .ako-movehd{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; margin-bottom:6px; }
   .modal-analysis .akw-row{ display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
   .modal-analysis .akw-item{ display:flex; flex-direction:column; font-size:10px; color:#8b93a3; }
   .modal-analysis .akw-item b{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:#dbe0e8; }
@@ -719,9 +730,10 @@
      reproduced: in the mock the panel is standalone, but here it sits on the
      modal surface, and no sibling tab nests a second panel inside .abody. */
   .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
-  .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .modal-analysis .psh-bar{ display:flex; align-items:flex-start; justify-content:center; gap:24px; padding-bottom:13px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .modal-analysis .psh-who{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.06em; opacity:0.75; }
   .modal-analysis .psh-side{ display:flex; align-items:flex-start; gap:12px; }
-  .modal-analysis .psh-vs{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; margin-top:9px; }
+  .modal-analysis .psh-vs{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6472; margin-top:1px; }
   .modal-analysis .psh-name{ font-size:15px; font-weight:700; }
   .modal-analysis .psh-arch{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
   .modal-analysis .psh-arch-none{ color:#5b6472; }
@@ -790,7 +802,9 @@
   .modal-analysis .psv-opp{ font-size:12px; font-weight:600; color:#dbe0e8; }
   .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8b93a3; }
   .modal-analysis .psv-score{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#c4ccd8; min-width:34px; text-align:right; }
-  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:color .12s ease; }
+  .modal-analysis .psv-more:hover{ color:#8fb4ff; }
+  .modal-analysis .psv-more:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; border-radius:4px; }
   @media (max-width:900px){
     .modal-analysis .psx-top{ grid-template-columns:1fr; }
     .modal-analysis .psv-grid{ grid-template-columns:1fr; }
@@ -5731,6 +5745,15 @@ function akTournamentBlock(m){
     if (cs.altitude != null) bits.push(`<span class="akt-cond"><b>${Number(cs.altitude).toLocaleString()} m</b> altitude<span class="akt-condsub">${psEsc(altitudeLabel(cs.altitude))}</span></span>`);
     if (cs.serviceHold != null) bits.push(`<span class="akt-cond"><b>${cs.serviceHold}%</b> hold rate<span class="akt-condsub">at this event</span></span>`);
     if (bits.length) cond = `<div class="akt-conds">${bits.join('')}</div>`;
+    // Prose read of the conditions, generated from the same court-speed record the
+    // chips above use — reuses the Tournament page's generator so the two surfaces
+    // can never tell a different story about the same event. Needs a real
+    // abstractSpeed (the generator formats it), so it is gated on that alone.
+    if (cs.abstractSpeed != null){
+      const surf = String(m.surface || '').toLowerCase();
+      const bounce = tourxBounce(surf, cs.altitude, cs.category);
+      cond += `<p class="akt-prose">${psEsc(tourxConditionsProse(surf, cs.category, Number(cs.abstractSpeed), bounce))}</p>`;
+    }
   }
   const name = (m.tour || 'Tournament').replace(/^(ATP|WTA)\s+/i, '');
   if (!m.p1TournamentHistory && !m.p2TournamentHistory && !cond){
@@ -5741,6 +5764,62 @@ function akTournamentBlock(m){
 }
 
 // --- block: odds ---
+// Compact open->now movement chart for the Key Factors bento cell. The Odds tab's
+// aOddsChartSvg is 884x400 with dual auto-scaled panels and hover tooltips — far too
+// large here — so this is a deliberately reduced read: one book, both players on a
+// SHARED y-axis (both series are decimal odds, so a shared axis is the honest way to
+// show them converging or diverging), open/now values called out at the ends.
+function akOddsMoveSvg(m){
+  const om = m.oddsMovement;
+  if (!om || !om.books || !Object.keys(om.books).length) return '';
+  // Same closing-odds rule as buildOddsSection: the capture keeps running in-play, so
+  // cap the series at match start or an in-progress match shows post-lock prices.
+  const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time||'') ? m.time : '00:00'}:00Z`);
+  const preMatch = pts => (Number.isFinite(startMs) ? (pts||[]).filter(p=>Date.parse(p[0])<=startMs) : (pts||[]));
+  // Pinnacle is the sharpest line and the Odds tab's default, so prefer it — but
+  // only if it actually quoted a movement here. Otherwise take the book with the
+  // most captured points rather than whichever happens to be first: on thin
+  // matches the first book often holds a single price, which is not a movement
+  // and would drop the chart entirely while a richer book sat unused.
+  const books = Object.keys(om.books);
+  const depth = b => preMatch(om.books[b].p1).length + preMatch(om.books[b].p2).length;
+  const bk = (books.indexOf('Pinnacle') >= 0 && depth('Pinnacle') >= 4)
+    ? 'Pinnacle'
+    : books.slice().sort((a, b) => depth(b) - depth(a))[0];
+  const s1 = preMatch(om.books[bk].p1), s2 = preMatch(om.books[bk].p2);
+  if (s1.length < 2 && s2.length < 2) return '';
+  const grid = Array.from(new Set(s1.concat(s2).map(p=>p[0]))).sort();
+  const N = grid.length;
+  if (N < 2) return '';
+  const v1 = aOddsStep(s1, grid), v2 = aOddsStep(s2, grid);
+  const all = v1.concat(v2).filter(v=>v!=null);
+  if (all.length < 2) return '';
+  let mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
+  const rg = (mx-mn) || 0.1; mn -= rg*0.22; mx += rg*0.22;
+  const W=300, H=104, padL=6, padR=40, padT=8, padB=16;
+  const X = i => padL + i*(W-padL-padR)/(N-1);
+  const Y = v => padT + (1-(v-mn)/(mx-mn))*(H-padT-padB);
+  const line = (vals, col) => {
+    let p=''; for (let i=0;i<N;i++){ if (vals[i]==null) continue; p += (p?' ':'') + X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); }
+    if (!p) return '';
+    const lastI = (()=>{ for(let i=N-1;i>=0;i--) if(vals[i]!=null) return i; return -1; })();
+    const firstI = (()=>{ for(let i=0;i<N;i++) if(vals[i]!=null) return i; return -1; })();
+    let s = '<polyline points="'+p+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (firstI>=0) s += '<circle cx="'+X(firstI).toFixed(1)+'" cy="'+Y(vals[firstI]).toFixed(1)+'" r="2.6" fill="#0e1015" stroke="'+col+'" stroke-width="1.6"/>';
+    if (lastI>=0){
+      s += '<circle cx="'+X(lastI).toFixed(1)+'" cy="'+Y(vals[lastI]).toFixed(1)+'" r="3" fill="'+col+'"/>';
+      s += '<text x="'+(X(lastI)+7).toFixed(1)+'" y="'+(Y(vals[lastI])+3.5).toFixed(1)+'" font-size="10.5" font-family="\'IBM Plex Mono\',monospace" font-weight="700" fill="'+col+'">'+vals[lastI].toFixed(2)+'</text>';
+    }
+    return s;
+  };
+  let g='';
+  for (let t=0;t<=2;t++){ const y = padT + (t/2)*(H-padT-padB); g += '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>'; }
+  g += '<text x="'+padL+'" y="'+(H-3)+'" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#5b6472">Open</text>';
+  g += '<text x="'+(W-padR).toFixed(1)+'" y="'+(H-3)+'" text-anchor="end" font-size="9" font-family="\'IBM Plex Mono\',monospace" fill="#5b6472">Now</text>';
+  g += line(v1, '#3E7BFA') + line(v2, '#E8934B');
+  return `<div class="ako-move"><div class="ako-movehd">Odds movement<span>${psEsc(bk)}</span></div>`
+    + '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;overflow:visible;">'+g+'</svg></div>';
+}
 function akOddsBlock(m){
   if (!m.odds || !m.odds.p1 || !m.odds.p2) return akBlock('odds', 'Odds', akEmpty('No prices in the feed for this match yet.'));
   const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, tot = i1 + i2;
@@ -5753,7 +5832,8 @@ function akOddsBlock(m){
     </div>
     <div class="ako-bar"><div class="ako-bar-a" style="width:${f1.toFixed(1)}%;"></div></div>
     <div class="ako-legend"><span>${f1.toFixed(1)}%</span><span class="ako-mid">vig removed</span><span>${f2.toFixed(1)}%</span></div>
-    <div class="ako-sub"><b>${psEsc(favName)}</b> favoured${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>`);
+    <div class="ako-sub"><b>${psEsc(favName)}</b> favoured${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>
+    ${akOddsMoveSvg(m)}`);
 }
 
 // --- block: weather (slim strip) ---
@@ -6058,6 +6138,29 @@ function styleVsArchetypeRowHtml(r, opts){
 }
 
 const PSV_ROW_CAP = 5;
+// "+N more" is a real control, so the extra rows have to be reachable after the
+// list is already in the DOM. Both render passes (the static build below and the
+// availability upgrade in upgradeStyleVsRows) publish their full row list and
+// their own row renderer here; the toggle re-renders through whichever is
+// current, so expanding after the upgrade lands still yields clickable rows.
+const _psvSides = { p1:null, p2:null };
+const _psvOpen  = { p1:false, p2:false };
+function psvListHtml(side){
+  const s = _psvSides[side];
+  if (!s || !s.rows) return '';
+  const open = _psvOpen[side];
+  const shown = open ? s.rows : s.rows.slice(0, PSV_ROW_CAP);
+  const body = shown.map((r, i) => s.renderRow(r, i)).join('');
+  const hidden = s.rows.length - PSV_ROW_CAP;
+  if (hidden <= 0) return body;
+  const label = open ? 'Show less' : `+${hidden} more`;
+  return body + `<div class="psv-more" role="button" tabindex="0" onclick="event.stopPropagation();psvToggleMore('${side}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();psvToggleMore('${side}')}">${label}</div>`;
+}
+function psvRenderList(side){
+  const list = document.getElementById('psvList-' + side);
+  if (list) list.innerHTML = psvListHtml(side);
+}
+function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
 function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
   const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
   const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
@@ -6071,10 +6174,9 @@ function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel,
   const pct = Math.round((w / rows.length) * 100);
   // Rendered static here and upgraded in place by upgradeStyleVsRows once the
   // availability indexes resolve — same two-pass contract as the H2H list.
-  const list = rows.slice(0, PSV_ROW_CAP).map(r => styleVsArchetypeRowHtml(r, null)).join('');
-  const more = rows.length > PSV_ROW_CAP ? `<div class="psv-more">+${rows.length - PSV_ROW_CAP} more</div>` : '';
+  _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r, null) };
   return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
-    `<div class="psv-list" id="psvList-${side}">${list}${more}</div>`);
+    `<div class="psv-list" id="psvList-${side}">${psvListHtml(side)}</div>`);
 }
 
 function styleVsArchetypeHtml(m, s1, s2){
@@ -6115,58 +6217,59 @@ function upgradeStyleVsRows(m, token){
       if (!s.rows || !s.rows.length) continue;
       const list = document.getElementById('psvList-' + s.side);
       if (!list) continue;
-      const shown = s.rows.slice(0, PSV_ROW_CAP);
-      let openable = 0;
-      const html = shown.map((r, i) => {
+      // Openability is decided per row at render time, so the renderer closes over
+      // the resolved indexes and stays correct for rows revealed later by "+N more".
+      const renderRow = (r, i) => {
         const ek = String(r.eventKey || '');
         const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-        if (canOpen) openable++;
         // Suffix must stay `psv<i>` — toggleFormPanel strips it to derive the
         // accordion group. The two cards get distinct prefixes so each column
         // is its own accordion, matching the Form tab's two-column behaviour.
         return styleVsArchetypeRowHtml(r, canOpen
           ? { canOpen:true, idPrefix:`psv${s.side}psv${i}`, playerKey:s.key, playerName:s.name }
           : null);
-      }).join('');
-      const more = s.rows.length > PSV_ROW_CAP ? `<div class="psv-more">+${s.rows.length - PSV_ROW_CAP} more</div>` : '';
-      if (openable) list.innerHTML = html + more;
+      };
+      const openable = s.rows.slice(0, PSV_ROW_CAP)
+        .filter(r => { const ek = String(r.eventKey || ''); return !!ek && (msIdx.has(ek) || pbpIdx.has(ek)); }).length;
+      if (openable){
+        _psvSides[s.side] = { rows: s.rows, renderRow: renderRow };
+        psvRenderList(s.side);
+      }
     }
   });
 }
 
-function styleHeaderSideHtml(m, pl, name, odds, side){
+function styleHeaderSideHtml(m, pl, name, side){
   const arch = pl && psArchFor(pl.primary);
   const accent = side === 'p1' ? '#7ba4ff' : '#eaa869';
   const rgba = side === 'p1' ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
   const archLine = arch
     ? `<div class="psh-arch" style="color:${accent};">${psEsc(arch.code)} · ${psEsc(arch.name)}</div>`
     : `<div class="psh-arch psh-arch-none">Unclassified</div>`;
-  const ini = formIni(name);
-  // Per-side alphas are the design's, not a shared constant: the mock tints the
-  // p2 avatar one point lighter and the p1 odds pill one point darker.
-  const avatar = `<span class="psh-ini" style="color:${accent}; background:${rgba(side === 'p1' ? 0.15 : 0.14)}; border-color:${rgba(0.4)};">${psEsc(ini)}</span>`;
-  const oddsPill = odds ? `<span class="psh-odds" style="color:${accent}; background:${rgba(0.12)}; border-color:${rgba(side === 'p1' ? 0.3 : 0.32)};">${psEsc(odds)}</span>` : '';
+  // The modal header already carries both full names, the avatars and the odds
+  // pills, so this tab no longer repeats them — it kept a second 36px avatar, a
+  // 15px name and a duplicate odds pill purely to restate the header. What is
+  // NOT duplicated is the archetype and the style badges, so those stay, with a
+  // short surname as the attribution label (the accent colour alone does not
+  // reliably say which archetype belongs to which player). The reclaimed height
+  // goes to the radar and the dimension bars below.
   const text = `<div class="psh-text" style="text-align:${side === 'p1' ? 'right' : 'left'};">
-      <div class="psh-name">${psEsc(name)}</div>${archLine}${styleBadgesHtml(pl, side === 'p1' ? 'right' : 'left')}</div>`;
-  return side === 'p1'
-    ? `<div class="psh-side">${text}${avatar}${oddsPill}</div>`
-    : `<div class="psh-side">${oddsPill}${avatar}${text}</div>`;
+      <div class="psh-who" style="color:${accent};">${psEsc(psShortName(name))}</div>${archLine}${styleBadgesHtml(pl, side === 'p1' ? 'right' : 'left')}</div>`;
+  return `<div class="psh-side">${text}</div>`;
 }
 
 function buildStyleSection(m){
   const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
   const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
-  const o1 = m.odds && m.odds.p1 ? Number(m.odds.p1).toFixed(2) : '';
-  const o2 = m.odds && m.odds.p2 ? Number(m.odds.p2).toFixed(2) : '';
   // Nothing at all landed — say which feed is empty rather than showing a blank tab.
   if (!s1 && !s2 && !r1 && !r2){
     return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history for a playing-style profile. Style classification needs a full ATP/Challenger record — it is thin at ITF and qualifying level.</div>`;
   }
   return `<div class="psx-wrap">
     <div class="psh-bar">
-      ${styleHeaderSideHtml(m, s1, m.p1, o1, 'p1')}
+      ${styleHeaderSideHtml(m, s1, m.p1, 'p1')}
       <span class="psh-vs">VS</span>
-      ${styleHeaderSideHtml(m, s2, m.p2, o2, 'p2')}
+      ${styleHeaderSideHtml(m, s2, m.p2, 'p2')}
     </div>
     <div class="psx-top">
       <div class="psr-col">${styleRadarBlockHtml(m, r1, r2)}</div>
@@ -6183,6 +6286,10 @@ function renderStyleSection(m){
   if (!el) return;
   // Every repaint invalidates any in-flight row upgrade from the previous one.
   const token = ++_psvToken;
+  // A repaint rebuilds both lists from scratch, so the expand state must reset
+  // with them — otherwise opening a second match inherits the first's expansion.
+  _psvOpen.p1 = false; _psvOpen.p2 = false;
+  _psvSides.p1 = null; _psvSides.p2 = null;
   el.innerHTML = buildStyleSection(m);
   el.dataset.psvToken = String(token);
   upgradeStyleVsRows(m, token);
@@ -6319,7 +6426,16 @@ function openAnalysisModal(matchId){
   // it guards on _aOdds.m so a fast reopen of a DIFFERENT match cannot be
   // overwritten by an in-flight fetch for the previous one.
   document.getElementById('aSectionOdds').innerHTML = buildOddsSection(m);
-  ensureOddsMovement(m).then(() => { if (_aOdds.m === m) renderOddsSection(); });
+  ensureOddsMovement(m).then(() => {
+    if (_aOdds.m !== m) return;
+    renderOddsSection();
+    // Key Factors' odds block carries a compact movement chart off the same shard,
+    // so it needs the same late repaint the Odds tab gets — without this the chart
+    // is absent on first open and only appears if the form shard happens to land
+    // afterwards and repaint the bento for its own reasons.
+    const keyEl = document.getElementById('aSectionKey');
+    if (keyEl) keyEl.innerHTML = buildKeyFactorsSection(m);
+  });
 
   document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);
 
@@ -7263,18 +7379,19 @@ const PP_SPLIT_CHEVRON = `<svg width="9" height="9" viewBox="0 0 8 8"><path d="M
 function ppSplitsSection(title, which, rows, subtitle, tier){
   const open = ppState.splitsOpen[which];
   const rot = open ? '90deg' : '0deg';
+  // The chevron beside the title IS the control — the standalone Show/Hide button
+  // was a second affordance for the same state. The whole heading row is the hit
+  // target so the label itself opens and closes the table.
   return `<div style="background:#0a0b0f;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 26px 24px;">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;">
-      <div style="display:flex;align-items:flex-start;gap:13px;">
-        <span style="display:inline-flex;margin-top:4px;color:${open ? '#3E7BFA' : '#5b6472'};transform:rotate(${rot});transition:transform .18s ease;">${PP_SPLIT_CHEVRON.replace('width="9" height="9"','width="11" height="11"')}</span>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;color:#f3f5f9;">${title}</span>
-          <span style="font-size:12.5px;color:#8b93a3;">${subtitle}</span>
-        </div>
+    <div class="pp-split-head" role="button" tabindex="0" aria-expanded="${open}"
+         onclick="togglePpSplits('${which}')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePpSplits('${which}')}"
+         style="display:flex;align-items:flex-start;gap:13px;cursor:pointer;border-radius:10px;margin:-6px -8px;padding:6px 8px;transition:background .15s ease;">
+      <span style="display:inline-flex;margin-top:4px;color:${open ? '#3E7BFA' : '#5b6472'};transform:rotate(${rot});transition:transform .18s ease,color .15s ease;">${PP_SPLIT_CHEVRON.replace('width="9" height="9"','width="11" height="11"')}</span>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;color:#f3f5f9;">${title}</span>
+        <span style="font-size:12.5px;color:#8b93a3;">${subtitle}</span>
       </div>
-      <button class="pp-split-tgl" onclick="togglePpSplits('${which}')" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:8px 15px;border-radius:9px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.035);color:#c8cfda;${PP_SPLIT_MONO}font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;transition:background .15s ease,border-color .15s ease;">
-        <span style="display:inline-flex;transform:rotate(${rot});transition:transform .18s ease;">${PP_SPLIT_CHEVRON}</span>${open ? 'Hide' : 'Show'}
-      </button>
     </div>
     ${open ? ppSplitsTableHtml(rows, which, tier) : ''}
   </div>`;
