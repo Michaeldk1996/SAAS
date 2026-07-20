@@ -13,6 +13,22 @@ on:
   schedule:
     - cron: '*/15 * * * *'   # every 15 minutes (UTC). GitHub may delay under load.
   workflow_dispatch:          # allow manual "Run workflow" from the Actions tab
+  # Frontend pushes to main auto-deploy so a dashboard change doesn't have to wait
+  # for the next cron tick. This runs the SAME full job on purpose: GitHub Pages
+  # replaces the whole site on every deploy, and several served files (model-output.json,
+  # odds/, form/, career-history/, setstats/, pbp/ shards) are built at runtime and are
+  # not in git — a checkout-only "fast deploy" would publish a site missing them and
+  # break the Edge Model, Odds, Form, and Career-record features. Warm caches keep this
+  # reasonably quick, and `concurrency` below queues it behind any in-flight cron run.
+  push:
+    branches: [main]
+    paths:
+      - 'bsp-consult-dashboard.html'
+      - 'index.html'
+      - 'auth.html'
+      - 'account.html'
+      - 'funnel.html'
+      - 'auth.js'
 
 # Never let two runs overlap; cancel an in-progress run if a newer one starts.
 concurrency:
