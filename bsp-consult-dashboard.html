@@ -1446,6 +1446,7 @@
       <button class="active" data-tab="matches">Matches</button>
       <button data-tab="players">Players</button>
       <button data-tab="tournaments">Tournaments</button>
+      <button data-tab="edge">Tennis Edge Model</button>
       <button data-tab="h2h">Head-to-Head</button>
       <button data-tab="styles">Playing Styles</button>
       <button data-tab="track">Track Record</button>
@@ -2094,6 +2095,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'players') showPlayerList();
   if (tab === 'tournaments') { showTournamentList(); renderTournamentsTab(); }
   if (tab === 'styles') renderPlayingStyles();
+  if (tab === 'edge') openEdgeModelTab();
 });
 
 
@@ -2436,7 +2438,15 @@ async function loadModelOutput(){
     const res = await fetch('./model-output.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = JSON.parse(await res.text()); // manual parse: catch mid-write reads
-    if (parsed && parsed.matches) { modelOutput = parsed; modelOutputLoaded = true; }
+    if (parsed && parsed.matches) {
+      modelOutput = parsed; modelOutputLoaded = true;
+      // If the user is already sitting on the Edge Model tab when the file lands
+      // (it loads independently of matches.json, so an immediate click can beat
+      // it), re-resolve the view: an empty state becomes real output, and a fresh
+      // tab open re-picks its runnable default instead of the first board match.
+      const edgePage = document.querySelector('.tabpage[data-page="edge"]');
+      if (edgePage && edgePage.classList.contains('active')) openEdgeModelTab();
+    }
   } catch (err) {
     console.warn('model-output.json fetch failed (kept last-good; Edge Model may be stale):', err.message);
   }
@@ -2908,7 +2918,6 @@ function renderMatches(){
       <div class="mx-footer">
         <span>${bookmakerLine}</span>
         <span class="mx-footlinks">
-          <a onclick="openEdgeModel('${m.id}')">Tennis Edge Model →</a>
           <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
         </span>
       </div>
@@ -2926,6 +2935,10 @@ function toggleFav(id){ openModal(); }
 /* engine run failed (missing Elo etc.) get an honest empty state. */
 /* ============================================================= */
 let edgeCurrentId = null;
+// True once the user has *deliberately* chosen a match (a card link or Prev/Next),
+// vs. the tab auto-landing on a default. Keeps a real choice sticky when the tab is
+// re-opened, while letting an auto-default get upgraded once model output loads.
+let edgeUserPicked = false;
 
 function edgeEsc(s){
   return String(s == null ? '' : s)
@@ -2936,13 +2949,40 @@ function edgePct(x, dp){ return (x == null || isNaN(x)) ? '—' : (x * 100).toFi
 function edgeOdds(x){ return (x == null || isNaN(x)) ? '—' : Number(x).toFixed(2); }
 function edgeCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 
-// Open the Edge Model page for a match. Not a top-nav tab — it's reached from a
-// match card — so it toggles the tabpage directly and clears the nav highlight.
+// Open the Edge Model page for a specific match — reached from a match-card link
+// or Prev/Next. This is a deliberate choice, so it becomes the sticky selection.
 function openEdgeModel(id){
   edgeCurrentId = id;
-  document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+  edgeUserPicked = true;
+  // Edge Model is a top-level nav tab, so entering it from a match card link
+  // still lights up its nav button (not clears the whole bar).
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === 'edge'));
   document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === 'edge'));
   window.scrollTo(0, 0);
+  renderEdgeModel(id);
+}
+// Entry point when the Edge Model *nav tab* is clicked (no specific match chosen).
+// Lands on the match the user last looked at if it's still on the board, else the
+// first match in the current filtered order — mirroring Prev/Next (getFiltered).
+function openEdgeModelTab(){
+  const list = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  const ids = list.map(m => m.id);
+  const hasOutput = mid => modelOutput.matches && modelOutput.matches[mid] && modelOutput.matches[mid].ok;
+  // Prefer a match the user deliberately chose earlier (if still on the board),
+  // then the first match with runnable output — so the tab opens on a real model
+  // rather than an empty state — then just the first match as a fallback. An
+  // auto-default is left non-sticky so it upgrades once model output loads.
+  const id = (edgeUserPicked && edgeCurrentId && ids.indexOf(edgeCurrentId) !== -1) ? edgeCurrentId
+           : (ids.find(hasOutput) || ids[0]);
+  window.scrollTo(0, 0);
+  if (!id){
+    // No matches on the board at all (e.g. between events, or a filter that
+    // excludes everything) — there's nothing to model yet.
+    const body = document.getElementById('edgeBody');
+    if (body) body.innerHTML = edgeEmptyState(null, 'No matches on the board right now. The Edge Model appears here for each match as soon as the board has fixtures to analyse.');
+    return;
+  }
+  edgeCurrentId = id;
   renderEdgeModel(id);
 }
 // Return to the matches board via the real nav button so its render + highlight
