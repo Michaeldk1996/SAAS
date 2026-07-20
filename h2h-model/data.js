@@ -199,4 +199,11 @@ module.exports = {
   rankOf,
   loadManualInputs,
   loadMatchupMatrix: () => load('matchup-matrix.json'),
+  // Tier-1 serve source: per-round serve numbers for the CURRENTLY active
+  // tournament(s), already produced for the Progression tab / Tournament
+  // Reports — reused here rather than adding a new fetch.
+  loadProgression: () => { try { return load('tournament-progression.json'); } catch (e) { return { tournaments: {} }; } },
+  // Tier-2 serve source: real per-match box scores keyed by api-tennis
+  // eventKey (the same cache the Form tab uses); joined via recentForm eventKeys.
+  loadHistoricalStats: () => { try { return load('historical-match-stats.json'); } catch (e) { return {}; } },
 };

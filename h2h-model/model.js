@@ -56,6 +56,8 @@ function runModel(match, opts = {}) {
     p1, p2, match, surface, bestOf,
     subjectiveSignal: opts.subjectiveSignal,
     matchupMatrix: data.loadMatchupMatrix(),
+    progression: data.loadProgression(),      // Tier-1 serve (this tournament)
+    historicalStats: data.loadHistoricalStats(), // Tier-2 serve (last-3 on surface)
   };
   const adjustments = runAll(ctx);
 
