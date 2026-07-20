@@ -319,26 +319,127 @@ function winnerUE(ctx) {
 }
 
 // =========================================================================
-// 9. SERVE STRENGTH — serve radar percentile (career serve% fallback)
+// 9. SERVE STRENGTH — momentum-weighted 4-tier blend on a common spw scale
+//    T1 this tournament (progression)  > T2 last-3 on surface (box scores)
+//    > T3 season-on-surface > T4 career-on-surface (fallback floor).
 // =========================================================================
+// All four tiers are reduced to one "serve points won %" (spw, ~50-70) number
+// so they are directly comparable and blendable. Weights renormalise over
+// whichever tiers a player actually has, so live tournament serving dominates
+// when present and career is the guaranteed floor. T1 reuses
+// tournament-progression.json (the Progression tab's own data) and T2 reuses
+// historical-match-stats.json (the Form tab's box-score cache) — no new
+// pipeline fetch is introduced.
 function serve(ctx) {
   const c = config.adjustments.serve;
-  const res = base(c.id, 'serve', 'Serve strength', c.maxMagnitude, 'style-radar.json / career-splits.json');
-  function serveRating(p) {
-    if (p.radar && num(p.radar.serve) != null) return { v: p.radar.serve, src: 'radar' };
-    const cat = careerCat(p.splits, surfaceCategory(ctx.surface)) || careerCat(p.splits, 'Best of 3');
-    if (cat && num(cat.spwPct) != null) return { v: cat.spwPct, src: 'career-spw' };
-    return null;
+  const res = base(c.id, 'serve', 'Serve strength',
+    c.maxMagnitude, 'tournament-progression.json (T1) / historical-match-stats.json (T2) / career-splits.json (T3,T4)');
+
+  // Collapse the three component rates into one spw number. Same formula for
+  // every tier, so units always match.
+  function spwFrom(firstInPct, firstWonPct, secondWonPct) {
+    const fi = num(firstInPct), fw = num(firstWonPct), sw = num(secondWonPct);
+    if (fi == null || fw == null || sw == null) return null;
+    const p = fi / 100;
+    return p * fw + (1 - p) * sw;
   }
-  const s1 = serveRating(ctx.p1), s2 = serveRating(ctx.p2);
-  if (!s1 || !s2) return res;
-  // radar is a 0-100 percentile; career spw is ~50-70 raw. Only compare like
-  // with like — if the sources differ, dampen confidence.
-  const sameSrc = s1.src === s2.src;
-  const scale = s1.src === 'radar' ? 60 : 15;
-  const signal = clamp((s1.v - s2.v) / scale, -1, 1);
-  return apply(res, sameSrc ? signal : signal * 0.5, sameSrc ? 'med' : 'low',
-    `Serve ${Math.round(s1.v)} vs ${Math.round(s2.v)} (${s1.src}).`);
+
+  const surfCat = surfaceCategory(ctx.surface);
+
+  // T1 — this tournament, completed rounds (mean spw across the player's
+  // rounds in the active edition).
+  function tier1(p) {
+    const prog = ctx.progression;
+    if (!prog || !prog.tournaments || !p.numericKey) return null;
+    const tourStr = String((ctx.match && ctx.match.tour) || '').toLowerCase();
+    if (!tourStr) return null;
+    let bucket = null;
+    for (const name of Object.keys(prog.tournaments)) {
+      if (tourStr.includes(name.toLowerCase())) { bucket = prog.tournaments[name]; break; }
+    }
+    if (!bucket || !Array.isArray(bucket.players)) return null;
+    const row = bucket.players.find(pl => String(pl.playerKey) === String(p.numericKey));
+    if (!row || !Array.isArray(row.rounds)) return null;
+    const spws = [];
+    for (const r of row.rounds) {
+      const m = r && r.metrics;
+      const s = m && spwFrom(m.firstServePct, m.firstServeWonPct, m.secondServeWonPct);
+      if (s != null) spws.push(s);
+    }
+    if (!spws.length) return null;
+    return { v: spws.reduce((a, b) => a + b, 0) / spws.length };
+  }
+
+  // T2 — last 3 matches on THIS surface, from the box-score cache joined by
+  // recentForm eventKeys. Point-in-time: only matches strictly before this
+  // match's date are eligible (keeps the backtest honest).
+  function tier2(p) {
+    const hs = ctx.historicalStats;
+    if (!hs || !p.profile || !p.numericKey) return null;
+    const want = String(surfCat || '').toLowerCase();
+    if (!want) return null;
+    const cutoff = new Date((ctx.match && (ctx.match.date || ctx.match.day)) || Date.now());
+    const spws = [];
+    for (const m of recentMatchesSorted(p.profile)) {
+      if (spws.length >= 3) break;
+      if (!m.eventKey || String(m.surface || '').toLowerCase() !== want) continue;
+      if (m.date && new Date(m.date) >= cutoff) continue; // no lookahead
+      const entry = hs[String(m.eventKey)];
+      const stats = entry && entry.matchStats;
+      if (!stats) continue;
+      const side = String(entry.p1Key) === String(p.numericKey) ? stats.p1
+                 : String(entry.p2Key) === String(p.numericKey) ? stats.p2 : null;
+      if (!side) continue;
+      const s = spwFrom(side['Service:1st serve percentage'],
+                        side['Service:1st serve points won'],
+                        side['Service:2nd serve points won']);
+      if (s != null) spws.push(s);
+    }
+    if (!spws.length) return null;
+    return { v: spws.reduce((a, b) => a + b, 0) / spws.length };
+  }
+
+  // T3 — season (rolling 52-week) surface spw.
+  function tier3(p) {
+    const row = surfCat && p.splits && p.splits.last52 && p.splits.last52[surfCat];
+    return row && num(row.spwPct) != null ? { v: row.spwPct } : null;
+  }
+
+  // T4 — career surface spw (falls back to a format bucket if surface absent).
+  function tier4(p) {
+    if (!p.splits || !p.splits.career) return null;
+    const row = (surfCat && p.splits.career[surfCat])
+             || p.splits.career['Best of 3'] || p.splits.career['Best of 5'];
+    return row && num(row.spwPct) != null ? { v: row.spwPct } : null;
+  }
+
+  const W = { tourney: 0.45, surf3: 0.30, season: 0.15, career: 0.10 };
+  const RANK = { tourney: 3, surf3: 2, season: 1, career: 0 };
+
+  // Availability-weighted blend: weights renormalise over whichever tiers a
+  // player actually has. Returns null only if the player has no serve data.
+  function blend(p) {
+    const tiers = [
+      { w: W.tourney, tag: 'tourney', r: tier1(p) },
+      { w: W.surf3,   tag: 'surf3',   r: tier2(p) },
+      { w: W.season,  tag: 'season',  r: tier3(p) },
+      { w: W.career,  tag: 'career',  r: tier4(p) },
+    ].filter(t => t.r && num(t.r.v) != null);
+    if (!tiers.length) return null;
+    const wsum = tiers.reduce((s, t) => s + t.w, 0);
+    const v = tiers.reduce((s, t) => s + t.w * t.r.v, 0) / wsum;
+    return { v, top: tiers[0].tag }; // tiers[0] = highest-priority present tier
+  }
+
+  const b1 = blend(ctx.p1), b2 = blend(ctx.p2);
+  if (!b1 || !b2) return res;
+
+  // Confidence keyed to the strongest tier that fired for either player.
+  const best = Math.max(RANK[b1.top], RANK[b2.top]);
+  const confidence = best >= 3 ? 'high' : best >= 1 ? 'med' : 'low';
+  const signal = clamp((b1.v - b2.v) / 15, -1, 1);
+  return apply(res, signal, confidence,
+    `Serve spw ${b1.v.toFixed(1)} (${b1.top}) vs ${b2.v.toFixed(1)} (${b2.top}).`);
 }
 
 // =========================================================================

@@ -68,10 +68,15 @@ module.exports = {
     //    supplies values in h2h-model/manual-inputs.json (else stays inert).
     winnerUE:       { id: 8,  maxMagnitude: 0.02, gated: true,
                       gateReason: 'api-tennis W/UE not reliable yet; awaiting manual-inputs.json or big-tournament feed' },
-    // 9. Serve strength — career serve% + serve radar
-    //    (calibrated 2026-07 from 0.035 -> 0.02: significant (z=3.5) on the
-    //     Sackmann fit, about half the original placeholder.)
-    serve:          { id: 9,  maxMagnitude: 0.02, gated: false },
+    // 9. Serve strength — momentum-weighted 4-tier blend (this-tournament >
+    //    last-3-on-surface > season-on-surface > career-on-surface).
+    //    Deliberate 0.035 override (2026-07): the Sackmann/backtest fit trims
+    //    serve to ~0.02 because it can only see diluted career serve; it cannot
+    //    reconstruct the live tier-1/tier-2 tournament-specific serve the model
+    //    now uses. The live signal is sharper (recent, surface- and event-
+    //    specific), so we override the fitted magnitude back up. See serve() in
+    //    adjustments.js and the note in calibrate.js.
+    serve:          { id: 9,  maxMagnitude: 0.035, gated: false },
     // 10. Return / pressure — career return% + break% + return radar
     returnPressure: { id: 10, maxMagnitude: 0.02, gated: false },
     // 11. Fatigue — 14-day match/set load from recent form dates

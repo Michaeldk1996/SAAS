@@ -178,6 +178,13 @@ const LAYERS = [
       const h = ctx.h2h; if (!h || (h.a + h.b) < 2) return null;
       return clamp1((h.a - h.b) / (h.a + h.b));
     } },
+  // NOTE (2026-07): this harness can only reconstruct DILUTED CAREER serve from
+  // Sackmann (ace% + first-serve-win% accumulated across all conditions). It
+  // cannot see the live model's tier-1 (this-tournament) or tier-2 (last-3-on-
+  // surface) serve, which have no deep historical archive. So the fit here will
+  // structurally UNDER-weight serve. We deliberately override the fitted value:
+  // production config.serve.maxMagnitude is pinned to 0.035, not the ~0.02 this
+  // fit suggests. Keep this layer for directional sanity only.
   { id: 9, key: 'serve', min: 10, scale: 1, fn: (s1, s2) => {
       if (s1.serve.matches < 10 || s2.serve.matches < 10) return null;
       const idx = s => (0.5 * (s.ace / Math.max(1, s.svpt)) / 0.08) + (0.5 * (s.firstWon / Math.max(1, s.firstIn)) / 0.72);
