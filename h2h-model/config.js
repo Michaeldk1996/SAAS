@@ -116,7 +116,11 @@ module.exports = {
   summary: {
     enabled: true,               // master switch (still requires a key at runtime)
     model: 'claude-opus-4-6',    // default per platform guidance
-    maxTokens: 700,              // a summary is short; keep spend low
+    // Five paragraphs of 2-3 sentences, and with thinking:'adaptive' the
+    // thinking tokens are drawn from this same budget. The old 700 was sized
+    // for the 3-5 sentence note and would truncate the five-paragraph one
+    // mid-sentence (a short stop_reason:'max_tokens' body, not an error).
+    maxTokens: 2000,
     thinking: 'adaptive',        // 'adaptive' | 'off' — adaptive for nuanced reads
     // How many of the strongest applied adjustments to hand the model.
     topAdjustments: 6,

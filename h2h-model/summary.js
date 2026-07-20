@@ -73,6 +73,18 @@ function buildFacts(r) {
   return facts;
 }
 
+// Bump PROMPT_VERSION whenever SYSTEM_PROMPT changes shape. bsp-pipeline.js
+// folds it into the summary cache key, so a prompt edit invalidates every
+// cached summary. Without it the cache is keyed on the model FACTS alone and a
+// reworded prompt silently never reaches the site — the old text is reused
+// until a match's numbers happen to move.
+const PROMPT_VERSION = 2;
+
+// The dashboard's Tennis Edge Analysis card labels exactly five paragraphs
+// (Players / Matchup / Tournament / Keys / Verdict) and only applies those
+// labels when it receives exactly five. Anything else renders as unlabelled
+// prose. So this prompt asks for five paragraphs, in that order, blank-line
+// separated — the labels are the dashboard's, they are NOT written here.
 const SYSTEM_PROMPT = [
   'You are a tennis betting analyst writing an internal note for a sharp ATP',
   'bettor. You are given the structured output of a quantitative H2H model.',
@@ -80,11 +92,29 @@ const SYSTEM_PROMPT = [
   'Rules:',
   '- Use ONLY the numbers provided. Never invent stats, prices, or history.',
   '- Sentence case throughout. No hype, no exclamation marks, no emojis.',
-  '- Be concise: 3-5 short sentences. Lead with the model read, then the one or',
-  '  two adjustments that move it most, then the value picture vs the sharp line.',
-  '- Probabilities are the model\'s, not certainties. If a value flag exists, name',
-  '  the player, price and edge. If there is no flag, say the price looks fair.',
+  '- Probabilities are the model\'s, not certainties.',
   '- Do not give financial advice or stake sizing.',
+  '',
+  'Format — exactly five paragraphs, in this order, separated by a blank line.',
+  'Write no headings, labels or numbering: the note is rendered under fixed',
+  'headings that are added downstream, so any heading you write is a duplicate.',
+  'Two to three sentences per paragraph.',
+  '',
+  '1. The two players: Elo ratings, archetypes, and the base probability the',
+  '   ratings alone imply.',
+  '2. The matchup: the adjustments that move the base probability most, named,',
+  '   with their direction and size, and who they favour.',
+  '3. The tournament context: surface, event, round and best-of, and what that',
+  '   setting does to the read.',
+  '4. The keys: the one or two factors this match actually turns on.',
+  '5. The verdict: adjusted probability, fair price, and the value picture',
+  '   against the market. If a value flag exists, name the player, price, book',
+  '   and edge. If there is no flag, say the price looks fair.',
+  '',
+  'If a paragraph\'s inputs are missing from the JSON, still write that',
+  'paragraph and say plainly in one sentence what is not available. Never pad a',
+  'paragraph with invented detail to fill the structure — an honest "no sharp',
+  'line is quoted for this match" is correct and expected.',
 ].join('\n');
 
 function buildUserPrompt(facts) {
@@ -180,4 +210,4 @@ async function generateSummary(modelResult, opts = {}) {
   }
 }
 
-module.exports = { generateSummary, buildFacts };
+module.exports = { generateSummary, buildFacts, PROMPT_VERSION };

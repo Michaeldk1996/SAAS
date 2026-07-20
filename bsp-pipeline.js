@@ -4069,10 +4069,10 @@ async function runPipeline() {
 const MODEL_OUTPUT_PATH = 'model-output.json';
 
 async function buildModelOutput(matches) {
-  let runModel, generateSummary, buildFacts;
+  let runModel, generateSummary, buildFacts, PROMPT_VERSION;
   try {
     ({ runModel } = require('./h2h-model/model'));
-    ({ generateSummary, buildFacts } = require('./h2h-model/summary'));
+    ({ generateSummary, buildFacts, PROMPT_VERSION } = require('./h2h-model/summary'));
   } catch (e) {
     // R&D-safe: a missing/broken engine must never take the whole pipeline down.
     console.warn(`Skipping model-output.json — H2H engine not loadable: ${e.message}`);
@@ -4130,7 +4130,13 @@ async function buildModelOutput(matches) {
 
     // ---- Stage 4: pre-baked AI summary, hash-cached ----
     const facts = buildFacts(result);
-    const factsHash = crypto.createHash('sha1').update(JSON.stringify(facts)).digest('hex');
+    // The cache key covers the PROMPT as well as the facts. Keyed on facts
+    // alone, a reworded prompt would never reach the site: every summary would
+    // hit the cache and serve text written by the old prompt until that
+    // match's numbers happened to move. Bumping PROMPT_VERSION in summary.js
+    // expires the whole cache exactly once, on the next run.
+    const factsHash = crypto.createHash('sha1')
+      .update(JSON.stringify({ v: PROMPT_VERSION || 1, facts })).digest('hex');
     const priorSum = prior[m.id] && prior[m.id].summary;
     if (priorSum && priorSum.ok && priorSum.factsHash === factsHash) {
       entry.summary = priorSum;            // numbers unchanged → reuse cached text
@@ -4138,7 +4144,11 @@ async function buildModelOutput(matches) {
     } else if (haveKey) {
       const s = await generateSummary(result);
       if (s.ok) {
-        entry.summary = { ok: true, text: s.summary, model: s.model,
+        // paras is what the dashboard's five-label render keys off. Recording
+        // it makes a prompt that stopped emitting five VISIBLE in the output
+        // file, instead of the card quietly falling back to unlabelled prose.
+        const paras = String(s.summary).split(/\n{2,}/).map(t => t.trim()).filter(Boolean).length;
+        entry.summary = { ok: true, text: s.summary, model: s.model, paras,
           factsHash, generatedAt: new Date().toISOString() };
         sumNew++;
       } else {
@@ -4157,7 +4167,16 @@ async function buildModelOutput(matches) {
     count: Object.keys(out).length,
     matches: out,
   }, true);
-  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  // Paragraph spread across every ok summary. The dashboard only applies the
+  // five Players/Matchup/Tournament/Keys/Verdict labels at exactly 5, so this
+  // line is how a regression in the prompt shows up in the CI log.
+  const paraSpread = {};
+  for (const e of Object.values(out)) {
+    const s = e && e.summary;
+    if (s && s.ok) paraSpread[s.paras || '?'] = (paraSpread[s.paras || '?'] || 0) + 1;
+  }
+  const paraStr = Object.keys(paraSpread).sort().map(k => `${k}para:${paraSpread[k]}`).join(' ') || 'none';
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped. Paragraphs: ${paraStr}`);
 }
 
 if (require.main === module) {
