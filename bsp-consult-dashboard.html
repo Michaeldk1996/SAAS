@@ -5679,6 +5679,13 @@ function akStyleBlock(m){
   return akBlock('style', 'Playing style', `${names}${edge}${dims}`, { tall:true });
 }
 
+// Season a match belongs to, as a 4-digit string. Anchored on the match's own date so
+// that opening a finished 2025 match does not label its surface record with this year.
+function akSeasonOf(m){
+  const d = String((m && m.date) || '');
+  return /^\d{4}/.test(d) ? d.slice(0, 4) : String(new Date().getUTCFullYear());
+}
+
 // --- block: recent form ---
 function akFormBlock(m){
   const col = (name, rows, pct, accent) => {
@@ -5690,9 +5697,25 @@ function akFormBlock(m){
     const last10 = rows.slice(0, 10);
     const w10 = last10.filter(r => r.won).length;
     const surf = (m.surface || '').toLowerCase();
-    const surfRows = rows.filter(r => (r.surface || '').toLowerCase() === surf);
+    const surfAll = rows.filter(r => (r.surface || '').toLowerCase() === surf);
+    // The surface record reads as a season figure, so it has to BE one. These rows are
+    // the player's last ~40 matches, which for most of the tour straddles two calendar
+    // years — labelling that "Clay 2026" while counting 2025 results would be a lie in
+    // the direction the client is trying to remove. Anchor the season on the match's own
+    // date (not today) so a finished match from a past season still labels correctly.
+    const season = akSeasonOf(m);
+    const surfSeason = surfAll.filter(r => String(r.date || '').slice(0, 4) === season);
+    // Fall back to the unfiltered rows only when the season is genuinely empty — early in
+    // a swing a player can have no matches yet on the surface he is about to play. Showing
+    // a dash there would be a downgrade, so we show the wider figure under a label that
+    // says so rather than one that claims a season it does not cover.
+    const seasonal = surfSeason.length > 0;
+    const surfRows = seasonal ? surfSeason : surfAll;
     const sw = surfRows.filter(r => r.won).length;
-    const surfLabel = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : 'Surface';
+    const surfName = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : 'Surface';
+    const surfLabel = surfAll.length === 0 ? surfName
+      : seasonal ? `${surfName} ${season}`
+      : `${surfName} · last ${surfAll.length}`;
     return `<div class="akf-col">
       <div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div>
       <div class="akf-dots">${dots}</div>
