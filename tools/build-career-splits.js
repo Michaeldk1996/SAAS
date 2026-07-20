@@ -268,6 +268,14 @@ const CATEGORIES = [
   ['Finals', m => m.round === 'F'],
   ['Semi-finals', m => m.round === 'SF'],
   ['Quarter-finals', m => m.round === 'QF'],
+  // Early rounds. Sackmann codes: R16=1/8-final, R32=1/16, R64=1/32, R128=1/64.
+  // Zero-match rows are dropped, so short-career players simply won't have the
+  // deeper (R128/R64) rows. RR (round-robin, Tour Finals) is deliberately not a
+  // bucket — it has no knockout stage to compare against.
+  ['Round of 16', m => m.round === 'R16'],
+  ['Round of 32', m => m.round === 'R32'],
+  ['Round of 64', m => m.round === 'R64'],
+  ['Round of 128', m => m.round === 'R128'],
   ['vs. Righties', m => m.oppHand === 'R'],
   ['vs. Lefties', m => m.oppHand === 'L'],
   ['vs. Top 10', m => m.oppRank != null && m.oppRank <= 10],
