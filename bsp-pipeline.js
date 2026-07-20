@@ -4048,6 +4048,116 @@ async function runPipeline() {
     tournaments: progressionTournaments,
   });
   console.log(`Wrote tournament-progression.json (${Object.keys(progressionTournaments).length}/${activeTournamentNames.length} tournaments had enough finished rounds for a progression chart).`);
+
+  // Tennis Edge Model — precompute the H2H engine output + pre-baked AI summary
+  // for every match, for the static dashboard to fetch. MUST run last: the
+  // engine reads the fresh matches.json / player-profiles.json /
+  // tournament-progression.json this run just wrote (its loaders cache on first
+  // read, and nothing has required the engine before now).
+  console.log('Running the Tennis Edge Model engine over every match...');
+  await buildModelOutput(matches);
+}
+
+// ---- Tennis Edge Model: per-match model output + pre-baked AI summary ------
+// The dashboard is a static site (GitHub Pages, no backend), so the Node H2H
+// engine cannot run in the browser. We precompute runModel() for every match
+// here and write model-output.json for the dashboard to fetch. Stage-4 AI
+// summaries (summary.js) are baked in too, using ANTHROPIC_API_KEY from the
+// pipeline environment — the key NEVER reaches the client. Each summary is
+// cached by a SHA-1 of its model facts, so an API call is spent only when a
+// match's numbers actually change (this pipeline runs every 15 min).
+const MODEL_OUTPUT_PATH = 'model-output.json';
+
+async function buildModelOutput(matches) {
+  let runModel, generateSummary, buildFacts;
+  try {
+    ({ runModel } = require('./h2h-model/model'));
+    ({ generateSummary, buildFacts } = require('./h2h-model/summary'));
+  } catch (e) {
+    // R&D-safe: a missing/broken engine must never take the whole pipeline down.
+    console.warn(`Skipping model-output.json — H2H engine not loadable: ${e.message}`);
+    return;
+  }
+  const crypto = require('crypto');
+
+  // Prior output, so a summary whose facts are unchanged is reused rather than
+  // regenerated — bounds Anthropic spend on the 15-min cron.
+  let prior = {};
+  try {
+    const p = JSON.parse(fs.readFileSync(MODEL_OUTPUT_PATH, 'utf8'));
+    prior = (p && p.matches) || {};
+  } catch (_) { /* first run — no cache yet */ }
+
+  const haveKey = Boolean(process.env.ANTHROPIC_API_KEY);
+  if (!haveKey) {
+    console.warn('  ANTHROPIC_API_KEY not set — engine output still written, AI summaries skipped (cached ones reused).');
+  }
+
+  const out = {};
+  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0;
+
+  for (const m of matches) {
+    let result;
+    try {
+      result = runModel(m);
+    } catch (e) {
+      failed++;
+      out[m.id] = { ok: false, reason: `engine error: ${e.message}` };
+      continue;
+    }
+    if (!result.ok) {
+      // Missing ELO/etc — store the reason + which sources were missing so the
+      // UI can show an honest "not enough data" state (never a fabricated read).
+      failed++;
+      out[m.id] = { ok: false, reason: result.reason || 'model could not run',
+        players: result.players || null };
+      continue;
+    }
+    ran++;
+
+    // Faithful, compact copy of the engine result. Every field is exactly what
+    // runModel() produced — nothing is invented or reshaped.
+    const entry = {
+      ok: true,
+      match: result.match,
+      players: result.players,
+      stage1: result.stage1,
+      stage2: result.stage2,
+      stage3: result.stage3,
+      generatedAt: result.meta && result.meta.generatedAt,
+      summary: null,
+    };
+
+    // ---- Stage 4: pre-baked AI summary, hash-cached ----
+    const facts = buildFacts(result);
+    const factsHash = crypto.createHash('sha1').update(JSON.stringify(facts)).digest('hex');
+    const priorSum = prior[m.id] && prior[m.id].summary;
+    if (priorSum && priorSum.ok && priorSum.factsHash === factsHash) {
+      entry.summary = priorSum;            // numbers unchanged → reuse cached text
+      sumCached++;
+    } else if (haveKey) {
+      const s = await generateSummary(result);
+      if (s.ok) {
+        entry.summary = { ok: true, text: s.summary, model: s.model,
+          factsHash, generatedAt: new Date().toISOString() };
+        sumNew++;
+      } else {
+        entry.summary = { ok: false, reason: s.reason, factsHash };
+        sumSkipped++;
+      }
+    } else {
+      entry.summary = { ok: false, reason: 'no ANTHROPIC_API_KEY at pipeline time', factsHash };
+      sumSkipped++;
+    }
+    out[m.id] = entry;
+  }
+
+  writeJsonAtomic(MODEL_OUTPUT_PATH, {
+    generatedAt: new Date().toISOString(),
+    count: Object.keys(out).length,
+    matches: out,
+  }, true);
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
 }
 
 if (require.main === module) {

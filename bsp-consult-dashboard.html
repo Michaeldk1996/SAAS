@@ -253,6 +253,7 @@
   [data-page="matches"] .mx-footer{ display:flex; justify-content:space-between; align-items:center; padding:10px 18px 14px; font-size:11.5px; font-family:var(--mx-font-mono); color:var(--mx-text-tertiary); }
   [data-page="matches"] .mx-footer a{ color:var(--mx-brand-blue-text); cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:500; border:1px solid var(--mx-hairline); border-radius:8px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
   [data-page="matches"] .mx-footer a:hover{ border-color:var(--mx-brand-blue); background:rgba(62,123,250,0.08); color:#fff; }
+  [data-page="matches"] .mx-footlinks{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 
   @media (max-width: 640px){
     [data-page="matches"] .mx-playerrow{ grid-template-columns:1fr; row-gap:6px; }
@@ -1865,6 +1866,144 @@
   </div>
 </div>
 
+<!-- ============================================================= -->
+<!-- TENNIS EDGE MODEL PAGE                                          -->
+<!-- Reads the pre-computed, per-match engine output from            -->
+<!-- model-output.json (built pipeline-side by buildModelOutput in   -->
+<!-- bsp-pipeline.js). This page NEVER recomputes the model in the   -->
+<!-- browser and NEVER fabricates a value — every number shown is a  -->
+<!-- field the Node engine actually produced. Opened from a Today's  -->
+<!-- Matches card; not a top-nav tab. Styles are scoped to           -->
+<!-- [data-page="edge"] so they do not touch the rest of the app.    -->
+<!-- ============================================================= -->
+<style>
+  [data-page="edge"]{
+    background:#06070a;
+    font-family:'Hanken Grotesk', sans-serif;
+    color:#e7e9ee;
+  }
+  .edge-shell{ min-height:100vh; padding:28px 24px 90px; display:flex; justify-content:center; }
+  .edge-wrap{ width:1160px; max-width:100%; display:flex; flex-direction:column; gap:14px; }
+  .edge-topnav{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .edge-nav-btn{
+    font-size:12.5px; font-weight:500; color:#8fb6ff; cursor:pointer;
+    padding:7px 12px; border:1px solid rgba(255,255,255,0.08); border-radius:10px;
+    background:#0a0d14; user-select:none; white-space:nowrap;
+  }
+  .edge-nav-btn:hover{ color:#bcd2ff; border-color:rgba(91,155,255,0.35); }
+  .edge-nav-btn.back{ color:#8b93a3; }
+  .edge-nav-btn.back:hover{ color:#c8cfda; }
+  .edge-card{
+    background:#0a0d14; border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:20px 22px;
+  }
+  .edge-sectitle{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600;
+    letter-spacing:0.14em; text-transform:uppercase; color:#8b93a3; margin:0 0 14px;
+  }
+  .edge-head{ padding:6px 2px 2px; }
+  .edge-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600;
+    letter-spacing:0.16em; text-transform:uppercase; color:#5b9bff; margin-bottom:8px;
+  }
+  .edge-title{ font-size:23px; font-weight:700; letter-spacing:-0.01em; color:#e7e9ee; }
+  .edge-sub{ font-size:13px; color:#8b93a3; margin-top:5px; }
+  /* Read-only match context chips (Section 1 — no interactive recompute). */
+  .edge-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .edge-chip{
+    display:flex; flex-direction:column; gap:3px; min-width:96px;
+    background:#0d111a; border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px; padding:9px 12px;
+  }
+  .edge-chip .k{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#6b7280; }
+  .edge-chip .v{ font-size:13px; font-weight:500; color:#c8cfda; }
+  /* Base-probability rows (Section 2). */
+  .edge-comp{ display:flex; align-items:center; gap:14px; padding:10px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .edge-comp:first-of-type{ border-top:none; }
+  .edge-comp .lbl{ flex:1 1 auto; min-width:0; }
+  .edge-comp .lbl .n{ font-size:13px; color:#c8cfda; }
+  .edge-comp .lbl .d{ font-size:11px; color:#6b7280; margin-top:2px; }
+  .edge-comp .wt{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b93a3; flex:none; }
+  .edge-comp .pr{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#e7e9ee; flex:none; min-width:56px; text-align:right; }
+  /* Split proportion bar — position/width encodes share, single neutral fill. */
+  .edge-split{ margin-top:14px; }
+  .edge-split-lbls{ display:flex; justify-content:space-between; font-size:12px; color:#c8cfda; margin-bottom:6px; }
+  .edge-split-lbls .mono{ font-family:'IBM Plex Mono', monospace; color:#e7e9ee; }
+  .edge-splitbar{ height:10px; border-radius:6px; background:rgba(255,255,255,0.06); overflow:hidden; display:flex; }
+  .edge-splitbar > i{ display:block; height:100%; }
+  .edge-splitbar > i.a{ background:#3E7BFA; }
+  .edge-splitbar > i.b{ background:rgba(255,255,255,0.12); }
+  /* Data coverage grid (Section 3). */
+  .edge-cov{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .edge-cov-col{ background:#0d111a; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 16px; }
+  .edge-cov-name{ font-size:14px; font-weight:600; color:#e7e9ee; margin-bottom:2px; }
+  .edge-cov-meta{ font-size:11px; color:#6b7280; margin-bottom:12px; font-family:'IBM Plex Mono', monospace; }
+  .edge-cov-src{ display:flex; align-items:center; justify-content:space-between; padding:5px 0; font-size:12.5px; color:#aeb8cc; }
+  .edge-cov-src .on{ color:#7fd0a8; font-family:'IBM Plex Mono', monospace; font-size:11px; }
+  .edge-cov-src .off{ color:#5b6472; font-family:'IBM Plex Mono', monospace; font-size:11px; }
+  /* Adjustment rows (Section 4). */
+  .edge-adjhead{ display:flex; justify-content:space-between; font-size:11px; color:#6b7280; margin-bottom:10px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.04em; }
+  .edge-adj{ padding:12px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .edge-adj:first-of-type{ border-top:none; }
+  .edge-adj.muted{ opacity:0.5; }
+  .edge-adj-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .edge-adj-name{ font-size:13px; font-weight:500; color:#e7e9ee; flex:1 1 auto; min-width:0; }
+  .edge-adj-delta{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#c8cfda; flex:none; }
+  .edge-adj-delta.none{ color:#5b6472; }
+  .edge-conf{
+    font-family:'IBM Plex Mono', monospace; font-size:9px; letter-spacing:0.08em; text-transform:uppercase;
+    padding:2px 6px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); color:#8b93a3; flex:none;
+  }
+  .edge-conf.high{ color:#7fd0a8; border-color:rgba(127,208,168,0.3); }
+  .edge-conf.med{ color:#e0b64d; border-color:rgba(224,182,77,0.3); }
+  .edge-conf.gated{ color:#8b93a3; border-color:rgba(255,255,255,0.1); }
+  /* Diverging bar: center line fixed; fill sits left (p1) or right (p2). */
+  .edge-dbar{ position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:5px; margin-bottom:7px; }
+  .edge-dbar::before{ content:''; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:rgba(255,255,255,0.15); }
+  .edge-dbar > i{ position:absolute; top:0; height:100%; background:#5b9bff; border-radius:5px; }
+  .edge-adj-detail{ font-size:11.5px; color:#6b7280; line-height:1.45; }
+  /* Fair price & value (Section 5). */
+  .edge-fair{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+  .edge-fair-cell{ background:#0d111a; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 16px; }
+  .edge-fair-cell .who{ font-size:13px; color:#c8cfda; margin-bottom:8px; }
+  .edge-fair-cell .odds{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600; color:#e7e9ee; }
+  .edge-fair-cell .prob{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#8b93a3; margin-top:2px; }
+  .edge-mkt{ border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-top:4px; }
+  .edge-mkt-row{ display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12.5px; color:#aeb8cc; }
+  .edge-mkt-row .src{ color:#8b93a3; }
+  .edge-mkt-row .mono{ font-family:'IBM Plex Mono', monospace; color:#c8cfda; }
+  .edge-flag{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; margin-top:8px;
+    background:rgba(79,185,138,0.08); border:1px solid rgba(79,185,138,0.28);
+  }
+  .edge-flag .tag{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:#7fd0a8; flex:none; }
+  .edge-flag .body{ font-size:12.5px; color:#e7e9ee; flex:1 1 auto; }
+  .edge-flag .edgeval{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:600; color:#4fb98a; flex:none; }
+  .edge-noflag{ font-size:12.5px; color:#6b7280; margin-top:8px; }
+  /* AI summary (Section 6). */
+  .edge-ai{ background:#0c1017; }
+  .edge-ai p{ font-size:14px; line-height:1.65; color:#c8cfda; margin:0 0 12px; }
+  .edge-ai p:last-child{ margin-bottom:0; }
+  .edge-ai-empty{ font-size:13px; color:#6b7280; line-height:1.6; }
+  .edge-foot{ font-size:11px; color:#5b6472; text-align:center; padding:6px 0 0; }
+  /* Empty state (match model could not run / no output). */
+  .edge-empty{ text-align:center; padding:44px 24px; color:#8b93a3; }
+  .edge-empty .ic{ font-size:26px; margin-bottom:12px; }
+  .edge-empty .msg{ font-size:13.5px; line-height:1.6; max-width:460px; margin:0 auto; }
+</style>
+<div class="tabpage" data-page="edge">
+  <div class="edge-shell">
+    <div class="edge-wrap">
+      <div class="edge-topnav">
+        <span class="edge-nav-btn" id="edgePrev" onclick="edgeNav(-1)">← Previous match</span>
+        <span class="edge-nav-btn back" onclick="edgeBack()">Back to matches</span>
+        <span class="edge-nav-btn" id="edgeNext" onclick="edgeNav(1)">Next match →</span>
+      </div>
+      <div id="edgeBody"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="favModal">
   <div class="modal">
     <div class="icon">★</div>
@@ -2278,6 +2417,31 @@ let matches = [];
 let dataLoadedAt = null;
 let matchesLoadedOnce = false;
 
+// Pre-computed Tennis Edge Model output, one entry per match, produced
+// pipeline-side by buildModelOutput() in bsp-pipeline.js. The Node engine
+// cannot run in the browser, so the dashboard only ever READS this file —
+// it never recomputes the model. Kept as last-good on a transient failure
+// so an open Edge Model page doesn't blank out mid-refresh.
+let modelOutput = { matches: {} };
+// True once model-output.json has been fetched + parsed at least once. Lets the
+// Edge Model page tell "the whole file isn't generated yet" (first deploy, before
+// the pipeline has ever written it) apart from "this one match couldn't run".
+let modelOutputLoaded = false;
+
+// Best-effort load: the Edge Model page degrades to an honest empty state if
+// this file is missing (e.g. first pipeline run hasn't produced it yet), so a
+// failure here must never break the rest of the dashboard.
+async function loadModelOutput(){
+  try {
+    const res = await fetch('./model-output.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = JSON.parse(await res.text()); // manual parse: catch mid-write reads
+    if (parsed && parsed.matches) { modelOutput = parsed; modelOutputLoaded = true; }
+  } catch (err) {
+    console.warn('model-output.json fetch failed (kept last-good; Edge Model may be stale):', err.message);
+  }
+}
+
 // Fetch + parse matches.json once. Parsing is done manually (fetch text →
 // JSON.parse) so that a *partial* file — e.g. the pipeline is mid-write when
 // this 3-minute refresh lands — is caught here as a parse error rather than
@@ -2321,6 +2485,10 @@ async function loadMatches(){
     document.getElementById('dataStatus').innerHTML =
       `<span class="dot"></span>Couldn't load matches.json — run bsp-pipeline.js first, and serve this page via a local server (not file://)`;
   }
+  // Refresh the model output alongside matches each cycle. Fire-and-forget
+  // (awaited so an open Edge Model re-render sees fresh numbers) but never
+  // allowed to throw — loadModelOutput swallows its own errors.
+  await loadModelOutput();
   buildTournamentFilters();
   renderHeaderStats();
   renderMatches();
@@ -2328,6 +2496,12 @@ async function loadMatches(){
   populateH2HSelects();
   renderH2H();
   renderTournamentsTab();
+  // If the Edge Model page is currently open, re-render it in place with the
+  // freshly loaded output so a background refresh doesn't leave stale numbers.
+  const edgeOpen = document.querySelector('.tabpage[data-page="edge"]');
+  if (edgeOpen && edgeOpen.classList.contains('active') && edgeCurrentId) {
+    renderEdgeModel(edgeCurrentId);
+  }
 }
 
 // Build one filter pill per active tournament from the real data
@@ -2733,13 +2907,340 @@ function renderMatches(){
       </div>
       <div class="mx-footer">
         <span>${bookmakerLine}</span>
-        <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
+        <span class="mx-footlinks">
+          <a onclick="openEdgeModel('${m.id}')">Tennis Edge Model →</a>
+          <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
+        </span>
       </div>
     </div>
   `;
   }).join('');
 }
 function toggleFav(id){ openModal(); }
+
+/* ============================================================= */
+/* TENNIS EDGE MODEL PAGE                                          */
+/* Renders the pre-computed engine output (model-output.json) for  */
+/* one match. It reads only fields the Node engine produced — it   */
+/* never recomputes the model or invents a value. Matches whose    */
+/* engine run failed (missing Elo etc.) get an honest empty state. */
+/* ============================================================= */
+let edgeCurrentId = null;
+
+function edgeEsc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function edgePct(x, dp){ return (x == null || isNaN(x)) ? '—' : (x * 100).toFixed(dp == null ? 1 : dp) + '%'; }
+function edgeOdds(x){ return (x == null || isNaN(x)) ? '—' : Number(x).toFixed(2); }
+function edgeCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+// Open the Edge Model page for a match. Not a top-nav tab — it's reached from a
+// match card — so it toggles the tabpage directly and clears the nav highlight.
+function openEdgeModel(id){
+  edgeCurrentId = id;
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === 'edge'));
+  window.scrollTo(0, 0);
+  renderEdgeModel(id);
+}
+// Return to the matches board via the real nav button so its render + highlight
+// run exactly as a normal tab switch would.
+function edgeBack(){
+  const btn = document.querySelector('#mainNav button[data-tab="matches"]');
+  if (btn) btn.click();
+  window.scrollTo(0, 0);
+}
+// Step through matches in the SAME order the board currently shows (getFiltered),
+// so Prev/Next matches what the user was just looking at. Wraps around the ends.
+function edgeNav(dir){
+  const list = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  const ids = list.map(m => m.id);
+  let idx = ids.indexOf(edgeCurrentId);
+  if (idx === -1 || ids.length === 0) return;
+  idx = (idx + dir + ids.length) % ids.length;
+  openEdgeModel(ids[idx]);
+}
+
+function edgeEmptyState(m, msg){
+  const title = m ? `${edgeEsc(m.p1)} vs ${edgeEsc(m.p2)}` : 'This match';
+  const sub = m ? `${edgeCap(m.surface || '')}${m.tournament ? ' · ' + edgeEsc(m.tournament) : ''}` : '';
+  return `
+    <div class="edge-head">
+      <div class="edge-eyebrow">Tennis Edge Model</div>
+      <div class="edge-title">${title}</div>
+      ${sub ? `<div class="edge-sub">${sub}</div>` : ''}
+    </div>
+    <div class="edge-card">
+      <div class="edge-empty">
+        <div class="ic">—</div>
+        <div class="msg">${edgeEsc(msg)}</div>
+      </div>
+    </div>`;
+}
+// Turn a raw engine failure reason into a member-facing sentence. Never exposes
+// internal field names; always honest that the model simply couldn't run.
+function edgeReasonText(e){
+  const r = (e && e.reason) ? String(e.reason) : '';
+  if (/elo/i.test(r)) return 'Not enough data to run the model on this match — one of the players doesn\u2019t have an Elo rating on file yet (usually a lower-tier or first-time entrant). The model runs automatically as soon as the data exists.';
+  if (/engine error/i.test(r)) return 'The model could not be computed for this match. This is logged automatically and will retry on the next pipeline run.';
+  return 'The model could not be run for this match yet. It runs automatically every 15 minutes as new data arrives.';
+}
+
+// ---- Section 4 helper: one adjustment row ----
+// The engine emits { direction, signal, deltaP1, confidence, detail, applied,
+// gated }. The diverging bar's WIDTH is |signal|*50 (max half the track) and its
+// SIDE comes from `direction` (p1 left, p2 right). Colour is a single neutral
+// tone for both sides — per the design-system rule, we never use colour to say
+// which player is favoured; position alone encodes direction.
+function edgeAdjRow(a, p1short, p2short){
+  const applied = !!a.applied;
+  const gated = !!a.gated;
+  const muted = !applied;
+  const w = Math.min(50, Math.abs(a.signal || 0) * 50); // % of full track
+  let fill = '';
+  if (applied && w > 0.2 && a.direction !== 'neutral'){
+    fill = a.direction === 'p1'
+      ? `<i style="left:${(50 - w).toFixed(1)}%;width:${w.toFixed(1)}%"></i>`
+      : `<i style="left:50%;width:${w.toFixed(1)}%"></i>`;
+  }
+  // Delta label: deltaP1 is the probability shift toward p1 (in points).
+  const mag = Math.abs(a.deltaP1 || 0) * 100;
+  let delta;
+  if (!applied){
+    delta = `<span class="edge-adj-delta none">${gated ? 'Gated' : 'No data'}</span>`;
+  } else if (a.direction === 'neutral' || mag < 0.05){
+    delta = `<span class="edge-adj-delta none">No effect</span>`;
+  } else {
+    const who = a.direction === 'p1' ? p1short : p2short;
+    delta = `<span class="edge-adj-delta">+${mag.toFixed(1)} pts \u2192 ${edgeEsc(who)}</span>`;
+  }
+  // Confidence chip (only meaningful when applied). Gated rows are labelled.
+  let conf = '';
+  if (gated && !applied){
+    conf = `<span class="edge-conf gated">Gated</span>`;
+  } else if (applied && a.confidence && a.confidence !== 'none'){
+    const cls = a.confidence === 'high' ? 'high' : a.confidence === 'med' ? 'med' : '';
+    conf = `<span class="edge-conf ${cls}">${edgeEsc(a.confidence)}</span>`;
+  }
+  return `
+    <div class="edge-adj${muted ? ' muted' : ''}">
+      <div class="edge-adj-top">
+        <span class="edge-adj-name">${edgeEsc(a.name)}</span>
+        ${conf}
+        ${delta}
+      </div>
+      <div class="edge-dbar">${fill}</div>
+      <div class="edge-adj-detail">${edgeEsc(a.detail || '')}</div>
+    </div>`;
+}
+
+// ---- Section 3 helper: per-player data coverage column ----
+function edgeCovCol(p){
+  if (!p) return `<div class="edge-cov-col"><div class="edge-cov-meta">No player data</div></div>`;
+  const s = p.sources || {};
+  const rows = [
+    ['Elo rating', s.elo], ['Career splits', s.splits], ['Profile', s.profile],
+    ['Clutch rating', s.clutch], ['Style radar', s.radar], ['Playing style', s.style],
+  ];
+  const meta = [
+    p.archetype ? p.archetype.replace(/_/g, ' ') : null,
+    (p.eloAll != null) ? 'Elo ' + p.eloAll : null,
+  ].filter(Boolean).join(' · ');
+  return `
+    <div class="edge-cov-col">
+      <div class="edge-cov-name">${edgeEsc(p.name || '—')}</div>
+      <div class="edge-cov-meta">${edgeEsc(meta || '—')}</div>
+      ${rows.map(([label, on]) => `
+        <div class="edge-cov-src">
+          <span>${label}</span>
+          <span class="${on ? 'on' : 'off'}">${on ? 'present' : '—'}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderEdgeModel(id){
+  const body = document.getElementById('edgeBody');
+  if (!body) return;
+  const e = modelOutput.matches && modelOutput.matches[id];
+  const m = matches.find(x => x.id === id) || null;
+
+  if (!e){
+    // Two distinct cases: the whole file hasn't been generated yet (first deploy,
+    // before the pipeline has ever written model-output.json) vs. the file exists
+    // but has no entry for this specific match.
+    const msg = !modelOutputLoaded
+      ? 'The Edge Model isn\u2019t available yet. It\u2019s generated by the pipeline every 15 minutes — once the first run completes, every match\u2019s model appears here automatically.'
+      : 'The model hasn\u2019t produced output for this match yet. It runs every 15 minutes in the pipeline — check back shortly.';
+    body.innerHTML = edgeEmptyState(m, msg);
+    return;
+  }
+  if (!e.ok){
+    // e.players may exist even on failure; prefer the match object for the title.
+    body.innerHTML = edgeEmptyState(m, edgeReasonText(e));
+    return;
+  }
+
+  const mm = e.match || {};
+  const st1 = e.stage1 || {};
+  const st2 = e.stage2 || {};
+  const st3 = e.stage3 || {};
+  const comp = st1.components || {};
+  const p1short = mm.p1 || (e.players && e.players.p1 && e.players.p1.name) || 'Player 1';
+  const p2short = mm.p2 || (e.players && e.players.p2 && e.players.p2.name) || 'Player 2';
+  const p1full = (e.players && e.players.p1 && e.players.p1.name) || p1short;
+  const p2full = (e.players && e.players.p2 && e.players.p2.name) || p2short;
+
+  // ---- header + Section 1: read-only match context ----
+  // The round field arrives as "{tour} - {round}" (e.g. "ATP Kitzbuhel - 1/16-finals").
+  // Strip the exact tour prefix so the chip and subtitle don't repeat the tournament name.
+  let cleanRound = mm.round || '';
+  if (mm.tour && cleanRound.indexOf(mm.tour) === 0){
+    cleanRound = cleanRound.slice(mm.tour.length).replace(/^\s*-\s*/, '');
+  }
+  const ctxChips = [
+    ['Surface', edgeCap(mm.surface || '')],
+    ['Round', cleanRound || '—'],
+    ['Format', mm.bestOf ? 'Best of ' + mm.bestOf : '—'],
+    ['Date', mm.date || '—'],
+  ];
+  const header = `
+    <div class="edge-head">
+      <div class="edge-eyebrow">Tennis Edge Model</div>
+      <div class="edge-title">${edgeEsc(p1full)} vs ${edgeEsc(p2full)}</div>
+      <div class="edge-sub">${edgeEsc(mm.tour || '')}${cleanRound ? ' · ' + edgeEsc(cleanRound) : ''}</div>
+    </div>
+    <div class="edge-card">
+      <div class="edge-sectitle">Match context</div>
+      <div class="edge-chips">
+        ${ctxChips.map(([k, v]) => `<div class="edge-chip"><span class="k">${k}</span><span class="v">${edgeEsc(v)}</span></div>`).join('')}
+      </div>
+    </div>`;
+
+  // ---- Section 2: base probability (pre-adjustment Elo blend) ----
+  const compRows = [];
+  if (comp.eloRaw) compRows.push([
+    'Overall Elo', `${comp.eloRaw.ratingP1} vs ${comp.eloRaw.ratingP2}`, comp.eloRaw.weight, comp.eloRaw.p1,
+  ]);
+  if (comp.eloSurface) compRows.push([
+    `Surface Elo${comp.eloSurface.surfaceKey ? ' (' + edgeCap(comp.eloSurface.surfaceKey) + ')' : ''}`,
+    comp.eloSurface.surfaceAvailable ? `${comp.eloSurface.ratingP1} vs ${comp.eloSurface.ratingP2}` : 'Surface data unavailable — falls back to overall',
+    comp.eloSurface.weight, comp.eloSurface.p1,
+  ]);
+  if (comp.elo5050) compRows.push([
+    'Balanced anchor', 'Neutral 50/50 prior', comp.elo5050.weight, comp.elo5050.p1,
+  ]);
+  const baseP1 = st1.baseP1, baseP2 = st1.baseP2;
+  const baseShare = (baseP1 != null) ? Math.max(0, Math.min(100, baseP1 * 100)) : 50;
+  const section2 = `
+    <div class="edge-card">
+      <div class="edge-sectitle">Base probability · pre-adjustment</div>
+      ${compRows.map(([n, d, wt, pr]) => `
+        <div class="edge-comp">
+          <div class="lbl"><div class="n">${edgeEsc(n)}</div><div class="d">${edgeEsc(d)}</div></div>
+          <div class="wt">${wt != null ? Math.round(wt * 100) + '%' : ''}</div>
+          <div class="pr">${edgePct(pr)}</div>
+        </div>`).join('')}
+      <div class="edge-split">
+        <div class="edge-split-lbls">
+          <span>${edgeEsc(p1short)} <span class="mono">${edgePct(baseP1)}</span></span>
+          <span><span class="mono">${edgePct(baseP2)}</span> ${edgeEsc(p2short)}</span>
+        </div>
+        <div class="edge-splitbar">
+          <i class="a" style="width:${baseShare.toFixed(1)}%"></i>
+          <i class="b" style="width:${(100 - baseShare).toFixed(1)}%"></i>
+        </div>
+      </div>
+    </div>`;
+
+  // ---- Section 3: data coverage ----
+  const section3 = `
+    <div class="edge-card">
+      <div class="edge-sectitle">Data coverage</div>
+      <div class="edge-cov">
+        ${edgeCovCol(e.players && e.players.p1)}
+        ${edgeCovCol(e.players && e.players.p2)}
+      </div>
+    </div>`;
+
+  // ---- Section 4: adjustment layers ----
+  const adjs = st2.adjustments || [];
+  const section4 = `
+    <div class="edge-card">
+      <div class="edge-sectitle">Adjustment layers · ${st2.appliedCount || 0} applied${st2.gatedCount ? ' · ' + st2.gatedCount + ' gated' : ''}</div>
+      <div class="edge-adjhead"><span>${edgeEsc(p1short)}</span><span>favours \u2192</span><span>${edgeEsc(p2short)}</span></div>
+      ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
+    </div>`;
+
+  // ---- Section 5: fair price & market value ----
+  const fair = st3.fair || {};
+  const sharp = st3.sharp || null;
+  const soft = st3.soft || null;
+  const flags = st3.flags || [];
+  let mktHtml = '';
+  if (sharp){
+    mktHtml += `
+      <div class="edge-mkt">
+        <div class="edge-mkt-row"><span class="src">${edgeEsc(sharp.source || 'Sharp line')}</span><span class="mono">${edgeOdds(sharp.price && sharp.price.p1)} / ${edgeOdds(sharp.price && sharp.price.p2)}</span></div>
+        <div class="edge-mkt-row"><span>Model edge vs sharp</span><span class="mono">${edgePct(sharp.edge && sharp.edge.p1)} / ${edgePct(sharp.edge && sharp.edge.p2)}</span></div>
+      </div>`;
+  }
+  if (soft){
+    mktHtml += `
+      <div class="edge-mkt">
+        <div class="edge-mkt-row"><span class="src">Best soft price${soft.book && soft.book.p1 ? ' (' + edgeEsc(soft.book.p1) + ' / ' + edgeEsc(soft.book.p2) + ')' : ''}</span><span class="mono">${edgeOdds(soft.price && soft.price.p1)} / ${edgeOdds(soft.price && soft.price.p2)}</span></div>
+        <div class="edge-mkt-row"><span>Model edge vs soft</span><span class="mono">${edgePct(soft.edge && soft.edge.p1)} / ${edgePct(soft.edge && soft.edge.p2)}</span></div>
+      </div>`;
+  }
+  let flagsHtml;
+  if (flags.length){
+    flagsHtml = flags.map(f => `
+      <div class="edge-flag">
+        <span class="tag">${edgeEsc(f.type)}</span>
+        <span class="body">${edgeEsc(f.player)} @ ${edgeOdds(f.price)}${f.book ? ' · ' + edgeEsc(f.book) : ''}</span>
+        <span class="edgeval">+${(f.edgePct != null ? f.edgePct : 0)}%</span>
+      </div>`).join('');
+  } else {
+    flagsHtml = `<div class="edge-noflag">No value edge detected at current prices.</div>`;
+  }
+  const section5 = `
+    <div class="edge-card">
+      <div class="edge-sectitle">Fair price & market value</div>
+      <div class="edge-fair">
+        <div class="edge-fair-cell">
+          <div class="who">${edgeEsc(p1short)}</div>
+          <div class="odds">${edgeOdds(fair.p1 && fair.p1.odds)}</div>
+          <div class="prob">Fair ${edgePct(fair.p1 && fair.p1.prob)}</div>
+        </div>
+        <div class="edge-fair-cell">
+          <div class="who">${edgeEsc(p2short)}</div>
+          <div class="odds">${edgeOdds(fair.p2 && fair.p2.odds)}</div>
+          <div class="prob">Fair ${edgePct(fair.p2 && fair.p2.prob)}</div>
+        </div>
+      </div>
+      ${mktHtml}
+      ${flagsHtml}
+    </div>`;
+
+  // ---- Section 6: pre-baked AI summary (single block; honest empty state) ----
+  const sum = e.summary || null;
+  let aiHtml;
+  if (sum && sum.ok && sum.text){
+    const paras = String(sum.text).split(/\n{2,}/).map(t => t.trim()).filter(Boolean);
+    aiHtml = paras.map(t => `<p>${edgeEsc(t)}</p>`).join('');
+  } else {
+    aiHtml = `<div class="edge-ai-empty">The written model summary will appear here once the pipeline generates it. Every number above is already live — the summary is added on the run after the figures settle.</div>`;
+  }
+  const section6 = `
+    <div class="edge-card edge-ai">
+      <div class="edge-sectitle">Model summary</div>
+      ${aiHtml}
+    </div>
+    <div class="edge-foot">Model estimates for informational purposes only. Not betting advice.</div>`;
+
+  body.innerHTML = header + section2 + section3 + section4 + section5 + section6;
+}
 
 // Form cell for the FORM column. Real value → green bar + %. When the
 // provider has no recent-match history for a player (null/undefined),

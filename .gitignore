@@ -36,3 +36,9 @@ career-history/
 career-history-index.json
 mcp-cache/
 tml-cache/
+
+# Tennis Edge Model output: the h2h-model engine result + pre-baked AI summary,
+# one entry per match. Pure pipeline-derived output — bsp-pipeline.js regenerates
+# it every run and publishes it straight to _site. Must never be committed: it
+# would churn on every run, and a keyless local build carries no AI summaries.
+model-output.json
