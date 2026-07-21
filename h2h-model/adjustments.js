@@ -82,6 +82,75 @@ function recentMatchesSorted(profile) {
   return arr.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+// ---- serve / return ratings (ATP-leaderboard style) -----------------------
+// One number per player, built from OUR own career-splits database (already
+// refreshed weekly by the pipeline: career + rolling last-52-weeks, per
+// surface). Mirrors the ATP serve/return leaderboards so Michael can sanity-
+// check a player's figure against atptour.com.
+
+// Serve rating = 1st-serve-in% + 1st-serve-won% + 2nd-serve-won%
+//              + service-games-held% + ace% − double-fault%.
+function serveRatingRow(row) {
+  if (!row) return null;
+  const fi = num(row.firstInPct), fw = num(row.firstWonPct), sw = num(row.secondWonPct),
+        hl = num(row.hldPct), a = num(row.aPct), df = num(row.dfPct);
+  if (fi == null || fw == null || sw == null || hl == null) return null;
+  return fi + fw + sw + hl + (a || 0) - (df || 0);
+}
+
+// Return rating = return-points-won% + break% (games broken).
+function returnRatingRow(row) {
+  if (!row) return null;
+  const rp = num(row.rpwPct), br = num(row.brkPct);
+  if (rp == null) return null;
+  return rp + (br || 0);
+}
+
+// Blend a per-surface rating: last-52-weeks (0.6) + career (0.4) — recent
+// weighted higher per Michael's spec ("especially the last 52 weeks per
+// surface"). Falls back to the format bucket (Bo3/Bo5) when the surface row is
+// absent, and degrades to whichever single scope exists.
+function blendedRating(splits, surfCat, bestOfBucket, ratingFn) {
+  if (!splits) return null;
+  const pick = (scope) => {
+    const s = splits[scope];
+    if (!s) return null;
+    return (surfCat && s[surfCat]) || (bestOfBucket && s[bestOfBucket]) || null;
+  };
+  const l = ratingFn(pick('last52'));
+  const c = ratingFn(pick('career'));
+  if (l != null && c != null) return 0.6 * l + 0.4 * c;
+  return l != null ? l : (c != null ? c : null);
+}
+
+// A player's genuine CAREER overall win% (percentage points), summed from the
+// full-career surface totals in player-profiles kpis (Clay+Hard+Grass). This is
+// the correct baseline for the surface (#4) and round (#6) layers — the old
+// kpis.All figure is only a ~30-match recent window and mis-scales the edge.
+function careerOverallWR(profile) {
+  const k = profile && profile.kpis;
+  if (!k) return null;
+  let won = 0, lost = 0;
+  for (const s of ['Clay', 'Hard', 'Grass']) {
+    const rec = k[s] && k[s].record;
+    if (rec && num(rec.won) != null && num(rec.lost) != null) { won += rec.won; lost += rec.lost; }
+  }
+  const tot = won + lost;
+  return tot > 0 ? (won / tot) * 100 : null;
+}
+
+// Altitude (metres) of a tournament name via the curated config map (substring,
+// case-insensitive). Returns null when the venue is not in the reference list.
+function tournamentAltitude(name) {
+  const s = String(name || '').toLowerCase();
+  if (!s) return null;
+  const map = config.altitudeMeters || {};
+  for (const key of Object.keys(map)) {
+    if (s.includes(key)) return map[key];
+  }
+  return null;
+}
+
 // =========================================================================
 // 1. STYLE MATCHUP — matchup-matrix.json (archetype vs archetype)
 // =========================================================================
@@ -112,13 +181,22 @@ function styleMatchup(ctx) {
 // =========================================================================
 function subjective(ctx) {
   const c = config.adjustments.subjective;
-  const res = base(c.id, 'subjective', 'Subjective input', c.maxMagnitude, 'manual');
-  const s = num(ctx.subjectiveSignal);
+  const res = base(c.id, 'subjective', 'Subjective input', c.maxMagnitude, 'manual-inputs.json:subjective');
+  // Priority: an explicit runtime signal (CLI --subj) wins; otherwise fall back
+  // to a persisted moderator value in manual-inputs.json keyed by match id.
+  // A subjective row is { signal: -1..+1 } from p1's (left player's) view.
+  let s = num(ctx.subjectiveSignal);
+  if (s == null || s === 0) {
+    const matchId = ctx.match && ctx.match.id;
+    const subj = (loadManualInputs() || {}).subjective || {};
+    const row = matchId != null ? subj[String(matchId)] : null;
+    if (row && num(row.signal) != null) s = clamp(row.signal, -1, 1);
+  }
   if (s == null || s === 0) {
     res.detail = 'No manual input (default neutral).';
     return res;
   }
-  return apply(res, s, 'med', `Manual override applied (${s > 0 ? '+' : ''}${s}).`);
+  return apply(res, s, 'med', `Manual read applied (${s > 0 ? '+' : ''}${s}).`);
 }
 
 // =========================================================================
@@ -142,23 +220,45 @@ function h2h(ctx) {
 // 4. SURFACE RECORD — surface win% relative to each player's own baseline
 // (relative-to-baseline avoids double-counting the surface ELO in Stage 1)
 // =========================================================================
+// The surface FIGURE is a blend of the player's career surface win%, their
+// last-52-weeks surface win%, and their recent form ON that surface (career
+// 0.4 / last52 0.4 / recent 0.2, renormalised over what's available). Kept as a
+// gap RELATIVE to each player's true career baseline so the surface ELO already
+// counted in Stage 1 is not double-counted.
+function surfaceFigure(p, surfCat) {
+  const parts = [];
+  const cRow = p.splits && p.splits.career && p.splits.career[surfCat];
+  const lRow = p.splits && p.splits.last52 && p.splits.last52[surfCat];
+  if (cRow && num(cRow.winPct) != null) parts.push({ w: 0.4, v: cRow.winPct });
+  if (lRow && num(lRow.winPct) != null) parts.push({ w: 0.4, v: lRow.winPct });
+  const ms = recentMatchesSorted(p.profile)
+    .filter(m => surfaceCategory(m.surface) === surfCat)
+    .slice(0, 12);
+  if (ms.length >= 4) {
+    const wr = (ms.filter(m => m.won).length / ms.length) * 100;
+    parts.push({ w: 0.2, v: wr });
+  }
+  if (!parts.length) return null;
+  const wsum = parts.reduce((s, x) => s + x.w, 0);
+  return parts.reduce((s, x) => s + x.w * x.v, 0) / wsum;
+}
 function surface(ctx) {
   const c = config.adjustments.surface;
-  const res = base(c.id, 'surface', 'Surface record', c.maxMagnitude, 'player-profiles.json:kpis');
+  const res = base(c.id, 'surface', 'Surface record', c.maxMagnitude,
+    'career-splits.json + player-profiles.json:recentForm');
   const cat = surfaceCategory(ctx.surface);
   if (!cat) return res;
   function surfEdge(p) {
-    const k = p.profile && p.profile.kpis;
-    if (!k || !k.All || !k[cat]) return null;
-    const all = num(k.All.winRate), surf = num(k[cat].winRate);
-    if (all == null || surf == null) return null;
-    return surf - all; // how much better than own average on this surface
+    const fig = surfaceFigure(p, cat);
+    const baseWR = careerOverallWR(p.profile);
+    if (fig == null || baseWR == null) return null;
+    return { edge: fig - baseWR, fig };
   }
   const e1 = surfEdge(ctx.p1), e2 = surfEdge(ctx.p2);
-  if (e1 == null || e2 == null) return res;
-  const signal = clamp((e1 - e2) / 30, -1, 1); // 30-pt relative gap = full
+  if (!e1 || !e2) return res;
+  const signal = clamp((e1.edge - e2.edge) / 30, -1, 1); // 30-pt relative gap = full
   return apply(res, signal, 'med',
-    `${cat} vs own baseline: ${fmtPct(e1)} vs ${fmtPct(e2)}.`);
+    `${cat} record ${Math.round(e1.fig)}% vs ${Math.round(e2.fig)}% (career+52wk+form, vs own career baseline).`);
 }
 
 // =========================================================================
@@ -207,14 +307,25 @@ function roundStage(ctx) {
   const res = base(c.id, 'roundStage', 'Round / stage performance', c.maxMagnitude, 'career-splits.json:rounds');
   const bucket = roundBucket(ctx.match.tournamentRound);
   if (!bucket) { res.detail = 'Round not identifiable from schedule.'; return res; }
-  // win% at this round vs the player's own overall baseline (kpis.All)
+  // Round win% = half career + half last-52-weeks at this round (renormalised
+  // when one scope is missing), compared to the player's TRUE career baseline
+  // (not the old ~30-match kpis.All window, which mis-scaled the edge).
   function stageEdge(p) {
-    const row = careerCat(p.splits, bucket);
-    if (!row || num(row.M) == null || num(row.winPct) == null) return null;
-    const baseWR = p.profile && p.profile.kpis && p.profile.kpis.All
-      && num(p.profile.kpis.All.winRate);
+    const cRow = p.splits && p.splits.career && p.splits.career[bucket];
+    const lRow = p.splits && p.splits.last52 && p.splits.last52[bucket];
+    const parts = [];
+    if (cRow && num(cRow.winPct) != null) parts.push({ w: 0.5, v: cRow.winPct });
+    if (lRow && num(lRow.winPct) != null) parts.push({ w: 0.5, v: lRow.winPct });
+    if (!parts.length) return null;
+    const wsum = parts.reduce((s, x) => s + x.w, 0);
+    const roundWR = parts.reduce((s, x) => s + x.w * x.v, 0) / wsum;
+    // Sample gate/damp uses the career row (the robust one), else last52.
+    const M = (cRow && num(cRow.M) != null) ? cRow.M
+            : (lRow && num(lRow.M) != null) ? lRow.M : null;
+    if (M == null) return null;
+    const baseWR = careerOverallWR(p.profile);
     if (baseWR == null) return null;
-    return { edge: row.winPct - baseWR, M: row.M, wr: row.winPct };
+    return { edge: roundWR - baseWR, M, wr: roundWR };
   }
   const e1 = stageEdge(ctx.p1), e2 = stageEdge(ctx.p2);
   if (!e1 || !e2) { res.detail = `No ${bucket} sample for a player.`; return res; }
@@ -319,174 +430,92 @@ function winnerUE(ctx) {
 }
 
 // =========================================================================
-// 9. SERVE STRENGTH — momentum-weighted 4-tier blend on a common spw scale
-//    T1 this tournament (progression)  > T2 last-3 on surface (box scores)
-//    > T3 season-on-surface > T4 career-on-surface (fallback floor).
+// 9. SERVE STRENGTH — ATP-leaderboard-style serve rating (career + last-52wk,
+//    per surface). Each player gets a single rating = 1st-in% + 1st-won% +
+//    2nd-won% + hold% + ace% − df%, exactly mirroring the atptour.com serve
+//    leaderboard so Michael can cross-check a figure. Built from OUR own
+//    career-splits database (pipeline refreshes career + rolling last-52-weeks
+//    per surface weekly). last52 is weighted 0.6, career 0.4.
 // =========================================================================
-// All four tiers are reduced to one "serve points won %" (spw, ~50-70) number
-// so they are directly comparable and blendable. Weights renormalise over
-// whichever tiers a player actually has, so live tournament serving dominates
-// when present and career is the guaranteed floor. T1 reuses
-// tournament-progression.json (the Progression tab's own data) and T2 reuses
-// historical-match-stats.json (the Form tab's box-score cache) — no new
-// pipeline fetch is introduced.
 function serve(ctx) {
   const c = config.adjustments.serve;
   const res = base(c.id, 'serve', 'Serve strength',
-    c.maxMagnitude, 'tournament-progression.json (T1) / historical-match-stats.json (T2) / career-splits.json (T3,T4)');
-
-  // Collapse the three component rates into one spw number. Same formula for
-  // every tier, so units always match.
-  function spwFrom(firstInPct, firstWonPct, secondWonPct) {
-    const fi = num(firstInPct), fw = num(firstWonPct), sw = num(secondWonPct);
-    if (fi == null || fw == null || sw == null) return null;
-    const p = fi / 100;
-    return p * fw + (1 - p) * sw;
-  }
-
+    c.maxMagnitude, 'career-splits.json (career + last-52wk per surface)');
   const surfCat = surfaceCategory(ctx.surface);
-
-  // T1 — this tournament, completed rounds (mean spw across the player's
-  // rounds in the active edition).
-  function tier1(p) {
-    const prog = ctx.progression;
-    if (!prog || !prog.tournaments || !p.numericKey) return null;
-    const tourStr = String((ctx.match && ctx.match.tour) || '').toLowerCase();
-    if (!tourStr) return null;
-    let bucket = null;
-    for (const name of Object.keys(prog.tournaments)) {
-      if (tourStr.includes(name.toLowerCase())) { bucket = prog.tournaments[name]; break; }
-    }
-    if (!bucket || !Array.isArray(bucket.players)) return null;
-    const row = bucket.players.find(pl => String(pl.playerKey) === String(p.numericKey));
-    if (!row || !Array.isArray(row.rounds)) return null;
-    const spws = [];
-    for (const r of row.rounds) {
-      const m = r && r.metrics;
-      const s = m && spwFrom(m.firstServePct, m.firstServeWonPct, m.secondServeWonPct);
-      if (s != null) spws.push(s);
-    }
-    if (!spws.length) return null;
-    return { v: spws.reduce((a, b) => a + b, 0) / spws.length };
-  }
-
-  // T2 — last 3 matches on THIS surface, from the box-score cache joined by
-  // recentForm eventKeys. Point-in-time: only matches strictly before this
-  // match's date are eligible (keeps the backtest honest).
-  function tier2(p) {
-    const hs = ctx.historicalStats;
-    if (!hs || !p.profile || !p.numericKey) return null;
-    const want = String(surfCat || '').toLowerCase();
-    if (!want) return null;
-    const cutoff = new Date((ctx.match && (ctx.match.date || ctx.match.day)) || Date.now());
-    const spws = [];
-    for (const m of recentMatchesSorted(p.profile)) {
-      if (spws.length >= 3) break;
-      if (!m.eventKey || String(m.surface || '').toLowerCase() !== want) continue;
-      if (m.date && new Date(m.date) >= cutoff) continue; // no lookahead
-      const entry = hs[String(m.eventKey)];
-      const stats = entry && entry.matchStats;
-      if (!stats) continue;
-      const side = String(entry.p1Key) === String(p.numericKey) ? stats.p1
-                 : String(entry.p2Key) === String(p.numericKey) ? stats.p2 : null;
-      if (!side) continue;
-      const s = spwFrom(side['Service:1st serve percentage'],
-                        side['Service:1st serve points won'],
-                        side['Service:2nd serve points won']);
-      if (s != null) spws.push(s);
-    }
-    if (!spws.length) return null;
-    return { v: spws.reduce((a, b) => a + b, 0) / spws.length };
-  }
-
-  // T3 — season (rolling 52-week) surface spw.
-  function tier3(p) {
-    const row = surfCat && p.splits && p.splits.last52 && p.splits.last52[surfCat];
-    return row && num(row.spwPct) != null ? { v: row.spwPct } : null;
-  }
-
-  // T4 — career surface spw (falls back to a format bucket if surface absent).
-  function tier4(p) {
-    if (!p.splits || !p.splits.career) return null;
-    const row = (surfCat && p.splits.career[surfCat])
-             || p.splits.career['Best of 3'] || p.splits.career['Best of 5'];
-    return row && num(row.spwPct) != null ? { v: row.spwPct } : null;
-  }
-
-  const W = { tourney: 0.45, surf3: 0.30, season: 0.15, career: 0.10 };
-  const RANK = { tourney: 3, surf3: 2, season: 1, career: 0 };
-
-  // Availability-weighted blend: weights renormalise over whichever tiers a
-  // player actually has. Returns null only if the player has no serve data.
-  function blend(p) {
-    const tiers = [
-      { w: W.tourney, tag: 'tourney', r: tier1(p) },
-      { w: W.surf3,   tag: 'surf3',   r: tier2(p) },
-      { w: W.season,  tag: 'season',  r: tier3(p) },
-      { w: W.career,  tag: 'career',  r: tier4(p) },
-    ].filter(t => t.r && num(t.r.v) != null);
-    if (!tiers.length) return null;
-    const wsum = tiers.reduce((s, t) => s + t.w, 0);
-    const v = tiers.reduce((s, t) => s + t.w * t.r.v, 0) / wsum;
-    return { v, top: tiers[0].tag }; // tiers[0] = highest-priority present tier
-  }
-
-  const b1 = blend(ctx.p1), b2 = blend(ctx.p2);
-  if (!b1 || !b2) return res;
-
-  // Confidence keyed to the strongest tier that fired for either player.
-  const best = Math.max(RANK[b1.top], RANK[b2.top]);
-  const confidence = best >= 3 ? 'high' : best >= 1 ? 'med' : 'low';
-  const signal = clamp((b1.v - b2.v) / 15, -1, 1);
-  return apply(res, signal, confidence,
-    `Serve spw ${b1.v.toFixed(1)} (${b1.top}) vs ${b2.v.toFixed(1)} (${b2.top}).`);
+  const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
+  const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, serveRatingRow);
+  const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, serveRatingRow);
+  if (r1 == null || r2 == null) return res;
+  // Serve ratings sit ~230-290; a 25-point gap is a decisive serving edge.
+  const signal = clamp((r1 - r2) / 25, -1, 1);
+  return apply(res, signal, 'med',
+    `Serve rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} (${surfCat || bucket}, career+52wk).`);
 }
 
 // =========================================================================
-// 10. RETURN / PRESSURE — return radar percentile (career return% fallback)
+// 10. RETURN / PRESSURE — ATP-leaderboard-style return rating (career +
+//    last-52wk, per surface). Rating = return-points-won% + break%, mirroring
+//    the atptour.com return leaderboard. Built from OUR career-splits database
+//    (last52 0.6 / career 0.4). Radar-independent, so it always fires.
 // =========================================================================
 function returnPressure(ctx) {
   const c = config.adjustments.returnPressure;
-  const res = base(c.id, 'returnPressure', 'Return / pressure', c.maxMagnitude, 'style-radar.json / career-splits.json');
-  function ret(p) {
-    if (p.radar && num(p.radar.return) != null) return { v: p.radar.return, src: 'radar' };
-    const cat = careerCat(p.splits, surfaceCategory(ctx.surface)) || careerCat(p.splits, 'Best of 3');
-    if (cat && num(cat.rpwPct) != null) return { v: cat.rpwPct, src: 'career-rpw' };
-    return null;
-  }
-  const r1 = ret(ctx.p1), r2 = ret(ctx.p2);
-  if (!r1 || !r2) return res;
-  const sameSrc = r1.src === r2.src;
-  const scale = r1.src === 'radar' ? 60 : 12;
-  const signal = clamp((r1.v - r2.v) / scale, -1, 1);
-  return apply(res, sameSrc ? signal : signal * 0.5, sameSrc ? 'med' : 'low',
-    `Return ${Math.round(r1.v)} vs ${Math.round(r2.v)} (${r1.src}).`);
+  const res = base(c.id, 'returnPressure', 'Return / pressure', c.maxMagnitude,
+    'career-splits.json (career + last-52wk per surface)');
+  const surfCat = surfaceCategory(ctx.surface);
+  const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
+  const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, returnRatingRow);
+  const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, returnRatingRow);
+  if (r1 == null || r2 == null) return res;
+  // Return ratings sit ~50-75; a 15-point gap is a decisive return edge.
+  const signal = clamp((r1 - r2) / 15, -1, 1);
+  return apply(res, signal, 'med',
+    `Return rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} (${surfCat || bucket}, career+52wk).`);
 }
 
 // =========================================================================
-// 11. FATIGUE — match/set load in the last N days (favours the fresher man)
+// 11. FATIGUE — recent workload + turnaround (favours the fresher man).
+//    Three ingredients per player over the rolling window:
+//      • time on court  — total sets played (proxy for minutes; no duration
+//        feed exists, so sets is the honest available measure);
+//      • matches played — count in the window;
+//      • turnaround     — hours since the player's most recent match.
+//    A heavier load AND a shorter turnaround both raise the fatigue score;
+//    the fresher player gets the edge.
 // =========================================================================
 function fatigue(ctx) {
   const c = config.adjustments.fatigue;
-  const res = base(c.id, 'fatigue', 'Fatigue (14-day load)', c.maxMagnitude, 'player-profiles.json:recentForm');
+  const res = base(c.id, 'fatigue', 'Fatigue (recent load)', c.maxMagnitude, 'player-profiles.json:recentForm');
   const matchDate = new Date(ctx.match.date || ctx.match.day || Date.now());
   const windowMs = config.fatigueWindowDays * 24 * 3600 * 1000;
   function load(p) {
     const ms = recentMatchesSorted(p.profile);
-    let sets = 0, count = 0;
+    let sets = 0, count = 0, lastMs = null;
     for (const m of ms) {
       const d = new Date(m.date);
       const diff = matchDate - d;
-      if (diff >= 0 && diff <= windowMs) { sets += parseSets(m.result); count++; }
+      if (diff >= 0 && diff <= windowMs) {
+        sets += parseSets(m.result); count++;
+        if (lastMs == null || d > lastMs) lastMs = d;
+      }
     }
-    return { sets, count };
+    const turnaroundH = lastMs ? (matchDate - lastMs) / 3600000 : null;
+    // Score = time on court (sets) + short-rest penalty. A turnaround under 48h
+    // adds up to +3 (ramping from 0 at 48h to +3 at ~12h or less).
+    let score = sets;
+    if (turnaroundH != null && turnaroundH < 48) {
+      score += clamp((48 - turnaroundH) / 12, 0, 3);
+    }
+    return { sets, count, turnaroundH, score };
   }
   const l1 = load(ctx.p1), l2 = load(ctx.p2);
   if (l1.count === 0 && l2.count === 0) { res.detail = 'No matches in window.'; return res; }
-  // heavier load => negative for that player => favour the fresher one
-  const signal = clamp((l2.sets - l1.sets) / 8, -1, 1);
+  // Heavier score => more fatigue => favour the fresher opponent.
+  const signal = clamp((l2.score - l1.score) / 10, -1, 1);
+  const t1 = l1.turnaroundH != null ? `last ${Math.round(l1.turnaroundH)}h` : 'rested';
+  const t2 = l2.turnaroundH != null ? `last ${Math.round(l2.turnaroundH)}h` : 'rested';
   return apply(res, signal, 'low',
-    `Last ${config.fatigueWindowDays}d load: ${l1.sets} sets (${l1.count}m) vs ${l2.sets} sets (${l2.count}m).`);
+    `${config.fatigueWindowDays}d load: ${l1.sets} sets/${l1.count}m (${t1}) vs ${l2.sets} sets/${l2.count}m (${t2}).`);
 }
 
 // =========================================================================
@@ -541,31 +570,77 @@ function formatSplit(ctx) {
 }
 
 // =========================================================================
-// 14. COURT SPEED — fast rewards serve, slow rewards return/movement
+// 14. COURT SPEED — two independent dimensions, both radar-free (they use the
+//    serve/return ratings and recent-form history, which are always available):
+//      A. ALTITUDE — when the venue sits above the altitude threshold (>350m),
+//         the player who historically performs BETTER at high-altitude events
+//         (win% at >350m tournaments vs their overall recent win%) is favoured.
+//      B. FAST / SLOW — from abstractSpeed: a fast court rewards the stronger
+//         server (serve rating gap), a slow court rewards the stronger returner
+//         (return rating gap).
+//    Signals from both dimensions add; the layer abstains when neither fires.
 // =========================================================================
 function courtSpeed(ctx) {
   const c = config.adjustments.courtSpeed;
-  const res = base(c.id, 'courtSpeed', 'Court speed', c.maxMagnitude, 'matches.json:courtSpeed / style-radar.json');
+  const res = base(c.id, 'courtSpeed', 'Court speed / altitude', c.maxMagnitude,
+    'matches.json:courtSpeed + config.altitudeMeters / career-splits.json');
   const cs = ctx.match.courtSpeed;
-  const r1 = ctx.p1.radar, r2 = ctx.p2.radar;
-  if (!cs) return res;
-  if (!r1 || !r2) { res.detail = 'Reliable style radar unavailable for a player.'; return res; }
-  const as = num(cs.abstractSpeed);
-  let signal = 0, label = cs.category || '';
-  if (as != null) {
-    if (as >= 0.9) { // fast
-      const serveGap = ((num(r1.serve) || 50) - (num(r2.serve) || 50)) / 100;
-      signal = serveGap * clamp((as - 0.9) / 0.15 + 0.5, 0, 1);
-      label = `fast (${as})`;
-    } else if (as <= 0.82) { // slow
-      const g = ((num(r1.return) || 50) + (num(r1.movement) || 50)
-               - (num(r2.return) || 50) - (num(r2.movement) || 50)) / 200;
-      signal = g * clamp((0.82 - as) / 0.15 + 0.5, 0, 1);
-      label = `slow (${as})`;
+  const surfCat = surfaceCategory(ctx.surface);
+  const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
+  let signal = 0;
+  const parts = [];
+
+  // --- A. Altitude affinity ---------------------------------------------
+  const threshold = num(config.altitudeThresholdM) != null ? config.altitudeThresholdM : 350;
+  let alt = cs && num(cs.altitude) != null ? cs.altitude : null;
+  if (alt == null) alt = tournamentAltitude(ctx.match && ctx.match.tour); // map fallback
+  if (alt != null && alt > threshold) {
+    function altEdge(p) {
+      const ms = recentMatchesSorted(p.profile);
+      if (!ms.length) return null;
+      const hi = ms.filter(m => {
+        const a = tournamentAltitude(m.tournament);
+        return a != null && a > threshold;
+      });
+      if (hi.length < 4) return null; // need a real altitude sample
+      const hiWR = hi.filter(m => m.won).length / hi.length;
+      const allWR = ms.filter(m => m.won).length / ms.length;
+      return hiWR - allWR; // altitude over/under-performance vs own norm
+    }
+    const a1 = altEdge(ctx.p1), a2 = altEdge(ctx.p2);
+    if (a1 != null && a2 != null) {
+      signal += clamp((a1 - a2) / 0.5, -1, 1) * 0.6; // altitude dimension weight
+      parts.push(`altitude ${Math.round(alt)}m`);
+    } else {
+      parts.push(`altitude ${Math.round(alt)}m (thin history)`);
     }
   }
-  if (signal === 0) { res.detail = `Neutral speed (${label}).`; return res; }
-  return apply(res, signal, 'low', `Court ${label}.`);
+
+  // --- B. Fast / slow surface -------------------------------------------
+  const as = cs && num(cs.abstractSpeed);
+  if (as != null) {
+    if (as >= 0.9) { // fast court => reward the server
+      const s1 = blendedRating(ctx.p1.splits, surfCat, bucket, serveRatingRow);
+      const s2 = blendedRating(ctx.p2.splits, surfCat, bucket, serveRatingRow);
+      if (s1 != null && s2 != null) {
+        signal += clamp((s1 - s2) / 25, -1, 1) * clamp((as - 0.9) / 0.15 + 0.4, 0, 1) * 0.5;
+        parts.push(`fast (${as})`);
+      }
+    } else if (as <= 0.82) { // slow court => reward the returner
+      const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, returnRatingRow);
+      const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, returnRatingRow);
+      if (r1 != null && r2 != null) {
+        signal += clamp((r1 - r2) / 15, -1, 1) * clamp((0.82 - as) / 0.15 + 0.4, 0, 1) * 0.5;
+        parts.push(`slow (${as})`);
+      }
+    }
+  }
+
+  if (signal === 0) {
+    res.detail = parts.length ? `Neutral (${parts.join(', ')}).` : 'Neutral court/altitude.';
+    return res;
+  }
+  return apply(res, clamp(signal, -1, 1), 'low', `Court: ${parts.join(', ')}.`);
 }
 
 // =========================================================================
@@ -580,28 +655,6 @@ function clutch(ctx) {
   const conf = (c1.confidence === 'high' && c2.confidence === 'high') ? 'med' : 'low';
   return apply(res, signal, conf,
     `Clutch ${Math.round(c1.clutchIndex)} vs ${Math.round(c2.clutchIndex)}.`);
-}
-
-// =========================================================================
-// 16. H2H TREND — recency-weighted direction of the head-to-head
-// =========================================================================
-function h2hTrend(ctx) {
-  const c = config.adjustments.h2hTrend;
-  const res = base(c.id, 'h2hTrend', 'H2H trend', c.maxMagnitude, 'matches.json:h2h');
-  const ms = (ctx.match.h2h && ctx.match.h2h.matches) || [];
-  if (ms.length === 0) return res;
-  const sorted = ms.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  let wsum = 0, tot = 0;
-  sorted.forEach((m, i) => {
-    const w = Math.pow(0.6, i); // most recent meeting weighted 1, then 0.6, 0.36...
-    wsum += (m.p1Won ? 1 : -1) * w;
-    tot += w;
-  });
-  if (tot === 0) return res;
-  const signal = clamp(wsum / tot, -1, 1);
-  const last = sorted[0];
-  return apply(res, signal, sorted.length >= 3 ? 'med' : 'low',
-    `Most recent: ${last.p1Won ? 'p1' : 'p2'} won (${last.date}).`);
 }
 
 // =========================================================================
@@ -645,7 +698,7 @@ const ALL = [
   styleMatchup, subjective, h2h, surface, recentForm,
   roundStage, qualityForm, winnerUE,
   serve, returnPressure, fatigue, weather, formatSplit,
-  courtSpeed, clutch, h2hTrend, oddsMovement,
+  courtSpeed, clutch, oddsMovement,
 ];
 
 function runAll(ctx) {

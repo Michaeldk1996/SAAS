@@ -3381,7 +3381,7 @@ function renderEdgeModel(id){
   // ── Page header ────────────────────────────────────────────────────────
   const header = `
     <div class="edge-head">
-      <div class="edge-eyebrow2">Tennis Edge Model · 17-layer</div>
+      <div class="edge-eyebrow2">Tennis Edge Model · ${(st2.adjustments || []).length}-layer</div>
       <div class="edge-h1">${edgeEsc(p1full)} vs ${edgeEsc(p2full)}</div>
       <div class="edge-h1sub">BSP Consult's proprietary match analysis and value model.</div>
     </div>`;

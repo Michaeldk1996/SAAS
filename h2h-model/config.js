@@ -89,9 +89,8 @@ module.exports = {
     courtSpeed:     { id: 14, maxMagnitude: 0.015, gated: false },
     // 15. Clutch rating — clutch-rating.json index
     clutch:         { id: 15, maxMagnitude: 0.02, gated: false },
-    // 16. H2H trend — recency-weighted head-to-head direction
-    h2hTrend:       { id: 16, maxMagnitude: 0.015, gated: false },
-    // 17. Odds market movement — opening vs current (lowest influence)
+    // 16. Odds market movement — opening vs current (lowest influence)
+    //     (H2H trend removed 2026-07 per review: redundant with H2H record #3.)
     oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false },
   },
 
@@ -127,6 +126,30 @@ module.exports = {
   // ---- Misc ----------------------------------------------------------
   // Tours played best-of-5 (Grand Slams). Everything else Bo3.
   bestOf5Tours: ['Australian Open', 'Roland Garros', 'French Open', 'Wimbledon', 'US Open'],
+
+  // Venue altitude reference (metres above sea level) — factual geographic
+  // data for the court-speed/altitude layer (#11). Keyed by a substring of the
+  // tournament name (case-insensitive). Used two ways: (a) if matches.json has
+  // no courtSpeed.altitude for the current match, look it up here; (b) to score
+  // a player's historical win-rate at high-altitude events (>350 m) from their
+  // recent-form tournament names. Extend this list as Michael confirms venues —
+  // only add real, verifiable altitudes here (never a guess).
+  altitudeMeters: {
+    'quito': 2850,
+    'bogota': 2640,
+    'gstaad': 1050,
+    'kitzbuhel': 762,
+    'kitzbühel': 762,
+    'sao paulo': 760,
+    'madrid': 667,
+    'santiago': 570,
+    'munich': 520,
+    'marrakech': 466,
+    'cordoba': 425,
+  },
+  // Altitude threshold (metres) at/above which a venue is treated as "altitude"
+  // and the altitude-affinity dimension of the court-speed layer activates.
+  altitudeThresholdM: 350,
 
   // Recent-form window sizes
   recentFormN: 5,       // last-5 for the form signal
