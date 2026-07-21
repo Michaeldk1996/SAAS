@@ -2203,6 +2203,7 @@
   .edge-rt-elo{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#c8cfda; }
   .edge-rt-idx{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#c8cfda; }
   .edge-rt-na{ color:#4b515e; }
+  .edge-rt-ch{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:#5b6472; margin-left:2px; vertical-align:super; cursor:help; }
   .edge-rt-table tr.lowc td{ opacity:0.5; }
   .edge-rt-foot{ margin-top:14px; font-size:10.5px; color:#5b6472; line-height:1.6; }
 </style>
@@ -3303,6 +3304,7 @@ function renderEdgeRatings(){
       serve: (b && b.serve)  ? b.serve.index  : null,
       ret:   (b && b.return) ? b.return.index : null,
       up:    (b && b.underPressure && b.underPressure.index != null) ? b.underPressure.index : null,
+      upChall: !!(b && b.underPressure && b.underPressure.inclChallenger),
       conf:  b ? b.confidence : null
     };
   });
@@ -3339,7 +3341,7 @@ function renderEdgeRatings(){
         <td class="edge-rt-elo">${fmtElo(r.elo)}</td>
         <td class="edge-rt-idx">${fmtIdx(r.serve)}</td>
         <td class="edge-rt-idx">${fmtIdx(r.ret)}</td>
-        <td class="edge-rt-idx">${fmtIdx(r.up)}</td>
+        <td class="edge-rt-idx">${fmtIdx(r.up)}${r.up != null && r.upChall ? '<sup class="edge-rt-ch" title="Includes Challenger / qualifying matches to reach a reliable sample">C</sup>' : ''}</td>
       </tr>`;
   });
   html += '</tbody>';
@@ -3348,7 +3350,7 @@ function renderEdgeRatings(){
   const rated = rows.filter(r => r.serve != null || r.ret != null || r.up != null).length;
   const scopeLbl = scope === 'career' ? 'career' : 'last 52 weeks';
   const surfLbl  = surf === 'All' ? 'all surfaces' : surf.toLowerCase();
-  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are percentiles within the rated pool; faded rows have a thin sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
+  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are percentiles within the rated pool; faded rows have a thin sample. A <sup class="edge-rt-ch">C</sup> on under-pressure means Challenger / qualifying matches were folded in to reach a reliable sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
 }
 // Return to the matches board via the real nav button so its render + highlight
 // run exactly as a normal tab switch would.

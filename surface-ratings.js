@@ -31,6 +31,20 @@ const TO_YEAR = 2026;
 const SURFACES = ['Hard', 'Clay', 'Grass'];      // Carpet dropped (too few matches)
 const LAST52_DAYS = 364;
 
+// ---- Challenger / qualifying fallback source (Jeff-Sackmann schema) ----------
+// TML-Database is ATP main-tour only, so players who are thin at tour level (young
+// or lower-ranked) never accumulate enough tiebreaks / deciding sets / break points
+// to earn an Under-Pressure rating. Sackmann's qual_chall files give the SAME schema
+// for Challenger + Grand-Slam/Masters qualifying — a genuinely different, deeper
+// coverage. We fold these in ONLY for components a player is thin on at tour level,
+// and flag those rows so the provenance is always visible. Same CC BY-NC-SA licence,
+// internal-derivation only. Reachable Sackmann fork mirror (JeffSackmann org is not
+// fetchable in the build env): Milos191405/Tennis-ATP, years 2018-2024.
+const CHALL_BASE = 'https://raw.githubusercontent.com/Milos191405/Tennis-ATP/master/tennis_atp/';
+const CHALL_CACHE = path.join(__dirname, 'chall-cache');
+const CHALL_FROM_YEAR = 2018;
+const CHALL_TO_YEAR = 2024;
+
 // inclusion gate: any player with MORE THAN 10 ATP-level (surface) matches is rated
 const INCLUDE_MIN_MATCHES = 11;
 // career reliability floors — used only to flag confidence, NOT to include/exclude
@@ -42,8 +56,8 @@ const L52_MIN_SVPT = 150;
 // per-component under-pressure floors (career scope; last52 uses half, floored at a small min)
 const MIN_BP_FACED = 50;
 const MIN_BP_CHANCE = 50;
-const MIN_TB = 10;
-const MIN_DEC = 8;
+const MIN_TB = 6;
+const MIN_DEC = 5;
 
 function deaccent(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 // Normalise a name to lowercase alphanumeric tokens (apostrophes stripped, hyphens/dots → space).
@@ -82,6 +96,18 @@ async function getCsv(year) {
   const text = await res.text();
   if (!text || text.length < 50) return null;
   if (!fs.existsSync(CACHE)) fs.mkdirSync(CACHE, { recursive: true });
+  fs.writeFileSync(file, text);
+  return text;
+}
+
+async function getChallCsv(year) {
+  const file = path.join(CHALL_CACHE, `qual_chall_${year}.csv`);
+  if (fs.existsSync(file) && fs.statSync(file).size > 0) return fs.readFileSync(file, 'utf8');
+  const res = await fetch(`${CHALL_BASE}atp_matches_qual_chall_${year}.csv`, { headers: { 'User-Agent': 'bsp-consult' } });
+  if (!res.ok) return null;
+  const text = await res.text();
+  if (!text || text.length < 50) return null;
+  if (!fs.existsSync(CHALL_CACHE)) fs.mkdirSync(CHALL_CACHE, { recursive: true });
   fs.writeFileSync(file, text);
   return text;
 }
@@ -134,8 +160,10 @@ function addContribution(b, c) {
 
 function round1(v) { return v == null ? null : +v.toFixed(1); }
 
-// compute the three ratings from an aggregated bucket, honoring floors
-function computeRatings(b, floors) {
+// compute the three ratings from an aggregated bucket, honoring floors.
+// `cb` (optional) is the SAME surface+scope Challenger/qualifying bucket — used only
+// to top up Under-Pressure components the player is thin on at tour level.
+function computeRatings(b, floors, cb) {
   const okSample = b.matches >= floors.minMatches && b.svpt >= floors.minSvpt;
   // serve
   let serve = null;
@@ -160,23 +188,46 @@ function computeRatings(b, floors) {
     const breakPct = b.oBpFaced > 0 ? (b.oBpFaced - b.oBpSaved) / b.oSvGms * 100 : 0;
     ret = { rptWonPct: round1(rptWonPct), breakPct: round1(breakPct), rating: round1(rptWonPct + breakPct) };
   }
-  // under-pressure (each component floored independently)
-  const bpSavedPct = b.bpFaced >= floors.minBpFaced ? b.bpSaved / b.bpFaced * 100 : null;
-  const bpConvPct = b.oBpFaced >= floors.minBpChance ? (b.oBpFaced - b.oBpSaved) / b.oBpFaced * 100 : null;
-  const tbWinPct = b.tbPlayed >= floors.minTb ? b.tbWon / b.tbPlayed * 100 : null;
-  const decWinPct = b.decPlayed >= floors.minDec ? b.decWon / b.decPlayed * 100 : null;
+  // under-pressure (each component floored independently). If a component is below its
+  // tour-level floor, top it up with the player's Challenger/qualifying sample so thin
+  // tour players still earn a reliable number — never inventing data, just widening the
+  // coverage. Tour-only samples that already clear the floor are left untouched.
+  // Blend Challenger data when the tour component is below its floor, OR when the
+  // player's overall tour sample is unreliable (thin / lower-ranked) — those players
+  // are exactly the ones a single-tier tour sample rates on too little data.
+  function upComp(tourNum, tourDen, chNum, chDen, floor) {
+    const blend = cb && (chDen || 0) > 0 && (tourDen < floor || !okSample);
+    if (blend) {
+      const den = tourDen + chDen;
+      if (den >= floor && den > 0) return { pct: (tourNum + (chNum || 0)) / den * 100, chall: true };
+    }
+    if (tourDen >= floor && tourDen > 0) return { pct: tourNum / tourDen * 100, chall: false };
+    return { pct: null, chall: false };
+  }
+  const rBpSaved = upComp(b.bpSaved, b.bpFaced, cb ? cb.bpSaved : 0, cb ? cb.bpFaced : 0, floors.minBpFaced);
+  const rBpConv  = upComp(b.oBpFaced - b.oBpSaved, b.oBpFaced, cb ? cb.oBpFaced - cb.oBpSaved : 0, cb ? cb.oBpFaced : 0, floors.minBpChance);
+  const rTb      = upComp(b.tbWon, b.tbPlayed, cb ? cb.tbWon : 0, cb ? cb.tbPlayed : 0, floors.minTb);
+  const rDec     = upComp(b.decWon, b.decPlayed, cb ? cb.decWon : 0, cb ? cb.decPlayed : 0, floors.minDec);
+  const bpSavedPct = rBpSaved.pct, bpConvPct = rBpConv.pct, tbWinPct = rTb.pct, decWinPct = rDec.pct;
+  const usedChall = rBpSaved.chall || rBpConv.chall || rTb.chall || rDec.chall;
   const upParts = [bpSavedPct, bpConvPct, tbWinPct, decWinPct];
-  const haveUp = upParts.filter(v => v != null).length;
+  const present = upParts.filter(v => v != null);
+  const haveUp = present.length;
+  // Rate on the components that clear their floors (>= 3 of 4), using the MEAN of the
+  // present components so 3- and 4-component players share one 0-100 scale — the missing
+  // component is never invented. Deciding sets are the rarest event, so newer players
+  // commonly land on 3 (BP saved / BP converted / tiebreak) and would otherwise be blank.
   const up = {
     bpSavedPct: round1(bpSavedPct), bpConvPct: round1(bpConvPct),
     tbWinPct: round1(tbWinPct), decWinPct: round1(decWinPct),
-    rating: haveUp === 4 ? round1(bpSavedPct + bpConvPct + tbWinPct + decWinPct) : null,
+    rating: haveUp >= 3 ? round1(present.reduce((a, c) => a + c, 0) / haveUp) : null,
     components: haveUp,
+    inclChallenger: usedChall,
   };
   return {
     serve, return: ret, underPressure: up,
     reliable: okSample,
-    confidence: okSample ? (haveUp === 4 ? 'high' : haveUp >= 2 ? 'med' : 'low') : 'low',
+    confidence: okSample ? (usedChall ? 'med' : (haveUp >= 4 ? 'high' : haveUp >= 3 ? 'med' : 'low')) : 'low',
     sample: { matches: b.matches, svpt: b.svpt, bpFaced: b.bpFaced, bpChances: b.oBpFaced, tbPlayed: b.tbPlayed, decPlayed: b.decPlayed },
   };
 }
@@ -262,6 +313,54 @@ function pctOf(sortedArr, v) {
   }
   console.log(`Scanned ${scanned} surface matches → ${byId.size} distinct players.`);
 
+  // ---- Challenger/qualifying scan (pressure fields only) → parallel challById store.
+  // Same schema, so only the Under-Pressure inputs are captured; serve/return are never
+  // sourced from Challenger data (kept tour-level to preserve the existing ratings).
+  const challById = new Map();     // id -> { name, latest, contribs:[] }
+  let challScanned = 0;
+  for (let y = CHALL_FROM_YEAR; y <= CHALL_TO_YEAR; y++) {
+    const text = await getChallCsv(y);
+    if (!text) { console.log(`  chall ${y}: missing`); continue; }
+    const lines = text.split(/\r?\n/).filter(l => l.length);
+    const H = lines[0].split(','); const ix = {}; H.forEach((h, i) => { ix[h] = i; });
+    for (let i = 1; i < lines.length; i++) {
+      const c = lines[i].split(',');
+      const wId = c[ix.winner_id], lId = c[ix.loser_id];
+      if (!wId || !lId) continue;
+      const surface = (c[ix.surface] || '').trim();
+      if (!SURFACES.includes(surface)) continue;
+      const date = ymdToMs(c[ix.tourney_date]);
+      const bestOf = parseInt(c[ix.best_of], 10) || null;
+      const ps = parseScore(c[ix.score], bestOf);
+      challScanned++;
+      const wBpF = n(c[ix.w_bpFaced]), wBpS = n(c[ix.w_bpSaved]);
+      const lBpF = n(c[ix.l_bpFaced]), lBpS = n(c[ix.l_bpSaved]);
+      // winner contribution (opponent = loser)
+      const wc = {
+        date, surface, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
+        bpFaced: wBpF, bpSaved: wBpF != null ? (wBpS || 0) : null,
+        oSvpt: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
+        oBpFaced: lBpF, oBpSaved: lBpF != null ? (lBpS || 0) : null,
+        tbPlayed: ps.tbPlayed, tbWon: ps.tbWonByWinner,
+        decPlayed: ps.decPlayed, decWon: ps.decWonByWinner,
+      };
+      // loser contribution (opponent = winner)
+      const lc = {
+        date, surface, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
+        bpFaced: lBpF, bpSaved: lBpF != null ? (lBpS || 0) : null,
+        oSvpt: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
+        oBpFaced: wBpF, oBpSaved: wBpF != null ? (wBpS || 0) : null,
+        tbPlayed: ps.tbPlayed, tbWon: ps.tbPlayed - ps.tbWonByWinner,
+        decPlayed: ps.decPlayed, decWon: ps.decPlayed - ps.decWonByWinner,
+      };
+      let aw = challById.get(wId); if (!aw) { aw = { name: c[ix.winner_name], latest: 0, contribs: [] }; challById.set(wId, aw); }
+      let al = challById.get(lId); if (!al) { al = { name: c[ix.loser_name], latest: 0, contribs: [] }; challById.set(lId, al); }
+      aw.contribs.push(wc); if (date && date > aw.latest) aw.latest = date;
+      al.contribs.push(lc); if (date && date > al.latest) al.latest = date;
+    }
+  }
+  console.log(`Scanned ${challScanned} Challenger/qual surface matches → ${challById.size} distinct players.`);
+
   // ---- index TML ids by (first-initial | last-surname-token) for candidate pruning
   const tmlIndex = new Map();   // `fi|lastToken` -> [ids]
   const tmlTok = new Map();     // id -> { tokens, fi }
@@ -272,6 +371,17 @@ function pctOf(sortedArr, v) {
     const key = fi + '|' + t[t.length - 1];
     if (!tmlIndex.has(key)) tmlIndex.set(key, []);
     tmlIndex.get(key).push(id);
+  }
+  // parallel index for the Challenger store (same token scheme)
+  const challIndex = new Map();
+  const challTok = new Map();
+  for (const [id, a] of challById) {
+    const t = normTokens(a.name); if (!t.length) continue;
+    const fi = t[0][0];
+    challTok.set(id, { tokens: t, fi });
+    const key = fi + '|' + t[t.length - 1];
+    if (!challIndex.has(key)) challIndex.set(key, []);
+    challIndex.get(key).push(id);
   }
 
   const careerFloors = { minMatches: CAREER_MIN_MATCHES, minSvpt: CAREER_MIN_SVPT, minBpFaced: MIN_BP_FACED, minBpChance: MIN_BP_CHANCE, minTb: MIN_TB, minDec: MIN_DEC };
@@ -286,17 +396,47 @@ function pctOf(sortedArr, v) {
     if (!matched.length) continue;
     matched.sort((x, y) => byId.get(y).contribs.length - byId.get(x).contribs.length);
     const a = byId.get(matched[0]);
-    const cutoff = a.latest ? a.latest - LAST52_DAYS * 86400000 : null;
 
-    // aggregate career + last52, per surface + 'All'
+    // match the SAME player in the Challenger store (token-aligned, best coverage)
+    let ac = null;
+    const cCands = challIndex.get(meta.fi + '|' + meta.lastTok);
+    if (cCands && cCands.length) {
+      const cMatched = cCands.filter(id => endsWithTokens(challTok.get(id).tokens, meta.surname));
+      if (cMatched.length) {
+        cMatched.sort((x, y) => challById.get(y).contribs.length - challById.get(x).contribs.length);
+        ac = challById.get(cMatched[0]);
+      }
+    }
+    // last-52 window is anchored to the player's most recent match across BOTH sources
+    const latestAll = Math.max(a.latest || 0, ac ? ac.latest : 0);
+    const cutoff = a.latest ? a.latest - LAST52_DAYS * 86400000 : null;
+    const cutoffAll = latestAll ? latestAll - LAST52_DAYS * 86400000 : null;
+
+    // aggregate career + last52, per surface + 'All' (tour level — primary)
     const scopes = { career: {}, last52: {} };
-    for (const surf of [...SURFACES, 'All']) { scopes.career[surf] = newBucket(); scopes.last52[surf] = newBucket(); }
+    const chall = { career: {}, last52: {} };
+    for (const surf of [...SURFACES, 'All']) {
+      scopes.career[surf] = newBucket(); scopes.last52[surf] = newBucket();
+      chall.career[surf] = newBucket(); chall.last52[surf] = newBucket();
+    }
     for (const c of a.contribs) {
       addContribution(scopes.career[c.surface], c);
       addContribution(scopes.career.All, c);
       if (cutoff != null && c.date != null && c.date >= cutoff) {
         addContribution(scopes.last52[c.surface], c);
         addContribution(scopes.last52.All, c);
+      }
+    }
+    // Challenger contributions in a parallel, non-blended store (used only to top up
+    // thin Under-Pressure components inside computeRatings).
+    if (ac) {
+      for (const c of ac.contribs) {
+        addContribution(chall.career[c.surface], c);
+        addContribution(chall.career.All, c);
+        if (cutoffAll != null && c.date != null && c.date >= cutoffAll) {
+          addContribution(chall.last52[c.surface], c);
+          addContribution(chall.last52.All, c);
+        }
       }
     }
     // inclusion gate: rate anyone with MORE THAN 10 career ATP-level matches.
@@ -306,8 +446,8 @@ function pctOf(sortedArr, v) {
     const surfaces = {};
     for (const surf of [...SURFACES, 'All']) {
       surfaces[surf] = {
-        career: computeRatings(scopes.career[surf], careerFloors),
-        last52: computeRatings(scopes.last52[surf], l52Floors),
+        career: computeRatings(scopes.career[surf], careerFloors, chall.career[surf]),
+        last52: computeRatings(scopes.last52[surf], l52Floors, chall.last52[surf]),
       };
     }
     rows.push({ name: meta.name, rank: meta.rank, surfaces });
@@ -315,15 +455,33 @@ function pctOf(sortedArr, v) {
   console.log(`Reconciled + qualified: ${rows.length} players.`);
 
   // ---- pool-percentile index per rating, within each surface+scope bucket
+  const UP_COMPONENTS = ['bpSavedPct', 'bpConvPct', 'tbWinPct', 'decWinPct'];
   for (const surf of [...SURFACES, 'All']) {
     for (const scope of ['career', 'last52']) {
-      for (const [fam, key] of [['serve', 'serve'], ['return', 'return'], ['underPressure', 'underPressure']]) {
+      // Serve & return are single composite ratings → percentile of the composite.
+      for (const fam of ['serve', 'return']) {
         const vals = rows.map(r => { const b = r.surfaces[surf][scope][fam]; return b && b.rating != null ? b.rating : null; })
           .filter(v => v != null).sort((x, y) => x - y);
         for (const r of rows) {
           const b = r.surfaces[surf][scope][fam];
           if (b && b.rating != null) b.index = pctOf(vals, b.rating);
         }
+      }
+      // Under-pressure: the four components have very different baselines (BP-saved
+      // ~60% vs BP-converted ~40%) and some players are missing one. Percentiling the
+      // raw mean therefore distorts (strong-component players get flattered, weak-
+      // component players get buried). Instead, rank EACH component within the pool,
+      // then average the available component percentiles → apples-to-apples 0-100.
+      const compSorted = {};
+      for (const comp of UP_COMPONENTS) {
+        compSorted[comp] = rows.map(r => r.surfaces[surf][scope].underPressure[comp])
+          .filter(v => v != null).sort((x, y) => x - y);
+      }
+      for (const r of rows) {
+        const u = r.surfaces[surf][scope].underPressure;
+        if (!u || u.rating == null) continue;                 // gated at >= 3 components upstream
+        const pcts = UP_COMPONENTS.map(comp => u[comp] != null ? pctOf(compSorted[comp], u[comp]) : null).filter(v => v != null);
+        u.index = pcts.length ? +(pcts.reduce((a, c) => a + c, 0) / pcts.length).toFixed(1) : null;
       }
     }
   }
@@ -341,14 +499,14 @@ function pctOf(sortedArr, v) {
   rows.sort((a, b) => a.rank - b.rank);
   const out = {
     generatedAt: new Date().toISOString(),
-    source: 'Self-derived from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database) — no ATP/Infosys data',
+    source: 'Self-derived from Jeff Sackmann tennis_atp schema — tour-level (Tennismylife/TML-Database) with Challenger/qualifying fallback (Milos191405/Tennis-ATP, ' + CHALL_FROM_YEAR + '-' + CHALL_TO_YEAR + ') for thin Under-Pressure components — no ATP/Infosys data',
     scopes: { career: `${FROM_YEAR}-${TO_YEAR} all qualifying matches`, last52: `matches within ${LAST52_DAYS} days of each player's most recent match` },
     surfaces: [...SURFACES, 'All'],
     method: {
-      serve: 'serveRating = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df%',
-      return: 'returnRating = returnPtsWon% + break%',
-      underPressure: 'upRating = BPsaved% + BPconverted% + tiebreak% + decidingSet% (ATP Under-Pressure board sum)',
-      index: '0-100 pool percentile within the same surface+scope bucket',
+      serve: 'serveRating = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df% (tour level only)',
+      return: 'returnRating = returnPtsWon% + break% (tour level only)',
+      underPressure: 'upRating = mean of the ATP Under-Pressure components present (BPsaved% / BPconverted% / tiebreak% / decidingSet%); rated when >= 3 of 4 clear their floors. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
+      index: '0-100 pool percentile within the same surface+scope bucket; serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile (so different component baselines and missing components do not distort)',
     },
     inclusion: `rated if career-All matches >= ${INCLUDE_MIN_MATCHES} (i.e. more than 10 ATP-level matches)`,
     floors: { career: careerFloors, last52: l52Floors },
