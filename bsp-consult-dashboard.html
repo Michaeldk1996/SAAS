@@ -2230,7 +2230,7 @@
         <div class="edge-rt-head">
           <div class="edge-eyebrow">Ratings board</div>
           <div class="edge-title">Player ratings by surface</div>
-          <div class="edge-sub">Self-computed surface Elo, plus serve, return and under-pressure ratings derived from the full ATP-level match archive. Indices are percentiles within the rated pool (100 = best).</div>
+          <div class="edge-sub">Self-computed surface Elo, plus serve, return and under-pressure ratings derived from the full ATP-level match archive. Serve, return and under-pressure are ATP-style ratings — the summed component percentages, scored the way the ATP leaderboards do (higher = better).</div>
         </div>
         <div class="edge-card">
           <div class="edge-rt-controls">
@@ -3301,9 +3301,9 @@ function renderEdgeRatings(){
     return {
       name: p.name, atp: p.rank,
       elo:   edgeEloSurf(p.name, surfLower),
-      serve: (b && b.serve)  ? b.serve.index  : null,
-      ret:   (b && b.return) ? b.return.index : null,
-      up:    (b && b.underPressure && b.underPressure.index != null) ? b.underPressure.index : null,
+      serve: (b && b.serve)  ? b.serve.rating  : null,
+      ret:   (b && b.return) ? b.return.rating : null,
+      up:    (b && b.underPressure && b.underPressure.rating != null) ? b.underPressure.rating : null,
       upChall: !!(b && b.underPressure && b.underPressure.inclChallenger),
       conf:  b ? b.confidence : null
     };
@@ -3321,7 +3321,7 @@ function renderEdgeRatings(){
     return (av < zv ? -1 : 1) * dir;
   });
 
-  const fmtIdx = v => v == null ? '<span class="edge-rt-na">—</span>' : Number(v).toFixed(1);
+  const fmtIdx = v => v == null ? '<span class="edge-rt-na">—</span>' : Math.round(v);
   const fmtElo = v => v == null ? '<span class="edge-rt-na">—</span>' : Math.round(v);
   const atpTag = r => (r.atp && r.atp < 9999) ? `<span class="edge-rt-atp">#${r.atp}</span>` : '';
   const ar = c => edgeRateSort.col === c ? `<span class="ar">${edgeRateSort.dir < 0 ? '▾' : '▴'}</span>` : '';
@@ -3350,7 +3350,7 @@ function renderEdgeRatings(){
   const rated = rows.filter(r => r.serve != null || r.ret != null || r.up != null).length;
   const scopeLbl = scope === 'career' ? 'career' : 'last 52 weeks';
   const surfLbl  = surf === 'All' ? 'all surfaces' : surf.toLowerCase();
-  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are percentiles within the rated pool; faded rows have a thin sample. A <sup class="edge-rt-ch">C</sup> on under-pressure means Challenger / qualifying matches were folded in to reach a reliable sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
+  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are ATP-style ratings — the summed component percentages, the way the ATP leaderboards score them (higher = better); faded rows have a thin sample. A <sup class="edge-rt-ch">C</sup> on under-pressure means Challenger / qualifying matches were folded in to reach a reliable sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
 }
 // Return to the matches board via the real nav button so its render + highlight
 // run exactly as a normal tab switch would.

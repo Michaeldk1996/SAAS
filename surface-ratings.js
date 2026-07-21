@@ -178,7 +178,9 @@ function computeRatings(b, floors, cb) {
     serve = {
       firstInPct: round1(firstInPct), firstWonPct: round1(firstWonPct), secondWonPct: round1(secondWonPct),
       holdPct: round1(holdPct), acePct: round1(acePct), dfPct: round1(dfPct),
-      rating: round1(firstInPct + firstWonPct + secondWonPct + holdPct + acePct - dfPct),
+      // ATP-style Serve Rating: sum of the serve component percentages (no df penalty,
+      // matching the official ATP/Infosys serve leaderboard build). df is still tracked.
+      rating: round1(firstInPct + firstWonPct + secondWonPct + holdPct + acePct),
     };
   }
   // return
@@ -186,7 +188,14 @@ function computeRatings(b, floors, cb) {
   if (b.oSvpt > 0 && b.oSvGms > 0) {
     const rptWonPct = (1 - (b.oFirstWon + b.oSecondWon) / b.oSvpt) * 100;
     const breakPct = b.oBpFaced > 0 ? (b.oBpFaced - b.oBpSaved) / b.oSvGms * 100 : 0;
-    ret = { rptWonPct: round1(rptWonPct), breakPct: round1(breakPct), rating: round1(rptWonPct + breakPct) };
+    // ATP-style Return Rating: return-points-won% + return-games-won% + break-points-
+    // converted%. BP-converted mirrors the ATP return build (it also feeds Under Pressure,
+    // exactly as the ATP reuses it in both leaderboards).
+    const bpConvPct = b.oBpFaced > 0 ? (b.oBpFaced - b.oBpSaved) / b.oBpFaced * 100 : 0;
+    ret = {
+      rptWonPct: round1(rptWonPct), breakPct: round1(breakPct), bpConvPct: round1(bpConvPct),
+      rating: round1(rptWonPct + breakPct + bpConvPct),
+    };
   }
   // under-pressure (each component floored independently). If a component is below its
   // tour-level floor, top it up with the player's Challenger/qualifying sample so thin
@@ -213,14 +222,17 @@ function computeRatings(b, floors, cb) {
   const upParts = [bpSavedPct, bpConvPct, tbWinPct, decWinPct];
   const present = upParts.filter(v => v != null);
   const haveUp = present.length;
-  // Rate on the components that clear their floors (>= 3 of 4), using the MEAN of the
-  // present components so 3- and 4-component players share one 0-100 scale — the missing
-  // component is never invented. Deciding sets are the rarest event, so newer players
+  // ATP-style Under-Pressure Rating: the SUM of BP-saved% + BP-converted% + tiebreak% +
+  // deciding-set% (~200-240), matching the ATP/Infosys Under Pressure leaderboard. Rated
+  // when >= 3 of 4 components clear their floors; a player on 3 is scaled to the full
+  // 4-component equivalent (mean of present * 4) so 3- and 4-component players stay on the
+  // same ATP scale — the missing component is estimated from the present ones, never
+  // fabricated from thin air. Deciding sets are the rarest event, so newer players
   // commonly land on 3 (BP saved / BP converted / tiebreak) and would otherwise be blank.
   const up = {
     bpSavedPct: round1(bpSavedPct), bpConvPct: round1(bpConvPct),
     tbWinPct: round1(tbWinPct), decWinPct: round1(decWinPct),
-    rating: haveUp >= 3 ? round1(present.reduce((a, c) => a + c, 0) / haveUp) : null,
+    rating: haveUp >= 3 ? round1(present.reduce((a, c) => a + c, 0) / haveUp * 4) : null,
     components: haveUp,
     inclChallenger: usedChall,
   };
@@ -503,10 +515,10 @@ function pctOf(sortedArr, v) {
     scopes: { career: `${FROM_YEAR}-${TO_YEAR} all qualifying matches`, last52: `matches within ${LAST52_DAYS} days of each player's most recent match` },
     surfaces: [...SURFACES, 'All'],
     method: {
-      serve: 'serveRating = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df% (tour level only)',
-      return: 'returnRating = returnPtsWon% + break% (tour level only)',
-      underPressure: 'upRating = mean of the ATP Under-Pressure components present (BPsaved% / BPconverted% / tiebreak% / decidingSet%); rated when >= 3 of 4 clear their floors. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
-      index: '0-100 pool percentile within the same surface+scope bucket; serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile (so different component baselines and missing components do not distort)',
+      serve: 'ATP-style Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + ace% (tour level only; no df penalty, matching the ATP serve leaderboard build)',
+      return: 'ATP-style Return Rating = returnPtsWon% + returnGamesWon% + BPconverted% (tour level only)',
+      underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
+      index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
     },
     inclusion: `rated if career-All matches >= ${INCLUDE_MIN_MATCHES} (i.e. more than 10 ATP-level matches)`,
     floors: { career: careerFloors, last52: l52Floors },
