@@ -1682,9 +1682,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 18.9,
-      "windSpeed": 9.3,
-      "humidity": 51,
+      "temperature": 19,
+      "windSpeed": 10.5,
+      "humidity": 52,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -1708,10 +1708,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -1723,7 +1723,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -1732,12 +1732,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -1746,11 +1746,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -1758,12 +1758,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -1774,9 +1774,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -1791,7 +1791,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/825_r-collignon.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -1846,6 +1846,18 @@
             [
               "2026-07-21T02:00:56.493Z",
               2.48
+            ],
+            [
+              "2026-07-21T04:08:01.295Z",
+              2.49
+            ],
+            [
+              "2026-07-21T05:01:32.100Z",
+              2.5
+            ],
+            [
+              "2026-07-21T05:32:44.889Z",
+              2.5
             ]
           ],
           "p2": [
@@ -1900,6 +1912,26 @@
             [
               "2026-07-21T02:00:56.493Z",
               1.588
+            ],
+            [
+              "2026-07-21T04:08:01.295Z",
+              1.581
+            ],
+            [
+              "2026-07-21T05:01:32.100Z",
+              1.588
+            ],
+            [
+              "2026-07-21T05:01:32.540Z",
+              1.588
+            ],
+            [
+              "2026-07-21T05:32:40.500Z",
+              1.591
+            ],
+            [
+              "2026-07-21T05:32:44.889Z",
+              1.588
             ]
           ]
         },
@@ -1918,7 +1950,7 @@
               2.4
             ],
             [
-              "2026-07-21T02:12:54.614Z",
+              "2026-07-21T05:38:31.507Z",
               2.4
             ]
           ],
@@ -1936,7 +1968,7 @@
               1.526
             ],
             [
-              "2026-07-21T02:12:54.614Z",
+              "2026-07-21T05:38:31.507Z",
               1.526
             ]
           ]
@@ -4219,8 +4251,8 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 20.2,
-      "windSpeed": 13.3,
+      "temperature": 19.9,
+      "windSpeed": 13.7,
       "humidity": 54,
       "source": "Open-Meteo",
       "historical": false,
@@ -4245,10 +4277,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -4260,7 +4292,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -4269,12 +4301,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -4283,11 +4315,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -4295,12 +4327,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -4311,9 +4343,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -4328,7 +4360,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -4395,6 +4427,18 @@
             [
               "2026-07-21T01:34:33.451Z",
               2.19
+            ],
+            [
+              "2026-07-21T04:39:59.038Z",
+              2.21
+            ],
+            [
+              "2026-07-21T05:18:43.972Z",
+              2.23
+            ],
+            [
+              "2026-07-21T05:33:53.776Z",
+              2.23
             ]
           ],
           "p2": [
@@ -4461,6 +4505,18 @@
             [
               "2026-07-21T01:34:33.451Z",
               1.746
+            ],
+            [
+              "2026-07-21T04:39:59.038Z",
+              1.729
+            ],
+            [
+              "2026-07-21T05:18:43.972Z",
+              1.724
+            ],
+            [
+              "2026-07-21T05:33:53.776Z",
+              1.724
             ]
           ]
         },
@@ -4471,7 +4527,7 @@
               2.1
             ],
             [
-              "2026-07-21T02:12:54.610Z",
+              "2026-07-21T05:38:29.808Z",
               2.1
             ]
           ],
@@ -4481,7 +4537,7 @@
               1.714
             ],
             [
-              "2026-07-21T02:12:54.610Z",
+              "2026-07-21T05:38:29.808Z",
               1.714
             ]
           ]
@@ -6371,9 +6427,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 19.5,
-      "windSpeed": 11.4,
-      "humidity": 56,
+      "temperature": 19.3,
+      "windSpeed": 11.7,
+      "humidity": 58,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -6397,10 +6453,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -6412,7 +6468,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -6421,12 +6477,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -6435,11 +6491,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -6447,12 +6503,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -6463,9 +6519,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -6480,7 +6536,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -6575,6 +6631,38 @@
             [
               "2026-07-21T01:34:18.615Z",
               1.416
+            ],
+            [
+              "2026-07-21T04:49:04.545Z",
+              1.409
+            ],
+            [
+              "2026-07-21T04:55:26.680Z",
+              1.406
+            ],
+            [
+              "2026-07-21T04:59:33.123Z",
+              1.408
+            ],
+            [
+              "2026-07-21T05:02:12.360Z",
+              1.401
+            ],
+            [
+              "2026-07-21T05:34:30.718Z",
+              1.374
+            ],
+            [
+              "2026-07-21T05:34:35.107Z",
+              1.37
+            ],
+            [
+              "2026-07-21T05:34:39.057Z",
+              1.369
+            ],
+            [
+              "2026-07-21T05:34:52.681Z",
+              1.377
             ]
           ],
           "p2": [
@@ -6669,6 +6757,38 @@
             [
               "2026-07-21T01:34:18.615Z",
               3.09
+            ],
+            [
+              "2026-07-21T04:49:04.545Z",
+              3.12
+            ],
+            [
+              "2026-07-21T04:55:26.680Z",
+              3.15
+            ],
+            [
+              "2026-07-21T04:59:33.123Z",
+              3.13
+            ],
+            [
+              "2026-07-21T05:02:12.360Z",
+              3.17
+            ],
+            [
+              "2026-07-21T05:34:30.718Z",
+              3.32
+            ],
+            [
+              "2026-07-21T05:34:35.107Z",
+              3.34
+            ],
+            [
+              "2026-07-21T05:34:39.057Z",
+              3.34
+            ],
+            [
+              "2026-07-21T05:34:52.681Z",
+              3.3
             ]
           ]
         },
@@ -6679,7 +6799,7 @@
               1.385
             ],
             [
-              "2026-07-21T02:12:54.608Z",
+              "2026-07-21T05:38:29.806Z",
               1.385
             ]
           ],
@@ -6689,7 +6809,7 @@
               2.9
             ],
             [
-              "2026-07-21T02:12:54.608Z",
+              "2026-07-21T05:38:29.806Z",
               2.9
             ]
           ]
@@ -6807,6 +6927,10 @@
             [
               "2026-07-21T00:54:18.858Z",
               1.392
+            ],
+            [
+              "2026-07-21T05:46:12.750Z",
+              1.382
             ]
           ],
           "p2": [
@@ -6921,6 +7045,10 @@
             [
               "2026-07-21T00:54:18.858Z",
               3.195
+            ],
+            [
+              "2026-07-21T05:46:12.750Z",
+              3.255
             ]
           ]
         },
@@ -6969,6 +7097,10 @@
             [
               "2026-07-20T21:25:10.114Z",
               1.37
+            ],
+            [
+              "2026-07-21T05:38:28.223Z",
+              1.35
             ]
           ],
           "p2": [
@@ -7015,6 +7147,10 @@
             [
               "2026-07-20T21:25:10.114Z",
               3.05
+            ],
+            [
+              "2026-07-21T05:38:28.223Z",
+              3.1
             ]
           ]
         },
@@ -7067,6 +7203,10 @@
             [
               "2026-07-21T00:43:57.437Z",
               1.38
+            ],
+            [
+              "2026-07-21T05:36:34.408Z",
+              1.37
             ]
           ],
           "p2": [
@@ -9225,8 +9365,8 @@
     },
     "weather": {
       "temperature": 19.1,
-      "windSpeed": 16.6,
-      "humidity": 50,
+      "windSpeed": 11.5,
+      "humidity": 54,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -9250,10 +9390,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -9265,7 +9405,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -9274,12 +9414,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -9288,11 +9428,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -9300,12 +9440,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -9316,9 +9456,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -9333,7 +9473,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/359_s-ofner.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -9436,6 +9576,10 @@
             [
               "2026-07-21T02:23:36.289Z",
               1.735
+            ],
+            [
+              "2026-07-21T05:33:28.788Z",
+              1.709
             ]
           ],
           "p2": [
@@ -9542,6 +9686,10 @@
             [
               "2026-07-21T02:23:36.289Z",
               2.21
+            ],
+            [
+              "2026-07-21T05:33:28.788Z",
+              2.25
             ]
           ]
         },
@@ -9556,7 +9704,7 @@
               1.69
             ],
             [
-              "2026-07-21T02:24:45.455Z",
+              "2026-07-21T05:38:31.505Z",
               1.69
             ]
           ],
@@ -9570,7 +9718,7 @@
               2.15
             ],
             [
-              "2026-07-21T02:24:45.455Z",
+              "2026-07-21T05:38:31.505Z",
               2.15
             ]
           ]
@@ -9692,6 +9840,10 @@
             [
               "2026-07-20T20:35:37.444Z",
               1.749
+            ],
+            [
+              "2026-07-21T05:36:44.369Z",
+              1.737
             ]
           ],
           "p2": [
@@ -9810,6 +9962,10 @@
             [
               "2026-07-20T20:35:37.444Z",
               2.178
+            ],
+            [
+              "2026-07-21T05:36:44.369Z",
+              2.197
             ]
           ]
         },
@@ -11946,9 +12102,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 19.5,
-      "windSpeed": 11.4,
-      "humidity": 56,
+      "temperature": 19.3,
+      "windSpeed": 11.7,
+      "humidity": 58,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -11972,10 +12128,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -11987,7 +12143,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -11996,12 +12152,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -12010,11 +12166,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -12022,12 +12178,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -12038,9 +12194,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -12055,7 +12211,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/566_a-shevchenko.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -12145,6 +12301,14 @@
             ],
             [
               "2026-07-21T01:33:59.858Z",
+              1.74
+            ],
+            [
+              "2026-07-21T03:45:41.607Z",
+              1.751
+            ],
+            [
+              "2026-07-21T05:35:03.726Z",
               1.74
             ]
           ],
@@ -12240,6 +12404,14 @@
             [
               "2026-07-21T01:33:59.858Z",
               2.2
+            ],
+            [
+              "2026-07-21T03:45:41.607Z",
+              2.18
+            ],
+            [
+              "2026-07-21T05:35:03.726Z",
+              2.2
             ]
           ]
         },
@@ -12258,7 +12430,7 @@
               1.769
             ],
             [
-              "2026-07-21T02:24:43.757Z",
+              "2026-07-21T05:38:29.804Z",
               1.769
             ]
           ],
@@ -12276,7 +12448,7 @@
               2.0
             ],
             [
-              "2026-07-21T02:24:43.757Z",
+              "2026-07-21T05:38:29.804Z",
               2.0
             ]
           ]
@@ -12402,6 +12574,22 @@
             [
               "2026-07-21T01:39:25.851Z",
               1.768
+            ],
+            [
+              "2026-07-21T02:25:11.350Z",
+              1.769
+            ],
+            [
+              "2026-07-21T03:56:01.335Z",
+              1.777
+            ],
+            [
+              "2026-07-21T04:58:59.061Z",
+              1.769
+            ],
+            [
+              "2026-07-21T05:07:59.116Z",
+              1.768
             ]
           ],
           "p2": [
@@ -12523,6 +12711,22 @@
             ],
             [
               "2026-07-21T01:39:25.851Z",
+              2.149
+            ],
+            [
+              "2026-07-21T02:25:11.350Z",
+              2.147
+            ],
+            [
+              "2026-07-21T03:56:01.335Z",
+              2.135
+            ],
+            [
+              "2026-07-21T04:58:59.061Z",
+              2.147
+            ],
+            [
+              "2026-07-21T05:07:59.116Z",
               2.149
             ]
           ]
@@ -13078,7 +13282,7 @@
       },
       "p2": {
         "price": 1.44,
-        "bookmaker": "Pncl"
+        "bookmaker": "WilliamHill"
       }
     },
     "tournamentRound": "ATP Estoril - 1/16-finals",
@@ -14576,8 +14780,8 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 23.9,
-      "windSpeed": 13.5,
+      "temperature": 23.8,
+      "windSpeed": 13.4,
       "humidity": 68,
       "source": "Open-Meteo",
       "historical": false,
@@ -14600,12 +14804,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -14614,11 +14818,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -14627,11 +14831,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -14640,11 +14844,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -14656,8 +14860,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -14670,7 +14874,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -14685,7 +14889,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9596_r-a-burruchaga.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -14792,6 +14996,26 @@
             [
               "2026-07-21T01:44:47.593Z",
               2.96
+            ],
+            [
+              "2026-07-21T04:40:14.281Z",
+              2.98
+            ],
+            [
+              "2026-07-21T05:29:57.818Z",
+              3.09
+            ],
+            [
+              "2026-07-21T05:29:58.261Z",
+              3.11
+            ],
+            [
+              "2026-07-21T05:30:02.218Z",
+              3.12
+            ],
+            [
+              "2026-07-21T05:30:18.936Z",
+              3.09
             ]
           ],
           "p2": [
@@ -14898,6 +15122,26 @@
             [
               "2026-07-21T01:44:47.593Z",
               1.436
+            ],
+            [
+              "2026-07-21T04:40:14.281Z",
+              1.442
+            ],
+            [
+              "2026-07-21T05:29:57.818Z",
+              1.416
+            ],
+            [
+              "2026-07-21T05:29:58.261Z",
+              1.413
+            ],
+            [
+              "2026-07-21T05:30:02.218Z",
+              1.409
+            ],
+            [
+              "2026-07-21T05:30:18.936Z",
+              1.416
             ]
           ]
         },
@@ -14916,7 +15160,7 @@
               2.75
             ],
             [
-              "2026-07-21T02:18:02.463Z",
+              "2026-07-21T05:44:26.392Z",
               2.75
             ]
           ],
@@ -14934,7 +15178,7 @@
               1.417
             ],
             [
-              "2026-07-21T02:18:02.463Z",
+              "2026-07-21T05:44:26.392Z",
               1.417
             ]
           ]
@@ -15080,6 +15324,10 @@
             [
               "2026-07-21T00:16:27.062Z",
               2.87
+            ],
+            [
+              "2026-07-21T04:56:27.573Z",
+              3.0
             ]
           ],
           "p2": [
@@ -15090,6 +15338,10 @@
             [
               "2026-07-21T00:16:27.062Z",
               1.42
+            ],
+            [
+              "2026-07-21T04:56:27.573Z",
+              1.4
             ]
           ]
         },
@@ -16642,9 +16894,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 23.6,
-      "windSpeed": 13,
-      "humidity": 69,
+      "temperature": 23.4,
+      "windSpeed": 13.3,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -16666,12 +16918,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -16680,11 +16932,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -16693,11 +16945,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -16706,11 +16958,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -16722,8 +16974,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -16736,7 +16988,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -16751,7 +17003,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -16854,6 +17106,22 @@
             [
               "2026-07-21T01:37:47.714Z",
               2.18
+            ],
+            [
+              "2026-07-21T04:11:57.002Z",
+              2.2
+            ],
+            [
+              "2026-07-21T05:00:29.966Z",
+              2.22
+            ],
+            [
+              "2026-07-21T05:29:27.467Z",
+              2.28
+            ],
+            [
+              "2026-07-21T05:41:50.983Z",
+              2.33
             ]
           ],
           "p2": [
@@ -16964,6 +17232,22 @@
             [
               "2026-07-21T01:37:47.714Z",
               1.751
+            ],
+            [
+              "2026-07-21T04:11:57.002Z",
+              1.74
+            ],
+            [
+              "2026-07-21T05:00:29.966Z",
+              1.729
+            ],
+            [
+              "2026-07-21T05:29:27.467Z",
+              1.694
+            ],
+            [
+              "2026-07-21T05:41:50.983Z",
+              1.666
             ]
           ]
         },
@@ -16974,7 +17258,7 @@
               2.05
             ],
             [
-              "2026-07-21T02:18:00.739Z",
+              "2026-07-21T05:44:26.394Z",
               2.05
             ]
           ],
@@ -16984,7 +17268,7 @@
               1.741
             ],
             [
-              "2026-07-21T02:18:00.739Z",
+              "2026-07-21T05:44:26.394Z",
               1.741
             ]
           ]
@@ -17046,6 +17330,10 @@
             [
               "2026-07-21T00:30:56.938Z",
               2.11
+            ],
+            [
+              "2026-07-21T05:40:43.232Z",
+              2.112
             ]
           ],
           "p2": [
@@ -17104,6 +17392,10 @@
             [
               "2026-07-21T00:30:56.938Z",
               1.72
+            ],
+            [
+              "2026-07-21T05:40:43.232Z",
+              1.73
             ]
           ]
         },
@@ -17136,6 +17428,14 @@
             [
               "2026-07-20T07:15:19.261Z",
               2.09
+            ],
+            [
+              "2026-07-21T05:38:37.255Z",
+              2.17
+            ],
+            [
+              "2026-07-21T05:43:52.266Z",
+              2.2
             ]
           ],
           "p2": [
@@ -17166,6 +17466,14 @@
             [
               "2026-07-20T07:15:19.261Z",
               1.72
+            ],
+            [
+              "2026-07-21T05:38:37.255Z",
+              1.67
+            ],
+            [
+              "2026-07-21T05:43:52.266Z",
+              1.65
             ]
           ]
         },
@@ -17198,6 +17506,14 @@
             [
               "2026-07-20T22:22:17.116Z",
               2.15
+            ],
+            [
+              "2026-07-21T05:37:59.838Z",
+              2.22
+            ],
+            [
+              "2026-07-21T05:44:01.799Z",
+              2.37
             ]
           ],
           "p2": [
@@ -17224,6 +17540,14 @@
             [
               "2026-07-20T22:22:17.116Z",
               1.7
+            ],
+            [
+              "2026-07-21T05:37:59.838Z",
+              1.67
+            ],
+            [
+              "2026-07-21T05:44:01.799Z",
+              1.6
             ]
           ]
         },
@@ -18700,9 +19024,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 23.7,
-      "windSpeed": 13,
-      "humidity": 68,
+      "temperature": 23.6,
+      "windSpeed": 13.7,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -18724,12 +19048,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -18738,11 +19062,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -18751,11 +19075,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -18764,11 +19088,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -18780,8 +19104,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -18794,7 +19118,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -18809,7 +19133,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/434_p-carreno-busta.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -18932,6 +19256,14 @@
             [
               "2026-07-21T01:36:57.520Z",
               3.04
+            ],
+            [
+              "2026-07-21T05:32:05.286Z",
+              3.18
+            ],
+            [
+              "2026-07-21T05:32:10.566Z",
+              3.18
             ]
           ],
           "p2": [
@@ -19054,6 +19386,14 @@
             [
               "2026-07-21T01:36:57.520Z",
               1.429
+            ],
+            [
+              "2026-07-21T05:32:05.286Z",
+              1.398
+            ],
+            [
+              "2026-07-21T05:32:10.566Z",
+              1.4
             ]
           ]
         },
@@ -19064,7 +19404,7 @@
               2.75
             ],
             [
-              "2026-07-21T02:19:17.122Z",
+              "2026-07-21T05:45:38.513Z",
               2.75
             ]
           ],
@@ -19074,7 +19414,7 @@
               1.417
             ],
             [
-              "2026-07-21T02:19:17.122Z",
+              "2026-07-21T05:45:38.513Z",
               1.417
             ]
           ]
@@ -19222,6 +19562,10 @@
             [
               "2026-07-21T00:59:44.829Z",
               3.0
+            ],
+            [
+              "2026-07-21T05:19:14.249Z",
+              3.0
             ]
           ],
           "p2": [
@@ -19263,6 +19607,10 @@
             ],
             [
               "2026-07-21T00:59:44.829Z",
+              1.37
+            ],
+            [
+              "2026-07-21T05:19:14.249Z",
               1.37
             ]
           ]
@@ -19318,6 +19666,10 @@
             [
               "2026-07-21T00:57:21.638Z",
               1.38
+            ],
+            [
+              "2026-07-21T05:37:59.418Z",
+              1.37
             ]
           ]
         },
@@ -19394,6 +19746,10 @@
             [
               "2026-07-21T02:06:36.581Z",
               3.0
+            ],
+            [
+              "2026-07-21T03:12:55.548Z",
+              3.2
             ]
           ],
           "p2": [
@@ -19468,6 +19824,10 @@
             [
               "2026-07-21T02:06:36.581Z",
               1.4
+            ],
+            [
+              "2026-07-21T03:12:55.548Z",
+              1.36
             ]
           ]
         }
@@ -21219,9 +21579,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.2,
-      "windSpeed": 13.3,
-      "humidity": 66,
+      "temperature": 24,
+      "windSpeed": 13.7,
+      "humidity": 67,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -21243,12 +21603,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -21257,11 +21617,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -21270,11 +21630,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -21283,11 +21643,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -21299,8 +21659,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -21313,7 +21673,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -21328,7 +21688,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1079_d-dzumhur.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -21407,6 +21767,26 @@
             [
               "2026-07-21T01:37:11.467Z",
               2.02
+            ],
+            [
+              "2026-07-21T03:20:41.124Z",
+              2.0
+            ],
+            [
+              "2026-07-21T03:22:05.167Z",
+              1.99
+            ],
+            [
+              "2026-07-21T05:19:12.976Z",
+              1.97
+            ],
+            [
+              "2026-07-21T05:31:30.937Z",
+              1.97
+            ],
+            [
+              "2026-07-21T05:31:34.468Z",
+              1.961
             ]
           ],
           "p2": [
@@ -21489,6 +21869,26 @@
             [
               "2026-07-21T01:37:11.467Z",
               1.877
+            ],
+            [
+              "2026-07-21T03:20:41.124Z",
+              1.892
+            ],
+            [
+              "2026-07-21T03:22:05.167Z",
+              1.9
+            ],
+            [
+              "2026-07-21T05:19:12.976Z",
+              1.909
+            ],
+            [
+              "2026-07-21T05:31:30.937Z",
+              1.917
+            ],
+            [
+              "2026-07-21T05:31:34.468Z",
+              1.925
             ]
           ]
         },
@@ -21507,7 +21907,7 @@
               1.952
             ],
             [
-              "2026-07-21T02:18:02.461Z",
+              "2026-07-21T05:44:28.077Z",
               1.952
             ]
           ],
@@ -21525,7 +21925,7 @@
               1.8
             ],
             [
-              "2026-07-21T02:18:02.461Z",
+              "2026-07-21T05:44:28.077Z",
               1.8
             ]
           ]
@@ -21647,6 +22047,14 @@
             [
               "2026-07-20T19:01:02.377Z",
               1.94
+            ],
+            [
+              "2026-07-21T04:34:17.079Z",
+              1.95
+            ],
+            [
+              "2026-07-21T05:39:06.068Z",
+              1.93
             ]
           ],
           "p2": [
@@ -21765,6 +22173,14 @@
             [
               "2026-07-20T19:01:02.377Z",
               1.86
+            ],
+            [
+              "2026-07-21T04:34:17.079Z",
+              1.85
+            ],
+            [
+              "2026-07-21T05:39:06.068Z",
+              1.87
             ]
           ]
         },
@@ -21805,6 +22221,18 @@
             [
               "2026-07-20T13:10:51.355Z",
               1.97
+            ],
+            [
+              "2026-07-21T04:19:20.656Z",
+              2.02
+            ],
+            [
+              "2026-07-21T04:24:43.577Z",
+              1.99
+            ],
+            [
+              "2026-07-21T05:37:26.045Z",
+              1.96
             ]
           ],
           "p2": [
@@ -21843,6 +22271,18 @@
             [
               "2026-07-20T13:10:51.355Z",
               1.81
+            ],
+            [
+              "2026-07-21T04:19:20.656Z",
+              1.77
+            ],
+            [
+              "2026-07-21T04:24:43.577Z",
+              1.8
+            ],
+            [
+              "2026-07-21T05:37:26.045Z",
+              1.82
             ]
           ]
         },
@@ -23569,9 +24009,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 23.7,
-      "windSpeed": 13,
-      "humidity": 68,
+      "temperature": 23.6,
+      "windSpeed": 13.7,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -23593,12 +24033,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -23607,11 +24047,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -23620,11 +24060,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -23633,11 +24073,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -23649,8 +24089,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -23663,7 +24103,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -23678,7 +24118,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/412_j-de-jong.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -23721,6 +24161,10 @@
             [
               "2026-07-21T01:36:08.857Z",
               2.14
+            ],
+            [
+              "2026-07-21T05:32:25.536Z",
+              2.2
             ]
           ],
           "p2": [
@@ -23763,6 +24207,10 @@
             [
               "2026-07-21T01:36:08.857Z",
               1.781
+            ],
+            [
+              "2026-07-21T05:32:25.536Z",
+              1.74
             ]
           ]
         },
@@ -23773,7 +24221,7 @@
               2.05
             ],
             [
-              "2026-07-21T02:18:02.459Z",
+              "2026-07-21T05:44:28.076Z",
               2.05
             ]
           ],
@@ -23783,7 +24231,7 @@
               1.741
             ],
             [
-              "2026-07-21T02:18:02.459Z",
+              "2026-07-21T05:44:28.076Z",
               1.741
             ]
           ]
@@ -25357,9 +25805,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.2,
-      "windSpeed": 13.3,
-      "humidity": 66,
+      "temperature": 24,
+      "windSpeed": 13.7,
+      "humidity": 67,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -25381,12 +25829,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -25395,11 +25843,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -25408,11 +25856,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -25421,11 +25869,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -25437,8 +25885,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -25451,7 +25899,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -25466,7 +25914,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/4053_o-luz.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -25625,6 +26073,14 @@
             [
               "2026-07-21T02:06:02.057Z",
               1.038
+            ],
+            [
+              "2026-07-21T03:41:24.033Z",
+              1.039
+            ],
+            [
+              "2026-07-21T05:31:12.019Z",
+              1.039
             ]
           ],
           "p2": [
@@ -25831,6 +26287,18 @@
             [
               "2026-07-21T02:06:02.057Z",
               14.14
+            ],
+            [
+              "2026-07-21T03:41:24.033Z",
+              14.57
+            ],
+            [
+              "2026-07-21T05:31:05.871Z",
+              14.57
+            ],
+            [
+              "2026-07-21T05:31:12.019Z",
+              14.64
             ]
           ]
         },
@@ -25865,7 +26333,7 @@
               1.029
             ],
             [
-              "2026-07-21T02:19:12.116Z",
+              "2026-07-21T05:45:33.451Z",
               1.029
             ]
           ],
@@ -25899,7 +26367,7 @@
               11.0
             ],
             [
-              "2026-07-21T02:19:12.116Z",
+              "2026-07-21T05:45:33.451Z",
               11.0
             ]
           ]
@@ -26077,6 +26545,10 @@
             [
               "2026-07-21T02:00:06.336Z",
               1.033
+            ],
+            [
+              "2026-07-21T05:01:05.175Z",
+              1.032
             ]
           ],
           "p2": [
@@ -26199,6 +26671,10 @@
             [
               "2026-07-21T02:00:06.336Z",
               11.5
+            ],
+            [
+              "2026-07-21T05:01:05.175Z",
+              11.7
             ]
           ]
         },
@@ -27717,9 +28193,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 23.7,
-      "windSpeed": 13,
-      "humidity": 68,
+      "temperature": 23.6,
+      "windSpeed": 13.7,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -27741,12 +28217,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -27755,11 +28231,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -27768,11 +28244,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -27781,11 +28257,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -27797,8 +28273,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -27811,7 +28287,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -27826,7 +28302,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/4077_t-pereira.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -27873,6 +28349,26 @@
             [
               "2026-07-21T01:40:40.207Z",
               1.334
+            ],
+            [
+              "2026-07-21T04:41:10.554Z",
+              1.338
+            ],
+            [
+              "2026-07-21T04:41:10.990Z",
+              1.338
+            ],
+            [
+              "2026-07-21T04:41:48.895Z",
+              1.326
+            ],
+            [
+              "2026-07-21T05:31:47.679Z",
+              1.321
+            ],
+            [
+              "2026-07-21T05:31:52.088Z",
+              1.319
             ]
           ],
           "p2": [
@@ -27919,6 +28415,26 @@
             [
               "2026-07-21T01:40:40.207Z",
               3.51
+            ],
+            [
+              "2026-07-21T04:41:10.554Z",
+              3.54
+            ],
+            [
+              "2026-07-21T04:41:10.990Z",
+              3.54
+            ],
+            [
+              "2026-07-21T04:41:48.895Z",
+              3.63
+            ],
+            [
+              "2026-07-21T05:31:47.679Z",
+              3.67
+            ],
+            [
+              "2026-07-21T05:31:52.088Z",
+              3.69
             ]
           ]
         },
@@ -27929,7 +28445,7 @@
               1.333
             ],
             [
-              "2026-07-21T02:19:10.407Z",
+              "2026-07-21T05:45:33.449Z",
               1.333
             ]
           ],
@@ -27939,7 +28455,7 @@
               3.1
             ],
             [
-              "2026-07-21T02:19:10.407Z",
+              "2026-07-21T05:45:33.449Z",
               3.1
             ]
           ]
@@ -27993,6 +28509,10 @@
             [
               "2026-07-21T01:41:36.115Z",
               1.31
+            ],
+            [
+              "2026-07-21T02:36:27.123Z",
+              1.32
             ]
           ],
           "p2": [
@@ -28043,6 +28563,10 @@
             [
               "2026-07-21T01:41:36.115Z",
               3.46
+            ],
+            [
+              "2026-07-21T02:36:27.123Z",
+              3.405
             ]
           ]
         },
@@ -28133,6 +28657,10 @@
             [
               "2026-07-20T13:44:57.997Z",
               1.3
+            ],
+            [
+              "2026-07-21T05:38:34.237Z",
+              1.29
             ]
           ],
           "p2": [
@@ -28159,6 +28687,10 @@
             [
               "2026-07-20T13:44:57.997Z",
               3.6
+            ],
+            [
+              "2026-07-21T05:38:34.237Z",
+              3.65
             ]
           ]
         },
@@ -29827,9 +30359,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.2,
-      "windSpeed": 13.3,
-      "humidity": 66,
+      "temperature": 24,
+      "windSpeed": 13.7,
+      "humidity": 67,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -29851,12 +30383,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -29865,11 +30397,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -29878,11 +30410,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -29891,11 +30423,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -29907,8 +30439,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -29921,7 +30453,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -29936,7 +30468,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2406_t-daniel.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -32425,8 +32957,8 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 20.2,
-      "windSpeed": 13.3,
+      "temperature": 19.9,
+      "windSpeed": 13.7,
       "humidity": 54,
       "source": "Open-Meteo",
       "historical": false,
@@ -32451,10 +32983,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -32466,7 +32998,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -32475,12 +33007,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -32489,11 +33021,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -32501,12 +33033,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -32517,9 +33049,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -32534,7 +33066,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -32581,6 +33113,26 @@
             [
               "2026-07-21T01:34:23.846Z",
               1.684
+            ],
+            [
+              "2026-07-21T03:45:17.331Z",
+              1.689
+            ],
+            [
+              "2026-07-21T04:07:45.094Z",
+              1.684
+            ],
+            [
+              "2026-07-21T04:27:58.462Z",
+              1.675
+            ],
+            [
+              "2026-07-21T04:35:44.668Z",
+              1.666
+            ],
+            [
+              "2026-07-21T05:33:38.878Z",
+              1.653
             ]
           ],
           "p2": [
@@ -32621,8 +33173,24 @@
               2.28
             ],
             [
-              "2026-07-21T01:34:23.846Z",
+              "2026-07-21T03:45:17.331Z",
               2.28
+            ],
+            [
+              "2026-07-21T04:07:45.094Z",
+              2.3
+            ],
+            [
+              "2026-07-21T04:27:58.462Z",
+              2.31
+            ],
+            [
+              "2026-07-21T04:35:44.668Z",
+              2.33
+            ],
+            [
+              "2026-07-21T05:33:38.878Z",
+              2.35
             ]
           ]
         },
@@ -32633,7 +33201,7 @@
               1.625
             ],
             [
-              "2026-07-21T02:17:58.957Z",
+              "2026-07-21T05:44:22.897Z",
               1.625
             ]
           ],
@@ -32643,7 +33211,7 @@
               2.25
             ],
             [
-              "2026-07-21T02:17:58.957Z",
+              "2026-07-21T05:44:22.897Z",
               2.25
             ]
           ]
@@ -32715,6 +33283,14 @@
             [
               "2026-07-20T21:19:37.951Z",
               1.63
+            ],
+            [
+              "2026-07-21T02:47:48.449Z",
+              1.65
+            ],
+            [
+              "2026-07-21T05:01:18.437Z",
+              1.65
             ]
           ],
           "p2": [
@@ -32729,6 +33305,14 @@
             [
               "2026-07-20T21:19:37.951Z",
               2.23
+            ],
+            [
+              "2026-07-21T02:47:48.449Z",
+              2.19
+            ],
+            [
+              "2026-07-21T05:01:18.437Z",
+              2.19
             ]
           ]
         },
@@ -32741,6 +33325,14 @@
             [
               "2026-07-20T21:23:02.859Z",
               1.65
+            ],
+            [
+              "2026-07-21T02:44:20.123Z",
+              1.67
+            ],
+            [
+              "2026-07-21T05:50:07.780Z",
+              1.62
             ]
           ],
           "p2": [
@@ -32751,6 +33343,14 @@
             [
               "2026-07-20T21:23:02.859Z",
               2.25
+            ],
+            [
+              "2026-07-21T02:44:20.123Z",
+              2.22
+            ],
+            [
+              "2026-07-21T05:50:07.780Z",
+              2.32
             ]
           ]
         },
@@ -32779,6 +33379,10 @@
             [
               "2026-07-21T00:07:39.559Z",
               1.61
+            ],
+            [
+              "2026-07-21T04:20:08.298Z",
+              1.66
             ]
           ],
           "p2": [
@@ -32805,6 +33409,10 @@
             [
               "2026-07-21T00:07:39.559Z",
               2.3
+            ],
+            [
+              "2026-07-21T04:20:08.298Z",
+              2.2
             ]
           ]
         }
@@ -32841,7 +33449,7 @@
       },
       "p2": {
         "price": 2.5,
-        "bookmaker": "1xBet"
+        "bookmaker": "bet365"
       }
     },
     "tournamentRound": "ATP Kitzbuhel - 1/16-finals",
@@ -33971,8 +34579,8 @@
     },
     "weather": {
       "temperature": 19.1,
-      "windSpeed": 16.6,
-      "humidity": 50,
+      "windSpeed": 11.5,
+      "humidity": 54,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -33996,10 +34604,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -34011,7 +34619,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -34020,12 +34628,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -34034,11 +34642,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -34046,12 +34654,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -34062,9 +34670,9 @@
           "code": 80,
           "hi": 23,
           "lo": 14,
-          "rain": 64,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -34079,7 +34687,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1297_k-feldbausch.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -34194,6 +34802,22 @@
             [
               "2026-07-21T01:44:47.593Z",
               1.574
+            ],
+            [
+              "2026-07-21T04:45:15.297Z",
+              1.581
+            ],
+            [
+              "2026-07-21T04:45:15.732Z",
+              1.581
+            ],
+            [
+              "2026-07-21T05:23:54.772Z",
+              1.574
+            ],
+            [
+              "2026-07-21T05:32:56.759Z",
+              1.561
             ]
           ],
           "p2": [
@@ -34312,6 +34936,22 @@
             [
               "2026-07-21T01:44:47.593Z",
               2.51
+            ],
+            [
+              "2026-07-21T04:45:15.297Z",
+              2.52
+            ],
+            [
+              "2026-07-21T04:45:15.732Z",
+              2.52
+            ],
+            [
+              "2026-07-21T05:23:54.772Z",
+              2.54
+            ],
+            [
+              "2026-07-21T05:32:56.759Z",
+              2.57
             ]
           ]
         },
@@ -34322,7 +34962,7 @@
               1.5
             ],
             [
-              "2026-07-21T02:19:29.050Z",
+              "2026-07-21T05:45:52.617Z",
               1.5
             ]
           ],
@@ -34332,7 +34972,7 @@
               2.5
             ],
             [
-              "2026-07-21T02:19:29.050Z",
+              "2026-07-21T05:45:52.617Z",
               2.5
             ]
           ]
@@ -34811,18 +35451,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.44,
-      "p2": 2.94,
-      "bookmaker": "Pncl"
+      "p1": 1.39,
+      "p2": 2.95,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.44,
-        "bookmaker": "Pncl"
+        "price": 1.39,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.94,
-        "bookmaker": "Pncl"
+        "price": 2.95,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Estoril - 1/16-finals",
@@ -36056,9 +36696,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.2,
-      "windSpeed": 13.3,
-      "humidity": 66,
+      "temperature": 24,
+      "windSpeed": 13.7,
+      "humidity": 67,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -36080,12 +36720,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": true,
           "available": true
         },
@@ -36094,11 +36734,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -36107,11 +36747,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -36120,11 +36760,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -36136,8 +36776,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -36150,7 +36790,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -36165,7 +36805,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -36204,6 +36844,22 @@
             [
               "2026-07-21T02:16:09.701Z",
               1.414
+            ],
+            [
+              "2026-07-21T02:40:52.431Z",
+              1.418
+            ],
+            [
+              "2026-07-21T02:46:16.988Z",
+              1.418
+            ],
+            [
+              "2026-07-21T05:05:36.735Z",
+              1.413
+            ],
+            [
+              "2026-07-21T05:30:44.362Z",
+              1.392
             ]
           ],
           "p2": [
@@ -36242,6 +36898,22 @@
             [
               "2026-07-21T02:16:09.701Z",
               3.06
+            ],
+            [
+              "2026-07-21T02:40:52.431Z",
+              3.04
+            ],
+            [
+              "2026-07-21T02:46:16.988Z",
+              3.04
+            ],
+            [
+              "2026-07-21T05:05:36.735Z",
+              3.06
+            ],
+            [
+              "2026-07-21T05:30:44.362Z",
+              3.17
             ]
           ]
         },
@@ -36278,6 +36950,10 @@
             [
               "2026-07-21T00:53:54.489Z",
               1.41
+            ],
+            [
+              "2026-07-21T03:10:27.055Z",
+              1.4
             ]
           ],
           "p2": [
@@ -36312,6 +36988,10 @@
             [
               "2026-07-21T00:53:54.489Z",
               2.921
+            ],
+            [
+              "2026-07-21T03:10:27.055Z",
+              2.96
             ]
           ]
         },
@@ -36328,6 +37008,10 @@
             [
               "2026-07-21T01:02:10.068Z",
               1.39
+            ],
+            [
+              "2026-07-21T02:31:49.441Z",
+              1.37
             ]
           ],
           "p2": [
@@ -36342,6 +37026,10 @@
             [
               "2026-07-21T01:02:10.068Z",
               2.9
+            ],
+            [
+              "2026-07-21T02:31:49.441Z",
+              3.05
             ]
           ]
         },
@@ -36374,6 +37062,44 @@
               2.9
             ]
           ]
+        },
+        "bet365": {
+          "p1": [
+            [
+              "2026-07-21T04:02:01.797Z",
+              1.4
+            ],
+            [
+              "2026-07-21T04:54:10.908Z",
+              1.36
+            ],
+            [
+              "2026-07-21T05:16:01.863Z",
+              1.4
+            ],
+            [
+              "2026-07-21T05:24:11.177Z",
+              1.36
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:02:01.797Z",
+              3.0
+            ],
+            [
+              "2026-07-21T04:54:10.908Z",
+              3.2
+            ],
+            [
+              "2026-07-21T05:16:01.863Z",
+              3.0
+            ],
+            [
+              "2026-07-21T05:24:11.177Z",
+              3.2
+            ]
+          ]
         }
       }
     },
@@ -36397,9 +37123,9 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.09,
-      "p2": 7.1,
-      "bookmaker": "Superbet"
+      "p1": 1.08,
+      "p2": 5.54,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
@@ -37945,9 +38671,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.4,
-      "windSpeed": 10.5,
-      "humidity": 63,
+      "temperature": 24,
+      "windSpeed": 11.9,
+      "humidity": 64,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -37969,12 +38695,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -37983,11 +38709,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": true,
           "available": true
         },
@@ -37996,11 +38722,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -38009,11 +38735,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -38025,8 +38751,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -38039,7 +38765,7 @@
           "lo": 20,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -38054,8 +38780,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/14435_t-torres.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-07-21T04:00:06.430Z",
+              1.1
+            ],
+            [
+              "2026-07-21T05:50:32.233Z",
+              1.1
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:00:06.430Z",
+              6.5
+            ],
+            [
+              "2026-07-21T05:50:32.233Z",
+              6.5
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -38194,18 +38942,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.44,
-      "p2": 2.77,
-      "bookmaker": "Superbet"
+      "p1": 1.43,
+      "p2": 2.63,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.44,
-        "bookmaker": "Superbet"
+        "price": 1.43,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.77,
-        "bookmaker": "Superbet"
+        "price": 2.63,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": "ATP Kitzbuhel - 1/8-finals",
@@ -40041,9 +40789,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 19.4,
-      "windSpeed": 7.3,
-      "humidity": 47,
+      "temperature": 19.2,
+      "windSpeed": 7.9,
+      "humidity": 48,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -40067,10 +40815,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -40082,7 +40830,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": true,
           "available": true
@@ -40091,12 +40839,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -40105,11 +40853,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -40117,12 +40865,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -40131,11 +40879,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -40150,8 +40898,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/416_j-rodionov.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-07-21T04:01:40.566Z",
+              1.455
+            ],
+            [
+              "2026-07-21T05:52:05.251Z",
+              1.455
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:01:40.566Z",
+              2.65
+            ],
+            [
+              "2026-07-21T05:52:05.251Z",
+              2.65
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -40277,6 +41047,10 @@
             [
               "2026-07-20T22:44:17.541Z",
               1.45
+            ],
+            [
+              "2026-07-21T05:48:14.794Z",
+              1.44
             ]
           ],
           "p2": [
@@ -40287,6 +41061,10 @@
             [
               "2026-07-20T22:44:17.541Z",
               2.77
+            ],
+            [
+              "2026-07-21T05:48:14.794Z",
+              2.85
             ]
           ]
         },
@@ -40326,18 +41104,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.52,
-      "p2": 2.52,
-      "bookmaker": "Superbet"
+      "p1": 1.48,
+      "p2": 2.51,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.52,
-        "bookmaker": "Superbet"
+        "price": 1.48,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.52,
-        "bookmaker": "Superbet"
+        "price": 2.51,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": "ATP Kitzbuhel - 1/8-finals",
@@ -42194,9 +42972,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 19.4,
-      "windSpeed": 7.3,
-      "humidity": 47,
+      "temperature": 19.2,
+      "windSpeed": 7.9,
+      "humidity": 48,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -42220,10 +42998,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -42235,7 +43013,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": true,
           "available": true
@@ -42244,12 +43022,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -42258,11 +43036,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -42270,12 +43048,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -42284,11 +43062,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -42303,8 +43081,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2002_f-diaz-acosta.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-07-21T04:01:32.063Z",
+              1.5
+            ],
+            [
+              "2026-07-21T05:51:58.526Z",
+              1.5
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:01:32.063Z",
+              2.5
+            ],
+            [
+              "2026-07-21T05:51:58.526Z",
+              2.5
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -42354,12 +43154,20 @@
             [
               "2026-07-20T19:17:55.166Z",
               1.55
+            ],
+            [
+              "2026-07-21T05:48:15.130Z",
+              1.52
             ]
           ],
           "p2": [
             [
               "2026-07-20T19:17:55.166Z",
               2.47
+            ],
+            [
+              "2026-07-21T05:48:15.130Z",
+              2.55
             ]
           ]
         },
@@ -42399,21 +43207,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.38,
-      "p2": 1.26,
-      "bookmaker": "Sbo"
+      "p1": 3.6,
+      "p2": 1.28,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.38,
-        "bookmaker": "Sbo"
+        "price": 3.6,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.26,
-        "bookmaker": "Sbo"
+        "price": 1.28,
+        "bookmaker": "Superbet"
       }
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Estoril - 1/8-finals",
     "p1Key": 1775,
     "p2Key": 8781,
     "h2h": {
@@ -44094,9 +44902,9 @@
       "category": "Slow"
     },
     "weather": {
-      "temperature": 24.4,
-      "windSpeed": 10.5,
-      "humidity": 63,
+      "temperature": 24,
+      "windSpeed": 11.9,
+      "humidity": 64,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Jul 20 – 26, 2026",
@@ -44118,12 +44926,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -44132,11 +44940,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": true,
           "available": true
         },
@@ -44145,11 +44953,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -44158,11 +44966,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -44174,8 +44982,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -44184,11 +44992,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 2,
-          "hi": 26,
-          "lo": 20,
+          "hi": 25,
+          "lo": 19,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -44203,8 +45011,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-07-21T04:07:42.871Z",
+              3.4
+            ],
+            [
+              "2026-07-21T05:46:00.921Z",
+              3.4
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:07:42.871Z",
+              1.294
+            ],
+            [
+              "2026-07-21T05:46:00.921Z",
+              1.294
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -44278,8 +45108,28 @@
               1.28
             ]
           ]
+        },
+        "bet365": {
+          "p1": [
+            [
+              "2026-07-21T04:02:01.671Z",
+              3.75
+            ]
+          ],
+          "p2": [
+            [
+              "2026-07-21T04:02:01.671Z",
+              1.28
+            ]
+          ]
         }
       }
+    },
+    "openingOdds": {
+      "p1": 3.605,
+      "p2": 1.29,
+      "bookmaker": "1xBet",
+      "at": "2026-07-21T00:20:49.848Z"
     }
   },
   {
@@ -52200,10 +53050,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -52215,7 +53065,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -52224,12 +53074,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -52238,11 +53088,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -52250,12 +53100,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -52264,11 +53114,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -55517,10 +56367,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -55532,7 +56382,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -55541,12 +56391,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -55555,11 +56405,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -55567,12 +56417,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -55581,11 +56431,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -58520,10 +59370,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -58535,7 +59385,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -58544,12 +59394,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -58558,11 +59408,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -58570,12 +59420,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -58584,11 +59434,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -61221,12 +62071,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -61235,11 +62085,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -61248,11 +62098,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -61261,11 +62111,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -61277,8 +62127,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -61287,11 +62137,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 2,
-          "hi": 26,
-          "lo": 20,
+          "hi": 25,
+          "lo": 19,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -64297,12 +65147,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -64311,11 +65161,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -64324,11 +65174,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -64337,11 +65187,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -64353,8 +65203,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -64363,11 +65213,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 2,
-          "hi": 26,
-          "lo": 20,
+          "hi": 25,
+          "lo": 19,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -67581,12 +68431,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -67595,11 +68445,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -67608,11 +68458,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -67621,11 +68471,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -67637,8 +68487,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -67647,11 +68497,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 2,
-          "hi": 26,
-          "lo": 20,
+          "hi": 25,
+          "lo": 19,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -70311,12 +71161,12 @@
           "date": "2026-07-21",
           "dow": "Tue",
           "label": "Jul 21",
-          "code": 2,
+          "code": 45,
           "hi": 24,
           "lo": 19,
           "rain": 0,
           "wind": 14,
-          "humidity": 81,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -70325,11 +71175,11 @@
           "dow": "Wed",
           "label": "Jul 22",
           "code": 2,
-          "hi": 25,
+          "hi": 24,
           "lo": 19,
           "rain": 0,
-          "wind": 14,
-          "humidity": 79,
+          "wind": 15,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -70338,11 +71188,11 @@
           "dow": "Thu",
           "label": "Jul 23",
           "code": 2,
-          "hi": 25,
-          "lo": 20,
+          "hi": 24,
+          "lo": 19,
           "rain": 0,
-          "wind": 17,
-          "humidity": 78,
+          "wind": 18,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -70351,11 +71201,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 2,
-          "hi": 24,
+          "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 76,
+          "wind": 20,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -70367,8 +71217,8 @@
           "hi": 23,
           "lo": 19,
           "rain": 0,
-          "wind": 22,
-          "humidity": 77,
+          "wind": 24,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         },
@@ -70377,11 +71227,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 2,
-          "hi": 26,
-          "lo": 20,
+          "hi": 25,
+          "lo": 19,
           "rain": 0,
           "wind": 22,
-          "humidity": 77,
+          "humidity": 75,
           "isMatch": false,
           "available": true
         }
@@ -73720,10 +74570,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -73735,7 +74585,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -73744,12 +74594,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -73758,11 +74608,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -73770,12 +74620,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -73784,11 +74634,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -76502,10 +77352,10 @@
           "label": "Jul 21",
           "code": 80,
           "hi": 20,
-          "lo": 12,
-          "rain": 18,
-          "wind": 17,
-          "humidity": 65,
+          "lo": 13,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -76517,7 +77367,7 @@
           "hi": 21,
           "lo": 10,
           "rain": 5,
-          "wind": 14,
+          "wind": 15,
           "humidity": 61,
           "isMatch": false,
           "available": true
@@ -76526,12 +77376,12 @@
           "date": "2026-07-23",
           "dow": "Thu",
           "label": "Jul 23",
-          "code": 80,
-          "hi": 18,
+          "code": 3,
+          "hi": 19,
           "lo": 12,
-          "rain": 83,
-          "wind": 8,
-          "humidity": 78,
+          "rain": 48,
+          "wind": 12,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -76540,11 +77390,11 @@
           "dow": "Fri",
           "label": "Jul 24",
           "code": 3,
-          "hi": 20,
+          "hi": 21,
           "lo": 11,
-          "rain": 63,
+          "rain": 25,
           "wind": 7,
-          "humidity": 64,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -76552,12 +77402,12 @@
           "date": "2026-07-25",
           "dow": "Sat",
           "label": "Jul 25",
-          "code": 3,
-          "hi": 26,
+          "code": 63,
+          "hi": 28,
           "lo": 11,
-          "rain": 28,
-          "wind": 8,
-          "humidity": 53,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         },
@@ -76566,11 +77416,11 @@
           "dow": "Sun",
           "label": "Jul 26",
           "code": 80,
-          "hi": 23,
-          "lo": 14,
-          "rain": 64,
+          "hi": 20,
+          "lo": 15,
+          "rain": 74,
           "wind": 9,
-          "humidity": 76,
+          "humidity": 88,
           "isMatch": false,
           "available": true
         }
@@ -101299,7 +102149,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/389_c-h-tseng.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-07-21T02:24:09Z",
+      "capturedAt": "2026-07-21T05:47:40Z",
       "books": {
         "Pinnacle": {
           "p1": [
