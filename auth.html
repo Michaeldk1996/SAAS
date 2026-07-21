@@ -337,7 +337,9 @@
         if (!ok) return false;
 
         BSP.signUp({ name: name, email: email, password: password, plan: plan })
-          .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+          // New accounts are always unverified — send them to the holding
+          // screen that prompts them to click the verification link.
+          .then(function(){ location.href = 'verify.html'; })
           .catch(function(err){ document.getElementById('formErr').textContent = err.message; });
       } else {
         if (!password){
@@ -348,7 +350,11 @@
         if (!ok) return false;
 
         BSP.signIn(email, password)
-          .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+          .then(function(u){
+            // Unverified users can sign in but must land on the holding screen
+            // until they click the verification link.
+            location.href = (u && u.emailVerified) ? 'bsp-consult-dashboard.html' : 'verify.html';
+          })
           .catch(function(err){
             document.getElementById('formErr').textContent = err.message;
             if (/password/i.test(err.message)) document.getElementById('password').classList.add('err');

@@ -133,6 +133,7 @@
       uid: fbUser.uid,
       name: data.fullName || fbUser.displayName || '',
       email: data.email || fbUser.email || '',
+      emailVerified: !!fbUser.emailVerified,
       plan: data.plan || 'free',
       oddsFormat: data.oddsFormat || 'decimal',
       timezone: data.timezone || DEFAULT_TZ,
@@ -236,6 +237,11 @@
         };
         return user.updateProfile({ displayName: name })
           .catch(function () {})
+          // Fire Firebase's built-in verification email immediately after the
+          // account is created. Best-effort: a send failure (e.g. rate limit)
+          // must not block account creation — the holding screen offers a
+          // "Resend" button as the recovery path.
+          .then(function () { return user.sendEmailVerification().catch(function () {}); })
           .then(function () { return _db.collection('users').doc(user.uid).set(profile); })
           .then(function () {
             _cachedUser = publicUser(user, profile);
@@ -281,6 +287,49 @@
       }).catch(function () {
         global.location.replace(redirectTo || 'auth.html');
         return null;
+      });
+    },
+
+    // requireVerified(loginTo, verifyTo) -> Promise<publicUser|null>. Like
+    // requireAuth, but ALSO bounces a signed-in-but-unverified user to the
+    // email holding screen. Used to gate the dashboard so a verification link
+    // must be clicked before the board is reachable.
+    requireVerified: function (loginTo, verifyTo) {
+      return BSP.whenAuthReady().then(function (u) {
+        if (!u) { global.location.replace(loginTo || 'auth.html'); return null; }
+        if (!u.emailVerified) { global.location.replace(verifyTo || 'verify.html'); return null; }
+        return u;
+      }).catch(function () {
+        global.location.replace(loginTo || 'auth.html');
+        return null;
+      });
+    },
+
+    // sendVerificationEmail() -> Promise. Re-sends Firebase's built-in
+    // verification email to the currently signed-in user (the "Resend" button).
+    sendVerificationEmail: function () {
+      return ensureInit().then(function () {
+        var user = _auth.currentUser;
+        if (!user) throw new Error('You are not signed in.');
+        if (user.emailVerified) return true;
+        return user.sendEmailVerification().then(function () { return true; });
+      }).catch(function (err) { throw mapAuthError(err); });
+    },
+
+    // reloadUser() -> Promise<publicUser|null>. Reloads the Firebase user from
+    // the server so a freshly-clicked verification link is reflected in
+    // emailVerified, refreshes the cached public user, and notifies subscribers.
+    reloadUser: function () {
+      return ensureInit().then(function () {
+        var user = _auth.currentUser;
+        if (!user) { _cachedUser = null; notifyAuth(null); return null; }
+        return user.reload().then(function () {
+          return loadProfile(_auth.currentUser);
+        }).then(function (u) {
+          _cachedUser = u;
+          notifyAuth(u);
+          return u;
+        });
       });
     },
 

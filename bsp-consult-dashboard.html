@@ -1489,8 +1489,13 @@
   }
   if (window.BSP && BSP.onAuthChange){
     BSP.onAuthChange(paintAcct);
-    // Protected route: redirect to sign-in if there is no session.
-    BSP.requireAuth('auth.html?mode=signin');
+    // Protected route: redirect to sign-in if there is no session, or to the
+    // email holding screen if the signed-in user hasn't verified their email.
+    if (BSP.requireVerified){
+      BSP.requireVerified('auth.html?mode=signin', 'verify.html');
+    } else {
+      BSP.requireAuth('auth.html?mode=signin');
+    }
   }
 })();
 </script>
