@@ -134,7 +134,7 @@ jobs:
           # The auth pages link to the dashboard by its repo filename, so publish
           # it under that name too, not just as index.html.
           cp bsp-consult-dashboard.html _site/bsp-consult-dashboard.html
-          cp auth.html account.html funnel.html verify.html auth.js _site/
+          cp auth.html account.html funnel.html verify.html auth.js analytics.js _site/
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
           # Tennis Edge Model output (h2h-model engine + pre-baked AI summary),
@@ -190,7 +190,7 @@ jobs:
           # will fetch a single form shard, so if it 404s the tab is empty for
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
-          for f in index.html bsp-consult-dashboard.html auth.html auth.js account.html funnel.html verify.html \
+          for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    odds-performance-index.json odds-index.json; do

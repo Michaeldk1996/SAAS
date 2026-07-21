@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BSP Consult · Tennis Edge — Find the edge the bookmakers miss</title>
+<script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -391,5 +392,16 @@
     </div>
   </div>
 
+<script>
+  // GA4: record clicks on any "Start free trial" CTA (all point at auth.html),
+  // tagged with the plan the button advertises. Delegated so it covers every
+  // CTA on the page without touching each anchor.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="auth.html"]');
+    if (!a || typeof teTrack !== 'function') return;
+    var plan = (a.getAttribute('href').match(/[?&]plan=([^&]+)/) || [])[1] || 'unknown';
+    teTrack('cta_start_trial', { plan: plan });
+  });
+</script>
 </body>
 </html>

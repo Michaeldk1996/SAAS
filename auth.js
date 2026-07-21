@@ -245,6 +245,7 @@
           .then(function () { return _db.collection('users').doc(user.uid).set(profile); })
           .then(function () {
             _cachedUser = publicUser(user, profile);
+            if (typeof global.teTrack === 'function') global.teTrack('sign_up', { method: 'password' });
             return _cachedUser;
           });
       }).catch(function (err) { throw mapAuthError(err); });
@@ -260,6 +261,7 @@
         return loadProfile(cred.user);
       }).then(function (u) {
         _cachedUser = u;
+        if (typeof global.teTrack === 'function') global.teTrack('login', { method: 'password' });
         return u;
       }).catch(function (err) { throw mapAuthError(err); });
     },
