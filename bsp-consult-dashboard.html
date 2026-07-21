@@ -1431,6 +1431,22 @@
   .phbanner.phb-error{ background:rgba(232,96,122,0.14); color:#f2879c; border-bottom-color:rgba(232,96,122,0.32); }
   .phbanner.phb-error .phb-dot{ background:#E8607A; }
 </style>
+<style id="te-gating-css">
+  /* TEN-8 Whop plan gating — locked analysis tabs + upgrade upsell */
+  .asidenav-item.te-locked{ opacity:0.55; }
+  .asidenav-item .te-lockbadge{ margin-left:auto; display:flex; align-items:center; color:#6b7280; }
+  .asidenav-item .te-lockbadge svg{ width:13px; height:13px; }
+  .asidenav-item.te-locked:hover .te-lockbadge{ color:#e8b341; }
+  .aupsell{ display:flex; align-items:center; justify-content:center; min-height:340px; padding:40px 24px; }
+  .te-upsell{ max-width:420px; text-align:center; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:34px 30px; }
+  .te-upsell-lock{ width:46px; height:46px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(62,123,250,0.14); color:#7ba4ff; }
+  .te-upsell-lock svg{ width:22px; height:22px; }
+  .te-upsell-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:#f4f6fa; margin-bottom:10px; }
+  .te-upsell-blurb{ font-family:'Hanken Grotesk',sans-serif; font-size:13.5px; color:#8b93a3; line-height:1.6; margin-bottom:22px; }
+  .te-upsell-btn{ display:inline-block; text-decoration:none; font-family:'Hanken Grotesk',sans-serif; font-weight:700; font-size:13.5px; color:#fff; padding:11px 26px; border-radius:10px; background:linear-gradient(135deg,#3E7BFA,#5b6bff); }
+  .te-upsell-btn:hover{ filter:brightness(1.08); }
+  #acctUpgrade:hover{ filter:brightness(1.08); }
+</style>
 </head>
 <body>
 
@@ -1455,6 +1471,7 @@
     </div>
   </div>
   <div class="account" id="acctBox" style="cursor:pointer;gap:10px;">
+    <a id="acctUpgrade" href="https://whop.com/tennisedge" target="_blank" rel="noopener" style="display:none;text-decoration:none;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,#3E7BFA,#5b6bff);color:#fff;">Upgrade</a>
     <a id="acctMain" href="account.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
       <span class="account-label" id="acctLabel">Account</span>
       <span class="account-avatar" id="acctAvatar">A</span>
@@ -2328,6 +2345,7 @@
         <div class="asection" data-asection="weather" id="aSectionWeather"></div>
         <div class="asection" data-asection="odds" id="aSectionOdds"></div>
         <div class="asection" data-asection="extra" id="aSectionExtra"></div>
+        <div class="aupsell" id="aUpsell" style="display:none;"></div>
       </div>
     </div>
     <div class="aanalysisfooter">
@@ -7514,6 +7532,105 @@ function renderStyleSection(m){
   upgradeStyleVsRows(m, token);
 }
 
+/* ── TEN-8 · Whop plan gating (content by tier) ───────────────────────────
+   Free → matches list only (analysis panel locked)
+   Edge → Key factors · Playing style · Form · H2H
+   Pro  → everything (Match Stats, Point by point, Progression, Overview,
+          Tournament, Weather, Odds, Extra stats)
+   Note: this is a UX gate on a static site — the underlying JSON shards are
+   public, so it guides upgrades rather than enforcing access. True enforcement
+   would need server-side rendering or per-field reads (out of scope per the
+   brief: "don't touch existing security rules"). */
+const TE_WHOP_BASE = 'https://whop.com/tennisedge';
+// Exact per-product Whop checkout URLs live in the Whop dashboard — drop them
+// in here to point the buttons straight at each product's checkout page.
+const TE_CHECKOUT = { edge: TE_WHOP_BASE, pro: TE_WHOP_BASE };
+const TE_TAB_ORDER = ['key','style','form','h2h','matchstats','progression','overview','tournament','weather','odds','extra'];
+const TE_TIER_TABS = {
+  free: [],
+  edge: ['key','style','form','h2h'],
+  pro:  TE_TAB_ORDER.slice(),
+};
+let _tePlan = 'free';
+function teAllowedTabs(){ return TE_TIER_TABS[_tePlan] || TE_TIER_TABS.free; }
+function tePlanAllows(atab){ return teAllowedTabs().indexOf(atab) !== -1; }
+function teMinTierFor(atab){ return TE_TIER_TABS.edge.indexOf(atab) !== -1 ? 'edge' : 'pro'; }
+function teFirstAllowedTab(){ return TE_TAB_ORDER.find(tePlanAllows) || 'key'; }
+const TE_LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+
+function teUpsellCard(atab){
+  const tier = teMinTierFor(atab);
+  const label = tier === 'pro' ? 'Pro' : 'Edge';
+  const url = TE_CHECKOUT[tier] || TE_WHOP_BASE;
+  const blurb = tier === 'pro'
+    ? 'Match Stats, Point by point, Progression, Overview, Tournament, Weather, Odds and Extra stats are part of Tennis Edge Pro.'
+    : 'Key factors, Playing style, Form and full head-to-head analysis are part of Tennis Edge.';
+  return '<div class="te-upsell">'
+    + '<div class="te-upsell-lock">' + TE_LOCK_SVG + '</div>'
+    + '<div class="te-upsell-title">Upgrade to unlock</div>'
+    + '<div class="te-upsell-blurb">' + blurb + '</div>'
+    + '<a class="te-upsell-btn" href="' + url + '" target="_blank" rel="noopener">Upgrade to ' + label + '</a>'
+    + '</div>';
+}
+
+// Paint the lock badges on the sidenav for the current plan.
+function teApplyAnalysisGating(){
+  const allowed = teAllowedTabs();
+  document.querySelectorAll('#aTabs .asidenav-item[data-atab]').forEach(item => {
+    const ok = allowed.indexOf(item.dataset.atab) !== -1;
+    item.classList.toggle('te-locked', !ok);
+    let badge = item.querySelector('.te-lockbadge');
+    if (!ok){
+      if (!badge){ badge = document.createElement('span'); badge.className = 'te-lockbadge'; badge.innerHTML = TE_LOCK_SVG; item.appendChild(badge); }
+    } else if (badge){ badge.remove(); }
+  });
+}
+
+// Switch the analysis panel to a tab, honouring the plan gate. A locked tab
+// shows the upgrade upsell in the body instead of the (still-built) section.
+function teShowAnalysisTab(atab){
+  const upsell = document.getElementById('aUpsell');
+  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
+  const nav = document.querySelector('#aTabs .asidenav-item[data-atab="' + atab + '"]');
+  if (nav) nav.classList.add('active');
+  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
+  if (tePlanAllows(atab)){
+    if (upsell) upsell.style.display = 'none';
+    const sec = document.querySelector('.asection[data-asection="' + atab + '"]');
+    if (sec) sec.classList.add('active');
+    syncAnalysisLiveBar(atab);
+  } else {
+    if (upsell){ upsell.innerHTML = teUpsellCard(atab); upsell.style.display = ''; }
+    syncAnalysisLiveBar('key');
+  }
+}
+
+// Header "Upgrade" pill — visible until the member is on Pro.
+function teSyncUpgradeChrome(){
+  const pill = document.getElementById('acctUpgrade');
+  if (!pill) return;
+  if (_tePlan === 'pro'){ pill.style.display = 'none'; return; }
+  const tier = _tePlan === 'edge' ? 'pro' : 'edge';
+  pill.textContent = tier === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Edge';
+  pill.href = TE_CHECKOUT[tier] || TE_WHOP_BASE;
+  pill.style.display = '';
+}
+
+// Plan resolves asynchronously from the Firebase profile; track it and re-gate
+// any open modal the moment it lands (or changes via a live Whop webhook write).
+if (window.BSP && BSP.onAuthChange){
+  BSP.onAuthChange(function(u){
+    _tePlan = (u && u.plan) || 'free';
+    teSyncUpgradeChrome();
+    const modal = document.getElementById('analysisModal');
+    if (modal && modal.classList.contains('open')){
+      teApplyAnalysisGating();
+      const active = document.querySelector('#aTabs .asidenav-item.active');
+      teShowAnalysisTab(active ? active.dataset.atab : teFirstAllowedTab());
+    }
+  });
+}
+
 function openAnalysisModal(matchId){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -7658,11 +7775,10 @@ function openAnalysisModal(matchId){
 
   document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);
 
-  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
-  document.querySelector('#aTabs .asidenav-item[data-atab="key"]').classList.add('active');
-  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
-  document.querySelector('.asection[data-asection="key"]').classList.add('active');
-  syncAnalysisLiveBar('key');
+  // TEN-8: apply the plan gate, then open on the first tab this plan can see
+  // (Free sees none, so it lands on the "Upgrade to Edge" upsell).
+  teApplyAnalysisGating();
+  teShowAnalysisTab(teFirstAllowedTab());
 
   document.getElementById('analysisModal').classList.add('open');
   if (typeof teTrack === 'function') teTrack('view_match_analysis', { match_id: matchId, completed: !!m.finalScore });
@@ -7671,11 +7787,7 @@ function openAnalysisModal(matchId){
 document.getElementById('aTabs').addEventListener('click', e => {
   const btn = e.target.closest('.asidenav-item[data-atab]');
   if (!btn) return;
-  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
-  document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
-  syncAnalysisLiveBar(btn.dataset.atab);
+  teShowAnalysisTab(btn.dataset.atab);
 });
 
 // Download report — scoped print of the modal's current content. Shows every
