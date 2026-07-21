@@ -42399,13 +42399,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.38,
+      "p2": 1.26,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.38,
+        "bookmaker": "Sbo"
+      },
+      "p2": {
+        "price": 1.26,
+        "bookmaker": "Sbo"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1775,
@@ -46031,7 +46037,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 6-3",
+      "display": "6-4, 6-7(3), 6-3",
       "sets": [
         {
           "p1": 6,
@@ -79355,7 +79361,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 7-6, 7-5",
+      "display": "1-6, 7-6(5), 7-5",
       "sets": [
         {
           "p1": 1,
@@ -86559,7 +86565,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 3-6",
+      "display": "4-6, 7-6(11), 3-6",
       "sets": [
         {
           "p1": 4,
@@ -110620,7 +110626,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 4-6",
+      "display": "4-6, 7-6(5), 4-6",
       "sets": [
         {
           "p1": 4,
@@ -112876,7 +112882,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 6-7, 4-6",
+      "display": "6-1, 6-7(5), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -133661,7 +133667,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
