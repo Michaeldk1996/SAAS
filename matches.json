@@ -6759,11 +6759,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/388_j-m-cerundolo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "oddsMovement": {
@@ -7829,7 +7835,10 @@
       "p2": 3,
       "bookmaker": "bet365",
       "at": "2026-07-18T15:20:31.902Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147453",
@@ -12642,11 +12651,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/566_a-shevchenko.jpg",
     "oddsMovement": {
@@ -13924,7 +13944,10 @@
       "p2": 2.47,
       "bookmaker": "Betsson",
       "at": "2026-07-18T16:35:12.717Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147465",
