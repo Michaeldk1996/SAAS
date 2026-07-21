@@ -49,7 +49,7 @@ names). **Copy the signing secret** Whop shows you → that is the
 
 1. **Blaze billing** — your call to enable it.
 2. **Webhook secret** — only exists after you create the webhook in Whop.
-3. **Tier naming** — this writes `basic`/`pro`; existing code uses `edge`. Set
-   `TIER_BASIC` in `index.js` + the plan-id envs to whichever you keep.
+3. **Tier naming** — RESOLVED (2026-07-21): mid tier = **Edge, €49** (matches the
+   live site). The function now writes `edge`/`pro`/`free`. No further change needed.
 
 Until deployed, memberships bought on Whop will not sync automatically.

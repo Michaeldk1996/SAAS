@@ -13,13 +13,13 @@
  *
  * Config (set before deploy — see functions/README.md):
  *   secret  WHOP_WEBHOOK_SECRET  – copied from the Whop dashboard webhook (whsec_…)
- *   string  WHOP_PLAN_BASIC      – the Whop plan_id OR product_id for the $49 tier
- *   string  WHOP_PLAN_PRO        – the Whop plan_id OR product_id for the $99 tier
+ *   string  WHOP_PLAN_BASIC      – the Whop plan_id OR product_id for the €49 Edge tier
+ *   string  WHOP_PLAN_PRO        – the Whop plan_id OR product_id for the €99 Pro tier
  *
- * NOTE: the tier value written is 'basic' | 'pro' | 'free'. The existing
- * dashboard/auth.js currently uses 'edge' for the mid tier — reconcile the
- * naming before go-live (flagged to founder on TEN-8). Change TIER_BASIC below
- * if the answer is 'edge'.
+ * NOTE: the tier value written is 'edge' | 'pro' | 'free' — matching the values
+ * dashboard/auth.js accepts (auth.js:361) and account.html renders (Free €0 /
+ * Edge €49 / Pro €99). Naming reconciled to 'edge' per founder decision on TEN-8
+ * (2026-07-21, interaction "naming" → name_edge_eur).
  */
 
 const crypto = require('crypto');
@@ -35,8 +35,9 @@ const WHOP_WEBHOOK_SECRET = defineSecret('WHOP_WEBHOOK_SECRET');
 const WHOP_PLAN_BASIC = defineString('WHOP_PLAN_BASIC');
 const WHOP_PLAN_PRO = defineString('WHOP_PLAN_PRO');
 
-// Change 'basic' -> 'edge' here if the founder keeps the existing tier name.
-const TIER_BASIC = 'basic';
+// Mid tier value written to users/{uid}.plan. 'edge' matches the dashboard
+// gating (auth.js:361) and pricing (account.html). Env var stays WHOP_PLAN_BASIC.
+const TIER_EDGE = 'edge';
 const TIER_PRO = 'pro';
 const TIER_FREE = 'free';
 
@@ -127,7 +128,7 @@ function tierFor(planRefs) {
   const pro = (WHOP_PLAN_PRO.value() || '').trim();
   for (const ref of planRefs) {
     if (pro && ref === pro) return TIER_PRO;
-    if (basic && ref === basic) return TIER_BASIC;
+    if (basic && ref === basic) return TIER_EDGE;
   }
   return null; // unknown product — do not guess a paid tier
 }
