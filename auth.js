@@ -1,354 +1,408 @@
 /*
- * BSP Consult — shared client-side session + preferences module.
- * Plain <script>-includable (no modules/imports). Exposes a global `BSP`.
+ * BSP Consult — shared client-side session + preferences module (Firebase-backed).
  *
- * Storage keys (all namespaced under bsp.*):
- *   bsp.users    -> JSON array of { name, email, passHash, plan, timezone, oddsFormat, notif, createdAt }
- *   bsp.session  -> email of the currently signed-in user (or absent)
+ * Plain <script>-includable (no ES modules/imports). Exposes a global `BSP`.
+ * This module replaces the earlier localStorage-only implementation with a real
+ * Firebase Authentication + Cloud Firestore backend, while keeping the same
+ * public `BSP.*` surface so existing pages (auth.html, account.html, the
+ * dashboard) keep working with only their async call-sites updated.
  *
- * No backend exists — this is a real, working client-side auth flow.
- * Passwords are never stored in plaintext: we store a SHA-256 hash
- * (SubtleCrypto when available on a secure/localhost context, with a
- * djb2 fallback so it still works from file:// or older contexts).
+ * The Firebase compat SDK is loaded on demand from Google's gstatic CDN, so
+ * there is no new local JS file to add to the deploy pipeline and no extra
+ * <script> tag is required on the pages — including auth.js is enough.
+ *
+ * Firestore user document: users/{uid}
+ *   fullName, email, plan ('free'), oddsFormat ('decimal'),
+ *   favouriteBookmakers [], timezone,
+ *   notifications { favouritePlayers, valuePicks, openingOdds, sharpMoney } (all false),
+ *   createdAt (server timestamp)
  */
 (function (global) {
   'use strict';
 
-  var USERS_KEY = 'bsp.users';
-  var SESSION_KEY = 'bsp.session';
-
-  var DEFAULT_PREFS = {
-    plan: 'pro',
-    timezone: '(GMT+01:00) Amsterdam',
-    oddsFormat: 'decimal',
-    notif: { matches: true, digest: true, billing: false }
+  /* ---------- Firebase project config (public web keys, not secrets) ---------- */
+  var firebaseConfig = {
+    apiKey: 'AIzaSyA9NYa0FY9gZHa7Cuwvxr-WtBWuSw-dCNs',
+    authDomain: 'tennis-edge-75cd9.firebaseapp.com',
+    projectId: 'tennis-edge-75cd9',
+    storageBucket: 'tennis-edge-75cd9.firebasestorage.app',
+    messagingSenderId: '740095842288',
+    appId: '1:740095842288:web:b10f428e7c1e3e354c2f35',
+    measurementId: 'G-L2RZQB615T'
   };
 
-  /* ---------- low-level storage helpers ---------- */
-  function readUsers() {
-    try {
-      var raw = global.localStorage.getItem(USERS_KEY);
-      var arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) {
-      return [];
-    }
+  var SDK_VERSION = '10.12.5';
+  var SDK_BASE = 'https://www.gstatic.com/firebasejs/' + SDK_VERSION + '/';
+
+  var DEFAULT_TZ = '(GMT+01:00) Amsterdam';
+  var NOTIF_KEYS = ['favouritePlayers', 'valuePicks', 'openingOdds', 'sharpMoney'];
+
+  function defaultNotif() {
+    return { favouritePlayers: false, valuePicks: false, openingOdds: false, sharpMoney: false };
   }
 
-  function writeUsers(users) {
-    global.localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  /* ---------- module state ---------- */
+  var _auth = null;
+  var _db = null;
+  var _cachedUser = null;      // publicUser or null
+  var _authResolved = false;   // has onAuthStateChanged fired at least once?
+  var _authCbs = [];           // subscribers to auth-state changes
+
+  var _firstAuthResolve;
+  var _firstAuth = new Promise(function (res) { _firstAuthResolve = res; });
+
+  var _readyResolve, _readyReject;
+  var _ready = new Promise(function (res, rej) { _readyResolve = res; _readyReject = rej; });
+
+  /* ---------- SDK loading ---------- */
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = global.document.createElement('script');
+      s.src = src;
+      s.async = false; // preserve execution order
+      s.onload = function () { resolve(); };
+      s.onerror = function () { reject(new Error('Failed to load ' + src)); };
+      global.document.head.appendChild(s);
+    });
   }
 
-  function normEmail(email) {
-    return String(email || '').trim().toLowerCase();
-  }
-
-  function findUser(users, email) {
-    var e = normEmail(email);
-    for (var i = 0; i < users.length; i++) {
-      if (normEmail(users[i].email) === e) return users[i];
-    }
-    return null;
-  }
-
-  /* ---------- password hashing ---------- */
-  // Simple synchronous djb2 fallback (returns hex string, prefixed so we can
-  // tell which scheme produced it).
-  function djb2(str) {
-    var h = 5381;
-    for (var i = 0; i < str.length; i++) {
-      h = ((h << 5) + h + str.charCodeAt(i)) & 0xffffffff;
-    }
-    // Fold to an unsigned hex string.
-    return 'd:' + (h >>> 0).toString(16);
-  }
-
-  // Returns a Promise<string> hash. Prefers SHA-256, falls back to djb2.
-  function hashPassword(password) {
-    var pw = String(password);
-    var subtle = global.crypto && global.crypto.subtle;
-    if (subtle && typeof subtle.digest === 'function' && global.TextEncoder) {
-      try {
-        var data = new global.TextEncoder().encode('bsp' + pw);
-        return subtle.digest('SHA-256', data).then(function (buf) {
-          var bytes = new Uint8Array(buf);
-          var hex = '';
-          for (var i = 0; i < bytes.length; i++) {
-            hex += bytes[i].toString(16).padStart(2, '0');
+  function initFirebase() {
+    return loadScript(SDK_BASE + 'firebase-app-compat.js')
+      .then(function () {
+        return Promise.all([
+          loadScript(SDK_BASE + 'firebase-auth-compat.js'),
+          loadScript(SDK_BASE + 'firebase-firestore-compat.js')
+        ]);
+      })
+      .then(function () {
+        var firebase = global.firebase;
+        if (!global.__bspFirebaseApp) {
+          global.__bspFirebaseApp = firebase.initializeApp(firebaseConfig);
+        }
+        _auth = firebase.auth();
+        _db = firebase.firestore();
+        return _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+      })
+      .then(function () {
+        // Restore/observe the session. Fires once immediately with the persisted
+        // user (or null) after the SDK finishes its async session restore — this
+        // is why requireAuth() must await the first callback rather than reading
+        // currentUser() synchronously on page load.
+        _auth.onAuthStateChanged(function (fbUser) {
+          var done = function (u) {
+            _cachedUser = u;
+            _authResolved = true;
+            _firstAuthResolve(u);
+            notifyAuth(u);
+          };
+          if (fbUser) {
+            loadProfile(fbUser).then(done).catch(function () { done(publicUser(fbUser, {})); });
+          } else {
+            done(null);
           }
-          return 's:' + hex;
-        }).catch(function () {
-          return djb2(pw);
         });
-      } catch (e) {
-        return Promise.resolve(djb2(pw));
-      }
-    }
-    return Promise.resolve(djb2(pw));
-  }
-
-  // Verify a candidate password against a stored hash, honouring the scheme
-  // prefix so we never fall back into a mismatch.
-  function verifyPassword(password, storedHash) {
-    if (!storedHash) return Promise.resolve(false);
-    var pw = String(password);
-    if (storedHash.indexOf('s:') === 0) {
-      return hashPassword(pw).then(function (h) {
-        // hashPassword may fall back to djb2 if subtle later fails; compare
-        // only if it produced an s: hash, otherwise recompute is impossible.
-        return h === storedHash;
+        _readyResolve();
+      })
+      .catch(function (err) {
+        _readyReject(err);
+        // Resolve the first-auth gate so protected pages don't hang forever if
+        // the SDK fails to load; they will treat the user as signed out.
+        if (!_authResolved) { _authResolved = true; _firstAuthResolve(null); }
+        throw err;
       });
-    }
-    // djb2 stored
-    return Promise.resolve(djb2(pw) === storedHash);
   }
 
-  /* ---------- public user-shape helpers ---------- */
-  function publicUser(u) {
-    if (!u) return null;
+  var _initPromise = null;
+  function ensureInit() {
+    if (!_initPromise) _initPromise = initFirebase();
+    return _initPromise.then(function () { return _ready; });
+  }
+
+  /* ---------- profile helpers ---------- */
+  function loadProfile(fbUser) {
+    return _db.collection('users').doc(fbUser.uid).get().then(function (snap) {
+      var data = snap && snap.exists ? snap.data() : {};
+      return publicUser(fbUser, data);
+    });
+  }
+
+  function publicUser(fbUser, data) {
+    data = data || {};
+    var notif = Object.assign(defaultNotif(), data.notifications || {});
     return {
-      name: u.name,
-      email: u.email,
-      plan: u.plan || DEFAULT_PREFS.plan,
-      timezone: u.timezone || DEFAULT_PREFS.timezone,
-      oddsFormat: u.oddsFormat || DEFAULT_PREFS.oddsFormat,
-      notif: Object.assign({}, DEFAULT_PREFS.notif, u.notif || {})
+      uid: fbUser.uid,
+      name: data.fullName || fbUser.displayName || '',
+      email: data.email || fbUser.email || '',
+      plan: data.plan || 'free',
+      oddsFormat: data.oddsFormat || 'decimal',
+      timezone: data.timezone || DEFAULT_TZ,
+      favouriteBookmakers: Array.isArray(data.favouriteBookmakers) ? data.favouriteBookmakers : [],
+      notifications: notif,
+      createdAt: data.createdAt || null
     };
   }
+
+  function notifyAuth(u) {
+    for (var i = 0; i < _authCbs.length; i++) {
+      try { _authCbs[i](u); } catch (e) {}
+    }
+  }
+
+  function normEmail(email) { return String(email || '').trim().toLowerCase(); }
 
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
   }
 
+  /* Map Firebase auth error codes to the friendly messages the UI expects.
+   * auth.html highlights fields by matching /password/i and /account/i, so the
+   * chosen wording matters. */
+  function mapAuthError(err) {
+    var code = (err && err.code) || '';
+    var msg;
+    switch (code) {
+      case 'auth/email-already-in-use': msg = 'An account with that email already exists.'; break;
+      case 'auth/invalid-email': msg = 'Please enter a valid email address.'; break;
+      case 'auth/weak-password': msg = 'Password must be at least 8 characters.'; break;
+      case 'auth/user-not-found': msg = 'No account found for that email.'; break;
+      case 'auth/wrong-password': msg = 'Incorrect password. Please try again.'; break;
+      // Newer SDKs collapse wrong-password / no-user into invalid-credential
+      // (email-enumeration protection) — surface a combined message that still
+      // contains "password" so the field highlight fires.
+      case 'auth/invalid-credential': msg = 'Incorrect email or password. Please try again.'; break;
+      case 'auth/too-many-requests': msg = 'Too many attempts. Please wait a moment and try again.'; break;
+      case 'auth/network-request-failed': msg = 'Network error. Check your connection and try again.'; break;
+      case 'auth/requires-recent-login': msg = 'Please sign in again to change this, for security.'; break;
+      default: msg = (err && err.message) ? err.message.replace(/^Firebase:\s*/, '') : 'Something went wrong. Please try again.';
+    }
+    var e = new Error(msg);
+    e.code = code;
+    return e;
+  }
+
   /* ---------- BSP API ---------- */
   var BSP = {
+    /* --- lifecycle --- */
+
+    // ready() -> Promise resolved once the SDK has initialised.
+    ready: function () { return ensureInit(); },
+
+    // whenAuthReady() -> Promise<publicUser|null> resolved after the first
+    // auth-state resolution (session restore complete).
+    whenAuthReady: function () { return ensureInit().then(function () { return _firstAuth; }); },
+
+    // onAuthChange(cb) -> unsubscribe fn. cb(publicUser|null) is called on every
+    // auth-state change, and immediately with the current value if already known.
+    onAuthChange: function (cb) {
+      if (typeof cb !== 'function') return function () {};
+      _authCbs.push(cb);
+      if (_authResolved) { try { cb(_cachedUser); } catch (e) {} }
+      ensureInit();
+      return function () {
+        var i = _authCbs.indexOf(cb);
+        if (i >= 0) _authCbs.splice(i, 1);
+      };
+    },
+
     /* --- auth --- */
 
     // signUp({name,email,password,plan}) -> Promise<publicUser>
-    // Rejects on invalid input or duplicate email.
     signUp: function (opts) {
       opts = opts || {};
       var name = String(opts.name || '').trim();
       var email = normEmail(opts.email);
       var password = String(opts.password || '');
-      var plan = opts.plan === 'edge' ? 'edge' : 'pro';
 
       if (!name) return Promise.reject(new Error('Please enter your full name.'));
       if (!isValidEmail(email)) return Promise.reject(new Error('Please enter a valid email address.'));
       if (password.length < 8) return Promise.reject(new Error('Password must be at least 8 characters.'));
 
-      var users = readUsers();
-      if (findUser(users, email)) {
-        return Promise.reject(new Error('An account with that email already exists.'));
-      }
-
-      return hashPassword(password).then(function (passHash) {
-        var user = {
-          name: name,
+      var firebase = global.firebase;
+      return ensureInit().then(function () {
+        return _auth.createUserWithEmailAndPassword(email, password);
+      }).then(function (cred) {
+        var user = cred.user;
+        // plan defaults to 'free' by spec — the auth.html plan picker is a
+        // marketing intent signal only (no billing is wired yet).
+        var profile = {
+          fullName: name,
           email: email,
-          passHash: passHash,
-          plan: plan,
-          timezone: DEFAULT_PREFS.timezone,
-          oddsFormat: DEFAULT_PREFS.oddsFormat,
-          notif: Object.assign({}, DEFAULT_PREFS.notif),
-          createdAt: Date.now()
+          plan: 'free',
+          oddsFormat: 'decimal',
+          favouriteBookmakers: [],
+          timezone: DEFAULT_TZ,
+          notifications: defaultNotif(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        users.push(user);
-        writeUsers(users);
-        global.localStorage.setItem(SESSION_KEY, email);
-        return publicUser(user);
-      });
+        return user.updateProfile({ displayName: name })
+          .catch(function () {})
+          .then(function () { return _db.collection('users').doc(user.uid).set(profile); })
+          .then(function () {
+            _cachedUser = publicUser(user, profile);
+            return _cachedUser;
+          });
+      }).catch(function (err) { throw mapAuthError(err); });
     },
 
     // signIn(email, password) -> Promise<publicUser>
-    // Rejects with a distinct message for no-account vs wrong-password.
     signIn: function (email, password) {
       var e = normEmail(email);
       if (!isValidEmail(e)) return Promise.reject(new Error('Please enter a valid email address.'));
-      var users = readUsers();
-      var user = findUser(users, e);
-      if (!user) return Promise.reject(new Error('No account found for that email.'));
-      return verifyPassword(password, user.passHash).then(function (ok) {
-        if (!ok) throw new Error('Incorrect password. Please try again.');
-        global.localStorage.setItem(SESSION_KEY, user.email);
-        return publicUser(user);
+      return ensureInit().then(function () {
+        return _auth.signInWithEmailAndPassword(e, String(password || ''));
+      }).then(function (cred) {
+        return loadProfile(cred.user);
+      }).then(function (u) {
+        _cachedUser = u;
+        return u;
+      }).catch(function (err) { throw mapAuthError(err); });
+    },
+
+    // signOut() -> Promise (resolves once the session is cleared).
+    signOut: function () {
+      return ensureInit().then(function () { return _auth.signOut(); }).then(function () {
+        _cachedUser = null;
+      }).catch(function () { _cachedUser = null; });
+    },
+
+    // currentUser() -> publicUser | null (synchronous; may be null before the
+    // first auth-state resolution — use whenAuthReady()/onAuthChange() to await).
+    currentUser: function () { return _cachedUser; },
+
+    // authResolved() -> bool: has the first auth-state settled yet?
+    authResolved: function () { return _authResolved; },
+
+    // requireAuth(redirectTo) -> Promise<publicUser|null>. Redirects to the
+    // login page if there is no session once auth state has resolved.
+    requireAuth: function (redirectTo) {
+      return BSP.whenAuthReady().then(function (u) {
+        if (!u) { global.location.replace(redirectTo || 'auth.html'); return null; }
+        return u;
+      }).catch(function () {
+        global.location.replace(redirectTo || 'auth.html');
+        return null;
       });
     },
 
-    signOut: function () {
-      global.localStorage.removeItem(SESSION_KEY);
-    },
-
-    // currentUser() -> publicUser | null (synchronous)
-    currentUser: function () {
-      var email = global.localStorage.getItem(SESSION_KEY);
-      if (!email) return null;
-      var user = findUser(readUsers(), email);
-      if (!user) {
-        // Stale session (user record gone) — clean up.
-        global.localStorage.removeItem(SESSION_KEY);
-        return null;
-      }
-      return publicUser(user);
-    },
-
-    // updateProfile(patch) -> publicUser | null
-    // patch may include name, email, plan, timezone, oddsFormat, notif.
-    // Persists to the stored user record and returns the fresh publicUser.
+    // updateProfile(patch) -> Promise<publicUser>
+    // patch may include name, email, plan, timezone, oddsFormat,
+    // favouriteBookmakers, notifications.
     updateProfile: function (patch) {
       patch = patch || {};
-      var sessionEmail = global.localStorage.getItem(SESSION_KEY);
-      if (!sessionEmail) return null;
-      var users = readUsers();
-      var user = findUser(users, sessionEmail);
-      if (!user) return null;
+      return ensureInit().then(function () {
+        var user = _auth.currentUser;
+        if (!user) throw new Error('You are not signed in.');
 
-      if (typeof patch.name === 'string' && patch.name.trim()) {
-        user.name = patch.name.trim();
-      }
-      if (typeof patch.email === 'string' && isValidEmail(patch.email)) {
-        var newEmail = normEmail(patch.email);
-        // Guard email uniqueness (allow keeping own email).
-        var clash = findUser(users, newEmail);
-        if (!clash || normEmail(clash.email) === normEmail(user.email)) {
-          user.email = newEmail;
-          global.localStorage.setItem(SESSION_KEY, newEmail);
+        var updates = {};
+        var chain = Promise.resolve();
+
+        if (typeof patch.name === 'string' && patch.name.trim()) {
+          updates.fullName = patch.name.trim();
+          chain = chain.then(function () { return user.updateProfile({ displayName: updates.fullName }).catch(function () {}); });
         }
-      }
-      if (patch.plan === 'edge' || patch.plan === 'pro') user.plan = patch.plan;
-      if (typeof patch.timezone === 'string' && patch.timezone) user.timezone = patch.timezone;
-      if (patch.oddsFormat === 'decimal' || patch.oddsFormat === 'fractional' || patch.oddsFormat === 'american') {
-        user.oddsFormat = patch.oddsFormat;
-      }
-      if (patch.notif && typeof patch.notif === 'object') {
-        user.notif = Object.assign({}, DEFAULT_PREFS.notif, user.notif || {}, patch.notif);
-      }
-      writeUsers(users);
-      return publicUser(user);
+        if (typeof patch.email === 'string' && isValidEmail(patch.email)) {
+          var newEmail = normEmail(patch.email);
+          if (newEmail !== normEmail(user.email)) {
+            updates.email = newEmail;
+            chain = chain.then(function () { return user.updateEmail(newEmail); });
+          }
+        }
+        if (patch.plan === 'free' || patch.plan === 'edge' || patch.plan === 'pro') updates.plan = patch.plan;
+        if (typeof patch.timezone === 'string' && patch.timezone) updates.timezone = patch.timezone;
+        if (patch.oddsFormat === 'decimal' || patch.oddsFormat === 'fractional' || patch.oddsFormat === 'american') {
+          updates.oddsFormat = patch.oddsFormat;
+        }
+        if (Array.isArray(patch.favouriteBookmakers)) updates.favouriteBookmakers = patch.favouriteBookmakers;
+        if (patch.notifications && typeof patch.notifications === 'object') {
+          var merged = Object.assign({}, (_cachedUser && _cachedUser.notifications) || defaultNotif());
+          NOTIF_KEYS.forEach(function (k) {
+            if (typeof patch.notifications[k] === 'boolean') merged[k] = patch.notifications[k];
+          });
+          updates.notifications = merged;
+        }
+
+        return chain.then(function () {
+          if (Object.keys(updates).length === 0) return _cachedUser;
+          return _db.collection('users').doc(user.uid).set(updates, { merge: true }).then(function () {
+            return loadProfile(user);
+          }).then(function (u) { _cachedUser = u; return u; });
+        });
+      }).catch(function (err) { throw mapAuthError(err); });
     },
 
     // changePassword(currentPassword, newPassword) -> Promise<true>
-    // Validates the current password against the stored hash, updates the hash.
     changePassword: function (currentPassword, newPassword) {
-      var sessionEmail = global.localStorage.getItem(SESSION_KEY);
-      if (!sessionEmail) return Promise.reject(new Error('You are not signed in.'));
       if (String(newPassword || '').length < 8) {
         return Promise.reject(new Error('New password must be at least 8 characters.'));
       }
-      var users = readUsers();
-      var user = findUser(users, sessionEmail);
-      if (!user) return Promise.reject(new Error('Account not found.'));
-      return verifyPassword(currentPassword, user.passHash).then(function (ok) {
-        if (!ok) throw new Error('Current password is incorrect.');
-        return hashPassword(newPassword).then(function (h) {
-          user.passHash = h;
-          writeUsers(users);
-          return true;
-        });
+      var firebase = global.firebase;
+      return ensureInit().then(function () {
+        var user = _auth.currentUser;
+        if (!user) throw new Error('You are not signed in.');
+        var cred = firebase.auth.EmailAuthProvider.credential(user.email, String(currentPassword || ''));
+        return user.reauthenticateWithCredential(cred).then(function () {
+          return user.updatePassword(String(newPassword));
+        }).then(function () { return true; });
+      }).catch(function (err) {
+        if (err && (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential')) {
+          var e = new Error('Current password is incorrect.'); e.code = err.code; throw e;
+        }
+        throw mapAuthError(err);
       });
-    },
-
-    // requireAuth() -> publicUser | (redirects). Call at top of protected pages.
-    requireAuth: function (redirectTo) {
-      var u = BSP.currentUser();
-      if (!u) {
-        global.location.replace(redirectTo || 'auth.html');
-        return null;
-      }
-      return u;
     },
 
     /* --- preferences (convenience wrappers) --- */
     getPreferences: function () {
-      var u = BSP.currentUser();
-      if (!u) {
-        return {
-          oddsFormat: DEFAULT_PREFS.oddsFormat,
-          timezone: DEFAULT_PREFS.timezone,
-          notif: Object.assign({}, DEFAULT_PREFS.notif)
-        };
-      }
-      return { oddsFormat: u.oddsFormat, timezone: u.timezone, notif: u.notif };
+      var u = _cachedUser;
+      if (!u) return { oddsFormat: 'decimal', timezone: DEFAULT_TZ, notifications: defaultNotif() };
+      return { oddsFormat: u.oddsFormat, timezone: u.timezone, notifications: u.notifications };
     },
-
-    setOddsFormat: function (fmt) {
-      return BSP.updateProfile({ oddsFormat: fmt });
-    },
-    setTimezone: function (tz) {
-      return BSP.updateProfile({ timezone: tz });
-    },
-    setNotif: function (notif) {
-      return BSP.updateProfile({ notif: notif });
-    },
+    setOddsFormat: function (fmt) { return BSP.updateProfile({ oddsFormat: fmt }); },
+    setTimezone: function (tz) { return BSP.updateProfile({ timezone: tz }); },
+    setNotifications: function (notifications) { return BSP.updateProfile({ notifications: notifications }); },
 
     /* --- odds formatting --- */
-    // formatOdds(decimalPrice[, format]) -> string in the user's chosen format.
-    // decimal  -> "2.62"
-    // fractional -> "13/8"
-    // american -> "+162" / "-150"
     formatOdds: function (decimalPrice, format) {
       var d = Number(decimalPrice);
       if (!isFinite(d) || d <= 1) {
-        // Degenerate input: show as-is to 2dp where possible.
         return isFinite(d) ? d.toFixed(2) : String(decimalPrice);
       }
-      var fmt = format || (BSP.currentUser() ? BSP.currentUser().oddsFormat : DEFAULT_PREFS.oddsFormat);
-
-      if (fmt === 'fractional') {
-        return decimalToFraction(d);
-      }
-      if (fmt === 'american') {
-        return decimalToAmerican(d);
-      }
+      var fmt = format || (_cachedUser ? _cachedUser.oddsFormat : 'decimal');
+      if (fmt === 'fractional') return decimalToFraction(d);
+      if (fmt === 'american') return decimalToAmerican(d);
       return d.toFixed(2);
     }
   };
 
   /* ---------- odds conversion internals ---------- */
   function decimalToAmerican(d) {
-    var b = d - 1; // net fractional profit
-    if (b >= 1) {
-      return '+' + Math.round(b * 100);
-    }
+    var b = d - 1;
+    if (b >= 1) return '+' + Math.round(b * 100);
     return '-' + Math.round(100 / b);
   }
-
   function decimalToFraction(d) {
-    var b = d - 1; // fractional profit as a real number
-    // Find the nearest simple fraction using a bounded continued-fraction
-    // search, then cap the denominator so results look like betting fractions.
-    var best = approximateFraction(b, 50);
+    var best = approximateFraction(d - 1, 50);
     return best.num + '/' + best.den;
   }
-
   function approximateFraction(x, maxDen) {
     if (x <= 0) return { num: 0, den: 1 };
-    // Continued fraction expansion.
     var bestNum = 1, bestDen = 1, bestErr = Infinity;
     for (var den = 1; den <= maxDen; den++) {
       var num = Math.round(x * den);
       if (num <= 0) continue;
       var err = Math.abs(x - num / den);
-      // Prefer smaller denominators when errors are close (simpler fractions).
-      if (err < bestErr - 1e-9) {
-        bestErr = err;
-        bestNum = num;
-        bestDen = den;
-      }
+      if (err < bestErr - 1e-9) { bestErr = err; bestNum = num; bestDen = den; }
     }
-    // Reduce.
     var g = gcd(bestNum, bestDen);
     return { num: bestNum / g, den: bestDen / g };
   }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a || 1; }
 
-  function gcd(a, b) {
-    a = Math.abs(a); b = Math.abs(b);
-    while (b) { var t = b; b = a % b; a = t; }
-    return a || 1;
-  }
-
-  // Expose.
+  /* ---------- expose ---------- */
   BSP.isValidEmail = isValidEmail;
-  BSP._defaults = DEFAULT_PREFS;
+  BSP.NOTIF_KEYS = NOTIF_KEYS;
   global.BSP = BSP;
+
+  // Kick off SDK init eagerly so the session restores as early as possible.
+  ensureInit().catch(function () {});
 })(typeof window !== 'undefined' ? window : this);

@@ -1458,25 +1458,25 @@
       <span class="account-label" id="acctLabel">Account</span>
       <span class="account-avatar" id="acctAvatar">A</span>
     </a>
-    <span id="acctSignout" onclick="BSP&&BSP.signOut&&(BSP.signOut(),location.href='funnel.html')" title="Sign out" style="display:none;cursor:pointer;color:#8b93a3;font-size:12px;font-weight:600;padding:4px 8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;">Sign out</span>
+    <span id="acctSignout" onclick="window.BSP&&BSP.signOut?BSP.signOut().then(function(){location.href='funnel.html';}):(location.href='funnel.html')" title="Sign out" style="display:none;cursor:pointer;color:#8b93a3;font-size:12px;font-weight:600;padding:4px 8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;">Sign out</span>
   </div>
 </div>
 <script src="./auth.js"></script>
 <script>
-// Reflect the BSP auth session in the top-nav account chip (soft — the dashboard
-// is not hard-gated so direct review still works; the funnel → auth → dashboard
-// flow lands a signed-in user here).
+// Protected route + top-nav account chip, backed by the Firebase session.
+// requireAuth redirects unauthenticated visitors to the sign-in page once the
+// Firebase session-restore has resolved (so a signed-in user is never bounced
+// on refresh), and onAuthChange keeps the account chip in sync.
 (function(){
-  function initAcct(){
+  function paintAcct(u){
     try{
-      var u = (window.BSP && BSP.currentUser) ? BSP.currentUser() : null;
       var label = document.getElementById('acctLabel');
       var avatar = document.getElementById('acctAvatar');
       var signout = document.getElementById('acctSignout');
       var main = document.getElementById('acctMain');
       if (u){
-        var initials = (u.name||u.email||'A').split(/\s+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
-        if (avatar) avatar.textContent = initials;
+        var initials = (u.name||u.email||'A').trim().split(/\s+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+        if (avatar) avatar.textContent = initials || 'A';
         if (label) label.textContent = u.name || u.email;
         if (signout) signout.style.display = '';
         if (main) main.href = 'account.html';
@@ -1487,8 +1487,11 @@
       }
     }catch(e){}
   }
-  if (document.readyState !== 'loading') initAcct();
-  else document.addEventListener('DOMContentLoaded', initAcct);
+  if (window.BSP && BSP.onAuthChange){
+    BSP.onAuthChange(paintAcct);
+    // Protected route: redirect to sign-in if there is no session.
+    BSP.requireAuth('auth.html?mode=signin');
+  }
 })();
 </script>
 

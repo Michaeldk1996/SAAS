@@ -16,90 +16,87 @@
   select{ -webkit-appearance:none; appearance:none; cursor:pointer; }
   input::placeholder{ color:#4a515f; }
   ::selection{ background:rgba(62,123,250,0.35); }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
 
-  .page{ display:flex; justify-content:center; padding:56px 40px; }
+  /* top bar */
+  .topbar{ max-width:920px; margin:0 auto; padding:22px 40px 0; display:flex; align-items:center; justify-content:space-between; }
+  .brand-id{ display:flex; align-items:center; gap:11px; }
+  .brand-id img{ width:32px; height:32px; border-radius:9px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); }
+  .brand-id b{ font-weight:800; letter-spacing:0.02em; font-size:14px; color:#e7e9ee; }
+  .topbar .rt{ display:flex; align-items:center; gap:18px; font-size:13px; }
+  .topbar .rt a{ font-weight:600; }
+  .topbar .rt .out{ color:#8b93a3; cursor:pointer; }
+  .topbar .rt .out:hover{ color:#cfd4de; }
+
+  .page{ display:flex; justify-content:center; padding:34px 40px 56px; }
   .shell{ width:920px; max-width:100%; display:flex; flex-direction:column; }
+  .h1{ margin:0 0 24px; font-size:24px; font-weight:700; letter-spacing:-0.02em; color:#f4f6fa; }
 
-  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-  .topbar h1{ margin:0; font-size:24px; font-weight:700; letter-spacing:-0.02em; color:#f4f6fa; }
-  .topbar .actions{ display:flex; align-items:center; gap:18px; }
-  .topbar .actions a, .topbar .actions button{ font-size:13px; font-weight:600; cursor:pointer; background:transparent; border:none; font-family:inherit; }
-  .backlink{ color:#3E7BFA; }
-  .signout{ color:#8b93a3; }
-  .signout:hover{ color:#cfd4de; }
+  .card{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:#08090C; overflow:hidden; display:grid; grid-template-columns:220px 1fr; }
 
-  .container{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:#08090C; overflow:hidden; display:grid; grid-template-columns:220px 1fr; }
-
-  .sidebar{ border-right:1px solid rgba(255,255,255,0.07); padding:22px 14px; display:flex; flex-direction:column; gap:2px; }
-  .sidebar .cap{ font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; padding:4px 10px 10px; }
-  .nav-item{ font-size:13px; font-weight:500; color:#8b93a3; background:transparent; border:none; text-align:left; border-radius:8px; padding:9px 10px; cursor:pointer; font-family:inherit; }
-  .nav-item:hover{ color:#e7e9ee; }
-  .nav-item.active{ font-weight:600; color:#fff; background:rgba(255,255,255,0.06); }
+  .side{ border-right:1px solid rgba(255,255,255,0.07); padding:22px 14px; display:flex; flex-direction:column; gap:2px; }
+  .side .cap{ font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; padding:4px 10px 10px; }
+  .navitem{ font-size:13px; font-weight:500; color:#8b93a3; background:transparent; border-radius:8px; padding:9px 10px; cursor:pointer; border:none; text-align:left; font-family:inherit; }
+  .navitem:hover{ color:#e7e9ee; }
+  .navitem.active{ font-weight:600; color:#fff; background:rgba(255,255,255,0.06); }
 
   .panel{ padding:28px 32px; min-height:580px; }
   .panel h2{ margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:-0.02em; color:#f4f6fa; }
   .panel .desc{ margin:0 0 28px; font-size:12.5px; color:#7a8496; }
-
-  .section{ display:none; }
-  .section.active{ display:block; }
+  .sec{ display:none; }
+  .sec.active{ display:block; }
 
   /* profile */
-  .profile-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-  .profile-id{ display:flex; align-items:center; gap:14px; }
+  .prof-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .prof-id{ display:flex; align-items:center; gap:14px; }
   .avatar{ width:48px; height:48px; border-radius:50%; flex:none; background:#141824; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#cfd4de; font-family:'IBM Plex Mono',monospace; }
-  .profile-id .nm{ font-size:14px; font-weight:600; color:#e7e9ee; }
-  .profile-id .em{ font-size:12px; color:#7a8496; }
-  .editlink{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; background:transparent; border:none; font-family:inherit; }
+  .prof-id .nm{ font-size:14px; font-weight:600; color:#e7e9ee; }
+  .prof-id .em{ font-size:12px; color:#7a8496; }
+  .editlink{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; }
   .editlink:hover{ color:#7ba4ff; }
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
   .fld{ display:flex; flex-direction:column; gap:6px; }
-  .fld.tz{ max-width:340px; margin-bottom:18px; }
   .fld .lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
-  .fld input, .fld select{ background:rgba(255,255,255,0.02); color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; width:100%; }
+  .fld input, .fld select{ background:rgba(255,255,255,0.02); color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; outline:none; }
   .fld.editing input, .fld.editing select{ background:#0b0d12; border-color:rgba(62,123,250,0.4); }
-  .fld select{ padding-right:32px; }
-  .selwrap{ position:relative; }
-  .selwrap .caret{ position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#6f7ba0; font-size:10px; pointer-events:none; }
-  .helper{ font-size:11.5px; color:#5b6472; margin-top:6px; }
+  .fld input:disabled, .fld select:disabled{ cursor:default; }
+  .tzwrap{ max-width:340px; position:relative; }
+  .tzwrap .caret{ position:absolute; right:12px; top:36px; color:#6f7ba0; font-size:10px; pointer-events:none; }
+  .helper{ font-size:11.5px; color:#5b6472; }
 
-  /* odds */
-  .oddstrack{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; border:1px solid rgba(255,255,255,0.1); border-radius:11px; padding:5px; background:#0e1015; max-width:460px; }
-  .oddsopt{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; }
-  .oddsopt.active{ background:rgba(62,123,250,0.12); border-color:rgba(62,123,250,0.55); }
-  .oddsopt .ol{ font-size:14px; font-weight:700; color:#aeb4c0; }
-  .oddsopt.active .ol{ color:#fff; }
-  .oddsopt .oe{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6b7280; }
-  .oddsopt.active .oe{ color:#7ba4ff; }
+  /* odds segmented */
+  .segwrap{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; border:1px solid rgba(255,255,255,0.1); border-radius:11px; padding:5px; background:#0e1015; max-width:460px; }
+  .seg{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; }
+  .seg .sl{ font-size:14px; font-weight:700; color:#aeb4c0; }
+  .seg .se{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6b7280; }
+  .seg.active{ background:rgba(62,123,250,0.12); border-color:rgba(62,123,250,0.55); }
+  .seg.active .sl{ color:#fff; }
+  .seg.active .se{ color:#7ba4ff; }
 
   /* subscription */
-  .subwrap{ display:flex; flex-direction:column; gap:16px; max-width:500px; }
-  .subcard{ border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:#0e1015; overflow:hidden; }
-  .subtop{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
-  .subtop .planline{ display:flex; align-items:center; gap:9px; }
-  .subtop .pname{ font-size:14.5px; font-weight:700; color:#f4f6fa; }
+  .sub-card{ border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:#0e1015; overflow:hidden; max-width:500px; }
+  .sub-top{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; }
+  .sub-top.divide{ border-bottom:1px solid rgba(255,255,255,0.07); }
+  .sub-plan{ display:flex; align-items:center; gap:9px; }
+  .sub-plan .pn{ font-size:14.5px; font-weight:700; color:#f4f6fa; }
   .badge-active{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#8fe4bd; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.28); border-radius:5px; padding:2px 7px; }
-  .subtop .renew{ font-size:12.5px; color:#7a8496; }
-  .subtop .price{ text-align:right; }
-  .subtop .price .amt{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; color:#f4f6fa; }
-  .subtop .price .per{ font-size:12px; color:#7a8496; }
-  .subpay{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; }
-  .subpay .left{ display:flex; align-items:center; gap:11px; }
-  .visachip{ width:34px; height:22px; border-radius:5px; background:#1a1f2b; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:700; color:#cfd4de; }
-  .subpay .card{ font-size:13px; color:#cfd4de; }
-  .subpay .exp{ font-size:12.5px; color:#7a8496; }
-  .sublinks{ display:flex; align-items:center; gap:20px; }
-  .sublinks span{ font-size:13px; font-weight:600; cursor:pointer; }
-  .sublinks .lk{ color:#3E7BFA; }
-  .sublinks .lk:hover{ color:#7ba4ff; }
-  .sublinks .cancel{ color:#8b93a3; }
-  .sublinks .cancel:hover{ color:#cfd4de; }
+  .sub-renew{ font-size:12.5px; color:#7a8496; margin-top:4px; }
+  .sub-price{ text-align:right; }
+  .sub-price .p{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; color:#f4f6fa; }
+  .sub-price .u{ font-size:12px; color:#7a8496; }
+  .sub-pay{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; }
+  .sub-links{ display:flex; align-items:center; gap:20px; margin-top:16px; }
+  .lnk{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; }
+  .lnk:hover{ color:#7ba4ff; }
+  .lnk.muted{ color:#8b93a3; }
+  .lnk.muted:hover{ color:#cfd4de; }
 
   /* notifications */
-  .notifwrap{ display:flex; flex-direction:column; max-width:540px; }
-  .notifrow{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
-  .notifrow .nl{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
-  .notifrow .nd{ font-size:12px; color:#7a8496; }
-  .switch{ width:38px; height:22px; border-radius:12px; flex:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); position:relative; cursor:pointer; }
+  .notif-list{ max-width:540px; }
+  .notif-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .notif-row .nl{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .notif-row .nd{ font-size:12px; color:#7a8496; margin-top:2px; }
+  .switch{ width:38px; height:22px; border-radius:12px; flex:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); position:relative; cursor:pointer; transition:background .12s; }
   .switch .knob{ position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .12s; }
   .switch.on{ background:#3E7BFA; border-color:#3E7BFA; }
   .switch.on .knob{ left:18px; }
@@ -107,55 +104,59 @@
   .switch.disabled .knob{ background:#5b6472; }
 
   /* security */
-  .secwrap{ display:flex; flex-direction:column; gap:20px; max-width:500px; }
-  .secblock{ display:flex; flex-direction:column; gap:12px; }
-  .secblock .h{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
-  .secblock input{ background:#0b0d12; color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; outline:none; }
-  .secblock input:focus{ border-color:rgba(62,123,250,0.5); }
-  .updatepw{ font-size:13px; font-weight:600; color:#3E7BFA; cursor:pointer; align-self:flex-start; background:transparent; border:none; font-family:inherit; }
-  .updatepw:hover{ color:#7ba4ff; }
-  .sec-msg{ font-size:12px; min-height:0; }
-  .sec-msg.err{ color:#E8607A; }
-  .sec-msg.ok{ color:#8fe4bd; }
+  .sec-wrap{ max-width:500px; display:flex; flex-direction:column; gap:20px; }
+  .pw-block{ display:flex; flex-direction:column; gap:12px; }
+  .pw-block .t{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .pw-block input{ background:#0b0d12; color:#e7ebf1; font-size:13.5px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; outline:none; }
+  .pw-block input:focus{ border-color:rgba(62,123,250,0.5); }
   .twofa{ display:flex; align-items:center; justify-content:space-between; padding-top:20px; border-top:1px solid rgba(255,255,255,0.06); }
-  .twofa .head{ display:flex; align-items:center; gap:9px; }
-  .twofa .tl{ font-size:13.5px; font-weight:500; color:#e7e9ee; }
+  .twofa .t{ display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:500; color:#e7e9ee; }
   .soon{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; color:#7a8496; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:5px; padding:2px 7px; }
-  .twofa .td{ font-size:12px; color:#7a8496; }
 
-  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0e1015; border:1px solid rgba(62,207,142,0.3); color:#8fe4bd; font-size:13px; padding:10px 18px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .2s; }
-  .toast.show{ opacity:1; }
+  .msg{ font-size:12px; margin-top:8px; min-height:15px; }
+  .msg.ok{ color:#8fe4bd; }
+  .msg.err{ color:#E8607A; }
+
+  /* toast */
+  #toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:#141824; border:1px solid rgba(255,255,255,0.14); color:#e7e9ee; font-size:13px; font-weight:600; padding:11px 18px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:50; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #loadwrap{ display:flex; justify-content:center; padding:120px; color:#7a8496; font-size:14px; }
 
   @media (max-width:720px){
-    .page{ padding:28px 16px; }
-    .container{ grid-template-columns:1fr; }
-    .sidebar{ border-right:none; border-bottom:1px solid rgba(255,255,255,0.07); flex-direction:row; flex-wrap:wrap; gap:6px; padding:14px; }
-    .sidebar .cap{ width:100%; padding-bottom:4px; }
+    .card{ grid-template-columns:1fr; }
+    .side{ border-right:none; border-bottom:1px solid rgba(255,255,255,0.07); flex-direction:row; flex-wrap:wrap; }
     .grid2{ grid-template-columns:1fr; }
-    .oddstrack{ grid-template-columns:1fr; }
+    .topbar,.page{ padding-left:18px; padding-right:18px; }
   }
 </style>
 </head>
 <body>
-  <div class="page">
-    <section class="shell">
-      <div class="topbar">
-        <h1>Account settings</h1>
-        <div class="actions">
-          <a class="backlink" href="bsp-consult-dashboard.html">← Back to dashboard</a>
-          <button class="signout" onclick="doSignOut()">Sign out</button>
-        </div>
-      </div>
+  <div class="topbar">
+    <a class="brand-id" href="bsp-consult-dashboard.html">
+      <img src="assets/bsp-logo.jpg" alt="BSP Consult" onerror="this.style.display='none'">
+      <b>BSP CONSULT</b>
+    </a>
+    <div class="rt">
+      <a href="bsp-consult-dashboard.html">Back to dashboard</a>
+      <span class="out" id="signOut">Sign out</span>
+    </div>
+  </div>
 
-      <div class="container">
+  <div id="loadwrap">Loading your account…</div>
+
+  <div class="page" id="pageWrap" style="display:none;">
+    <section class="shell">
+      <h1 class="h1">Account settings</h1>
+      <div class="card">
         <!-- sidebar -->
-        <div class="sidebar">
+        <div class="side" id="side">
           <span class="cap">Settings</span>
-          <button class="nav-item active" data-nav="profile" onclick="setNav('profile')">Profile</button>
-          <button class="nav-item" data-nav="odds" onclick="setNav('odds')">Odds format</button>
-          <button class="nav-item" data-nav="billing" onclick="setNav('billing')">Subscription</button>
-          <button class="nav-item" data-nav="notif" onclick="setNav('notif')">Notifications</button>
-          <button class="nav-item" data-nav="security" onclick="setNav('security')">Security</button>
+          <button class="navitem active" data-nav="profile">Profile</button>
+          <button class="navitem" data-nav="odds">Odds format</button>
+          <button class="navitem" data-nav="billing">Subscription</button>
+          <button class="navitem" data-nav="notif">Notifications</button>
+          <button class="navitem" data-nav="security">Security</button>
         </div>
 
         <!-- panel -->
@@ -163,127 +164,79 @@
           <h2 id="panelTitle">Profile</h2>
           <p class="desc" id="panelDesc">Your identity across BSP Consult.</p>
 
-          <!-- profile -->
-          <div class="section active" id="sec-profile">
-            <div class="profile-head">
-              <div class="profile-id">
-                <span class="avatar" id="avatar">AB</span>
+          <!-- PROFILE -->
+          <div class="sec active" data-sec="profile">
+            <div class="prof-head">
+              <div class="prof-id">
+                <span class="avatar" id="pAvatar">–</span>
                 <div>
                   <div class="nm" id="pName">—</div>
                   <div class="em" id="pEmail">—</div>
                 </div>
               </div>
-              <button class="editlink" id="editBtn" onclick="toggleEdit()">Edit</button>
+              <span class="editlink" id="editToggle">Edit</span>
             </div>
             <div class="grid2">
-              <label class="fld" id="fldName">
-                <span class="lbl">Full name</span>
-                <input type="text" id="inName" disabled>
-              </label>
-              <label class="fld" id="fldEmail">
-                <span class="lbl">Email address</span>
-                <input type="email" id="inEmail" disabled>
-              </label>
+              <label class="fld" id="fldName"><span class="lbl">Full name</span><input type="text" id="inName" disabled></label>
+              <label class="fld" id="fldEmail"><span class="lbl">Email address</span><input type="email" id="inEmail" disabled></label>
             </div>
-            <label class="fld tz" id="fldTz">
-              <span class="lbl">Timezone</span>
-              <span class="selwrap">
-                <select id="inTz" disabled>
-                  <option>(GMT+00:00) London</option>
-                  <option>(GMT+01:00) Amsterdam</option>
-                  <option>(GMT+01:00) Paris</option>
-                  <option>(GMT+02:00) Athens</option>
-                  <option>(GMT-05:00) New York</option>
-                  <option>(GMT-08:00) Los Angeles</option>
-                  <option>(GMT+10:00) Sydney</option>
-                </select>
-                <span class="caret">▾</span>
-              </span>
+            <label class="fld tzwrap" id="fldTz"><span class="lbl">Timezone</span>
+              <select id="inTz" disabled>
+                <option>(GMT+00:00) London</option>
+                <option>(GMT+01:00) Amsterdam</option>
+                <option>(GMT+01:00) Paris</option>
+                <option>(GMT+02:00) Athens</option>
+                <option>(GMT-05:00) New York</option>
+                <option>(GMT-08:00) Los Angeles</option>
+                <option>(GMT+10:00) Sydney</option>
+              </select>
+              <span class="caret">▾</span>
               <span class="helper">Sets the time on every match card, alert and report.</span>
             </label>
+            <div class="msg" id="profMsg"></div>
           </div>
 
-          <!-- odds -->
-          <div class="section" id="sec-odds">
-            <div class="oddstrack">
-              <button class="oddsopt" data-fmt="decimal" onclick="setOdds('decimal')"><span class="ol">Decimal</span><span class="oe">2.62</span></button>
-              <button class="oddsopt" data-fmt="fractional" onclick="setOdds('fractional')"><span class="ol">Fractional</span><span class="oe">13/8</span></button>
-              <button class="oddsopt" data-fmt="american" onclick="setOdds('american')"><span class="ol">American</span><span class="oe">+162</span></button>
+          <!-- ODDS -->
+          <div class="sec" data-sec="odds">
+            <div class="segwrap" id="segwrap">
+              <span class="seg" data-fmt="decimal"><span class="sl">Decimal</span><span class="se">2.62</span></span>
+              <span class="seg" data-fmt="fractional"><span class="sl">Fractional</span><span class="se">13/8</span></span>
+              <span class="seg" data-fmt="american"><span class="sl">American</span><span class="se">+162</span></span>
             </div>
+            <div class="msg" id="oddsMsg"></div>
           </div>
 
-          <!-- subscription -->
-          <div class="section" id="sec-billing">
-            <div class="subwrap">
-              <div class="subcard">
-                <div class="subtop">
-                  <div>
-                    <div class="planline">
-                      <span class="pname" id="subPlan">Pro</span>
-                      <span class="badge-active">ACTIVE</span>
-                    </div>
-                    <span class="renew" id="subRenew">Renews 14 August 2026</span>
-                  </div>
-                  <div class="price">
-                    <span class="amt" id="subPrice">€99</span><span class="per"> / month</span>
-                  </div>
-                </div>
-                <div class="subpay">
-                  <div class="left">
-                    <span class="visachip">VISA</span>
-                    <span class="card">Visa ending 4291</span>
-                  </div>
-                  <span class="exp">Expires 08/28</span>
-                </div>
-              </div>
-              <div class="sublinks">
-                <span class="lk" onclick="alert('Plan changes are coming soon.')">Upgrade plan</span>
-                <span class="lk" onclick="alert('Invoices are coming soon.')">View invoices</span>
-                <span class="cancel" onclick="alert('To cancel, contact support before your trial ends.')">Cancel subscription</span>
-              </div>
-            </div>
+          <!-- SUBSCRIPTION -->
+          <div class="sec" data-sec="billing">
+            <div class="sub-card" id="subCard"><!-- filled by JS --></div>
+            <div class="sub-links" id="subLinks"></div>
           </div>
 
-          <!-- notifications -->
-          <div class="section" id="sec-notif">
-            <div class="notifwrap">
-              <div class="notifrow">
-                <div><div class="nl">Match alerts</div><div class="nd">Value flags and line moves on matches you follow.</div></div>
-                <div class="switch" id="sw-matches" onclick="toggleNotif('matches')"><span class="knob"></span></div>
-              </div>
-              <div class="notifrow">
-                <div><div class="nl">Weekly digest</div><div class="nd">A Monday summary of model performance and edges.</div></div>
-                <div class="switch" id="sw-digest" onclick="toggleNotif('digest')"><span class="knob"></span></div>
-              </div>
-              <div class="notifrow" style="border-bottom:none;">
-                <div><div class="nl">Billing emails</div><div class="nd">Receipts, renewals and payment issues.</div></div>
-                <div class="switch" id="sw-billing" onclick="toggleNotif('billing')"><span class="knob"></span></div>
-              </div>
-            </div>
+          <!-- NOTIFICATIONS -->
+          <div class="sec" data-sec="notif">
+            <div class="notif-list" id="notifList"><!-- filled by JS --></div>
+            <div class="msg" id="notifMsg"></div>
           </div>
 
-          <!-- security -->
-          <div class="section" id="sec-security">
-            <div class="secwrap">
-              <div class="secblock">
-                <span class="h">Change password</span>
-                <input type="password" id="pwCurrent" placeholder="Current password" autocomplete="current-password">
+          <!-- SECURITY -->
+          <div class="sec" data-sec="security">
+            <div class="sec-wrap">
+              <div class="pw-block">
+                <span class="t">Change password</span>
+                <input type="password" id="pwCur" placeholder="Current password" autocomplete="current-password">
                 <div class="grid2" style="margin-bottom:0;">
                   <input type="password" id="pwNew" placeholder="New password" autocomplete="new-password">
-                  <input type="password" id="pwConfirm" placeholder="Confirm new password" autocomplete="new-password">
+                  <input type="password" id="pwConf" placeholder="Confirm new password" autocomplete="new-password">
                 </div>
-                <span class="sec-msg" id="pwMsg"></span>
-                <button class="updatepw" onclick="updatePassword()">Update password</button>
+                <span class="lnk" id="pwUpdate" style="align-self:flex-start;">Update password</span>
+                <div class="msg" id="pwMsg"></div>
               </div>
               <div class="twofa">
                 <div>
-                  <div class="head">
-                    <span class="tl">Two-factor authentication</span>
-                    <span class="soon">COMING SOON</span>
-                  </div>
-                  <span class="td">Add an authenticator app for a second layer of security.</span>
+                  <div class="t">Two-factor authentication <span class="soon">COMING SOON</span></div>
+                  <span class="helper" style="color:#7a8496;">Add an authenticator app for a second layer of security.</span>
                 </div>
-                <div class="switch disabled"><span class="knob"></span></div>
+                <span class="switch disabled"><span class="knob"></span></span>
               </div>
             </div>
           </div>
@@ -292,151 +245,173 @@
     </section>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div id="toast"></div>
 
   <script src="auth.js"></script>
   <script>
-    var user = BSP.requireAuth('auth.html');
+  (function(){
+    var user = null;
     var editing = false;
 
-    var navMeta = {
-      profile:  { title: 'Profile',                desc: 'Your identity across BSP Consult.' },
-      odds:     { title: 'Odds format',            desc: 'Applies to every price shown across the platform.' },
-      billing:  { title: 'Subscription & billing', desc: 'Manage your plan and payment method.' },
-      notif:    { title: 'Notifications',          desc: 'Choose what lands in your inbox.' },
-      security: { title: 'Security',               desc: 'Keep your account protected.' }
+    var NAV = {
+      profile:  { title:'Profile',              desc:'Your identity across BSP Consult.' },
+      odds:     { title:'Odds format',          desc:'Applies to every price shown across the platform.' },
+      billing:  { title:'Subscription & billing', desc:'Manage your plan and payment method.' },
+      notif:    { title:'Notifications',        desc:'Choose what lands in your inbox.' },
+      security: { title:'Security',             desc:'Keep your account protected.' }
     };
 
-    function toast(msg){
+    var NOTIF_DEFS = [
+      { key:'favouritePlayers', label:'Favourite players', desc:'When a player you follow is playing or shows a value edge.' },
+      { key:'valuePicks',       label:'Value picks',       desc:'When the model flags a market price as valuable.' },
+      { key:'openingOdds',      label:'Opening odds',      desc:'When opening prices are published for upcoming matches.' },
+      { key:'sharpMoney',       label:'Sharp money movement', desc:'When sharp line moves are detected across bookmakers.' }
+    ];
+
+    var PLAN_META = {
+      free: { label:'Free',  price:'€0',  blurb:"You're on the free plan.", canCancel:false },
+      edge: { label:'Edge',  price:'€49', blurb:'Board & analysis.',       canCancel:true  },
+      pro:  { label:'Pro',   price:'€99', blurb:'Full value engine.',      canCancel:true  }
+    };
+
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
+    function initials(name, email){
+      var base = (name||email||'?').trim();
+      var parts = base.split(/\s+/).filter(Boolean);
+      var s = parts.length>1 ? (parts[0][0]+parts[parts.length-1][0]) : base.slice(0,2);
+      return s.toUpperCase();
+    }
+
+    var toastTimer;
+    function toast(text){
       var t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      clearTimeout(t._h);
-      t._h = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+      t.textContent = text; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    }
+    function setMsg(id, text, ok){
+      var el = document.getElementById(id);
+      el.textContent = text || '';
+      el.className = 'msg ' + (text ? (ok ? 'ok' : 'err') : '');
     }
 
-    function initials(name){
-      return String(name || '').split(/\s+/).map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
-    }
-
-    function setNav(key){
-      document.querySelectorAll('.nav-item').forEach(function(b){
-        b.classList.toggle('active', b.getAttribute('data-nav') === key);
-      });
-      document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
-      document.getElementById('sec-' + key).classList.add('active');
-      document.getElementById('panelTitle').textContent = navMeta[key].title;
-      document.getElementById('panelDesc').textContent = navMeta[key].desc;
-    }
-
-    /* ---- profile ---- */
+    /* ---------- render ---------- */
     function renderProfile(){
-      document.getElementById('avatar').textContent = initials(user.name);
-      document.getElementById('pName').textContent = user.name;
-      document.getElementById('pEmail').textContent = user.email;
-      document.getElementById('inName').value = user.name;
-      document.getElementById('inEmail').value = user.email;
-      document.getElementById('inTz').value = user.timezone;
+      document.getElementById('pAvatar').textContent = initials(user.name, user.email);
+      document.getElementById('pName').textContent = user.name || '—';
+      document.getElementById('pEmail').textContent = user.email || '—';
+      document.getElementById('inName').value = user.name || '';
+      document.getElementById('inEmail').value = user.email || '';
+      document.getElementById('inTz').value = user.timezone || '(GMT+01:00) Amsterdam';
+      applyEditState();
     }
-
-    function toggleEdit(){
-      if (!editing){
-        editing = true;
-        document.getElementById('editBtn').textContent = 'Save';
-        ['fldName','fldEmail','fldTz'].forEach(function(id){ document.getElementById(id).classList.add('editing'); });
-        document.getElementById('inName').disabled = false;
-        document.getElementById('inEmail').disabled = false;
-        document.getElementById('inTz').disabled = false;
-      } else {
-        var name = document.getElementById('inName').value.trim();
-        var email = document.getElementById('inEmail').value.trim();
-        var tz = document.getElementById('inTz').value;
-        if (!name){ toast('Name cannot be empty.'); return; }
-        if (!BSP.isValidEmail(email)){ toast('Enter a valid email.'); return; }
-        var updated = BSP.updateProfile({ name: name, email: email, timezone: tz });
-        if (!updated){ toast('Could not save.'); return; }
-        user = updated;
-        editing = false;
-        document.getElementById('editBtn').textContent = 'Edit';
-        ['fldName','fldEmail','fldTz'].forEach(function(id){ document.getElementById(id).classList.remove('editing'); });
-        document.getElementById('inName').disabled = true;
-        document.getElementById('inEmail').disabled = true;
-        document.getElementById('inTz').disabled = true;
-        renderProfile();
-        toast('Profile saved.');
-      }
+    function applyEditState(){
+      document.getElementById('editToggle').textContent = editing ? 'Save' : 'Edit';
+      ['inName','inEmail','inTz'].forEach(function(id){ document.getElementById(id).disabled = !editing; });
+      ['fldName','fldEmail','fldTz'].forEach(function(id){ document.getElementById(id).classList.toggle('editing', editing); });
     }
-
-    /* ---- odds ---- */
     function renderOdds(){
-      document.querySelectorAll('.oddsopt').forEach(function(o){
-        o.classList.toggle('active', o.getAttribute('data-fmt') === user.oddsFormat);
+      var segs = document.querySelectorAll('#segwrap .seg');
+      segs.forEach(function(s){ s.classList.toggle('active', s.getAttribute('data-fmt') === (user.oddsFormat||'decimal')); });
+    }
+    function renderBilling(){
+      var meta = PLAN_META[user.plan] || PLAN_META.free;
+      var card = document.getElementById('subCard');
+      card.innerHTML =
+        '<div class="sub-top divide">'
+        +   '<div><div class="sub-plan"><span class="pn">'+esc(meta.label)+'</span>'
+        +     '<span class="badge-active">ACTIVE</span></div>'
+        +     '<div class="sub-renew">'+esc(meta.blurb)+'</div></div>'
+        +   '<div class="sub-price"><span class="p">'+esc(meta.price)+'</span><span class="u"> / month</span></div>'
+        + '</div>'
+        + '<div class="sub-pay"><span style="font-size:12.5px;color:#7a8496;">No payment method on file.</span></div>';
+      var links = document.getElementById('subLinks');
+      var html = '<a class="lnk" href="funnel.html">'+(user.plan==='free'?'Upgrade plan':'Change plan')+'</a>'
+               + '<span class="lnk muted" id="invLink">View invoices</span>';
+      if (meta.canCancel) html += '<span class="lnk muted" id="cancelLink">Cancel subscription</span>';
+      links.innerHTML = html;
+      var inv = document.getElementById('invLink'); if (inv) inv.onclick = function(){ toast('No invoices yet.'); };
+      var cancel = document.getElementById('cancelLink'); if (cancel) cancel.onclick = function(){ toast('Contact support to change your plan.'); };
+    }
+    function renderNotif(){
+      var list = document.getElementById('notifList');
+      list.innerHTML = NOTIF_DEFS.map(function(n){
+        var on = !!(user.notifications && user.notifications[n.key]);
+        return '<div class="notif-row"><div><div class="nl">'+esc(n.label)+'</div><div class="nd">'+esc(n.desc)+'</div></div>'
+          + '<span class="switch'+(on?' on':'')+'" data-notif="'+n.key+'"><span class="knob"></span></span></div>';
+      }).join('');
+      list.querySelectorAll('.switch[data-notif]').forEach(function(sw){
+        sw.onclick = function(){ toggleNotif(sw.getAttribute('data-notif'), sw); };
       });
+    }
+
+    /* ---------- actions ---------- */
+    function toggleEdit(){
+      if (!editing){ editing = true; applyEditState(); document.getElementById('inName').focus(); return; }
+      // Save
+      var name = document.getElementById('inName').value.trim();
+      var email = document.getElementById('inEmail').value.trim();
+      var tz = document.getElementById('inTz').value;
+      if (!name){ setMsg('profMsg','Please enter your full name.',false); return; }
+      if (!BSP.isValidEmail(email)){ setMsg('profMsg','Please enter a valid email address.',false); return; }
+      setMsg('profMsg','Saving…',true);
+      BSP.updateProfile({ name:name, email:email, timezone:tz }).then(function(u){
+        user = u; editing = false; renderProfile(); setMsg('profMsg','',true); toast('Profile saved');
+      }).catch(function(err){ setMsg('profMsg', err.message || 'Could not save.', false); });
     }
     function setOdds(fmt){
-      user = BSP.setOddsFormat(fmt) || user;
-      renderOdds();
-      toast('Odds format set to ' + fmt + '.');
+      var prev = user.oddsFormat;
+      user.oddsFormat = fmt; renderOdds();
+      BSP.setOddsFormat(fmt).then(function(u){ user = u; renderOdds(); toast('Odds format updated'); })
+        .catch(function(err){ user.oddsFormat = prev; renderOdds(); setMsg('oddsMsg', err.message||'Could not save.', false); });
     }
-
-    /* ---- subscription ---- */
-    function renderSubscription(){
-      var isPro = user.plan === 'pro';
-      document.getElementById('subPlan').textContent = isPro ? 'Pro' : 'Edge';
-      document.getElementById('subPrice').textContent = isPro ? '€99' : '€49';
-      // Derive a renewal date 30 days out for a realistic, stable-ish display.
-      var d = new Date();
-      d.setDate(d.getDate() + 30);
-      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      document.getElementById('subRenew').textContent = 'Renews ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    function toggleNotif(key, sw){
+      var next = !(user.notifications && user.notifications[key]);
+      sw.classList.toggle('on', next); // optimistic
+      var patch = {}; patch[key] = next;
+      BSP.setNotifications(patch).then(function(u){ user = u; renderNotif(); })
+        .catch(function(err){ sw.classList.toggle('on', !next); setMsg('notifMsg', err.message||'Could not save.', false); });
     }
-
-    /* ---- notifications ---- */
-    function renderNotif(){
-      ['matches','digest','billing'].forEach(function(k){
-        document.getElementById('sw-' + k).classList.toggle('on', !!user.notif[k]);
-      });
-    }
-    function toggleNotif(key){
-      var next = Object.assign({}, user.notif);
-      next[key] = !next[key];
-      user = BSP.setNotif(next) || user;
-      renderNotif();
-    }
-
-    /* ---- security ---- */
     function updatePassword(){
-      var cur = document.getElementById('pwCurrent').value;
+      var cur = document.getElementById('pwCur').value;
       var nw = document.getElementById('pwNew').value;
-      var cf = document.getElementById('pwConfirm').value;
-      var msg = document.getElementById('pwMsg');
-      msg.className = 'sec-msg';
-      if (nw.length < 8){ msg.className = 'sec-msg err'; msg.textContent = 'New password must be at least 8 characters.'; return; }
-      if (nw !== cf){ msg.className = 'sec-msg err'; msg.textContent = 'New passwords do not match.'; return; }
+      var cf = document.getElementById('pwConf').value;
+      if (!cur){ setMsg('pwMsg','Enter your current password.',false); return; }
+      if (nw.length < 8){ setMsg('pwMsg','New password must be at least 8 characters.',false); return; }
+      if (nw !== cf){ setMsg('pwMsg','New passwords do not match.',false); return; }
+      setMsg('pwMsg','Updating…',true);
       BSP.changePassword(cur, nw).then(function(){
-        msg.className = 'sec-msg ok';
-        msg.textContent = 'Password updated.';
-        document.getElementById('pwCurrent').value = '';
+        document.getElementById('pwCur').value = '';
         document.getElementById('pwNew').value = '';
-        document.getElementById('pwConfirm').value = '';
-      }).catch(function(err){
-        msg.className = 'sec-msg err';
-        msg.textContent = err.message;
-      });
+        document.getElementById('pwConf').value = '';
+        setMsg('pwMsg','',true); toast('Password updated');
+      }).catch(function(err){ setMsg('pwMsg', err.message||'Could not update password.', false); });
+    }
+    function switchNav(key){
+      document.querySelectorAll('.navitem').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-nav')===key); });
+      document.querySelectorAll('.sec').forEach(function(s){ s.classList.toggle('active', s.getAttribute('data-sec')===key); });
+      document.getElementById('panelTitle').textContent = NAV[key].title;
+      document.getElementById('panelDesc').textContent = NAV[key].desc;
     }
 
-    function doSignOut(){
-      BSP.signOut();
-      location.href = 'auth.html';
-    }
+    /* ---------- wire ---------- */
+    document.querySelectorAll('.navitem').forEach(function(b){ b.onclick = function(){ switchNav(b.getAttribute('data-nav')); }; });
+    document.querySelectorAll('#segwrap .seg').forEach(function(s){ s.onclick = function(){ setOdds(s.getAttribute('data-fmt')); }; });
+    document.getElementById('editToggle').onclick = toggleEdit;
+    document.getElementById('pwUpdate').onclick = updatePassword;
+    document.getElementById('signOut').onclick = function(){
+      BSP.signOut().then(function(){ location.href = 'funnel.html'; });
+    };
 
-    // Initial render (only if authed — requireAuth redirects otherwise).
-    if (user){
-      renderProfile();
-      renderOdds();
-      renderSubscription();
-      renderNotif();
-    }
+    /* ---------- boot (protected route) ---------- */
+    BSP.requireAuth('auth.html').then(function(u){
+      if (!u) return; // redirected
+      user = u;
+      document.getElementById('loadwrap').style.display = 'none';
+      document.getElementById('pageWrap').style.display = 'flex';
+      renderProfile(); renderOdds(); renderBilling(); renderNotif();
+    });
+  })();
   </script>
 </body>
 </html>
