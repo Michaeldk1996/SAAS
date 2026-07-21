@@ -1782,11 +1782,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/825_r-collignon.jpg",
     "oddsMovement": {
@@ -2660,7 +2666,10 @@
       "p2": 1.426,
       "bookmaker": "1xBet",
       "at": "2026-07-19T14:20:41.015Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147453",
@@ -5637,7 +5646,25 @@
       "p2": 2.31,
       "bookmaker": "Betsson",
       "at": "2026-07-18T16:35:15.137Z"
-    }
+    },
+    "finalScore": {
+      "display": "6-4, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12147465",
@@ -7261,11 +7288,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2168_s-wawrinka.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9596_r-a-burruchaga.jpg",
     "oddsMovement": {
@@ -7919,7 +7952,10 @@
       "p2": 1.42,
       "bookmaker": "1xBet",
       "at": "2026-07-18T19:13:02.183Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147466",
@@ -13756,7 +13792,21 @@
       "p2": 1.68,
       "bookmaker": "1xBet",
       "at": "2026-07-18T23:43:09.791Z"
-    }
+    },
+    "finalScore": {
+      "display": "5-0",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12147472",
@@ -19544,11 +19594,27 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 5,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/978_d-merida-aguilar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "oddsMovement": {
@@ -20510,7 +20576,10 @@
       "p2": 2.764,
       "bookmaker": "1xBet",
       "at": "2026-07-20T19:07:45.981Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147862",
@@ -29759,13 +29828,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.4,
+      "p2": 1.5,
+      "bookmaker": "BetVictor"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.4,
+        "bookmaker": "BetVictor"
+      },
+      "p2": {
+        "price": 1.5,
+        "bookmaker": "BetVictor"
+      }
     },
     "tournamentRound": "ATP Kitzbuhel - 1/8-finals",
     "p1Key": 2831,
@@ -31655,13 +31730,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.38,
+      "p2": 1.53,
+      "bookmaker": "BetVictor"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.38,
+        "bookmaker": "BetVictor"
+      },
+      "p2": {
+        "price": 1.53,
+        "bookmaker": "BetVictor"
+      }
     },
     "tournamentRound": "ATP Kitzbuhel - 1/8-finals",
     "p1Key": 395,
@@ -83900,27 +83981,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "oddsMovement": {
@@ -88441,7 +88506,26 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 3-6, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12147793",
@@ -90011,17 +90095,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/4053_o-luz.jpg",
     "oddsMovement": {
@@ -91214,7 +91292,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12147794",
@@ -92612,27 +92705,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 6
-      },
-      {
-        "set": 3,
-        "p1": 3,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9209_g-bueno.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/4077_t-pereira.jpg",
     "oddsMovement": {
@@ -96813,7 +96890,26 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 1-6, 7-6(5)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12147796",
@@ -98805,11 +98901,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2386_l-djere.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -104030,7 +104126,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(4), 4-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12147797",
@@ -105285,17 +105396,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "30 - 15",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1297_k-feldbausch.jpg",
     "oddsMovement": {
@@ -106292,7 +106397,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(2), 1-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "past-12147289",
