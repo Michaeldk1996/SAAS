@@ -400,6 +400,20 @@
       });
     },
 
+    // sendPasswordReset(email) -> Promise<true>
+    // Fires Firebase's built-in password-reset email — no custom backend.
+    // Resolves even for an unknown address (email-enumeration protection),
+    // which is why the UI always shows the same "reset link sent" confirmation.
+    sendPasswordReset: function (email) {
+      var e = normEmail(email);
+      if (!isValidEmail(e)) return Promise.reject(new Error('Please enter a valid email address.'));
+      return ensureInit().then(function () {
+        return _auth.sendPasswordResetEmail(e);
+      }).then(function () { return true; }).catch(function (err) {
+        throw mapAuthError(err);
+      });
+    },
+
     /* --- preferences (convenience wrappers) --- */
     getPreferences: function () {
       var u = _cachedUser;

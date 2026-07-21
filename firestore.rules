@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// BSP Consult · Tennis Edge — Firestore production security rules
+// Project: tennis-edge-75cd9
+//
+// Replaces the default test-mode rules (open read/write). Deploy from the
+// Firebase console (Firestore Database → Rules → Publish) or via the CLI
+// (`firebase deploy --only firestore:rules`).
+//
+// Design: a signed-in user can only ever touch their OWN data. Analytics /
+// affiliate rows are create-only from the client and are never client-readable
+// (the future admin analytics view reads them server-side, which bypasses these
+// rules). Everything not matched below is denied by default.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- User profiles ------------------------------------------------------
+    // A user may read and write ONLY their own document. No user can read or
+    // write another user's data. Unauthenticated requests match nothing here,
+    // so they get zero access.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ---- Affiliate bookmaker-click events (batch item 7) --------------------
+    // A signed-in user may create their own click rows (must stamp their own
+    // uid). Clients can never read, edit, or delete click data.
+    match /affiliate_clicks/{clickId} {
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // ---- Behaviour analytics events (batch item 8, if kept in Firestore) ----
+    // Same shape as affiliate clicks: own-create only, no client reads.
+    match /analytics_events/{eventId} {
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // ---- Default deny -------------------------------------------------------
+    // Any path not matched above is fully locked.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

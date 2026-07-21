@@ -194,7 +194,7 @@
             <label class="field">
               <span class="lblrow">
                 <span class="lbl">Password</span>
-                <span class="forgot" id="forgotLink" onclick="forgotStub()">Forgot?</span>
+                <span class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot?</span>
               </span>
               <input class="inp" type="password" id="password" placeholder="Your password" autocomplete="current-password">
               <span class="field-err" id="pwErr"></span>
@@ -302,7 +302,31 @@
     }
 
     function socialStub(){ alert('Social sign-in coming soon.'); }
-    function forgotStub(){ alert('Password reset is coming soon. For now, create a new account or contact support.'); }
+
+    function forgotPassword(){
+      clearErrors();
+      var emailEl = document.getElementById('email');
+      var email = emailEl.value.trim();
+      var formErr = document.getElementById('formErr');
+      formErr.style.color = '';
+      if (!BSP.isValidEmail(email)){
+        document.getElementById('emailErr').textContent = 'Enter your email above, then tap “Forgot?” to get a reset link.';
+        emailEl.classList.add('err');
+        emailEl.focus();
+        return;
+      }
+      var link = document.getElementById('forgotLink');
+      link.textContent = 'Sending…';
+      BSP.sendPasswordReset(email).then(function(){
+        formErr.style.color = '#5fd08a';
+        formErr.textContent = 'Reset link sent to ' + email;
+        link.textContent = 'Forgot?';
+      }).catch(function(err){
+        formErr.style.color = '';
+        formErr.textContent = (err && err.message) || 'Could not send a reset link. Please try again.';
+        link.textContent = 'Forgot?';
+      });
+    }
 
     function submitAuth(e){
       e.preventDefault();
