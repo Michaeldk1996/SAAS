@@ -165,6 +165,7 @@ jobs:
           # not copied = silent 404 (Elo pill degrades; the Styles tab goes empty).
           cp elo-ratings.json _site/ 2>/dev/null || true
           cp clutch-rating.json _site/ 2>/dev/null || true
+          cp surface-ratings.json _site/ 2>/dev/null || true
           cp archetypes-classified.json _site/ 2>/dev/null || true
           cp matchup-matrix.json _site/ 2>/dev/null || true
           cp playing-styles.json _site/ 2>/dev/null || true

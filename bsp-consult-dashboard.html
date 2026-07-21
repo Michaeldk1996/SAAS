@@ -2158,16 +2158,95 @@
   .edge-ai2 p{ font-size:14.5px; line-height:1.72; color:#d4dae4; margin:0 0 14px; text-wrap:pretty; }
   .edge-ai2 p:last-of-type{ margin-bottom:0; }
   .edge-aifoot{ margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.07); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:10.5px; color:#5b6472; }
+
+  /* ---- Edge sub-tabs (Match model | Player ratings) ---- */
+  .edge-subtabs-wrap{ display:flex; justify-content:flex-start; }
+  .edge-subtabs{ display:inline-flex; gap:4px; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:5px; width:max-content; max-width:100%; }
+  .edge-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:13px; font-weight:600; color:#8b93a3; background:none; border:none; padding:9px 20px; border-radius:9px; cursor:pointer; white-space:nowrap; transition:background .15s ease, color .15s ease; }
+  .edge-subtab:hover{ color:#cfd4de; }
+  .edge-subtab.active{ color:#fff; background:#3E7BFA; }
+  .edge-pane{ display:none; }
+  .edge-pane.active{ display:block; }
+  /* ---- Player ratings leaderboard ---- */
+  .edge-rt-head{ padding:4px 2px 2px; margin-bottom:16px; }
+  .edge-rt-controls{ display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center; margin-bottom:14px; }
+  .edge-rt-cg{ display:flex; flex-direction:column; gap:6px; }
+  .edge-rt-cglbl{ font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
+  .edge-seg{ display:inline-flex; gap:3px; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; width:max-content; }
+  .edge-seg-btn{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; color:#8b93a3; background:none; border:none; padding:6px 14px; border-radius:7px; cursor:pointer; white-space:nowrap; transition:background .14s ease, color .14s ease; }
+  .edge-seg-btn:hover{ color:#cfd4de; }
+  .edge-seg-btn.active{ color:#fff; background:rgba(255,255,255,0.10); }
+  .edge-seg-btn.active[data-surf="Hard"]{ background:#3f6c98; }
+  .edge-seg-btn.active[data-surf="Clay"]{ background:#a8542a; }
+  .edge-seg-btn.active[data-surf="Grass"]{ background:#3f7049; }
+  .edge-rt-tablewrap{ overflow-x:auto; }
+  .edge-rt-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  .edge-rt-table th{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#6b7280; text-align:right; padding:0 14px 10px; border-bottom:1px solid rgba(255,255,255,0.08); white-space:nowrap; cursor:pointer; user-select:none; }
+  .edge-rt-table th.l{ text-align:left; }
+  .edge-rt-table th:hover{ color:#aeb8cc; }
+  .edge-rt-table th .ar{ color:#5b9bff; margin-left:4px; }
+  .edge-rt-table td{ padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.045); text-align:right; white-space:nowrap; }
+  .edge-rt-table td.l{ text-align:left; }
+  .edge-rt-table tr:hover td{ background:rgba(255,255,255,0.015); }
+  .edge-rt-rk{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#5b6472; width:34px; }
+  .edge-rt-nm{ color:#dfe3ea; font-weight:500; }
+  .edge-rt-atp{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#5b6472; margin-left:7px; }
+  .edge-rt-elo{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#c8cfda; }
+  .edge-rt-idx{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:#c8cfda; }
+  .edge-rt-na{ color:#4b515e; }
+  .edge-rt-table tr.lowc td{ opacity:0.5; }
+  .edge-rt-foot{ margin-top:14px; font-size:10.5px; color:#5b6472; line-height:1.6; }
 </style>
 <div class="tabpage" data-page="edge">
   <div class="edge-shell">
     <div class="edge-wrap">
-      <div class="edge-topnav">
-        <span class="edge-nav-btn" id="edgePrev" onclick="edgeNav(-1)">← Previous match</span>
-        <span class="edge-nav-btn back" onclick="edgeBack()">Back to matches</span>
-        <span class="edge-nav-btn" id="edgeNext" onclick="edgeNav(1)">Next match →</span>
+      <div class="edge-subtabs-wrap">
+        <div class="edge-subtabs">
+          <button class="edge-subtab active" data-epane="model" onclick="switchEdgeTab(this,'model')">Match model</button>
+          <button class="edge-subtab" data-epane="ratings" onclick="switchEdgeTab(this,'ratings')">Player ratings</button>
+        </div>
       </div>
-      <div id="edgeBody"></div>
+
+      <div class="edge-pane active" data-epane="model">
+        <div class="edge-topnav">
+          <span class="edge-nav-btn" id="edgePrev" onclick="edgeNav(-1)">← Previous match</span>
+          <span class="edge-nav-btn back" onclick="edgeBack()">Back to matches</span>
+          <span class="edge-nav-btn" id="edgeNext" onclick="edgeNav(1)">Next match →</span>
+        </div>
+        <div id="edgeBody"></div>
+      </div>
+
+      <div class="edge-pane" data-epane="ratings">
+        <div class="edge-rt-head">
+          <div class="edge-eyebrow">Ratings board</div>
+          <div class="edge-title">Player ratings by surface</div>
+          <div class="edge-sub">Self-computed surface Elo, plus serve, return and under-pressure ratings derived from the full ATP-level match archive. Indices are percentiles within the rated pool (100 = best).</div>
+        </div>
+        <div class="edge-card">
+          <div class="edge-rt-controls">
+            <div class="edge-rt-cg">
+              <span class="edge-rt-cglbl">Surface</span>
+              <div class="edge-seg" id="edgeRateSurf">
+                <button class="edge-seg-btn active" data-surf="All"   onclick="edgeRateSetSurface(this,'All')">All</button>
+                <button class="edge-seg-btn"        data-surf="Hard"  onclick="edgeRateSetSurface(this,'Hard')">Hard</button>
+                <button class="edge-seg-btn"        data-surf="Clay"  onclick="edgeRateSetSurface(this,'Clay')">Clay</button>
+                <button class="edge-seg-btn"        data-surf="Grass" onclick="edgeRateSetSurface(this,'Grass')">Grass</button>
+              </div>
+            </div>
+            <div class="edge-rt-cg">
+              <span class="edge-rt-cglbl">Scope</span>
+              <div class="edge-seg" id="edgeRateScope">
+                <button class="edge-seg-btn active" data-scope="career" onclick="edgeRateSetScope(this,'career')">Career</button>
+                <button class="edge-seg-btn"        data-scope="last52" onclick="edgeRateSetScope(this,'last52')">Last 52 weeks</button>
+              </div>
+            </div>
+          </div>
+          <div class="edge-rt-tablewrap">
+            <table class="edge-rt-table" id="edgeRateTable"></table>
+          </div>
+          <div class="edge-rt-foot" id="edgeRateFoot"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2262,7 +2341,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'players') showPlayerList();
   if (tab === 'tournaments') { showTournamentList(); renderTournamentsTab(); }
   if (tab === 'styles') renderPlayingStyles();
-  if (tab === 'edge') openEdgeModelTab();
+  if (tab === 'edge') { edgeShowPane('model'); openEdgeModelTab(); }
 });
 
 
@@ -3151,6 +3230,116 @@ function openEdgeModelTab(){
   }
   edgeCurrentId = id;
   renderEdgeModel(id);
+}
+
+// ---- Edge sub-tabs: Match model | Player ratings ----------------------------
+let edgeRateSurface = 'All';                 // All | Hard | Clay | Grass
+let edgeRateScope   = 'career';              // career | last52
+let edgeRateSort    = { col: 'elo', dir: -1 }; // dir -1 = descending
+
+function switchEdgeTab(el, which){
+  document.querySelectorAll('[data-page="edge"] .edge-subtab').forEach(b => b.classList.toggle('active', b === el));
+  document.querySelectorAll('[data-page="edge"] .edge-pane').forEach(p => p.classList.toggle('active', p.getAttribute('data-epane') === which));
+  if (which === 'ratings') renderEdgeRatings();
+  window.scrollTo(0, 0);
+}
+// Force a given sub-tab active without a click target (used on nav entry so the
+// Edge Model always opens on the match model, never a stale ratings view).
+function edgeShowPane(which){
+  document.querySelectorAll('[data-page="edge"] .edge-subtab').forEach(b => b.classList.toggle('active', b.getAttribute('data-epane') === which));
+  document.querySelectorAll('[data-page="edge"] .edge-pane').forEach(p => p.classList.toggle('active', p.getAttribute('data-epane') === which));
+}
+function edgeRateSetSurface(el, s){
+  edgeRateSurface = s;
+  el.parentElement.querySelectorAll('.edge-seg-btn').forEach(b => b.classList.toggle('active', b === el));
+  renderEdgeRatings();
+}
+function edgeRateSetScope(el, s){
+  edgeRateScope = s;
+  el.parentElement.querySelectorAll('.edge-seg-btn').forEach(b => b.classList.toggle('active', b === el));
+  renderEdgeRatings();
+}
+function edgeRateSortBy(col){
+  if (edgeRateSort.col === col) edgeRateSort.dir *= -1;
+  else edgeRateSort = { col, dir: (col === 'name' ? 1 : -1) };
+  renderEdgeRatings();
+}
+// Per-surface Elo lookup — same key logic as psEloFor (last surname token + first
+// initial), but reads elo.elo[key][surface].rating rather than the overall scalar.
+function edgeEloKey(name){
+  const p = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  if (p.length < 2) return null;
+  return p[p.length - 1] + '|' + p[0][0];
+}
+function edgeEloSurf(name, surfLower){
+  const k = edgeEloKey(name), e = eloRatings && eloRatings.elo;
+  if (!k || !e || !e[k] || !e[k][surfLower]) return null;
+  const r = e[k][surfLower].rating;
+  return (typeof r === 'number') ? r : null;
+}
+function renderEdgeRatings(){
+  const table = document.getElementById('edgeRateTable');
+  const foot  = document.getElementById('edgeRateFoot');
+  if (!table) return;
+  const players = (surfaceRatings && surfaceRatings.players) || [];
+  if (!players.length){ table.innerHTML = ''; if (foot) foot.textContent = 'Ratings are loading…'; return; }
+
+  const surf = edgeRateSurface, scope = edgeRateScope, surfLower = surf.toLowerCase();
+  const rows = players.map(p => {
+    const b = p.surfaces && p.surfaces[surf] && p.surfaces[surf][scope];
+    return {
+      name: p.name, atp: p.rank,
+      elo:   edgeEloSurf(p.name, surfLower),
+      serve: (b && b.serve)  ? b.serve.index  : null,
+      ret:   (b && b.return) ? b.return.index : null,
+      up:    (b && b.underPressure && b.underPressure.index != null) ? b.underPressure.index : null,
+      conf:  b ? b.confidence : null
+    };
+  });
+
+  const col = edgeRateSort.col, dir = edgeRateSort.dir;
+  rows.sort((a, z) => {
+    let av = a[col], zv = z[col];
+    if (col === 'name'){ return String(av).localeCompare(String(zv)) * dir; }
+    const an = (av == null), zn = (zv == null);
+    if (an && zn) return 0;
+    if (an) return 1;            // players with no rating on this surface sink to the bottom
+    if (zn) return -1;
+    if (av === zv) return 0;
+    return (av < zv ? -1 : 1) * dir;
+  });
+
+  const fmtIdx = v => v == null ? '<span class="edge-rt-na">—</span>' : Number(v).toFixed(1);
+  const fmtElo = v => v == null ? '<span class="edge-rt-na">—</span>' : Math.round(v);
+  const atpTag = r => (r.atp && r.atp < 9999) ? `<span class="edge-rt-atp">#${r.atp}</span>` : '';
+  const ar = c => edgeRateSort.col === c ? `<span class="ar">${edgeRateSort.dir < 0 ? '▾' : '▴'}</span>` : '';
+
+  let html = `<thead><tr>
+      <th class="l">#</th>
+      <th class="l" onclick="edgeRateSortBy('name')">Player${ar('name')}</th>
+      <th onclick="edgeRateSortBy('elo')">Elo${ar('elo')}</th>
+      <th onclick="edgeRateSortBy('serve')">Serve${ar('serve')}</th>
+      <th onclick="edgeRateSortBy('ret')">Return${ar('ret')}</th>
+      <th onclick="edgeRateSortBy('up')">Under pressure${ar('up')}</th>
+    </tr></thead><tbody>`;
+  rows.forEach((r, i) => {
+    html += `<tr class="${r.conf === 'low' ? 'lowc' : ''}">
+        <td class="l edge-rt-rk">${i + 1}</td>
+        <td class="l"><span class="edge-rt-nm">${escapeHtml(r.name)}</span>${atpTag(r)}</td>
+        <td class="edge-rt-elo">${fmtElo(r.elo)}</td>
+        <td class="edge-rt-idx">${fmtIdx(r.serve)}</td>
+        <td class="edge-rt-idx">${fmtIdx(r.ret)}</td>
+        <td class="edge-rt-idx">${fmtIdx(r.up)}</td>
+      </tr>`;
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  const rated = rows.filter(r => r.serve != null || r.ret != null || r.up != null).length;
+  const scopeLbl = scope === 'career' ? 'career' : 'last 52 weeks';
+  const surfLbl  = surf === 'All' ? 'all surfaces' : surf.toLowerCase();
+  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are percentiles within the rated pool; faded rows have a thin sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
 }
 // Return to the matches board via the real nav button so its render + highlight
 // run exactly as a normal tab switch would.
@@ -7706,6 +7895,7 @@ async function loadCareerSplits(){
 // up synchronously via ppEloFor(). Absence just falls back to a deterministic
 // illustrative estimate so the pill is never empty.
 let eloRatings = { ratings: {} };
+let surfaceRatings = { players: [] };
 let playerStyles = { byKey: {} };
 function styleKey(name){ const p = (typeof psEloNorm === 'function' ? psEloNorm(name) : String(name || '').toLowerCase()).split(' ').filter(Boolean); return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0]; }
 function ppStyleFor(name){ const k = styleKey(name); return k ? (playerStyles.byKey || {})[k] : null; }
@@ -8314,6 +8504,15 @@ async function loadEloRatings(){
     const res = await fetch('./elo-ratings.json', { cache: 'no-cache' });
     if (res.ok){ eloRatings = await res.json(); _ppEloSorted = null; }
   } catch (err) { /* additive; the Elo pill degrades to an illustrative value */ }
+}
+// Surface serve/return/under-pressure ratings (surface-ratings.js output). Additive:
+// only the Edge Model "Player ratings" board reads it, so a miss just leaves that
+// board empty rather than breaking anything else.
+async function loadSurfaceRatings(){
+  try {
+    const res = await fetch('./surface-ratings.json', { cache: 'no-cache' });
+    if (res.ok){ surfaceRatings = await res.json(); if (typeof renderEdgeRatings === 'function') renderEdgeRatings(); }
+  } catch (err) { /* additive; the ratings board degrades to an empty state */ }
 }
 async function loadPlayerProfiles(){
   try {
@@ -12867,7 +13066,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

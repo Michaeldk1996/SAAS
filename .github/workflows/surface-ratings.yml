@@ -1,0 +1,99 @@
+name: BSP weekly surface-ratings refresh
+
+# Rebuilds surface-ratings.json (self-derived serve / return / under-pressure
+# ratings per surface, in career + last-52-week scopes) from the cached TML
+# match CSVs, then commits it back to main. The main pipeline (pipeline.yml)
+# copies the committed file into _site, so a refresh reaches the live site on
+# the next pipeline cycle — this workflow only keeps the committed file current.
+#
+# Why weekly: the ratings are career/last-52 aggregates that only move as players
+# finish matches; a weekly cadence keeps the current-year CSV (and therefore the
+# ratings) fresh without hammering the TML mirror.
+#
+# The current-year CSV is deleted before the build so surface-ratings.js re-fetches
+# it from the TML mirror (getCsv only downloads a year it does not already have on
+# disk). Older years are immutable, so they stay cached and are not re-downloaded.
+# Both the refreshed CSV and surface-ratings.json are committed.
+#
+# No API keys or npm dependencies (Node's built-in fetch + fs).
+# Cadence: Monday 21:00 UTC — an hour after the Elo refresh, so both weekly
+# rating sources land the same evening. workflow_dispatch allows a manual refresh.
+
+on:
+  schedule:
+    - cron: '0 21 * * 1'    # Mondays 21:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-surface-ratings
+  cancel-in-progress: false
+
+permissions:
+  contents: write            # needed to commit the refreshed files
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record the committed file's player count
+        # Captured before the rebuild overwrites it so the sanity check below can
+        # tell a real refresh from a build that quietly lost players.
+        run: |
+          echo "PREV_PLAYERS=$(node -e 'try{console.log((require(\"./surface-ratings.json\").players||[]).length)}catch(e){console.log(0)}')" >> "$GITHUB_ENV"
+
+      - name: Refresh the current-year TML CSV
+        # Force a re-download of the growing current-year file; getCsv only fetches
+        # a year it does not already have cached, so removing it triggers the pull.
+        run: |
+          Y=$(date -u +%Y)
+          rm -f "tml-cache/$Y.csv"
+          echo "Removed tml-cache/$Y.csv (will be re-fetched by the builder)."
+
+      - name: Rebuild surface ratings
+        run: node surface-ratings.js
+
+      - name: Sanity-check the rebuilt file
+        # A truncated build must never overwrite a good file. The player count
+        # should not regress meaningfully week to week.
+        run: |
+          node -e '
+            const d = require("./surface-ratings.json");
+            const n = (d.players || []).length;
+            const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
+            if (!n) { console.error("::error::surface-ratings.json has no players — refusing to commit"); process.exit(1); }
+            if (n < Math.floor(prev * 0.9)) { console.error(`::error::player count regressed ${prev} -> ${n} — refusing to commit`); process.exit(1); }
+            console.log(`OK: ${n} players (was ${prev}), generatedAt ${d.generatedAt}.`);
+          '
+
+      - name: Commit refreshed surface-ratings.json (+ current-year CSV)
+        run: |
+          Y=$(date -u +%Y)
+          git add surface-ratings.json "tml-cache/$Y.csv"
+          if git diff --cached --quiet; then
+            echo "Nothing changed — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-surface-bot"
+          git config user.email "bsp-surface-bot@users.noreply.github.com"
+          git commit -m "chore(surface-ratings): weekly serve/return/under-pressure refresh [skip ci]"
+          # Another workflow may have advanced main since checkout; rebase and
+          # retry so the refresh is never lost to a benign race.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push surface-ratings.json after 3 attempts."
+          exit 1
