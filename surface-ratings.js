@@ -10,8 +10,9 @@
 // (Tennismylife/TML-Database mirror). Every number is our own derivation
 // from public match results — NO ATP/Infosys scraping, no new licence.
 //
-//   SERVE RATING   = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df%
-//   RETURN RATING  = returnPtsWon% + break%
+//   SERVE RATING   = 1stIn% + 1stWon% + 2ndWon% + hold% + ace%
+//   RETURN RATING  = 1stReturnWon% + 2ndReturnWon% + BPconverted% + returnGamesWon%
+//                    (the four ATP/Infosys "Return" board components)
 //   UNDER-PRESSURE = BPsaved% + BPconverted% + tiebreak% + decidingSet%
 //                    (the four ATP "Under Pressure" board components)
 //
@@ -142,7 +143,7 @@ function newBucket() {
   return {
     matches: 0, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
     bpFaced: 0, bpSaved: 0,
-    oSvpt: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0, oBpFaced: 0, oBpSaved: 0,
+    oSvpt: 0, oFirstIn: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0, oBpFaced: 0, oBpSaved: 0,
     tbPlayed: 0, tbWon: 0, decPlayed: 0, decWon: 0,
   };
 }
@@ -151,7 +152,7 @@ function addContribution(b, c) {
   if (c.svpt) { b.svpt += c.svpt; b.firstIn += c.firstIn; b.firstWon += c.firstWon; b.secondWon += c.secondWon; b.ace += c.ace; b.df += c.df; }
   if (c.svGms) b.svGms += c.svGms;
   if (c.bpFaced != null) { b.bpFaced += c.bpFaced; b.bpSaved += c.bpSaved; }
-  if (c.oSvpt) { b.oSvpt += c.oSvpt; b.oFirstWon += c.oFirstWon; b.oSecondWon += c.oSecondWon; }
+  if (c.oSvpt) { b.oSvpt += c.oSvpt; b.oFirstIn += c.oFirstIn; b.oFirstWon += c.oFirstWon; b.oSecondWon += c.oSecondWon; }
   if (c.oSvGms) b.oSvGms += c.oSvGms;
   if (c.oBpFaced != null) { b.oBpFaced += c.oBpFaced; b.oBpSaved += c.oBpSaved; }
   b.tbPlayed += c.tbPlayed; b.tbWon += c.tbWon;
@@ -186,15 +187,22 @@ function computeRatings(b, floors, cb) {
   // return
   let ret = null;
   if (b.oSvpt > 0 && b.oSvGms > 0) {
-    const rptWonPct = (1 - (b.oFirstWon + b.oSecondWon) / b.oSvpt) * 100;
+    // ATP-style Return Rating = %1st-serve return points won + %2nd-serve return points won
+    // + %break points converted + %return games won — the four Infosys ATP terms. Splitting
+    // return points by serve type (instead of one blended figure) is what puts the rating on
+    // the true ~140-160 ATP scale. Opponent 1st serves in (oFirstIn) is the denominator that
+    // separates the two; every serve point that is not a 1st-serve-in is a 2nd-serve point.
+    const oSecondPts = b.oSvpt - b.oFirstIn;
+    const ret1stWonPct = b.oFirstIn > 0 ? (b.oFirstIn - b.oFirstWon) / b.oFirstIn * 100 : 0;
+    const ret2ndWonPct = oSecondPts > 0 ? (oSecondPts - b.oSecondWon) / oSecondPts * 100 : 0;
     const breakPct = b.oBpFaced > 0 ? (b.oBpFaced - b.oBpSaved) / b.oSvGms * 100 : 0;
-    // ATP-style Return Rating: return-points-won% + return-games-won% + break-points-
-    // converted%. BP-converted mirrors the ATP return build (it also feeds Under Pressure,
-    // exactly as the ATP reuses it in both leaderboards).
     const bpConvPct = b.oBpFaced > 0 ? (b.oBpFaced - b.oBpSaved) / b.oBpFaced * 100 : 0;
+    // overall return-points-won% retained for reference (not part of the ATP rating sum).
+    const rptWonPct = (1 - (b.oFirstWon + b.oSecondWon) / b.oSvpt) * 100;
     ret = {
+      ret1stWonPct: round1(ret1stWonPct), ret2ndWonPct: round1(ret2ndWonPct),
       rptWonPct: round1(rptWonPct), breakPct: round1(breakPct), bpConvPct: round1(bpConvPct),
-      rating: round1(rptWonPct + breakPct + bpConvPct),
+      rating: round1(ret1stWonPct + ret2ndWonPct + breakPct + bpConvPct),
     };
   }
   // under-pressure (each component floored independently). If a component is below its
@@ -300,7 +308,7 @@ function pctOf(sortedArr, v) {
         svpt: W.svpt || 0, firstIn: W.firstIn || 0, firstWon: W.firstWon || 0, secondWon: W.secondWon || 0,
         svGms: W.svGms || 0, ace: W.ace || 0, df: W.df || 0,
         bpFaced: W.bpFaced, bpSaved: W.bpFaced != null ? (W.bpSaved || 0) : null,
-        oSvpt: L.svpt || 0, oFirstWon: L.firstWon || 0, oSecondWon: L.secondWon || 0, oSvGms: L.svGms || 0,
+        oSvpt: L.svpt || 0, oFirstIn: L.firstIn || 0, oFirstWon: L.firstWon || 0, oSecondWon: L.secondWon || 0, oSvGms: L.svGms || 0,
         oBpFaced: L.bpFaced, oBpSaved: L.bpFaced != null ? (L.bpSaved || 0) : null,
         tbPlayed: ps.tbPlayed, tbWon: ps.tbWonByWinner,
         decPlayed: ps.decPlayed, decWon: ps.decWonByWinner,
@@ -311,7 +319,7 @@ function pctOf(sortedArr, v) {
         svpt: L.svpt || 0, firstIn: L.firstIn || 0, firstWon: L.firstWon || 0, secondWon: L.secondWon || 0,
         svGms: L.svGms || 0, ace: L.ace || 0, df: L.df || 0,
         bpFaced: L.bpFaced, bpSaved: L.bpFaced != null ? (L.bpSaved || 0) : null,
-        oSvpt: W.svpt || 0, oFirstWon: W.firstWon || 0, oSecondWon: W.secondWon || 0, oSvGms: W.svGms || 0,
+        oSvpt: W.svpt || 0, oFirstIn: W.firstIn || 0, oFirstWon: W.firstWon || 0, oSecondWon: W.secondWon || 0, oSvGms: W.svGms || 0,
         oBpFaced: W.bpFaced, oBpSaved: W.bpFaced != null ? (W.bpSaved || 0) : null,
         tbPlayed: ps.tbPlayed, tbWon: ps.tbPlayed - ps.tbWonByWinner,
         decPlayed: ps.decPlayed, decWon: ps.decPlayed - ps.decWonByWinner,
@@ -351,7 +359,7 @@ function pctOf(sortedArr, v) {
       const wc = {
         date, surface, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
         bpFaced: wBpF, bpSaved: wBpF != null ? (wBpS || 0) : null,
-        oSvpt: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
+        oSvpt: 0, oFirstIn: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
         oBpFaced: lBpF, oBpSaved: lBpF != null ? (lBpS || 0) : null,
         tbPlayed: ps.tbPlayed, tbWon: ps.tbWonByWinner,
         decPlayed: ps.decPlayed, decWon: ps.decWonByWinner,
@@ -360,7 +368,7 @@ function pctOf(sortedArr, v) {
       const lc = {
         date, surface, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
         bpFaced: lBpF, bpSaved: lBpF != null ? (lBpS || 0) : null,
-        oSvpt: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
+        oSvpt: 0, oFirstIn: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0,
         oBpFaced: wBpF, oBpSaved: wBpF != null ? (wBpS || 0) : null,
         tbPlayed: ps.tbPlayed, tbWon: ps.tbPlayed - ps.tbWonByWinner,
         decPlayed: ps.decPlayed, decWon: ps.decPlayed - ps.decWonByWinner,
@@ -516,7 +524,7 @@ function pctOf(sortedArr, v) {
     surfaces: [...SURFACES, 'All'],
     method: {
       serve: 'ATP-style Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + ace% (tour level only; no df penalty, matching the ATP serve leaderboard build)',
-      return: 'ATP-style Return Rating = returnPtsWon% + returnGamesWon% + BPconverted% (tour level only)',
+      return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (tour level only; return points split by serve type to match the Infosys ATP Return leaderboard scale)',
       underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
       index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
     },
