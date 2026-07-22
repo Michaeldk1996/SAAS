@@ -2883,7 +2883,13 @@ function matchDayBucket(m){
   if (!m.date) return m.day;
   const now = new Date();
   const dayMs = 86400000;
-  const dateStr = d => d.toISOString().split('T')[0];
+  // Bucket by the viewer's LOCAL calendar day, not UTC. m.date is the venue-local
+  // fixture date, and the day-tab LABELS (daymin2Label/day2Label/weekday above) are
+  // already computed in local time — so deciding today/yesterday/tomorrow in UTC
+  // here left them inconsistent: after local midnight but before UTC midnight
+  // (e.g. 01:00 CEST = 23:00 UTC the prior day) every one of "today's" matches
+  // bucketed to Tomorrow and the default Today tab rendered empty.
+  const dateStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const matchDay = m.date;
   const twoDaysAgo = dateStr(new Date(now.getTime() - 2 * dayMs));
   const yesterday = dateStr(new Date(now.getTime() - dayMs));
