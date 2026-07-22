@@ -24,14 +24,20 @@
 
 const crypto = require('crypto');
 const { onRequest } = require('firebase-functions/v2/https');
-const { defineSecret, defineString } = require('firebase-functions/params');
+const { defineString } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
 const db = admin.firestore();
 
-const WHOP_WEBHOOK_SECRET = defineSecret('WHOP_WEBHOOK_SECRET');
+// WHOP_WEBHOOK_SECRET is delivered as a deploy-time env param (written to
+// functions/.env by the deploy workflow from the GitHub Actions secret of the
+// same name), matching how the plan IDs below are supplied. It is never
+// committed to git. This avoids a Secret Manager / Service Usage IAM grant on
+// the CI deploy service account; harden to defineSecret() once that SA has
+// roles/secretmanager.admin + roles/serviceusage.serviceUsageConsumer.
+const WHOP_WEBHOOK_SECRET = defineString('WHOP_WEBHOOK_SECRET');
 const WHOP_PLAN_BASIC = defineString('WHOP_PLAN_BASIC');
 const WHOP_PLAN_PRO = defineString('WHOP_PLAN_PRO');
 
@@ -200,7 +206,7 @@ async function handleEvent(action, data) {
 }
 
 exports.whopWebhook = onRequest(
-  { secrets: [WHOP_WEBHOOK_SECRET], region: 'us-central1', cors: false },
+  { region: 'us-central1', cors: false },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 

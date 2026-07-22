@@ -49,26 +49,27 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
 
-      - name: Write plan params (functions/.env)
+      - name: Write function params (functions/.env)
         env:
           WHOP_PLAN_BASIC: ${{ secrets.WHOP_PLAN_BASIC }}
           WHOP_PLAN_PRO: ${{ secrets.WHOP_PLAN_PRO }}
+          WHOP_WEBHOOK_SECRET: ${{ secrets.WHOP_WEBHOOK_SECRET }}
         run: |
           if [ -z "$WHOP_PLAN_BASIC" ] || [ -z "$WHOP_PLAN_PRO" ]; then
             echo "::error::Missing WHOP_PLAN_BASIC and/or WHOP_PLAN_PRO"; exit 1
           fi
-          printf 'WHOP_PLAN_BASIC=%s\nWHOP_PLAN_PRO=%s\n' "$WHOP_PLAN_BASIC" "$WHOP_PLAN_PRO" > functions/.env
-
-      - name: Store webhook secret in Secret Manager
-        env:
-          WHOP_WEBHOOK_SECRET: ${{ secrets.WHOP_WEBHOOK_SECRET }}
-        run: |
           if [ -z "$WHOP_WEBHOOK_SECRET" ]; then
             echo "::error::Missing repository secret WHOP_WEBHOOK_SECRET"; exit 1
           fi
-          printf '%s' "$WHOP_WEBHOOK_SECRET" \
-            | firebase functions:secrets:set WHOP_WEBHOOK_SECRET \
-                --data-file=- --project "$FIREBASE_PROJECT"
+          # functions/.env is written here from GitHub Actions secrets and is
+          # never committed. The webhook secret is supplied as an env param
+          # (defineString) rather than Secret Manager, so the deploy needs no
+          # Secret Manager / Service Usage IAM on the CI service account.
+          {
+            printf 'WHOP_PLAN_BASIC=%s\n' "$WHOP_PLAN_BASIC"
+            printf 'WHOP_PLAN_PRO=%s\n' "$WHOP_PLAN_PRO"
+            printf 'WHOP_WEBHOOK_SECRET=%s\n' "$WHOP_WEBHOOK_SECRET"
+          } > functions/.env
 
       - name: Deploy whopWebhook
         run: |
