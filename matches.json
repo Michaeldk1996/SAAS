@@ -1354,27 +1354,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 3,
-        "p1": 3,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "oddsMovement": {
@@ -2499,7 +2483,26 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 4-6, 6-7(4)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12148127",
