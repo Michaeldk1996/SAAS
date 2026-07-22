@@ -1,0 +1,81 @@
+name: Deploy Whop Webhook (Firebase Functions)
+
+# Manual, one-click deploy of the whopWebhook Cloud Function.
+# No terminal needed: set the four repository secrets (below), then run this
+# workflow from the GitHub Actions tab -> "Run workflow".
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   FIREBASE_SERVICE_ACCOUNT  - full JSON of a service-account key with deploy
+#                               rights on project tennis-edge-75cd9
+#   WHOP_WEBHOOK_SECRET       - the whsec_... value from the Whop webhook
+#   WHOP_PLAN_BASIC           - Whop plan_id / product_id for the Edge (€49) tier
+#   WHOP_PLAN_PRO             - Whop plan_id / product_id for the Pro (€99) tier
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-whop-webhook
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT: tennis-edge-75cd9
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-sa.json
+    steps:
+      - name: Check out the Whop integration branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install function dependencies
+        working-directory: functions
+        run: npm install
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write service-account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing repository secret FIREBASE_SERVICE_ACCOUNT"; exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
+
+      - name: Write plan params (functions/.env)
+        env:
+          WHOP_PLAN_BASIC: ${{ secrets.WHOP_PLAN_BASIC }}
+          WHOP_PLAN_PRO: ${{ secrets.WHOP_PLAN_PRO }}
+        run: |
+          if [ -z "$WHOP_PLAN_BASIC" ] || [ -z "$WHOP_PLAN_PRO" ]; then
+            echo "::error::Missing WHOP_PLAN_BASIC and/or WHOP_PLAN_PRO"; exit 1
+          fi
+          printf 'WHOP_PLAN_BASIC=%s\nWHOP_PLAN_PRO=%s\n' "$WHOP_PLAN_BASIC" "$WHOP_PLAN_PRO" > functions/.env
+
+      - name: Store webhook secret in Secret Manager
+        env:
+          WHOP_WEBHOOK_SECRET: ${{ secrets.WHOP_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$WHOP_WEBHOOK_SECRET" ]; then
+            echo "::error::Missing repository secret WHOP_WEBHOOK_SECRET"; exit 1
+          fi
+          printf '%s' "$WHOP_WEBHOOK_SECRET" \
+            | firebase functions:secrets:set WHOP_WEBHOOK_SECRET \
+                --data-file=- --project "$FIREBASE_PROJECT"
+
+      - name: Deploy whopWebhook
+        run: |
+          firebase deploy --only functions:whopWebhook \
+            --project "$FIREBASE_PROJECT" --non-interactive --force
+
+      - name: Print webhook URL
+        run: |
+          echo "Deployed. Configure this URL in Whop -> Settings -> Webhooks:"
+          echo "https://us-central1-${FIREBASE_PROJECT}.cloudfunctions.net/whopWebhook"
