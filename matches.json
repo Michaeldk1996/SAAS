@@ -9870,11 +9870,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "oddsMovement": {
@@ -10404,7 +10410,10 @@
       "p2": 1.555,
       "bookmaker": "1xBet",
       "at": "2026-07-21T13:31:23.095Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148251",
@@ -12506,11 +12515,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "oddsMovement": {
@@ -13152,7 +13167,10 @@
       "p2": 1.595,
       "bookmaker": "1xBet",
       "at": "2026-07-21T13:31:23.321Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148308",
@@ -20267,7 +20285,25 @@
       "p2": 1.45,
       "bookmaker": "Betano",
       "at": "2026-07-21T16:49:38.314Z"
-    }
+    },
+    "finalScore": {
+      "display": "6-3, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12148311",
@@ -22249,11 +22285,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "oddsMovement": {
@@ -22759,7 +22795,10 @@
       "p2": 1.847,
       "bookmaker": "Pinnacle",
       "at": "2026-07-21T17:58:51.291Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148318",
