@@ -4532,11 +4532,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1777_t-m-etcheverry.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/416_j-rodionov.jpg",
     "oddsMovement": {
@@ -5270,7 +5276,10 @@
       "p2": 2.739,
       "bookmaker": "1xBet",
       "at": "2026-07-20T16:46:00.036Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12147864",
@@ -11201,7 +11210,25 @@
       "p2": 1.555,
       "bookmaker": "1xBet",
       "at": "2026-07-21T13:31:23.095Z"
-    }
+    },
+    "finalScore": {
+      "display": "0-6, 3-6",
+      "sets": [
+        {
+          "p1": 0,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12148251",
@@ -13312,11 +13339,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "oddsMovement": {
@@ -14190,7 +14228,10 @@
       "p2": 1.595,
       "bookmaker": "1xBet",
       "at": "2026-07-21T13:31:23.321Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148308",
@@ -17971,11 +18012,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1297_k-feldbausch.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "oddsMovement": {
@@ -19213,7 +19260,10 @@
       "p2": 1.443,
       "bookmaker": "1xBet",
       "at": "2026-07-21T17:03:49.226Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148311",
@@ -21708,7 +21758,29 @@
       "p2": 1.847,
       "bookmaker": "Pinnacle",
       "at": "2026-07-21T17:58:51.291Z"
-    }
+    },
+    "finalScore": {
+      "display": "7-6(6), 2-6, 6-4",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12148318",
@@ -25377,10 +25449,21 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Finished",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 0
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "A - 40",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
@@ -26215,7 +26298,10 @@
       "p2": 1.401,
       "bookmaker": "Pinnacle",
       "at": "2026-07-21T17:42:43.361Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148320",
@@ -39425,7 +39511,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 7-6(3), 1-6",
+      "display": "5-7, 7-6, 1-6",
       "sets": [
         {
           "p1": 5,
@@ -45745,7 +45831,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -51524,7 +51610,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 7-6(4), 1-6",
+      "display": "5-7, 7-6, 1-6",
       "sets": [
         {
           "p1": 5,
@@ -86314,7 +86400,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6(5), 6-4",
+      "display": "3-6, 7-6, 6-4",
       "sets": [
         {
           "p1": 3,
@@ -113727,7 +113813,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 1-6, 7-6(5)",
+      "display": "6-3, 1-6, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -120350,7 +120436,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -127186,7 +127272,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(2), 1-6",
+      "display": "6-7, 1-6",
       "sets": [
         {
           "p1": 6,
@@ -147338,7 +147424,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(3), 6-3",
+      "display": "6-4, 6-7, 6-3",
       "sets": [
         {
           "p1": 6,
