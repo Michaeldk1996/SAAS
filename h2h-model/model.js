@@ -62,7 +62,17 @@ function runModel(match, opts = {}) {
   };
   const adjustments = runAll(ctx);
 
-  const totalDelta = adjustments.reduce((s, a) => s + (a.applied ? a.deltaP1 : 0), 0);
+  // Combined live-signal cap (Model v2.0 Phase-0). Layers #8 (W/UE), #9 (serve)
+  // and #12 (weather) are "live reads"; clip their COMBINED deltaP1 to
+  // +/- config.liveSignalCap before summing, so together they can never move the
+  // price more than one strong signal. The other layers pass through untouched.
+  const liveIds = config.liveSignalCapLayerIds;
+  const rawLiveDelta = adjustments.reduce(
+    (s, a) => s + (a.applied && liveIds.includes(a.id) ? a.deltaP1 : 0), 0);
+  const cappedLiveDelta = clamp(rawLiveDelta, -config.liveSignalCap, config.liveSignalCap);
+  const nonLiveDelta = adjustments.reduce(
+    (s, a) => s + (a.applied && !liveIds.includes(a.id) ? a.deltaP1 : 0), 0);
+  const totalDelta = nonLiveDelta + cappedLiveDelta;
   const baselineP1 = clamp(stage1.baseP1 + totalDelta, config.probFloor, config.probCeil);
 
   // Rank-tier probability ceiling (Model v2.0 Phase-0). Cap the FAVOURITE on
@@ -103,6 +113,13 @@ function runModel(match, opts = {}) {
         cutoff: config.rankTierCutoff,
         ceil: tierCeil,
         clamped: round4(adjustedP1) !== round4(baselineP1),
+      },
+      liveCap: {
+        layerIds: liveIds,
+        cap: config.liveSignalCap,
+        rawDeltaP1: round4(rawLiveDelta),
+        cappedDeltaP1: round4(cappedLiveDelta),
+        clamped: round4(cappedLiveDelta) !== round4(rawLiveDelta),
       },
     },
     stage3: pricing,

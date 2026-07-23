@@ -108,6 +108,17 @@ module.exports = {
   probCeilBothTop50: 0.85,
   probCeilOneTop50: 0.90,
 
+  // ---- Combined live-signal cap (Model v2.0 Phase-0) ----
+  // Layers #8 (W/UE), #9 (serve) and #12 (weather) are "live reads": their
+  // magnitudes sum to 8.5pp, so stacked they could move the price more than the
+  // evidentiary weight of one strong in-match signal warrants. Their COMBINED
+  // deltaP1 is clipped to +/- liveSignalCap BEFORE it enters the model; the
+  // other 11 layers are untouched. Clip (not per-layer rescale) because only the
+  // summed contribution feeds the price. Layers keyed by retained id, so this
+  // stays correct regardless of display order.
+  liveSignalCap: 0.07,
+  liveSignalCapLayerIds: [8, 9, 12],
+
   // ---- Stage 3: value detection --------------------------------------
   value: {
     // Edge = fairProb - marketImplied (vig-removed). Flag thresholds:
