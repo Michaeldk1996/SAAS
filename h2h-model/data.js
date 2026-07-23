@@ -145,18 +145,82 @@ function surfaceCategory(surface) {
   return null;
 }
 
+// Rank-at-time sidecar (Step 2a). Built by build-rank-at-time.js from tml-cache;
+// a standalone file, never inlined and never served to the browser. Missing file
+// => rankOf() transparently falls back to current rank (pre-2a behaviour).
+// Max age (days) an observation may predate the match and still count as
+// "match-day": ranks are published weekly, so anything inside ~13 months covers
+// a player who missed a stretch without letting a years-stale rank leak through.
+const RANK_AT_TIME_MAX_AGE_DAYS = 400;
+let _rankAtTime; // { key: [[yyyymmdd, rank], ...] } | null
+function rankAtTimeIndex() {
+  if (_rankAtTime === undefined) {
+    try {
+      _rankAtTime = load('rank-at-time.json').players || null;
+    } catch (e) {
+      _rankAtTime = null; // sidecar absent -> current-rank fallback only
+    }
+  }
+  return _rankAtTime;
+}
+// Convert a Date / ms / 'YYYY-MM-DD' / YYYYMMDD into a comparable YYYYMMDD int.
+function toYmd(date) {
+  if (date == null) return null;
+  if (typeof date === 'number' && date >= 19000000 && date <= 99991231) return date; // already YYYYMMDD
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return null;
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+}
+function ymdToDayNum(ymd) {
+  const s = String(ymd);
+  return Math.floor(Date.UTC(+s.slice(0, 4), (+s.slice(4, 6) || 1) - 1, +s.slice(6, 8) || 1) / 86400000);
+}
 /**
- * Resolve an opponent's CURRENT rank (proxy for match-day rank) used by the
- * quality-adjusted-form adjustment. Two-tier lookup:
- *   1. numeric api-tennis key -> player-profiles.json (only ~current-slate
- *      players are cached there, so this covers a minority of historical
- *      recent-form opponents).
- *   2. FALLBACK: opponent name -> "lastname|initial" -> elo-ratings.json
- *      `.all.rank`. elo-ratings covers far more players (~540 vs ~445), so this
- *      resolves the long tail of recent-form opponents the profiles miss.
- * Returns null only when neither source knows the player (never fabricated).
+ * The match-day rank of `abbrName` as of `matchDate`, from the rank-at-time
+ * sidecar. Returns the most recent observation on-or-before the match date that
+ * is within RANK_AT_TIME_MAX_AGE_DAYS, or null when the sidecar has no usable
+ * observation for that player/date (caller then falls back to current rank).
  */
-function rankOf(numericKey, abbrName) {
+function rankAtTime(abbrName, matchDate) {
+  const idx = rankAtTimeIndex();
+  if (!idx) return null;
+  const targetYmd = toYmd(matchDate);
+  if (targetYmd == null) return null;
+  const eloKey = eloKeyFromFullName(abbrName);
+  if (!eloKey) return null;
+  const obs = idx[eloKey];
+  if (!obs || !obs.length) return null;
+  // binary search: greatest obs date <= targetYmd
+  let lo = 0, hi = obs.length - 1, best = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (obs[mid][0] <= targetYmd) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+  }
+  if (best < 0) return null; // player's first observation postdates the match
+  const [obsYmd, rank] = obs[best];
+  if (ymdToDayNum(targetYmd) - ymdToDayNum(obsYmd) > RANK_AT_TIME_MAX_AGE_DAYS) return null;
+  return rank;
+}
+
+/**
+ * Resolve an opponent's rank used by the quality-adjusted-form adjustment.
+ *   0. PREFERRED (when `matchDate` given): the opponent's MATCH-DAY rank from
+ *      the rank-at-time sidecar. A player ranked #8 today may have been #180
+ *      when the recent-form match was played — current rank mislabels the win.
+ *   1. numeric api-tennis key -> player-profiles.json current rank (only
+ *      ~current-slate players are cached there).
+ *   2. FALLBACK: opponent name -> "lastname|initial" -> elo-ratings.json
+ *      `.all.rank`. elo-ratings covers far more players, resolving the tail.
+ * Returns null only when no source knows the player (never fabricated).
+ * `matchDate` is optional & backward-compatible: omit it and the pre-2a
+ * current-rank behaviour is unchanged.
+ */
+function rankOf(numericKey, abbrName, matchDate) {
+  // tier 0: rank-at-time sidecar (only when a date is supplied)
+  if (matchDate != null) {
+    const rat = rankAtTime(abbrName, matchDate);
+    if (rat != null) return rat;
+  }
   // tier 1: numeric key -> profile rank
   if (numericKey != null) {
     const profiles = playersOf(load('player-profiles.json'));
