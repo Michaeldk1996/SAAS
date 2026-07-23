@@ -298,7 +298,7 @@ function qualityForm(ctx) {
     const last10 = ms.slice(0, 10);
     const overallWR = last10.filter(m => m.won).length / last10.length;
     const vsTop50 = last10.filter(m => {
-      const r = rankOf(m.opponentKey, m.opponent);
+      const r = rankOf(m.opponentKey, m.opponent, m.date); // opponent's rank ON that match date
       return r != null && r <= 50;
     });
     let s1 = 0, s1conf = false;
@@ -316,7 +316,7 @@ function qualityForm(ctx) {
       for (const m of ms) {
         if (!m.won) continue;
         if (surfaceCategory(m.surface) !== cat) continue;
-        const r = rankOf(m.opponentKey, m.opponent);
+        const r = rankOf(m.opponentKey, m.opponent, m.date); // opponent's rank ON that match date
         if (r == null || r > 20) continue;
         const age = now - new Date(m.date);
         s2 += age <= wk52Ms ? 1.0 : 0.4; // recent worth more than old career win

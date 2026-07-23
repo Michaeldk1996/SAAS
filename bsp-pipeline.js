@@ -4059,6 +4059,18 @@ async function runPipeline() {
   });
   console.log(`Wrote tournament-progression.json (${Object.keys(progressionTournaments).length}/${activeTournamentNames.length} tournaments had enough finished rounds for a progression chart).`);
 
+  // Rank-at-time sidecar (Step 2a): rebuild rank-at-time.json from the TML
+  // archive the career backfill above just refreshed into tml-cache/, so the
+  // model's quality-adjusted-form layer sees each recent-form opponent's rank
+  // AS OF the match date (not today's rank). Best-effort: a failure leaves the
+  // committed sidecar in place, and a missing sidecar makes rankOf() fall back
+  // to current rank — i.e. exactly the pre-2a behaviour. Never blocks the model.
+  try {
+    require('child_process').execSync('node build-rank-at-time.js', { stdio: 'inherit' });
+  } catch (e) {
+    console.warn(`  rank-at-time rebuild skipped (${e.message}) — using committed sidecar / current-rank fallback.`);
+  }
+
   // Tennis Edge Model — precompute the H2H engine output + pre-baked AI summary
   // for every match, for the static dashboard to fetch. MUST run last: the
   // engine reads the fresh matches.json / player-profiles.json /
