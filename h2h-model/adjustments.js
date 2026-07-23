@@ -31,7 +31,7 @@
 
 const config = require('./config');
 const { surfaceCategory, rankOf, loadManualInputs } = require('./data');
-const { pinnacleSeries } = require('./price');
+const { pinnacleSeries, bookSeries, preMatchCutoffMs } = require('./price');
 
 // ---- small helpers --------------------------------------------------------
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
@@ -519,30 +519,103 @@ function clutch(ctx) {
 // =========================================================================
 // 17. ODDS MARKET MOVEMENT — Pinnacle opening vs current (lowest weight)
 // =========================================================================
-function impliedFromDecimal(price) {
-  const p = num(price);
-  return p && p > 1 ? 1 / p : null;
+// ATP-level gate (#17 upgrade 4): line movement is only informative in a liquid
+// ATP main-tour market. Challenger/ITF/Futures/WTA books are thin and noisy, so
+// the layer is gated below tour level rather than reading noise as signal. Feed
+// is ATP-only, so an unknown/blank tour is NOT gated (fail-open for the tour we
+// serve); only explicit sub-tour markers gate out.
+function isAtpLevel(match) {
+  const tour = String(match.tour || '').toLowerCase();
+  if (!tour) return true;
+  return !/challenger|\bch\b|itf|\bm15\b|\bm25\b|futures|\bwta\b/.test(tour);
 }
-function vigFreeP1(price1, price2) {
-  const i1 = impliedFromDecimal(price1), i2 = impliedFromDecimal(price2);
-  if (i1 == null || i2 == null) return null;
-  return i1 / (i1 + i2);
+
+// Timing weight (#17 upgrade 2): a Pinnacle move that lands LATE (within
+// lateWindowHours of the scheduled start) is sharper than early opening drift.
+// Split the pre-match series at the late-window edge and weight by the fraction
+// of the total move that happened late. Degrades to weight 1 when we can't tell
+// the time (never penalise for missing timestamps).
+function timingWeight(pin, match, c) {
+  const cutoff = preMatchCutoffMs(match);
+  const ticks = pin.ticks.filter(t => t.ts != null && t.vfP1 != null);
+  if (cutoff == null || ticks.length < 3) return { weight: 1, late: false, label: 'timing n/a' };
+  const lateEdge = cutoff - c.lateWindowHours * 3600 * 1000;
+  let mid = null;
+  for (const t of ticks) { if (t.ts <= lateEdge) mid = t; }
+  if (!mid) return { weight: 1, late: true, label: 'move late' }; // all ticks inside late window
+  const earlyShift = Math.abs(mid.vfP1 - pin.opening.vfP1);
+  const lateShift = Math.abs(pin.current.vfP1 - mid.vfP1);
+  const denom = earlyShift + lateShift;
+  const lateFrac = denom > 1e-9 ? lateShift / denom : 0;
+  const weight = c.timingFloor + (1 - c.timingFloor) * lateFrac;
+  return { weight, late: lateFrac >= 0.5, label: `${Math.round(lateFrac * 100)}% late` };
 }
+
+// Steam detection (#17 upgrade 3): cross-book agreement on the move direction.
+// Count books whose own pre-match vig-free line moved the same way as Pinnacle
+// (steam = coordinated sharp money) vs against it. Full weight when >= steamMinBooks
+// agree; a lone Pinnacle move is discounted (steamLoneMult), partial agreement
+// sits in between (steamMidMult).
+function steamFactor(match, pinDir, c) {
+  const books = (match.oddsMovement && match.oddsMovement.books)
+    ? Object.keys(match.oddsMovement.books) : [];
+  const thresh = c.minMove * 0.5;
+  let agree = 0, oppose = 0;
+  for (const b of books) {
+    const s = bookSeries(match, b);
+    if (!s || Math.abs(s.shift) < thresh) continue; // flat/absent book: not a mover
+    if (Math.sign(s.shift) === pinDir) agree++; else oppose++;
+  }
+  const total = agree + oppose;
+  const confirmed = agree >= c.steamMinBooks && agree > oppose;
+  let mult;
+  if (confirmed) mult = 1.0;
+  else if (total <= 1) mult = c.steamLoneMult;   // only Pinnacle moved
+  else mult = c.steamMidMult;                     // partial cross-book agreement
+  return { agree, oppose, total, mult, confirmed };
+}
+
 function oddsMovement(ctx) {
   const c = config.adjustments.oddsMovement;
   const res = base(c.id, 'oddsMovement', 'Odds market movement', c.maxMagnitude, 'matches.json:oddsMovement');
-  // Use the settlement-filtered Pinnacle two-way line (opening vs current),
-  // compared on a vig-free basis so overround changes don't create noise.
-  const s = pinnacleSeries(ctx.match);
-  if (!s) return res;
-  const openP1 = vigFreeP1(s.opening.p1, s.opening.p2);
-  const curP1 = vigFreeP1(s.current.p1, s.current.p2);
-  if (openP1 == null || curP1 == null) return res;
-  const shift = curP1 - openP1; // positive => market moved toward p1
-  const signal = clamp(shift / 0.10, -1, 1); // a 10-pt implied move = full
-  if (signal === 0) { res.detail = 'No line movement.'; return res; }
-  return apply(res, signal, 'low',
-    `Pinnacle: p1 vig-free ${fmtPct(openP1 * 100)}\u2192${fmtPct(curP1 * 100)}.`);
+  // Honest, machine-visible data-block: reverse-line-move is not built (no
+  // public-betting % in any licensed feed). Surfaced, never faked.
+  res.reverseLineMove = c.reverseLineMove;
+
+  // (4) ATP-level gate
+  if (!isAtpLevel(ctx.match)) {
+    return gate(res, 'below ATP tour level \u2014 market too thin for movement to be informative');
+  }
+
+  // (5) no-line flag \u2014 no clean pre-match Pinnacle tick history to read.
+  const pin = bookSeries(ctx.match, 'Pinnacle');
+  if (!pin) {
+    res.noLine = true;
+    res.detail = 'No clean pre-match Pinnacle line (no-line) \u2014 movement signal unavailable.';
+    return res;
+  }
+
+  const shift = pin.shift;                 // + => market moved toward p1
+  const absShift = Math.abs(shift);
+
+  // (1) move-size threshold \u2014 a vig-free move under minMove is book noise.
+  if (absShift < c.minMove) {
+    res.detail = `Pinnacle move ${fmtPct(shift * 100)} < ${fmtPct(c.minMove * 100)} threshold \u2014 treated as noise.`;
+    return res; // signal stays 0 (dead-zone)
+  }
+  const span = Math.max(c.fullMove - c.minMove, 1e-6);
+  const raw = Math.sign(shift) * clamp((absShift - c.minMove) / span, 0, 1);
+
+  // (2) timing weight and (3) steam detection
+  const timing = timingWeight(pin, ctx.match, c);
+  const steam = steamFactor(ctx.match, Math.sign(shift), c);
+
+  const signal = clamp(raw * timing.weight * steam.mult, -1, 1);
+  const conf = steam.confirmed ? (timing.late ? 'med' : 'low') : 'low';
+  const detail =
+    `Pinnacle p1 ${fmtPct(pin.opening.vfP1 * 100)}\u2192${fmtPct(pin.current.vfP1 * 100)} ` +
+    `(${steam.agree}/${steam.total} books ${steam.confirmed ? 'steam' : 'no steam'}, ${timing.label}).`;
+  return apply(res, signal, conf, detail);
 }
 
 // ---- formatting helper ----------------------------------------------------

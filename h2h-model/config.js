@@ -91,9 +91,39 @@ module.exports = {
     //     full 3pp cap; smaller gaps scale below it. Old /40 saturated any 40-pt
     //     gap to full. (Founder spec: div 94 so the max real gap reaches 3pp.)
     clutch:         { id: 15, maxMagnitude: 0.03, gated: false, divisor: 94 },
-    // 16. Odds market movement — opening vs current (lowest influence)
+    // 16/17. Odds market movement — opening vs current (lowest influence).
     //     (H2H trend removed 2026-07 per review: redundant with H2H record #3.)
-    oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false },
+    //     Model v2.0 Phase-0 #17 upgrade: the raw Pinnacle vig-free shift is now
+    //     sharpened by four honest filters before it contributes (magnitude cap
+    //     unchanged at 0.015 — this makes the SAME small budget smarter, it does
+    //     not give movement more weight):
+    //       (1) move-size threshold — a vig-free move under `minMove` is book
+    //           noise and contributes 0 (dead-zone); above it, scaled to
+    //           saturate at `fullMove`.
+    //       (2) timing weight — a move that lands LATE (within `lateWindowHours`
+    //           of the scheduled start) is sharper than early opening drift;
+    //           an all-early move is discounted to `timingFloor`.
+    //       (3) steam detection — cross-book agreement: when >= `steamMinBooks`
+    //           books move the same direction it's steam (full weight); a lone
+    //           Pinnacle move is discounted to `steamLoneMult`, partial to
+    //           `steamMidMult`.
+    //       (4) ATP-level gate — the layer is gated (contributes 0) below ATP
+    //           main-tour level, where the market is too thin to trust.
+    //     A missing pre-match line is surfaced as an explicit no-line flag
+    //     (res.noLine) rather than a fake 0-move.
+    //     DATA-BLOCKED: reverse-line-move (price moves opposite the public
+    //     betting %) is NOT built — it needs public-betting/ticket %, which no
+    //     feed we license carries. It is left as an honest gap, not faked.
+    oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false,
+                      minMove: 0.015,        // vig-free dead-zone (1.5pp)
+                      fullMove: 0.08,        // vig-free move that saturates raw signal (8pp)
+                      timingFloor: 0.6,      // weight when the whole move is at the open
+                      lateWindowHours: 12,   // "late" = within this many hours of start
+                      steamMinBooks: 3,      // books that must agree to confirm steam
+                      steamLoneMult: 0.5,    // discount when only Pinnacle moved
+                      steamMidMult: 0.8,     // discount for partial cross-book agreement
+                      reverseLineMove: { available: false,
+                        reason: 'needs public-betting/ticket %; no licensed feed carries it' } },
   },
 
   // Final clamp on adjusted probability so no single match is called a lock.

@@ -121,6 +121,42 @@ function pinnacleSeries(match) {
   return null;
 }
 
+/**
+ * Generic per-book PRE-MATCH two-way series — the primitive behind the #17
+ * odds-movement upgrades (steam detection & timing weighting). Unlike
+ * pinnacleSeries this takes any book name and has NO bestOdds fallback: steam
+ * and timing are only meaningful from real tick history, so a book with no
+ * clean pre-match ticks returns null (a "no-line" for that book) rather than a
+ * fabricated single point. Same sanity/cutoff/in-play-leak filters as
+ * pinnacleSeries so the two agree on what a real pre-match line is.
+ * @returns { opening:{p1,p2,ts,vfP1}, current:{p1,p2,ts,vfP1},
+ *            ticks:[{p1,p2,ts,vfP1}], shift, count } | null
+ */
+function bookSeries(match, bookName) {
+  const bk = match.oddsMovement && match.oddsMovement.books &&
+             match.oddsMovement.books[bookName];
+  if (!bk || !Array.isArray(bk.p1) || !Array.isArray(bk.p2)) return null;
+  const len = Math.min(bk.p1.length, bk.p2.length);
+  const cutoff = preMatchCutoffMs(match);
+  const ticks = [];
+  for (let k = 0; k < len; k++) {
+    const a = bk.p1[k] && bk.p1[k][1];
+    const b = bk.p2[k] && bk.p2[k][1];
+    if (!saneTwoWay(a, b)) continue;
+    const ts = bk.p1[k] && Date.parse(bk.p1[k][0]);
+    // keep only pre-match ticks (or all, if the tick carries no parseable time)
+    if (cutoff != null && ts && ts > cutoff) continue;
+    ticks.push({ p1: a, p2: b, ts: (ts || null), vfP1: vfP1(a, b) });
+  }
+  if (!ticks.length) return null;
+  const opening = ticks[0];
+  const current = ticks[ticks.length - 1];
+  if (opening.vfP1 == null || current.vfP1 == null) return null;
+  // in-play-leak backstop (same rule as pinnacleSeries)
+  if (Math.abs(current.vfP1 - opening.vfP1) > config.maxPreMatchMove) return null;
+  return { opening, current, ticks, shift: current.vfP1 - opening.vfP1, count: ticks.length };
+}
+
 // Current sane Pinnacle two-way prices (for the fair-value comparison)
 function pinnaclePrices(match) {
   const s = pinnacleSeries(match);
@@ -210,4 +246,4 @@ function valueFlag(type, side, player, price, edge, book) {
 function round4(x) { return Math.round(x * 1e4) / 1e4; }
 function round4OrNull(x) { return x == null ? null : round4(x); }
 
-module.exports = { priceAndValue, vigFree, fairOdds, pinnacleSeries, saneTwoWay };
+module.exports = { priceAndValue, vigFree, fairOdds, pinnacleSeries, bookSeries, preMatchCutoffMs, saneTwoWay };
