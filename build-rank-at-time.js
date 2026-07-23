@@ -26,7 +26,9 @@
  *
  * Usage:  node build-rank-at-time.js
  *   env RANK_TML_DIR   override the tml-cache directory (default ./tml-cache)
- *   env RANK_FROM_YEAR earliest year to include (default 2019)
+ *   env RANK_FROM_YEAR earliest year to include (default 2000 — the earliest
+ *                      year TML carries; rank-field coverage is 96-99% every
+ *                      year 2000-2026, so there is no data-driven cutoff)
  */
 
 const fs = require('fs');
@@ -34,7 +36,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const TML_DIR = process.env.RANK_TML_DIR || path.join(ROOT, 'tml-cache');
-const FROM_YEAR = +(process.env.RANK_FROM_YEAR || 2019);
+const FROM_YEAR = +(process.env.RANK_FROM_YEAR || 2000);
 const OUT = path.join(ROOT, 'rank-at-time.json');
 
 // --- key derivation: MUST match data.js#eloKeyFromFullName exactly ----------
