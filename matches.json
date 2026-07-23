@@ -4590,15 +4590,25 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
         "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 5,
         "p2": 2
       }
     ],
-    "liveGameScore": "30 - 30",
+    "liveGameScore": "0 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/434_p-carreno-busta.jpg",
@@ -13395,17 +13405,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
     "oddsMovement": {
@@ -14166,7 +14170,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 6-1",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12148684",
@@ -15824,11 +15843,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1777_t-m-etcheverry.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "oddsMovement": {
@@ -16550,7 +16575,10 @@
       "p2": 1.826,
       "bookmaker": "Pinnacle",
       "at": "2026-07-22T17:26:58.583Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148685",
