@@ -12700,11 +12700,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -13598,7 +13604,10 @@
       "p2": 2.87,
       "bookmaker": "Pinnacle",
       "at": "2026-07-22T17:14:05.852Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148665",
