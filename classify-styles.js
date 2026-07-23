@@ -152,8 +152,8 @@ function pctOf(arr, v) {
       const c = lines[i].split(',');
       const wId = c[ix.winner_id], lId = c[ix.loser_id];
       if (!wId || !lId) continue;
-      allMatches.push([wId, lId]);
       const surface = surfaceOf(c[ix.surface]);
+      allMatches.push([wId, lId, surface]);   // surface carried so the matrix can split hard/clay/grass
       const wRank = n(c[ix.winner_rank]), lRank = n(c[ix.loser_rank]);
       const tourneyKey = (c[ix.tourney_id] || c[ix.tourney_name] || '') + ':' + String(c[ix.tourney_date] || '').slice(0, 4);
       const ps = parseScore(c[ix.score], parseInt(c[ix.best_of], 10) || null);
@@ -425,6 +425,30 @@ function pctOf(arr, v) {
   const matrix = {};
   for (const A of ARCH8) { matrix[A] = {}; for (const B of ARCH8) { if (A === B) { matrix[A][B] = null; continue; } const aw = winsByPair[A][B], bw = winsByPair[B][A], nAB = aw + bw; matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB }; } }
 
+  // ---- surface-split matchup matrix (hard / clay / grass) ----
+  // Same construction as the pooled matrix above, but partitioned by court surface so
+  // the model can read how an archetype edge shifts across surfaces. 'other' (carpet /
+  // unknown) is dropped. Each surface is an independent 8x8; the MATRIX_MIN_N floor is
+  // applied per surface, so a cell can be reliable pooled yet null on a thin surface.
+  const SURFACES = ['hard', 'clay', 'grass'];
+  const winsByPairSurf = {};
+  for (const s of SURFACES) { winsByPairSurf[s] = {}; for (const A of ARCH8) { winsByPairSurf[s][A] = {}; for (const B of ARCH8) winsByPairSurf[s][A][B] = 0; } }
+  const surfaceMatchesCounted = { hard: 0, clay: 0, grass: 0 };
+  for (const [wId, lId, surf] of allMatches) {
+    if (!winsByPairSurf[surf]) continue;                 // skip 'other'
+    const aw = idToPrimary.get(wId), al = idToPrimary.get(lId); if (!aw || !al) continue;
+    winsByPairSurf[surf][aw][al]++; surfaceMatchesCounted[surf]++;
+  }
+  const matrixBySurface = {};
+  for (const s of SURFACES) {
+    matrixBySurface[s] = {};
+    for (const A of ARCH8) { matrixBySurface[s][A] = {}; for (const B of ARCH8) {
+      if (A === B) { matrixBySurface[s][A][B] = null; continue; }
+      const aw = winsByPairSurf[s][A][B], bw = winsByPairSurf[s][B][A], nAB = aw + bw;
+      matrixBySurface[s][A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB };
+    } }
+  }
+
   // ---- write outputs ----
   function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
   // playing-styles.json holds the current-ATP players only. Retired players — including
@@ -458,9 +482,11 @@ function pctOf(arr, v) {
     minSampleN: MATRIX_MIN_N, matchesCounted: matrixMatches,
     archetypes: Object.fromEntries(ARCH8.map(k => [k, { en: ARCH_LABEL[k] }])),
     matrix,
+    surfaceNote: 'matrixBySurface splits the same win% construction by court surface (hard/clay/grass). Same minSampleN floor applied per surface; carpet/unknown dropped.',
+    surfaceMatchesCounted, matrixBySurface,
   };
   writeAtomic('matchup-matrix.json', matrixOut);
-  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 8 primaries).`);
+  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 8 primaries; surface split hard ${surfaceMatchesCounted.hard} / clay ${surfaceMatchesCounted.clay} / grass ${surfaceMatchesCounted.grass}).`);
 
   // ---- console sanity (current-ATP players = what the dashboard shows) ----
   const counts = {}; outRows.forEach(r => counts[r.primary] = (counts[r.primary] || 0) + 1);
