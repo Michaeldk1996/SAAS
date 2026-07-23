@@ -84,8 +84,12 @@ module.exports = {
     //    The court-speed DATA field (m.courtSpeed) and its dashboard environment
     //    display are unaffected — only the model adjustment layer is gone. The
     //    altitudeMeters table below is retained for the future #9/#10 redesign.
-    // 15. Clutch rating — clutch-rating.json index
-    clutch:         { id: 15, maxMagnitude: 0.02, gated: false },
+    // 15. Clutch ("Under pressure") rating — clutch-rating.json index.
+    //     Model v2.0 Phase-0: flat 3pp cap (was 2pp), no surface/altitude
+    //     modifier. clutchIndex is a 0-100 pool-percentile, so `divisor` = 100
+    //     (the max possible gap) makes the widest real spread (~94) land at
+    //     ~3pp WITHOUT exceeding it; the old /40 saturated any 40-pt gap to full.
+    clutch:         { id: 15, maxMagnitude: 0.03, gated: false, divisor: 100 },
     // 16. Odds market movement — opening vs current (lowest influence)
     //     (H2H trend removed 2026-07 per review: redundant with H2H record #3.)
     oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false },

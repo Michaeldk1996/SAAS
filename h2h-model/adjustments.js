@@ -510,7 +510,7 @@ function clutch(ctx) {
   const res = base(c.id, 'clutch', 'Clutch rating', c.maxMagnitude, 'clutch-rating.json');
   const c1 = ctx.p1.clutch, c2 = ctx.p2.clutch;
   if (!c1 || !c2 || num(c1.clutchIndex) == null || num(c2.clutchIndex) == null) return res;
-  const signal = clamp((c1.clutchIndex - c2.clutchIndex) / 40, -1, 1);
+  const signal = clamp((c1.clutchIndex - c2.clutchIndex) / c.divisor, -1, 1);
   const conf = (c1.confidence === 'high' && c2.confidence === 'high') ? 'med' : 'low';
   return apply(res, signal, conf,
     `Clutch ${Math.round(c1.clutchIndex)} vs ${Math.round(c2.clutchIndex)}.`);
