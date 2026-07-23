@@ -37,7 +37,7 @@ Blend of three ELO estimates (weights in `config.eloBlend`):
 `0.30·raw + 0.40·surface + 0.30·(50/50 stabiliser)`, logistic divisor 400.
 If either player has no overall ELO the match is skipped (never forced to 0.5).
 
-**Stage 2 — 17 adjustments** (`adjustments.js`)
+**Stage 2 — 14 adjustments** (v2.0 Step 1 removed #6, #14) (`adjustments.js`)
 Each returns a signed signal in `[-1,+1]` from p1's view and contributes
 `signal × maxMagnitude` probability points. Surface/serve/return/format are
 written **relative to each player's own baseline** so they add texture ELO
@@ -51,7 +51,7 @@ reference = best available book price. Flags:
 
 ---
 
-## Adjustment status (17 layers)
+## Adjustment status (14 active layers · #6 round-stage and #14 court-speed removed in v2.0 Step 1)
 
 | # | Layer | Status | Source | Notes |
 |---|---|---|---|---|
@@ -60,7 +60,7 @@ reference = best available book price. Flags:
 | 3 | H2H record | 🟢 | matches.json:h2h | sample-damped |
 | 4 | Surface record | 🟢 | player-profiles:kpis | surface win% **vs own baseline** |
 | 5 | Recent form | 🟢 | player-profiles:recentForm | last-5, incl. Challenger/ITF |
-| 6 | Round / stage | 🟢 | career-splits.json:rounds | stage win% vs own baseline; **see Adjustment 6** |
+| ~~6~~ | ~~Round / stage~~ | ⛔ removed | — | **removed in Model v2.0 Step 1** (id retired, not reused) |
 | 7 | Quality-adjusted form | 🟢 | recentForm + rank | **see Adjustment 7** |
 | 8 | Winner / UE ratio | 🔴 gated | manual-inputs.json | inert until Michael supplies W/UE |
 | 9 | Serve strength | 🟢 | style-radar → career fallback | radar only when `ok:true` |
@@ -68,7 +68,7 @@ reference = best available book price. Flags:
 | 11 | Fatigue (14d load) | 🟢 | recentForm dates | sets played in window |
 | 12 | Weather / conditions | 🟢* | matches:weather + radar | *needs reliable radar for both |
 | 13 | Format split Bo3/Bo5 | 🟢 | career-splits.json | needs 10+ in both formats |
-| 14 | Court speed | 🟢* | matches:courtSpeed + radar | *needs reliable radar for both |
+| ~~14~~ | ~~Court speed~~ | ⛔ removed | — | **removed in Model v2.0 Step 1** (id retired; court-speed data field & dashboard display unaffected) |
 | 15 | Clutch rating | 🟢 | clutch-rating.json | clutch-index gap |
 | 16 | H2H trend | 🟢 | matches:h2h | recency-weighted direction |
 | 17 | Odds market movement | 🟢 | matches:oddsMovement | Pinnacle open→current, **cleaned** |
@@ -104,19 +104,12 @@ tuned secret sauce. They are centralised so Michael can backtest and tune them.
 
 ---
 
-## Adjustment 6 — round / stage performance
+## Adjustment 6 — round / stage performance — REMOVED (Model v2.0 Step 1)
 
-- `tools/build-career-splits.js` was extended with four early-round categories
-  (Round of 16/32/64/128; 1/8=R16, 1/16=R32, 1/32=R64, 1/64=R128). Regeneration
-  is deterministic from the warm TA cache and **purely additive** — every
-  existing category row is byte-identical (20,448 cells diffed, 0 changes), so
-  the dashboard's existing rows are untouched and simply gain new round rows
-  (zero-match rows auto-hide).
-- Signal: each player's win% at **this match's round** minus their **own overall
-  win%** (`kpis.All`). Relative-to-self, so it adds stage temperament without
-  re-counting the skill ELO already saw. Damped by the smaller per-round sample
-  (`fullDampM`); abstains when the round is unidentifiable or a player has fewer
-  than `minRoundM` matches at that round.
+This layer was removed in the Stennisfy Model v2.0 rebuild (Step 1). The
+career-splits round categories it consumed remain in the data (used elsewhere);
+only the model adjustment layer was deleted. Layer id 6 is retired and not
+reused so historical model output stays comparable.
 
 ## Adjustment 7 — quality-adjusted recent form
 

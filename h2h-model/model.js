@@ -5,7 +5,8 @@
  *
  * runModel(match, opts) runs the full green pipeline for one match record:
  *   Stage 1  base probability from ELO
- *   Stage 2  17 adjustment layers (16 green, 1 gated: #8 W/UE)
+ *   Stage 2  14 adjustment layers (13 green, 1 gated: #8 W/UE)
+ *            [Model v2.0 Step 1: #6 round-stage and #14 court-speed removed.]
  *   Stage 3  fair price + value flags
  *
  * It returns a single structured object (no console output, no UI) so it can

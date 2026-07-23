@@ -1,7 +1,11 @@
 'use strict';
 
 /**
- * adjustments.js — Stage 2: the 17 adjustment layers.
+ * adjustments.js — Stage 2: the adjustment layers.
+ *
+ * Model v2.0 (Step 1): layers #6 (round/stage) and #14 (court speed/altitude)
+ * were removed. 14 active layers remain (13 green + 1 gated: #8 W/UE). Retired
+ * layer ids (6, 14) are NOT reused so historical output stays comparable.
  *
  * Each adjustment is a pure function of the match context and returns a
  * standard shape:
@@ -139,18 +143,6 @@ function careerOverallWR(profile) {
   return tot > 0 ? (won / tot) * 100 : null;
 }
 
-// Altitude (metres) of a tournament name via the curated config map (substring,
-// case-insensitive). Returns null when the venue is not in the reference list.
-function tournamentAltitude(name) {
-  const s = String(name || '').toLowerCase();
-  if (!s) return null;
-  const map = config.altitudeMeters || {};
-  for (const key of Object.keys(map)) {
-    if (s.includes(key)) return map[key];
-  }
-  return null;
-}
-
 // =========================================================================
 // 1. STYLE MATCHUP — matchup-matrix.json (archetype vs archetype)
 // =========================================================================
@@ -280,65 +272,6 @@ function recentForm(ctx) {
   const conf = (f1.n >= N && f2.n >= N) ? 'med' : 'low';
   return apply(res, signal, conf,
     `Last ${f1.n}: ${f1.wins}W vs last ${f2.n}: ${f2.wins}W.`);
-}
-
-// =========================================================================
-// 6. ROUND / STAGE PERFORMANCE — over/underperformance at THIS match's round
-//    vs the player's own overall win%. career-splits now carries R128..F round
-//    categories, so we compare each player's win% at the current round against
-//    their own baseline (relative-to-self avoids re-counting the ELO Stage 1
-//    already saw). Sample-damped; abstains on unknown round or thin samples.
-// =========================================================================
-// Map a matches.json round label ("... - 1/16-finals") to a career-splits
-// round category. European nomenclature: 1/8=R16, 1/16=R32, 1/32=R64, 1/64=R128.
-function roundBucket(roundLabel) {
-  const s = String(roundLabel || '').toLowerCase();
-  if (s.includes('1/64')) return 'Round of 128';
-  if (s.includes('1/32')) return 'Round of 64';
-  if (s.includes('1/16')) return 'Round of 32';
-  if (s.includes('1/8')) return 'Round of 16';
-  if (s.includes('quarter')) return 'Quarter-finals';
-  if (s.includes('semi')) return 'Semi-finals';
-  if (s.includes('final')) return 'Finals'; // plain "final" (semi/quarter caught above)
-  return null; // round-robin / unknown
-}
-function roundStage(ctx) {
-  const c = config.adjustments.roundStage;
-  const res = base(c.id, 'roundStage', 'Round / stage performance', c.maxMagnitude, 'career-splits.json:rounds');
-  const bucket = roundBucket(ctx.match.tournamentRound);
-  if (!bucket) { res.detail = 'Round not identifiable from schedule.'; return res; }
-  // Round win% = half career + half last-52-weeks at this round (renormalised
-  // when one scope is missing), compared to the player's TRUE career baseline
-  // (not the old ~30-match kpis.All window, which mis-scaled the edge).
-  function stageEdge(p) {
-    const cRow = p.splits && p.splits.career && p.splits.career[bucket];
-    const lRow = p.splits && p.splits.last52 && p.splits.last52[bucket];
-    const parts = [];
-    if (cRow && num(cRow.winPct) != null) parts.push({ w: 0.5, v: cRow.winPct });
-    if (lRow && num(lRow.winPct) != null) parts.push({ w: 0.5, v: lRow.winPct });
-    if (!parts.length) return null;
-    const wsum = parts.reduce((s, x) => s + x.w, 0);
-    const roundWR = parts.reduce((s, x) => s + x.w * x.v, 0) / wsum;
-    // Sample gate/damp uses the career row (the robust one), else last52.
-    const M = (cRow && num(cRow.M) != null) ? cRow.M
-            : (lRow && num(lRow.M) != null) ? lRow.M : null;
-    if (M == null) return null;
-    const baseWR = careerOverallWR(p.profile);
-    if (baseWR == null) return null;
-    return { edge: roundWR - baseWR, M, wr: roundWR };
-  }
-  const e1 = stageEdge(ctx.p1), e2 = stageEdge(ctx.p2);
-  if (!e1 || !e2) { res.detail = `No ${bucket} sample for a player.`; return res; }
-  if (e1.M < c.minRoundM || e2.M < c.minRoundM) {
-    res.detail = `${bucket} sample too thin (${e1.M} / ${e2.M}).`;
-    return res;
-  }
-  // Damp by the smaller sample so a 6-match row doesn't swing as hard as a 40.
-  const damp = clamp(Math.min(e1.M, e2.M) / c.fullDampM, 0, 1);
-  const signal = clamp((e1.edge - e2.edge) / 30, -1, 1) * damp; // 30-pt gap = full
-  const conf = (Math.min(e1.M, e2.M) >= c.fullDampM) ? 'med' : 'low';
-  return apply(res, signal, conf,
-    `${bucket} vs own baseline: ${fmtPct(e1.edge)} (${e1.M}m) vs ${fmtPct(e2.edge)} (${e2.M}m).`);
 }
 
 // =========================================================================
@@ -570,80 +503,6 @@ function formatSplit(ctx) {
 }
 
 // =========================================================================
-// 14. COURT SPEED — two independent dimensions, both radar-free (they use the
-//    serve/return ratings and recent-form history, which are always available):
-//      A. ALTITUDE — when the venue sits above the altitude threshold (>350m),
-//         the player who historically performs BETTER at high-altitude events
-//         (win% at >350m tournaments vs their overall recent win%) is favoured.
-//      B. FAST / SLOW — from abstractSpeed: a fast court rewards the stronger
-//         server (serve rating gap), a slow court rewards the stronger returner
-//         (return rating gap).
-//    Signals from both dimensions add; the layer abstains when neither fires.
-// =========================================================================
-function courtSpeed(ctx) {
-  const c = config.adjustments.courtSpeed;
-  const res = base(c.id, 'courtSpeed', 'Court speed / altitude', c.maxMagnitude,
-    'matches.json:courtSpeed + config.altitudeMeters / career-splits.json');
-  const cs = ctx.match.courtSpeed;
-  const surfCat = surfaceCategory(ctx.surface);
-  const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
-  let signal = 0;
-  const parts = [];
-
-  // --- A. Altitude affinity ---------------------------------------------
-  const threshold = num(config.altitudeThresholdM) != null ? config.altitudeThresholdM : 350;
-  let alt = cs && num(cs.altitude) != null ? cs.altitude : null;
-  if (alt == null) alt = tournamentAltitude(ctx.match && ctx.match.tour); // map fallback
-  if (alt != null && alt > threshold) {
-    function altEdge(p) {
-      const ms = recentMatchesSorted(p.profile);
-      if (!ms.length) return null;
-      const hi = ms.filter(m => {
-        const a = tournamentAltitude(m.tournament);
-        return a != null && a > threshold;
-      });
-      if (hi.length < 4) return null; // need a real altitude sample
-      const hiWR = hi.filter(m => m.won).length / hi.length;
-      const allWR = ms.filter(m => m.won).length / ms.length;
-      return hiWR - allWR; // altitude over/under-performance vs own norm
-    }
-    const a1 = altEdge(ctx.p1), a2 = altEdge(ctx.p2);
-    if (a1 != null && a2 != null) {
-      signal += clamp((a1 - a2) / 0.5, -1, 1) * 0.6; // altitude dimension weight
-      parts.push(`altitude ${Math.round(alt)}m`);
-    } else {
-      parts.push(`altitude ${Math.round(alt)}m (thin history)`);
-    }
-  }
-
-  // --- B. Fast / slow surface -------------------------------------------
-  const as = cs && num(cs.abstractSpeed);
-  if (as != null) {
-    if (as >= 0.9) { // fast court => reward the server
-      const s1 = blendedRating(ctx.p1.splits, surfCat, bucket, serveRatingRow);
-      const s2 = blendedRating(ctx.p2.splits, surfCat, bucket, serveRatingRow);
-      if (s1 != null && s2 != null) {
-        signal += clamp((s1 - s2) / 25, -1, 1) * clamp((as - 0.9) / 0.15 + 0.4, 0, 1) * 0.5;
-        parts.push(`fast (${as})`);
-      }
-    } else if (as <= 0.82) { // slow court => reward the returner
-      const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, returnRatingRow);
-      const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, returnRatingRow);
-      if (r1 != null && r2 != null) {
-        signal += clamp((r1 - r2) / 15, -1, 1) * clamp((0.82 - as) / 0.15 + 0.4, 0, 1) * 0.5;
-        parts.push(`slow (${as})`);
-      }
-    }
-  }
-
-  if (signal === 0) {
-    res.detail = parts.length ? `Neutral (${parts.join(', ')}).` : 'Neutral court/altitude.';
-    return res;
-  }
-  return apply(res, clamp(signal, -1, 1), 'low', `Court: ${parts.join(', ')}.`);
-}
-
-// =========================================================================
 // 15. CLUTCH RATING — clutch-rating.json clutch index
 // =========================================================================
 function clutch(ctx) {
@@ -694,11 +553,13 @@ function fmtPct(x) {
 }
 
 // ---- registry (order = display order, roughly the weight hierarchy) -------
+// Model v2.0 (Step 1): layers #6 (roundStage) and #14 (courtSpeed) removed.
+// 14 active layers remain (13 green + 1 gated: #8 winnerUE).
 const ALL = [
   styleMatchup, subjective, h2h, surface, recentForm,
-  roundStage, qualityForm, winnerUE,
+  qualityForm, winnerUE,
   serve, returnPressure, fatigue, weather, formatSplit,
-  courtSpeed, clutch, oddsMovement,
+  clutch, oddsMovement,
 ];
 
 function runAll(ctx) {
