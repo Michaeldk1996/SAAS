@@ -63,7 +63,17 @@ function runModel(match, opts = {}) {
   const adjustments = runAll(ctx);
 
   const totalDelta = adjustments.reduce((s, a) => s + (a.applied ? a.deltaP1 : 0), 0);
-  const adjustedP1 = clamp(stage1.baseP1 + totalDelta, config.probFloor, config.probCeil);
+  const baselineP1 = clamp(stage1.baseP1 + totalDelta, config.probFloor, config.probCeil);
+
+  // Rank-tier probability ceiling (Model v2.0 Phase-0). Cap the FAVOURITE on
+  // whichever side it lands, so the ceiling holds whether p1 or p2 is stronger:
+  // clamp to [1 - tierCeil, tierCeil]. Unknown rank (no profile/elo row — a
+  // lower-tier player the sources don't cover) counts as OUTSIDE the top tier,
+  // never as elite, so mid/low matches keep the loose 0.98 ceiling.
+  const p1Rank = rankOfPlayer(p1);
+  const p2Rank = rankOfPlayer(p2);
+  const tierCeil = tierProbCeil(p1Rank, p2Rank, config);
+  const adjustedP1 = clamp(baselineP1, 1 - tierCeil, tierCeil);
 
   // ---- Stage 3 ----
   const pricing = priceAndValue(adjustedP1, match);
@@ -88,6 +98,12 @@ function runModel(match, opts = {}) {
       adjustedP2: round4(1 - adjustedP1),
       appliedCount,
       gatedCount,
+      rankCeil: {
+        p1Rank, p2Rank,
+        cutoff: config.rankTierCutoff,
+        ceil: tierCeil,
+        clamped: round4(adjustedP1) !== round4(baselineP1),
+      },
     },
     stage3: pricing,
     meta: {
@@ -126,5 +142,28 @@ function playerMeta(p) {
 }
 
 function round4(x) { return Math.round(x * 1e4) / 1e4; }
+
+// Current-rank proxy for a resolved player bundle: profile rank first (only
+// covers ~current-slate players), then elo-ratings overall rank (wider tail).
+// Returns null when neither source knows the player — never fabricated.
+function rankOfPlayer(p) {
+  const pr = p && p.profile && p.profile.rank;
+  if (typeof pr === 'number' && isFinite(pr)) return pr;
+  const er = p && p.elo && p.elo.all && p.elo.all.rank;
+  if (typeof er === 'number' && isFinite(er)) return er;
+  return null;
+}
+
+// Rank-tier ceiling for the favourite. Null/unknown rank => treated as OUTSIDE
+// the top tier (a lower-tier player the sources don't cover), so it never
+// tightens a mid/low-tier match. Avoids the `null <= 50` coercion trap.
+function tierProbCeil(r1, r2, config) {
+  const cutoff = config.rankTierCutoff;
+  const inTop = (r) => typeof r === 'number' && isFinite(r) && r <= cutoff;
+  const t1 = inTop(r1), t2 = inTop(r2);
+  if (t1 && t2) return config.probCeilBothTop50;      // both elite
+  if (t1 !== t2) return config.probCeilOneTop50;      // exactly one outside
+  return config.probCeil;                             // both outside -> baseline
+}
 
 module.exports = { runModel, inferBestOf };

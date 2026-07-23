@@ -91,9 +91,22 @@ module.exports = {
     oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false },
   },
 
-  // Final clamp on adjusted probability so no single match is called a lock
-  probFloor: 0.02,
+  // Final clamp on adjusted probability so no single match is called a lock.
+  // probFloor/probCeil are the *baseline* clamp; probCeilBothTop50 /
+  // probCeilOneTop50 are the rank-tier ceilings applied on top (see model.js).
+  probFloor: 0.05,
   probCeil: 0.98,
+  // ---- Rank-tier probability ceiling (Model v2.0 Phase-0) ----
+  // Stacked adjustment layers can push a win-prob high enough to manufacture
+  // false market value. Cap the FAVOURITE (either side) by how strong the two
+  // players' current ranks are. rankTierCutoff = the "top-N" boundary.
+  //   both players in top-N        -> probCeilBothTop50 (elite vs elite is
+  //                                    rarely a >85% lock)
+  //   exactly one outside top-N    -> probCeilOneTop50
+  //   both outside top-N           -> no tier cap; baseline probCeil applies
+  rankTierCutoff: 50,
+  probCeilBothTop50: 0.85,
+  probCeilOneTop50: 0.90,
 
   // ---- Stage 3: value detection --------------------------------------
   value: {
