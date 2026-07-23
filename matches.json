@@ -22597,13 +22597,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.32,
+      "p2": 1.51,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.32,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 1.51,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Estoril - Quarter-finals",
     "p1Key": 9596,
