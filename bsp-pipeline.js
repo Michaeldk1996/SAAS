@@ -3996,6 +3996,16 @@ async function runPipeline() {
   extractFormShards(matches);
   // Must run AFTER the opening/closing derivation above — that block reads the
   // timelines this one strips out.
+  //
+  // extractOddsShards nulls each m.oddsMovement (it moves to a lazy shard), but
+  // the Tennis Edge Model runs LAST (buildModelOutput, below) and reads
+  // m.oddsMovement.books.Pinnacle to price the "sharp" (Pinnacle) reference in
+  // the Fair-price panel. Stripping first starved the model: it derived
+  // sharp=null on the whole board, so every card read "Pinnacle — not quoted"
+  // even when a clean Pinnacle series had been captured (it just lived only in
+  // the shard by then). Snapshot the movement here so we can re-attach it to the
+  // in-memory matches for the model without putting it back into matches.json.
+  const oddsMovementForModel = new Map(matches.map(m => [m.id, m.oddsMovement]));
   extractOddsShards(matches);
 
   writeJsonAtomic('matches.json', matches);
@@ -4055,6 +4065,18 @@ async function runPipeline() {
   // tournament-progression.json this run just wrote (its loaders cache on first
   // read, and nothing has required the engine before now).
   console.log('Running the Tennis Edge Model engine over every match...');
+  // Re-attach the pre-strip odds movement so the model can price the Pinnacle
+  // (sharp) reference. Safe here: matches.json was already written (above, and
+  // again by the tournament-history backfill) WITHOUT oddsMovement, and nothing
+  // re-serialises matches after this point — so this in-memory re-attach feeds
+  // the model without leaking the timelines back onto the page-load critical
+  // path. Without it the Fair-price panel reads "Pinnacle — not quoted" boardwide.
+  for (const m of matches) {
+    if (!m.oddsMovement) {
+      const saved = oddsMovementForModel.get(m.id);
+      if (saved) m.oddsMovement = saved;
+    }
+  }
   await buildModelOutput(matches);
 }
 
