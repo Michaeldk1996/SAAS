@@ -50,15 +50,9 @@ module.exports = {
     surface:        { id: 4,  maxMagnitude: 0.05, gated: false },
     // 5. Recent form — last-N results (all levels incl. Challenger/ITF)
     recentForm:     { id: 5,  maxMagnitude: 0.04, gated: false },
-    // 6. Round / stage performance — stage over/underperformance vs a player's
-    //    OWN overall win% at the specific round this match is (R128..F). Uses
-    //    the extended career-splits round categories; abstains when the round
-    //    is unknown or the per-round sample is too thin.
-    //    (calibrated 2026-07 from 0.03 -> 0.016: significant (z=2.4) on the
-    //     Sackmann fit, about half the original placeholder.)
-    roundStage:     { id: 6,  maxMagnitude: 0.016, gated: false,
-                      minRoundM: 5,        // need >=5 career matches at this round per player
-                      fullDampM: 15 },     // sample at/above which the signal is undamped
+    // 6. [REMOVED in Model v2.0] Round / stage performance — deleted per the
+    //    Stennisfy v2.0 rebuild (Step 1). Layer id 6 is retired; the id is not
+    //    reused so historical output remains comparable.
     // 7. Quality-adjusted recent form — top-50 form vs overall form + top-20
     //    wins on this surface. Uses opponent CURRENT rank resolved via
     //    player-profiles (proxy for match-day rank).
@@ -85,8 +79,11 @@ module.exports = {
     weather:        { id: 12, maxMagnitude: 0.03, gated: false },
     // 13. Format split — Bo3 vs Bo5 career win%
     formatSplit:    { id: 13, maxMagnitude: 0.03, gated: false },
-    // 14. Court speed — fast/slow vs style fit
-    courtSpeed:     { id: 14, maxMagnitude: 0.015, gated: false },
+    // 14. [REMOVED in Model v2.0] Court speed / altitude — deleted per the
+    //    Stennisfy v2.0 rebuild (Step 1). Layer id 14 is retired (id not reused).
+    //    The court-speed DATA field (m.courtSpeed) and its dashboard environment
+    //    display are unaffected — only the model adjustment layer is gone. The
+    //    altitudeMeters table below is retained for the future #9/#10 redesign.
     // 15. Clutch rating — clutch-rating.json index
     clutch:         { id: 15, maxMagnitude: 0.02, gated: false },
     // 16. Odds market movement — opening vs current (lowest influence)
@@ -128,7 +125,9 @@ module.exports = {
   bestOf5Tours: ['Australian Open', 'Roland Garros', 'French Open', 'Wimbledon', 'US Open'],
 
   // Venue altitude reference (metres above sea level) — factual geographic
-  // data for the court-speed/altitude layer (#11). Keyed by a substring of the
+  // data. The court-speed/altitude adjustment layer that consumed this was
+  // removed in Model v2.0 (Step 1); this table is retained for the planned
+  // #9/#10 surface-speed × altitude redesign. Keyed by a substring of the
   // tournament name (case-insensitive). Used two ways: (a) if matches.json has
   // no courtSpeed.altitude for the current match, look it up here; (b) to score
   // a player's historical win-rate at high-altitude events (>350 m) from their

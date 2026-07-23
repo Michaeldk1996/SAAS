@@ -35,8 +35,9 @@
  *  - Only reconstructable layers are fit. #1 style-matchup IS fit here (from the
  *    current-snapshot matchup-matrix.json + playing-styles.json — see the CAVEAT
  *    on loadStyle(): it is not strictly point-in-time). #2 subjective, #8 W/UE,
- *    #12 weather, #14 court-speed, #15 clutch, #17 odds-movement have no usable
- *    historical source here and are NOT fit (they keep their placeholders).
+ *    #12 weather, #15 clutch, #17 odds-movement have no usable historical source
+ *    here and are NOT fit (they keep their placeholders). (#6 round-stage and
+ *    #14 court-speed were removed entirely in Model v2.0 Step 1.)
  *  - Sackmann tennis_atp is CC BY-NC-SA (non-commercial). Internal R&D only.
  *
  * USAGE
@@ -199,11 +200,7 @@ const LAYERS = [
       if (a === 0 && b === 0) return null;
       return clamp1((b - a) / 15); // fresher p1 (less load) => positive
     } },
-  { id: 6, key: 'roundStage', min: 5, scale: 0.2, fn: (s1, s2, ctx) => {
-      const over = (st) => { const r = rate(st.round[ctx.round], 5), o = rate(st.all, 10); return (r == null || o == null) ? null : r - o; };
-      const a = over(s1), b = over(s2);
-      return (a == null || b == null) ? null : clamp1((a - b) / 0.20);
-    } },
+  // #6 roundStage removed in Model v2.0 (Step 1).
   { id: 7, key: 'qualityForm', min: 5, scale: 0.5, fn: (s1, s2) => {
       const topRate = st => { const t = st.last20.filter(x => x.oppRank && x.oppRank <= 50); return t.length >= 5 ? t.reduce((a, x) => a + x.won, 0) / t.length : null; };
       const a = topRate(s1), b = topRate(s2);
