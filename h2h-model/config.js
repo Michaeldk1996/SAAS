@@ -94,9 +94,11 @@ module.exports = {
     // 16/17. Odds market movement — opening vs current (lowest influence).
     //     (H2H trend removed 2026-07 per review: redundant with H2H record #3.)
     //     Model v2.0 Phase-0 #17 upgrade: the raw Pinnacle vig-free shift is now
-    //     sharpened by four honest filters before it contributes (magnitude cap
-    //     unchanged at 0.015 — this makes the SAME small budget smarter, it does
-    //     not give movement more weight):
+    //     sharpened by four honest filters before it contributes. Magnitude cap
+    //     raised 0.015 -> 0.03 (3pp) per founder spec 2026-07-23: the sharpened
+    //     signal earns the same 3pp headroom as clutch #15. The four filters below
+    //     still gate WHEN it fires; the cap only bounds HOW FAR a confirmed move
+    //     can push the price:
     //       (1) move-size threshold — a vig-free move under `minMove` is book
     //           noise and contributes 0 (dead-zone); above it, scaled to
     //           saturate at `fullMove`.
@@ -114,7 +116,7 @@ module.exports = {
     //     DATA-BLOCKED: reverse-line-move (price moves opposite the public
     //     betting %) is NOT built — it needs public-betting/ticket %, which no
     //     feed we license carries. It is left as an honest gap, not faked.
-    oddsMovement:   { id: 17, maxMagnitude: 0.015, gated: false,
+    oddsMovement:   { id: 17, maxMagnitude: 0.03, gated: false,
                       minMove: 0.015,        // vig-free dead-zone (1.5pp)
                       fullMove: 0.08,        // vig-free move that saturates raw signal (8pp)
                       timingFloor: 0.6,      // weight when the whole move is at the open
