@@ -1,0 +1,57 @@
+name: ATP_Entry W/UE card harvest (Layer #8)
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'   # 6x/day (UTC). Incremental, so cost is flat vs 1x/day.
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-atp-entry-harvest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Harvest @ATP_Entry statistics cards (incremental)
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ -z "$X_BEARER_TOKEN" ]; then
+            echo "::error::X_BEARER_TOKEN secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          node tools/harvest-atp-entry.js
+
+      - name: Commit harvest state + queue (only if changed)
+        run: |
+          if git diff --quiet -- atp-entry-harvest-state.json atp-entry-harvest-queue.json; then
+            echo "No new cards harvested — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-atp-entry-bot"
+          git config user.email "bsp-atp-entry-bot@users.noreply.github.com"
+          git add atp-entry-harvest-state.json atp-entry-harvest-queue.json
+          git commit -m "chore(layer8): harvest @ATP_Entry W/UE cards [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed harvest state on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push harvest state after 3 attempts."
+          exit 1
