@@ -1633,11 +1633,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/14435_t-torres.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "oddsMovement": {
@@ -2519,7 +2530,10 @@
       "p2": 1.311,
       "bookmaker": "1xBet",
       "at": "2026-07-22T21:04:42.595Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148859",
@@ -6997,11 +7011,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -8287,7 +8312,10 @@
       "p2": 2.497,
       "bookmaker": "1xBet",
       "at": "2026-07-23T15:48:30.225Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12148978",
