@@ -122,4 +122,24 @@ function attachWue(matchStats, tour, p1Name, p2Name) {
   return matchStats;
 }
 
-module.exports = { attachWue, nameKey, tourSlug, ratioOf };
+// Progression-path lookup. The Tournament Reports round/progression charts are
+// built by buildTournamentProgression() straight from raw api-tennis fixture
+// statistics — a DIFFERENT code path and data shape from attachWue's {p1,p2}
+// matchStats object — so they need the same OCR fallback surfaced by name pair.
+// Given the tournament and both players' names, returns { winners, unforcedErrors }
+// (FH+BH totals) for `playerName` from the reviewed @ATP_Entry card, or null when
+// the corpus has no row for that pair. Callers must invoke this ONLY when
+// api-tennis carries no W/UE for the fixture, preserving the never-mix rule.
+function lookupWue(tour, playerName, opponentName) {
+  const k1 = nameKey(playerName);
+  const k2 = nameKey(opponentName);
+  if (!k1 || !k2) return null;
+  const pairKey = [k1, k2].sort().join('+');
+  const row = ocrIndex().get(`${tourSlug(tour)}::${pairKey}`);
+  if (!row || !row.players[k1]) return null;
+  const o = row.players[k1];
+  if (typeof o.winners !== 'number' || typeof o.unforcedErrors !== 'number') return null;
+  return { winners: o.winners, unforcedErrors: o.unforcedErrors };
+}
+
+module.exports = { attachWue, lookupWue, nameKey, tourSlug, ratioOf };

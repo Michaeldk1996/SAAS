@@ -33,7 +33,7 @@ const fs = require('fs');
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
 // never mixed within a match (see atp-entry-fallback.js).
-const { attachWue } = require('./atp-entry-fallback');
+const { attachWue, lookupWue } = require('./atp-entry-fallback');
 
 // Atomic JSON write: write to a temp file in the same directory, then rename
 // over the target. rename(2) is atomic on the same filesystem, so a reader
@@ -2094,7 +2094,7 @@ const PROGRESSION_DERIVED_METRIC_KEYS = [
 // match's already stat_period==='match'-filtered statistics list. Shared
 // by the per-player round loop and the per-round field-average aggregator
 // below so both use exactly the same derivation logic.
-function extractProgressionMetrics(matchStats, playerKey) {
+function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   const metrics = {};
   for (const def of PROGRESSION_METRIC_DEFS) {
     const stat = findMatchStat(matchStats, playerKey, def.type, def.name);
@@ -2108,6 +2108,24 @@ function extractProgressionMetrics(matchStats, playerKey) {
       metrics[def.key] = parseInt(stat.stat_value, 10) || 0;
     }
   }
+
+  // Layer #8 W/UE source priority for the Tournament Reports charts. The round
+  // comparison + player progression views read winners/UE straight from the raw
+  // api-tennis stat sheet, which carries NO Winners/Unforced Errors for the
+  // ~20% ATP-250 gap (Estoril, Kitzbühel) — leaving those bars and their
+  // field-average line empty. When (and only when) api-tennis has neither value
+  // for this player, fall back to the reviewed @ATP_Entry OCR corpus, honouring
+  // the same strict priority + never-mix rule as attachWue(). Flagged wueSource.
+  let wueSource = (metrics.winners != null && metrics.unforcedErrors != null) ? 'api-tennis' : null;
+  if (wueSource == null && fallbackCtx) {
+    const fb = lookupWue(fallbackCtx.tour, fallbackCtx.playerName, fallbackCtx.opponentName);
+    if (fb) { metrics.winners = fb.winners; metrics.unforcedErrors = fb.unforcedErrors; wueSource = 'ATP_Entry_OCR'; }
+  }
+
+  // winnersPct / unforcedErrorsPct need total points played as the denominator.
+  // That row (Total Points Won) is on every stat sheet even for fixtures missing
+  // W/UE, so it is available for OCR-sourced matches too. It is a point count,
+  // not a W/UE stat, so pairing it with OCR winners/UE does not mix W/UE sources.
   const totalPoints = metrics.winners != null && metrics.unforcedErrors != null
     ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
     : null;
@@ -2125,6 +2143,9 @@ function extractProgressionMetrics(matchStats, playerKey) {
     // feed's own won/total, so it needs no winners/UE data (which this feed is
     // routinely missing) and is populated for every match that has a stat sheet.
     totalPointsWonPct: metrics.totalPointsWonPct,
+    // Provenance of the winners/UE-derived metrics: 'api-tennis', 'ATP_Entry_OCR',
+    // or null (neither source had W/UE — those three metrics stay null).
+    wueSource,
   };
 }
 
@@ -2219,7 +2240,9 @@ async function buildTournamentProgression(tourName) {
       if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) continue;
       const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
       if (matchStats.length === 0) continue;
-      const metrics = extractProgressionMetrics(matchStats, playerKey);
+      const metrics = extractProgressionMetrics(matchStats, playerKey, {
+        tour: fixture.tournament_name, playerName: info.name, opponentName: opponent,
+      });
       rounds.push({
         round: roundLabelByName[fixture.tournament_round] || fixture.tournament_round,
         opponent,
@@ -2248,7 +2271,12 @@ async function buildTournamentProgression(tourName) {
       const matchStats = f.statistics.filter(s => s.stat_period === 'match');
       if (matchStats.length === 0) continue;
       for (const key of [f.first_player_key, f.second_player_key]) {
-        const m = extractProgressionMetrics(matchStats, key);
+        const isFirst = key === f.first_player_key;
+        const m = extractProgressionMetrics(matchStats, key, {
+          tour: f.tournament_name,
+          playerName: isFirst ? f.event_first_player : f.event_second_player,
+          opponentName: isFirst ? f.event_second_player : f.event_first_player,
+        });
         for (const metricKey of PROGRESSION_DERIVED_METRIC_KEYS) perMetricValues[metricKey].push(m[metricKey]);
         sampleCount++;
       }
@@ -4210,7 +4238,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
