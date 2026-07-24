@@ -1,0 +1,877 @@
+{
+  "source": "@ATP_Entry ATP Match Statistics cards (blue, FH/BH wing-split panel), vision-OCR + reviewed on TEN-8",
+  "role": "FALLBACK ONLY — used solely when api-tennis has no Winners/Unforced-Errors for a fixture. Never mixed with api-tennis for the same match.",
+  "note": "Manually refreshed screenshot corpus, not an automated feed. Winners/UE totals only (a card has no total-points denominator, so winnersPct/unforcedErrorsPct are NOT derivable from this source).",
+  "tournaments": [
+    "Estoril",
+    "Kitzbuhel"
+  ],
+  "cards": 32,
+  "playerRows": 64,
+  "rows": [
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNrMapUWoAAbdZp",
+      "matchKey": "basilashvili|n+torres|t",
+      "players": {
+        "torres|t": {
+          "name": "Tiago Torres",
+          "fhWinners": 8,
+          "bhWinners": 4,
+          "fhUnforced": 4,
+          "bhUnforced": 7,
+          "winners": 12,
+          "unforcedErrors": 11
+        },
+        "basilashvili|n": {
+          "name": "Nikoloz Basilashvili",
+          "fhWinners": 5,
+          "bhWinners": 6,
+          "fhUnforced": 17,
+          "bhUnforced": 17,
+          "winners": 11,
+          "unforcedErrors": 34
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNro6HYWwAAbUyV",
+      "matchKey": "carabelli|c+droguet|t",
+      "players": {
+        "droguet|t": {
+          "name": "Titouan Droguet",
+          "fhWinners": 10,
+          "bhWinners": 6,
+          "fhUnforced": 13,
+          "bhUnforced": 4,
+          "winners": 16,
+          "unforcedErrors": 17
+        },
+        "carabelli|c": {
+          "name": "Camilo Ugo Carabelli",
+          "fhWinners": 21,
+          "bhWinners": 3,
+          "fhUnforced": 19,
+          "bhUnforced": 13,
+          "winners": 24,
+          "unforcedErrors": 32
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNsSn6uWYAAuYG3",
+      "matchKey": "assche|l+silva|f",
+      "players": {
+        "silva|f": {
+          "name": "Frederico Ferreira Silva",
+          "fhWinners": 27,
+          "bhWinners": 3,
+          "fhUnforced": 37,
+          "bhUnforced": 20,
+          "winners": 30,
+          "unforcedErrors": 57
+        },
+        "assche|l": {
+          "name": "Luca Van Assche",
+          "fhWinners": 17,
+          "bhWinners": 8,
+          "fhUnforced": 18,
+          "bhUnforced": 27,
+          "winners": 25,
+          "unforcedErrors": 45
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNsz4zxWsAAwNlX",
+      "matchKey": "martinez|p+rocha|h",
+      "players": {
+        "rocha|h": {
+          "name": "Henrique Rocha",
+          "fhWinners": 22,
+          "bhWinners": 2,
+          "fhUnforced": 27,
+          "bhUnforced": 18,
+          "winners": 24,
+          "unforcedErrors": 45
+        },
+        "martinez|p": {
+          "name": "Pedro Martinez",
+          "fhWinners": 13,
+          "bhWinners": 5,
+          "fhUnforced": 8,
+          "bhUnforced": 13,
+          "winners": 18,
+          "unforcedErrors": 21
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNwbgw_WAAITwiS",
+      "matchKey": "busta|p+gaubas|v",
+      "players": {
+        "gaubas|v": {
+          "name": "Vilius Gaubas",
+          "fhWinners": 9,
+          "bhWinners": 4,
+          "fhUnforced": 10,
+          "bhUnforced": 5,
+          "winners": 13,
+          "unforcedErrors": 15
+        },
+        "busta|p": {
+          "name": "Pablo Carreno Busta",
+          "fhWinners": 17,
+          "bhWinners": 6,
+          "fhUnforced": 6,
+          "bhUnforced": 7,
+          "winners": 23,
+          "unforcedErrors": 13
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNwet2xXEAE9_XR",
+      "matchKey": "borges|n+luz|o",
+      "players": {
+        "borges|n": {
+          "name": "Nuno Borges",
+          "fhWinners": 12,
+          "bhWinners": 3,
+          "fhUnforced": 5,
+          "bhUnforced": 8,
+          "winners": 15,
+          "unforcedErrors": 13
+        },
+        "luz|o": {
+          "name": "Orlando Luz",
+          "fhWinners": 12,
+          "bhWinners": 4,
+          "fhUnforced": 17,
+          "bhUnforced": 6,
+          "winners": 16,
+          "unforcedErrors": 23
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNxFiGuXEAAYzh0",
+      "matchKey": "burruchaga|r+wawrinka|s",
+      "players": {
+        "wawrinka|s": {
+          "name": "Stan Wawrinka",
+          "fhWinners": 18,
+          "bhWinners": 4,
+          "fhUnforced": 30,
+          "bhUnforced": 26,
+          "winners": 22,
+          "unforcedErrors": 56
+        },
+        "burruchaga|r": {
+          "name": "Roman Andres Burruchaga",
+          "fhWinners": 12,
+          "bhWinners": 7,
+          "fhUnforced": 28,
+          "bhUnforced": 16,
+          "winners": 19,
+          "unforcedErrors": 44
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R1",
+      "card": "HNxb8EnXsAAuf4I",
+      "matchKey": "faria|j+zandschulp|b",
+      "players": {
+        "zandschulp|b": {
+          "name": "Botic van de Zandschulp",
+          "fhWinners": 9,
+          "bhWinners": 4,
+          "fhUnforced": 11,
+          "bhUnforced": 10,
+          "winners": 13,
+          "unforcedErrors": 21
+        },
+        "faria|j": {
+          "name": "Jaime Faria",
+          "fhWinners": 3,
+          "bhWinners": 1,
+          "fhUnforced": 11,
+          "bhUnforced": 9,
+          "winners": 4,
+          "unforcedErrors": 20
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN1YrXuXgAIV3Tl",
+      "matchKey": "droguet|t+gaston|h",
+      "players": {
+        "gaston|h": {
+          "name": "Hugo Gaston",
+          "fhWinners": 8,
+          "bhWinners": 4,
+          "fhUnforced": 15,
+          "bhUnforced": 5,
+          "winners": 12,
+          "unforcedErrors": 20
+        },
+        "droguet|t": {
+          "name": "Titouan Droguet",
+          "fhWinners": 6,
+          "bhWinners": 0,
+          "fhUnforced": 20,
+          "bhUnforced": 13,
+          "winners": 6,
+          "unforcedErrors": 33
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN1_eQvXMAAqs90",
+      "matchKey": "borges|n+burruchaga|r",
+      "players": {
+        "borges|n": {
+          "name": "Nuno Borges",
+          "fhWinners": 19,
+          "bhWinners": 5,
+          "fhUnforced": 35,
+          "bhUnforced": 15,
+          "winners": 24,
+          "unforcedErrors": 50
+        },
+        "burruchaga|r": {
+          "name": "Roman Andres Burruchaga",
+          "fhWinners": 18,
+          "bhWinners": 3,
+          "fhUnforced": 20,
+          "bhUnforced": 10,
+          "winners": 21,
+          "unforcedErrors": 30
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN2dqNuW8AAueOs",
+      "matchKey": "tabilo|a+torres|t",
+      "players": {
+        "tabilo|a": {
+          "name": "Alejandro Tabilo",
+          "fhWinners": 10,
+          "bhWinners": 6,
+          "fhUnforced": 17,
+          "bhUnforced": 10,
+          "winners": 16,
+          "unforcedErrors": 27
+        },
+        "torres|t": {
+          "name": "Tiago Torres",
+          "fhWinners": 10,
+          "bhWinners": 7,
+          "fhUnforced": 9,
+          "bhUnforced": 5,
+          "winners": 17,
+          "unforcedErrors": 14
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN3EkNbWUAA3qeP",
+      "matchKey": "blockx|a+jacquet|k",
+      "players": {
+        "jacquet|k": {
+          "name": "Kyrian Jacquet",
+          "fhWinners": 27,
+          "bhWinners": 18,
+          "fhUnforced": 23,
+          "bhUnforced": 16,
+          "winners": 45,
+          "unforcedErrors": 39
+        },
+        "blockx|a": {
+          "name": "Alexander Blockx",
+          "fhWinners": 17,
+          "bhWinners": 6,
+          "fhUnforced": 10,
+          "bhUnforced": 8,
+          "winners": 23,
+          "unforcedErrors": 18
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN6-aqgXgAMwwA6",
+      "matchKey": "bueno|g+faria|j",
+      "players": {
+        "faria|j": {
+          "name": "Jaime Faria",
+          "fhWinners": 8,
+          "bhWinners": 4,
+          "fhUnforced": 8,
+          "bhUnforced": 13,
+          "winners": 12,
+          "unforcedErrors": 21
+        },
+        "bueno|g": {
+          "name": "Gonzalo Bueno",
+          "fhWinners": 7,
+          "bhWinners": 0,
+          "fhUnforced": 10,
+          "bhUnforced": 12,
+          "winners": 7,
+          "unforcedErrors": 22
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN6tqQiXIAAip39",
+      "matchKey": "assche|l+busta|p",
+      "players": {
+        "assche|l": {
+          "name": "Luca Van Assche",
+          "fhWinners": 15,
+          "bhWinners": 6,
+          "fhUnforced": 13,
+          "bhUnforced": 13,
+          "winners": 21,
+          "unforcedErrors": 26
+        },
+        "busta|p": {
+          "name": "Pablo Carreno Busta",
+          "fhWinners": 14,
+          "bhWinners": 5,
+          "fhUnforced": 20,
+          "bhUnforced": 10,
+          "winners": 19,
+          "unforcedErrors": 30
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN77MXZXYAEi5mv",
+      "matchKey": "darderi|l+martinez|p",
+      "players": {
+        "martinez|p": {
+          "name": "Pedro Martinez",
+          "fhWinners": 4,
+          "bhWinners": 2,
+          "fhUnforced": 12,
+          "bhUnforced": 7,
+          "winners": 6,
+          "unforcedErrors": 19
+        },
+        "darderi|l": {
+          "name": "Luciano Darderi",
+          "fhWinners": 10,
+          "bhWinners": 3,
+          "fhUnforced": 6,
+          "bhUnforced": 2,
+          "winners": 13,
+          "unforcedErrors": 8
+        }
+      }
+    },
+    {
+      "tournament": "Estoril",
+      "tourSlug": "estoril",
+      "round": "R2",
+      "card": "HN7hS6mXMAAkpzO",
+      "matchKey": "rublev|a+skatov|t",
+      "players": {
+        "rublev|a": {
+          "name": "Andrey Rublev",
+          "fhWinners": 16,
+          "bhWinners": 6,
+          "fhUnforced": 7,
+          "bhUnforced": 3,
+          "winners": 22,
+          "unforcedErrors": 10
+        },
+        "skatov|t": {
+          "name": "Timofey Skatov",
+          "fhWinners": 2,
+          "bhWinners": 3,
+          "fhUnforced": 8,
+          "bhUnforced": 6,
+          "winners": 5,
+          "unforcedErrors": 14
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNqlOITWIAADSVR",
+      "matchKey": "muller|a+navone|m",
+      "players": {
+        "muller|a": {
+          "name": "Alexandre Muller",
+          "fhWinners": 5,
+          "bhWinners": 2,
+          "fhUnforced": 12,
+          "bhUnforced": 14,
+          "winners": 7,
+          "unforcedErrors": 26
+        },
+        "navone|m": {
+          "name": "Mariano Navone",
+          "fhWinners": 8,
+          "bhWinners": 5,
+          "fhUnforced": 3,
+          "bhUnforced": 11,
+          "winners": 13,
+          "unforcedErrors": 14
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNr-X-UWYAACC8D",
+      "matchKey": "buse|i+kopriva|v",
+      "players": {
+        "kopriva|v": {
+          "name": "Vit Kopriva",
+          "fhWinners": 17,
+          "bhWinners": 10,
+          "fhUnforced": 28,
+          "bhUnforced": 20,
+          "winners": 27,
+          "unforcedErrors": 48
+        },
+        "buse|i": {
+          "name": "Ignacio Buse",
+          "fhWinners": 9,
+          "bhWinners": 9,
+          "fhUnforced": 18,
+          "bhUnforced": 16,
+          "winners": 18,
+          "unforcedErrors": 34
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNrMsbcWsAEbZh7",
+      "matchKey": "hanfmann|y+neumayer|l",
+      "players": {
+        "neumayer|l": {
+          "name": "Lukas Neumayer",
+          "fhWinners": 3,
+          "bhWinners": 6,
+          "fhUnforced": 13,
+          "bhUnforced": 7,
+          "winners": 9,
+          "unforcedErrors": 20
+        },
+        "hanfmann|y": {
+          "name": "Yannick Hanfmann",
+          "fhWinners": 14,
+          "bhWinners": 11,
+          "fhUnforced": 13,
+          "bhUnforced": 17,
+          "winners": 25,
+          "unforcedErrors": 30
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNrodrjWMAAZl-R",
+      "matchKey": "rodionov|j+schwaerzler|j",
+      "players": {
+        "schwaerzler|j": {
+          "name": "Joel Schwaerzler",
+          "fhWinners": 11,
+          "bhWinners": 5,
+          "fhUnforced": 18,
+          "bhUnforced": 6,
+          "winners": 16,
+          "unforcedErrors": 24
+        },
+        "rodionov|j": {
+          "name": "Jurij Rodionov",
+          "fhWinners": 11,
+          "bhWinners": 2,
+          "fhUnforced": 12,
+          "bhUnforced": 6,
+          "winners": 13,
+          "unforcedErrors": 18
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNw9wBxWEAEWMWo",
+      "matchKey": "altmaier|d+collignon|r",
+      "players": {
+        "altmaier|d": {
+          "name": "Daniel Altmaier",
+          "fhWinners": 16,
+          "bhWinners": 5,
+          "fhUnforced": 10,
+          "bhUnforced": 6,
+          "winners": 21,
+          "unforcedErrors": 16
+        },
+        "collignon|r": {
+          "name": "Raphael Collignon",
+          "fhWinners": 10,
+          "bhWinners": 2,
+          "fhUnforced": 9,
+          "bhUnforced": 11,
+          "winners": 12,
+          "unforcedErrors": 20
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNwbOZXXUAAdgdC",
+      "matchKey": "shevchenko|a+struff|j",
+      "players": {
+        "struff|j": {
+          "name": "Jan-Lennard Struff",
+          "fhWinners": 16,
+          "bhWinners": 9,
+          "fhUnforced": 23,
+          "bhUnforced": 19,
+          "winners": 25,
+          "unforcedErrors": 42
+        },
+        "shevchenko|a": {
+          "name": "Alexander Shevchenko",
+          "fhWinners": 11,
+          "bhWinners": 5,
+          "fhUnforced": 11,
+          "bhUnforced": 12,
+          "winners": 16,
+          "unforcedErrors": 23
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNwbwE4WMAAEhmR",
+      "matchKey": "baez|s+kecmanovic|m",
+      "players": {
+        "baez|s": {
+          "name": "Sebastian Baez",
+          "fhWinners": 11,
+          "bhWinners": 10,
+          "fhUnforced": 18,
+          "bhUnforced": 11,
+          "winners": 21,
+          "unforcedErrors": 29
+        },
+        "kecmanovic|m": {
+          "name": "Miomir Kecmanovic",
+          "fhWinners": 16,
+          "bhWinners": 7,
+          "fhUnforced": 20,
+          "bhUnforced": 18,
+          "winners": 23,
+          "unforcedErrors": 38
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R1",
+      "card": "HNwmHnGX0AEXOpN",
+      "matchKey": "molcan|a+ofner|s",
+      "players": {
+        "molcan|a": {
+          "name": "Alex Molcan",
+          "fhWinners": 1,
+          "bhWinners": 1,
+          "fhUnforced": 7,
+          "bhUnforced": 6,
+          "winners": 2,
+          "unforcedErrors": 13
+        },
+        "ofner|s": {
+          "name": "Sebastian Ofner",
+          "fhWinners": 15,
+          "bhWinners": 2,
+          "fhUnforced": 8,
+          "bhUnforced": 21,
+          "winners": 17,
+          "unforcedErrors": 29
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R2",
+      "card": "HN02gLUWsAAaP3E",
+      "matchKey": "halys|q+vacherot|v",
+      "players": {
+        "halys|q": {
+          "name": "Quentin Halys",
+          "fhWinners": 10,
+          "bhWinners": 2,
+          "fhUnforced": 12,
+          "bhUnforced": 2,
+          "winners": 12,
+          "unforcedErrors": 14
+        },
+        "vacherot|v": {
+          "name": "Valentin Vacherot",
+          "fhWinners": 11,
+          "bhWinners": 4,
+          "fhUnforced": 11,
+          "bhUnforced": 8,
+          "winners": 15,
+          "unforcedErrors": 19
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R2",
+      "card": "HN19NbBWYAAxZa3",
+      "matchKey": "acosta|f+bublik|a",
+      "players": {
+        "bublik|a": {
+          "name": "Alexander Bublik",
+          "fhWinners": 14,
+          "bhWinners": 3,
+          "fhUnforced": 12,
+          "bhUnforced": 13,
+          "winners": 17,
+          "unforcedErrors": 25
+        },
+        "acosta|f": {
+          "name": "Facundo Diaz Acosta",
+          "fhWinners": 6,
+          "bhWinners": 4,
+          "fhUnforced": 8,
+          "bhUnforced": 7,
+          "winners": 10,
+          "unforcedErrors": 15
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R2",
+      "card": "HN1KxHSXcAAiD2j",
+      "matchKey": "navone|m+struff|j",
+      "players": {
+        "struff|j": {
+          "name": "Jan-Lennard Struff",
+          "fhWinners": 5,
+          "bhWinners": 4,
+          "fhUnforced": 14,
+          "bhUnforced": 8,
+          "winners": 9,
+          "unforcedErrors": 22
+        },
+        "navone|m": {
+          "name": "Mariano Navone",
+          "fhWinners": 5,
+          "bhWinners": 7,
+          "fhUnforced": 5,
+          "bhUnforced": 5,
+          "winners": 12,
+          "unforcedErrors": 10
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "R2",
+      "card": "HN1nvhTWEAA2FNk",
+      "matchKey": "etcheverry|t+rodionov|j",
+      "players": {
+        "etcheverry|t": {
+          "name": "Tomas Martin Etcheverry",
+          "fhWinners": 12,
+          "bhWinners": 2,
+          "fhUnforced": 14,
+          "bhUnforced": 5,
+          "winners": 14,
+          "unforcedErrors": 19
+        },
+        "rodionov|j": {
+          "name": "Jurij Rodionov",
+          "fhWinners": 10,
+          "bhWinners": 4,
+          "fhUnforced": 18,
+          "bhUnforced": 12,
+          "winners": 14,
+          "unforcedErrors": 30
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "QF",
+      "card": "HN6-SMsXwAArACj",
+      "matchKey": "buse|i+etcheverry|t",
+      "players": {
+        "etcheverry|t": {
+          "name": "Tomas Martin Etcheverry",
+          "fhWinners": 9,
+          "bhWinners": 4,
+          "fhUnforced": 11,
+          "bhUnforced": 5,
+          "winners": 13,
+          "unforcedErrors": 16
+        },
+        "buse|i": {
+          "name": "Ignacio Buse",
+          "fhWinners": 5,
+          "bhWinners": 6,
+          "fhUnforced": 15,
+          "bhUnforced": 19,
+          "winners": 11,
+          "unforcedErrors": 34
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "QF",
+      "card": "HN6tIpwWgAEoeoV",
+      "matchKey": "halys|q+navone|m",
+      "players": {
+        "navone|m": {
+          "name": "Mariano Navone",
+          "fhWinners": 5,
+          "bhWinners": 3,
+          "fhUnforced": 10,
+          "bhUnforced": 6,
+          "winners": 8,
+          "unforcedErrors": 16
+        },
+        "halys|q": {
+          "name": "Quentin Halys",
+          "fhWinners": 13,
+          "bhWinners": 4,
+          "fhUnforced": 16,
+          "bhUnforced": 8,
+          "winners": 17,
+          "unforcedErrors": 24
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "QF",
+      "card": "HN6tdHvWsAASyxD",
+      "matchKey": "baez|s+hanfmann|y",
+      "players": {
+        "hanfmann|y": {
+          "name": "Yannick Hanfmann",
+          "fhWinners": 11,
+          "bhWinners": 7,
+          "fhUnforced": 7,
+          "bhUnforced": 10,
+          "winners": 18,
+          "unforcedErrors": 17
+        },
+        "baez|s": {
+          "name": "Sebastian Baez",
+          "fhWinners": 7,
+          "bhWinners": 3,
+          "fhUnforced": 8,
+          "bhUnforced": 12,
+          "winners": 10,
+          "unforcedErrors": 20
+        }
+      }
+    },
+    {
+      "tournament": "Kitzbuhel",
+      "tourSlug": "kitzbuhel",
+      "round": "QF",
+      "card": "HN7KalJXEAAT1os",
+      "matchKey": "bublik|a+molcan|a",
+      "players": {
+        "bublik|a": {
+          "name": "Alexander Bublik",
+          "fhWinners": 15,
+          "bhWinners": 0,
+          "fhUnforced": 11,
+          "bhUnforced": 6,
+          "winners": 15,
+          "unforcedErrors": 17
+        },
+        "molcan|a": {
+          "name": "Alex Molcan",
+          "fhWinners": 3,
+          "bhWinners": 4,
+          "fhUnforced": 7,
+          "bhUnforced": 6,
+          "winners": 7,
+          "unforcedErrors": 13
+        }
+      }
+    }
+  ]
+}
