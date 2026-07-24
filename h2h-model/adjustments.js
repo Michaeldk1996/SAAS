@@ -454,12 +454,30 @@ function fatigue(ctx) {
 // =========================================================================
 // 12. WEATHER / CONDITIONS — wind hurts big servers, heat rewards movers
 // =========================================================================
+// Humidity + rain reinforce the SAME physics as heat/wind (heavy, slow, wet
+// conditions reward the mover and blunt the server), at reduced weight. Founder
+// spec TEN-8 2026-07-24; humidity/rain sign+weights are a physics-consistent
+// first cut, gated for founder confirm before live merge. maxMagnitude (#12 =
+// 0.03) still caps the layer, so extra inputs cannot exceed its designed ceiling.
+const WEATHER_HUMID_MULT = 0.5;  // humidity effect vs heat (weaker, same sign)
+const WEATHER_RAIN_MULT  = 0.5;  // rain effect vs heat (weaker, same sign)
+
+// Open-Meteo WMO weathercodes that mean liquid precipitation (drizzle/rain/
+// showers/thunder). Snow (71-77, 85-86) is excluded — irrelevant to ATP play.
+function isRainCode(code) {
+  return code != null && (
+    (code >= 51 && code <= 67) ||   // drizzle + rain
+    (code >= 80 && code <= 82) ||   // rain showers
+    (code >= 95 && code <= 99)      // thunderstorm
+  );
+}
+
 function weather(ctx) {
   const c = config.adjustments.weather;
   const res = base(c.id, 'weather', 'Weather / conditions', c.maxMagnitude, 'matches.json:weather / style-radar.json');
   const w = ctx.match.weather;
   if (!w) return res;
-  const temp = num(w.temperature), wind = num(w.windSpeed);
+  const temp = num(w.temperature), wind = num(w.windSpeed), humidity = num(w.humidity);
   const r1 = ctx.p1.radar, r2 = ctx.p2.radar;
   if (!r1 || !r2) { res.detail = 'Reliable style radar unavailable for a player.'; return res; }
   let signal = 0;
@@ -475,6 +493,30 @@ function weather(ctx) {
     const moveGap = ((num(r1.movement) || 50) - (num(r2.movement) || 50)) / 100;
     signal += heatFactor * moveGap; // better mover rewarded in heat
     parts.push(`heat ${temp}\u00b0C`);
+  }
+  if (humidity != null && humidity > 70) {
+    const humFactor = clamp((humidity - 70) / 30, 0, 1);
+    const moveGap = ((num(r1.movement) || 50) - (num(r2.movement) || 50)) / 100;
+    signal += WEATHER_HUMID_MULT * humFactor * moveGap; // heavy damp air rewards the mover
+    parts.push(`humidity ${humidity}%`);
+  }
+  // Rain — FORECAST-WINDOW ONLY. Localise the match-day forecast entry; if none
+  // is present/available (historical match, or no forecast) rain self-hides.
+  const day = Array.isArray(w.week) ? w.week.find((d) => d && d.isMatch) : null;
+  if (!w.historical && day && day.available !== false) {
+    const precipPct = num(day.rain);          // precipitation probability, %
+    // Combine weathercode + probability: precip probability is the base; a rain
+    // weathercode floors it at 0.5 so a confirmed-rain day still fires even when
+    // the probability field is low or absent.
+    let rainProb = precipPct != null ? clamp(precipPct / 100, 0, 1) : 0;
+    if (isRainCode(day.code)) rainProb = Math.max(rainProb, 0.5);
+    if (rainProb > 0) {
+      const serveGap = ((num(r1.serve) || 50) - (num(r2.serve) || 50)) / 100;
+      const moveGap  = ((num(r1.movement) || 50) - (num(r2.movement) || 50)) / 100;
+      // Wet/heavy court: reward the mover AND dampen the bigger server.
+      signal += WEATHER_RAIN_MULT * rainProb * ((moveGap - serveGap) / 2);
+      parts.push(`rain ~${Math.round(rainProb * 100)}%`);
+    }
   }
   if (parts.length === 0) { res.detail = 'Neutral conditions.'; return res; }
   return apply(res, signal, 'low', `Conditions: ${parts.join(', ')}.`);
