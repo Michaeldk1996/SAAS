@@ -31,6 +31,9 @@
 require('dotenv').config();
 const fs = require('fs');
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
+// Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
+// never mixed within a match (see atp-entry-fallback.js).
+const { attachWue } = require('./atp-entry-fallback');
 
 // Atomic JSON write: write to a temp file in the same directory, then rename
 // over the target. rename(2) is atomic on the same filesystem, so a reader
@@ -2375,6 +2378,12 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
     setStats: buildSetStatsFromFixture(fixture, p1Key, p2Key),
   };
+
+  // Layer #8 Winners/Unforced-Errors: resolve the per-match source with the
+  // founder's strict priority (api-tennis primary; @ATP_Entry OCR fallback for
+  // the ATP-250 gap; never mixed), flagging `matchStats.wueSource` + each
+  // player's `wue.source`. No-op for matches with no stat sheet.
+  attachWue(match.matchStats, match.tour, match.p1, match.p2);
 
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
