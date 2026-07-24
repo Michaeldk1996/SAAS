@@ -1,28 +1,62 @@
 // =================================================================
-// @ATP_Entry OCR Winners/Unforced-Errors FALLBACK dataset builder
+// @ATP_Entry Winners/Unforced-Errors HARVESTER  (Layer #8 fallback)
 // -----------------------------------------------------------------
-// Emits `atp-entry-wue.json` — a static, manually-refreshed fallback
-// source of per-match Winners / Unforced-Errors totals, read by the
-// pipeline ONLY when api-tennis has no W/UE data for a fixture (the
-// ~20% gap, concentrated at ATP 250 level). See atp-entry-fallback.js
-// for the join + priority logic.
+// Emits `atp-entry-wue.json` — the per-match Winners / Unforced-Errors
+// fallback source, read by the pipeline ONLY when api-tennis has no
+// W/UE for a fixture (the ~20% gap, concentrated at ATP-250 level).
+// See atp-entry-fallback.js for the runtime join + source-priority.
 //
-// SOURCE: blue "@ATP_Entry" ATP Match Statistics cards (the ones with
-// the forehand/backhand Winners/Errors wing-split panel), OCR-read by
-// vision passes and reviewed on TEN-8 before being encoded here. Each
-// card is one match; the card prints per-wing counts (FH/BH winners,
-// FH/BH unforced errors). Layer #8 needs only the totals, so FH+BH are
-// summed here; the wing split is retained for provenance/inspection.
+// WHAT THIS HARVESTER AUTOMATES (founder spec, TEN-8 2026-07-24):
+//   1. Takes the reviewed @ATP_Entry card corpus (CARDS below): per-wing
+//      FH/BH Winners + Unforced Errors, one card = one match.
+//   2. Sums FH+BH to per-player totals (winners, unforcedErrors).
+//   3. JOINS each card to its api-tennis match record on (tournament,
+//      player-pair) to pull the TOTAL-POINTS denominator. api-tennis
+//      is missing Winners/UE for these 250 matches but STILL carries
+//      "Total Points Won" (verified live: Muller v Navone, Kitzbühel,
+//      event 12147454 — Winners/UE empty, Total Points Won stat_total
+//      = 103). That denominator is what makes the percentages derivable.
+//   4. DERIVES the founder's five fields per player and stores them:
+//        winners            = FH + BH winners
+//        unforcedErrors     = FH + BH unforced
+//        winnersUnforcedRatio = winners / unforcedErrors        (W/UE)
+//        winnersPct         = winners / totalPoints  * 100       (Winners %)
+//        unforcedErrorsPct  = unforcedErrors / totalPoints * 100 (UE %)
+//   5. Counts every api-tennis READ via tools/apitennis-read-counter.js
+//      (one windowed get_fixtures covers a whole draw — a full harvest
+//      costs a handful of reads, not one-per-match) and prints coverage.
 //
-// NOT AN AUTOMATED FEED. This is a founder-supplied screenshot corpus.
-// To add a new tournament: append its cards below and re-run this
-// script (`node tools/build-atp-entry-wue.js`).
+// STILL MANUAL — the card VALUES. Acquiring the @ATP_Entry card images
+// from X and OCR-reading them needs X API credentials this environment
+// does not have (no X/twitter key in .env). Until those land, the CARDS
+// table is transcribed + reviewed on TEN-8; everything downstream of the
+// card values is automated here. To add a tournament: append its cards,
+// add its date window to DENOMINATOR_WINDOWS, and re-run this script.
+//
+//   node tools/build-atp-entry-wue.js            # fetch denominators + build
+//   node tools/build-atp-entry-wue.js --offline  # build with null pcts (no api-tennis)
 // =================================================================
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const { ReadCounter } = require('./apitennis-read-counter');
+// Reuse the runtime key + ratio logic verbatim so a card and its live
+// fixture can never reduce to different keys (build-time / run-time drift
+// is the classic silent-miss bug in this join).
+const { nameKey, tourSlug, ratioOf } = require('../atp-entry-fallback');
 
-// --- input: one entry per card. players = [ [name, fhWin, bhWin, fhUE, bhUE], ... ]
-// Values transcribed verbatim from the reviewed extraction table (TEN-8).
+const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
+const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
+const EVENT_TYPE_ATP_SINGLES = 265;
+
+// Date windows that cover every card's match. api-tennis caps a single
+// get_fixtures at a 7-day range, so one window per ~week of play. Both
+// current tournaments (Estoril, Kitzbühel) fall inside one window.
+const DENOMINATOR_WINDOWS = [
+  ['2026-07-20', '2026-07-26'],
+];
+
+// --- input: one entry per reviewed card. players = [ [name, fhWin, bhWin, fhUE, bhUE], ... ]
 const CARDS = [
   // ---- Millennium Estoril Open — ATP 250 ----
   { tour: 'Estoril', round: 'R1', card: 'HNrMapUWoAAbdZp', players: [['Tiago Torres',8,4,4,7],['Nikoloz Basilashvili',5,6,17,17]] },
@@ -60,60 +94,125 @@ const CARDS = [
   { tour: 'Kitzbuhel', round: 'QF', card: 'HN7KalJXEAAT1os', players: [['Alexander Bublik',15,0,11,6],['Alex Molcan',3,4,7,6]] },
 ];
 
-// Surname|first-initial key — identical reduction to the layer #8 baseline
-// builder and classify-styles, so an abbreviated feed name ("T. M. Etcheverry")
-// and the card's full name ("Tomas Martin Etcheverry") both collapse to the
-// same key ("etcheverry|t").
-function deaccent(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, ''); }
-function nameKey(name) {
-  const p = deaccent(name).toLowerCase().replace(/&nbsp;/g, ' ').replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
-  return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0];
-}
-function tourSlug(t) { return deaccent(t).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^atp\s+/, '').replace(/\s+/g, ''); }
+const pct = (n, total) => (total > 0 ? Math.round((n / total) * 1000) / 10 : null);
 
-const rows = [];
-for (const c of CARDS) {
-  const keys = c.players.map(pl => nameKey(pl[0]));
-  if (keys.some(k => !k)) throw new Error(`unresolvable name in card ${c.card}`);
-  const players = {};
-  c.players.forEach(([name, fhWin, bhWin, fhUE, bhUE], i) => {
-    players[keys[i]] = {
-      name,
-      fhWinners: fhWin, bhWinners: bhWin, fhUnforced: fhUE, bhUnforced: bhUE,
-      winners: fhWin + bhWin,          // total winners  (layer #8 ratio numerator)
-      unforcedErrors: fhUE + bhUE,     // total unforced (layer #8 ratio denominator)
-    };
-  });
-  rows.push({
-    tournament: c.tour,
-    tourSlug: tourSlug(c.tour),
-    round: c.round,
-    card: c.card,
-    // unordered pair key = the stable per-match join (two players meet at most
-    // once in one tournament, so this is unique regardless of round labelling).
-    matchKey: [...keys].sort().join('+'),
-    players,
-  });
+// Total points PLAYED in a match = the "Total Points Won" stat_total (match
+// period). It is a match-level constant (both players' rows carry the same
+// stat_total; the two stat_won values sum to it), so either player's row works.
+function totalPointsFromFixture(fixture) {
+  const stats = Array.isArray(fixture.statistics) ? fixture.statistics : [];
+  const row = stats.find(s => s.stat_period === 'match' && /^total points won$/i.test(s.stat_name || ''));
+  const n = row ? parseInt(row.stat_total, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-// integrity: no duplicate (tournament,matchKey)
-const seen = new Set();
-for (const r of rows) {
-  const id = r.tourSlug + '::' + r.matchKey;
-  if (seen.has(id)) throw new Error(`duplicate match ${id}`);
-  seen.add(id);
+// Build a (tourSlug::sortedPairKey) -> { totalPoints, eventKey } index of the
+// api-tennis denominators, counting every read. Returns { index, counter }.
+async function fetchDenominators() {
+  const counter = new ReadCounter({ label: 'api-tennis' });
+  const index = new Map();
+  if (!API_TENNIS_KEY) return { index, counter, skipped: true };
+  for (const [start, stop] of DENOMINATOR_WINDOWS) {
+    const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}`
+      + `&date_start=${start}&date_stop=${stop}&event_type_key=${EVENT_TYPE_ATP_SINGLES}`;
+    const json = await counter.get(url);
+    const fixtures = Array.isArray(json && json.result) ? json.result : [];
+    for (const f of fixtures) {
+      const k1 = nameKey(f.event_first_player);
+      const k2 = nameKey(f.event_second_player);
+      if (!k1 || !k2) continue;
+      const totalPoints = totalPointsFromFixture(f);
+      if (totalPoints == null) continue; // no denominator on this fixture -> skip
+      const key = `${tourSlug(f.tournament_name)}::${[k1, k2].sort().join('+')}`;
+      // First scored copy wins; a later, statless duplicate must not clobber it.
+      if (!index.has(key)) index.set(key, { totalPoints, eventKey: f.event_key });
+    }
+  }
+  return { index, counter, skipped: false };
 }
 
-const out = {
-  source: '@ATP_Entry ATP Match Statistics cards (blue, FH/BH wing-split panel), vision-OCR + reviewed on TEN-8',
-  role: 'FALLBACK ONLY — used solely when api-tennis has no Winners/Unforced-Errors for a fixture. Never mixed with api-tennis for the same match.',
-  note: 'Manually refreshed screenshot corpus, not an automated feed. Winners/UE totals only (a card has no total-points denominator, so winnersPct/unforcedErrorsPct are NOT derivable from this source).',
-  tournaments: [...new Set(rows.map(r => r.tournament))],
-  cards: rows.length,
-  playerRows: rows.reduce((n, r) => n + Object.keys(r.players).length, 0),
-  rows,
-};
+async function main() {
+  const offline = process.argv.includes('--offline');
+  const { index, counter, skipped } = offline
+    ? { index: new Map(), counter: new ReadCounter({ label: 'api-tennis' }), skipped: true }
+    : await fetchDenominators();
 
-const outPath = path.join(__dirname, '..', 'atp-entry-wue.json');
-fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
-console.log(`wrote ${outPath}: ${out.cards} cards, ${out.playerRows} player rows, tournaments=${out.tournaments.join(', ')}`);
+  const rows = [];
+  const unjoined = [];
+  for (const c of CARDS) {
+    const keys = c.players.map(pl => nameKey(pl[0]));
+    if (keys.some(k => !k)) throw new Error(`unresolvable name in card ${c.card}`);
+    const slug = tourSlug(c.tour);
+    const pairKey = [...keys].sort().join('+');
+    const denom = index.get(`${slug}::${pairKey}`) || null;
+    if (!denom && !skipped) unjoined.push(`${c.tour}/${c.round}/${c.card} (${pairKey})`);
+
+    const players = {};
+    c.players.forEach(([name, fhWin, bhWin, fhUE, bhUE], i) => {
+      const winners = fhWin + bhWin;              // total winners (FH + BH)
+      const unforcedErrors = fhUE + bhUE;         // total unforced (FH + BH)
+      const totalPoints = denom ? denom.totalPoints : null;
+      players[keys[i]] = {
+        name,
+        fhWinners: fhWin, bhWinners: bhWin, fhUnforced: fhUE, bhUnforced: bhUE,
+        winners,
+        unforcedErrors,
+        // Founder's five fields — nulls stay honest when no denominator joined.
+        winnersUnforcedRatio: ratioOf(winners, unforcedErrors),   // winners / UE
+        winnersPct: pct(winners, totalPoints),                    // winners / total points
+        unforcedErrorsPct: pct(unforcedErrors, totalPoints),      // UE / total points
+      };
+    });
+    rows.push({
+      tournament: c.tour,
+      tourSlug: slug,
+      round: c.round,
+      card: c.card,
+      matchKey: pairKey,
+      // api-tennis denominator provenance (null when the join missed).
+      apiTennisEventKey: denom ? denom.eventKey : null,
+      totalPointsPlayed: denom ? denom.totalPoints : null,
+      players,
+    });
+  }
+
+  // integrity: no duplicate (tournament, matchKey)
+  const seen = new Set();
+  for (const r of rows) {
+    const id = r.tourSlug + '::' + r.matchKey;
+    if (seen.has(id)) throw new Error(`duplicate match ${id}`);
+    seen.add(id);
+  }
+
+  const joined = rows.filter(r => r.totalPointsPlayed != null).length;
+  const out = {
+    source: '@ATP_Entry ATP Match Statistics cards (blue, FH/BH wing-split panel), vision-OCR + reviewed on TEN-8',
+    role: 'FALLBACK ONLY — used solely when api-tennis has no Winners/Unforced-Errors for a fixture. Never mixed with api-tennis for the same match.',
+    note: 'Winners/UE totals come from the @ATP_Entry card; the Winners% / UE% denominator (total points played) is joined from the api-tennis match record on (tournament, player-pair). Percentages are null for any card whose api-tennis fixture was not found.',
+    tournaments: [...new Set(rows.map(r => r.tournament))],
+    cards: rows.length,
+    playerRows: rows.reduce((n, r) => n + Object.keys(r.players).length, 0),
+    denominatorSource: skipped ? null : 'api-tennis get_fixtures Total Points Won (stat_total, match period)',
+    cardsJoinedToDenominator: skipped ? 0 : joined,
+    apiTennisReads: counter.reads,
+    rows,
+  };
+
+  const outPath = path.join(__dirname, '..', 'atp-entry-wue.json');
+  fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
+
+  counter.printSummary();
+  console.log(`\nwrote ${outPath}`);
+  console.log(`  ${out.cards} cards, ${out.playerRows} player rows, tournaments=${out.tournaments.join(', ')}`);
+  if (skipped) {
+    console.log('  denominator join SKIPPED (--offline or no API_TENNIS_KEY) — winnersPct/unforcedErrorsPct are null');
+  } else {
+    console.log(`  denominator join: ${joined}/${rows.length} cards matched an api-tennis fixture with Total Points Won`);
+    if (unjoined.length) {
+      console.log(`  UNJOINED cards (no denominator — percentages null):`);
+      for (const u of unjoined) console.log(`    - ${u}`);
+    }
+  }
+}
+
+main().catch(err => { console.error(err); process.exit(1); });

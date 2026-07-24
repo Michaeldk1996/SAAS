@@ -73,6 +73,24 @@ function ratioOf(winners, unforcedErrors) {
   return Math.round((winners / unforcedErrors) * 100) / 100;
 }
 
+// Build the per-player `wue` object for the OCR fallback path. Carries the
+// stored derived fields (winnersPct / unforcedErrorsPct — winners|UE over the
+// api-tennis total-points denominator, joined at harvest time) so the fallback
+// exposes the same percentage surface the api-tennis path does downstream.
+// Falls back to a live-computed ratio if the corpus predates the derived fields.
+function ocrWue(o, row) {
+  return {
+    winners: o.winners,
+    unforcedErrors: o.unforcedErrors,
+    ratio: o.winnersUnforcedRatio != null ? o.winnersUnforcedRatio : ratioOf(o.winners, o.unforcedErrors),
+    winnersPct: o.winnersPct != null ? o.winnersPct : null,
+    unforcedErrorsPct: o.unforcedErrorsPct != null ? o.unforcedErrorsPct : null,
+    totalPointsPlayed: row.totalPointsPlayed != null ? row.totalPointsPlayed : null,
+    wingSplit: { fhWinners: o.fhWinners, bhWinners: o.bhWinners, fhUnforced: o.fhUnforced, bhUnforced: o.bhUnforced },
+    source: 'ATP_Entry_OCR', card: row.card,
+  };
+}
+
 // Resolve the W/UE source for one match and attach `wue` to each player of
 // `matchStats`, plus `matchStats.wueSource`. Mutates and returns matchStats.
 // `matchStats` is the {p1,p2} object from buildMatchStatsFromFixture (may be
@@ -98,21 +116,9 @@ function attachWue(matchStats, tour, p1Name, p2Name) {
     const pairKey = [k1, k2].sort().join('+');
     const row = ocrIndex().get(`${tourSlug(tour)}::${pairKey}`);
     if (row && row.players[k1] && row.players[k2]) {
-      const o1 = row.players[k1];
-      const o2 = row.players[k2];
       matchStats.wueSource = 'ATP_Entry_OCR';
-      matchStats.p1.wue = {
-        winners: o1.winners, unforcedErrors: o1.unforcedErrors,
-        ratio: ratioOf(o1.winners, o1.unforcedErrors),
-        wingSplit: { fhWinners: o1.fhWinners, bhWinners: o1.bhWinners, fhUnforced: o1.fhUnforced, bhUnforced: o1.bhUnforced },
-        source: 'ATP_Entry_OCR', card: row.card,
-      };
-      matchStats.p2.wue = {
-        winners: o2.winners, unforcedErrors: o2.unforcedErrors,
-        ratio: ratioOf(o2.winners, o2.unforcedErrors),
-        wingSplit: { fhWinners: o2.fhWinners, bhWinners: o2.bhWinners, fhUnforced: o2.fhUnforced, bhUnforced: o2.bhUnforced },
-        source: 'ATP_Entry_OCR', card: row.card,
-      };
+      matchStats.p1.wue = ocrWue(row.players[k1], row);
+      matchStats.p2.wue = ocrWue(row.players[k2], row);
       return matchStats;
     }
   }

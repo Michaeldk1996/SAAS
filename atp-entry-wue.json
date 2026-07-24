@@ -1,13 +1,16 @@
 {
   "source": "@ATP_Entry ATP Match Statistics cards (blue, FH/BH wing-split panel), vision-OCR + reviewed on TEN-8",
   "role": "FALLBACK ONLY — used solely when api-tennis has no Winners/Unforced-Errors for a fixture. Never mixed with api-tennis for the same match.",
-  "note": "Manually refreshed screenshot corpus, not an automated feed. Winners/UE totals only (a card has no total-points denominator, so winnersPct/unforcedErrorsPct are NOT derivable from this source).",
+  "note": "Winners/UE totals come from the @ATP_Entry card; the Winners% / UE% denominator (total points played) is joined from the api-tennis match record on (tournament, player-pair). Percentages are null for any card whose api-tennis fixture was not found.",
   "tournaments": [
     "Estoril",
     "Kitzbuhel"
   ],
   "cards": 32,
   "playerRows": 64,
+  "denominatorSource": "api-tennis get_fixtures Total Points Won (stat_total, match period)",
+  "cardsJoinedToDenominator": 32,
+  "apiTennisReads": 1,
   "rows": [
     {
       "tournament": "Estoril",
@@ -15,6 +18,8 @@
       "round": "R1",
       "card": "HNrMapUWoAAbdZp",
       "matchKey": "basilashvili|n+torres|t",
+      "apiTennisEventKey": 12147467,
+      "totalPointsPlayed": 109,
       "players": {
         "torres|t": {
           "name": "Tiago Torres",
@@ -23,7 +28,10 @@
           "fhUnforced": 4,
           "bhUnforced": 7,
           "winners": 12,
-          "unforcedErrors": 11
+          "unforcedErrors": 11,
+          "winnersUnforcedRatio": 1.09,
+          "winnersPct": 11,
+          "unforcedErrorsPct": 10.1
         },
         "basilashvili|n": {
           "name": "Nikoloz Basilashvili",
@@ -32,7 +40,10 @@
           "fhUnforced": 17,
           "bhUnforced": 17,
           "winners": 11,
-          "unforcedErrors": 34
+          "unforcedErrors": 34,
+          "winnersUnforcedRatio": 0.32,
+          "winnersPct": 10.1,
+          "unforcedErrorsPct": 31.2
         }
       }
     },
@@ -42,6 +53,8 @@
       "round": "R1",
       "card": "HNro6HYWwAAbUyV",
       "matchKey": "carabelli|c+droguet|t",
+      "apiTennisEventKey": 12147471,
+      "totalPointsPlayed": 150,
       "players": {
         "droguet|t": {
           "name": "Titouan Droguet",
@@ -50,7 +63,10 @@
           "fhUnforced": 13,
           "bhUnforced": 4,
           "winners": 16,
-          "unforcedErrors": 17
+          "unforcedErrors": 17,
+          "winnersUnforcedRatio": 0.94,
+          "winnersPct": 10.7,
+          "unforcedErrorsPct": 11.3
         },
         "carabelli|c": {
           "name": "Camilo Ugo Carabelli",
@@ -59,7 +75,10 @@
           "fhUnforced": 19,
           "bhUnforced": 13,
           "winners": 24,
-          "unforcedErrors": 32
+          "unforcedErrors": 32,
+          "winnersUnforcedRatio": 0.75,
+          "winnersPct": 16,
+          "unforcedErrorsPct": 21.3
         }
       }
     },
@@ -69,6 +88,8 @@
       "round": "R1",
       "card": "HNsSn6uWYAAuYG3",
       "matchKey": "assche|l+silva|f",
+      "apiTennisEventKey": 12147470,
+      "totalPointsPlayed": 215,
       "players": {
         "silva|f": {
           "name": "Frederico Ferreira Silva",
@@ -77,7 +98,10 @@
           "fhUnforced": 37,
           "bhUnforced": 20,
           "winners": 30,
-          "unforcedErrors": 57
+          "unforcedErrors": 57,
+          "winnersUnforcedRatio": 0.53,
+          "winnersPct": 14,
+          "unforcedErrorsPct": 26.5
         },
         "assche|l": {
           "name": "Luca Van Assche",
@@ -86,7 +110,10 @@
           "fhUnforced": 18,
           "bhUnforced": 27,
           "winners": 25,
-          "unforcedErrors": 45
+          "unforcedErrors": 45,
+          "winnersUnforcedRatio": 0.56,
+          "winnersPct": 11.6,
+          "unforcedErrorsPct": 20.9
         }
       }
     },
@@ -96,6 +123,8 @@
       "round": "R1",
       "card": "HNsz4zxWsAAwNlX",
       "matchKey": "martinez|p+rocha|h",
+      "apiTennisEventKey": 12147766,
+      "totalPointsPlayed": 156,
       "players": {
         "rocha|h": {
           "name": "Henrique Rocha",
@@ -104,7 +133,10 @@
           "fhUnforced": 27,
           "bhUnforced": 18,
           "winners": 24,
-          "unforcedErrors": 45
+          "unforcedErrors": 45,
+          "winnersUnforcedRatio": 0.53,
+          "winnersPct": 15.4,
+          "unforcedErrorsPct": 28.8
         },
         "martinez|p": {
           "name": "Pedro Martinez",
@@ -113,7 +145,10 @@
           "fhUnforced": 8,
           "bhUnforced": 13,
           "winners": 18,
-          "unforcedErrors": 21
+          "unforcedErrors": 21,
+          "winnersUnforcedRatio": 0.86,
+          "winnersPct": 11.5,
+          "unforcedErrorsPct": 13.5
         }
       }
     },
@@ -123,6 +158,8 @@
       "round": "R1",
       "card": "HNwbgw_WAAITwiS",
       "matchKey": "busta|p+gaubas|v",
+      "apiTennisEventKey": 12147468,
+      "totalPointsPlayed": 100,
       "players": {
         "gaubas|v": {
           "name": "Vilius Gaubas",
@@ -131,7 +168,10 @@
           "fhUnforced": 10,
           "bhUnforced": 5,
           "winners": 13,
-          "unforcedErrors": 15
+          "unforcedErrors": 15,
+          "winnersUnforcedRatio": 0.87,
+          "winnersPct": 13,
+          "unforcedErrorsPct": 15
         },
         "busta|p": {
           "name": "Pablo Carreno Busta",
@@ -140,7 +180,10 @@
           "fhUnforced": 6,
           "bhUnforced": 7,
           "winners": 23,
-          "unforcedErrors": 13
+          "unforcedErrors": 13,
+          "winnersUnforcedRatio": 1.77,
+          "winnersPct": 23,
+          "unforcedErrorsPct": 13
         }
       }
     },
@@ -150,6 +193,8 @@
       "round": "R1",
       "card": "HNwet2xXEAE9_XR",
       "matchKey": "borges|n+luz|o",
+      "apiTennisEventKey": 12147793,
+      "totalPointsPlayed": 120,
       "players": {
         "borges|n": {
           "name": "Nuno Borges",
@@ -158,7 +203,10 @@
           "fhUnforced": 5,
           "bhUnforced": 8,
           "winners": 15,
-          "unforcedErrors": 13
+          "unforcedErrors": 13,
+          "winnersUnforcedRatio": 1.15,
+          "winnersPct": 12.5,
+          "unforcedErrorsPct": 10.8
         },
         "luz|o": {
           "name": "Orlando Luz",
@@ -167,7 +215,10 @@
           "fhUnforced": 17,
           "bhUnforced": 6,
           "winners": 16,
-          "unforcedErrors": 23
+          "unforcedErrors": 23,
+          "winnersUnforcedRatio": 0.7,
+          "winnersPct": 13.3,
+          "unforcedErrorsPct": 19.2
         }
       }
     },
@@ -177,6 +228,8 @@
       "round": "R1",
       "card": "HNxFiGuXEAAYzh0",
       "matchKey": "burruchaga|r+wawrinka|s",
+      "apiTennisEventKey": 12147465,
+      "totalPointsPlayed": 215,
       "players": {
         "wawrinka|s": {
           "name": "Stan Wawrinka",
@@ -185,7 +238,10 @@
           "fhUnforced": 30,
           "bhUnforced": 26,
           "winners": 22,
-          "unforcedErrors": 56
+          "unforcedErrors": 56,
+          "winnersUnforcedRatio": 0.39,
+          "winnersPct": 10.2,
+          "unforcedErrorsPct": 26
         },
         "burruchaga|r": {
           "name": "Roman Andres Burruchaga",
@@ -194,7 +250,10 @@
           "fhUnforced": 28,
           "bhUnforced": 16,
           "winners": 19,
-          "unforcedErrors": 44
+          "unforcedErrors": 44,
+          "winnersUnforcedRatio": 0.43,
+          "winnersPct": 8.8,
+          "unforcedErrorsPct": 20.5
         }
       }
     },
@@ -204,6 +263,8 @@
       "round": "R1",
       "card": "HNxb8EnXsAAuf4I",
       "matchKey": "faria|j+zandschulp|b",
+      "apiTennisEventKey": 12147466,
+      "totalPointsPlayed": 107,
       "players": {
         "zandschulp|b": {
           "name": "Botic van de Zandschulp",
@@ -212,7 +273,10 @@
           "fhUnforced": 11,
           "bhUnforced": 10,
           "winners": 13,
-          "unforcedErrors": 21
+          "unforcedErrors": 21,
+          "winnersUnforcedRatio": 0.62,
+          "winnersPct": 12.1,
+          "unforcedErrorsPct": 19.6
         },
         "faria|j": {
           "name": "Jaime Faria",
@@ -221,7 +285,10 @@
           "fhUnforced": 11,
           "bhUnforced": 9,
           "winners": 4,
-          "unforcedErrors": 20
+          "unforcedErrors": 20,
+          "winnersUnforcedRatio": 0.2,
+          "winnersPct": 3.7,
+          "unforcedErrorsPct": 18.7
         }
       }
     },
@@ -231,6 +298,8 @@
       "round": "R2",
       "card": "HN1YrXuXgAIV3Tl",
       "matchKey": "droguet|t+gaston|h",
+      "apiTennisEventKey": 12148319,
+      "totalPointsPlayed": 104,
       "players": {
         "gaston|h": {
           "name": "Hugo Gaston",
@@ -239,7 +308,10 @@
           "fhUnforced": 15,
           "bhUnforced": 5,
           "winners": 12,
-          "unforcedErrors": 20
+          "unforcedErrors": 20,
+          "winnersUnforcedRatio": 0.6,
+          "winnersPct": 11.5,
+          "unforcedErrorsPct": 19.2
         },
         "droguet|t": {
           "name": "Titouan Droguet",
@@ -248,7 +320,10 @@
           "fhUnforced": 20,
           "bhUnforced": 13,
           "winners": 6,
-          "unforcedErrors": 33
+          "unforcedErrors": 33,
+          "winnersUnforcedRatio": 0.18,
+          "winnersPct": 5.8,
+          "unforcedErrorsPct": 31.7
         }
       }
     },
@@ -258,6 +333,8 @@
       "round": "R2",
       "card": "HN1_eQvXMAAqs90",
       "matchKey": "borges|n+burruchaga|r",
+      "apiTennisEventKey": 12148320,
+      "totalPointsPlayed": 180,
       "players": {
         "borges|n": {
           "name": "Nuno Borges",
@@ -266,7 +343,10 @@
           "fhUnforced": 35,
           "bhUnforced": 15,
           "winners": 24,
-          "unforcedErrors": 50
+          "unforcedErrors": 50,
+          "winnersUnforcedRatio": 0.48,
+          "winnersPct": 13.3,
+          "unforcedErrorsPct": 27.8
         },
         "burruchaga|r": {
           "name": "Roman Andres Burruchaga",
@@ -275,7 +355,10 @@
           "fhUnforced": 20,
           "bhUnforced": 10,
           "winners": 21,
-          "unforcedErrors": 30
+          "unforcedErrors": 30,
+          "winnersUnforcedRatio": 0.7,
+          "winnersPct": 11.7,
+          "unforcedErrorsPct": 16.7
         }
       }
     },
@@ -285,6 +368,8 @@
       "round": "R2",
       "card": "HN2dqNuW8AAueOs",
       "matchKey": "tabilo|a+torres|t",
+      "apiTennisEventKey": 12147862,
+      "totalPointsPlayed": 132,
       "players": {
         "tabilo|a": {
           "name": "Alejandro Tabilo",
@@ -293,7 +378,10 @@
           "fhUnforced": 17,
           "bhUnforced": 10,
           "winners": 16,
-          "unforcedErrors": 27
+          "unforcedErrors": 27,
+          "winnersUnforcedRatio": 0.59,
+          "winnersPct": 12.1,
+          "unforcedErrorsPct": 20.5
         },
         "torres|t": {
           "name": "Tiago Torres",
@@ -302,7 +390,10 @@
           "fhUnforced": 9,
           "bhUnforced": 5,
           "winners": 17,
-          "unforcedErrors": 14
+          "unforcedErrors": 14,
+          "winnersUnforcedRatio": 1.21,
+          "winnersPct": 12.9,
+          "unforcedErrorsPct": 10.6
         }
       }
     },
@@ -312,6 +403,8 @@
       "round": "R2",
       "card": "HN3EkNbWUAA3qeP",
       "matchKey": "blockx|a+jacquet|k",
+      "apiTennisEventKey": 12148318,
+      "totalPointsPlayed": 222,
       "players": {
         "jacquet|k": {
           "name": "Kyrian Jacquet",
@@ -320,7 +413,10 @@
           "fhUnforced": 23,
           "bhUnforced": 16,
           "winners": 45,
-          "unforcedErrors": 39
+          "unforcedErrors": 39,
+          "winnersUnforcedRatio": 1.15,
+          "winnersPct": 20.3,
+          "unforcedErrorsPct": 17.6
         },
         "blockx|a": {
           "name": "Alexander Blockx",
@@ -329,7 +425,10 @@
           "fhUnforced": 10,
           "bhUnforced": 8,
           "winners": 23,
-          "unforcedErrors": 18
+          "unforcedErrors": 18,
+          "winnersUnforcedRatio": 1.28,
+          "winnersPct": 10.4,
+          "unforcedErrorsPct": 8.1
         }
       }
     },
@@ -339,6 +438,8 @@
       "round": "R2",
       "card": "HN6-aqgXgAMwwA6",
       "matchKey": "bueno|g+faria|j",
+      "apiTennisEventKey": 12148483,
+      "totalPointsPlayed": 103,
       "players": {
         "faria|j": {
           "name": "Jaime Faria",
@@ -347,7 +448,10 @@
           "fhUnforced": 8,
           "bhUnforced": 13,
           "winners": 12,
-          "unforcedErrors": 21
+          "unforcedErrors": 21,
+          "winnersUnforcedRatio": 0.57,
+          "winnersPct": 11.7,
+          "unforcedErrorsPct": 20.4
         },
         "bueno|g": {
           "name": "Gonzalo Bueno",
@@ -356,7 +460,10 @@
           "fhUnforced": 10,
           "bhUnforced": 12,
           "winners": 7,
-          "unforcedErrors": 22
+          "unforcedErrors": 22,
+          "winnersUnforcedRatio": 0.32,
+          "winnersPct": 6.8,
+          "unforcedErrorsPct": 21.4
         }
       }
     },
@@ -366,6 +473,8 @@
       "round": "R2",
       "card": "HN6tqQiXIAAip39",
       "matchKey": "assche|l+busta|p",
+      "apiTennisEventKey": 12148316,
+      "totalPointsPlayed": 153,
       "players": {
         "assche|l": {
           "name": "Luca Van Assche",
@@ -374,7 +483,10 @@
           "fhUnforced": 13,
           "bhUnforced": 13,
           "winners": 21,
-          "unforcedErrors": 26
+          "unforcedErrors": 26,
+          "winnersUnforcedRatio": 0.81,
+          "winnersPct": 13.7,
+          "unforcedErrorsPct": 17
         },
         "busta|p": {
           "name": "Pablo Carreno Busta",
@@ -383,7 +495,10 @@
           "fhUnforced": 20,
           "bhUnforced": 10,
           "winners": 19,
-          "unforcedErrors": 30
+          "unforcedErrors": 30,
+          "winnersUnforcedRatio": 0.63,
+          "winnersPct": 12.4,
+          "unforcedErrorsPct": 19.6
         }
       }
     },
@@ -393,6 +508,8 @@
       "round": "R2",
       "card": "HN77MXZXYAEi5mv",
       "matchKey": "darderi|l+martinez|p",
+      "apiTennisEventKey": 12148127,
+      "totalPointsPlayed": 69,
       "players": {
         "martinez|p": {
           "name": "Pedro Martinez",
@@ -401,7 +518,10 @@
           "fhUnforced": 12,
           "bhUnforced": 7,
           "winners": 6,
-          "unforcedErrors": 19
+          "unforcedErrors": 19,
+          "winnersUnforcedRatio": 0.32,
+          "winnersPct": 8.7,
+          "unforcedErrorsPct": 27.5
         },
         "darderi|l": {
           "name": "Luciano Darderi",
@@ -410,7 +530,10 @@
           "fhUnforced": 6,
           "bhUnforced": 2,
           "winners": 13,
-          "unforcedErrors": 8
+          "unforcedErrors": 8,
+          "winnersUnforcedRatio": 1.63,
+          "winnersPct": 18.8,
+          "unforcedErrorsPct": 11.6
         }
       }
     },
@@ -420,6 +543,8 @@
       "round": "R2",
       "card": "HN7hS6mXMAAkpzO",
       "matchKey": "rublev|a+skatov|t",
+      "apiTennisEventKey": 12148317,
+      "totalPointsPlayed": 81,
       "players": {
         "rublev|a": {
           "name": "Andrey Rublev",
@@ -428,7 +553,10 @@
           "fhUnforced": 7,
           "bhUnforced": 3,
           "winners": 22,
-          "unforcedErrors": 10
+          "unforcedErrors": 10,
+          "winnersUnforcedRatio": 2.2,
+          "winnersPct": 27.2,
+          "unforcedErrorsPct": 12.3
         },
         "skatov|t": {
           "name": "Timofey Skatov",
@@ -437,7 +565,10 @@
           "fhUnforced": 8,
           "bhUnforced": 6,
           "winners": 5,
-          "unforcedErrors": 14
+          "unforcedErrors": 14,
+          "winnersUnforcedRatio": 0.36,
+          "winnersPct": 6.2,
+          "unforcedErrorsPct": 17.3
         }
       }
     },
@@ -447,6 +578,8 @@
       "round": "R1",
       "card": "HNqlOITWIAADSVR",
       "matchKey": "muller|a+navone|m",
+      "apiTennisEventKey": 12147454,
+      "totalPointsPlayed": 103,
       "players": {
         "muller|a": {
           "name": "Alexandre Muller",
@@ -455,7 +588,10 @@
           "fhUnforced": 12,
           "bhUnforced": 14,
           "winners": 7,
-          "unforcedErrors": 26
+          "unforcedErrors": 26,
+          "winnersUnforcedRatio": 0.27,
+          "winnersPct": 6.8,
+          "unforcedErrorsPct": 25.2
         },
         "navone|m": {
           "name": "Mariano Navone",
@@ -464,7 +600,10 @@
           "fhUnforced": 3,
           "bhUnforced": 11,
           "winners": 13,
-          "unforcedErrors": 14
+          "unforcedErrors": 14,
+          "winnersUnforcedRatio": 0.93,
+          "winnersPct": 12.6,
+          "unforcedErrorsPct": 13.6
         }
       }
     },
@@ -474,6 +613,8 @@
       "round": "R1",
       "card": "HNr-X-UWYAACC8D",
       "matchKey": "buse|i+kopriva|v",
+      "apiTennisEventKey": 12147452,
+      "totalPointsPlayed": 218,
       "players": {
         "kopriva|v": {
           "name": "Vit Kopriva",
@@ -482,7 +623,10 @@
           "fhUnforced": 28,
           "bhUnforced": 20,
           "winners": 27,
-          "unforcedErrors": 48
+          "unforcedErrors": 48,
+          "winnersUnforcedRatio": 0.56,
+          "winnersPct": 12.4,
+          "unforcedErrorsPct": 22
         },
         "buse|i": {
           "name": "Ignacio Buse",
@@ -491,7 +635,10 @@
           "fhUnforced": 18,
           "bhUnforced": 16,
           "winners": 18,
-          "unforcedErrors": 34
+          "unforcedErrors": 34,
+          "winnersUnforcedRatio": 0.53,
+          "winnersPct": 8.3,
+          "unforcedErrorsPct": 15.6
         }
       }
     },
@@ -501,6 +648,8 @@
       "round": "R1",
       "card": "HNrMsbcWsAEbZh7",
       "matchKey": "hanfmann|y+neumayer|l",
+      "apiTennisEventKey": 12147455,
+      "totalPointsPlayed": 141,
       "players": {
         "neumayer|l": {
           "name": "Lukas Neumayer",
@@ -509,7 +658,10 @@
           "fhUnforced": 13,
           "bhUnforced": 7,
           "winners": 9,
-          "unforcedErrors": 20
+          "unforcedErrors": 20,
+          "winnersUnforcedRatio": 0.45,
+          "winnersPct": 6.4,
+          "unforcedErrorsPct": 14.2
         },
         "hanfmann|y": {
           "name": "Yannick Hanfmann",
@@ -518,7 +670,10 @@
           "fhUnforced": 13,
           "bhUnforced": 17,
           "winners": 25,
-          "unforcedErrors": 30
+          "unforcedErrors": 30,
+          "winnersUnforcedRatio": 0.83,
+          "winnersPct": 17.7,
+          "unforcedErrorsPct": 21.3
         }
       }
     },
@@ -528,6 +683,8 @@
       "round": "R1",
       "card": "HNrodrjWMAAZl-R",
       "matchKey": "rodionov|j+schwaerzler|j",
+      "apiTennisEventKey": 12147768,
+      "totalPointsPlayed": 106,
       "players": {
         "schwaerzler|j": {
           "name": "Joel Schwaerzler",
@@ -536,7 +693,10 @@
           "fhUnforced": 18,
           "bhUnforced": 6,
           "winners": 16,
-          "unforcedErrors": 24
+          "unforcedErrors": 24,
+          "winnersUnforcedRatio": 0.67,
+          "winnersPct": 15.1,
+          "unforcedErrorsPct": 22.6
         },
         "rodionov|j": {
           "name": "Jurij Rodionov",
@@ -545,7 +705,10 @@
           "fhUnforced": 12,
           "bhUnforced": 6,
           "winners": 13,
-          "unforcedErrors": 18
+          "unforcedErrors": 18,
+          "winnersUnforcedRatio": 0.72,
+          "winnersPct": 12.3,
+          "unforcedErrorsPct": 17
         }
       }
     },
@@ -555,6 +718,8 @@
       "round": "R1",
       "card": "HNw9wBxWEAEWMWo",
       "matchKey": "altmaier|d+collignon|r",
+      "apiTennisEventKey": 12147449,
+      "totalPointsPlayed": 122,
       "players": {
         "altmaier|d": {
           "name": "Daniel Altmaier",
@@ -563,7 +728,10 @@
           "fhUnforced": 10,
           "bhUnforced": 6,
           "winners": 21,
-          "unforcedErrors": 16
+          "unforcedErrors": 16,
+          "winnersUnforcedRatio": 1.31,
+          "winnersPct": 17.2,
+          "unforcedErrorsPct": 13.1
         },
         "collignon|r": {
           "name": "Raphael Collignon",
@@ -572,7 +740,10 @@
           "fhUnforced": 9,
           "bhUnforced": 11,
           "winners": 12,
-          "unforcedErrors": 20
+          "unforcedErrors": 20,
+          "winnersUnforcedRatio": 0.6,
+          "winnersPct": 9.8,
+          "unforcedErrorsPct": 16.4
         }
       }
     },
@@ -582,6 +753,8 @@
       "round": "R1",
       "card": "HNwbOZXXUAAdgdC",
       "matchKey": "shevchenko|a+struff|j",
+      "apiTennisEventKey": 12147456,
+      "totalPointsPlayed": 182,
       "players": {
         "struff|j": {
           "name": "Jan-Lennard Struff",
@@ -590,7 +763,10 @@
           "fhUnforced": 23,
           "bhUnforced": 19,
           "winners": 25,
-          "unforcedErrors": 42
+          "unforcedErrors": 42,
+          "winnersUnforcedRatio": 0.6,
+          "winnersPct": 13.7,
+          "unforcedErrorsPct": 23.1
         },
         "shevchenko|a": {
           "name": "Alexander Shevchenko",
@@ -599,7 +775,10 @@
           "fhUnforced": 11,
           "bhUnforced": 12,
           "winners": 16,
-          "unforcedErrors": 23
+          "unforcedErrors": 23,
+          "winnersUnforcedRatio": 0.7,
+          "winnersPct": 8.8,
+          "unforcedErrorsPct": 12.6
         }
       }
     },
@@ -609,6 +788,8 @@
       "round": "R1",
       "card": "HNwbwE4WMAAEhmR",
       "matchKey": "baez|s+kecmanovic|m",
+      "apiTennisEventKey": 12147450,
+      "totalPointsPlayed": 183,
       "players": {
         "baez|s": {
           "name": "Sebastian Baez",
@@ -617,7 +798,10 @@
           "fhUnforced": 18,
           "bhUnforced": 11,
           "winners": 21,
-          "unforcedErrors": 29
+          "unforcedErrors": 29,
+          "winnersUnforcedRatio": 0.72,
+          "winnersPct": 11.5,
+          "unforcedErrorsPct": 15.8
         },
         "kecmanovic|m": {
           "name": "Miomir Kecmanovic",
@@ -626,7 +810,10 @@
           "fhUnforced": 20,
           "bhUnforced": 18,
           "winners": 23,
-          "unforcedErrors": 38
+          "unforcedErrors": 38,
+          "winnersUnforcedRatio": 0.61,
+          "winnersPct": 12.6,
+          "unforcedErrorsPct": 20.8
         }
       }
     },
@@ -636,6 +823,8 @@
       "round": "R1",
       "card": "HNwmHnGX0AEXOpN",
       "matchKey": "molcan|a+ofner|s",
+      "apiTennisEventKey": 12147453,
+      "totalPointsPlayed": 108,
       "players": {
         "molcan|a": {
           "name": "Alex Molcan",
@@ -644,7 +833,10 @@
           "fhUnforced": 7,
           "bhUnforced": 6,
           "winners": 2,
-          "unforcedErrors": 13
+          "unforcedErrors": 13,
+          "winnersUnforcedRatio": 0.15,
+          "winnersPct": 1.9,
+          "unforcedErrorsPct": 12
         },
         "ofner|s": {
           "name": "Sebastian Ofner",
@@ -653,7 +845,10 @@
           "fhUnforced": 8,
           "bhUnforced": 21,
           "winners": 17,
-          "unforcedErrors": 29
+          "unforcedErrors": 29,
+          "winnersUnforcedRatio": 0.59,
+          "winnersPct": 15.7,
+          "unforcedErrorsPct": 26.9
         }
       }
     },
@@ -663,6 +858,8 @@
       "round": "R2",
       "card": "HN02gLUWsAAaP3E",
       "matchKey": "halys|q+vacherot|v",
+      "apiTennisEventKey": 12148310,
+      "totalPointsPlayed": 111,
       "players": {
         "halys|q": {
           "name": "Quentin Halys",
@@ -671,7 +868,10 @@
           "fhUnforced": 12,
           "bhUnforced": 2,
           "winners": 12,
-          "unforcedErrors": 14
+          "unforcedErrors": 14,
+          "winnersUnforcedRatio": 0.86,
+          "winnersPct": 10.8,
+          "unforcedErrorsPct": 12.6
         },
         "vacherot|v": {
           "name": "Valentin Vacherot",
@@ -680,7 +880,10 @@
           "fhUnforced": 11,
           "bhUnforced": 8,
           "winners": 15,
-          "unforcedErrors": 19
+          "unforcedErrors": 19,
+          "winnersUnforcedRatio": 0.79,
+          "winnersPct": 13.5,
+          "unforcedErrorsPct": 17.1
         }
       }
     },
@@ -690,6 +893,8 @@
       "round": "R2",
       "card": "HN19NbBWYAAxZa3",
       "matchKey": "acosta|f+bublik|a",
+      "apiTennisEventKey": 12147864,
+      "totalPointsPlayed": 123,
       "players": {
         "bublik|a": {
           "name": "Alexander Bublik",
@@ -698,7 +903,10 @@
           "fhUnforced": 12,
           "bhUnforced": 13,
           "winners": 17,
-          "unforcedErrors": 25
+          "unforcedErrors": 25,
+          "winnersUnforcedRatio": 0.68,
+          "winnersPct": 13.8,
+          "unforcedErrorsPct": 20.3
         },
         "acosta|f": {
           "name": "Facundo Diaz Acosta",
@@ -707,7 +915,10 @@
           "fhUnforced": 8,
           "bhUnforced": 7,
           "winners": 10,
-          "unforcedErrors": 15
+          "unforcedErrors": 15,
+          "winnersUnforcedRatio": 0.67,
+          "winnersPct": 8.1,
+          "unforcedErrorsPct": 12.2
         }
       }
     },
@@ -717,6 +928,8 @@
       "round": "R2",
       "card": "HN1KxHSXcAAiD2j",
       "matchKey": "navone|m+struff|j",
+      "apiTennisEventKey": 12148250,
+      "totalPointsPlayed": 90,
       "players": {
         "struff|j": {
           "name": "Jan-Lennard Struff",
@@ -725,7 +938,10 @@
           "fhUnforced": 14,
           "bhUnforced": 8,
           "winners": 9,
-          "unforcedErrors": 22
+          "unforcedErrors": 22,
+          "winnersUnforcedRatio": 0.41,
+          "winnersPct": 10,
+          "unforcedErrorsPct": 24.4
         },
         "navone|m": {
           "name": "Mariano Navone",
@@ -734,7 +950,10 @@
           "fhUnforced": 5,
           "bhUnforced": 5,
           "winners": 12,
-          "unforcedErrors": 10
+          "unforcedErrors": 10,
+          "winnersUnforcedRatio": 1.2,
+          "winnersPct": 13.3,
+          "unforcedErrorsPct": 11.1
         }
       }
     },
@@ -744,6 +963,8 @@
       "round": "R2",
       "card": "HN1nvhTWEAA2FNk",
       "matchKey": "etcheverry|t+rodionov|j",
+      "apiTennisEventKey": 12147863,
+      "totalPointsPlayed": 131,
       "players": {
         "etcheverry|t": {
           "name": "Tomas Martin Etcheverry",
@@ -752,7 +973,10 @@
           "fhUnforced": 14,
           "bhUnforced": 5,
           "winners": 14,
-          "unforcedErrors": 19
+          "unforcedErrors": 19,
+          "winnersUnforcedRatio": 0.74,
+          "winnersPct": 10.7,
+          "unforcedErrorsPct": 14.5
         },
         "rodionov|j": {
           "name": "Jurij Rodionov",
@@ -761,7 +985,10 @@
           "fhUnforced": 18,
           "bhUnforced": 12,
           "winners": 14,
-          "unforcedErrors": 30
+          "unforcedErrors": 30,
+          "winnersUnforcedRatio": 0.47,
+          "winnersPct": 10.7,
+          "unforcedErrorsPct": 22.9
         }
       }
     },
@@ -771,6 +998,8 @@
       "round": "QF",
       "card": "HN6-SMsXwAArACj",
       "matchKey": "buse|i+etcheverry|t",
+      "apiTennisEventKey": 12148684,
+      "totalPointsPlayed": 118,
       "players": {
         "etcheverry|t": {
           "name": "Tomas Martin Etcheverry",
@@ -779,7 +1008,10 @@
           "fhUnforced": 11,
           "bhUnforced": 5,
           "winners": 13,
-          "unforcedErrors": 16
+          "unforcedErrors": 16,
+          "winnersUnforcedRatio": 0.81,
+          "winnersPct": 11,
+          "unforcedErrorsPct": 13.6
         },
         "buse|i": {
           "name": "Ignacio Buse",
@@ -788,7 +1020,10 @@
           "fhUnforced": 15,
           "bhUnforced": 19,
           "winners": 11,
-          "unforcedErrors": 34
+          "unforcedErrors": 34,
+          "winnersUnforcedRatio": 0.32,
+          "winnersPct": 9.3,
+          "unforcedErrorsPct": 28.8
         }
       }
     },
@@ -798,6 +1033,8 @@
       "round": "QF",
       "card": "HN6tIpwWgAEoeoV",
       "matchKey": "halys|q+navone|m",
+      "apiTennisEventKey": 12148660,
+      "totalPointsPlayed": 115,
       "players": {
         "navone|m": {
           "name": "Mariano Navone",
@@ -806,7 +1043,10 @@
           "fhUnforced": 10,
           "bhUnforced": 6,
           "winners": 8,
-          "unforcedErrors": 16
+          "unforcedErrors": 16,
+          "winnersUnforcedRatio": 0.5,
+          "winnersPct": 7,
+          "unforcedErrorsPct": 13.9
         },
         "halys|q": {
           "name": "Quentin Halys",
@@ -815,7 +1055,10 @@
           "fhUnforced": 16,
           "bhUnforced": 8,
           "winners": 17,
-          "unforcedErrors": 24
+          "unforcedErrors": 24,
+          "winnersUnforcedRatio": 0.71,
+          "winnersPct": 14.8,
+          "unforcedErrorsPct": 20.9
         }
       }
     },
@@ -825,6 +1068,8 @@
       "round": "QF",
       "card": "HN6tdHvWsAASyxD",
       "matchKey": "baez|s+hanfmann|y",
+      "apiTennisEventKey": 12148665,
+      "totalPointsPlayed": 116,
       "players": {
         "hanfmann|y": {
           "name": "Yannick Hanfmann",
@@ -833,7 +1078,10 @@
           "fhUnforced": 7,
           "bhUnforced": 10,
           "winners": 18,
-          "unforcedErrors": 17
+          "unforcedErrors": 17,
+          "winnersUnforcedRatio": 1.06,
+          "winnersPct": 15.5,
+          "unforcedErrorsPct": 14.7
         },
         "baez|s": {
           "name": "Sebastian Baez",
@@ -842,7 +1090,10 @@
           "fhUnforced": 8,
           "bhUnforced": 12,
           "winners": 10,
-          "unforcedErrors": 20
+          "unforcedErrors": 20,
+          "winnersUnforcedRatio": 0.5,
+          "winnersPct": 8.6,
+          "unforcedErrorsPct": 17.2
         }
       }
     },
@@ -852,6 +1103,8 @@
       "round": "QF",
       "card": "HN7KalJXEAAT1os",
       "matchKey": "bublik|a+molcan|a",
+      "apiTennisEventKey": 12148685,
+      "totalPointsPlayed": 111,
       "players": {
         "bublik|a": {
           "name": "Alexander Bublik",
@@ -860,7 +1113,10 @@
           "fhUnforced": 11,
           "bhUnforced": 6,
           "winners": 15,
-          "unforcedErrors": 17
+          "unforcedErrors": 17,
+          "winnersUnforcedRatio": 0.88,
+          "winnersPct": 13.5,
+          "unforcedErrorsPct": 15.3
         },
         "molcan|a": {
           "name": "Alex Molcan",
@@ -869,7 +1125,10 @@
           "fhUnforced": 7,
           "bhUnforced": 6,
           "winners": 7,
-          "unforcedErrors": 13
+          "unforcedErrors": 13,
+          "winnersUnforcedRatio": 0.54,
+          "winnersPct": 6.3,
+          "unforcedErrorsPct": 11.7
         }
       }
     }
