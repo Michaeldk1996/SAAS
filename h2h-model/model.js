@@ -23,7 +23,7 @@ const config = require('./config');
 const data = require('./data');
 const { baseProbability } = require('./elo');
 const { runAll, clamp } = require('./adjustments');
-const { priceAndValue } = require('./price');
+const { priceAndValue, vigFree, pinnacleSeries, bookSeries } = require('./price');
 
 function inferBestOf(match) {
   const tour = String(match.tour || '');
@@ -41,7 +41,9 @@ function runModel(match, opts = {}) {
   const surface = match.surface;
   const bestOf = inferBestOf(match);
 
-  // ---- Stage 1 ----
+  // ---- Stage 1 (Model v2.0 STEP 2): three-state market-anchored base ----
+  // elo.js stays pure — it returns the component win-probs; the state
+  // selection + market blend live here, where the odds are already in scope.
   const stage1 = baseProbability(p1, p2, surface);
   if (!stage1.ok) {
     return {
@@ -51,6 +53,15 @@ function runModel(match, opts = {}) {
       players: { p1: playerMeta(p1), p2: playerMeta(p2) },
     };
   }
+  const blendedElo = stage1.components.elo5050.p1;    // 50/50 overall+surface
+  const surfaceElo = stage1.components.eloSurface.p1; // surface standalone
+  const anchor = selectMarketAnchor(match);           // {state, market, book, flag,...}
+  const bw = config.baseState['state' + anchor.state];
+  // State 3 carries market weight 0 (weights still sum to 1: 0.5+0.5), so a
+  // null market never enters the sum.
+  const baseP1 = bw.blendedElo * blendedElo
+               + bw.surfaceElo * surfaceElo
+               + (anchor.state === 3 ? 0 : bw.market * anchor.market);
 
   // ---- Stage 2 ----
   const ctx = {
@@ -62,10 +73,29 @@ function runModel(match, opts = {}) {
   };
   const adjustments = runAll(ctx);
 
+  // ---- Layer dampening by base state (Model v2.0 STEP 3) ----
+  // Statistical layers the market already prices (#4/#5/#7/#9/#10) are dampened
+  // to avoid double-counting the market anchor. Multiply the layer's final
+  // deltaP1 by the state factor BEFORE it enters any sum; record the pre-damp
+  // value so the displayed contribution is the real (dampened) one and the bars
+  // still sum to the total. State 3 (no market) is ×1.0, so nothing changes.
+  const dampMap = config.layerDampening;
+  let dampenedCount = 0;
+  for (const a of adjustments) {
+    const f = a.applied && dampMap[a.id] ? dampMap[a.id][anchor.state] : null;
+    if (f != null && f !== 1) {
+      a.dampening = { state: anchor.state, factor: f, rawDeltaP1: a.deltaP1 };
+      a.deltaP1 = round4(a.deltaP1 * f);
+      dampenedCount++;
+    }
+  }
+
   // Combined live-signal cap (Model v2.0 Phase-0). Layers #8 (W/UE), #9 (serve)
   // and #12 (weather) are "live reads"; clip their COMBINED deltaP1 to
   // +/- config.liveSignalCap before summing, so together they can never move the
   // price more than one strong signal. The other layers pass through untouched.
+  // Runs AFTER dampening (spec: "Cap applies after layer dampening") so the
+  // capped total reflects the dampened #9 serve contribution.
   const liveIds = config.liveSignalCapLayerIds;
   const rawLiveDelta = adjustments.reduce(
     (s, a) => s + (a.applied && liveIds.includes(a.id) ? a.deltaP1 : 0), 0);
@@ -73,7 +103,7 @@ function runModel(match, opts = {}) {
   const nonLiveDelta = adjustments.reduce(
     (s, a) => s + (a.applied && !liveIds.includes(a.id) ? a.deltaP1 : 0), 0);
   const totalDelta = nonLiveDelta + cappedLiveDelta;
-  const baselineP1 = clamp(stage1.baseP1 + totalDelta, config.probFloor, config.probCeil);
+  const baselineP1 = clamp(baseP1 + totalDelta, config.probFloor, config.probCeil);
 
   // Rank-tier probability ceiling (Model v2.0 Phase-0). Cap the FAVOURITE on
   // whichever side it lands, so the ceiling holds whether p1 or p2 is stronger:
@@ -96,10 +126,21 @@ function runModel(match, opts = {}) {
     match: matchMeta(match, bestOf),
     players: { p1: playerMeta(p1), p2: playerMeta(p2) },
     stage1: {
-      baseP1: round4(stage1.baseP1),
-      baseP2: round4(1 - stage1.baseP1),
+      baseP1: round4(baseP1),
+      baseP2: round4(1 - baseP1),
       components: stage1.components,
       note: stage1.note,
+      // Model v2.0 STEP 2: which of the three base states priced this match.
+      baseState: {
+        state: anchor.state,
+        flag: anchor.flag,
+        anchorBook: anchor.book,
+        marketProb: anchor.market != null ? round4(anchor.market) : null,
+        anchorPrice: anchor.anchorPrice || null,
+        pinnacleFrozen: anchor.frozen || false,
+        weights: bw,
+        eloOnlyP1: round4(0.5 * blendedElo + 0.5 * surfaceElo),
+      },
     },
     stage2: {
       adjustments,
@@ -120,6 +161,13 @@ function runModel(match, opts = {}) {
         rawDeltaP1: round4(rawLiveDelta),
         cappedDeltaP1: round4(cappedLiveDelta),
         clamped: round4(cappedLiveDelta) !== round4(rawLiveDelta),
+      },
+      // Model v2.0 STEP 3: how many statistical layers were dampened, and at
+      // what state level, so the double-counting guard is auditable per match.
+      dampening: {
+        state: anchor.state,
+        layerIds: Object.keys(dampMap).map(Number),
+        appliedCount: dampenedCount,
       },
     },
     stage3: pricing,
@@ -183,4 +231,54 @@ function tierProbCeil(r1, r2, config) {
   return config.probCeil;                             // both outside -> baseline
 }
 
-module.exports = { runModel, inferBestOf };
+// ---- Model v2.0 STEP 2: market-anchor selection --------------------------
+// Pick the base state and its market anchor from the match's odds:
+//   State 2  Pinnacle line exists (frozen official opening preferred; else the
+//            live opening tick) — the primary, most-trusted anchor.
+//   State 1  no Pinnacle yet, but an alternative sharp book has a clean
+//            pre-match line (first available in config order).
+//   State 3  no book has a line — Elo-only.
+// vig-free implied prob is always used (never raw implied), per spec.
+function pinnacleAnchor(match) {
+  // Frozen official opening line wins — written once by the pipeline and never
+  // recomputed, so the anchor never drifts run-to-run (founder decision 2026-07-24).
+  const fr = match.pinnacleOpen;
+  if (fr && fr.p1 > 1 && fr.p2 > 1) {
+    const vf = vigFree(fr.p1, fr.p2);
+    if (vf) return { p1: fr.p1, p2: fr.p2, vfP1: vf.p1, ts: fr.ts || null, frozen: true };
+  }
+  // Fallback for standalone runs / matches not yet frozen: the live Pinnacle
+  // opening tick (de-facto opening; not persisted).
+  const s = pinnacleSeries(match);
+  if (s && s.opening) {
+    const vf = vigFree(s.opening.p1, s.opening.p2);
+    if (vf) return { p1: s.opening.p1, p2: s.opening.p2, vfP1: vf.p1, ts: null, frozen: false };
+  }
+  return null;
+}
+
+function selectMarketAnchor(match) {
+  const cfg = config.marketAnchorBooks;
+  const flags = config.baseState.flags;
+  const pin = pinnacleAnchor(match);
+  if (pin) {
+    return {
+      state: 2, market: pin.vfP1, book: cfg.pinnacle,
+      anchorPrice: { p1: pin.p1, p2: pin.p2, ts: pin.ts },
+      frozen: pin.frozen, flag: flags[2],
+    };
+  }
+  for (const book of cfg.alternatives) {
+    const s = bookSeries(match, book);
+    if (s && s.opening && s.opening.vfP1 != null) {
+      return {
+        state: 1, market: s.opening.vfP1, book,
+        anchorPrice: { p1: s.opening.p1, p2: s.opening.p2, ts: s.opening.ts || null },
+        frozen: false, flag: flags[1],
+      };
+    }
+  }
+  return { state: 3, market: null, book: null, anchorPrice: null, frozen: false, flag: flags[3] };
+}
+
+module.exports = { runModel, inferBestOf, selectMarketAnchor };

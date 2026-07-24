@@ -32,6 +32,53 @@ module.exports = {
   // ELO divisor in the logistic (standard chess/tennis ELO = 400)
   eloDivisor: 400,
 
+  // ---- Stage 1 (Model v2.0 STEP 2): three-state market-anchored base ----
+  // Replaces the Elo-only base with a market-anchored blend. elo.js stays
+  // PURE (it exposes the component win-probs); model.js selects the state and
+  // does the blend using these tables. Each state's weights sum to 1.0.
+  // Inputs (all P(p1 wins)):
+  //   blendedElo = elo5050  (50% overall + 50% surface ratings — a stabiliser)
+  //   surfaceElo = surface-specific ELO standalone
+  //   market     = vig-free implied prob of the state's anchor book
+  // State selection (model.js): State 2 if a Pinnacle line exists (frozen
+  // opening preferred), else State 1 if any alternative book has a clean
+  // pre-match line, else State 3 (Elo-only).
+  baseState: {
+    state1: { blendedElo: 0.30, surfaceElo: 0.30, market: 0.40 }, // alt-book anchor
+    state2: { blendedElo: 0.25, surfaceElo: 0.25, market: 0.50 }, // Pinnacle confirmed
+    state3: { blendedElo: 0.50, surfaceElo: 0.50, market: 0.00 }, // Elo-only
+    flags: {
+      1: '⚠️ Temporary base — alternative book anchor, awaiting Pinnacle line',
+      2: '✅ Full blended base active — Pinnacle anchor confirmed',
+      3: '⚠️ Elo-only base — no market anchor available. Treat with caution.',
+    },
+  },
+  // Book anchoring. Pinnacle is the State-2 (primary) anchor; State 1 uses the
+  // first available NON-Pinnacle book in `alternatives`, left to right. The
+  // strings are the EXACT oddsMovement.books keys written by
+  // refresh-odds-history.py's BOOK_LABELS (note 'bet365' is lowercase and
+  // 'William Hill' has a space — a wrong case would silently disable State 1).
+  // Founder decision 2026-07-24: amended to books we actually capture
+  // (Sbobet/Betfair are NOT captured; add later if the provider supplies them).
+  marketAnchorBooks: {
+    pinnacle: 'Pinnacle',
+    alternatives: ['bet365', 'William Hill', '1xBet', 'Betano', 'Betsson'],
+  },
+
+  // ---- Stage 2 dampening by base state (Model v2.0 STEP 3) ----
+  // Statistical layers the market already prices are dampened to avoid
+  // double-counting the market signal. Multiplier applied to each layer's
+  // final deltaP1 BEFORE it enters the adjustment sum, keyed by layer id then
+  // base state (1/2/3). Layers not listed here run at full magnitude in every
+  // state. State 3 (no market) is always ×1.0 — nothing to double-count.
+  layerDampening: {
+    4:  { 1: 0.70, 2: 0.50, 3: 1.0 },   // #4  surface record
+    5:  { 1: 0.70, 2: 0.50, 3: 1.0 },   // #5  recent form
+    7:  { 1: 0.70, 2: 0.50, 3: 1.0 },   // #7  quality form
+    9:  { 1: 0.70, 2: 0.50, 3: 1.0 },   // #9  serve strength
+    10: { 1: 0.70, 2: 0.50, 3: 1.0 },   // #10 return / pressure
+  },
+
   // ---- Stage 2: adjustment magnitudes (probability points) ------------
   // Ordered by the brief's weight hierarchy (highest influence first).
   // `gated: true` means the data source is not reliable/available yet

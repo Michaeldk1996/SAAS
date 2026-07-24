@@ -4016,6 +4016,70 @@ async function runPipeline() {
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved.`);
 
+  // ---- Frozen Pinnacle opening line + base-state switch log ----
+  // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability
+  // model's State-2 anchor is the FIRST captured Pinnacle two-way line, frozen
+  // so the anchor never drifts as tick history changes on later runs. Same
+  // derive-once/pin/carry-forward rule as openingOdds above: derive from the
+  // sane opening tick, write { p1, p2, ts, vfP1 } ONCE, inherit verbatim after,
+  // and log the alt-book(State 1)/Elo(State 3) -> Pinnacle(State 2) switch the
+  // first time a match freezes. Runs while m.oddsMovement is still attached
+  // (before the odds shard strip below) and before matches.json is written, so
+  // the frozen field persists. CLAUDE.md persistence rule: never recomputed.
+  const { pinnacleSeries: pinSeriesFor, bookSeries: bookSeriesFor, vigFree: vigFreeFor } =
+    require('./h2h-model/price');
+  const altAnchorBooks = require('./h2h-model/config').marketAnchorBooks.alternatives;
+  const priorPinOpen = new Map();
+  try {
+    const priorP = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
+    for (const pm of priorP) {
+      if (!pm.pinnacleOpen) continue;
+      priorPinOpen.set(`id:${pm.id}`, pm.pinnacleOpen);
+      priorPinOpen.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm.pinnacleOpen);
+    }
+  } catch (e) { /* first run — nothing pinned to carry forward */ }
+
+  const pinSwitchEvents = [];
+  let pinFrozen = 0, pinPreserved = 0;
+  for (const m of matches) {
+    const carried = priorPinOpen.get(`id:${m.id}`)
+      || priorPinOpen.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
+    if (carried) { m.pinnacleOpen = carried; pinPreserved++; continue; } // never recompute
+    const s = pinSeriesFor(m);
+    if (!s || !s.opening) continue;
+    const vf = vigFreeFor(s.opening.p1, s.opening.p2);
+    if (!vf) continue;
+    const pinBook = m.oddsMovement && m.oddsMovement.books && m.oddsMovement.books.Pinnacle;
+    const ts = (pinBook && pinBook.p1 && pinBook.p1[0] && pinBook.p1[0][0]) || null;
+    m.pinnacleOpen = { p1: s.opening.p1, p2: s.opening.p2, ts, vfP1: Math.round(vf.p1 * 1e4) / 1e4 };
+    pinFrozen++;
+    // Switch event: what was this match anchored on before Pinnacle appeared?
+    let altAnchor = null;
+    for (const b of altAnchorBooks) {
+      const bs = bookSeriesFor(m, b);
+      if (bs && bs.opening && bs.opening.vfP1 != null) {
+        altAnchor = { book: b, vfP1: Math.round(bs.opening.vfP1 * 1e4) / 1e4 };
+        break;
+      }
+    }
+    pinSwitchEvents.push({
+      id: m.id, date: m.date, p1: m.p1, p2: m.p2,
+      from: altAnchor ? { state: 1, book: altAnchor.book, vfP1: altAnchor.vfP1 } : { state: 3 },
+      to: { state: 2, book: 'Pinnacle', vfP1: m.pinnacleOpen.vfP1, ts },
+      switchedAt: nowIso,
+    });
+  }
+  if (pinFrozen || pinPreserved) {
+    console.log(`Pinnacle opening line — ${pinFrozen} newly frozen, ${pinPreserved} preserved (never recomputed).`);
+  }
+  if (pinSwitchEvents.length) {
+    let priorSwitches = [];
+    try { priorSwitches = JSON.parse(fs.readFileSync('pinnacle-switch-log.json', 'utf8')); } catch (e) { /* none yet */ }
+    const merged = priorSwitches.concat(pinSwitchEvents);
+    writeJsonAtomic('pinnacle-switch-log.json', merged);
+    console.log(`Logged ${pinSwitchEvents.length} base-state switch event(s) -> pinnacle-switch-log.json (${merged.length} total).`);
+  }
+
   // Recent-form rows move OUT of matches.json into one lazy shard per player.
   //
   // Measured on the live file before this change: the two row arrays were
