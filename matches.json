@@ -1461,11 +1461,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "30 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9596_r-a-burruchaga.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "oddsMovement": {
@@ -2725,7 +2736,10 @@
       "p2": 1.609,
       "ts": "2026-07-23T07:37:06.753Z",
       "vfP1": 0.3954
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149044",
