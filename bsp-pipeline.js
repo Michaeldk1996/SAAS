@@ -3481,7 +3481,11 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      its Career-record drill-down would fall back to the current season only.
 //      Seed players rebuild every run; without this bump the other ~370 keep the
 //      mismatched pair for up to 14 days.
-const PROFILE_SCHEMA_VERSION = 7;
+// v8 = adds profile.wue (aggregated Winner/UE ratio for model layer #8). Without
+//      this bump, cached v7 profiles carry no wue field, so layer #8 self-hides
+//      for every non-seed player until the cache ages out — the same ~370-player
+//      strand this version counter exists to prevent.
+const PROFILE_SCHEMA_VERSION = 8;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
