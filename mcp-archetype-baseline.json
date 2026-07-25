@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-07-23T14:01:29.527Z",
+  "layer": 8,
+  "status": "STAGED — not activated. Do not serve live until api-tennis Winners/Unforced data is confirmed reliable.",
+  "source": "Match Charting Project (CC BY-NC-SA, R&D use only) x live 8-archetype classification",
+  "mcpMinCharted": 10,
+  "tourBaseline": {
+    "mcpPlayers": 232,
+    "winnerRatePerPt": 0.1696,
+    "unforcedRatePerPt": 0.1789
+  },
+  "archetypes": {
+    "big_server": {
+      "label": "Big Server",
+      "mcpPlayers": 47,
+      "winnerRatePerPt": 0.2012,
+      "unforcedRatePerPt": 0.1778,
+      "wuRatio": 1.131,
+      "totalChartedMatches": 1924
+    },
+    "big_server_baseliner": {
+      "label": "Big Server + Baseliner",
+      "mcpPlayers": 15,
+      "winnerRatePerPt": 0.1924,
+      "unforcedRatePerPt": 0.1895,
+      "wuRatio": 1.016,
+      "totalChartedMatches": 1178
+    },
+    "attacking_baseliner": {
+      "label": "Attacking Baseliner",
+      "mcpPlayers": 32,
+      "winnerRatePerPt": 0.1811,
+      "unforcedRatePerPt": 0.1797,
+      "wuRatio": 1.008,
+      "totalChartedMatches": 1990
+    },
+    "solid_baseliner": {
+      "label": "Solid Baseliner",
+      "mcpPlayers": 24,
+      "winnerRatePerPt": 0.1621,
+      "unforcedRatePerPt": 0.1723,
+      "wuRatio": 0.941,
+      "totalChartedMatches": 1158
+    },
+    "all_court_elite": {
+      "label": "All-Court Elite",
+      "mcpPlayers": 6,
+      "winnerRatePerPt": 0.1718,
+      "unforcedRatePerPt": 0.1617,
+      "wuRatio": 1.063,
+      "totalChartedMatches": 2478
+    },
+    "counter_puncher": {
+      "label": "Counter Puncher",
+      "mcpPlayers": 61,
+      "winnerRatePerPt": 0.1476,
+      "unforcedRatePerPt": 0.1796,
+      "wuRatio": 0.822,
+      "totalChartedMatches": 2361
+    },
+    "solid_defender": {
+      "label": "Solid Defender",
+      "mcpPlayers": 27,
+      "winnerRatePerPt": 0.1485,
+      "unforcedRatePerPt": 0.1767,
+      "wuRatio": 0.84,
+      "totalChartedMatches": 834
+    },
+    "all_court": {
+      "label": "All-Court Player",
+      "mcpPlayers": 20,
+      "winnerRatePerPt": 0.164,
+      "unforcedRatePerPt": 0.1855,
+      "wuRatio": 0.884,
+      "totalChartedMatches": 642
+    }
+  }
+}

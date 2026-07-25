@@ -114,6 +114,8 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 
 **License warning — Sackmann datasets:** CC BY-NC-SA (non-commercial). Use for internal model R&D only. Never serve this data or a model trained on it directly to paying members.
 
+**License warning — Layer #8 W/UE MCP archetype baseline (`mcp-archetype-baseline.json`):** derived from the Match Charting Project (CC BY-NC-SA, non-commercial). Same rule as the model weights above — **internal R&D only**; it seeds the W/UE-ratio expectation per archetype but must NOT be served commercially to paying members until we have a commercially-licensed alternative. Founder decision (TEN-8, 2026-07-25).
+
 **Name matching note:** The Odds API and API-Tennis use different name formats. Current matching is by last name — tested against 4 real pairs. Watch for silent match-merge failures on busy match days.
 
 ---
