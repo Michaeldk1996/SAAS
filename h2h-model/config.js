@@ -199,8 +199,25 @@ module.exports = {
                         { minM: 0,    mult: 1.00 },
                       ],
                       surfaceMinM: 10, universalPenalty: 0.70 },
-    // 10. Return / pressure — career return% + break% + return radar
-    returnPressure: { id: 10, maxMagnitude: 0.02, gated: false },
+    // 10. Return / pressure — career return-points-won% + break% (+ break-point
+    //    conversion% WHERE the splits row carries it; dormant today because
+    //    career-splits.json has no BP-conversion field, and the only live source
+    //    is the current match's own stats = target leakage, so it is excluded by
+    //    design). Repriced 2026-07-25 (founder) as the INVERSE of serve #9:
+    //    return matters MORE on slow courts and LESS at altitude (thin air aids
+    //    the server, blunts the returner). Dynamic per-match magnitude =
+    //    surface base scale x altitude multiplier, hard-clamped to maxMagnitude.
+    //      base:     Slow/clay 3.0pp, Medium/hard 1.75pp, Fast/grass 1.5pp
+    //      altitude: >=1500m x0.70, 800-1499m x0.82, 300-799m x0.90, <300m x1.00
+    //    maxMagnitude (0.03) is the 3pp post-altitude ceiling / over-cap check.
+    returnPressure: { id: 10, maxMagnitude: 0.03, gated: false,
+                      baseScalePP: { Fast: 0.015, Medium: 0.0175, Slow: 0.03 },
+                      altitudeTiers: [
+                        { minM: 1500, mult: 0.70 },
+                        { minM: 800,  mult: 0.82 },
+                        { minM: 300,  mult: 0.90 },
+                        { minM: 0,    mult: 1.00 },
+                      ] },
     // 11. Fatigue — 14-day match/set load from recent form dates
     fatigue:        { id: 11, maxMagnitude: 0.02, gated: false },
     // 12. Weather / conditions — heat & wind vs style

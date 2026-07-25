@@ -102,12 +102,17 @@ function serveRatingRow(row) {
   return fi + fw + sw + hl + (a || 0) - (df || 0);
 }
 
-// Return rating = return-points-won% + break% (games broken).
+// Return rating = return-points-won% + break% (games broken) + break-point
+// conversion% WHERE the splits row carries it. `bpConvPct` is dormant today —
+// career-splits.json has no BP-conversion field, and the only live bpConverted
+// is the current match's own result (target leakage), so it is deliberately not
+// sourced from there. Guarded by presence so it folds in automatically the day
+// the splits pipeline adds it, without changing anyone's rating until then.
 function returnRatingRow(row) {
   if (!row) return null;
-  const rp = num(row.rpwPct), br = num(row.brkPct);
+  const rp = num(row.rpwPct), br = num(row.brkPct), bpc = num(row.bpConvPct);
   if (rp == null) return null;
-  return rp + (br || 0);
+  return rp + (br || 0) + (bpc || 0);
 }
 
 // Blend a per-surface rating: last-52-weeks (0.6) + career (0.4) — recent
@@ -701,19 +706,56 @@ function serve(ctx) {
 //    the atptour.com return leaderboard. Built from OUR career-splits database
 //    (last52 0.6 / career 0.4). Radar-independent, so it always fires.
 // =========================================================================
+// --- Layer #10 return-reprice helpers (inverse of serve #9) ----------------
+// Surface base magnitude (probability points): return is MOST valuable on slow
+// courts, least on fast. clay = Slow, hard = Medium, grass = Fast. Unknown
+// surface -> Medium (hard) as the neutral default.
+function returnBaseMag(surfCat) {
+  const s = (config.adjustments.returnPressure && config.adjustments.returnPressure.baseScalePP) || {};
+  if (surfCat === 'Grass') return num(s.Fast) != null ? s.Fast : 0.015;
+  if (surfCat === 'Clay')  return num(s.Slow) != null ? s.Slow : 0.03;
+  return num(s.Medium) != null ? s.Medium : 0.0175; // Hard + unknown surface
+}
+
+// Altitude multiplier: thin air aids the server and BLUNTS the returner, so the
+// tiers SUPPRESS (<=1.0). Tiers ordered high->low; first threshold cleared wins.
+function returnAltitudeMult(alt) {
+  if (alt == null) return 1.0;
+  const tiers = (config.adjustments.returnPressure && config.adjustments.returnPressure.altitudeTiers) || [];
+  for (const t of tiers) { if (alt >= t.minM) return t.mult; }
+  return 1.0;
+}
+
 function returnPressure(ctx) {
   const c = config.adjustments.returnPressure;
-  const res = base(c.id, 'returnPressure', 'Return / pressure', c.maxMagnitude,
-    'career-splits.json (career + last-52wk per surface)');
+  const CEIL = num(c.maxMagnitude) != null ? c.maxMagnitude : 0.03;
+  const res = base(c.id, 'returnPressure', 'Return / pressure', CEIL,
+    'career-splits.json (career + last-52wk per surface) + config.altitudeMeters');
   const surfCat = surfaceCategory(ctx.surface);
   const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
   const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, returnRatingRow);
   const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, returnRatingRow);
   if (r1 == null || r2 == null) return res;
+
+  // Dynamic magnitude = surface base scale x altitude multiplier, capped at CEIL.
+  // Altitude only ever suppresses (mult <= 1.0), so the ceiling binds solely at
+  // slow + sea level (3.0pp x 1.00); it is a safety clamp, not a common path.
+  const baseMag = returnBaseMag(surfCat);
+  const cspd = ctx.match.courtSpeed;
+  let alt = cspd && num(cspd.altitude) != null ? cspd.altitude : null;
+  if (alt == null) alt = tournamentAltitude(ctx.match && ctx.match.tour);
+  const altMult = returnAltitudeMult(alt);
+  const effMag = Math.min(CEIL, baseMag * altMult);
+  res.maxMagnitude = round4(effMag);
+
   // Return ratings sit ~50-75; a 15-point gap is a decisive return edge.
   const signal = clamp((r1 - r2) / 15, -1, 1);
+  const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
+  const altPart = (alt != null && altMult < 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
   return apply(res, signal, 'med',
-    `Return rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} (${surfCat || bucket}, career+52wk).`);
+    `Return rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} ` +
+    `(${surfCat || bucket}, career+52wk; ${speed} base ${(baseMag * 100).toFixed(2)}pp${altPart}; ` +
+    `mag ${(effMag * 100).toFixed(2)}pp).`);
 }
 
 // =========================================================================
