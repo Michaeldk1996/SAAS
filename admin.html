@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not Found</title>
+<script src="./admin-config.js"></script>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--line:#2a3240;--txt:#d6dee8;--dim:#7d8794;--accent:#4da3ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--p1:#4da3ff;--p2:#e0883b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  code,.mono{font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace}
+  #gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:100}
+  #gate .box{text-align:center}
+  #gate h1{font-size:44px;color:#30363d;margin:0 0 4px;font-weight:600}
+  #gate p{color:#30363d;margin:0 0 18px}
+  #gate input{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:6px;width:220px;outline:none}
+  #gate input:focus{border-color:var(--accent)}
+  #app{display:none;max-width:1200px;margin:0 auto;padding:18px}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:8px}
+  header.top h1{font-size:18px;margin:0;font-weight:600}
+  header.top .meta{color:var(--dim);font-size:12px}
+  nav.tabs{display:flex;gap:4px;margin:14px 0;flex-wrap:wrap}
+  nav.tabs button{background:var(--panel);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+  nav.tabs button.active{background:var(--panel2);color:var(--txt);border-color:var(--accent)}
+  section.tab{display:none}
+  section.tab.active{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
+  .card .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:pointer}
+  .card .hd .title{font-weight:600}
+  .card .hd .sub{color:var(--dim);font-size:12px}
+  .card .body{padding:12px 14px;display:none}
+  .card.open .body{display:block}
+  .card .body.always{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0}
+  .kv{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+  .kv .k{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  .kv .v{font-size:15px;margin-top:2px;font-weight:600}
+  table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  td.num{text-align:right;font-family:'SF Mono',ui-monospace,Menlo,monospace}
+  tr.applied td:first-child{border-left:3px solid var(--good)}
+  tr.gated td:first-child{border-left:3px solid var(--warn)}
+  tr.missing td:first-child{border-left:3px solid #444}
+  .pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600}
+  .pill.good{background:rgba(63,185,80,.15);color:var(--good)}
+  .pill.warn{background:rgba(210,153,34,.15);color:var(--warn)}
+  .pill.bad{background:rgba(248,81,73,.15);color:var(--bad)}
+  .pill.dim{background:rgba(125,135,148,.15);color:var(--dim)}
+  .pill.p1{background:rgba(77,163,255,.15);color:var(--p1)}
+  .pill.p2{background:rgba(224,136,59,.15);color:var(--p2)}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .stub{padding:26px;text-align:center;color:var(--dim);border:1px dashed var(--line);border-radius:8px}
+  .detail{color:var(--dim);font-size:11px}
+  .flagline{margin-top:8px;padding:8px 10px;border-radius:6px;background:var(--panel2);border:1px solid var(--line)}
+  .err{color:var(--bad)}
+  .barwrap{background:#0b0f16;border-radius:4px;height:6px;overflow:hidden;margin-top:4px}
+  .bar{height:100%}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="box">
+    <h1>404</h1>
+    <p>This page could not be found.</p>
+    <input id="pw" type="password" autocomplete="off" aria-label="x" />
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+'use strict';
+const CFG = window.ADMIN_CONFIG || {};
+const TOKEN_KEY = 'bsp.admin.ok';
+
+// ---- gate ----------------------------------------------------------------
+function authed(){ return sessionStorage.getItem(TOKEN_KEY) === '1'; }
+function tryPassword(v){
+  if (CFG.password === '' || v === CFG.password){ sessionStorage.setItem(TOKEN_KEY,'1'); reveal(); }
+}
+function reveal(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.title = 'BSP Admin';
+  boot();
+}
+document.getElementById('pw').addEventListener('keydown',e=>{ if(e.key==='Enter') tryPassword(e.target.value); });
+if (authed()) reveal(); else document.getElementById('pw').focus();
+
+// ---- helpers -------------------------------------------------------------
+const $ = (h)=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild;};
+const esc = (s)=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = (x,d=1)=>x==null||!isFinite(x)?'—':(x*100).toFixed(d)+'%';
+const pp = (x,d=1)=>x==null||!isFinite(x)?'—':(x>=0?'+':'')+(x*100).toFixed(d)+'pp';
+const dec = (x,d=2)=>x==null||!isFinite(x)?'—':(+x).toFixed(d);
+const fmtTs = (t)=>{ if(!t) return '—'; const d=new Date(t); return isNaN(d)?'—':d.toISOString().replace('T',' ').slice(0,16)+'Z'; };
+const agoH = (t)=>{ if(!t) return null; const h=(Date.now()-new Date(t).getTime())/3.6e6; return isFinite(h)?h:null; };
+async function getJson(url){ const r=await fetch(url+'?cb='+Date.now()); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); }
+
+let DATA = { model:null, matches:null, health:null, harvest:null, errors:[] };
+
+async function boot(){
+  const app = document.getElementById('app');
+  app.innerHTML = '<header class="top"><h1>BSP Consult · Admin</h1><span class="meta" id="topmeta">loading…</span></header>'
+    + '<nav class="tabs" id="tabs"></nav>'
+    + '<section class="tab active" id="tab1"></section>'
+    + '<section class="tab" id="tab2"></section>'
+    + '<section class="tab" id="tab3"></section>'
+    + '<section class="tab" id="tab4"></section>'
+    + '<section class="tab" id="tab5"></section>';
+  const tabs = [
+    ['tab1','1 · Live board'],['tab2','2 · Layer log'],['tab3','3 · Layer summary'],
+    ['tab4','4 · Value-flag history'],['tab5','5 · Model state'],
+  ];
+  const nav = document.getElementById('tabs');
+  tabs.forEach(([id,label],i)=>{
+    const b=document.createElement('button'); b.textContent=label; if(i===0)b.className='active';
+    b.onclick=()=>{ document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); document.getElementById(id).classList.add('active'); };
+    nav.appendChild(b);
+  });
+
+  // Load data (best-effort; harvest state may be 404 on Pages).
+  const [model,matches,health] = await Promise.all([
+    getJson('./model-output.json').catch(e=>{DATA.errors.push('model-output.json: '+e.message);return null;}),
+    getJson('./matches.json').catch(e=>{DATA.errors.push('matches.json: '+e.message);return null;}),
+    getJson('./pipeline-health.json').catch(e=>{DATA.errors.push('pipeline-health.json: '+e.message);return null;}),
+  ]);
+  DATA.model=model; DATA.matches=matches; DATA.health=health;
+  DATA.harvest = await getJson('./atp-entry-harvest-state.json').catch(()=>null); // not exposed => null
+
+  document.getElementById('topmeta').innerHTML =
+    'model generated ' + esc(fmtTs(model&&model.generatedAt)) + ' · pipeline last-success ' + esc(fmtTs(health&&health.lastSuccess));
+
+  renderSection1();
+  renderStub('tab2','Section 2 — Layer performance log','Requires the append-only <code>admin-log.json</code>, which depends on the <code>valueSnapshot</code> field being written in the pipeline. Building after that field is confirmed live (per founder sequencing).');
+  renderStub('tab3','Section 3 — Layer performance summary','Aggregates over <code>admin-log.json</code> (Section 2). Same dependency.');
+  renderStub('tab4','Section 4 — Value-flag history','Reads frozen <code>valueSnapshot</code> per flagged match. Building after the field lands in the pipeline.');
+  renderSection5();
+}
+
+function matchList(model){
+  if(!model||!model.matches) return [];
+  const M=model.matches;
+  return Array.isArray(M)?M.map((v,k)=>[k,v]):Object.entries(M);
+}
+
+// ---- Section 1: Live board overview -------------------------------------
+function renderSection1(){
+  const el=document.getElementById('tab1');
+  const model=DATA.model;
+  if(!model){ el.innerHTML='<div class="err">model-output.json unavailable.</div>'; return; }
+  const list=matchList(model);
+  el.innerHTML='';
+  const head=$('<div class="detail" style="margin-bottom:8px">'+list.length+' priced matches · click a card to expand · full model output (everything the member view hides)</div>');
+  el.appendChild(head);
+  list.forEach(([id,m])=>{ el.appendChild(matchCard(id,m)); });
+}
+
+function matchCard(id,m){
+  const mt=m.match||{}, pl=m.players||{}, s1=m.stage1||{}, bs=(s1.baseState)||{}, s2=m.stage2||{}, s3=m.stage3||{};
+  const adjs=(s2.adjustments)||[];
+  const applied=adjs.filter(a=>a.applied), gated=adjs.filter(a=>a.gated&&!a.applied), missing=adjs.filter(a=>!a.applied&&!a.gated);
+  const fair=s3.fair||{}, sharp=s3.sharp||{}, soft=s3.soft||{};
+  const state=bs.state;
+  const hrsToStart = mt.date ? ((new Date(mt.date+'T12:00:00Z').getTime()-Date.now())/3.6e6) : null;
+  // Value flag "showing to members": State 2 confirmed + a positive edge vs Pinnacle + within the display window.
+  const edgeP1=(sharp.edge&&sharp.edge.p1), edgeP2=(sharp.edge&&sharp.edge.p2);
+  const bestEdge=Math.max(edgeP1==null?-9:edgeP1, edgeP2==null?-9:edgeP2);
+  const winP = (edgeP1!=null&&edgeP2!=null)?(edgeP1>=edgeP2?'p1':'p2'):null;
+  const openTs = bs.anchorPrice&&bs.anchorPrice.ts;
+  const openAgo = agoH(openTs);
+  const showing = state===2 && bestEdge>0 && openAgo!=null && openAgo<=(CFG.stateWindowHours||30);
+
+  const c=$('<div class="card"></div>');
+  c.innerHTML =
+    '<div class="hd"><div><span class="title">'+esc(mt.p1)+' vs '+esc(mt.p2)+'</span> '
+      + '<span class="sub">· '+esc(mt.round||mt.tour)+' · '+esc(mt.surface)+' · Bo'+esc(mt.bestOf)+' · '+esc(mt.date)+'</span></div>'
+      + '<div>'+statePill(state)+' '+(showing?'<span class="pill good">FLAG SHOWING</span>':'<span class="pill dim">flag hidden</span>')+'</div></div>'
+    + '<div class="body"></div>';
+  const body=c.querySelector('.body');
+
+  // Base probability breakdown
+  const comp=s1.components||{}; const er=comp.eloRaw||{},es=comp.eloSurface||{},e50=comp.elo5050||{};
+  body.appendChild($('<div class="grid">'
+    + kv('State', stateLabel(state)+(bs.pinnacleFrozen?' · frozen':''))
+    + kv('Base P1 / P2', pct(s1.baseP1)+' / '+pct(s1.baseP2))
+    + kv('Blended Elo', pct(er.p1)+' <span class="detail">('+esc(er.ratingP1)+' vs '+esc(er.ratingP2)+', w'+dec(er.weight,2)+')</span>')
+    + kv('Surface Elo', (es.surfaceAvailable===false?'<span class="detail">n/a</span>':pct(es.p1))+' <span class="detail">'+esc(es.surfaceKey||'')+' w'+dec(es.weight,2)+'</span>')
+    + kv('Elo 50/50', pct(e50.p1)+' <span class="detail">w'+dec(e50.weight,2)+'</span>')
+    + kv('Market anchor', esc(bs.anchorBook||'—')+' '+pct(bs.marketProb)+' <span class="detail">'+(bs.anchorPrice?dec(bs.anchorPrice.p1)+'/'+dec(bs.anchorPrice.p2):'')+'</span>')
+    + '</div>'));
+
+  // Coverage
+  body.appendChild($('<div class="grid">'
+    + kv('Coverage', '<span class="pos">'+applied.length+' full</span> · <span class="warn" style="color:var(--warn)">'+gated.length+' partial</span> · <span class="detail">'+missing.length+' missing</span>')
+    + kv('Applied / Gated', s2.appliedCount+' / '+s2.gatedCount)
+    + kv('Total ΔP1', pp(s2.totalDeltaP1))
+    + kv('Adjusted P1', pct(s2.adjustedP1))
+    + '</div>'));
+  body.appendChild($('<div class="detail">missing: '+(missing.map(a=>esc(a.name)).join(', ')||'none')+'</div>'));
+
+  // Adjustment stack
+  const rows=adjs.map(a=>{
+    const cls=a.applied?'applied':(a.gated?'gated':'missing');
+    const st=a.applied?'<span class="pill good">applied</span>':(a.gated?'<span class="pill warn">gated</span>':'<span class="pill dim">missing</span>');
+    const dir=a.direction==='p1'?'<span class="pill p1">P1</span>':a.direction==='p2'?'<span class="pill p2">P2</span>':'';
+    return '<tr class="'+cls+'"><td>'+esc(a.id)+'</td><td>'+esc(a.name)+' '+dir+'</td><td>'+st+'</td>'
+      + '<td class="num">'+dec(a.signal,3)+'</td><td class="num '+(a.deltaP1>0?'pos':a.deltaP1<0?'neg':'')+'">'+pp(a.deltaP1)+'</td>'
+      + '<td class="detail">'+esc(a.detail)+'</td></tr>';
+  }).join('');
+  body.appendChild($('<table><thead><tr><th>#</th><th>Layer</th><th>Status</th><th>Signal</th><th>ΔP1</th><th>Explanation</th></tr></thead><tbody>'+rows+'</tbody></table>'));
+
+  // Final pricing + edges
+  body.appendChild($('<div class="grid">'
+    + kv('Fair price', dec(fair.p1&&fair.p1.odds)+' / '+dec(fair.p2&&fair.p2.odds)+' <span class="detail">('+pct(fair.p1&&fair.p1.prob)+')</span>')
+    + kv('Edge vs Pinnacle (vig-free)', edgeCell(edgeP1)+' / '+edgeCell(edgeP2)+' <span class="detail">'+esc(sharp.source||'')+'</span>')
+    + kv('Edge vs best soft', edgeCell(soft.edge&&soft.edge.p1)+' / '+edgeCell(soft.edge&&soft.edge.p2)+' <span class="detail">'+esc((soft.book&&soft.book.p1)||'')+'</span>')
+    + '</div>'));
+
+  // Flag status detail
+  body.appendChild($('<div class="flagline">'
+    + '<b>Member value flag:</b> '+(showing?'<span class="pos">SHOWING</span> on '+(winP==='p1'?esc(mt.p1):esc(mt.p2)):'<span class="detail">hidden</span>')
+    + ' · state '+esc(state)+' · best edge '+pp(bestEdge>-9?bestEdge:null)
+    + ' · pinnacleOpen '+esc(fmtTs(openTs))+' ('+(openAgo!=null?dec(openAgo,1)+'h ago':'—')+')'
+    + ' · hrs to start '+(hrsToStart!=null?dec(hrsToStart,1):'—')
+    + '</div>'));
+  if(m.summary&&m.summary.text) body.appendChild($('<div class="detail" style="margin-top:8px">'+esc(m.summary.text)+'</div>'));
+
+  c.querySelector('.hd').onclick=()=>c.classList.toggle('open');
+  return c;
+}
+
+function kv(k,v){ return '<div class="kv"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
+function edgeCell(x){ if(x==null||!isFinite(x)) return '—'; return '<span class="'+(x>0?'pos':x<0?'neg':'')+'">'+pp(x)+'</span>'; }
+function statePill(s){ return s===2?'<span class="pill good">State 2</span>':s===1?'<span class="pill warn">State 1</span>':'<span class="pill dim">State '+esc(s)+'</span>'; }
+function stateLabel(s){ return s===1?'1 · single-book':s===2?'2 · Pinnacle confirmed':s===3?'3 · Elo-only':String(s); }
+
+// ---- Section 5: Model state monitor -------------------------------------
+function renderSection5(){
+  const el=document.getElementById('tab5');
+  const model=DATA.model, matches=DATA.matches, health=DATA.health, harvest=DATA.harvest;
+  const list=matchList(model);
+  el.innerHTML='';
+
+  // Pipeline / feed health
+  const lastAgo=agoH(health&&health.lastSuccess);
+  const healthPill = health? (health.consecutiveFailures>0?'<span class="pill bad">'+health.consecutiveFailures+' consecutive failures</span>':(lastAgo!=null&&lastAgo<0.75?'<span class="pill good">healthy</span>':'<span class="pill warn">stale ('+dec(lastAgo,1)+'h)</span>')) : '<span class="pill dim">no health file</span>';
+  const c1=$('<div class="card open"><div class="hd"><div class="title">Pipeline & feed</div><div>'+healthPill+'</div></div><div class="body"></div></div>');
+  c1.querySelector('.body').appendChild($('<div class="grid">'
+    + kv('Last pipeline run', fmtTs(health&&health.lastSuccess)+(lastAgo!=null?' <span class="detail">('+dec(lastAgo,1)+'h ago)</span>':''))
+    + kv('Last trigger', esc((health&&health.lastTrigger)||'—'))
+    + kv('Run duration', health&&health.lastSuccessDurationMs?Math.round(health.lastSuccessDurationMs/1000)+'s':'—')
+    + kv('Consecutive failures', esc(health?health.consecutiveFailures:'—'))
+    + kv('Last error', (health&&health.lastError)?'<span class="err">'+esc(health.lastError)+'</span>':'<span class="pos">none</span>')
+    + kv('api-tennis', (model&&model.generatedAt&&agoH(model.generatedAt)<1)?'<span class="pos">responding</span> <span class="detail">(model fresh)</span>':'<span class="warn" style="color:var(--warn)">unverified</span>')
+    + '</div>'));
+  el.appendChild(c1);
+
+  // Board coverage stats
+  let s1c=0,s2c=0,s3c=0,pinn=0,wue=0;
+  list.forEach(([id,m])=>{
+    const bs=(m.stage1&&m.stage1.baseState)||{};
+    if(bs.state===1)s1c++; else if(bs.state===2)s2c++; else if(bs.state===3)s3c++;
+    if(bs.anchorBook==='Pinnacle'||(bs.anchorPrice&&bs.anchorPrice.p1))pinn++;
+    const w=((m.stage2&&m.stage2.adjustments)||[]).find(a=>a.key==='winnerUE');
+    if(w&&w.applied)wue++;
+  });
+  const N=list.length||1;
+  let weather=0, wxTotal=0;
+  if(matches){ const arr=Array.isArray(matches)?matches:(matches.matches||[]); wxTotal=arr.length; weather=arr.filter(x=>x.weather&&x.weather.temperature!=null).length; }
+
+  const c2=$('<div class="card open"><div class="hd"><div class="title">Current board coverage</div><div class="sub">'+list.length+' priced matches</div></div><div class="body"></div></div>');
+  c2.querySelector('.body').appendChild($('<div class="grid">'
+    + kv('Pinnacle line', pinn+' / '+list.length+coverageBar(pinn,N))
+    + kv('State 1 / 2 / 3', '<span style="color:var(--warn)">'+s1c+'</span> / <span class="pos">'+s2c+'</span> / <span class="detail">'+s3c+'</span>')
+    + kv('Layer #8 W/UE (api-tennis)', wue+' / '+list.length+coverageBar(wue,N)+'<div class="detail">matches where winnerUE fired on real W/UE</div>')
+    + kv('Weather', weather+' / '+wxTotal+coverageBar(weather,wxTotal||1))
+    + '</div>'));
+  el.appendChild(c2);
+
+  // @ATP_Entry harvest
+  const c3=$('<div class="card open"><div class="hd"><div class="title">@ATP_Entry harvest</div></div><div class="body"></div></div>');
+  if(harvest){
+    c3.querySelector('.body').appendChild($('<div class="grid">'
+      + kv('Last seen id', esc(harvest.lastSeenId||harvest.since_id||'—'))
+      + kv('Last harvest', fmtTs(harvest.lastRunAt||harvest.updatedAt||harvest.ts))
+      + kv('Cards in queue', esc(harvest.queueCount!=null?harvest.queueCount:(harvest.newCards!=null?harvest.newCards:'—')))
+      + '</div>'));
+  } else {
+    c3.querySelector('.body').appendChild($('<div class="stub">Harvest state file is not published to Pages (<code>atp-entry-harvest-state.json</code> is committed to the repo but not in the <code>_site</code> copy list). Exposing it at a public URL is a deliberate choice — flagged for the founder rather than done silently.</div>'));
+  }
+  el.appendChild(c3);
+
+  if(DATA.errors.length) el.appendChild($('<div class="err" style="margin-top:8px">load warnings: '+esc(DATA.errors.join(' · '))+'</div>'));
+}
+
+function coverageBar(n,d){ const p=Math.round(100*n/(d||1)); const col=p>=80?'var(--good)':p>=40?'var(--warn)':'var(--bad)'; return '<div class="barwrap"><div class="bar" style="width:'+p+'%;background:'+col+'"></div></div>'; }
+
+function renderStub(tabId,title,note){
+  document.getElementById(tabId).innerHTML='<div class="card"><div class="hd"><div class="title">'+title+'</div><div><span class="pill dim">pending valueSnapshot</span></div></div><div class="body always"><div class="stub">'+note+'</div></div></div>';
+}
+</script>
+</body>
+</html>
