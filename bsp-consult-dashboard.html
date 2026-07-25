@@ -3452,6 +3452,19 @@ function edgeConfidence(full){
 // Decimal odds from a probability.
 function edgeProbOdds(p){ return (p == null || !isFinite(p) || p <= 0) ? '—' : (1 / p).toFixed(2); }
 
+// Rule A (founder, 2026-07-25): the W/UE layer (#8) renders NOTHING for a match
+// it has no data for — no dimmed "GATED" placeholder row, just absent — so the
+// layer count, the coverage bar and the adjustment list all flex to what
+// actually applies to THIS match. `applied` is the real has-data flag (both the
+// hard gate and plain missing data leave it false), so this also holds post-B:
+// once the gate is removed, a #8 layer with no api-tennis W/UE stays absent.
+// Layered ON TOP of the existing `a.hidden` self-hide any layer can use (e.g.
+// H2H with zero prior meetings).
+const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);
+function edgeVisibleAdjs(list){
+  return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
+}
+
 // One adjustment row (design Section 4). Style matchup gets the gold anchor
 // treatment, Subjective input the same (both are HIGHEST in the engine), and
 // the winner/UE layer the blue "prominent" treatment the design calls for.
@@ -3612,7 +3625,7 @@ function renderEdgeModel(id){
   // ── Page header ────────────────────────────────────────────────────────
   const header = `
     <div class="edge-head">
-      <div class="edge-eyebrow2">Tennis Edge Model · ${(st2.adjustments || []).filter(a => !a.hidden).length}-layer</div>
+      <div class="edge-eyebrow2">Tennis Edge Model · ${edgeVisibleAdjs(st2.adjustments).length}-layer</div>
       <div class="edge-h1">${edgeEsc(p1full)} vs ${edgeEsc(p2full)}</div>
       <div class="edge-h1sub">BSP Consult's proprietary match analysis and value model.</div>
     </div>`;
@@ -3692,11 +3705,11 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  // ── Section 3: 17-layer coverage ───────────────────────────────────────
-  // A layer may hide itself entirely (e.g. H2H with zero prior meetings) — such
-  // rows are dropped from the coverage bar and the adjustment list, not shown
-  // as an empty "No data" row.
-  const adjs = (st2.adjustments || []).filter(a => !a.hidden);
+  // ── Section 3: layer coverage ──────────────────────────────────────────
+  // Self-hiding layers (see edgeVisibleAdjs) drop out entirely — the coverage
+  // bar, the counts and the adjustment list all flex to the layers that
+  // actually apply to THIS match, rather than showing an empty/dimmed row.
+  const adjs = edgeVisibleAdjs(st2.adjustments);
   const counts = { full: 0, partial: 0, missing: 0 };
   adjs.forEach(a => { counts[edgeCovState(a)]++; });
   const conf = edgeConfidence(counts.full);
