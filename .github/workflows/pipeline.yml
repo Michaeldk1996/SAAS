@@ -37,7 +37,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write      # was: read — needed so the run can commit admin-log.json back
   pages: write
   id-token: write
 
@@ -222,3 +222,26 @@ jobs:
             }
             console.log("Pipeline healthy; last success", Math.round(ageMin), "min ago");
           '
+      # TEN-27 admin performance ledger. Runs only after the freshness gate
+      # passes, appends newly-completed matches to admin-log.json, commits it
+      # back to main. Guard + [skip ci] => a missing builder or an empty run
+      # never breaks the deploy and the commit never re-triggers CI.
+      # Replaces the standalone admin-log.yml (deleted in Edit 3).
+      - name: Append completed matches to admin log (best-effort)
+        run: node build-admin-log.js || true
+      - name: Commit admin log (only if changed)
+        run: |
+          if [ -z "$(git status --porcelain -- admin-log.json)" ]; then
+            echo "No new admin-log entries — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-admin-log-bot"
+          git config user.email "bsp-admin-log-bot@users.noreply.github.com"
+          git add admin-log.json
+          git commit -m "chore(admin): append completed match log [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push after 3 attempts."; exit 1
