@@ -469,70 +469,95 @@ function recentForm(ctx) {
 }
 
 // =========================================================================
-// 7. QUALITY-ADJUSTED RECENT FORM
-//    Signal 1 (primary): last-10 win rate vs top-50 opponents compared to the
-//      last-10 overall win rate — rewards beating quality, discounts padding
-//      a record against lower-ranked players.
-//    Signal 2 (secondary): top-20 wins on THIS surface, recency-weighted
-//      (last 52 weeks count more than older career wins).
-//    Opponent rank = current rank via player-profiles (proxy for match-day).
+// 7. QUALITY-ADJUSTED CAREER FORM (v2.0 rebuild)
+//    Pure career signal — no overlap with recent-form (#5). Reads the
+//    career-splits `q7` block: per-player [M,W] counts bucketed into three
+//    recency eras (<=2yr / 2-4yr / 4yr+), for the overall record, the
+//    vs-top-50 record, and the vs-top-50 record on each surface. Opponent rank
+//    is taken AT MATCH TIME by the builder (sharper than a current-rank proxy).
+//      Signal A (weightA): (career top-50 win% − overall career win%) — does a
+//        player raise or fold vs elite? The layer takes the DIFFERENCE of the
+//        two players' deviations.
+//      Signal B (weightB): (top-50 win% ON THIS SURFACE − overall top-50 win%)
+//        — the surface-specific quality ceiling. Again the difference of devs.
+//    Win rates are recency-weighted (recencyWeights on the era counts). Each
+//    signal is independently sample-damped by its own top-50 match count
+//    (dampTiers); below the smallest tier it is zeroed and flagged. Signal B
+//    needs >= surfaceFloorM surface top-50 matches to fire. The combined damped
+//    deviation-difference is scaled by signalScale into [-1,1].
 // =========================================================================
+// bucket = [M0,W0,M1,W1,M2,W2]; -> { wr: recency-weighted fraction|null, M: raw }.
+function q7weightedWR(bucket, weights) {
+  if (!Array.isArray(bucket)) return { wr: null, M: 0 };
+  let wNum = 0, wDen = 0, M = 0;
+  for (let e = 0; e < 3; e++) {
+    const m = bucket[e * 2] || 0, w = bucket[e * 2 + 1] || 0;
+    const wt = weights[e];
+    wDen += wt * m; wNum += wt * w; M += m;
+  }
+  return { wr: wDen > 0 ? wNum / wDen : null, M };
+}
+function q7damp(M, tiers) {
+  for (const [floor, factor] of tiers) if (M >= floor) return factor;
+  return 0; // below smallest tier -> near-zero + flag
+}
 function qualityForm(ctx) {
   const c = config.adjustments.qualityForm;
   const res = base(c.id, 'qualityForm', 'Quality-adjusted form', c.maxMagnitude,
-    'player-profiles.json:recentForm + rank');
-  const cat = surfaceCategory(ctx.surface);
-  const now = new Date(ctx.match.date || Date.now());
-  const wk52Ms = 52 * 7 * 24 * 3600 * 1000;
+    'career-splits.json:q7 (career top-50 form, recency-weighted)');
+  const cat = surfaceCategory(ctx.surface); // 'Hard' | 'Clay' | 'Grass' | null
+  const W = c.recencyWeights;
+  const smallestTier = c.dampTiers[c.dampTiers.length - 1][0];
 
-  function signals(p) {
-    const ms = recentMatchesSorted(p.profile);
-    if (ms.length === 0) return null;
-    // --- Signal 1: quality-adjusted last-10 ---
-    const last10 = ms.slice(0, 10);
-    const overallWR = last10.filter(m => m.won).length / last10.length;
-    const vsTop50 = last10.filter(m => {
-      const r = rankOf(m.opponentKey, m.opponent, m.date); // opponent's rank ON that match date
-      return r != null && r <= 50;
-    });
-    let s1 = 0, s1conf = false;
-    if (vsTop50.length >= 2) {
-      const top50WR = vsTop50.filter(m => m.won).length / vsTop50.length;
-      s1 = top50WR - overallWR;      // positive => better vs quality than overall
-      s1conf = vsTop50.length >= 3;
-    } else {
-      // no top-50 opposition recently => mild discount if form is high & soft
-      s1 = -0.15 * overallWR;
-    }
-    // --- Signal 2: recency-weighted top-20 wins on this surface ---
-    let s2 = 0;
-    if (cat) {
-      for (const m of ms) {
-        if (!m.won) continue;
-        if (surfaceCategory(m.surface) !== cat) continue;
-        const r = rankOf(m.opponentKey, m.opponent, m.date); // opponent's rank ON that match date
-        if (r == null || r > 20) continue;
-        const age = now - new Date(m.date);
-        s2 += age <= wk52Ms ? 1.0 : 0.4; // recent worth more than old career win
+  function devs(p) {
+    const q = p.splits && p.splits.q7;
+    if (!q) return null;
+    const overall = q7weightedWR(q.overall, W);
+    const top50 = q7weightedWR(q.top50, W);
+    if (overall.wr == null || top50.wr == null) return null;
+
+    // Signal A: top-50 win% deviation from overall win%.
+    const devA = top50.wr - overall.wr;
+    const dampA = q7damp(top50.M, c.dampTiers);
+
+    // Signal B: surface top-50 win% vs overall top-50 win% — fires only with
+    // enough surface top-50 matches (M >= surfaceFloorM), else contributes 0.
+    let devB = 0, dampB = 0, surfM = 0;
+    const sb = cat && q.surf50 && q.surf50[cat];
+    if (sb) {
+      const surf = q7weightedWR(sb, W);
+      surfM = surf.M;
+      if (surf.wr != null && surf.M >= c.surfaceFloorM) {
+        devB = surf.wr - top50.wr;
+        dampB = q7damp(surf.M, c.dampTiers);
       }
     }
-    return { s1, s2, s1conf, top50n: vsTop50.length };
+    return {
+      devA, dampA, devB, dampB, top50M: top50.M, surfM,
+      lowA: top50.M < smallestTier,       // under 10 career top-50 -> flagged
+      lowB: !(surfM >= c.surfaceFloorM),  // under the surface floor
+    };
   }
 
-  const a = signals(ctx.p1), b = signals(ctx.p2);
+  const a = devs(ctx.p1), b = devs(ctx.p2);
   if (!a || !b) return res;
 
-  // Signal 1 differential (each s1 roughly in [-1,1]); Signal 2 differential
-  // squashed (a 3-big-win edge ~ full secondary signal).
-  const sig1 = clamp(a.s1 - b.s1, -1, 1);
-  const sig2 = clamp((a.s2 - b.s2) / 3, -1, 1);
-  const w2 = c.signal2Weight;
-  const signal = clamp((1 - w2) * sig1 + w2 * sig2, -1, 1);
-  const conf = (a.s1conf && b.s1conf) ? 'med' : 'low';
-  return apply(res, signal, conf,
-    `Top50 last10: ${pctRate(a)} vs ${pctRate(b)}; surface top20 wins ${a.s2.toFixed(1)} vs ${b.s2.toFixed(1)}.`);
+  const sigA = (a.devA * a.dampA) - (b.devA * b.dampA);
+  const sigB = (a.devB * a.dampB) - (b.devB * b.dampB);
+  const combined = c.weightA * sigA + c.weightB * sigB;
+  const signal = clamp(combined / c.signalScale, -1, 1);
+
+  const fullTier = c.dampTiers[0][0];
+  const conf = (a.top50M >= fullTier && b.top50M >= fullTier) ? 'med' : 'low';
+  const flagged = a.lowA || b.lowA;
+  const pp = x => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(1)}pp`;
+  const out = apply(res, signal, conf,
+    `Career top50 dev ${pp(a.devA)}(${a.top50M}m) vs ${pp(b.devA)}(${b.top50M}m); ` +
+    `${cat || 'surface'} top50 dev ${pp(a.devB)}(${a.surfM}m) vs ${pp(b.devB)}(${b.surfM}m).` +
+    (flagged ? ' Thin top-50 sample flagged.' : ''));
+  out.qualityFlag = flagged;
+  return out;
 }
-function pctRate(s) { return `${s.top50n} quality games`; }
 
 // =========================================================================
 // 8. W/UE RATIO — archetype-relative Winner/Unforced over/under-performance.
@@ -902,4 +927,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts };
+module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm };

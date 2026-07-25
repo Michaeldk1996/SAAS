@@ -63,13 +63,56 @@ function todayStamp() {
 }
 const TODAY = todayStamp();
 function daysAgoStamp(stamp, cutoff) { return stamp >= cutoff; }
-// 364 days before a YYYYMMDD stamp, as YYYYMMDD.
-function minus364(stamp) {
+// `days` before a YYYYMMDD stamp, as YYYYMMDD.
+function minusDays(stamp, days) {
   const y = +stamp.slice(0, 4), m = +stamp.slice(4, 6), d = +stamp.slice(6, 8);
   const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() - 364);
+  dt.setUTCDate(dt.getUTCDate() - days);
   const p = n => String(n).padStart(2, '0');
   return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(dt.getUTCDate())}`;
+}
+// 364 days before a YYYYMMDD stamp, as YYYYMMDD.
+function minus364(stamp) { return minusDays(stamp, 364); }
+
+// ---- Layer #7 (quality-adjusted form) recency-era buckets -------------------
+// The h2h-model's quality-form layer needs each player's win rate vs top-50
+// opponents (career-wide AND per surface) with a recency split, but splits()
+// above collapses every match date into one aggregate. So we emit a compact
+// per-player `q7` block: for each subset (overall / vs-top-50 / top-50-on-each-
+// surface) three [M,W] counts, bucketed by how old the match is relative to the
+// build date (TODAY): 0 = last 2yr, 1 = 2-4yr, 2 = 4+yr. The recency WEIGHTS and
+// sample-size dampening live in h2h-model/config.js so they stay tunable without
+// a rebuild — only the era BOUNDARIES are baked here, and they drift under a day
+// since this file rebuilds daily. Uses opponent rank AT MATCH TIME (matchmx
+// cell 12), which is sharper than the model's current-rank proxy.
+const Q7_ERA2 = minusDays(TODAY, 730);   // 2-year boundary
+const Q7_ERA4 = minusDays(TODAY, 1461);  // 4-year boundary
+function q7era(dateStamp) {
+  return dateStamp >= Q7_ERA2 ? 0 : (dateStamp >= Q7_ERA4 ? 1 : 2);
+}
+// [M0,W0, M1,W1, M2,W2] over the matches passing `pred`.
+function q7bucket(matches, pred) {
+  const b = [0, 0, 0, 0, 0, 0];
+  for (const m of matches) {
+    if (!pred(m)) continue;
+    const i = q7era(m.date) * 2;
+    b[i]++;                        // M
+    if (m.wl === 'W') b[i + 1]++;  // W
+  }
+  return b;
+}
+function q7splits(matches) {
+  const top50 = m => m.oppRank != null && m.oppRank <= 50;
+  const q = {
+    overall: q7bucket(matches, () => true),
+    top50: q7bucket(matches, top50),
+    surf50: {},
+  };
+  for (const s of ['Hard', 'Clay', 'Grass']) {
+    const b = q7bucket(matches, m => m.surface === s && top50(m));
+    if (b[0] + b[2] + b[4] > 0) q.surf50[s] = b; // drop empty surfaces (self-hide)
+  }
+  return q;
 }
 // Tennis Abstract anchors "Last 52 Weeks" to the player's OWN most recent match,
 // not to today. Verified by solving for the cutoff that reproduces TA's rendered
@@ -458,6 +501,7 @@ async function main() {
         matchesParsed: matches.length, last52Count: last52.length, cutoff52: cut52,
         career: splits(matches),
         last52: splits(last52),
+        q7: q7splits(matches),
       };
       ok++;
     }
@@ -468,6 +512,7 @@ async function main() {
     fetchedAt: TODAY,
     source: 'Jeff Sackmann ATP match data via tennisabstract.com player-classic (matchmx)',
     window52Rule: 'per player: 364 days before that player\'s most recent tour match (matches tennisabstract)',
+    q7Rule: 'q7: quality-form buckets for h2h-model layer #7. Each subset (overall / top50 / surf50.{Hard,Clay,Grass}) is [M0,W0,M1,W1,M2,W2] by recency era (0=<=2yr, 1=2-4yr, 2=4yr+) vs fetchedAt. Opponent rank is at-match-time (matchmx). Recency weights + sample dampening applied model-side.',
     categories: CATEGORIES.map(c => c[0]),
     columns: [
       'M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct', 'gameW', 'gameL', 'gamePct',
