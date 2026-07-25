@@ -8904,6 +8904,45 @@ function ppCareerSplitsHtml(p){
   return `<div style="display:flex;flex-direction:column;gap:16px;">
     ${career}${last52}</div>`;
 }
+// Layer #4A — compact "Surface record" rail card. Career + rolling last-52-weeks
+// W-L and win% per surface, sourced purely from the public career-splits.json
+// aggregate (same figures the Career splits table uses — nothing recomputed or
+// invented). A surface below the M>=10 career sample floor is dropped, and the
+// whole panel self-hides when none clear it (mirrors the Layer #8 A no-data rule).
+// Additive: the left-rail "Surface performance" KPI block is untouched.
+function ppSurfaceRecordHtml(p){
+  const s = careerSplits[String(p.key)];
+  if (!s || !s.career) return '';
+  const rows = ['Hard','Clay','Grass']
+    .map(surf => {
+      const c = s.career[surf];
+      if (!c || typeof c.M !== 'number' || c.M < 10) return null;   // M>=10 sample floor
+      const lr = s.last52 && s.last52[surf];
+      const l = (lr && typeof lr.M === 'number' && lr.M >= 10) ? lr : null;
+      return { surf, c, l };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.c.winPct || 0) - (a.c.winPct || 0));   // best surface first
+  if (!rows.length) return '';   // whole panel self-hides — zero blast radius
+  const pct = v => (typeof v === 'number' ? v.toFixed(1) : '—');
+  const rowsHtml = rows.map(r => {
+    const col = PP_SURF_COLORS[r.surf] || '#8b93a3';
+    const last = r.l
+      ? ` · <span style="color:#a7b0c0;">${pct(r.l.winPct)}% ${r.l.W}-${r.l.L} last 52 wks</span>`
+      : ` · <span style="color:#5b6472;">Under 10 in last 52 wks</span>`;
+    return `<div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:9px 11px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span style="font-size:12px;font-weight:700;color:${col};">${r.surf}</span>
+        <span style="font-size:12.5px;font-weight:800;color:#e7e9ee;font-family:'IBM Plex Mono',monospace;">${pct(r.c.winPct)}%</span>
+      </div>
+      <div style="font-size:11px;color:#8b93a3;margin-top:3px;font-family:'IBM Plex Mono',monospace;">${r.c.W}-${r.c.L} career${last}</div>
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;flex-direction:column;gap:9px;">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface record</span>
+    <div style="display:flex;flex-direction:column;gap:8px;">${rowsHtml}</div>
+  </div>`;
+}
 const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
 const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -10616,6 +10655,7 @@ function buildPlayerProfileHtml(p){
           <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
           ${surfHtml}
         </div>
+        ${ppSurfaceRecordHtml(p)}
       </div>
 
       <!-- RIGHT MAIN -->
