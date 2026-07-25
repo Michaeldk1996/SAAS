@@ -726,39 +726,102 @@ function returnPressure(ctx) {
 //    A heavier load AND a shorter turnaround both raise the fatigue score;
 //    the fresher player gets the edge.
 // =========================================================================
+// Tournament UTC offset (hours) via the curated, VERIFIED config map (substring
+// match; never a guess — see config.tournamentUtcOffset). Null => unmapped, so
+// the travel factor self-hides rather than inventing a location.
+function tournamentTz(name) {
+  if (!name) return null;
+  const n = String(name).toLowerCase();
+  const map = config.tournamentUtcOffset || {};
+  for (const key in map) { if (n.includes(key)) return map[key]; }
+  return null;
+}
+
+// One player's fatigue "units" over the rolling window = sets played (time on
+// court) x the stacked per-player load multipliers. Returns the raw pieces so
+// the layer can build an honest, auditable detail string.
+function fatigueUnits(p, ctx, c) {
+  const matchDate = new Date(ctx.match.date || ctx.match.day || Date.now());
+  const windowMs = c.windowDays * 24 * 3600 * 1000;
+  const inWin = [];
+  for (const m of recentMatchesSorted(p.profile)) {   // sorted most-recent first
+    if (m.walkover) continue;                           // a walkover is not court time
+    const d = new Date(m.date);
+    const diff = matchDate - d;
+    if (diff >= 0 && diff <= windowMs) inWin.push({ m, d });
+  }
+  const sets = inWin.reduce((s, x) => s + parseSets(x.m.result), 0);
+  const count = inWin.length;
+  const factors = [];
+  let mult = 1.0;
+
+  // Short turnaround: minMatches+ in the window AND at least one back-to-back
+  // pair. Dates are day-granular (no time-of-day feed), so "<36h" is honestly
+  // approximated as consecutive calendar days (rest gap <= restDaysThresh).
+  if (count >= c.shortTurnaround.minMatches) {
+    const asc = inWin.slice().sort((a, b) => a.d - b.d);
+    let backToBack = false;
+    for (let i = 1; i < asc.length; i++) {
+      const gapDays = Math.round((asc[i].d - asc[i - 1].d) / 86400000);
+      if (gapDays <= c.shortTurnaround.restDaysThresh) { backToBack = true; break; }
+    }
+    if (backToBack) { mult *= c.shortTurnaround.mult; factors.push(`turnaround x${c.shortTurnaround.mult}`); }
+  }
+
+  // Surface change: 2+ distinct surfaces across the window (today's included).
+  const surfs = new Set(inWin.map((x) => surfaceCategory(x.m.surface)).filter(Boolean));
+  const todayCat = surfaceCategory(ctx.surface);
+  if (todayCat) surfs.add(todayCat);
+  if (surfs.size >= 2) { mult *= c.surfaceChangeMult; factors.push(`surf-switch x${c.surfaceChangeMult}`); }
+
+  // Travel: previous window tournament -> today's, UTC-offset gap >= threshold.
+  // Self-hides (no factor) when either venue is unmapped.
+  const todayTz = tournamentTz(ctx.match.tour || ctx.match.tournament);
+  const prevTz = inWin.length ? tournamentTz(inWin[0].m.tournament) : null;
+  const travelKnown = todayTz != null && prevTz != null;
+  if (travelKnown && Math.abs(todayTz - prevTz) >= c.travelTzGapH) {
+    mult *= c.travelMult; factors.push(`travel x${c.travelMult}`);
+  }
+
+  // Age recovery (older = slower). PLACEHOLDER curve — flagged for founder tuning.
+  const age = num(p.profile && p.profile.age);
+  let ageMult = 1.0;
+  if (age != null) { for (const [minAge, mm] of c.ageRecovery) { if (age >= minAge) { ageMult = mm; break; } } }
+  if (ageMult !== 1.0) { mult *= ageMult; factors.push(`age ${age} x${ageMult}`); }
+
+  return { sets, count, mult: round4(mult), units: round4(sets * mult), factors, travelKnown };
+}
+
 function fatigue(ctx) {
   const c = config.adjustments.fatigue;
   const res = base(c.id, 'fatigue', 'Fatigue (recent load)', c.maxMagnitude, 'player-profiles.json:recentForm');
-  const matchDate = new Date(ctx.match.date || ctx.match.day || Date.now());
-  const windowMs = config.fatigueWindowDays * 24 * 3600 * 1000;
-  function load(p) {
-    const ms = recentMatchesSorted(p.profile);
-    let sets = 0, count = 0, lastMs = null;
-    for (const m of ms) {
-      const d = new Date(m.date);
-      const diff = matchDate - d;
-      if (diff >= 0 && diff <= windowMs) {
-        sets += parseSets(m.result); count++;
-        if (lastMs == null || d > lastMs) lastMs = d;
-      }
-    }
-    const turnaroundH = lastMs ? (matchDate - lastMs) / 3600000 : null;
-    // Score = time on court (sets) + short-rest penalty. A turnaround under 48h
-    // adds up to +3 (ramping from 0 at 48h to +3 at ~12h or less).
-    let score = sets;
-    if (turnaroundH != null && turnaroundH < 48) {
-      score += clamp((48 - turnaroundH) / 12, 0, 3);
-    }
-    return { sets, count, turnaroundH, score };
+  const l1 = fatigueUnits(ctx.p1, ctx, c);
+  const l2 = fatigueUnits(ctx.p2, ctx, c);
+  res.fatigue = { p1: l1, p2: l2 };  // exposed for the validation harness
+  if (l1.count === 0 && l2.count === 0) { res.detail = `No matches in last ${c.windowDays}d.`; return res; }
+
+  // Physical toll of TODAY's court scales the whole player gap.
+  const todayCat = surfaceCategory(ctx.surface);
+  const surfMult = (todayCat && c.surfaceMult[todayCat]) || 1.0;
+  const gap = l1.units - l2.units;          // more units => more fatigued
+  const adjGap = gap * surfMult;
+  const absGap = Math.abs(adjGap);
+
+  // Net (surface-scaled) unit gap -> probability-point band. pp <= maxMagnitude
+  // always, so the layer can never breach its cap.
+  let pp = 0;
+  for (const [minU, ppv] of c.unitBands) { if (absGap >= minU) { pp = ppv; break; } }
+  const fmt = (l) => `${l.sets}s/${l.count}m=${l.units.toFixed(1)}u${l.factors.length ? ` [${l.factors.join(', ')}]` : ''}`;
+  if (pp === 0) {
+    res.detail = `${c.windowDays}d load even on ${todayCat || ctx.surface}: ${fmt(l1)} vs ${fmt(l2)} (gap ${adjGap.toFixed(1)}u < 2).`;
+    return res;
   }
-  const l1 = load(ctx.p1), l2 = load(ctx.p2);
-  if (l1.count === 0 && l2.count === 0) { res.detail = 'No matches in window.'; return res; }
-  // Heavier score => more fatigue => favour the fresher opponent.
-  const signal = clamp((l2.score - l1.score) / 10, -1, 1);
-  const t1 = l1.turnaroundH != null ? `last ${Math.round(l1.turnaroundH)}h` : 'rested';
-  const t2 = l2.turnaroundH != null ? `last ${Math.round(l2.turnaroundH)}h` : 'rested';
+  // Favour the FRESHER (lower-units) player: gap>0 (p1 more tired) => -signal.
+  const signal = (gap > 0 ? -1 : 1) * (pp / c.maxMagnitude);
+  const fresher = gap > 0 ? (ctx.p2.fullName || ctx.p2.abbrName || 'p2') : (ctx.p1.fullName || ctx.p1.abbrName || 'p1');
   return apply(res, signal, 'low',
-    `${config.fatigueWindowDays}d load: ${l1.sets} sets/${l1.count}m (${t1}) vs ${l2.sets} sets/${l2.count}m (${t2}).`);
+    `${c.windowDays}d load on ${todayCat || ctx.surface} (x${surfMult}): ${fmt(l1)} vs ${fmt(l2)}; ` +
+    `net gap ${adjGap.toFixed(1)}u -> ${(pp * 100).toFixed(1)}pp to ${fresher}.`);
 }
 
 // =========================================================================

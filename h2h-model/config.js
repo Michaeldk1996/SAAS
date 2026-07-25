@@ -201,8 +201,44 @@ module.exports = {
                       surfaceMinM: 10, universalPenalty: 0.70 },
     // 10. Return / pressure — career return% + break% + return radar
     returnPressure: { id: 10, maxMagnitude: 0.02, gated: false },
-    // 11. Fatigue — 14-day match/set load from recent form dates
-    fatigue:        { id: 11, maxMagnitude: 0.02, gated: false },
+    // 11. Fatigue — recent workload + turnaround (TEN-8 reduced-scope build,
+    //     founder spec 2026-07-25). Each player's fatigue "units" over a rolling
+    //     10-day window = sets played (time-on-court proxy; no minutes feed
+    //     exists) multiplied by four per-player load factors, then the
+    //     player-gap maps to a probability-point band. Dropped inputs (minutes,
+    //     weight, fitness) are NOT available and are honestly omitted.
+    //       • surfaceMult    — physical toll of TODAY's court (clay grinds legs,
+    //                          grass is gentle): the whole layer gap is scaled by
+    //                          the current match surface.
+    //       • shortTurnaround — 4+ matches in the window with at least one
+    //                          back-to-back (<36h ≈ consecutive calendar days,
+    //                          the finest granularity the date-only feed allows).
+    //       • surfaceChange   — >=1 surface switch inside the window (adaptation
+    //                          cost), today's surface included in the set.
+    //       • travel          — an intercontinental move (>=7h UTC-offset gap)
+    //                          from the player's previous window tournament to
+    //                          today's, read from the VERIFIED tournamentUtcOffset
+    //                          table below; SELF-HIDES (x1.0) when either venue is
+    //                          unmapped — never a guessed location.
+    //       • ageRecovery     — older players recover slower (integer age from
+    //                          player-profiles). NOTE: the founder gave no age
+    //                          curve, so these are honest CALIBRATION PLACEHOLDERS
+    //                          flagged for his review, like every other weight here.
+    //     Unit-gap -> pp bands (founder spec): <2u => 0, 2-4u => 1.0pp,
+    //     4-7u => 1.5pp, >=7u => 2.5pp (the maxMagnitude ceiling). Because the pp
+    //     is chosen by band and never exceeds maxMagnitude, the layer is
+    //     over-cap-proof by construction.
+    fatigue:        { id: 11, maxMagnitude: 0.025, gated: false,
+                      windowDays: 10,
+                      surfaceMult: { Clay: 1.40, Hard: 1.00, Grass: 0.75 },
+                      shortTurnaround: { minMatches: 4, restDaysThresh: 1, mult: 1.40 },
+                      surfaceChangeMult: 1.20,
+                      travelMult: 1.25,
+                      travelTzGapH: 7,      // intercontinental = UTC-offset gap >= 7h
+                      // older = slower recovery. PLACEHOLDER curve (founder to tune).
+                      ageRecovery: [[33, 1.15], [30, 1.08], [0, 1.00]],
+                      // net (surface-scaled) unit-gap -> pp. Ordered high-first.
+                      unitBands: [[7, 0.025], [4, 0.015], [2, 0.010]] },
     // 12. Weather / conditions — heat & wind vs style
     weather:        { id: 12, maxMagnitude: 0.03, gated: false },
     // 13. Format split — Bo3 vs Bo5 career win%
@@ -338,6 +374,58 @@ module.exports = {
   // Altitude threshold (metres) at/above which a venue is treated as "altitude"
   // and the altitude-affinity dimension of the court-speed layer activates.
   altitudeThresholdM: 350,
+
+  // Tournament UTC offset (standard/non-DST hours from UTC) — factual geographic
+  // data, used ONLY by the Fatigue layer (#11) to detect an intercontinental
+  // travel leg (>= travelTzGapH hours between a player's previous window
+  // tournament and today's). Keyed by a case-insensitive substring of the
+  // tournament name (the `tour` field on matches.json and the `tournament` field
+  // on recentForm), same lookup style as altitudeMeters. DST is ignored on
+  // purpose: the intercontinental threshold (7h) is far coarser than any +/-1h
+  // seasonal shift, so a standard offset is sufficient and never fabricated.
+  // A tournament NOT in this table self-hides the travel factor (x1.0) — the
+  // layer degrades honestly rather than guessing a location. Extend as Michael
+  // confirms venues (only real, verifiable offsets).
+  tournamentUtcOffset: {
+    // --- Europe (UK/Portugal 0; most of the continent +1; east +2) ---
+    'wimbledon': 0, 'london': 0, 'queen': 0, 'eastbourne': 0, 'nottingham': 0,
+    'birmingham': 0, 'ilkley': 0, 'surbiton': 0, 'estoril': 0, 'oeiras': 0,
+    'lisbon': 0, 'dublin': 0,
+    'french open': 1, 'roland garros': 1, 'paris': 1, 'metz': 1, 'lille': 1,
+    'pau': 1, 'montpellier': 1, 'marseille': 1, 'lyon': 1, 'nice': 1, 'bordeaux': 1,
+    'madrid': 1, 'barcelona': 1, 'valencia': 1, 'murcia': 1, 'marbella': 1,
+    'mallorca': 1, 'marrakech': 1, 'casablanca': 1,
+    'rome': 1, 'monte carlo': 1, 'monte-carlo': 1, 'turin': 1, 'monza': 1,
+    'milan': 1, 'florence': 1, 'parma': 1, 'cagliari': 1, 'napoli': 1, 'sardinia': 1,
+    'hamburg': 1, 'munich': 1, 'halle': 1, 'stuttgart': 1, 'cologne': 1,
+    'dusseldorf': 1, 'kitzbuhel': 1, 'kitzbühel': 1, 'vienna': 1, 'gstaad': 1,
+    'geneva': 1, 'basel': 1, 'st. polten': 1, 'st. pölten': 1,
+    'rotterdam': 1, "'s-hertogenbosch": 1, 'antwerp': 1, 'brussels': 1,
+    'bastad': 1, 'båstad': 1, 'stockholm': 1, 'copenhagen': 1, 'oslo': 1,
+    'belgrade': 1, 'zagreb': 1, 'umag': 1,
+    'bucharest': 2, 'sofia': 2, 'brasov': 2, 'iasi': 2, 'cluj': 2, 'athens': 2,
+    // --- Middle East / West Asia ---
+    'tel aviv': 2, 'doha': 3, 'manama': 3, 'riyadh': 3, 'dubai': 4, 'abu dhabi': 4,
+    'astana': 5, 'almaty': 5, 'nur-sultan': 5,
+    // --- South Asia / SE Asia / East Asia ---
+    'chennai': 5.5, 'pune': 5.5, 'new delhi': 5.5, 'bangkok': 7, 'jakarta': 7,
+    'singapore': 8, 'kuala lumpur': 8, 'beijing': 8, 'shanghai': 8, 'chengdu': 8,
+    'zhuhai': 8, 'shenzhen': 8, 'hangzhou': 8, 'hong kong': 8, 'taipei': 8,
+    'tokyo': 9, 'osaka': 9, 'seoul': 9,
+    // --- Oceania ---
+    'perth': 8, 'adelaide': 10.5, 'brisbane': 10, 'australian open': 11,
+    'melbourne': 11, 'sydney': 11, 'canberra': 11, 'hobart': 11, 'auckland': 13,
+    // --- North America (US Eastern -5 winter / -4 summer; here summer baseline
+    //     for the July-September hard swing) ---
+    'us open': -4, 'new york': -4, 'flushing': -4, 'washington': -4, 'newport': -4,
+    'atlanta': -4, 'cincinnati': -4, 'winston': -5, 'chicago': -5, 'dallas': -5,
+    'houston': -5, 'delray beach': -5, 'indian wells': -7, 'san diego': -7,
+    'los cabos': -7, 'acapulco': -6, 'montreal': -4, 'toronto': -4,
+    // --- Latin America ---
+    'buenos aires': -3, 'cordoba': -3, 'córdoba': -3, 'rio de janeiro': -3,
+    'sao paulo': -3, 'são paulo': -3, 'montevideo': -3, 'santiago': -4,
+    'quito': -5, 'bogota': -5, 'bogotá': -5, 'lima': -5, 'cali': -5,
+  },
 
   // Recent-form window sizes
   recentFormN: 5,       // last-5 for the form signal
