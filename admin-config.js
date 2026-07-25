@@ -6,7 +6,7 @@
 // unlinked and rotate the password here as needed.
 window.ADMIN_CONFIG = {
   // Change this to rotate access. Empty string disables the gate (not advised).
-  password: 'Admin123!',
+  password: 'BSP@Admin2026!',
   // A value flag is "showing to members" only when a match is State 2 confirmed
   // AND within this many hours of start (mirrors the member-facing State-2 gate).
   stateWindowHours: 30,
