@@ -344,24 +344,128 @@ function surface(ctx) {
 }
 
 // =========================================================================
-// 5. RECENT FORM — last-N results (all levels incl. Challenger/ITF)
+// 5. RECENT FORM — v2.0 redesign (TEN-8, 2026-07-25).
+//    Blends two per-player signals, then takes the differential:
+//      Signal A (60%) — SHORT MOMENTUM: last 3-5 matches, recency-weighted
+//        (x1.0, .85, .70, .55, .40 most-recent-first).
+//      Signal B (40%) — RECENT-FORM QUALITY: last 10 matches OR last 8 weeks
+//        (whichever is the larger window), each match weighted by opposition
+//        quality (top-10 x2.0 ... Challenger/ITF x0.4). <5 matches => B=0, the
+//        player runs on Signal A alone.
+//    A SURFACE DISCOUNT (same surface as today x1.0, different x0.30) multiplies
+//    each match's weight in BOTH signals before the rate is computed, so a
+//    cross-surface result counts for less. Each player's blended form is
+//    centred (0.5 win-rate => neutral 0). 14+ days without a competitive match
+//    cancels that player's signal (neutral 0, flagged insufficient activity) —
+//    the layer still runs off the other player. Magnitude 2.5pp per the spec.
+//    A large form gap (|differential| > threshold) is flagged for the summary.
 // =========================================================================
+// Full per-player breakdown (exported for the validation harness so the exact
+// per-match weights are auditable). Returns:
+//   { active, S (centred [-1,1]), F ([0,1] blended form), A, B, aOnly,
+//     reason, aTrace[], bTrace[] }
+function recentFormParts(p, ctx) {
+  const c = config.adjustments.recentForm;
+  const surfCat = surfaceCategory(ctx.surface);
+  const rw = c.recencyWeights || [1.0, 0.85, 0.70, 0.55, 0.40];
+  const qw = c.qualityWeights || { top10: 2.0, top50: 1.5, top100: 1.0, beyond100: 0.6, challengerITF: 0.4 };
+  const sdSame = num(c.surfaceSameMult) != null ? c.surfaceSameMult : 1.0;
+  const sdDiff = num(c.surfaceDiffMult) != null ? c.surfaceDiffMult : 0.30;
+  const matchDate = new Date(ctx.match.date || Date.now());
+
+  // Surface discount for a historical match vs today's surface. When today's
+  // surface is unknown we cannot discount, so everything counts at 1.0.
+  const surfDiscount = (m) => (!surfCat ? 1.0
+    : (surfaceCategory(m.surface) === surfCat ? sdSame : sdDiff));
+
+  // Opposition-quality multiplier (Signal B) from the opponent's rank ON the day
+  // of that match (rank-at-time sidecar, Step 2a; current-rank fallback). An
+  // unrankable opponent is treated as Challenger/ITF-level opposition.
+  const qualityMult = (m) => {
+    const r = rankOf(m.opponentKey, m.opponent, m.date);
+    if (r == null) return qw.challengerITF;
+    if (r <= 10) return qw.top10;
+    if (r <= 50) return qw.top50;
+    if (r <= 100) return qw.top100;
+    return qw.beyond100;
+  };
+
+  const ms = recentMatchesSorted(p.profile);
+  if (!ms.length) return { active: false, S: 0, F: null, reason: 'no recent matches' };
+
+  // --- inactivity: 14+ days since the last COMPETITIVE (non-walkover) match ---
+  const lastComp = ms.find(m => !m.walkover);
+  if (!lastComp) return { active: false, S: 0, F: null, reason: 'no competitive match' };
+  const gapDays = (matchDate - new Date(lastComp.date)) / 86400000;
+  if (gapDays >= c.inactivityDays) {
+    return { active: false, S: 0, F: null, reason: `inactive ${Math.round(gapDays)}d`, gapDays };
+  }
+
+  // --- Signal A: last 3-5 matches, recency x surface weighted ---
+  const aMatches = ms.slice(0, rw.length);
+  let aNum = 0, aDen = 0; const aTrace = [];
+  aMatches.forEach((m, i) => {
+    const sd = surfDiscount(m);
+    const w = rw[i] * sd;
+    aDen += w; if (m.won) aNum += w;
+    aTrace.push({ date: m.date, surf: m.surface, won: !!m.won, recW: rw[i], surfD: sd, w: round4(w) });
+  });
+  const A = aDen > 0 ? aNum / aDen : null;
+  if (A == null) return { active: false, S: 0, F: null, reason: 'no Signal A' };
+
+  // --- Signal B: last 10 matches OR last 8 weeks, whichever LARGER ---
+  const weeksMs = c.signalBWeeks * 7 * 86400000;
+  const inWeeks = ms.filter(m => { const d = matchDate - new Date(m.date); return d >= 0 && d <= weeksMs; });
+  const bWindow = Math.max(c.signalBWindow, inWeeks.length);
+  const bMatches = ms.slice(0, bWindow);
+  let B = null; const bTrace = [];
+  if (bMatches.length >= c.signalBMinMatches) {
+    let bNum = 0, bDen = 0;
+    for (const m of bMatches) {
+      const sd = surfDiscount(m);
+      const q = qualityMult(m);
+      const w = q * sd;
+      bDen += w; if (m.won) bNum += w;
+      bTrace.push({ date: m.date, opp: m.opponent, rank: rankOf(m.opponentKey, m.opponent, m.date),
+                    qMult: q, surfD: sd, w: round4(w), won: !!m.won });
+    }
+    B = bDen > 0 ? bNum / bDen : null;
+  }
+
+  // --- blend within the player; centre at neutral 0.5 win-rate ---
+  const aOnly = (B == null);
+  const F = aOnly ? A : (c.signalAWeight * A + c.signalBWeight * B);
+  const S = clamp(2 * F - 1, -1, 1);
+  return { active: true, S, F, A, B, aOnly, nA: aMatches.length, nB: bMatches.length, aTrace, bTrace };
+}
+
 function recentForm(ctx) {
   const c = config.adjustments.recentForm;
   const res = base(c.id, 'recentForm', 'Recent form', c.maxMagnitude, 'player-profiles.json:recentForm');
-  const N = config.recentFormN;
-  function form(p) {
-    const ms = recentMatchesSorted(p.profile).slice(0, N);
-    if (ms.length === 0) return null;
-    const wins = ms.filter(m => m.won).length;
-    return { rate: wins / ms.length, wins, n: ms.length };
+  const f1 = recentFormParts(ctx.p1, ctx), f2 = recentFormParts(ctx.p2, ctx);
+
+  // Nothing to say only when BOTH players lack usable activity.
+  if (!f1.active && !f2.active) {
+    res.detail = `Insufficient recent activity (${f1.reason} / ${f2.reason}).`;
+    return res;
   }
-  const f1 = form(ctx.p1), f2 = form(ctx.p2);
-  if (!f1 || !f2) return res;
-  const signal = (f1.rate - f2.rate); // both in [0,1] => diff in [-1,1]
-  const conf = (f1.n >= N && f2.n >= N) ? 'med' : 'low';
-  return apply(res, signal, conf,
-    `Last ${f1.n}: ${f1.wins}W vs last ${f2.n}: ${f2.wins}W.`);
+
+  // Centred-form difference, halved so the max spread maps to full magnitude.
+  const signal = clamp((f1.S - f2.S) / 2, -1, 1);
+
+  // Flag a large form gap on the [0,1] blended-form scale (inactive => neutral 0.5).
+  const fa = f1.F != null ? f1.F : 0.5, fb = f2.F != null ? f2.F : 0.5;
+  const formDiff = Math.abs(fa - fb);
+  const flagged = formDiff > c.flagDiffThreshold;
+
+  const conf = (f1.active && f2.active && !f1.aOnly && !f2.aOnly) ? 'med' : 'low';
+  const desc = (f) => f.active ? `${Math.round(f.F * 100)}%${f.aOnly ? ' (A only)' : ''}` : `inactive`;
+  const out = apply(res, signal, conf,
+    `Form ${desc(f1)} vs ${desc(f2)} (A=last${(c.recencyWeights || []).length} recency-wtd, B=quality-wtd; surface-discounted).` +
+    (flagged ? ' Significant form gap flagged.' : ''));
+  out.formFlag = flagged;          // consumed by the AI summary / admin surfaces
+  out.formDiff = round4(formDiff);
+  return out;
 }
 
 // =========================================================================
@@ -798,4 +902,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance, winnerUE };
+module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts };

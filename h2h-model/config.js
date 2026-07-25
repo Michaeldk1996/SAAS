@@ -114,8 +114,29 @@ module.exports = {
                       dominance: { straight: 1.0, oneDropped: 0.8, competitive: 0.6, unknown: 0.7 } },
     // 4. Surface record — career win% on the match surface
     surface:        { id: 4,  maxMagnitude: 0.05, gated: false },
-    // 5. Recent form — last-N results (all levels incl. Challenger/ITF)
-    recentForm:     { id: 5,  maxMagnitude: 0.04, gated: false },
+    // 5. Recent form — v2.0 redesign (TEN-8, 2026-07-25). Two blended signals:
+    //    Signal A (60%) = short momentum, last 3-5 matches recency-weighted.
+    //    Signal B (40%) = recent-form QUALITY, last 10 matches / last 8 weeks
+    //    (whichever larger), opposition-quality weighted. A surface discount
+    //    (same surface x1.0, different x0.30) is applied to BOTH signals before
+    //    calculating. 14+ days without a competitive match cancels a player's
+    //    signal (neutral 0). Magnitude 2.5pp per the v2.0 spec.
+    recentForm:     { id: 5,  maxMagnitude: 0.025, gated: false,
+                      signalAWeight: 0.60,   // short momentum
+                      signalBWeight: 0.40,   // recent form quality
+                      // Signal A recency multipliers, most-recent first (3-5 matches).
+                      recencyWeights: [1.0, 0.85, 0.70, 0.55, 0.40],
+                      signalBWindow: 10,     // last-10 matches...
+                      signalBWeeks: 8,       // ...or last-8 weeks, whichever larger
+                      signalBMinMatches: 5,  // <5 in window => Signal B = 0, run A only
+                      surfaceSameMult: 1.0,  // surface discount: same surface as today
+                      surfaceDiffMult: 0.30, //                   different surface
+                      inactivityDays: 14,    // 14+ days no competitive match => neutral 0
+                      flagDiffThreshold: 0.4, // flag when |form differential| exceeds this
+                      // Opposition-quality multipliers for Signal B, by opponent
+                      // rank (current-rank proxy via rankOf; unrankable opponent =
+                      // Challenger/ITF-level opposition).
+                      qualityWeights: { top10: 2.0, top50: 1.5, top100: 1.0, beyond100: 0.6, challengerITF: 0.4 } },
     // 6. [REMOVED in Model v2.0] Round / stage performance — deleted per the
     //    Stennisfy v2.0 rebuild (Step 1). Layer id 6 is retired; the id is not
     //    reused so historical output remains comparable.
