@@ -131,13 +131,13 @@ async function boot(){
   ]);
   DATA.model=model; DATA.matches=matches; DATA.health=health;
   DATA.harvest = await getJson('./atp-entry-harvest-state.json').catch(()=>null); // not exposed => null
-  // admin-log.json is built + committed every pipeline run but is not in the
-  // _site copy list, so ./admin-log.json 404s on Pages. Fall back to the raw
-  // GitHub URL (repo is public, serves with CORS *) so Section 4 renders now.
-  // If a future pipeline change publishes it to _site, the same-origin path wins.
-  DATA.adminLog = await getJson('./admin-log.json')
-    .catch(()=>getJson('https://raw.githubusercontent.com/Michaeldk1996/SAAS/main/admin-log.json'))
-    .catch(()=>null);
+  // Option A (founder, TEN-8): admin-log.json is deliberately NOT published to
+  // _site, so this same-origin fetch 404s on the public Pages site and the
+  // ledger is never exposed at a public URL. Sections 2/3/4 therefore show the
+  // "data not published" stub on Pages by design. To render the real ledger
+  // behind genuine auth, serve it from the authenticated Firebase host (the
+  // password gate here is obscurity-only, per admin-config.js) — see report.
+  DATA.adminLog = await getJson('./admin-log.json').catch(()=>null);
 
   document.getElementById('topmeta').innerHTML =
     'model generated ' + esc(fmtTs(model&&model.generatedAt)) + ' · pipeline last-success ' + esc(fmtTs(health&&health.lastSuccess));
