@@ -6629,14 +6629,8 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 7
-      }
-    ],
+    "liveStatus": "Set 3",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
@@ -89195,16 +89189,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 3
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 2
       }
     ],
-    "liveGameScore": "A - 40",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1056_a-martin.jpg",
     "oddsMovement": {
@@ -90536,22 +90535,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 0
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/52663_t-svajda.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1082_e-ymer.jpg",
     "oddsMovement": {
@@ -90630,7 +90618,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-0, 7-6(5)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 0
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12149280",
@@ -97622,16 +97625,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
-        "p1": 2,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
         "p2": 3
+      },
+      {
+        "set": 3,
+        "p1": 0,
+        "p2": 2
       }
     ],
-    "liveGameScore": "15 - 40",
-    "liveServer": "p1",
+    "liveGameScore": "30 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2839_m-mcdonald.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9362_e-butvilas.jpg",
     "oddsMovement": {
