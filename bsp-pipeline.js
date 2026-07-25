@@ -4108,12 +4108,20 @@ async function runPipeline() {
     require('./h2h-model/price');
   const altAnchorBooks = require('./h2h-model/config').marketAnchorBooks.alternatives;
   const priorPinOpen = new Map();
+  // Frozen value snapshot (model fair + edge-vs-Pinnacle at first State-2 entry)
+  // is carried forward with the SAME rule, from the same prior matches.json.
+  const priorValueSnap = new Map();
   try {
     const priorP = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
     for (const pm of priorP) {
-      if (!pm.pinnacleOpen) continue;
-      priorPinOpen.set(`id:${pm.id}`, pm.pinnacleOpen);
-      priorPinOpen.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm.pinnacleOpen);
+      if (pm.pinnacleOpen) {
+        priorPinOpen.set(`id:${pm.id}`, pm.pinnacleOpen);
+        priorPinOpen.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm.pinnacleOpen);
+      }
+      if (pm.valueSnapshot) {
+        priorValueSnap.set(`id:${pm.id}`, pm.valueSnapshot);
+        priorValueSnap.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, pm.valueSnapshot);
+      }
     }
   } catch (e) { /* first run — nothing pinned to carry forward */ }
 
@@ -4268,7 +4276,55 @@ async function runPipeline() {
       if (saved) m.oddsMovement = saved;
     }
   }
-  await buildModelOutput(matches);
+  const modelOut = await buildModelOutput(matches);
+
+  // ---- Frozen value snapshot (Model v2.0; admin dashboard ROI/CLV source) ----
+  // Same freeze-once / carry-forward rule as pinnacleOpen: the FIRST time a
+  // match is State-2 confirmed (baseState.state === 2 — anchored on the frozen
+  // Pinnacle line), snapshot the model's fair probabilities + edge-vs-Pinnacle
+  // and NEVER recompute, so the admin value-flag history + flat-1u ROI measure
+  // against the read the member saw AT ENTRY, not a later drifted one. Keyed by
+  // id AND np(date|p1|p2) because m.id flips upcoming-*->past-* when a match
+  // finishes. Persisted by patching the CLEAN on-disk matches.json (written
+  // pre-model, oddsMovement already sharded off) — the in-memory `matches` have
+  // oddsMovement RE-ATTACHED for the engine and must NOT be re-serialised here.
+  if (modelOut) {
+    const round4 = (x) => (x == null ? null : Math.round(x * 1e4) / 1e4);
+    const freshSnaps = new Map();
+    let vsFrozen = 0, vsCarried = 0;
+    for (const m of matches) {
+      const carried = priorValueSnap.get(`id:${m.id}`)
+        || priorValueSnap.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
+      if (carried) { freshSnaps.set(m.id, carried); vsCarried++; continue; } // never recompute
+      const r = modelOut[m.id];
+      if (!r || !r.ok || !r.stage1 || !r.stage3) continue;
+      const bs = r.stage1.baseState;
+      if (!bs || bs.state !== 2) continue;                 // freeze only on State-2 confirmed
+      const fair = r.stage3.fair, sharp = r.stage3.sharp;
+      if (!fair || !fair.p1 || fair.p1.prob == null) continue;
+      freshSnaps.set(m.id, {
+        fairP1: round4(fair.p1.prob),
+        fairP2: round4(fair.p2 && fair.p2.prob != null ? fair.p2.prob : 1 - fair.p1.prob),
+        edgeVsPinnacleP1: sharp && sharp.edge ? round4(sharp.edge.p1) : null,
+        edgeVsPinnacleP2: sharp && sharp.edge ? round4(sharp.edge.p2) : null,
+        ts: nowIso,
+      });
+      vsFrozen++;
+    }
+    if (freshSnaps.size) {
+      try {
+        const disk = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
+        for (const dm of disk) {
+          const vs = freshSnaps.get(dm.id);
+          if (vs) dm.valueSnapshot = vs;
+        }
+        writeJsonAtomic('matches.json', disk);
+        console.log(`valueSnapshot — ${vsFrozen} newly frozen, ${vsCarried} carried (never recomputed); patched into matches.json.`);
+      } catch (e) {
+        console.warn(`valueSnapshot persist skipped: ${e.message}`);
+      }
+    }
+  }
 }
 
 // ---- Tennis Edge Model: per-match model output + pre-baked AI summary ------
@@ -4371,6 +4427,7 @@ async function buildModelOutput(matches) {
     matches: out,
   }, true);
   console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  return out;
 }
 
 if (require.main === module) {
