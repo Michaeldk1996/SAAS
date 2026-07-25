@@ -197,9 +197,10 @@ function subjective(ctx) {
 // Each prior meeting is scored three ways and the scores MULTIPLY:
 //   • surface filter   — same surface as this match = 1.0, different/unknown = 0.25
 //   • recency filter   — <=2y = 1.0, 2-4y = 0.6, >4y = 0.2
-//   • set-score dominance — straight-sets result = 1.0, any other completed
-//     result = 0.6 (signed by who won: a straight-sets LOSS is a stronger
-//     negative than a deciding-set loss).
+//   • set-score dominance — straight sets = 1.0, Bo5 win-in-four (3-1) = 0.8,
+//     any other completed result (2-1 / 3-2) = 0.6 (signed by who won: a
+//     straight-sets LOSS is a stronger negative than a 1-3 loss, which is
+//     stronger than a 2-3 loss).
 // The FILTERED (weight-summed) meeting count N_eff drives a three-tier sample
 // system that scales the whole layer's magnitude: Tier 1 (N_eff>=8) full, Tier 2
 // (3-7) 45%, Tier 3 (<3) near-zero. Zero *raw* meetings hides the layer entirely
@@ -208,18 +209,21 @@ function subjective(ctx) {
 // safety net so the function is robust if a knob is ever absent).
 
 // Set-score dominance from an "a - b" result string (already reordered p1-first).
-// Straight sets (loser took 0 sets: 2-0 / 3-0) => full dominance. Any other
-// completed win (2-1, 3-2, and Bo5 win-in-4 3-1) => competitive. Unparseable
-// score but a known winner => a neutral middle default.
-// NOTE: 3-1 (Bo5 win-in-four) is bucketed as "competitive" under the two-value
-// spec; flagged for Michael if he later wants an intermediate weight.
+// Three tiers (unsigned magnitude; the caller applies the +/- sign by who won):
+//   • straight sets (loser took 0: 2-0 / 3-0)          => 1.0  full dominance
+//   • Bo5 win-in-four (winner 3, loser 1: 3-1)         => 0.8  strong but not clean
+//   • any other completed win (2-1 / 3-2)              => 0.6  competitive
+// Unparseable score but a known winner => a neutral middle default (unknown).
 function setDominance(result, dcfg) {
-  const D = dcfg || { straight: 1.0, competitive: 0.6, unknown: 0.7 };
+  const D = dcfg || { straight: 1.0, oneDropped: 0.8, competitive: 0.6, unknown: 0.7 };
   if (typeof result !== 'string') return D.unknown;
   const parts = result.split('-').map(s => parseInt(s.trim(), 10));
   if (parts.length !== 2 || parts.some(n => !isFinite(n))) return D.unknown;
-  const loserSets = Math.min(parts[0], parts[1]);
-  return loserSets === 0 ? D.straight : D.competitive;
+  const winnerSets = Math.max(parts[0], parts[1]);
+  const loserSets  = Math.min(parts[0], parts[1]);
+  if (loserSets === 0) return D.straight;                       // 2-0 / 3-0
+  if (winnerSets === 3 && loserSets === 1) return D.oneDropped; // 3-1 (Bo5 win-in-4)
+  return D.competitive;                                         // 2-1 / 3-2
 }
 
 function h2h(ctx) {

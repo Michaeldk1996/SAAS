@@ -107,8 +107,11 @@ module.exports = {
                       tier1MinN: 8,     // N_eff >= 8  => full signal
                       tier2MinN: 3,     // 3 <= N_eff < 8 => 45% magnitude
                       tierMult: { t1: 1.0, t2: 0.45, t3: 0.10 },  // t3 (N_eff<3) near-zero
-                      // set-score dominance: straight-sets win vs any other completed win
-                      dominance: { straight: 1.0, competitive: 0.6, unknown: 0.7 } },
+                      // set-score dominance: straight-sets win (1.0) vs Bo5 win-in-four
+                      // 3-1 (0.8) vs any other completed win — 2-1 / 3-2 (0.6). Signed by
+                      // who won, so a straight-sets loss is a stronger negative than a
+                      // 1-3 loss, which is stronger than a 2-3 loss.
+                      dominance: { straight: 1.0, oneDropped: 0.8, competitive: 0.6, unknown: 0.7 } },
     // 4. Surface record — career win% on the match surface
     surface:        { id: 4,  maxMagnitude: 0.05, gated: false },
     // 5. Recent form — last-N results (all levels incl. Challenger/ITF)

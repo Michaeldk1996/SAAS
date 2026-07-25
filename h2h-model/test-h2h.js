@@ -21,6 +21,11 @@ ok('3-0 straight=1.0', setDominance('3 - 0',cfg.adjustments.h2h.dominance)===1.0
 ok('2-1 competitive=0.6', setDominance('2 - 1',cfg.adjustments.h2h.dominance)===0.6);
 ok('3-2 competitive=0.6', setDominance('3 - 2',cfg.adjustments.h2h.dominance)===0.6);
 ok('unparseable=0.7', setDominance('W/O',cfg.adjustments.h2h.dominance)===0.7);
+// Bo5 win-in-four: 3-1 is its own tier at 0.8, strictly between straight & deciding.
+const _D=cfg.adjustments.h2h.dominance;
+const _straight=setDominance('3 - 0',_D), _oneDrop=setDominance('3 - 1',_D), _decide=setDominance('3 - 2',_D);
+ok('3-1 win-in-four=0.8', _oneDrop===0.8, _oneDrop);
+ok('3-1 sits between straight(1.0) and deciding(0.6)', _straight>_oneDrop && _oneDrop>_decide, `${_straight} > ${_oneDrop} > ${_decide}`);
 
 console.log('=== hide + balanced ===');
 ok('0 meetings => hidden', h2h(ctx('Clay',[])).hidden===true);
@@ -39,6 +44,19 @@ console.log('=== Tier 1 dominance: straight vs deciding sweeps ===');
 const t1dec=h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',true,'2 - 1'))));
 ok('all-deciding wins signal=0.6', near(t1dec.signal,0.6), t1dec.signal);
 ok('deciding deltaP1=0.6*2.5=1.5pp', near(t1dec.deltaP1,0.6*MAG), t1dec.deltaP1);
+
+console.log('=== Tier 1 dominance: 3-1 win-in-four sits between straight & deciding ===');
+const t1odWin=h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',true,'3 - 1'))));
+ok('all 3-1 wins signal=0.8', near(t1odWin.signal,0.8), t1odWin.signal);
+ok('3-1 deltaP1=0.8*2.5=2.0pp', near(t1odWin.deltaP1,0.8*MAG), t1odWin.deltaP1);
+ok('3-1 signal between straight(1.0) & deciding(0.6)', t1.signal>t1odWin.signal && t1odWin.signal>t1dec.signal, `${t1.signal}>${t1odWin.signal}>${t1dec.signal}`);
+
+console.log('=== Loss dominance ordering: 0-3 stronger negative than 1-3 than 2-3 ===');
+const lStraight=h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',false,'3 - 0')))).signal; // -1.0
+const lOneDrop =h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',false,'3 - 1')))).signal; // -0.8
+const lDecide  =h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',false,'3 - 2')))).signal; // -0.6
+ok('1-3 loss=-0.8', near(lOneDrop,-0.8), lOneDrop);
+ok('0-3 < 1-3 < 2-3 (more negative = stronger)', lStraight<lOneDrop && lOneDrop<lDecide, `${lStraight} < ${lOneDrop} < ${lDecide}`);
 
 console.log('=== Tier 2: 4 same-surface recent straight wins (N_eff=4) => 45% mag ===');
 const t2=h2h(ctx('Clay',Array.from({length:4},()=>meet(1,'Clay',true,'2 - 0'))));
