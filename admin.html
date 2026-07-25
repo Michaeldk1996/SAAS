@@ -208,7 +208,8 @@ function matchCard(id,m){
     const cls=a.applied?'applied':(a.gated?'gated':'missing');
     const st=a.applied?'<span class="pill good">applied</span>':(a.gated?'<span class="pill warn">gated</span>':'<span class="pill dim">missing</span>');
     const dir=a.direction==='p1'?'<span class="pill p1">P1</span>':a.direction==='p2'?'<span class="pill p2">P2</span>':'';
-    return '<tr class="'+cls+'"><td>'+esc(a.id)+'</td><td>'+esc(a.name)+' '+dir+'</td><td>'+st+'</td>'
+    const src=a.key==='winnerUE'?wueSourceBadge(a):'';
+    return '<tr class="'+cls+'"><td>'+esc(a.id)+'</td><td>'+esc(a.name)+' '+dir+' '+src+'</td><td>'+st+'</td>'
       + '<td class="num">'+dec(a.signal,3)+'</td><td class="num '+(a.deltaP1>0?'pos':a.deltaP1<0?'neg':'')+'">'+pp(a.deltaP1)+'</td>'
       + '<td class="detail">'+esc(a.detail)+'</td></tr>';
   }).join('');
@@ -238,6 +239,31 @@ function kv(k,v){ return '<div class="kv"><div class="k">'+k+'</div><div class="
 function edgeCell(x){ if(x==null||!isFinite(x)) return '—'; return '<span class="'+(x>0?'pos':x<0?'neg':'')+'">'+pp(x)+'</span>'; }
 function statePill(s){ return s===2?'<span class="pill good">State 2</span>':s===1?'<span class="pill warn">State 1</span>':'<span class="pill dim">State '+esc(s)+'</span>'; }
 function stateLabel(s){ return s===1?'1 · single-book':s===2?'2 · Pinnacle confirmed':s===3?'3 · Elo-only':String(s); }
+
+// Layer #8 (winnerUE) per-match W/UE data-source badge, for data-quality
+// monitoring over time. The pipeline embeds the combined source note in the
+// adjustment's `detail` as "(<srcNote>, m/n matches)", where <srcNote> is one
+// per-player source ('api-tennis' | 'ATP_Entry_OCR' | 'mixed') or two joined by
+// '/' when the two players differ. We collapse that to one of three buckets the
+// founder asked for — api-tennis only / mixed / OCR only — favouring the
+// conservative reading (any OCR contribution downgrades the badge from pure
+// api-tennis). Display-only: reads existing model-output.json, no reprice.
+function wueSourceBadge(a){
+  if(!a || a.applied!==true) return ''; // parenthetical only present when the layer fires
+  const m=/\(([^,()]+),\s*[\d/]+\s*matches\)/.exec(a.detail||'');
+  if(!m) return '';
+  const raw=m[1].trim();
+  const parts=raw.split('/').map(s=>s.trim().toLowerCase());
+  const isOcr=s=>s.includes('ocr')||s.includes('atp_entry');
+  const isApi=s=>s.includes('api-tennis');
+  const anyOcr=parts.some(p=>p==='mixed'||isOcr(p));
+  const anyApi=parts.some(p=>p==='mixed'||isApi(p));
+  let cls,label;
+  if(anyApi&&!anyOcr){ cls='good'; label='api-tennis'; }
+  else if(anyOcr&&!anyApi){ cls='dim'; label='OCR'; }
+  else { cls='warn'; label='mixed'; } // both present, or any 'mixed' per-player source
+  return '<span class="pill '+cls+'" title="W/UE source: '+esc(raw)+'">src: '+label+'</span>';
+}
 
 // ---- Section 5: Model state monitor -------------------------------------
 function renderSection5(){
