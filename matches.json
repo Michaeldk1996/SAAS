@@ -4723,11 +4723,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "oddsMovement": {
@@ -5082,7 +5088,10 @@
       "edgeVsPinnacleP1": -0.0307,
       "edgeVsPinnacleP2": 0.0307,
       "ts": "2026-07-25T07:55:02.648Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149222",
@@ -84342,16 +84351,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Finished",
+    "liveScore": null,
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/37936_a-ilagan.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1212_r-bertola.jpg",
     "oddsMovement": {
@@ -85380,11 +85383,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": null,
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1207_m-echargui.jpg",
     "oddsMovement": {
@@ -85484,7 +85493,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149276",
@@ -87014,10 +87026,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "-",
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1882_j-mccabe.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3319_a-bolt.jpg",
@@ -87223,7 +87235,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(6), 6-7(2)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12149277",
@@ -92199,17 +92226,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2986_z-svajda.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1087_s-kozlov.jpg",
     "oddsMovement": {
@@ -92292,7 +92313,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-5, 6-1",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "upcoming-12149281",
