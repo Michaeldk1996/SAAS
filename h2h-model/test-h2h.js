@@ -1,7 +1,7 @@
 'use strict';
 const path=require('path');
 const HM=__dirname;
-const { h2h, setDominance }=require(path.join(HM,'adjustments'));
+const { h2h, setDominance, winnerUE }=require(path.join(HM,'adjustments'));
 const cfg=require(path.join(HM,'config'));
 const MAG=cfg.adjustments.h2h.maxMagnitude; // 0.025
 const NOW='2026-07-25';
@@ -75,6 +75,49 @@ ok('old meetings drop to tier 3 (N_eff=1.6)', /tier 3/.test(rf.detail), rf.detai
 console.log('=== Loss sign: straight-set losses => negative signal toward p2 ===');
 const loss=h2h(ctx('Clay',Array.from({length:8},()=>meet(1,'Clay',false,'2 - 0'))));
 ok('straight losses signal=-1.0 dir p2', near(loss.signal,-1.0) && loss.direction==='p2', loss.signal+'/'+loss.direction);
+
+// ---- Layer #8: archetype-relative W/UE (winnerUE) ------------------------
+// Baseline (mcp-archetype-baseline.json): counter_puncher wuRatio 0.822,
+// big_server 1.131. Signal = clamp((r1/base1 - r2/base2) / 0.30, -1, 1).
+console.log('=== winnerUE (layer #8) ===');
+const WMAG=cfg.adjustments.winnerUE.maxMagnitude; // 0.02
+function wctx(p1,p2){ return { p1, p2 }; }
+function player(primary, wue){ return { style: primary?{ primary }:null, profile: wue?{ wue }:null }; }
+function wue(ratio, source='api-tennis', matches=5){ return { winnersRate:0.18, unforcedRate:ratio?0.18/ratio:0.18, ratio, matches, source }; }
+
+// Self-hide: either player missing wue => un-applied, NOT gated (display filter drops it).
+const noData=winnerUE(wctx(player('big_server',null), player('counter_puncher',wue(1.0))));
+ok('missing wue => applied:false', noData.applied===false, noData.applied);
+ok('missing wue => NOT gated (self-hide, not dimmed row)', noData.gated===false, noData.gated);
+const bothMissing=winnerUE(wctx(player('big_server',null), player('counter_puncher',null)));
+ok('both missing => applied:false', bothMissing.applied===false, bothMissing.applied);
+
+// Same archetype, p1 has the higher raw ratio => signal toward p1.
+const p1Better=winnerUE(wctx(player('solid_baseliner',wue(1.10)), player('solid_baseliner',wue(0.90))));
+ok('same archetype, higher ratio => dir p1', p1Better.applied===true && p1Better.direction==='p1', p1Better.direction);
+ok('signal magnitude within [-1,1]', p1Better.signal>0 && p1Better.signal<=1, p1Better.signal);
+ok('deltaP1 = signal*0.02', near(p1Better.deltaP1, p1Better.signal*WMAG, 1e-4), p1Better.deltaP1);
+
+// Archetype normalisation: a counter-puncher at ratio 1.0 (norm 0.822) is
+// OVER-performing its style more than a big-server at 1.0 (norm 1.131), so the
+// counter-puncher should read as the aggressive one relative to expectation.
+const cp=winnerUE(wctx(player('counter_puncher',wue(1.0)), player('big_server',wue(1.0))));
+ok('equal raw ratio but CP over-performs its archetype => dir p1', cp.direction==='p1', cp.direction+' sig '+cp.signal);
+// Sanity: flip the archetypes, sign flips.
+const cpFlip=winnerUE(wctx(player('big_server',wue(1.0)), player('counter_puncher',wue(1.0))));
+ok('archetype swap flips the sign', near(cpFlip.signal,-cp.signal,1e-6), `${cp.signal} vs ${cpFlip.signal}`);
+
+// Symmetric equal-relative players => signal 0 => self-hidden (applied:false).
+const even=winnerUE(wctx(player('counter_puncher',wue(0.822)), player('big_server',wue(1.131))));
+ok('both exactly at archetype norm => signal 0 => applied:false', even.applied===false && near(even.signal,0), even.signal);
+
+// Unknown style falls back to tour ratio, still fires (no crash).
+const noStyle=winnerUE(wctx(player(null,wue(1.2)), player(null,wue(0.8))));
+ok('unknown archetype => tour-ratio fallback, still applies dir p1', noStyle.applied===true && noStyle.direction==='p1', noStyle.direction);
+
+// Source note surfaces in detail (mixed sources shown honestly).
+const mixed=winnerUE(wctx(player('big_server',wue(1.2,'api-tennis')), player('big_server',wue(0.9,'ATP_Entry_OCR'))));
+ok('mixed sources noted in detail', /api-tennis\/ATP_Entry_OCR/.test(mixed.detail), mixed.detail);
 
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

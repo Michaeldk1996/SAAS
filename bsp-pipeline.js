@@ -3234,6 +3234,73 @@ function buildPlayerInsights(profile, tourAverage) {
 // player's own fixtures. Returns { profile:null } when get_players yields
 // nothing — an honest skip, never a fabricated profile. `insights` is left
 // empty here and filled by the caller once the tour average is known.
+// Rolling window (most-recent fixtures carrying W/UE) behind model layer #8's
+// archetype-relative signal. Match-count based, not calendar (recent form beats
+// a stale calendar window). Most players have FAR fewer W/UE matches than this
+// cap because api-tennis only carries Winners/Unforced on Slams (+ the reviewed
+// @ATP_Entry OCR corpus), so it is an upper bound, not a target.
+const WUE_ROLLING_MATCHES = 20;
+const WUE_MIN_MATCHES = 3; // below this the aggregate is too noisy to serve
+
+// Aggregate one player's Winner/Unforced-error profile across their recent
+// fixtures, for model layer #8 (winnerUE). api-tennis per-match W/UE is PRIMARY;
+// the reviewed @ATP_Entry OCR corpus is the FALLBACK, resolved per fixture and
+// NEVER mixed within a single fixture (identical rule to attachWue /
+// extractProgressionMetrics). Total Points Won — a point count on every stat
+// sheet, present even when W/UE is absent — is the pooled rate denominator, so
+// pairing it with OCR-sourced W/UE does not mix W/UE sources. Pools raw counts
+// (not a mean of per-match ratios) so a long match weighs proportionally.
+// Returns { winnersRate, unforcedRate, ratio, matches, source } | null.
+function aggregatePlayerWue(fixtures, playerKey, playerName) {
+  if (!Array.isArray(fixtures)) return null;
+  const sorted = [...fixtures].sort((a, b) =>
+    String(b.event_date || '').localeCompare(String(a.event_date || '')));
+  let sumW = 0, sumUE = 0, sumTP = 0, n = 0;
+  const sources = new Set();
+  for (const f of sorted) {
+    if (n >= WUE_ROLLING_MATCHES) break;
+    if (!Array.isArray(f.statistics) || f.statistics.length === 0) continue;
+    const matchStats = f.statistics.filter(s => s.stat_period === 'match');
+    if (matchStats.length === 0) continue;
+
+    // api-tennis PRIMARY: this fixture's own Winners + Unforced errors rows.
+    // On ATP-250s those rows are absent (0% coverage) → source stays null → OCR.
+    const wStat = findMatchStat(matchStats, playerKey, 'Points', 'Winners');
+    const ueStat = findMatchStat(matchStats, playerKey, 'Points', 'Unforced errors');
+    let winners = null, unforced = null, source = null;
+    if (wStat && ueStat) {
+      winners = parseInt(wStat.stat_value, 10) || 0;
+      unforced = parseInt(ueStat.stat_value, 10) || 0;
+      source = 'api-tennis';
+    } else {
+      // @ATP_Entry OCR FALLBACK — only when api-tennis carries neither value.
+      const isP1 = String(f.first_player_key) === String(playerKey);
+      const oppName = isP1 ? f.event_second_player : f.event_first_player;
+      const fb = lookupWue(f.tournament_name, playerName, oppName);
+      if (fb && Number.isFinite(fb.winners) && Number.isFinite(fb.unforcedErrors)) {
+        winners = fb.winners; unforced = fb.unforcedErrors; source = 'ATP_Entry_OCR';
+      }
+    }
+    if (source == null) continue;
+
+    const tpStat = findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won');
+    const totalPts = tpStat && tpStat.stat_total > 0 ? parseInt(tpStat.stat_total, 10) : null;
+    if (!totalPts) continue; // keep pooled rates coherent
+
+    sumW += winners; sumUE += unforced; sumTP += totalPts; n++;
+    sources.add(source);
+  }
+  if (n < WUE_MIN_MATCHES || sumUE <= 0 || sumTP <= 0) return null;
+  const source = sources.size === 1 ? [...sources][0] : 'mixed';
+  return {
+    winnersRate: Math.round((sumW / sumTP) * 10000) / 10000,
+    unforcedRate: Math.round((sumUE / sumTP) * 10000) / 10000,
+    ratio: Math.round((sumW / sumUE) * 1000) / 1000,
+    matches: n,
+    source,
+  };
+}
+
 async function buildOneProfile(key, name, surfaceMap) {
   const currentYear = new Date().getFullYear();
   const playerStats = await fetchPlayerStats(key);
@@ -3340,6 +3407,10 @@ async function buildOneProfile(key, name, surfaceMap) {
     dna,
     statsAll: aggBySurface.All?.stats || null,
     samplesAll: aggBySurface.All?.samples || null,
+    // Model layer #8 (winnerUE) input: archetype-relative W/UE aggregate over the
+    // player's recent W/UE-carrying fixtures. null for the ~all-250 population
+    // that has no api-tennis W/UE and no OCR card → layer #8 self-hides for them.
+    wue: aggregatePlayerWue(allTierFixtures, key, name),
     surfaces,
     // Recent form uses its own broad all-tier fetch (see fetchRecentSinglesFixtures),
     // NOT the ATP-only allFixtures used for the season/DNA/surface aggregates above.

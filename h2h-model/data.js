@@ -262,6 +262,11 @@ module.exports = {
   surfaceCategory,
   rankOf,
   loadManualInputs,
+  // Layer #8 (W/UE) archetype expectation table — per-archetype Winner/Unforced
+  // ratios from the Match Charting Project (CC BY-NC-SA, R&D use only). Compared
+  // against each player's aggregated profile.wue. Missing file => null (layer
+  // self-hides). See CLAUDE.md licensing note.
+  loadMcpBaseline: () => { try { return load('mcp-archetype-baseline.json'); } catch (e) { return null; } },
   loadMatchupMatrix: () => load('matchup-matrix.json'),
   // Tier-1 serve source: per-round serve numbers for the CURRENTLY active
   // tournament(s), already produced for the Progression tab / Tournament

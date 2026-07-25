@@ -30,7 +30,7 @@
  */
 
 const config = require('./config');
-const { surfaceCategory, rankOf, loadManualInputs } = require('./data');
+const { surfaceCategory, rankOf, loadManualInputs, loadMcpBaseline } = require('./data');
 const { pinnacleSeries, bookSeries, preMatchCutoffMs } = require('./price');
 
 // ---- small helpers --------------------------------------------------------
@@ -431,25 +431,50 @@ function qualityForm(ctx) {
 function pctRate(s) { return `${s.top50n} quality games`; }
 
 // =========================================================================
-// 8. W/UE RATIO — inert unless Michael supplies values in manual-inputs.json
-//    Schema: { "wue": { "<numericKey>": { "winners": n, "unforced": n } } }
+// 8. W/UE RATIO — archetype-relative Winner/Unforced over/under-performance.
+//    Each player's aggregated Winner/Unforced ratio (profile.wue, built in the
+//    pipeline from api-tennis per-match W/UE with @ATP_Entry OCR fallback,
+//    never mixed within a fixture) is normalised against their playing-style
+//    archetype's MCP-charted expectation (mcp-archetype-baseline.json). The
+//    edge is the gap between the two players' relative over-performance, so a
+//    counter-puncher hitting 1.0 (well above its 0.82 archetype norm) reads as
+//    aggressive relative to expectation, not just in absolute terms.
+//    SELF-HIDES (returns an un-applied result, NOT gate()) when either player
+//    lacks aggregated W/UE — the display filter drops a non-applied winnerUE
+//    row, so it never renders a dimmed placeholder. On the all-ATP-250 live
+//    board (0% api-tennis W/UE, OCR only for finished Estoril/Kitzbühel) this
+//    self-hides board-wide; it fires once a fixture carrying api-tennis W/UE
+//    (Slams, and larger events) is priced.
 // =========================================================================
 function winnerUE(ctx) {
   const c = config.adjustments.winnerUE;
   const res = base(c.id, 'winnerUE', 'Winner / unforced-error ratio',
-    c.maxMagnitude, 'manual-inputs.json:wue');
-  const manual = (loadManualInputs() || {}).wue || {};
-  function ratio(p) {
-    const row = p.numericKey != null ? manual[String(p.numericKey)] : null;
-    if (!row || num(row.winners) == null || num(row.unforced) == null || row.unforced <= 0) return null;
-    return row.winners / row.unforced;
-  }
-  const r1 = ratio(ctx.p1), r2 = ratio(ctx.p2);
-  if (r1 == null || r2 == null) return gate(res, c.gateReason);
-  // ratio ~1.0 is break-even; scale the difference
-  const signal = clamp((r1 - r2) / 1.0, -1, 1);
+    c.maxMagnitude, 'player-profiles.json:wue × MCP archetype baseline');
+  const w1 = ctx.p1 && ctx.p1.profile && ctx.p1.profile.wue;
+  const w2 = ctx.p2 && ctx.p2.profile && ctx.p2.profile.wue;
+  // Self-hide when either player has no aggregated W/UE (or a degenerate ratio).
+  if (!w1 || !w2 || !(num(w1.ratio) > 0) || !(num(w2.ratio) > 0)) return res;
+
+  const baseline = loadMcpBaseline();
+  const arch = (baseline && baseline.archetypes) || {};
+  const tb = baseline && baseline.tourBaseline;
+  const tourRatio = (tb && tb.unforcedRatePerPt > 0)
+    ? tb.winnerRatePerPt / tb.unforcedRatePerPt
+    : 0.95;
+  // Archetype expectation for a player: their classified style's charted wuRatio,
+  // falling back to the whole-tour ratio when the style is unknown/absent.
+  const expect = (p) => {
+    const skey = p && p.style && p.style.primary;
+    const a = skey && arch[skey];
+    return (a && num(a.wuRatio) > 0) ? a.wuRatio : tourRatio;
+  };
+  const b1 = expect(ctx.p1), b2 = expect(ctx.p2);
+  const rel1 = w1.ratio / b1, rel2 = w2.ratio / b2; // 1.0 = playing to archetype
+  // A 0.30 gap in relative over-performance = full magnitude toward that player.
+  const signal = clamp((rel1 - rel2) / 0.30, -1, 1);
+  const srcNote = (w1.source === w2.source) ? w1.source : `${w1.source}/${w2.source}`;
   return apply(res, signal, 'med',
-    `W/UE ${r1.toFixed(2)} vs ${r2.toFixed(2)} (manual input).`);
+    `W/UE ${w1.ratio.toFixed(2)} vs ${w2.ratio.toFixed(2)} — rel-to-archetype ${rel1.toFixed(2)} vs ${rel2.toFixed(2)} (${srcNote}, ${w1.matches}/${w2.matches} matches).`);
 }
 
 // =========================================================================
@@ -773,4 +798,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance };
+module.exports = { runAll, clamp, h2h, setDominance, winnerUE };

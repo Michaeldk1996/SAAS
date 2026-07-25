@@ -124,10 +124,11 @@ module.exports = {
     //    player-profiles (proxy for match-day rank).
     qualityForm:    { id: 7,  maxMagnitude: 0.04, gated: false,
                       signal2Weight: 0.30 },  // secondary "big wins on surface" weight
-    // 8. W/UE ratio — api-tennis feed unreliable; activates ONLY when Michael
-    //    supplies values in h2h-model/manual-inputs.json (else stays inert).
-    winnerUE:       { id: 8,  maxMagnitude: 0.02, gated: true,
-                      gateReason: 'api-tennis W/UE not reliable yet; awaiting manual-inputs.json or big-tournament feed' },
+    // 8. W/UE ratio — archetype-relative W/UE over-performance (profile.wue ×
+    //    MCP archetype baseline). Fires per-match whenever BOTH players carry an
+    //    aggregated W/UE (api-tennis primary, @ATP_Entry OCR fallback); self-hides
+    //    otherwise. No manual input, no level whitelist — data presence gates it.
+    winnerUE:       { id: 8,  maxMagnitude: 0.02, gated: false },
     // 9. Serve strength — momentum-weighted 4-tier blend (this-tournament >
     //    last-3-on-surface > season-on-surface > career-on-surface).
     //    Deliberate 0.035 override (2026-07): the Sackmann/backtest fit trims
