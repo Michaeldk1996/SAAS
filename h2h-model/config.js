@@ -89,10 +89,26 @@ module.exports = {
     styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false },
     // 2. Subjective input — Michael's manual read (passthrough, default 0)
     subjective:     { id: 2,  maxMagnitude: 0.10, gated: false },
-    // 3. H2H record — career head-to-head balance
-    //    (calibrated 2026-07 from 0.05 -> 0.03: logistic fit on 42.6k Sackmann
-    //     matches gave a significant (z=2.8) but ~half-size effect vs the guess.)
-    h2h:            { id: 3,  maxMagnitude: 0.03, gated: false },
+    // 3. H2H record — dominance-weighted head-to-head (v2.0 redesign 2026-07).
+    //    Per-meeting surface & recency filters MULTIPLY, set-score dominance
+    //    scores each meeting, and a three-tier sample system scales the signal.
+    //    maxMagnitude pinned to 0.025 (2.5pp) per the v2.0 spec — explicitly
+    //    raised from the 1.5pp redesign draft; supersedes the prior 0.03
+    //    Sackmann-fit placeholder (that fit saw only career W-L balance, not the
+    //    surface/recency/dominance texture this layer now uses). All the knobs
+    //    below are centralised here so Michael can tune without touching code.
+    h2h:            { id: 3,  maxMagnitude: 0.025, gated: false,
+                      // surface filter: same surface as the match vs different/unknown
+                      surfaceWeight: { same: 1.0, diff: 0.25 },
+                      // recency filter (years since the meeting): <=recentY, <=midY, older
+                      recencyYears:  { recent: 2, mid: 4 },
+                      recencyWeight: { recent: 1.0, mid: 0.6, old: 0.2 },
+                      // three-tier sample system on the FILTERED (weighted) meeting count
+                      tier1MinN: 8,     // N_eff >= 8  => full signal
+                      tier2MinN: 3,     // 3 <= N_eff < 8 => 45% magnitude
+                      tierMult: { t1: 1.0, t2: 0.45, t3: 0.10 },  // t3 (N_eff<3) near-zero
+                      // set-score dominance: straight-sets win vs any other completed win
+                      dominance: { straight: 1.0, competitive: 0.6, unknown: 0.7 } },
     // 4. Surface record — career win% on the match surface
     surface:        { id: 4,  maxMagnitude: 0.05, gated: false },
     // 5. Recent form — last-N results (all levels incl. Challenger/ITF)

@@ -3612,7 +3612,7 @@ function renderEdgeModel(id){
   // ── Page header ────────────────────────────────────────────────────────
   const header = `
     <div class="edge-head">
-      <div class="edge-eyebrow2">Tennis Edge Model · ${(st2.adjustments || []).length}-layer</div>
+      <div class="edge-eyebrow2">Tennis Edge Model · ${(st2.adjustments || []).filter(a => !a.hidden).length}-layer</div>
       <div class="edge-h1">${edgeEsc(p1full)} vs ${edgeEsc(p2full)}</div>
       <div class="edge-h1sub">BSP Consult's proprietary match analysis and value model.</div>
     </div>`;
@@ -3693,7 +3693,10 @@ function renderEdgeModel(id){
     </div>`;
 
   // ── Section 3: 17-layer coverage ───────────────────────────────────────
-  const adjs = st2.adjustments || [];
+  // A layer may hide itself entirely (e.g. H2H with zero prior meetings) — such
+  // rows are dropped from the coverage bar and the adjustment list, not shown
+  // as an empty "No data" row.
+  const adjs = (st2.adjustments || []).filter(a => !a.hidden);
   const counts = { full: 0, partial: 0, missing: 0 };
   adjs.forEach(a => { counts[edgeCovState(a)]++; });
   const conf = edgeConfidence(counts.full);

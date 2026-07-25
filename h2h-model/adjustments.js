@@ -192,20 +192,106 @@ function subjective(ctx) {
 }
 
 // =========================================================================
-// 3. H2H RECORD — career head-to-head balance
+// 3. H2H RECORD — dominance-weighted head-to-head (v2.0 redesign)
 // =========================================================================
+// Each prior meeting is scored three ways and the scores MULTIPLY:
+//   • surface filter   — same surface as this match = 1.0, different/unknown = 0.25
+//   • recency filter   — <=2y = 1.0, 2-4y = 0.6, >4y = 0.2
+//   • set-score dominance — straight-sets result = 1.0, any other completed
+//     result = 0.6 (signed by who won: a straight-sets LOSS is a stronger
+//     negative than a deciding-set loss).
+// The FILTERED (weight-summed) meeting count N_eff drives a three-tier sample
+// system that scales the whole layer's magnitude: Tier 1 (N_eff>=8) full, Tier 2
+// (3-7) 45%, Tier 3 (<3) near-zero. Zero *raw* meetings hides the layer entirely
+// (res.hidden) so the Bet Confirmation Stack shows no empty H2H row.
+// All thresholds/weights come from config.adjustments.h2h (defaults inline as a
+// safety net so the function is robust if a knob is ever absent).
+
+// Set-score dominance from an "a - b" result string (already reordered p1-first).
+// Straight sets (loser took 0 sets: 2-0 / 3-0) => full dominance. Any other
+// completed win (2-1, 3-2, and Bo5 win-in-4 3-1) => competitive. Unparseable
+// score but a known winner => a neutral middle default.
+// NOTE: 3-1 (Bo5 win-in-four) is bucketed as "competitive" under the two-value
+// spec; flagged for Michael if he later wants an intermediate weight.
+function setDominance(result, dcfg) {
+  const D = dcfg || { straight: 1.0, competitive: 0.6, unknown: 0.7 };
+  if (typeof result !== 'string') return D.unknown;
+  const parts = result.split('-').map(s => parseInt(s.trim(), 10));
+  if (parts.length !== 2 || parts.some(n => !isFinite(n))) return D.unknown;
+  const loserSets = Math.min(parts[0], parts[1]);
+  return loserSets === 0 ? D.straight : D.competitive;
+}
+
 function h2h(ctx) {
   const c = config.adjustments.h2h;
-  const res = base(c.id, 'h2h', 'H2H record', c.maxMagnitude, 'matches.json:h2h');
+  const res = base(c.id, 'h2h', 'H2H record', c.maxMagnitude, 'matches.json:h2h.matches');
+
   const h = ctx.match.h2h;
-  if (!h) return res;
-  const w1 = h.p1Wins || 0, w2 = h.p2Wins || 0, total = w1 + w2;
-  if (total === 0) { res.detail = 'No prior meetings.'; return res; }
-  // balance in [-1,1], damped by sample (few meetings => weaker signal)
-  const balance = (w1 - w2) / total;
-  const damp = Math.min(1, total / 4); // full weight at 4+ meetings
-  const conf = total >= 4 ? 'med' : 'low';
-  return apply(res, balance * damp, conf, `H2H ${w1}-${w2} (${total} meetings).`);
+  const meetings = (h && Array.isArray(h.matches)) ? h.matches : [];
+  // Zero prior meetings => hide the layer entirely (spec: no empty H2H row).
+  if (meetings.length === 0) { res.hidden = true; res.detail = 'No prior meetings.'; return res; }
+
+  // Config knobs (with inline defaults as a safety net).
+  const sW  = c.surfaceWeight || { same: 1.0, diff: 0.25 };
+  const rY  = c.recencyYears  || { recent: 2, mid: 4 };
+  const rW  = c.recencyWeight || { recent: 1.0, mid: 0.6, old: 0.2 };
+  const tM  = c.tierMult      || { t1: 1.0, t2: 0.45, t3: 0.10 };
+  const t1N = (c.tier1MinN != null) ? c.tier1MinN : 8;
+  const t2N = (c.tier2MinN != null) ? c.tier2MinN : 3;
+
+  const matchCat = surfaceCategory(ctx.surface);
+  const nowMs = Date.parse(ctx.match && ctx.match.date);
+  const refMs = isFinite(nowMs) ? nowMs : Date.now();
+  const YEAR_MS = 365.25 * 24 * 3600 * 1000;
+
+  let wSum = 0;    // Σ filter weight  => effective (filtered) sample size N_eff
+  let domSum = 0;  // Σ filter weight × signed dominance
+  let sameSurf = 0, recent2y = 0;
+  for (const m of meetings) {
+    // surface filter — same surface only when both categories are known and equal
+    const mCat = surfaceCategory(m.surface);
+    const surfW = (matchCat && mCat && mCat === matchCat) ? sW.same : sW.diff;
+    if (surfW === sW.same) sameSurf++;
+
+    // recency filter — default to the oldest band if the date is unparseable
+    let recW = rW.old;
+    const mMs = Date.parse(m.date);
+    if (isFinite(mMs)) {
+      const ageY = (refMs - mMs) / YEAR_MS;
+      recW = ageY <= rY.recent ? rW.recent : (ageY <= rY.mid ? rW.mid : rW.old);
+      if (ageY <= rY.recent) recent2y++;
+    }
+
+    // set-score dominance, signed by who won this meeting
+    const dom = setDominance(m.result, c.dominance);
+    const signed = (m.p1Won ? 1 : -1) * dom;
+
+    const w = surfW * recW;
+    wSum += w;
+    domSum += w * signed;
+  }
+
+  // Filtered sample size selects the tier / magnitude multiplier.
+  const nEff = wSum;
+  let tier, tierMult, conf;
+  if (nEff >= t1N)      { tier = 1; tierMult = tM.t1; conf = 'high'; }
+  else if (nEff >= t2N) { tier = 2; tierMult = tM.t2; conf = 'med';  }
+  else                  { tier = 3; tierMult = tM.t3; conf = 'low';  }
+
+  // Weight-averaged signed dominance in [-1,1], then scaled by the tier.
+  const domAvg = wSum > 0 ? (domSum / wSum) : 0;
+  const signal = clamp(domAvg * tierMult, -1, 1);
+
+  const w1 = meetings.filter(m => m.p1Won).length;
+  const w2 = meetings.length - w1;
+  const detail = `H2H ${w1}-${w2} (${meetings.length} meeting${meetings.length === 1 ? '' : 's'}; `
+    + `${sameSurf} on ${matchCat || 'surface'}, ${recent2y} in last 2y; `
+    + `Nₑₓ ${nEff.toFixed(1)}, tier ${tier}).`;
+
+  const out = apply(res, signal, conf, detail);
+  // Meetings exist => always show the row, even for a balanced (0-signal) record.
+  out.applied = true;
+  return out;
 }
 
 // =========================================================================
@@ -681,4 +767,6 @@ function runAll(ctx) {
   return ALL.map(fn => fn(ctx));
 }
 
-module.exports = { runAll, clamp };
+// h2h + setDominance exported for unit tests (pure fns; today's live board is
+// all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
+module.exports = { runAll, clamp, h2h, setDominance };
