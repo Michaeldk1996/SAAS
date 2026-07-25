@@ -1,0 +1,398 @@
+{
+ "schema": 1,
+ "updated": "2026-07-25T07:55:55.177Z",
+ "runs": [
+  {
+   "ts": "2026-07-25T07:55:55.177Z",
+   "run": "30150128572",
+   "priced": 19,
+   "logged": 19,
+   "flagged": 16,
+   "newlyLogged": 19,
+   "newlyFrozen": 16
+  }
+ ],
+ "flags": {
+  "12148127": {
+   "key": "12148127",
+   "date": "2026-07-23",
+   "p1": "P. Martinez",
+   "p2": "L. Darderi",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.1369,
+   "valueSnapshot": {
+    "fairP1": 0.1369,
+    "fairP2": 0.8631,
+    "edgeVsPinnacleP1": -0.1127,
+    "edgeVsPinnacleP2": 0.1127,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "0-6, 1-6",
+   "modelFairLast": 0.1369,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148316": {
+   "key": "12148316",
+   "date": "2026-07-23",
+   "p1": "L. van Assche",
+   "p2": "P. Carreno-Busta",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.3144,
+   "valueSnapshot": {
+    "fairP1": 0.3144,
+    "fairP2": 0.6856,
+    "edgeVsPinnacleP1": -0.0216,
+    "edgeVsPinnacleP2": 0.0216,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-3, 4-6, 6-2",
+   "modelFairLast": 0.3144,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148317": {
+   "key": "12148317",
+   "date": "2026-07-23",
+   "p1": "A. Rublev",
+   "p2": "T. Skatov",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.9,
+   "valueSnapshot": {
+    "fairP1": 0.9,
+    "fairP2": 0.1,
+    "edgeVsPinnacleP1": 0.0214,
+    "edgeVsPinnacleP2": -0.0214,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-1, 6-1",
+   "modelFairLast": 0.9,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148483": {
+   "key": "12148483",
+   "date": "2026-07-23",
+   "p1": "J. Faria",
+   "p2": "G. Bueno",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.8219,
+   "valueSnapshot": {
+    "fairP1": 0.8219,
+    "fairP2": 0.1781,
+    "edgeVsPinnacleP1": 0.0009,
+    "edgeVsPinnacleP2": -0.0009,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-2, 6-4",
+   "modelFairLast": 0.8219,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148660": {
+   "key": "12148660",
+   "date": "2026-07-23",
+   "p1": "M. Navone",
+   "p2": "Q. Halys",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.6042,
+   "valueSnapshot": {
+    "fairP1": 0.6042,
+    "fairP2": 0.3958,
+    "edgeVsPinnacleP1": -0.0592,
+    "edgeVsPinnacleP2": 0.0592,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "5-7, 3-6",
+   "modelFairLast": 0.6042,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148665": {
+   "key": "12148665",
+   "date": "2026-07-23",
+   "p1": "Y. Hanfmann",
+   "p2": "S. Baez",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.6002,
+   "valueSnapshot": {
+    "fairP1": 0.6002,
+    "fairP2": 0.3998,
+    "edgeVsPinnacleP1": 0.051,
+    "edgeVsPinnacleP2": -0.051,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-3, 6-1",
+   "modelFairLast": 0.6002,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148684": {
+   "key": "12148684",
+   "date": "2026-07-23",
+   "p1": "T. M. Etcheverry",
+   "p2": "I. Buse",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.4681,
+   "valueSnapshot": {
+    "fairP1": 0.4681,
+    "fairP2": 0.5319,
+    "edgeVsPinnacleP1": -0.025,
+    "edgeVsPinnacleP2": 0.025,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-2, 7-5",
+   "modelFairLast": 0.4681,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148685": {
+   "key": "12148685",
+   "date": "2026-07-23",
+   "p1": "A. Bublik",
+   "p2": "A. Molcan",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.6191,
+   "valueSnapshot": {
+    "fairP1": 0.6191,
+    "fairP2": 0.3809,
+    "edgeVsPinnacleP1": 0.03,
+    "edgeVsPinnacleP2": -0.03,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-3, 6-2",
+   "modelFairLast": 0.6191,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148859": {
+   "key": "12148859",
+   "date": "2026-07-24",
+   "p1": "R. A. Burruchaga",
+   "p2": "A. Blockx",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.325,
+   "valueSnapshot": {
+    "fairP1": 0.325,
+    "fairP2": 0.675,
+    "edgeVsPinnacleP1": -0.1773,
+    "edgeVsPinnacleP2": 0.1773,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "4-6, 7-5, 4-6",
+   "modelFairLast": 0.325,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148971": {
+   "key": "12148971",
+   "date": "2026-07-24",
+   "p1": "Y. Hanfmann",
+   "p2": "Q. Halys",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.598,
+   "valueSnapshot": {
+    "fairP1": 0.598,
+    "fairP2": 0.402,
+    "edgeVsPinnacleP1": 0.0367,
+    "edgeVsPinnacleP2": -0.0367,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "4-6, 6-7(2)",
+   "modelFairLast": 0.598,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12148978": {
+   "key": "12148978",
+   "date": "2026-07-24",
+   "p1": "A. Bublik",
+   "p2": "T. M. Etcheverry",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.626,
+   "valueSnapshot": {
+    "fairP1": 0.626,
+    "fairP2": 0.374,
+    "edgeVsPinnacleP1": 0.0175,
+    "edgeVsPinnacleP2": -0.0175,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-3, 6-4",
+   "modelFairLast": 0.626,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149043": {
+   "key": "12149043",
+   "date": "2026-07-24",
+   "p1": "A. Rublev",
+   "p2": "L. van Assche",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.8434,
+   "valueSnapshot": {
+    "fairP1": 0.8434,
+    "fairP2": 0.1566,
+    "edgeVsPinnacleP1": 0.0175,
+    "edgeVsPinnacleP2": -0.0175,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-3, 3-6, 4-6",
+   "modelFairLast": 0.8434,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149044": {
+   "key": "12149044",
+   "date": "2026-07-24",
+   "p1": "J. Faria",
+   "p2": "L. Darderi",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.3412,
+   "valueSnapshot": {
+    "fairP1": 0.3412,
+    "fairP2": 0.6588,
+    "edgeVsPinnacleP1": -0.0237,
+    "edgeVsPinnacleP2": 0.0237,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "finished",
+   "finalScore": "6-2, 5-7, 2-6",
+   "modelFairLast": 0.3412,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149162": {
+   "key": "12149162",
+   "date": "2026-07-25",
+   "p1": "A. Bublik",
+   "p2": "Q. Halys",
+   "surface": "clay",
+   "tour": "ATP Kitzbuhel",
+   "modelFairEntry": 0.689,
+   "valueSnapshot": {
+    "fairP1": 0.689,
+    "fairP2": 0.311,
+    "edgeVsPinnacleP1": 0.0175,
+    "edgeVsPinnacleP2": -0.0175,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.689,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149164": {
+   "key": "12149164",
+   "date": "2026-07-25",
+   "p1": "L. van Assche",
+   "p2": "H. Gaston",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.5788,
+   "valueSnapshot": {
+    "fairP1": 0.5788,
+    "fairP2": 0.4212,
+    "edgeVsPinnacleP1": -0.0307,
+    "edgeVsPinnacleP2": 0.0307,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5788,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149222": {
+   "key": "12149222",
+   "date": "2026-07-25",
+   "p1": "A. Blockx",
+   "p2": "L. Darderi",
+   "surface": "clay",
+   "tour": "ATP Estoril",
+   "modelFairEntry": 0.4608,
+   "valueSnapshot": {
+    "fairP1": 0.4608,
+    "fairP2": 0.5392,
+    "edgeVsPinnacleP1": 0.0861,
+    "edgeVsPinnacleP2": -0.0861,
+    "ts": "2026-07-25T07:55:02.648Z"
+   },
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4608,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149294": {
+   "key": "12149294",
+   "date": "2026-07-26",
+   "p1": "A. Magadan",
+   "p2": "G. Johns",
+   "surface": "hard",
+   "tour": "ATP Los Cabos",
+   "modelFairEntry": 0.5431,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5431,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149295": {
+   "key": "12149295",
+   "date": "2026-07-26",
+   "p1": "M. Tobon",
+   "p2": "B. Tomic",
+   "surface": "hard",
+   "tour": "ATP Los Cabos",
+   "modelFairEntry": 0.1994,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1994,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  },
+  "12149299": {
+   "key": "12149299",
+   "date": "2026-07-26",
+   "p1": "B. Gojo",
+   "p2": "A. Mayo",
+   "surface": "hard",
+   "tour": "ATP Los Cabos",
+   "modelFairEntry": 0.9004,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-25T07:55:55.177Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.9004,
+   "lastSeen": "2026-07-25T07:55:55.177Z"
+  }
+ }
+}
