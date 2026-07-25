@@ -1669,6 +1669,9 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     day: computeDay(oddsEvent.commence_time),
     date: new Date(oddsEvent.commence_time).toISOString().slice(0, 10),
     time: new Date(oddsEvent.commence_time).toISOString().slice(11, 16),
+    // Full ISO start instant for the dashboard's State-2 display gate — one
+    // unambiguous UTC instant instead of reconstructing date + "T" + time.
+    startTs: new Date(oddsEvent.commence_time).toISOString(),
     p1: oddsEvent.home_team,
     p2: oddsEvent.away_team,
     tour: oddsEvent.sport_title,

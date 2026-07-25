@@ -3565,6 +3565,31 @@ function renderEdgeModel(id){
     return;
   }
 
+  // ── State-2-confirmed display gate (founder decision 2026-07-25) ──────────
+  // Members see the full model (fair price, value flags, edge vs Pinnacle/soft,
+  // movers, Bet Confirmation Stack) ONLY when the match is State-2 confirmed =
+  // a Pinnacle line exists (stage1.baseState.state === 2) AND the match is
+  // inside the 0–30h pre-start window. The engine keeps computing in every
+  // state; this gates the DISPLAY only, evaluated at render time against the
+  // live client clock so the 30h boundary never goes stale between the 15-min
+  // pipeline runs. The window is measured from scheduled match START, not from
+  // when the Pinnacle line first appeared.
+  //   • state 2 AND 0 < hoursToStart ≤ 30   → full output (fall through below)
+  //   • not confirmed, match not yet started → one muted "awaiting" label
+  //   • match already started (≤ 0h)         → one muted "Match in play." label
+  const gateState = e.stage1 && e.stage1.baseState && e.stage1.baseState.state;
+  const startTs = m && (m.startTs || (m.date && m.time ? `${m.date}T${m.time}:00Z` : null));
+  const hoursToStart = startTs ? (new Date(startTs).getTime() - Date.now()) / 3.6e6 : null;
+  const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
+  if (!stateConfirmed){
+    if (hoursToStart != null && hoursToStart <= 0){
+      body.innerHTML = edgeEmptyState(m, 'Match in play.');  // match started — muted label, no model output
+    } else {
+      body.innerHTML = edgeEmptyState(m, 'Awaiting confirmed market line.');
+    }
+    return;
+  }
+
   const mm = e.match || {};
   const st1 = e.stage1 || {};
   const st2 = e.stage2 || {};
