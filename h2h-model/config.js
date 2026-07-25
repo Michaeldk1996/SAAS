@@ -176,7 +176,29 @@ module.exports = {
     //    now uses. The live signal is sharper (recent, surface- and event-
     //    specific), so we override the fitted magnitude back up. See serve() in
     //    adjustments.js and the note in calibrate.js.
-    serve:          { id: 9,  maxMagnitude: 0.035, gated: false },
+    // 9. Serve strength — DYNAMIC magnitude (Layer #9 reprice, 2026-07-25).
+    //    effMag = surface base scale x altitude multiplier, then hard-capped at
+    //    `maxMagnitude` (the ceiling). Base scale by court-speed tier:
+    //    Fast(grass) 4pp / Medium(hard) 2.5pp / Slow(clay) 2pp. Altitude
+    //    amplifies serve (thinner air => faster ball, cheaper holds):
+    //      >=1500m x2.00, 800-1499m x1.60, 300-799m x1.25, <300m x1.00
+    //    read from the VERIFIED altitudeMeters table below (never a guess).
+    //    Per founder decision 2026-07-25 (Option C): the altitude multiplier
+    //    applies as designed, but the FINAL post-altitude magnitude is clamped
+    //    to maxMagnitude so e.g. Fast x2.0 (=8pp) can never dominate the model.
+    //    Thin surface samples (<surfaceMinM career matches on the match surface)
+    //    fall back to the player's universal (all-surface, format-bucket) serve
+    //    rating at a `universalPenalty` reliability factor. `maxMagnitude` is the
+    //    5pp ceiling used by the over-cap check.
+    serve:          { id: 9,  maxMagnitude: 0.05, gated: false,
+                      baseScalePP: { Fast: 0.04, Medium: 0.025, Slow: 0.02 },
+                      altitudeTiers: [
+                        { minM: 1500, mult: 2.00 },
+                        { minM: 800,  mult: 1.60 },
+                        { minM: 300,  mult: 1.25 },
+                        { minM: 0,    mult: 1.00 },
+                      ],
+                      surfaceMinM: 10, universalPenalty: 0.70 },
     // 10. Return / pressure — career return% + break% + return radar
     returnPressure: { id: 10, maxMagnitude: 0.02, gated: false },
     // 11. Fatigue — 14-day match/set load from recent form dates

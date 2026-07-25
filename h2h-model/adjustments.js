@@ -614,19 +614,85 @@ function winnerUE(ctx) {
 //    career-splits database (pipeline refreshes career + rolling last-52-weeks
 //    per surface weekly). last52 is weighted 0.6, career 0.4.
 // =========================================================================
+// --- Layer #9 serve-reprice helpers ---------------------------------------
+// Tournament altitude (metres) via the curated, VERIFIED config map (substring
+// match on the tournament name; never a guess — see config.altitudeMeters).
+function tournamentAltitude(name) {
+  if (!name) return null;
+  const n = String(name).toLowerCase();
+  const map = config.altitudeMeters || {};
+  for (const key in map) { if (n.includes(key)) return map[key]; }
+  return null;
+}
+
+// Surface base magnitude (probability points) by court-speed tier:
+// grass = Fast, hard = Medium, clay = Slow. Unknown surface -> Medium.
+function serveBaseMag(surfCat) {
+  const s = (config.adjustments.serve && config.adjustments.serve.baseScalePP) || {};
+  if (surfCat === 'Grass') return num(s.Fast) != null ? s.Fast : 0.04;
+  if (surfCat === 'Clay')  return num(s.Slow) != null ? s.Slow : 0.02;
+  return num(s.Medium) != null ? s.Medium : 0.025; // Hard + unknown surface
+}
+
+// Altitude multiplier from the tiered table (thinner air amplifies serve).
+// Tiers are ordered high->low; the first threshold the altitude clears wins.
+function serveAltitudeMult(alt) {
+  if (alt == null) return 1.0;
+  const tiers = (config.adjustments.serve && config.adjustments.serve.altitudeTiers) || [];
+  for (const t of tiers) { if (alt >= t.minM) return t.mult; }
+  return 1.0;
+}
+
 function serve(ctx) {
   const c = config.adjustments.serve;
-  const res = base(c.id, 'serve', 'Serve strength',
-    c.maxMagnitude, 'career-splits.json (career + last-52wk per surface)');
+  const CEIL = num(c.maxMagnitude) != null ? c.maxMagnitude : 0.05;
+  const res = base(c.id, 'serve', 'Serve strength', CEIL,
+    'career-splits.json (career + last-52wk per surface) + config.altitudeMeters');
   const surfCat = surfaceCategory(ctx.surface);
   const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
-  const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, serveRatingRow);
-  const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, serveRatingRow);
-  if (r1 == null || r2 == null) return res;
+
+  // Per-player serve rating: surface-specific when the surface sample is real
+  // (>= surfaceMinM career matches on THIS surface), otherwise the universal
+  // (all-surface, format-bucket) rating flagged for a reliability penalty.
+  const minM = num(c.surfaceMinM) != null ? c.surfaceMinM : 10;
+  function ratingFor(splits) {
+    if (!splits) return null;
+    const cs = surfCat && splits.career && splits.career[surfCat];
+    const sm = cs && num(cs.M) != null ? cs.M : 0;
+    if (surfCat && sm >= minM) {
+      const r = blendedRating(splits, surfCat, bucket, serveRatingRow);
+      if (r != null) return { rating: r, reliable: true };
+    }
+    const u = blendedRating(splits, null, bucket, serveRatingRow); // universal
+    if (u != null) return { rating: u, reliable: false };
+    return null;
+  }
+  const a = ratingFor(ctx.p1.splits), b = ratingFor(ctx.p2.splits);
+  if (!a || !b) return res;
+
+  // Dynamic magnitude = surface base scale x altitude multiplier, capped at CEIL.
+  const baseMag = serveBaseMag(surfCat);
+  const cspd = ctx.match.courtSpeed;
+  let alt = cspd && num(cspd.altitude) != null ? cspd.altitude : null;
+  if (alt == null) alt = tournamentAltitude(ctx.match && ctx.match.tour);
+  const altMult = serveAltitudeMult(alt);
+  const effMag = Math.min(CEIL, baseMag * altMult);
+  res.maxMagnitude = round4(effMag);
+
   // Serve ratings sit ~230-290; a 25-point gap is a decisive serving edge.
-  const signal = clamp((r1 - r2) / 25, -1, 1);
+  let signal = clamp((a.rating - b.rating) / 25, -1, 1);
+  // Reliability penalty when EITHER player is on the universal fallback rating.
+  const relDamp = (a.reliable && b.reliable)
+    ? 1.0 : (num(c.universalPenalty) != null ? c.universalPenalty : 0.70);
+  signal *= relDamp;
+
+  const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
+  const altPart = (alt != null && altMult > 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
+  const relPart = relDamp < 1.0 ? ', thin-surface x0.70' : '';
   return apply(res, signal, 'med',
-    `Serve rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} (${surfCat || bucket}, career+52wk).`);
+    `Serve rating ${a.rating.toFixed(1)} vs ${b.rating.toFixed(1)} ` +
+    `(${surfCat || bucket}; ${speed} base ${(baseMag * 100).toFixed(1)}pp${altPart}${relPart}; ` +
+    `mag ${(effMag * 100).toFixed(1)}pp).`);
 }
 
 // =========================================================================
