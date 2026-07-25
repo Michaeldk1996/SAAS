@@ -99,7 +99,7 @@ const fmtTs = (t)=>{ if(!t) return '—'; const d=new Date(t); return isNaN(d)?'
 const agoH = (t)=>{ if(!t) return null; const h=(Date.now()-new Date(t).getTime())/3.6e6; return isFinite(h)?h:null; };
 async function getJson(url){ const r=await fetch(url+'?cb='+Date.now()); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); }
 
-let DATA = { model:null, matches:null, health:null, harvest:null, errors:[] };
+let DATA = { model:null, matches:null, health:null, harvest:null, adminLog:null, errors:[] };
 
 async function boot(){
   const app = document.getElementById('app');
@@ -111,7 +111,7 @@ async function boot(){
     + '<section class="tab" id="tab4"></section>'
     + '<section class="tab" id="tab5"></section>';
   const tabs = [
-    ['tab1','1 · Live board'],['tab2','2 · Layer log'],['tab3','3 · Layer summary'],
+    ['tab1','1 · Live board'],['tab2','2 · Performance log'],['tab3','3 · Summary'],
     ['tab4','4 · Value-flag history'],['tab5','5 · Model state'],
   ];
   const nav = document.getElementById('tabs');
@@ -131,14 +131,21 @@ async function boot(){
   ]);
   DATA.model=model; DATA.matches=matches; DATA.health=health;
   DATA.harvest = await getJson('./atp-entry-harvest-state.json').catch(()=>null); // not exposed => null
+  // admin-log.json is built + committed every pipeline run but is not in the
+  // _site copy list, so ./admin-log.json 404s on Pages. Fall back to the raw
+  // GitHub URL (repo is public, serves with CORS *) so Section 4 renders now.
+  // If a future pipeline change publishes it to _site, the same-origin path wins.
+  DATA.adminLog = await getJson('./admin-log.json')
+    .catch(()=>getJson('https://raw.githubusercontent.com/Michaeldk1996/SAAS/main/admin-log.json'))
+    .catch(()=>null);
 
   document.getElementById('topmeta').innerHTML =
     'model generated ' + esc(fmtTs(model&&model.generatedAt)) + ' · pipeline last-success ' + esc(fmtTs(health&&health.lastSuccess));
 
   renderSection1();
-  renderStub('tab2','Section 2 — Layer performance log','Requires the append-only <code>admin-log.json</code>, which depends on the <code>valueSnapshot</code> field being written in the pipeline. Building after that field is confirmed live (per founder sequencing).');
-  renderStub('tab3','Section 3 — Layer performance summary','Aggregates over <code>admin-log.json</code> (Section 2). Same dependency.');
-  renderStub('tab4','Section 4 — Value-flag history','Reads frozen <code>valueSnapshot</code> per flagged match. Building after the field lands in the pipeline.');
+  renderSection2();
+  renderSection3();
+  renderSection4();
   renderSection5();
 }
 
@@ -325,6 +332,81 @@ function renderSection5(){
 }
 
 function coverageBar(n,d){ const p=Math.round(100*n/(d||1)); const col=p>=80?'var(--good)':p>=40?'var(--warn)':'var(--bad)'; return '<div class="barwrap"><div class="bar" style="width:'+p+'%;background:'+col+'"></div></div>'; }
+
+// ---- Sections 2/3/4: value-flag ledger (admin-log.json) -----------------
+// admin-log.json = { schema, updated, runs:[{ts,run,priced,logged,flagged,
+// newlyLogged,newlyFrozen}], flags:{ id:{ p1,p2,date,surface,tour,status,
+// finalScore, valueSnapshot:{fairP1,fairP2,edgeVsPinnacleP1,edgeVsPinnacleP2,ts} }}}.
+// The frozen valueSnapshot is written once, on a match's first State-2 entry.
+function flagList(){ const al=DATA.adminLog; return (al&&al.flags)?Object.values(al.flags):[]; }
+// The flagged (value) side is the one with the positive frozen edge vs Pinnacle.
+function valueSide(f){ const vs=f.valueSnapshot||{}; const e1=vs.edgeVsPinnacleP1,e2=vs.edgeVsPinnacleP2;
+  if(e1==null&&e2==null) return null; return (e1==null?-9:e1)>=(e2==null?-9:e2)?'p1':'p2'; }
+function valueEdge(f){ const vs=f.valueSnapshot||{}; const s=valueSide(f); return s?(s==='p1'?vs.edgeVsPinnacleP1:vs.edgeVsPinnacleP2):null; }
+function valueFair(f){ const vs=f.valueSnapshot||{}; const s=valueSide(f); return s?(s==='p1'?vs.fairP1:vs.fairP2):null; }
+function avg(xs){ const a=xs.filter(x=>x!=null&&isFinite(x)); return a.length?a.reduce((p,c)=>p+c,0)/a.length:null; }
+// admin-log.json is committed to the repo but is NOT in the pipeline's _site copy
+// list, so it 404s on Pages. Exposing it publishes internal performance + value
+// history at a public URL — a founder decision, flagged not done silently (same
+// convention as the @ATP_Entry harvest block in Section 5).
+function adminLogStub(tabId,title){
+  document.getElementById(tabId).innerHTML='<div class="card"><div class="hd"><div class="title">'+title+'</div><div><span class="pill warn">data not published</span></div></div><div class="body always"><div class="stub"><code>admin-log.json</code> is built every pipeline run and committed to the repo, but it is <b>not in the <code>_site</code> copy list</b>, so it 404s on Pages and this section has no data. Publishing it exposes internal model performance + value-flag history at a public URL — a deliberate choice, flagged for the founder rather than done silently. Approve it (add <code>cp admin-log.json _site/</code> to pipeline.yml) and this section renders automatically.</div></div></div>';
+}
+
+// ---- Section 2: pipeline performance log --------------------------------
+function renderSection2(){
+  const al=DATA.adminLog; if(!al) return adminLogStub('tab2','Section 2 — Performance log');
+  const runs=(al.runs||[]).slice().reverse();       // newest first
+  const latest=runs[0]||{};
+  let h='<div class="card open"><div class="hd"><div class="title">Pipeline performance log</div><div class="sub">'+runs.length+' run'+(runs.length===1?'':'s')+' logged · updated '+esc(fmtTs(al.updated))+'</div></div><div class="body">';
+  h+='<div class="grid">'+kv('Latest run','<span class="mono">'+esc(latest.run||'—')+'</span> <span class="detail">'+esc(fmtTs(latest.ts))+'</span>')
+    +kv('Priced',esc(latest.priced))+kv('Logged',esc(latest.logged))+kv('Flagged',esc(latest.flagged))+kv('Newly frozen',esc(latest.newlyFrozen))+'</div>';
+  h+='<table><thead><tr><th>Run</th><th>Time</th><th class="num">Priced</th><th class="num">Logged</th><th class="num">Flagged</th><th class="num">New log</th><th class="num">New frozen</th></tr></thead><tbody>';
+  h+=runs.map(r=>'<tr><td class="mono">'+esc(r.run)+'</td><td>'+esc(fmtTs(r.ts))+'</td><td class="num">'+esc(r.priced)+'</td><td class="num">'+esc(r.logged)+'</td><td class="num">'+esc(r.flagged)+'</td><td class="num">'+esc(r.newlyLogged)+'</td><td class="num">'+esc(r.newlyFrozen)+'</td></tr>').join('')||'<tr><td colspan="7" class="detail">No runs logged yet.</td></tr>';
+  h+='</tbody></table></div></div>';
+  document.getElementById('tab2').innerHTML=h;
+}
+
+// ---- Section 3: value-flag performance summary --------------------------
+function renderSection3(){
+  const al=DATA.adminLog; if(!al) return adminLogStub('tab3','Section 3 — Summary');
+  const flags=flagList();
+  const settled=flags.filter(f=>f.status==='finished');
+  const pending=flags.filter(f=>f.status!=='finished');
+  const avgEdge=avg(flags.map(valueEdge));
+  const bySurf={}; flags.forEach(f=>{const s=f.surface||'—';(bySurf[s]=bySurf[s]||[]).push(f);});
+  const surfRows=Object.keys(bySurf).sort().map(s=>{const g=bySurf[s];
+    return '<tr><td>'+esc(s)+'</td><td class="num">'+g.length+'</td><td class="num">'+g.filter(f=>f.status==='finished').length+'</td><td class="num">'+pp(avg(g.map(valueEdge)))+'</td></tr>';}).join('')||'<tr><td colspan="4" class="detail">No flags yet.</td></tr>';
+  let h='<div class="card open"><div class="hd"><div class="title">Value-flag performance summary</div><div class="sub">'+flags.length+' flag'+(flags.length===1?'':'s')+' tracked</div></div><div class="body">';
+  h+='<div class="grid">'+kv('Flags tracked',flags.length)
+    +kv('Settled / pending','<span class="pos">'+settled.length+'</span> / <span class="detail">'+pending.length+'</span>')
+    +kv('Avg edge vs Pinnacle',pp(avgEdge)+' <span class="detail">value side, frozen</span>')+'</div>';
+  h+='<table><thead><tr><th>Surface</th><th class="num">Flags</th><th class="num">Settled</th><th class="num">Avg edge</th></tr></thead><tbody>'+surfRows+'</tbody></table>';
+  h+='<div class="detail" style="margin-top:8px">Realized hit-rate / CLV / ROI are intentionally not shown: <code>admin-log.json</code> carries no per-flag <code>winner</code> field, and inferring it from <code>finalScore</code> strings (retirements, walkovers) would be unreliable. Wiring a winner into <code>build-admin-log.js</code> is the clean follow-up that unlocks realized performance here — flagged, not faked.</div>';
+  h+='</div></div>';
+  document.getElementById('tab3').innerHTML=h;
+}
+
+// ---- Section 4: value-flag history --------------------------------------
+function renderSection4(){
+  const al=DATA.adminLog; if(!al) return adminLogStub('tab4','Section 4 — Value-flag history');
+  const flags=flagList().slice().sort((a,b)=>String(b.firstSeen||b.date||'').localeCompare(String(a.firstSeen||a.date||'')));
+  let h='<div class="card open"><div class="hd"><div class="title">Value-flag history</div><div class="sub">'+flags.length+' flag'+(flags.length===1?'':'s')+' · frozen valueSnapshot per match</div></div><div class="body">';
+  if(!flags.length){ h+='<div class="stub">No value flags logged yet.</div>'; }
+  else {
+    h+='<table><thead><tr><th>Date</th><th>Match</th><th>Surface</th><th>Value on</th><th class="num">Model fair</th><th class="num">Edge vs Pinn</th><th>Status</th><th>Score</th></tr></thead><tbody>';
+    h+=flags.map(f=>{
+      const side=valueSide(f);
+      const sidePill=side==='p1'?'<span class="pill p1">'+esc(f.p1)+'</span>':side==='p2'?'<span class="pill p2">'+esc(f.p2)+'</span>':'—';
+      const st=f.status==='finished'?'<span class="pill good">finished</span>':'<span class="pill dim">'+esc(f.status||'pending')+'</span>';
+      const e=valueEdge(f);
+      return '<tr><td>'+esc(f.date)+'</td><td>'+esc(f.p1)+' vs '+esc(f.p2)+' <span class="detail">'+esc(f.tour||'')+'</span></td><td>'+esc(f.surface)+'</td><td>'+sidePill+'</td><td class="num">'+pct(valueFair(f))+'</td><td class="num '+((e||0)>0?'pos':(e||0)<0?'neg':'')+'">'+pp(e)+'</td><td>'+st+'</td><td class="mono">'+esc(f.finalScore||'—')+'</td></tr>';
+    }).join('');
+    h+='</tbody></table>';
+  }
+  h+='</div></div>';
+  document.getElementById('tab4').innerHTML=h;
+}
 
 function renderStub(tabId,title,note){
   document.getElementById(tabId).innerHTML='<div class="card"><div class="hd"><div class="title">'+title+'</div><div><span class="pill dim">pending valueSnapshot</span></div></div><div class="body always"><div class="stub">'+note+'</div></div></div>';
