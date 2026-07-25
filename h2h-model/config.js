@@ -140,11 +140,29 @@ module.exports = {
     // 6. [REMOVED in Model v2.0] Round / stage performance — deleted per the
     //    Stennisfy v2.0 rebuild (Step 1). Layer id 6 is retired; the id is not
     //    reused so historical output remains comparable.
-    // 7. Quality-adjusted recent form — top-50 form vs overall form + top-20
-    //    wins on this surface. Uses opponent CURRENT rank resolved via
-    //    player-profiles (proxy for match-day rank).
-    qualityForm:    { id: 7,  maxMagnitude: 0.04, gated: false,
-                      signal2Weight: 0.30 },  // secondary "big wins on surface" weight
+    // 7. Quality-adjusted CAREER form (v2.0 rebuild) — pure career signal, no
+    //    overlap with recent-form (#5). Reads the career-splits `q7` block
+    //    (opponent rank AT MATCH TIME, recency-bucketed).
+    //    Signal A (60%): each player's career win% vs top-50 opponents MINUS
+    //      their overall career win% (does he raise or fold vs elite?); layer =
+    //      difference of the two players' deviations.
+    //    Signal B (40%): each player's top-50 win% ON THIS SURFACE minus their
+    //      overall top-50 win% (surface-specific quality ceiling); layer =
+    //      difference of the two players' deviations.
+    //    Recency weights are applied to the win-rate numerator/denominator;
+    //    each signal is independently sample-damped by its own top-50 match
+    //    count (A: career top-50; B: surface top-50, M>=surfaceFloorM to fire).
+    qualityForm:    { id: 7,  maxMagnitude: 0.03, gated: false,
+                      weightA: 0.6, weightB: 0.4,
+                      recencyWeights: [1.0, 0.7, 0.4], // eras: <=2yr / 2-4yr / 4yr+
+                      // sample-size dampening on each signal's magnitude, by that
+                      // signal's top-50 match count. Below the smallest tier the
+                      // signal is zeroed (near-zero + flagged) per spec.
+                      dampTiers: [[50, 1.0], [25, 0.7], [10, 0.4]],
+                      surfaceFloorM: 10,   // min surface top-50 matches for Signal B
+                      // maps a combined damped deviation-difference to [-1,1];
+                      // a 0.30 (30pp) net gap reaches the full 3pp cap.
+                      signalScale: 0.30 },
     // 8. W/UE ratio — archetype-relative W/UE over-performance (profile.wue ×
     //    MCP archetype baseline). Fires per-match whenever BOTH players carry an
     //    aggregated W/UE (api-tennis primary, @ATP_Entry OCR fallback); self-hides
