@@ -2128,11 +2128,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "4 - 3",
-    "liveServer": "p2",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1895_a-bublik.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -2870,7 +2870,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "4-6, 6-7(6)",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "upcoming-12149164",
@@ -86990,11 +87005,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1882_j-mccabe.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3319_a-bolt.jpg",
     "oddsMovement": {
@@ -87196,7 +87217,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149277",
@@ -93916,11 +93940,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/798_a-dougaz.jpg",
     "oddsMovement": {
@@ -94362,7 +94392,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149282",
