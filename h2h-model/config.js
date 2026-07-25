@@ -241,21 +241,31 @@ module.exports = {
     //                          player-profiles). NOTE: the founder gave no age
     //                          curve, so these are honest CALIBRATION PLACEHOLDERS
     //                          flagged for his review, like every other weight here.
-    //     Unit-gap -> pp bands (founder spec): <2u => 0, 2-4u => 1.0pp,
-    //     4-7u => 1.5pp, >=7u => 2.5pp (the maxMagnitude ceiling). Because the pp
-    //     is chosen by band and never exceeds maxMagnitude, the layer is
-    //     over-cap-proof by construction.
+    //     Unit-gap -> pp bands (founder Option-C recalibration 2026-07-25,
+    //     "widen-A"): <3u => 0, 3-6u => 1.0pp, 6-15u => 1.5pp, >=15u => 2.5pp
+    //     (the maxMagnitude ceiling). The cap was moved from >=7u to >=15u and the
+    //     clay/turnaround multipliers were trimmed (1.40 -> 1.25 / 1.20) so a
+    //     clay-heavy board resolves mild/moderate/severe instead of saturating.
+    //     Because the pp is chosen by band and never exceeds maxMagnitude, the
+    //     layer is over-cap-proof by construction.
     fatigue:        { id: 11, maxMagnitude: 0.025, gated: false,
                       windowDays: 10,
-                      surfaceMult: { Clay: 1.40, Hard: 1.00, Grass: 0.75 },
-                      shortTurnaround: { minMatches: 4, restDaysThresh: 1, mult: 1.40 },
+                      // Recalibration TEN-8 2026-07-25 (founder Option C): reduced
+                      // clay + turnaround multipliers so a clay-heavy board no longer
+                      // saturates the cap, paired with the "widen-A" bands below.
+                      surfaceMult: { Clay: 1.25, Hard: 1.00, Grass: 0.75 },
+                      shortTurnaround: { minMatches: 4, restDaysThresh: 1, mult: 1.20 },
                       surfaceChangeMult: 1.20,
                       travelMult: 1.25,
                       travelTzGapH: 7,      // intercontinental = UTC-offset gap >= 7h
                       // older = slower recovery. PLACEHOLDER curve (founder to tune).
                       ageRecovery: [[33, 1.15], [30, 1.08], [0, 1.00]],
                       // net (surface-scaled) unit-gap -> pp. Ordered high-first.
-                      unitBands: [[7, 0.025], [4, 0.015], [2, 0.010]] },
+                      // "widen-A" recalibration: 2.5pp cap now requires a >=15u gap
+                      // (was 7u) so the ceiling is reserved for genuinely severe
+                      // differentials; 1.5pp at >=6u, 1.0pp at >=3u give a real
+                      // mild/moderate/severe spread instead of everything at the cap.
+                      unitBands: [[15, 0.025], [6, 0.015], [3, 0.010]] },
     // 12. Weather / conditions — heat & wind vs style
     weather:        { id: 12, maxMagnitude: 0.03, gated: false },
     // 13. Format split — Bo5 ONLY (TEN-8 reduced-scope build, founder spec
