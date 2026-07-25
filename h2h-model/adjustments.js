@@ -835,23 +835,40 @@ function weather(ctx) {
 // =========================================================================
 // 13. FORMAT SPLIT — Bo3 vs Bo5 (format-preference relative to other format)
 // =========================================================================
+// Bo5 ONLY (founder spec TEN-8 2026-07-25). A Bo3 match outputs zero — the
+// layer speaks only to Grand-Slam best-of-5. Per player it scores Bo5 OVER/UNDER-
+// performance = career Bo5 win% minus a career Bo3 (normal-format) baseline,
+// sample-damped by the player's Bo5 match count. The layer signal is the
+// DIFFERENCE of the two players' damped over-performance, so a tour-wide Bo5
+// effect (Bo5 is Slams-only => tougher fields => a systematic win% drop) cancels
+// in the head-to-head, and "both good / both bad nearly cancels" falls out for
+// free. maxMagnitude 2.5pp.
+// HONEST LIMITS (flagged for founder review): (1) "Expected Bo5 rate from Elo"
+// is NOT computable — career-splits stores aggregate win% only, no per-match
+// opponent Elo — so the Bo3 career win% stands in as the baseline; (2) a
+// "vs top-50" comparison is not built (career-splits carries a "vs. Top 10"
+// bucket, not top-50).
 function formatSplit(ctx) {
   const c = config.adjustments.formatSplit;
-  const res = base(c.id, 'formatSplit', 'Format split (Bo3/Bo5)', c.maxMagnitude, 'career-splits.json');
-  const thisFmt = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
-  const otherFmt = ctx.bestOf === 5 ? 'Best of 3' : 'Best of 5';
-  function fmtEdge(p) {
-    const a = careerCat(p.splits, thisFmt), b = careerCat(p.splits, otherFmt);
-    if (!a || !b) return null;
-    if ((a.M || 0) < 10 || (b.M || 0) < 10) return null; // need samples in both
-    if (num(a.winPct) == null || num(b.winPct) == null) return null;
-    return a.winPct - b.winPct; // better at THIS format than the other
+  const res = base(c.id, 'formatSplit', 'Format split (Bo5)', c.maxMagnitude, 'career-splits.json');
+  if (ctx.bestOf !== 5) { res.detail = 'Bo3 match — format split applies to Bo5 (Grand Slams) only.'; return res; }
+  function perf(p) {
+    const career = p.splits && p.splits.career;
+    const c5 = career && career['Best of 5'];
+    const c3 = career && career['Best of 3'];
+    if (!c5 || (c5.M || 0) < c.minM || num(c5.winPct) == null) return null; // hidden below Bo5 floor
+    if (!c3 || num(c3.winPct) == null) return null;                          // need a Bo3 baseline
+    let damp = 0;
+    for (const [minM, d] of c.dampTiers) { if ((c5.M || 0) >= minM) { damp = d; break; } }
+    const over = c5.winPct - c3.winPct;
+    return { raw: c5.winPct, base: c3.winPct, over, M: c5.M, damp, val: over * damp };
   }
-  const e1 = fmtEdge(ctx.p1), e2 = fmtEdge(ctx.p2);
-  if (e1 == null || e2 == null) { res.detail = 'Insufficient Bo3/Bo5 sample.'; return res; }
-  const signal = clamp((e1 - e2) / 30, -1, 1);
-  return apply(res, signal, 'low',
-    `${thisFmt} edge: ${fmtPct(e1)} vs ${fmtPct(e2)}.`);
+  const a = perf(ctx.p1), b = perf(ctx.p2);
+  res.formatSplit = { p1: a, p2: b };  // exposed for the validation harness
+  if (!a || !b) { res.detail = `Insufficient Bo5 sample (need ${c.minM}+ Bo5 matches both sides).`; return res; }
+  const signal = clamp((a.val - b.val) / c.signalScale, -1, 1);
+  const desc = (l) => `${Math.round(l.raw * 10) / 10}%-${Math.round(l.base * 10) / 10}%=${fmtPct(l.over)} (M${l.M}, x${l.damp})`;
+  return apply(res, signal, 'low', `Bo5 vs Bo3 baseline: ${desc(a)} vs ${desc(b)}.`);
 }
 
 // =========================================================================

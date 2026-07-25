@@ -205,8 +205,21 @@ module.exports = {
     fatigue:        { id: 11, maxMagnitude: 0.02, gated: false },
     // 12. Weather / conditions — heat & wind vs style
     weather:        { id: 12, maxMagnitude: 0.03, gated: false },
-    // 13. Format split — Bo3 vs Bo5 career win%
-    formatSplit:    { id: 13, maxMagnitude: 0.03, gated: false },
+    // 13. Format split — Bo5 ONLY (TEN-8 reduced-scope build, founder spec
+    //     2026-07-25). Bo3 outputs zero. Per player: career Bo5 win% minus a
+    //     career Bo3 baseline, sample-damped by Bo5 match count; the layer signal
+    //     is the DIFFERENCE of the two players' damped over-performance (so both
+    //     good / both bad nearly cancels, and the Slams-only field confound
+    //     cancels in the head-to-head). Dampening tiers by Bo5 M: <10 hidden,
+    //     10-19 x0.40, 20-29 x0.70, 30+ full. signalScale = net damped
+    //     over-performance gap (pp) that reaches the full 2.5pp cap. maxMagnitude
+    //     2.5pp. Elo-expected baseline is not built (no per-match opponent Elo in
+    //     career-splits) — Bo3 career win% is the honest stand-in; see formatSplit()
+    //     in adjustments.js for the flagged limits.
+    formatSplit:    { id: 13, maxMagnitude: 0.025, gated: false,
+                      minM: 10,
+                      dampTiers: [[30, 1.00], [20, 0.70], [10, 0.40]],
+                      signalScale: 25 },
     // 14. [REMOVED in Model v2.0] Court speed / altitude — deleted per the
     //    Stennisfy v2.0 rebuild (Step 1). Layer id 14 is retired (id not reused).
     //    The court-speed DATA field (m.courtSpeed) and its dashboard environment
