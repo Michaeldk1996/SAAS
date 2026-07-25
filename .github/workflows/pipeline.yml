@@ -135,6 +135,7 @@ jobs:
           # it under that name too, not just as index.html.
           cp bsp-consult-dashboard.html _site/bsp-consult-dashboard.html
           cp auth.html account.html funnel.html verify.html auth.js analytics.js _site/
+          cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
           # Tennis Edge Model output (h2h-model engine + pre-baked AI summary),
