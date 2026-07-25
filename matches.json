@@ -87006,14 +87006,8 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 1
-      }
-    ],
+    "liveStatus": "Set 2",
+    "liveScore": null,
     "liveGameScore": "0 - 15",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1882_j-mccabe.jpg",
@@ -92196,11 +92190,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "30 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2986_z-svajda.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1087_s-kozlov.jpg",
     "oddsMovement": {
@@ -92280,7 +92280,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149281",
@@ -93941,16 +93944,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p2",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/798_a-dougaz.jpg",
     "oddsMovement": {
