@@ -206,16 +206,25 @@ module.exports = {
                       // tournament-progression.json (api-tennis per-round
                       // 1st-in / 1st-won / 2nd-won %), already produced for the
                       // Progression tab and already in ctx — no new feed call.
-                      // Only those 3 OBSERVED serve components are re-priced; a
-                      // single event's stat sheets don't carry hold%/ace%/df%, so
-                      // those stay at the season blend (they cancel in the delta,
-                      // keeping the rating on the full serveRatingRow scale). The
-                      // re-price is a bounded nudge = weight x (this-event 3-comp
-                      // avg − same-scope season 3-comp blend), clamped to
-                      // maxDeltaPP rating points so one hot/cold round can't
-                      // dominate; signal & magnitude clamps downstream are
-                      // unchanged, so the 5pp ceiling still holds.
-                      inTournament: { weight: 0.5, minRounds: 1, maxDeltaPP: 20 } },
+                      // Upgraded 2026-07-26 (founder): a single event's stat sheets
+                      // DO carry hold%/ace%/df% — confirmed live on the api-tennis
+                      // per-match sheet (Games/Service games won is a native
+                      // won/total; Aces / Double Faults are counts over Points/
+                      // Service Points Won). So all SIX serve components now re-price
+                      // in-tournament (the mirror of the Layer #10 return tier),
+                      // not just 1st-in/1st-won/2nd-won. The original three keep
+                      // their combined deviation; the three added components are
+                      // each event-aggregate-vs-season-baseline, per-component
+                      // min-sample-gated (hold on service games, ace/df on service
+                      // points — the fabrication guard) then clamped to
+                      // perComponentCap. The combined nudge clamps to maxDeltaPP
+                      // rating points so one hot/cold round can't dominate; signal &
+                      // magnitude clamps downstream are unchanged (5pp ceiling holds).
+                      // When progression carries none of the new counts (pre-harvest
+                      // snapshot) the tier reduces EXACTLY to the prior 3-comp nudge.
+                      inTournament: { weight: 0.5, minRounds: 1, maxDeltaPP: 20,
+                                      perComponentCap: 4,
+                                      minSample: { hold: 8, ace: 40, df: 40 } } },
     // 10. Return / pressure — career return-points-won% + break% (+ break-point
     //    conversion% WHERE the splits row carries it; dormant today because
     //    career-splits.json has no BP-conversion field, and the only live source

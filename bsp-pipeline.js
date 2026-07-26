@@ -2133,6 +2133,29 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
     : null;
   const totalPointsPlayed = totalPoints && totalPoints.stat_total > 0 ? totalPoints.stat_total : null;
+  // Raw serve counts for the Layer #9 in-tournament serve tier's three
+  // now-observable components (hold% / ace% / df%). Confirmed live on the
+  // api-tennis per-match sheet: `Games:Service games won` carries a real
+  // won/total pair (the serve mirror of `Games:Return games won`), and
+  // `Points:Service Points Won` gives the service-point denominator that
+  // turns the raw Aces / Double Faults counts into rates. We store raw
+  // {won,total} / counts (not derived pcts) so the model can sum denominators
+  // across the event's rounds and enforce its own min-sample — never presenting
+  // a small-denominator rate as fact.
+  const rawWonTotal = (type, name) => {
+    const s = findMatchStat(matchStats, playerKey, type, name);
+    if (!s) return null;
+    const won = parseInt(s.stat_won, 10);
+    const total = parseInt(s.stat_total, 10);
+    return (Number.isFinite(won) && Number.isFinite(total) && total > 0) ? { won, total } : null;
+  };
+  const rawCount = (type, name) => {
+    const s = findMatchStat(matchStats, playerKey, type, name);
+    if (!s) return null;
+    const v = parseInt(s.stat_value, 10);
+    return Number.isFinite(v) ? v : null;
+  };
+  const svPtsRow = rawWonTotal('Points', 'Service Points Won');   // service points played = its total
   return {
     firstServePct: metrics.firstServePct,
     firstServeWonPct: metrics.firstServeWonPct,
@@ -2146,6 +2169,14 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     // feed's own won/total, so it needs no winners/UE data (which this feed is
     // routinely missing) and is populated for every match that has a stat sheet.
     totalPointsWonPct: metrics.totalPointsWonPct,
+    // Serve-side raw counts (kept so the Layer #9 in-tournament serve tier can sum
+    // denominators across rounds and enforce min-sample — never a small-denominator
+    // rate as fact). svHold is a native won/total; aces/dfs are counts denominated
+    // by svPts (service points played) exactly as the season aPct/dfPct baselines are.
+    svHold: rawWonTotal('Games', 'Service games won'),   // Games / Service games won (hold%)
+    aces: rawCount('Service', 'Aces'),                   // Service / Aces (count)
+    dfs: rawCount('Service', 'Double Faults'),           // Service / Double Faults (count)
+    svPts: svPtsRow ? svPtsRow.total : null,             // Points / Service Points Won -> service points played (ace%/df% denominator)
     // Provenance of the winners/UE-derived metrics: 'api-tennis', 'ATP_Entry_OCR',
     // or null (neither source had W/UE — those three metrics stay null).
     wueSource,
