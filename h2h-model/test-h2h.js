@@ -170,5 +170,39 @@ const twoR=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServ
 const avg=inTournamentServeDelta(progCtx(twoR), pObj, splits,'Clay','Best of 3');
 ok('averages across completed rounds (n=2, avg 180)', avg && avg.n===2 && avg.itShared===180, avg);
 
+// Backward compatibility: with NO hold/ace/df counts in progression (today's
+// snapshot), the three new components self-hide and the tier reduces EXACTLY to
+// the prior 3-comp nudge.
+ok('no new components without serve counts', hot.components===0 && near(hot.nudge, SITC.weight*(200-180.4)), hot);
+
+// -------- upgraded 6-component serve tier (hold% / ace% / df%) --------
+// Season baselines now include hldPct/aPct/dfPct. Blends (0.6*last52+0.4*career):
+// hold 0.6*80+0.4*75=78 ; ace 0.6*8+0.4*6=7.2 ; df 0.6*4+0.4*5=4.4 ; shared 180.4.
+const splits6 = {
+  last52:{ Clay:{firstInPct:60,firstWonPct:72,secondWonPct:52, hldPct:80, aPct:8, dfPct:4} },
+  career:{ Clay:{firstInPct:55,firstWonPct:70,secondWonPct:50, hldPct:75, aPct:6, dfPct:5} },
+};
+// One round: hot serve (shared 200), strong hold (9/10=90), high ace (10/100=10%),
+// low df (2/100=2%). base3 = 0.5*(200-180.4)=9.8.
+const r6=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
+          svHold:{won:9,total:10}, aces:10, dfs:2, svPts:100}}];
+const full=inTournamentServeDelta(progCtx(r6), pObj, splits6,'Clay','Best of 3');
+ok('all three new components fire', full && full.components===3 && full.used.join(',')==='hold,ace,df', full);
+// hold dev +12 -> 0.5*12=6 capped to perComponentCap 4 ; ace 0.5*(10-7.2)=1.4 ;
+// df sign: 0.5*(-1)*(2-4.4)=+1.2 (lower df than season => serve better) => compSum 6.6.
+ok('6-comp nudge = base3 + capped components', full && near(full.nudge, 9.8 + 4 + 1.4 + 1.2), full && full.nudge);
+ok('per-component cap bounds hold', full && /hold .* \+4\.00/.test(full.cdetail), full && full.cdetail);
+// df polarity: a round with HIGH df must nudge the rating DOWN vs the low-df round.
+const rHiDf=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
+             svHold:{won:9,total:10}, aces:10, dfs:8, svPts:100}}];
+const hiDf=inTournamentServeDelta(progCtx(rHiDf), pObj, splits6,'Clay','Best of 3');
+ok('higher df% lowers the serve nudge', hiDf && hiDf.nudge < full.nudge, {full:full&&full.nudge, hiDf:hiDf&&hiDf.nudge});
+// Fabrication guard: counts below the min-sample floors self-hide (no rate from
+// too few chances) => components 0, nudge falls back to base3 only.
+const rThin=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
+             svHold:{won:4,total:5}, aces:2, dfs:1, svPts:30}}];
+const thin=inTournamentServeDelta(progCtx(rThin), pObj, splits6,'Clay','Best of 3');
+ok('below-floor serve counts self-hide (fabrication guard)', thin && thin.components===0 && near(thin.nudge, 9.8), thin);
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

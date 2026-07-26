@@ -152,6 +152,23 @@ function serveSharedRow(row) {
 // carries ONLY finished rounds, so every row is strictly earlier than the
 // upcoming match being priced (no leakage), and a player with no finished rounds
 // yet (R1) yields null => the tier self-hides and serve falls back to season.
+// The three serve components a single-event stat sheet ALSO carries — confirmed
+// live on the api-tennis per-match sheet 2026-07-26 (`Games:Service games won`
+// = a native won/total hold%, and Aces / Double Faults counts denominated by
+// `Points:Service Points Won`), disproving the earlier assumption that a single
+// event sheet lacks hold%/ace%/df%. Added to the original three (1st-in/1st-won/
+// 2nd-won) so the in-tournament serve tier is a COMPLETE re-price rather than one
+// that holds hold%/ace%/df% at the season blend. Each is an event-aggregate-vs-
+// season-baseline pair, per-component min-sample-gated + clamped (the fabrication
+// guard: a rate is never computed from too few chances). `sign` carries the
+// serveRatingRow polarity — hold% and ace% RAISE the rating, double-fault% LOWERS
+// it, so a hotter-than-season df% nudges the serve rating DOWN.
+const SERVE_IT_COMPONENTS = [
+  { name: 'hold', row: (r) => r && num(r.hldPct), sign: 1,  minKey: 'hold', minDef: 8  }, // Games/Service games won -> hldPct
+  { name: 'ace',  row: (r) => r && num(r.aPct),   sign: 1,  minKey: 'ace',  minDef: 40 }, // Aces / service points   -> aPct
+  { name: 'df',   row: (r) => r && num(r.dfPct),  sign: -1, minKey: 'df',   minDef: 40 }, // Double Faults / svc pts  -> dfPct
+];
+
 function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   const cfg = config.adjustments.serve && config.adjustments.serve.inTournament;
   if (!cfg || !playerObj || !splits) return null;
@@ -164,22 +181,62 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   const pRow = t.players.find(pp => pp && String(pp.playerKey) === key);
   if (!pRow || !Array.isArray(pRow.rounds)) return null;
   let fi = 0, fw = 0, sw = 0, n = 0;
+  // New-component numerator/denominator sums across the event's finished rounds.
+  // hold sums its own {won,total}; ace/df sum their raw counts over the service-
+  // point denominator (svPts) — mirroring the season aPct/dfPct = aces|dfs / pts.
+  const agg = { hold: { won: 0, total: 0 }, ace: { won: 0, total: 0 }, df: { won: 0, total: 0 } };
   for (const r of pRow.rounds) {
     const met = r && r.metrics;
     if (!met) continue;
     const a = num(met.firstServePct), b = num(met.firstServeWonPct), c2 = num(met.secondServeWonPct);
     if (a == null || b == null || c2 == null) continue;
     fi += a; fw += b; sw += c2; n++;
+    const h = met.svHold;
+    if (h && Number.isFinite(h.won) && Number.isFinite(h.total) && h.total > 0) {
+      agg.hold.won += h.won; agg.hold.total += h.total;
+    }
+    const sp = num(met.svPts);
+    if (sp != null && sp > 0) {
+      if (Number.isFinite(met.aces)) { agg.ace.won += met.aces; agg.ace.total += sp; }
+      if (Number.isFinite(met.dfs))  { agg.df.won  += met.dfs;  agg.df.total  += sp; }
+    }
   }
   const minR = num(cfg.minRounds) != null ? cfg.minRounds : 1;
   if (n < minR) return null;
-  const itShared = (fi + fw + sw) / n;                 // this-event 3-comp avg
+  const itShared = (fi + fw + sw) / n;                 // this-event original 3-comp avg
   const seasonShared = blendedRating(splits, surfCat, bucket, serveSharedRow);
   if (seasonShared == null) return null;                // no season baseline to deviate from
   const w = num(cfg.weight) != null ? cfg.weight : 0.5;
   const cap = num(cfg.maxDeltaPP) != null ? cfg.maxDeltaPP : 20;
-  const nudge = clamp(w * (itShared - seasonShared), -cap, cap);
-  return { nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared) };
+  // Original three components, unchanged: their combined deviation (kept UNclamped
+  // here so it composes with the new components under one total clamp below).
+  const base3 = w * (itShared - seasonShared);
+  // The three now-observable components, each gated + per-component-clamped. When
+  // progression carries none of them (today's snapshot, pre-re-harvest), compSum
+  // is 0 and the tier reduces EXACTLY to the original clamp(base3) — backward
+  // compatible; the components fold in the moment the harvest writes their counts.
+  const perCap = num(cfg.perComponentCap) != null ? cfg.perComponentCap : 4;
+  const minSample = cfg.minSample || {};
+  let compSum = 0;
+  const used = [];
+  const cdetail = [];
+  for (const comp of SERVE_IT_COMPONENTS) {
+    const c = agg[comp.name];
+    const floor = num(minSample[comp.minKey]) != null ? minSample[comp.minKey] : comp.minDef;
+    if (!c || c.total < floor) continue;               // below min-sample => component self-hides (no fabrication)
+    const eventPct = 100 * c.won / c.total;
+    const season = blendedRating(splits, surfCat, bucket, comp.row);
+    if (season == null) continue;                      // no season baseline => component self-hides
+    const compNudge = clamp(w * comp.sign * (eventPct - season), -perCap, perCap);
+    compSum += compNudge;
+    used.push(comp.name);
+    cdetail.push(`${comp.name} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
+  }
+  const nudge = clamp(base3 + compSum, -cap, cap);
+  return {
+    nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared),
+    components: used.length, used, cdetail: cdetail.join('; '),
+  };
 }
 
 // A player's genuine CAREER overall win% (percentage points), summed from the
