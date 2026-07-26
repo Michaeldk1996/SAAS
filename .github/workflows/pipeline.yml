@@ -228,7 +228,9 @@ jobs:
       # never breaks the deploy and the commit never re-triggers CI.
       # Replaces the standalone admin-log.yml (deleted in Edit 3).
       - name: Append completed matches to admin log (best-effort)
-        run: node build-admin-log.js || true
+        run: |
+          node build-admin-log.js || true
+          node push-admin-log-to-firestore.js || true
       - name: Commit admin log (only if changed)
         run: |
           if [ -z "$(git status --porcelain -- admin-log.json)" ]; then
