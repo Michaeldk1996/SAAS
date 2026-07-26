@@ -206,6 +206,11 @@ const rhot = inTournamentReturnDelta(retCtx(allHot), rObj, rsplits, 'Clay', 'Bes
 ok('fires with a completed round', rhot!==null && rhot.n===1, rhot);
 ok('all 4 components fire', rhot && rhot.components===4 && rhot.used.length===4, rhot && rhot.used);
 ok('break% fires from retGames raw', rhot && rhot.used.includes('break'), rhot && rhot.used);
+// Rate provenance surfaced for admin: every return component is a native feed
+// rate, so all fired components land in nativeUsed and derivedUsed stays empty
+// (the explicit serve/return contrast — serve carries derived ace%/df%).
+ok('all return components are native', rhot && rhot.nativeUsed.length===4 && rhot.derivedUsed.length===0, rhot && {n:rhot.nativeUsed,d:rhot.derivedUsed});
+ok('no derived rates flagged in return detail', rhot && !/†/.test(rhot.detail), rhot && rhot.detail);
 ok('nudge finite & positive when returning hot', rhot && Number.isFinite(rhot.nudge) && rhot.nudge>0, rhot && rhot.nudge);
 ok('nudge within maxDeltaPP', rhot && Math.abs(rhot.nudge)<=RITC.maxDeltaPP+1e-9, rhot && rhot.nudge);
 ok('round4 numeric sanity', rhot && rhot.nudge===Math.round(rhot.nudge*1e4)/1e4, rhot && rhot.nudge);

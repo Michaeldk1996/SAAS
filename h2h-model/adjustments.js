@@ -212,11 +212,17 @@ function serveWonPctFromRound(met) {
 // into its 1st/2nd halves (mirroring how the serve tier splits serve into
 // 1st-in/1st-won/2nd-won), reading the player's OWN direct return numbers rather
 // than deriving them from the opponent's serve row.
+// `kind` is the component's rate PROVENANCE, surfaced in the model output so the
+// admin dashboard can show which rates the feed gives us directly vs ones we
+// compute (founder request, TEN-8 2026-07-26). Every return component is a
+// 'native' api-tennis rate read verbatim — 1st/2nd return points won %, break%
+// (Games:Return games won), BP conversion % (Return:BP Converted). The return
+// tier has NO derived components (unlike serve's ace%/df%).
 const RETURN_IT_COMPONENTS = [
-  { name: 'ret1',   raw: 'ret1',     row: (r) => r && num(r.ret1WonPct), minKey: 'ret1',   minDef: 20 }, // 1st return points won
-  { name: 'ret2',   raw: 'ret2',     row: (r) => r && num(r.ret2WonPct), minKey: 'ret2',   minDef: 15 }, // 2nd return points won
-  { name: 'break',  raw: 'retGames', row: (r) => r && num(r.brkPct),     minKey: 'break',  minDef: 8  }, // return games won (break%)
-  { name: 'bpConv', raw: 'bpConv',   row: (r) => r && num(r.bpConvPct),  minKey: 'bpConv', minDef: 5  }, // break points converted
+  { name: 'ret1',   kind: 'native', raw: 'ret1',     row: (r) => r && num(r.ret1WonPct), minKey: 'ret1',   minDef: 20 }, // 1st return points won
+  { name: 'ret2',   kind: 'native', raw: 'ret2',     row: (r) => r && num(r.ret2WonPct), minKey: 'ret2',   minDef: 15 }, // 2nd return points won
+  { name: 'break',  kind: 'native', raw: 'retGames', row: (r) => r && num(r.brkPct),     minKey: 'break',  minDef: 8  }, // return games won (break%)
+  { name: 'bpConv', kind: 'native', raw: 'bpConv',   row: (r) => r && num(r.bpConvPct),  minKey: 'bpConv', minDef: 5  }, // break points converted
 ];
 
 // In-tournament RETURN tier (#10 top tier — the return analog of the serve tier):
@@ -271,6 +277,11 @@ function inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket) {
   let nudgeSum = 0;
   const used = [];
   const detail = [];
+  // Provenance split, surfaced for admin. Every return component is native, so
+  // derivedUsed stays empty — this makes the serve/return contrast explicit in
+  // the output (serve carries derived ace%/df%; return carries none).
+  const nativeUsed = [];
+  const derivedUsed = [];
   for (const comp of RETURN_IT_COMPONENTS) {
     const a = agg[comp.raw];
     const floor = num(minSample[comp.minKey]) != null ? minSample[comp.minKey] : comp.minDef;
@@ -281,12 +292,14 @@ function inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket) {
     const compNudge = clamp(w * (eventPct - season), -perCap, perCap);
     nudgeSum += compNudge;
     used.push(comp.name);
-    detail.push(`${comp.name} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
+    (comp.kind === 'derived' ? derivedUsed : nativeUsed).push(comp.name);
+    detail.push(`${comp.name}${comp.kind === 'derived' ? '†' : ''} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
   }
   if (used.length === 0) return null;                  // zero components qualified => self-hide
   const cap = num(cfg.maxDeltaPP) != null ? cfg.maxDeltaPP : 4;
   const nudge = clamp(nudgeSum, -cap, cap);
-  return { nudge: round4(nudge), n, components: used.length, used, detail: detail.join('; ') };
+  // nativeUsed/derivedUsed: rate provenance for the admin dashboard (return = all native).
+  return { nudge: round4(nudge), n, components: used.length, used, detail: detail.join('; '), nativeUsed, derivedUsed };
 }
 
 // A player's genuine CAREER overall win% (percentage points), summed from the
@@ -932,8 +945,16 @@ function returnPressure(ctx) {
   const signal = clamp((r1 - r2) / 15, -1, 1);
   const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
   const altPart = (alt != null && altMult < 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
-  // In-tournament top tier: note who it re-priced and off how many rounds.
-  const itNote = (r) => r.inTourn ? `${r.inTourn.n}r ${r.inTourn.nudge >= 0 ? '+' : ''}${r.inTourn.nudge.toFixed(1)}` : null;
+  // In-tournament top tier: note who it re-priced, off how many rounds, and the
+  // rate provenance of the components that fired (all native for return) so the
+  // distinction is visible in the admin dashboard.
+  const itNote = (r) => {
+    if (!r.inTourn) return null;
+    const it = r.inTourn;
+    const prov = `native: ${it.nativeUsed.join(', ')}` +
+      (it.derivedUsed && it.derivedUsed.length ? `; derived: ${it.derivedUsed.join(', ')}` : '');
+    return `${it.n}r ${it.nudge >= 0 ? '+' : ''}${it.nudge.toFixed(1)} [${prov}]`;
+  };
   const ia = itNote(A), ib = itNote(B);
   const itPart = (ia || ib) ? `; in-tourn ${ia || '—'} / ${ib || '—'}` : '';
   return apply(res, signal, 'med',
