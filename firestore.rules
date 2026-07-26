@@ -53,7 +53,7 @@ service cloud.firestore {
     // use. Until at least one real value is present, this read denies everyone.
     function isAdmin() {
       return request.auth != null && (
-        request.auth.uid in ['PASTE_FOUNDER_FIREBASE_UID_HERE']
+        request.auth.uid in ['dqniZkontSPLBwseOTBzmfCBUQG3']
         || (request.auth.token.email != null
             && request.auth.token.email in ['paste_founder_email_here'])
       );
