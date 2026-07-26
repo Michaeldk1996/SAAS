@@ -24,7 +24,7 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 | Data files | `matches.json`, `tournament-profiles.json`, `tournament-progression.json`, `player-profiles.json` |
 | Odds | The Odds API (Grand Slams, 1000s, 500s) + OddsAPI + Oddsapi (ATP 250 and broader coverage) |
 | Tennis data | api-tennis.com (fixtures, results, H2H, surface stats, box scores) |
-| Historical | Jeff Sackmann tennis_atp + MatchChartingProject (CC BY-NC-SA — internal use only, never serve to paying members) |
+| Historical | Jeff Sackmann tennis_atp + MatchChartingProject (CC BY-NC-SA — internal R&D use; commercial serving to paying members gated until a commercially-licensed alternative — see **Model R&D mode** below) |
 | Automation | GitHub Actions cron `*/15 * * * *` |
 | Backtest tools | `backtest_elo.py`, `backtest_demo.py`, `demo_matches.csv` (Elo research, internal only) |
 
@@ -112,9 +112,11 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 | Sackmann tennis_atp | Historical W/L, surface splits, tournament records | Integration in progress |
 | Sackmann MatchCharting | Shot-by-shot, serve/return, rally length | Integration in progress |
 
-**License warning — Sackmann datasets:** CC BY-NC-SA (non-commercial). Use for internal model R&D only. Never serve this data or a model trained on it directly to paying members.
+**Model R&D mode (founder decision, TEN-8, 2026-07-26):** The h2h-model — including every Stage-2 adjustment layer (e.g. Layer #4 surface record) and the Layer #8 MCP archetype baseline — is being built and run in **internal research & development mode**. The CC BY-NC-SA non-commercial restriction is a gate on **commercial serving to paying members**, not on internal R&D. Do **not** flag the non-commercial data licence as a blocker for R&D builds — activate and iterate. The licence gate re-engages only when we move to **commercial deployment with paying members**, at which point a commercially-licensed alternative (or clean-room Stage-1-only fair price) is required before serving. Flag licensing then, not now.
 
-**License warning — Layer #8 W/UE MCP archetype baseline (`mcp-archetype-baseline.json`):** derived from the Match Charting Project (CC BY-NC-SA, non-commercial). Same rule as the model weights above — **internal R&D only**; it seeds the W/UE-ratio expectation per archetype but must NOT be served commercially to paying members until we have a commercially-licensed alternative. Founder decision (TEN-8, 2026-07-25).
+**License warning — Sackmann datasets:** CC BY-NC-SA (non-commercial). Internal model R&D use is permitted (see **Model R&D mode** above). Do not serve this data, or a model trained on it directly, to **paying members** once the product is commercially deployed — revisit for a commercially-licensed alternative before commercial launch.
+
+**License warning — Layer #8 W/UE MCP archetype baseline (`mcp-archetype-baseline.json`):** derived from the Match Charting Project (CC BY-NC-SA, non-commercial). Same rule as the model weights above — **internal R&D use is permitted** (see **Model R&D mode**); it seeds the W/UE-ratio expectation per archetype but must NOT be served commercially to paying members until we have a commercially-licensed alternative. Founder decisions (TEN-8, 2026-07-25; R&D-mode clarification 2026-07-26).
 
 **Name matching note:** The Odds API and API-Tennis use different name formats. Current matching is by last name — tested against 4 real pairs. Watch for silent match-merge failures on busy match days.
 
