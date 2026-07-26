@@ -173,65 +173,99 @@ ok('averages across completed rounds (n=2, avg 180)', avg && avg.n===2 && avg.it
 // =========================================================================
 // #10 in-tournament RETURN tier (return analog of the serve tier)
 // =========================================================================
-console.log('=== in-tournament return tier (#10 top tier) ===');
+console.log('=== in-tournament return tier (#10 top tier — 4 components) ===');
 const { inTournamentReturnDelta, returnSharedRow } = require(path.join(HM,'adjustments'));
 const RITC = cfg.adjustments.returnPressure.inTournament;
 
-// returnSharedRow is the single observable-in-event return component (rpwPct).
+// returnSharedRow is the legacy single-component reader (still exported).
 ok('returnSharedRow reads rpwPct', returnSharedRow({rpwPct:35})===35);
 ok('returnSharedRow null when rpwPct missing', returnSharedRow({brkPct:20})===null);
 
-// Synthetic return splits: season rpw blend = last52*0.6 + career*0.4
-// = 40*0.6 + 30*0.4 = 36 (Clay).
-const rsplits = { last52:{ Clay:{rpwPct:40} }, career:{ Clay:{rpwPct:30} } };
+// Synthetic 4-component return splits (Clay). Each season baseline blends
+// last52*0.6 + career*0.4:
+//   ret1  30*0.6+20*0.4 = 26   ret2 50*0.6+40*0.4 = 46
+//   break 25*0.6+15*0.4 = 21   bpConv 40*0.6+30*0.4 = 36
+const rsplits = {
+  last52:{ Clay:{ ret1WonPct:30, ret2WonPct:50, brkPct:25, bpConvPct:40 } },
+  career:{ Clay:{ ret1WonPct:20, ret2WonPct:40, brkPct:15, bpConvPct:30 } },
+};
 const rObj = { numericKey:'358' };
-function retCtx(players){ return { match:{ tour:'ATP Estoril' },
-  progression:{ tournaments:{ Estoril:{ players } } } }; }
-const meRow = (rounds) => ({ name:'Me', playerKey:'358', rounds });
-const foe = (name, round, met) => ({ name, playerKey:'x'+name, rounds:[{ round, opponent:'Me', metrics:met }] });
-// Opponent served firstIn 60 / firstWon 70 / secondWon 50 => serve-pts-won
-// = 0.6*70 + 0.4*50 = 62 => derived return-pts-won for Me = 38 (> season 36).
-const okServe = { firstServePct:60, firstServeWonPct:70, secondServeWonPct:50 };
-const hotPlayers = [ meRow([{round:'R1', opponent:'Foe1'}]), foe('Foe1','R1',okServe) ];
-const rhot = inTournamentReturnDelta(retCtx(hotPlayers), rObj, rsplits, 'Clay', 'Best of 3');
+function retCtx(rounds){ return { match:{ tour:'ATP Estoril' },
+  progression:{ tournaments:{ Estoril:{ players:[{ name:'Me', playerKey:'358', rounds }] } } } }; }
+
+// All four components carry adequate denominators and event rates above baseline
+// => every component fires, sign positive. (Raw deltas are large enough that the
+// per-component + total clamps bind, so nudge saturates at maxDeltaPP.)
+const allHot = [{ round:'R1', metrics:{
+  ret1:{won:15,total:30},    // 50.0% (> 26), total 30 >= 20
+  ret2:{won:12,total:20},    // 60.0% (> 46), total 20 >= 15
+  retGames:{won:5,total:10}, // 50.0% (> 21), total 10 >= 8   (break%)
+  bpConv:{won:6,total:10},   // 60.0% (> 36), total 10 >= 5
+} }];
+const rhot = inTournamentReturnDelta(retCtx(allHot), rObj, rsplits, 'Clay', 'Best of 3');
 ok('fires with a completed round', rhot!==null && rhot.n===1, rhot);
-ok('this-event rpw derived = 38 (100 − opp serve-won 62)', rhot && near(rhot.itShared,38), rhot && rhot.itShared);
-ok('season rpw blend = 36', rhot && near(rhot.seasonShared,36), rhot && rhot.seasonShared);
-ok('nudge = weight*(38-36)', rhot && near(rhot.nudge, RITC.weight*(38-36)), rhot && rhot.nudge);
-ok('positive nudge when returning hot', rhot && rhot.nudge>0, rhot && rhot.nudge);
+ok('all 4 components fire', rhot && rhot.components===4 && rhot.used.length===4, rhot && rhot.used);
+ok('break% fires from retGames raw', rhot && rhot.used.includes('break'), rhot && rhot.used);
+ok('nudge finite & positive when returning hot', rhot && Number.isFinite(rhot.nudge) && rhot.nudge>0, rhot && rhot.nudge);
+ok('nudge within maxDeltaPP', rhot && Math.abs(rhot.nudge)<=RITC.maxDeltaPP+1e-9, rhot && rhot.nudge);
+ok('round4 numeric sanity', rhot && rhot.nudge===Math.round(rhot.nudge*1e4)/1e4, rhot && rhot.nudge);
 
-// Self-hide branches (identical to serve tier).
-ok('self-hide when no completed rounds (R1)',
-   inTournamentReturnDelta(retCtx([meRow([])]), rObj, rsplits,'Clay','Best of 3')===null);
-ok('self-hide off-progression tournament',
-   inTournamentReturnDelta({match:{tour:'ATP Washington'},progression:{tournaments:{Estoril:{players:hotPlayers}}}}, rObj, rsplits,'Clay','Best of 3')===null);
-ok('self-hide when player absent from event',
-   inTournamentReturnDelta(retCtx(hotPlayers), {numericKey:'999'}, rsplits,'Clay','Best of 3')===null);
-ok('self-hide with no season baseline',
-   inTournamentReturnDelta(retCtx(hotPlayers), rObj, {}, 'Clay','Best of 3')===null);
-// Opponent not resolvable in players[] => that round skipped => no usable rounds.
-ok('self-hide when opponent unresolvable',
-   inTournamentReturnDelta(retCtx([meRow([{round:'R1',opponent:'Ghost'}])]), rObj, rsplits,'Clay','Best of 3')===null);
+// ZERO FABRICATION: a round giving bpConv only 1/1 (< min-sample 5) drops that
+// component — no NaN/Infinity — while the three well-sampled components still fire.
+const bpThin = [{ round:'R1', metrics:{
+  ret1:{won:15,total:30}, ret2:{won:12,total:20}, retGames:{won:5,total:10}, bpConv:{won:1,total:1} } }];
+const rbp = inTournamentReturnDelta(retCtx(bpThin), rObj, rsplits,'Clay','Best of 3');
+ok('bpConv self-hides below min-sample (no fabrication, no NaN)',
+   rbp && rbp.components===3 && !rbp.used.includes('bpConv') && Number.isFinite(rbp.nudge), rbp);
 
-// Bound: an opponent who wins ZERO serve points => derived rpw 100, capped.
-const capFoe = [ meRow([{round:'R1',opponent:'Bad'}]),
-                 foe('Bad','R1',{firstServePct:0,firstServeWonPct:0,secondServeWonPct:0}) ];
-const rcap = inTournamentReturnDelta(retCtx(capFoe), rObj, rsplits,'Clay','Best of 3');
-ok('nudge capped at maxDeltaPP', rcap && Math.abs(rcap.nudge)<=RITC.maxDeltaPP+1e-9, rcap && rcap.nudge);
+// Denominators SUM across rounds: two rounds of bpConv 3/3 aggregate to 6 (>= 5)
+// and fire, though either round alone (3) is below the floor.
+const bpTwo = [ { round:'R1', metrics:{ bpConv:{won:3,total:3} } },
+                { round:'R2', metrics:{ bpConv:{won:3,total:3} } } ];
+const rbptwo = inTournamentReturnDelta(retCtx(bpTwo), rObj, rsplits,'Clay','Best of 3');
+ok('sums denominators across rounds (bpConv 3+3 >= 5 fires, n=2)',
+   rbptwo && rbptwo.n===2 && rbptwo.components===1 && rbptwo.used[0]==='bpConv', rbptwo);
+// ...but a SINGLE sub-floor bpConv round self-hides entirely (its only component).
+ok('single sub-min bpConv round self-hides entirely',
+   inTournamentReturnDelta(retCtx([{round:'R1',metrics:{bpConv:{won:3,total:3}}}]), rObj, rsplits,'Clay','Best of 3')===null);
 
-// Cold event => negative nudge (opponent served well, we returned poorly).
-// firstIn 80 / firstWon 75 / secondWon 55 => serve-won 0.8*75+0.2*55 = 71 => rpw 29 (< 36).
-const coldFoe = [ meRow([{round:'R1',opponent:'Cold'}]),
-                  foe('Cold','R1',{firstServePct:80,firstServeWonPct:75,secondServeWonPct:55}) ];
-const rcold = inTournamentReturnDelta(retCtx(coldFoe), rObj, rsplits,'Clay','Best of 3');
+// OVER-CAP guard: perfect event on all four => each componentNudge saturates at
+// perComponentCap (1.25), their sum (5) clamps to maxDeltaPP (4).
+const rInsane = [{ round:'R1', metrics:{
+  ret1:{won:30,total:30}, ret2:{won:20,total:20}, retGames:{won:10,total:10}, bpConv:{won:10,total:10} } }];
+const rins = inTournamentReturnDelta(retCtx(rInsane), rObj, rsplits,'Clay','Best of 3');
+ok('total nudge clamped to maxDeltaPP', rins && near(rins.nudge, RITC.maxDeltaPP) && Math.abs(rins.nudge)<=RITC.maxDeltaPP+1e-9, rins && rins.nudge);
+
+// Per-component cap binds INDEPENDENTLY: only bpConv clears its floor (others 1/1),
+// its raw delta (0.2*(100-36)=12.8) is clamped to perComponentCap, so the whole
+// nudge = perComponentCap (well under maxDeltaPP).
+const oneBig = [{ round:'R1', metrics:{
+  ret1:{won:1,total:1}, ret2:{won:1,total:1}, retGames:{won:1,total:1}, bpConv:{won:10,total:10} } }];
+const rone = inTournamentReturnDelta(retCtx(oneBig), rObj, rsplits,'Clay','Best of 3');
+ok('per-component cap binds (single-comp nudge = perComponentCap)',
+   rone && rone.components===1 && rone.used[0]==='bpConv' && near(rone.nudge, RITC.perComponentCap), rone && rone.nudge);
+
+// Cold event on all four => negative nudge (favours the opponent).
+const allCold = [{ round:'R1', metrics:{
+  ret1:{won:3,total:30},    // 10.0% (< 26)
+  ret2:{won:4,total:20},    // 20.0% (< 46)
+  retGames:{won:1,total:10},// 10.0% (< 21)
+  bpConv:{won:1,total:10},  // 10.0% (< 36)
+} }];
+const rcold = inTournamentReturnDelta(retCtx(allCold), rObj, rsplits,'Clay','Best of 3');
 ok('negative nudge when returning cold', rcold && rcold.nudge<0, rcold && rcold.nudge);
 
-// Multi-round average: R1 rpw 38, R2 rpw 42 (opp serve-won 58) => avg 40, n=2.
-const twoPlayers = [ meRow([{round:'R1',opponent:'F1'},{round:'R2',opponent:'F2'}]),
-                     foe('F1','R1',okServe),
-                     foe('F2','R2',{firstServePct:60,firstServeWonPct:70,secondServeWonPct:40}) ];
-const ravg = inTournamentReturnDelta(retCtx(twoPlayers), rObj, rsplits,'Clay','Best of 3');
-ok('averages across completed rounds (n=2, avg rpw 40)', ravg && ravg.n===2 && near(ravg.itShared,40), ravg);
+// Self-hide branches.
+ok('self-hide when no completed rounds (R1)',
+   inTournamentReturnDelta(retCtx([]), rObj, rsplits,'Clay','Best of 3')===null);
+ok('self-hide when rounds carry no return counts',
+   inTournamentReturnDelta(retCtx([{round:'R1',metrics:{firstServePct:60}}]), rObj, rsplits,'Clay','Best of 3')===null);
+ok('self-hide off-progression tournament',
+   inTournamentReturnDelta({match:{tour:'ATP Washington'},progression:{tournaments:{Estoril:{players:[{name:'Me',playerKey:'358',rounds:allHot}]}}}}, rObj, rsplits,'Clay','Best of 3')===null);
+ok('self-hide when player absent from event',
+   inTournamentReturnDelta(retCtx(allHot), {numericKey:'999'}, rsplits,'Clay','Best of 3')===null);
+ok('self-hide when splits missing all baselines',
+   inTournamentReturnDelta(retCtx(allHot), rObj, {}, 'Clay','Best of 3')===null);
 
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

@@ -336,7 +336,7 @@ function splits(matches) {
     const t = {
       aces: 0, dfs: 0, pts: 0, firstIn: 0, firstWon: 0, secondWon: 0,
       svGames: 0, bpSaved: 0, bpFaced: 0,
-      opts: 0, ofirstWon: 0, osecondWon: 0, osvGames: 0, obpSaved: 0, obpFaced: 0,
+      opts: 0, ofirstIn: 0, ofirstWon: 0, osecondWon: 0, osvGames: 0, obpSaved: 0, obpFaced: 0,
     };
     for (const m of sub) {
       if (m.wl === 'W') W++;
@@ -351,7 +351,7 @@ function splits(matches) {
       t.firstIn += m.srv.firstIn; t.firstWon += m.srv.firstWon;
       t.secondWon += m.srv.secondWon; t.svGames += m.srv.svGames;
       t.bpSaved += m.srv.bpSaved; t.bpFaced += m.srv.bpFaced;
-      t.opts += m.opp.pts; t.ofirstWon += m.opp.firstWon;
+      t.opts += m.opp.pts; t.ofirstIn += m.opp.firstIn; t.ofirstWon += m.opp.firstWon;
       t.osecondWon += m.opp.secondWon; t.osvGames += m.opp.svGames;
       t.obpSaved += m.opp.bpSaved; t.obpFaced += m.opp.bpFaced;
     }
@@ -381,6 +381,16 @@ function splits(matches) {
       secondWonPct: r1(secondPts > 0 ? t.secondWon / secondPts : null),
       spwPct: r1(spw),
       rpwPct: r1(rpw),
+      // Return-points-won split into its two halves (the return-side mirror of
+      // firstWonPct/secondWonPct), off the OPPONENT's serve counters: the returner
+      // won every opponent 1st/2nd serve point the server didn't. Fed to the Layer
+      // #10 in-tournament return tier as its 1st/2nd-return-points-won baselines.
+      ret1WonPct: r1(t.ofirstIn ? (t.ofirstIn - t.ofirstWon) / t.ofirstIn : null),                                  // returner won vs opp 1st serve
+      ret2WonPct: r1((t.opts - t.ofirstIn) > 0 ? ((t.opts - t.ofirstIn) - t.osecondWon) / (t.opts - t.ofirstIn) : null), // returner won vs opp 2nd serve
+      // Break points converted = opponent's break points faced that he did NOT save.
+      // Mirror of brkPct's numerator, but over BP CHANCES (obpFaced) rather than
+      // return games. The season baseline for the tier's BP-conversion component.
+      bpConvPct: pct(t.obpFaced - t.obpSaved, t.obpFaced),                                                          // break points converted
       tpwPct: r1((t.pts + t.opts) ? (svWon + (t.opts - oSvWon)) / (t.pts + t.opts) : null),
       // Dominance Ratio: return points won per serve point lost. Above 1.0 means
       // he does more damage on return than he concedes on serve.
@@ -517,7 +527,8 @@ async function main() {
     columns: [
       'M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct', 'gameW', 'gameL', 'gamePct',
       'tbW', 'tbL', 'tbPct', 'MS', 'hldPct', 'brkPct', 'aPct', 'dfPct', 'firstInPct',
-      'firstWonPct', 'secondWonPct', 'spwPct', 'rpwPct', 'tpwPct', 'dr',
+      'firstWonPct', 'secondWonPct', 'spwPct', 'rpwPct', 'ret1WonPct', 'ret2WonPct',
+      'bpConvPct', 'tpwPct', 'dr',
     ],
     // Serve columns are measured over MS, not M: they exist only for matches
     // where the source recorded serve counters (~98% since 2025, ~74% career).

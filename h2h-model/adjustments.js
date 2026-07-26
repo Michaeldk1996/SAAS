@@ -103,11 +103,11 @@ function serveRatingRow(row) {
 }
 
 // Return rating = return-points-won% + break% (games broken) + break-point
-// conversion% WHERE the splits row carries it. `bpConvPct` is dormant today —
-// career-splits.json has no BP-conversion field, and the only live bpConverted
-// is the current match's own result (target leakage), so it is deliberately not
-// sourced from there. Guarded by presence so it folds in automatically the day
-// the splits pipeline adds it, without changing anyone's rating until then.
+// conversion% WHERE the splits row carries it. `bpConvPct` is now emitted by
+// build-career-splits (season BP-conversion off the opponent's break points
+// faced/saved), so it folds into the base rating; still guarded by presence so a
+// row from an older splits build (or one lacking the field) degrades cleanly to
+// rpw + break rather than dropping to null.
 function returnRatingRow(row) {
   if (!row) return null;
   const rp = num(row.rpwPct), br = num(row.brkPct), bpc = num(row.bpConvPct);
@@ -182,16 +182,11 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   return { nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared) };
 }
 
-// Return sub-rating on ONLY the return component a single-event sheet lets us
-// observe: return-points-won%. tournament-progression.json carries per-round
-// SERVE metrics only (no return-points-won%, no break/BP stats), so — unlike the
-// serve tier which reads its component straight off the row — the in-tournament
-// return figure is DERIVED cleanly from the opponent's serve row in the SAME
-// finished round (return-points-won% = 100 − opponent's serve-points-won%; see
-// inTournamentReturnDelta). This shared row mirrors serveSharedRow: it is the
-// same-scope season baseline of that one observable component, so brk%/BP-conv%
-// (which the derivation cannot see) cancel in the delta and the re-priced return
-// rating stays on the full returnRatingRow scale. Null if the row lacks rpwPct.
+// Return sub-rating on the single derived-from-opponent return component
+// (return-points-won%). LEGACY: kept for the exported API and back-compat; the
+// in-tournament return tier no longer derives rpw from the opponent's serve row —
+// it now reads the player's OWN raw return counts off each round (see
+// inTournamentReturnDelta below). Null if the row lacks rpwPct.
 function returnSharedRow(row) {
   if (!row) return null;
   return num(row.rpwPct);
@@ -199,6 +194,8 @@ function returnSharedRow(row) {
 
 // Serve-points-won% for one progression round row = firstIn × firstWon +
 // (1−firstIn) × secondWon, all percentages. Null if any serve component missing.
+// LEGACY: was the opponent-serve derivation for the return tier; retained but no
+// longer called now that the return tier reads the player's own return counts.
 function serveWonPctFromRound(met) {
   if (!met) return null;
   const fi = num(met.firstServePct), fw = num(met.firstServeWonPct), sw = num(met.secondServeWonPct);
@@ -207,18 +204,34 @@ function serveWonPctFromRound(met) {
   return p * fw + (1 - p) * sw;
 }
 
-// In-tournament RETURN tier (#10 top tier — the return analog of the serve
-// tier): re-price the return rating using this event's COMPLETED earlier rounds.
-// Progression carries serve metrics only, so a player's in-event return-points-
-// won% is DERIVED from the OPPONENT's serve row in the same finished round
-// (rpw = 100 − opponent serve-points-won%). Opponent linkage: the round's
-// `opponent` name is matched against the tournament's players[] and that
-// opponent's row for the SAME round is read — that round is itself finished and
-// strictly earlier than the upcoming match, so there is no leakage. Rounds whose
-// opponent (or opponent serve metrics) can't be resolved are skipped; a player
-// with no usable finished rounds yet (R1) yields null => the tier self-hides and
-// return falls back to the season blend. Returns a bounded nudge = weight ×
-// (this-event avg rpw − same-scope season rpw blend), clamped to maxDeltaPP.
+// The four return components, each an event-aggregate-vs-season-baseline pair.
+// `raw` names the {won,total} object bsp-pipeline now writes onto each round's
+// metrics; `season` names the career-splits key blendedRating reads for the same
+// scope; `min` is the per-component denominator floor (the fabrication guard —
+// summed across the event's rounds). Components 1+2 are return-points-won split
+// into its 1st/2nd halves (mirroring how the serve tier splits serve into
+// 1st-in/1st-won/2nd-won), reading the player's OWN direct return numbers rather
+// than deriving them from the opponent's serve row.
+const RETURN_IT_COMPONENTS = [
+  { name: 'ret1',   raw: 'ret1',     row: (r) => r && num(r.ret1WonPct), minKey: 'ret1',   minDef: 20 }, // 1st return points won
+  { name: 'ret2',   raw: 'ret2',     row: (r) => r && num(r.ret2WonPct), minKey: 'ret2',   minDef: 15 }, // 2nd return points won
+  { name: 'break',  raw: 'retGames', row: (r) => r && num(r.brkPct),     minKey: 'break',  minDef: 8  }, // return games won (break%)
+  { name: 'bpConv', raw: 'bpConv',   row: (r) => r && num(r.bpConvPct),  minKey: 'bpConv', minDef: 5  }, // break points converted
+];
+
+// In-tournament RETURN tier (#10 top tier — the return analog of the serve tier):
+// re-price the return rating using this event's COMPLETED earlier rounds. Each
+// round now carries the player's OWN raw return counts, so this is a genuine
+// 4-component rating (1st/2nd return points won %, break%, BP conversion %) — no
+// opponent lookup, no derivation. For each component the {won,total} counts are
+// SUMMED across the player's finished rounds; a component fires only when that
+// summed denominator clears its per-component min-sample AND its same-scope season
+// baseline exists — otherwise the component self-hides (a rate is never computed
+// from too few, or zero, chances: the fabrication guard). Progression carries
+// ONLY finished rounds, each strictly earlier than the upcoming match (no
+// leakage). A player with no finished round contributing any component (R1)
+// yields null => the tier self-hides and return falls back to the season blend.
+// Returns nudge = clamp(Σ clamp(weight × Δ_c, ±perComponentCap), ±maxDeltaPP).
 function inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket) {
   const cfg = config.adjustments.returnPressure && config.adjustments.returnPressure.inTournament;
   if (!cfg || !playerObj || !splits) return null;
@@ -230,25 +243,50 @@ function inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket) {
   const key = String(playerObj.numericKey);
   const pRow = t.players.find(pp => pp && String(pp.playerKey) === key);
   if (!pRow || !Array.isArray(pRow.rounds)) return null;
-  let rpwSum = 0, n = 0;
+
+  // Sum each component's won/total across the event's finished rounds. A round
+  // "contributes" when it carries at least one valid return count — that count
+  // gates the minRounds self-hide (a round with no return counts is invisible).
+  const agg = {};
+  for (const comp of RETURN_IT_COMPONENTS) agg[comp.raw] = { won: 0, total: 0 };
+  let n = 0;                                            // rounds that contributed any component
   for (const r of pRow.rounds) {
-    if (!r || !r.opponent) continue;
-    const opp = t.players.find(pp => pp && pp.name === r.opponent);
-    if (!opp || !Array.isArray(opp.rounds)) continue;
-    const oppRound = opp.rounds.find(rr => rr && rr.round === r.round);
-    const oppServeWon = serveWonPctFromRound(oppRound && oppRound.metrics);
-    if (oppServeWon == null) continue;
-    rpwSum += (100 - oppServeWon); n++;               // returner won the rest
+    const met = r && r.metrics;
+    if (!met) continue;
+    let contributed = false;
+    for (const comp of RETURN_IT_COMPONENTS) {
+      const c = met[comp.raw];
+      if (c && Number.isFinite(c.won) && Number.isFinite(c.total) && c.total > 0) {
+        agg[comp.raw].won += c.won; agg[comp.raw].total += c.total; contributed = true;
+      }
+    }
+    if (contributed) n++;
   }
   const minR = num(cfg.minRounds) != null ? cfg.minRounds : 1;
-  if (n < minR) return null;
-  const itShared = rpwSum / n;                         // this-event derived rpw avg
-  const seasonShared = blendedRating(splits, surfCat, bucket, returnSharedRow);
-  if (seasonShared == null) return null;               // no season baseline to deviate from
+  if (n < minR) return null;                            // no finished round carried return counts (R1)
+
   const w = num(cfg.weight) != null ? cfg.weight : 0.5;
+  const perCap = num(cfg.perComponentCap) != null ? cfg.perComponentCap : 2;
+  const minSample = cfg.minSample || {};
+  let nudgeSum = 0;
+  const used = [];
+  const detail = [];
+  for (const comp of RETURN_IT_COMPONENTS) {
+    const a = agg[comp.raw];
+    const floor = num(minSample[comp.minKey]) != null ? minSample[comp.minKey] : comp.minDef;
+    if (a.total < floor) continue;                     // below min-sample => component self-hides (no fabrication)
+    const eventPct = 100 * a.won / a.total;
+    const season = blendedRating(splits, surfCat, bucket, comp.row);
+    if (season == null) continue;                      // no season baseline => component self-hides
+    const compNudge = clamp(w * (eventPct - season), -perCap, perCap);
+    nudgeSum += compNudge;
+    used.push(comp.name);
+    detail.push(`${comp.name} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
+  }
+  if (used.length === 0) return null;                  // zero components qualified => self-hide
   const cap = num(cfg.maxDeltaPP) != null ? cfg.maxDeltaPP : 4;
-  const nudge = clamp(w * (itShared - seasonShared), -cap, cap);
-  return { nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared) };
+  const nudge = clamp(nudgeSum, -cap, cap);
+  return { nudge: round4(nudge), n, components: used.length, used, detail: detail.join('; ') };
 }
 
 // A player's genuine CAREER overall win% (percentage points), summed from the

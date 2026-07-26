@@ -2133,6 +2133,18 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
     : null;
   const totalPointsPlayed = totalPoints && totalPoints.stat_total > 0 ? totalPoints.stat_total : null;
+  // Raw won/total for one stat row, or null when the feed lacks it (or reports a
+  // zero denominator). Used for the return-side counts the Layer #10 in-tournament
+  // return tier sums across rounds — we store the raw {won,total} rather than a
+  // derived pct so the model can add denominators and enforce its own min-sample
+  // (never presenting a small-denominator rate as fact).
+  const rawWonTotal = (type, name) => {
+    const s = findMatchStat(matchStats, playerKey, type, name);
+    if (!s) return null;
+    const won = parseInt(s.stat_won, 10);
+    const total = parseInt(s.stat_total, 10);
+    return (Number.isFinite(won) && Number.isFinite(total) && total > 0) ? { won, total } : null;
+  };
   return {
     firstServePct: metrics.firstServePct,
     firstServeWonPct: metrics.firstServeWonPct,
@@ -2146,6 +2158,12 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     // feed's own won/total, so it needs no winners/UE data (which this feed is
     // routinely missing) and is populated for every match that has a stat sheet.
     totalPointsWonPct: metrics.totalPointsWonPct,
+    // return-side raw counts (kept so the model can sum denominators across rounds
+    // and enforce min-sample — never present a small-denominator rate as fact)
+    ret1: rawWonTotal('Return', '1st return points won'),      // Return / 1st return points won
+    ret2: rawWonTotal('Return', '2nd return points won'),      // Return / 2nd return points won
+    retGames: rawWonTotal('Games', 'Return games won'),        // Games  / Return games won (break%)
+    bpConv: rawWonTotal('Return', 'Break Points Converted'),   // Return / Break Points Converted (BP conv%)
     // Provenance of the winners/UE-derived metrics: 'api-tennis', 'ATP_Entry_OCR',
     // or null (neither source had W/UE — those three metrics stay null).
     wueSource,
