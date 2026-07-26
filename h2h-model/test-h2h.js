@@ -204,5 +204,68 @@ const rThin=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondSer
 const thin=inTournamentServeDelta(progCtx(rThin), pObj, splits6,'Clay','Best of 3');
 ok('below-floor serve counts self-hide (fabrication guard)', thin && thin.components===0 && near(thin.nudge, 9.8), thin);
 
+// =========================================================================
+// #10 in-tournament RETURN tier (return analog of the serve tier)
+// =========================================================================
+console.log('=== in-tournament return tier (#10 top tier) ===');
+const { inTournamentReturnDelta, returnSharedRow } = require(path.join(HM,'adjustments'));
+const RITC = cfg.adjustments.returnPressure.inTournament;
+
+// returnSharedRow is the single observable-in-event return component (rpwPct).
+ok('returnSharedRow reads rpwPct', returnSharedRow({rpwPct:35})===35);
+ok('returnSharedRow null when rpwPct missing', returnSharedRow({brkPct:20})===null);
+
+// Synthetic return splits: season rpw blend = last52*0.6 + career*0.4
+// = 40*0.6 + 30*0.4 = 36 (Clay).
+const rsplits = { last52:{ Clay:{rpwPct:40} }, career:{ Clay:{rpwPct:30} } };
+const rObj = { numericKey:'358' };
+function retCtx(players){ return { match:{ tour:'ATP Estoril' },
+  progression:{ tournaments:{ Estoril:{ players } } } }; }
+const meRow = (rounds) => ({ name:'Me', playerKey:'358', rounds });
+const foe = (name, round, met) => ({ name, playerKey:'x'+name, rounds:[{ round, opponent:'Me', metrics:met }] });
+// Opponent served firstIn 60 / firstWon 70 / secondWon 50 => serve-pts-won
+// = 0.6*70 + 0.4*50 = 62 => derived return-pts-won for Me = 38 (> season 36).
+const okServe = { firstServePct:60, firstServeWonPct:70, secondServeWonPct:50 };
+const hotPlayers = [ meRow([{round:'R1', opponent:'Foe1'}]), foe('Foe1','R1',okServe) ];
+const rhot = inTournamentReturnDelta(retCtx(hotPlayers), rObj, rsplits, 'Clay', 'Best of 3');
+ok('fires with a completed round', rhot!==null && rhot.n===1, rhot);
+ok('this-event rpw derived = 38 (100 − opp serve-won 62)', rhot && near(rhot.itShared,38), rhot && rhot.itShared);
+ok('season rpw blend = 36', rhot && near(rhot.seasonShared,36), rhot && rhot.seasonShared);
+ok('nudge = weight*(38-36)', rhot && near(rhot.nudge, RITC.weight*(38-36)), rhot && rhot.nudge);
+ok('positive nudge when returning hot', rhot && rhot.nudge>0, rhot && rhot.nudge);
+
+// Self-hide branches (identical to serve tier).
+ok('self-hide when no completed rounds (R1)',
+   inTournamentReturnDelta(retCtx([meRow([])]), rObj, rsplits,'Clay','Best of 3')===null);
+ok('self-hide off-progression tournament',
+   inTournamentReturnDelta({match:{tour:'ATP Washington'},progression:{tournaments:{Estoril:{players:hotPlayers}}}}, rObj, rsplits,'Clay','Best of 3')===null);
+ok('self-hide when player absent from event',
+   inTournamentReturnDelta(retCtx(hotPlayers), {numericKey:'999'}, rsplits,'Clay','Best of 3')===null);
+ok('self-hide with no season baseline',
+   inTournamentReturnDelta(retCtx(hotPlayers), rObj, {}, 'Clay','Best of 3')===null);
+// Opponent not resolvable in players[] => that round skipped => no usable rounds.
+ok('self-hide when opponent unresolvable',
+   inTournamentReturnDelta(retCtx([meRow([{round:'R1',opponent:'Ghost'}])]), rObj, rsplits,'Clay','Best of 3')===null);
+
+// Bound: an opponent who wins ZERO serve points => derived rpw 100, capped.
+const capFoe = [ meRow([{round:'R1',opponent:'Bad'}]),
+                 foe('Bad','R1',{firstServePct:0,firstServeWonPct:0,secondServeWonPct:0}) ];
+const rcap = inTournamentReturnDelta(retCtx(capFoe), rObj, rsplits,'Clay','Best of 3');
+ok('nudge capped at maxDeltaPP', rcap && Math.abs(rcap.nudge)<=RITC.maxDeltaPP+1e-9, rcap && rcap.nudge);
+
+// Cold event => negative nudge (opponent served well, we returned poorly).
+// firstIn 80 / firstWon 75 / secondWon 55 => serve-won 0.8*75+0.2*55 = 71 => rpw 29 (< 36).
+const coldFoe = [ meRow([{round:'R1',opponent:'Cold'}]),
+                  foe('Cold','R1',{firstServePct:80,firstServeWonPct:75,secondServeWonPct:55}) ];
+const rcold = inTournamentReturnDelta(retCtx(coldFoe), rObj, rsplits,'Clay','Best of 3');
+ok('negative nudge when returning cold', rcold && rcold.nudge<0, rcold && rcold.nudge);
+
+// Multi-round average: R1 rpw 38, R2 rpw 42 (opp serve-won 58) => avg 40, n=2.
+const twoPlayers = [ meRow([{round:'R1',opponent:'F1'},{round:'R2',opponent:'F2'}]),
+                     foe('F1','R1',okServe),
+                     foe('F2','R2',{firstServePct:60,firstServeWonPct:70,secondServeWonPct:40}) ];
+const ravg = inTournamentReturnDelta(retCtx(twoPlayers), rObj, rsplits,'Clay','Best of 3');
+ok('averages across completed rounds (n=2, avg rpw 40)', ravg && ravg.n===2 && near(ravg.itShared,40), ravg);
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

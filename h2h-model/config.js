@@ -243,7 +243,27 @@ module.exports = {
                         { minM: 800,  mult: 0.82 },
                         { minM: 300,  mult: 0.90 },
                         { minM: 0,    mult: 1.00 },
-                      ] },
+                      ],
+                      // In-tournament RETURN tier (TEN-8 layer #10 top tier — the
+                      // return analog of the serve tier, TEN-29). This event's
+                      // completed earlier rounds re-price the return rating as the
+                      // TOP tier above last-52-weeks and career; self-hides at R1.
+                      // Source is tournament-progression.json, already in ctx — no
+                      // new feed call. That file carries per-round SERVE metrics
+                      // ONLY, so the player's in-event return-points-won% is DERIVED
+                      // cleanly from the OPPONENT's serve row in the same finished
+                      // round (rpw = 100 − opponent serve-points-won%). Only that
+                      // one observable component is re-priced; brk%/BP-conv% stay at
+                      // the season blend (they cancel in the delta), keeping the
+                      // rating on the full returnRatingRow scale. Re-price is a
+                      // bounded nudge = weight × (this-event rpw avg − same-scope
+                      // season rpw blend), clamped to maxDeltaPP rating points so
+                      // one hot/cold round can't dominate; the signal (/15) and
+                      // magnitude clamps downstream are unchanged, so the 3pp
+                      // ceiling still holds. maxDeltaPP:4 mirrors the serve tier's
+                      // 20 as the SAME ~11% fraction of its shared-row scale (serve
+                      // shared row ≈ 3 comps ≈ 187; return shared row = rpwPct ≈ 35).
+                      inTournament: { weight: 0.5, minRounds: 1, maxDeltaPP: 4 } },
     // 11. Fatigue — recent workload + turnaround (TEN-8 reduced-scope build,
     //     founder spec 2026-07-25). Each player's fatigue "units" over a rolling
     //     10-day window = sets played (time-on-court proxy; no minutes feed

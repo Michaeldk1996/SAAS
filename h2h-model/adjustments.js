@@ -239,6 +239,75 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   };
 }
 
+// Return sub-rating on ONLY the return component a single-event sheet lets us
+// observe: return-points-won%. tournament-progression.json carries per-round
+// SERVE metrics only (no return-points-won%, no break/BP stats), so — unlike the
+// serve tier which reads its component straight off the row — the in-tournament
+// return figure is DERIVED cleanly from the opponent's serve row in the SAME
+// finished round (return-points-won% = 100 − opponent's serve-points-won%; see
+// inTournamentReturnDelta). This shared row mirrors serveSharedRow: it is the
+// same-scope season baseline of that one observable component, so brk%/BP-conv%
+// (which the derivation cannot see) cancel in the delta and the re-priced return
+// rating stays on the full returnRatingRow scale. Null if the row lacks rpwPct.
+function returnSharedRow(row) {
+  if (!row) return null;
+  return num(row.rpwPct);
+}
+
+// Serve-points-won% for one progression round row = firstIn × firstWon +
+// (1−firstIn) × secondWon, all percentages. Null if any serve component missing.
+function serveWonPctFromRound(met) {
+  if (!met) return null;
+  const fi = num(met.firstServePct), fw = num(met.firstServeWonPct), sw = num(met.secondServeWonPct);
+  if (fi == null || fw == null || sw == null) return null;
+  const p = fi / 100;
+  return p * fw + (1 - p) * sw;
+}
+
+// In-tournament RETURN tier (#10 top tier — the return analog of the serve
+// tier): re-price the return rating using this event's COMPLETED earlier rounds.
+// Progression carries serve metrics only, so a player's in-event return-points-
+// won% is DERIVED from the OPPONENT's serve row in the same finished round
+// (rpw = 100 − opponent serve-points-won%). Opponent linkage: the round's
+// `opponent` name is matched against the tournament's players[] and that
+// opponent's row for the SAME round is read — that round is itself finished and
+// strictly earlier than the upcoming match, so there is no leakage. Rounds whose
+// opponent (or opponent serve metrics) can't be resolved are skipped; a player
+// with no usable finished rounds yet (R1) yields null => the tier self-hides and
+// return falls back to the season blend. Returns a bounded nudge = weight ×
+// (this-event avg rpw − same-scope season rpw blend), clamped to maxDeltaPP.
+function inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket) {
+  const cfg = config.adjustments.returnPressure && config.adjustments.returnPressure.inTournament;
+  if (!cfg || !playerObj || !splits) return null;
+  const prog = ctx.progression && ctx.progression.tournaments;
+  if (!prog) return null;
+  const tourName = String((ctx.match && ctx.match.tour) || '').replace(/^ATP\s+/i, '').trim();
+  const t = tourName && prog[tourName];
+  if (!t || !Array.isArray(t.players)) return null;
+  const key = String(playerObj.numericKey);
+  const pRow = t.players.find(pp => pp && String(pp.playerKey) === key);
+  if (!pRow || !Array.isArray(pRow.rounds)) return null;
+  let rpwSum = 0, n = 0;
+  for (const r of pRow.rounds) {
+    if (!r || !r.opponent) continue;
+    const opp = t.players.find(pp => pp && pp.name === r.opponent);
+    if (!opp || !Array.isArray(opp.rounds)) continue;
+    const oppRound = opp.rounds.find(rr => rr && rr.round === r.round);
+    const oppServeWon = serveWonPctFromRound(oppRound && oppRound.metrics);
+    if (oppServeWon == null) continue;
+    rpwSum += (100 - oppServeWon); n++;               // returner won the rest
+  }
+  const minR = num(cfg.minRounds) != null ? cfg.minRounds : 1;
+  if (n < minR) return null;
+  const itShared = rpwSum / n;                         // this-event derived rpw avg
+  const seasonShared = blendedRating(splits, surfCat, bucket, returnSharedRow);
+  if (seasonShared == null) return null;               // no season baseline to deviate from
+  const w = num(cfg.weight) != null ? cfg.weight : 0.5;
+  const cap = num(cfg.maxDeltaPP) != null ? cfg.maxDeltaPP : 4;
+  const nudge = clamp(w * (itShared - seasonShared), -cap, cap);
+  return { nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared) };
+}
+
 // A player's genuine CAREER overall win% (percentage points), summed from the
 // full-career surface totals in player-profiles kpis (Clay+Hard+Grass). This is
 // the correct baseline for the surface (#4) and round (#6) layers — the old
@@ -853,9 +922,19 @@ function returnPressure(ctx) {
     'career-splits.json (career + last-52wk per surface) + config.altitudeMeters');
   const surfCat = surfaceCategory(ctx.surface);
   const bucket = ctx.bestOf === 5 ? 'Best of 5' : 'Best of 3';
-  const r1 = blendedRating(ctx.p1.splits, surfCat, bucket, returnRatingRow);
-  const r2 = blendedRating(ctx.p2.splits, surfCat, bucket, returnRatingRow);
-  if (r1 == null || r2 == null) return res;
+  // In-tournament top tier: re-price the season return rating on this event's
+  // completed earlier rounds, deviating against the SAME scope as the base rating
+  // (surface, with blendedRating's own bucket fallback). Self-hides at R1.
+  function ratingFor(playerObj) {
+    const splits = playerObj && playerObj.splits;
+    const r = blendedRating(splits, surfCat, bucket, returnRatingRow);
+    if (r == null) return null;
+    const it = inTournamentReturnDelta(ctx, playerObj, splits, surfCat, bucket);
+    return { rating: it ? r + it.nudge : r, inTourn: it || null };
+  }
+  const A = ratingFor(ctx.p1), B = ratingFor(ctx.p2);
+  if (!A || !B) return res;
+  const r1 = A.rating, r2 = B.rating;
 
   // Dynamic magnitude = surface base scale x altitude multiplier, capped at CEIL.
   // Altitude only ever suppresses (mult <= 1.0), so the ceiling binds solely at
@@ -872,10 +951,14 @@ function returnPressure(ctx) {
   const signal = clamp((r1 - r2) / 15, -1, 1);
   const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
   const altPart = (alt != null && altMult < 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
+  // In-tournament top tier: note who it re-priced and off how many rounds.
+  const itNote = (r) => r.inTourn ? `${r.inTourn.n}r ${r.inTourn.nudge >= 0 ? '+' : ''}${r.inTourn.nudge.toFixed(1)}` : null;
+  const ia = itNote(A), ib = itNote(B);
+  const itPart = (ia || ib) ? `; in-tourn ${ia || '—'} / ${ib || '—'}` : '';
   return apply(res, signal, 'med',
     `Return rating ${r1.toFixed(1)} vs ${r2.toFixed(1)} ` +
     `(${surfCat || bucket}, career+52wk; ${speed} base ${(baseMag * 100).toFixed(2)}pp${altPart}; ` +
-    `mag ${(effMag * 100).toFixed(2)}pp).`);
+    `mag ${(effMag * 100).toFixed(2)}pp${itPart}).`);
 }
 
 // =========================================================================
@@ -1235,4 +1318,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow };
+module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };
