@@ -272,6 +272,58 @@ function wueSourceBadge(a){
   return '<span class="pill '+cls+'" title="W/UE source: '+esc(raw)+'">src: '+label+'</span>';
 }
 
+// ---- Feed-timing monitor (TEN-8, founder) -------------------------------
+// Flags a tournament that is on the board and recently active but has no
+// fixtures for its next play-day — the signature of a feed timing gap where a
+// draw (typically R1) has not yet been published, so the Tomorrow tab will be
+// empty for it. Amber, early-warning only; it reads the already-public
+// matches.json and adds no data exposure. Pure (no DOM) so it is unit-testable.
+//
+// Rule, per tournament (grouped by `tour`):
+//   • lastDay = latest date it has any match on the board
+//   • active  = lastDay is today or yesterday (still in its play window; a
+//               tournament that finished days ago drops off on its own)
+//   • no-next = it has no match dated lastDay+1 (next day unpublished)
+//   • early   = no Quarter/Semi/Final round anywhere for it. A deep tournament
+//               simply winding down is NOT a draw gap — this also stops a final
+//               (often carried with a null round) being mislabelled "R1 not
+//               published".
+//   • window  = we are within 12h of the expected next-day start, proxied by
+//               lastDay+1 at the tournament's earliest observed start time
+//               (sessions start at a consistent local time day-to-day). Below
+//               that it stays quiet to avoid crying wolf a full day early.
+// Once fired it keeps warning while overdue (negative hours) and clears by
+// itself once next-day fixtures appear or the tournament ages out.
+function feedTimingWarnings(matches, nowMs){
+  const arr = Array.isArray(matches) ? matches : ((matches&&matches.matches)||[]);
+  if(!arr.length) return [];
+  const D = ms => new Date(ms).toISOString().slice(0,10);                 // UTC yyyy-mm-dd
+  const addDays = (d,n) => D(Date.parse(d+'T00:00:00Z') + n*86400000);
+  const today = D(nowMs), yesterday = addDays(today,-1);
+  const LATE = /quarter|semi|final/i;
+  const byTour = {};
+  arr.forEach(m => { const t=(m&&m.tour)||'?'; (byTour[t]=byTour[t]||[]).push(m); });
+  const out=[];
+  Object.keys(byTour).forEach(tour => {
+    const ms = byTour[tour];
+    const dates = ms.map(m=>m.date).filter(Boolean);
+    if(!dates.length) return;
+    const lastDay = dates.reduce((a,b)=>a>b?a:b);
+    if(lastDay < yesterday) return;                                       // not recently active
+    const nextDay = addDays(lastDay,1);
+    if(dates.some(d=>d===nextDay)) return;                                // next-day fixtures present → fine
+    if(ms.some(m=>LATE.test(m.tournamentRound||''))) return;              // deep tournament, not a draw gap
+    const lastMs = ms.filter(m=>m.date===lastDay);
+    const times = lastMs.map(m=>m.time).filter(t=>/^\d{1,2}:\d{2}$/.test(t||'')).sort();
+    const expStart = Date.parse(nextDay+'T'+(times[0]||'00:00')+':00Z');
+    const hrs = (expStart - nowMs)/3600000;
+    if(hrs > 12) return;                                                  // more than 12h out → too early
+    const city = (lastMs[0].venue && lastMs[0].venue.city) || String(tour).replace(/^ATP\s+/,'');
+    out.push({ tour, city, hoursUntil: hrs, count: lastMs.length, nextDay });
+  });
+  return out.sort((a,b)=>a.hoursUntil-b.hoursUntil);
+}
+
 // ---- Section 5: Model state monitor -------------------------------------
 function renderSection5(){
   const el=document.getElementById('tab5');
@@ -327,6 +379,24 @@ function renderSection5(){
     c3.querySelector('.body').appendChild($('<div class="stub">Harvest state file is not published to Pages (<code>atp-entry-harvest-state.json</code> is committed to the repo but not in the <code>_site</code> copy list). Exposing it at a public URL is a deliberate choice — flagged for the founder rather than done silently.</div>'));
   }
   el.appendChild(c3);
+
+  // Feed timing — next-day fixtures / draw-publication gap (see feedTimingWarnings)
+  const feedWarn = feedTimingWarnings(matches, Date.now());
+  const ftPill = feedWarn.length
+    ? '<span class="pill warn">'+feedWarn.length+' tournament'+(feedWarn.length>1?'s':'')+' awaiting next-day fixtures</span>'
+    : '<span class="pill good">next-day fixtures OK</span>';
+  const c4=$('<div class="card open"><div class="hd"><div class="title">Feed timing · next-day fixtures</div><div>'+ftPill+'</div></div><div class="body"></div></div>');
+  if(feedWarn.length){
+    const rows = feedWarn.map(w=>{
+      const when = w.hoursUntil>=0 ? 'expected R1 start in '+dec(w.hoursUntil,1)+'h' : dec(-w.hoursUntil,1)+'h overdue';
+      return kv('<span style="color:var(--warn)">'+esc(w.city)+' R1 draw not yet published</span>',
+                '<span class="detail">'+w.count+' match'+(w.count>1?'es':'')+' on '+esc(w.tour)+'’s last board-day · no fixtures for '+esc(w.nextDay)+' · '+when+'</span>');
+    }).join('');
+    c4.querySelector('.body').appendChild($('<div class="grid">'+rows+'</div>'));
+  } else {
+    c4.querySelector('.body').appendChild($('<div class="stub">Every tournament with recent matches on the board either has next-day fixtures published or is more than 12h from its next expected start. Amber fires when a draw (typically R1) looks unpublished inside that window, so an empty Tomorrow tab is visible here before it hits the board.</div>'));
+  }
+  el.appendChild(c4);
 
   if(DATA.errors.length) el.appendChild($('<div class="err" style="margin-top:8px">load warnings: '+esc(DATA.errors.join(' · '))+'</div>'));
 }
