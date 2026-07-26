@@ -461,6 +461,10 @@ module.exports = {
     'atlanta': -4, 'cincinnati': -4, 'winston': -5, 'chicago': -5, 'dallas': -5,
     'houston': -5, 'delray beach': -5, 'indian wells': -7, 'san diego': -7,
     'los cabos': -7, 'acapulco': -6, 'montreal': -4, 'toronto': -4,
+    // North American Challengers seen on the live board 2026-07-26 (the
+    // hard-court summer swing runs Challengers alongside the ATP events; these
+    // names never contained a tour-city substring, so travel self-hid on them):
+    'bloomfield hills': -4, 'winnipeg': -5, 'granby': -4,
     // --- Latin America ---
     'buenos aires': -3, 'cordoba': -3, 'córdoba': -3, 'rio de janeiro': -3,
     'sao paulo': -3, 'são paulo': -3, 'montevideo': -3, 'santiago': -4,
