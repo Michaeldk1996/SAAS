@@ -65,29 +65,75 @@
   <div class="box">
     <h1>404</h1>
     <p>This page could not be found.</p>
-    <input id="pw" type="password" autocomplete="off" aria-label="x" />
+    <div id="gateLogin" style="margin-top:14px">
+      <input id="gEmail" type="email" autocomplete="username" placeholder="email" aria-label="email" style="width:220px;margin-bottom:6px" /><br>
+      <input id="gPw" type="password" autocomplete="current-password" placeholder="password" aria-label="password" />
+      <div id="gErr" class="err" style="min-height:16px;margin-top:8px;font-size:12px"></div>
+    </div>
+    <p id="gateDenied" style="display:none;margin-top:14px">Not authorized. <span id="gateSignout" style="cursor:pointer;text-decoration:underline;color:var(--dim)">Sign out</span></p>
   </div>
 </div>
 <div id="app"></div>
 
+<!-- Real Firebase auth (shared member-site session layer). Provides BSP.*. -->
+<script src="./auth.js"></script>
 <script>
 'use strict';
 const CFG = window.ADMIN_CONFIG || {};
-const TOKEN_KEY = 'bsp.admin.ok';
 
-// ---- gate ----------------------------------------------------------------
-function authed(){ return sessionStorage.getItem(TOKEN_KEY) === '1'; }
-function tryPassword(v){
-  if (CFG.password === '' || v === CFG.password){ sessionStorage.setItem(TOKEN_KEY,'1'); reveal(); }
+// ---- gate: REAL Firebase auth, founder-only (TEN-8) -----------------------
+// The dashboard renders ONLY for a signed-in AND allowlisted founder account.
+// boot() is never called for a signed-out visitor or a non-founder member, so
+// no admin data (and no admin-log) is ever fetched or rendered for them. The
+// allowlist lives in admin-config.js (ADMIN_UIDS / ADMIN_EMAILS) and is mirrored
+// by the Firestore rule on `admin/*`, so even a hand-crafted client cannot read
+// the ledger without the founder's own token.
+const ADMIN_UIDS = (CFG.ADMIN_UIDS || []).map(s => String(s));
+const ADMIN_EMAILS = (CFG.ADMIN_EMAILS || []).map(s => String(s).trim().toLowerCase());
+let BOOTED = false;
+
+function isFounder(u){
+  if (!u || !u.emailVerified) return false;           // must be signed in + verified
+  if (ADMIN_UIDS.length && ADMIN_UIDS.indexOf(u.uid) >= 0) return true;
+  if (ADMIN_EMAILS.length && u.email &&
+      ADMIN_EMAILS.indexOf(String(u.email).trim().toLowerCase()) >= 0) return true;
+  return false;                                        // empty allowlist => denies everyone
 }
-function reveal(){
-  document.getElementById('gate').style.display='none';
-  document.getElementById('app').style.display='block';
+function showDenied(signedIn){
+  document.getElementById('gate').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gateLogin').style.display  = signedIn ? 'none'  : 'block';
+  document.getElementById('gateDenied').style.display = signedIn ? 'block' : 'none';
+}
+function grant(){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
   document.title = 'BSP Admin';
-  boot();
+  if (!BOOTED){ BOOTED = true; boot(); }
 }
-document.getElementById('pw').addEventListener('keydown',e=>{ if(e.key==='Enter') tryPassword(e.target.value); });
-if (authed()) reveal(); else document.getElementById('pw').focus();
+(function initGate(){
+  // Fail closed: if the auth layer is unavailable, deny and never boot.
+  if (!(window.BSP && BSP.onAuthChange)){ showDenied(false); return; }
+  // Fires on session restore and every subsequent auth-state change.
+  BSP.onAuthChange(function(u){ if (isFounder(u)) grant(); else showDenied(!!u); });
+
+  var email = document.getElementById('gEmail');
+  var pw = document.getElementById('gPw');
+  var err = document.getElementById('gErr');
+  function submit(){
+    err.textContent = '';
+    if (!(window.BSP && BSP.signIn)){ err.textContent = 'Auth unavailable.'; return; }
+    BSP.signIn(email.value, pw.value).then(function(u){
+      // onAuthChange grants if founder; otherwise surface a neutral denial and
+      // sign the non-founder back out so no member session lingers here.
+      if (!isFounder(u)){ err.textContent = 'Not authorized.'; BSP.signOut && BSP.signOut(); }
+    }).catch(function(e){ err.textContent = (e && e.message) || 'Sign-in failed.'; });
+  }
+  pw.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+  email.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+  var so = document.getElementById('gateSignout');
+  if (so) so.onclick = function(){ if (window.BSP && BSP.signOut) BSP.signOut().then(function(){ showDenied(false); }); };
+})();
 
 // ---- helpers -------------------------------------------------------------
 const $ = (h)=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild;};
@@ -98,6 +144,22 @@ const dec = (x,d=2)=>x==null||!isFinite(x)?'—':(+x).toFixed(d);
 const fmtTs = (t)=>{ if(!t) return '—'; const d=new Date(t); return isNaN(d)?'—':d.toISOString().replace('T',' ').slice(0,16)+'Z'; };
 const agoH = (t)=>{ if(!t) return null; const h=(Date.now()-new Date(t).getTime())/3.6e6; return isFinite(h)?h:null; };
 async function getJson(url){ const r=await fetch(url+'?cb='+Date.now()); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); }
+
+// TEN-8: read the admin ledger from Firestore (doc `admin/log`, field `payload`)
+// using the already-initialised founder session from auth.js. Firestore rules
+// restrict this read to the founder uid/email, so it only ever resolves for a
+// signed-in founder — the same identity that already passed the gate. Returns
+// the ledger object, or null on any error (caller falls back to a static fetch).
+async function fetchAdminLogFromFirestore(){
+  try{
+    if (!window.BSP || !BSP.ready) return null;
+    await BSP.ready();                          // ensures the firebase compat SDK is loaded
+    if (!(window.firebase && firebase.firestore)) return null;
+    const snap = await firebase.firestore().collection('admin').doc('log').get();
+    if (snap && snap.exists){ const d = snap.data() || {}; return d.payload || d; }
+    return null;
+  }catch(e){ DATA.errors.push('admin/log (Firestore): '+e.message); return null; }
+}
 
 let DATA = { model:null, matches:null, health:null, harvest:null, adminLog:null, errors:[] };
 
@@ -131,13 +193,14 @@ async function boot(){
   ]);
   DATA.model=model; DATA.matches=matches; DATA.health=health;
   DATA.harvest = await getJson('./atp-entry-harvest-state.json').catch(()=>null); // not exposed => null
-  // Option A (founder, TEN-8): admin-log.json is deliberately NOT published to
-  // _site, so this same-origin fetch 404s on the public Pages site and the
-  // ledger is never exposed at a public URL. Sections 2/3/4 therefore show the
-  // "data not published" stub on Pages by design. To render the real ledger
-  // behind genuine auth, serve it from the authenticated Firebase host (the
-  // password gate here is obscurity-only, per admin-config.js) — see report.
-  DATA.adminLog = await getJson('./admin-log.json').catch(()=>null);
+  // TEN-8: the ledger is served from Firestore (doc `admin/log`), readable ONLY
+  // by the founder's own token (see firestore.rules). This is the genuinely
+  // private path — admin-log.json is deliberately NOT published to Pages, so the
+  // same-origin fetch 404s publicly and only ever succeeds for a local checkout.
+  // Firestore first, static fetch as a graceful fallback (local dev / if the
+  // founder ever chooses to publish it).
+  DATA.adminLog = await fetchAdminLogFromFirestore();
+  if (!DATA.adminLog) DATA.adminLog = await getJson('./admin-log.json').catch(()=>null);
 
   document.getElementById('topmeta').innerHTML =
     'model generated ' + esc(fmtTs(model&&model.generatedAt)) + ' · pipeline last-success ' + esc(fmtTs(health&&health.lastSuccess));
@@ -415,12 +478,12 @@ function valueSide(f){ const vs=f.valueSnapshot||{}; const e1=vs.edgeVsPinnacleP
 function valueEdge(f){ const vs=f.valueSnapshot||{}; const s=valueSide(f); return s?(s==='p1'?vs.edgeVsPinnacleP1:vs.edgeVsPinnacleP2):null; }
 function valueFair(f){ const vs=f.valueSnapshot||{}; const s=valueSide(f); return s?(s==='p1'?vs.fairP1:vs.fairP2):null; }
 function avg(xs){ const a=xs.filter(x=>x!=null&&isFinite(x)); return a.length?a.reduce((p,c)=>p+c,0)/a.length:null; }
-// admin-log.json is committed to the repo but is NOT in the pipeline's _site copy
-// list, so it 404s on Pages. Exposing it publishes internal performance + value
-// history at a public URL — a founder decision, flagged not done silently (same
-// convention as the @ATP_Entry harvest block in Section 5).
+// TEN-8: the ledger is now served privately from Firestore (doc `admin/log`),
+// NOT from a public URL. If it is unavailable it is because the backend mirror
+// step has not run yet (needs FIREBASE_SERVICE_ACCOUNT in CI) or the Firestore
+// rule / allowlist has not been published — flagged for the founder, not faked.
 function adminLogStub(tabId,title){
-  document.getElementById(tabId).innerHTML='<div class="card"><div class="hd"><div class="title">'+title+'</div><div><span class="pill warn">data not published</span></div></div><div class="body always"><div class="stub"><code>admin-log.json</code> is built every pipeline run and committed to the repo, but it is <b>not in the <code>_site</code> copy list</b>, so it 404s on Pages and this section has no data. Publishing it exposes internal model performance + value-flag history at a public URL — a deliberate choice, flagged for the founder rather than done silently. Approve it (add <code>cp admin-log.json _site/</code> to pipeline.yml) and this section renders automatically.</div></div></div>';
+  document.getElementById(tabId).innerHTML='<div class="card"><div class="hd"><div class="title">'+title+'</div><div><span class="pill warn">ledger unavailable</span></div></div><div class="body always"><div class="stub">The performance ledger is served privately from Firestore (<code>admin/log</code>), readable only by the founder account — it is intentionally <b>not</b> a public URL. This section is empty because the Firestore doc has not been populated yet (the pipeline mirror step needs the <code>FIREBASE_SERVICE_ACCOUNT</code> secret) and/or the <code>admin/*</code> read rule + <code>ADMIN_UIDS/ADMIN_EMAILS</code> allowlist have not been published. Once the mirror runs and the rule is live, this renders automatically.</div></div></div>';
 }
 
 // ---- Section 2: pipeline performance log --------------------------------

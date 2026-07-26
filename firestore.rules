@@ -40,6 +40,29 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // ---- Admin ledger (TEN-8, founder-only) ---------------------------------
+    // The admin dashboard's performance ledger is mirrored into `admin/log` by
+    // the pipeline (via the Admin SDK / service account, which BYPASSES these
+    // rules — hence writes are denied to all normal clients below). Only the
+    // founder account may READ it, so the ledger is genuinely private even
+    // though admin.html is a static, publicly-fetchable page.
+    //
+    // >>> FOUNDER ACTION REQUIRED <<<  Fill in the SAME identity you put in
+    // admin-config.js. Prefer uid(s); email(s) are matched case-sensitively by
+    // Firestore so use the exact lowercase address. Delete the branch you don't
+    // use. Until at least one real value is present, this read denies everyone.
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid in ['PASTE_FOUNDER_FIREBASE_UID_HERE']
+        || (request.auth.token.email != null
+            && request.auth.token.email in ['paste_founder_email_here'])
+      );
+    }
+    match /admin/{doc} {
+      allow read: if isAdmin();
+      allow write: if false;   // CI writes via the Admin SDK (bypasses rules)
+    }
+
     // ---- Default deny -------------------------------------------------------
     // Any path not matched above is fully locked.
     match /{document=**} {
