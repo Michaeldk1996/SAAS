@@ -18,7 +18,7 @@ window.ADMIN_CONFIG = {
   // Allowlisted Firebase Auth uids that may open the admin dashboard.
   // Example: ['aBcD1234efGh5678ijkl'].  Leave [] if using emails only.
   ADMIN_UIDS: [
-    // 'PASTE_FOUNDER_FIREBASE_UID_HERE',
+    // 'dqniZkontSPLBwseOTBzmfCBUQG3',
   ],
 
   // Allowlisted (verified) account emails, matched case-insensitively.
