@@ -132,6 +132,56 @@ function blendedRating(splits, surfCat, bestOfBucket, ratingFn) {
   return l != null ? l : (c != null ? c : null);
 }
 
+// Serve sub-rating on ONLY the 3 components a single-event stat sheet carries:
+// 1st-serve-in% + 1st-serve-won% + 2nd-serve-won%. Used to compute the
+// in-tournament deviation against the SAME-scope season blend so hold%/ace%/df%
+// cancel and the re-priced serve rating stays on the full serveRatingRow scale.
+function serveSharedRow(row) {
+  if (!row) return null;
+  const fi = num(row.firstInPct), fw = num(row.firstWonPct), sw = num(row.secondWonPct);
+  if (fi == null || fw == null || sw == null) return null;
+  return fi + fw + sw;
+}
+
+// In-tournament serve tier (#9 top tier): re-price the serve rating using this
+// event's COMPLETED earlier rounds. Reads tournament-progression.json (already
+// in ctx as ctx.progression — api-tennis per-round 1st-in / 1st-won / 2nd-won %,
+// built for the Progression tab), averages the 3 observed serve components over
+// the player's finished rounds in the current tournament, and returns a bounded
+// nudge = weight x (this-event avg − same-scope season 3-comp blend). Progression
+// carries ONLY finished rounds, so every row is strictly earlier than the
+// upcoming match being priced (no leakage), and a player with no finished rounds
+// yet (R1) yields null => the tier self-hides and serve falls back to season.
+function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
+  const cfg = config.adjustments.serve && config.adjustments.serve.inTournament;
+  if (!cfg || !playerObj || !splits) return null;
+  const prog = ctx.progression && ctx.progression.tournaments;
+  if (!prog) return null;
+  const tourName = String((ctx.match && ctx.match.tour) || '').replace(/^ATP\s+/i, '').trim();
+  const t = tourName && prog[tourName];
+  if (!t || !Array.isArray(t.players)) return null;
+  const key = String(playerObj.numericKey);
+  const pRow = t.players.find(pp => pp && String(pp.playerKey) === key);
+  if (!pRow || !Array.isArray(pRow.rounds)) return null;
+  let fi = 0, fw = 0, sw = 0, n = 0;
+  for (const r of pRow.rounds) {
+    const met = r && r.metrics;
+    if (!met) continue;
+    const a = num(met.firstServePct), b = num(met.firstServeWonPct), c2 = num(met.secondServeWonPct);
+    if (a == null || b == null || c2 == null) continue;
+    fi += a; fw += b; sw += c2; n++;
+  }
+  const minR = num(cfg.minRounds) != null ? cfg.minRounds : 1;
+  if (n < minR) return null;
+  const itShared = (fi + fw + sw) / n;                 // this-event 3-comp avg
+  const seasonShared = blendedRating(splits, surfCat, bucket, serveSharedRow);
+  if (seasonShared == null) return null;                // no season baseline to deviate from
+  const w = num(cfg.weight) != null ? cfg.weight : 0.5;
+  const cap = num(cfg.maxDeltaPP) != null ? cfg.maxDeltaPP : 20;
+  const nudge = clamp(w * (itShared - seasonShared), -cap, cap);
+  return { nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared) };
+}
+
 // A player's genuine CAREER overall win% (percentage points), summed from the
 // full-career surface totals in player-profiles kpis (Clay+Hard+Grass). This is
 // the correct baseline for the surface (#4) and round (#6) layers — the old
@@ -660,19 +710,28 @@ function serve(ctx) {
   // (>= surfaceMinM career matches on THIS surface), otherwise the universal
   // (all-surface, format-bucket) rating flagged for a reliability penalty.
   const minM = num(c.surfaceMinM) != null ? c.surfaceMinM : 10;
-  function ratingFor(splits) {
+  function ratingFor(playerObj) {
+    const splits = playerObj && playerObj.splits;
     if (!splits) return null;
     const cs = surfCat && splits.career && splits.career[surfCat];
     const sm = cs && num(cs.M) != null ? cs.M : 0;
+    let rating = null, reliable = false, effSurf = null;
     if (surfCat && sm >= minM) {
       const r = blendedRating(splits, surfCat, bucket, serveRatingRow);
-      if (r != null) return { rating: r, reliable: true };
+      if (r != null) { rating = r; reliable = true; effSurf = surfCat; }
     }
-    const u = blendedRating(splits, null, bucket, serveRatingRow); // universal
-    if (u != null) return { rating: u, reliable: false };
-    return null;
+    if (rating == null) {
+      const u = blendedRating(splits, null, bucket, serveRatingRow); // universal
+      if (u == null) return null;
+      rating = u; reliable = false; effSurf = null;
+    }
+    // In-tournament top tier: re-price on this event's completed earlier rounds,
+    // deviating against the SAME scope (surface or universal) as the base rating.
+    const it = inTournamentServeDelta(ctx, playerObj, splits, effSurf, bucket);
+    if (it) rating += it.nudge;
+    return { rating, reliable, inTourn: it || null };
   }
-  const a = ratingFor(ctx.p1.splits), b = ratingFor(ctx.p2.splits);
+  const a = ratingFor(ctx.p1), b = ratingFor(ctx.p2);
   if (!a || !b) return res;
 
   // Dynamic magnitude = surface base scale x altitude multiplier, capped at CEIL.
@@ -694,10 +753,14 @@ function serve(ctx) {
   const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
   const altPart = (alt != null && altMult > 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
   const relPart = relDamp < 1.0 ? ', thin-surface x0.70' : '';
+  // In-tournament top tier: note who it re-priced and off how many rounds.
+  const itNote = (r) => r.inTourn ? `${r.inTourn.n}r ${r.inTourn.nudge >= 0 ? '+' : ''}${r.inTourn.nudge.toFixed(1)}` : null;
+  const ia = itNote(a), ib = itNote(b);
+  const itPart = (ia || ib) ? `; in-tourn ${ia || '—'} / ${ib || '—'}` : '';
   return apply(res, signal, 'med',
     `Serve rating ${a.rating.toFixed(1)} vs ${b.rating.toFixed(1)} ` +
     `(${surfCat || bucket}; ${speed} base ${(baseMag * 100).toFixed(1)}pp${altPart}${relPart}; ` +
-    `mag ${(effMag * 100).toFixed(1)}pp).`);
+    `mag ${(effMag * 100).toFixed(1)}pp${itPart}).`);
 }
 
 // =========================================================================
@@ -1115,4 +1178,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits };
+module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow };

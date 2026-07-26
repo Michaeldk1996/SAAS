@@ -119,5 +119,56 @@ ok('unknown archetype => tour-ratio fallback, still applies dir p1', noStyle.app
 const mixed=winnerUE(wctx(player('big_server',wue(1.2,'api-tennis')), player('big_server',wue(0.9,'ATP_Entry_OCR'))));
 ok('mixed sources noted in detail', /api-tennis\/ATP_Entry_OCR/.test(mixed.detail), mixed.detail);
 
+// =========================================================================
+// #9 in-tournament serve tier (TEN-29)
+// =========================================================================
+console.log('=== in-tournament serve tier (#9 top tier) ===');
+const { inTournamentServeDelta, serveSharedRow } = require(path.join(HM,'adjustments'));
+const SITC = cfg.adjustments.serve.inTournament;
+
+// serveSharedRow sums the 3 observed serve components; null if any missing.
+ok('serveSharedRow sums 3 comps', serveSharedRow({firstInPct:60,firstWonPct:72,secondWonPct:52})===184);
+ok('serveSharedRow null when a comp missing', serveSharedRow({firstInPct:60,firstWonPct:72})===null);
+
+// Synthetic splits: season blend of the 3 shared comps = last52*0.6 + career*0.4.
+// last52 clay shared = 60+72+52=184, career clay shared = 55+70+50=175 => blend 180.4.
+const splits = { last52:{ Clay:{firstInPct:60,firstWonPct:72,secondWonPct:52} },
+                 career:{ Clay:{firstInPct:55,firstWonPct:70,secondWonPct:50} } };
+// progression: player served BETTER this event (shared avg 60+80+60=200 over 1 round).
+function progCtx(rounds){ return { match:{ tour:'ATP Estoril' },
+  progression:{ tournaments:{ Estoril:{ players:[{ playerKey:'358', rounds }] } } } }; }
+const pObj = { numericKey:'358' };
+const hotRounds=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60}}];
+const hot = inTournamentServeDelta(progCtx(hotRounds), pObj, splits, 'Clay', 'Best of 3');
+ok('fires with a completed round', hot!==null && hot.n===1, hot);
+ok('this-event avg = 200', hot && hot.itShared===200, hot && hot.itShared);
+ok('season blend = 180.4', hot && Math.abs(hot.seasonShared-180.4)<1e-6, hot && hot.seasonShared);
+ok('nudge = weight*(200-180.4)', hot && near(hot.nudge, SITC.weight*(200-180.4)), hot && hot.nudge);
+ok('positive nudge when serving hot', hot && hot.nudge>0, hot && hot.nudge);
+
+// Self-hide at R1 / off-progression: no rounds, no tournament, unknown player.
+ok('self-hide when no completed rounds (R1)', inTournamentServeDelta(progCtx([]), pObj, splits, 'Clay','Best of 3')===null);
+ok('self-hide off-progression tournament',
+   inTournamentServeDelta({match:{tour:'ATP Washington'},progression:{tournaments:{Estoril:{players:[]}}}}, pObj, splits,'Clay','Best of 3')===null);
+ok('self-hide when player absent from event',
+   inTournamentServeDelta(progCtx(hotRounds), {numericKey:'999'}, splits,'Clay','Best of 3')===null);
+ok('self-hide with no season baseline', inTournamentServeDelta(progCtx(hotRounds), pObj, {}, 'Clay','Best of 3')===null);
+
+// Bound: an absurd hot round is capped at maxDeltaPP.
+const insane=[{round:'R1',metrics:{firstServePct:100,firstServeWonPct:100,secondServeWonPct:100}}];
+const capped=inTournamentServeDelta(progCtx(insane), pObj, splits,'Clay','Best of 3');
+ok('nudge capped at maxDeltaPP', capped && Math.abs(capped.nudge)<=SITC.maxDeltaPP+1e-9, capped && capped.nudge);
+
+// Cold event => negative nudge (favours the opponent).
+const coldRounds=[{round:'R1',metrics:{firstServePct:40,firstServeWonPct:50,secondServeWonPct:40}}];
+const cold=inTournamentServeDelta(progCtx(coldRounds), pObj, splits,'Clay','Best of 3');
+ok('negative nudge when serving cold', cold && cold.nudge<0, cold && cold.nudge);
+
+// Multi-round average.
+const twoR=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60}},
+            {round:'R2',metrics:{firstServePct:60,firstServeWonPct:60,secondServeWonPct:40}}];
+const avg=inTournamentServeDelta(progCtx(twoR), pObj, splits,'Clay','Best of 3');
+ok('averages across completed rounds (n=2, avg 180)', avg && avg.n===2 && avg.itShared===180, avg);
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

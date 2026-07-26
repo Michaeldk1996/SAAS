@@ -198,7 +198,24 @@ module.exports = {
                         { minM: 300,  mult: 1.25 },
                         { minM: 0,    mult: 1.00 },
                       ],
-                      surfaceMinM: 10, universalPenalty: 0.70 },
+                      surfaceMinM: 10, universalPenalty: 0.70,
+                      // In-tournament serve tier (TEN-29). This event's completed
+                      // earlier rounds re-price the serve rating as the TOP tier
+                      // above last-52-weeks and career. Self-hides at R1 (a player
+                      // has no earlier rounds in the event yet). Source is
+                      // tournament-progression.json (api-tennis per-round
+                      // 1st-in / 1st-won / 2nd-won %), already produced for the
+                      // Progression tab and already in ctx — no new feed call.
+                      // Only those 3 OBSERVED serve components are re-priced; a
+                      // single event's stat sheets don't carry hold%/ace%/df%, so
+                      // those stay at the season blend (they cancel in the delta,
+                      // keeping the rating on the full serveRatingRow scale). The
+                      // re-price is a bounded nudge = weight x (this-event 3-comp
+                      // avg − same-scope season 3-comp blend), clamped to
+                      // maxDeltaPP rating points so one hot/cold round can't
+                      // dominate; signal & magnitude clamps downstream are
+                      // unchanged, so the 5pp ceiling still holds.
+                      inTournament: { weight: 0.5, minRounds: 1, maxDeltaPP: 20 } },
     // 10. Return / pressure — career return-points-won% + break% (+ break-point
     //    conversion% WHERE the splits row carries it; dormant today because
     //    career-splits.json has no BP-conversion field, and the only live source
