@@ -8072,10 +8072,26 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Finished",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "-",
     "liveServer": null,
     "p1PhotoUrl": null,
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3318_e-winter.jpg",
@@ -8106,7 +8122,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149294",
@@ -9303,7 +9322,29 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/60067_a-magadan.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7637_g-johns.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "finalScore": {
+      "display": "2-6, 6-1, 6-1",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12149295",
@@ -10592,14 +10633,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "5 - 6",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/34386_m-tobon.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3145_b-tomic.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149296",
@@ -14604,11 +14648,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1307_a-hernandez.jpg",
     "oddsMovement": {
@@ -14630,7 +14680,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12149299",
