@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-07-26T21:05:51.891Z",
+ "updated": "2026-07-26T23:17:10.171Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -271,6 +271,15 @@
    "flagged": 8,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-07-26T23:17:10.171Z",
+   "run": "30224729740",
+   "priced": 30,
+   "logged": 45,
+   "flagged": 9,
+   "newlyLogged": 0,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -461,7 +470,7 @@
    "status": "finished",
    "finalScore": "4-6, 7-5, 4-6",
    "modelFairLast": 0.3336,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12148971": {
    "key": "12148971",
@@ -482,7 +491,7 @@
    "status": "finished",
    "finalScore": "4-6, 6-7(2)",
    "modelFairLast": 0.5609,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12148978": {
    "key": "12148978",
@@ -503,7 +512,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.6286,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149043": {
    "key": "12149043",
@@ -524,7 +533,7 @@
    "status": "finished",
    "finalScore": "6-3, 3-6, 4-6",
    "modelFairLast": 0.8328,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149044": {
    "key": "12149044",
@@ -545,7 +554,7 @@
    "status": "finished",
    "finalScore": "6-2, 5-7, 2-6",
    "modelFairLast": 0.3637,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149162": {
    "key": "12149162",
@@ -566,7 +575,7 @@
    "status": "finished",
    "finalScore": "4-6, 6-7(6)",
    "modelFairLast": 0.6897,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149164": {
    "key": "12149164",
@@ -587,7 +596,7 @@
    "status": "finished",
    "finalScore": "6-4, 7-5",
    "modelFairLast": 0.5713,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149222": {
    "key": "12149222",
@@ -608,7 +617,7 @@
    "status": "finished",
    "finalScore": "5-7, 7-6(1), 7-6(5)",
    "modelFairLast": 0.4725,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149294": {
    "key": "12149294",
@@ -653,7 +662,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.8948,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149354": {
    "key": "12149354",
@@ -713,7 +722,7 @@
    "status": "finished",
    "finalScore": "6-4, 4-6, 7-5",
    "modelFairLast": 0.2612,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149489": {
    "key": "12149489",
@@ -758,7 +767,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.824,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149516": {
    "key": "12149516",
@@ -772,8 +781,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4568,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.4576,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149517": {
    "key": "12149517",
@@ -783,12 +792,18 @@
    "surface": "hard",
    "tour": "ATP Washington",
    "modelFairEntry": 0.1817,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.21,
+    "fairP2": 0.79,
+    "edgeVsPinnacleP1": -0.0776,
+    "edgeVsPinnacleP2": 0.0776,
+    "ts": "2026-07-26T23:13:39.452Z"
+   },
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1822,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.21,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149518": {
    "key": "12149518",
@@ -802,8 +817,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4086,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.4085,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149519": {
    "key": "12149519",
@@ -817,8 +832,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5773,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.5768,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149520": {
    "key": "12149520",
@@ -832,8 +847,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4593,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.4596,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149521": {
    "key": "12149521",
@@ -847,8 +862,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1466,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.1461,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149522": {
    "key": "12149522",
@@ -863,7 +878,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2614,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149523": {
    "key": "12149523",
@@ -877,8 +892,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7019,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.7007,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149524": {
    "key": "12149524",
@@ -892,8 +907,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6617,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.6609,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149525": {
    "key": "12149525",
@@ -907,8 +922,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6473,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.649,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149526": {
    "key": "12149526",
@@ -922,8 +937,8 @@
    "firstSeen": "2026-07-26T04:36:03.251Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3212,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.3215,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149556": {
    "key": "12149556",
@@ -938,7 +953,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4996,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149557": {
    "key": "12149557",
@@ -953,7 +968,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.8748,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149558": {
    "key": "12149558",
@@ -968,7 +983,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3981,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149559": {
    "key": "12149559",
@@ -983,7 +998,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6887,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149560": {
    "key": "12149560",
@@ -997,8 +1012,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6437,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.6436,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149561": {
    "key": "12149561",
@@ -1012,8 +1027,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7523,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.7525,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149562": {
    "key": "12149562",
@@ -1028,7 +1043,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1731,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   },
   "12149563": {
    "key": "12149563",
@@ -1042,8 +1057,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4758,
-   "lastSeen": "2026-07-26T21:05:51.891Z"
+   "modelFairLast": 0.4759,
+   "lastSeen": "2026-07-26T23:17:10.171Z"
   }
  }
 }
