@@ -2142,6 +2142,10 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   // {won,total} / counts (not derived pcts) so the model can sum denominators
   // across the event's rounds and enforce its own min-sample — never presenting
   // a small-denominator rate as fact.
+  //
+  // rawWonTotal is shared with the Layer #10 in-tournament return tier, which sums
+  // the return-side counts across rounds the same way — raw {won,total} rather than
+  // a derived pct so the model can add denominators and enforce its own min-sample.
   const rawWonTotal = (type, name) => {
     const s = findMatchStat(matchStats, playerKey, type, name);
     if (!s) return null;
@@ -2177,6 +2181,12 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     aces: rawCount('Service', 'Aces'),                   // Service / Aces (count)
     dfs: rawCount('Service', 'Double Faults'),           // Service / Double Faults (count)
     svPts: svPtsRow ? svPtsRow.total : null,             // Points / Service Points Won -> service points played (ace%/df% denominator)
+    // return-side raw counts (kept so the Layer #10 return tier can sum denominators
+    // across rounds and enforce min-sample — never present a small-denominator rate as fact)
+    ret1: rawWonTotal('Return', '1st return points won'),      // Return / 1st return points won
+    ret2: rawWonTotal('Return', '2nd return points won'),      // Return / 2nd return points won
+    retGames: rawWonTotal('Games', 'Return games won'),        // Games  / Return games won (break%)
+    bpConv: rawWonTotal('Return', 'Break Points Converted'),   // Return / Break Points Converted (BP conv%)
     // Provenance of the winners/UE-derived metrics: 'api-tennis', 'ATP_Entry_OCR',
     // or null (neither source had W/UE — those three metrics stay null).
     wueSource,

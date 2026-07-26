@@ -249,21 +249,37 @@ module.exports = {
                       // completed earlier rounds re-price the return rating as the
                       // TOP tier above last-52-weeks and career; self-hides at R1.
                       // Source is tournament-progression.json, already in ctx — no
-                      // new feed call. That file carries per-round SERVE metrics
-                      // ONLY, so the player's in-event return-points-won% is DERIVED
-                      // cleanly from the OPPONENT's serve row in the same finished
-                      // round (rpw = 100 − opponent serve-points-won%). Only that
-                      // one observable component is re-priced; brk%/BP-conv% stay at
-                      // the season blend (they cancel in the delta), keeping the
-                      // rating on the full returnRatingRow scale. Re-price is a
-                      // bounded nudge = weight × (this-event rpw avg − same-scope
-                      // season rpw blend), clamped to maxDeltaPP rating points so
-                      // one hot/cold round can't dominate; the signal (/15) and
-                      // magnitude clamps downstream are unchanged, so the 3pp
-                      // ceiling still holds. maxDeltaPP:4 mirrors the serve tier's
-                      // 20 as the SAME ~11% fraction of its shared-row scale (serve
-                      // shared row ≈ 3 comps ≈ 187; return shared row = rpwPct ≈ 35).
-                      inTournament: { weight: 0.5, minRounds: 1, maxDeltaPP: 4 } },
+                      // new feed call. Each round now carries the player's OWN raw
+                      // return counts (bsp-pipeline extractProgressionMetrics), so
+                      // the tier is a genuine 4-COMPONENT rating, each an event
+                      // aggregate vs the same-scope season baseline:
+                      //   1. 1st-serve return points won %  (baseline ret1WonPct)
+                      //   2. 2nd-serve return points won %  (baseline ret2WonPct)
+                      //   3. break % = return games won %   (baseline brkPct)
+                      //   4. break-point conversion %       (baseline bpConvPct)
+                      // The per-component min-sample IS the fabrication guard: a
+                      // component only fires once its denominator SUMMED across this
+                      // event's rounds clears its floor (ret1 20 return pts, ret2 15,
+                      // break 8 return games, bpConv 5 BP chances) AND its season
+                      // baseline exists; otherwise that component self-hides — a rate
+                      // is never computed from too few (or zero) chances. Each used
+                      // component contributes clamp(weight × Δ, ±perComponentCap), and
+                      // the summed nudge is clamped to maxDeltaPP rating points so no
+                      // single component (or hot round) can dominate. The signal (/15)
+                      // and magnitude clamps downstream are unchanged, so the 3pp
+                      // ceiling still holds. maxDeltaPP:4 is the same over-cap guard
+                      // the validator checks.
+                      // weight/perComponentCap tuned 2026-07-26 against the live
+                      // Estoril+Kitzbuhel board: the four return components are highly
+                      // correlated (a hot returner is up on all of them at once), so a
+                      // 0.5 weight × 2pp per-component cap summed the four into the ±4
+                      // total cap on 59% of fired sides — the blend collapsed to "±4"
+                      // and lost its granularity. weight 0.2 / perComponentCap 1.25
+                      // keeps the same ±4 over-cap guard but pins only ~10% of sides
+                      // (median |nudge| ≈ 2.5pt), so the 4-component signal actually
+                      // varies. maxDeltaPP unchanged; zero over-cap still guaranteed.
+                      inTournament: { weight: 0.2, minRounds: 1, maxDeltaPP: 4, perComponentCap: 1.25,
+                                      minSample: { ret1: 20, ret2: 15, break: 8, bpConv: 5 } } },
     // 11. Fatigue — recent workload + turnaround (TEN-8 reduced-scope build,
     //     founder spec 2026-07-25). Each player's fatigue "units" over a rolling
     //     10-day window = sets played (time-on-court proxy; no minutes feed
