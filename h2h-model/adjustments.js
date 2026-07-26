@@ -163,11 +163,24 @@ function serveSharedRow(row) {
 // guard: a rate is never computed from too few chances). `sign` carries the
 // serveRatingRow polarity — hold% and ace% RAISE the rating, double-fault% LOWERS
 // it, so a hotter-than-season df% nudges the serve rating DOWN.
+// `kind` is the component's rate PROVENANCE, surfaced in the model output so the
+// admin dashboard can show which rates the feed gives us directly and which we
+// compute (founder request, TEN-8 2026-07-26):
+//   'native'  = a rate the api-tennis sheet reports as its own field — a real
+//               won/total (hold% = Games:Service games won) read verbatim.
+//   'derived' = a rate WE compute as an honest numerator/denominator from two
+//               raw counts on the sheet (ace% = Aces / Service Points Won,
+//               df% = Double Faults / Service Points Won) — real count over real
+//               count, gated on service-point volume; never fabricated.
+// The three always-on serve-split components (1st-in / 1st-won / 2nd-won) are
+// likewise native rates — see SERVE_NATIVE_SPLIT below.
 const SERVE_IT_COMPONENTS = [
-  { name: 'hold', row: (r) => r && num(r.hldPct), sign: 1,  minKey: 'hold', minDef: 8  }, // Games/Service games won -> hldPct
-  { name: 'ace',  row: (r) => r && num(r.aPct),   sign: 1,  minKey: 'ace',  minDef: 40 }, // Aces / service points   -> aPct
-  { name: 'df',   row: (r) => r && num(r.dfPct),  sign: -1, minKey: 'df',   minDef: 40 }, // Double Faults / svc pts  -> dfPct
+  { name: 'hold', kind: 'native',  row: (r) => r && num(r.hldPct), sign: 1,  minKey: 'hold', minDef: 8  }, // Games/Service games won -> hldPct
+  { name: 'ace',  kind: 'derived', row: (r) => r && num(r.aPct),   sign: 1,  minKey: 'ace',  minDef: 40 }, // Aces / service points   -> aPct
+  { name: 'df',   kind: 'derived', row: (r) => r && num(r.dfPct),  sign: -1, minKey: 'df',   minDef: 40 }, // Double Faults / svc pts  -> dfPct
 ];
+// The always-on shared serve-split components — all native feed rates.
+const SERVE_NATIVE_SPLIT = ['1stIn', '1stWon', '2ndWon'];
 
 function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   const cfg = config.adjustments.serve && config.adjustments.serve.inTournament;
@@ -220,6 +233,11 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   let compSum = 0;
   const used = [];
   const cdetail = [];
+  // Provenance split, surfaced in the output so admin can distinguish feed-native
+  // rates from ones we compute. The base-3 serve split always fires here (n>=minR
+  // already checked), so it seeds the native list.
+  const nativeUsed = [...SERVE_NATIVE_SPLIT];
+  const derivedUsed = [];
   for (const comp of SERVE_IT_COMPONENTS) {
     const c = agg[comp.name];
     const floor = num(minSample[comp.minKey]) != null ? minSample[comp.minKey] : comp.minDef;
@@ -230,12 +248,16 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
     const compNudge = clamp(w * comp.sign * (eventPct - season), -perCap, perCap);
     compSum += compNudge;
     used.push(comp.name);
-    cdetail.push(`${comp.name} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
+    (comp.kind === 'derived' ? derivedUsed : nativeUsed).push(comp.name);
+    cdetail.push(`${comp.name}${comp.kind === 'derived' ? '†' : ''} ${eventPct.toFixed(1)}v${season.toFixed(1)} ${compNudge >= 0 ? '+' : ''}${round4(compNudge).toFixed(2)}`);
   }
   const nudge = clamp(base3 + compSum, -cap, cap);
   return {
     nudge: round4(nudge), n, itShared: round4(itShared), seasonShared: round4(seasonShared),
     components: used.length, used, cdetail: cdetail.join('; '),
+    // Rate provenance († marks derived in cdetail): native = feed-reported
+    // rates read verbatim; derived = ace%/df% we compute as count/count.
+    nativeUsed, derivedUsed,
   };
 }
 
@@ -810,8 +832,16 @@ function serve(ctx) {
   const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
   const altPart = (alt != null && altMult > 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
   const relPart = relDamp < 1.0 ? ', thin-surface x0.70' : '';
-  // In-tournament top tier: note who it re-priced and off how many rounds.
-  const itNote = (r) => r.inTourn ? `${r.inTourn.n}r ${r.inTourn.nudge >= 0 ? '+' : ''}${r.inTourn.nudge.toFixed(1)}` : null;
+  // In-tournament top tier: note who it re-priced, off how many rounds, and the
+  // rate provenance of the components that fired (native feed rates vs derived
+  // ace%/df% we compute) so the distinction is visible in the admin dashboard.
+  const itNote = (r) => {
+    if (!r.inTourn) return null;
+    const it = r.inTourn;
+    const prov = `native: ${it.nativeUsed.join(', ')}` +
+      (it.derivedUsed && it.derivedUsed.length ? `; derived: ${it.derivedUsed.join(', ')}` : '');
+    return `${it.n}r ${it.nudge >= 0 ? '+' : ''}${it.nudge.toFixed(1)} [${prov}]`;
+  };
   const ia = itNote(a), ib = itNote(b);
   const itPart = (ia || ib) ? `; in-tourn ${ia || '—'} / ${ib || '—'}` : '';
   return apply(res, signal, 'med',

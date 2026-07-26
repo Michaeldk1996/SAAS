@@ -192,6 +192,14 @@ ok('all three new components fire', full && full.components===3 && full.used.joi
 // df sign: 0.5*(-1)*(2-4.4)=+1.2 (lower df than season => serve better) => compSum 6.6.
 ok('6-comp nudge = base3 + capped components', full && near(full.nudge, 9.8 + 4 + 1.4 + 1.2), full && full.nudge);
 ok('per-component cap bounds hold', full && /hold .* \+4\.00/.test(full.cdetail), full && full.cdetail);
+// Rate provenance surfaced for admin: hold + base-3 split are native feed rates,
+// ace%/df% are derived (count/count); cdetail marks derived with †.
+ok('native provenance = base-3 split + hold',
+   full && full.nativeUsed.join(',')==='1stIn,1stWon,2ndWon,hold', full && full.nativeUsed);
+ok('derived provenance = ace + df',
+   full && full.derivedUsed.join(',')==='ace,df', full && full.derivedUsed);
+ok('cdetail flags derived rates with †',
+   full && /ace† /.test(full.cdetail) && /df† /.test(full.cdetail) && !/hold† /.test(full.cdetail), full && full.cdetail);
 // df polarity: a round with HIGH df must nudge the rating DOWN vs the low-df round.
 const rHiDf=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
              svHold:{won:9,total:10}, aces:10, dfs:8, svPts:100}}];
