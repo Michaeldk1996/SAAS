@@ -1464,6 +1464,9 @@
   </div>
 </div>
 <script src="./auth.js"></script>
+<!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
+     BSP Consult Intel composer to decide whether to show the admin controls. -->
+<script src="./admin-config.js"></script>
 <script>
 // Protected route + top-nav account chip, backed by the Firebase session.
 // requireAuth redirects unauthenticated visitors to the sign-in page once the
@@ -1905,6 +1908,54 @@
   [data-page="news"] .news-item.open .news-body{ display:block; }
   [data-page="news"] .news-body p{ margin:0; font-size:14px; line-height:1.7; color:var(--text-dim); white-space:pre-wrap; border-top:1px solid var(--border); padding-top:14px; }
   [data-page="news"] .news-empty{ border:1px dashed var(--border); border-radius:var(--radius); padding:40px 24px; text-align:center; color:var(--text-dim); font-size:13.5px; }
+
+  /* ---- BSP Consult Intel (manual injury / insider notes, TEN-8) ----
+     Founder-authored notes stored in Firestore, shown ABOVE the automated
+     api-tennis articles in a visually distinct highlighted card so members
+     never confuse a hand-written intel note with a scraped article. */
+  [data-page="news"] .intel-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+  [data-page="news"] .intel-card{
+    border:1px solid rgba(91,155,255,0.45); border-left:3px solid var(--accent);
+    border-radius:var(--radius); background:linear-gradient(180deg,rgba(62,123,250,0.10),rgba(62,123,250,0.03));
+    padding:15px 18px;
+  }
+  [data-page="news"] .intel-badge{
+    display:inline-flex; align-items:center; gap:6px; font-family:ui-monospace,monospace;
+    font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    color:#8fb6ff; margin-bottom:8px;
+  }
+  [data-page="news"] .intel-badge .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  [data-page="news"] .intel-player{
+    display:inline-block; font-family:ui-monospace,monospace; font-size:11px; font-weight:600;
+    color:#cfe0ff; background:rgba(91,155,255,0.16); border-radius:6px; padding:2px 8px; margin-left:8px;
+  }
+  [data-page="news"] .intel-text{ font-size:14px; line-height:1.6; color:var(--text); white-space:pre-wrap; margin:0; }
+  [data-page="news"] .intel-foot{ margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  [data-page="news"] .intel-time{ font-family:ui-monospace,monospace; font-size:11px; color:var(--text-faint); }
+  [data-page="news"] .intel-act{ font-size:11px; font-weight:600; color:#8b93a3; cursor:pointer; background:none; border:none; padding:0; }
+  [data-page="news"] .intel-act:hover{ color:var(--accent); }
+  [data-page="news"] .intel-act.del:hover{ color:#ff6b6b; }
+  /* Admin composer — only rendered for the founder (Firebase admin allowlist). */
+  [data-page="news"] .intel-admin{
+    border:1px dashed rgba(91,155,255,0.4); border-radius:var(--radius);
+    background:var(--panel); padding:16px 18px; margin-bottom:14px;
+  }
+  [data-page="news"] .intel-admin h3{ font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#8fb6ff; margin:0 0 12px; font-family:ui-monospace,monospace; }
+  [data-page="news"] .intel-admin textarea, [data-page="news"] .intel-admin input{
+    width:100%; box-sizing:border-box; background:#0d111a; border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-size:13.5px; padding:10px 12px; font-family:inherit;
+  }
+  [data-page="news"] .intel-admin textarea{ min-height:74px; resize:vertical; line-height:1.5; }
+  [data-page="news"] .intel-admin input{ margin-top:8px; }
+  [data-page="news"] .intel-admin-row{ display:flex; align-items:center; gap:12px; margin-top:10px; }
+  [data-page="news"] .intel-admin-row .count{ font-family:ui-monospace,monospace; font-size:11px; color:var(--text-faint); }
+  [data-page="news"] .intel-pub{
+    margin-left:auto; background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:650; cursor:pointer;
+  }
+  [data-page="news"] .intel-pub:disabled{ opacity:0.5; cursor:not-allowed; }
+  [data-page="news"] .intel-pub.secondary{ background:transparent; border:1px solid var(--border); color:var(--text-dim); }
+  [data-page="news"] .intel-msg{ font-size:12px; color:var(--text-faint); min-height:16px; }
 </style>
 <div class="tabpage" data-page="news">
   <div class="news-wrap">
@@ -1913,6 +1964,10 @@
       <p>Everything the tennis news feed has published in the last 72 hours — unfiltered. Click any headline to read the full article.</p>
       <div class="news-meta" id="newsMeta">Loading…</div>
     </div>
+    <!-- BSP Consult Intel: admin composer (founder only) + member-visible notes,
+         both rendered by loadIntel() into these hosts. -->
+    <div id="intelAdmin"></div>
+    <div class="intel-list" id="intelList"></div>
     <div class="news-list" id="newsList"></div>
   </div>
 </div>
@@ -2431,6 +2486,7 @@ function newsAgo(ts){
 }
 
 async function loadNews(){
+  loadIntel(); // BSP Consult Intel loads independently of the article feed
   const listEl = document.getElementById('newsList');
   const metaEl = document.getElementById('newsMeta');
   try {
@@ -2492,6 +2548,171 @@ function renderNews(){
       <div class="news-body"><p>${body}</p></div>
     </article>`;
   }).join('');
+}
+
+
+/* ---------- BSP CONSULT INTEL (manual injury / insider notes, TEN-8) ----------
+   Founder-authored notes stored in Firestore (collection `intel_notes`), shown
+   above the automated api-tennis articles. Members READ the notes; only the
+   founder (Firebase admin allowlist in admin-config.js, enforced again by
+   firestore.rules) can create / edit / delete. Firestore lives outside the repo
+   so notes survive every pipeline rebuild of news-feed.json.
+
+   Doc shape: { text, player, createdAt (serverTimestamp), createdAtMs (Number,
+   used for reliable client-side ordering + display), authorUid }.
+   A maximum of INTEL_MAX active notes is kept — publishing a 6th deletes the
+   oldest. */
+const INTEL_COLLECTION = 'intel_notes';
+const INTEL_MAX = 5;
+let _intelNotes = [];      // cached, newest first
+let _intelEditingId = null;
+
+function isBspAdmin(){
+  const u = (window.BSP && BSP.currentUser) ? BSP.currentUser() : null;
+  if (!u) return false;
+  const cfg = window.ADMIN_CONFIG || {};
+  const uids = cfg.ADMIN_UIDS || [];
+  const emails = (cfg.ADMIN_EMAILS || []).map(e => String(e).toLowerCase());
+  return uids.indexOf(u.uid) !== -1 ||
+         (!!u.email && emails.indexOf(String(u.email).toLowerCase()) !== -1);
+}
+
+function intelDb(){
+  // auth.js loads the Firebase compat SDK and calls initializeApp; after
+  // BSP.ready() the `firebase` global + firestore() are available.
+  if (!window.firebase || !firebase.firestore) return null;
+  return firebase.firestore();
+}
+
+function intelTimeLabel(n){
+  const ms = n.createdAtMs || (n.createdAt && n.createdAt.toMillis ? n.createdAt.toMillis() : 0);
+  return ms ? new Date(ms).toLocaleString() : '';
+}
+
+async function loadIntel(){
+  try {
+    if (window.BSP && BSP.ready) await BSP.ready();
+    const db = intelDb();
+    if (!db) { renderIntel(); return; }
+    // Order by our own millis field to avoid the serverTimestamp null-until-ack race.
+    const snap = await db.collection(INTEL_COLLECTION)
+      .orderBy('createdAtMs', 'desc').limit(INTEL_MAX).get();
+    _intelNotes = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+  } catch (err) {
+    // Read may be denied until the founder publishes the updated firestore.rules,
+    // or fail offline — never break the News page over it.
+    console.warn('intel: load failed:', err && err.message);
+    _intelNotes = _intelNotes || [];
+  }
+  renderIntel();
+}
+
+function renderIntel(){
+  const listEl  = document.getElementById('intelList');
+  const adminEl = document.getElementById('intelAdmin');
+  if (!listEl) return;
+  const admin = isBspAdmin();
+
+  // Member/founder-visible notes.
+  listEl.innerHTML = (_intelNotes || []).map(n => {
+    const player = n.player ? `<span class="intel-player">${newsEscape(n.player)}</span>` : '';
+    const when = intelTimeLabel(n);
+    const acts = admin ? `
+        <button class="intel-act" onclick="intelStartEdit('${n.id}')">Edit</button>
+        <button class="intel-act del" onclick="intelDelete('${n.id}')">Delete</button>` : '';
+    return `<div class="intel-card">
+      <div class="intel-badge"><span class="dot"></span>BSP Consult Intel${player}</div>
+      <p class="intel-text">${newsEscape(n.text || '')}</p>
+      <div class="intel-foot">
+        ${when ? `<span class="intel-time">${newsEscape(when)}</span>` : ''}
+        ${acts}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Admin composer — founder only.
+  if (!adminEl) return;
+  if (!admin) { adminEl.innerHTML = ''; return; }
+  const editing = _intelEditingId ? (_intelNotes.find(n => n.id === _intelEditingId) || null) : null;
+  adminEl.innerHTML = `
+    <div class="intel-admin">
+      <h3>${editing ? 'Edit intel note' : 'Post BSP Consult Intel'}</h3>
+      <textarea id="intelText" placeholder="Injury update, insider info, practice observation…">${editing ? newsEscape(editing.text || '') : ''}</textarea>
+      <input id="intelPlayer" type="text" placeholder="Player tag (optional, e.g. Sinner)" value="${editing ? newsEscape(editing.player || '') : ''}" />
+      <div class="intel-admin-row">
+        <span class="count">${(_intelNotes || []).length}/${INTEL_MAX} active${editing ? '' : ((_intelNotes || []).length >= INTEL_MAX ? ' — oldest will drop off' : '')}</span>
+        ${editing ? `<button class="intel-pub secondary" onclick="intelCancelEdit()">Cancel</button>` : ''}
+        <button class="intel-pub" id="intelPublishBtn" onclick="intelPublish()">${editing ? 'Save changes' : 'Publish'}</button>
+      </div>
+      <div class="intel-msg" id="intelMsg"></div>
+    </div>`;
+}
+
+function intelStartEdit(id){ _intelEditingId = id; renderIntel(); }
+function intelCancelEdit(){ _intelEditingId = null; renderIntel(); }
+
+async function intelPublish(){
+  const msgEl = document.getElementById('intelMsg');
+  const btn = document.getElementById('intelPublishBtn');
+  const setMsg = t => { if (msgEl) msgEl.textContent = t; };
+  if (!isBspAdmin()){ setMsg('Admin session required.'); return; }
+  const text = (document.getElementById('intelText') || {}).value || '';
+  const player = ((document.getElementById('intelPlayer') || {}).value || '').trim();
+  if (!text.trim()){ setMsg('Note text is required.'); return; }
+  const db = intelDb();
+  if (!db){ setMsg('Firestore unavailable — try again once signed in.'); return; }
+  if (btn) btn.disabled = true;
+  setMsg('Saving…');
+  try {
+    const u = BSP.currentUser();
+    if (_intelEditingId){
+      await db.collection(INTEL_COLLECTION).doc(_intelEditingId).set(
+        { text: text.trim(), player }, { merge: true });
+      _intelEditingId = null;
+    } else {
+      await db.collection(INTEL_COLLECTION).add({
+        text: text.trim(),
+        player,
+        authorUid: u ? u.uid : null,
+        createdAtMs: Date.now(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    await intelPruneToMax(db);
+    await loadIntel();
+    setMsg('');
+  } catch (err) {
+    console.warn('intel: publish failed:', err && err.message);
+    setMsg('Save failed: ' + (err && err.message ? err.message : 'unknown error') +
+      ' (has the updated firestore.rules been published?)');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function intelDelete(id){
+  if (!isBspAdmin()) return;
+  if (!window.confirm('Delete this intel note for all members?')) return;
+  const db = intelDb();
+  if (!db) return;
+  try {
+    await db.collection(INTEL_COLLECTION).doc(id).delete();
+    if (_intelEditingId === id) _intelEditingId = null;
+    await loadIntel();
+  } catch (err) {
+    console.warn('intel: delete failed:', err && err.message);
+  }
+}
+
+// Enforce the max-5 cap: after an add, drop the oldest notes beyond INTEL_MAX.
+async function intelPruneToMax(db){
+  try {
+    const snap = await db.collection(INTEL_COLLECTION).orderBy('createdAtMs', 'desc').get();
+    const extras = snap.docs.slice(INTEL_MAX);
+    for (const d of extras) await d.ref.delete();
+  } catch (err) {
+    console.warn('intel: prune failed:', err && err.message);
+  }
 }
 
 

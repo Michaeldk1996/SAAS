@@ -63,6 +63,18 @@ service cloud.firestore {
       allow write: if false;   // CI writes via the Admin SDK (bypasses rules)
     }
 
+    // ---- BSP Consult Intel (TEN-8 news-updates) -----------------------------
+    // Founder-authored injury / insider notes shown on the News page above the
+    // automated articles. Unlike the admin ledger above (written server-side by
+    // CI, so all client writes are denied), these notes are written from the
+    // BROWSER by the founder while signed in — so the client write must be
+    // allowed, but ONLY for the admin allowlist. Any signed-in member may read
+    // them (the News page is behind the member auth gate).
+    match /intel_notes/{noteId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
     // ---- Default deny -------------------------------------------------------
     // Any path not matched above is fully locked.
     match /{document=**} {
