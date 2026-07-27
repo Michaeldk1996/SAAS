@@ -44,7 +44,9 @@ chall-cache/
 # would churn on every run, and a keyless local build carries no AI summaries.
 model-output.json
 
-# News feed: build-news-feed.js pulls the api-tennis get_news window on every
-# pipeline run and publishes it straight to _site. Like model-output.json it
-# churns on every run and needs the API key to build, so it is never committed.
+# News feed + tournament entries: build-news-feed.js / build-tournament-entries.js
+# pull api-tennis on every pipeline run and publish straight to _site. Like
+# model-output.json they churn every run and need the API key to build, so they
+# are never committed.
 news-feed.json
+tournament-entries.json

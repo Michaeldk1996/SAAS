@@ -1893,6 +1893,17 @@
   [data-page="news"] .news-head h1{ font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 6px; color:var(--text); }
   [data-page="news"] .news-head p{ margin:0; color:var(--text-dim); font-size:13.5px; }
   [data-page="news"] .news-meta{ margin-top:8px; font-size:12px; color:var(--text-faint); font-family:ui-monospace,monospace; }
+  [data-page="news"] .news-filter{ margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  [data-page="news"] .news-filter label{ font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-faint); font-family:ui-monospace,monospace; }
+  [data-page="news"] .news-filter select{
+    background:#0d111a; border:1px solid var(--border); border-radius:8px; color:var(--text);
+    font-size:13px; padding:7px 30px 7px 12px; font-family:inherit; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center;
+  }
+  [data-page="news"] .news-filter select:focus{ outline:none; border-color:var(--accent); }
+  [data-page="news"] .news-filter-note{ font-size:11px; color:var(--text-faint); font-family:ui-monospace,monospace; }
   [data-page="news"] .news-list{ display:flex; flex-direction:column; gap:10px; }
   [data-page="news"] .news-item{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); overflow:hidden; transition:border-color .12s; }
   [data-page="news"] .news-item:hover{ border-color:#33404f; }
@@ -1966,8 +1977,16 @@
   <div class="news-wrap">
     <div class="news-head">
       <h1>News</h1>
-      <p>Everything the tennis news feed has published in the last 72 hours — unfiltered. Click any headline to read the full article.</p>
+      <p>ATP main-tour tennis news from the last 72 hours — match reports, draws, previews, injuries, coaching and player insight. Click any headline to read the full article.</p>
       <div class="news-meta" id="newsMeta">Loading…</div>
+      <!-- Tournament filter (TEN-8): narrows the feed to articles mentioning a
+           player actually in the selected ATP draw. Roster comes from
+           tournament-entries.json (fixtures-derived). Hidden until populated. -->
+      <div class="news-filter" id="newsFilterWrap" style="display:none;">
+        <label for="newsTourFilter">Tournament</label>
+        <select id="newsTourFilter"><option value="">All ATP tournaments</option></select>
+        <span class="news-filter-note" id="newsFilterNote"></span>
+      </div>
     </div>
     <!-- BSP Consult Intel: admin composer (founder only) + member-visible notes,
          both rendered by loadIntel() into these hosts. -->
@@ -2465,6 +2484,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
    the 72h display window the page is meant to show. */
 const NEWS_WINDOW_HOURS = 72;
 let _newsData = null;
+let _tourEntries = null;   // tournament-entries.json (fixtures-derived rosters)
+let _newsTourKey = '';     // selected tournament_key, '' = all
+let _tourMatchRe = null;   // cached surname regex for the selected tournament
 
 function newsParseTs(s){
   // Feed timestamps look like "2026-07-26 10:01:09.706" (UTC, space-separated).
@@ -2492,6 +2514,7 @@ function newsAgo(ts){
 
 async function loadNews(){
   loadIntel(); // BSP Consult Intel loads independently of the article feed
+  loadTourEntries(); // tournament filter loads independently — never blocks articles
   const listEl = document.getElementById('newsList');
   const metaEl = document.getElementById('newsMeta');
   try {
@@ -2511,25 +2534,89 @@ async function loadNews(){
   renderNews();
 }
 
+/* Tournament filter (TEN-8). Fetches tournament-entries.json — for each current
+   ATP draw, the roster of players in it (fixtures-derived; api-tennis has no
+   entry-list/seed endpoint). Populates the dropdown so a member can narrow the
+   feed to one tournament. Best-effort: if the file is missing the filter simply
+   stays hidden and the full feed still shows. */
+async function loadTourEntries(){
+  const wrap = document.getElementById('newsFilterWrap');
+  const sel = document.getElementById('newsTourFilter');
+  try {
+    const res = await fetch('./tournament-entries.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _tourEntries = JSON.parse(await res.text());
+  } catch (err) {
+    console.warn('tournament-entries.json unavailable:', err.message);
+    return; // filter stays hidden — full feed unaffected
+  }
+  const tours = Array.isArray(_tourEntries.tournaments) ? _tourEntries.tournaments : [];
+  if (!sel || !wrap || !tours.length) return;
+  // Rebuild options (All + one per tournament, keeping any current selection).
+  const prev = _newsTourKey;
+  sel.innerHTML = '<option value="">All ATP tournaments</option>' +
+    tours.map(t => `<option value="${newsEscape(t.tournamentKey)}">`
+      + `${newsEscape(t.name)}${t.surface ? ' · ' + newsEscape(t.surface) : ''} (${t.playerCount})`
+      + `</option>`).join('');
+  if (prev && tours.some(t => String(t.tournamentKey) === prev)) sel.value = prev;
+  sel.onchange = () => { _newsTourKey = sel.value; _tourMatchRe = null; renderNews(); };
+  wrap.style.display = 'flex';
+}
+
+// Word-boundary surname regex for the selected tournament's roster (cached).
+// Matches on each player's last-name token(s) of length >= 4, so an article
+// naming any player in that draw is kept.
+function tourMatchRegex(){
+  if (_tourMatchRe !== null) return _tourMatchRe; // may be a RegExp or false
+  if (!_newsTourKey || !_tourEntries) return (_tourMatchRe = false);
+  const t = (_tourEntries.tournaments || []).find(x => String(x.tournamentKey) === _newsTourKey);
+  if (!t || !Array.isArray(t.players)) return (_tourMatchRe = false);
+  const toks = new Set();
+  for (const p of t.players){
+    String(p.surname || '').split(/\s+/).forEach(tok => { if (tok.length >= 4) toks.add(tok); });
+  }
+  if (!toks.size) return (_tourMatchRe = false);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  _tourMatchRe = new RegExp('\\b(' + [...toks].map(esc).join('|') + ')\\b', 'i');
+  return _tourMatchRe;
+}
+
 function renderNews(){
   const listEl = document.getElementById('newsList');
   const metaEl = document.getElementById('newsMeta');
   if (!listEl || !_newsData) return;
   const all = Array.isArray(_newsData.articles) ? _newsData.articles : [];
   const cutoff = Date.now() - NEWS_WINDOW_HOURS * 3600 * 1000;
-  const items = all
+  let items = all
     .map(a => ({ a, ts: newsParseTs(a.published_at) }))
     .filter(x => !isFinite(x.ts) || x.ts >= cutoff)   // keep undated items rather than silently drop them
     .sort((x, y) => (y.ts || 0) - (x.ts || 0));
 
+  // Tournament filter: narrow to articles naming a player in the selected draw.
+  const tourRe = tourMatchRegex();
+  const tourName = _newsTourKey && _tourEntries
+    ? ((_tourEntries.tournaments || []).find(t => String(t.tournamentKey) === _newsTourKey) || {}).name
+    : '';
+  if (tourRe){
+    items = items.filter(({ a }) => tourRe.test(String(a.title || '')) || tourRe.test(String(a.content || '')));
+  }
+
+  const noteEl = document.getElementById('newsFilterNote');
+  if (noteEl) noteEl.textContent = tourRe ? `showing articles mentioning a ${tourName} player` : '';
+
   if (metaEl){
     const gen = _newsData.generatedAt ? new Date(_newsData.generatedAt) : null;
-    metaEl.textContent = `${items.length} article${items.length === 1 ? '' : 's'} in the last ${NEWS_WINDOW_HOURS}h`
+    metaEl.textContent = `${items.length} article${items.length === 1 ? '' : 's'}`
+      + (tourName ? ` for ${tourName}` : ` in the last ${NEWS_WINDOW_HOURS}h`)
       + (gen ? ` · feed updated ${gen.toLocaleString()}` : '');
   }
 
   if (!items.length){
-    listEl.innerHTML = `<div class="news-empty">No articles published in the last ${NEWS_WINDOW_HOURS} hours.</div>`;
+    listEl.innerHTML = `<div class="news-empty">`
+      + (tourName
+          ? `No articles in the last ${NEWS_WINDOW_HOURS}h mention a player currently in ${newsEscape(tourName)}.`
+          : `No articles published in the last ${NEWS_WINDOW_HOURS} hours.`)
+      + `</div>`;
     return;
   }
 

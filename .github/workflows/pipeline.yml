@@ -77,6 +77,7 @@ jobs:
             tml-cache
             model-output.json
             news-feed.json
+            tournament-entries.json
           key: bsp-caches-${{ github.run_id }}
           restore-keys: |
             bsp-caches-
@@ -123,6 +124,17 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node build-news-feed.js || true
+
+      # Tournament entries (TEN-8): for each current ATP-main-tour singles event,
+      # the roster of players in it (derived from get_fixtures) enriched with ATP
+      # rank + nationality (get_standings). Powers the News page tournament filter.
+      # api-tennis has no entry-list/seed endpoint, so this is fixtures-derived and
+      # seeds are omitted — see build-tournament-entries.js header. Best-effort: a
+      # failure keeps the previous tournament-entries.json and never blocks deploy.
+      - name: Build tournament entries (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node build-tournament-entries.js || true
 
       # Market-performance shards, rebuilt every run against the profiles the pipeline
       # just refreshed. Reads only the committed odds-archive/ CSVs, so it makes no
@@ -177,6 +189,10 @@ jobs:
           # stored verbatim by build-news-feed.js. Committed but not copied = silent
           # 404, which empties the News page.
           cp news-feed.json _site/ 2>/dev/null || true
+          # Tournament entries (TEN-8): per-ATP-draw rosters that power the News
+          # page tournament filter. Committed but not copied = silent 404, which
+          # just hides the filter (the feed still shows).
+          cp tournament-entries.json _site/ 2>/dev/null || true
           # Playing Styles + Player Profile redesign data: Elo pill, clutch rating,
           # archetype rosters, and the self-computed matchup matrix. Committed but
           # not copied = silent 404 (Elo pill degrades; the Styles tab goes empty).
