@@ -1929,6 +1929,11 @@
     display:inline-block; font-family:ui-monospace,monospace; font-size:11px; font-weight:600;
     color:#cfe0ff; background:rgba(91,155,255,0.16); border-radius:6px; padding:2px 8px; margin-left:8px;
   }
+  [data-page="news"] .intel-player-link{ cursor:pointer; }
+  [data-page="news"] .intel-player-link:hover{ background:rgba(91,155,255,0.28); color:#fff; }
+  [data-page="news"] .intel-match{ font-size:11px; margin-top:6px; min-height:14px; font-family:ui-monospace,monospace; color:var(--text-faint); }
+  [data-page="news"] .intel-match.ok{ color:#3ECF8E; }
+  [data-page="news"] .intel-match.none{ color:#8b93a3; }
   [data-page="news"] .intel-text{ font-size:14px; line-height:1.6; color:var(--text); white-space:pre-wrap; margin:0; }
   [data-page="news"] .intel-foot{ margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   [data-page="news"] .intel-time{ font-family:ui-monospace,monospace; font-size:11px; color:var(--text-faint); }
@@ -2558,8 +2563,9 @@ function renderNews(){
    firestore.rules) can create / edit / delete. Firestore lives outside the repo
    so notes survive every pipeline rebuild of news-feed.json.
 
-   Doc shape: { text, player, createdAt (serverTimestamp), createdAtMs (Number,
-   used for reliable client-side ordering + display), authorUid }.
+   Doc shape: { text, player (canonical roster name or raw typed text), playerKey
+   (numeric profile key when the fuzzy match was confident, else null), createdAt
+   (serverTimestamp), createdAtMs (Number, for ordering + display), authorUid }.
    A maximum of INTEL_MAX active notes is kept — publishing a 6th deletes the
    oldest. */
 const INTEL_COLLECTION = 'intel_notes';
@@ -2589,6 +2595,96 @@ function intelTimeLabel(n){
   return ms ? new Date(ms).toLocaleString() : '';
 }
 
+/* ---- Intel player linking (TEN-8) ----
+   The founder types a player name as free text; we fuzzy-match it against the
+   built player-profiles.json roster and link the note to the closest player
+   automatically — no dropdown. If nothing matches with confidence the note still
+   publishes, just without a player link. On publish we store the matched player's
+   canonical `player` name + numeric `playerKey`; render turns the tag into the
+   same profile link the rest of the dashboard uses (openPlayerProfileFromMatch). */
+function intelNameNorm(s){
+  // Mirrors psEloNorm: strip accents, lowercase, drop apostrophes, treat dots and
+  // hyphens as spaces so "F. Auger-Aliassime" -> "f auger aliassime".
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function intelLev(a, b){
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const d = Array.from({ length: m + 1 }, (_, i) => { const r = new Array(n + 1).fill(0); r[0] = i; return r; });
+  for (let j = 0; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++){
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  }
+  return d[m][n];
+}
+// Built lazily once playerProfiles is loaded; a numeric candidate list keyed for scoring.
+let _intelRoster = null;
+function intelRoster(){
+  if (_intelRoster) return _intelRoster;
+  if (typeof playerProfiles === 'undefined' || !playerProfiles) return [];
+  const list = [];
+  for (const k of Object.keys(playerProfiles)){
+    const p = playerProfiles[k]; if (!p || !p.name) continue;
+    const nn = intelNameNorm(p.name);
+    const toks = nn.split(' ').filter(Boolean);
+    const surname = toks.slice(1).join(' ') || toks[0] || '';
+    list.push({ key: String(p.key != null ? p.key : k), name: p.name, norm: nn,
+      surname, initial: (toks[0] || '')[0] || '', rank: parseInt(p.rank, 10) || 9999 });
+  }
+  if (list.length) _intelRoster = list;
+  return list;
+}
+// Returns { name, key, score } for the best confident match, or null. Deliberately
+// conservative: a *wrong* link is worse than none, so retired / off-roster names
+// (Nadal, Federer) that only resemble a current player fall below threshold.
+function intelMatchPlayer(query){
+  const q = intelNameNorm(query);
+  if (!q) return null;
+  const cands = intelRoster();
+  if (!cands.length) return null;
+  const qt = q.split(' ').filter(Boolean);
+  const last = qt[qt.length - 1];
+  let best = null;
+  for (const c of cands){
+    if (c.surname.length < 2) continue;
+    let s = 0;
+    if (q === c.norm) s = 100;
+    else {
+      const endsSurname = c.surname.length >= 3 && (q === c.surname || q.endsWith(' ' + c.surname));
+      if (endsSurname){
+        s = 86;
+        const before = q.slice(0, q.length - c.surname.length).trim();
+        if (before){ s += (before[0] === c.initial) ? 10 : -12; }
+      } else if (c.surname.startsWith(last) || last.startsWith(c.surname)){
+        s = 66; if (qt.length > 1 && qt[0][0] === c.initial) s += 6;
+      } else if (c.surname.includes(last) && last.length >= 5){
+        s = 56;
+      } else {
+        const d = intelLev(last, c.surname);
+        const ml = Math.max(last.length, c.surname.length);
+        const sim = ml ? 1 - d / ml : 0;
+        if (sim >= 0.85 && c.surname.length >= 5) s = Math.round(30 + sim * 36);
+      }
+    }
+    if (s > 0 && (!best || s > best.s || (s === best.s && c.rank < best.c.rank))) best = { s, c };
+  }
+  return (best && best.s >= 60) ? { name: best.c.name, key: best.c.key, score: best.s } : null;
+}
+// Resolve a stored note to { label, key } for rendering. New notes carry playerKey;
+// legacy notes (player text only) are matched on the fly so they link too.
+function intelResolveNote(n){
+  if (!n) return { label: '', key: null };
+  if (n.playerKey != null && typeof playerProfiles !== 'undefined' &&
+      playerProfiles && playerProfiles[String(n.playerKey)]){
+    return { label: playerProfiles[String(n.playerKey)].name || n.player || '', key: String(n.playerKey) };
+  }
+  const raw = (n.player || '').trim();
+  if (!raw) return { label: '', key: null };
+  const m = intelMatchPlayer(raw);
+  return m ? { label: m.name, key: m.key } : { label: raw, key: null };
+}
+
 async function loadIntel(){
   try {
     if (window.BSP && BSP.ready) await BSP.ready();
@@ -2615,7 +2711,12 @@ function renderIntel(){
 
   // Member/founder-visible notes.
   listEl.innerHTML = (_intelNotes || []).map(n => {
-    const player = n.player ? `<span class="intel-player">${newsEscape(n.player)}</span>` : '';
+    const pr = intelResolveNote(n);
+    const player = pr.label
+      ? (pr.key
+          ? `<span class="intel-player intel-player-link" onclick="event.stopPropagation();openPlayerProfileFromMatch('${pr.key}')" title="View ${newsEscape(pr.label)} profile">${newsEscape(pr.label)}</span>`
+          : `<span class="intel-player">${newsEscape(pr.label)}</span>`)
+      : '';
     const when = intelTimeLabel(n);
     const acts = admin ? `
         <button class="intel-act" onclick="intelStartEdit('${n.id}')">Edit</button>
@@ -2638,7 +2739,8 @@ function renderIntel(){
     <div class="intel-admin">
       <h3>${editing ? 'Edit intel note' : 'Post BSP Consult Intel'}</h3>
       <textarea id="intelText" placeholder="Injury update, insider info, practice observation…">${editing ? newsEscape(editing.text || '') : ''}</textarea>
-      <input id="intelPlayer" type="text" placeholder="Player tag (optional, e.g. Sinner)" value="${editing ? newsEscape(editing.player || '') : ''}" />
+      <input id="intelPlayer" type="text" placeholder="Player name (optional, free text — auto-links, e.g. Sinner)" value="${editing ? newsEscape(editing.player || '') : ''}" oninput="intelUpdateMatchHint()" />
+      <div class="intel-match" id="intelMatchHint"></div>
       <div class="intel-admin-row">
         <span class="count">${(_intelNotes || []).length}/${INTEL_MAX} active${editing ? '' : ((_intelNotes || []).length >= INTEL_MAX ? ' — oldest will drop off' : '')}</span>
         ${editing ? `<button class="intel-pub secondary" onclick="intelCancelEdit()">Cancel</button>` : ''}
@@ -2646,6 +2748,20 @@ function renderIntel(){
       </div>
       <div class="intel-msg" id="intelMsg"></div>
     </div>`;
+  intelUpdateMatchHint();
+}
+
+// Live feedback under the free-text player field: shows which profile the note
+// will link to (or that it will publish unlinked). No dropdown — just confirmation.
+function intelUpdateMatchHint(){
+  const hint = document.getElementById('intelMatchHint');
+  const inp = document.getElementById('intelPlayer');
+  if (!hint || !inp) return;
+  const raw = (inp.value || '').trim();
+  if (!raw){ hint.textContent = ''; hint.className = 'intel-match'; return; }
+  const m = intelMatchPlayer(raw);
+  if (m){ hint.textContent = '→ links to ' + m.name; hint.className = 'intel-match ok'; }
+  else { hint.textContent = 'No player match — will publish without a link'; hint.className = 'intel-match none'; }
 }
 
 function intelStartEdit(id){ _intelEditingId = id; renderIntel(); }
@@ -2657,8 +2773,14 @@ async function intelPublish(){
   const setMsg = t => { if (msgEl) msgEl.textContent = t; };
   if (!isBspAdmin()){ setMsg('Admin session required.'); return; }
   const text = (document.getElementById('intelText') || {}).value || '';
-  const player = ((document.getElementById('intelPlayer') || {}).value || '').trim();
+  const rawPlayer = ((document.getElementById('intelPlayer') || {}).value || '').trim();
   if (!text.trim()){ setMsg('Note text is required.'); return; }
+  // Fuzzy-resolve the typed name to a roster player. A confident match stores the
+  // canonical name + numeric key (so the tag links to the profile); no match stores
+  // the raw text with a null key and the note still publishes, unlinked.
+  const match = rawPlayer ? intelMatchPlayer(rawPlayer) : null;
+  const player = match ? match.name : rawPlayer;
+  const playerKey = match ? match.key : null;
   const db = intelDb();
   if (!db){ setMsg('Firestore unavailable — try again once signed in.'); return; }
   if (btn) btn.disabled = true;
@@ -2667,12 +2789,13 @@ async function intelPublish(){
     const u = BSP.currentUser();
     if (_intelEditingId){
       await db.collection(INTEL_COLLECTION).doc(_intelEditingId).set(
-        { text: text.trim(), player }, { merge: true });
+        { text: text.trim(), player, playerKey }, { merge: true });
       _intelEditingId = null;
     } else {
       await db.collection(INTEL_COLLECTION).add({
         text: text.trim(),
         player,
+        playerKey,
         authorUid: u ? u.uid : null,
         createdAtMs: Date.now(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
