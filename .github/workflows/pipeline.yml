@@ -76,6 +76,7 @@ jobs:
             point-by-point-cache.json
             tml-cache
             model-output.json
+            news-feed.json
           key: bsp-caches-${{ github.run_id }}
           restore-keys: |
             bsp-caches-
@@ -112,6 +113,16 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node build-point-by-point.js || true
+
+      # News feed (TEN-8): pull the api-tennis get_news window and store every
+      # article verbatim in news-feed.json for the dashboard's News page. Uses the
+      # same API_TENNIS_KEY secret as the rest of the pipeline. Best-effort — a
+      # failure keeps the previous news-feed.json (from cache) and never blocks the
+      # deploy.
+      - name: Build news feed (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node build-news-feed.js || true
 
       # Market-performance shards, rebuilt every run against the profiles the pipeline
       # just refreshed. Reads only the committed odds-archive/ CSVs, so it makes no
@@ -162,6 +173,10 @@ jobs:
           cp odds-index.json _site/ 2>/dev/null || true
           cp -r odds _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
+          # News feed (TEN-8): every article from the api-tennis get_news window,
+          # stored verbatim by build-news-feed.js. Committed but not copied = silent
+          # 404, which empties the News page.
+          cp news-feed.json _site/ 2>/dev/null || true
           # Playing Styles + Player Profile redesign data: Elo pill, clutch rating,
           # archetype rosters, and the self-computed matchup matrix. Committed but
           # not copied = silent 404 (Elo pill degrades; the Styles tab goes empty).
