@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-07-27T00:19:37.282Z",
+ "updated": "2026-07-27T02:12:58.363Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -288,6 +288,15 @@
    "logged": 46,
    "flagged": 4,
    "newlyLogged": 1,
+   "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-07-27T02:12:58.363Z",
+   "run": "30231064361",
+   "priced": 25,
+   "logged": 57,
+   "flagged": 4,
+   "newlyLogged": 11,
    "newlyFrozen": 0
   }
  ],
@@ -583,8 +592,8 @@
    "firstSeen": "2026-07-25T07:55:55.177Z",
    "status": "finished",
    "finalScore": "4-6, 6-7(6)",
-   "modelFairLast": 0.6897,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.6917,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149164": {
    "key": "12149164",
@@ -604,8 +613,8 @@
    "firstSeen": "2026-07-25T07:55:55.177Z",
    "status": "finished",
    "finalScore": "6-4, 7-5",
-   "modelFairLast": 0.5713,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.5711,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149222": {
    "key": "12149222",
@@ -625,8 +634,8 @@
    "firstSeen": "2026-07-25T07:55:55.177Z",
    "status": "finished",
    "finalScore": "5-7, 7-6(1), 7-6(5)",
-   "modelFairLast": 0.4725,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.4721,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149294": {
    "key": "12149294",
@@ -731,7 +740,7 @@
    "status": "finished",
    "finalScore": "6-4, 4-6, 7-5",
    "modelFairLast": 0.2612,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149489": {
    "key": "12149489",
@@ -812,7 +821,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1813,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149518": {
    "key": "12149518",
@@ -961,8 +970,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4996,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.5123,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149557": {
    "key": "12149557",
@@ -977,7 +986,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.8748,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149558": {
    "key": "12149558",
@@ -992,7 +1001,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3981,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149559": {
    "key": "12149559",
@@ -1007,7 +1016,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6887,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149560": {
    "key": "12149560",
@@ -1021,8 +1030,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6436,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.648,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149561": {
    "key": "12149561",
@@ -1036,8 +1045,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7525,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.7563,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149562": {
    "key": "12149562",
@@ -1051,8 +1060,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1731,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.1758,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149563": {
    "key": "12149563",
@@ -1066,8 +1075,8 @@
    "firstSeen": "2026-07-26T09:11:10.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4759,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.4707,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   },
   "12149666": {
    "key": "12149666",
@@ -1081,8 +1090,173 @@
    "firstSeen": "2026-07-27T00:19:37.282Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4069,
-   "lastSeen": "2026-07-27T00:19:37.282Z"
+   "modelFairLast": 0.4024,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "e81136d8af2867898952ce896f71662f": {
+   "key": "e81136d8af2867898952ce896f71662f",
+   "date": "2026-07-27",
+   "p1": "Alejandro Tabilo",
+   "p2": "Tallon Griekspoor",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.47,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.47,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "4c5845a68ef60155168b11c6c5e86b97": {
+   "key": "4c5845a68ef60155168b11c6c5e86b97",
+   "date": "2026-07-27",
+   "p1": "Matteo Arnaldi",
+   "p2": "Lorenzo Musetti",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.3256,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.3256,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "a7d3eae7eac3a96a924111872bbf0cc2": {
+   "key": "a7d3eae7eac3a96a924111872bbf0cc2",
+   "date": "2026-07-27",
+   "p1": "Taylor Fritz",
+   "p2": "Zizou Bergs",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.6866,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6866,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "8c72b0ebf1cece7509614e7551b084f9": {
+   "key": "8c72b0ebf1cece7509614e7551b084f9",
+   "date": "2026-07-27",
+   "p1": "Kei Nishikori",
+   "p2": "Juncheng Shang",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.4129,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4129,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "02f0b6673ba022fb9765afc9f8a50e9c": {
+   "key": "02f0b6673ba022fb9765afc9f8a50e9c",
+   "date": "2026-07-28",
+   "p1": "Frances Tiafoe",
+   "p2": "Terence Atmane",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.8097,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.8097,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "30f0320d3a420d0f2c62b61b0e359c01": {
+   "key": "30f0320d3a420d0f2c62b61b0e359c01",
+   "date": "2026-07-28",
+   "p1": "Adrian Mannarino",
+   "p2": "Learner Tien",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.1557,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1557,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "af6a0b794885d32c2ab42f4906ba2e45": {
+   "key": "af6a0b794885d32c2ab42f4906ba2e45",
+   "date": "2026-07-28",
+   "p1": "Alex Michelsen",
+   "p2": "Jack Draper",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.4756,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4756,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "cc2bdc2041cd08f06f6ea0a6f20b0b9b": {
+   "key": "cc2bdc2041cd08f06f6ea0a6f20b0b9b",
+   "date": "2026-07-28",
+   "p1": "Alex de Minaur",
+   "p2": "Stefanos Tsitsipas",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.6795,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6795,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "b09766dc03534a3e77f2ee6137e33f95": {
+   "key": "b09766dc03534a3e77f2ee6137e33f95",
+   "date": "2026-07-28",
+   "p1": "Arthur Fils",
+   "p2": "Rafael Jodar",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.6608,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6608,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "ac4d7fbd351591b71a42ee82337d4c1d": {
+   "key": "ac4d7fbd351591b71a42ee82337d4c1d",
+   "date": "2026-07-28",
+   "p1": "Brandon Nakashima",
+   "p2": "Tomas Martin Etcheverry",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.5879,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5879,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
+  },
+  "296715636308be675eb4fd454f74cd7f": {
+   "key": "296715636308be675eb4fd454f74cd7f",
+   "date": "2026-07-28",
+   "p1": "Kamil Majchrzak",
+   "p2": "Tommy Paul",
+   "surface": "hard",
+   "tour": "ATP Washington Open",
+   "modelFairEntry": 0.2734,
+   "valueSnapshot": null,
+   "firstSeen": "2026-07-27T02:12:58.363Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.2734,
+   "lastSeen": "2026-07-27T02:12:58.363Z"
   }
  }
 }
