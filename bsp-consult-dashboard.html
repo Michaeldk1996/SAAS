@@ -2269,6 +2269,16 @@
   .edge-vfoot{ padding:16px 22px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
   .edge-movers{ flex:1; min-width:260px; }
   .edge-cap2{ font-size:9.5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; margin-bottom:10px; }
+  /* MARKET SIZE block (Section 5 sibling) — per-venue 24h traded notional off the market shard */
+  .edge-msize{ margin:0 22px 4px; padding:14px 16px; background:#0a0d14; border:1px solid rgba(255,255,255,0.10); border-radius:12px; }
+  .ms-head{ font-size:9.5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; margin-bottom:10px; }
+  .ms-rows{ display:flex; flex-direction:column; gap:8px; }
+  .ms-row{ display:flex; align-items:baseline; gap:10px; }
+  .ms-venue{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b93a3; min-width:88px; }
+  .ms-val{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:600; color:#e7e9ee; }
+  .ms-val.na{ color:#5b6472; }
+  .ms-final{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#6b7280; }
+  .ms-note{ margin-top:10px; font-size:10px; line-height:1.5; color:#5b6472; }
   .edge-mover{ display:flex; align-items:center; gap:10px; font-size:12.5px; padding:3px 0; }
   .edge-mover .rk{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#5b6472; width:14px; flex:none; }
   .edge-mover .nm{ flex:1; color:#c8cfda; min-width:0; }
@@ -4192,6 +4202,58 @@ function edgeCopySummary(el){
   }
 }
 
+// ── MARKET SIZE display ────────────────────────────────────────────────────
+// Currency, thousands as K (no decimals) up to 999K, then M with at most 1
+// decimal. Round to nearest K; anything under 500 shows "<$1K". A rounded K that
+// reaches 1000 is promoted to M so we never print "$1000K".
+function fmtMarketSize(v){
+  if (v == null || !isFinite(v)) return '—';
+  if (v < 500) return '<$1K';
+  if (v < 1000000){
+    const k = Math.round(v / 1000);
+    if (k < 1000) return '$' + k + 'K';
+  }
+  let s = (v / 1000000).toFixed(1);
+  if (s.slice(-2) === '.0') s = s.slice(0, -2);
+  return '$' + s + 'M';
+}
+
+// Render the MARKET SIZE block from m.marketSize (the shard's venues object).
+// Returns '' when the block must not show — i.e. no shard, or NEITHER venue is
+// present — so the bare container renders invisible until (and unless) data lands.
+// Both venues always hold their line when the block is shown; a present:false or
+// matched:false venue shows an em dash, never a substituted figure. Display basis
+// is marketSize24h only (marketSizeAllTime is admin-only and never shown here).
+function buildMarketSizeBlock(m){
+  const venues = m && m.marketSize;
+  if (!venues) return '';
+  const rows = [['kalshi', 'Kalshi'], ['polymarket', 'Polymarket']].map(([key, label]) => {
+    const v = venues[key] || null;
+    const present = !!(v && v.present);
+    const hasVal = !!(v && v.present && v.matched && v.marketSize24h != null && isFinite(v.marketSize24h));
+    return { label: label, present: present, value: hasVal ? Number(v.marketSize24h) : null, frozen: !!(v && v.frozenAt) };
+  });
+  // Hide only when NEITHER venue is present (no shard exists / both missing).
+  if (!rows.some(r => r.present)) return '';
+  // Deepest-first by 24h size; a present venue always sorts above a missing one.
+  rows.sort((a, b) => {
+    if (a.present !== b.present) return a.present ? -1 : 1;
+    return (b.value == null ? -Infinity : b.value) - (a.value == null ? -Infinity : a.value);
+  });
+  const rowsHtml = rows.map(r => {
+    const na = r.value == null;
+    const marker = r.frozen ? '<span class="ms-final">· final</span>' : '';
+    return `<div class="ms-row"><span class="ms-venue">${r.label}</span><span class="ms-val${na ? ' na' : ''}">${na ? '—' : fmtMarketSize(r.value)}</span>${marker}</div>`;
+  }).join('');
+  const note = "Market size is each venue's 24-hour traded volume at $1 settlement value — Kalshi as the sum of both players' contracts, Polymarket as the moneyline market. Venues are shown independently and not treated as equivalent. For completed matches the figure is frozen at settlement, a different window than a live 24-hour figure.";
+  return `
+    <div class="edge-msize">
+      <div class="ms-head">Market Size</div>
+      <div class="ms-rows">${rowsHtml}</div>
+      <div class="ms-note" title="${note}">${note}</div>
+    </div>`;
+}
+
 // ── Main render ──────────────────────────────────────────────────────────
 // Converged onto design handoff 28. Deviations from the design, all forced
 // by the difference between the prototype's mock model and the real engine:
@@ -4458,6 +4520,7 @@ function renderEdgeModel(id){
         ${valueCol('p1', p1short, fair.p1, true)}
         ${valueCol('p2', p2short, fair.p2, false)}
       </div>
+      <div id="edgeMarketSize">${buildMarketSizeBlock(m)}</div>
       <div class="edge-vfoot">
         <div class="edge-movers">
           <div class="edge-cap2">Biggest movers</div>
@@ -4515,6 +4578,21 @@ function renderEdgeModel(id){
     </div>`;
 
   body.innerHTML = header + section1 + section2 + section3 + section4 + section5 + section6;
+
+  // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
+  // tab's movement chart): the container above paints empty from whatever is
+  // already on m, then this hydrates m.marketSize and repaints just that block.
+  // Guarded on edgeCurrentId so an in-flight fetch for a previously-open match
+  // can't overwrite a faster reopen of a different one. Memoised, so reopening
+  // the model costs no second fetch, and it degrades silently if the shard/index
+  // is absent (buildMarketSizeBlock returns '' → the container stays invisible).
+  if (m){
+    ensureMarketSize(m).then(() => {
+      if (edgeCurrentId !== id) return;
+      const msEl = document.getElementById('edgeMarketSize');
+      if (msEl) msEl.innerHTML = buildMarketSizeBlock(m);
+    });
+  }
 }
 
 // Form cell for the FORM column. Real value → green bar + %. When the
@@ -4900,6 +4978,50 @@ function ensureOddsMovement(m){
   return loadOddsShard(eventKeyOfMatch(m)).then(d => {
     m.oddsMovement = d ? { market: d.market, capturedAt: d.capturedAt, books: d.books } : null;
     m._oddsLoaded = true;
+    return m;
+  });
+}
+
+// ── MARKET SIZE shards ────────────────────────────────────────────────────
+// Per-match prediction-market traded-notional, written by fetch-market-size.js
+// to ./market/<eventKey>.json with a flat ./market-index.json gate. Same lazy,
+// gated, memoised load as the odds shards above: a shard is fetched at most once
+// per match and only when its event key is in the index (no 404 storms), and the
+// whole feature degrades silently if market-index.json 404s.
+let _marketIndex = null, _marketIndexPromise = null;
+const _marketShards = {}, _marketShardPromises = {};
+
+function loadMarketIndex(){
+  if (_marketIndex) return Promise.resolve(_marketIndex);
+  if (_marketIndexPromise) return _marketIndexPromise;
+  _marketIndexPromise = fetch('./market-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _marketIndex = new Set((Array.isArray(a) ? a : []).map(String)); return _marketIndex; })
+    .catch(err => { console.warn('market-index.json load failed:', err.message); _marketIndex = new Set(); return _marketIndex; });
+  return _marketIndexPromise;
+}
+
+function loadMarketShard(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek) return Promise.resolve(null);
+  if (ek in _marketShards) return Promise.resolve(_marketShards[ek]);
+  if (_marketShardPromises[ek]) return _marketShardPromises[ek];
+  _marketShardPromises[ek] = loadMarketIndex()
+    .then(idx => idx.has(ek)
+      ? fetch(`./market/${ek}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)
+      : null)
+    .then(d => { _marketShards[ek] = (d && d.venues) ? d : null; return _marketShards[ek]; })
+    .catch(err => { console.warn(`market shard ${ek} load failed:`, err.message); _marketShards[ek] = null; return null; });
+  return _marketShardPromises[ek];
+}
+
+// Hydrate one match's venues block onto m.marketSize, memoised so reopening the
+// Edge Model costs no second fetch. buildMarketSizeBlock reads m.marketSize.
+function ensureMarketSize(m){
+  if (!m || m._marketSizeLoaded) return Promise.resolve(m);
+  return loadMarketShard(eventKeyOfMatch(m)).then(d => {
+    m.marketSize = d ? d.venues : null;
+    m._marketSizeLoaded = true;
     return m;
   });
 }
