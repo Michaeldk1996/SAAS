@@ -45,13 +45,18 @@ jobs:
 
       - name: Commit asapsports-signal.json (only if changed)
         run: |
-          if git diff --quiet -- asapsports-signal.json; then
-            echo "No readiness-signal changes to commit."
-            exit 0
-          fi
+          # Stage FIRST, then diff the index: on the first-ever run the file is
+          # untracked, and `git diff` (working tree vs HEAD) ignores untracked
+          # files -> it would report "no changes" and the first real signal would
+          # never get committed. `git add` + `git diff --cached` catches both a
+          # brand-new file and an update to an existing one.
           git config user.name  "bsp-asap-bot"
           git config user.email "bsp-asap-bot@users.noreply.github.com"
           git add asapsports-signal.json
+          if git diff --cached --quiet -- asapsports-signal.json; then
+            echo "No readiness-signal changes to commit."
+            exit 0
+          fi
           git commit -m "chore(asap): refresh player readiness signal [skip ci]"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
