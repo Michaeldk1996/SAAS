@@ -8529,6 +8529,16 @@ async function loadCareerSplits(){
     if (res.ok){ const d = await res.json(); careerSplits = d.players || {}; }
   } catch (err) { /* additive; absence just hides the sections */ }
 }
+// TEN-8 ASAP Sports — "Player's own words" pre-match readiness signal, keyed by
+// profile key (tools/asapsports-signal.js output). Loaded lazily; the profile
+// card renders the section only for players with a current-tournament transcript.
+let asapSignals = {};
+async function loadAsapSignals(){
+  try {
+    const res = await fetch('./asapsports-signal.json', { cache: 'no-cache' });
+    if (res.ok){ const d = await res.json(); asapSignals = d.players || {}; }
+  } catch (err) { /* additive; absence just hides the section */ }
+}
 // Player-profile redesign — live Elo ratings (fetch-elo.js output, same file the
 // Playing Styles tab reads). Loaded once; the profile header's Elo pill looks it
 // up synchronously via ppEloFor(). Absence just falls back to a deterministic
@@ -9483,6 +9493,49 @@ function ppCareerSplitsHtml(p){
   if (!career && !last52) return '';
   return `<div style="display:flex;flex-direction:column;gap:16px;">
     ${career}${last52}</div>`;
+}
+// TEN-8 ASAP Sports — "Player's own words". Self-hiding pre-match readiness card:
+// 3-5 bullets extracted from the player's own current-tournament press conference,
+// each with one short verbatim quote. Sourced from asapsports-signal.json (keyed by
+// profile key). Absent player / no transcript => renders nothing (no layout hole),
+// mirroring the ppCareerSplitsHtml no-data rule. Quotes are ANALYSIS INPUT attributed
+// to ASAP Sports — never presented as our own words. All user-derived text escaped.
+const ASAP_CATS = {
+  injury_physical:    { label: 'Injury / physical',   color: '#f87171' },
+  fatigue_workload:   { label: 'Fatigue / workload',  color: '#fbbf24' },
+  confidence_mental:  { label: 'Confidence',          color: '#34d399' },
+  form_self:          { label: 'Form',                color: '#60a5fa' },
+  surface_conditions: { label: 'Surface / conditions',color: '#a78bfa' },
+};
+function ppAsapSignalHtml(p){
+  const s = asapSignals[String(p.key)];
+  if (!s || !Array.isArray(s.bullets) || !s.bullets.length) return '';
+  const rows = s.bullets.map(b => {
+    const cat = ASAP_CATS[b.category] || { label: 'Note', color: '#94a3b8' };
+    const quote = String(b.quote || '').replace(/^["']+|["']+$/g, '').trim();
+    return `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,0.07);">
+      <span style="flex:0 0 auto;align-self:flex-start;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${cat.color};background:${cat.color}1a;border:1px solid ${cat.color}40;border-radius:5px;padding:3px 7px;white-space:nowrap;">${escapeHtml(cat.label)}</span>
+      <div style="min-width:0;">
+        <div style="font-size:13.5px;line-height:1.45;color:#e5e7eb;">${escapeHtml(b.text)}</div>
+        ${quote ? `<div style="margin-top:5px;font-size:12.5px;line-height:1.4;color:#9ca3af;font-style:italic;">&ldquo;${escapeHtml(quote)}&rdquo;</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  const when = (s.tournament ? escapeHtml(s.tournament) : 'Current tournament')
+    + (s.date ? ` · ${escapeHtml(s.date)}` : '');
+  const src = s.sourceUrl
+    ? `<a href="${escapeHtml(s.sourceUrl)}" target="_blank" rel="noopener nofollow" style="color:#9ca3af;text-decoration:underline;">ASAP Sports</a>`
+    : 'ASAP Sports';
+  return `<div style="border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px 6px;background:rgba(255,255,255,0.02);">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:2px;">
+      <div style="font-size:15px;font-weight:700;color:#f3f4f6;">Player's own words</div>
+      <div style="font-size:11px;color:#8b93a1;">Pre-match press conference · ${when}</div>
+    </div>
+    ${rows}
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:10.5px;color:#6b7280;">
+      Player's own words — verbatim quotes courtesy of ${src}. Readiness signal only; not a match prediction.
+    </div>
+  </div>`;
 }
 // Layer #4A — compact "Surface record" rail card. Career + rolling last-52-weeks
 // W-L and win% per surface, sourced purely from the public career-splits.json
@@ -11241,6 +11294,7 @@ function buildPlayerProfileHtml(p){
       <!-- RIGHT MAIN -->
       <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
         ${oddsHtml}
+        ${ppAsapSignalHtml(p)}
         <!-- align-items defaults to stretch: both cards take the row's height, so the
              taller one (usually Career record, which renders a row per career year)
              sets the height and the other fills to match. Previously align-items:start
@@ -13745,7 +13799,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap
