@@ -189,6 +189,21 @@ function sumNullable(a, b) {
   return (a || 0) + (b || 0);
 }
 
+// Map the per-player binary markets to a single side-A win probability. Each
+// market's `yes_sub_title` is the clean player name; last_price_dollars is that
+// player's implied. Returns P(side a) or null when no market can be confidently
+// attributed to either named side (never guesses a direction).
+function kalshiPriceA(markets, aName, bName) {
+  for (const mk of markets || []) {
+    const nm = mk.yes_sub_title || mk.yes_sub_title_full || '';
+    const lp = num(mk.last_price_dollars);
+    if (nm === '' || lp == null || !isFinite(lp)) continue;
+    if (nameConfidence(aName, nm) >= MATCH_THRESHOLD) return lp;
+    if (nameConfidence(bName, nm) >= MATCH_THRESHOLD) return 1 - lp;
+  }
+  return null;
+}
+
 // Kalshi: open KXATPMATCH events, nested markets. Each event = one match,
 // two per-player binary markets. event_ticker encodes the date (26JUL26...).
 async function fetchKalshiInventory() {
@@ -203,11 +218,17 @@ async function fetchKalshiInventory() {
     const v24 = markets.reduce((s, m) => sumNullable(s, num(m.volume_24h_fp)), null);
     const vAll = markets.reduce((s, m) => sumNullable(s, num(m.volume_fp)), null);
     const settled = markets.length > 0 && markets.every((m) => m.status && m.status !== 'active');
+    // Side-A implied price: the last price of the per-player market whose
+    // player (yes_sub_title) is side a; a market on side b contributes 1 - price.
+    // Left null when no market's player can be confidently named — the display
+    // then shows size only, never a guessed direction.
+    const priceA = kalshiPriceA(markets, vs[0].trim(), vs[1].trim());
     out.push({
       venue: 'kalshi',
       a: vs[0].trim(), b: vs[1].trim(),
       date: parseKalshiDate(ev.event_ticker),
       ref: ev.event_ticker,
+      priceA: priceA,
       legs: markets.length,
       v24, vAll, settled,
     });
@@ -222,6 +243,27 @@ function parseKalshiDate(ticker) {
   const m = /-(\d{2})([A-Z]{3})(\d{2})/.exec(ticker || '');
   if (!m) return null;
   return `20${m[1]}-${MONTHS[m[2]] || '01'}-${m[3]}`;
+}
+
+// Side-A win probability from a Polymarket moneyline market. `outcomes` and
+// `outcomePrices` arrive as arrays or JSON-encoded strings; match the outcome
+// name to side a by surname and take its price. Null when unresolvable.
+function pmPriceA(ml, aName) {
+  const parse = (x) => {
+    if (Array.isArray(x)) return x;
+    if (typeof x === 'string') { try { return JSON.parse(x); } catch { return null; } }
+    return null;
+  };
+  const outs = parse(ml.outcomes);
+  const prices = parse(ml.outcomePrices);
+  if (!Array.isArray(outs) || !Array.isArray(prices) || outs.length !== prices.length) return null;
+  for (let i = 0; i < outs.length; i++) {
+    if (nameConfidence(aName, String(outs[i])) >= MATCH_THRESHOLD) {
+      const p = num(prices[i]);
+      return (p != null && isFinite(p)) ? p : null;
+    }
+  }
+  return null;
 }
 
 // Polymarket: tennis-tag open events; each event bundles ~16 markets.
@@ -244,12 +286,17 @@ async function fetchPolymarketInventory() {
       const players = title.includes(':') ? title.split(':').slice(1).join(':') : title;
       const vs = players.split(/\s+vs\.?\s+/i);
       if (vs.length !== 2) continue;
+      // Side-A implied price from the moneyline's own outcomes/prices (both come
+      // as JSON arrays, sometimes JSON-encoded strings). Match outcome names to
+      // side a by surname so orientation is never assumed from array order.
+      const priceA = pmPriceA(ml, vs[0].trim());
       out.push({
         venue: 'polymarket',
         a: vs[0].trim(), b: vs[1].trim(),
         tournament: title.includes(':') ? title.split(':')[0].trim() : '',
         date: (ev.startDate || ev.startTime || '').slice(0, 10) || null,
         ref: ml.id || ev.id,
+        priceA: priceA,
         v24: num(ml.volume24hr), vAll: num(ml.volume),
         settled: ml.closed === true,
       });
@@ -319,7 +366,7 @@ function readExistingShard(dir, key) {
 }
 
 // Build a per-venue block, honouring settlement freeze from the prior shard.
-function venueBlock(matchResult, prior, capturedAt) {
+function venueBlock(matchResult, prior, capturedAt, match) {
   // prior already settled/frozen -> carry it forward untouched
   if (prior && prior.settled && prior.frozenAt) return prior;
 
@@ -331,11 +378,21 @@ function venueBlock(matchResult, prior, capturedAt) {
     return { present: false, matched: false, reason: 'matcher_failed' };
   }
   const e = matchResult.entry;
+  // p1-oriented implied split for the display bar. e.priceA is P(side a wins);
+  // pairMatch tells us whether side a is p1 (orientation 0) or p2 (1). Left null
+  // when the venue gave no usable price — the display then shows size only.
+  let impliedP1 = null;
+  if (match && e.priceA != null && isFinite(e.priceA)) {
+    const orient = pairMatch(match.p1, match.p2, e.a, e.b).orientation;
+    const p1p = orient === 0 ? Number(e.priceA) : 1 - Number(e.priceA);
+    if (p1p > 0 && p1p < 1) impliedP1 = +p1p.toFixed(4);
+  }
   const block = {
     present: true,
     matched: true,
     marketSize24h: e.v24,      // display basis
     marketSizeAllTime: e.vAll, // data only, admin surfaces it
+    impliedP1: impliedP1,      // p1-oriented implied win prob for the split bar
     ref: e.ref,
     settled: !!e.settled,
   };
@@ -402,8 +459,8 @@ async function main() {
     tally(counters.kalshi, kRes.status);
     tally(counters.polymarket, pRes.status);
 
-    const kBlock = venueBlock(kRes, prior && prior.venues && prior.venues.kalshi, capturedAt);
-    const pBlock = venueBlock(pRes, prior && prior.venues && prior.venues.polymarket, capturedAt);
+    const kBlock = venueBlock(kRes, prior && prior.venues && prior.venues.kalshi, capturedAt, m);
+    const pBlock = venueBlock(pRes, prior && prior.venues && prior.venues.polymarket, capturedAt, m);
 
     if (kBlock.present && pBlock.present) counters.both_present++;
     if (!kBlock.present && !pBlock.present) { counters.neither_present++; continue; } // section hides -> no shard
