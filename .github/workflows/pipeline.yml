@@ -144,6 +144,16 @@ jobs:
       - name: Build market performance shards (best-effort)
         run: node build-odds-performance.js || true
 
+      # MARKET SIZE shards (TEN-8): per-match prediction-market 24h volume from
+      # Kalshi (sum of both players' contract legs) and Polymarket (moneyline
+      # market). Reads the matches.json the pipeline just wrote. Best-effort —
+      # if a venue is unreachable, the previous run's committed shards remain
+      # and are copied below, and any market already settled stays frozen at its
+      # settlement snapshot (fetch-market-size.js never re-queries a frozen
+      # venue). A venue outage must not break the pipeline.
+      - name: Build market-size shards (best-effort)
+        run: node fetch-market-size.js --slate matches.json --out market || true
+
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
       #
@@ -188,6 +198,13 @@ jobs:
           # which is exactly how the movement chart went missing for three days.
           cp odds-index.json _site/ 2>/dev/null || true
           cp -r odds _site/ 2>/dev/null || true
+          # MARKET SIZE (TEN-8): the index gates every shard fetch, exactly like
+          # odds-index.json — without it the dashboard never asks for a shard and
+          # the block silently hides. The health file feeds the admin all-time vs
+          # 24h view + split coverage counters. All three are best-effort copies.
+          cp market-index.json _site/ 2>/dev/null || true
+          cp -r market _site/ 2>/dev/null || true
+          cp market-size-health.json _site/ 2>/dev/null || true
           cp pipeline-health.json _site/ 2>/dev/null || true
           # News feed (TEN-8): every article from the api-tennis get_news window,
           # stored verbatim by build-news-feed.js. Committed but not copied = silent
