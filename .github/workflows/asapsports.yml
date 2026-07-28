@@ -1,29 +1,21 @@
 name: BSP ASAP Sports readiness signal
 
-# TEN-8 / ten8-asapsports. Twice daily: scrape ASAP Sports tennis press-conference
-# transcripts, run an LLM extraction for the players currently on the board, and
-# commit asapsports-signal.json. The dashboard's player profile card renders the
-# "Player's own words" section from that file (a missing player => the card shows
-# nothing). pipeline.yml copies asapsports-signal.json into _site on its next run,
-# so the signal publishes on the following pipeline tick (it is a data JSON, not
-# in the push-paths filter, so it does not auto-deploy on this commit).
-#
-# Cost is bounded: tools/asapsports-signal.js hash-caches per transcript and only
-# spends Anthropic tokens on transcripts that are new or changed since last run.
-# Reuses the existing ANTHROPIC_API_KEY secret (same one the main pipeline uses).
+# PROOF BRANCH (ten8-asap-board-fix). Same scrape+extract as main, but two changes:
+#   1. Fetch the LIVE deployed board (fresh, main-draw) before extracting, instead
+#      of the stale committed matches.json (which lags to the qualifier board and
+#      is why the signal came back empty).
+#   2. Upload the signal as an ARTIFACT — do NOT push to main. This lets us prove
+#      populated bullets with zero impact on the live site until the founder approves.
 
 on:
-  schedule:
-    - cron: '0 7 * * *'     # 07:00 UTC
-    - cron: '0 18 * * *'    # 18:00 UTC
   workflow_dispatch:
 
 concurrency:
-  group: bsp-asapsports
+  group: bsp-asapsports-proof
   cancel-in-progress: false
 
 permissions:
-  contents: write            # needed to commit the refreshed asapsports-signal.json
+  contents: read
 
 jobs:
   signal:
@@ -38,33 +30,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Scrape + extract readiness signal
+      - name: Fetch LIVE board (fresh main-draw, what the founder sees)
+        run: |
+          curl -sSf https://michaeldk1996.github.io/SAAS/matches.json -o matches.json
+          node -e 'const m=require("./matches.json");console.log("Live board:",m.length,"matches; dates",[...new Set(m.map(x=>x.date))].sort().join(","));'
+
+      - name: Scrape + extract readiness signal (real LLM bullets)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node tools/asapsports-signal.js
 
-      - name: Commit asapsports-signal.json (only if changed)
-        run: |
-          # Stage FIRST, then diff the index: on the first-ever run the file is
-          # untracked, and `git diff` (working tree vs HEAD) ignores untracked
-          # files -> it would report "no changes" and the first real signal would
-          # never get committed. `git add` + `git diff --cached` catches both a
-          # brand-new file and an update to an existing one.
-          git config user.name  "bsp-asap-bot"
-          git config user.email "bsp-asap-bot@users.noreply.github.com"
-          git add asapsports-signal.json
-          if git diff --cached --quiet -- asapsports-signal.json; then
-            echo "No readiness-signal changes to commit."
-            exit 0
-          fi
-          git commit -m "chore(asap): refresh player readiness signal [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "Pushed asapsports-signal.json on attempt $attempt."
-              exit 0
-            fi
-            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
-            git pull --rebase origin main || true
-          done
-          echo "::error::Could not push asapsports-signal.json after 3 attempts."
-          exit 1
+      - name: Upload signal artifact (PROOF — no push to main)
+        uses: actions/upload-artifact@v4
+        with:
+          name: asap-signal-proof
+          path: asapsports-signal.json
+          if-no-files-found: error
