@@ -4292,12 +4292,15 @@ function buildMarketSignalBlock(m, e){
   const sharp = st3.sharp || null;
 
   // ── Sharp estimates ──────────────────────────────────────────────────────
-  // Pinnacle: the model publishes impliedProb per side WITH vig (the two sides
-  // sum to >1), so normalise the two Pinnacle sides against each other — a valid
-  // two-way devig because both prices are the same (sharp) book. Stennisfy: our
-  // adjusted fair probability, already vig-free (fair.p1.prob + fair.p2.prob = 1).
+  // Pinnacle: the model already publishes the devigged two-way line as
+  // sharp.vigFreeProb (p1-oriented, vig-free — the two sides sum to 1), the same
+  // field the Fair-price block reads. Use it directly; no client-side devig.
+  // (Fallback: if only a raw two-side impliedProb is ever emitted, normalise it.)
+  // Stennisfy: our adjusted fair probability, already vig-free (fair.p1.prob + fair.p2.prob = 1).
   let pinnP1 = null;
-  if (sharp && sharp.impliedProb && sharp.impliedProb.p1 != null && sharp.impliedProb.p2 != null){
+  if (sharp && sharp.vigFreeProb && sharp.vigFreeProb.p1 != null && isFinite(Number(sharp.vigFreeProb.p1))){
+    pinnP1 = Number(sharp.vigFreeProb.p1);
+  } else if (sharp && sharp.impliedProb && sharp.impliedProb.p1 != null && sharp.impliedProb.p2 != null){
     const a = Number(sharp.impliedProb.p1), b = Number(sharp.impliedProb.p2);
     if (isFinite(a) && isFinite(b) && (a + b) > 0) pinnP1 = a / (a + b);
   }
