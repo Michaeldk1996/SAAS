@@ -4941,8 +4941,16 @@ let _oddsIndex = null, _oddsIndexPromise = null;
 const _oddsShards = {}, _oddsShardPromises = {};
 
 function eventKeyOfMatch(m){
-  const parts = String((m && m.id != null) ? m.id : '').split('-');
-  return parts.length > 1 ? parts.slice(1).join('-') : '';
+  // Board ids come in two shapes: a prefixed fixture id ("upcoming-12149520" /
+  // "past-12149488" — the event key follows the first hyphen) and a bare 32-hex
+  // odds-feed hash on the live/marquee cards (no hyphen; the whole id IS the
+  // key). Splitting on '-' and dropping the first segment blanked the hash ids,
+  // so those cards addressed shard "" and silently found nothing (market-size +
+  // odds tabs). indexOf keeps both shapes addressable and matches the writer in
+  // fetch-market-size.js.
+  const id = String((m && m.id != null) ? m.id : '');
+  const i = id.indexOf('-');
+  return i >= 0 ? id.slice(i + 1) : id;
 }
 
 function loadOddsIndex(){
