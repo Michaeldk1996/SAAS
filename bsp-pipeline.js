@@ -3092,8 +3092,16 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
 const ODDS_SHARD_DIR = 'odds';
 const ODDS_INDEX_PATH = 'odds-index.json';
 function eventKeyOf(m) {
-  const parts = String(m && m.id != null ? m.id : '').split('-');
-  return parts.length > 1 ? parts.slice(1).join('-') : '';
+  // Two id shapes on the board: prefixed fixture ids ("upcoming-12149520" /
+  // "past-12149488" — the event key follows the first hyphen) and a bare 32-hex
+  // odds-feed hash on the live/marquee cards (no hyphen; the whole id IS the
+  // key). split('-').slice(1) blanked the hash ids, so extractOddsShards wrote
+  // NO shard for the marquee matches and their Odds tab silently found nothing.
+  // indexOf keeps both shapes addressable and matches the reader
+  // (bsp-consult-dashboard.html eventKeyOfMatch) and fetch-market-size.js.
+  const id = String(m && m.id != null ? m.id : '');
+  const i = id.indexOf('-');
+  return i >= 0 ? id.slice(i + 1) : id;
 }
 function extractOddsShards(matches) {
   fs.mkdirSync(ODDS_SHARD_DIR, { recursive: true });
