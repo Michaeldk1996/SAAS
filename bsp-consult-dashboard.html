@@ -2616,23 +2616,25 @@ function renderNews(){
       + (gen ? ` · feed updated ${gen.toLocaleString()}` : '');
   }
 
-  // ASAP Sports "Player's own words" quote cards. Interim layout (TEN-8, founder
-  // request 2026-07-28): rendered as their own block STACKED BELOW the api-tennis
-  // articles — no date interleave, no sort. Reuses ppAsapSignalHtml (the amber-badged
-  // profile card) as-is. Suppressed while a tournament filter is active, since the
-  // block is all-players and filtering quotes by roster is deferred to the real design.
+  // ASAP Sports "Player's own words". Interim layout (TEN-8, founder request
+  // 2026-07-28): each speaking player is rendered as a NATIVE news article (the same
+  // collapsible .news-item card as the api-tennis wire), NOT the amber profile card —
+  // the founder asked for it "written in the same style" as the other articles. The
+  // ASAP articles are stacked ABOVE the api-tennis feed (which runs to ~50+ items and
+  // buried them when they sat below). Suppressed while a tournament filter is active,
+  // since the block is all-players and filtering quotes by roster is deferred.
   const asapHtml = tourRe ? '' : renderNewsAsapCards();
 
   if (!items.length){
-    listEl.innerHTML = `<div class="news-empty">`
+    listEl.innerHTML = asapHtml + `<div class="news-empty">`
       + (tourName
           ? `No articles in the last ${NEWS_WINDOW_HOURS}h mention a player currently in ${newsEscape(tourName)}.`
           : `No articles published in the last ${NEWS_WINDOW_HOURS} hours.`)
-      + `</div>` + asapHtml;
+      + `</div>`;
     return;
   }
 
-  listEl.innerHTML = items.map(({ a, ts }) => {
+  listEl.innerHTML = asapHtml + items.map(({ a, ts }) => {
     const src = newsSourceLabel(a.sources);
     const when = isFinite(ts) ? new Date(ts).toLocaleString() : (a.published_at || '');
     const ago = newsAgo(ts);
@@ -2652,34 +2654,53 @@ function renderNews(){
       </div>
       <div class="news-body"><p>${body}</p></div>
     </article>`;
-  }).join('') + asapHtml;
+  }).join('');
 }
 
-// ASAP Sports quote cards for the News feed (TEN-8, interim). Iterates every player
-// in asapsports-signal.json that has extracted bullets and renders each as its own
-// card by REUSING ppAsapSignalHtml (the amber-badged "Player's own words" card from
-// the profile page) verbatim — no new styling. The profile card omits the player
-// name (the profile header already shows it), so here we prepend a small name label
-// so the feed identifies who is speaking. Returns '' when no signal is loaded, so the
-// News feed is unchanged whenever ASAP data is absent.
+// ASAP Sports "Player's own words" for the News feed (TEN-8, interim). Iterates every
+// player in asapsports-signal.json that has extracted bullets and renders each as a
+// NATIVE news article — the identical collapsible .news-item card the api-tennis wire
+// uses — so they read as ordinary articles in the founder's requested style, not the
+// amber profile card. Distinguished only by the feed tag (🎤 vs 📰) and the amber
+// source pill. The article body is the player's paraphrased takeaways, each followed
+// by the verbatim quote; a muted footer attributes the quotes to ASAP Sports and
+// labels the block a readiness signal (not a prediction). Returns '' when no signal is
+// loaded, so the News feed is unchanged whenever ASAP data is absent.
 function renderNewsAsapCards(){
   const entries = Object.entries(asapSignals || {})
     .filter(([, s]) => s && Array.isArray(s.bullets) && s.bullets.length);
   if (!entries.length) return '';
-  const cards = entries.map(([key, s]) => {
-    const card = ppAsapSignalHtml({ key });
-    if (!card) return '';
+  return entries.map(([, s]) => {
     const name = s.name ? escapeHtml(s.name) : 'Player';
-    return `<div style="margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:700;color:#e7e9ee;margin-bottom:7px;">${name}</div>
-      ${card}
-    </div>`;
+    const when = [s.tournament, s.date].filter(Boolean).map(escapeHtml).join(' · ');
+    const srcTag = s.sourceUrl
+      ? `<a href="${escapeHtml(s.sourceUrl)}" target="_blank" rel="noopener nofollow" class="news-src">ASAP Sports</a>`
+      : `<span class="news-src">ASAP Sports</span>`;
+    const body = s.bullets.map(b => {
+      const text = String(b.text || '').trim();
+      const quote = String(b.quote || '').replace(/^["']+|["']+$/g, '').trim();
+      if (!text && !quote) return '';
+      return quote ? `${text}\n“${quote}”` : text;
+    }).filter(Boolean).join('\n\n');
+    if (!body) return '';
+    return `<article class="news-item">
+      <div class="news-itemhead" onclick="this.parentElement.classList.toggle('open')">
+        <div class="news-itemmain">
+          <p class="news-title">${name} — in their own words</p>
+          <div class="news-sub">
+            <span class="news-feedtag" title="Verbatim pre-match press-conference quotes via ASAP Sports" style="color:#f59e0b;background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.40);">🎤 Player's own words · ASAP Sports</span>
+            ${srcTag}
+            ${when ? `<span>${when}</span>` : ''}
+          </div>
+        </div>
+        <span class="news-chev">▶</span>
+      </div>
+      <div class="news-body">
+        <p>${escapeHtml(body)}</p>
+        <div style="margin-top:12px;font-size:11px;line-height:1.5;color:var(--text-faint);">Verbatim quotes courtesy of ASAP Sports. Player readiness signal only — not a match prediction.</div>
+      </div>
+    </article>`;
   }).filter(Boolean).join('');
-  if (!cards) return '';
-  return `<div style="margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.09);">
-    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8b93a1;margin-bottom:14px;">Player's own words · ASAP Sports</div>
-    ${cards}
-  </div>`;
 }
 
 // Load the ASAP signal for the News page, then re-render so the quote cards appear.
