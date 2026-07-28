@@ -4,13 +4,17 @@ name: BSP ASAP Sports readiness signal
 # transcripts, run an LLM extraction for the players currently on the board, and
 # commit asapsports-signal.json. The dashboard's player profile card renders the
 # "Player's own words" section from that file (a missing player => the card shows
-# nothing). pipeline.yml copies asapsports-signal.json into _site on its next run,
-# so the signal publishes on the following pipeline tick (it is a data JSON, not
-# in the push-paths filter, so it does not auto-deploy on this commit).
+# nothing). pipeline.yml copies asapsports-signal.json into _site on its next run.
+#
+# BOARD SOURCE (fixed 2026-07-28): read the LIVE deployed matches.json, not the
+# committed one. The committed matches.json on main is the score-refresh board and
+# lags a round behind the live board (it held Washington QUALIFIERS while the live
+# board showed the main draw) -> zero overlap with press-conference transcripts ->
+# empty signal. bsp-pipeline.js regenerates the fresh board into _site each run, so
+# the deployed matches.json is the board the site actually shows.
 #
 # Cost is bounded: tools/asapsports-signal.js hash-caches per transcript and only
 # spends Anthropic tokens on transcripts that are new or changed since last run.
-# Reuses the existing ANTHROPIC_API_KEY secret (same one the main pipeline uses).
 
 on:
   schedule:
@@ -38,6 +42,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Use the LIVE deployed board (fresh main-draw, not the lagging commit)
+        run: |
+          curl -sSf https://michaeldk1996.github.io/SAAS/matches.json -o matches.json
+          node -e 'const m=require("./matches.json");console.log("Live board:",m.length,"matches; dates",[...new Set(m.map(x=>x.date))].sort().join(","));'
+
       - name: Scrape + extract readiness signal
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -45,13 +54,11 @@ jobs:
 
       - name: Commit asapsports-signal.json (only if changed)
         run: |
-          # Stage FIRST, then diff the index: on the first-ever run the file is
-          # untracked, and `git diff` (working tree vs HEAD) ignores untracked
-          # files -> it would report "no changes" and the first real signal would
-          # never get committed. `git add` + `git diff --cached` catches both a
-          # brand-new file and an update to an existing one.
+          # Stage FIRST, then diff the index (see history: first-ever run is untracked).
           git config user.name  "bsp-asap-bot"
           git config user.email "bsp-asap-bot@users.noreply.github.com"
+          # matches.json was overwritten with the live board above; do NOT commit it.
+          git checkout -- matches.json 2>/dev/null || true
           git add asapsports-signal.json
           if git diff --cached --quiet -- asapsports-signal.json; then
             echo "No readiness-signal changes to commit."
