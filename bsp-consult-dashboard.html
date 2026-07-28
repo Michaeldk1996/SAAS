@@ -1913,6 +1913,10 @@
   [data-page="news"] .news-title{ font-size:15px; font-weight:650; line-height:1.35; color:var(--text); margin:0; }
   [data-page="news"] .news-sub{ margin-top:7px; font-size:12px; color:var(--text-faint); font-family:ui-monospace,monospace; display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
   [data-page="news"] .news-src{ color:var(--accent); text-transform:capitalize; }
+  /* Source-provenance badge: automated api-tennis get_news feed. Distinct blue,
+     deliberately contrasted with the amber "Player's own words / ASAP Sports"
+     badge on player-profile cards so the two content sources read apart at a glance. */
+  [data-page="news"] .news-feedtag{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#60a5fa; background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.38); border-radius:5px; padding:2px 8px; white-space:nowrap; }
   [data-page="news"] .news-chev{ color:var(--text-faint); font-size:12px; flex-shrink:0; margin-top:3px; transition:transform .15s; }
   [data-page="news"] .news-item.open .news-chev{ transform:rotate(90deg); color:var(--accent); }
   [data-page="news"] .news-body{ display:none; padding:0 18px 18px; }
@@ -2630,6 +2634,7 @@ function renderNews(){
         <div class="news-itemmain">
           <p class="news-title">${newsEscape(a.title || 'Untitled')}</p>
           <div class="news-sub">
+            <span class="news-feedtag" title="Automated wire feed via api-tennis get_news">📰 Automated news · api-tennis</span>
             ${src ? `<span class="news-src">${newsEscape(src)}</span>` : ''}
             ${when ? `<span>${newsEscape(when)}</span>` : ''}
             ${ago ? `<span>${ago}</span>` : ''}
@@ -9528,7 +9533,9 @@ function ppAsapSignalHtml(p){
     : 'ASAP Sports';
   return `<div style="border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px 6px;background:rgba(255,255,255,0.02);">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:2px;">
-      <div style="font-size:15px;font-weight:700;color:#f3f4f6;">Player's own words</div>
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#f59e0b;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.40);border-radius:5px;padding:2px 8px;white-space:nowrap;">&#127908; ASAP Sports · Player's own words</span>
+      </div>
       <div style="font-size:11px;color:#8b93a1;">Pre-match press conference · ${when}</div>
     </div>
     ${rows}
