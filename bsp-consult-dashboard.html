@@ -2617,22 +2617,24 @@ function renderNews(){
   }
 
   // ASAP Sports "Player's own words" quote cards. Interim layout (TEN-8, founder
-  // request 2026-07-28): rendered as their own block STACKED BELOW the api-tennis
-  // articles — no date interleave, no sort. Reuses ppAsapSignalHtml (the amber-badged
-  // profile card) as-is. Suppressed while a tournament filter is active, since the
-  // block is all-players and filtering quotes by roster is deferred to the real design.
+  // request 2026-07-28): rendered as their own block STACKED ABOVE the api-tennis
+  // articles — no date interleave, no sort. Placed on top because the api-tennis feed
+  // runs to ~50+ articles and a below-the-feed block was effectively invisible (founder
+  // could not find it). Reuses ppAsapSignalHtml (the amber-badged profile card) as-is.
+  // Suppressed while a tournament filter is active, since the block is all-players and
+  // filtering quotes by roster is deferred to the real design.
   const asapHtml = tourRe ? '' : renderNewsAsapCards();
 
   if (!items.length){
-    listEl.innerHTML = `<div class="news-empty">`
+    listEl.innerHTML = asapHtml + `<div class="news-empty">`
       + (tourName
           ? `No articles in the last ${NEWS_WINDOW_HOURS}h mention a player currently in ${newsEscape(tourName)}.`
           : `No articles published in the last ${NEWS_WINDOW_HOURS} hours.`)
-      + `</div>` + asapHtml;
+      + `</div>`;
     return;
   }
 
-  listEl.innerHTML = items.map(({ a, ts }) => {
+  listEl.innerHTML = asapHtml + items.map(({ a, ts }) => {
     const src = newsSourceLabel(a.sources);
     const when = isFinite(ts) ? new Date(ts).toLocaleString() : (a.published_at || '');
     const ago = newsAgo(ts);
@@ -2676,7 +2678,7 @@ function renderNewsAsapCards(){
     </div>`;
   }).filter(Boolean).join('');
   if (!cards) return '';
-  return `<div style="margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.09);">
+  return `<div style="margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.09);">
     <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8b93a1;margin-bottom:14px;">Player's own words · ASAP Sports</div>
     ${cards}
   </div>`;
