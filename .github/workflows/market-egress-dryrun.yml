@@ -1,0 +1,74 @@
+name: market-size egress dry-run
+
+# TEN-8 MERGE GATE. One-shot probe: does a GitHub Actions runner (datacenter IP)
+# actually reach the Kalshi + Polymarket public APIs, or does a venue block
+# datacenter egress the way TML 403s this repo's runners (160/160)?
+#
+# Production (fetch-market-size.js, wired into pipeline.yml) will call these exact
+# hosts/paths on the 15-min cron. The DoH dance in the fetcher is only for the
+# founder's DNS-poisoned LAN; CI DNS is clean, so this probes the one open
+# question: is the runner IP accepted. Runs automatically on push to this branch
+# (no gh CLI / no default-branch dispatch needed). Never touches main or deploy.
+
+on:
+  push:
+    branches: [ten8-market-egress-dryrun]
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Kalshi + Polymarket from the runner
+        run: |
+          set -uo pipefail
+          UA='bsp-marketsize/1.0'
+          K_URL='https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=KXATPMATCH&status=open&limit=200&with_nested_markets=true'
+          P_URL='https://gamma-api.polymarket.com/events?tag_slug=tennis&closed=false&limit=100&offset=0'
+          FAIL=0
+
+          probe() {
+            local name="$1" url="$2" jqpath="$3"
+            echo "::group::$name"
+            echo "IP as seen by the internet: $(curl -s --max-time 15 https://api.ipify.org || echo '?')"
+            local body code
+            body=$(curl -sS --max-time 30 -w '\nHTTPCODE:%{http_code}\n' \
+                     -H "accept: application/json" -H "user-agent: $UA" "$url" 2>&1)
+            code=$(printf '%s' "$body" | sed -n 's/^HTTPCODE:\([0-9]*\)$/\1/p' | tail -1)
+            local payload
+            payload=$(printf '%s' "$body" | sed '/^HTTPCODE:[0-9]*$/d')
+            echo "HTTP status: ${code:-<none>}"
+            echo "Response bytes: $(printf '%s' "$payload" | wc -c)"
+            echo "First 400 chars:"
+            printf '%s' "$payload" | head -c 400; echo
+
+            # Block detection: Cloudflare / access-denied challenge pages
+            if printf '%s' "$payload" | grep -qiE 'just a moment|attention required|access denied|cf-chl|cloudflare|<!DOCTYPE html'; then
+              echo "VERDICT $name: BLOCKED (challenge/HTML page — datacenter egress refused)"; FAIL=1; echo "::endgroup::"; return
+            fi
+            if [ "${code:-0}" = "403" ] || [ "${code:-0}" = "401" ] || [ "${code:-0}" = "429" ]; then
+              echo "VERDICT $name: BLOCKED (HTTP ${code})"; FAIL=1; echo "::endgroup::"; return
+            fi
+            if [ "${code:-0}" != "200" ]; then
+              echo "VERDICT $name: DEGRADED (HTTP ${code:-<none>} — not a hard block, but not 200)"; FAIL=1; echo "::endgroup::"; return
+            fi
+            # Valid-JSON + expected-shape check
+            if printf '%s' "$payload" | jq -e "$jqpath" >/dev/null 2>&1; then
+              local n; n=$(printf '%s' "$payload" | jq -r "$jqpath | length" 2>/dev/null)
+              echo "VERDICT $name: PASS (HTTP 200, valid JSON, ${n} items at $jqpath)"
+            else
+              echo "VERDICT $name: SUSPECT (HTTP 200 but JSON shape unexpected at $jqpath)"; FAIL=1
+            fi
+            echo "::endgroup::"
+          }
+
+          probe "KALSHI" "$K_URL" '.events'
+          probe "POLYMARKET" "$P_URL" '.'
+
+          echo "=============================================="
+          if [ "$FAIL" = "0" ]; then
+            echo "EGRESS DRY-RUN: PASS — both venues reachable from Actions runner IP."
+          else
+            echo "EGRESS DRY-RUN: FAIL — at least one venue blocked/degraded from the runner IP. Do NOT merge; report."
+          fi
+          exit $FAIL
