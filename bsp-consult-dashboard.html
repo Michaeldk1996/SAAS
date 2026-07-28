@@ -4286,7 +4286,18 @@ function msigSplitRow(cls, label, p1, sizeHtml){
     `</div>`;
 }
 
-function buildMarketSignalBlock(m, e){
+function buildMarketSignalBlock(m, e, opts){
+  // Split gate (founder decision 2026-07-28). The two sections carry different
+  // trust guarantees, so the state-2 display gate applies to only one of them:
+  //   • Sharp estimates (Stennisfy fair price + Pinnacle devigged anchor) IS
+  //     model output read against a market anchor — the exact thing the state-2
+  //     gate protects. It renders ONLY when the match is state-2 confirmed.
+  //   • Market money (Kalshi / Polymarket) is a raw venue observation, valid
+  //     whether or not Pinnacle has posted a line. It renders whenever venue
+  //     data exists, gate or no gate.
+  // stateConfirmed defaults true so the confirmed render path is unchanged; the
+  // gated path passes it false to show Market money alone.
+  const stateConfirmed = !opts || opts.stateConfirmed !== false;
   const st3 = (e && e.stage3) || {};
   const fair = st3.fair || null;
   const sharp = st3.sharp || null;
@@ -4305,7 +4316,7 @@ function buildMarketSignalBlock(m, e){
     if (isFinite(a) && isFinite(b) && (a + b) > 0) pinnP1 = a / (a + b);
   }
   const stenP1 = (fair && fair.p1 && fair.p1.prob != null && isFinite(fair.p1.prob)) ? Number(fair.p1.prob) : null;
-  const hasSharpSect = pinnP1 != null || stenP1 != null;
+  const hasSharpSect = stateConfirmed && (pinnP1 != null || stenP1 != null);
   const sharpRows = hasSharpSect
     ? msigSplitRow('', 'Pinnacle', pinnP1, '') + msigSplitRow('', 'Stennisfy', stenP1, '')
     : '';
@@ -4342,7 +4353,12 @@ function buildMarketSignalBlock(m, e){
 
   if (!hasSharpSect && !hasMoneySect) return '';
   const frozen = frozenVenue || !!(m && m.finalScore);
-  const note = "Sharp estimates read our Stennisfy fair price against Pinnacle's devigged line. Market money is each prediction-market venue's 24-hour traded size at $1 settlement value — the split shows which side the money is on, the MARKET SIZE column how much. Venues are shown independently and not treated as equivalent; on a completed match the figures are frozen at settlement.";
+  // Footnote only describes the sections actually shown — in the gated (money-only)
+  // render the Sharp-estimates sentence is dropped so it doesn't reference a section
+  // that isn't on screen.
+  const sharpNote = "Sharp estimates read our Stennisfy fair price against Pinnacle's devigged line. ";
+  const moneyNote = "Market money is each prediction-market venue's 24-hour traded size at $1 settlement value — the split shows which side the money is on, the MARKET SIZE column how much. Venues are shown independently and not treated as equivalent; on a completed match the figures are frozen at settlement.";
+  const note = (hasSharpSect ? sharpNote : '') + moneyNote;
   return `
     <div class="edge-msig">
       <div class="msig-head">Market Signal${frozen ? '<span class="msig-final"> · final</span>' : ''}</div>
@@ -4410,10 +4426,23 @@ function renderEdgeModel(id){
   const hoursToStart = startTs ? (new Date(startTs).getTime() - Date.now()) / 3.6e6 : null;
   const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
   if (!stateConfirmed){
-    if (hoursToStart != null && hoursToStart <= 0){
-      body.innerHTML = edgeEmptyState(m, 'Match in play.');  // match started — muted label, no model output
-    } else {
-      body.innerHTML = edgeEmptyState(m, 'Awaiting confirmed market line.');
+    const reason = (hoursToStart != null && hoursToStart <= 0)
+      ? 'Match in play.'                 // match started — muted label, no model output
+      : 'Awaiting confirmed market line.';
+    // Sharp estimates stay gated (they're model output vs a market anchor), but
+    // Market money is a raw venue observation valid without a confirmed line, so
+    // render the block money-only here. This is what keeps the feature visible
+    // when there are no upcoming state-2 matches on the board. buildMarketSignal
+    // Block self-hides (returns '') when there is no venue data, so the muted
+    // empty-state label is all that shows on matches without market money.
+    body.innerHTML = edgeEmptyState(m, reason) +
+      `<div id="edgeMarketSize">${buildMarketSignalBlock(m, e, { stateConfirmed: false })}</div>`;
+    if (m){
+      ensureMarketSize(m).then(() => {
+        if (edgeCurrentId !== id) return;
+        const msEl = document.getElementById('edgeMarketSize');
+        if (msEl) msEl.innerHTML = buildMarketSignalBlock(m, e, { stateConfirmed: false });
+      });
     }
     return;
   }
@@ -4624,7 +4653,7 @@ function renderEdgeModel(id){
         ${valueCol('p1', p1short, fair.p1, true)}
         ${valueCol('p2', p2short, fair.p2, false)}
       </div>
-      <div id="edgeMarketSize">${buildMarketSignalBlock(m, e)}</div>
+      <div id="edgeMarketSize">${buildMarketSignalBlock(m, e, { stateConfirmed: true })}</div>
       <div class="edge-vfoot">
         <div class="edge-movers">
           <div class="edge-cap2">Biggest movers</div>
@@ -4694,7 +4723,7 @@ function renderEdgeModel(id){
     ensureMarketSize(m).then(() => {
       if (edgeCurrentId !== id) return;
       const msEl = document.getElementById('edgeMarketSize');
-      if (msEl) msEl.innerHTML = buildMarketSignalBlock(m, e);
+      if (msEl) msEl.innerHTML = buildMarketSignalBlock(m, e, { stateConfirmed: true });
     });
   }
 }
