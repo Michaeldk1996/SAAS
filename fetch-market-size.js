@@ -276,25 +276,31 @@ function withinDateWindow(matchDate, venueDate) {
 //   'absent'    — no candidate market for this pair on this venue
 //   'ambiguous' — candidate(s) found but not confidently/uniquely joinable
 function matchVenue(match, inventory) {
+  // 1) Name match first (both players must clear the bar), date-INDEPENDENT.
+  //    A player pair is unique within a tournament, so a confident unique name
+  //    match is safe to take even when the board's date and the venue's date
+  //    disagree (measured failure mode: board dates Los Cabos R1 three days
+  //    after both venues do, which the old ±2-day PRE-filter turned into a miss).
   const cands = [];
   for (const it of inventory) {
-    if (!withinDateWindow(match.date, it.date)) continue;
     const pm = pairMatch(match.p1, match.p2, it.a, it.b);
     if (pm.score >= MATCH_THRESHOLD) cands.push({ it, score: pm.score });
   }
   if (cands.length === 0) {
-    // was there any near-miss (shared one surname) ignoring the date window?
+    // was there any near-miss (shared one surname)?
     const near = inventory.some((it) => {
       const pm = pairMatch(match.p1, match.p2, it.a, it.b);
       return pm.score > 0 && pm.score < MATCH_THRESHOLD;
     });
     return { status: near ? 'ambiguous' : 'absent', entry: null };
   }
-  if (cands.length > 1) {
-    // disambiguate by tournament (Polymarket only) if possible
-    return { status: 'ambiguous', entry: null };
-  }
-  return { status: 'matched', entry: cands[0].it };
+  // 2) Unique name match -> take it.
+  if (cands.length === 1) return { status: 'matched', entry: cands[0].it };
+  // 3) Multiple name matches -> NOW use the date window to disambiguate; a
+  //    single survivor is a confident join, otherwise drop (never guess).
+  const dated = cands.filter((c) => withinDateWindow(match.date, c.it.date));
+  if (dated.length === 1) return { status: 'matched', entry: dated[0].it };
+  return { status: 'ambiguous', entry: null };
 }
 
 /* ------------------------------------------------------------------ *

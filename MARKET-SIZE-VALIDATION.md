@@ -54,23 +54,79 @@ present on both produced both lines.
 market exists but could not be confidently/uniquely joined). These are separate counts, as
 required.
 
-### ✅ (4) Measured matcher failure rate — not the old 2–5% / 5–10% estimates
-**Measured 0.0% (0 of 17)** on a same-time cross-venue slate. Method: the two live venue
-inventories were matched against each other (every Kalshi event that also exists on
-Polymarket *should* join; a failure is a pure matcher miss, with no board-slate staleness
-confound). 17 Kalshi events → **17/17 confident 1:1 joins, 0 ambiguous, 0 gaps.**
+### ✅ (4) Matcher failure rate — measured against the real board, hand-verified
 
-This number is honest about how it was reached: an initial pass reported a **false 0%**
-while silently missing two real matches. Both were caught by hand-verification and fixed:
-- `Damm Jr vs Shelton` (Kalshi) ↔ `Martin Damm vs Ben Shelton` (Polymarket) — "Jr" had been
-  treated as a surname token. Fix: strip generational suffixes (Jr/Sr/II/III/IV).
-- `Shimabukuro vs Pacheco Mendez` (Kalshi) ↔ `Rodrigo Pacheco` (Polymarket) — Polymarket
-  truncated the compound surname. Fix: accept a shared trailing surname token at the pair
-  level (both players must still clear the bar; any ambiguity is dropped).
+*(This replaces the earlier "0 of 17". That number was measured by cross-matching the two
+venue inventories against **each other** — and both venues agree on each match's date, so
+that method is structurally blind to a board-vs-venue date disagreement. Measuring against
+the actual board, as required, exposed exactly such a failure. The old method is exactly the
+kind of self-referential shortcut to avoid.)*
 
-**Caveat, stated plainly:** n=17 is one slate on one day. 0% is a snapshot, not a permanent
-guarantee. That is exactly why the split counter ships in the admin dashboard — the failure
-rate is **measured continuously in production**, so if it drifts you see it, you don't guess.
+**The slate (named, whole, not curated).** The live production board `matches.json`, fetched
+from the deployed Pages site on 2026-07-28. **38 ATP men's singles matches.** Tournaments:
+**ATP Washington Open** and **ATP Los Cabos** (plus one completed **ATP Estoril** row). Dates
+**2026-07-26 → 2026-07-29**. Every match on the board was included — nothing dropped to
+flatter the number.
+
+**Ground truth: hand-verified, 100% (not a sample, not the matcher's own score).** Kalshi's
+inventory is 17 events — I read all 17 by hand. Polymarket's inventory is 356 markets — I
+filtered by surname to the candidates for each board match and read them by hand. For **all
+38 matches × 2 venues = 76 venue decisions**, I determined by hand (a) whether a market
+truly exists on that venue and (b) where the matcher matched, whether it matched the *right*
+market. Correctness was **not** inferred from the matcher's confidence.
+
+**Failure defined three ways — only the last two count:**
+
+| Venue | Markets that actually exist (denominator) | ✅ matched correctly | ✗ **missed** (market exists, we returned absent) | ✗ **wrong match** (attached to a different match) | no-market (correct, not a failure) |
+|---|---|---|---|---|---|
+| **Kalshi** | **17** | 12 events (14 board rows) | **5** | **0** | rest |
+| **Polymarket** | **21** | 16 matches (18 board rows) | **5** | **0** | rest |
+
+- **Kalshi matcher failure rate = 5 / 17 = 29.4%.** Polymarket = **5 / 21 = 23.8%.**
+- **Wrong matches — the category that actually hurts — = 0 of 76.** Every same-surname trap
+  on the slate was correctly rejected by the opponent + uniqueness guards: Tabilo (vs
+  Griekspoor on the board / vs Atmane on the venue), the two Svajdas (Trevor vs Zachary), two
+  Kouame matches (vs Dimitrov / vs Winter), two Tomic matches, two Vukic matches, two
+  Michelsen matches, Musetti appearing in two matches. **Name-matching made 0 errors**,
+  including the hard ones (`de Minaur`, `Pacheco Mendez`, `Damm Jr.`, full-name-vs-initial).
+- **All 10 misses (5 matches × both venues) share ONE cause.** The five Los Cabos R1 matches
+  (Brooksby–Moutet, Shapovalov–Hijikata, Svrcina–Walton, Zheng–Landaluce, Shimabukuro–Pacheco
+  Mendez) are dated **2026-07-29 on the board** but **2026-07-26 on both venues** — a 3-day
+  gap that the old ±2-day date **pre-filter** turned into an absent. Both venues independently
+  agree on 07-26; the market unquestionably exists (exact player pairs). These are genuine
+  *misses*, not coverage gaps.
+
+**One board-data edge, disclosed (not charged to the matcher):** the board carries a
+duplicate row `Ugo Humbert vs Andrej Martin` next to the real `Ugo Humbert vs Andres Martin`;
+both venues list only Andres. The matcher joined the (correct) Humbert–Martin market to both
+rows. The market is right; the spurious row is an upstream board-dedup issue. Flagged for the
+board-data owner, not counted as a matcher failure.
+
+**Fix applied and re-measured on the identical live slate.** `matchVenue` now matches on
+names first and uses the date window only to break *multiple*-candidate ties, instead of as a
+hard pre-filter (a player pair is unique within a tournament, so a unique name match is safe
+to take even when board/venue dates disagree). Re-measured:
+**Kalshi misses 5 → 0, Polymarket misses 5 → 0, wrong matches 0 → 0, ambiguous 0 → 0.** Only
+those 5 rows changed; each joined to its obviously-correct market (e.g. `Brooksby v Moutet →
+KXATPMATCH-26JUL26BROMOU / PM 3109591`). Post-fix failure rate on this slate: **0 / 17
+Kalshi, 0 / 21 Polymarket** — now honestly earned, with denominator and hand-verification
+attached, not a self-graded 0.
+
+**Caveat, plainly:** this is one slate on one day (38 matches). 0% post-fix is a snapshot, not
+a guarantee — which is why the split counter (matched / no_market / matcher_failed) still
+ships to the admin dashboard so the rate is measured continuously in production, not guessed.
+
+### ⚠️ Coverage finding (separate from matcher accuracy) — needs a decision before merge
+The fetcher's slate filter (`fetch-market-size.js`, ~L367) processes only ids starting
+`upcoming-` / `past-`. The current live board carries **today's marquee Washington matches
+under bare-hash ids**, which the filter skips — including the highest-volume markets on the
+slate: **de Minaur–Tsitsipas ($153K Kalshi / $45K PM), Majchrzak–Paul ($150K), Mannarino–Tien,
+Fils–Jodar, Giron–Hewitt, Nakashima–Etcheverry, Svajda–Mensik, Humbert–Martin.** Both venues
+carry these markets and the matcher joins them correctly (verified above), so the block would
+be **absent on exactly the matches a bettor cares most about.** This is a slate-filter / board
+dual-representation question, **not** a matcher error, and I did not change the filter blind —
+it may be intentional (eventKey scheme / dedup with the odds pipeline). **Decision needed:**
+widen the filter to cover hash-id board matches, or confirm those are rendered elsewhere.
 
 ---
 
