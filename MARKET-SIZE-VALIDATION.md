@@ -128,7 +128,17 @@ file, and I'll report the distribution once it has run against the live board fo
    branch/track** (admin), outside the TEN-8 write boundary. I did not reach across tracks to
    edit it. Say the word and I'll either wire it on the admin branch or hand the health-file
    contract to whoever owns that track.
-3. **Dashboard display panel** — built on this branch; diff under review in this report cycle.
+3. **Dashboard display panel** — built and reviewed on this branch. Renders in the Edge
+   Model "Fair price & value" section as a sibling to Sharp Estimates: `MARKET SIZE` header,
+   up to two venue lines sorted deepest-first (present above missing), em dash for a
+   missing/unmatched venue, `· final` marker on a settlement-frozen figure, 24h basis only,
+   the methodology sentence as caption + tooltip. Rides a lazy, index-gated, memoised shard
+   load cloned from the odds-movement pattern (fetched at most once per match, degrades
+   silently if the index 404s), with a late-repaint guarded on the open match id. The
+   currency formatter passes all nine spec cases including the `$1000K→$1M` promotion edge.
+   **Not yet done: a live browser render against real shards** — the block is verified by
+   unit-checking its logic, not yet by driving the dashboard end-to-end. That end-to-end
+   render is part of the pre-merge CI dry-run in item 1.
 
 Standing rules held: no fabricated data, validation report before merge (this), no merge to
 main without your approval. Directional flow remains the separate follow-up; the leg finding
