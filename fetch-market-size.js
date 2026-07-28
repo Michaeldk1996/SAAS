@@ -370,8 +370,18 @@ async function main() {
   if (measureOnly) return measure(kInv, pInv);
 
   const slate = JSON.parse(fs.readFileSync(slatePath, 'utf8'));
-  const matches = slate.filter((m) => String(m.id || '').startsWith('upcoming-') ||
-                                       String(m.id || '').startsWith('past-'));
+  // Process every real board match, regardless of id SCHEME. The board carries
+  // three id shapes, assigned by three builders in bsp-pipeline.js:
+  //   buildMatchObject      -> id = oddsEvent.id  (a bare 32-hex odds-feed hash;
+  //                            these are the live/marquee cards, e.g. de Minaur
+  //                            vs Tsitsipas). NO upcoming-/past- prefix.
+  //   buildUpcomingMatchObject -> id = `upcoming-${event_key}`
+  //   buildPastMatchObject     -> id = `past-${event_key}`
+  // The old filter keyed on the upcoming-/past- prefix, so it silently skipped
+  // exactly the biggest matches (the hash-id, odds-feed cards). Filter on the
+  // shape of a real match instead of the id prefix. eventKeyOf() already handles
+  // a prefix-less hash id (indexOf('-') === -1 -> whole id is the key).
+  const matches = slate.filter((m) => m && m.id != null && m.p1 && m.p2);
 
   fs.mkdirSync(outDir, { recursive: true });
   const index = [];
