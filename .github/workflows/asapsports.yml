@@ -28,6 +28,7 @@ concurrency:
 
 permissions:
   contents: write            # needed to commit the refreshed asapsports-signal.json
+  actions: write             # needed to dispatch pipeline.yml so the fresh signal deploys now
 
 jobs:
   signal:
@@ -53,21 +54,30 @@ jobs:
         run: node tools/asapsports-signal.js
 
       - name: Commit asapsports-signal.json (only if changed)
+        id: commit
         run: |
           # Stage FIRST, then diff the index (see history: first-ever run is untracked).
           git config user.name  "bsp-asap-bot"
           git config user.email "bsp-asap-bot@users.noreply.github.com"
           # matches.json was overwritten with the live board above; do NOT commit it.
           git checkout -- matches.json 2>/dev/null || true
+          # How many players did this scrape actually produce? The deploy dispatch
+          # below is gated on this so a zero-player (empty) signal never triggers a
+          # publish (founder request, 2026-07-28).
+          PLAYERS=$(node -e 'try{const s=require("./asapsports-signal.json");process.stdout.write(String(s&&s.players?Object.keys(s.players).length:0))}catch(e){process.stdout.write("0")}')
+          echo "players=$PLAYERS" >> "$GITHUB_OUTPUT"
+          echo "Signal contains $PLAYERS player(s)."
           git add asapsports-signal.json
           if git diff --cached --quiet -- asapsports-signal.json; then
             echo "No readiness-signal changes to commit."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "chore(asap): refresh player readiness signal [skip ci]"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               echo "Pushed asapsports-signal.json on attempt $attempt."
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
@@ -75,3 +85,18 @@ jobs:
           done
           echo "::error::Could not push asapsports-signal.json after 3 attempts."
           exit 1
+
+      # Deploy hardening (TEN-8, founder request 2026-07-28): the signal commits with
+      # [skip ci] and the pipeline push-trigger's paths filter excludes data files, so
+      # a fresh signal otherwise waits for the next 15-min pipeline cron before it is
+      # copied into _site and published. Dispatch pipeline.yml directly so the deploy
+      # fires now — but ONLY when we actually pushed a NON-EMPTY signal, so an empty
+      # scrape never publishes over good data. (workflow_dispatch is the one event the
+      # default GITHUB_TOKEN is allowed to trigger, so no PAT is required.)
+      - name: Publish now — dispatch pipeline.yml (only on a fresh non-empty signal)
+        if: steps.commit.outputs.pushed == 'true' && steps.commit.outputs.players != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fresh signal with ${{ steps.commit.outputs.players }} player(s) pushed — dispatching pipeline.yml to publish to Pages."
+          gh workflow run pipeline.yml --ref main
