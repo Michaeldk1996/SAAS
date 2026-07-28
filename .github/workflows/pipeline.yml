@@ -161,6 +161,10 @@ jobs:
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
+          # ASAP Sports "Player's own words" readiness signal (TEN-8), keyed by
+          # profile key; asapsports.yml rebuilds it twice daily. Tolerant cp (may
+          # not exist before that workflow's first run) — NOT in the assert list.
+          cp asapsports-signal.json _site/ 2>/dev/null || true
           # Tennis Edge Model output (h2h-model engine + pre-baked AI summary),
           # one entry per match. Committed but not copied = silent 404, which
           # empties the entire Edge Model page. bsp-pipeline.js writes it last,
