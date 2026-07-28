@@ -8586,6 +8586,14 @@ async function loadAsapSignals(){
     const res = await fetch('./asapsports-signal.json', { cache: 'no-cache' });
     if (res.ok){ const d = await res.json(); asapSignals = d.players || {}; }
   } catch (err) { /* additive; absence just hides the section */ }
+  // TEN-8 lazy-race fix: if a profile is already open when the signal resolves, repaint
+  // it so the ASAP card fills in place. Without this the card renders nothing on first
+  // paint (self-hides when asapSignals is empty) and never corrects itself — visually
+  // identical to a real data gap. Same idiom as loadOddsPerfShardThenRerender; the News
+  // surface already repaints via loadAsapForNews().
+  const _ppView = document.getElementById('playerProfileView');
+  if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
+      && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
 }
 // Player-profile redesign — live Elo ratings (fetch-elo.js output, same file the
 // Playing Styles tab reads). Loaded once; the profile header's Elo pill looks it
