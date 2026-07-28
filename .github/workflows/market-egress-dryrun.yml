@@ -20,8 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Probe Kalshi + Polymarket from the runner
+        shell: bash
         run: |
-          set -uo pipefail
+          set +e +o pipefail   # runner invokes bash -e; a benign SIGPIPE/no-match must NOT abort the probe
           UA='bsp-marketsize/1.0'
           K_URL='https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=KXATPMATCH&status=open&limit=200&with_nested_markets=true'
           P_URL='https://gamma-api.polymarket.com/events?tag_slug=tennis&closed=false&limit=100&offset=0'
@@ -40,7 +41,7 @@ jobs:
             echo "HTTP status: ${code:-<none>}"
             echo "Response bytes: $(printf '%s' "$payload" | wc -c)"
             echo "First 400 chars:"
-            printf '%s' "$payload" | head -c 400; echo
+            echo "${payload:0:400}"
 
             # Block detection: Cloudflare / access-denied challenge pages
             if printf '%s' "$payload" | grep -qiE 'just a moment|attention required|access denied|cf-chl|cloudflare|<!DOCTYPE html'; then
