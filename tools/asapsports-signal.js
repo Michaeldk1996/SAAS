@@ -254,15 +254,14 @@ const OUTPUT_SCHEMA = {
   properties: {
     bullets: {
       type: 'array',
-      maxItems: 5,
       items: {
         type: 'object',
         additionalProperties: false,
         required: ['category', 'text', 'quote'],
         properties: {
           category: { type: 'string', enum: CATEGORIES },
-          text: { type: 'string', maxLength: 160 },
-          quote: { type: 'string', maxLength: 200 },
+          text: { type: 'string' },
+          quote: { type: 'string' },
         },
       },
     },
