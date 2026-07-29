@@ -210,3 +210,89 @@ Player B `rgb(231,233,238)`, grass `rgb(42,184,160)`, viz `rgb(91,155,255)`, odd
   shell that routes to the working password path.
 - Code boxes render 56×64px vs the ref's slightly larger ~64–72px squares — negligible, kept
   at 56 so six boxes + gaps equal the form-column width.
+
+## Item 3 — COMPLETED MATCHES (finished-state of the Matches card)
+
+Completed Matches is a **state**, not a page: the Upcoming/Completed segmented control's
+"Completed" position filters the SAME Matches shell + header + `.match-card` component to
+finished fixtures. No second card was forked — the existing card (`renderMatches`) already
+carries an `isCompleted = !!m.finalScore` branch that reuses every shell/header binding and
+only recomposes the row body + footer. This pass VERIFIED that state end-to-end (the gate the
+prior commit never ran), documented every inferred element, and added a durable completed-state
+render harness. The card code itself was already correct and committed at `9b782d0`; no HTML
+change was required — the deliverable is the verified gate + this documentation + the harness.
+
+### What the completed card composes (all reusing the existing shell/card)
+- **Header** — unchanged shell: surface (colour-coded) · tournament · round badge, then the
+  fixture **date+time** right-aligned in IBM Plex Mono muted (`.mc-altdate`). The two
+  upcoming column-headers ("Odds · Implied", "Recent form") are **dropped** (`colHead=''`)
+  because the completed body has no such columns.
+- **Player rows** — identity colours kept per README (A `#6aaeff`, B `#e7e9ee`) regardless of
+  who won. Winner emphasis is carried by three non-identity signals so the "never both blue /
+  A always blue, B always white" rule is never broken:
+  1. `WON` pill (`--mc-pos #3dd68c` on `pos-bg`/`pos-bd` — README `--pos` tokens),
+  2. a 3px `--mc-pos` accent bar down the left of the winner row (`.mc-row.winner::before`),
+  3. the winner's sets-won total tile carries the lighter `.w` background vs the loser's `.l`.
+- **Score column** — `mcSetCluster()`: sets-won total tile + per-set games, ALL IBM Plex Mono
+  (verified `fontFamily: "IBM Plex Mono"` in the render probe). Tiebreaks supported via `sup`.
+- **Odds** — `mcJourney()`: opening→track→closing journey with a purely-directional drift
+  glyph; when only a closing price was ever recorded it collapses to the bare close number
+  (no placeholder, no "Open" label). Opening odds aren't in today's `matches.json`, so the
+  cards currently show the closing price alone.
+- **Footer / Market Signal** — the upcoming "Market Signal" chip **transforms** to
+  "**Market Signal · final**" and still expands in place; on a finished match the sharp split
+  is read from the settled/bound odds (e.g. bet365 75/25 live), Stennisfy % + Polymarket/Kalshi
+  flow/liquidity stay `—` (same data-layer gap as upcoming). "See full analysis →" is retained.
+- **Dropped upcoming-only affordances** (probed absent on every completed card): `FAV` tag,
+  odds/implied `.mc-oddswrap`, recent-form bars, inline column headers, and the "3 Bets Today"
+  Pro promo card (suppressed with `state.view !== 'completed'`).
+
+### Verification (the gate) — 1400px, from commit `9b782d0`
+Harness: `scripts/render-completed.mjs` (adapted from `render-verify.mjs`; Node 24 global
+WebSocket + spawned `--headless=new` Chrome via CDP; explicit `Emulation.setDeviceMetricsOverride`
+width 1400, never `--window-size`). It builds the preview from `git show 9b782d0:…html`, injects
+the real-shape BSP auth stub, then **drives the page's own controls**: clicks the `yesterday`
+day-tab (the bucket that actually carries finished fixtures — see day-bucket note below) and the
+`data-view="completed"` segmented button, then **waits for a completed card to paint** by polling
+for `.mc-sets`/`.mc-won` (no fixed-sleep-and-assume). DOM probe confirmed: `activeView:"completed"`,
+13 completed cards, WON badge present, set totals in `"IBM Plex Mono"`, and FAV/oddswrap/form-bar/
+column-head/Pro-promo all absent. Screenshots (worktree root):
+`ten8-completed-1400-9b782d0.png` (full page), `-card.png` (first card), `-sigopen.png`
+(Market Signal · final expanded).
+
+### INFERRED — no founder reference existed for the completed card (confirm/correct)
+The founder attached no Completed screenshot and `export/README.md` has no prose Completed
+section. I decoded `export/stennisfy-dashboard.html` (a compressed Framer scene-stack): it does
+NOT contain the Today's-Matches *completed card* — the only completed cues are the **Tournaments**
+"Completed" status colour `#3ECF8E` on `rgba(62,207,142,0.12)` and a **player-history** "def. …
+2 - 1" fixture format. The upcoming card's original composition came from a now-absent zip-32
+`matches-upcoming.html`; no equivalent completed artifact survives. So the following are
+reasoned inferences from the design system + upcoming-card consistency, NOT a reference:
+1. **Winner emphasis = WON pill + accent bar + set-total tile, with identity colours kept.**
+   (Not recolouring/dimming names — that would break the README A/B colour rule.)
+2. **Market Signal is kept and relabelled "· final"** (frozen at settlement) rather than removed.
+   An alternative reading is to drop it entirely on a finished match — flagged for confirmation.
+3. **Score shown as per-player set-total tile + per-set games** (vs a single "6-4 4-6 6-4"
+   scoreline). Chosen to mirror the upcoming card's right-aligned two-value layout.
+4. **Closing odds shown as the odds journey** rather than dropping odds entirely on a finished
+   match (README says finished cards need no live odds, but the closing price is historical fact).
+
+### README-vs-export note
+Export Tournaments uses green `#3ECF8E`/`rgba(62,207,142,0.12)` for "Completed"; the card uses
+README `--pos #3dd68c` + `pos-bg rgba(61,214,140,0.15)`. README wins (per the founder rule);
+one-line swap if he wants the export's exact green.
+
+### Residual gaps (honest)
+- **Opening odds** aren't in `matches.json`, so the journey renders the closing price only
+  (no open→close movement). Real value, not a placeholder — expands automatically once the
+  pipeline carries `openingOdds` on finished fixtures.
+- **Day-bucket interaction (behaviour, not composition):** a *today*-dated finished match
+  buckets to `past` (`matchDayBucket` returns `'past'` once `m.finalScore` exists), so the
+  Completed view on the **Today** tab is empty by design — completed cards surface on the
+  **Yesterday** / **Past** / any specific past-day tab. Left untouched (it's day-filter/data
+  logic, out of Item 3's card scope); flagged so the founder can decide whether "Today +
+  Completed" should also admit today's just-finished matches.
+- **Avatars** use external `api.api-tennis.com` photo URLs that 404 under headless (they load
+  in the live app); on failure they fall back to the shared A-tint/B-neutral initials circle
+  (`mcAvatarFail`). Identical to the accepted upcoming-card behaviour — shared code, not a
+  completed-state issue.
