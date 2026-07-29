@@ -2156,10 +2156,36 @@
   [data-page="news"] .news-feedtag{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#60a5fa; background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.38); border-radius:5px; padding:2px 8px; white-space:nowrap; }
   [data-page="news"] .news-chev{ color:var(--text-faint); font-size:12px; flex-shrink:0; margin-top:3px; transition:transform .15s; }
   [data-page="news"] .news-item.open .news-chev{ transform:rotate(90deg); color:var(--accent); }
-  [data-page="news"] .news-body{ display:none; padding:0 18px 18px; }
-  [data-page="news"] .news-item.open .news-body{ display:block; }
-  [data-page="news"] .news-body p{ margin:0; font-size:14px; line-height:1.7; color:var(--text-dim); white-space:pre-wrap; border-top:1px solid var(--border); padding-top:14px; }
+  /* Body is VISIBLE by default (matches the export), clamped to a 3-line preview;
+     opening the card lifts the clamp to reveal the full article. */
+  [data-page="news"] .news-body{ display:block; padding:12px 18px 16px; }
+  [data-page="news"] .news-body p{ margin:0; font-size:13.5px; line-height:1.65; color:var(--text-dim); white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  [data-page="news"] .news-item.open .news-body p{ -webkit-line-clamp:unset; overflow:visible; }
   [data-page="news"] .news-empty{ border:1px dashed var(--border); border-radius:var(--radius); padding:40px 24px; text-align:center; color:var(--text-dim); font-size:13.5px; }
+
+  /* ---- News header, controls & category chips (rebuilt to design export) ---- */
+  [data-page="news"] .news-tourpill{ display:inline-block; vertical-align:middle; margin-left:10px; font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--accent); background:rgba(62,123,250,0.12); border:1px solid rgba(62,123,250,0.42); border-radius:999px; padding:3px 10px; }
+  [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:var(--text-faint); font-family:ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
+  [data-page="news"] .news-livedot{ width:7px; height:7px; border-radius:50%; background:#3ECF8E; box-shadow:0 0 0 3px rgba(62,207,142,0.18); }
+  [data-page="news"] .news-clock{ color:var(--text-dim); }
+  [data-page="news"] .news-controls{ display:flex; gap:12px; align-items:center; margin-bottom:14px; }
+  [data-page="news"] .news-searchwrap{ position:relative; flex:1; }
+  [data-page="news"] .news-searchicon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-faint); pointer-events:none; }
+  [data-page="news"] .news-search{ width:100%; box-sizing:border-box; padding:11px 14px 11px 38px; font-size:13.5px; color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:10px; }
+  [data-page="news"] .news-search:focus{ outline:none; border-color:var(--accent); }
+  [data-page="news"] .news-search::placeholder{ color:var(--text-faint); }
+  [data-page="news"] .news-range{ padding:11px 14px; font-size:13px; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+  [data-page="news"] .news-range:focus{ outline:none; border-color:var(--accent); }
+  [data-page="news"] .news-chips{ display:flex; flex-wrap:wrap; gap:9px; margin-bottom:18px; }
+  [data-page="news"] .news-chip{ font-size:12.5px; font-weight:550; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:8px 15px; cursor:pointer; transition:border-color .12s, color .12s, background .12s; }
+  [data-page="news"] .news-chip:hover{ border-color:#33404f; color:var(--text); }
+  [data-page="news"] .news-chip.active{ color:var(--accent); border-color:rgba(62,123,250,0.55); background:rgba(62,123,250,0.10); }
+  /* Per-card meta row: category tag · source · player, with the age pushed right. */
+  [data-page="news"] .news-metarow{ display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin-bottom:9px; font-size:12px; font-family:ui-monospace,monospace; color:var(--text-faint); }
+  [data-page="news"] .news-cat{ font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:5px; padding:2px 8px; white-space:nowrap; }
+  [data-page="news"] .news-player{ color:var(--text-dim); }
+  [data-page="news"] .news-ago{ margin-left:auto; display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+  [data-page="news"] .news-footnote{ margin-top:22px; font-size:11px; line-height:1.55; color:var(--text-faint); }
 
   /* ---- BSP Consult Intel (manual injury / insider notes, TEN-8) ----
      Founder-authored notes stored in Firestore, shown ABOVE the automated
@@ -2217,23 +2243,32 @@
 <div class="tabpage" data-page="news">
   <div class="news-wrap">
     <div class="news-head">
-      <h1>News</h1>
-      <p>ATP main-tour tennis news from the last 72 hours — match reports, draws, previews, injuries, coaching and player insight. Click any headline to read the full article.</p>
-      <div class="news-meta" id="newsMeta">Loading…</div>
-      <!-- Tournament filter (TEN-8): narrows the feed to articles mentioning a
-           player actually in the selected ATP draw. Roster comes from
-           tournament-entries.json (fixtures-derived). Hidden until populated. -->
-      <div class="news-filter" id="newsFilterWrap" style="display:none;">
-        <label for="newsTourFilter">Tournament</label>
-        <select id="newsTourFilter"><option value="">All ATP tournaments</option></select>
-        <span class="news-filter-note" id="newsFilterNote"></span>
-      </div>
+      <h1>Tennis News <span class="news-tourpill">ATP MEN'S</span></h1>
+      <p>Latest market and tour information · For informational purposes only</p>
+      <div class="news-live"><span class="news-livedot"></span><span class="news-clock" id="newsClock">--:--:--</span> · Live feed</div>
     </div>
+    <!-- Controls: free-text search + time-range window (matches design export). -->
+    <div class="news-controls">
+      <div class="news-searchwrap">
+        <svg class="news-searchicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="newsSearch" class="news-search" type="text" autocomplete="off" placeholder="Search headlines, players, tournaments" oninput="newsOnSearch(this.value)">
+      </div>
+      <select id="newsRange" class="news-range" onchange="newsOnRange(this.value)">
+        <option value="24">Last 24h</option>
+        <option value="48">Last 48h</option>
+        <option value="72">Last 72h</option>
+        <option value="168">Last 7d</option>
+      </select>
+    </div>
+    <!-- Category filter chips. Category is derived client-side (keyword classifier);
+         no category field exists in news-feed.json — the data layer is untouched. -->
+    <div class="news-chips" id="newsChips"></div>
     <!-- BSP Consult Intel: admin composer (founder only) + member-visible notes,
          both rendered by loadIntel() into these hosts. -->
     <div id="intelAdmin"></div>
     <div class="intel-list" id="intelList"></div>
     <div class="news-list" id="newsList"></div>
+    <div class="news-footnote" id="newsFootnote"></div>
   </div>
 </div>
 
@@ -2751,6 +2786,78 @@ let _tourEntries = null;   // tournament-entries.json (fixtures-derived rosters)
 let _newsTourKey = '';     // selected tournament_key, '' = all
 let _tourMatchRe = null;   // cached surname regex for the selected tournament
 
+// Rebuilt-to-export controls (TEN-8). Time-range window, free-text search and a
+// derived category filter. Category + player are NOT feed fields — both are derived
+// client-side at render time; news-feed.json is untouched.
+const NEWS_CATEGORIES = ['Match Reports', 'Withdrawals & Injuries', 'Tour News', 'Draws & Schedules'];
+let _newsRangeHours = 24;   // default matches the export's "Last 24h"
+let _newsSearch = '';
+let _newsCat = '';          // '' = all; else one of NEWS_CATEGORIES
+let _newsClockTimer = null;
+let _eloRoster = null;      // surname(lower) -> { label:"I. Surname", elo }
+
+// Keyword classifier → one of the four export categories. Most specific first
+// (injuries), then draws/schedules, then match reports, else general tour news.
+function newsClassify(title, content){
+  const t = ((title || '') + ' ' + (content || '')).toLowerCase();
+  if (/\b(withdr\w*|retir\w*|injur\w*|pull(?:s|ed)?\s+out|walkover|w\/o|hip|knee|ankle|shoulder|wrist|elbow|thigh|hamstring|calf|abdomin\w*|illness|virus|medical timeout|ruled out|sidelined|abandon\w*|comeback from|back (?:injury|complaint|problem|spasm))\b/.test(t)) return 'Withdrawals & Injuries';
+  if (/\b(draw|draws|seed\w*|bracket|order of play|qualif\w*|wild ?card|entry list|schedul\w*|byes?)\b/.test(t)) return 'Draws & Schedules';
+  if (/\b(beat|beats|def\.?|defeat\w*|win|wins|won|reach(?:es|ed)?|survive[sd]?|edge[sd]?|advanc\w*|through to|sets?|tie-?break|final|semi-?final|quarter-?final|upset|saves?|clinch\w*|thriller)\b/.test(t)) return 'Match Reports';
+  return 'Tour News';
+}
+
+// Best-effort player attribution from the headline, matched against the Elo roster
+// surname map. Title only (not body) to avoid crediting a player merely mentioned in
+// passing. Returns '' when no confident single-surname hit — a wrong name is worse
+// than none. No player field exists in the feed; this is derivation, not data.
+function newsPlayerFor(title){
+  if (!_eloRoster) return '';
+  const words = String(title || '').toLowerCase().match(/[a-zà-ÿ'’-]{3,}/g) || [];
+  for (const w of words){ if (_eloRoster[w]) return _eloRoster[w].label; }
+  return '';
+}
+
+// Load the Elo roster once and build surname -> "I. Surname" (highest-Elo wins on
+// surname collisions). Fire-and-forget; never blocks the article feed.
+async function loadNewsRoster(){
+  if (_eloRoster) return;
+  try {
+    const res = await fetch('./elo-ratings.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = JSON.parse(await res.text());
+    const map = {};
+    const eloOf = k => (d.elo && d.elo[k] && d.elo[k].all && d.elo[k].all.rating) || 0;
+    for (const key of Object.keys(d.ratings || {})){
+      const parts = String(key).split('|');
+      const sur = parts[0]; const ini = parts[1];
+      if (!sur) continue;
+      const label = (ini ? ini.toUpperCase() + '. ' : '') + sur.charAt(0).toUpperCase() + sur.slice(1);
+      const elo = eloOf(key);
+      if (!map[sur] || elo > map[sur].elo) map[sur] = { label, elo };
+    }
+    _eloRoster = map;
+    if (_newsData) renderNews();
+  } catch (err) { /* best-effort: player line simply omitted */ }
+}
+
+// Live HH:MM:SS clock in the header. Started once; harmless if the element is absent.
+function newsStartClock(){
+  const tick = () => { const el = document.getElementById('newsClock'); if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12:false }); };
+  tick();
+  if (!_newsClockTimer) _newsClockTimer = setInterval(tick, 1000);
+}
+
+function newsOnSearch(v){ _newsSearch = String(v || '').trim().toLowerCase(); renderNews(); }
+function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 24; renderNews(); }
+function newsToggleCat(cat){ _newsCat = (_newsCat === cat) ? '' : cat; renderNewsChips(); renderNews(); }
+function renderNewsChips(){
+  const wrap = document.getElementById('newsChips');
+  if (!wrap) return;
+  wrap.innerHTML = NEWS_CATEGORIES.map(c =>
+    `<button class="news-chip${_newsCat === c ? ' active' : ''}" onclick="newsToggleCat('${c.replace(/'/g, "\\'")}')">${newsEscape(c)}</button>`
+  ).join('');
+}
+
 function newsParseTs(s){
   // Feed timestamps look like "2026-07-26 10:01:09.706" (UTC, space-separated).
   if (!s) return NaN;
@@ -2776,8 +2883,10 @@ function newsAgo(ts){
 }
 
 async function loadNews(){
+  newsStartClock();  // live header clock
+  renderNewsChips(); // category filter chips
+  loadNewsRoster();  // Elo surname map for player attribution — never blocks articles
   loadIntel(); // BSP Consult Intel loads independently of the article feed
-  loadTourEntries(); // tournament filter loads independently — never blocks articles
   loadAsapForNews(); // ASAP quote cards load independently — never block articles
   const listEl = document.getElementById('newsList');
   const metaEl = document.getElementById('newsMeta');
@@ -2847,71 +2956,66 @@ function tourMatchRegex(){
 
 function renderNews(){
   const listEl = document.getElementById('newsList');
-  const metaEl = document.getElementById('newsMeta');
+  const footEl = document.getElementById('newsFootnote');
   if (!listEl || !_newsData) return;
   const all = Array.isArray(_newsData.articles) ? _newsData.articles : [];
-  const cutoff = Date.now() - NEWS_WINDOW_HOURS * 3600 * 1000;
+  const cutoff = Date.now() - _newsRangeHours * 3600 * 1000;
+
   let items = all
     .map(a => ({ a, ts: newsParseTs(a.published_at) }))
     .filter(x => !isFinite(x.ts) || x.ts >= cutoff)   // keep undated items rather than silently drop them
-    .sort((x, y) => (y.ts || 0) - (x.ts || 0));
+    .sort((x, y) => (y.ts || 0) - (x.ts || 0))
+    .map(x => ({
+      a: x.a, ts: x.ts,
+      cat: newsClassify(x.a.title, x.a.content),      // derived — no category field in feed
+      player: newsPlayerFor(x.a.title),               // derived from Elo roster surname map
+      src: newsSourceLabel(x.a.sources),
+    }));
 
-  // Tournament filter: narrow to articles naming a player in the selected draw.
-  const tourRe = tourMatchRegex();
-  const tourName = _newsTourKey && _tourEntries
-    ? ((_tourEntries.tournaments || []).find(t => String(t.tournamentKey) === _newsTourKey) || {}).name
-    : '';
-  if (tourRe){
-    items = items.filter(({ a }) => tourRe.test(String(a.title || '')) || tourRe.test(String(a.content || '')));
+  // Category chip filter, then free-text search across headline/body/player/source.
+  if (_newsCat) items = items.filter(x => x.cat === _newsCat);
+  if (_newsSearch){
+    items = items.filter(x =>
+      (String(x.a.title || '') + ' ' + String(x.a.content || '') + ' ' + x.player + ' ' + x.src)
+        .toLowerCase().includes(_newsSearch));
   }
 
-  const noteEl = document.getElementById('newsFilterNote');
-  if (noteEl) noteEl.textContent = tourRe ? `showing articles mentioning a ${tourName} player` : '';
+  // ASAP "Player's own words" cards sit above the wire, but only in the unfiltered
+  // view — a category/search filter keeps the result set clean.
+  const asapHtml = (_newsCat || _newsSearch) ? '' : renderNewsAsapCards();
 
-  if (metaEl){
+  if (footEl){
     const gen = _newsData.generatedAt ? new Date(_newsData.generatedAt) : null;
-    metaEl.textContent = `${items.length} article${items.length === 1 ? '' : 's'}`
-      + (tourName ? ` for ${tourName}` : ` in the last ${NEWS_WINDOW_HOURS}h`)
-      + (gen ? ` · feed updated ${gen.toLocaleString()}` : '');
+    footEl.textContent = 'Automated ATP main-tour news via api-tennis'
+      + (gen ? ' · feed updated ' + gen.toLocaleString() : '')
+      + '. Category and player labels are derived automatically. BSP Consult Intel notes are our own.';
   }
-
-  // ASAP Sports "Player's own words". Interim layout (TEN-8, founder request
-  // 2026-07-28): each speaking player is rendered as a NATIVE news article (the same
-  // collapsible .news-item card as the api-tennis wire), NOT the amber profile card —
-  // the founder asked for it "written in the same style" as the other articles. The
-  // ASAP articles are stacked ABOVE the api-tennis feed (which runs to ~50+ items and
-  // buried them when they sat below). Suppressed while a tournament filter is active,
-  // since the block is all-players and filtering quotes by roster is deferred.
-  const asapHtml = tourRe ? '' : renderNewsAsapCards();
 
   if (!items.length){
     listEl.innerHTML = asapHtml + `<div class="news-empty">`
-      + (tourName
-          ? `No articles in the last ${NEWS_WINDOW_HOURS}h mention a player currently in ${newsEscape(tourName)}.`
-          : `No articles published in the last ${NEWS_WINDOW_HOURS} hours.`)
+      + (_newsSearch ? `No articles match “${newsEscape(_newsSearch)}”.`
+         : _newsCat ? `No ${newsEscape(_newsCat)} articles in the last ${_newsRangeHours}h.`
+         : `No articles published in the last ${_newsRangeHours} hours.`)
       + `</div>`;
     return;
   }
 
-  listEl.innerHTML = asapHtml + items.map(({ a, ts }) => {
-    const src = newsSourceLabel(a.sources);
-    const when = isFinite(ts) ? new Date(ts).toLocaleString() : (a.published_at || '');
+  listEl.innerHTML = asapHtml + items.map(({ a, ts, cat, player, src }) => {
     const ago = newsAgo(ts);
     const body = a.content ? newsEscape(a.content) : '<em>No article body provided by the feed.</em>';
     return `<article class="news-item">
       <div class="news-itemhead" onclick="this.parentElement.classList.toggle('open')">
         <div class="news-itemmain">
-          <p class="news-title">${newsEscape(a.title || 'Untitled')}</p>
-          <div class="news-sub">
-            <span class="news-feedtag" title="Automated wire feed via api-tennis get_news">📰 Automated news · api-tennis</span>
+          <div class="news-metarow">
+            <span class="news-cat">${newsEscape(cat)}</span>
             ${src ? `<span class="news-src">${newsEscape(src)}</span>` : ''}
-            ${when ? `<span>${newsEscape(when)}</span>` : ''}
-            ${ago ? `<span>${ago}</span>` : ''}
+            ${player ? `<span class="news-player">${newsEscape(player)}</span>` : ''}
+            <span class="news-ago">${ago ? newsEscape(ago) : ''}<span class="news-chev">▶</span></span>
           </div>
+          <p class="news-title">${newsEscape(a.title || 'Untitled')}</p>
+          <div class="news-body"><p>${body}</p></div>
         </div>
-        <span class="news-chev">▶</span>
       </div>
-      <div class="news-body"><p>${body}</p></div>
     </article>`;
   }).join('');
 }
@@ -2945,18 +3049,18 @@ function renderNewsAsapCards(){
     return `<article class="news-item">
       <div class="news-itemhead" onclick="this.parentElement.classList.toggle('open')">
         <div class="news-itemmain">
-          <p class="news-title">${name} — in their own words</p>
-          <div class="news-sub">
-            <span class="news-feedtag" title="Verbatim pre-match press-conference quotes via ASAP Sports" style="color:#f59e0b;background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.40);">🎤 Player's own words · ASAP Sports</span>
+          <div class="news-metarow">
+            <span class="news-cat" style="color:#f59e0b;background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.40);" title="Verbatim pre-match press-conference quotes via ASAP Sports">Player's own words</span>
             ${srcTag}
-            ${when ? `<span>${when}</span>` : ''}
+            <span class="news-player">${name}</span>
+            <span class="news-ago">${when ? when + ' ' : ''}<span class="news-chev">▶</span></span>
+          </div>
+          <p class="news-title">${name} — in their own words</p>
+          <div class="news-body">
+            <p>${escapeHtml(body)}</p>
+            <div style="margin-top:12px;font-size:11px;line-height:1.5;color:var(--text-faint);">Verbatim quotes courtesy of ASAP Sports. Player readiness signal only — not a match prediction.</div>
           </div>
         </div>
-        <span class="news-chev">▶</span>
-      </div>
-      <div class="news-body">
-        <p>${escapeHtml(body)}</p>
-        <div style="margin-top:12px;font-size:11px;line-height:1.5;color:var(--text-faint);">Verbatim quotes courtesy of ASAP Sports. Player readiness signal only — not a match prediction.</div>
       </div>
     </article>`;
   }).filter(Boolean).join('');
@@ -3152,7 +3256,7 @@ function renderIntel(){
   const editing = _intelEditingId ? (_intelNotes.find(n => n.id === _intelEditingId) || null) : null;
   adminEl.innerHTML = `
     <div class="intel-admin">
-      <h3>${editing ? 'Edit intel note' : 'Post BSP Consult Intel'}</h3>
+      <h3>${editing ? 'Edit intel note' : 'Post intel'}</h3>
       <textarea id="intelText" placeholder="Injury update, insider info, practice observation…">${editing ? newsEscape(editing.text || '') : ''}</textarea>
       <input id="intelPlayer" type="text" placeholder="Player name (optional, free text — auto-links, e.g. Sinner)" value="${editing ? newsEscape(editing.player || '') : ''}" oninput="intelUpdateMatchHint()" />
       <div class="intel-match" id="intelMatchHint"></div>
