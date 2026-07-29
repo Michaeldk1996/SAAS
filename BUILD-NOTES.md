@@ -387,3 +387,107 @@ Screenshots: `md-stats-1400-<commit>.png`, `md-pbp-1400-<commit>.png`.
 - The H2H tab's single local row is the *current* match (no past box score in the served index),
   so that specific row shows "stats not available" — a data gap, not a render break; the
   form-panel component structure renders.
+
+---
+
+## Item 5 — THE MATCH ANALYSIS MODAL: exactly ten tabs, "Extra stats" removed
+
+Founder spec (verbatim): "THE MATCH ANALYSIS MODAL — all ten tabs. No screenshots for
+these; work from the README. **Extra stats does not exist — the rail is ten tabs, not
+eleven. Remove it from the live app.**" README rail order = Key factors · Playing style ·
+Form · H2H · Match Stats · Progression · Overview · Tournament · Weather · Odds.
+
+### DISCOVER — before/after tab inventory
+The rail (`#aTabs .asidenav-item[data-atab]`, built in the modal markup ~L2686) was already
+in README order; the ONLY divergence was an 11th tab. So this was a **removal**, not a
+re-order or re-build — every one of the ten renderers already existed and paints.
+
+BEFORE (11 rail items): key · style · form · h2h · matchstats · progression · overview ·
+tournament · weather · odds · **extra ("Extra stats")**.
+AFTER (10, README order): key · style · form · h2h · matchstats · progression · overview ·
+tournament · weather · odds. (Plus the separate `.asidenav-download` "Download report"
+action, which is not a tab.)
+
+### What was removed (four sites + a dead helper chain)
+1. **Rail entry** `data-atab="extra"` (was ~L2696).
+2. **Section container** `<div class="asection" data-asection="extra" id="aSectionExtra">` (was ~L2710).
+3. **Fill call** `document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);`
+   in `openAnalysisModal` (was ~L8990).
+4. **The exclusive renderer chain** (grep-proved used nowhere else): `EXTRA_STAT_ORDER`,
+   `extraStatRowHtml`, `extraStatsWindowHtml`, `buildExtraStatsSection` (~L7130–7214) —
+   deleted, replaced by a one-paragraph removal comment.
+The generic tab-switch handler (`#aTabs` click listener) is data-driven, so no handler
+needed editing. `printAnalysisReport` iterates `.asection` generically — one fewer section,
+no code change. Grep after: only the removal comment mentions the old names; no live ref to
+`extra` / `buildExtraStatsSection` / `aSectionExtra` remains.
+**Left in place (harmless dead CSS):** the `.aextra-*` rules (~L1530–1537), now unused —
+consistent with the repo's approach to dead CSS (`.mstat-track` etc.). One-line strip if wanted.
+
+### DISCOVERED + FIXED — pre-existing z-index bug that hid the whole rail
+The redesign's `.sf-sidebar` (fixed app nav) is `z-index:60`; `.modal-overlay` (the Analysis
+modal root `#analysisModal`) was `z-index:50`. So the fixed sidebar rendered **on top of**
+the open modal, covering its left ~236px — i.e. the tab rail's icons+labels. Proved with
+`document.elementFromPoint` at the first rail item's centre: it returned a `.sf-sidebar`
+BUTTON, not the rail item. This predates Item 5 (both CSS rules untouched by this pass) but
+makes "confirm the rail shows exactly 10 tabs" impossible to satisfy visually and blocks a
+user from seeing/clicking the rail labels. Fix: `.modal-overlay` `z-index:50 → 100` (above
+the sidebar's 60, below the global tooltip 99999). A blocking modal must sit above app
+chrome. After the fix `elementFromPoint` hits the rail item (`hitIsRailItem:true`) and the
+rail screenshot shows all ten labels. **Flagged for founder** — one-line revert to 50 if he
+wants the old stacking, but that re-hides the rail.
+
+### Per-tab binding + local availability (verified match `past-12149516`, A. Tabilo vs T. Griekspoor, Washington ATP 500, Final 7-6 4-6 6-4)
+| Tab | Renderer | Binds | Local render |
+|---|---|---|---|
+| Key factors | `buildKeyFactorsSection` | matchup-matrix + archetypes (style edge), recent results, odds bento | **REAL** (style-edge 49/51, "coin-flip" copy, weather/odds bento) |
+| Playing style | `renderStyleSection` (+ `loadStyleRadar`/`ensurePsMatrix`) | style-radar.json + matchup-matrix.json | **REAL** (Serve/Return/Baseline/Net/Defence/Clutch percentile bars, 23·116 charted) |
+| Form | `buildFormSection` (+ lazy `ensureFormRows`) | per-player recentForm shard | honest placeholder — "Recent-form data needs the stats source" (lazy shard not served locally; live app has it) |
+| H2H | `buildH2HSection` | h2h record from matches.json / player history | **REAL** header (met 1×, 1-0, match list); single row's box score needs a setstats shard → per-row "stats not available" |
+| Match Stats | `buildMatchStatsSection` → shared `msBarHtml` (Item 4) | inline `m.matchStats`/`m.setStats` | **REAL** (10 diverging bars, Stats/Point-by-point sub-tabs, Set 1/2/3 selectors; PbP sub-tab paints 10 real game rows) |
+| Progression | `buildMatchProgressionSection` | live tournament draw / progression | honest placeholder — "No live tournament draw data on file" (also round-gated: hidden in R1) |
+| Overview | `buildYearlyTables` | player-tournament-history (career by tier/surface/season) | **REAL** (career 192-136 59%, clay/hard/grass splits, season) |
+| Tournament | `buildTournamentSection` | tournament-surfaces/venues + player history at event | **REAL** header (Washington, ATP 500, court speed 1.18 Fast, altitude 90 m, round); some year rows need a stat-breakdown shard → note |
+| Weather | `buildWeatherSection` | `m.weather` (weather backfill) | **REAL** (30.4°C, wind 6.7, humidity 51%, match-day + tournament-week strip) |
+| Odds | `buildOddsSection` (+ lazy `ensureOddsMovement`) | `m.odds`/`m.books` de-vigged | **REAL** (bet365 41.2/58.8 vig-removed, market table bet365/Pnci/Sbo); movement chart upgrades when the lazy timeline shard lands |
+
+Six tabs fully real from local data (Key factors, Playing style, Match Stats, Overview,
+Tournament header, Weather, Odds) plus H2H header; the honest placeholders (Form, H2H
+per-row box score, Progression draw, Tournament per-year breakdown) all bind to
+pipeline-built/lazy shards (`setstats/`, recentForm shards, live draw) that are absent from
+the worktree — the SAME documented local shard gap as Item 4. Nothing invented.
+
+### VERIFY — the gate (1400px CDP, all ten tabs driven)
+Harness `scripts/render-tabs.mjs` (zero-install: Node global WebSocket + spawned
+`--headless=new` Chrome; explicit `Emulation.setDeviceMetricsOverride` width 1400, never
+`--window-size`; setstats/{ek}.json synthesized from real `historical-match-stats.json` and a
+re-keyed real `point-by-point.json` log, as in Item 4). It opens a real finished match, then:
+- **Rail assertion:** `count===10`, `hasExtra===false`, labels+order === README, no `extra`
+  section → `RAIL_EXACTLY_TEN_README_ORDER true`.
+- **Drives all ten:** clicks each rail item, POLLS the section until it actually paints
+  (children present AND past any loading line — no fixed-sleep-and-assume), records a text
+  snippet + whether it's an honest `.acomingsoon` placeholder, and screenshots each tab →
+  `ALL_TEN_PAINTED true`.
+- **Depth check:** Match Stats → Point by point sub-tab paints 10 real game rows
+  (`PBP_SUBTAB_GAME_ROWS 10`).
+- **Visibility check:** `elementFromPoint` on the rail returns a rail item (post z-index fix).
+Screenshots (worktree root, from WORKING == the committed tree):
+`md-rail-1400-WORKING.png` (the ten-tab rail, no Extra stats), `md-tab-<atab>-1400-WORKING.png`
+for all ten tabs, and the PbP sub-tab via the Item-4 harness.
+
+### INFERRED (no founder reference for this pass — confirm/correct)
+1. **Rail order was already README-correct at 050fbac**; Item 5 = pure removal of the 11th
+   tab. No re-composition of the ten existing tabs was done (each already paints) — per the
+   "don't break a working modal" rule.
+2. **Removed the whole exclusive `buildExtraStatsSection` helper chain**, not just the rail
+   entry, so no dead code path can resurrect the tab. Kept `.aextra-*` CSS (harmless).
+3. **Raised `.modal-overlay` z-index above `.sf-sidebar`** to make the rail visible — a
+   discovered pre-existing bug, fixed because the founder's own gate ("confirm the rail shows
+   exactly 10 tabs") can't be met while the sidebar hides the rail. One-line revert if unwanted.
+
+### Residual gaps (honest)
+- Form / Progression / the H2H single-row box score / Tournament per-year breakdown bind to
+  pipeline-built or lazy shards (`setstats/`, recentForm shards, live draw) absent from the
+  worktree; they render honest placeholders locally and populate on the live app. Verified via
+  the render-only real-data fixtures (Item 4 method) where a shard path had to be exercised.
+- Progression is additionally round-gated (`progressionRoundState` hides it in the first
+  round); the verify match is a later round so the tab is present and drivable.
