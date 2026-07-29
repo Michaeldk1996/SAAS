@@ -98,3 +98,35 @@ not a design miss; founder said "data layer untouched" this pass.
 Evidence artefacts (in agent workspace):
 - `ten8-matches-1400-8f48e86.png` — full page, 1400×4084, from commit 8f48e86
 - `ten8-matches-1400-8f48e86-sigopen.png` — Market Signal expanded card
+
+## README-vs-comment disagreements logged (founder rule: README wins unless a direct order says otherwise)
+
+- **Header status-line grey.** README "Today's Matches — Upcoming" says the "Live · updated"
+  text + clock are `--muted-2` (#4b5672). Founder's 05:09Z comment explicitly said #5b6880
+  (`--muted`). Current build follows the **comment** (#5b6880) — a direct, specific order
+  outranks the general README-wins default. Flagged for founder to confirm; one-line revert
+  if he wants README (#4b5672).
+- **Live dot.** README wants a 7px `--pos` dot with a `rgba(61,214,140,0.18)` ring; current
+  build uses a `--pos` dot with an 8px box-shadow glow. Founder's comment only specified the
+  colour (#3dd68c). Minor; will switch to the README ring on the next Item-1 touch.
+
+## NEXT — Item 2 (Login + OTP/Verify) build spec, from README "Login / Sign up" (authoritative)
+
+Port the export's Login design onto the real `auth.html` (keeps Firebase OTP logic). Two-column.
+- **Primary auth button** "Continue with email" = the ONE solid `--brand-deep` (#2f6bd8) fill in
+  the product. Verify button on the code step shares it. Nothing else solid anywhere.
+- **Secondary** ("Use phone instead", 2 OAuth tiles, 2 store badges): `rgba(255,255,255,0.04)`
+  fill on `rgba(255,255,255,0.15)` border, radius 8px, label `--text` 600. Never brand-blue border.
+- **Fields**: rest `rgba(255,255,255,0.04)` on `rgba(91,155,255,0.22)`; focus border →
+  `rgba(91,155,255,0.35)`, nothing else (no glow/shadow/lift). Error: `--neg` border + message
+  below in Hanken 13px `--neg`, clears on next keystroke, never on blur. Same treatment on the
+  six code boxes.
+- **Button states**: loading = disabled, label "Sending code…", fill 60% opacity. Disabled =
+  fill 40% opacity. NO spinner exists in the product — opacity alone marks unavailability.
+- **Left column**: brand mark alone at top; App Store + Google Play badges at the very foot,
+  below the legal line, left-aligned side by side. No competing CTA above the primary.
+- **Right preview panel**: reuses Matches components (match card, Market Signal, Line Movement)
+  as ordinary `--card`/`--border-subtle` r12 blocks — DO NOT redefine them. "Visualize the edge"
+  is the only non-identity blue on the panel; odds/book names/prices never blue.
+- Reference: `design-export/login.html` + founder screenshots 13.08.09/.11/.12. Verify with the
+  same 1400px render harness; produce the per-page evidence pack before calling it done.
