@@ -144,6 +144,32 @@
     --mx-accent-form: #c9a24b;
     --mx-radius-input: 9px;
     --mx-radius-card: 11px;
+    /* ---- stennisfy design-layer tokens (Today's Matches card port) ---- */
+    --mc-card: #0a0d14;
+    --mc-border-data: rgba(255,255,255,0.09);
+    --mc-border-subtle: rgba(255,255,255,0.07);
+    --mc-border-hover: rgba(91,155,255,0.22);
+    --mc-text: #e7e9ee;
+    --mc-muted: #5b6880;
+    --mc-muted-2: #4b5672;
+    --mc-brand: #5b9bff;
+    --mc-brand-deep: #2f6bd8;
+    --mc-brand-wash: rgba(91,155,255,0.08);
+    --mc-brand-tint: rgba(91,155,255,0.15);
+    --mc-player-a: #6aaeff;
+    --mc-player-b: #e7e9ee;
+    --mc-pos: #3dd68c;
+    --mc-neg: #e0616f;
+    --mc-warn: #e8a84e;
+    --mc-pos-bg: rgba(61,214,140,0.15);
+    --mc-pos-bd: rgba(61,214,140,0.3);
+    --mc-neg-bg: rgba(224,97,111,0.15);
+    --mc-neg-bd: rgba(224,97,111,0.3);
+    --mc-hard: #4db8ff;
+    --mc-clay: #e8a84e;
+    --mc-grass: #2ab8a0;
+    --mc-r-match: 14px;
+    --mc-r-pill: 6px;
   }
 
   [data-page="matches"] .mx-titlerow{ padding:24px 24px 0; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; }
@@ -203,60 +229,103 @@
   [data-page="matches"] .mx-sortsel{ appearance:none; -webkit-appearance:none; background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-input); padding:10px 32px 10px 13px; color:#cfd4de; font-size:12.5px; outline:none; cursor:pointer; font-family:var(--mx-font-ui); }
   [data-page="matches"] .mx-selectchevron{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--mx-text-secondary); font-size:10px; }
 
-  /* Match table */
+  /* ===== Today's Matches — stennisfy design-layer port (card list) ===== */
   [data-page="matches"] .mx-tablewrap{ padding:16px 24px 40px; }
-  [data-page="matches"] .mx-table{ border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-card); overflow:hidden; background:var(--mx-bg-table); }
-  [data-page="matches"] .mx-thead{ display:grid; grid-template-columns:2.3fr 1.3fr 1.2fr; gap:16px; padding:10px 18px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mx-text-tertiary); font-family:var(--mx-font-mono); border-bottom:1px solid var(--mx-hairline-soft); background:#0c0e13; }
-  [data-page="matches"] .mx-thead .right{ text-align:right; }
-  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mx-text-secondary); font-size:13.5px; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-match{ border-bottom:1px solid var(--mx-hairline-soft); }
-  [data-page="matches"] .mx-match:last-child{ border-bottom:none; }
-  [data-page="matches"] .mx-meta{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 18px 4px; font-size:11px; color:var(--mx-text-tertiary); font-family:var(--mx-font-mono); flex-wrap:wrap; }
-  [data-page="matches"] .mx-meta-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  [data-page="matches"] .mx-surf{ color:var(--mx-text-secondary); font-weight:500; }
-  [data-page="matches"] .mx-surf.clay{ color:#d98a5b; }
-  [data-page="matches"] .mx-surf.hard{ color:#7ba4ff; }
-  [data-page="matches"] .mx-surf.grass{ color:#6ed3a3; }
-  [data-page="matches"] .mx-tour{ color:var(--mx-text-secondary); }
-  [data-page="matches"] .mx-round{ color:var(--mx-text-secondary); background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:6px; padding:2px 7px; font-size:10.5px; }
-  [data-page="matches"] .mx-day{ color:var(--mx-brand-blue-text); }
-  [data-page="matches"] .mx-day.live{ color:#E28B4A; }
-  [data-page="matches"] .mx-h2h{ color:var(--mx-text-tertiary); }
-  [data-page="matches"] .mx-fav{ cursor:pointer; color:var(--mx-text-faint); font-size:15px; background:none; border:none; padding:0; }
-  [data-page="matches"] .mx-fav:hover{ color:var(--mx-brand-blue); }
-  [data-page="matches"] .mx-livescore{ padding:0 18px 4px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mx-text-secondary); display:flex; gap:8px; align-items:baseline; }
-  [data-page="matches"] .mx-livescore .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-serveddot{ color:#E28B4A; font-size:13px; }
-  [data-page="matches"] .mx-playerrow{ display:grid; grid-template-columns:2.3fr 1.3fr 1.2fr; gap:16px; align-items:center; padding:13px 18px; transition:background .15s ease; }
-  [data-page="matches"] .mx-playerrow:hover{ background:rgba(62,123,250,0.05); }
-  [data-page="matches"] .mx-playerrow.last{ padding:13px 18px 17px; }
-  [data-page="matches"] .mx-col1{ display:flex; align-items:center; gap:11px; min-width:0; }
-  [data-page="matches"] .mx-name{ font-family:var(--mx-font-ui); font-size:15px; font-weight:600; color:var(--mx-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="matches"] .mx-name[onclick]:hover, [data-page="matches"] .avatar[onclick]:hover, [data-page="matches"] .avatar-fallback[onclick]:hover{ color:var(--accent); text-decoration:underline; }
-  [data-page="matches"] .mx-favtag{ font-size:9px; font-weight:600; color:var(--mx-text-tertiary); letter-spacing:0.09em; flex-shrink:0; border:1px solid var(--mx-hairline); border-radius:4px; padding:1px 5px; }
-  [data-page="matches"] .mx-col2{ display:flex; align-items:baseline; gap:9px; justify-content:flex-end; }
-  [data-page="matches"] .mx-odds{ font-family:var(--mx-font-mono); font-size:27px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
-  [data-page="matches"] .mx-implied{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--mx-text-tertiary); width:38px; text-align:right; }
-  [data-page="matches"] .mx-scorelabel{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-finodds{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; line-height:1.1; align-self:center; }
-  [data-page="matches"] .mx-finodds .fo-pair{ display:flex; align-items:baseline; gap:5px; }
-  [data-page="matches"] .mx-finodds .fo-v{ font-family:var(--mx-font-mono); font-size:13px; font-weight:600; color:var(--mx-text-secondary); }
-  [data-page="matches"] .mx-finodds .fo-pair.open .fo-v{ color:var(--mx-text-faint); font-weight:500; }
-  [data-page="matches"] .mx-finodds .fo-l{ font-family:var(--mx-font-ui); font-size:8.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); min-width:34px; text-align:left; }
-  [data-page="matches"] .mx-chip-x{ color:var(--mx-text-faint); font-weight:600; margin-left:3px; }
-  [data-page="matches"] .mx-chip.active .mx-chip-x{ color:#fff; }
-  [data-page="matches"] .mx-col3{ display:flex; gap:10px; justify-content:flex-end; align-items:center; font-family:var(--mx-font-mono); }
-  [data-page="matches"] .mx-form{ font-size:12.5px; color:var(--mx-text-primary); min-width:34px; text-align:right; }
-  [data-page="matches"] .mx-form.empty{ color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-formbar{ width:56px; height:4px; border-radius:2px; background:rgba(255,255,255,0.10); overflow:hidden; flex-shrink:0; }
-  [data-page="matches"] .mx-formbar.empty{ background:rgba(255,255,255,0.05); }
-  [data-page="matches"] .mx-formbar-fill{ height:100%; background:var(--mx-accent-green); border-radius:2px; }
-  [data-page="matches"] .mx-footer{ display:flex; justify-content:space-between; align-items:center; padding:10px 18px 14px; font-size:11.5px; font-family:var(--mx-font-mono); color:var(--mx-text-tertiary); }
-  [data-page="matches"] .mx-footer a{ color:var(--mx-brand-blue-text); cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:500; border:1px solid var(--mx-hairline); border-radius:8px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
-  [data-page="matches"] .mx-footer a:hover{ border-color:var(--mx-brand-blue); background:rgba(62,123,250,0.08); color:#fff; }
-  [data-page="matches"] .mx-footlinks{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-  [data-page="matches"] .mx-footer a.mx-msigchip{ color:var(--mx-text-secondary); border-color:var(--mx-hairline); background:rgba(91,155,255,0.05); font-family:var(--mx-font-mono); font-size:11px; letter-spacing:0.02em; }
-  [data-page="matches"] .mx-footer a.mx-msigchip:hover{ border-color:var(--mx-brand-blue); color:#fff; }
+  [data-page="matches"] .mx-table{ border:none; background:transparent; border-radius:0; overflow:visible; }
+  [data-page="matches"] .mx-thead{ display:none; }
+  [data-page="matches"] #matchlist{ display:flex; flex-direction:column; gap:14px; }
+  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mc-muted); font-size:13.5px; font-family:var(--mx-font-ui); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); background:var(--mc-card); }
+
+  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:16px 18px; transition:border-color 120ms; }
+  [data-page="matches"] .match-card:hover{ border-color:var(--mc-border-hover); }
+
+  /* header */
+  [data-page="matches"] .mc-head{ display:flex; align-items:center; gap:10px; font-size:12px; flex-wrap:wrap; font-family:var(--mx-font-ui); }
+  [data-page="matches"] .mc-surface{ font-weight:700; }
+  [data-page="matches"] .mc-surface.hard{ color:var(--mc-hard); }
+  [data-page="matches"] .mc-surface.clay{ color:var(--mc-clay); }
+  [data-page="matches"] .mc-surface.grass{ color:var(--mc-grass); }
+  [data-page="matches"] .mc-dot{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-tourn{ color:var(--mc-muted); font-weight:600; }
+  [data-page="matches"] .mc-round{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-muted); padding:2px 7px; border:1px solid var(--mc-border-subtle); border-radius:var(--mc-r-pill); }
+  [data-page="matches"] .mc-h2h{ color:var(--mc-muted-2); font-size:11px; font-family:var(--mx-font-mono); }
+  [data-page="matches"] .mc-status{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
+  [data-page="matches"] .mc-status.live{ color:var(--mc-warn); }
+  [data-page="matches"] .mc-time{ font-family:var(--mx-font-mono); color:var(--mc-muted); margin-left:auto; }
+  [data-page="matches"] .mc-altdate{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); margin-left:auto; }
+  [data-page="matches"] .mc-fav{ cursor:pointer; color:var(--mc-muted-2); font-size:15px; background:none; border:none; padding:0; line-height:1; margin-left:8px; }
+  [data-page="matches"] .mc-fav:hover{ color:var(--mc-brand); }
+
+  /* score line (live / suspended / pending only) */
+  [data-page="matches"] .mc-scoreline{ margin-top:10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
+  [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
+
+  /* column header (upcoming) */
+  [data-page="matches"] .mc-colhead{ display:grid; grid-template-columns:1fr 140px 120px; gap:12px; padding:12px 10px 0; }
+  [data-page="matches"] .mc-colhead .lbl{ font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--mc-muted-2); text-align:right; font-family:var(--mx-font-ui); }
+
+  /* player rows */
+  [data-page="matches"] .mc-players{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+  [data-page="matches"] .mc-row{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:12px; position:relative; }
+  [data-page="matches"] .mc-players.up .mc-row{ display:grid; grid-template-columns:1fr 140px 120px; gap:12px; align-items:center; }
+  [data-page="matches"] .mc-row.winner::before{ content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--mc-pos); }
+  [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
+  [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
+  [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
+  [data-page="matches"] .mc-av.b{ color:var(--mc-player-b); background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-name{ font-family:var(--mx-font-ui); font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
+  [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
+  [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
+  [data-page="matches"] .mc-fav-tag, [data-page="matches"] .mc-won{ font-family:var(--mx-font-mono); font-size:10px; font-weight:700; letter-spacing:0.04em; padding:1px 6px; border-radius:var(--mc-r-pill); flex:0 0 auto; }
+  [data-page="matches"] .mc-fav-tag{ color:var(--mc-brand); background:var(--mc-brand-wash); border:1px solid var(--mc-border-hover); }
+  [data-page="matches"] .mc-won{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
+  [data-page="matches"] .mc-serve{ color:var(--mc-warn); font-size:13px; }
+
+  /* recent-form bar — strength, brand gradient, never semantic */
+  [data-page="matches"] .mc-form{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  [data-page="matches"] .mc-form__track{ width:76px; height:6px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; flex:0 0 auto; }
+  [data-page="matches"] .mc-form__fill{ height:100%; border-radius:3px; background:linear-gradient(90deg, var(--mc-brand-deep), var(--mc-brand)); }
+  [data-page="matches"] .mc-form__val{ font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); min-width:26px; text-align:right; }
+
+  /* odds + implied (upcoming) */
+  [data-page="matches"] .mc-oddswrap{ display:flex; align-items:baseline; gap:8px; justify-content:flex-end; }
+  [data-page="matches"] .mc-odds{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); }
+  [data-page="matches"] .mc-implied{ font-family:var(--mx-font-mono); font-size:12px; font-weight:600; color:var(--mc-muted-2); }
+
+  /* set-score cluster (completed) */
+  [data-page="matches"] .mc-sets{ display:inline-flex; align-items:center; gap:8px; margin-left:auto; }
+  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); padding:2px 7px; border-radius:5px; }
+  [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.03); }
+  [data-page="matches"] .mc-sets__games{ display:inline-flex; gap:6px; }
+  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); position:relative; }
+  [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; }
+
+  /* odds journey (completed) — non-semantic open→close */
+  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:10px; }
+  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; }
+  [data-page="matches"] .mc-journey__track{ width:46px; height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
+  [data-page="matches"] .mc-journey__track::before, [data-page="matches"] .mc-journey__track::after{ content:''; position:absolute; top:-2px; width:6px; height:6px; border-radius:50%; }
+  [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
+  [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
+  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
+  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:12px; }
+
+  /* market signal + footer */
+  [data-page="matches"] .mc-market{ margin-top:14px; padding:11px 14px; background:var(--mc-card); border:1px solid var(--mc-border-subtle); border-radius:12px; display:flex; align-items:center; gap:10px; }
+  [data-page="matches"] .mc-market__label{ font-size:12px; font-weight:700; color:var(--mc-muted); letter-spacing:0.02em; font-family:var(--mx-font-ui); }
+  [data-page="matches"] .mc-market__spacer{ flex:1 1 auto; }
+  [data-page="matches"] .mc-market__chip{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); border:1px solid var(--mc-border-subtle); border-radius:var(--mc-r-pill); padding:3px 9px; cursor:pointer; text-decoration:none; }
+  [data-page="matches"] .mc-market__chip:hover{ border-color:var(--mc-border-hover); color:var(--mc-brand); }
+  [data-page="matches"] .mc-foot{ margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-bookline{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:700; font-size:13px; text-decoration:none; }
+  [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
+  [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
+  [data-page="matches"] .value-pill.pos{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
+  [data-page="matches"] .value-pill.neg{ color:var(--mc-neg); background:var(--mc-neg-bg); border:1px solid var(--mc-neg-bd); }
 
   @media (max-width: 640px){
     [data-page="matches"] .mx-playerrow{ grid-template-columns:1fr; row-gap:6px; }
@@ -3712,6 +3781,55 @@ function impliedPct(price){
   return price ? `${Math.round(100 / price)}%` : '';
 }
 
+// ---- Today's Matches card builders (stennisfy design-layer port) ----
+// Same data bindings as the legacy table card — only the presentation changed.
+// 32px identity avatar: real headshot when we have one, colour-coded initials
+// fallback (A = brand tint, B = neutral) otherwise. Profile-link attrs preserved.
+function mcAvatarHtml(photoUrl, name, playerKey, side){
+  const initials = playerInitials(name);
+  const attrs = profileLinkAttrs(playerKey, name);
+  if (photoUrl) return `<img class="mc-av ${side}"${attrs} src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="mcAvatarFail(this,'${initials}','${side}')">`;
+  return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
+}
+// A failed headshot becomes a properly design-styled identity circle (A brand
+// tint / B neutral) with initials — never the empty circle the legacy fallback
+// left behind. Keeps real photos where they load; degrades to the design look.
+function mcAvatarFail(img, initials, side){
+  const d = document.createElement('div');
+  d.className = 'mc-av ' + side;
+  d.textContent = initials;
+  if (img && img.parentNode) img.replaceWith(d);
+}
+// Recent-form bar: 76px track, brand-strength gradient (never pos/warn/neg — form
+// is strength, not quality). Em dash, never 0, when the fixture carries no form.
+function mcFormBar(val){
+  const has = val != null && val !== '';
+  const w = has ? Math.max(0, Math.min(100, Number(val))) : 0;
+  const disp = has ? Math.round(Number(val)) : '—';
+  return `<span class="mc-form"><span class="mc-form__track"><span class="mc-form__fill" style="width:${w}%"></span></span><span class="mc-form__val">${disp}</span></span>`;
+}
+// Completed set-score cluster for one player: sets-won total tile (winner faint /
+// loser fainter) + per-set games in Mono muted. who = 'p1' | 'p2'.
+function mcSetCluster(finalScore, who){
+  const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
+  const total = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
+  const isW = finalScore.winner === who;
+  const games = sets.map(s => `<span class="mc-sets__g">${s[who]}</span>`).join('');
+  return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span><span class="mc-sets__games">${games}</span></span>`;
+}
+// Completed odds journey for one player: open → gradient track → close, plus a
+// purely-directional drift glyph. Non-semantic (never coloured by shorten/drift).
+// Any value that was never recorded is omitted, never a placeholder.
+function mcJourney(open, close){
+  if (open == null && close == null) return '';
+  if (open == null) return `<span class="mc-journey"><span class="mc-journey__close">${close.toFixed(2)}</span></span>`;
+  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
+  const diff = close - open;
+  const glyph = diff > 0 ? '▲' : diff < 0 ? '▼' : '·';
+  const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift">${glyph} ${Math.abs(diff).toFixed(2)}</span>` : '';
+  return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span>`;
+}
+
 function renderMatches(){
   const list = document.getElementById('matchlist');
   const filtered = getFiltered();
@@ -3761,17 +3879,18 @@ function renderMatches(){
         const surfLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
         surfacePart = ` · H2H ${surfLabel}: ${surfP1Wins}-${surfaceMatches.length - surfP1Wins}`;
       }
-      h2hInlineHtml = `<span class="mx-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
+      h2hInlineHtml = `<span class="mc-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
     }
+    // Live / suspended / pending get a score line above the rows. Completed
+    // matches show their result through the set-score cluster (mcSetCluster),
+    // not this line, so the finalScore branch is intentionally omitted here.
     let scoreLineHtml = '';
     if (partialScore) {
-      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
+      scoreLineHtml = `<div class="mc-scoreline"><span class="lbl">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
     } else if (m.live) {
-      scoreLineHtml = `<div class="mx-livescore">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
-    } else if (finalScore) {
-      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${finalScore.display}<span class="note">Final score</span></div>`;
-    } else if (isPastDay) {
-      scoreLineHtml = `<div class="mx-livescore">Score pending<span class="note">not yet returned by the data provider</span></div>`;
+      scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
+    } else if (isPastDay && !finalScore) {
+      scoreLineHtml = `<div class="mc-scoreline">Score pending<span class="note">not yet returned by the data provider</span></div>`;
     }
     const p1IsWinner = finalScore && finalScore.winner === 'p1';
     const p2IsWinner = finalScore && finalScore.winner === 'p2';
@@ -3807,59 +3926,64 @@ function renderMatches(){
     };
     const p1OddsCell = finOddsCell(p1Open, p1Close);
     const p2OddsCell = finOddsCell(p2Open, p2Close);
+    const isCompleted = !!finalScore;
+    const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
+    const serve = side => (m.live && m.liveServer === side) ? ' <span class="mc-serve" title="Serving">•</span>' : '';
+    // Completed cards close the header with the fixture date; upcoming/live cards
+    // carry the day/status label + start time (both existing bindings).
+    const rightMeta = isCompleted
+      ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' · ' + m.time : ''}</span>`
+      : `<span class="mc-status${m.live ? ' live' : ''}">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`;
+    const headHtml = `
+      <div class="mc-head">
+        <span class="mc-surface ${m.surface}">${surfCap}</span>
+        <span class="mc-dot">·</span><span class="mc-tourn">${m.tour}</span>
+        ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
+        ${h2hInlineHtml}
+        ${rightMeta}
+        <button class="mc-fav" data-id="${m.id}" onclick="toggleFav('${m.id}')" aria-label="More options for ${m.p1} vs ${m.p2}">${state.favorites.has(m.id) ? '★' : '☆'}</button>
+      </div>`;
+    const playersHtml = isCompleted
+      ? `<div class="mc-players">
+          <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            ${mcSetCluster(finalScore, 'p1')}
+            ${mcJourney(p1Open, p1Close)}
+          </div>
+          <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${p2IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            ${mcSetCluster(finalScore, 'p2')}
+            ${mcJourney(p2Open, p2Close)}
+          </div>
+        </div>`
+      : `<div class="mc-colhead"><span></span><span class="lbl">Recent form</span><span class="lbl">Odds · Implied</span></div>
+        <div class="mc-players up">
+          <div class="mc-row a">
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            ${mcFormBar(m.p1RecentForm)}
+            <span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>
+          </div>
+          <div class="mc-row b">
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            ${mcFormBar(m.p2RecentForm)}
+            <span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>
+          </div>
+        </div>`;
     return `
-    <div class="mx-match">
-      <div class="mx-meta">
-        <div class="mx-meta-left">
-          <span class="mx-surf ${m.surface}">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}</span>
-          <span class="mx-tour">${m.tour}</span>
-          ${roundBadge ? `<span class="mx-round">${roundBadge}</span>` : ''}
-          <span>${m.date || '—'}</span>
-          <span>${m.time || '—'}</span>
-          <span class="mx-day${m.live ? ' live' : ''}">${statusLabel(m)}</span>
-          ${h2hInlineHtml}
-        </div>
-        <button class="mx-fav" data-id="${m.id}" onclick="toggleFav('${m.id}')" aria-label="Toggle favorite for ${m.p1} vs ${m.p2}">${state.favorites.has(m.id) ? '★' : '☆'}</button>
+    <article class="match-card mx-match" data-id="${m.id}">
+      ${headHtml}
+      ${isCompleted ? '' : scoreLineHtml}
+      ${playersHtml}
+      <div class="mc-market">
+        <span class="mc-market__label">Market Signal${isCompleted ? ' · final' : ''}</span>
+        <span class="mc-market__spacer"></span>
+        <a class="mc-market__chip mx-msigchip" data-msig="${eventKeyOfMatch(m)}" style="display:none" onclick="openEdgeModelAt('${m.id}')">◈ View</a>
       </div>
-      ${scoreLineHtml}
-      <div class="mx-playerrow">
-        <div class="mx-col1">
-          ${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}
-          <span class="mx-name"${profileLinkAttrs(m.p1Key, m.p1)}>${p1IsWinner ? '✓ ' : ''}${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
-          ${p1IsFavorite ? '<span class="mx-favtag">FAV</span>' : ''}
-        </div>
-        <div class="mx-col2">
-          ${p1OddsCell}
-          <span class="mx-odds" style="color:${p1Color}">${p1MainDisplay}</span>
-          <span class="mx-implied">${p1SubDisplay}</span>
-        </div>
-        <div class="mx-col3">
-          ${formCellHtml(m.p1RecentForm)}
-        </div>
+      <div class="mc-foot">
+        <span class="mc-bookline">${bookmakerLine}</span>
+        <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
       </div>
-      <div class="mx-playerrow last">
-        <div class="mx-col1">
-          ${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}
-          <span class="mx-name"${profileLinkAttrs(m.p2Key, m.p2)}>${p2IsWinner ? '✓ ' : ''}${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
-          ${(hasOdds && !p1IsFavorite) ? '<span class="mx-favtag">FAV</span>' : ''}
-        </div>
-        <div class="mx-col2">
-          ${p2OddsCell}
-          <span class="mx-odds" style="color:${p2Color}">${p2MainDisplay}</span>
-          <span class="mx-implied">${p2SubDisplay}</span>
-        </div>
-        <div class="mx-col3">
-          ${formCellHtml(m.p2RecentForm)}
-        </div>
-      </div>
-      <div class="mx-footer">
-        <span>${bookmakerLine}</span>
-        <span class="mx-footlinks">
-          <a class="mx-msigchip" data-msig="${eventKeyOfMatch(m)}" style="display:none" onclick="openEdgeModelAt('${m.id}')">◈ Market Signal</a>
-          <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
-        </span>
-      </div>
-    </div>
+    </article>
   `;
   }).join('');
   // Reveal the compact Market Signal chip only on cards whose match actually has
