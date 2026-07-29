@@ -251,8 +251,9 @@
   [data-page="matches"] .mc-h2h{ color:var(--mc-muted-2); font-size:11px; font-family:var(--mx-font-mono); }
   [data-page="matches"] .mc-status{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
   [data-page="matches"] .mc-status.live{ color:var(--mc-warn); }
-  [data-page="matches"] .mc-time{ font-family:var(--mx-font-mono); color:var(--mc-muted); margin-left:auto; }
+  [data-page="matches"] .mc-time{ font-family:var(--mx-font-mono); color:var(--mc-muted); }
   [data-page="matches"] .mc-altdate{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); margin-left:auto; }
+  [data-page="matches"] .mc-altdate-inl{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
   [data-page="matches"] .mc-fav{ cursor:pointer; color:var(--mc-muted-2); font-size:15px; background:none; border:none; padding:0; line-height:1; margin-left:8px; }
   [data-page="matches"] .mc-fav:hover{ color:var(--mc-brand); }
 
@@ -261,14 +262,14 @@
   [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
 
-  /* column header (upcoming) */
-  [data-page="matches"] .mc-colhead{ display:grid; grid-template-columns:1fr 140px 120px; gap:12px; padding:12px 10px 0; }
-  [data-page="matches"] .mc-colhead .lbl{ font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--mc-muted-2); text-align:right; font-family:var(--mx-font-ui); }
+  /* column headers — inline on the card header row, right-aligned above the two data columns */
+  [data-page="matches"] .mc-colhead-inline{ margin-left:auto; margin-right:10px; display:grid; grid-template-columns:130px 120px; gap:12px; }
+  [data-page="matches"] .mc-colhead-inline .lbl{ font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--mc-muted-2); text-align:right; font-family:var(--mx-font-ui); white-space:nowrap; }
 
   /* player rows */
   [data-page="matches"] .mc-players{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
   [data-page="matches"] .mc-row{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:12px; position:relative; }
-  [data-page="matches"] .mc-players.up .mc-row{ display:grid; grid-template-columns:1fr 140px 120px; gap:12px; align-items:center; }
+  [data-page="matches"] .mc-players.up .mc-row{ display:grid; grid-template-columns:1fr 130px 120px; gap:12px; align-items:center; min-height:46px; }
   [data-page="matches"] .mc-row.winner::before{ content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--mc-pos); }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
@@ -313,14 +314,12 @@
   [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
   [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:12px; }
 
-  /* market signal + footer */
-  [data-page="matches"] .mc-market{ margin-top:14px; padding:11px 14px; background:var(--mc-card); border:1px solid var(--mc-border-subtle); border-radius:12px; display:flex; align-items:center; gap:10px; }
-  [data-page="matches"] .mc-market__label{ font-size:12px; font-weight:700; color:var(--mc-muted); letter-spacing:0.02em; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mc-market__spacer{ flex:1 1 auto; }
-  [data-page="matches"] .mc-market__chip{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); border:1px solid var(--mc-border-subtle); border-radius:var(--mc-r-pill); padding:3px 9px; cursor:pointer; text-decoration:none; }
-  [data-page="matches"] .mc-market__chip:hover{ border-color:var(--mc-border-hover); color:var(--mc-brand); }
-  [data-page="matches"] .mc-foot{ margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  [data-page="matches"] .mc-bookline{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); }
+  /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
+  [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
+  [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-msig.has-signal, [data-page="matches"] .mc-msig.has-signal .chev{ color:var(--mc-brand); }
+  [data-page="matches"] .mc-msig:hover{ color:var(--mc-brand); }
   [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:700; font-size:13px; text-decoration:none; }
   [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
   [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
@@ -3931,17 +3930,30 @@ function renderMatches(){
     const serve = side => (m.live && m.liveServer === side) ? ' <span class="mc-serve" title="Serving">•</span>' : '';
     // Completed cards close the header with the fixture date; upcoming/live cards
     // carry the day/status label + start time (both existing bindings).
+    // Header date-time sits with the left cluster (surface · tournament · round · time).
+    // Per the export spec no relative "Today" tag appears — the date strip above already
+    // states the selected day; a card whose day differs shows its actual date, muted.
+    const liveOrInt = m.live || m.interrupted;
+    const daySpecific = ['today','yesterday','tomorrow','daymin2','day2'].includes(state.day);
+    const showAltDate = (state.day === 'all' || state.day === 'past' || (daySpecific && dayBucket !== state.day));
     const rightMeta = isCompleted
       ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' · ' + m.time : ''}</span>`
-      : `<span class="mc-status${m.live ? ' live' : ''}">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`;
+      : liveOrInt
+        ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`
+        : `${showAltDate ? `<span class="mc-altdate-inl">${m.date || ''}</span>` : ''}<span class="mc-time">${m.time || ''}</span>`;
+    // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
+    // header row itself, right-aligned above their columns. Completed cards have no such
+    // columns (set-score cluster + odds journey instead), so they omit the labels.
+    const colHead = isCompleted ? '' :
+      `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
     const headHtml = `
       <div class="mc-head">
         <span class="mc-surface ${m.surface}">${surfCap}</span>
         <span class="mc-dot">·</span><span class="mc-tourn">${m.tour}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
-        ${h2hInlineHtml}
         ${rightMeta}
-        <button class="mc-fav" data-id="${m.id}" onclick="toggleFav('${m.id}')" aria-label="More options for ${m.p1} vs ${m.p2}">${state.favorites.has(m.id) ? '★' : '☆'}</button>
+        ${h2hInlineHtml}
+        ${colHead}
       </div>`;
     const playersHtml = isCompleted
       ? `<div class="mc-players">
@@ -3956,17 +3968,16 @@ function renderMatches(){
             ${mcJourney(p2Open, p2Close)}
           </div>
         </div>`
-      : `<div class="mc-colhead"><span></span><span class="lbl">Recent form</span><span class="lbl">Odds · Implied</span></div>
-        <div class="mc-players up">
+      : `<div class="mc-players up">
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            ${mcFormBar(m.p1RecentForm)}
             <span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>
+            ${mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            ${mcFormBar(m.p2RecentForm)}
             <span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>
+            ${mcFormBar(m.p2RecentForm)}
           </div>
         </div>`;
     return `
@@ -3974,13 +3985,8 @@ function renderMatches(){
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
-      <div class="mc-market">
-        <span class="mc-market__label">Market Signal${isCompleted ? ' · final' : ''}</span>
-        <span class="mc-market__spacer"></span>
-        <a class="mc-market__chip mx-msigchip" data-msig="${eventKeyOfMatch(m)}" style="display:none" onclick="openEdgeModelAt('${m.id}')">◈ View</a>
-      </div>
       <div class="mc-foot">
-        <span class="mc-bookline">${bookmakerLine}</span>
+        <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="openEdgeModelAt('${m.id}')">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
         <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
       </div>
     </article>
@@ -3993,7 +3999,7 @@ function renderMatches(){
   loadMarketIndex().then(idx => {
     document.querySelectorAll('.mx-msigchip[data-msig]').forEach(el => {
       const k = el.getAttribute('data-msig');
-      if (k && idx.has(k)) el.style.display = '';
+      if (k && idx.has(k)) el.classList.add('has-signal');
     });
   });
 }
