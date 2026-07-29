@@ -191,8 +191,12 @@
   @media (max-width:720px){ [data-page="matches"] .mx-stats-strip{ grid-template-columns:repeat(2,1fr); } }
 
   [data-page="matches"] .mx-controls{ padding:20px 24px 0; }
-  [data-page="matches"] .mx-daytabsrow{ display:flex; align-items:center; gap:4px; }
-  [data-page="matches"] .mx-daytabs-scroll{ display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--mx-hairline-soft); flex:1; }
+  /* Review item 5: the rail is a tight cluster at the LEFT, chevrons immediately
+     adjacent — not spread full-width with detached arrows. flex:0 0 auto stops the
+     scroll box stretching; the full-width hairline under the rail is removed so only
+     the ACTIVE day is underlined (see .mx-daytabs button.active). */
+  [data-page="matches"] .mx-daytabsrow{ display:inline-flex; align-items:center; gap:8px; align-self:flex-start; }
+  [data-page="matches"] .mx-daytabs-scroll{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; border-bottom:none; flex:0 0 auto; }
   [data-page="matches"] .mx-daytabs-scroll::-webkit-scrollbar{ display:none; }
   [data-page="matches"] .mx-daytabschevron{ background:none; border:none; color:var(--mx-text-faint); cursor:pointer; padding:8px 4px; flex-shrink:0; font-size:14px; }
   [data-page="matches"] .mx-daytabschevron:hover{ color:var(--mx-text-secondary); }
@@ -227,7 +231,8 @@
   [data-page="matches"] .mx-search:focus{ border-color:rgba(62,123,250,0.5); background:#0d1017; }
   [data-page="matches"] .mx-selectwrap{ position:relative; }
   [data-page="matches"] .mx-sortsel{ appearance:none; -webkit-appearance:none; background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-input); padding:10px 32px 10px 13px; color:#cfd4de; font-size:12.5px; outline:none; cursor:pointer; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-selectchevron{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--mx-text-secondary); font-size:10px; }
+  /* Review item 7: an up-down sort glyph (⇅) implies direction, not a dropdown menu. */
+  [data-page="matches"] .mx-selectchevron{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--mx-text-secondary); font-size:12px; }
 
   /* ===== Today's Matches — stennisfy design-layer port (card list) ===== */
   [data-page="matches"] .mx-tablewrap{ padding:16px 24px 40px; }
@@ -317,9 +322,37 @@
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
-  [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); display:inline-block; transition:transform 120ms ease; }
   [data-page="matches"] .mc-msig.has-signal, [data-page="matches"] .mc-msig.has-signal .chev{ color:var(--mc-brand); }
   [data-page="matches"] .mc-msig:hover{ color:var(--mc-brand); }
+
+  /* Market Signal panel — expands in place (review item 1). Full-bleed to the card
+     edges (negative margins cancel the card's 16px 18px padding), own dark section. */
+  [data-page="matches"] .match-card.sig-open{ border-color:rgba(91,155,255,0.35); }
+  [data-page="matches"] .match-card.sig-open .mc-msig, [data-page="matches"] .match-card.sig-open .mc-msig .chev{ color:var(--mc-brand); }
+  [data-page="matches"] .match-card.sig-open .mc-msig .chev{ transform:rotate(180deg); }
+  [data-page="matches"] .mc-sigpanel{ display:none; margin:14px -18px -16px; padding:13px 20px 15px; background:#080b11; border-top:1px solid rgba(255,255,255,0.05); }
+  [data-page="matches"] .match-card.sig-open .mc-sigpanel{ display:block; }
+  [data-page="matches"] .mc-sig-head{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:11px; }
+  [data-page="matches"] .mc-sig-pa{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-player-a); white-space:nowrap; }
+  [data-page="matches"] .mc-sig-vs{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-pb{ font-family:var(--mx-font-ui); font-size:11px; font-weight:600; color:var(--mc-player-b); white-space:nowrap; }
+  [data-page="matches"] .mc-sig-group + .mc-sig-group{ border-top:1px solid rgba(255,255,255,0.06); margin-top:11px; padding-top:9px; }
+  [data-page="matches"] .mc-sig-grouprow{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px; }
+  [data-page="matches"] .mc-sig-grouplabel{ font-family:var(--mx-font-ui); font-size:11px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-liqlabel{ width:104px; flex:none; text-align:right; font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-row{ display:flex; align-items:center; gap:12px; margin-bottom:9px; }
+  [data-page="matches"] .mc-sig-row:last-child{ margin-bottom:0; }
+  [data-page="matches"] .mc-sig-src{ display:inline-flex; align-items:center; gap:7px; width:100px; flex:none; font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-sig-dotm{ width:6px; height:6px; border-radius:50%; background:var(--mc-muted); flex:none; }
+  [data-page="matches"] .mc-sig-fav{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-player-a); width:32px; text-align:right; flex:none; }
+  [data-page="matches"] .mc-sig-bar{ flex:1; margin:0 6px; display:flex; height:4px; overflow:hidden; border-radius:2px; background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-sig-bar__fill{ display:block; height:100%; background:var(--mc-player-a); }
+  [data-page="matches"] .mc-sig-bar__dog{ display:block; height:100%; background:rgba(255,255,255,0.20); }
+  [data-page="matches"] .mc-sig-dog{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted); width:32px; flex:none; }
+  [data-page="matches"] .mc-sig-liq{ width:104px; flex:none; text-align:right; font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted); }
+  [data-page="matches"] .mc-sig-row.unbound .mc-sig-fav, [data-page="matches"] .mc-sig-row.unbound .mc-sig-dog, [data-page="matches"] .mc-sig-row.unbound .mc-sig-liq{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-note{ margin-top:11px; font-family:var(--mx-font-ui); font-size:10.5px; line-height:1.5; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:700; font-size:13px; text-decoration:none; }
   [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
   [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
@@ -1580,16 +1613,22 @@
   [data-page="matches"] .mc-datetime{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
 
   /* item 10 — Pro promo card, mid-list */
-  .mc-promo{ display:flex; align-items:center; gap:18px; background:var(--sf-card); border:1px solid var(--sf-border-data);
-    border-radius:14px; padding:18px 20px; margin:10px 0; }
-  .mc-promo__count{ font-family:var(--sf-font-mono); font-size:26px; font-weight:700; color:var(--sf-brand); line-height:1; }
-  .mc-promo__body{ flex:1; min-width:0; }
-  .mc-promo__title{ display:flex; align-items:center; gap:9px; font-family:var(--sf-font-ui); font-size:15px; font-weight:700; color:var(--sf-text); }
-  .mc-promo__badge{ font-family:var(--sf-font-mono); font-size:10px; font-weight:700; letter-spacing:0.1em; color:var(--sf-brand);
-    background:var(--sf-brand-tint); border:1px solid rgba(91,155,255,0.3); border-radius:6px; padding:3px 8px; }
-  .mc-promo__sub{ font-family:var(--sf-font-ui); font-size:13px; color:var(--sf-text-3); margin-top:3px; }
-  .mc-promo__cta{ font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-brand); white-space:nowrap; text-decoration:none; }
-  .mc-promo__cta:hover{ text-decoration:underline; }
+  /* item 6 — Pro promo card: icon tile · "3 Bets Today" heading + subtext (left),
+     PRO badge + CTA (right). Promotional rows keep the brand-hover border at rest
+     to distinguish them from content (export rule). */
+  .mc-promo{ display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:64px;
+    background:var(--sf-card); border:1px solid rgba(91,155,255,0.22); border-radius:12px; padding:13px 20px; margin:2px 0; }
+  .mc-promo__icon{ width:30px; height:30px; border-radius:8px; flex:none; display:grid; place-items:center;
+    background:var(--sf-brand-tint); border:1px solid rgba(91,155,255,0.22); color:var(--sf-brand); }
+  .mc-promo__icon svg{ width:15px; height:15px; }
+  .mc-promo__body{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .mc-promo__title{ font-family:var(--sf-font-ui); font-size:15px; font-weight:700; color:var(--sf-text); }
+  .mc-promo__sub{ font-family:var(--sf-font-ui); font-size:13px; color:var(--sf-muted); }
+  .mc-promo__right{ display:flex; align-items:center; gap:14px; flex:none; }
+  .mc-promo__badge{ font-family:var(--sf-font-mono); font-size:9px; font-weight:700; letter-spacing:0.12em; color:#6aaeff;
+    background:var(--sf-brand-tint); border:1px solid rgba(91,155,255,0.35); border-radius:20px; padding:3px 9px; }
+  .mc-promo__cta{ font-family:var(--sf-font-ui); font-size:12.5px; font-weight:700; color:var(--sf-brand); white-space:nowrap; text-decoration:none; }
+  .mc-promo__cta:hover{ color:#6aaeff; }
 
   @media (max-width:900px){
     body{ padding-left:0; }
@@ -1724,7 +1763,7 @@
           <option value="oddsgap">Sort: Biggest odds gap</option>
           <option value="surface">Sort: Surface</option>
         </select>
-        <span class="mx-selectchevron">▾</span>
+        <span class="mx-selectchevron">⇅</span>
       </div>
     </div>
   </div>
@@ -3924,6 +3963,44 @@ function mcJourney(open, close){
   const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift">${glyph} ${Math.abs(diff).toFixed(2)}</span>` : '';
   return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span>`;
 }
+// Market Signal panel — expands IN PLACE beneath the card (review item 1), never
+// navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
+// Stennisfy model) and MARKET MONEY (Polymarket, Kalshi — Betfair dropped per the
+// amendment: we can't link it, so it doesn't render). Only the sharp de-vig is bound
+// on this card's data source (m.odds = a single-book two-way snapshot, normalised so
+// the two implied probabilities sum to 100). The Stennisfy model %, the prediction-
+// market flow and liquidity are NOT on matches.json yet, so they render as "—" with
+// an explicit note — never invented. See BUILD-NOTES.md.
+function mcSigPanel(m){
+  const pa = m.p1, pb = m.p2;
+  const o1 = m.odds && m.odds.p1, o2 = m.odds && m.odds.p2;
+  const hasBook = o1 > 0 && o2 > 0;
+  const clamp = v => Math.max(3, Math.min(97, Math.round(v)));
+  const pinA = hasBook ? clamp(100 * (1/o1) / ((1/o1) + (1/o2))) : null;
+  const book = (m.odds && m.odds.bookmaker) || 'Sharp';
+  const row = (label, aPct, hasLiq) => {
+    const liqCell = hasLiq ? `<span class="mc-sig-liq">—</span>` : '';
+    if (aPct == null) {
+      return `<div class="mc-sig-row unbound"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">—</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:0"></span></span><span class="mc-sig-dog">—</span>${liqCell}</div>`;
+    }
+    const bPct = 100 - aPct;
+    return `<div class="mc-sig-row"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">${aPct}%</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:${aPct}%"></span><span class="mc-sig-bar__dog" style="width:${bPct}%"></span></span><span class="mc-sig-dog">${bPct}%</span>${liqCell}</div>`;
+  };
+  return `<div class="mc-sigpanel">
+      <div class="mc-sig-head"><span class="mc-sig-pa">${pa}</span><span class="mc-sig-vs">vs</span><span class="mc-sig-pb">${pb}</span></div>
+      <div class="mc-sig-group">
+        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Sharp estimates</span></div>
+        ${row(book, pinA, false)}
+        ${row('Stennisfy', null, false)}
+      </div>
+      <div class="mc-sig-group">
+        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Market money</span><span class="mc-sig-liqlabel">Liquidity</span></div>
+        ${row('Polymarket', null, true)}
+        ${row('Kalshi', null, true)}
+      </div>
+      <div class="mc-sig-note">${pinA != null ? book + ' split is live from this card’s bound odds.' : 'No bound odds for this match.'} Stennisfy model %, Polymarket &amp; Kalshi flow and liquidity aren’t wired to this card’s data source yet — shown as “—”, never invented.</div>
+    </div>`;
+}
 
 function renderMatches(){
   const list = document.getElementById('matchlist');
@@ -4034,11 +4111,13 @@ function renderMatches(){
     const showAltDate = (state.day === 'all' || state.day === 'past' || (daySpecific && dayBucket !== state.day));
     // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
     // always shown now, not just the bare time and not only when the day differs.
+    // Review item 7: the export separates date and time with a plain space
+    // ("2026-07-20 18:00"), not a middot.
     const rightMeta = isCompleted
-      ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' · ' + m.time : ''}</span>`
+      ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`
       : liveOrInt
         ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`
-        : `<span class="mc-datetime">${m.date || ''}${m.time ? ' · ' + m.time : ''}</span>`;
+        : `<span class="mc-datetime">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`;
     // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
     // header row itself, right-aligned above their columns. Completed cards have no such
     // columns (set-score cluster + odds journey instead), so they omit the labels.
@@ -4047,7 +4126,7 @@ function renderMatches(){
     const headHtml = `
       <div class="mc-head">
         <span class="mc-surface ${m.surface}">${surfCap}</span>
-        <span class="mc-dot">·</span><span class="mc-tourn">${m.tour}</span>
+        <span class="mc-tourn">${m.tour}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
         ${rightMeta}
         ${colHead}
@@ -4083,23 +4162,30 @@ function renderMatches(){
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
       <div class="mc-foot">
-        <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="openEdgeModelAt('${m.id}')">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
+        <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
         <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
       </div>
+      ${mcSigPanel(m)}
     </article>
   `;
   });
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
   if (state.view !== 'completed' && cards.length > 2) {
+    // Review item 6: export layout is icon-tile · "3 Bets Today" (one heading) + subtext,
+    // then PRO badge + CTA right-aligned — not a large separate numeral. The trend glyph
+    // in the tile is the export's exact path (zip 32 promo icon).
     cards.splice(2, 0,
       `<article class="mc-promo">
-        <div class="mc-promo__count">3</div>
+        <span class="mc-promo__icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 H16 V10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <div class="mc-promo__body">
-          <div class="mc-promo__title">Bets Today <span class="mc-promo__badge">PRO</span></div>
+          <div class="mc-promo__title">3 Bets Today</div>
           <div class="mc-promo__sub">Top value plays, hand-picked daily.</div>
         </div>
-        <a class="mc-promo__cta" href="account.html">Unlock today's picks →</a>
+        <span class="mc-promo__right">
+          <span class="mc-promo__badge">PRO</span>
+          <a class="mc-promo__cta" href="account.html">Unlock today's picks →</a>
+        </span>
       </article>`);
   }
   list.innerHTML = cards.join('');
@@ -4115,6 +4201,12 @@ function renderMatches(){
   });
 }
 function toggleFav(id){ openModal(); }
+// Market Signal disclosure: expand/collapse the panel in place on its own card.
+// Never navigates — the chevron flip + selected border are driven by .sig-open.
+function toggleSig(btn){
+  const card = btn.closest('.match-card');
+  if (card) card.classList.toggle('sig-open');
+}
 
 /* ============================================================= */
 /* TENNIS EDGE MODEL PAGE                                          */
