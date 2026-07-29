@@ -287,7 +287,7 @@
   /* recent-form bar — strength, brand gradient, never semantic */
   [data-page="matches"] .mc-form{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
   [data-page="matches"] .mc-form__track{ width:76px; height:6px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; flex:0 0 auto; }
-  [data-page="matches"] .mc-form__fill{ height:100%; border-radius:3px; background:linear-gradient(90deg, var(--mc-brand-deep), var(--mc-brand)); }
+  [data-page="matches"] .mc-form__fill{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--mc-brand-deep), var(--mc-brand)); }
   [data-page="matches"] .mc-form__val{ font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); min-width:26px; text-align:right; }
 
   /* odds + implied (upcoming) */
@@ -1514,10 +1514,10 @@
     --sf-text:#e7e9ee; --sf-text-3:#8b93a3; --sf-muted:#5b6880; --sf-muted-2:#4b5672;
     --sf-pos:#3dd68c; --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
-  body{ background:var(--sf-page); padding-left:280px; }
+  body{ background:var(--sf-page); padding-left:250px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:280px; background:var(--sf-sidebar);
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:250px; background:var(--sf-sidebar);
     border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
     padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
   .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; }
@@ -1531,7 +1531,7 @@
   .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
     border:none; border-radius:9px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:14px;
     font-weight:500; color:var(--sf-text-3); cursor:pointer; }
-  .sf-nav button svg{ width:18px; height:18px; flex:none; stroke:currentColor; stroke-width:1.7; }
+  .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; }
   .sf-nav button:hover{ color:var(--sf-text); background:rgba(255,255,255,0.03); }
   .sf-nav button.active{ background:var(--sf-brand-tint); color:var(--sf-text); font-weight:600; }
   .sf-nav button.active svg{ color:var(--sf-brand); }
@@ -1549,8 +1549,14 @@
     font-family:var(--sf-font-ui); font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; }
   .sf-upgrade:hover{ border-color:var(--sf-brand); color:#fff; }
 
-  /* item 7 — content column constrained + centred beside the sidebar */
-  [data-page="matches"]{ max-width:1160px; margin:0 auto; }
+  /* item 7 / review-item 4 — content column left-aligned beside the sidebar (export
+     is flex:1 left-aligned, NOT centred: centring + a 280px rail was pushing everything
+     right). Export main = padding:30px 40px 70px, max-width:1360px. Top padding pulled
+     up to the export's 30px so the header no longer sits low. */
+  [data-page="matches"]{ max-width:1360px; margin:0; padding-top:30px; }
+  [data-page="matches"] .mx-titlerow{ padding:0 40px 0; }
+  [data-page="matches"] .mx-controls{ padding:20px 40px 0; }
+  [data-page="matches"] .mx-tablewrap{ padding:16px 40px 40px; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control */
   [data-page="matches"] .mx-titlerow{ align-items:flex-start !important; }
@@ -1607,12 +1613,13 @@
   </div>
   <div class="sf-navlabel">Analyse</div>
   <nav class="sf-nav" id="mainNav">
-    <button class="active" data-tab="matches"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>Matches</button>
-    <button data-tab="players"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5.5a3 3 0 0 1 0 5.8"/><path d="M18.5 20c0-2.4-1.2-3.9-3.2-4.7"/></svg>Players</button>
-    <button data-tab="tournaments"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 9.5"/><path d="M17 6h2.5A2.5 2.5 0 0 1 17 9.5"/><path d="M12 12v4"/><path d="M9 20h6"/><path d="M10 16h4l.5 4h-5z"/></svg>Tournaments</button>
-    <button data-tab="edge"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><path d="M21 6h-4"/><path d="M21 6v4"/></svg>Stennisfy Model</button>
-    <button data-tab="styles"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Playing Styles</button>
-    <button data-tab="news"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>News</button>
+    <!-- Sidebar glyphs are the export's exact path set (zip 32 nav array), not icon-library substitutes: viewBox 0 0 20 20. -->
+    <button class="active" data-tab="matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</button>
+    <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
+    <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
+    <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg>Stennisfy Model</button>
+    <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
+    <button data-tab="news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</button>
   </nav>
   <div class="sf-foot">
     <a class="sf-userchip" id="acctMain" href="account.html">
@@ -3893,7 +3900,7 @@ function mcAvatarFail(img, initials, side){
 function mcFormBar(val){
   const has = val != null && val !== '';
   const w = has ? Math.max(0, Math.min(100, Number(val))) : 0;
-  const disp = has ? Math.round(Number(val)) : '—';
+  const disp = has ? Math.round(Number(val)) + '%' : '—';
   return `<span class="mc-form"><span class="mc-form__track"><span class="mc-form__fill" style="width:${w}%"></span></span><span class="mc-form__val">${disp}</span></span>`;
 }
 // Completed set-score cluster for one player: sets-won total tile (winner faint /
