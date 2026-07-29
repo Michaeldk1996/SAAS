@@ -491,3 +491,112 @@ for all ten tabs, and the PbP sub-tab via the Item-4 harness.
   the render-only real-data fixtures (Item 4 method) where a shard path had to be exercised.
 - Progression is additionally round-gated (`progressionRoundState` hides it in the first
   round); the verify match is a later round so the tab is present and drivable.
+
+---
+
+## Item 6A — THE PLAYER PROFILE PAGE: port to the Stennisfy export composition
+
+Restyle/port, NOT a rebuild. The profile (`buildPlayerProfileHtml` @ ~11196, mounted into
+`#playerProfileView.pp-formsurface`, repainted only via `ppRepaint`) already renders every
+section the export designs — and MORE (it is a rich superset). So this pass brought the four
+named blocks (header/identity, ratings, recent form, career/history) to the export's
+composition + README tokens; every data binding is untouched (recentForm, career-by-year,
+KPIs, Elo, market shard all bind exactly as before).
+
+### Authoritative source
+No founder screenshot exists for Player Profile (it didn't come through), so
+`export/player-profile.html` (a 480KB Framer scene-stack; template on its L387) was decoded
+for values and is the sole reference. Every inferred choice is logged below for confirmation.
+
+### DISCOVER — profile section → renderer inventory (unchanged code paths)
+| Section (DOM order) | Renderer / line | Binds |
+|---|---|---|
+| Back to Players | inline @ ~11956 | — |
+| HERO / identity | inline @ ~11973 (+ `ppEloFor`, `ppStyleFor`, styleLine/meta @ ~11942) | `p.name/rank/country/age/hand/backhand`, archetype |
+| Left rail — surface chips | `chips` @ ~11209 (`setPpSurface`) | `p.kpis[s]` |
+| Left rail — stat tiles | `tilesHtml` @ ~11270 | Elo (`ppEloForSurface`), `p.kpis`, recentForm, titles |
+| Left rail — Playing style radar | `ppStyleCard` @ 10456 | `playing-styles.json` |
+| Left rail — Surface performance | `surfHtml` @ ~11290 | `p.kpis[s]`, seasonSurfRec |
+| Left rail — Surface record | `ppSurfaceRecordHtml` @ 10260 | `career-splits.json` |
+| Right — Market performance | `#ppMarketPanel` @ ~11654 | `odds-performance/<key>.json` shard |
+| Right — ASAP signal | `ppAsapSignalHtml` | `asapsports-signal.json` |
+| Right — Recent form | `recentFormCard` @ ~11819 (`ppFormRow` @ 11718) | `p.recentForm.matches` |
+| Right — Career record | `careerRecordCard` @ ~11869 (`ppCareerYears`, `ppShowYearSurface`) | careerByYear |
+| Right — Career splits / Last 52 | `ppCareerSplitsHtml` @ 10193 | `career-splits.json` |
+| Right — Record by tournament | `recordSearchCard` @ ~11923 | `p.tournamentHistory` |
+| Right — Key insights | `insightsHtml` @ ~11907 (`ppDynamicInsights`) | splits/style/market |
+
+### PORT — before → after (the four named blocks)
+1. **HERO avatar.** Before: 84px rounded-square (`border-radius:22px`), navy gradient
+   `#1c2333→#111623`, initials `#dbe6ff` 26/800 (Hanken), rank badge bottom-**right**. After
+   (export): **circular** 96px, blue-tint gradient `rgba(91,155,255,0.22→0.05)`, border
+   `rgba(91,155,255,0.35)`, initials **IBM Plex Mono** `#8fb6ff` 30/700, rank badge
+   bottom-**centre** (`#3E7BFA`, mono 12/700). Probe-confirmed circular + mono.
+2. **HERO name / pills.** Name 30px → **40px/800** (export 44; trimmed to 40 to sit inside the
+   retained hero-card padding — INFERRED). ATP pill recoloured blue→**muted `#9fb2d4`** on
+   `rgba(159,178,212,0.1)`/`.32` (export). The gold **Elo pill was DROPPED** from the header
+   (export shows only the ATP pill; Elo remains in the ELO-Rating stat tile, binding intact) —
+   INFERRED, one-line restore. Archetype line `#9cc0ff` 13.5/600 → **`#5b9bff` 18/700**
+   (export identity accent). Meta 12.5→14px, divider `rgba(.16)`.
+3. **Ratings stat tiles.** Value `20px/800` → **`24px/700` IBM Plex Mono** (export 26; 24 keeps
+   wide records like `351–85` from ellipsis-clipping in the 340px rail — INFERRED).
+4. **Surface performance cards.** name 12→14/700, win% `14/800`→**`16/700` coloured per
+   surface**, radius 11→14, padding 12·14→14·16, dot 8→9 (export).
+5. **Recent form.** Title `14/700`→**`20/800`**; form % recoloured green→**brand `#5b9bff`**
+   (export). The W/L **letter pills were replaced by the export's thin chronological STRIP** —
+   10 solid `8px`/`radius 2` segments, win **`#3dd68c`** / loss **`#e0616f`**, oldest→newest,
+   with **"10 ago" / "now →"** mono captions below. Probe-confirmed 8px/2px, 10 segs, correct
+   two colours, captions present.
+6. **Career record.** Title `14/700`→**`20/800`** (both populated + empty states). Surface
+   header/cell/total colours retokened to **README surfaces**: Clay `#eda869`→**`#e8a84e`**,
+   Hard `#7ba4ff`→**`#4db8ff`**, Grass `#3ECF8E`→**`#2ab8a0`**. Probe-confirmed the three
+   computed header colours are the exact README tokens.
+7. **Surface token single-source.** `PP_SURF_COLORS` (@10293) changed to README values, which
+   propagates the corrected surfaces to the surface chips, surface-performance cards and
+   recent-form tournament tags in one place. Grass moving to teal `#2ab8a0` (from `#3ECF8E`)
+   also **separates the grass colour from the win-green** (`#3dd68c`/`#3ECF8E`) — the win/loss
+   badges and form strip hardcode the green literals, so they were NOT affected (verified: the
+   strip still renders `rgb(61,214,140)` win).
+
+### INFERRED (no founder reference — confirm/correct)
+- **Outer card wrapper RETAINED.** The export flows sections as standalone cards on the page
+  bg (no wrapper); the current profile wraps hero+body+footer in one bordered `border-radius:18px`
+  card with a `border-right` left rail. I kept the wrapper: the export has no layout to port for
+  the profile's *richer* right-column blocks (Market performance, ASAP, splits, Record-by-
+  tournament, Key insights, none of which exist in the export), and the wrapper is load-bearing
+  for the working two-column + `ppSyncCareerHeight` layout. Removing it is a larger restructure
+  I judged out of scope for "don't break the working profile." One-line follow-up if wanted.
+- **Name 40px** (export 44), **tile value 24px** (export 26) — both trimmed for the retained,
+  more compact in-card context; see above.
+- **"View by surface" chips left blue-active** (export colours them per surface). They are a
+  nav control, not data; low priority. Flagged.
+- **Elo pill dropped** from the header (Elo still in the tile). Restore is one line.
+- **Radii** on the named cards left at the profile's existing 16px (export uses 12–14);
+  harmonising the whole profile to README `--r-card 12` is a trivial follow-up but would touch
+  the unchanged sibling cards, so deferred for consistency.
+
+### VERIFY — the gate (1400px CDP, real data, from the WORKING tree == committed)
+Harness `scripts/render-profile.mjs` (zero-install: Node 24 global WebSocket + spawned
+`--headless=new` Chrome; explicit `Emulation.setDeviceMetricsOverride` width 1400, never
+`--window-size`). It injects the real-shape BSP auth stub, loads the real
+`player-profiles.json` (428 players), **drives the real navigation** (clicks the Players nav
+tab, then `showPlayerProfile('2382')` — C. Alcaraz, ATP #1, 26 recentForm matches, 9 career
+years), **polls until `.pp-shell` actually paints** (no fixed-sleep), then full-page +
+hero-clip screenshots. DOM/computed-style probes confirmed every token above. Nothing broke:
+`hasMarketPanel:true`, 9 career rows, back-link present, market shard rendered real data.
+Evidence (worktree root): `pp-after-WORKING.png` (full page 1400×4474),
+`pp-after-WORKING-hero.png` (header), `pp-before-WORKING.png` (pre-port baseline).
+
+### Per-section: real data vs honest placeholder (local)
+All four named blocks render **REAL** from `player-profiles.json`: header identity, stat tiles,
+surface performance, recent form (26 real matches, grouped by tournament), career record (9
+real year rows + Total). Market performance is **REAL** for Alcaraz (indexed odds-performance
+shard present locally). Placeholders are the same documented lazy-shard gaps as Items 4/5: the
+per-form-row expand panel (stats/pbp shards) and per-year drill only reveal chevrons for
+matches present in the local stats/pbp indexes — data-layer, not composition.
+
+### Residual gaps (honest)
+- Outer-card wrapper + per-surface chip colouring + card radii are the logged deviations above.
+- Form-row expand panels and career drill-downs bind to `setstats/`/`pbp/` shards that are
+  pipeline-built and largely absent locally (same gap as Items 4/5); the row/table composition
+  renders, the expand payload is shard-gated.

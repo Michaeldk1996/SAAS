@@ -10290,7 +10290,7 @@ function ppSurfaceRecordHtml(p){
     <div style="display:flex;flex-direction:column;gap:8px;">${rowsHtml}</div>
   </div>`;
 }
-const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
+const PP_SURF_COLORS = { Grass: '#2ab8a0', Hard: '#4db8ff', Clay: '#e8a84e' };
 const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Match surfaces arrive lowercase ('clay'); map to the capitalised key used by
@@ -11273,7 +11273,7 @@ function buildPlayerProfileHtml(p){
         <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
         <span style="font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
       </div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
+      <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
       <div style="font-size:10px;color:#6b7280;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>
     </div>`).join('');
 
@@ -11290,10 +11290,10 @@ function buildPlayerProfileHtml(p){
   const surfHtml = surfData.map(d => {
     const active = surf !== 'All' && surf === d.s;
     return `
-      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:11px;padding:12px 14px;">
+      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:14px;padding:14px 16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
-          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
-          <span style="font-size:14px;font-weight:800;font-family:'IBM Plex Mono',monospace;">${d.wr}%</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
+          <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
         </div>
         <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
         <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;">${d.rc} career · ${d.wr}%</div>
@@ -11704,9 +11704,13 @@ function buildPlayerProfileHtml(p){
     return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?(s==='All'?'#dbe6ff':cc):'#8b93a3'};background:${activeChip?ppHexA(cc,0.16):'transparent'};border:1px solid ${activeChip?ppHexA(cc,0.45):'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
   }).join('');
   const pillsSrc = formLast10.slice().reverse();
+  // Export composition: a thin chronological form STRIP (oldest→newest) — solid
+  // green (win) / red (loss) segments, not filled W/L letter pills. pillsSrc is
+  // already oldest-first (formLast10 is newest-first, reversed), matching the
+  // "N ago → now" reading below the strip.
   const pillsHtml = pillsSrc.map(m => {
     const w = m.won;
-    return `<span style="flex:1;height:26px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.15)'};border:1px solid ${w?'rgba(62,207,142,0.42)':'rgba(232,96,122,0.45)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;">${w?'W':'L'}</span>`;
+    return `<span style="flex:1;height:8px;border-radius:2px;background:${w?'#3dd68c':'#e0616f'};"></span>`;
   }).join('') || `<span style="font-size:12px;color:#5b6472;">No ${formEmptyLabel} matches.</span>`;
   // Every form row is an expandable panel carrying the same Match Stats /
   // Point by point tabs as the Match Analysis modal. formPanelHtml does all the
@@ -11818,12 +11822,13 @@ function buildPlayerProfileHtml(p){
 
   const recentFormCard = `
     <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="font-size:14px;font-weight:700;">Recent form</div>
-        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Recent form</div>
+        <span style="display:inline-flex;align-items:baseline;gap:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;"><span style="color:#5b9bff;font-weight:700;">${formHeaderPct}</span> <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">${formChips}</div>
-      <div style="display:flex;gap:5px;margin-bottom:16px;">${pillsHtml}</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">${pillsHtml}</div>
+      ${pillsSrc.length ? `<div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span style="font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${pillsSrc.length} ago</span><span style="font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">now →</span></div>` : '<div style="margin-bottom:16px;"></div>'}
       ${formBodyHtml}
     </div>`;
 
@@ -11848,9 +11853,9 @@ function buildPlayerProfileHtml(p){
         return `<div onclick="ppShowYearSurface('${r.year}','all',${r.total[0]},${r.total[1]})" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='rgba(62,123,250,0.06)';" onmouseout="this.style.background='transparent';">
           <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#e7e9ee;">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:#8b93a3;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
           ${cellHtml(r.total, '#e7e9ee', 'rgba(255,255,255,0.25)', r.year, 'all')}
-          ${cellHtml(r.clay, '#eda869', 'rgba(237,168,105,0.4)', r.year, 'clay')}
-          ${cellHtml(r.hard, '#7ba4ff', 'rgba(123,164,255,0.4)', r.year, 'hard')}
-          ${cellHtml(r.grass, '#3ECF8E', 'rgba(62,207,142,0.4)', r.year, 'grass')}
+          ${cellHtml(r.clay, '#e8a84e', 'rgba(232,168,78,0.4)', r.year, 'clay')}
+          ${cellHtml(r.hard, '#4db8ff', 'rgba(77,184,255,0.4)', r.year, 'hard')}
+          ${cellHtml(r.grass, '#2ab8a0', 'rgba(42,184,160,0.4)', r.year, 'grass')}
         </div><div class="yr-drill pp-yr-drill" id="ppYrDrill-${r.year}"></div>`;
       }
       if (r.onTour && !r.hasData){
@@ -11869,22 +11874,22 @@ function buildPlayerProfileHtml(p){
     careerRecordCard = `
       <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <div style="font-size:14px;font-weight:700;">Career record</div>
+          <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Career record</div>
           <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
         </div>
         <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,0.07);">
-          ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#eda869',true)}${hcol('Hard','#7ba4ff',true)}${hcol('Grass','#3ECF8E',true)}
+          ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#e8a84e',true)}${hcol('Hard','#4db8ff',true)}${hcol('Grass','#2ab8a0',true)}
         </div>
         <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
           <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
-          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#eda869')}${totCell(t.hard,'#7ba4ff')}${totCell(t.grass,'#3ECF8E')}
+          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#e8a84e')}${totCell(t.hard,'#4db8ff')}${totCell(t.grass,'#2ab8a0')}
         </div>
       </div>`;
   } else {
     careerRecordCard = `<div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Career record</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;">Career record</div>
       <div style="font-size:12.5px;color:#5b6472;">No year-by-year match history on record for this player yet.</div>
     </div>`;
   }
@@ -11950,7 +11955,7 @@ function buildPlayerProfileHtml(p){
   const _ppStyle = ppStyleFor(p.name);
   const styleLine = [(_ppStyle && _ppStyle.archetype_label) || p.archetype, specialist].filter(Boolean).join(' · ');
   const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
-  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:12px;background:rgba(255,255,255,0.12);"></span>':''}<span>${pesc(m)}</span>`).join('');
+  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:13px;background:rgba(255,255,255,0.16);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
   return `
   <div style="margin-bottom:16px;">
@@ -11971,19 +11976,18 @@ function buildPlayerProfileHtml(p){
   <div style="width:100%;background:#0b0d12;border:1px solid rgba(255,255,255,0.08);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -50px rgba(0,0,0,0.95);">
 
     <!-- HERO -->
-    <div style="padding:18px 26px 22px;display:flex;align-items:flex-start;gap:22px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;">
+    <div style="padding:20px 26px 26px;display:flex;align-items:flex-start;gap:26px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;">
       <div style="position:relative;flex:none;">
-        <span style="width:84px;height:84px;border-radius:22px;background:linear-gradient(135deg,#1c2333,#111623);border:2px solid rgba(62,123,250,0.55);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#dbe6ff;box-shadow:0 0 0 4px rgba(62,123,250,0.1);">${initials}</span>
-        <span style="position:absolute;bottom:-6px;right:-6px;min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:#3E7BFA;border:3px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
+        <span style="width:96px;height:96px;border-radius:50%;background:linear-gradient(155deg,rgba(91,155,255,0.22),rgba(91,155,255,0.05));border:1px solid rgba(91,155,255,0.35);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#8fb6ff;font-family:'IBM Plex Mono',monospace;">${initials}</span>
+        <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:#3E7BFA;border:2px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
       </div>
       <div style="min-width:0;flex:1;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:30px;font-weight:800;letter-spacing:-0.02em;">${p.name}</h1>
-          <span style="font-size:11px;font-weight:700;color:#7ba4ff;background:rgba(62,123,250,0.12);border:1px solid rgba(62,123,250,0.3);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
-          ${eloPill}
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${p.name}</h1>
+          <span style="font-size:13px;font-weight:600;color:#9fb2d4;background:rgba(159,178,212,0.1);border:1px solid rgba(159,178,212,0.32);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
         </div>
-        ${styleLine ? `<div style="margin-top:7px;font-size:13.5px;font-weight:600;color:#9cc0ff;">${pesc(styleLine)}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:12.5px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
+        ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#5b9bff;">${pesc(styleLine)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:14px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
       </div>
     </div>
 
