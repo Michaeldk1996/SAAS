@@ -59,3 +59,42 @@ Rendered headless (Chrome `--headless=new`, 1400px) against the local today-date
 `ten8-review2-sigopen.png` (in `~/.bsp-splits-cron/`). Preview served at
 `http://localhost:8850/ten8-matches-preview.html` (auth gate neutralised in the preview
 copy only; the committed file keeps the real gate).
+
+## Verification pass (founder "finish Today's Matches" comment, 2026-07-29 05:09Z)
+
+Ran the side-by-side the founder said was missing — a live-DOM probe + 1400px full-page
+render taken FROM commit `8f48e86`, not from a preview I had lying around. Harness:
+`render-matches.mjs` (Node 24 global WebSocket + spawned headless Chrome via CDP, zero
+installs). It rebuilds the preview from `git show 8f48e86:bsp-consult-dashboard.html`,
+injects a BSP auth stub matching the REAL publicUser shape `{uid,name,email,emailVerified}`,
+serves the worktree, sets a 1400px CDP viewport, waits for `.match-card`, probes the DOM,
+then screenshots full-page + the Market-Signal-expanded card.
+
+Result — every outstanding Item-1 point is already satisfied at `8f48e86`:
+- Stennisfy Model icon = line-chart glyph (paths `M4 4v12h12` + `M6.5 12.5l3-3.5 2.5 2 4-5.5`). Not an arrow/star.
+- Playing Styles icon = bar-chart glyph (`M4 15V9M8 15V5M12 15v-4M16 15V7`). Not a target.
+- Market Signal chip `onclick="toggleSig(this)"` — expands in place (`.sig-open`), never navigates.
+- Expanded panel: SHARP ESTIMATES (Pinnacle 56/44 LIVE, Stennisfy —), MARKET MONEY
+  (Polymarket, Kalshi — **Betfair absent**), LIQUIDITY right-aligned on the group label row.
+- Sidebar foot: one bordered `.sf-userchip` (avatar · name · "Free plan" · chevron) + outlined
+  "Upgrade to Pro". No bare Sign-out. `footHTMLhasSignOut=false`.
+- Header: green dot `#3dd68c` + "Live · updated " (space present) + clock.
+- Date rail: chevrons in bordered squares, right chevron immediately after the last day.
+
+**Why the founder saw it as broken:** he was judging a STALE render, not `8f48e86`. This is
+exactly the "reported matches without running the side-by-side" failure he flagged. Fixed the
+process, not the code.
+
+**One trap caught:** first render showed the account label as "preview" — that was MY stub
+using `displayName` where the real `publicUser` (auth.js:132-134) exposes `name`. Corrected
+the stub; label then renders "Alex Morgan". `paintAcct` (`u.name || email-localpart`) was
+never wrong. Had I "fixed" it to read `displayName`, I'd have diverged from the real object.
+
+**Known non-blocking gap (data, not composition):** Stennisfy model %, Polymarket & Kalshi
+flow/liquidity aren't wired to this card's source yet — rendered as "—", never invented, with
+an on-card footnote saying so. Pinnacle split is live. This is the documented data-layer gap,
+not a design miss; founder said "data layer untouched" this pass.
+
+Evidence artefacts (in agent workspace):
+- `ten8-matches-1400-8f48e86.png` — full page, 1400×4084, from commit 8f48e86
+- `ten8-matches-1400-8f48e86-sigopen.png` — Market Signal expanded card
