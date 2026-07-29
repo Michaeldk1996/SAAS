@@ -600,3 +600,68 @@ matches present in the local stats/pbp indexes — data-layer, not composition.
 - Form-row expand panels and career drill-downs bind to `setstats/`/`pbp/` shards that are
   pipeline-built and largely absent locally (same gap as Items 4/5); the row/table composition
   renders, the expand payload is shard-gated.
+
+---
+
+# Item 6B — TOURNAMENTS page (Overview) port to references (TEN-8)
+
+Scoped to `renderTourxOverview()` / `tourxConditionsPanelHtml()` (the `tourx` system —
+NOT the older `tprofile` catalog, which is dead for this surface). Data layer untouched:
+`COURT_CONDITIONS` (real per-tournament altitude / 3-yr abstract speed / 1st-serve-won /
+service-hold), `tournamentProfiles` (champion), `tournamentProgression` (report state),
+and the live match feed (This-week list) are all bound exactly as before.
+
+## Before → after composition
+- **Section tabs** relabelled `Tournaments overview / Tournament Reports` → **`Overview / Reports`**
+  to match the reference pill group (container styling already matched).
+- **Right panel reordered** to the two founder screenshots. New top-to-bottom order:
+  title+status → hero AS number + `abstract court speed · {label}` → slider →
+  **SLOW/MEDIUM/FAST endpoint labels (new)** → **rank line (new)** → CONDITIONS READ →
+  ALTITUDE / 1ST SERVE WON / SERVICE HOLD tiles → BOUNCE / CHAMPION → 3-yr chart →
+  ROI BACKING FAVOURITES/UNDERDOGS → FAVOURITE RELIABILITY → report panel.
+  (Was: hero → tiles(4) → bounce/champion → chart → borderless conditions-read → button.)
+- **CONDITIONS READ** was a borderless top-border divider → now a **bordered data card**
+  (`#0d1420`, radius 12), which also fixes the README "no borderless data block" rule.
+- **Tiles: 4 → 3.** Dropped the redundant "Abstract court speed" tile (it is already the
+  hero number above the slider). Reference shows exactly Altitude / 1st serve won / Service
+  hold. Tile value size bumped 16→22px to match the reference's prominence.
+- **Hero number** 44 → 54px (reference reads it as the dominant element).
+- **Report state** moved from a small inline button to a **full-width panel** — solid
+  "View report" CTA when `hasReport`, else the reference's centred "Report not available yet
+  / Match reports are published after the tournament concludes." card.
+- **Surface dot colours** aligned to README tokens: grass `#2ab8a0`, clay `#e8a84e`, hard
+  `#4db8ff` (were `#3ECF8E / #eda869 / #7ba4ff`). Matches the reference dots more closely.
+
+## Per-section: real data vs honest placeholder
+- Hero AS, asLabel, altitude, 1st-serve-won, service-hold, bounce, 3-yr chart (1.10/1.08/1.11),
+  champion (J. Sinner), conditions-read prose — **REAL** (`COURT_CONDITIONS` + `tourxBounce`
+  + `tournamentProfiles`; prose is a fixed surface/speed-branched template over real values).
+- **Rank line — REAL, DERIVED.** `20th fastest of 64 tour events · tour median 1.02`,
+  computed live from the conditions registry (the same set the left rail lists). Differs
+  from the design mock's `12th … of 18 … median 1.31` because the mock used a smaller
+  placeholder set — the mock numbers are NOT reproduced.
+- **ROI BACKING FAVOURITES / UNDERDOGS — HONEST PLACEHOLDER (`—` + "No per-tournament ROI
+  feed wired").** The mock's `-1.1%` / `-0.2%` are NOT rendered: no per-tournament betting-ROI
+  source exists locally. The `COURT_CONDITIONS` header comment states betting ROI / favourite
+  win rate are "deliberately NOT shown … no real data source exists"; `tournament-profiles.json`
+  carries no ROI field. Fabricating them is exactly the trap the founder has caught.
+- **FAVOURITE RELIABILITY — HONEST PLACEHOLDER (`—`, empty neutral bar + note).** Same reason:
+  the mock's `72% Moderate` binds to a tournament-level results-and-prices feed not wired here.
+
+## README-vs-reference disagreements / inferred choices (logged)
+- Reference shows **no ⓘ** next to `abstract court speed · Fast`; I kept a subtle grey ⓘ
+  (the "What is abstract court speed?" explainer is a real, useful affordance). Minor.
+- This-week left-rail contents are live-feed driven (today = Washington/Los Cabos, not the
+  mock's Kitzbühel/Estoril/Gstaad) — correct real data, not a composition miss.
+- ROI/reliability placeholders are a deliberate deviation from the reference per the
+  never-invent rule; founder decides whether to source that feed.
+
+## Verify
+`scripts/render-tourn.mjs` — Node 24 global WebSocket + spawned headless Chrome via CDP,
+zero installs. Rebuilds the preview from `git show <commit>:bsp-consult-dashboard.html`,
+injects the real publicUser auth stub, serves the worktree, sets an explicit 1400px CDP
+viewport (`Emulation.setDeviceMetricsOverride`, not `--window-size`), clicks the Tournaments
+nav, selects Wimbledon, polls until the conditions panel paints (`/abstract court speed/`
+in `.tourx-ovright`), probes every section, then full-page screenshots. Probe confirmed:
+Overview/Reports tabs, This Week/This Season toggle, slider labels, real rank line, 3 tiles,
+bounce/champion, 3-yr chart, ROI placeholders, reliability placeholder, report panel.
