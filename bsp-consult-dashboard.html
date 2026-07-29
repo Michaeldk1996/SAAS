@@ -1929,6 +1929,7 @@
 [data-page="styles"] .ps-eyebrow{ display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#5b6472; margin-bottom:10px; }
 [data-page="styles"] .ps-blocktitle{ margin:0; font-size:30px; font-weight:800; letter-spacing:-0.02em; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; }
 [data-page="styles"] .ps-blocklead{ margin:12px 0 0; max-width:640px; font-size:13.5px; line-height:1.65; color:#8b93a3; }
+[data-page="styles"] .ps-gnote{ margin:16px 0 0; font-size:12.5px; line-height:1.6; color:#6b7280; }
 [data-page="styles"] .ps-key{ display:flex; gap:20px; margin:20px 0 22px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; }
 [data-page="styles"] .ps-keyitem{ display:inline-flex; align-items:center; gap:7px; }
 [data-page="styles"] .ps-kdash{ width:16px; height:2px; display:inline-block; }
@@ -2050,7 +2051,7 @@
     <!-- HERO: MATCHUP GRID -->
     <div class="ps-block">
       <span class="ps-eyebrow">Style vs style</span>
-      <h2 class="ps-blocktitle">The matchup grid</h2>
+      <h2 class="ps-blocktitle">Matchup grid</h2>
       <p class="ps-blocklead">Read row beats column. The big figure is the edge — how far above or below an even 50% split the row style wins; the raw win rate sits beneath. Green is a strong matchup, red is weak. Hover to isolate a row and column.</p>
       <div class="ps-key">
         <span class="ps-keyitem"><i class="ps-kdash" style="background:#3ECF8E;"></i>Strong</span>
@@ -2058,6 +2059,7 @@
         <span class="ps-keyitem"><i class="ps-kdash" style="background:#E8607A;"></i>Weak</span>
       </div>
       <div id="psMatrix" class="ps-gridwrap"></div>
+      <p id="psMatrixNote" class="ps-gnote" style="display:none;"></p>
     </div>
     <!-- SEVEN ARCHETYPES -->
     <div class="ps-block">
@@ -3455,6 +3457,22 @@ function psRenderMatrixAndCards(){
   mx.innerHTML = g;
   psWireGridHover(mx);
 
+  // Sub-threshold footnote — archetypes below the 10-player floor read as indicative
+  // only, matching the design export. Counts come from the live roster, not a mock.
+  const noteEl = document.getElementById('psMatrixNote');
+  if (noteEl){
+    const subs = A.map(a => ({ name: a.name, c: (a.count != null ? a.count : a.players.length) }))
+      .filter(x => x.c != null && x.c < 10);
+    if (subs.length){
+      const parts = subs.map(x => x.name + ' (' + x.c + ' player' + (x.c === 1 ? '' : 's') + ')');
+      const list = parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+      const verb = subs.length === 1 ? 'is' : 'are';
+      const poss = subs.length === 1 ? 'its' : 'their';
+      noteEl.textContent = list + ' ' + verb + ' below the 10-player threshold — ' + poss + ' edges are indicative only.';
+      noteEl.style.display = '';
+    } else { noteEl.style.display = 'none'; }
+  }
+
   // ---------- expandable archetype rows, one per PS_ARCHETYPES entry ----------
   let html = '';
   A.forEach((a, i) => {
@@ -3470,7 +3488,7 @@ function psRenderMatrixAndCards(){
       return '<div class="ps-bar"><span class="ps-barlabel">' +
         '<span class="ps-barkey ps-barkey-' + kind + '">' + (kind === 'dom' ? 'Dom vs' : 'Weak vs') + '</span>' +
         '<div class="ps-baropp">' + psEsc(A[j].name) + '</div></span>' +
-        '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + (win >= 50 ? '#3E7BFA' : '#E8607A') + ';"></span></span>' +
+        '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + (win >= 50 ? '#3ECF8E' : '#E8607A') + ';"></span></span>' +
         '<span class="ps-barpct">' + win + '%</span></div>';
     };
     // Two dominant + two weak for EVERY archetype, All-Court Elite included — no
