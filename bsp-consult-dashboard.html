@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BSP Consult — Dashboard</title>
+<title>Stennisfy — Dashboard</title>
 <script src="./analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -144,6 +144,32 @@
     --mx-accent-form: #c9a24b;
     --mx-radius-input: 9px;
     --mx-radius-card: 11px;
+    /* ---- stennisfy design-layer tokens (Today's Matches card port) ---- */
+    --mc-card: #0a0d14;
+    --mc-border-data: rgba(255,255,255,0.09);
+    --mc-border-subtle: rgba(255,255,255,0.07);
+    --mc-border-hover: rgba(91,155,255,0.22);
+    --mc-text: #e7e9ee;
+    --mc-muted: #5b6880;
+    --mc-muted-2: #4b5672;
+    --mc-brand: #5b9bff;
+    --mc-brand-deep: #2f6bd8;
+    --mc-brand-wash: rgba(91,155,255,0.08);
+    --mc-brand-tint: rgba(91,155,255,0.15);
+    --mc-player-a: #6aaeff;
+    --mc-player-b: #e7e9ee;
+    --mc-pos: #3dd68c;
+    --mc-neg: #e0616f;
+    --mc-warn: #e8a84e;
+    --mc-pos-bg: rgba(61,214,140,0.15);
+    --mc-pos-bd: rgba(61,214,140,0.3);
+    --mc-neg-bg: rgba(224,97,111,0.15);
+    --mc-neg-bd: rgba(224,97,111,0.3);
+    --mc-hard: #4db8ff;
+    --mc-clay: #e8a84e;
+    --mc-grass: #2ab8a0;
+    --mc-r-match: 14px;
+    --mc-r-pill: 6px;
   }
 
   [data-page="matches"] .mx-titlerow{ padding:24px 24px 0; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; }
@@ -165,8 +191,12 @@
   @media (max-width:720px){ [data-page="matches"] .mx-stats-strip{ grid-template-columns:repeat(2,1fr); } }
 
   [data-page="matches"] .mx-controls{ padding:20px 24px 0; }
-  [data-page="matches"] .mx-daytabsrow{ display:flex; align-items:center; gap:4px; }
-  [data-page="matches"] .mx-daytabs-scroll{ display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--mx-hairline-soft); flex:1; }
+  /* Review item 5: the rail is a tight cluster at the LEFT, chevrons immediately
+     adjacent — not spread full-width with detached arrows. flex:0 0 auto stops the
+     scroll box stretching; the full-width hairline under the rail is removed so only
+     the ACTIVE day is underlined (see .mx-daytabs button.active). */
+  [data-page="matches"] .mx-daytabsrow{ display:inline-flex; align-items:center; gap:8px; align-self:flex-start; }
+  [data-page="matches"] .mx-daytabs-scroll{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; border-bottom:none; flex:0 0 auto; }
   [data-page="matches"] .mx-daytabs-scroll::-webkit-scrollbar{ display:none; }
   [data-page="matches"] .mx-daytabschevron{ background:none; border:none; color:var(--mx-text-faint); cursor:pointer; padding:8px 4px; flex-shrink:0; font-size:14px; }
   [data-page="matches"] .mx-daytabschevron:hover{ color:var(--mx-text-secondary); }
@@ -201,62 +231,133 @@
   [data-page="matches"] .mx-search:focus{ border-color:rgba(62,123,250,0.5); background:#0d1017; }
   [data-page="matches"] .mx-selectwrap{ position:relative; }
   [data-page="matches"] .mx-sortsel{ appearance:none; -webkit-appearance:none; background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-input); padding:10px 32px 10px 13px; color:#cfd4de; font-size:12.5px; outline:none; cursor:pointer; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-selectchevron{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--mx-text-secondary); font-size:10px; }
+  /* Review item 7: an up-down sort glyph (⇅) implies direction, not a dropdown menu. */
+  [data-page="matches"] .mx-selectchevron{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--mx-text-secondary); font-size:12px; }
 
-  /* Match table */
+  /* ===== Today's Matches — stennisfy design-layer port (card list) ===== */
   [data-page="matches"] .mx-tablewrap{ padding:16px 24px 40px; }
-  [data-page="matches"] .mx-table{ border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-card); overflow:hidden; background:var(--mx-bg-table); }
-  [data-page="matches"] .mx-thead{ display:grid; grid-template-columns:2.3fr 1.3fr 1.2fr; gap:16px; padding:10px 18px; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mx-text-tertiary); font-family:var(--mx-font-mono); border-bottom:1px solid var(--mx-hairline-soft); background:#0c0e13; }
-  [data-page="matches"] .mx-thead .right{ text-align:right; }
-  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mx-text-secondary); font-size:13.5px; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-match{ border-bottom:1px solid var(--mx-hairline-soft); }
-  [data-page="matches"] .mx-match:last-child{ border-bottom:none; }
-  [data-page="matches"] .mx-meta{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 18px 4px; font-size:11px; color:var(--mx-text-tertiary); font-family:var(--mx-font-mono); flex-wrap:wrap; }
-  [data-page="matches"] .mx-meta-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  [data-page="matches"] .mx-surf{ color:var(--mx-text-secondary); font-weight:500; }
-  [data-page="matches"] .mx-surf.clay{ color:#d98a5b; }
-  [data-page="matches"] .mx-surf.hard{ color:#7ba4ff; }
-  [data-page="matches"] .mx-surf.grass{ color:#6ed3a3; }
-  [data-page="matches"] .mx-tour{ color:var(--mx-text-secondary); }
-  [data-page="matches"] .mx-round{ color:var(--mx-text-secondary); background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:6px; padding:2px 7px; font-size:10.5px; }
-  [data-page="matches"] .mx-day{ color:var(--mx-brand-blue-text); }
-  [data-page="matches"] .mx-day.live{ color:#E28B4A; }
-  [data-page="matches"] .mx-h2h{ color:var(--mx-text-tertiary); }
-  [data-page="matches"] .mx-fav{ cursor:pointer; color:var(--mx-text-faint); font-size:15px; background:none; border:none; padding:0; }
-  [data-page="matches"] .mx-fav:hover{ color:var(--mx-brand-blue); }
-  [data-page="matches"] .mx-livescore{ padding:0 18px 4px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mx-text-secondary); display:flex; gap:8px; align-items:baseline; }
-  [data-page="matches"] .mx-livescore .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-serveddot{ color:#E28B4A; font-size:13px; }
-  [data-page="matches"] .mx-playerrow{ display:grid; grid-template-columns:2.3fr 1.3fr 1.2fr; gap:16px; align-items:center; padding:13px 18px; transition:background .15s ease; }
-  [data-page="matches"] .mx-playerrow:hover{ background:rgba(62,123,250,0.05); }
-  [data-page="matches"] .mx-playerrow.last{ padding:13px 18px 17px; }
-  [data-page="matches"] .mx-col1{ display:flex; align-items:center; gap:11px; min-width:0; }
-  [data-page="matches"] .mx-name{ font-family:var(--mx-font-ui); font-size:15px; font-weight:600; color:var(--mx-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="matches"] .mx-name[onclick]:hover, [data-page="matches"] .avatar[onclick]:hover, [data-page="matches"] .avatar-fallback[onclick]:hover{ color:var(--accent); text-decoration:underline; }
-  [data-page="matches"] .mx-favtag{ font-size:9px; font-weight:600; color:var(--mx-text-tertiary); letter-spacing:0.09em; flex-shrink:0; border:1px solid var(--mx-hairline); border-radius:4px; padding:1px 5px; }
-  [data-page="matches"] .mx-col2{ display:flex; align-items:baseline; gap:9px; justify-content:flex-end; }
-  [data-page="matches"] .mx-odds{ font-family:var(--mx-font-mono); font-size:27px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
-  [data-page="matches"] .mx-implied{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--mx-text-tertiary); width:38px; text-align:right; }
-  [data-page="matches"] .mx-scorelabel{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-finodds{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; line-height:1.1; align-self:center; }
-  [data-page="matches"] .mx-finodds .fo-pair{ display:flex; align-items:baseline; gap:5px; }
-  [data-page="matches"] .mx-finodds .fo-v{ font-family:var(--mx-font-mono); font-size:13px; font-weight:600; color:var(--mx-text-secondary); }
-  [data-page="matches"] .mx-finodds .fo-pair.open .fo-v{ color:var(--mx-text-faint); font-weight:500; }
-  [data-page="matches"] .mx-finodds .fo-l{ font-family:var(--mx-font-ui); font-size:8.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mx-text-faint); min-width:34px; text-align:left; }
-  [data-page="matches"] .mx-chip-x{ color:var(--mx-text-faint); font-weight:600; margin-left:3px; }
-  [data-page="matches"] .mx-chip.active .mx-chip-x{ color:#fff; }
-  [data-page="matches"] .mx-col3{ display:flex; gap:10px; justify-content:flex-end; align-items:center; font-family:var(--mx-font-mono); }
-  [data-page="matches"] .mx-form{ font-size:12.5px; color:var(--mx-text-primary); min-width:34px; text-align:right; }
-  [data-page="matches"] .mx-form.empty{ color:var(--mx-text-faint); }
-  [data-page="matches"] .mx-formbar{ width:56px; height:4px; border-radius:2px; background:rgba(255,255,255,0.10); overflow:hidden; flex-shrink:0; }
-  [data-page="matches"] .mx-formbar.empty{ background:rgba(255,255,255,0.05); }
-  [data-page="matches"] .mx-formbar-fill{ height:100%; background:var(--mx-accent-green); border-radius:2px; }
-  [data-page="matches"] .mx-footer{ display:flex; justify-content:space-between; align-items:center; padding:10px 18px 14px; font-size:11.5px; font-family:var(--mx-font-mono); color:var(--mx-text-tertiary); }
-  [data-page="matches"] .mx-footer a{ color:var(--mx-brand-blue-text); cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:500; border:1px solid var(--mx-hairline); border-radius:8px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
-  [data-page="matches"] .mx-footer a:hover{ border-color:var(--mx-brand-blue); background:rgba(62,123,250,0.08); color:#fff; }
-  [data-page="matches"] .mx-footlinks{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-  [data-page="matches"] .mx-footer a.mx-msigchip{ color:var(--mx-text-secondary); border-color:var(--mx-hairline); background:rgba(91,155,255,0.05); font-family:var(--mx-font-mono); font-size:11px; letter-spacing:0.02em; }
-  [data-page="matches"] .mx-footer a.mx-msigchip:hover{ border-color:var(--mx-brand-blue); color:#fff; }
+  [data-page="matches"] .mx-table{ border:none; background:transparent; border-radius:0; overflow:visible; }
+  [data-page="matches"] .mx-thead{ display:none; }
+  [data-page="matches"] #matchlist{ display:flex; flex-direction:column; gap:14px; }
+  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mc-muted); font-size:13.5px; font-family:var(--mx-font-ui); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); background:var(--mc-card); }
+
+  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:16px 18px; transition:border-color 120ms; }
+  [data-page="matches"] .match-card:hover{ border-color:var(--mc-border-hover); }
+
+  /* header */
+  [data-page="matches"] .mc-head{ display:flex; align-items:center; gap:10px; font-size:12px; flex-wrap:wrap; font-family:var(--mx-font-ui); }
+  [data-page="matches"] .mc-surface{ font-weight:700; }
+  [data-page="matches"] .mc-surface.hard{ color:var(--mc-hard); }
+  [data-page="matches"] .mc-surface.clay{ color:var(--mc-clay); }
+  [data-page="matches"] .mc-surface.grass{ color:var(--mc-grass); }
+  [data-page="matches"] .mc-dot{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-tourn{ color:var(--mc-muted); font-weight:600; }
+  [data-page="matches"] .mc-round{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-muted); padding:2px 7px; border:1px solid var(--mc-border-subtle); border-radius:var(--mc-r-pill); }
+  [data-page="matches"] .mc-h2h{ color:var(--mc-muted-2); font-size:11px; font-family:var(--mx-font-mono); }
+  [data-page="matches"] .mc-status{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
+  [data-page="matches"] .mc-status.live{ color:var(--mc-warn); }
+  [data-page="matches"] .mc-time{ font-family:var(--mx-font-mono); color:var(--mc-muted); }
+  [data-page="matches"] .mc-altdate{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); margin-left:auto; }
+  [data-page="matches"] .mc-altdate-inl{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
+  [data-page="matches"] .mc-fav{ cursor:pointer; color:var(--mc-muted-2); font-size:15px; background:none; border:none; padding:0; line-height:1; margin-left:8px; }
+  [data-page="matches"] .mc-fav:hover{ color:var(--mc-brand); }
+
+  /* score line (live / suspended / pending only) */
+  [data-page="matches"] .mc-scoreline{ margin-top:10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
+  [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
+
+  /* column headers — inline on the card header row, right-aligned above the two data columns */
+  [data-page="matches"] .mc-colhead-inline{ margin-left:auto; margin-right:10px; display:grid; grid-template-columns:130px 120px; gap:12px; }
+  [data-page="matches"] .mc-colhead-inline .lbl{ font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--mc-muted-2); text-align:right; font-family:var(--mx-font-ui); white-space:nowrap; }
+
+  /* player rows */
+  [data-page="matches"] .mc-players{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+  [data-page="matches"] .mc-row{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:12px; position:relative; }
+  [data-page="matches"] .mc-players.up .mc-row{ display:grid; grid-template-columns:1fr 130px 120px; gap:12px; align-items:center; min-height:46px; }
+  [data-page="matches"] .mc-row.winner::before{ content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--mc-pos); }
+  [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
+  [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
+  [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
+  [data-page="matches"] .mc-av.b{ color:var(--mc-player-b); background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-name{ font-family:var(--mx-font-ui); font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
+  [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
+  [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
+  [data-page="matches"] .mc-fav-tag, [data-page="matches"] .mc-won{ font-family:var(--mx-font-mono); font-size:10px; font-weight:700; letter-spacing:0.04em; padding:1px 6px; border-radius:var(--mc-r-pill); flex:0 0 auto; }
+  [data-page="matches"] .mc-fav-tag{ color:var(--mc-brand); background:var(--mc-brand-wash); border:1px solid var(--mc-border-hover); }
+  [data-page="matches"] .mc-won{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
+  [data-page="matches"] .mc-serve{ color:var(--mc-warn); font-size:13px; }
+
+  /* recent-form bar — strength, brand gradient, never semantic */
+  [data-page="matches"] .mc-form{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  [data-page="matches"] .mc-form__track{ width:76px; height:6px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; flex:0 0 auto; }
+  [data-page="matches"] .mc-form__fill{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--mc-brand-deep), var(--mc-brand)); }
+  [data-page="matches"] .mc-form__val{ font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); min-width:26px; text-align:right; }
+
+  /* odds + implied (upcoming) */
+  [data-page="matches"] .mc-oddswrap{ display:flex; align-items:baseline; gap:8px; justify-content:flex-end; }
+  [data-page="matches"] .mc-odds{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); }
+  [data-page="matches"] .mc-implied{ font-family:var(--mx-font-mono); font-size:12px; font-weight:600; color:var(--mc-muted-2); }
+
+  /* set-score cluster (completed) */
+  [data-page="matches"] .mc-sets{ display:inline-flex; align-items:center; gap:8px; margin-left:auto; }
+  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); padding:2px 7px; border-radius:5px; }
+  [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.03); }
+  [data-page="matches"] .mc-sets__games{ display:inline-flex; gap:6px; }
+  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); position:relative; }
+  [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; }
+
+  /* odds journey (completed) — non-semantic open→close */
+  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:10px; }
+  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; }
+  [data-page="matches"] .mc-journey__track{ width:46px; height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
+  [data-page="matches"] .mc-journey__track::before, [data-page="matches"] .mc-journey__track::after{ content:''; position:absolute; top:-2px; width:6px; height:6px; border-radius:50%; }
+  [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
+  [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
+  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
+  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:12px; }
+
+  /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
+  [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
+  [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); display:inline-block; transition:transform 120ms ease; }
+  [data-page="matches"] .mc-msig.has-signal, [data-page="matches"] .mc-msig.has-signal .chev{ color:var(--mc-brand); }
+  [data-page="matches"] .mc-msig:hover{ color:var(--mc-brand); }
+
+  /* Market Signal panel — expands in place (review item 1). Full-bleed to the card
+     edges (negative margins cancel the card's 16px 18px padding), own dark section. */
+  [data-page="matches"] .match-card.sig-open{ border-color:rgba(91,155,255,0.35); }
+  [data-page="matches"] .match-card.sig-open .mc-msig, [data-page="matches"] .match-card.sig-open .mc-msig .chev{ color:var(--mc-brand); }
+  [data-page="matches"] .match-card.sig-open .mc-msig .chev{ transform:rotate(180deg); }
+  [data-page="matches"] .mc-sigpanel{ display:none; margin:14px -18px -16px; padding:13px 20px 15px; background:#080b11; border-top:1px solid rgba(255,255,255,0.05); }
+  [data-page="matches"] .match-card.sig-open .mc-sigpanel{ display:block; }
+  [data-page="matches"] .mc-sig-head{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:11px; }
+  [data-page="matches"] .mc-sig-pa{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-player-a); white-space:nowrap; }
+  [data-page="matches"] .mc-sig-vs{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-pb{ font-family:var(--mx-font-ui); font-size:11px; font-weight:600; color:var(--mc-player-b); white-space:nowrap; }
+  [data-page="matches"] .mc-sig-group + .mc-sig-group{ border-top:1px solid rgba(255,255,255,0.06); margin-top:11px; padding-top:9px; }
+  [data-page="matches"] .mc-sig-grouprow{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px; }
+  [data-page="matches"] .mc-sig-grouplabel{ font-family:var(--mx-font-ui); font-size:11px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-liqlabel{ width:104px; flex:none; text-align:right; font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-row{ display:flex; align-items:center; gap:12px; margin-bottom:9px; }
+  [data-page="matches"] .mc-sig-row:last-child{ margin-bottom:0; }
+  [data-page="matches"] .mc-sig-src{ display:inline-flex; align-items:center; gap:7px; width:100px; flex:none; font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-sig-dotm{ width:6px; height:6px; border-radius:50%; background:var(--mc-muted); flex:none; }
+  [data-page="matches"] .mc-sig-fav{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-player-a); width:32px; text-align:right; flex:none; }
+  [data-page="matches"] .mc-sig-bar{ flex:1; margin:0 6px; display:flex; height:4px; overflow:hidden; border-radius:2px; background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-sig-bar__fill{ display:block; height:100%; background:var(--mc-player-a); }
+  [data-page="matches"] .mc-sig-bar__dog{ display:block; height:100%; background:rgba(255,255,255,0.20); }
+  [data-page="matches"] .mc-sig-dog{ font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted); width:32px; flex:none; }
+  [data-page="matches"] .mc-sig-liq{ width:104px; flex:none; text-align:right; font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted); }
+  [data-page="matches"] .mc-sig-row.unbound .mc-sig-fav, [data-page="matches"] .mc-sig-row.unbound .mc-sig-dog, [data-page="matches"] .mc-sig-row.unbound .mc-sig-liq{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-sig-note{ margin-top:11px; font-family:var(--mx-font-ui); font-size:10.5px; line-height:1.5; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:600; font-size:13px; text-decoration:none; }
+  [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
+  [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
+  [data-page="matches"] .value-pill.pos{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
+  [data-page="matches"] .value-pill.neg{ color:var(--mc-neg); background:var(--mc-neg-bg); border:1px solid var(--mc-neg-bd); }
 
   @media (max-width: 640px){
     [data-page="matches"] .mx-playerrow{ grid-template-columns:1fr; row-gap:6px; }
@@ -291,19 +392,47 @@
   .pagehead h1{ font-family:'Space Grotesk', sans-serif; font-size:22px; margin:0 0 4px 0; font-weight:600; }
   .pagehead p{ margin:0; color:var(--text-dim); font-size:13px; }
 
-  /* Players grid */
-  .playergrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:14px; }
-  .playercard{ background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:16px; }
-  .playercard .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .playercard .name{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; }
-  .playercard .style{ font-size:11px; color:var(--text-faint); margin-bottom:12px; }
-  .playercard .row{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
-  .playercard .row b{ color:var(--text); font-family:'IBM Plex Mono', monospace; font-weight:600; }
-  .playercard .surfacetags{ display:flex; gap:6px; margin-top:12px; }
-  .surfacetag{ font-size:10px; font-weight:600; padding:3px 7px; border-radius:4px; }
-  .surfacetag.clay{ background:var(--court-clay-dim); color:var(--court-clay); }
-  .surfacetag.grass{ background:var(--court-grass-dim); color:var(--court-grass); }
-  .surfacetag.hard{ background:var(--court-hard-dim); color:var(--court-hard); }
+  /* Players — tournament groups */
+  .pgroup{ margin-top:34px; }
+  .pgroup:first-child{ margin-top:26px; }
+  .pgroup-head{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .pgroup-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .pgroup-dot.hard{ background:#4db8ff; }
+  .pgroup-dot.clay{ background:#e8a84e; }
+  .pgroup-dot.grass{ background:#2ab8a0; }
+  .pgroup-name{ font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:16px; color:#eef2f8; flex:none; letter-spacing:-0.01em; }
+  .pgroup-meta{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; letter-spacing:0.09em; color:#5b6472; flex:none; text-transform:uppercase; }
+  .pgroup-hair{ flex:1; height:1px; background:rgba(255,255,255,0.08); }
+
+  /* Players grid + card */
+  .playergrid{ display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:14px; }
+  @media (max-width:1080px){ .playergrid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (max-width:820px){ .playergrid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width:520px){ .playergrid{ grid-template-columns: minmax(0,1fr); } }
+  .playercard{ display:flex; flex-direction:column; min-width:0; background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:16px; }
+  .playercard .pc-id{ display:flex; align-items:center; gap:11px; }
+  .playercard .pc-avatar{ width:38px; height:38px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:15px; color:#cdd7e6; background:linear-gradient(135deg,#1a2434,#0e141d); border:1px solid rgba(255,255,255,0.10); }
+  .playercard .name{ font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:14.5px; color:#eef2f8; line-height:1.25; }
+  .playercard .pc-arch{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .playercard .pc-arch-dot{ width:6px; height:6px; border-radius:50%; background:#7ba4ff; flex:none; }
+  .playercard .pc-arch-label{ font-size:12px; color:#aab3c2; font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .playercard .pc-elo{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#5b6472; letter-spacing:0.06em; flex:none; }
+  .playercard .pc-elo b{ color:#dbe3ef; font-weight:600; font-size:12px; margin-left:5px; }
+  .playercard .pc-div{ height:1px; background:rgba(255,255,255,0.07); margin:14px 0 12px; }
+  .playercard .pc-oddslabel{ font-size:11px; color:var(--text-faint); margin-bottom:8px; }
+  .playercard .pc-oddsrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; }
+  .playercard .pc-pill{ display:inline-flex; align-items:center; gap:8px; min-width:0; padding:6px 11px; border:1px solid rgba(255,255,255,0.12); border-radius:9px; background:rgba(255,255,255,0.02); }
+  .playercard .pc-price{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:13px; color:#eef2f8; flex:none; }
+  .playercard .pc-book{ font-size:11px; color:#8b93a3; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .playercard .pc-ext{ display:flex; color:#5b6472; }
+  .playercard .pc-ext svg{ width:12px; height:12px; }
+  .playercard .pc-view{ font-size:11.5px; font-weight:600; color:#7ba4ff; white-space:nowrap; }
+  .playercard[data-clickable="1"]{ cursor:pointer; transition:border-color .15s ease; }
+  .playercard[data-clickable="1"]:hover{ border-color:rgba(123,164,255,0.4); }
+  .playercard[data-clickable="0"] .pc-view{ color:#4b5568; }
+
+  /* Players — search helper line */
+  .pgsearch-helper{ margin-top:11px; font-size:12.5px; color:#5b6472; }
 
   /* Players — search autocomplete dropdown */
   .psearch-results{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:60; background:var(--panel); border:1px solid var(--border); border-radius:10px; max-height:340px; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.45); }
@@ -443,7 +572,10 @@
   .methosection h2 .ic{ font-size:18px; }
   .methosection p{ color:var(--text-dim); font-size:14px; margin:0; }
 
-  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:50; }
+  /* z-index:100 keeps a blocking modal (backdrop + panel) above the redesign's
+     fixed .sf-sidebar (z-index:60); at the old z-index:50 the sidebar rendered
+     over the modal's left edge and hid the Analysis rail's tab labels (TEN-8). */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
   .modal{ background: var(--panel); border:1px solid var(--border); border-radius:12px; padding:28px; max-width:340px; text-align:center; }
   .modal .icon{ font-size:28px; margin-bottom:10px; color:var(--accent); }
@@ -845,8 +977,8 @@
 
   /* ---- Match Stats tab — single split bar per stat (Flashscore-style) ---- */
   :is(.modal-analysis,.pp-formsurface) .mstat-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; vertical-align:middle; }
-  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p1{ background:#3E7BFA; margin-right:6px; }
-  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p2{ background:#E8934B; margin-left:6px; }
+  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p1{ background:#6aaeff; margin-right:6px; }
+  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p2{ background:#e7e9ee; margin-left:6px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row{ margin-bottom:16px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:6px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-val{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; flex-shrink:0; min-width:44px; }
@@ -884,8 +1016,8 @@
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-half{ flex:1; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-half.p1{ display:flex; justify-content:flex-end; }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill{ height:100%; border-radius:4px; display:block; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p1{ background:linear-gradient(90deg,rgba(62,123,250,0.35),#3E7BFA); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:linear-gradient(90deg,#E8934B,rgba(232,147,75,0.35)); }
+  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p1{ background:#6aaeff; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:#e7e9ee; }
   /* Banner above the stat sheet of a suspended match: these numbers are real but
      frozen mid-match, so they must never be read as a completed box score. */
   .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,0.08); border-left:2px solid #8b93a3; border-radius:10px; background:rgba(255,255,255,0.025); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#cfd4de; }
@@ -1432,39 +1564,157 @@
   .phbanner.phb-warn .phb-dot{ background:#E8B341; }
   .phbanner.phb-error{ background:rgba(232,96,122,0.14); color:#f2879c; border-bottom-color:rgba(232,96,122,0.32); }
   .phbanner.phb-error .phb-dot{ background:#E8607A; }
+
+  /* ================================================================= */
+  /* STENNISFY APP SHELL — sidebar / header / content column (TEN-8).   */
+  /* Presentation-only port of the design export. Appended last so it   */
+  /* overrides the legacy BSP top-bar layout without editing it inline. */
+  /* Tokens sourced from export/README.md.                              */
+  /* ================================================================= */
+  :root{
+    --sf-page:#06070a; --sf-sidebar:#0a0d13; --sf-card:#0a0d14;
+    --sf-border-subtle:rgba(255,255,255,0.07); --sf-border-data:rgba(255,255,255,0.09);
+    --sf-brand:#5b9bff; --sf-brand-tint:rgba(91,155,255,0.15); --sf-brand-wash:rgba(91,155,255,0.08);
+    --sf-text:#e7e9ee; --sf-text-3:#8b93a3; --sf-muted:#5b6880; --sf-muted-2:#4b5672;
+    --sf-pos:#3dd68c; --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
+  }
+  body{ background:var(--sf-page); padding-left:236px; }
+  .topnav{ display:none !important; }               /* old horizontal bar, replaced */
+
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:236px; background:var(--sf-sidebar);
+    border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
+    padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
+  .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; }
+  .sf-brand-mark{ width:40px; height:40px; border-radius:12px; flex:none; display:grid; place-items:center;
+    font-family:var(--sf-font-ui); font-weight:800; font-size:19px; color:#dbe6ff;
+    background:linear-gradient(135deg,#2f6bd8,#132648); border:1px solid rgba(91,155,255,0.35); }
+  .sf-brand-name{ font-family:var(--sf-font-ui); font-weight:800; font-size:17px; letter-spacing:-0.01em; color:var(--sf-text); line-height:1; }
+  .sf-brand-sub{ font-family:var(--sf-font-mono); font-size:9px; letter-spacing:0.22em; text-transform:uppercase; color:var(--sf-muted); margin-top:4px; }
+  .sf-navlabel{ font-family:var(--sf-font-ui); font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--sf-muted); padding:0 10px; margin:26px 0 8px; }
+  .sf-nav{ display:flex; flex-direction:column; gap:2px; }
+  .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
+    border:none; border-radius:9px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:14px;
+    font-weight:500; color:var(--sf-text-3); cursor:pointer; }
+  .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; }
+  .sf-nav button:hover{ color:var(--sf-text); background:rgba(255,255,255,0.03); }
+  .sf-nav button.active{ background:var(--sf-brand-tint); color:var(--sf-text); font-weight:600; }
+  .sf-nav button.active svg{ color:var(--sf-brand); }
+  .sf-foot{ margin-top:auto; padding-top:16px; }
+  /* Review item 1: the account chip is a single bordered CARD (avatar · name +
+     "Free plan" · chevron), one contained unit — matching the export. No Sign out
+     link on the sidebar: that lives behind the chevron (the chip links to account). */
+  .sf-userchip{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:12px;
+    border:1px solid var(--sf-border-data); background:var(--sf-card); cursor:pointer; text-decoration:none; color:inherit; }
+  .sf-userchip:hover{ background:rgba(255,255,255,0.05); border-color:var(--sf-border-subtle); }
+  .sf-userav{ width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:linear-gradient(135deg,#2f6bd8,#132648); color:#dbe6ff; font-family:var(--sf-font-mono); font-weight:700; font-size:12px; }
+  .sf-userinfo{ min-width:0; flex:1; display:flex; flex-direction:column; }
+  .sf-username{ font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sf-userplan{ font-family:var(--sf-font-ui); font-size:11px; color:var(--sf-muted); margin-top:1px; }
+  .sf-chev{ color:var(--sf-muted); flex:none; }
+  .sf-upgrade{ display:block; width:100%; margin-top:10px; padding:11px; text-align:center;
+    border:1px solid var(--sf-border-data); border-radius:9px; background:none; color:var(--sf-text);
+    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; }
+  .sf-upgrade:hover{ border-color:var(--sf-brand); color:#fff; }
+
+  /* item 7 / review-item 4 — content column left-aligned beside the sidebar (export
+     is flex:1 left-aligned, NOT centred: centring + a 280px rail was pushing everything
+     right). Export main = padding:30px 40px 70px, max-width:1360px. Top padding pulled
+     up to the export's 30px so the header no longer sits low. */
+  [data-page="matches"]{ max-width:1360px; margin:0; padding-top:30px; }
+  [data-page="matches"] .mx-titlerow{ padding:0 40px 0; }
+  [data-page="matches"] .mx-controls{ padding:20px 40px 0; }
+  [data-page="matches"] .mx-tablewrap{ padding:16px 40px 40px; }
+
+  /* item 5 — header: title block + Upcoming/Completed segmented control */
+  [data-page="matches"] .mx-titlerow{ align-items:flex-start !important; }
+  /* Review item 2 — header palette locked to the export: title #e7e9ee, sub-line
+     and the whole status line #5b6880 muted, the live dot #3dd68c. */
+  [data-page="matches"] .mx-h1{ color:var(--sf-text) !important; }
+  [data-page="matches"] .mx-subtitle{ max-width:640px; color:var(--sf-muted) !important; }
+  [data-page="matches"] .mx-datastatus{ color:var(--sf-muted) !important; gap:7px; }
+  [data-page="matches"] .mx-datastatus .dot{ background:var(--sf-pos) !important; box-shadow:0 0 8px var(--sf-pos) !important; }
+  [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--sf-muted); font-family:var(--sf-font-ui); }
+  [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--sf-muted); font-family:var(--sf-font-mono); }
+  /* Review item 4 — segmented control locked to README values. Active: 0.22 fill on
+     0.45 border, #e7e9ee weight 700. Inactive: transparent, borderless (a transparent
+     1px border reserves the space so the active state doesn't nudge its neighbour),
+     #5b6880 weight 600. Tighter padding so the container isn't wider than the export. */
+  [data-page="matches"] .mx-viewseg{ display:inline-flex; background:var(--mx-bg-input); border:1px solid var(--sf-border-subtle);
+    border-radius:9px; padding:3px; gap:2px; }
+  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:6px 13px; border-radius:7px;
+    font-family:var(--sf-font-ui); font-size:12.5px; font-weight:600; color:var(--sf-muted); cursor:pointer; }
+  [data-page="matches"] .mx-viewseg button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#e7e9ee; font-weight:700; }
+
+  /* item 6 — date-rail arrows as bordered square chevron buttons */
+  [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; padding:0 !important; border:1px solid var(--sf-border-subtle) !important;
+    border-radius:8px; background:transparent !important; display:grid; place-items:center; color:var(--sf-text-3) !important; font-size:18px; font-weight:400; line-height:1; }
+  [data-page="matches"] .mx-daytabschevron:hover{ border-color:var(--sf-brand) !important; color:#fff !important; }
+
+  /* item 8 — header date-time (left cluster, mono/muted) */
+  [data-page="matches"] .mc-datetime{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
+
+  /* item 10 — Pro promo card, mid-list */
+  /* item 6 — Pro promo card: icon tile · "3 Bets Today" heading + subtext (left),
+     PRO badge + CTA (right). Promotional rows keep the brand-hover border at rest
+     to distinguish them from content (export rule). */
+  .mc-promo{ display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:64px;
+    background:var(--sf-card); border:1px solid rgba(91,155,255,0.22); border-radius:12px; padding:13px 20px; margin:2px 0; }
+  .mc-promo__icon{ width:30px; height:30px; border-radius:8px; flex:none; display:grid; place-items:center;
+    background:var(--sf-brand-tint); border:1px solid rgba(91,155,255,0.22); color:var(--sf-brand); }
+  .mc-promo__icon svg{ width:15px; height:15px; }
+  .mc-promo__body{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .mc-promo__title{ font-family:var(--sf-font-ui); font-size:15px; font-weight:700; color:var(--sf-text); }
+  .mc-promo__sub{ font-family:var(--sf-font-ui); font-size:13px; color:var(--sf-muted); }
+  .mc-promo__right{ display:flex; align-items:center; gap:14px; flex:none; }
+  .mc-promo__badge{ font-family:var(--sf-font-mono); font-size:9px; font-weight:700; letter-spacing:0.12em; color:#6aaeff;
+    background:var(--sf-brand-tint); border:1px solid rgba(91,155,255,0.35); border-radius:20px; padding:3px 9px; }
+  .mc-promo__cta{ font-family:var(--sf-font-ui); font-size:12.5px; font-weight:700; color:var(--sf-brand); white-space:nowrap; text-decoration:none; }
+  .mc-promo__cta:hover{ color:#6aaeff; }
+
+  @media (max-width:900px){
+    body{ padding-left:0; }
+    .sf-sidebar{ position:static; width:auto; flex-direction:column; }
+  }
 </style>
 </head>
 <body>
 
-<div class="topnav">
-  <div class="topnav-left">
-    <div class="brand">
-      <span class="brand-mark">BSP</span>
-      <div class="brand-text">
-        <span class="brand-name">BSP CONSULT</span>
-        <span class="brand-sub">Tennis edge</span>
-      </div>
-    </div>
-    <div class="navlinks" id="mainNav">
-      <button class="active" data-tab="matches">Matches</button>
-      <button data-tab="players">Players</button>
-      <button data-tab="tournaments">Tournaments</button>
-      <button data-tab="edge">Tennis Edge Model</button>
-      <button data-tab="h2h">Head-to-Head</button>
-      <button data-tab="styles">Playing Styles</button>
-      <button data-tab="track">Track Record</button>
-      <button data-tab="news">News</button>
-      <button data-tab="metho">Methodology</button>
+<!-- STENNISFY APP SHELL — left sidebar (TEN-8: replaces the old BSP top bar).
+     #mainNav + button[data-tab] kept so the existing tab-switch handler is untouched.
+     Account IDs (#acctMain/#acctLabel/#acctAvatar/#acctSignout) kept so the Firebase
+     paintAcct() wiring still resolves — the "Free plan" sub-line is static design copy. -->
+<aside class="sf-sidebar">
+  <div class="sf-brand">
+    <div class="sf-brand-mark">T</div>
+    <div>
+      <div class="sf-brand-name">Stennisfy</div>
+      <div class="sf-brand-sub">Analytics</div>
     </div>
   </div>
-  <div class="account" id="acctBox" style="cursor:pointer;gap:10px;">
-    <a id="acctMain" href="account.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-      <span class="account-label" id="acctLabel">Account</span>
-      <span class="account-avatar" id="acctAvatar">A</span>
+  <div class="sf-navlabel">Analyse</div>
+  <nav class="sf-nav" id="mainNav">
+    <!-- Sidebar glyphs are the export's exact path set (zip 32 nav array), not icon-library substitutes: viewBox 0 0 20 20. -->
+    <button class="active" data-tab="matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</button>
+    <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
+    <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
+    <!-- Review item 2: Stennisfy Model = a line-chart glyph (axis + rising trend line), not the star/arrow. Matches the Playing-Styles bar-chart glyph weight. -->
+    <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5"/></svg>Stennisfy Model</button>
+    <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
+    <button data-tab="news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</button>
+  </nav>
+  <div class="sf-foot">
+    <a class="sf-userchip" id="acctMain" href="account.html">
+      <span class="sf-userav" id="acctAvatar">AM</span>
+      <span class="sf-userinfo">
+        <span class="sf-username" id="acctLabel">alex.morgan</span>
+        <span class="sf-userplan">Free plan</span>
+      </span>
+      <svg class="sf-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
     </a>
-    <span id="acctSignout" onclick="window.BSP&&BSP.signOut?BSP.signOut().then(function(){location.href='funnel.html';}):(location.href='funnel.html')" title="Sign out" style="display:none;cursor:pointer;color:#8b93a3;font-size:12px;font-weight:600;padding:4px 8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;">Sign out</span>
+    <a class="sf-upgrade" href="account.html">Upgrade to Pro</a>
   </div>
-</div>
+</aside>
 <script src="./auth.js"></script>
 <!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
      BSP Consult Intel composer to decide whether to show the admin controls. -->
@@ -1482,10 +1732,13 @@
       var signout = document.getElementById('acctSignout');
       var main = document.getElementById('acctMain');
       if (u){
-        var initials = (u.name||u.email||'A').trim().split(/\s+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+        // Show a display name, never the raw email (review item 1): prefer the
+        // account name; otherwise take the local part of the email ("alex.morgan").
+        var display = u.name || (u.email ? String(u.email).split('@')[0] : 'Account');
+        var initials = display.trim().split(/[\s._-]+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
         if (avatar) avatar.textContent = initials || 'A';
-        if (label) label.textContent = u.name || u.email;
-        if (signout) signout.style.display = '';
+        if (label) label.textContent = display;
+        if (signout) signout.style.display = 'none';
         if (main) main.href = 'account.html';
       } else {
         if (label) label.textContent = 'Sign in';
@@ -1512,31 +1765,20 @@
   <div class="mx-titlerow">
     <div>
       <h1 class="mx-h1">Today's Matches</h1>
-      <p class="mx-subtitle">Live odds across bookmakers for every ATP match today. Value signals coming soon.</p>
+      <p class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</p>
       <p class="mx-datastatus" id="dataStatus"><span class="dot"></span>Loading…</p>
     </div>
-    <div class="signalbanner">
-      <div class="ticon-circle gray">🔔</div>
-      <div class="sb-body">
-        <div class="sb-title">Value signals coming soon</div>
-        <div class="sb-sub">We're analyzing value across all matches</div>
-      </div>
-      <button onclick="openInfoModal('signals')">Learn more</button>
-    </div>
-  </div>
-
-  <div class="mx-stats">
-    <div class="mx-stats-strip">
-      <div class="mx-stat-tile"><div class="mx-stat-label">Matches tracked</div><div class="mx-stat-value" id="statMatchesTracked">—</div></div>
-      <div class="mx-stat-tile"><div class="mx-stat-label">Active tournaments</div><div class="mx-stat-value" id="statActiveTournaments">—</div></div>
-      <div class="mx-stat-tile"><div class="mx-stat-label">Bookmakers compared</div><div class="mx-stat-value" id="statBookmakersCompared">—</div></div>
-      <div class="mx-stat-tile comingsoon"><div class="mx-stat-label">Value signals</div><div class="mx-stat-value">Coming soon</div></div>
+    <!-- Upcoming / Completed segmented control (export item 5) — client-side view
+         filter over already-bound matches; no data-layer change. -->
+    <div class="mx-viewseg" id="viewSeg">
+      <button class="active" data-view="upcoming">Upcoming</button>
+      <button data-view="completed">Completed</button>
     </div>
   </div>
 
   <div class="mx-controls">
     <div class="mx-daytabsrow">
-      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">◀</button>
+      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
           <button data-day="daymin2" id="daymin2Tab"><span id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
@@ -1544,11 +1786,9 @@
           <button class="active" data-day="today">Today<span class="dbottom" id="todayBottom"></span></button>
           <button data-day="tomorrow">Tomorrow<span class="dbottom" id="tomorrowBottom"></span></button>
           <button data-day="day2" id="day2Tab"><span id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
-          <button class="mx-daypill" data-day="all">All days</button>
-          <button class="mx-daypill" data-day="past">Past</button>
         </div>
       </div>
-      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">▶</button>
+      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">›</button>
     </div>
     <div class="mx-filterbar">
       <div class="mx-surfacedd" id="surfaceDropdown">
@@ -1568,7 +1808,7 @@
           <option value="oddsgap">Sort: Biggest odds gap</option>
           <option value="surface">Sort: Surface</option>
         </select>
-        <span class="mx-selectchevron">▾</span>
+        <span class="mx-selectchevron">⇅</span>
       </div>
     </div>
   </div>
@@ -1591,24 +1831,17 @@
     <div id="playerListView">
       <div class="pagehead">
         <h1>Players</h1>
-        <p>Search any player to open their full profile, or browse today's match participants below.</p>
+        <p>Full profiles, ratings and form — the context behind every price.</p>
       </div>
       <div class="playersearchwrap" style="position:relative;">
         <div class="pgsearchbar">
           <span class="pgsearch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg></span>
-          <input id="playerSearch" placeholder="Search any player by name…" autocomplete="off">
-          <span class="pgsearch-tag">Global search</span>
+          <input id="playerSearch" placeholder="Search any ATP player by name…" autocomplete="off">
         </div>
         <div id="playerSearchResults" class="psearch-results" style="display:none;"></div>
       </div>
-      <div class="pgzone-sep">
-        <div class="pgzone-labels">
-          <div class="pgzone-title">Today's Players</div>
-          <div class="pgzone-sub" id="playerZoneCount"></div>
-        </div>
-        <div class="pgzone-hair"></div>
-      </div>
-      <div class="playergrid" id="playerGrid"></div>
+      <div class="pgsearch-helper">Search the full ATP tour — current and historical players.</div>
+      <div id="playerGroups"></div>
     </div>
     <!-- pp-formsurface marks this as a second host for the shared form panel
          (formPanelHtml). Its stats sheet, point log and tab strip were styled
@@ -2463,7 +2696,6 @@
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
         <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg></span><span>Weather</span></div>
         <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="7" rx="5" ry="2.4"></ellipse><path d="M3 7v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"></path><ellipse cx="16" cy="14" rx="5" ry="2.4"></ellipse><path d="M11 14v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-5"></path></svg></span><span>Odds</span></div>
-        <div class="asidenav-item" data-atab="extra"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></span><span>Extra stats</span></div>
         <div class="asidenav-download" onclick="printAnalysisReport()"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span><span>Download report</span></div>
       </div>
       <div class="abody">
@@ -2477,7 +2709,6 @@
         <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
         <div class="asection" data-asection="weather" id="aSectionWeather"></div>
         <div class="asection" data-asection="odds" id="aSectionOdds"></div>
-        <div class="asection" data-asection="extra" id="aSectionExtra"></div>
       </div>
     </div>
     <div class="aanalysisfooter">
@@ -3405,7 +3636,7 @@ async function loadMatches(){
     dataLoadedAt = new Date();
     document.getElementById('dataStatus').classList.remove('error');
     document.getElementById('dataStatus').innerHTML =
-      `<span class="dot"></span>Live — updated ${dataLoadedAt.toLocaleTimeString()}`;
+      `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${dataLoadedAt.toLocaleTimeString()}</span>`;
   } else if (matchesLoadedOnce){
     // Transient failure but we already have good data on screen — keep showing
     // it instead of blanking the board. Don't re-render to empty.
@@ -3460,6 +3691,9 @@ function buildTournamentFilters(){
 
 // Real numbers computed from matches.json — no hardcoded placeholders.
 function renderHeaderStats(){
+  // The header stat strip was removed in the shell port (export item 3); guard so
+  // this legacy updater is a no-op when the tiles aren't in the DOM.
+  if (!document.getElementById('statMatchesTracked')) return;
   document.getElementById('statMatchesTracked').textContent = matches.length;
   document.getElementById('statActiveTournaments').textContent =
     new Set(matches.map(m => m.tour).filter(Boolean)).size;
@@ -3474,7 +3708,7 @@ function renderHeaderStats(){
 
 // tournaments = the set of selected tournament chips. Empty means no filter, so
 // "all" needs no sentinel value of its own.
-const state = { day:"today", surface:"all", tournaments:new Set(), search:"", sort:"time", favorites:new Set() };
+const state = { day:"today", view:"upcoming", surface:"all", tournaments:new Set(), search:"", sort:"time", favorites:new Set() };
 
 function oddsGap(m){
   // Gap in implied win probability between the two players — a real,
@@ -3504,6 +3738,11 @@ function getFiltered(){
         if (Date.now() - new Date(m.finishedAt).getTime() > 86400000) return false;
       } else if (bucket !== state.day) return false;
     }
+    // Upcoming / Completed segmented control (export item 5): a view filter over
+    // the already-bound matches for the selected day. Live matches count as
+    // upcoming (still in play). No data-layer change.
+    if (state.view === 'completed' && !isFinishedMatch(m)) return false;
+    if (state.view === 'upcoming' && isFinishedMatch(m)) return false;
     if (state.surface !== 'all' && m.surface !== state.surface) return false;
     if (state.tournaments.size && !state.tournaments.has(m.tour)) return false;
     if (state.search){
@@ -3712,6 +3951,93 @@ function impliedPct(price){
   return price ? `${Math.round(100 / price)}%` : '';
 }
 
+// ---- Today's Matches card builders (stennisfy design-layer port) ----
+// Same data bindings as the legacy table card — only the presentation changed.
+// 32px identity avatar: real headshot when we have one, colour-coded initials
+// fallback (A = brand tint, B = neutral) otherwise. Profile-link attrs preserved.
+function mcAvatarHtml(photoUrl, name, playerKey, side){
+  const initials = playerInitials(name);
+  const attrs = profileLinkAttrs(playerKey, name);
+  if (photoUrl) return `<img class="mc-av ${side}"${attrs} src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="mcAvatarFail(this,'${initials}','${side}')">`;
+  return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
+}
+// A failed headshot becomes a properly design-styled identity circle (A brand
+// tint / B neutral) with initials — never the empty circle the legacy fallback
+// left behind. Keeps real photos where they load; degrades to the design look.
+function mcAvatarFail(img, initials, side){
+  const d = document.createElement('div');
+  d.className = 'mc-av ' + side;
+  d.textContent = initials;
+  if (img && img.parentNode) img.replaceWith(d);
+}
+// Recent-form bar: 76px track, brand-strength gradient (never pos/warn/neg — form
+// is strength, not quality). Em dash, never 0, when the fixture carries no form.
+function mcFormBar(val){
+  const has = val != null && val !== '';
+  const w = has ? Math.max(0, Math.min(100, Number(val))) : 0;
+  const disp = has ? Math.round(Number(val)) + '%' : '—';
+  return `<span class="mc-form"><span class="mc-form__track"><span class="mc-form__fill" style="width:${w}%"></span></span><span class="mc-form__val">${disp}</span></span>`;
+}
+// Completed set-score cluster for one player: sets-won total tile (winner faint /
+// loser fainter) + per-set games in Mono muted. who = 'p1' | 'p2'.
+function mcSetCluster(finalScore, who){
+  const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
+  const total = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
+  const isW = finalScore.winner === who;
+  const games = sets.map(s => `<span class="mc-sets__g">${s[who]}</span>`).join('');
+  return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span><span class="mc-sets__games">${games}</span></span>`;
+}
+// Completed odds journey for one player: open → gradient track → close, plus a
+// purely-directional drift glyph. Non-semantic (never coloured by shorten/drift).
+// Any value that was never recorded is omitted, never a placeholder.
+function mcJourney(open, close){
+  if (open == null && close == null) return '';
+  if (open == null) return `<span class="mc-journey"><span class="mc-journey__close">${close.toFixed(2)}</span></span>`;
+  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
+  const diff = close - open;
+  const glyph = diff > 0 ? '▲' : diff < 0 ? '▼' : '·';
+  const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift">${glyph} ${Math.abs(diff).toFixed(2)}</span>` : '';
+  return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span>`;
+}
+// Market Signal panel — expands IN PLACE beneath the card (review item 1), never
+// navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
+// Stennisfy model) and MARKET MONEY (Polymarket, Kalshi — Betfair dropped per the
+// amendment: we can't link it, so it doesn't render). Only the sharp de-vig is bound
+// on this card's data source (m.odds = a single-book two-way snapshot, normalised so
+// the two implied probabilities sum to 100). The Stennisfy model %, the prediction-
+// market flow and liquidity are NOT on matches.json yet, so they render as "—" with
+// an explicit note — never invented. See BUILD-NOTES.md.
+function mcSigPanel(m){
+  const pa = m.p1, pb = m.p2;
+  const o1 = m.odds && m.odds.p1, o2 = m.odds && m.odds.p2;
+  const hasBook = o1 > 0 && o2 > 0;
+  const clamp = v => Math.max(3, Math.min(97, Math.round(v)));
+  const pinA = hasBook ? clamp(100 * (1/o1) / ((1/o1) + (1/o2))) : null;
+  const book = (m.odds && m.odds.bookmaker) || 'Sharp';
+  const row = (label, aPct, hasLiq) => {
+    const liqCell = hasLiq ? `<span class="mc-sig-liq">—</span>` : '';
+    if (aPct == null) {
+      return `<div class="mc-sig-row unbound"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">—</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:0"></span></span><span class="mc-sig-dog">—</span>${liqCell}</div>`;
+    }
+    const bPct = 100 - aPct;
+    return `<div class="mc-sig-row"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">${aPct}%</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:${aPct}%"></span><span class="mc-sig-bar__dog" style="width:${bPct}%"></span></span><span class="mc-sig-dog">${bPct}%</span>${liqCell}</div>`;
+  };
+  return `<div class="mc-sigpanel">
+      <div class="mc-sig-head"><span class="mc-sig-pa">${pa}</span><span class="mc-sig-vs">vs</span><span class="mc-sig-pb">${pb}</span></div>
+      <div class="mc-sig-group">
+        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Sharp estimates</span></div>
+        ${row(book, pinA, false)}
+        ${row('Stennisfy', null, false)}
+      </div>
+      <div class="mc-sig-group">
+        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Market money</span><span class="mc-sig-liqlabel">Liquidity</span></div>
+        ${row('Polymarket', null, true)}
+        ${row('Kalshi', null, true)}
+      </div>
+      <div class="mc-sig-note">${pinA != null ? book + ' split is live from this card’s bound odds.' : 'No bound odds for this match.'} Stennisfy model %, Polymarket &amp; Kalshi flow and liquidity aren’t wired to this card’s data source yet — shown as “—”, never invented.</div>
+    </div>`;
+}
+
 function renderMatches(){
   const list = document.getElementById('matchlist');
   const filtered = getFiltered();
@@ -3719,7 +4045,7 @@ function renderMatches(){
     list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
     return;
   }
-  list.innerHTML = filtered.map(m => {
+  const cards = filtered.map(m => {
     // "Favori" is honestly derived from real market odds (lower odds = favorite) —
     // not a fabricated stat. Only shown when odds actually exist for this match.
     const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
@@ -3761,17 +4087,18 @@ function renderMatches(){
         const surfLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
         surfacePart = ` · H2H ${surfLabel}: ${surfP1Wins}-${surfaceMatches.length - surfP1Wins}`;
       }
-      h2hInlineHtml = `<span class="mx-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
+      h2hInlineHtml = `<span class="mc-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
     }
+    // Live / suspended / pending get a score line above the rows. Completed
+    // matches show their result through the set-score cluster (mcSetCluster),
+    // not this line, so the finalScore branch is intentionally omitted here.
     let scoreLineHtml = '';
     if (partialScore) {
-      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
+      scoreLineHtml = `<div class="mc-scoreline"><span class="lbl">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
     } else if (m.live) {
-      scoreLineHtml = `<div class="mx-livescore">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
-    } else if (finalScore) {
-      scoreLineHtml = `<div class="mx-livescore"><span class="mx-scorelabel">Score</span>${finalScore.display}<span class="note">Final score</span></div>`;
-    } else if (isPastDay) {
-      scoreLineHtml = `<div class="mx-livescore">Score pending<span class="note">not yet returned by the data provider</span></div>`;
+      scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
+    } else if (isPastDay && !finalScore) {
+      scoreLineHtml = `<div class="mc-scoreline">Score pending<span class="note">not yet returned by the data provider</span></div>`;
     }
     const p1IsWinner = finalScore && finalScore.winner === 'p1';
     const p2IsWinner = finalScore && finalScore.winner === 'p2';
@@ -3807,61 +4134,97 @@ function renderMatches(){
     };
     const p1OddsCell = finOddsCell(p1Open, p1Close);
     const p2OddsCell = finOddsCell(p2Open, p2Close);
+    const isCompleted = !!finalScore;
+    const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
+    const serve = side => (m.live && m.liveServer === side) ? ' <span class="mc-serve" title="Serving">•</span>' : '';
+    // Completed cards close the header with the fixture date; upcoming/live cards
+    // carry the day/status label + start time (both existing bindings).
+    // Header date-time sits with the left cluster (surface · tournament · round · time).
+    // Per the export spec no relative "Today" tag appears — the date strip above already
+    // states the selected day; a card whose day differs shows its actual date, muted.
+    const liveOrInt = m.live || m.interrupted;
+    const daySpecific = ['today','yesterday','tomorrow','daymin2','day2'].includes(state.day);
+    const showAltDate = (state.day === 'all' || state.day === 'past' || (daySpecific && dayBucket !== state.day));
+    // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
+    // always shown now, not just the bare time and not only when the day differs.
+    // Review item 7: the export separates date and time with a plain space
+    // ("2026-07-20 18:00"), not a middot.
+    const rightMeta = isCompleted
+      ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`
+      : liveOrInt
+        ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`
+        : `<span class="mc-datetime">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`;
+    // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
+    // header row itself, right-aligned above their columns. Completed cards have no such
+    // columns (set-score cluster + odds journey instead), so they omit the labels.
+    const colHead = isCompleted ? '' :
+      `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
+    const headHtml = `
+      <div class="mc-head">
+        <span class="mc-surface ${m.surface}">${surfCap}</span>
+        <span class="mc-tourn">${m.tour}</span>
+        ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
+        ${rightMeta}
+        ${colHead}
+      </div>`;
+    const playersHtml = isCompleted
+      ? `<div class="mc-players">
+          <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            ${mcSetCluster(finalScore, 'p1')}
+            ${mcJourney(p1Open, p1Close)}
+          </div>
+          <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${p2IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            ${mcSetCluster(finalScore, 'p2')}
+            ${mcJourney(p2Open, p2Close)}
+          </div>
+        </div>`
+      : `<div class="mc-players up">
+          <div class="mc-row a">
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            <span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>
+            ${mcFormBar(m.p1RecentForm)}
+          </div>
+          <div class="mc-row b">
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            <span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>
+            ${mcFormBar(m.p2RecentForm)}
+          </div>
+        </div>`;
     return `
-    <div class="mx-match">
-      <div class="mx-meta">
-        <div class="mx-meta-left">
-          <span class="mx-surf ${m.surface}">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}</span>
-          <span class="mx-tour">${m.tour}</span>
-          ${roundBadge ? `<span class="mx-round">${roundBadge}</span>` : ''}
-          <span>${m.date || '—'}</span>
-          <span>${m.time || '—'}</span>
-          <span class="mx-day${m.live ? ' live' : ''}">${statusLabel(m)}</span>
-          ${h2hInlineHtml}
-        </div>
-        <button class="mx-fav" data-id="${m.id}" onclick="toggleFav('${m.id}')" aria-label="Toggle favorite for ${m.p1} vs ${m.p2}">${state.favorites.has(m.id) ? '★' : '☆'}</button>
+    <article class="match-card mx-match" data-id="${m.id}">
+      ${headHtml}
+      ${isCompleted ? '' : scoreLineHtml}
+      ${playersHtml}
+      <div class="mc-foot">
+        <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
+        <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
       </div>
-      ${scoreLineHtml}
-      <div class="mx-playerrow">
-        <div class="mx-col1">
-          ${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}
-          <span class="mx-name"${profileLinkAttrs(m.p1Key, m.p1)}>${p1IsWinner ? '✓ ' : ''}${m.p1}${m.live && m.liveServer === 'p1' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
-          ${p1IsFavorite ? '<span class="mx-favtag">FAV</span>' : ''}
-        </div>
-        <div class="mx-col2">
-          ${p1OddsCell}
-          <span class="mx-odds" style="color:${p1Color}">${p1MainDisplay}</span>
-          <span class="mx-implied">${p1SubDisplay}</span>
-        </div>
-        <div class="mx-col3">
-          ${formCellHtml(m.p1RecentForm)}
-        </div>
-      </div>
-      <div class="mx-playerrow last">
-        <div class="mx-col1">
-          ${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}
-          <span class="mx-name"${profileLinkAttrs(m.p2Key, m.p2)}>${p2IsWinner ? '✓ ' : ''}${m.p2}${m.live && m.liveServer === 'p2' ? ' <span class="mx-serveddot" title="Serving">•</span>' : ''}</span>
-          ${(hasOdds && !p1IsFavorite) ? '<span class="mx-favtag">FAV</span>' : ''}
-        </div>
-        <div class="mx-col2">
-          ${p2OddsCell}
-          <span class="mx-odds" style="color:${p2Color}">${p2MainDisplay}</span>
-          <span class="mx-implied">${p2SubDisplay}</span>
-        </div>
-        <div class="mx-col3">
-          ${formCellHtml(m.p2RecentForm)}
-        </div>
-      </div>
-      <div class="mx-footer">
-        <span>${bookmakerLine}</span>
-        <span class="mx-footlinks">
-          <a class="mx-msigchip" data-msig="${eventKeyOfMatch(m)}" style="display:none" onclick="openEdgeModelAt('${m.id}')">◈ Market Signal</a>
-          <a onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
-        </span>
-      </div>
-    </div>
+      ${mcSigPanel(m)}
+    </article>
   `;
-  }).join('');
+  });
+  // Pro promo card, inserted after the second match card (export item 10). Only on
+  // the Upcoming view and only when there are enough cards for it to sit mid-list.
+  if (state.view !== 'completed' && cards.length > 2) {
+    // Review item 6: export layout is icon-tile · "3 Bets Today" (one heading) + subtext,
+    // then PRO badge + CTA right-aligned — not a large separate numeral. The trend glyph
+    // in the tile is the export's exact path (zip 32 promo icon).
+    cards.splice(2, 0,
+      `<article class="mc-promo">
+        <span class="mc-promo__icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 H16 V10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="mc-promo__body">
+          <div class="mc-promo__title">3 Bets Today</div>
+          <div class="mc-promo__sub">Top value plays, hand-picked daily.</div>
+        </div>
+        <span class="mc-promo__right">
+          <span class="mc-promo__badge">PRO</span>
+          <a class="mc-promo__cta" href="account.html">Unlock today's picks →</a>
+        </span>
+      </article>`);
+  }
+  list.innerHTML = cards.join('');
   // Reveal the compact Market Signal chip only on cards whose match actually has
   // a market shard (one cheap index fetch, shared with the Edge Model page). The
   // card list re-renders wholesale on every filter/live refresh, so this reveal
@@ -3869,11 +4232,17 @@ function renderMatches(){
   loadMarketIndex().then(idx => {
     document.querySelectorAll('.mx-msigchip[data-msig]').forEach(el => {
       const k = el.getAttribute('data-msig');
-      if (k && idx.has(k)) el.style.display = '';
+      if (k && idx.has(k)) el.classList.add('has-signal');
     });
   });
 }
 function toggleFav(id){ openModal(); }
+// Market Signal disclosure: expand/collapse the panel in place on its own card.
+// Never navigates — the chevron flip + selected border are driven by .sig-open.
+function toggleSig(btn){
+  const card = btn.closest('.match-card');
+  if (card) card.classList.toggle('sig-open');
+}
 
 /* ============================================================= */
 /* TENNIS EDGE MODEL PAGE                                          */
@@ -5872,10 +6241,30 @@ function formRowHtml(match, idPrefix, playerKey, playerName){
   `;
 }
 
-// A stat row inside an expanded recent-match panel. Same diverging-bar
-// component as the main Match Stats sheet (.msheet-bar): value left, label
-// centred, value right, and a bar whose halves show each player's share of the
-// stat — the tracked player reads left/blue, the opponent right/amber.
+// THE one diverging stat bar, shared by every match-detail surface: the modal
+// Match Stats sheet (msheetRowHtml) and all seven form-panel mounts
+// (formPanelStatRow). Fixed centre, total-normalised — each half is exactly
+// half the track; Player A's fill = a/(a+b) of the LEFT half drawn from the
+// centre leftward (the half's justify-content:flex-end anchors it there),
+// Player B's = b/(a+b) of the RIGHT half from the centre rightward. So neither
+// side ever fills its half unless the other is 0. A missing/non-positive side
+// contributes nothing rather than distorting the split. Colour is the player's
+// identity (A #6aaeff / B #e7e9ee, in .msheet-fill.p1/.p2), never who leads.
+// ONE implementation on purpose: do not inline a per-tab copy of this markup.
+function msBarHtml(rawA, rawB){
+  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const a = mag(rawA), b = mag(rawB), sum = a + b;
+  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
+  return `
+      <div class="msheet-bar">
+        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
+        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
+      </div>`;
+}
+
+// A stat row inside an expanded recent-match panel. Delegates its bar to the
+// shared msBarHtml so the geometry can never drift from the modal sheet's; only
+// the value/label cells (compact, leader-weighted) are the form panel's own.
 function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
@@ -5886,11 +6275,6 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   const oppColor = oppLeads ? '#f0a95f' : '#8b93a3';
   const ownWeight = ownLeads ? 700 : 500;
   const oppWeight = oppLeads ? 700 : 500;
-  // Bar magnitude = the stat itself (count, or the rate for pct stats); a
-  // missing side contributes nothing rather than distorting the split.
-  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-  const a = mag(ownVal), b = mag(oppVal), sum = a + b;
-  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
     <div class="aform-panel-stat">
       <div class="aform-panel-row">
@@ -5898,10 +6282,7 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
         <span style="color:#5b6472;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">${label}</span>
         <span style="text-align:right;color:${oppColor};font-weight:${oppWeight};">${fmt(oppVal)}</span>
       </div>
-      <div class="msheet-bar">
-        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
-        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
-      </div>
+      ${msBarHtml(ownVal, oppVal)}
     </div>
   `;
 }
@@ -6747,91 +7128,12 @@ function buildTournamentSection(m){
   `;
 }
 
-// Fixed display order/labels — mirrors EXTRA_STAT_DEFS in bsp-pipeline.js so
-// stats always render in the same order regardless of raw key insertion order.
-const EXTRA_STAT_ORDER = [
-  ['Service:Aces', 'Aces', 'count'],
-  ['Service:Double Faults', 'Double Faults', 'count'],
-  ['Service:1st Serve Points Won', '1st Serve Points Won', 'pct'],
-  ['Service:2nd Serve Points Won', '2nd Serve Points Won', 'pct'],
-  ['Service:Break Points Saved', 'Break Points Saved', 'pct'],
-  ['Return:Break Points Converted', 'Break Points Converted', 'pct'],
-  ['Points:Winners', 'Winners', 'count'],
-  ['Points:Unforced Errors', 'Unforced Errors', 'count'],
-  ['Points:Service Points Won', 'Service Points Won', 'pct'],
-  ['Points:Return Points Won', 'Return Points Won', 'pct'],
-  ['Points:Total Points Won', 'Total Points Won', 'pct'],
-];
-
-function extraStatRowHtml(label, kind, p1Val, p2Val, key, p1Samples, p2Samples){
-  if (p1Val == null && p2Val == null) return '';
-  // Same minimum-sample rule as the profile card (PP_MIN_SAMPLE). Here it also
-  // protects the head-to-head bar: one player converting his only break point
-  // would otherwise render as a 100%-vs-44% rout against Alcaraz. An unrated
-  // side shows its sample instead of a percentage, and the bar is withheld
-  // rather than drawn at a fake 50/50, which would imply a real dead heat.
-  const ms = PP_MIN_SAMPLE[key];
-  const nOf = s => (s ? s[key] : null);
-  const lowOf = s => !!ms && nOf(s) != null && nOf(s) < ms.min;
-  const p1Low = lowOf(p1Samples), p2Low = lowOf(p2Samples);
-  const fmt = (v, low, s) => low
-    ? `<span style="color:#8a7b3f;">— <span style="font-size:10px;">(${nOf(s)} ${ms.noun}${nOf(s) === 1 ? '' : 's'})</span></span>`
-    : (v == null ? '—' : (kind === 'pct' ? `${v}%` : v));
-  const a = p1Low ? 0 : (p1Val ?? 0);
-  const b = p2Low ? 0 : (p2Val ?? 0);
-  const total = a + b;
-  const width = (p1Low || p2Low) ? 0 : (total > 0 ? Math.round((a / total) * 100) : 50);
-  return `
-    <div class="arow">
-      <div class="albl"><span>${label}</span></div>
-      <div class="aval"><span>${fmt(p1Val, p1Low, p1Samples)}</span><span>${fmt(p2Val, p2Low, p2Samples)}</span></div>
-      <div class="atrack"><div style="width:${width}%"></div></div>
-    </div>
-  `;
-}
-
-function extraStatsWindowHtml(m, windowData, windowLabel){
-  if (!windowData || (!windowData.p1 && !windowData.p2)) {
-    return `
-      <div class="aextra-card">
-        <div class="aextra-windowhead">${windowLabel}</div>
-        <div class="acomingsoon">Not enough recent match data on file for either player in this window.</div>
-      </div>
-    `;
-  }
-  const p1Stats = windowData.p1 ? windowData.p1.stats : {};
-  const p2Stats = windowData.p2 ? windowData.p2.stats : {};
-  const p1Samples = windowData.p1 ? windowData.p1.samples : null;
-  const p2Samples = windowData.p2 ? windowData.p2.samples : null;
-  const rows = EXTRA_STAT_ORDER
-    .map(([key, label, kind]) => extraStatRowHtml(label, kind, p1Stats[key], p2Stats[key], key, p1Samples, p2Samples))
-    .filter(Boolean)
-    .join('');
-  const countsNote = `<div class="anote">${m.p1}: ${windowData.p1 ? windowData.p1.matchCount + ' matches' : 'no data'} · ${m.p2}: ${windowData.p2 ? windowData.p2.matchCount + ' matches' : 'no data'} on file</div>`;
-  return `
-    <div class="aextra-card">
-      <div class="aextra-windowhead">${windowLabel}</div>
-      <div class="aextra-names"><span>${m.p1}</span><span>${m.p2}</span></div>
-      ${rows || '<div class="acomingsoon">No comparable stats on file for this window.</div>'}
-      ${countsNote}
-    </div>
-  `;
-}
-
-function buildExtraStatsSection(m){
-  if (!m.extraStats) {
-    return `<div class="acomingsoon">No extra stats data on file yet for this match.</div>`;
-  }
-  const last52 = extraStatsWindowHtml(m, m.extraStats.last52Weeks, 'Last 52 weeks (all surfaces)');
-  const surfaceLabel = m.extraStats.surfaceLabel ? m.extraStats.surfaceLabel.charAt(0).toUpperCase() + m.extraStats.surfaceLabel.slice(1) : 'this surface';
-  const surface = extraStatsWindowHtml(m, m.extraStats.surface, `On ${surfaceLabel} (last 2 seasons on file)`);
-  const fallbackNote = `
-    <div class="anote" style="margin-top:18px;text-align:left;">
-      Career totals and opponent-style splits aren't built: a true full-career aggregate would need years of extra API calls per veteran player, and opponent-style filtering depends on the playing-style methodology (not defined yet).
-    </div>
-  `;
-  return `${last52}<div style="height:22px;"></div>${surface}${fallbackNote}`;
-}
+// Extra stats tab REMOVED (TEN-8 Item 5): the founder's spec fixes the rail at
+// exactly ten tabs — Key factors · Playing style · Form · H2H · Match Stats ·
+// Progression · Overview · Tournament · Weather · Odds. The former "Extra stats"
+// (11th) tab and its exclusive renderer chain (EXTRA_STAT_ORDER, extraStatRowHtml,
+// extraStatsWindowHtml, buildExtraStatsSection) were deleted here; the rail entry,
+// section container and openAnalysisModal fill-call were removed with them.
 
 // Real box-score stats for THIS specific match (distinct from the aggregated
 // season-level Extra Stats above) — mirrors MATCH_STAT_DEFS in bsp-pipeline.js.
@@ -6890,11 +7192,6 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   }
   const frac = (raw) => (raw && raw.total > 0) ? `<span class="msheet-frac">(${raw.won}/${raw.total})</span>` : '';
   const num = (v) => v == null ? '—' : (kind === 'pct' ? `${v}%` : String(v));
-  // Bar magnitude = the raw stat itself (a count, or the percentage for rate
-  // stats). A missing side contributes nothing rather than distorting the split.
-  const mag = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-  const a = mag(p1Val), b = mag(p2Val), sum = a + b;
-  const pct = (n) => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
     <div class="msheet-row">
       <div class="msheet-vals">
@@ -6902,10 +7199,7 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
         <span class="msheet-label">${label}</span>
         <span class="msheet-val p2">${num(p2Val)}${frac(p2Raw)}</span>
       </div>
-      <div class="msheet-bar">
-        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
-        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
-      </div>
+      ${msBarHtml(p1Val, p2Val)}
     </div>
   `;
 }
@@ -8615,8 +8909,6 @@ function openAnalysisModal(matchId){
     if (keyEl) keyEl.innerHTML = buildKeyFactorsSection(m);
   });
 
-  document.getElementById('aSectionExtra').innerHTML = buildExtraStatsSection(m);
-
   document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
   document.querySelector('#aTabs .asidenav-item[data-atab="key"]').classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
@@ -8692,6 +8984,14 @@ document.getElementById('tournamentGroup').addEventListener('click', e => {
 });
 document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
 document.getElementById('sortSelect').addEventListener('change', e => { state.sort = e.target.value; renderMatches(); });
+// Upcoming / Completed segmented control (export item 5).
+document.getElementById('viewSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-view]');
+  if (!btn) return;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('active', b === btn));
+  state.view = btn.dataset.view;
+  renderMatches();
+});
 document.getElementById('dayTabsLeft').addEventListener('click', () => {
   document.getElementById('dayTabsScroll').scrollBy({ left: -120, behavior: 'smooth' });
 });
@@ -8730,37 +9030,109 @@ function getPlayersFromMatches(){
   });
   return Array.from(map.values());
 }
+// Archetype + Elo lookups for the player cards. Bound to the real pipeline
+// artefacts the export's card design requires (per founder handoff):
+//   archetype  ← playing-styles.json (classify-styles.js output, archetype_label)
+//   elo        ← elo-ratings.json (fetch-elo.js, weekly Tennis Abstract mirror)
+// Both keyed by the same last-token+initial join used elsewhere (psEloFor).
+let pgArchByKey = null;      // Map: "surname|initial" → archetype_label
+let pgEloData = null;        // parsed elo-ratings.json
+let pgLookupsLoading = false, pgLookupsLoaded = false;
+function pgJoinKey(name){
+  const p = psEloNorm(name).split(' ').filter(Boolean);
+  if (p.length < 2) return null;
+  return p[p.length - 1] + '|' + p[0][0];
+}
+async function loadPlayerCardLookups(){
+  if (pgLookupsLoaded || pgLookupsLoading) return;
+  pgLookupsLoading = true;
+  try {
+    const [psRes, elRes] = await Promise.all([
+      fetch('./playing-styles.json', { cache:'no-cache' }),
+      fetch('./elo-ratings.json', { cache:'no-cache' }),
+    ]);
+    if (psRes.ok){
+      const ps = await psRes.json();
+      pgArchByKey = new Map();
+      (ps.players || []).forEach(p => {
+        const k = pgJoinKey(p.name);
+        if (k && p.archetype_label && !pgArchByKey.has(k)) pgArchByKey.set(k, p.archetype_label);
+      });
+    }
+    if (elRes.ok) pgEloData = await elRes.json();
+  } catch(err){ console.warn('player-card lookups load failed:', err.message); }
+  pgLookupsLoaded = true; pgLookupsLoading = false;
+  // Re-render the grid now that archetype/Elo are available.
+  if (document.getElementById('playerGroups')) renderPlayers();
+}
+function pgArchetypeFor(name){ const k = pgJoinKey(name); return (k && pgArchByKey && pgArchByKey.get(k)) || null; }
+function pgEloFor(name){ return psEloFor(pgEloData, name); }
+const PG_EXT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></svg>';
+
 function renderPlayers(filter){
-  const grid = document.getElementById('playerGrid');
+  const host = document.getElementById('playerGroups');
+  if (!host) return;
+  if (!pgLookupsLoaded) loadPlayerCardLookups();   // lazy; re-renders on completion
   const q = (filter||"").toLowerCase();
-  const all = getPlayersFromMatches();
-  const list = all.filter(p => p.name.toLowerCase().includes(q));
-  // Zone-2 live counts: real players + distinct tournaments in today's field.
-  const zoneEl = document.getElementById('playerZoneCount');
-  if (zoneEl){
-    const tours = new Set();
-    all.forEach(p => p.matches.forEach(m => { if (m.tour) tours.add(m.tour); }));
-    const pl = all.length, tn = tours.size;
-    zoneEl.textContent = `${pl} player${pl===1?'':'s'} across ${tn} tournament${tn===1?'':'s'}`;
-  }
-  grid.innerHTML = list.map(p => {
+  const all = getPlayersFromMatches().filter(p => p.name.toLowerCase().includes(q));
+  // Group by tournament; each group states its own surface + player count.
+  const groups = new Map();
+  all.forEach(p => {
+    const tour = p.matches[0].tour || 'Other';
+    if (!groups.has(tour)) groups.set(tour, { tour, surface: p.matches[0].surface, players: [] });
+    groups.get(tour).players.push(p);
+  });
+  const cardHtml = p => {
     const odds = p.matches[0].odds;
-    // Only players we actually have a built profile for (player-profiles.json)
-    // are clickable; others still render but aren't links to a broken page.
+    // Only players with a built profile (player-profiles.json) open a real page;
+    // others still render an identical card — "View profile" is always present so
+    // every card is the same height — but aren't wired to a broken route.
     const hasProfile = p.key != null && playerProfiles[String(p.key)];
-    const clickAttr = hasProfile ? ` onclick="showPlayerProfile('${p.key}')" style="cursor:pointer;"` : '';
-    const cta = hasProfile ? `<div style="margin-top:10px;font-size:11.5px;font-weight:600;color:#7ba4ff;">View profile →</div>` : '';
+    const arch = pgArchetypeFor(p.name);
+    const elo = pgEloFor(p.name);
+    const initial = pesc((p.name.trim()[0] || '?').toUpperCase());
+    const eloHtml = elo != null
+      ? `<span class="pc-elo">ELO<b>${elo}</b></span>`
+      : `<span class="pc-elo">ELO<b>—</b></span>`;
+    const price = odds?.price ? odds.price.toFixed(2) : 'pending';
+    const book = odds?.bookmaker ? pesc(odds.bookmaker) : '—';
     return `
-    <div class="playercard"${clickAttr}>
-      <div class="top"><div class="name">${p.name}</div></div>
-      <div class="style">vs ${p.matches[0].opponent} · ${p.matches[0].tour}</div>
-      <div class="row"><span>Best odds</span><b>${odds?.price ? odds.price.toFixed(2) : 'pending'}</b></div>
-      <div class="row"><span>Bookmaker</span><b style="font-family:'Inter',sans-serif;font-size:11px;">${odds?.bookmaker || '—'}</b></div>
-      <div class="surfacetags"><span class="surfacetag ${p.matches[0].surface}">${p.matches[0].surface}</span></div>
-      ${cta}
-    </div>
-  `;
-  }).join('') || `<div style="color:var(--text-faint);font-size:13px;">No players found.</div>`;
+    <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')"` : ''}>
+      <div class="pc-id">
+        <div class="pc-avatar">${initial}</div>
+        <div class="name">${pesc(p.name)}</div>
+      </div>
+      <div class="pc-arch">
+        <span class="pc-arch-dot"></span>
+        <span class="pc-arch-label">${arch ? pesc(arch) : 'Unclassified'}</span>
+        ${eloHtml}
+      </div>
+      <div class="pc-div"></div>
+      <div class="pc-oddslabel">Best odds to win</div>
+      <div class="pc-oddsrow">
+        <span class="pc-pill">
+          <span class="pc-price">${price}</span>
+          <span class="pc-book">${book}</span>
+          <span class="pc-ext">${PG_EXT_SVG}</span>
+        </span>
+        <span class="pc-view">View profile →</span>
+      </div>
+    </div>`;
+  };
+  const surfName = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  host.innerHTML = Array.from(groups.values()).map(g => {
+    const n = g.players.length;
+    return `
+    <div class="pgroup">
+      <div class="pgroup-head">
+        <span class="pgroup-dot ${g.surface}"></span>
+        <span class="pgroup-name">${pesc(g.tour)}</span>
+        <span class="pgroup-meta">${(g.surface||'').toUpperCase()} · ${n} PLAYER${n===1?'':'S'}</span>
+        <span class="pgroup-hair"></span>
+      </div>
+      <div class="playergrid">${g.players.map(cardHtml).join('')}</div>
+    </div>`;
+  }).join('') || `<div style="color:var(--text-faint);font-size:13px;margin-top:24px;">No players found.</div>`;
 }
 
 /* ---------- PLAYER SEARCH (full pool, dropdown autocomplete) ----------
@@ -9918,7 +10290,7 @@ function ppSurfaceRecordHtml(p){
     <div style="display:flex;flex-direction:column;gap:8px;">${rowsHtml}</div>
   </div>`;
 }
-const PP_SURF_COLORS = { Grass: '#3ECF8E', Hard: '#7ba4ff', Clay: '#eda869' };
+const PP_SURF_COLORS = { Grass: '#2ab8a0', Hard: '#4db8ff', Clay: '#e8a84e' };
 const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Match surfaces arrive lowercase ('clay'); map to the capitalised key used by
@@ -10901,7 +11273,7 @@ function buildPlayerProfileHtml(p){
         <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
         <span style="font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
       </div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
+      <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
       <div style="font-size:10px;color:#6b7280;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>
     </div>`).join('');
 
@@ -10918,10 +11290,10 @@ function buildPlayerProfileHtml(p){
   const surfHtml = surfData.map(d => {
     const active = surf !== 'All' && surf === d.s;
     return `
-      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:11px;padding:12px 14px;">
+      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:14px;padding:14px 16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
-          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
-          <span style="font-size:14px;font-weight:800;font-family:'IBM Plex Mono',monospace;">${d.wr}%</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
+          <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
         </div>
         <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
         <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;">${d.rc} career · ${d.wr}%</div>
@@ -11332,9 +11704,13 @@ function buildPlayerProfileHtml(p){
     return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?(s==='All'?'#dbe6ff':cc):'#8b93a3'};background:${activeChip?ppHexA(cc,0.16):'transparent'};border:1px solid ${activeChip?ppHexA(cc,0.45):'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
   }).join('');
   const pillsSrc = formLast10.slice().reverse();
+  // Export composition: a thin chronological form STRIP (oldest→newest) — solid
+  // green (win) / red (loss) segments, not filled W/L letter pills. pillsSrc is
+  // already oldest-first (formLast10 is newest-first, reversed), matching the
+  // "N ago → now" reading below the strip.
   const pillsHtml = pillsSrc.map(m => {
     const w = m.won;
-    return `<span style="flex:1;height:26px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.15)'};border:1px solid ${w?'rgba(62,207,142,0.42)':'rgba(232,96,122,0.45)'};color:${w?'#3ECF8E':'#E8607A'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;">${w?'W':'L'}</span>`;
+    return `<span style="flex:1;height:8px;border-radius:2px;background:${w?'#3dd68c':'#e0616f'};"></span>`;
   }).join('') || `<span style="font-size:12px;color:#5b6472;">No ${formEmptyLabel} matches.</span>`;
   // Every form row is an expandable panel carrying the same Match Stats /
   // Point by point tabs as the Match Analysis modal. formPanelHtml does all the
@@ -11446,12 +11822,13 @@ function buildPlayerProfileHtml(p){
 
   const recentFormCard = `
     <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="font-size:14px;font-weight:700;">Recent form</div>
-        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#3ECF8E;">${formHeaderPct} <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Recent form</div>
+        <span style="display:inline-flex;align-items:baseline;gap:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;"><span style="color:#5b9bff;font-weight:700;">${formHeaderPct}</span> <span style="font-size:10.5px;color:#5b6472;">· last ${pillsSrc.length}</span></span>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">${formChips}</div>
-      <div style="display:flex;gap:5px;margin-bottom:16px;">${pillsHtml}</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">${pillsHtml}</div>
+      ${pillsSrc.length ? `<div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span style="font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${pillsSrc.length} ago</span><span style="font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">now →</span></div>` : '<div style="margin-bottom:16px;"></div>'}
       ${formBodyHtml}
     </div>`;
 
@@ -11476,9 +11853,9 @@ function buildPlayerProfileHtml(p){
         return `<div onclick="ppShowYearSurface('${r.year}','all',${r.total[0]},${r.total[1]})" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='rgba(62,123,250,0.06)';" onmouseout="this.style.background='transparent';">
           <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:#e7e9ee;">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:#8b93a3;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
           ${cellHtml(r.total, '#e7e9ee', 'rgba(255,255,255,0.25)', r.year, 'all')}
-          ${cellHtml(r.clay, '#eda869', 'rgba(237,168,105,0.4)', r.year, 'clay')}
-          ${cellHtml(r.hard, '#7ba4ff', 'rgba(123,164,255,0.4)', r.year, 'hard')}
-          ${cellHtml(r.grass, '#3ECF8E', 'rgba(62,207,142,0.4)', r.year, 'grass')}
+          ${cellHtml(r.clay, '#e8a84e', 'rgba(232,168,78,0.4)', r.year, 'clay')}
+          ${cellHtml(r.hard, '#4db8ff', 'rgba(77,184,255,0.4)', r.year, 'hard')}
+          ${cellHtml(r.grass, '#2ab8a0', 'rgba(42,184,160,0.4)', r.year, 'grass')}
         </div><div class="yr-drill pp-yr-drill" id="ppYrDrill-${r.year}"></div>`;
       }
       if (r.onTour && !r.hasData){
@@ -11497,22 +11874,22 @@ function buildPlayerProfileHtml(p){
     careerRecordCard = `
       <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <div style="font-size:14px;font-weight:700;">Career record</div>
+          <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Career record</div>
           <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
         </div>
         <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,0.07);">
-          ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#eda869',true)}${hcol('Hard','#7ba4ff',true)}${hcol('Grass','#3ECF8E',true)}
+          ${hcol('Year','#6b7280',false)}${hcol('Total','#8b93a3',true)}${hcol('Clay','#e8a84e',true)}${hcol('Hard','#4db8ff',true)}${hcol('Grass','#2ab8a0',true)}
         </div>
         <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
           <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
-          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#eda869')}${totCell(t.hard,'#7ba4ff')}${totCell(t.grass,'#3ECF8E')}
+          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#e8a84e')}${totCell(t.hard,'#4db8ff')}${totCell(t.grass,'#2ab8a0')}
         </div>
       </div>`;
   } else {
     careerRecordCard = `<div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Career record</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;">Career record</div>
       <div style="font-size:12.5px;color:#5b6472;">No year-by-year match history on record for this player yet.</div>
     </div>`;
   }
@@ -11578,7 +11955,7 @@ function buildPlayerProfileHtml(p){
   const _ppStyle = ppStyleFor(p.name);
   const styleLine = [(_ppStyle && _ppStyle.archetype_label) || p.archetype, specialist].filter(Boolean).join(' · ');
   const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
-  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:12px;background:rgba(255,255,255,0.12);"></span>':''}<span>${pesc(m)}</span>`).join('');
+  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:13px;background:rgba(255,255,255,0.16);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
   return `
   <div style="margin-bottom:16px;">
@@ -11599,19 +11976,18 @@ function buildPlayerProfileHtml(p){
   <div style="width:100%;background:#0b0d12;border:1px solid rgba(255,255,255,0.08);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -50px rgba(0,0,0,0.95);">
 
     <!-- HERO -->
-    <div style="padding:18px 26px 22px;display:flex;align-items:flex-start;gap:22px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;">
+    <div style="padding:20px 26px 26px;display:flex;align-items:flex-start;gap:26px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;">
       <div style="position:relative;flex:none;">
-        <span style="width:84px;height:84px;border-radius:22px;background:linear-gradient(135deg,#1c2333,#111623);border:2px solid rgba(62,123,250,0.55);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#dbe6ff;box-shadow:0 0 0 4px rgba(62,123,250,0.1);">${initials}</span>
-        <span style="position:absolute;bottom:-6px;right:-6px;min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:#3E7BFA;border:3px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
+        <span style="width:96px;height:96px;border-radius:50%;background:linear-gradient(155deg,rgba(91,155,255,0.22),rgba(91,155,255,0.05));border:1px solid rgba(91,155,255,0.35);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#8fb6ff;font-family:'IBM Plex Mono',monospace;">${initials}</span>
+        <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:#3E7BFA;border:2px solid #0b0d12;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
       </div>
       <div style="min-width:0;flex:1;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:30px;font-weight:800;letter-spacing:-0.02em;">${p.name}</h1>
-          <span style="font-size:11px;font-weight:700;color:#7ba4ff;background:rgba(62,123,250,0.12);border:1px solid rgba(62,123,250,0.3);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
-          ${eloPill}
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${p.name}</h1>
+          <span style="font-size:13px;font-weight:600;color:#9fb2d4;background:rgba(159,178,212,0.1);border:1px solid rgba(159,178,212,0.32);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
         </div>
-        ${styleLine ? `<div style="margin-top:7px;font-size:13.5px;font-weight:600;color:#9cc0ff;">${pesc(styleLine)}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:12.5px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
+        ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#5b9bff;">${pesc(styleLine)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:14px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
       </div>
     </div>
 
@@ -12878,7 +13254,8 @@ const TOURX_METRICS = [
 // Human round labels for a 128-draw; data rounds are R1..SF (index-aligned).
 const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const TOURX_TOTAL_WINNERS = [64, 32, 16, 8, 4, 2, 1];
-const TOURX_SURF_COLOR = { grass: '#3ECF8E', clay: '#eda869', hard: '#7ba4ff' };
+// Surface dot colours are the README design tokens (labels only, never data quality).
+const TOURX_SURF_COLOR = { grass: '#2ab8a0', clay: '#e8a84e', hard: '#4db8ff' };
 const TOURX_ACC = '#3E7BFA', TOURX_MUT = 'rgba(62,123,250,0.32)';
 
 // Round labels are drawn PER TOURNAMENT from the real draw size. A Grand Slam
@@ -12931,7 +13308,7 @@ function tourxEsc(s){ return String(s).replace(/'/g, "\\'"); }
 function renderTournamentsTab(){
   const tabs = document.getElementById('tourxSectionTabs');
   if (!tabs) return;
-  const secs = [['overview', 'Tournaments overview'], ['reports', 'Tournament Reports']];
+  const secs = [['overview', 'Overview'], ['reports', 'Reports']];
   tabs.innerHTML = secs.map(([v, l]) => {
     const a = tourxState.section === v;
     const style = `font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};`;
@@ -13037,13 +13414,62 @@ function tourxConditionsPanelHtml(){
         <p style="margin:0;font-size:13px;line-height:1.65;color:#aeb8cc;">This metric uses ace rate, adjusted for the servers and returners in each match, to rate each tournament by surface speed. The number therefore indirectly accounts for everything that influences play: temperature, humidity, wind, balls, and of course the physical surface itself.</p>
         <p style="margin:10px 0 0;font-size:13px;line-height:1.65;color:#aeb8cc;">Ratings cover every tour-level event from the last 52 weeks. A rating above 1.00 is faster than average — a 1.25, for example, means players hit 25% more aces than they would have on a tour-average surface.</p>
       </div>` : '';
-  const cell = (label, value, color) => `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:14px 15px;"><div style="font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${label}</div><div style="font-size:16px;font-weight:700;margin-top:6px;color:${color};font-family:'IBM Plex Mono',monospace;">${value}</div></div>`;
+  const cell = (label, value, color) => `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:16px 18px;"><div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${label}</div><div style="font-size:22px;font-weight:700;margin-top:8px;color:${color};font-family:'IBM Plex Mono',monospace;">${value}</div></div>`;
+  // Three tiles, matching the founder reference (Abstract court speed is not
+  // repeated here — it is already the hero number above the slider).
   const cells = [
-    cell('Abstract court speed', as.toFixed(2), '#eef2f8'),
     cell('Altitude', c.altitude != null ? `${c.altitude} m` : '—', '#eef2f8'),
     cell('1st serve won', c.firstServeWon != null ? `${c.firstServeWon}%` : '—', '#eef2f8'),
     cell('Service hold', c.serviceHold != null ? `${c.serviceHold}%` : '—', '#eef2f8'),
   ].join('');
+  // Real derived rank + median across the conditions registry (the same set the
+  // left rail lists). Not fabricated — the numbers differ from the design mock's
+  // "18 tour events / 1.31" because the mock used a smaller placeholder set.
+  const _regAll = tourxConditionRegistry();
+  const _speedsDesc = _regAll.map(t => t.abstractSpeed).sort((a, b) => b - a);
+  const _nTot = _speedsDesc.length;
+  const _rank = _speedsDesc.filter(v => v > as).length + 1;
+  const _sortAsc = [..._speedsDesc].sort((a, b) => a - b);
+  const _median = _nTot ? (_nTot % 2 ? _sortAsc[(_nTot - 1) / 2] : (_sortAsc[_nTot / 2 - 1] + _sortAsc[_nTot / 2]) / 2) : as;
+  const _ord = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+  const rankLine = `<div style="margin-top:13px;font-size:12.5px;color:#8b93a3;">
+      <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_ord(_rank)}</span> fastest of
+      <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_nTot}</span> tour events ·
+      tour median <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_median.toFixed(2)}</span></div>`;
+  const sliderLabels = `<div style="margin-top:9px;display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;">
+      <span>Slow</span><span>Medium</span><span>Fast</span></div>`;
+  const conditionsCard = `<div style="margin-top:22px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:18px 20px;">
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">Conditions read</div>
+      <p style="margin:0;font-size:13.5px;line-height:1.65;color:#aeb8cc;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
+    </div>`;
+  // ROI backing favourites / underdogs — HONEST PLACEHOLDER. No per-tournament
+  // ROI source exists locally (see the COURT_CONDITIONS note: betting ROI is
+  // deliberately not carried; tournament-profiles.json has no ROI field). Do NOT
+  // fabricate the mock's -1.1% / -0.2%.
+  const roiTile = label => `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:16px 18px;">
+      <div style="font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${label}</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:9px;"><span style="font-size:26px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5b6472;">—</span><span style="font-size:12px;color:#8b93a3;">flat-stake yield</span></div>
+      <div style="font-size:11px;color:#5b6472;margin-top:8px;">No per-tournament ROI feed wired</div>
+    </div>`;
+  const roiRow = `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">${roiTile('ROI backing favourites')}${roiTile('ROI backing underdogs')}</div>`;
+  // Favourite reliability — HONEST PLACEHOLDER, same reason as ROI above.
+  const reliabilityCard = `<div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:18px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <span style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Favourite reliability</span>
+        <span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5b6472;">—</span>
+      </div>
+      <div style="margin-top:12px;height:8px;border-radius:5px;background:rgba(255,255,255,0.05);"></div>
+      <div style="font-size:11.5px;color:#5b6472;line-height:1.5;margin-top:12px;">Per-tournament favourite win rate isn't sourced locally — this binds to a tournament-level results-and-prices feed that isn't wired to this build.</div>
+    </div>`;
+  const reportPanel = c.hasReport
+    ? `<div style="margin-top:16px;border:1px solid rgba(62,123,250,0.24);border-radius:12px;background:linear-gradient(120deg,rgba(62,123,250,0.10),rgba(62,123,250,0.02));padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div><div style="font-size:15px;font-weight:700;color:#eef2f8;">Tournament report available</div><div style="font-size:12.5px;color:#8b93a3;margin-top:4px;">Round-by-round breakdown of every completed match.</div></div>
+        <button onclick="tourxOpenReport('${tourxEsc(c.name)}')" style="display:inline-flex;align-items:center;gap:9px;background:#3E7BFA;color:#fff;font-size:14px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;border:none;border-radius:11px;padding:12px 22px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background='#5a90ff'" onmouseout="this.style.background='#3E7BFA'">View report<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+      </div>`
+    : `<div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:34px 22px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#8b93a3;">Report not available yet</div>
+        <div style="font-size:12.5px;color:#5b6472;margin-top:6px;">Match reports are published after the tournament concludes.</div>
+      </div>`;
   const hist = [c.as2023, c.as2024, c.as2025];
   const histPts = [2023, 2024, 2025].map((y, i) => ({ y, v: hist[i] })).filter(p => p.v != null);
   let sparkCard = '';
@@ -13057,38 +13483,30 @@ function tourxConditionsPanelHtml(){
         <div style="width:260px;flex:none;">${tourxSparklineSvg([2023, 2024, 2025], hist)}</div>
       </div>`;
   }
-  const prose = tourxConditionsProse(c.surface, c.speedCat, as, bounce);
-  // Primary action: View report. Solid CTA when a report exists; muted disabled state otherwise.
-  const reportBtn = c.hasReport
-    ? `<button onclick="tourxOpenReport('${tourxEsc(c.name)}')" style="display:inline-flex;align-items:center;gap:9px;background:#3E7BFA;color:#fff;font-size:14px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;border:none;border-radius:11px;padding:13px 24px;cursor:pointer;box-shadow:0 10px 24px -10px rgba(62,123,250,0.7);transition:background 0.15s ease;" onmouseover="this.style.background='#5a90ff'" onmouseout="this.style.background='#3E7BFA'">
-        View report
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-      </button>`
-    : `<button disabled style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,0.05);color:#5b6472;font-size:14px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;border:1px solid rgba(255,255,255,0.08);border-radius:11px;padding:13px 24px;cursor:not-allowed;">Report not available yet</button>`;
-  const links = `<div style="margin-top:20px;">${reportBtn}</div>`;
   return `<div style="padding:24px 26px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
         <div><div style="display:flex;align-items:center;gap:11px;"><span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">${c.name}</span>${statusBadge}</div>
           <div style="font-size:13px;color:#8b93a3;margin-top:5px;">${subline}</div></div>
       </div>
       <div style="margin-top:22px;display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;">
-        <span style="font-size:44px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.03em;color:#eef2f8;line-height:1;">${as.toFixed(2)}</span>
+        <span style="font-size:54px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.03em;color:#eef2f8;line-height:1;">${as.toFixed(2)}</span>
         <span style="font-size:13px;color:#8b93a3;font-weight:600;">abstract court speed · ${asLabel}</span>
-        <span onclick="tourxToggleOvInfo()" title="What is this?" style="align-self:center;display:inline-flex;color:#eef2f8;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
+        <span onclick="tourxToggleOvInfo()" title="What is this?" style="align-self:center;display:inline-flex;color:#8b93a3;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
       </div>
-      <div style="margin-top:14px;height:7px;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28));position:relative;"><span style="position:absolute;top:-3px;left:${speedPct}%;width:13px;height:13px;border-radius:50%;background:#eef2f8;border:2px solid #0b0f18;transform:translateX(-50%);"></span></div>
+      <div style="margin-top:16px;height:7px;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28));position:relative;"><span style="position:absolute;top:-3px;left:${speedPct}%;width:13px;height:13px;border-radius:50%;background:#eef2f8;border:2px solid #0b0f18;transform:translateX(-50%);"></span></div>
+      ${sliderLabels}
+      ${rankLine}
       ${infoCard}
-      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">${cells}</div>
+      ${conditionsCard}
+      <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${cells}</div>
       <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
         <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">Bounce</span><span style="font-size:13px;font-weight:700;color:#cfd6e6;">${bounce}</span></div>
         <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">${championLabel}</span><span style="font-size:13px;font-weight:700;color:${championColor};">${champion}</span></div>
       </div>
       ${sparkCard}
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);">
-        <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin-bottom:9px;">Conditions read</div>
-        <p style="margin:0;font-size:13.5px;line-height:1.65;color:#8b93a3;">${prose}</p>
-      </div>
-      ${links}
+      ${roiRow}
+      ${reliabilityCard}
+      ${reportPanel}
     </div>`;
 }
 // Join conditions + catalog + this-week status + defending champion for one name.

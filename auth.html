@@ -3,399 +3,576 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BSP Consult · Sign in</title>
+<title>Stennisfy · Log in or sign up</title>
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+  OTP-BACKEND DECISION  (surfaced for founder — a real 6-digit code is a backend call, not a front-end guess)
+  ----------------------------------------------------------------------------------------------------------
+  DESIGN  : passwordless 6-digit email OTP ("We'll send you a code you can use to log in").
+  BACKEND : auth.js is Firebase email+PASSWORD. There is NO 6-digit-OTP issue/verify function,
+            and Firebase email-link (magic-link) sign-in is NOT usable without a console/config
+            change (enable "Email link" provider + actionCodeSettings url + authorized domain).
+  WIRED   :
+    - "Continue with email" validates via BSP.isValidEmail and advances (client-side) to the
+      code step. NO code is actually emailed — nothing on the backend can send one yet.
+    - "Verify" calls verifyCode(), which does NOT fake a login. It shows an inline note that
+      6-digit sign-in isn't enabled and routes the user to the real, working password sign-in
+      (email prefilled). It never pretends the code succeeded.
+    - "Resend code" is honest: it states no code was sent because the OTP backend isn't wired.
+  FALLBACK: a fully-working Firebase email+password sign-in / sign-up path is always reachable
+            ("Use a password instead" on the email step, and from the Verify note). Real users
+            are never locked out.
+  NEEDS FOUNDER DECISION: to make the designed 6-digit code real, pick ONE:
+      (a) enable Firebase email-link passwordless sign-in (console change; still a link, not a
+          typed 6-digit code — the "6 boxes" become decorative or get replaced), or
+      (b) add a Cloud Function that issues + verifies a 6-digit code (true to the design).
+    Until then the OTP step is a faithful visual shell over the password fallback.
+-->
 <style>
+  :root{
+    --page:#06070a; --card:#0a0d14; --card-alt:#0d1119;
+    --border-data:rgba(255,255,255,0.09); --border-subtle:rgba(255,255,255,0.07);
+    --border-interact:rgba(91,155,255,0.22); --border-selected:rgba(91,155,255,0.35);
+    --text:#e7e9ee; --text-2:#c8cfda; --text-3:#8b93a3;
+    --muted:#5b6880; --muted-2:#4b5672; --muted-3:#6b7280;
+    --brand:#5b9bff; --brand-deep:#2f6bd8; --player-a:#6aaeff; --player-b:#e7e9ee;
+    --brand-wash:rgba(91,155,255,0.08); --brand-tint:rgba(91,155,255,0.15);
+    --pos:#3dd68c; --warn:#e8a84e; --neg:#e0616f;
+    --grass:#2ab8a0; --hard:#4db8ff; --clay:#e8a84e;
+    --field-fill:rgba(255,255,255,0.04);
+    --r-card:12px; --r-control:8px; --r-pill:6px;
+    --font-ui:'Hanken Grotesk',sans-serif; --font-data:'IBM Plex Mono',monospace;
+  }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:#0b0c10; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
-  a{ color:#7ba4ff; text-decoration:none; }
-  a:hover{ color:#a9c4ff; }
-  input{ font-family:'Hanken Grotesk',sans-serif; }
-  input::placeholder{ color:#4a515f; }
-  ::selection{ background:rgba(62,123,250,0.35); }
+  html,body{ height:100%; }
+  body{ margin:0; background:var(--page); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+  a{ color:var(--brand); text-decoration:none; }
+  ::selection{ background:rgba(91,155,255,0.30); }
 
-  .page{ display:flex; justify-content:center; padding:48px; min-height:100vh; }
-  .shell{ width:1040px; max-width:100%; display:flex; flex-direction:column; gap:14px; }
-  .modeSub{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8b93a3; }
+  .wrap{ min-height:100vh; max-width:1400px; margin:0 auto; padding:44px 60px;
+    display:grid; grid-template-columns:400px 1fr; column-gap:120px; align-items:center; }
 
-  .card{ border:1px solid rgba(255,255,255,0.08); border-radius:20px; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; box-shadow:0 40px 90px -55px rgba(0,0,0,0.9); }
+  /* ============ LEFT COLUMN ============ */
+  .left{ max-width:400px; }
+  .brand{ display:flex; align-items:center; gap:12px; margin-bottom:76px; }
+  .brand .tile{ width:44px; height:44px; border-radius:12px; flex:none;
+    background:linear-gradient(160deg,#1d2c4d,#0f1a30); border:1px solid var(--border-interact);
+    box-shadow:0 0 0 1px rgba(91,155,255,0.10) inset; display:flex; align-items:center; justify-content:center; }
+  .brand .tile svg{ display:block; }
+  .brand .wm{ display:flex; flex-direction:column; gap:4px; }
+  .brand .wm b{ font-size:14px; font-weight:800; letter-spacing:0.15em; color:var(--text); line-height:1; }
+  .brand .wm small{ font-size:9.5px; letter-spacing:0.26em; color:var(--muted); line-height:1; }
 
-  /* brand panel */
-  .brand-panel{ position:relative; background:linear-gradient(180deg,#101a33,#0a0c11); padding:44px 40px; display:flex; flex-direction:column; justify-content:space-between; border-right:1px solid rgba(255,255,255,0.06); min-height:600px; }
-  .brand-panel .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, rgba(62,123,250,0.18), transparent 60%); pointer-events:none; }
-  .brand-top{ position:relative; }
-  .brand-id{ display:flex; align-items:center; gap:11px; }
-  .brand-id img{ width:38px; height:38px; border-radius:10px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); box-shadow:0 0 0 3px rgba(62,123,250,0.12); }
-  .brand-id .wm{ display:flex; flex-direction:column; gap:1px; }
-  .brand-id .wm b{ font-weight:800; letter-spacing:0.02em; font-size:15px; line-height:1; }
-  .brand-id .wm small{ font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6f7ba0; font-family:'IBM Plex Mono',monospace; }
-  .brand-title{ margin:38px 0 0; font-size:27px; font-weight:800; letter-spacing:-0.02em; line-height:1.2; }
-  .brand-body{ margin:16px 0 0; font-size:14.5px; line-height:1.6; color:#9aa3b2; max-width:340px; }
+  .h1{ margin:0; font-size:31px; font-weight:800; letter-spacing:-0.02em; line-height:1.12; color:var(--text); }
+  .sub{ margin:12px 0 0; font-size:15px; color:var(--muted); line-height:1.45; }
 
-  .mini{ position:relative; border:1px solid rgba(255,255,255,0.09); border-radius:13px; background:rgba(13,15,20,0.7); overflow:hidden; margin-top:32px; }
-  .mini-head{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); }
-  .mini-head .cap{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
-  .mini-head .live{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8fe0b8; }
-  .mini-row{ display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04); }
-  .mini-row .m{ font-size:12.5px; font-weight:600; white-space:nowrap; }
-  .mini-row .o{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#cfd4de; }
-  .mini-row .fl{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; border-radius:6px; padding:3px 8px; width:62px; text-align:center; }
+  .flabel{ display:block; font-size:13px; color:var(--muted); margin:30px 0 9px; }
 
-  /* form panel */
-  .form-panel{ background:#0b0c10; padding:44px 44px; display:flex; flex-direction:column; }
-  .toggle{ display:inline-flex; align-self:flex-start; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:11px; padding:4px; gap:3px; margin-bottom:30px; }
-  .toggle button{ font-family:inherit; font-size:13px; font-weight:600; color:#8b93a3; background:transparent; border:1px solid transparent; border-radius:8px; padding:8px 20px; cursor:pointer; }
-  .toggle button.active{ color:#fff; background:rgba(62,123,250,0.16); border-color:rgba(62,123,250,0.4); }
+  .inp{ width:100%; height:52px; background:var(--field-fill); border:1px solid var(--border-interact);
+    border-radius:var(--r-control); padding:0 16px; color:var(--text); font-family:var(--font-ui); font-size:15px; outline:none; }
+  .inp::placeholder{ color:var(--muted); }
+  .inp:focus{ border-color:var(--border-selected); }   /* focus = border only; no glow/shadow/lift */
+  .inp.err{ border-color:var(--neg); }
+  .field-err{ display:block; min-height:0; margin-top:8px; font-size:13px; color:var(--neg); }
 
-  .form-title{ margin:0; font-size:24px; font-weight:800; letter-spacing:-0.02em; }
-  .form-sub{ margin:8px 0 0; font-size:13.5px; color:#8b93a3; }
+  /* the ONE approved solid button in the product */
+  .btn-solid{ width:100%; height:54px; margin-top:18px; border:none; border-radius:var(--r-control);
+    background:var(--brand-deep); color:#fff; font-family:var(--font-ui); font-size:15px; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .btn-solid:disabled{ opacity:0.40; cursor:not-allowed; color:rgba(255,255,255,0.72); }   /* disabled = 40% + muted label */
+  .btn-solid.loading{ opacity:0.60; cursor:default; }                                        /* loading = 60%, no spinner */
+  .btn-solid svg{ display:block; }
 
-  .social{ display:flex; gap:10px; margin-top:26px; }
-  .social button{ flex:1; display:flex; align-items:center; justify-content:center; gap:9px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px; font-size:13.5px; font-weight:600; color:#e7e9ee; cursor:pointer; background:transparent; font-family:inherit; }
-  .social button:hover{ background:rgba(255,255,255,0.05); }
+  .divider{ display:flex; align-items:center; gap:16px; margin:24px 0; }
+  .divider .ln{ flex:1; height:1px; background:var(--border-subtle); }
+  .divider .tx{ font-size:14px; color:var(--muted); }
 
-  .divider{ display:flex; align-items:center; gap:14px; margin:22px 0; }
-  .divider span.line{ flex:1; height:1px; background:rgba(255,255,255,0.08); }
-  .divider span.txt{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6472; font-family:'IBM Plex Mono',monospace; }
+  /* secondary treatment: white 0.04 fill, white 0.15 border, never brand-blue border */
+  .btn-2{ width:100%; height:52px; border:1px solid rgba(255,255,255,0.15); border-radius:var(--r-control);
+    background:rgba(255,255,255,0.04); color:var(--text); font-family:var(--font-ui); font-size:14.5px; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .btn-2:hover{ background:rgba(255,255,255,0.06); }
+  .btn-2 svg{ display:block; }
 
-  label.field{ display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
-  label.field .lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
-  label.field .lblrow{ display:flex; align-items:center; justify-content:space-between; }
-  .forgot{ font-size:12px; color:#7ba4ff; cursor:pointer; }
-  .forgot:hover{ color:#a9c4ff; }
-  input.inp{ background:#0d0f14; color:#e7ebf1; font-size:14px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; padding:11px 13px; outline:none; }
-  input.inp:focus{ border-color:rgba(62,123,250,0.5); }
-  input.inp.err{ border-color:rgba(232,96,122,0.6); }
+  .oauth{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
 
-  .field-err{ font-size:11.5px; color:#E8607A; min-height:0; }
+  .legal{ margin:26px 0 0; font-size:12.5px; line-height:1.55; color:var(--muted); max-width:360px; }
+  .legal a{ color:var(--text-3); }
 
-  .plans-lbl{ font-size:11.5px; font-weight:500; color:#8b93a3; }
-  .plan-choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
-  .plan-choice{ border:1px solid rgba(255,255,255,0.1); background:#0d0f14; border-radius:11px; padding:13px 14px; cursor:pointer; display:flex; flex-direction:column; gap:3px; }
-  .plan-choice.active{ border-color:rgba(62,123,250,0.55); background:rgba(62,123,250,0.1); }
-  .plan-choice .top{ display:flex; align-items:center; justify-content:space-between; }
-  .plan-choice .nm{ font-size:13.5px; font-weight:700; color:#cfd4de; }
-  .plan-choice.active .nm{ color:#fff; }
-  .plan-choice .pr{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b93a3; }
-  .plan-choice.active .pr{ color:#7ba4ff; }
-  .plan-choice .tg{ font-size:11px; color:#7a8496; }
+  .stores{ display:flex; gap:12px; margin-top:24px; }
+  .store{ display:flex; align-items:center; gap:9px; height:52px; padding:0 16px; border-radius:var(--r-control);
+    border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.04); cursor:pointer; }
+  .store svg{ display:block; flex:none; }
+  .store .st{ display:flex; flex-direction:column; line-height:1.05; }
+  .store .st .k{ font-size:8.5px; letter-spacing:0.04em; color:var(--text-3); text-transform:uppercase; }
+  .store .st .n{ font-size:14px; font-weight:700; color:var(--text); }
 
-  .checkline{ display:flex; align-items:flex-start; gap:9px; margin-bottom:20px; cursor:pointer; }
-  .checkline.center{ align-items:center; }
-  .checkbox{ width:17px; height:17px; border-radius:5px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.04); flex:none; margin-top:1px; display:flex; align-items:center; justify-content:center; }
-  .checkbox.on{ background:#3E7BFA; border-color:#3E7BFA; }
-  .checkbox svg{ display:none; }
-  .checkbox.on svg{ display:block; }
-  .checkline .txt{ font-size:12px; line-height:1.5; color:#8b93a3; }
-  .checkline.center .txt{ font-size:12.5px; }
+  .pwline{ text-align:center; margin-top:22px; }
+  .pwline a{ font-size:13.5px; color:var(--text-3); font-weight:600; cursor:pointer; }
+  .pwline a:hover{ color:var(--text-2); }
 
-  .submit{ display:block; width:100%; text-align:center; font-size:15px; font-weight:700; color:#0b0d12; background:#3E7BFA; border:none; border-radius:11px; padding:13px; cursor:pointer; font-family:inherit; }
-  .submit:hover{ background:#5a90ff; }
+  /* ---- OTP / code step ---- */
+  .otp{ text-align:center; }
+  .mailglyph{ width:64px; height:64px; border-radius:16px; margin:0 auto 24px;
+    border:1px solid var(--border-interact); background:var(--brand-wash);
+    display:flex; align-items:center; justify-content:center; }
+  .otp .h1{ text-align:center; }
+  .otp .sub{ text-align:center; }
+  .codes{ display:flex; gap:12px; justify-content:center; margin:26px 0 4px; }
+  .code{ width:56px; height:64px; text-align:center; background:var(--field-fill);
+    border:1px solid var(--border-interact); border-radius:var(--r-control); color:var(--text);
+    font-family:var(--font-data); font-size:26px; font-weight:500; outline:none; }
+  .code:focus{ border-color:var(--border-selected); }
+  .code.err{ border-color:var(--neg); }
+  .otpnote{ min-height:0; margin:2px 0 0; font-size:13px; color:var(--text-3); line-height:1.5; }
+  .resend{ margin-top:20px; font-size:13.5px; color:var(--muted); }
+  .resend a{ color:var(--brand); font-weight:600; cursor:pointer; }
+  .backlink{ display:block; margin-top:16px; font-size:13.5px; color:var(--muted); cursor:pointer; }
+  .backlink:hover{ color:var(--text-3); }
 
-  .form-err{ margin:14px 0 0; font-size:12.5px; color:#E8607A; text-align:center; min-height:0; }
-
-  .switch{ text-align:center; font-size:13px; color:#8b93a3; margin:20px 0 0; }
-  .switch a{ color:#7ba4ff; font-weight:600; cursor:pointer; }
-  .switch a:hover{ color:#a9c4ff; }
+  /* ---- password fallback step ---- */
+  .fwd-forgot{ display:flex; justify-content:space-between; align-items:baseline; margin:30px 0 9px; }
+  .fwd-forgot .flabel{ margin:0; }
+  .fwd-forgot a{ font-size:13px; color:var(--brand); cursor:pointer; }
+  .form-err{ min-height:0; margin:14px 0 0; font-size:13px; color:var(--neg); text-align:center; }
+  .terms{ display:flex; align-items:flex-start; gap:10px; margin-top:18px; cursor:pointer; }
+  .terms .box{ width:18px; height:18px; flex:none; margin-top:1px; border-radius:5px;
+    border:1px solid rgba(255,255,255,0.2); background:var(--field-fill); display:flex; align-items:center; justify-content:center; }
+  .terms .box.on{ background:var(--brand-deep); border-color:var(--brand-deep); }
+  .terms .box svg{ display:none; } .terms .box.on svg{ display:block; }
+  .terms .tx{ font-size:12.5px; line-height:1.5; color:var(--muted); }
 
   .hidden{ display:none !important; }
 
-  @media (max-width:860px){
-    .page{ padding:24px 16px; }
-    .card{ grid-template-columns:1fr; }
-    .brand-panel{ min-height:auto; border-right:none; border-bottom:1px solid rgba(255,255,255,0.06); }
-    .brand-panel .mini{ display:none; }
-    .form-panel{ padding:32px 24px; }
+  /* ============ RIGHT PREVIEW PANEL ============ */
+  .panel{ align-self:stretch; background:var(--card); border:1px solid var(--border-subtle);
+    border-radius:16px; padding:40px 44px; display:flex; flex-direction:column;
+    min-height:calc(100vh - 88px); }
+  .panel-top{ margin-top:14%; }
+  .block{ border:1px solid var(--border-subtle); border-radius:var(--r-card); padding:20px 22px; }
+  .block + .block{ margin-top:20px; }
+
+  /* match card */
+  .mc-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .mc-surface{ font-size:13.5px; color:var(--grass); }
+  .mc-tourn{ font-family:var(--font-data); font-size:12.5px; color:var(--muted); }
+  .mc-row{ display:flex; align-items:center; justify-content:space-between; padding:7px 0; }
+  .mc-row + .mc-row{ margin-top:4px; }
+  .mc-name{ display:flex; align-items:center; gap:12px; font-size:16px; font-weight:700; }
+  .mc-dash{ width:16px; height:2px; border-radius:2px; flex:none; }
+  .mc-a{ color:var(--player-a); } .mc-a .mc-dash{ background:var(--player-a); }
+  .mc-b{ color:var(--player-b); } .mc-b .mc-dash{ background:var(--player-b); }
+  .mc-odds{ font-family:var(--font-data); font-size:17px; font-weight:600; color:var(--text); }
+
+  /* market signal */
+  .cap{ font-family:var(--font-data); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+  .ms-track{ position:relative; height:8px; border-radius:6px; background:rgba(255,255,255,0.09); margin:16px 0 12px; overflow:hidden; }
+  .ms-fill{ position:absolute; inset:0 auto 0 0; width:74%; border-radius:6px;
+    background:linear-gradient(90deg,var(--brand-deep),var(--brand)); }
+  .ms-legend{ display:flex; justify-content:space-between; align-items:baseline; }
+  .ms-fav{ font-family:var(--font-data); font-size:13px; color:var(--brand); }
+  .ms-fav b{ font-weight:600; }
+  .ms-fav .w{ font-family:var(--font-data); color:var(--brand); margin-left:6px; }
+  .ms-under{ font-family:var(--font-data); font-size:13px; color:var(--muted); }
+
+  /* line movement */
+  .lm-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .lm-cols{ display:flex; gap:44px; }
+  .lm-cols span{ font-family:var(--font-data); font-size:10px; letter-spacing:0.12em; color:var(--muted); }
+  .lm-row{ display:grid; grid-template-columns:64px 42px 1fr 66px; align-items:center; gap:14px; }
+  .lm-row + .lm-row{ margin-top:20px; }
+  .lm-book{ font-size:13.5px; color:var(--text-3); }
+  .lm-open{ font-family:var(--font-data); font-size:13px; color:var(--muted); }
+  .lm-mtrack{ position:relative; height:2px; background:rgba(255,255,255,0.12); border-radius:2px; }
+  .lm-dot{ position:absolute; top:50%; right:0; transform:translate(50%,-50%); width:9px; height:9px;
+    border-radius:50%; background:var(--brand); box-shadow:0 0 0 3px rgba(91,155,255,0.15); }
+  .lm-close{ text-align:right; }
+  .lm-close .p{ display:block; font-family:var(--font-data); font-size:15px; font-weight:600; color:var(--text); }
+  .lm-close .d{ display:block; font-family:var(--font-data); font-size:10.5px; margin-top:3px; }
+  .lm-close .d.pos{ color:var(--pos); } .lm-close .d.neg{ color:var(--neg); }
+
+  /* visualize footer */
+  .panel-foot{ margin-top:auto; padding-top:40px; }
+  .viz-h{ font-size:27px; font-weight:800; letter-spacing:-0.01em; color:var(--brand); margin:0; }
+  .viz-b{ margin:16px 0 0; font-size:15.5px; line-height:1.55; color:var(--text-2); max-width:520px; }
+  .dots{ display:flex; gap:8px; margin-top:26px; }
+  .dots i{ width:16px; height:5px; border-radius:3px; background:rgba(255,255,255,0.15); display:block; }
+  .dots i.on{ width:30px; background:var(--brand); }
+
+  @media (max-width:1000px){
+    .wrap{ grid-template-columns:1fr; row-gap:32px; padding:32px 24px; }
+    .panel{ min-height:0; order:2; }
+    .panel-top{ margin-top:0; }
+    .brand{ margin-bottom:36px; }
   }
 </style>
 </head>
 <body>
-  <div class="page">
-    <section class="shell">
-      <div class="modeSub" id="modeSub">Sign in</div>
+  <div class="wrap">
 
-      <div class="card">
-        <!-- brand panel -->
-        <div class="brand-panel">
-          <div class="glow"></div>
-          <div class="brand-top">
-            <div class="brand-id">
-              <img src="assets/bsp-logo.jpg" alt="BSP Consult">
-              <div class="wm">
-                <b>BSP CONSULT</b>
-                <small>Tennis edge</small>
-              </div>
-            </div>
-            <h2 class="brand-title" id="brandTitle">Welcome back to the edge.</h2>
-            <p class="brand-body" id="brandBody">Pick up where you left off: fair odds, value flags and match analysis across the tour.</p>
+    <!-- ================= LEFT ================= -->
+    <div class="left">
+      <div class="brand">
+        <div class="tile">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M4 5h14M11 5v13" stroke="#6aaeff" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="wm"><b>STENNISFY</b><small>ANALYTICS</small></div>
+      </div>
+
+      <!-- ---- STEP: email ---- -->
+      <section id="stepEmail">
+        <h1 class="h1">Log in or sign up</h1>
+        <p class="sub">We'll send you a code you can use to log in.</p>
+
+        <label class="flabel" for="email">Enter your email</label>
+        <input class="inp" type="email" id="email" placeholder="Email" autocomplete="email" oninput="onEmailInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();continueEmail();}">
+        <span class="field-err" id="emailErr"></span>
+
+        <button type="button" class="btn-solid" id="continueBtn" onclick="continueEmail()" disabled>
+          <span id="continueLbl">Continue with email</span>
+          <svg id="continueArrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <div class="divider"><span class="ln"></span><span class="tx">or</span><span class="ln"></span></div>
+
+        <button type="button" class="btn-2" onclick="socialStub('Phone sign-in')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e7e9ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 2.5H4.2A1.7 1.7 0 0 0 2.5 4.4c0 8.9 7.2 16.1 16.1 16.1a1.7 1.7 0 0 0 1.9-1.7v-2.4a1.7 1.7 0 0 0-1.5-1.7l-2.7-.4a1.7 1.7 0 0 0-1.6.7l-1 1.4a13 13 0 0 1-5.4-5.4l1.4-1a1.7 1.7 0 0 0 .7-1.6l-.4-2.7a1.7 1.7 0 0 0-1.7-1.5Z"/></svg>
+          Use phone instead
+        </button>
+
+        <div class="oauth">
+          <button type="button" class="btn-2" onclick="socialStub('Google sign-in')" aria-label="Continue with Google">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.6-.1-1.2-.2-1.8H12v3.5h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.7 9.4 6.1 12 6.1z"/></svg>
+          </button>
+          <button type="button" class="btn-2" onclick="socialStub('Apple sign-in')" aria-label="Continue with Apple">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.7c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-1 2.4-2 .5-.7.7-1.4.7-1.4s-1.5-.6-1.5-2.4z"/><path d="M14.5 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9 0 1.8-.5 2.3-1.1z"/></svg>
+          </button>
+        </div>
+
+        <div class="pwline" style="margin-top:20px"><a onclick="goStep('password')">Use a password instead</a></div>
+
+        <p class="legal">By continuing you agree to our <a href="#" onclick="return legal(event)">Terms</a> and <a href="#" onclick="return legal(event)">Privacy Policy</a>. Model insights are for informational purposes only.</p>
+
+        <div class="stores">
+          <div class="store" onclick="socialStub('App Store')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.7c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-1 2.4-2 .5-.7.7-1.4.7-1.4s-1.5-.6-1.5-2.4z"/><path d="M14.5 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9 0 1.8-.5 2.3-1.1z"/></svg>
+            <span class="st"><span class="k">Download on the</span><span class="n">App Store</span></span>
           </div>
+          <div class="store" onclick="socialStub('Google Play')">
+            <svg width="19" height="19" viewBox="0 0 24 24"><path fill="#00D3F2" d="M3.3 2.4 13 12 3.3 21.6c-.3-.2-.5-.6-.5-1.1V3.5c0-.5.2-.9.5-1.1z"/><path fill="#00E676" d="M16.7 8.7 5.4 2.3 3.3 2.4 13 12z"/><path fill="#FFCE00" d="M20.4 10.8c.7.4.7 1.9 0 2.4l-3.7 2.1L13 12l3.7-3.3z"/><path fill="#FF3D46" d="M3.3 21.6 13 12l3.7 3.3-11.3 6.4z"/></svg>
+            <span class="st"><span class="k">Get it on</span><span class="n">Google Play</span></span>
+          </div>
+        </div>
+      </section>
 
-          <div class="mini">
-            <div class="mini-head">
-              <span class="cap">Model vs market</span>
-              <span class="live">● live</span>
-            </div>
-            <div class="mini-row">
-              <span class="m">Stricker vs Munar</span>
-              <span class="o">3.30</span>
-              <span class="fl" style="color:#3ECF8E; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.3);">+8.9%</span>
-            </div>
-            <div class="mini-row">
-              <span class="m">Fils vs Ruud</span>
-              <span class="o">2.05</span>
-              <span class="fl" style="color:#3ECF8E; background:rgba(62,207,142,0.12); border:1px solid rgba(62,207,142,0.3);">+4.4%</span>
-            </div>
-            <div class="mini-row" style="border-bottom:none;">
-              <span class="m">Sinner vs Djokovic</span>
-              <span class="o">1.26</span>
-              <span class="fl" style="color:#E8607A; background:rgba(232,96,122,0.12); border:1px solid rgba(232,96,122,0.3);">−2.1%</span>
-            </div>
+      <!-- ---- STEP: code / OTP ---- -->
+      <section id="stepCode" class="otp hidden">
+        <div class="mailglyph">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5b9bff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+        </div>
+        <h1 class="h1">Check your inbox</h1>
+        <p class="sub">Enter the 6-digit code we emailed to<br><span id="codeEmail" style="color:var(--text-3)">your email</span></p>
+
+        <div class="codes" id="codes">
+          <input class="code" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+          <input class="code" inputmode="numeric" maxlength="1">
+          <input class="code" inputmode="numeric" maxlength="1">
+          <input class="code" inputmode="numeric" maxlength="1">
+          <input class="code" inputmode="numeric" maxlength="1">
+          <input class="code" inputmode="numeric" maxlength="1">
+        </div>
+        <p class="otpnote" id="otpNote"></p>
+
+        <button type="button" class="btn-solid" id="verifyBtn" onclick="verifyCode()"><span>Verify</span></button>
+
+        <p class="resend">Didn't get it? <a onclick="resendCode()">Resend code</a></p>
+        <a class="backlink" onclick="goStep('email')">&lsaquo;&nbsp; Use a different email</a>
+      </section>
+
+      <!-- ---- STEP: password fallback (real working Firebase login) ---- -->
+      <section id="stepPassword" class="hidden">
+        <h1 class="h1" id="pwTitle">Sign in with a password</h1>
+        <p class="sub" id="pwSub">Enter your email and password to reach your board.</p>
+
+        <label class="flabel hidden" id="nameLbl" for="pwName">Full name</label>
+        <input class="inp hidden" type="text" id="pwName" placeholder="Alex Bekkers" autocomplete="name">
+        <span class="field-err hidden" id="pwNameErr"></span>
+
+        <label class="flabel" for="pwEmail">Email</label>
+        <input class="inp" type="email" id="pwEmail" placeholder="you@email.com" autocomplete="email">
+        <span class="field-err" id="pwEmailErr"></span>
+
+        <div class="fwd-forgot">
+          <label class="flabel" for="pwPass">Password</label>
+          <a id="pwForgot" onclick="forgotPassword()">Forgot?</a>
+        </div>
+        <input class="inp" type="password" id="pwPass" placeholder="Your password" autocomplete="current-password">
+        <span class="field-err" id="pwPassErr"></span>
+
+        <div class="terms hidden" id="pwTerms" onclick="toggleTerms()">
+          <span class="box" id="pwTermsBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="tx">I agree to the Terms and understand model insights are informational only, not betting advice.</span>
+        </div>
+
+        <button type="button" class="btn-solid" id="pwSubmit" onclick="submitPassword()"><span id="pwSubmitLbl">Sign in</span></button>
+        <p class="form-err" id="pwFormErr"></p>
+
+        <div class="pwline"><span style="color:var(--muted);font-size:13.5px" id="pwSwitchText">New here?</span> <a id="pwSwitchLink" onclick="togglePwMode()">Create an account</a></div>
+        <a class="backlink" onclick="goStep('email')">&lsaquo; Back to email code</a>
+      </section>
+    </div>
+
+    <!-- ================= RIGHT PREVIEW PANEL ================= -->
+    <div class="panel">
+      <div class="panel-top">
+        <!-- match card -->
+        <div class="block">
+          <div class="mc-head">
+            <span class="mc-surface">Grass</span>
+            <span class="mc-tourn">Wimbledon · SF</span>
+          </div>
+          <div class="mc-row">
+            <span class="mc-name mc-a"><span class="mc-dash"></span>J. Sinner</span>
+            <span class="mc-odds">1.34</span>
+          </div>
+          <div class="mc-row">
+            <span class="mc-name mc-b"><span class="mc-dash"></span>C. Alcaraz</span>
+            <span class="mc-odds">3.46</span>
           </div>
         </div>
 
-        <!-- form panel -->
-        <div class="form-panel">
-          <div class="toggle">
-            <button type="button" id="tabSignin" class="active" onclick="setMode('signin')">Sign in</button>
-            <button type="button" id="tabSignup" onclick="setMode('signup')">Sign up</button>
+        <!-- market signal -->
+        <div class="block">
+          <span class="cap">Market signal</span>
+          <div class="ms-track"><span class="ms-fill"></span></div>
+          <div class="ms-legend">
+            <span class="ms-fav"><b>74%</b><span class="w">favourite</span></span>
+            <span class="ms-under">26%</span>
           </div>
+        </div>
 
-          <h1 class="form-title" id="formTitle">Sign in to BSP Consult</h1>
-          <p class="form-sub" id="formSub">Enter your details to reach your board.</p>
-
-          <div class="social">
-            <button type="button" onclick="socialStub()">
-              <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.6-.1-1.2-.2-1.8H12v3.5h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.7 9.4 6.1 12 6.1z"/></svg>
-              Google
-            </button>
-            <button type="button" onclick="socialStub()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.7c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-1 2.4-2 .5-.7.7-1.4.7-1.4s-1.5-.6-1.5-2.4z"/><path d="M14.5 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9 0 1.8-.5 2.3-1.1z"/></svg>
-              Apple
-            </button>
+        <!-- line movement -->
+        <div class="block">
+          <div class="lm-head">
+            <span class="cap">Line movement</span>
+            <span class="lm-cols"><span>OPEN</span><span>CLOSE</span></span>
           </div>
-          <div class="divider"><span class="line"></span><span class="txt">or with email</span><span class="line"></span></div>
-
-          <form id="authForm" onsubmit="return submitAuth(event)" novalidate>
-            <!-- full name (signup only) -->
-            <label class="field" id="nameField">
-              <span class="lbl">Full name</span>
-              <input class="inp" type="text" id="fullName" placeholder="Alex Bekkers" autocomplete="name">
-              <span class="field-err" id="nameErr"></span>
-            </label>
-
-            <label class="field">
-              <span class="lbl">Email address</span>
-              <input class="inp" type="email" id="email" placeholder="you@email.com" autocomplete="email">
-              <span class="field-err" id="emailErr"></span>
-            </label>
-
-            <label class="field">
-              <span class="lblrow">
-                <span class="lbl">Password</span>
-                <span class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot?</span>
-              </span>
-              <input class="inp" type="password" id="password" placeholder="Your password" autocomplete="current-password">
-              <span class="field-err" id="pwErr"></span>
-            </label>
-
-            <!-- plan picker (signup only) -->
-            <div id="planField" style="margin-bottom:16px;">
-              <span class="plans-lbl">Choose your plan</span>
-              <div class="plan-choices">
-                <div class="plan-choice" id="planEdge" onclick="setPlan('edge')">
-                  <span class="top"><span class="nm">Edge</span><span class="pr">€49</span></span>
-                  <span class="tg">Board &amp; analysis</span>
-                </div>
-                <div class="plan-choice active" id="planPro" onclick="setPlan('pro')">
-                  <span class="top"><span class="nm">Pro</span><span class="pr">€99</span></span>
-                  <span class="tg">Full value engine</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- terms (signup only) -->
-            <div class="checkline" id="termsField" onclick="toggleCheck('terms')">
-              <span class="checkbox" id="termsBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-              <span class="txt">I agree to the <a href="#" onclick="event.stopPropagation();event.preventDefault();alert('Terms coming soon.');">terms</a> and understand model insights are informational only, not betting advice.</span>
-            </div>
-
-            <!-- keep signed in (signin only) -->
-            <div class="checkline center hidden" id="keepField" onclick="toggleCheck('keep')">
-              <span class="checkbox on" id="keepBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-              <span class="txt">Keep me signed in on this device</span>
-            </div>
-
-            <button type="submit" class="submit" id="submitBtn">Sign in</button>
-            <p class="form-err" id="formErr"></p>
-          </form>
-
-          <p class="switch" id="switchLine">
-            <span id="switchText">New to BSP Consult?</span>
-            <a id="switchLink" onclick="setMode(mode==='signup'?'signin':'signup')">Create one free</a>
-          </p>
+          <div class="lm-row">
+            <span class="lm-book">Pinnacle</span>
+            <span class="lm-open">1.42</span>
+            <span class="lm-mtrack"><span class="lm-dot"></span></span>
+            <span class="lm-close"><span class="p">1.34</span><span class="d pos">▼ -0.08</span></span>
+          </div>
+          <div class="lm-row">
+            <span class="lm-book">Bet365</span>
+            <span class="lm-open">3.20</span>
+            <span class="lm-mtrack"><span class="lm-dot"></span></span>
+            <span class="lm-close"><span class="p">3.46</span><span class="d neg">▲ +0.26</span></span>
+          </div>
         </div>
       </div>
-    </section>
+
+      <div class="panel-foot">
+        <h2 class="viz-h">Visualize the edge</h2>
+        <p class="viz-b">Live odds across six books, model signals, playing-style matchups and line movement — to understand every pick.</p>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
   </div>
 
   <script src="auth.js"></script>
   <script>
-    var mode = 'signin';
-    var plan = 'pro';
-    var checks = { terms: false, keep: true };
+    /* ---------------- step machine ---------------- */
+    var currentEmail = '';
+    var pwMode = 'signin';       // 'signin' | 'signup'
+    var termsChecked = false;
 
-    function qp(name){
-      var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
-      return m ? decodeURIComponent(m[1]) : null;
+    function qp(name){ var m=new RegExp('[?&]'+name+'=([^&]*)').exec(location.search); return m?decodeURIComponent(m[1]):null; }
+
+    function goStep(step){
+      ['stepEmail','stepCode','stepPassword'].forEach(function(id){
+        document.getElementById(id).classList.toggle('hidden', id !== 'step'+cap(step));
+      });
+      if (step === 'code'){
+        document.getElementById('codeEmail').textContent = currentEmail || 'your email';
+        clearCodes();
+        document.getElementById('otpNote').textContent = '';
+        var first = document.querySelector('#codes .code'); if (first) first.focus();
+      }
+      if (step === 'password'){
+        if (currentEmail && !document.getElementById('pwEmail').value) document.getElementById('pwEmail').value = currentEmail;
+        var f = document.getElementById(currentEmail ? 'pwPass' : 'pwEmail'); if (f) f.focus();
+      }
+      if (step === 'email'){
+        var e = document.getElementById('email'); if (e) e.focus();
+      }
+    }
+    function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+    /* ---------------- email step ---------------- */
+    function onEmailInput(){
+      var v = document.getElementById('email').value.trim();
+      var btn = document.getElementById('continueBtn');
+      btn.disabled = !(window.BSP && BSP.isValidEmail(v));
+      document.getElementById('emailErr').textContent = '';
+      document.getElementById('email').classList.remove('err');
     }
 
-    function setPlan(p){
-      plan = (p === 'edge') ? 'edge' : 'pro';
-      document.getElementById('planEdge').classList.toggle('active', plan === 'edge');
-      document.getElementById('planPro').classList.toggle('active', plan === 'pro');
-    }
-
-    function toggleCheck(which){
-      checks[which] = !checks[which];
-      var box = document.getElementById(which + 'Box');
-      box.classList.toggle('on', checks[which]);
-    }
-
-    function setMode(m){
-      mode = (m === 'signup') ? 'signup' : 'signin';
-      var isSignup = mode === 'signup';
-
-      document.getElementById('tabSignin').classList.toggle('active', !isSignup);
-      document.getElementById('tabSignup').classList.toggle('active', isSignup);
-
-      document.getElementById('modeSub').textContent = isSignup ? 'Sign up' : 'Sign in';
-      document.getElementById('brandTitle').textContent = isSignup ? 'Start finding value tonight.' : 'Welcome back to the edge.';
-      document.getElementById('brandBody').textContent = isSignup
-        ? 'Seven days free. Full board, all surfaces, every ATP match — see a green flag before you commit.'
-        : 'Pick up where you left off: fair odds, value flags and match analysis across the tour.';
-      document.getElementById('formTitle').textContent = isSignup ? 'Create your account' : 'Sign in to BSP Consult';
-      document.getElementById('formSub').textContent = isSignup
-        ? 'Free for 7 days — no card charged until the trial ends.'
-        : 'Enter your details to reach your board.';
-      document.getElementById('password').placeholder = isSignup ? 'At least 8 characters' : 'Your password';
-      document.getElementById('password').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
-      document.getElementById('submitBtn').textContent = isSignup ? 'Start free trial' : 'Sign in';
-      document.getElementById('switchText').textContent = isSignup ? 'Already have an account?' : 'New to BSP Consult?';
-      document.getElementById('switchLink').textContent = isSignup ? 'Sign in' : 'Create one free';
-      document.title = isSignup ? 'BSP Consult · Create account' : 'BSP Consult · Sign in';
-
-      // Field visibility
-      document.getElementById('nameField').classList.toggle('hidden', !isSignup);
-      document.getElementById('planField').classList.toggle('hidden', !isSignup);
-      document.getElementById('termsField').classList.toggle('hidden', !isSignup);
-      document.getElementById('keepField').classList.toggle('hidden', isSignup);
-      document.getElementById('forgotLink').classList.toggle('hidden', isSignup);
-
-      clearErrors();
-    }
-
-    function clearErrors(){
-      ['nameErr','emailErr','pwErr','formErr'].forEach(function(id){ document.getElementById(id).textContent=''; });
-      ['fullName','email','password'].forEach(function(id){ document.getElementById(id).classList.remove('err'); });
-    }
-
-    function socialStub(){ alert('Social sign-in coming soon.'); }
-
-    function forgotPassword(){
-      clearErrors();
-      var emailEl = document.getElementById('email');
-      var email = emailEl.value.trim();
-      var formErr = document.getElementById('formErr');
-      formErr.style.color = '';
-      if (!BSP.isValidEmail(email)){
-        document.getElementById('emailErr').textContent = 'Enter your email above, then tap “Forgot?” to get a reset link.';
-        emailEl.classList.add('err');
-        emailEl.focus();
+    function continueEmail(){
+      var el = document.getElementById('email');
+      var v = el.value.trim();
+      if (!(window.BSP && BSP.isValidEmail(v))){
+        document.getElementById('emailErr').textContent = 'Enter a valid email address.';
+        el.classList.add('err'); el.focus();
         return;
       }
-      var link = document.getElementById('forgotLink');
-      link.textContent = 'Sending…';
-      BSP.sendPasswordReset(email).then(function(){
-        formErr.style.color = '#5fd08a';
-        formErr.textContent = 'Reset link sent to ' + email;
-        link.textContent = 'Forgot?';
-      }).catch(function(err){
-        formErr.style.color = '';
-        formErr.textContent = (err && err.message) || 'Could not send a reset link. Please try again.';
-        link.textContent = 'Forgot?';
-      });
+      currentEmail = v;
+      // loading state: disabled + 60% opacity + label, NO spinner. No code is actually
+      // sent (no OTP backend) — this only drives the design's step transition.
+      var btn = document.getElementById('continueBtn');
+      btn.disabled = true; btn.classList.add('loading');
+      document.getElementById('continueLbl').textContent = 'Sending code…';
+      document.getElementById('continueArrow').style.display = 'none';
+      setTimeout(function(){
+        btn.classList.remove('loading'); btn.disabled = false;
+        document.getElementById('continueLbl').textContent = 'Continue with email';
+        document.getElementById('continueArrow').style.display = '';
+        goStep('code');
+      }, 450);
     }
 
-    function submitAuth(e){
-      e.preventDefault();
-      clearErrors();
-      var isSignup = mode === 'signup';
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var ok = true;
+    function socialStub(what){ alert((what||'This') + ' is coming soon.'); }
+    function legal(e){ e.preventDefault(); alert('Terms & Privacy Policy coming soon.'); return false; }
 
-      if (!BSP.isValidEmail(email)){
-        document.getElementById('emailErr').textContent = 'Enter a valid email address.';
-        document.getElementById('email').classList.add('err');
-        ok = false;
+    /* ---------------- code step ---------------- */
+    function codeInputs(){ return Array.prototype.slice.call(document.querySelectorAll('#codes .code')); }
+    function clearCodes(){ codeInputs().forEach(function(i){ i.value=''; i.classList.remove('err'); }); }
+    function codeValue(){ return codeInputs().map(function(i){ return i.value; }).join(''); }
+
+    (function wireCodes(){
+      var ins = codeInputs();
+      ins.forEach(function(inp, idx){
+        inp.addEventListener('input', function(){
+          inp.value = inp.value.replace(/[^0-9]/g,'').slice(0,1);
+          inp.classList.remove('err');
+          document.getElementById('otpNote').textContent = '';
+          if (inp.value && idx < ins.length-1) ins[idx+1].focus();
+        });
+        inp.addEventListener('keydown', function(e){
+          if (e.key === 'Backspace' && !inp.value && idx > 0){ ins[idx-1].focus(); ins[idx-1].value=''; }
+          if (e.key === 'ArrowLeft' && idx > 0) ins[idx-1].focus();
+          if (e.key === 'ArrowRight' && idx < ins.length-1) ins[idx+1].focus();
+          if (e.key === 'Enter') verifyCode();
+        });
+        inp.addEventListener('paste', function(e){
+          e.preventDefault();
+          var d = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,6);
+          for (var i=0;i<ins.length;i++) ins[i].value = d[i] || '';
+          (ins[Math.min(d.length, ins.length-1)] || inp).focus();
+        });
+      });
+    })();
+
+    // HONEST: there is no 6-digit verifier on the backend. Do NOT pretend this logs in.
+    // Route the user to the real, working password sign-in with their email prefilled.
+    function verifyCode(){
+      var code = codeValue();
+      if (code.length < 6){
+        codeInputs().forEach(function(i){ if(!i.value) i.classList.add('err'); });
+        document.getElementById('otpNote').textContent = 'Enter all six digits.';
+        return;
       }
+      document.getElementById('otpNote').textContent =
+        '6-digit code sign-in isn’t enabled yet — continue with your password instead.';
+      setTimeout(function(){ goStep('password'); }, 900);
+    }
+
+    function resendCode(){
+      // Honest: nothing was emailed because the OTP backend isn't wired.
+      document.getElementById('otpNote').textContent =
+        'No code was sent — 6-digit sign-in isn’t enabled yet. Use your password below.';
+    }
+
+    /* ---------------- password fallback (real Firebase auth) ---------------- */
+    function togglePwMode(){
+      pwMode = (pwMode === 'signin') ? 'signup' : 'signin';
+      var isSignup = pwMode === 'signup';
+      document.getElementById('pwTitle').textContent = isSignup ? 'Create your account' : 'Sign in with a password';
+      document.getElementById('pwSub').textContent = isSignup
+        ? 'Free for 7 days — no card charged until the trial ends.'
+        : 'Enter your email and password to reach your board.';
+      document.getElementById('pwSubmitLbl').textContent = isSignup ? 'Start free trial' : 'Sign in';
+      document.getElementById('pwSwitchText').textContent = isSignup ? 'Already have an account?' : 'New here?';
+      document.getElementById('pwSwitchLink').textContent = isSignup ? 'Sign in' : 'Create an account';
+      document.getElementById('pwPass').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+      document.getElementById('pwPass').placeholder = isSignup ? 'At least 8 characters' : 'Your password';
+      ['nameLbl','pwName','pwTerms'].forEach(function(id){ document.getElementById(id).classList.toggle('hidden', !isSignup); });
+      document.getElementById('pwForgot').style.display = isSignup ? 'none' : '';
+      clearPwErrors();
+    }
+    function toggleTerms(){ termsChecked = !termsChecked; document.getElementById('pwTermsBox').classList.toggle('on', termsChecked); }
+    function clearPwErrors(){
+      ['pwNameErr','pwEmailErr','pwPassErr','pwFormErr'].forEach(function(id){ document.getElementById(id).textContent=''; });
+      ['pwName','pwEmail','pwPass'].forEach(function(id){ document.getElementById(id).classList.remove('err'); });
+    }
+
+    function submitPassword(){
+      clearPwErrors();
+      var isSignup = pwMode === 'signup';
+      var email = document.getElementById('pwEmail').value.trim();
+      var pass = document.getElementById('pwPass').value;
+      var ok = true;
+      if (!(window.BSP && BSP.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter a valid email address.'; document.getElementById('pwEmail').classList.add('err'); ok=false; }
 
       if (isSignup){
-        var name = document.getElementById('fullName').value.trim();
-        if (!name){
-          document.getElementById('nameErr').textContent = 'Enter your full name.';
-          document.getElementById('fullName').classList.add('err');
-          ok = false;
-        }
-        if (password.length < 8){
-          document.getElementById('pwErr').textContent = 'At least 8 characters.';
-          document.getElementById('password').classList.add('err');
-          ok = false;
-        }
-        if (!checks.terms){
-          document.getElementById('formErr').textContent = 'Please accept the terms to continue.';
-          ok = false;
-        }
-        if (!ok) return false;
-
-        BSP.signUp({ name: name, email: email, password: password, plan: plan })
-          // New accounts are always unverified — send them to the holding
-          // screen that prompts them to click the verification link.
-          .then(function(){ location.href = 'verify.html'; })
-          .catch(function(err){ document.getElementById('formErr').textContent = err.message; });
+        var name = document.getElementById('pwName').value.trim();
+        if (!name){ document.getElementById('pwNameErr').textContent='Enter your full name.'; document.getElementById('pwName').classList.add('err'); ok=false; }
+        if (pass.length < 8){ document.getElementById('pwPassErr').textContent='At least 8 characters.'; document.getElementById('pwPass').classList.add('err'); ok=false; }
+        if (!termsChecked){ document.getElementById('pwFormErr').textContent='Please accept the terms to continue.'; ok=false; }
+        if (!ok) return;
+        setBusy('pwSubmit','pwSubmitLbl','Creating account…');
+        BSP.signUp({ name:name, email:email, password:pass, plan:'free' })
+          .then(function(){ location.href='verify.html'; })
+          .catch(function(err){ clearBusy('pwSubmit','pwSubmitLbl','Start free trial'); document.getElementById('pwFormErr').textContent = err.message; });
       } else {
-        if (!password){
-          document.getElementById('pwErr').textContent = 'Enter your password.';
-          document.getElementById('password').classList.add('err');
-          ok = false;
-        }
-        if (!ok) return false;
-
-        BSP.signIn(email, password)
-          .then(function(u){
-            // Unverified users can sign in but must land on the holding screen
-            // until they click the verification link.
-            location.href = (u && u.emailVerified) ? 'bsp-consult-dashboard.html' : 'verify.html';
-          })
+        if (!pass){ document.getElementById('pwPassErr').textContent='Enter your password.'; document.getElementById('pwPass').classList.add('err'); ok=false; }
+        if (!ok) return;
+        setBusy('pwSubmit','pwSubmitLbl','Signing in…');
+        BSP.signIn(email, pass)
+          .then(function(u){ location.href = (u && u.emailVerified) ? 'bsp-consult-dashboard.html' : 'verify.html'; })
           .catch(function(err){
-            document.getElementById('formErr').textContent = err.message;
-            if (/password/i.test(err.message)) document.getElementById('password').classList.add('err');
-            if (/account/i.test(err.message)) document.getElementById('email').classList.add('err');
+            clearBusy('pwSubmit','pwSubmitLbl','Sign in');
+            document.getElementById('pwFormErr').textContent = err.message;
+            if (/password/i.test(err.message)) document.getElementById('pwPass').classList.add('err');
+            if (/email|account/i.test(err.message)) document.getElementById('pwEmail').classList.add('err');
           });
       }
-      return false;
+    }
+    function setBusy(btnId,lblId,txt){ var b=document.getElementById(btnId); b.disabled=true; b.classList.add('loading'); document.getElementById(lblId).textContent=txt; }
+    function clearBusy(btnId,lblId,txt){ var b=document.getElementById(btnId); b.disabled=false; b.classList.remove('loading'); document.getElementById(lblId).textContent=txt; }
+
+    function forgotPassword(){
+      clearPwErrors();
+      var el = document.getElementById('pwEmail');
+      var email = el.value.trim();
+      var fe = document.getElementById('pwFormErr');
+      if (!(window.BSP && BSP.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter your email above, then tap “Forgot?” for a reset link.'; el.classList.add('err'); el.focus(); return; }
+      var link = document.getElementById('pwForgot'); link.textContent='Sending…';
+      BSP.sendPasswordReset(email).then(function(){ fe.style.color='var(--pos)'; fe.textContent='Reset link sent to '+email; link.textContent='Forgot?'; })
+        .catch(function(err){ fe.style.color=''; fe.textContent=(err&&err.message)||'Could not send a reset link.'; link.textContent='Forgot?'; });
     }
 
-    // Init from query params.
+    /* ---------------- init ---------------- */
     (function init(){
-      var qplan = qp('plan');
-      if (qplan === 'edge' || qplan === 'pro') plan = qplan;
-      setPlan(plan);
-      var qmode = qp('mode');
-      setMode(qmode === 'signup' ? 'signup' : 'signin');
+      var qe = qp('email'); if (qe) { currentEmail = qe; document.getElementById('email').value = qe; }
+      onEmailInput();
+      var step = qp('step');
+      if (step === 'code' || step === 'password') goStep(step); else goStep('email');
     })();
   </script>
 </body>
