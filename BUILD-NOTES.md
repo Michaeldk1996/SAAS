@@ -296,3 +296,94 @@ one-line swap if he wants the export's exact green.
   in the live app); on failure they fall back to the shared A-tint/B-neutral initials circle
   (`mcAvatarFail`). Identical to the accepted upcoming-card behaviour — shared code, not a
   completed-state issue.
+
+---
+
+## Item 4 — THE SHARED MATCH-DETAIL COMPONENT (Summary / Stats / Point by point)
+
+Consolidation refactor. The one geometry-bearing element of match detail — the diverging
+per-stat bar — was rendered by **two hand-synced copies** that had to be kept identical by
+hand. They have now been collapsed to **one implementation** (`msBarHtml`), so the bar
+geometry can never drift per-surface again. Bar colours were also brought to the design spec.
+
+### The copies found (discovery)
+`bsp-consult-dashboard.html`, inline JS. Two near-duplicate stat-sheet stacks:
+- **Copy A — modal Match Stats sheet:** `buildMatchStatsSheet` (~7391) + `msheetRowHtml`
+  (~7241) + banner `buildMatchStatsBannerHtml` + `buildMatchStatsSection`. Binds inline
+  `m.matchStats` / `m.setStats` (from `matches.json`).
+- **Copy B — form-panel sheet:** `formPanelStatsBodyHtml` (~6280) + `formPanelStatRow` (~6247)
+  + `formPanelHtml` (~6329). Binds `setstats/{ek}.json` shards via `loadSetStatsShard`
+  (or inline for the Form tab).
+- Both emitted the SAME `.msheet-bar` markup verbatim (the duplication).
+- Already shared, left as-is: `buildPointByPointHtml` (5716) + `buildSetSelectorHtml` (7344).
+- Dead CSS (never emitted): `.mstat-track` / `.mstat-seg` (985–988). Left in place, harmless.
+
+### The seven mount points (all render the form-panel component `formPanelHtml`)
+1. `showYearSurfaceMatches` (~5874) — modal Overview year/surface drill
+2. `formRowHtml` (~6239) — modal Form tab rows
+3. `h2hRowHtml` (~6731) — modal H2H tab rows
+4. `atournMatchRowHtml` (~6878) — modal Tournament tab rows
+5. `styleVsArchetypeRowHtml` (~8704) — modal Playing-Style "vs archetype" rows
+6. `ppShowYearSurface` (~11089) — player-profile year/surface drill
+7. `ppFormRow` in `buildPlayerProfileHtml` (~11805) — player-profile Recent form
+Plus the modal's own **Match Stats tab** (mounted in `openAnalysisModal` @ 8933) = Copy A.
+Each derives its own `ek` off the row object (`data-ek` on `.aform-panel-wrap`).
+
+### What changed (before → after)
+- **New shared helper `msBarHtml(rawA, rawB)`** (~6253): the ONE diverging bar. Fixed centre,
+  total-normalised — each half = half the track; A's fill = `a/(a+b)` of the LEFT half drawn
+  from the centre leftward (`.msheet-half.p1{justify-content:flex-end}`), B's = `b/(a+b)` of
+  the RIGHT half from centre rightward. Clamps missing/non-positive sides to 0.
+- `msheetRowHtml` (Copy A) and `formPanelStatRow` (Copy B) now BOTH call `msBarHtml` — the
+  inline bar markup + its `mag`/`pct` math was deleted from both. **Grep proof:** exactly one
+  `msheet-half p1` emit site remains (inside `msBarHtml`).
+- **Bar colours → design spec** (CSS, one place, all mounts): `.msheet-fill.p1` `#3E7BFA`
+  gradient → solid **`#6aaeff`** (Player A); `.msheet-fill.p2` `#E8934B` amber gradient →
+  solid **`#e7e9ee`** (Player B). Matches the export runtime (`aFill:'#6aaeff'`,
+  `bFill:'#e7e9ee'`) and the README A/B identity rule ("never both blue").
+- **Legend dots → same identity:** `.mstat-dot.p1` `#3E7BFA`→`#6aaeff`, `.p2` `#E8934B`→`#e7e9ee`.
+
+### Real ek(s) used + geometry proof
+- Modal Stats: **`past-12149516`** (A. Tabilo vs T. Griekspoor, real `m.matchStats` from
+  `matches.json`). Rendered vs independently-computed `a/(a+b)`: Aces 14/17 → shareA 0.452
+  (14/31 = 0.4516); 1st-serve% 60/65 → 0.480; Break-pts-conv → 0.417. All within rounding.
+  Max rendered half-share 0.583 < 1 → neither side fills its half. Colours `rgb(106,174,255)` /
+  `rgb(231,233,238)` on every bar.
+- Form-panel Stats via a REAL `setstats/{ek}.json`: ek **`12059463`**, fetched over HTTP through
+  the shipped `loadSetStatsShard` → `matchStatsFromShard` → `formPanelStatsBodyHtml` → `msBarHtml`.
+  12 bars; Aces 4-4 → renderedShareA 0.500; same identity colours. (Shard synthesized from the
+  real `historical-match-stats.json` entry for the render harness only — never committed.)
+- PbP: sub-tab still paints real game rows post-refactor (verified with a real point log).
+
+### Verification harness
+`scripts/render-matchdetail.mjs` — 1400px CDP (explicit `Emulation.setDeviceMetricsOverride`),
+auth-stubbed, opens the modal on a real completed match, cross-checks every bar's rendered
+fill-width-within-its-half against the raw stat, verifies computed colours, screenshots Stats +
+PbP, exercises the real `setstats/{ek}.json` fetch path, and spot-checks other mounts.
+Screenshots: `md-stats-1400-<commit>.png`, `md-pbp-1400-<commit>.png`.
+
+### Inferred choices (no founder screenshot for this component — confirm)
+1. **"Summary view" = the existing headline strip** (names+dots + `.ms-final` "Final · score"
+   banner + set-total header), NOT a new third sub-tab. The export + current app both expose
+   only **Stats / Point by point** sub-tabs; the founder's "Summary" maps to that header. No new
+   tab was invented.
+2. **Consolidated the geometry-bearing BAR, not the two sheet WRAPPERS.** A full fold of the
+   modal sheet (p1/p2 absolute, banner, won/total fractions) and the form-panel sheet (own/opp
+   orientation, compact leader-weighted value cells) into one wrapper would change the modal's
+   data orientation and risk breaking a working modal — out of scope per the "stop rather than
+   commit a broken modal" rule. The bar (which "took four attempts") is now single-sourced;
+   the two value-cell layouts remain per their surface.
+3. **Value-text colours left as shipped** (modal neutral `#e7ebf1`; form-panel leader-weighted).
+   Item 4 specifies bar + identity colours only; value recolouring was not in scope.
+4. Bar fills are **solid** (not gradients) per the export's `aFill`/`bFill` solids.
+
+### Residual gaps (honest)
+- No local match has a `point-by-point.json` entry (that sidecar covers older matches; the 37
+  local `matches.json` fixtures don't overlap it), and `setstats/`/`pbp/` shard dirs are
+  pipeline-built, absent from the worktree. PbP real-rows and the form-panel real-shard were
+  therefore verified with **render-only** fixtures built from real data already in the repo
+  (`point-by-point.json` re-keyed; `setstats` synthesized from `historical-match-stats.json`).
+  The code paths, orientation and geometry are the shipped ones; only the file location is faked.
+- The H2H tab's single local row is the *current* match (no past box score in the served index),
+  so that specific row shows "stats not available" — a data gap, not a render break; the
+  form-panel component structure renders.

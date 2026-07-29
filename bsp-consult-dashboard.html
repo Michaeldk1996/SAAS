@@ -974,8 +974,8 @@
 
   /* ---- Match Stats tab — single split bar per stat (Flashscore-style) ---- */
   :is(.modal-analysis,.pp-formsurface) .mstat-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; vertical-align:middle; }
-  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p1{ background:#3E7BFA; margin-right:6px; }
-  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p2{ background:#E8934B; margin-left:6px; }
+  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p1{ background:#6aaeff; margin-right:6px; }
+  :is(.modal-analysis,.pp-formsurface) .mstat-dot.p2{ background:#e7e9ee; margin-left:6px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row{ margin-bottom:16px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:6px; }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-val{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; flex-shrink:0; min-width:44px; }
@@ -1013,8 +1013,8 @@
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-half{ flex:1; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-half.p1{ display:flex; justify-content:flex-end; }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill{ height:100%; border-radius:4px; display:block; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p1{ background:linear-gradient(90deg,rgba(62,123,250,0.35),#3E7BFA); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:linear-gradient(90deg,#E8934B,rgba(232,147,75,0.35)); }
+  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p1{ background:#6aaeff; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:#e7e9ee; }
   /* Banner above the stat sheet of a suspended match: these numbers are real but
      frozen mid-match, so they must never be read as a completed box score. */
   .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,0.08); border-left:2px solid #8b93a3; border-radius:10px; background:rgba(255,255,255,0.025); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#cfd4de; }
@@ -6240,10 +6240,30 @@ function formRowHtml(match, idPrefix, playerKey, playerName){
   `;
 }
 
-// A stat row inside an expanded recent-match panel. Same diverging-bar
-// component as the main Match Stats sheet (.msheet-bar): value left, label
-// centred, value right, and a bar whose halves show each player's share of the
-// stat — the tracked player reads left/blue, the opponent right/amber.
+// THE one diverging stat bar, shared by every match-detail surface: the modal
+// Match Stats sheet (msheetRowHtml) and all seven form-panel mounts
+// (formPanelStatRow). Fixed centre, total-normalised — each half is exactly
+// half the track; Player A's fill = a/(a+b) of the LEFT half drawn from the
+// centre leftward (the half's justify-content:flex-end anchors it there),
+// Player B's = b/(a+b) of the RIGHT half from the centre rightward. So neither
+// side ever fills its half unless the other is 0. A missing/non-positive side
+// contributes nothing rather than distorting the split. Colour is the player's
+// identity (A #6aaeff / B #e7e9ee, in .msheet-fill.p1/.p2), never who leads.
+// ONE implementation on purpose: do not inline a per-tab copy of this markup.
+function msBarHtml(rawA, rawB){
+  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const a = mag(rawA), b = mag(rawB), sum = a + b;
+  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
+  return `
+      <div class="msheet-bar">
+        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
+        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
+      </div>`;
+}
+
+// A stat row inside an expanded recent-match panel. Delegates its bar to the
+// shared msBarHtml so the geometry can never drift from the modal sheet's; only
+// the value/label cells (compact, leader-weighted) are the form panel's own.
 function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
@@ -6254,11 +6274,6 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   const oppColor = oppLeads ? '#f0a95f' : '#8b93a3';
   const ownWeight = ownLeads ? 700 : 500;
   const oppWeight = oppLeads ? 700 : 500;
-  // Bar magnitude = the stat itself (count, or the rate for pct stats); a
-  // missing side contributes nothing rather than distorting the split.
-  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-  const a = mag(ownVal), b = mag(oppVal), sum = a + b;
-  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
     <div class="aform-panel-stat">
       <div class="aform-panel-row">
@@ -6266,10 +6281,7 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
         <span style="color:#5b6472;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">${label}</span>
         <span style="text-align:right;color:${oppColor};font-weight:${oppWeight};">${fmt(oppVal)}</span>
       </div>
-      <div class="msheet-bar">
-        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
-        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
-      </div>
+      ${msBarHtml(ownVal, oppVal)}
     </div>
   `;
 }
@@ -7258,11 +7270,6 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   }
   const frac = (raw) => (raw && raw.total > 0) ? `<span class="msheet-frac">(${raw.won}/${raw.total})</span>` : '';
   const num = (v) => v == null ? '—' : (kind === 'pct' ? `${v}%` : String(v));
-  // Bar magnitude = the raw stat itself (a count, or the percentage for rate
-  // stats). A missing side contributes nothing rather than distorting the split.
-  const mag = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-  const a = mag(p1Val), b = mag(p2Val), sum = a + b;
-  const pct = (n) => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
   return `
     <div class="msheet-row">
       <div class="msheet-vals">
@@ -7270,10 +7277,7 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
         <span class="msheet-label">${label}</span>
         <span class="msheet-val p2">${num(p2Val)}${frac(p2Raw)}</span>
       </div>
-      <div class="msheet-bar">
-        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
-        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
-      </div>
+      ${msBarHtml(p1Val, p2Val)}
     </div>
   `;
 }
