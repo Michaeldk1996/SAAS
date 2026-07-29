@@ -353,7 +353,7 @@
   [data-page="matches"] .mc-sig-liq{ width:104px; flex:none; text-align:right; font-family:var(--mx-font-mono); font-size:11px; color:var(--mc-muted); }
   [data-page="matches"] .mc-sig-row.unbound .mc-sig-fav, [data-page="matches"] .mc-sig-row.unbound .mc-sig-dog, [data-page="matches"] .mc-sig-row.unbound .mc-sig-liq{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-sig-note{ margin-top:11px; font-family:var(--mx-font-ui); font-size:10.5px; line-height:1.5; color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:700; font-size:13px; text-decoration:none; }
+  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--mc-brand); font-family:var(--mx-font-ui); font-weight:600; font-size:13px; text-decoration:none; }
   [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
   [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
   [data-page="matches"] .value-pill.pos{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
@@ -1547,10 +1547,10 @@
     --sf-text:#e7e9ee; --sf-text-3:#8b93a3; --sf-muted:#5b6880; --sf-muted-2:#4b5672;
     --sf-pos:#3dd68c; --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
-  body{ background:var(--sf-page); padding-left:250px; }
+  body{ background:var(--sf-page); padding-left:236px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:250px; background:var(--sf-sidebar);
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:236px; background:var(--sf-sidebar);
     border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
     padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
   .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; }
@@ -1569,8 +1569,12 @@
   .sf-nav button.active{ background:var(--sf-brand-tint); color:var(--sf-text); font-weight:600; }
   .sf-nav button.active svg{ color:var(--sf-brand); }
   .sf-foot{ margin-top:auto; padding-top:16px; }
-  .sf-userchip{ display:flex; align-items:center; gap:11px; padding:10px; border-radius:11px; cursor:pointer; text-decoration:none; color:inherit; }
-  .sf-userchip:hover{ background:rgba(255,255,255,0.03); }
+  /* Review item 1: the account chip is a single bordered CARD (avatar · name +
+     "Free plan" · chevron), one contained unit — matching the export. No Sign out
+     link on the sidebar: that lives behind the chevron (the chip links to account). */
+  .sf-userchip{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:12px;
+    border:1px solid var(--sf-border-data); background:var(--sf-card); cursor:pointer; text-decoration:none; color:inherit; }
+  .sf-userchip:hover{ background:rgba(255,255,255,0.05); border-color:var(--sf-border-subtle); }
   .sf-userav{ width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center;
     background:linear-gradient(135deg,#2f6bd8,#132648); color:#dbe6ff; font-family:var(--sf-font-mono); font-weight:700; font-size:12px; }
   .sf-userinfo{ min-width:0; flex:1; display:flex; flex-direction:column; }
@@ -1593,20 +1597,27 @@
 
   /* item 5 — header: title block + Upcoming/Completed segmented control */
   [data-page="matches"] .mx-titlerow{ align-items:flex-start !important; }
-  [data-page="matches"] .mx-subtitle{ max-width:640px; }
-  [data-page="matches"] .mx-datastatus{ color:var(--sf-text-3) !important; }
+  /* Review item 2 — header palette locked to the export: title #e7e9ee, sub-line
+     and the whole status line #5b6880 muted, the live dot #3dd68c. */
+  [data-page="matches"] .mx-h1{ color:var(--sf-text) !important; }
+  [data-page="matches"] .mx-subtitle{ max-width:640px; color:var(--sf-muted) !important; }
+  [data-page="matches"] .mx-datastatus{ color:var(--sf-muted) !important; gap:7px; }
   [data-page="matches"] .mx-datastatus .dot{ background:var(--sf-pos) !important; box-shadow:0 0 8px var(--sf-pos) !important; }
-  [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--sf-text-3); font-family:var(--sf-font-ui); }
-  [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--sf-text-3); font-family:var(--sf-font-mono); }
+  [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--sf-muted); font-family:var(--sf-font-ui); }
+  [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--sf-muted); font-family:var(--sf-font-mono); }
+  /* Review item 4 — segmented control locked to README values. Active: 0.22 fill on
+     0.45 border, #e7e9ee weight 700. Inactive: transparent, borderless (a transparent
+     1px border reserves the space so the active state doesn't nudge its neighbour),
+     #5b6880 weight 600. Tighter padding so the container isn't wider than the export. */
   [data-page="matches"] .mx-viewseg{ display:inline-flex; background:var(--mx-bg-input); border:1px solid var(--sf-border-subtle);
     border-radius:9px; padding:3px; gap:2px; }
-  [data-page="matches"] .mx-viewseg button{ background:none; border:none; padding:7px 16px; border-radius:7px;
-    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-text-3); cursor:pointer; }
-  [data-page="matches"] .mx-viewseg button.active{ background:var(--sf-brand-tint); color:#fff; }
+  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:6px 13px; border-radius:7px;
+    font-family:var(--sf-font-ui); font-size:12.5px; font-weight:600; color:var(--sf-muted); cursor:pointer; }
+  [data-page="matches"] .mx-viewseg button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#e7e9ee; font-weight:700; }
 
   /* item 6 — date-rail arrows as bordered square chevron buttons */
   [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; padding:0 !important; border:1px solid var(--sf-border-subtle) !important;
-    border-radius:8px; display:grid; place-items:center; color:var(--sf-text-3) !important; font-size:12px; }
+    border-radius:8px; background:transparent !important; display:grid; place-items:center; color:var(--sf-text-3) !important; font-size:18px; font-weight:400; line-height:1; }
   [data-page="matches"] .mx-daytabschevron:hover{ border-color:var(--sf-brand) !important; color:#fff !important; }
 
   /* item 8 — header date-time (left cluster, mono/muted) */
@@ -1670,7 +1681,6 @@
       </span>
       <svg class="sf-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
     </a>
-    <span id="acctSignout" onclick="window.BSP&&BSP.signOut?BSP.signOut().then(function(){location.href='funnel.html';}):(location.href='funnel.html')" title="Sign out" style="display:none;cursor:pointer;color:#8b93a3;font-size:11px;font-weight:600;padding:5px 10px;margin-top:8px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;text-align:center;">Sign out</span>
     <a class="sf-upgrade" href="account.html">Upgrade to Pro</a>
   </div>
 </aside>
@@ -1691,10 +1701,13 @@
       var signout = document.getElementById('acctSignout');
       var main = document.getElementById('acctMain');
       if (u){
-        var initials = (u.name||u.email||'A').trim().split(/\s+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+        // Show a display name, never the raw email (review item 1): prefer the
+        // account name; otherwise take the local part of the email ("alex.morgan").
+        var display = u.name || (u.email ? String(u.email).split('@')[0] : 'Account');
+        var initials = display.trim().split(/[\s._-]+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
         if (avatar) avatar.textContent = initials || 'A';
-        if (label) label.textContent = u.name || u.email;
-        if (signout) signout.style.display = '';
+        if (label) label.textContent = display;
+        if (signout) signout.style.display = 'none';
         if (main) main.href = 'account.html';
       } else {
         if (label) label.textContent = 'Sign in';
@@ -1734,7 +1747,7 @@
 
   <div class="mx-controls">
     <div class="mx-daytabsrow">
-      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">◀</button>
+      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
           <button data-day="daymin2" id="daymin2Tab"><span id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
@@ -1744,7 +1757,7 @@
           <button data-day="day2" id="day2Tab"><span id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
         </div>
       </div>
-      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">▶</button>
+      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">›</button>
     </div>
     <div class="mx-filterbar">
       <div class="mx-surfacedd" id="surfaceDropdown">
