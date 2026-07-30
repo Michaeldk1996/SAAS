@@ -924,12 +924,53 @@ the live "edge" tab (`renderEdgeModel`). Reference: `stennisfy-frontend/design-e
   info is folded into Market Context ("Stennisfy base price") + the 17-segment strip.
   NOTE: the detailed per-layer list (which of the 17 layers fired and their pp
   contribution) is now summarised as a strip + count only — the per-layer DETAIL is no
-  longer shown. If that detail should be retained, re-add it as an expandable "see all 17
-  layers" under the strip (keep-richer, like the Profile extras). Founder's call.
-- **Branding left as-is:** page header still reads "TENNIS EDGE MODEL · N-LAYER" /
-  "BSP Consult's proprietary…", while the export/app-nav use "Stennisfy". Did NOT migrate
-  BSP-Consult→Stennisfy branding here — that's a cross-cutting rename, a separate task.
-  Only the Analysis section copy (explicit in the export) uses Stennisfy.
+  longer shown.
+  RULING (founder, 2026-07-30): **the strip is the decision — do NOT restore the detail
+  list.** The design phase SAW the full value layers and deliberately chose a summarised
+  strip over the detail list; re-adding it would second-guess a reviewed call. This is NOT
+  the "keep-richer" exception the Profile extras were (those were things the design phase
+  never saw, so were never rejected — this detail WAS seen and cut). Recorded here so it is
+  not later "restored" as a missing feature.
+- **Branding — header migrated on this page (DONE 2026-07-30):** the Model/Match-Analysis
+  page header sub-line now reads "Stennisfy's proprietary match analysis and value model."
+  (was "BSP Consult's proprietary…"). Reason: a page header contradicting its own
+  Stennisfy sidebar nav on the same screen is a self-contradiction, not a deferred rename.
+  The eyebrow "Tennis Edge Model · N-layer" is a product/model name, not BSP branding, and
+  stays.
+
+- **BSP-Consult → Stennisfy branding migration (OPEN — its own task):** the design build
+  contained exactly ONE rendered BSP string (removed in design). The LIVE app still renders
+  **17 BSP-branded strings across 5 served surfaces** (plus 4 image-fallback `alt` texts and
+  the `assets/bsp-logo.jpg` logo asset). Inventory — file : line : rendered text:
+  - `bsp-consult-dashboard.html` (served as index.html):
+    - 2835 : `<span class="abrand">BSP Consult</span>` (Intel-box brand label)
+    - 3146 : "… BSP Consult Intel notes are our own." (news-source disclaimer)
+    - 3402 : `BSP Consult Intel` (intel badge)
+    - 4707 : "Elo is BSP Consult's self-computed surface Elo …" (ratings-table footer)
+  - `account.html`:
+    - 6   : `<title>BSP Consult · Account settings</title>`
+    - 139 : `<b>BSP CONSULT</b>` (wordmark)
+    - 166 / 258 : "Your identity across BSP Consult." (panel desc — static + JS default)
+  - `verify.html`:
+    - 6  : `<title>BSP Consult · Verify your email</title>`
+    - 60 : `<b>BSP CONSULT</b>` (wordmark)
+    - 74 : "Open the email from BSP Consult (check spam …)."
+  - `admin.html`:
+    - 111 : `document.title = 'BSP Admin'`
+    - 168 : `<h1>BSP Consult · Admin</h1>`
+  - `funnel.html`:
+    - 6   : `<title>BSP Consult · Tennis Edge — Find the edge the bookmakers miss</title>`
+    - 162 : `<b>BSP CONSULT</b>` (wordmark)
+    - 183 : "BSP Consult turns raw ATP data into fair prices. …" (hero)
+    - 365 : "No. BSP Consult is an analytics tool. …" (FAQ)
+    - 389 : `© 2026 BSP Consult · Tennis edge` (footer)
+  Image-fallback `alt="BSP Consult"` (renders only if the logo image fails): account.html:138,
+  verify.html:59, funnel.html:160 & 388. Logo asset: `assets/bsp-logo.jpg` (all pages).
+  NOT counted: `window.BSP.*` auth API, `BSP_ICONS.*` identifiers, code comments, CSS class
+  names — none of these render. The repo's own `index.html` redirect stub also names BSP
+  twice but is NOT served (pipeline copies the dashboard over it as index.html).
+  This inventory is the migration backlog; it was NOT swept in this push (only the
+  self-contradicting page header was fixed).
 - **Retained the gated Market Signal block** inside Fair price & value (shipped feature,
   not in the mock) — kept.
 - **No win/loss token migration** folded in (separate deferred task).
