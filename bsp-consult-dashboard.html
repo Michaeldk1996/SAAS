@@ -2798,8 +2798,13 @@ let _eloRoster = null;      // surname(lower) -> { label:"I. Surname", elo }
 
 // Keyword classifier → one of the four export categories. Most specific first
 // (injuries), then draws/schedules, then match reports, else general tour news.
+// TITLE ONLY: scanning the body force-bucketed ~40% of genuine Tour News into
+// Injuries/Draws on incidental mentions ("shoulder", "draw") and starved Match
+// Reports. Live-feed audit (103 articles): title+content → 65% Injuries / 0% Tour
+// News (implausible); title-only → 31% Injuries / 24% Match Reports / 40% Tour
+// News. `content` retained in the signature for callers; deliberately unused.
 function newsClassify(title, content){
-  const t = ((title || '') + ' ' + (content || '')).toLowerCase();
+  const t = String(title || '').toLowerCase();
   if (/\b(withdr\w*|retir\w*|injur\w*|pull(?:s|ed)?\s+out|walkover|w\/o|hip|knee|ankle|shoulder|wrist|elbow|thigh|hamstring|calf|abdomin\w*|illness|virus|medical timeout|ruled out|sidelined|abandon\w*|comeback from|back (?:injury|complaint|problem|spasm))\b/.test(t)) return 'Withdrawals & Injuries';
   if (/\b(draw|draws|seed\w*|bracket|order of play|qualif\w*|wild ?card|entry list|schedul\w*|byes?)\b/.test(t)) return 'Draws & Schedules';
   if (/\b(beat|beats|def\.?|defeat\w*|win|wins|won|reach(?:es|ed)?|survive[sd]?|edge[sd]?|advanc\w*|through to|sets?|tie-?break|final|semi-?final|quarter-?final|upset|saves?|clinch\w*|thriller)\b/.test(t)) return 'Match Reports';

@@ -701,3 +701,42 @@ Styles pass" it is complete. The Playing Styles **badge palette** (`#3ECF8E`
 Pressure-Player pill at ~3399, matched by the identical Profile/Players badge at
 ~10581) was left on the export-specified categorical green pending that decision —
 changing it alone would split PS badges from the same badge elsewhere.
+
+## News — derived-field accuracy audit (TEN-8, founder task before News "stands")
+
+Ran the two derived fields over the **live** `news-feed.json` (103 articles,
+`generatedAt 2026-07-29T12:25Z`). Founder rule: "a wrong chip is worse than none —
+render nothing rather than a guess."
+
+**Category classifier — was body-contaminated; fixed to TITLE-ONLY.**
+`newsClassify()` scanned `title + content`, so incidental body mentions
+("shoulder", "draw", "schedule") force-bucketed articles. Distribution proved it:
+- title+content: 65% Injuries / 25% Draws / 10% Match Reports / **0% Tour News**
+- title-only:    31% Injuries /  5% Draws / 24% Match Reports / **40% Tour News**
+Switched to title-only (`content` kept in signature, unused). Every article still
+gets a category (fallback = Tour News). **Residual title-word false positives**
+remain and are NOT yet fixed: "Wimbledon **Sets** Attendance Record" → Match
+Reports (bare `sets?`), "Main **Draw** Match" → Draws & Schedules. Options for the
+founder: tighten the regexes, or gate low-confidence single-keyword hits to no chip.
+
+**Player chip (Elo surname map) — UNRELIABLE, no code change pending founder call.**
+- Feed native `player_name`/`player_key` are present in schema but **empty on
+  0/103** live articles — the pipeline never populates them, so headline
+  derivation is a workaround for a data-layer gap, not redundant.
+- Derived map fires on 64/103 (62%) but `newsPlayerFor()` returns the FIRST
+  in-roster surname in the title, with **no gender/tour guard and no subject
+  detection**. Confirmed false positives: "Alex Eala Overcomes **Zheng Qinwen**…"
+  → "M. Zheng" (WTA player mis-tagged via an ATP surname collision; subject is
+  Eala, not Zheng). A single-in-roster-surname gate (33 articles) does NOT fix it
+  — Zheng is still the sole male-roster hit on those women's articles.
+- Options measured: (A) single-surname gate + WTA-collision denylist (~30 chips);
+  (B) first-named-entity + single male hit (fewer, higher precision); (C) **fix at
+  source** — populate `player_key` in `build-news-feed.js` from the feed's
+  `entity_key`/event data so the chip is data, not NLP. Recommend C; A as interim.
+
+**Default window.** Age vs generatedAt (cumulative): ≤6h 0, ≤12h 7, ≤24h 18,
+≤48h 41, ≤72h 56, >72h 47. Current 24h default returns 18 (not empty) so it is
+safe for this feed, but freshest item is >6h old — recommend keeping 24h + an
+auto-widen fallback (step to 48/72h/7d) when the filtered window yields 0, so the
+page never opens empty. Note: several ≤24h items are WTA; the "ATP MEN'S" pill is
+not excluding them (separate men's-filter gap, flagged).
