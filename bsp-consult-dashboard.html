@@ -279,7 +279,7 @@
   /* §5-§9 — Completed row is a CSS grid: name | set-cluster | flex spacer | 1px
      divider | odds journey. Winner gets the accent bar flush to the left edge via
      inset box-shadow (§9); neither row is opacity-dimmed. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:170px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ display:none; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner{ box-shadow:inset 3px 0 0 var(--mc-pos); }
   [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; }
@@ -287,13 +287,14 @@
   [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-13px 0; }
   [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
   /* §5/§7 — OPEN / CLOSE caps header over the odds column, once per card. */
-  [data-page="matches"] .mc-cmpl-head{ display:grid; grid-template-columns:170px 126px minmax(18px,1fr) 1px 218px; gap:0; padding:0 20px 2px; }
+  [data-page="matches"] .mc-cmpl-head{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; padding:0 20px 2px; }
   [data-page="matches"] .mc-cmpl-head__odds{ grid-column:5; display:flex; align-items:center; gap:10px; padding-left:18px; }
   [data-page="matches"] .mc-cmpl-head__odds .sp{ width:46px; flex:0 0 auto; }
   [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
   /* §3 — Completed summary strip: settled · favourites held · upsets. Full card
      width + card chrome; three cells split by 1px vertical dividers (first cell
      has no left divider). Held% and Upsets both derive from ONE heldCount pass. */
+  [data-page="matches"] .mc-summary-slot:not(:empty){ margin:2px 0 16px; }
   [data-page="matches"] .mc-statbox{ display:grid; grid-template-columns:repeat(3,1fr); background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:14px 18px; }
   [data-page="matches"] .mc-statbox__cell{ display:flex; flex-direction:column; gap:6px; padding:0 20px; border-left:1px solid rgba(255,255,255,0.07); }
   [data-page="matches"] .mc-statbox__cell:first-child{ border-left:0; padding-left:0; }
@@ -356,6 +357,13 @@
   [data-page="matches"] .mc-players.cmpl .mc-name{ font-weight:700; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name{ color:var(--mc-text); }
   [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name{ color:var(--mc-muted); }
+  /* Smaller PASS-3 item: with the WON pill gone and identity colour suppressed,
+     brightness + the edge bar are the only winner signals, so the set-score digits
+     must carry the differential too — winner bright, loser dimmed (not both muted). */
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__g,
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__total{ color:var(--mc-text); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__g,
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total{ color:var(--mc-muted-2); }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -1847,6 +1855,12 @@
       <button data-view="completed">Completed</button>
     </div>
   </div>
+
+  <!-- §2 (PASS 3): completed-view day summary sits directly under the status line
+       and ABOVE the date strip + filter row — a day-level summary, not a header
+       for the first card. Populated by renderMatches; empty (and collapsed) in
+       the Upcoming view. -->
+  <div class="mc-summary-slot" id="mcSummaryStrip"></div>
 
   <div class="mx-controls">
     <div class="mx-daytabsrow">
@@ -4357,13 +4371,37 @@ function mcFormBar(val){
 }
 // Completed set-score cluster for one player: sets-won total tile (winner faint /
 // loser fainter) + per-set games in Mono muted. who = 'p1' | 'p2'.
+// Parse the score display string ("7-5, 7-6(4)") into per-set tiebreak points,
+// aligned index-for-index to finalScore.sets. Each entry is {p1,p2} tiebreak
+// points for a tiebreak set, or null for a normal set. The parenthetical is the
+// LOSER's tiebreak points; the winner's are 7, or loser+2 when the break ran
+// long (e.g. 7-6(8) = a 10-8 breaker). Source is display only — sets[] carries
+// games, not tiebreak points, and setstats has none either (PASS 3 §5).
+function mcTiebreaks(finalScore){
+  const disp = finalScore && typeof finalScore.display === 'string' ? finalScore.display : '';
+  if (!disp) return [];
+  return disp.split(',').map(tok => {
+    const m = tok.trim().match(/^(\d+)-(\d+)(?:\((\d+)\))?$/);
+    if (!m || m[3] == null) return null;
+    const a = +m[1], b = +m[2], loserPts = +m[3];
+    if (a === b) return null;
+    const winnerPts = loserPts <= 5 ? 7 : loserPts + 2;
+    // Fewer games in the set = the tiebreak loser; each side shows its own points.
+    return a > b ? { p1: winnerPts, p2: loserPts } : { p1: loserPts, p2: winnerPts };
+  });
+}
 function mcSetCluster(finalScore, who){
   const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
   const total = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
   const isW = finalScore.winner === who;
+  const tbs = mcTiebreaks(finalScore);
   // Games are DIRECT grid children of .mc-sets (no wrapper) so each per-set cell
   // lands in its own fixed column and lines up across the two player rows (§6).
-  const games = sets.map(s => `<span class="mc-sets__g">${s[who]}</span>`).join('');
+  // Tiebreak sets carry a superscript of this side's own breaker points (§5).
+  const games = sets.map((s, i) => {
+    const tb = (tbs[i] && tbs[i][who] != null) ? `<sup>${tbs[i][who]}</sup>` : '';
+    return `<span class="mc-sets__g">${s[who]}${tb}</span>`;
+  }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
 }
 // Completed odds journey for one player: open → gradient track → close, plus a
@@ -4484,6 +4522,10 @@ function updateMatchesHeaderChrome(){
 function renderMatches(){
   updateMatchesHeaderChrome();
   const list = document.getElementById('matchlist');
+  // §2 (PASS 3): the summary strip lives in its own slot above the date strip, not
+  // inside the card list. Clear it every render; the completed branch below refills.
+  const summarySlot = document.getElementById('mcSummaryStrip');
+  if (summarySlot) summarySlot.innerHTML = '';
   const filtered = getFiltered();
   if (filtered.length === 0){
     list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
@@ -4677,7 +4719,8 @@ function renderMatches(){
       <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Favourites held</span><span class="mc-statbox__val">${heldPct}</span></div>
       <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Upsets</span><span class="mc-statbox__val">${upsets}</span></div>
     </div>`;
-    cards.unshift(statBoxHtml);
+    if (summarySlot) summarySlot.innerHTML = statBoxHtml;
+    else cards.unshift(statBoxHtml); // fallback if the slot markup is ever absent
   }
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
