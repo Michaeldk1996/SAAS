@@ -837,29 +837,57 @@ never saw these; they were never presented, so never rejected):**
   carrying its OWN independent 3-tab switcher **Results / Sets & Games / Service**.
   Column sets per the export: Results = W-L·M·Win%; Sets & Games = TB%·Gm%·Set% (that
   IS the export's column order — verified in the export DOM, not a typo); Service =
-  MS·A%·DF%·Hld%·Brk%. New: `ppSplitCard`, `ppSplitTabsHtml`, `ppSplitTabTableHtml`,
+  A%·DF%·Hld%·Brk% (MS dropped as a column per founder point 1 — see RESOLVED note below;
+  the sample now renders once under the tab switcher). New: `ppSplitCard`, `ppSplitTabsHtml`,
+  `ppServiceSampleHtml`, `ppSplitTabTableHtml`,
   state `ppState.splitsTab={career,last52}`, `setPpSplitTab()` (repaints via `ppRepaint`).
 - **(A) Rail reorder** to tiles → Surface Performance → Surface Record → Radar. The
   radar (`ppStyleCard`) moved to the end; surface record sits right after surface
   performance. (Chips "View by surface" stay at the top as the surface control.)
 
-**DELIBERATE DEVIATIONS (flagged for the one-push review):**
-- **Win%-only grading.** The export decoratively tints Set%/Hld%/Brk% too, but the live
-  page only has a validated ranking-tier baseline for Win% (`ppSplitGrade`). Colouring
-  the others would be an unbacked colour = a false signal. Only Win% is graded; the rest
-  render neutral. (A colour can turn a number false — same rule as elsewhere.)
-- **DROPPED the raw count-pair columns.** The export's tabbed layout shows fewer stat
-  columns than the old wide table — it drops the raw `Set W-L` / `Game W-L` / `TB W-L`
-  pairs, keeping the percentages. Built faithful to the export (founder called C a
-  considered design decision). REVERSIBLE: if the raw pairs should be retained, add them
-  back into the Sets & Games tab.
-- **Service tab overflow on the narrow twin canvas.** Each twin side is only ~300px at a
-  1400px viewport, which fits the 3-col Results/Sets tabs but NOT the 5-col Service tab —
-  `MS·A%·DF%` show and `Hld%·Brk%` sit behind an `overflow-x:auto` horizontal scroll.
-  Hld%/Brk% are the two headline serve stats, so this hides the important ones by default.
-  OPEN for founder: (a) accept the scroll, (b) drop MS as a column (least important — it's
-  the sample denominator) to get Service to 4 cols that fit, (c) widen the splits block, or
-  (d) stack Career/Last-52 instead of twin so each table gets full width. Recommend (b).
+**FOUNDER RULINGS (comment 2026-07-30 — these CLOSE the three open items below):**
+> "The export wins. The export shows percentages only in the tabbed splits… Build it as
+> the export shows it. If a field was moved, reordered or removed relative to the old page,
+> follow the export — that is the decision, not an omission to second-guess." The Player
+> Profile extras (six tiles, Surface Record, market callout) stay — "the narrow exception,
+> and only because the design phase never saw them." General rule: **do NOT carry the old
+> page's information architecture forward.** Where the export shows something differently,
+> or shows less, the export is the spec.
+
+**VALIDATED BASELINES — which split metrics may ever be colour-graded (founder point 2):**
+Record this so nobody "completes" the grading later against a baseline that does not exist.
+- **Win%** — HAS a validated baseline: the ranking-tier median (`ppSplitGrade`, tier from
+  the player's current rank). This is the ONLY validated reference in the file, so Win% is
+  the ONLY graded (coloured) cell. Green/red is earned.
+- **NO validated baseline (render neutral, never grade without building one first):**
+  Set%, Gm%, TB% (Sets & Games); A%, DF%, Hld%, Brk% (Service). The export decoratively
+  tints some of these; we deliberately do NOT — an unbacked colour is a false signal
+  ("a colour can turn a number false" — same rule as elsewhere). Grading any of these
+  later REQUIRES first fitting and validating a per-metric tour/tier baseline.
+
+**RESOLVED — count-pair columns stay DROPPED (founder point 3, the export wins).** The
+earlier note about restoring the raw `Set W-L` / `Game W-L` / `TB W-L` (and serve count)
+pairs is REVERSED by the founder: "Ignore what I said about restoring the raw count pairs…
+The export shows percentages only in the tabbed splits. That was reviewed and signed off."
+The tabbed splits show percentages only — this is FINAL, do not re-add the count pairs.
+
+**RESOLVED — Service tab now fits without a horizontal scroll (founder point 1, option b).**
+Dropped **MS as a column**; the Service tab is now 4 percentage columns (`A%·DF%·Hld%·Brk%`).
+The matches-served sample renders ONCE under the tab switcher as muted context
+(`ppServiceSampleHtml`) — the span across the shown splits (min–max, e.g. "1–151 matches
+served, by split"; a single figure when uniform). Grid tightened to
+`minmax(84px,1fr) repeat(4, minmax(52px,1fr))`. VERIFIED at the real narrow canvas via CDP
+(`scripts` probe): each twin side is exactly **299px**; before, 5 cols overflowed to 304px
+and pushed Brk% 5px off-screen; now scrollWidth == clientWidth == 299 and **both Hld% AND
+Brk% sit inside the visible rect** on Career and Last-52. Long labels ("Grand Slams",
+"Semi-finals") wrap to two lines — the accepted trade at 299px, since the founder's hard
+requirement is that Hld%/Brk% are visible without scrolling. `overflow-x:auto` stays only as
+a graceful fallback.
+- NOTE (surfaced, not silently hidden): removing per-row MS also removed the per-row
+  thin-sample flag. The sample range's low end can be **1** (some splits — e.g. a rare
+  surface/round — rest on a single match), because the splits TABLE itself applies no
+  M≥N floor (pre-existing; unchanged here). If the founder wants the thinnest splits
+  floored out of the table, that is a separate, deliberate row-filter decision.
 
 ## Stennisfy Model — rebuild-to-export (TEN-8, founder comment 2026-07-30) — DONE, LOCAL ONLY (commit c322d60)
 Founder: "PROCEED, same rules. Everything per the export." Built the export layout into
