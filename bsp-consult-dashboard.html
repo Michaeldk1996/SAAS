@@ -317,7 +317,19 @@
   [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
   [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
   [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
-  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:12px; }
+  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
+  /* §7 — delta stacked beneath the close figure; directional green/red (export screenshot,
+     pending sign-off — see BUILD-NOTES; README specifies --muted-2 for this page). */
+  [data-page="matches"] .mc-journey__clwrap{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:1px; }
+  [data-page="matches"] .mc-drift.pos{ color:var(--mc-pos); }
+  [data-page="matches"] .mc-drift.neg{ color:var(--mc-neg); }
+  /* §11 — identity colour suppressed on the Completed card ONLY: both names bright, no
+     Player-A blue. Brightness + the winner edge bar carry the winner/loser signal.
+     STATE-SCOPED — do not re-apply from the shared component to the Upcoming view. */
+  [data-page="matches"] .mc-players.cmpl .mc-name{ color:var(--mc-text) !important; }
+  /* §6 — score brightness split: winner's set-score bright, loser's dimmed. */
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__g{ color:var(--mc-text); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total{ color:var(--mc-muted); }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -1663,6 +1675,13 @@
   [data-page="matches"] .mx-datastatus .dot{ background:var(--sf-pos) !important; box-shadow:0 0 8px var(--sf-pos) !important; }
   [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--sf-muted); font-family:var(--sf-font-ui); }
   [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--sf-muted); font-family:var(--sf-font-mono); }
+  /* §2 — Completed status line: muted 'Settled · <date>', no green, no glow. */
+  [data-page="matches"] .mx-datastatus.settled .dot{ background:var(--sf-muted) !important; box-shadow:none !important; }
+  [data-page="matches"] .mx-datastatus.settled .mx-settled-txt{ color:var(--sf-muted); font-family:var(--sf-font-ui); }
+  /* §4 — date-tab focus ring is keyboard-only and subtle; the active-tab underline stays
+     the selected-state marker, never a full rectangular outline box. */
+  [data-page="matches"] .mx-daytabs button:focus{ outline:none; }
+  [data-page="matches"] .mx-daytabs button:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:3px; border-radius:6px; }
   /* Review item 4 — segmented control locked to README values. Active: 0.22 fill on
      0.45 border, #e7e9ee weight 700. Inactive: transparent, borderless (a transparent
      1px border reserves the space so the active state doesn't nudge its neighbour),
@@ -3944,6 +3963,8 @@ async function loadMatches(){
     document.getElementById('dataStatus').classList.remove('error');
     document.getElementById('dataStatus').innerHTML =
       `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${dataLoadedAt.toLocaleTimeString()}</span>`;
+    // Completed view overrides the live line with the muted 'Settled · <date>' chrome.
+    if (typeof updateMatchesHeaderChrome === 'function') updateMatchesHeaderChrome();
   } else if (matchesLoadedOnce){
     // Transient failure but we already have good data on screen — keep showing
     // it instead of blanking the board. Don't re-render to empty.
@@ -4299,12 +4320,19 @@ function mcSetCluster(finalScore, who){
 // Any value that was never recorded is omitted, never a placeholder.
 function mcJourney(open, close){
   if (open == null && close == null) return '';
-  if (open == null) return `<span class="mc-journey"><span class="mc-journey__close">${close.toFixed(2)}</span></span>`;
+  if (open == null) return `<span class="mc-journey"><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span></span></span>`;
   if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
   const diff = close - open;
+  // §7 — delta sits BENEATH the close figure; directional filled triangle with a true
+  // minus sign, coloured green/red per the export screenshot. NOTE: the export README
+  // affirmatively specifies --muted-2 for this page's drift markers (scoped green/red to
+  // the Match Analysis Odds tab only), so this is a SECOND scoped exception pending the
+  // founder's sign-off — see BUILD-NOTES. One-line revert = drop the .pos/.neg colours.
+  const dir = diff > 0 ? 'pos' : diff < 0 ? 'neg' : '';
   const glyph = diff > 0 ? '▲' : diff < 0 ? '▼' : '·';
-  const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift">${glyph} ${Math.abs(diff).toFixed(2)}</span>` : '';
-  return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span>`;
+  const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
+  const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift ${dir}">${glyph}${sign}${Math.abs(diff).toFixed(2)}</span>` : '';
+  return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span></span>`;
 }
 // Market Signal panel — expands IN PLACE beneath the card (review item 1), never
 // navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
@@ -4345,7 +4373,53 @@ function mcSigPanel(m){
     </div>`;
 }
 
+// §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
+// forward-date truncation. Called at the top of every renderMatches so it always tracks
+// the current view + selected day. No data-layer change.
+function settledDateLabel(){
+  const off = { today:0, yesterday:-1, daymin2:-2, tomorrow:1, day2:2 }[state.day];
+  if (off === undefined) return '';
+  const d = new Date(Date.now() + off * 86400000);
+  return `${d.getDate()} ${d.toLocaleDateString('en-US',{ month:'short' })} ${d.getFullYear()}`;
+}
+function updateMatchesHeaderChrome(){
+  const completed = state.view === 'completed';
+  // Nothing can have settled in the future — snap a forward day back to today in Completed.
+  if (completed && (state.day === 'tomorrow' || state.day === 'day2')){
+    state.day = 'today';
+    document.querySelectorAll('#dayTabs button').forEach(b => b.classList.toggle('active', b.dataset.day === 'today'));
+  }
+  const h1  = document.querySelector('[data-page="matches"] .mx-h1');
+  const sub = document.querySelector('[data-page="matches"] .mx-subtitle');
+  const ds  = document.getElementById('dataStatus');
+  if (h1)  h1.textContent  = completed ? 'Completed Matches' : "Today's Matches";
+  if (sub) sub.textContent = completed
+    ? 'Settled ATP results with the full opening-to-closing odds journey.'
+    : 'Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.';
+  // §4 — hide Tomorrow / +2 tabs and disable the forward chevron in Completed.
+  const tomo = document.querySelector('#dayTabs button[data-day="tomorrow"]');
+  const d2   = document.getElementById('day2Tab');
+  const fwd  = document.getElementById('dayTabsRight');
+  if (tomo) tomo.style.display = completed ? 'none' : '';
+  if (d2)   d2.style.display   = completed ? 'none' : '';
+  if (fwd){ fwd.disabled = completed; fwd.style.opacity = completed ? '0.3' : ''; fwd.style.pointerEvents = completed ? 'none' : ''; }
+  // §2 — status line: muted 'Settled · <date>' in Completed, live clock in Upcoming.
+  if (ds && !ds.classList.contains('error')){
+    if (completed){
+      ds.classList.add('settled');
+      const lbl = settledDateLabel();
+      ds.innerHTML = `<span class="dot"></span><span class="mx-settled-txt">Settled</span> <span class="mx-clock">· ${lbl || 'recent'}</span>`;
+    } else {
+      ds.classList.remove('settled');
+      if (dataLoadedAt){
+        ds.innerHTML = `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${dataLoadedAt.toLocaleTimeString()}</span>`;
+      }
+    }
+  }
+}
+
 function renderMatches(){
+  updateMatchesHeaderChrome();
   const list = document.getElementById('matchlist');
   const filtered = getFiltered();
   if (filtered.length === 0){
@@ -4475,14 +4549,14 @@ function renderMatches(){
         ${colHead}
       </div>`;
     const playersHtml = isCompleted
-      ? `<div class="mc-players">
+      ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span></span>
             ${mcSetCluster(finalScore, 'p1')}
             ${mcJourney(p1Open, p1Close)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${p2IsWinner ? '<span class="mc-won">WON</span>' : ''}</span>
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span></span>
             ${mcSetCluster(finalScore, 'p2')}
             ${mcJourney(p2Open, p2Close)}
           </div>

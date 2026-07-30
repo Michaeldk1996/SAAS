@@ -1246,3 +1246,58 @@ Panel is a single component on this one-page step machine (not duplicated across
 consolidation was needed there. Source note: `login.html`'s right panel is a 6-bar chart, but
 the founder's screenshot (and the current build) use the Pinnacle/Bet365 rows — screenshot is
 authoritative for the panel, login.html for the left column.
+
+## TEN-8 — Completed Matches rebuild against the export (Task 3), pass 1
+
+Scope: Completed state of the Matches page only. Data layer untouched. Local only.
+Proof render (1400px): `completed-matches-1400-working.png` (+ `-card.png`). Rendered via
+`scripts/render-completed.mjs` pattern; because the repo `matches.json` is stale (holds
+2026-07-22..26, nothing on the selectable day tabs), the proof used a scratch render that
+relabels the latest finished-day group to "yesterday" on the fly — real matches, real
+scores/odds, only the date bucket shifted so the cards paint. Repo data NOT modified.
+
+DONE this pass (verified in the 1400px render + a DOM probe):
+- §1 Title/subtitle swap with the segmented control. Completed → H1 "Completed Matches",
+  subtitle "Settled ATP results with the full opening-to-closing odds journey." Upcoming
+  pair unchanged. Wired in new `updateMatchesHeaderChrome()` (called at top of renderMatches).
+- §2 Status line. In Completed: muted-grey dot (`--sf-muted`, rgb(91,104,128), no glow),
+  "Settled · <selected date>" with the date in Plex Mono, no clock/green. Upcoming keeps the
+  live line. New `.mx-datastatus.settled` CSS + `settledDateLabel()`.
+- §4 Date strip. In Completed the strip truncates at Today (Tomorrow / +2 tabs hidden,
+  forward chevron disabled + dimmed) via the chrome fn; a forward day selected when flipping
+  to Completed snaps back to today. Also tamed the active-date "full outline box": focus is
+  now keyboard-only (`:focus-visible` subtle 0.35 brand ring), the active-tab underline stays
+  the selected-state marker.
+- §6 (brightness only) Winner's set-score bright (`--mc-text`), loser's dimmed (`--mc-muted`).
+- §10 WON pill removed entirely (markup + the `mc-won` emit). `.mc-won` CSS left dormant/unused.
+- §11 Identity colour suppressed on the Completed card ONLY: added `.mc-players.cmpl` and
+  `.mc-players.cmpl .mc-name{color:var(--mc-text)!important}`. STATE-SCOPED — Upcoming keeps
+  identity colour. Do not re-apply from the shared component.
+
+§7 DELTA COLOUR — SECOND SCOPED EXCEPTION, PENDING FOUNDER SIGN-OFF.
+mcJourney now stacks the drift delta BENEATH the close figure (`.mc-journey__clwrap` column)
+and colours it directionally: ▲ positive → `--mc-pos` (#3dd68c), ▼ negative → `--mc-neg`
+(#e0616f), with a true minus sign (−). This matches the EXPORT SCREENSHOT.
+IMPORTANT: the export README does NOT grant this. It affirmatively specifies the opposite for
+this page — README §"Completed Matches" → "Drift markers": *"the ▲ / ▼ glyph and its value
+beside the closing price are purely directional: both in `--muted-2`, IBM Plex Mono... No
+amber, green or red."* The green/red exception is scoped BY NAME to the Match Analysis Odds
+tab only (README colour note L55–57; Odds-journey note L227–233 "This page's odds journey
+stays non-semantic."). So the export screenshot is OUT OF COMPLIANCE with the rulebook.
+Per the founder's §7 instruction for the "not granted" branch, built green/red as the export
+shows and logging it here pending sign-off. ONE-LINE REVERT to compliant: delete the
+`.mc-drift.pos`/`.mc-drift.neg` colour rules (delta falls back to `--mc-muted-2`).
+NOTE: the current proof sample doesn't show a coloured delta because those matches carry no
+opening price (mcJourney renders close-only), so the green/red path is code-verified, not yet
+screenshot-verified on live data — flagged in the gaps report.
+
+REMAINING (next pass): §3 summary strip (MATCHES SETTLED / FAVOURITES HELD / UPSETS);
+§5 header rearrange (datetime into the left group after the round chip) + OPEN/CLOSE column
+labels; §6 score-block PLACEMENT (immediately right of the name, not pushed right by
+margin-left:auto) + superscript tiebreaks (per-set games array lacks tiebreak points; only
+`finalScore.display` carries "7(6)" — needs parsing); §7 OPEN column + true per-row sparkline
++ OPEN/CLOSE labels; §8 vertical divider; §9 winner bar flush to the card's outer edge
+(currently inset ~28px); §12 sort dropdown (4 options, dark panel, no "Sort:" prefix, wired
+sorts); §13 shared filter-row chrome (translucent fill + magnifier glyph, one class across
+both views). Exact values (sparkline track/fill/width/dot radius, filter fill alpha, dropdown
+hover bg) to be taken from `~/Downloads/export 2/matches-upcoming.html`.
