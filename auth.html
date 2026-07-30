@@ -198,8 +198,12 @@
     border-radius:50%; background:var(--brand); box-shadow:0 0 0 3px rgba(91,155,255,0.15); }
   .lm-close{ text-align:right; }
   .lm-close .p{ display:block; font-family:var(--font-data); font-size:15px; font-weight:600; color:var(--text); }
-  .lm-close .d{ display:block; font-family:var(--font-data); font-size:10.5px; margin-top:3px; }
-  .lm-close .d.pos{ color:var(--pos); } .lm-close .d.neg{ color:var(--neg); }
+  /* Login preview is NOT the Match Analysis Odds tab, so its odds deltas are non-semantic:
+     --muted-2, Plex Mono, both directions. The ▼/▲ glyph is the only thing that encodes
+     direction; the colour encodes nothing. Green/red on odds deltas exists only on the
+     Match Analysis Odds tab (README, authoritative) — see BUILD-NOTES. */
+  .lm-close .d{ display:block; font-family:var(--font-data); font-size:10.5px; margin-top:3px; color:var(--muted-2); }
+  .lm-close .d.pos, .lm-close .d.neg{ color:var(--muted-2); }
 
   /* visualize footer */
   .panel-foot{ margin-top:auto; padding-top:40px; }
