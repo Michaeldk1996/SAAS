@@ -1024,17 +1024,42 @@ established app win/loss green/red predates the design-system pair. Measured sco
 
 **(b) `--text` core-token divergence — app-wide, its OWN pass.** Export primary text is
 `#F2F4F7`; the app diverges with hardcoded `#e7e9ee` literals that bypass the token.
-IMPORTANT REFINEMENT (measured — the founder's "one-line change" framing predates this):
-it is NOT a one-line token edit. The `:root --text` token is ALREADY correct (`#F2F4F7`,
-`bsp-consult-dashboard.html:17`). The divergence is **hardcoded literals**, per file:
-  - `bsp-consult-dashboard.html` — 70× `#e7e9ee`  (+ 6× the near-neighbour `#e7ebf1`)
+The `:root --text` token is ALREADY correct (`#F2F4F7`, `bsp-consult-dashboard.html:17`) —
+so this is NOT a one-line token edit (that earlier framing predates the measurement). The
+divergence is **hardcoded literals**, per file:
+  - `bsp-consult-dashboard.html` — 71× `#e7e9ee`  (+ 6× the near-neighbour `#e7ebf1`)
   - `account.html` — 8×   ·  `verify.html` — 2×  ·  `funnel.html` — 2×  ·  `admin.html` — 0×
-LANDMINE that makes this a deliberate, per-occurrence pass rather than a find-replace:
-`#e7e9ee` is ALSO **`--player-b`'s identity colour** in the LOCKED match-detail bars
-(`.msheet-fill.p2` at `:1020`, and the `oppColor` literal in `formPanelStatRow`). Those
-occurrences are IDENTITY, not text — they must be PRESERVED. So the sweep must exclude the
-player-B identity uses and only re-point genuine text literals to `var(--text)`. Wide blast
-radius (primary text colour on every surface) → its own pass, full visual diff, no folding in.
+
+> ⚠️ **READ BEFORE YOU START THE SWEEP — DO NOT FIND-REPLACE `#e7e9ee`.**
+> `#e7e9ee` is TWO colours wearing one hex: the primary-**text** colour AND **`--player-b`'s
+> identity colour** in the LOCKED match-detail bars. A global `#e7e9ee → var(--text)` would
+> silently repaint Player B's bars/dots/names and pass every build check — it would *look*
+> like a clean sweep while breaking the identity we just locked and measured. This is a
+> deliberate, per-occurrence pass. Split the literals into the two categories below and
+> touch ONLY Category 1.
+
+**Category 2 — Player-B IDENTITY. MUST STAY `#e7e9ee`. (6 code sites + 1 comment — named individually because the list is small.)**
+These encode Player B's identity, not text. Do NOT convert them.
+  1. `:160` `--mc-player-b: #e7e9ee;` — the Player-B token *definition* itself.
+  2. `:981` `.mstat-dot.p2 { background:#e7e9ee }` — legend identity dot for Player B (bar names row).
+  3. `:1020` `.msheet-bar .msheet-fill.p2 { background:#e7e9ee }` — the LOCKED diverging-bar fill, Player B.
+  4. `:1070` `.ms-sum-name.p2 { color:#e7e9ee }` — Summary score-row name, Player B (pairs with `.p1 #6aaeff` at `:1069`).
+  5. `:2703` `.edge-mcnm.b { color:#e7e9ee }` — market-card opponent name, Player B (pairs with `.a #6aaeff` on the same line).
+  6. `:6710` `const oppColor = '#e7e9ee'; // --player-b` — opponent-side value colour in `formPanelStatRow`.
+  - (`:6686` is a comment — `// identity (A #6aaeff / B #e7e9ee …)` — no code change; leave it as documentation.)
+
+**Category 1 — genuine TEXT literals → `var(--text)`. (The other ~64 in the dashboard, plus the 8/2/2 in account/verify/funnel.)**
+Re-point these to the token. Three need extra care — verify their scope after converting:
+  - `:135` `--mx-text-primary: #e7e9ee;` and `:152` `--mc-text: #e7e9ee;` — scoped text-token
+    *definitions*. Widest blast radius: changing each re-points a whole component scope
+    (matchup-grid text; stennisfy match-card text). Do these first and diff the whole scope.
+  - `:992` `.msheet-names { color:#e7e9ee }` — colours BOTH player names in the bar header;
+    identity there is carried by the dots (Category 2 #2), not the name text, so this is text —
+    but it sits directly beside the p2 dot, so eyeball A's and B's names after converting.
+Everything else is ordinary primary text (account labels, styles headings, edge/market rows,
+profile market-performance copy, radar labels, tooltips, tournament search) — safe to convert.
+Wide blast radius (primary text on every surface) → its own reviewed pass, full visual diff,
+never folded into page/component work.
 
 ## SHARED MATCH-DETAIL PANEL LOCK — bar geometry VERIFIED + Summary/720px SHIPPED (2026-07-30)
 
