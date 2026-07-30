@@ -1012,3 +1012,65 @@ legacy pair, by surface:
 - `account.html`               —  0 green /  1 red
 - TOTAL: 5 surface files, ~85 green + ~42 red occurrences (~127 total).
 Do this as its own reviewed pass, one surface at a time, verifying nothing regresses.
+
+## TOKEN SWEEP is now TWO distinct passes (founder ruling 2026-07-30)
+The colour-token sweep is not one job. Record both, keep them apart, do each in its OWN
+reviewed pass with a full visual check — never fold either into page/component work.
+
+**(a) Win/loss pair migration** — `#3ECF8E`/`#E8607A` → `#3dd68c`/`#e0616f`. The
+established app win/loss green/red predates the design-system pair. Measured scope is the
+`~31-site` dashboard count plus the other surfaces inventoried in the section above
+(5 surface files, ~127 occurrences). Semantics stay identical; only the hex moves.
+
+**(b) `--text` core-token divergence — app-wide, its OWN pass.** Export primary text is
+`#F2F4F7`; the app diverges with hardcoded `#e7e9ee` literals that bypass the token.
+IMPORTANT REFINEMENT (measured — the founder's "one-line change" framing predates this):
+it is NOT a one-line token edit. The `:root --text` token is ALREADY correct (`#F2F4F7`,
+`bsp-consult-dashboard.html:17`). The divergence is **hardcoded literals**, per file:
+  - `bsp-consult-dashboard.html` — 70× `#e7e9ee`  (+ 6× the near-neighbour `#e7ebf1`)
+  - `account.html` — 8×   ·  `verify.html` — 2×  ·  `funnel.html` — 2×  ·  `admin.html` — 0×
+LANDMINE that makes this a deliberate, per-occurrence pass rather than a find-replace:
+`#e7e9ee` is ALSO **`--player-b`'s identity colour** in the LOCKED match-detail bars
+(`.msheet-fill.p2` at `:1020`, and the `oppColor` literal in `formPanelStatRow`). Those
+occurrences are IDENTITY, not text — they must be PRESERVED. So the sweep must exclude the
+player-B identity uses and only re-point genuine text literals to `var(--text)`. Wide blast
+radius (primary text colour on every surface) → its own pass, full visual diff, no folding in.
+
+## SHARED MATCH-DETAIL PANEL LOCK — bar geometry VERIFIED + Summary/720px SHIPPED (2026-07-30)
+
+**Bar geometry — FIXED-CENTRE and TOTAL-NORMALISED, both confirmed by rendered measurement.**
+`msBarHtml` (`:6666`) is the single implementation for the Match Stats sheet and all seven
+form-panel mounts. CSS at `:1015-1020`: `.msheet-bar` is a flexbox of two `.msheet-half`
+children each `flex:1` (each exactly half the track); left half `justify-content:flex-end`
+anchors its fill to the centre, right half's fill anchors from the centre outward. Width
+formula: `sum=a+b`; each fill = `n/sum` as a percentage OF ITS OWN HALF.
+Rendered widths (720px container, headless Chrome, on record):
+  - near-tie 52/48 → half-track 357.5px · fillA 185.9px (52.0%) · fillB 171.6px (48.0%)
+  - lopsided 85/15 → half-track 357.5px · fillA 303.9px (85.0%) · fillB 53.6px (15.0%)
+  - meeting point (fillA right / fillB left) = 357.5 / 362.5 in BOTH rows → **centre never
+    moves** (excludes the moving-centre failure mode). Neither fill reaches its half even at
+    85/15 (303.9 < 357.5) → **total-normalised** (excludes the max-normalised failure mode).
+  - colours: fillA `rgb(106,174,255)`=#6aaeff (--player-a) · fillB `rgb(231,233,238)`=#e7e9ee
+    (--player-b) — identity by POSITION, no leader emphasis (stat-value recolour is settled).
+
+**Match Stats tab — Summary view + 720px content cap SHIPPED.** `buildMatchStatsSummaryHtml`
+(new) + restructured `buildMatchStatsSection`:
+  - Level-1 controls now **Summary · Stats · Point by point** (Stats stays default active);
+    Level-2 set-scope row belongs to Stats only. All controls + all three views live inside
+    one **`.ms-cap` (max-width:720px, centred)** — verified rendered cap width = **720.0px**.
+  - Summary = ONE grid `grid-template-columns:1fr auto repeat(n, minmax(26px,auto))`
+    (verified rendered `594px 34px 26px 26px` for a 2-set match): two identity-coloured
+    score rows (name left in #6aaeff / #e7e9ee, sets-won tile with winner emphasis, per-set
+    games) over a MATCH TIME row. Orientation verified correct against `finalScore.sets`
+    (P. Martinez 0/1 vs L. Darderi 6/6, tiles 0-loser / 2-winner).
+  - MATCH TIME durations are DETERMINISTIC PLACEHOLDERS (~4.5 min/game, summing exactly to
+    the total; em dash where a set's games are unreadable) — TODO-marked in source; no
+    per-set timing exists in the feed. Verified: set 27m + 32m = total 59m.
+  - Player legend (identity dots + names) and the set-scope selector render in Stats/Point
+    by point only, NEVER in Summary — verified 0 legend nodes / 0 selectors in the pane.
+  - REMAINING Match-Stats items (not in this push): the 38px sets / 17px games "STAT
+    COMPARISON" score-header restyle (currently the green `ms-final` banner), and the
+    shared-COMPONENT mounts' own Summary (formPanelHtml Level-1 tab) — deferred because
+    form-row `result` carries only sets-won ("p1Sets - p2Sets"), not per-set games, so those
+    mounts need per-set games plumbed from the pbp/setstats shard before their Summary grid
+    can populate. Match Stats tab has `finalScore.sets` inline, so it ships first.

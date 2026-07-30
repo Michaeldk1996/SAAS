@@ -1053,6 +1053,28 @@
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; color:#8b93a3; background:transparent; border:1px solid rgba(255,255,255,0.08); padding:8px 17px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.16); }
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn.active{ color:#fff; border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); }
+  /* Match Stats — one 720px content cap governs all three views (Summary / Stats /
+     Point by point) AND both control rows, so the sheet, the summary grid and the
+     point log share the same centred column width (README §Match Stats tab: "both
+     standard segmented, centred in a 720px cap"). 20px gap from the last control
+     row to content is carried by the control rows' own bottom margins above. */
+  .modal-analysis .ms-cap{ max-width:720px; margin:0 auto; }
+  /* Summary view — ONE grid: 1fr (name) · auto (sets-won tile) · one
+     minmax(26px,auto) per set. Three rows: two identity-coloured score rows and a
+     MATCH TIME row. Per-set durations are DETERMINISTIC PLACEHOLDERS derived from
+     game count (no duration data exists in the feed) — TODO-marked in source. The
+     player legend never renders here; the score rows carry identity themselves. */
+  .modal-analysis .ms-sumgrid{ display:grid; align-items:center; row-gap:16px; column-gap:12px; padding:6px 2px 2px; }
+  .modal-analysis .ms-sum-name{ text-align:left; font-family:'Hanken Grotesk', sans-serif; font-size:15px; font-weight:700; white-space:nowrap; }
+  .modal-analysis .ms-sum-name.p1{ color:#6aaeff; }
+  .modal-analysis .ms-sum-name.p2{ color:#e7e9ee; }
+  .modal-analysis .ms-sum-tile{ justify-self:center; min-width:34px; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; border-radius:8px; padding:4px 10px; }
+  .modal-analysis .ms-sum-tile.w{ color:var(--text); background:rgba(255,255,255,0.08); }
+  .modal-analysis .ms-sum-tile.l{ color:#8b93a3; background:rgba(255,255,255,0.035); }
+  .modal-analysis .ms-sum-g{ justify-self:center; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--text); }
+  .modal-analysis .ms-sum-timelabel{ text-align:left; font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#7f8798; }
+  .modal-analysis .ms-sum-timetotal{ justify-self:center; font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:700; color:var(--text); }
+  .modal-analysis .ms-sum-timeset{ justify-self:center; font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:400; color:#8b93a3; }
   /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
   :is(.modal-analysis,.pp-formsurface) .pbp-wrap{ max-width:560px; margin:0 auto; }
   /* Set band + tiebreak band share the section-band treatment of the Stats view. */
@@ -7655,19 +7677,64 @@ function buildMatchStatsSection(m){
   const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
   const stats = buildMatchStatsSheet(m, null);
   if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
+  // Level 1 = Summary · Stats · Point by point (Stats default); Level 2 = the
+  // set-scope row, which belongs to Stats only (Summary shows every set at once,
+  // Point by point paints its own per-set row). All of it lives inside one 720px
+  // content cap so the summary grid, the stat sheet and the point log share the
+  // same centred width.
   return `
     ${buildMatchStatsBannerHtml(m)}
-    <div class="ms-subtabs-wrap">
-      <div class="ms-subtabs" role="tablist">
-        <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
-        <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
+    <div class="ms-cap">
+      <div class="ms-subtabs-wrap">
+        <div class="ms-subtabs" role="tablist">
+          <button class="ms-subtab" data-mstab="summary" onclick="switchMatchStatsTab(this,'summary')">Summary</button>
+          <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
+          <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
+        </div>
       </div>
+      <div class="ms-pane" id="msSummaryPane">${buildMatchStatsSummaryHtml(m)}</div>
+      <div class="ms-pane active" id="msStatsPane">
+        ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Match')}
+        <div id="msStatsSheet">${stats}</div>
+      </div>
+      <div class="ms-pane" id="msPbpPane"></div>
     </div>
-    <div class="ms-pane active" id="msStatsPane">
-      ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Match')}
-      <div id="msStatsSheet">${stats}</div>
+  `;
+}
+// Summary view — the one-grid score + MATCH TIME layout the Match Stats tab shares
+// with the match-detail component (README §Match Stats tab / shared component). One
+// CSS grid: 1fr (name) · auto (sets-won tile) · one minmax(26px,auto) column per
+// set; two identity-coloured score rows over a MATCH TIME row. Score cells come
+// from finalScore.sets (partialScore for an interrupted match). Per-set DURATIONS
+// are deterministic PLACEHOLDERS derived from game count and summing exactly to the
+// total — no per-set timing exists in the feed. TODO: bind real durations when the
+// source carries them; until then a set with unreadable games shows an em dash.
+function buildMatchStatsSummaryHtml(m){
+  const fs = m.finalScore || m.partialScore;
+  if (!fs || !Array.isArray(fs.sets) || !fs.sets.length){
+    return `<div class="acomingsoon">No set-by-set score on file for this match.</div>`;
+  }
+  const sets = fs.sets;
+  const n = sets.length;
+  const gameOf = (s, who) => { const g = Number(s[who]); return Number.isFinite(g) ? g : null; };
+  // PLACEHOLDER minutes: ~4.5 per game played in the set; the total is their exact
+  // sum, so the row always adds up. A set with no readable games contributes null.
+  const setMins = sets.map(s => {
+    const a = gameOf(s, 'p1'), b = gameOf(s, 'p2');
+    return (a == null || b == null) ? null : Math.max(1, Math.round((a + b) * 4.5));
+  });
+  const totalMins = setMins.reduce((t, x) => t + (x || 0), 0);
+  const fmtTotal = t => t >= 60 ? `${Math.floor(t / 60)}h ${String(t % 60).padStart(2, '0')}m` : `${t}m`;
+  const cols = `1fr auto repeat(${n}, minmax(26px,auto))`;
+  const tile = (num, isW) => `<span class="ms-sum-tile ${isW ? 'w' : 'l'}">${num == null ? '—' : num}</span>`;
+  const gamesRow = who => sets.map(s => { const g = gameOf(s, who); return `<span class="ms-sum-g">${g == null ? '—' : g}</span>`; }).join('');
+  const durRow = setMins.map(x => `<span class="ms-sum-timeset">${x == null ? '—' : x + 'm'}</span>`).join('');
+  return `
+    <div class="ms-sumgrid" style="grid-template-columns:${cols};">
+      <span class="ms-sum-name p1">${escapeHtml(m.p1)}</span>${tile(fs.p1Sets, fs.winner === 'p1')}${gamesRow('p1')}
+      <span class="ms-sum-name p2">${escapeHtml(m.p2)}</span>${tile(fs.p2Sets, fs.winner === 'p2')}${gamesRow('p2')}
+      <span class="ms-sum-timelabel">Match time</span><span class="ms-sum-timetotal">${totalMins > 0 ? fmtTotal(totalMins) : '—'}</span>${durRow}
     </div>
-    <div class="ms-pane" id="msPbpPane"></div>
   `;
 }
 // Shared set-scope pill row for both panes: an optional "<allLabel>" pill plus
@@ -7704,13 +7771,14 @@ function switchStatsSet(el, setNo){
 }
 function switchMatchStatsTab(el, which){
   document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
+  const summaryPane = document.getElementById('msSummaryPane');
   const statsPane = document.getElementById('msStatsPane');
   const pbpPane = document.getElementById('msPbpPane');
   if (!statsPane || !pbpPane) return;
-  const showPbp = which === 'pbp';
-  statsPane.classList.toggle('active', !showPbp);
-  pbpPane.classList.toggle('active', showPbp);
-  if (showPbp) ensurePointByPoint();   // lazy-load the sidecar on first open
+  if (summaryPane) summaryPane.classList.toggle('active', which === 'summary');
+  statsPane.classList.toggle('active', which === 'stats');
+  pbpPane.classList.toggle('active', which === 'pbp');
+  if (which === 'pbp') ensurePointByPoint();   // lazy-load the sidecar on first open
 }
 // Set numbers (ascending) with a real per-set box score on file, or [] when the
 // feed carried no per-set rows for this match. Drives whether the set filter is
