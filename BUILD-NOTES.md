@@ -1274,30 +1274,41 @@ DONE this pass (verified in the 1400px render + a DOM probe):
   `.mc-players.cmpl .mc-name{color:var(--mc-text)!important}`. STATE-SCOPED — Upcoming keeps
   identity colour. Do not re-apply from the shared component.
 
-§7 DELTA COLOUR — SECOND SCOPED EXCEPTION, PENDING FOUNDER SIGN-OFF.
-mcJourney now stacks the drift delta BENEATH the close figure (`.mc-journey__clwrap` column)
-and colours it directionally: ▲ positive → `--mc-pos` (#3dd68c), ▼ negative → `--mc-neg`
-(#e0616f), with a true minus sign (−). This matches the EXPORT SCREENSHOT.
-IMPORTANT: the export README does NOT grant this. It affirmatively specifies the opposite for
-this page — README §"Completed Matches" → "Drift markers": *"the ▲ / ▼ glyph and its value
-beside the closing price are purely directional: both in `--muted-2`, IBM Plex Mono... No
-amber, green or red."* The green/red exception is scoped BY NAME to the Match Analysis Odds
-tab only (README colour note L55–57; Odds-journey note L227–233 "This page's odds journey
-stays non-semantic."). So the export screenshot is OUT OF COMPLIANCE with the rulebook.
-Per the founder's §7 instruction for the "not granted" branch, built green/red as the export
-shows and logging it here pending sign-off. ONE-LINE REVERT to compliant: delete the
-`.mc-drift.pos`/`.mc-drift.neg` colour rules (delta falls back to `--mc-muted-2`).
-NOTE: the current proof sample doesn't show a coloured delta because those matches carry no
-opening price (mcJourney renders close-only), so the green/red path is code-verified, not yet
-screenshot-verified on live data — flagged in the gaps report.
+§7 DELTA COLOUR — SETTLED (founder ruling, 2026-07-30): `--muted-2`, BOTH directions.
+The drift delta stacks BENEATH the close figure (`.mc-journey__clwrap` column). Colour is
+`--mc-muted-2` in both directions; the ▲/▼ glyph carries direction, the colour carries
+nothing. True minus sign (−). Rule going forward: green/red on odds deltas exists ONLY on the
+Match Analysis Odds tab; everywhere else direction is the glyph's job.
+DIVERGENCE LOG (export vs README): the README affirmatively specifies `--muted-2` for this
+page's drift markers (§"Completed Matches"→"Drift markers": *"purely directional: both in
+`--muted-2`, IBM Plex Mono... No amber, green or red"*) and scopes the green/red exception
+BY NAME to the Match Analysis Odds tab. The README is authoritative over the HTML/screenshot.
+For the record: the export SOURCE (matches-upcoming.html React source) actually coloured the
+drift brand-BLUE (`#5b9bff` shorten / `#6aaeff` drift), never green/red — so the earlier
+"green/red per screenshot" premise was itself off. Either reading resolves to `--muted-2`.
+Same ruling applied to auth.html login-preview odds deltas (separate commit) — `.lm-close .d`
+→ `--muted-2`, pos/neg overrides dropped.
 
-REMAINING (next pass): §3 summary strip (MATCHES SETTLED / FAVOURITES HELD / UPSETS);
-§5 header rearrange (datetime into the left group after the round chip) + OPEN/CLOSE column
-labels; §6 score-block PLACEMENT (immediately right of the name, not pushed right by
-margin-left:auto) + superscript tiebreaks (per-set games array lacks tiebreak points; only
-`finalScore.display` carries "7(6)" — needs parsing); §7 OPEN column + true per-row sparkline
-+ OPEN/CLOSE labels; §8 vertical divider; §9 winner bar flush to the card's outer edge
-(currently inset ~28px); §12 sort dropdown (4 options, dark panel, no "Sort:" prefix, wired
-sorts); §13 shared filter-row chrome (translucent fill + magnifier glyph, one class across
-both views). Exact values (sparkline track/fill/width/dot radius, filter fill alpha, dropdown
-hover bg) to be taken from `~/Downloads/export 2/matches-upcoming.html`.
+PASS 2 SHIPPED (Completed Matches, 2026-07-30): all remaining sections built to the export
+React source (layout/values decoded from `~/Downloads/export 2/matches-upcoming.html`).
+- §3 summary strip: `.mc-statbox` prepended once in Completed view. MATCHES SETTLED / FAVOURITES
+  HELD / UPSETS. Favourite = lower CLOSING odds; favHeld = that player won. Held% and Upsets
+  derive from ONE `heldCount`/`denom` pass (Upsets = denom − heldCount), so they cannot
+  disagree on screen. Caps label `--mc-muted-2`, value Mono 500 `--mc-text`, cells split by
+  `rgba(255,255,255,0.07)` verticals (first cell none).
+- §5/§6/§7/§8/§9: Completed card row is now a CSS grid `170px 126px minmax(18px,1fr) 1px 218px`.
+  Score cluster sits in col 2 immediately right of the name (§6, `margin-left:auto` removed);
+  OPEN/CLOSE caps header over col 5 (§5/§7); 1px `rgba(255,255,255,0.07)` full-height divider
+  in col 4 (§8, `margin:-13px 0` bleed); winner accent bar `box-shadow: inset 3px 0 0
+  var(--mc-pos)` flush to the row's left edge (§9). Name colour is won-based (winner `--mc-text`,
+  loser `--mc-muted`) — replaced pass-1's blanket-bright rule; NO player-A/B blue.
+- §6 CORRECTION: removed pass-1's winner/loser SCORE dimming. Per the export, colour separates
+  the sets-won total (`--mc-text`, both rows) from per-set games (`--mc-muted`, both rows), NOT
+  winner from loser. Outcome is carried by the green accent bar + the name only.
+- §12: Completed sort options = Time · Biggest upset · Largest drift · Closing value (keys
+  time/upset/drift/closing), wired null-safe; Upcoming keeps its set. Invalid active sort → time.
+
+REMAINING (gaps): §13 shared filter-row chrome (translucent fill + magnifier glyph, one class
+across both views) not yet unified; superscript tiebreak points still absent (per-set games
+array lacks TB; only `finalScore.display` carries "7(6)"); Completed filter/sort row is
+rendered+styled but not fully wired to the settled set (deliberate scope per README).
