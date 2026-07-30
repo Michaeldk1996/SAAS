@@ -1136,7 +1136,7 @@
   .modal-analysis .tprogress-card .tpvlabel{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600; color:#eef1f6; padding:2px 5px; border-radius:6px; white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpavgtag{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#aab2c0; padding:2px 8px; border-radius:20px; border:1px dashed rgba(255,255,255,0.22); background:rgba(0,0,0,0.35); white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpround{ position:absolute; bottom:2px; transform:translateX(-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); pointer-events:none; }
-  .modal-analysis .tprogress-card .tpbye{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:600; font-style:italic; letter-spacing:0.02em; padding:1.5px 6px; border-radius:6px; border:1px dashed; white-space:nowrap; pointer-events:none; }
+  .modal-analysis .tprogress-card .tpbye{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:3px 9px; border-radius:7px; border:1.5px solid; white-space:nowrap; pointer-events:none; box-shadow:0 2px 7px rgba(0,0,0,0.45); z-index:6; }
   .modal-analysis .tprogress-card .tpdot{ position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; cursor:default; z-index:5; }
   .modal-analysis .tprogress-card .tpdot:hover{ z-index:25; }
   .modal-analysis .tprogress-card .tpnode{ position:absolute; left:50%; top:50%; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; border:2px solid #0b0d12; }
@@ -13127,7 +13127,7 @@ function progressionPlot(rounds, series, formatValue){
       const taken = y => labelPositions.some(lp => Math.abs(lp.x - x) < 6 && Math.abs(lp.y - y) < 12);
       let top = 90 - k * 14;
       while (top > 20 && taken(top)) top -= 14;
-      overlayHtml += `<div class="tpbye" style="left:${x}%; top:${top}%; color:${color}; border-color:${color}66; background:${color}1f;">Bye</div>`;
+      overlayHtml += `<div class="tpbye" style="left:${x}%; top:${top}%; color:${color}; border-color:${color}; background:${color}33;">Bye</div>`;
     });
   });
 
