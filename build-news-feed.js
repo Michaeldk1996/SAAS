@@ -90,21 +90,78 @@ const RE_ATP = /\bATP\b|\bgrand slam\b|\bmasters 1000\b|\bmasters\b|\bATP ?(?:25
 // keeps every explicitly-ATP/Challenger article but drops player-name-only
 // men's headlines — a safe degradation (never keeps women's content).
 function loadAtpNameRegex() {
+  return loadRoster().re;
+}
+
+// Load player-profiles.json once and build the three lookups the feed needs:
+//   re            — word-boundary surname regex (used by the ATP-tour keep filter)
+//   surnameToKeys — lowercase surname -> Set(playerKey); a surname shared by two
+//                   roster players maps to >1 key and is therefore unresolvable
+//   keyToName     — playerKey -> stored display name ("D. Schwartzman")
+// Names are stored "D. Schwartzman", so the surname is the name minus a leading
+// initial. Best-effort: a missing file yields empty maps (marker-only degrade).
+function loadRoster() {
   try {
-    const roster = JSON.parse(fs.readFileSync('player-profiles.json', 'utf8')).players || {};
+    const players = JSON.parse(fs.readFileSync('player-profiles.json', 'utf8')).players || {};
     const surnames = new Set();
-    for (const v of Object.values(roster)) {
+    const surnameToKeys = new Map();
+    const keyToName = new Map();
+    for (const [key, v] of Object.entries(players)) {
       const n = (v && v.name ? String(v.name) : '').trim();
       if (!n) continue;
+      keyToName.set(String(key), n);
       const surname = n.replace(/^[A-Z]\.\s*/, '').trim(); // strip leading "D. "
-      if (surname.length >= 4) surnames.add(surname);
+      if (surname.length < 4) continue;
+      surnames.add(surname);
+      const sl = surname.toLowerCase();
+      if (!surnameToKeys.has(sl)) surnameToKeys.set(sl, new Set());
+      surnameToKeys.get(sl).add(String(key));
     }
-    if (!surnames.size) return null;
-    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp('\\b(' + [...surnames].map(esc).join('|') + ')\\b', 'i');
+    let re = null;
+    if (surnames.size) {
+      const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      re = new RegExp('\\b(' + [...surnames].map(esc).join('|') + ')\\b', 'i');
+    }
+    return { re, surnameToKeys, keyToName };
   } catch (_) {
-    return null; // marker-only fallback
+    return { re: null, surnameToKeys: new Map(), keyToName: new Map() };
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Player attribution AT SOURCE (TEN-8, founder directive 2026-07-30).
+ *
+ * The feed's structured `player_key` / `player_name` fields ship NULL on every
+ * article (measured: 91/91), so the render layer used to derive a chip from the
+ * headline at paint time. The founder's ruling: populate player_key in the
+ * pipeline so the chip is DATA, not render-time NLP — and gate it fail-closed.
+ *
+ * Fail-closed rule (an absent chip costs nothing; a wrong one misattributes a
+ * result to a player who wasn't in the match):
+ *   1. The title contains EXACTLY ONE distinct in-roster surname.
+ *   2. That surname leads the headline — it is the first named entity, proxied
+ *      as first-word or second-word position (allowing an optional first-name /
+ *      initial token before it, e.g. "Jannik Sinner …").
+ *   3. The surname resolves to EXACTLY ONE roster key (a surname shared by two
+ *      roster players is ambiguous and gets no chip).
+ * Anything else → { player_key:null, player_name:null }. Derivation stays
+ * title-only, so a player merely mentioned mid-body is never credited.
+ * ------------------------------------------------------------------------- */
+function derivePlayer(title, roster) {
+  const NONE = { player_key: null, player_name: null };
+  if (!roster || !roster.surnameToKeys || !roster.surnameToKeys.size) return NONE;
+  const tokens = (String(title || '').match(/[A-Za-zÀ-ÿ'’-]+/g) || []).map(t => t.toLowerCase());
+  const matched = new Map(); // surnameLower -> first word index
+  tokens.forEach((w, i) => {
+    if (roster.surnameToKeys.has(w) && !matched.has(w)) matched.set(w, i);
+  });
+  if (matched.size !== 1) return NONE;            // exactly one in-roster surname
+  const [sl, idx] = [...matched.entries()][0];
+  if (idx > 1) return NONE;                        // must lead the headline
+  const keys = roster.surnameToKeys.get(sl);
+  if (!keys || keys.size !== 1) return NONE;       // unambiguous key only
+  const key = [...keys][0];
+  return { player_key: key, player_name: roster.keyToName.get(key) || null };
 }
 
 // Returns true if the article is ATP-main-tour content worth keeping.
@@ -131,13 +188,18 @@ function classifyKeep(article, atpNameRe) {
   //    ATP player or carries an explicit ATP / Grand Slam / Masters marker.
   if (namesAtp(title) || RE_ATP.test(title)) return true;
 
-  // 3. Neutral headline — fall back to the body. Keep only if the body is
-  //    clearly ATP AND carries no women's / lower-tier / off-court / historical
-  //    marker anywhere (a neutral headline gives us no subject to anchor on, so
-  //    we are stricter).
+  // 3. Neutral headline — fall back to the body, FAIL-CLOSED (TEN-8, men's-pill
+  //    correctness fix 2026-07-30). The page banners "ATP MEN'S", but the feed
+  //    ships no populated tour/gender field to enforce that, so a WTA article
+  //    with a neutral headline that merely mentioned "ATP" once in its body used
+  //    to leak in under the men's banner. A neutral headline gives us no subject
+  //    to anchor on, so we now require BOTH an explicit ATP marker AND a named
+  //    ATP-roster player in the body (was: either), plus no women's / lower-tier
+  //    / off-court / historical marker anywhere. Better to drop a genuinely-ATP
+  //    neutral-title piece than to file a women's result under a men's banner.
   const bodyBlocked = RE_WOMEN.test(body) || RE_LOWERTIER.test(body) ||
     RE_OFFCOURT.test(body) || RE_HISTORICAL.test(body);
-  if ((RE_ATP.test(body) || namesAtp(body)) && !bodyBlocked) return true;
+  if (RE_ATP.test(body) && namesAtp(body) && !bodyBlocked) return true;
   return false;
 }
 
@@ -178,12 +240,23 @@ async function main() {
   // ATP-main-tour content filter: keep ATP 250/500/Masters/Slam content worth a
   // bettor's attention; drop historical, doping/governance/legal, Challenger/ITF,
   // WTA and non-player-affecting business stories. Article bodies are never altered.
-  const atpNameRe = loadAtpNameRegex();
-  const kept = articles.filter(a => classifyKeep(a, atpNameRe));
+  const roster = loadRoster();
+  const kept = articles.filter(a => classifyKeep(a, roster.re));
   const total = articles.length;
   const survivalPct = total ? (100 * kept.length / total).toFixed(1) : '0.0';
   console.log(`news-feed: ATP-main-tour filter kept ${kept.length}/${total} articles (${survivalPct}%)` +
-    (atpNameRe ? '.' : ' — WARNING: player-profiles.json unavailable, marker-only fallback.'));
+    (roster.re ? '.' : ' — WARNING: player-profiles.json unavailable, marker-only fallback.'));
+
+  // Populate player_key / player_name AT SOURCE (the feed ships them null). The
+  // render layer reads these as data instead of re-deriving from the headline.
+  let chipCount = 0;
+  for (const a of kept) {
+    const d = derivePlayer(a.title, roster);
+    a.player_key = d.player_key;
+    a.player_name = d.player_name;
+    if (d.player_key != null) chipCount++;
+  }
+  console.log(`news-feed: player_key derived (fail-closed) for ${chipCount}/${kept.length} kept articles.`);
 
   // Newest first purely so the page doesn't have to sort a large list on every
   // open — no kept articles are altered.
@@ -213,4 +286,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classifyKeep, loadAtpNameRegex };
+module.exports = { classifyKeep, loadAtpNameRegex, loadRoster, derivePlayer };

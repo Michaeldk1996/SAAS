@@ -2803,23 +2803,69 @@ let _eloRoster = null;      // surname(lower) -> { label:"I. Surname", elo }
 // Reports. Live-feed audit (103 articles): title+content → 65% Injuries / 0% Tour
 // News (implausible); title-only → 31% Injuries / 24% Match Reports / 40% Tour
 // News. `content` retained in the signature for callers; deliberately unused.
+// Match-Reports evidence is split STRONG vs WEAK (TEN-8, weak-keyword gate
+// 2026-07-30). A lone ambiguous token used to force-bucket non-results into
+// Match Reports — "Wimbledon Sets Attendance Record" hit `sets?`. Fail closed to
+// the neutral Tour News bucket unless the evidence is strong: an unambiguous
+// result verb, OR two weak signals, OR one weak signal plus a scoreline.
+// STRONG signals are unambiguous on their own (a result verb or a named match
+// round). WEAK signals are words that recur in non-match headlines — "sets" a
+// record, the "final" decision, "reaches" a deal — so a lone weak hit is NOT
+// enough; it needs a second weak hit or a scoreline. This is the founder's
+// "gate weak single-keyword hits" rule; "Wimbledon Sets Attendance Record" no
+// longer counts as a match report.
+const MR_STRONG = /\b(beat|beats|beaten|def\.?|defeat\w*|upset|ousts?|ousted|downs?|stuns?|routs?|thriller|clinch\w*|saves?|dumps?|topples?|knocks? out|win|wins|won|survive[sd]?|tie-?break|semi-?final|quarter-?final)\b/;
+const MR_WEAK   = /\b(reach(?:es|ed)?|edge[sd]?|advanc\w*|through to|sets?|final)\b/g;
+const MR_SCORE  = /\b\d{1,2}-\d{1,2}\b/;
 function newsClassify(title, content){
   const t = String(title || '').toLowerCase();
   if (/\b(withdr\w*|retir\w*|injur\w*|pull(?:s|ed)?\s+out|walkover|w\/o|hip|knee|ankle|shoulder|wrist|elbow|thigh|hamstring|calf|abdomin\w*|illness|virus|medical timeout|ruled out|sidelined|abandon\w*|comeback from|back (?:injury|complaint|problem|spasm))\b/.test(t)) return 'Withdrawals & Injuries';
   if (/\b(draw|draws|seed\w*|bracket|order of play|qualif\w*|wild ?card|entry list|schedul\w*|byes?)\b/.test(t)) return 'Draws & Schedules';
-  if (/\b(beat|beats|def\.?|defeat\w*|win|wins|won|reach(?:es|ed)?|survive[sd]?|edge[sd]?|advanc\w*|through to|sets?|tie-?break|final|semi-?final|quarter-?final|upset|saves?|clinch\w*|thriller)\b/.test(t)) return 'Match Reports';
+  const weakHits = (t.match(MR_WEAK) || []).length;
+  if (MR_STRONG.test(t) || weakHits >= 2 || (weakHits >= 1 && MR_SCORE.test(t))) return 'Match Reports';
   return 'Tour News';
 }
 
-// Best-effort player attribution from the headline, matched against the Elo roster
-// surname map. Title only (not body) to avoid crediting a player merely mentioned in
-// passing. Returns '' when no confident single-surname hit — a wrong name is worse
-// than none. No player field exists in the feed; this is derivation, not data.
+// Player chip = DATA, not render-time NLP (TEN-8, founder directive 2026-07-30).
+// build-news-feed.js now populates player_key / player_name at source under a
+// fail-closed rule, so renderNews prefers a.player_name. newsPlayerFor() is the
+// INTERIM client fallback for any feed built before that field lands: it applies
+// the identical fail-closed rule against a surname->key map derived from
+// playerProfiles. A chip renders ONLY when the title contains exactly one
+// in-roster surname, that surname leads the headline (first or second word,
+// allowing a first-name/initial before it), and it resolves to a single roster
+// key. An absent chip costs nothing; a wrong one misattributes a result.
+let _newsProfileRoster = null; // { surnameToKeys:Map(surname->Set(key)), keyToName:Map }
+function newsProfileRoster(){
+  if (_newsProfileRoster) return _newsProfileRoster;
+  const surnameToKeys = new Map(), keyToName = new Map();
+  if (typeof playerProfiles !== 'undefined' && playerProfiles){
+    for (const [key, v] of Object.entries(playerProfiles)){
+      const n = (v && v.name ? String(v.name) : '').trim();
+      if (!n) continue;
+      keyToName.set(String(key), n);
+      const surname = n.replace(/^[A-Z]\.\s*/, '').trim();
+      if (surname.length < 4) continue;
+      const sl = surname.toLowerCase();
+      if (!surnameToKeys.has(sl)) surnameToKeys.set(sl, new Set());
+      surnameToKeys.get(sl).add(String(key));
+    }
+  }
+  if (surnameToKeys.size) _newsProfileRoster = { surnameToKeys, keyToName }; // don't cache an empty (profiles not loaded yet)
+  return { surnameToKeys, keyToName };
+}
 function newsPlayerFor(title){
-  if (!_eloRoster) return '';
-  const words = String(title || '').toLowerCase().match(/[a-zà-ÿ'’-]{3,}/g) || [];
-  for (const w of words){ if (_eloRoster[w]) return _eloRoster[w].label; }
-  return '';
+  const r = newsProfileRoster();
+  if (!r.surnameToKeys.size) return '';
+  const tokens = (String(title || '').match(/[A-Za-zÀ-ÿ'’-]+/g) || []).map(t => t.toLowerCase());
+  const matched = new Map(); // surnameLower -> first word index
+  tokens.forEach((w, i) => { if (r.surnameToKeys.has(w) && !matched.has(w)) matched.set(w, i); });
+  if (matched.size !== 1) return '';
+  const [sl, idx] = [...matched.entries()][0];
+  if (idx > 1) return '';
+  const keys = r.surnameToKeys.get(sl);
+  if (!keys || keys.size !== 1) return '';
+  return r.keyToName.get([...keys][0]) || '';
 }
 
 // Load the Elo roster once and build surname -> "I. Surname" (highest-Elo wins on
@@ -2964,18 +3010,27 @@ function renderNews(){
   const footEl = document.getElementById('newsFootnote');
   if (!listEl || !_newsData) return;
   const all = Array.isArray(_newsData.articles) ? _newsData.articles : [];
-  const cutoff = Date.now() - _newsRangeHours * 3600 * 1000;
 
-  let items = all
-    .map(a => ({ a, ts: newsParseTs(a.published_at) }))
-    .filter(x => !isFinite(x.ts) || x.ts >= cutoff)   // keep undated items rather than silently drop them
-    .sort((x, y) => (y.ts || 0) - (x.ts || 0))
-    .map(x => ({
-      a: x.a, ts: x.ts,
-      cat: newsClassify(x.a.title, x.a.content),      // derived — no category field in feed
-      player: newsPlayerFor(x.a.title),               // derived from Elo roster surname map
-      src: newsSourceLabel(x.a.sources),
-    }));
+  // Map + time-filter for a given window (hours). Player chip is DATA-first:
+  // a.player_name is populated by build-news-feed.js at source; the client
+  // fail-closed derivation is only the fallback for feeds built before that field.
+  const within = (hours) => {
+    const cutoff = Date.now() - hours * 3600 * 1000;
+    return all
+      .map(a => ({ a, ts: newsParseTs(a.published_at) }))
+      .filter(x => !isFinite(x.ts) || x.ts >= cutoff)   // keep undated items rather than silently drop them
+      .sort((x, y) => (y.ts || 0) - (x.ts || 0))
+      .map(x => ({
+        a: x.a, ts: x.ts,
+        cat: newsClassify(x.a.title, x.a.content),      // derived — no category field in feed
+        player: (x.a.player_key != null && x.a.player_name)
+          ? String(x.a.player_name)                     // populated at source (fail-closed)
+          : newsPlayerFor(x.a.title),                   // interim fallback for pre-field feeds
+        src: newsSourceLabel(x.a.sources),
+      }));
+  };
+
+  let items = within(_newsRangeHours);
 
   // Category chip filter, then free-text search across headline/body/player/source.
   if (_newsCat) items = items.filter(x => x.cat === _newsCat);
@@ -2983,6 +3038,19 @@ function renderNews(){
     items = items.filter(x =>
       (String(x.a.title || '') + ' ' + String(x.a.content || '') + ' ' + x.player + ' ' + x.src)
         .toLowerCase().includes(_newsSearch));
+  }
+
+  // Auto-widen fallback (TEN-8, 2026-07-30): an empty UNFILTERED window opens the
+  // page blank, which is worse than showing older items. When no category/search
+  // filter is active and the selected window is empty, widen to the next tier that
+  // has articles (up to 7d) and note it. The user's range selector is untouched.
+  let widenedTo = 0;
+  if (!items.length && !_newsCat && !_newsSearch){
+    for (const h of [24, 48, 72, 168]){
+      if (h <= _newsRangeHours) continue;
+      const wider = within(h);
+      if (wider.length){ items = wider; widenedTo = h; break; }
+    }
   }
 
   // ASAP "Player's own words" cards sit above the wire, but only in the unfiltered
@@ -3005,7 +3073,10 @@ function renderNews(){
     return;
   }
 
-  listEl.innerHTML = asapHtml + items.map(({ a, ts, cat, player, src }) => {
+  const widenNote = widenedTo
+    ? `<div class="news-widennote" style="font-size:12px;color:var(--text-faint,#8b93a3);padding:6px 2px 14px;">No articles in the last ${_newsRangeHours}h — showing the last ${widenedTo >= 168 ? '7 days' : widenedTo + ' hours'} instead.</div>`
+    : '';
+  listEl.innerHTML = asapHtml + widenNote + items.map(({ a, ts, cat, player, src }) => {
     const ago = newsAgo(ts);
     const body = a.content ? newsEscape(a.content) : '<em>No article body provided by the feed.</em>';
     return `<article class="news-item">

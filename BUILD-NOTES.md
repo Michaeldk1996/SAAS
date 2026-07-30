@@ -740,3 +740,75 @@ safe for this feed, but freshest item is >6h old — recommend keeping 24h + an
 auto-widen fallback (step to 48/72h/7d) when the filtered window yields 0, so the
 page never opens empty. Note: several ≤24h items are WTA; the "ATP MEN'S" pill is
 not excluding them (separate men's-filter gap, flagged).
+
+## News — founder rulings applied (TEN-8, comment 2026-07-30T00:58Z) — SHIPPED LOCAL
+
+The founder answered the three open questions from the derived-field audit above.
+All changes below are LOCAL-ONLY (not pushed) per "Local only." Files touched:
+`build-news-feed.js` (pipeline), `bsp-consult-dashboard.html` (render).
+
+**1. Player chip — Option C (at source) + stricter-than-A interim. DONE.**
+- Measured the live feed again: the schema fields `player_key`/`player_name`/
+  `tournament_key`/`entity_type`/`event_*` are present but **null on 91/91** — the
+  vendor never populates them. So "the feed already has the field and the pipeline
+  should fill it" means *derive and write it in the pipeline*, not read a vendor value.
+- Pipeline (`build-news-feed.js`): new `loadRoster()` + `derivePlayer()`; `main()`
+  now writes `player_key`/`player_name` onto each kept article. **Fail-closed rule**
+  (exactly as instructed): render a key ONLY when the title contains exactly ONE
+  distinct in-roster surname, that surname LEADS the headline (word index 0 or 1,
+  allowing a first-name/initial before it — the "first named entity" proxy), and it
+  resolves to exactly one roster key. Anything else → null.
+- Render (`bsp-consult-dashboard.html`): chip is now DATA-first — reads
+  `a.player_name` when `a.player_key` is set. `newsPlayerFor()` was rewritten to the
+  identical fail-closed rule (against a `playerProfiles` surname→key map) purely as
+  the INTERIM fallback for feeds built before the field lands. The old Elo-surname
+  first-hit derivation (the source of the Eala/Zheng mis-tag) is gone.
+- Validation over 91 real titles: **22 chips fire, all correct** (player leads the
+  headline); collisions ("Sinner, Alcaraz …") and mid-body mentions fire nothing.
+  The Eala/Zheng case gets no chip (WTA surnames aren't in the ATP roster).
+- HONEST NOTE: even "at source," this is still title-derived — there is no vendor
+  truth field. It is now centralized, canonical (→ playerProfiles key) and gated.
+
+**2. Category classifier — weak single-keyword gate. DONE.**
+- Match-Reports evidence split STRONG (unambiguous result verbs + named rounds:
+  beat/def/upset/win/won/survives/semi-final/…) vs WEAK (ambiguous: sets/final/
+  reach/edge/advance/through). A lone WEAK hit no longer buckets → falls to Tour
+  News; a specific bucket needs a STRONG hit, two WEAK hits, or one WEAK + a
+  scoreline. "Wimbledon **Sets** Attendance Record" → Tour News (was Match Reports).
+- Distribution over 91 titles: Tour News 49 / Injuries 27 / Match Reports 11 /
+  Draws 4 (Match Reports ~12%, down from title-only's 24% inflated by lone "sets").
+
+**3. Men's filter — fixed AT THE FILTER, not the pill. DONE.**
+- Confirmed the feed carries **no populated tour/gender field** to gate on
+  (tournament_key/entity_type all null). So the gate stays text-based but is now
+  FAIL-CLOSED on the neutral-headline path: `classifyKeep` step 3 changed from
+  (ATP marker OR roster surname) to (ATP marker AND roster surname) in the body,
+  with all women/lower-tier/off-court/historical blocks still applied.
+- Impact on the 91 previously-kept articles: **3 now drop** — "Errani …" and
+  "Ana Ivanovic …" (both WTA, exactly the leak the founder reported under the
+  ATP MEN'S banner) and one retired-player off-tennis fluff piece ("Thiem …
+  Football Boots"). The pill's claim is now enforced, so it stays.
+
+**4. Auto-widen fallback. DONE.**
+- `renderNews` refactored: when the selected window is empty AND no category/search
+  filter is active, it widens to the next tier that has articles (24→48→72→7d) and
+  shows "No articles in the last Nh — showing the last M instead." The user's range
+  selector is left untouched. A filtered-empty result still shows the honest "no
+  matches" state (a deliberate empty, not an accident).
+
+## TASK — Win/loss colour-token migration (#3ECF8E/#E8607A → #3dd68c/#e0616f) — NOT STARTED, deferred by founder
+Founder ruling (2026-07-30): the app's established win/loss pair `#3ECF8E`(green)/
+`#E8607A`(red) predates the design-system pair `#3dd68c`/`#e0616f`. This is a real,
+separate migration — **do NOT fold it into page work** (it would make every page
+diff unreviewable). Playing Styles is correct as left (export-exact where the export
+specifies, canonical tokens where colour was newly introduced).
+
+MEASURED SCOPE (grep across the repo, node_modules excluded) — occurrences of the
+legacy pair, by surface:
+- `_render-profile.html`       — 37 green / 23 red
+- `bsp-consult-dashboard.html` — 31 green / 17 red   (the "~30 sites" the founder counted)
+- `funnel.html`                — 16 green /  0 red
+- `verify.html`                —  1 green /  1 red
+- `account.html`               —  0 green /  1 red
+- TOTAL: 5 surface files, ~85 green + ~42 red occurrences (~127 total).
+Do this as its own reviewed pass, one surface at a time, verifying nothing regresses.
