@@ -38,7 +38,7 @@
     --border-interact:rgba(91,155,255,0.22); --border-selected:rgba(91,155,255,0.35);
     --text:#e7e9ee; --text-2:#c8cfda; --text-3:#8b93a3;
     --muted:#5b6880; --muted-2:#4b5672; --muted-3:#6b7280;
-    --brand:#5b9bff; --brand-deep:#2f6bd8; --player-a:#6aaeff; --player-b:#e7e9ee;
+    --brand:#5b9bff; --brand-deep:#2f6bd8; --brand-deep-off:#1d2f5a; --player-a:#6aaeff; --player-b:#e7e9ee;
     --brand-wash:rgba(91,155,255,0.08); --brand-tint:rgba(91,155,255,0.15);
     --pos:#3dd68c; --warn:#e8a84e; --neg:#e0616f;
     --grass:#2ab8a0; --hard:#4db8ff; --clay:#e8a84e;
@@ -78,11 +78,12 @@
   .inp.err{ border-color:var(--neg); }
   .field-err{ display:block; min-height:0; margin-top:8px; font-size:13px; color:var(--neg); }
 
-  /* the ONE approved solid button in the product */
-  .btn-solid{ width:100%; height:54px; margin-top:18px; border:none; border-radius:var(--r-control);
-    background:var(--brand-deep); color:#fff; font-family:var(--font-ui); font-size:15px; font-weight:700;
+  /* a sanctioned solid button (email-step Continue + code-step Verify). enabled fill = --brand-deep;
+     disabled = muted-navy fill (--brand-deep-off), not a faded blue — matches the export's two states. */
+  .btn-solid{ width:100%; height:50px; margin-top:18px; border:none; border-radius:var(--r-control);
+    background:var(--brand-deep); color:var(--text); font-family:var(--font-ui); font-size:15px; font-weight:600;
     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
-  .btn-solid:disabled{ opacity:0.40; cursor:not-allowed; color:rgba(255,255,255,0.72); }   /* disabled = 40% + muted label */
+  .btn-solid:disabled{ background:var(--brand-deep-off); color:var(--muted); opacity:1; cursor:not-allowed; }  /* disabled = muted navy fill + dimmed label */
   .btn-solid.loading{ opacity:0.60; cursor:default; }                                        /* loading = 60%, no spinner */
   .btn-solid svg{ display:block; }
 
@@ -114,24 +115,29 @@
   .pwline a{ font-size:13.5px; color:var(--text-3); font-weight:600; cursor:pointer; }
   .pwline a:hover{ color:var(--text-2); }
 
-  /* ---- OTP / code step ---- */
+  /* ---- OTP / code step (values from export login.html) ---- */
   .otp{ text-align:center; }
-  .mailglyph{ width:64px; height:64px; border-radius:16px; margin:0 auto 24px;
-    border:1px solid var(--border-interact); background:var(--brand-wash);
+  .mailglyph{ width:56px; height:56px; border-radius:15px; margin:0 auto 20px;
+    border:1px solid rgba(91,155,255,0.4); background:rgba(91,155,255,0.12);
     display:flex; align-items:center; justify-content:center; }
-  .otp .h1{ text-align:center; }
-  .otp .sub{ text-align:center; }
-  .codes{ display:flex; gap:12px; justify-content:center; margin:26px 0 4px; }
-  .code{ width:56px; height:64px; text-align:center; background:var(--field-fill);
-    border:1px solid var(--border-interact); border-radius:var(--r-control); color:var(--text);
-    font-family:var(--font-data); font-size:26px; font-weight:500; outline:none; }
-  .code:focus{ border-color:var(--border-selected); }
+  .otp .h1{ text-align:center; font-size:28px; letter-spacing:-0.01em; }
+  .otp .sub{ text-align:center; margin-top:8px; color:var(--text-3); line-height:1.55; }
+  .codes{ display:flex; gap:10px; justify-content:center; margin:30px 0 22px; }
+  .code{ width:52px; height:52px; text-align:center; background:var(--field-fill);
+    border:1px solid var(--border-data); border-radius:var(--r-control); color:var(--text);
+    font-family:var(--font-data); font-size:22px; font-weight:700; outline:none; }
+  /* resting: all six identical, --border-data, no distinguished box. focus = subtle ring,
+     keyboard-only (:focus-visible), so the programmatic autofocus on load shows no border box. */
+  .code:focus-visible{ border-color:var(--border-selected); box-shadow:0 0 0 3px rgba(91,155,255,0.15); }
   .code.err{ border-color:var(--neg); }
+  /* autofill hook: a one-time SMS/email code fires animationstart so gating re-evaluates */
+  @keyframes otpAutofill { from{} to{} }
+  .code:-webkit-autofill{ animation-name:otpAutofill; }
   .otpnote{ min-height:0; margin:2px 0 0; font-size:13px; color:var(--text-3); line-height:1.5; }
-  .resend{ margin-top:20px; font-size:13.5px; color:var(--muted); }
+  .resend{ margin-top:20px; font-size:13.5px; color:var(--text-3); }
   .resend a{ color:var(--brand); font-weight:600; cursor:pointer; }
-  .backlink{ display:block; margin-top:16px; font-size:13.5px; color:var(--muted); cursor:pointer; }
-  .backlink:hover{ color:var(--text-3); }
+  .backlink{ display:block; margin-top:10px; font-size:13.5px; color:var(--text-3); cursor:pointer; }
+  .backlink:hover{ color:var(--text-2); }
 
   /* ---- password fallback step ---- */
   .fwd-forgot{ display:flex; justify-content:space-between; align-items:baseline; margin:30px 0 9px; }
@@ -186,7 +192,8 @@
   .lm-row + .lm-row{ margin-top:20px; }
   .lm-book{ font-size:13.5px; color:var(--text-3); }
   .lm-open{ font-family:var(--font-data); font-size:13px; color:var(--muted); }
-  .lm-mtrack{ position:relative; height:2px; background:rgba(255,255,255,0.12); border-radius:2px; }
+  /* movement track paints a filled segment (muted→brand gradient), not a bare line + dot */
+  .lm-mtrack{ position:relative; height:2px; background:linear-gradient(90deg,var(--muted),var(--brand)); border-radius:2px; }
   .lm-dot{ position:absolute; top:50%; right:0; transform:translate(50%,-50%); width:9px; height:9px;
     border-radius:50%; background:var(--brand); box-shadow:0 0 0 3px rgba(91,155,255,0.15); }
   .lm-close{ text-align:right; }
@@ -273,7 +280,7 @@
       <!-- ---- STEP: code / OTP ---- -->
       <section id="stepCode" class="otp hidden">
         <div class="mailglyph">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5b9bff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5b9bff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
         </div>
         <h1 class="h1">Check your inbox</h1>
         <p class="sub">Enter the 6-digit code we emailed to<br><span id="codeEmail" style="color:var(--text-3)">your email</span></p>
@@ -288,7 +295,7 @@
         </div>
         <p class="otpnote" id="otpNote"></p>
 
-        <button type="button" class="btn-solid" id="verifyBtn" onclick="verifyCode()"><span>Verify</span></button>
+        <button type="button" class="btn-solid" id="verifyBtn" onclick="verifyCode()" disabled><span>Verify</span></button>
 
         <p class="resend">Didn't get it? <a onclick="resendCode()">Resend code</a></p>
         <a class="backlink" onclick="goStep('email')">&lsaquo;&nbsp; Use a different email</a>
@@ -402,6 +409,7 @@
         document.getElementById('codeEmail').textContent = currentEmail || 'your email';
         clearCodes();
         document.getElementById('otpNote').textContent = '';
+        updateVerify();   // Verify starts disabled until all six digits are present
         var first = document.querySelector('#codes .code'); if (first) first.focus();
       }
       if (step === 'password'){
@@ -453,6 +461,12 @@
     function codeInputs(){ return Array.prototype.slice.call(document.querySelectorAll('#codes .code')); }
     function clearCodes(){ codeInputs().forEach(function(i){ i.value=''; i.classList.remove('err'); }); }
     function codeValue(){ return codeInputs().map(function(i){ return i.value; }).join(''); }
+    // Gate Verify on a complete six-digit code. Re-run on every path that can change the
+    // digits — typing, autofill (input/change/animationstart), paste, and step entry.
+    function updateVerify(){
+      var btn = document.getElementById('verifyBtn');
+      if (btn) btn.disabled = codeValue().replace(/[^0-9]/g,'').length < 6;
+    }
 
     (function wireCodes(){
       var ins = codeInputs();
@@ -462,7 +476,11 @@
           inp.classList.remove('err');
           document.getElementById('otpNote').textContent = '';
           if (inp.value && idx < ins.length-1) ins[idx+1].focus();
+          updateVerify();
         });
+        // autofill from an SMS/email one-time-code suggestion doesn't always fire 'input'
+        inp.addEventListener('change', updateVerify);
+        inp.addEventListener('animationstart', function(e){ if (e.animationName === 'otpAutofill') updateVerify(); });
         inp.addEventListener('keydown', function(e){
           if (e.key === 'Backspace' && !inp.value && idx > 0){ ins[idx-1].focus(); ins[idx-1].value=''; }
           if (e.key === 'ArrowLeft' && idx > 0) ins[idx-1].focus();
@@ -474,6 +492,7 @@
           var d = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,6);
           for (var i=0;i<ins.length;i++) ins[i].value = d[i] || '';
           (ins[Math.min(d.length, ins.length-1)] || inp).focus();
+          updateVerify();
         });
       });
     })();

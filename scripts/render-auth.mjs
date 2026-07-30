@@ -86,18 +86,40 @@ await capture(`${base}/auth.html`, 'auth-1400-email-empty.png', `(function(){
   var b=document.getElementById('continueBtn'); return {disabled:b.disabled, opacity:getComputedStyle(b).opacity};
 })()`);
 
-// Code step
+// Code step — captured EMPTY to mirror the reference screenshot (Verify disabled/navy).
+// Probe drives the full gating cycle with real input events: load(disabled) →
+// six digits(enabled) → delete one(disabled) — and checks no box is distinguished on load.
 await capture(`${base}/auth.html?step=code&email=micha.dekegel@hotmail.com`, 'auth-1400-code.png', `(function(){
-  // fill the boxes to mirror the reference (323123) for a faithful side-by-side
-  var ins=document.querySelectorAll('#codes .code'); var v='323123';
-  for(var i=0;i<ins.length;i++){ ins[i].value=v[i]; }
+  var ins=document.querySelectorAll('#codes .code');
+  var vb=document.getElementById('verifyBtn');
+  var cs=function(el){return getComputedStyle(el);};
+  var loadDisabled = vb.disabled, loadBg = cs(vb).backgroundColor, loadColor = cs(vb).color;
+  var borders = Array.prototype.map.call(ins, function(i){return cs(i).borderColor;});
+  var uniqBorders = borders.filter(function(b,i){return borders.indexOf(b)===i;});
+  var boxShadows = Array.prototype.map.call(ins, function(i){return cs(i).boxShadow;});
+  // type six digits via real input events
+  var v='323123';
+  for(var i=0;i<ins.length;i++){ ins[i].value=v[i]; ins[i].dispatchEvent(new Event('input',{bubbles:true})); }
+  var sixDisabled = vb.disabled, sixBg = cs(vb).backgroundColor;
+  // delete one
+  ins[5].value=''; ins[5].dispatchEvent(new Event('input',{bubbles:true}));
+  var fiveDisabled = vb.disabled;
+  // restore empty for the screenshot
+  for(var j=0;j<ins.length;j++){ ins[j].value=''; ins[j].dispatchEvent(new Event('input',{bubbles:true})); }
+  var track=document.querySelector('.lm-mtrack');
   return {
     step:'code',
     heading:(document.querySelector('#stepCode .h1')||{}).textContent,
+    headingSize: cs(document.querySelector('#stepCode .h1')).fontSize,
     email:(document.getElementById('codeEmail')||{}).textContent,
+    emailColor: cs(document.getElementById('codeEmail')).color,
     boxes: ins.length,
-    verifyBg: getComputedStyle(document.getElementById('verifyBtn')).backgroundColor,
-    codeFont: getComputedStyle(ins[0]).fontFamily
+    boxW: cs(ins[0]).width, boxH: cs(ins[0]).height, boxRadius: cs(ins[0]).borderRadius,
+    boxWeight: cs(ins[0]).fontWeight, codeFont: cs(ins[0]).fontFamily,
+    uniqueBorderCount: uniqBorders.length, borderOnLoad: borders[0], boxShadowOnLoad: boxShadows[0],
+    GATE_loadDisabled: loadDisabled, GATE_loadBg: loadBg, GATE_loadLabel: loadColor,
+    GATE_sixDisabled: sixDisabled, GATE_sixBg: sixBg, GATE_fiveDisabled: fiveDisabled,
+    trackBg: cs(track).backgroundImage.slice(0,60)
   };
 })()`);
 

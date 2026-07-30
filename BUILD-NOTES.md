@@ -1198,3 +1198,51 @@ click-only (no URL routing), so deep-linking a specific tab would need a one-lin
 reader in the dashboard — **out of scope** for this atomic edit; nav lands on Matches.
 No dashboard tab is shown active (account isn't a dashboard tab; export's active
 "Matches" was standby state).
+## TEN-8 Task 7 — Auth code-verification (OTP) step corrections
+
+Scoped to the code step of `auth.html`. Auth behaviour (validate/resend/back) untouched.
+Values taken from the export source `~/Downloads/export/login.html`; two values that only
+exist in the founder's `da46cc87` screenshot were pixel-sampled and are flagged below.
+
+Fixed (verified via `scripts/render-auth.mjs`, 1400px CDP; probe values in parens):
+1. **Verify enable-gating.** Was always enabled/bright. Now gated on a complete six-digit
+   code: disabled on load (GATE_loadDisabled=true), enabled at six digits
+   (GATE_sixDisabled=false), disabled again after deleting one (GATE_fiveDisabled=true).
+   Autofill covered: `input` + `change` + `animationstart` (`.code:-webkit-autofill` fires
+   `@keyframes otpAutofill`) all re-run `updateVerify()`; paste + step-entry too.
+2. **Verify fill states.** Enabled = `--brand-deep #2f6bd8` (GATE_sixBg rgb(47,107,216)),
+   label `--text #e7e9ee`, weight 600 (was #fff/700). Disabled = muted-navy
+   `--brand-deep-off #1d2f5a` (GATE_loadBg rgb(29,47,90)) + label `--muted` — a real two-state
+   fill, not the old opacity:0.40 faded blue. `#1d2f5a` sampled from the screenshot (login.html
+   has no disabled state). `.btn-solid` is shared, so the email-step Continue disabled state now
+   matches too (the consolidation the task asked for — one style path, not two).
+3. **Code boxes.** 52×52, radius 8, gap 10, fill `--field-fill` rgba(255,255,255,0.04),
+   font 22px/700 IBM Plex Mono (was 56×64/26px/500). Border = `--border-data` (all six
+   identical; uniqueBorderCount=1). Resting shows no distinguished box; the first-box "bright
+   border" was the autofocus ring — moved to `:focus-visible` (keyboard-only) as a subtle
+   0.15 brand ring, so the programmatic load-focus paints nothing (boxShadowOnLoad=none).
+4. **Mail tile.** 56×56, radius 15, fill rgba(91,155,255,0.12), border rgba(91,155,255,0.4),
+   glyph 26px/stroke 1.6 (was 64×64/28px). Heading "Check your inbox" 28px/-0.01em (was 31px).
+   Instruction + email both `--text-3 #8b93a3` (email no longer emphasised; source has it blue
+   #6aaeff but the screenshot + task both render it muted — screenshot wins).
+5. **Footer links.** Resend line + "Use a different email" to `--text-3`, back-link margin
+   10px; sizes per source (13.5px).
+6. **§9 sparkline.** `.lm-mtrack` was a flat track + terminal dot (zero-width fill). Now paints
+   a `linear-gradient(90deg,--muted,--brand)` filled segment brightening to the close dot —
+   sampled from the screenshot (muted→brand, ~#5b6880→#5b9bff).
+
+Reported, NOT changed (founder to rule):
+- **§9 delta colour (STOP item).** Kept `▼ -0.08` `--pos` / `▲ +0.26` `--neg`. Per README/
+  BUILD-NOTES token semantics `--pos`=shortened price, `--neg`=drifted price — coloured deltas
+  are a sanctioned exception. But the `da46cc87` screenshot renders both muted. This is the
+  pre-existing open question (BUILD-NOTES "README-vs-reference notes"). One-line change to
+  `.d.pos`/`.d.neg` → `--muted` if the founder prefers the screenshot look.
+- **Ghost `1.34`/`3.46` in the left column.** Do NOT reproduce live — verified in the 1400px
+  render, both figures appear only inside the right panel; nothing floats in the left column.
+  The overlap in the founder's screenshot is a presentation/screenshot artefact, not a
+  z-index/positioning bug. No change.
+
+Panel is a single component on this one-page step machine (not duplicated across steps), so no
+consolidation was needed there. Source note: `login.html`'s right panel is a 6-bar chart, but
+the founder's screenshot (and the current build) use the Pinnacle/Bet365 rows — screenshot is
+authoritative for the panel, login.html for the left column.
