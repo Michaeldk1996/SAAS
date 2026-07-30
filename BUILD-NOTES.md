@@ -1141,3 +1141,60 @@ not "it matches."
 
 **If the queue empties:** continue down the modal — remaining tabs against the export,
 then Account Settings. Don't idle.
+
+---
+
+## TEN-8 Task 1 — Account Settings rebuilt against export (commit 30c3af8, local)
+
+`account.html` was a tabbed settings console (BSP wordmark header + left settings rail,
+one section per pane). Rebuilt to the export's IA: **single scrolling column of cards**
+on the global Stennisfy sidebar. Card order Profile → Plan → Preferences → Notifications
+→ Security → Support → footer actions. Design tokens = the product `--sf-*` system
+(same as the dashboard, itself rebuilt against this same export).
+
+**Data bindings — all kept, all persist via the existing Firebase-backed `BSP` API
+(auth.js), the same mechanism the odds-format preference already used:**
+- Profile name/email → `BSP.updateProfile({name,email})` (edit collapses behind Edit profile).
+- Odds format → `BSP.setOddsFormat` (unchanged persistence + price-render effect elsewhere).
+- **Favourite bookmakers** → real persisted field `user.favouriteBookmakers[]`
+  (`BSP.updateProfile({favouriteBookmakers})`). Book set is the pipeline's canonical
+  fair-market reference order from `bsp-pipeline.js` `prefer=['bet365','Pncl','Betfair',
+  'Unibet','WilliamHill','Marathon']` (same books present in matches.json). Keys stored
+  match the pipeline keys. **Downstream Market-Signal ordering is UNWIRED**: the pipeline
+  `prefer[]` is hardcoded and runs CI-side; the client preference is persisted but does
+  not yet reorder the strip. Closed label = "N selected", or em dash at zero.
+- **Timezone** → folded into Preferences (row 3), `BSP.setTimezone`. Not in the export —
+  a live capability the design phase never saw (same call as the Player-Profile extras);
+  it's a preference so it lives in Preferences, not Profile.
+- Notifications (4 toggles, exact export strings/defaults) → `BSP.setNotifications`
+  (favouritePlayers real backing exists on the record). Persist across reload.
+
+**Standby vs live (export defines structure, live defines content):**
+- Plan card binds `user.plan` (real field: free|edge|pro). Per-tier name+description
+  supplied in-page (no description field on the record) — free copy = the export's.
+  Upgrade to Pro shows unless plan==='pro'. **OPEN for founder:** confirm the real tier
+  names/copy and whether Upgrade should render for the founder account.
+- Password "Last changed" = **em dash** — Firebase exposes no password-change timestamp
+  (never the export's standby "3 months ago").
+- Avatar = brand-wash fill + brand initials (photoURL used if the record ever has one).
+
+**Built-but-disabled (no backend), flagged not silently dead:**
+- 2FA Enable — auth.js/Firebase MFA not wired.
+- Contact support — no real support address in the repo (only *.local placeholders);
+  address renders as em dash. **OPEN:** founder to supply the real support address.
+- Delete account — no deletion endpoint; button + confirm step render, confirm disabled.
+
+**Verified (CDP, 1400px, commit 30c3af8):** page renders, 0 console errors; computed
+font-family Hanken everywhere, IBM Plex Mono only on the 3 segment examples; toggle-on
+= rgb(91,155,255); segmented example #7ba4ff; American uses a true minus (−). Toggle
+44×24 / 20px white knob, plan brand-wash gradient, sign-out + trash glyphs hand-drawn
+to the export render (the export bundle carries no machine-readable component source).
+
+**Sidebar adaptation:** no shared sidebar module exists — it lives inline in the
+dashboard SPA. Replicated verbatim (identical classes/CSS/glyphs). On this standalone
+page the ANALYSE items are anchors to `bsp-consult-dashboard.html#<tab>` rather than
+in-page `data-tab` buttons (account has no tab-pages). The dashboard's tab switcher is
+click-only (no URL routing), so deep-linking a specific tab would need a one-line hash
+reader in the dashboard — **out of scope** for this atomic edit; nav lands on Matches.
+No dashboard tab is shown active (account isn't a dashboard tab; export's active
+"Matches" was standby state).
