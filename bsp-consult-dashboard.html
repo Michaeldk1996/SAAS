@@ -10523,6 +10523,29 @@ const PP_SPLIT_SECTIONS = [
 ];
 function pct1(v){ return v != null ? v.toFixed(1) + '%' : '—'; }
 function wl(w, l){ return (w != null && l != null) ? `${w}-${l}` : '—'; }
+// THIN-SAMPLE MARKING (founder, 2026-07-30). Dropping the per-row MS column also
+// dropped the only per-row thin-sample flag, so a split resting on a single match
+// could show a clean 100% Hld% with nothing qualifying it — a number rendered at
+// full confidence off no real sample, which reads as a finding. We do NOT floor
+// those rows out (a floor hides real data; the split still belongs in the table).
+// We mark them: below the threshold a percentage renders in the muted denominator
+// tone (PP_SPLIT_C.dim — the same tone MS used) instead of the result tone
+// (PP_SPLIT_C.num). No badge, no caption, no extra colour: the value stays visible
+// and legible, it just visibly does not carry full weight. This mirrors how the
+// design system already treats sample everywhere else — sample size is disclosed,
+// judgement about sample size is not asserted.
+//
+// Threshold picked from the live data, not a guess: across every SHOWN split
+// (career + last-52, n=5080), the governing match sample decays smoothly with no
+// natural cliff. A cut at < 3 marks exactly the 1–2-match tail the founder named —
+// 23% of serve rows (MS) and 21% of match rows (M) — a clear minority; 3+ stays at
+// full weight. Governing sample is MS on the Service tab (serve %s are measured
+// over MS, never over M) and M on Sets & Games. Results is deliberately untouched:
+// its M is a visible column (sample already disclosed) and Win% is graded, not a
+// --num cell. Muting applies only to present --num percentages; an em dash ("not
+// measured") is left as-is. One constant to retune if the founder wants a different
+// line.
+const PP_SPLIT_THIN = 3;
 // Matches-served sample for the Service tab, shown ONCE under the tab switcher as
 // muted context (founder, 2026-07-30) instead of an MS column on every row. Reported
 // as the span across the shown splits (min–max), or a single figure when every shown
@@ -10625,9 +10648,14 @@ function ppSplitTabTableHtml(rows, which, tier){
       // One grade per row, reused by the Win% cell for both its colour and its
       // hover text so the two can never disagree about why the cell is green.
       const g = ppSplitGrade(r, which, k, tier);
+      // Governing match sample for this row's tab (see PP_SPLIT_THIN note): MS for
+      // Service, M elsewhere. A --num percentage resting on fewer matches renders in
+      // the muted denominator tone so it stays legible but does not read as a finding.
+      const thinSample = tab.id === 'service' ? r.MS : r.M;
+      const thin = typeof thinSample === 'number' && thinSample < PP_SPLIT_THIN;
       return `<div class="pp-split-row" style="${grid}align-items:center;padding:11px 0;border-radius:8px;background:${bg};transition:background .12s ease;">
         <span style="text-align:left;padding:0 12px;position:sticky;left:0;background:#0a0d14;font-family:'Hanken Grotesk',sans-serif;font-size:14px;font-weight:700;color:#e7e9ee;">${k}</span>
-        ${tab.cols.map(c => `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding-left:12px;${PP_SPLIT_MONO}font-size:${c.win ? '14px' : '13px'};font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : c.c};white-space:nowrap;">${c.get(r)}</span>`).join('')}
+        ${tab.cols.map(c => { const v = c.get(r); const muted = thin && !c.win && c.c === PP_SPLIT_C.num && v !== '—'; return `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding-left:12px;${PP_SPLIT_MONO}font-size:${c.win ? '14px' : '13px'};font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : (muted ? PP_SPLIT_C.dim : c.c)};white-space:nowrap;">${v}</span>`; }).join('')}
       </div>`;
     }).join('');
   }).join('');

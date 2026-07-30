@@ -883,11 +883,32 @@ Brk% sit inside the visible rect** on Career and Last-52. Long labels ("Grand Sl
 "Semi-finals") wrap to two lines — the accepted trade at 299px, since the founder's hard
 requirement is that Hld%/Brk% are visible without scrolling. `overflow-x:auto` stays only as
 a graceful fallback.
-- NOTE (surfaced, not silently hidden): removing per-row MS also removed the per-row
-  thin-sample flag. The sample range's low end can be **1** (some splits — e.g. a rare
-  surface/round — rest on a single match), because the splits TABLE itself applies no
-  M≥N floor (pre-existing; unchanged here). If the founder wants the thinnest splits
-  floored out of the table, that is a separate, deliberate row-filter decision.
+- **RESOLVED — thin-sample MARKING (founder ruling, 2026-07-30).** Removing per-row MS
+  had also removed the per-row thin-sample flag, so a split resting on one match could
+  show a clean 100% Hld% with nothing qualifying it — a number at full confidence off no
+  real sample, which reads as a finding. Founder: do NOT fix it with a row filter (a
+  floor hides real data; the split still belongs in the table) — **mark it**: below a
+  threshold, render the percentage in the muted tone rather than the result tone. No
+  badge, no caption, no extra colour; the value stays visible and legible, it just
+  doesn't carry full weight. Consistent with the rest of the design: sample size is
+  disclosed, judgement about sample size is not asserted.
+  - **Impl:** `PP_SPLIT_THIN = 3`. A `--num` percentage whose governing match sample is
+    < 3 renders in `PP_SPLIT_C.dim` (`#5b6472` — the exact tone the dropped MS column
+    used) instead of `PP_SPLIT_C.num` (`#b8c0cc`). Governing sample = **MS** on the
+    Service tab (serve %s are measured over MS, never M) and **M** on Sets & Games.
+    Em dashes ("not measured") are left as-is. Applied in `ppSplitTabTableHtml`.
+  - **Threshold is data-driven, not a guess:** across every shown split (career+last-52,
+    n=5080) the sample decays smoothly with no natural cliff. `< 3` marks exactly the
+    1–2-match tail — **22% of valued serve cells** (and ~21% of match cells) — a clear
+    minority; 3+ stays full weight. One constant to retune if the founder wants a
+    different line. Verified against live `career-splits.json`: e.g. Gojo vs. Lefties
+    (MS=1, Hld% 100%) → muted; a 2-match Grass row → muted; MS=97 Hard → full weight.
+  - **Scope:** applied to the two ungraded-percentage tabs where the match sample is NOT
+    a visible column (Service keyed on MS; Sets & Games keyed on M). **Results is left
+    untouched** — its M is already a visible column (sample disclosed) and Win% is a
+    graded cell, not a `--num` cell. Extending to Sets & Games is the same principle, not
+    a re-open of a settled layout; flagged here so it is a conscious call, not a silent
+    reach.
 
 ## Stennisfy Model — rebuild-to-export (TEN-8, founder comment 2026-07-30) — DONE, LOCAL ONLY (commit c322d60)
 Founder: "PROCEED, same rules. Everything per the export." Built the export layout into
