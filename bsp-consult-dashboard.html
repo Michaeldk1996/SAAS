@@ -2626,9 +2626,96 @@
   .edge-rt-ch{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:#5b6472; margin-left:2px; vertical-align:super; cursor:help; }
   .edge-rt-table tr.lowc td{ opacity:0.5; }
   .edge-rt-foot{ margin-top:14px; font-size:10.5px; color:#5b6472; line-height:1.6; }
+
+  /* ── Left rail — tournament dropdown + scrollable match list (design export;
+     replaces the Prev/Back/Next stepper). ── */
+  .edge-shell.edge-2col{ display:flex; align-items:flex-start; gap:22px; }
+  .edge-rail{ width:240px; flex:none; position:sticky; top:14px; display:flex; flex-direction:column;
+    background:#0a0d13; border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;
+    max-height:calc(100vh - 28px); }
+  .edge-rail-top{ display:block; padding:12px 14px 9px; font-size:11px; font-weight:600;
+    letter-spacing:0.02em; color:#5b6880; }
+  .edge-rail-tourwrap{ padding:0 12px 10px; }
+  .edge-rail-tsel{ appearance:none; -webkit-appearance:none; width:100%;
+    background:rgba(255,255,255,0.04) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%235b6880' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 10px center;
+    border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e7e9ee;
+    font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:600;
+    padding:9px 30px 9px 11px; cursor:pointer; }
+  .edge-rail-list{ flex:1; overflow-y:auto; padding:2px 10px 10px; display:flex; flex-direction:column; gap:5px; }
+  .edge-rail-row{ display:flex; align-items:center; gap:8px; width:100%;
+    background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+    border-radius:6px; padding:7px 10px; cursor:pointer; text-align:left; font-family:'Hanken Grotesk',sans-serif; }
+  .edge-rail-row:hover{ background:rgba(255,255,255,0.045); }
+  .edge-rail-row.on{ background:rgba(62,123,250,0.14); border-color:rgba(62,123,250,0.5); }
+  .edge-rail-nm{ flex:1; min-width:0; font-size:12px; font-weight:600; color:#c8cfda;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .edge-rail-row.on .edge-rail-nm{ color:#fff; }
+  .edge-rail-meta{ flex:none; font-size:9.5px; font-family:'IBM Plex Mono',monospace; color:#4b5672;
+    text-align:right; white-space:nowrap; }
+  .edge-rail-back{ margin-top:auto; position:sticky; bottom:0; display:block; padding:11px 14px;
+    border-top:1px solid rgba(255,255,255,0.07); background:#0a0d13; font-size:12px; color:#5b6880; cursor:pointer; }
+  .edge-rail-back:hover{ color:#e7e9ee; }
+  @media (max-width:900px){
+    .edge-shell.edge-2col{ flex-direction:column; }
+    .edge-rail{ width:100%; position:static; max-height:none; }
+    .edge-rail-list{ max-height:300px; }
+  }
+
+  /* ── Market context (4 columns) — design export ── */
+  .edge-mctx{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+  @media (max-width:1050px){ .edge-mctx{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:560px){ .edge-mctx{ grid-template-columns:1fr; } }
+  .edge-mcbox{ background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:12px;
+    padding:15px 16px; display:flex; flex-direction:column; gap:12px; }
+  .edge-mcbox.base{ border-color:rgba(37,99,235,0.30); }
+  .edge-mclbl{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em;
+    text-transform:uppercase; color:#5b6880; }
+  .edge-mcline{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .edge-mcline.sep{ padding-top:11px; border-top:1px solid rgba(255,255,255,0.06); }
+  .edge-mcnm{ font-size:12px; font-weight:700; }
+  .edge-mcnm.a{ color:#6aaeff; } .edge-mcnm.b{ color:#e7e9ee; }
+  .edge-mcval{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .edge-mcodd{ font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700; line-height:0.9; color:#fff; }
+  .edge-mcodd.na{ color:#5b6472; }
+  .edge-mcimp{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880; }
+  .edge-mcfoot{ display:flex; flex-direction:column; gap:5px; }
+  .edge-mcfl{ font-size:11px; color:#4b5672; font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .edge-mcfl .who{ color:#8fb6ff; font-weight:600; }
+  .edge-mcfl .up{ color:#4fb98a; } .edge-mcfl .dn{ color:#d9737f; }
+
+  /* ── Value layers strip (N of 17) — design export ── */
+  .edge-vlbar{ display:flex; gap:4px; }
+  .edge-vlseg{ flex:1; height:6px; border-radius:3px; }
+  .edge-vllegend{ display:flex; align-items:center; gap:14px; margin-top:13px; flex-wrap:wrap;
+    font-size:10.5px; font-family:'IBM Plex Mono',monospace; color:#8b93a3; }
+  .edge-vlkey{ display:inline-flex; align-items:center; gap:6px; }
+  .edge-vlkey i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .edge-vlnote{ margin-left:4px; }
+  .edge-vlactive{ margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; color:#8b93a3; }
+
+  /* ── Generate button — Stennisfy Analysis (design export) ── */
+  .edge-genwrap{ display:flex; flex-direction:column; gap:14px; }
+  .edge-genlead{ font-size:13.5px; color:#c8cfda; line-height:1.6; }
+  .edge-genbtn{ align-self:flex-start; font-family:'Hanken Grotesk',sans-serif; font-size:13px;
+    font-weight:700; color:#fff; background:#3E7BFA; border:1px solid #3E7BFA; border-radius:10px;
+    padding:11px 20px; cursor:pointer; }
+  .edge-genbtn:hover{ background:#356fe0; }
+  .edge-regen{ font-size:11.5px; font-weight:600; color:#8b93a3; background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:7px 13px; cursor:pointer;
+    user-select:none; white-space:nowrap; }
+  .edge-regen:hover{ color:#c8cfda; border-color:rgba(255,255,255,0.2); }
 </style>
 <div class="tabpage" data-page="edge">
-  <div class="edge-shell">
+  <div class="edge-shell edge-2col">
+    <aside class="edge-rail">
+      <span class="edge-rail-top">Stennisfy Model</span>
+      <div class="edge-rail-tourwrap">
+        <select class="edge-rail-tsel" id="edgeRailTour" onchange="edgeRailTourChange(this.value)"></select>
+      </div>
+      <div class="edge-rail-list" id="edgeRailList"></div>
+      <span class="edge-rail-back" onclick="edgeBack()">‹ Back to dashboard</span>
+    </aside>
     <div class="edge-wrap">
       <div class="edge-subtabs-wrap">
         <div class="edge-subtabs">
@@ -2638,11 +2725,6 @@
       </div>
 
       <div class="edge-pane active" data-epane="model">
-        <div class="edge-topnav">
-          <span class="edge-nav-btn" id="edgePrev" onclick="edgeNav(-1)">← Previous match</span>
-          <span class="edge-nav-btn back" onclick="edgeBack()">Back to matches</span>
-          <span class="edge-nav-btn" id="edgeNext" onclick="edgeNav(1)">Next match →</span>
-        </div>
         <div id="edgeBody"></div>
       </div>
 
@@ -4505,6 +4587,7 @@ function openEdgeModelTab(){
   if (!id){
     // No matches on the board at all (e.g. between events, or a filter that
     // excludes everything) — there's nothing to model yet.
+    edgeRenderRail();
     const body = document.getElementById('edgeBody');
     if (body) body.innerHTML = edgeEmptyState(null, 'No matches on the board right now. The Edge Model appears here for each match as soon as the board has fixtures to analyse.');
     return;
@@ -4664,6 +4747,188 @@ function edgeReasonText(e){
   if (/elo/i.test(r)) return 'Not enough data to run the model on this match — one of the players doesn\u2019t have an Elo rating on file yet (usually a lower-tier or first-time entrant). The model runs automatically as soon as the data exists.';
   if (/engine error/i.test(r)) return 'The model could not be computed for this match. This is logged automatically and will retry on the next pipeline run.';
   return 'The model could not be run for this match yet. It runs automatically every 15 minutes as new data arrives.';
+}
+
+// ── Left rail (design export): tournament dropdown "All tournaments (N)" + a
+// scrollable match list. Replaces the old Prev/Back/Next stepper CHROME; the
+// underlying selection (edgeCurrentId / openEdgeModel) is unchanged — a row
+// click drives the model body exactly as Prev/Next did. The list mirrors the
+// board's current filtered order (getFiltered), so it matches what the user was
+// last looking at. Round short-code + "Today/Tomorrow/<day> HH:MM" per row.
+let edgeRailTour = 'all';                      // 'all' | a tour name
+function edgeRailTourChange(v){ edgeRailTour = v; edgeRenderRail(); }
+function edgeRailPick(id){ edgeShowPane('model'); openEdgeModel(id); }
+// Row time label. Uses the board's own day bucket so "Today/Tomorrow" agree with
+// the Matches page; falls back to the weekday of the match date otherwise. Never
+// fabricates a time — an absent m.time simply drops that half of the label.
+function edgeWhenLabel(m){
+  const t = (m && /^\d{2}:\d{2}/.test(m.time || '')) ? m.time.slice(0, 5) : '';
+  let day = '';
+  const b = (typeof matchDayBucket === 'function') ? matchDayBucket(m) : null;
+  if (b === 'today') day = 'Today';
+  else if (b === 'tomorrow') day = 'Tomorrow';
+  else if (m && m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) day = d.toLocaleDateString('en-US', { weekday: 'short' }); }
+  return [day, t].filter(Boolean).join(' ');
+}
+function edgeRenderRail(){
+  const listEl = document.getElementById('edgeRailList');
+  const sel = document.getElementById('edgeRailTour');
+  if (!listEl) return;
+  const all = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  const tourCounts = {};
+  all.forEach(m => { const t = m.tour || '—'; tourCounts[t] = (tourCounts[t] || 0) + 1; });
+  const tours = Object.keys(tourCounts).sort();
+  if (edgeRailTour !== 'all' && !tourCounts[edgeRailTour]) edgeRailTour = 'all';
+  if (sel){
+    sel.innerHTML = `<option value="all">All tournaments (${all.length})</option>`
+      + tours.map(t => `<option value="${edgeEsc(t)}">${edgeEsc(t)} (${tourCounts[t]})</option>`).join('');
+    sel.value = edgeRailTour;
+  }
+  const list = (edgeRailTour === 'all') ? all : all.filter(m => (m.tour || '—') === edgeRailTour);
+  listEl.innerHTML = list.length
+    ? list.map(m => {
+        const rc = roundBadgeText(m.tournamentRound);          // null → round slot stays empty (honesty rule)
+        const meta = [rc || '', edgeWhenLabel(m)].filter(Boolean).join(' · ');
+        const on = (m.id === edgeCurrentId) ? ' on' : '';
+        return `<button type="button" class="edge-rail-row${on}" onclick="edgeRailPick('${m.id}')">
+            <span class="edge-rail-nm">${edgeEsc(m.p1)} v ${edgeEsc(m.p2)}</span>
+            <span class="edge-rail-meta">${edgeEsc(meta)}</span></button>`;
+      }).join('')
+    : `<div style="padding:14px 10px; font-size:12px; color:#5b6472;">No matches on the board right now.</div>`;
+}
+
+// ── Market context (4 columns, design export): SOFT BOOK OPENING · PINNACLE
+// OPENING · STENNISFY BASE PRICE · PINNACLE NOW. Every price is real:
+//   • Soft/Pinnacle OPENING read from the first tick of m.oddsMovement.books[*]
+//     (.p1[0]/.p2[0]); an absent opening renders an em dash — never a zero and
+//     never the current price standing in for the opening (founder honesty rule).
+//   • Stennisfy base price = the model's base fair price (stage1.baseP1/P2) → odds.
+//   • Pinnacle now = the last tick of the Pinnacle series.
+function edgeMarketContextHtml(m, st1, p1short, p2short){
+  const books = (m && m.oddsMovement && m.oddsMovement.books) ? m.oddsMovement.books : null;
+  const fmt = v => (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(2);
+  const impl = v => (v == null || !isFinite(v) || v <= 0) ? '' : Math.round(100 / v) + '%';
+  const first = (bk, side) => { const s = books && books[bk] && books[bk][side]; return (s && s.length) ? s[0][1] : null; };
+  const last  = (bk, side) => { const s = books && books[bk] && books[bk][side]; return (s && s.length) ? s[s.length - 1][1] : null; };
+
+  // Best (highest) soft-book OPENING per side, across every non-Pinnacle book.
+  let softOpenA = null, softOpenB = null, softNameA = null, softNameB = null;
+  if (books){
+    Object.keys(books).forEach(bk => {
+      if (bk === 'Pinnacle') return;
+      const oa = first(bk, 'p1'), ob = first(bk, 'p2');
+      if (oa != null && (softOpenA == null || oa > softOpenA)){ softOpenA = oa; softNameA = bk; }
+      if (ob != null && (softOpenB == null || ob > softOpenB)){ softOpenB = ob; softNameB = bk; }
+    });
+  }
+  // Pinnacle opening — prefer the movement series' first tick; fall back to the
+  // baked pinnacleOpen field (same opening line, captured by the pipeline).
+  let pinOpenA = first('Pinnacle', 'p1'), pinOpenB = first('Pinnacle', 'p2');
+  if (pinOpenA == null && m && m.pinnacleOpen && m.pinnacleOpen.p1 != null) pinOpenA = m.pinnacleOpen.p1;
+  if (pinOpenB == null && m && m.pinnacleOpen && m.pinnacleOpen.p2 != null) pinOpenB = m.pinnacleOpen.p2;
+  const pinNowA = last('Pinnacle', 'p1'), pinNowB = last('Pinnacle', 'p2');
+
+  const baseA = (st1 && st1.baseP1 != null) ? st1.baseP1 : null;
+  const baseB = (st1 && st1.baseP2 != null) ? st1.baseP2 : null;
+  const baseOddA = (baseA != null && baseA > 0) ? 1 / baseA : null;
+  const baseOddB = (baseB != null && baseB > 0) ? 1 / baseB : null;
+
+  // Base-vs-Pinnacle-open gap (only when a Pinnacle opening exists).
+  const gapNote = (prob, mktOdd) => {
+    if (prob == null || mktOdd == null || !isFinite(mktOdd) || mktOdd <= 0) return null;
+    const g = prob * 100 - 100 / mktOdd;
+    return { txt: (g >= 0 ? '+' : '−') + Math.abs(g).toFixed(1) + '% vs Pinnacle open', cls: g >= 0 ? 'up' : 'dn' };
+  };
+  // Movement arrow for Pinnacle now vs open (odds shortened = money in = green).
+  const move = (open, now) => {
+    if (open == null || now == null) return { arrow: '', cls: '' };
+    if (now < open) return { arrow: '↓', cls: 'up' };
+    if (now > open) return { arrow: '↑', cls: 'dn' };
+    return { arrow: '→', cls: '' };
+  };
+
+  const line = (who, name, odd) => `
+      <div class="edge-mcline${who === 'b' ? ' sep' : ''}">
+        <span class="edge-mcnm ${who}">${edgeEsc(name)}</span>
+        <span class="edge-mcval"><span class="edge-mcodd${odd == null ? ' na' : ''}">${fmt(odd)}</span><span class="edge-mcimp">${impl(odd)}</span></span>
+      </div>`;
+  const box = (label, cls, aOdd, bOdd, foot) => `
+      <div class="edge-mcbox${cls ? ' ' + cls : ''}">
+        <span class="edge-mclbl">${label}</span>
+        ${line('a', p1short, aOdd)}
+        ${line('b', p2short, bOdd)}
+        ${foot ? `<div class="edge-mcfoot">${foot}</div>` : ''}
+      </div>`;
+
+  const gA = gapNote(baseA, pinOpenA), gB = gapNote(baseB, pinOpenB);
+  const mvA = move(pinOpenA, pinNowA), mvB = move(pinOpenB, pinNowB);
+
+  const softFoot = (softNameA || softNameB)
+    ? `<div class="edge-mcfl">Best soft book · ${edgeEsc(softNameA || softNameB)}</div>` : '';
+  const pinOpenFoot = (pinOpenA != null || pinOpenB != null)
+    ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p1short)}</span> opened ${fmt(pinOpenA)}</div>`
+      + `<div class="edge-mcfl"><span class="who">${edgeEsc(p2short)}</span> opened ${fmt(pinOpenB)}</div>` : '';
+  const baseFoot = (gA || gB)
+    ? `${gA ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p1short)}</span> <span class="${gA.cls}">${gA.txt}</span></div>` : ''}`
+      + `${gB ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p2short)}</span> <span class="${gB.cls}">${gB.txt}</span></div>` : ''}` : '';
+  const nowFoot = (pinNowA != null || pinNowB != null)
+    ? `<div class="edge-mcfl">Opened ${fmt(pinOpenA)} → Now <span class="${mvA.cls}">${fmt(pinNowA)} ${mvA.arrow}</span></div>`
+      + `<div class="edge-mcfl">Opened ${fmt(pinOpenB)} → Now <span class="${mvB.cls}">${fmt(pinNowB)} ${mvB.arrow}</span></div>` : '';
+
+  return `
+    <div class="edge-card">
+      <div class="edge-eyeb">Market context</div>
+      <div class="edge-mctx">
+        ${box('Soft book opening', '', softOpenA, softOpenB, softFoot)}
+        ${box('Pinnacle opening', '', pinOpenA, pinOpenB, pinOpenFoot)}
+        ${box('Stennisfy base price', 'base', baseOddA, baseOddB, baseFoot)}
+        ${box('Pinnacle now', '', pinNowA, pinNowB, nowFoot)}
+      </div>
+    </div>`;
+}
+
+// ── Value-layers strip (design export): 17 fixed segments coloured Good/Medium/
+// Poor by each layer's data-coverage state, plus "N of 17 value layers active"
+// where N is the count of layers that actually applied to THIS match read.
+// Segments beyond the layers the model emitted stay grey (Poor / not evaluated).
+function edgeValueStripHtml(adjs){
+  const TOTAL = 17;
+  const active = adjs.filter(a => a.applied).length;
+  const segs = [];
+  for (let i = 0; i < TOTAL; i++){
+    const a = adjs[i];
+    if (a){
+      const st = edgeCovState(a);
+      segs.push(`<span class="edge-vlseg" style="background:${edgeCovColor(st)}" title="${edgeEsc(a.name)} — ${st}"></span>`);
+    } else {
+      segs.push(`<span class="edge-vlseg" style="background:${edgeCovColor('missing')}" title="Not evaluated"></span>`);
+    }
+  }
+  return `
+    <div class="edge-card">
+      <div class="edge-eyeb" style="margin-bottom:14px;">Value layers</div>
+      <div class="edge-vlbar">${segs.join('')}</div>
+      <div class="edge-vllegend">
+        <span class="edge-vlkey"><i style="background:#4fb98a"></i>Good</span>
+        <span class="edge-vlkey"><i style="background:#e0b64d"></i>Medium</span>
+        <span class="edge-vlkey"><i style="background:#5b6472"></i>Poor</span>
+        <span class="edge-vlnote">Value layers active across this match read</span>
+        <span class="edge-vlactive">${active} of ${TOTAL} value layers active</span>
+      </div>
+    </div>`;
+}
+
+// On-demand reveal of the written analysis (design export "Generate" affordance).
+// The prose itself is the pipeline's model summary — this only toggles its
+// visibility, so nothing is fabricated: an ungenerated match reveals the honest
+// "will appear once the pipeline generates it" placeholder.
+function edgeGenerateAnalysis(){
+  const intro = document.getElementById('edgeGenIntro');
+  const body  = document.getElementById('edgeGenBody');
+  const regen = document.getElementById('edgeRegenBtn');
+  if (intro) intro.style.display = 'none';
+  if (body)  body.style.display = '';
+  if (regen) regen.style.display = '';
 }
 
 // ---- Section 4 helper: one adjustment row ----
@@ -4961,6 +5226,7 @@ function buildMarketSignalBlock(m, e, opts){
 function renderEdgeModel(id){
   const body = document.getElementById('edgeBody');
   if (!body) return;
+  edgeRenderRail();                    // keep the left rail + its active highlight in sync
   const e = modelOutput.matches && modelOutput.matches[id];
   const m = matches.find(x => x.id === id) || null;
 
@@ -5075,94 +5341,26 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  // ── Section 2: base probability ────────────────────────────────────────
-  const estCard = (label, c) => {
-    if (!c) return '';
-    const pA = c.p1;
-    const pB = (pA == null) ? null : 1 - pA;
-    const wA = (pA == null) ? 50 : Math.max(0, Math.min(100, pA * 100));
-    const detail = (c.ratingP1 != null && c.ratingP2 != null)
-      ? `${c.ratingP1} vs ${c.ratingP2}`
-      : (c.surfaceAvailable === false ? 'No surface rating — falls back to overall' : '');
-    return `
-      <div class="edge-est">
-        <div>
-          <span class="lb">${edgeEsc(label)}${c.weight != null ? ' · ' + Math.round(c.weight * 100) + '%' : ''}</span>
-          ${detail ? `<div class="na" style="margin-top:4px;">${edgeEsc(detail)}</div>` : ''}
-        </div>
-        <div class="rows">
-          <div class="r a"><span class="n">${edgeEsc(p1short)}</span><span class="p">${edgePct(pA)}</span></div>
-          <span class="edge-estbar"><i style="width:${wA.toFixed(1)}%"></i><i class="rest"></i></span>
-          <div class="r"><span class="n">${edgeEsc(p2short)}</span><span class="p">${edgePct(pB)}</span></div>
-        </div>
-        <div class="ft"><span>${edgeProbOdds(pA)}</span><span>${edgeProbOdds(pB)}</span></div>
-      </div>`;
-  };
-  const baseP1 = st1.baseP1, baseP2 = st1.baseP2;
-  const section2 = `
-    <div class="edge-card">
-      <div class="edge-eyeb">Base probability · Elo estimates</div>
-      <div class="edge-estgrid">
-        ${estCard('Overall Elo', comp.eloRaw)}
-        ${estCard('Surface Elo' + (comp.eloSurface && comp.eloSurface.surfaceKey ? ' (' + edgeCap(comp.eloSurface.surfaceKey) + ')' : ''), comp.eloSurface)}
-        ${estCard('Balanced anchor', comp.elo5050)}
-        <div class="edge-estacc">
-          <span class="lb">Blended base fair price</span>
-          <div class="pair">
-            <div class="a"><div class="who">${edgeEsc(p1short)}</div><div class="od">${edgeProbOdds(baseP1)}</div><div class="pc">${edgePct(baseP1)}</div></div>
-            <div style="text-align:right;"><div class="who">${edgeEsc(p2short)}</div><div class="od">${edgeProbOdds(baseP2)}</div><div class="pc">${edgePct(baseP2)}</div></div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  // ── Section 2: market context (4 columns — design export) ──────────────
+  // Replaces the standalone base-probability card: the model's base fair price
+  // now rides the "Stennisfy base price" column alongside the real soft/Pinnacle
+  // opening and current lines. See edgeMarketContextHtml for the honesty rules.
+  const section2 = edgeMarketContextHtml(m, st1, p1short, p2short);
 
-  // ── Section 3: layer coverage ──────────────────────────────────────────
-  // Self-hiding layers (see edgeVisibleAdjs) drop out entirely — the coverage
-  // bar, the counts and the adjustment list all flex to the layers that
-  // actually apply to THIS match, rather than showing an empty/dimmed row.
+  // ── Section 3: value layers (17-segment strip — design export) ─────────
+  // Self-hiding layers (see edgeVisibleAdjs) drop out entirely, so the active
+  // count flexes to the layers that actually apply to THIS match. `counts`/`conf`
+  // are still derived here for the model-confidence readout in Section 5.
   const adjs = edgeVisibleAdjs(st2.adjustments);
   const counts = { full: 0, partial: 0, missing: 0 };
   adjs.forEach(a => { counts[edgeCovState(a)]++; });
   const conf = edgeConfidence(counts.full);
-  const section3 = `
-    <div class="edge-card edge-covcard">
-      <div class="edge-covleft">
-        <div class="edge-covhead">
-          <span class="edge-eyeb" style="margin-bottom:0;">Data coverage · ${adjs.length} layers</span>
-          <span class="edge-pill ${conf.cls}">${conf.label} CONFIDENCE</span>
-        </div>
-        <div class="edge-segbar">
-          ${adjs.map(a => {
-            const st = edgeCovState(a);
-            return `<span title="${edgeEsc(a.name)} — ${st}" style="background:${edgeCovColor(st)}"></span>`;
-          }).join('')}
-        </div>
-        <span class="edge-hint">Hover a segment to see its adjustment</span>
-      </div>
-      <div class="edge-covcounts">
-        <div class="edge-covn"><span class="v" style="color:#4fb98a">${counts.full}</span><span class="k">Full</span></div>
-        <div class="edge-covn"><span class="v" style="color:#e0b64d">${counts.partial}</span><span class="k">Partial</span></div>
-        <div class="edge-covn"><span class="v" style="color:#8b93a3">${counts.missing}</span><span class="k">Missing</span></div>
-      </div>
-    </div>`;
+  const section3 = edgeValueStripHtml(adjs);
 
-  // ── Section 4: adjustment layers ───────────────────────────────────────
+  // Net-shift readout (still used by the Section 5 value card header).
   const netPP = (st2.totalDeltaP1 || 0) * 100;
   const netWho = netPP >= 0 ? p1short : p2short;
   const netTxt = (netPP >= 0 ? '+' : '−') + Math.abs(netPP).toFixed(1) + 'pp';
-  const section4 = `
-    <div class="edge-card">
-      <div class="edge-s4head">
-        <span class="edge-eyeb">Adjustment layers · ${adjs.length}</span>
-        <span class="edge-net">Net shift <strong>${netTxt}</strong> toward ${edgeEsc(netWho)}</span>
-      </div>
-      <div class="edge-adjhead2">
-        <span>Adjustment</span><span class="c">${edgeEsc(p1short)} · edge · ${edgeEsc(p2short)}</span><span class="rt">Favours</span>
-      </div>
-      <div class="edge-adjlist">
-        ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
-      </div>
-    </div>`;
 
   // ── Section 5: fair price & value ──────────────────────────────────────
   const fair = st3.fair || {};
@@ -5254,13 +5452,17 @@ function renderEdgeModel(id){
         ? `<div class="edge-plabel">${LABELS[i]}</div><p>${edgeEsc(t)}</p>`
         : `<p>${edgeEsc(t)}</p>`)).join('')
     : `<p style="color:#6b7280; font-size:13px;">The written model summary will appear here once the pipeline generates it. Every number above is already live — the summary is added on the run after the figures settle.</p>`;
+  // On-demand Generate affordance (design export): the written read stays folded
+  // behind a "Generate Tennis Edge Analysis" button until the member asks for it;
+  // once revealed a "↻ Regenerate" chip appears. The prose is the pipeline's own
+  // model summary — Generate only toggles visibility, never fabricates text.
   const section6 = `
     <div class="edge-ai2">
       <div class="edge-aihead">
         <div class="l">
           <span class="edge-ic gold"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l1.9 4.2 4.6.5-3.5 3 1 4.5L10 12.4 5.9 14.7l1-4.5-3.5-3 4.6-.5z" stroke="#e0b64d" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
           <div>
-            <div class="t">Tennis Edge Analysis</div>
+            <div class="t">Stennisfy Analysis</div>
             <div class="edge-aichips">
               <span class="edge-aichip">${edgeEsc(surfName)}</span>
               <span class="edge-aichip">${edgeEsc(mm.tour || '—')}</span>
@@ -5268,16 +5470,23 @@ function renderEdgeModel(id){
             </div>
           </div>
         </div>
-        ${hasText ? `<span class="edge-copy" onclick="edgeCopySummary(this)">Copy</span>` : ''}
+        <span id="edgeRegenBtn" class="edge-regen" style="display:none;" onclick="edgeGenerateAnalysis()">↻ Regenerate</span>
       </div>
-      ${bodyHtml}
+      <div id="edgeGenIntro" class="edge-genwrap">
+        <div class="edge-genlead">Generate a five-part analytical read across the players, the style matchup, the tournament context, the key statistical edges and the model's verdict.</div>
+        <button class="edge-genbtn" onclick="edgeGenerateAnalysis()">Generate Tennis Edge Analysis</button>
+      </div>
+      <div id="edgeGenBody" style="display:none;">
+        ${hasText ? `<div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><span class="edge-copy" onclick="edgeCopySummary(this)">Copy</span></div>` : ''}
+        ${bodyHtml}
+      </div>
       <div class="edge-aifoot">
-        <span>Tennis Edge Analysis is generated by BSP Consult's proprietary model and is for informational purposes only.</span>
+        <span>Stennisfy Analysis is generated by Stennisfy's proprietary model and is for informational purposes only.</span>
         <span>${mm.date ? 'Generated ' + edgeEsc(mm.date) : ''}</span>
       </div>
     </div>`;
 
-  body.innerHTML = header + section1 + section2 + section3 + section4 + section5 + section6;
+  body.innerHTML = header + section1 + section2 + section3 + section5 + section6;
 
   // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
   // tab's movement chart): the container above paints empty from whatever is
