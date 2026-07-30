@@ -10098,7 +10098,7 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', careerLockPx: null, splitsOpen: { career: true, last52: false }, mktWindow: 'career', mktSplit: 'level' };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', careerLockPx: null, splitsOpen: { career: true, last52: true }, splitsTab: { career: 'results', last52: 'results' }, mktWindow: 'career', mktSplit: 'level' };
 
 // Upstream match history (recentForm.matches) is only complete from 2023 on.
 // Measured across all 437 players carrying form data: 2023-2026 hold a median
@@ -10116,6 +10116,13 @@ const PP_FULL_HISTORY_FROM = 2023;
 // click handlers ppUpgradeFormRows() installs, leaving the form rows dead.
 function togglePpSplits(which){
   ppState.splitsOpen[which] = !ppState.splitsOpen[which];
+  ppRepaint();
+}
+// Per-side splits tab (Results / Sets & Games / Service). Mirrors togglePpSplits:
+// mutate in-memory state, then repaint through ppRepaint() (never a raw innerHTML
+// write) so the Recent-form clamp and its click handlers are re-applied.
+function setPpSplitTab(which, tab){
+  ppState.splitsTab[which] = tab;
   ppRepaint();
 }
 // One splits table (Career or Last 52 weeks). Rows with zero matches were
@@ -10246,38 +10253,49 @@ function ppSplitGradeTip(g, tier){
   return 'The median player ' + tier.label + ' wins ' + g.exp.toFixed(1) + '% of this split. '
     + sg + 'pp. ' + verdict;
 }
-// The 15 columns, in 5 groups. `w` is the grid track width, `bl` marks the
-// column that opens a group (it carries the thin vertical separator).
+// Twin-column tabbed splits (rebuild-to-export of design-export/player-profile.html).
+// The old wide 15-column grid was replaced by three tabs per side — Results /
+// Sets & Games / Service — each rendering a narrow mini-table across the same
+// PP_SPLIT_SECTIONS. Column order and header tooltips mirror the export verbatim.
 //
-// A serve column is measured over MS (matches with recorded serve data), not M.
-// Where the source recorded none, the value is absent and renders as an em dash:
-// "not measured" and "zero" are different facts and must not look alike.
-// Each column carries a plain-English `t` explanation. Hovering the header shows
-// it as an instant custom tooltip (see initPpSplitTips). The native browser
-// `title` is deliberately NOT set on the header cell — having both would render
-// the same text twice, stacked, on hover.
-const PP_SPLIT_COLS = [
-  { k: 'M',       w: '44px', bl: 1, t: 'M — Matches played in this split.',                              get: r => r.M, c: PP_SPLIT_C.count, b: true },
-  { k: 'W',       w: '44px',        t: 'W — Matches won.',                                               get: r => r.W, c: PP_SPLIT_C.count, b: true },
-  { k: 'L',       w: '44px',        t: 'L — Matches lost.',                                              get: r => r.L, c: PP_SPLIT_C.count, b: true },
-  { k: 'Win%',    w: '64px',        t: 'Win% — Match win percentage: matches won ÷ matches played. Graded against the median player of the same ranking tier in the same split, not a fixed cutoff: green means clearly better than expected for his level, red clearly worse. Hover a figure for the comparison behind it.', get: r => pct1(r.winPct), win: true },
-  { k: 'Set W-L', w: '74px', bl: 1, t: 'Set W-L — Sets won and sets lost across these matches.',         get: r => wl(r.setW, r.setL),   c: PP_SPLIT_C.pair },
-  { k: 'Set%',    w: '52px',        t: 'Set% — Set win percentage: sets won ÷ sets played.',             get: r => pct1(r.setPct),       c: PP_SPLIT_C.num },
-  { k: 'Game W-L',w: '92px', bl: 1, t: 'Game W-L — Games won and games lost across these matches.',      get: r => wl(r.gameW, r.gameL), c: PP_SPLIT_C.pair },
-  { k: 'Game%',   w: '52px',        t: 'Game% — Game win percentage: games won ÷ games played.',         get: r => pct1(r.gamePct),      c: PP_SPLIT_C.num },
-  { k: 'TB W-L',  w: '72px', bl: 1, t: 'TB W-L — Tiebreaks won and tiebreaks lost.',                     get: r => wl(r.tbW, r.tbL),     c: PP_SPLIT_C.pair },
-  { k: 'TB%',     w: '52px',        t: 'TB% — Tiebreak win percentage: tiebreaks won ÷ tiebreaks played.', get: r => pct1(r.tbPct),      c: PP_SPLIT_C.num },
-  { k: 'MS',      w: '44px',        t: 'MS — Matches with serve statistics: the sample every serve column to the right is measured over (may be fewer than M).', get: r => r.MS != null ? r.MS : '—', c: PP_SPLIT_C.dim },
-  { k: 'Hld%',    w: '52px', bl: 1, t: 'Hld% — Hold percentage: share of his own service games he held (did not get broken).', get: r => pct1(r.hldPct), c: PP_SPLIT_C.num },
-  { k: 'Brk%',    w: '52px',        t: 'Brk% — Break percentage: share of the opponent\'s service games he broke.', get: r => pct1(r.brkPct), c: PP_SPLIT_C.num },
-  { k: 'A%',      w: '48px',        t: 'A% — Ace percentage: aces as a share of his service points.',    get: r => pct1(r.aPct),         c: PP_SPLIT_C.num },
-  { k: 'DF%',     w: '48px',        t: 'DF% — Double-fault percentage: double faults as a share of his service points.', get: r => pct1(r.dfPct), c: PP_SPLIT_C.num },
-];
-// Group headers, bracketing the columns above. The spans must sum to
-// PP_SPLIT_COLS.length or the grid silently shears.
-const PP_SPLIT_GROUPS = [
-  { label: 'Record', span: 4 }, { label: 'Sets', span: 2 }, { label: 'Games', span: 2 },
-  { label: 'Tiebreaks', span: 3 }, { label: 'Serve', span: 4 },
+// NOTE on the Sets & Games order: the export renders it TB% · Gm% · Set% (verified
+// against the escaped-JSON export), so we match that rather than a
+// low-to-high-granularity Set%/Gm%/TB% reading.
+//
+// HONESTY: only Win% is colour-graded (via ppSplitGrade against the ranking-tier
+// baseline — the sole validated reference in this file). Every other percentage
+// stays a neutral numeric colour. The export decoratively tints Set%/Hld%/Brk%
+// etc.; we deliberately do NOT, because there is no validated baseline for them.
+// A serve column is measured over MS; where the source recorded none the value is
+// absent and renders as an em dash ("not measured" ≠ "zero").
+// Each column carries a plain-English `t` shown as an instant hover tooltip on the
+// header (see initPpSplitTips + .pp-split-h[data-tip]).
+//
+// GRID WIDTHS deviate from the export's 70/90px stat tracks: in this app the
+// profile shell is capped (~1114px at a 1400px viewport), so each twin-column side
+// is only ~299px wide. Stat tracks are 60px (min, holds "100.0%") and flex to fill;
+// the label is 116px so long rows ("Grand Slams", "Quarter-finals") stay one line.
+// Results & Sets & Games (3 cols) fit with no overflow; Service (5 cols) cannot fit
+// 5 percentage columns in ~299px, so its overflow-x:auto side scrolls rather than
+// shears — matching the export column order exactly, just at a narrower canvas.
+const PP_SPLIT_TABS = [
+  { id: 'results', label: 'Results', grid: 'minmax(116px,1fr) repeat(3, minmax(60px,1fr))', cols: [
+    { k: 'W-L',  t: 'Match wins and losses in this split.', get: r => wl(r.W, r.L), c: PP_SPLIT_C.pair },
+    { k: 'M',    t: 'Matches played.',                       get: r => r.M,          c: PP_SPLIT_C.count, b: true },
+    { k: 'Win%', t: 'Share of matches won.',                 get: r => pct1(r.winPct), win: true },
+  ]},
+  { id: 'sets', label: 'Sets & Games', grid: 'minmax(116px,1fr) repeat(3, minmax(60px,1fr))', cols: [
+    { k: 'TB%',  t: 'Share of tiebreaks won.', get: r => pct1(r.tbPct),   c: PP_SPLIT_C.num },
+    { k: 'Gm%',  t: 'Share of games won.',     get: r => pct1(r.gamePct), c: PP_SPLIT_C.num },
+    { k: 'Set%', t: 'Share of sets won.',      get: r => pct1(r.setPct),  c: PP_SPLIT_C.num },
+  ]},
+  { id: 'service', label: 'Service', grid: 'minmax(116px,1fr) repeat(5, minmax(60px,max-content))', cols: [
+    { k: 'MS',   t: 'Matches in which this player served — the sample behind the service percentages.', get: r => r.MS != null ? r.MS : '—', c: PP_SPLIT_C.dim },
+    { k: 'A%',   t: 'Aces as a share of service points played.',          get: r => pct1(r.aPct),   c: PP_SPLIT_C.num },
+    { k: 'DF%',  t: 'Double faults as a share of service points played.', get: r => pct1(r.dfPct),  c: PP_SPLIT_C.num },
+    { k: 'Hld%', t: 'Share of service games held.',                       get: r => pct1(r.hldPct), c: PP_SPLIT_C.num },
+    { k: 'Brk%', t: 'Share of return games broken.',                      get: r => pct1(r.brkPct), c: PP_SPLIT_C.num },
+  ]},
 ];
 // Left-hand rows, grouped into labelled sections. Rows with zero matches were
 // dropped at ingest, so a section renders only the keys that actually exist and
@@ -10329,18 +10347,38 @@ function initPpSplitTips(){
     if (el && e.target.closest && e.target.closest('.pp-split-h')) el.style.opacity = '0';
   });
 }
-// The grid track list is shared by the group header, the column header and every
-// data row — they must stay in lockstep or the columns shear apart.
-const PP_SPLIT_GRID = `display:grid;grid-template-columns:150px ${PP_SPLIT_COLS.map(c => c.w).join(' ')};`;
-const PP_SPLIT_SEP = '1px solid rgba(255,255,255,0.06)';
 const PP_SPLIT_MONO = `font-family:'IBM Plex Mono',monospace;`;
-function ppSplitsTableHtml(rows, which, tier){
+// The segmented Results / Sets & Games / Service control for one side. Each side
+// carries its own active tab in ppState.splitsTab[which]; clicking a pill routes
+// through setPpSplitTab -> ppRepaint (never a raw innerHTML write). Active-pill
+// palette is the export's: bg rgba(91,155,255,0.22), border rgba(91,155,255,0.45),
+// colour #e7e9ee, weight 700; inactive is a transparent #5b6880 at weight 600.
+function ppSplitTabsHtml(which){
+  const active = ppState.splitsTab[which] || 'results';
+  const btns = PP_SPLIT_TABS.map(t => {
+    const on = t.id === active;
+    const bg = on ? 'rgba(91,155,255,0.22)' : 'transparent';
+    const bd = on ? 'rgba(91,155,255,0.45)' : 'transparent';
+    const col = on ? '#e7e9ee' : '#5b6880';
+    const wt = on ? '700' : '600';
+    return `<span class="pp-split-tab" role="button" tabindex="0"
+      onclick="setPpSplitTab('${which}','${t.id}')"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setPpSplitTab('${which}','${t.id}')}"
+      style="white-space:nowrap;cursor:pointer;padding:8px 18px;border-radius:9px;font-size:13px;font-weight:${wt};color:${col};background:${bg};border:1px solid ${bd};">${t.label}</span>`;
+  }).join('');
+  return `<div style="display:inline-flex;gap:4px;background:#0d111a;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:4px;margin-top:18px;">${btns}</div>`;
+}
+// Renders ONLY the active tab's columns as a mini-table across all 5
+// PP_SPLIT_SECTIONS, with continuous zebra striping and per-column header tooltips.
+// Win% is the only graded (coloured) cell — see the honesty note above the tab
+// config. The label column is sticky so a narrow side scrolls without losing it.
+function ppSplitTabTableHtml(rows, which, tier){
   initPpSplitTips();
-  const groupHead = `<div style="${PP_SPLIT_GRID}padding:6px 0 4px;"><span></span>${
-    PP_SPLIT_GROUPS.map(g => `<span style="grid-column:span ${g.span};margin:0 4px;text-align:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.09);${PP_SPLIT_MONO}font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#8b93a3;">${g.label}</span>`).join('')
-  }</div>`;
-  const colHead = `<div style="${PP_SPLIT_GRID}padding:0 0 9px;"><span></span>${
-    PP_SPLIT_COLS.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding:0 11px;cursor:help;white-space:nowrap;${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}${PP_SPLIT_MONO}font-size:10px;font-weight:${c.win ? '600' : '500'};letter-spacing:0.04em;color:${c.win ? '#8b93a3' : '#6b7280'};">${c.k.toUpperCase()}</span>`).join('')
+  const tab = PP_SPLIT_TABS.find(t => t.id === (ppState.splitsTab[which] || 'results')) || PP_SPLIT_TABS[0];
+  const grid = `display:grid;grid-template-columns:${tab.grid};`;
+  const head = `<div style="${grid}align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
+    <span style="position:sticky;left:0;background:#0a0d14;"></span>${
+    tab.cols.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding-left:12px;cursor:help;white-space:nowrap;${PP_SPLIT_MONO}font-size:11px;font-weight:500;color:#5b6880;">${c.k}</span>`).join('')
   }</div>`;
   // The zebra stripe runs continuously down the whole table rather than
   // restarting per section, so the eye can still track a row across a divider.
@@ -10348,44 +10386,38 @@ function ppSplitsTableHtml(rows, which, tier){
   const body = PP_SPLIT_SECTIONS.map(sec => {
     const keys = sec.keys.filter(k => rows[k]);
     if (!keys.length) return '';
-    const label = `<div style="display:flex;align-items:center;gap:11px;padding:15px 0 6px;">
-      <span style="${PP_SPLIT_MONO}font-size:9.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5b6472;">${sec.label}</span>
-      <span style="flex:1;height:1px;background:rgba(255,255,255,0.055);"></span></div>`;
+    const label = `<div class="pp-split-sec" style="${PP_SPLIT_MONO}font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#4b5672;padding:16px 0 8px;">${sec.label}</div>`;
     return label + keys.map(k => {
       const r = rows[k];
       const bg = (stripe++ % 2 === 1) ? 'rgba(255,255,255,0.022)' : 'transparent';
       // One grade per row, reused by the Win% cell for both its colour and its
       // hover text so the two can never disagree about why the cell is green.
       const g = ppSplitGrade(r, which, k, tier);
-      return `<div class="pp-split-row" style="${PP_SPLIT_GRID}align-items:center;background:${bg};border-radius:7px;transition:background .12s ease;">
-        <span style="text-align:left;padding:13px 12px;font-family:'Hanken Grotesk',sans-serif;font-size:13px;font-weight:600;color:#e7e9ee;">${k}</span>
-        ${PP_SPLIT_COLS.map(c => `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding:13px 11px;${PP_SPLIT_MONO}font-size:13px;font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : c.c};${c.bl ? `border-left:${PP_SPLIT_SEP};` : ''}white-space:nowrap;">${c.get(r)}</span>`).join('')}
+      return `<div class="pp-split-row" style="${grid}align-items:center;padding:11px 0;border-radius:8px;background:${bg};transition:background .12s ease;">
+        <span style="text-align:left;padding:0 12px;position:sticky;left:0;background:#0a0d14;font-family:'Hanken Grotesk',sans-serif;font-size:14px;font-weight:700;color:#e7e9ee;">${k}</span>
+        ${tab.cols.map(c => `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding-left:12px;${PP_SPLIT_MONO}font-size:${c.win ? '14px' : '13px'};font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : c.c};white-space:nowrap;">${c.get(r)}</span>`).join('')}
       </div>`;
     }).join('');
   }).join('');
-  // 984px is the exact sum of the grid tracks; below that the table scrolls
-  // sideways rather than crushing the columns into each other.
-  return `<div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;overflow-x:auto;"><div style="min-width:984px;">${groupHead}${colHead}${body}</div></div>`;
+  // A side scrolls sideways rather than shearing its columns if it ever gets too
+  // narrow; at 1400px in the twin-column layout it fits without scrolling.
+  return `<div style="overflow-x:auto;margin-top:16px;"><div style="min-width:0;">${head}${body}</div></div>`;
 }
-const PP_SPLIT_CHEVRON = `<svg width="9" height="9" viewBox="0 0 8 8"><path d="M2 1 L6 4 L2 7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
-function ppSplitsSection(title, which, rows, subtitle, tier){
+// One collapsible splits card (Career or Last 52 weeks). Caret + title + subtitle
+// come from the export; the whole heading row toggles ppState.splitsOpen[which].
+function ppSplitCard(title, which, rows, subtitle, tier){
   const open = ppState.splitsOpen[which];
-  const rot = open ? '90deg' : '0deg';
-  // The chevron beside the title IS the control — the standalone Show/Hide button
-  // was a second affordance for the same state. The whole heading row is the hit
-  // target so the label itself opens and closes the table.
-  return `<div style="background:#0a0b0f;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 26px 24px;">
+  const caret = open ? 'rotate(0deg)' : 'rotate(-90deg)';
+  return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:22px 26px;min-width:0;">
     <div class="pp-split-head" role="button" tabindex="0" aria-expanded="${open}"
          onclick="togglePpSplits('${which}')"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePpSplits('${which}')}"
-         style="display:flex;align-items:flex-start;gap:13px;cursor:pointer;border-radius:10px;margin:-6px -8px;padding:6px 8px;transition:background .15s ease;">
-      <span style="display:inline-flex;margin-top:4px;color:${open ? '#3E7BFA' : '#5b6472'};transform:rotate(${rot});transition:transform .18s ease,color .15s ease;">${PP_SPLIT_CHEVRON.replace('width="9" height="9"','width="11" height="11"')}</span>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;color:#f3f5f9;">${title}</span>
-        <span style="font-size:12.5px;color:#8b93a3;">${subtitle}</span>
-      </div>
+         style="display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <span style="display:inline-flex;color:#5b9bff;transform:${caret};transition:transform .15s ease;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <span style="font-size:20px;font-weight:800;color:#f3f5f9;">${title}</span>
     </div>
-    ${open ? ppSplitsTableHtml(rows, which, tier) : ''}
+    <div style="font-size:13px;color:#5b6880;margin-top:6px;margin-left:29px;">${subtitle}</div>
+    ${open ? ppSplitTabsHtml(which) + ppSplitTabTableHtml(rows, which, tier) : ''}
   </div>`;
 }
 function ppCareerSplitsHtml(p){
@@ -10398,10 +10430,11 @@ function ppCareerSplitsHtml(p){
   // comparison used rather than leaving the reader to infer it.
   const tier = ppSplitTier(s.rank);
   const vsTier = tier ? ` · Win% vs the median player ${tier.label}` : '';
-  const career = s.career && Object.keys(s.career).length ? ppSplitsSection('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches${vsTier}`, tier) : '';
-  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitsSection('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches${vsTier}`, tier) : '';
+  const career = s.career && Object.keys(s.career).length ? ppSplitCard('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches${vsTier}`, tier) : '';
+  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitCard('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches${vsTier}`, tier) : '';
   if (!career && !last52) return '';
-  return `<div style="display:flex;flex-direction:column;gap:16px;">
+  // Twin-column: Career (left) and Last 52 weeks (right) side by side.
+  return `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;">
     ${career}${last52}</div>`;
 }
 // TEN-8 ASAP Sports — "Player's own words". Self-hiding pre-match readiness card:
@@ -12199,12 +12232,12 @@ function buildPlayerProfileHtml(p){
           <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${tilesHtml}</div>
-        ${ppStyleCard(p)}
         <div style="display:flex;flex-direction:column;gap:9px;">
           <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
           ${surfHtml}
         </div>
         ${ppSurfaceRecordHtml(p)}
+        ${ppStyleCard(p)}
       </div>
 
       <!-- RIGHT MAIN -->
