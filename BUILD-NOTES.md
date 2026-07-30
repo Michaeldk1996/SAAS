@@ -1099,3 +1099,45 @@ Rendered widths (720px container, headless Chrome, on record):
     form-row `result` carries only sets-won ("p1Sets - p2Sets"), not per-set games, so those
     mounts need per-set games plumbed from the pbp/setstats shard before their Summary grid
     can populate. Match Stats tab has `finalScore.sets` inline, so it ships first.
+
+## QUEUED TASK BATCH — governing rules (founder comment 2026-07-30 04:00Z)
+
+The founder queued a batch: a series of forthcoming messages, each a task with
+screenshots + changes. This comment is the rulebook, not a task. These rules govern
+every task in the batch until the founder says otherwise.
+
+**Queue handling.**
+- Every message is a task; do all of them, no stopping between messages for confirmation.
+- Work in the order sent unless a later one obviously depends on an earlier one — if so,
+  reorder and say so here.
+- If two messages contradict, the LATER one wins. Note the conflict here.
+- Screenshot ⟂ text: the screenshot is the spec. If text contradicts the screenshot,
+  follow the screenshot and log it.
+- Don't stop to ask — take the best-supported reading, log the call here, continue. Stop
+  only if something blocks ALL further progress; log it and keep going on everything else.
+
+**Standing rules — all tasks.**
+1. SOURCE OF TRUTH: zip 32 in `design-export/`; its README is authoritative over the HTML.
+   Screenshots are supplementary (composition); README for values.
+2. THE EXPORT WINS. Don't carry the old page's IA forward. Narrow exception: where the
+   live page has MORE than the export AND the design phase never saw it (Player Profile
+   extras), keep it and record why. Where the export shows something *different* (not
+   less), the export wins.
+3. DATA LAYER UNTOUCHED. Every figure keeps its current binding. Design shows a field the
+   pipeline doesn't produce → placeholder + TODO. Never fabricate a derivation; never
+   derive from a source that can't support it (sets-won ≠ per-set games).
+4. EM DASH ≠ ZERO. Never interchangeable, on any surface.
+5. SHARED MATCH-DETAIL COMPONENT: one implementation, seven mounts, five in-modal. No
+   per-tab variants. Tab needs something the component lacks → report it, don't fork.
+6. ON-TOKEN ONLY. No near-miss hues (#3dd68c not #3ECF8E, #e0616f not #E8607A). Do NOT
+   touch the two deferred sweeps (win/loss pair migration; #e7e9ee literal audit) inside
+   task work — they are separate passes.
+7. PUSH PER TASK. Not one big batch; each push reviewable on its own.
+
+**Evidence required per task (one place):** commit hash · exact URL + port · a 1400px
+screenshot from that commit · the two comparison lists (what the EXPORT shows / what the
+PAGE showed before) · every judgement call, deviation, deferral named. Render-and-measure,
+not "it matches."
+
+**If the queue empties:** continue down the modal — remaining tabs against the export,
+then Account Settings. Don't idle.
