@@ -665,3 +665,39 @@ nav, selects Wimbledon, polls until the conditions panel paints (`/abstract cour
 in `.tourx-ovright`), probes every section, then full-page screenshots. Probe confirmed:
 Overview/Reports tabs, This Week/This Season toggle, slider labels, real rank line, 3 tiles,
 bounce/champion, 3-yr chart, ROI placeholders, reliability placeholder, report panel.
+
+## Playing Styles — colour-token correction (TEN-8, post-review)
+
+Founder review of `de87fab` flagged that the Matchup-grid pass used **off-token
+near-miss hues** (`#3ECF8E` green, `#E8607A` red) instead of the repo tokens
+`--mc-pos #3dd68c` / `--mc-neg #e0616f`. "Near-miss hues are the specific thing
+the design phase swept out." This pass corrects the Playing Styles page:
+
+- **`.ps-edge-g/.ps-edge-r`, `psEdgeColor()`, the `.ps-gauge` gradient, the
+  Strong/Weak legend swatches, and the advantage-verdict endpoints** → tokens
+  `#3dd68c` / `#e0616f`. (The muted `#5f9079`/`#9a626e` label tints and the
+  `#8b93a3`/`#E8934B` mid-tiers are export-exact and left as-is.)
+- **DOM/WEAK archetype-row bars (`.ps-barfill`)** → reverted the dom side from
+  green `#3ECF8E` back to the export's **blue `#3E7BFA`**. The `de87fab` change
+  to green was an incorrect "DOM sounds positive" inference; the zip-25 export
+  (`support.js`/`.dc.html`) defines these bars as `barColor: win>=50 ? '#3E7BFA'
+  : red` — blue for ≥50, NOT green. Weak side → token `#e0616f`.
+
+**APPROVED EXCEPTION — green/red on the Matchup grid.** The hero 7×7 grid colours
+each edge number green (row wins the matchup) / red (row loses). That is a
+*comparison*, not a data-quality judgement, so it repurposes the pos/neg colour
+family. Per founder: the zip-25 export genuinely shows green/red there, so it is
+**reproduced as an approved exception** — but with the canonical tokens
+(`#3dd68c`/`#e0616f`), never the near-miss hues. The archetype-row bars sidestep
+the repurposing entirely by using accent-blue for the winning side.
+
+**OPEN / FLAGGED to founder — app-wide near-miss green.** `#3ECF8E`/`#E8607A`
+are NOT confined to Playing Styles; they are the de-facto app-wide win/loss green
+and red (form pills `.aform-pill`, `.yr-*-wl`, radar surface map, tournament
+compare palette, match W/L chips, ~30 sites in `bsp-consult-dashboard.html`),
+while `#3dd68c`/`#e0616f` (`--mc-*`) are scoped mainly to the Matches page. If the
+token rule is meant app-wide this is a larger migration; scoped to "the Playing
+Styles pass" it is complete. The Playing Styles **badge palette** (`#3ECF8E`
+Pressure-Player pill at ~3399, matched by the identical Profile/Players badge at
+~10581) was left on the export-specified categorical green pending that decision —
+changing it alone would split PS badges from the same badge elsewhere.
