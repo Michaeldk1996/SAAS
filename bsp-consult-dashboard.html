@@ -1075,18 +1075,23 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-ballcell{ width:22px; display:flex; justify-content:center; }
   :is(.modal-analysis,.pp-formsurface) .pbp-ball{ display:flex; color:#8b93a3; }
   :is(.modal-analysis,.pp-formsurface) .pbp-ball svg{ width:15px; height:15px; display:block; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  /* The digit of whoever just won the point carries that player's colour; the
-     other stays neutral, so the lead is readable without reading the numbers. */
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p1{ color:#5b93ff; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p2{ color:#f0a95f; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .neutral{ color:#8b93a3; }
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  /* Export invariant (README "shared match-detail component"): the game-winner's
+     number carries --text, the trailing number --muted-2 (#4b5672). Scores take
+     NO identity or brand colour — who won the game is read from the score itself,
+     the running lead from the set/score rows, not from a colour on the digit. */
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p1{ color:var(--text); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p2{ color:var(--text); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .neutral{ color:#4b5672; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gnum .dot{ color:#5b6472; font-weight:400; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gpts{ display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:8px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-pt{ display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#6f7787; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-bp{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:700; color:#E8934B; background:rgba(232,147,75,0.14); border:1px solid rgba(232,147,75,0.32); border-radius:4px; padding:1px 5px; }
+  /* BP renders in the NEGATIVE token, product-wide within the match-detail block
+     (README design-tokens note: LOST SERVE and BP are match events, red by explicit
+     decision; SP stays neutral). */
+  :is(.modal-analysis,.pp-formsurface) .pbp-bp{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:700; color:#e0616f; background:rgba(224,97,111,0.15); border:1px solid rgba(224,97,111,0.3); border-radius:4px; padding:1px 5px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag{ font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:700; letter-spacing:0.05em; border-radius:5px; padding:2px 7px; white-space:nowrap; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:#E8607A; background:rgba(232,96,122,0.12); border:1px solid rgba(232,96,122,0.3); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:#e0616f; background:rgba(224,97,111,0.15); border:1px solid rgba(224,97,111,0.3); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:#5b93ff; background:rgba(62,123,250,0.16); border:1px solid rgba(62,123,250,0.4); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.mp{ color:#2fbf7e; background:rgba(62,207,142,0.16); border:1px solid rgba(62,207,142,0.4); }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
@@ -6675,13 +6680,14 @@ function msBarHtml(rawA, rawB){
 function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
-  const bothPresent = ownVal != null && oppVal != null;
-  const ownLeads = bothPresent && (lowerBetter ? ownVal < oppVal : ownVal > oppVal);
-  const oppLeads = bothPresent && !ownLeads;
-  const ownColor = ownLeads ? '#7ba4ff' : '#8b93a3';
-  const oppColor = oppLeads ? '#f0a95f' : '#8b93a3';
-  const ownWeight = ownLeads ? 700 : 500;
-  const oppWeight = oppLeads ? 700 : 500;
+  // Export invariant (README shared match-detail component, Stats): both values
+  // render Mono 700 in their identity colour by POSITION — left --player-a, right
+  // --player-b — never greyed or leader-conditional. The fixed-centre,
+  // total-normalised bar carries who leads; the numbers only carry the values.
+  const ownColor = '#6aaeff';   // --player-a
+  const oppColor = '#e7e9ee';   // --player-b
+  const ownWeight = 700;
+  const oppWeight = 700;
   return `
     <div class="aform-panel-stat">
       <div class="aform-panel-row">
