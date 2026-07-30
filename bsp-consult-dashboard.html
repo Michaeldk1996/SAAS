@@ -279,7 +279,7 @@
   /* §5-§9 — Completed row is a CSS grid: name | set-cluster | flex spacer | 1px
      divider | odds journey. Winner gets the accent bar flush to the left edge via
      inset box-shadow (§9); neither row is opacity-dimmed. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:170px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ display:none; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner{ box-shadow:inset 3px 0 0 var(--mc-pos); }
   [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; }
@@ -287,7 +287,7 @@
   [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-13px 0; }
   [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
   /* §5/§7 — OPEN / CLOSE caps header over the odds column, once per card. */
-  [data-page="matches"] .mc-cmpl-head{ display:grid; grid-template-columns:170px 126px minmax(18px,1fr) 1px 218px; gap:0; padding:0 20px 2px; }
+  [data-page="matches"] .mc-cmpl-head{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; padding:0 20px 2px; }
   [data-page="matches"] .mc-cmpl-head__odds{ grid-column:5; display:flex; align-items:center; gap:10px; padding-left:18px; }
   [data-page="matches"] .mc-cmpl-head__odds .sp{ width:46px; flex:0 0 auto; }
   [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
@@ -355,7 +355,7 @@
      loser — see the set-cluster block above.) */
   [data-page="matches"] .mc-players.cmpl .mc-name{ font-weight:700; }
   [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name{ color:var(--mc-text); }
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name{ color:var(--mc-muted); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name{ color:var(--mc-muted-2); }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
