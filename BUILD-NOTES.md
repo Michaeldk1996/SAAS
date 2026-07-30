@@ -766,8 +766,26 @@ All changes below are LOCAL-ONLY (not pushed) per "Local only." Files touched:
 - Validation over 91 real titles: **22 chips fire, all correct** (player leads the
   headline); collisions ("Sinner, Alcaraz …") and mid-body mentions fire nothing.
   The Eala/Zheng case gets no chip (WTA surnames aren't in the ATP roster).
-- HONEST NOTE: even "at source," this is still title-derived — there is no vendor
-  truth field. It is now centralized, canonical (→ playerProfiles key) and gated.
+> **⚠️ SCHEMA CAVEAT — `player_key` on `news-feed.json` is DERIVED, not vendor truth.**
+> Read this before trusting the field. It is populated at source now (build-news-feed.js
+> writes it), so it looks authoritative in the JSON — **it is not**. Three facts to keep
+> straight:
+> 1. **The vendor field is null on every article.** api-tennis emits `player_key` (and
+>    `player_name`/`tournament_key`/`entity_type`/`event_*`) in the schema but leaves all
+>    of them null — 91/91 articles at last measure. There is NO vendor-supplied player
+>    identity on this feed.
+> 2. **Our value is title-derived under a heuristic.** `derivePlayer()` matches surnames
+>    in the *headline text* against the ATP roster. It is a best-effort inference, not a
+>    fact from the data provider. It can be wrong the way any keyword match can be wrong.
+> 3. **The gate that keeps it honest (fail-closed):** a key is written ONLY when the title
+>    contains exactly ONE distinct in-roster surname, that surname LEADS the headline
+>    (word index 0–1, first-name/initial allowed before it), and it resolves to exactly
+>    one roster key. Collisions ("Sinner, Alcaraz…"), mid-body mentions, and non-ATP
+>    surnames all yield null → no chip. Absent is deliberate and honest; a wrong chip is
+>    the failure we designed against (22/91 fire, all correct at last validation).
+>
+> If you are extending this feed: do not "trust the populated field." Treat a set
+> `player_key` as "our heuristic was confident," never as "the vendor said so."
 
 **2. Category classifier — weak single-keyword gate. DONE.**
 - Match-Reports evidence split STRONG (unambiguous result verbs + named rounds:
@@ -795,6 +813,98 @@ All changes below are LOCAL-ONLY (not pushed) per "Local only." Files touched:
   shows "No articles in the last Nh — showing the last M instead." The user's range
   selector is left untouched. A filtered-empty result still shows the honest "no
   matches" state (a deliberate empty, not an accident).
+
+## Player Profile — rebuild-to-export (TEN-8, founder comment 2026-07-30) — DONE, LOCAL ONLY (commit 24ae1102)
+Founder directive: keep the richer live page, adopt two export ideas, record every
+extra so a later reader doesn't "fix" the divergence back. Built against the
+authoritative NEWER export (`stennisfy-frontend/design-export/player-profile.html`);
+note the `~/Downloads/export/player-profile.html` Jul-25 copy is an OLDER version
+(static group headers, stacked splits) — do not use it as the reference.
+
+**LIVE-FUNCTIONALITY RETAINED BEYOND THE EXPORT (do NOT remove — the design phase
+never saw these; they were never presented, so never rejected):**
+1. **Six stat tiles** (adds RECENT FORM + TITLES to the export's four). Kept.
+2. **Surface Record rail block** (`ppSurfaceRecordHtml`) — career + last-52 W-L/win%
+   per surface, M>=10 floor, self-hiding. Kept. Placed directly after Surface
+   Performance (same subject).
+3. **"Read on the market" callout** in Market Performance. Kept.
+4. **4-in-a-row market tiles + callout** — carry more than the export's 2×2 + expander.
+   Kept as-is (option B left).
+
+**ADOPTED FROM THE EXPORT:**
+- **(C) Twin-column tabbed splits.** Replaced the wide stacked all-columns table with
+  a `minmax(0,1fr) minmax(0,1fr)` grid — Career splits beside Last 52 weeks — each card
+  carrying its OWN independent 3-tab switcher **Results / Sets & Games / Service**.
+  Column sets per the export: Results = W-L·M·Win%; Sets & Games = TB%·Gm%·Set% (that
+  IS the export's column order — verified in the export DOM, not a typo); Service =
+  MS·A%·DF%·Hld%·Brk%. New: `ppSplitCard`, `ppSplitTabsHtml`, `ppSplitTabTableHtml`,
+  state `ppState.splitsTab={career,last52}`, `setPpSplitTab()` (repaints via `ppRepaint`).
+- **(A) Rail reorder** to tiles → Surface Performance → Surface Record → Radar. The
+  radar (`ppStyleCard`) moved to the end; surface record sits right after surface
+  performance. (Chips "View by surface" stay at the top as the surface control.)
+
+**DELIBERATE DEVIATIONS (flagged for the one-push review):**
+- **Win%-only grading.** The export decoratively tints Set%/Hld%/Brk% too, but the live
+  page only has a validated ranking-tier baseline for Win% (`ppSplitGrade`). Colouring
+  the others would be an unbacked colour = a false signal. Only Win% is graded; the rest
+  render neutral. (A colour can turn a number false — same rule as elsewhere.)
+- **DROPPED the raw count-pair columns.** The export's tabbed layout shows fewer stat
+  columns than the old wide table — it drops the raw `Set W-L` / `Game W-L` / `TB W-L`
+  pairs, keeping the percentages. Built faithful to the export (founder called C a
+  considered design decision). REVERSIBLE: if the raw pairs should be retained, add them
+  back into the Sets & Games tab.
+- **Service tab overflow on the narrow twin canvas.** Each twin side is only ~300px at a
+  1400px viewport, which fits the 3-col Results/Sets tabs but NOT the 5-col Service tab —
+  `MS·A%·DF%` show and `Hld%·Brk%` sit behind an `overflow-x:auto` horizontal scroll.
+  Hld%/Brk% are the two headline serve stats, so this hides the important ones by default.
+  OPEN for founder: (a) accept the scroll, (b) drop MS as a column (least important — it's
+  the sample denominator) to get Service to 4 cols that fit, (c) widen the splits block, or
+  (d) stack Career/Last-52 instead of twin so each table gets full width. Recommend (b).
+
+## Stennisfy Model — rebuild-to-export (TEN-8, founder comment 2026-07-30) — DONE, LOCAL ONLY (commit c322d60)
+Founder: "PROCEED, same rules. Everything per the export." Built the export layout into
+the live "edge" tab (`renderEdgeModel`). Reference: `stennisfy-frontend/design-export/stennisfy-model.html`.
+
+**BUILT (per export + founder directive):**
+- **Left rail** replaces the Prev/Back/Next stepper: "All tournaments (N)" `<select>` +
+  scrollable match list; each row = `A v B` + round short-code + Today/Tomorrow/day HH:MM;
+  click drives the model body (same selection logic; only the chrome changed). Fns
+  `edgeRenderRail`, `edgeRailTourChange`, `edgeRailPick`, `edgeWhenLabel`.
+- **4-col MARKET CONTEXT** (`edgeMarketContextHtml`): SOFT BOOK OPENING · PINNACLE OPENING ·
+  STENNISFY BASE PRICE · PINNACLE NOW (each: both sides' odds + implied % + footer).
+- **17-segment VALUE LAYERS strip** (`edgeValueStripHtml`) + Good/Medium/Poor legend +
+  "N of 17 value layers active".
+- **Generate button** on Stennisfy Analysis (`edgeGenerateAnalysis`, on-demand).
+
+**HONESTY (founder-specified, enforced):**
+- **SOFT BOOK OPENING** = first tick of `m.oddsMovement.books[nonPinnacle][side][0]`, best
+  (highest) opening per side, footer names the book. Absent → em dash "—". NEVER zero,
+  NEVER the current soft price. Live coverage 41/47 real, 6 em dash. (Pinnacle opening
+  31/47; Pinnacle now = last Pinnacle tick.)
+- **ROUND SHORT-CODES** via existing `roundBadgeText`: F/SF/QF/R16/R32/…; **null → empty
+  slot** (no draw-position inference). 18/47 local matches null → time-only rows.
+- **State-2 display gate preserved** (untouched). With stale local matches.json + the real
+  clock the board gates to empty honestly ("No matches on the board right now"); verified
+  the full body only via a real-shaped LOCAL `model-output.json` fixture + frozen clock,
+  both deleted, never committed. Rail + Market-Context ODDS render from REAL data; base
+  price / value-layer states / fair price / summary come from the pipeline artefact
+  `model-output.json` (not in git) so they populate on the live site only.
+
+**DELIBERATE DEVIATIONS / DECISIONS FOR THE ONE-PUSH REVIEW:**
+- **Removed live-only sections not in the export:** the base-probability Elo-estimate
+  cards, the standalone data-coverage card, and the FULL per-layer adjustment list. Their
+  info is folded into Market Context ("Stennisfy base price") + the 17-segment strip.
+  NOTE: the detailed per-layer list (which of the 17 layers fired and their pp
+  contribution) is now summarised as a strip + count only — the per-layer DETAIL is no
+  longer shown. If that detail should be retained, re-add it as an expandable "see all 17
+  layers" under the strip (keep-richer, like the Profile extras). Founder's call.
+- **Branding left as-is:** page header still reads "TENNIS EDGE MODEL · N-LAYER" /
+  "BSP Consult's proprietary…", while the export/app-nav use "Stennisfy". Did NOT migrate
+  BSP-Consult→Stennisfy branding here — that's a cross-cutting rename, a separate task.
+  Only the Analysis section copy (explicit in the export) uses Stennisfy.
+- **Retained the gated Market Signal block** inside Fair price & value (shipped feature,
+  not in the mock) — kept.
+- **No win/loss token migration** folded in (separate deferred task).
 
 ## TASK — Win/loss colour-token migration (#3ECF8E/#E8607A → #3dd68c/#e0616f) — NOT STARTED, deferred by founder
 Founder ruling (2026-07-30): the app's established win/loss pair `#3ECF8E`(green)/
