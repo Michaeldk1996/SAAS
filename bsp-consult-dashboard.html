@@ -806,6 +806,14 @@
 
   .modal-analysis .abody{ padding:18px 24px 22px 24px; flex:1; overflow-y:auto; min-width:0; }
   .modal-analysis .asection{ display:none; }
+  /* News tab (11th): in-place expand/rotate to match the export wire. */
+  #aSectionNews .anews-row{ cursor:pointer; border-radius:7px; transition:background .12s; }
+  #aSectionNews .anews-row:hover{ background:rgba(255,255,255,0.02); }
+  #aSectionNews .anews-row.open .anews-grid{ align-items:start; }
+  #aSectionNews .anews-row.open .anews-when{ padding-top:2px; }
+  #aSectionNews .anews-row.open .anews-title{ white-space:normal; overflow:visible; line-height:1.4; text-wrap:pretty; }
+  #aSectionNews .anews-row.open .anews-caret{ transform:rotate(180deg); color:#e7e9ee; }
+  #aSectionNews .anews-row.open .anews-body{ display:flex !important; }
   .modal-analysis .asection.active{ display:block; }
   /* ---- Odds tab (Design #16 — honest reduced: current prices only, no per-book history in feed) ---- */
   .aodds-tab{ display:flex; flex-direction:column; gap:20px; }
@@ -3064,6 +3072,7 @@
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
         <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg></span><span>Weather</span></div>
         <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="7" rx="5" ry="2.4"></ellipse><path d="M3 7v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"></path><ellipse cx="16" cy="14" rx="5" ry="2.4"></ellipse><path d="M11 14v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-5"></path></svg></span><span>Odds</span></div>
+        <div class="asidenav-item" data-atab="news"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a1 1 0 0 1 1 1v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"></path><path d="M16 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2"></path><line x1="8" y1="8" x2="12" y2="8"></line><line x1="8" y1="12" x2="12" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg></span><span>News</span></div>
         <div class="asidenav-download" onclick="printAnalysisReport()"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span><span>Download report</span></div>
       </div>
       <div class="abody">
@@ -3077,6 +3086,7 @@
         <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
         <div class="asection" data-asection="weather" id="aSectionWeather"></div>
         <div class="asection" data-asection="odds" id="aSectionOdds"></div>
+        <div class="asection" data-asection="news" id="aSectionNews"></div>
       </div>
     </div>
     <div class="aanalysisfooter">
@@ -8286,6 +8296,126 @@ function syncAnalysisLiveBar(tab){
   liveBar.style.display = (_aLiveBarOn && !insetHere) ? '' : 'none';
 }
 
+/* ---------- Match Analysis modal: News tab (11th) ---------- */
+// Reuses the shared news feed (news-feed.json / _newsData) and the News page's
+// compact wire, filtered to the match's two players. Attribution is DATA
+// (player_key), with the same fail-closed headline resolver the page uses as an
+// interim fallback for pre-field feeds. Colour rulings: identity only — Player A
+// #6aaeff, Player B #e7e9ee by name order; View-all in brand #5b9bff. No fills.
+let _aNewsMatch = null;      // current match for the modal News tab
+let _aNewsFilter = 'all';    // 'all' | 'p1' | 'p2'
+let _aNewsState = 'load';    // 'load' | 'ok' | 'unavailable'
+
+async function ensureNewsData(){
+  if (_newsData) { _aNewsState = 'ok'; return; }
+  try {
+    const res = await fetch('./news-feed.json', { cache:'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _newsData = JSON.parse(await res.text());
+    _aNewsState = 'ok';
+  } catch (_) { _aNewsState = 'unavailable'; }
+}
+function renderNewsSection(){
+  const el = document.getElementById('aSectionNews');
+  if (el && _aNewsMatch) el.innerHTML = buildNewsSection(_aNewsMatch);
+}
+function aNewsSetFilter(f){ _aNewsFilter = f; renderNewsSection(); }
+function aNewsViewAll(){
+  closeAnalysisModal();
+  const b = document.querySelector('#mainNav button[data-tab="news"]');
+  if (b) b.click();
+}
+// "Jul 31 · 08:40" — tz-bound (reuses newsFmtTime / newsTz).
+function aNewsWhen(ts){
+  if (!isFinite(ts)) return '—';
+  let d;
+  try { d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'2-digit', timeZone:newsTz() }); }
+  catch(e){ d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'2-digit' }); }
+  return d + ' · ' + newsFmtTime(ts);
+}
+// One player's articles, newest-first. player_key is the join; the resolver is
+// the interim fallback (never a raw headline string-match).
+function aNewsArticlesFor(key, name){
+  const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
+  const surname = String(name || '').replace(/^[A-Z]\.\s*/, '').trim().toLowerCase();
+  return all.map(a => ({ a, ts: newsParseTs(a.published_at) }))
+    .filter(x => {
+      const a = x.a;
+      if (a.player_key != null) return String(a.player_key) === String(key);
+      const rn = newsPlayerFor(a.title);
+      return rn ? String(rn).replace(/^[A-Z]\.\s*/, '').trim().toLowerCase() === surname : false;
+    })
+    .sort((x,y) => (isFinite(y.ts)?y.ts:-Infinity) - (isFinite(x.ts)?x.ts:-Infinity))
+    .map(x => x.a);
+}
+function aNewsGroupHtml(label, color, articles){
+  if (!articles.length) return '';   // empty group does not render (README rule)
+  const rows = articles.map(a => {
+    const ts = newsParseTs(a.published_at);
+    const paras = a.content ? newsSplitParas(a.content) : [];
+    const body = paras.length
+      ? paras.map(p => `<div class="anews-para" style="font-size:14px; color:#a8b0c0; line-height:1.7; text-wrap:pretty; max-width:68ch;">${newsEscape(p)}</div>`).join('')
+      : `<div class="anews-para" style="font-size:14px; color:#a8b0c0; line-height:1.7; max-width:68ch;"><em>No further detail provided.</em></div>`;
+    return `<div class="anews-row" onclick="this.classList.toggle('open')" style="display:flex; flex-direction:column; padding:9px 6px;">
+        <div class="anews-grid" style="display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:center;">
+          <span class="anews-when" title="${newsEscape(newsFmtDateTime(ts))}" style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:#4b5672; white-space:nowrap;">${newsEscape(aNewsWhen(ts))}</span>
+          <span class="anews-title" style="font-size:13.5px; font-weight:600; color:#e7e9ee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${newsEscape(a.title || 'Untitled')}</span>
+          <span class="anews-caret" style="font-size:11px; color:#5b6880; justify-self:end;">▾</span>
+        </div>
+        <div class="anews-body" style="display:none; flex-direction:column; gap:8px; padding:8px 16px 4px 116px;">${body}</div>
+      </div>`;
+  }).join('');
+  return `<div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:${color}; white-space:nowrap;">${newsEscape(label)}</span>
+      <span style="flex:1; height:1px; background:rgba(255,255,255,0.09);"></span>
+    </div>
+    <div style="display:flex; flex-direction:column;">${rows}</div>`;
+}
+function buildNewsSection(m){
+  const seg = (id,label,on) => {
+    const st = on
+      ? 'font-weight:700; color:#e7e9ee; background:rgba(91,155,255,0.22); border:1px solid rgba(91,155,255,0.45);'
+      : 'font-weight:600; color:#5b6880; background:transparent; border:1px solid transparent;';
+    return `<span class="anews-seg" onclick="aNewsSetFilter('${id}')" style="cursor:pointer; white-space:nowrap; padding:8px 14px; border-radius:10px; font-size:12.5px; ${st}">${newsEscape(label)}</span>`;
+  };
+  const filters = `<div style="display:flex; align-items:center; gap:2px;">`
+    + seg('all','All', _aNewsFilter==='all')
+    + seg('p1', m.p1, _aNewsFilter==='p1')
+    + seg('p2', m.p2, _aNewsFilter==='p2')
+    + `</div>`;
+  const viewAll = `<span class="anews-viewall" onclick="aNewsViewAll()" style="font-size:13px; font-weight:600; color:#5b9bff; align-self:flex-start; cursor:pointer;">View all news →</span>`;
+  const wrap = inner => `<div style="display:flex; flex-direction:column; gap:12px;">${filters}${inner}</div>`;
+
+  if (_aNewsState === 'unavailable') {
+    let chk;
+    try { chk = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false, timeZone:newsTz() }); }
+    catch(e){ chk = new Date().toLocaleTimeString('en-GB', { hour12:false }); }
+    return wrap(`<div style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
+        <span style="font-size:15px; color:#e7e9ee;">News feed unavailable.</span>
+        <span style="font-size:13px; color:#5b6880;">Last checked <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">${chk}</span>.</span>
+      </div>`);
+  }
+  if (_aNewsState !== 'ok') {
+    return wrap(`<div style="font-size:13px; color:#5b6880; padding:10px 0;">Loading news…</div>`);
+  }
+
+  const aArts = aNewsArticlesFor(m.p1Key, m.p1);
+  const bArts = aNewsArticlesFor(m.p2Key, m.p2);
+  const showA = _aNewsFilter !== 'p2';
+  const showB = _aNewsFilter !== 'p1';
+  const groups = (showA ? aNewsGroupHtml(m.p1, '#6aaeff', aArts) : '')
+               + (showB ? aNewsGroupHtml(m.p2, '#e7e9ee', bArts) : '');
+  const visible = (showA ? aArts.length : 0) + (showB ? bArts.length : 0);
+  if (!visible) {
+    const who = _aNewsFilter==='p1' ? m.p1 : _aNewsFilter==='p2' ? m.p2 : `${m.p1} or ${m.p2}`;
+    return wrap(`<div style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
+        <span style="font-size:15px; color:#e7e9ee;">No recent news for ${newsEscape(who)}.</span>
+        ${viewAll}
+      </div>`);
+  }
+  return wrap(`${groups}${viewAll}`);
+}
+
 function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
@@ -8481,10 +8611,15 @@ function buildMatchStatsSheet(m, setNo){
 // Fixed per-player accent colors for the Analysis modal (avatar ring, edge
 // pills) — same fixed hex pair already established for the Progression tab,
 // kept separate from the app-wide var(--court-clay) P2 token used elsewhere.
-const ANALYSIS_P1_COLOR = '#3E7BFA';
-const ANALYSIS_P2_COLOR = '#E8934B';
-const ANALYSIS_P1_RGBA = (a) => `rgba(62,123,250,${a})`;
-const ANALYSIS_P2_RGBA = (a) => `rgba(232,147,75,${a})`;
+// TEN-8 (2026-07-31): flipped to the ruled identity pair — blue = navigation/
+// identity ONLY; Player A #6aaeff, Player B #e7e9ee, fixed by NAME ORDER
+// regardless of who wins. The prior #3E7BFA-for-A / #E8934B-for-B (orange) are
+// wrong everywhere per the founder ruling; the export authority confirms this
+// pair across every modal tab (H2H, Form, Playing Style, Progression, radar…).
+const ANALYSIS_P1_COLOR = '#6aaeff';
+const ANALYSIS_P2_COLOR = '#e7e9ee';
+const ANALYSIS_P1_RGBA = (a) => `rgba(106,174,255,${a})`;
+const ANALYSIS_P2_RGBA = (a) => `rgba(231,233,238,${a})`;
 
 const AKC_ICONS = {
   serve: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
@@ -10026,6 +10161,15 @@ function openAnalysisModal(matchId){
   // it guards on _aOdds.m so a fast reopen of a DIFFERENT match cannot be
   // overwritten by an in-flight fetch for the previous one.
   document.getElementById('aSectionOdds').innerHTML = buildOddsSection(m);
+  // News tab (11th). The shared news feed is only fetched when the News PAGE is
+  // visited, so lazy-load it here on first modal open (odds/form pattern): paint
+  // a placeholder now, repaint when the fetch lands. Guarded on _aNewsMatch so a
+  // fast reopen of a different match can't be overwritten by an in-flight fetch.
+  _aNewsMatch = m;
+  _aNewsFilter = 'all';
+  _aNewsState = _newsData ? 'ok' : 'load';
+  renderNewsSection();
+  ensureNewsData().then(() => { if (_aNewsMatch !== m) return; renderNewsSection(); });
   ensureOddsMovement(m).then(() => {
     if (_aOdds.m !== m) return;
     renderOddsSection();

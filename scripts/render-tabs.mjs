@@ -37,6 +37,29 @@ const histEks = Object.keys(hist).filter(k => hist[k] && hist[k].matchStats && h
 function synthShard(ek){ const h = hist[ek]; if (!h || !h.matchStats) return null;
   return { p1Key: h.p1Key, p2Key: h.p2Key, match: { p1: h.matchStats.p1, p2: h.matchStats.p2 } }; }
 
+// Synthetic news-feed.json fixture (the real file is a git-ignored pipeline
+// artefact, absent locally). One article per player-key present in matches.json,
+// keyed by player_key so the modal News tab can join and render real rows.
+const newsFixture = (() => {
+  let matchesArr = [];
+  try {
+    const mj = JSON.parse(fs.readFileSync(path.join(WT, 'matches.json'), 'utf8'));
+    matchesArr = Array.isArray(mj) ? mj : (mj.matches || Object.values(mj));
+  } catch (_) {}
+  const seen = new Set(); const articles = [];
+  for (const m of matchesArr) {
+    for (const side of [['p1Key','p1'],['p2Key','p2']]) {
+      const key = m[side[0]], name = m[side[1]];
+      if (key == null || seen.has(String(key))) continue;
+      seen.add(String(key));
+      articles.push({ news_key:'syn-'+key, title: name + ' advances in straight sets, eyes next round',
+        content: name + ' looked sharp on serve and dictated from the baseline. "I felt good out there," the player said afterward.\n\nAttention now turns to a tougher test in the coming rounds.',
+        published_at: '2026-07-30T12:00:00Z', sources:['synthetic-fixture'], player_key: key, player_name: name });
+    }
+  }
+  return { generatedAt:'2026-07-30T12:00:00Z', articles };
+})();
+
 const types = {'.html':'text/html','.js':'text/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.woff':'font/woff'};
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
@@ -47,6 +70,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {'content-type':'application/json'}); return res.end(JSON.stringify(obj));
   }
   if (p === '/matchstats-index.json') { res.writeHead(200, {'content-type':'application/json'}); return res.end(JSON.stringify(histEks)); }
+  if (p === '/news-feed.json') { res.writeHead(200, {'content-type':'application/json'}); return res.end(JSON.stringify(newsFixture)); }
   const sm = p.match(/^\/setstats\/(\d+)\.json$/);
   if (sm) { const shard = synthShard(sm[1]); res.writeHead(shard?200:404, {'content-type':'application/json'}); return res.end(JSON.stringify(shard||null)); }
   const fp = path.join(WT, p);
@@ -62,6 +86,7 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile = fs.mkdtempSync('/tmp/ch-tabs-');
 const dport = 9600 + Math.floor(port % 300);
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${dport}`, `--user-data-dir=${profile}`,
+  '--remote-allow-origins=*',
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--force-device-scale-factor=1', 'about:blank'], {stdio:'ignore'});
 
 async function cdpTarget() {
@@ -83,11 +108,11 @@ const evaluate = async (expr) => { const r = await c.send('Runtime.evaluate',{ex
 await c.send('Page.navigate', {url: `${base}/${previewName}#/matches`});
 for(let i=0;i<100;i++){ const n = await evaluate(`(typeof matches!=='undefined' && matches.length)||0`).catch(()=>0); if(n>0) break; await sleep(200); }
 
-// EXPECTED rail — README order, exactly ten, no "extra".
+// EXPECTED rail — README order, now ELEVEN with News appended (11th), no "extra".
 const EXPECT = [
   ['key','Key factors'],['style','Playing style'],['form','Form'],['h2h','H2H'],
   ['matchstats','Match Stats'],['progression','Progression'],['overview','Overview'],
-  ['tournament','Tournament'],['weather','Weather'],['odds','Odds'],
+  ['tournament','Tournament'],['weather','Weather'],['odds','Odds'],['news','News'],
 ];
 
 // Open a real finished match that has matchStats (so Stats/PbP paint) and, if we
@@ -117,10 +142,10 @@ const rail = await evaluate(`(function(){
     sections: [...document.querySelectorAll('.asection[data-asection]')].map(function(s){return s.dataset.asection;}) };
 })()`);
 console.log('RAIL', JSON.stringify(rail, null, 2));
-const railOk = rail.count===10 && !rail.hasExtra &&
+const railOk = rail.count===11 && !rail.hasExtra &&
   EXPECT.every((e,i)=> rail.tabs[i] && rail.tabs[i].atab===e[0] && rail.tabs[i].label.trim()===e[1]) &&
   !rail.sections.includes('extra');
-console.log('RAIL_EXACTLY_TEN_README_ORDER', railOk);
+console.log('RAIL_EXACTLY_ELEVEN_README_ORDER', railOk);
 
 // Screenshot the whole modal element (rail + body) so the ten-tab rail is visible
 // in a founder-facing artefact, not just clipped at the page's left edge.
@@ -179,8 +204,24 @@ await evaluate(`(function(){var b=document.querySelector('#aSectionMatchStats .m
 let pbpRows=0; for(let i=0;i<60;i++){ pbpRows = await evaluate(`document.querySelectorAll('#msPbpPane .pbp-wrap .pbp-grow').length`).catch(()=>0); if(pbpRows>0) break; await sleep(150); }
 console.log('PBP_SUBTAB_GAME_ROWS', pbpRows);
 
+// News-tab depth check: confirm the synthetic feed produced real article rows
+// (not just the graceful "unavailable" state), and that a row expands in place.
+await evaluate(`(function(){var t=document.querySelector('#aTabs .asidenav-item[data-atab="news"]'); if(t)t.click();})()`);
+await sleep(200);
+const news = await evaluate(`(function(){
+  var s=document.getElementById('aSectionNews'); if(!s) return {missing:true};
+  var rows=s.querySelectorAll('.anews-row');
+  var segs=s.querySelectorAll('.anews-seg');
+  if(rows[0]) rows[0].click();
+  var open=s.querySelector('.anews-row.open .anews-body');
+  return { rows:rows.length, segs:segs.length,
+    unavailable:/News feed unavailable|No recent news/i.test(s.textContent||''),
+    expands: !!open };
+})()`);
+console.log('NEWS_TAB', JSON.stringify(news));
+
 const allPainted = results.every(r=>r.painted);
-console.log('ALL_TEN_PAINTED', allPainted);
+console.log('ALL_ELEVEN_PAINTED', allPainted);
 console.log('SUMMARY', JSON.stringify({railOk, allPainted, tabs:results.map(r=>({t:r.atab, painted:r.painted, placeholder:r.placeholder}))}));
 
 chrome.kill(); server.close();
