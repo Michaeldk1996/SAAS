@@ -93,6 +93,11 @@ const SESSIONS = [
     file: 'matches-upcoming.html',
     captures: [
       { name: 'modal-key-factors', interaction: true, actions: [{ click: 'See full analysis' }, { click: 'Key factors' }] },
+      // News is the one modal tab whose label ("News") also exists as a sidebar nav
+      // item (span.sbseg), which precedes the modal in DOM order — a plain getByText
+      // click would hit the sidebar and navigate away. Scope it to the modal tab-nav
+      // (span.nav), which uniquely holds exactly the 11 tab labels and no sidebar item.
+      { name: 'modal-news', interaction: true, actions: [{ modalTab: 'News' }] },
       { name: 'modal-playing-style', interaction: true, actions: [{ click: 'Playing style' }] },
       { name: 'modal-form', interaction: true, actions: [{ click: 'Form' }] },
       { name: 'modal-h2h', interaction: true, actions: [{ click: 'H2H' }] },
@@ -191,17 +196,29 @@ async function doNav(page, text) {
   }
 }
 
+// Modal Analysis tab labels are all `span.nav` (exactly the 11 tabs, no sidebar
+// items) — use this when a tab label collides with a sidebar nav item (e.g. "News").
+async function doModalTab(page, text) {
+  try {
+    await page.locator('span.nav', { hasText: text }).filter({ visible: true }).first().click({ timeout: 4000 });
+    return true;
+  } catch {
+    return doClick(page, text);
+  }
+}
+
 async function runActions(page, actions) {
   const failures = [];
   for (const a of actions) {
     let ok = false;
     if (a.click) ok = await doClick(page, a.click);
+    else if (a.modalTab) ok = await doModalTab(page, a.modalTab);
     else if (a.nav) ok = await doNav(page, a.nav);
     else if (a.fill) {
       try { await page.locator(a.fill[0]).first().fill(a.fill[1], { timeout: 4000 }); ok = true; }
       catch { ok = false; }
     }
-    if (!ok) failures.push(a.click || a.nav || (a.fill && `fill ${a.fill[0]}`));
+    if (!ok) failures.push(a.click || a.modalTab || a.nav || (a.fill && `fill ${a.fill[0]}`));
     await waitStable(page, { max: 12, needed: 2 });
   }
   return failures;
@@ -370,7 +387,7 @@ async function main() {
       pageStates[cap.name] = {
         file: session.file,
         requiredInteraction: !!cap.interaction,
-        interactionSteps: cap.actions.map((a) => a.click || a.nav || (a.fill && `fill:${a.fill[0]}`)).filter(Boolean),
+        interactionSteps: cap.actions.map((a) => a.click || a.modalTab || a.nav || (a.fill && `fill:${a.fill[0]}`)).filter(Boolean),
         elementCount: Object.keys(records).length,
         actionFailures: failures,
         iframeCount,
