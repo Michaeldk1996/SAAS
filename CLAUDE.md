@@ -126,7 +126,7 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 
 - **Aesthetic:** Dark dashboard, near-black backgrounds, flat surfaces, hairline borders only. No gradients, no shadows, no decorative backgrounds.
 - **Style reference:** Linear, Vercel dashboard, Stripe settings pages — confident typography, generous whitespace, clear hierarchy
-- **Typography:** Two font weights only — regular and medium (500). Never bold or heavy. Hierarchy through size and weight only, not colour.
+- **Typography:** Five font weights are used, as built in the export: 400 (regular, the bulk of text), 500, 600, 700, and 800 (headings, active pills, large mono figures). The export is canonical here — 600/700/800 across 7,500+ elements is the design, not a violation. Hierarchy through size and weight, not colour. (Verified against `design-export/tokens-observed.json`, 2026-07-31.)
 - **Case:** Sentence case everywhere — never title case or all caps
 - **Spacing:** Generous — data-dense but never cramped
 - **Stat display:** Neutral only — never use colour to indicate which player has the better stat

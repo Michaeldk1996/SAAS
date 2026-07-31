@@ -306,6 +306,20 @@ function sortMap(map) {
     Object.entries(map).sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
   );
 }
+// Readability filter for the DERIVED tokens-design.json: keep only integer-pixel
+// values ≤ 80px. This strips the computed-geometry long tail (resolved flex/grid
+// widths, negative offsets, sub-pixel/half-pixel values, oversized radii like
+// 999px, and non-px units like 50%) so the file reads as the authored design grid.
+// It is a convenience view ONLY — tokens-observed.json remains the raw source of
+// truth and is never filtered.
+function designPxOnly(map) {
+  return Object.fromEntries(
+    Object.entries(map).filter(([v]) => {
+      const m = /^(\d+)px$/.exec(v);
+      return m && Number(m[1]) <= 80;
+    })
+  );
+}
 
 // ── Main ────────────────────────────────────────────────────────────────────
 async function main() {
@@ -408,8 +422,24 @@ async function main() {
     spacing: sortMap(tokens.spacing),
   };
 
+  // Derived, readable design-token view (integer px ≤ 80 only). Colours and font
+  // weights carry through unchanged; px-shaped maps are filtered. Raw file is untouched.
+  const tokensDesign = {
+    metadata: {
+      ...tokensOut.metadata,
+      note: 'DERIVED readability view of tokens-observed.json: font-size / border-radius / spacing filtered to integer-pixel values ≤ 80px (computed-geometry artefacts, half-pixels, non-px units removed). Colours and font weights are carried through unchanged. NOT a source of truth — see tokens-observed.json for the raw, unfiltered set.',
+      filter: 'integer px ≤ 80 for fontSizes/borderRadii/spacing; colors + fontWeights unfiltered',
+    },
+    colors: tokensOut.colors,
+    fontSizes: designPxOnly(tokensOut.fontSizes),
+    fontWeights: tokensOut.fontWeights,
+    borderRadii: designPxOnly(tokensOut.borderRadii),
+    spacing: designPxOnly(tokensOut.spacing),
+  };
+
   fs.writeFileSync(path.join(EXPORT_DIR, 'computed-styles.json'), JSON.stringify(computed, null, 2));
   fs.writeFileSync(path.join(EXPORT_DIR, 'tokens-observed.json'), JSON.stringify(tokensOut, null, 2));
+  fs.writeFileSync(path.join(EXPORT_DIR, 'tokens-design.json'), JSON.stringify(tokensDesign, null, 2));
 
   // Console summary.
   console.log(`\nExtracted ${metadata.pageStateCount} page-states, ${metadata.totalElements} elements total.`);
@@ -418,7 +448,7 @@ async function main() {
     console.log('\nCould not reach / partial:');
     for (const u of unreachable) console.log(`  - ${u.state}: ${u.reason}`);
   }
-  console.log('\nWrote design-export/computed-styles.json and design-export/tokens-observed.json');
+  console.log('\nWrote design-export/computed-styles.json, tokens-observed.json and tokens-design.json');
 }
 
 main().catch((err) => {
