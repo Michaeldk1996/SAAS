@@ -14251,6 +14251,23 @@ const TOURX_METRICS = [
   { key: 'winnersUnforcedRatio', label: 'Winners / Unforced Errors Ratio',     short: 'W/UE Ratio',      kind: 'ratio' },
   { key: 'totalPointsWonPct',    label: 'Total Points Won %',                  short: 'Total Points Won', kind: 'pct' },
 ];
+// Reports metric-grid ordering (design-export §6 + founder ruling 2026-07-31).
+// The 2-col row-major card grid groups the three SERVE metrics down the left
+// column and the three RALLY metrics down the right column; the overall Total
+// Points Won card is kept, appended to the BOTTOM of the (left) serve column —
+// "keep the 7th card but put it under the serve metrics". Interleaving serve/
+// rally pairs into a row-major grid yields serve-left / rally-right; the trailing
+// serve-family card (Total Points Won) then lands directly beneath the serve column.
+const TOURX_SERVE_KEYS = ['firstServePct', 'firstServeWonPct', 'secondServeWonPct'];
+const TOURX_RALLY_KEYS = ['winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio'];
+function tourxGridOrder(metrics){
+  const serve = metrics.filter(m => TOURX_SERVE_KEYS.includes(m.key));
+  const rally = metrics.filter(m => TOURX_RALLY_KEYS.includes(m.key));
+  const rest  = metrics.filter(m => !TOURX_SERVE_KEYS.includes(m.key) && !TOURX_RALLY_KEYS.includes(m.key));
+  const out = [], rows = Math.max(serve.length, rally.length);
+  for (let i = 0; i < rows; i++){ if (serve[i]) out.push(serve[i]); if (rally[i]) out.push(rally[i]); }
+  return out.concat(rest); // Total Points Won → foot of the serve/left column
+}
 // Human round labels for a 128-draw; data rounds are R1..SF (index-aligned).
 const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const TOURX_TOTAL_WINNERS = [64, 32, 16, 8, 4, 2, 1];
@@ -15055,7 +15072,7 @@ function tourxProgressionGridHtml(players, shownMetrics, field){
   const lastName = nm => nm.split(' ').slice(-1)[0];
   const off = tourxState.ppSpotOff || {};
   const hi = tourxState.roundIdx;
-  const cards = shownMetrics.map(m => {
+  const cards = tourxGridOrder(shownMetrics).map(m => {
     const fld = (field && field.metrics && field.metrics[m.key]) ? field.metrics[m.key] : [];
     // Average toggle-chips: 6px colour dot + name + mono value, unified 11px/400.
     // Tapping toggles that player's spotlight globally; muted → whole chip 0.32.
@@ -15096,7 +15113,7 @@ function tourxCompareCardsHtml(players, shownMetrics, field, mode){
   // dot + name + value, same size/weight for every player). H2H (2) and
   // single-line (1) keep their larger header value pills.
   const useMulti = !(mode === 'rounds' && (players.length === 1 || players.length === 2));
-  const cards = shownMetrics.map(m => {
+  const cards = tourxGridOrder(shownMetrics).map(m => {
     const fld = (field && field.metrics && field.metrics[m.key]) ? field.metrics[m.key] : [];
     const headerVals = players.map((p, i) => {
       const c = TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length];
@@ -15167,7 +15184,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
   // neutral grey ramp by their position in the winners list, so a player's dot is
   // the same colour across all six metric cards regardless of their rank within one.
   const greyOf = {}; entries.forEach((e, i) => { greyOf[e.name] = TOURX_GREYS[i % TOURX_GREYS.length]; });
-  const grid = shownMetrics.map(m => {
+  const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
     const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
@@ -15438,7 +15455,7 @@ function tourxH2HViewHtml(T){
   const pa = pOf(aName), pb = pOf(bName);
   const field = T.field && T.field.metrics ? T.field.metrics : {};
   const lastNN = arr => { for (let i = arr.length - 1; i >= 0; i--){ if (arr[i] != null) return arr[i]; } return null; };
-  const cards = TOURX_METRICS.map(m => {
+  const cards = tourxGridOrder(TOURX_METRICS).map(m => {
     const av = pa.data[m.key], bv = pb.data[m.key];
     const fld = (field[m.key] || []).slice(0, Math.max(av.length, bv.length));
     const aLast = lastNN(av), bLast = lastNN(bv);
