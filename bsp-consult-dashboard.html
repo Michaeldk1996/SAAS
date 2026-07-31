@@ -1074,7 +1074,7 @@
   .modal-analysis .psx-nums{ display:flex; align-items:flex-start; justify-content:space-between; margin-top:16px; }
   .modal-analysis .psx-pct{ font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700; line-height:0.85; }
   .modal-analysis .psx-code{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; margin-top:5px; }
-  .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,#3E7BFA,#E8934B); opacity:0.9; }
+  .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,#6aaeff,#e7e9ee); opacity:0.9; }
   .modal-analysis .psx-tick{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:rgba(255,255,255,0.45); transform:translateX(-50%); }
   .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:#0e1015; border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,0.45); }
   .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.04em; color:#5b6472; }
@@ -1090,8 +1090,8 @@
   .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
   .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:#c4ccd8; }
   .modal-analysis .psr-swatch{ width:16px; height:10px; border-radius:2px; }
-  .modal-analysis .psr-swatch-a{ background:rgba(62,123,250,0.35); border:1.5px solid #3E7BFA; }
-  .modal-analysis .psr-swatch-b{ border:1.5px dashed #E8934B; }
+  .modal-analysis .psr-swatch-a{ background:rgba(106,174,255,0.35); border:1.5px solid #6aaeff; }
+  .modal-analysis .psr-swatch-b{ border:1.5px dashed #e7e9ee; }
   .modal-analysis .psr-n{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; margin-top:7px; }
   .modal-analysis .psr-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; text-align:center; font-size:12px; color:#8b93a3; line-height:1.55; padding:0 14px; }
   .modal-analysis .psr-empty-sub{ display:block; margin-top:8px; font-size:11px; color:#5b6472; }
@@ -1128,7 +1128,7 @@
   .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8b93a3; }
   .modal-analysis .psv-score{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#c4ccd8; min-width:34px; text-align:right; }
   .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:color .12s ease; }
-  .modal-analysis .psv-more:hover{ color:#8fb4ff; }
+  .modal-analysis .psv-more:hover{ color:#6aaeff; }
   .modal-analysis .psv-more:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; border-radius:4px; }
   @media (max-width:900px){
     .modal-analysis .psx-top{ grid-template-columns:1fr; }
@@ -9075,8 +9075,8 @@ function buildOddsReduced(m){
       <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;">Market-implied win probability</span>
       <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">via ${m.odds.bookmaker} · vig removed</span>
     </div>
-    <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;"><span style="color:#7ba4ff;">${p1Fair}%</span><span style="color:#E8934B;">${p2Fair}%</span></div>
-    <div style="height:6px;border-radius:4px;background:rgba(232,147,75,0.25);overflow:hidden;"><div style="height:100%;width:${p1Fair}%;background:#3E7BFA;"></div></div>
+    <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;"><span style="color:#6aaeff;">${p1Fair}%</span><span style="color:#e7e9ee;">${p2Fair}%</span></div>
+    <div style="height:6px;border-radius:4px;background:rgba(231,233,238,0.22);overflow:hidden;"><div style="height:100%;width:${p1Fair}%;background:#6aaeff;"></div></div>
     <div style="font-size:11.5px;color:#8b93a3;margin-top:7px;"><b style="color:var(--text);">${favName}</b> favored</div>
   </div>`;
 
@@ -9775,8 +9775,8 @@ function styleEdgeHtml(m, s1, s2){
   if (a1.id === a2.id){
     return `<div class="psx-card">${head}
       <div class="psx-sub">Mirror matchup — both play as ${psEsc(a1.name)}s</div>
-      <div class="psx-nums"><div><div class="psx-pct" style="color:#8fb4ff;">50%</div><div class="psx-code" style="color:#7ba4ff;">${psEsc(a1.code)}</div></div>
-        <div style="text-align:right;"><div class="psx-pct" style="color:#eaa869;">50%</div><div class="psx-code" style="color:#eaa869;">${psEsc(a2.code)}</div></div></div>
+      <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">50%</div><div class="psx-code" style="color:#6aaeff;">${psEsc(a1.code)}</div></div>
+        <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">50%</div><div class="psx-code" style="color:#e7e9ee;">${psEsc(a2.code)}</div></div></div>
       <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:50%; border-color:#8b93a3;"></div></div>
       <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
       <div class="psx-tag" style="color:#8b93a3; background:rgba(139,147,163,0.1); border-color:rgba(139,147,163,0.26);">▸ style gives neither player an edge</div>
@@ -9796,8 +9796,8 @@ function styleEdgeHtml(m, s1, s2){
     : `<div class="psx-tag" style="color:${lead.color}; background:${lead.bg}; border-color:${lead.bd};">▸ leans +${lead.pts} pts to the ${psEsc(lead.name.toLowerCase())}</div>`;
   return `<div class="psx-card">${head}
     <div class="psx-sub">${psEsc(p1pct >= p2pct ? a1.name : a2.name)}s beat ${psEsc(p1pct >= p2pct ? a2.name : a1.name)}s</div>
-    <div class="psx-nums"><div><div class="psx-pct" style="color:#8fb4ff;">${p1pct}%</div><div class="psx-code" style="color:#7ba4ff;">${psEsc(a1.code)}</div></div>
-      <div style="text-align:right;"><div class="psx-pct" style="color:#eaa869;">${p2pct}%</div><div class="psx-code" style="color:#eaa869;">${psEsc(a2.code)}</div></div></div>
+    <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">${p1pct}%</div><div class="psx-code" style="color:#6aaeff;">${psEsc(a1.code)}</div></div>
+      <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">${p2pct}%</div><div class="psx-code" style="color:#e7e9ee;">${psEsc(a2.code)}</div></div></div>
     <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
     <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
     ${tag}
@@ -9838,11 +9838,11 @@ function styleDimensionEdgeHtml(m, r1, r2){
     const edge = tied ? { name:'level', color:'#8b93a3' }
       : (aWins ? { name:psShortName(m.p1), color:'#8fb4ff' } : { name:psShortName(m.p2), color:'#eaa869' });
     return `<div class="psd-row">
-      <span class="psd-val" style="color:${aWins && !tied ? '#8fb4ff' : '#6b7280'}; text-align:right;">${a}</span>
+      <span class="psd-val" style="color:${aWins && !tied ? '#6aaeff' : '#6b7280'}; text-align:right;">${a}</span>
       <span class="psd-track psd-track-a"><span class="psd-fill" style="width:${a}%; background:${aWins && !tied ? ANALYSIS_P1_COLOR : ANALYSIS_P1_RGBA(0.32)};"></span></span>
       <div class="psd-mid"><div class="psd-label">${psEsc(ax.label)}</div><div class="psd-edge" style="color:${edge.color};">▸ ${psEsc(edge.name)}</div></div>
       <span class="psd-track psd-track-b"><span class="psd-fill" style="width:${b}%; background:${!aWins && !tied ? ANALYSIS_P2_COLOR : ANALYSIS_P2_RGBA(0.32)};"></span></span>
-      <span class="psd-val" style="color:${!aWins && !tied ? '#eaa869' : '#6b7280'}; text-align:left;">${b}</span>
+      <span class="psd-val" style="color:${!aWins && !tied ? '#e7e9ee' : '#6b7280'}; text-align:left;">${b}</span>
     </div>`;
   }).join('');
   return `<div class="psx-block"><div class="psx-label" style="margin-bottom:14px;">Dimension edge</div><div class="psd-list">${rows}</div></div>`;
@@ -9945,8 +9945,8 @@ function styleVsArchetypeHtml(m, s1, s2){
   if (!r1 && !r2) return '';
   return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
     <div class="psv-grid">
-      ${styleVsArchetypeCard(m.p1, r1, a2, '#8fb4ff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1')}
-      ${styleVsArchetypeCard(m.p2, r2, a1, '#eaa869', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2')}
+      ${styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1')}
+      ${styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2')}
     </div></div>`;
 }
 
