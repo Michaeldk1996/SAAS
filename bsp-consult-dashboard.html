@@ -771,7 +771,7 @@
   .modal-analysis .apname{ font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
   .modal-analysis .aodds{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--text-dim); background:#0e1015; border:1px solid var(--border); border-radius:8px; min-width:30px; height:30px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; flex-shrink:0; }
   .modal-analysis .aodds.p1{ background:rgba(62,123,250,0.10); border-color:rgba(62,123,250,0.30); color:#9dc0ff; }
-  .modal-analysis .aodds.p2{ background:rgba(232,147,75,0.12); border-color:rgba(232,147,75,0.34); color:#f0a95f; }
+  .modal-analysis .aodds.p2{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.12); color:#e7e9ee; }
   .modal-analysis .aodds:empty{ display:none; }
   .modal-analysis .avslabel2{ color:var(--text-faint); font-weight:500; font-size:11px; font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
   /* The score is stated ONCE in the header: sets in the matchup pills, then this
@@ -1697,8 +1697,10 @@
   .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; color:#cfd4de; font-weight:600; font-size:13px; }
   .atourn-yearrow .rd{ color:#dfe3ea; font-family:'Hanken Grotesk', sans-serif; font-size:13px; }
   .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:#e7ebf1; font-size:13px; }
-  .atourn-showmore{ font-size:12px; color:var(--accent); cursor:pointer; margin-top:6px; }
+  .atourn-wd{ color:#4b5672; font-style:italic; font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-showmore{ font-size:13px; font-weight:600; color:#5b9bff; cursor:pointer; margin-top:6px; }
   .atourn-showmore:hover{ text-decoration:underline; }
+  .atourn-showmore-chev{ margin-left:4px; font-size:14px; }
   .atourn-yearrow.clickable{ cursor:pointer; }
   .atourn-yearrow.clickable:hover .yr{ color:var(--accent); }
   .atourn-yearrow .exp{ font-size:10px; color:#6b7280; margin-left:6px; }
@@ -3063,6 +3065,7 @@
     <div class="aanalysis-body-wrap">
       <div class="asidenav" id="aTabs">
         <div class="asidenav-item active" data-atab="key"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="M21 2l-9.6 9.6"></path><path d="M15.5 7.5l3 3L22 7l-3-3"></path></svg></span><span>Key factors</span></div>
+        <div class="asidenav-item" data-atab="news"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a1 1 0 0 1 1 1v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"></path><path d="M16 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2"></path><line x1="8" y1="8" x2="12" y2="8"></line><line x1="8" y1="12" x2="12" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg></span><span>News</span></div>
         <div class="asidenav-item" data-atab="style"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Playing style</span></div>
         <div class="asidenav-item" data-atab="form"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Form</span></div>
         <div class="asidenav-item" data-atab="h2h"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>H2H</span></div>
@@ -3072,7 +3075,6 @@
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
         <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg></span><span>Weather</span></div>
         <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="7" rx="5" ry="2.4"></ellipse><path d="M3 7v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"></path><ellipse cx="16" cy="14" rx="5" ry="2.4"></ellipse><path d="M11 14v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-5"></path></svg></span><span>Odds</span></div>
-        <div class="asidenav-item" data-atab="news"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a1 1 0 0 1 1 1v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"></path><path d="M16 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2"></path><line x1="8" y1="8" x2="12" y2="8"></line><line x1="8" y1="12" x2="12" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg></span><span>News</span></div>
         <div class="asidenav-download" onclick="printAnalysisReport()"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span><span>Download report</span></div>
       </div>
       <div class="abody">
@@ -3091,7 +3093,6 @@
     </div>
     <div class="aanalysisfooter">
       <span>All stats are updated live. Model insights are for informational purposes only.</span>
-      <span class="abrand">BSP Consult</span>
     </div>
   </div>
 </div>
@@ -7967,18 +7968,24 @@ function toggleTournamentYear(id){
   if (!el) return;
   el.style.display = el.style.display === 'none' ? '' : 'none';
 }
-function atournYearRowHtml(y, colPrefix, color, hoverColor){
+function atournYearRowHtml(y, colPrefix, color, hoverColor, expanded){
   const matches = Array.isArray(y.matches) ? y.matches : [];
   const listId = `atournMatches-${colPrefix}-${y.year}`;
   const rows = matches.map(x => atournMatchRowHtml(x)).join('');
+  const open = !!expanded && matches.length > 0;
+  // Withdrawal years render as one muted row — "Withdrawal" in italic, an em
+  // dash where the record would be — matching the export (state
+  // modal-tournament). Never a 0-0: not-played is not played-and-lost.
+  const rdCell = y.withdrew ? `<em class="atourn-wd">Withdrawal</em>` : (y.roundReached || '—');
+  const wlCell = y.withdrew ? '—' : `${y.won}-${y.lost}`;
   return `
     <div class="atourn-yearrow${matches.length ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''} onmouseenter="this.style.borderColor='${hoverColor}';" onmouseleave="this.style.borderColor='';">
       <span class="bar" style="background:${color};"></span>
       <span class="yr">${y.year}${matches.length ? '<span class="exp">▾</span>' : ''}</span>
-      <span class="rd">${y.roundReached || '—'}</span>
-      <span class="wl">${y.won}-${y.lost}</span>
+      <span class="rd">${rdCell}</span>
+      <span class="wl">${wlCell}</span>
     </div>
-    ${matches.length ? `<div class="atourn-matchlist" id="${listId}" style="display:none;">${rows}</div>` : ''}
+    ${matches.length ? `<div class="atourn-matchlist" id="${listId}" style="display:${open ? '' : 'none'};">${rows}</div>` : ''}
   `;
 }
 function showTournamentMore(colPrefix){
@@ -8000,18 +8007,33 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   const isP1 = colPrefix === 'p1';
   const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  const recColor = isP1 ? '#eaf0ff' : '#fff2e6';
-  const pctLblColor = isP1 ? '#93a8cf' : '#cfa77f';
-  const recordColor = isP1 ? '#cfd6e6' : '#e6d3c2';
-  const editionsColor = isP1 ? '#7f93b5' : '#c19a72';
-  const longAccentColor = isP1 ? '#7ba4ff' : '#f0a95f';
-  const trackGradient = isP1 ? 'linear-gradient(90deg,#3E7BFA,#5b90ff)' : 'linear-gradient(90deg,#E8934B,#f0a95f)';
+  // Colour vocabulary read from design-export/computed-styles.json (state
+  // modal-tournament): both player cards share ONE neutral palette — the only
+  // identity-carrying mark is the win-rate bar fill (A #6aaeff, B #e7e9ee).
+  // Player B is #e7e9ee, fixed by name order — there is no orange in the
+  // identity system.
+  const recColor = '#e7e9ee';        // big win-rate %   (export fw800 / 44px)
+  const pctLblColor = '#e7e9ee';     // "win rate" label (export fw400 / 14px)
+  const recordColor = '#e7e9ee';     // record figure    (export fw700 / 14px)
+  const editionsColor = '#5b6880';   // "N editions played" (export 12.5px)
+  const longAccentColor = isP1 ? '#6aaeff' : '#e7e9ee';  // GS-only; no export ref
+  const trackBar = isP1 ? '#6aaeff' : '#e7e9ee';         // export bar fill (flat)
 
   const visible = history.years.slice(0, 3);
   const extra = history.years.slice(3);
-  const visibleRows = visible.map(y => atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3))).join('');
+  // Export default-expands the most recent edition inline (state
+  // modal-tournament) so the match detail is the first thing read, not a click
+  // away.
+  const visibleRows = visible.map((y, i) => atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3), i === 0)).join('');
   const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3))}</div>`).join('');
-  const showMoreHtml = extra.length ? `<div class="atourn-showmore" id="atournShowMore-${colPrefix}" onclick="showTournamentMore('${colPrefix}')">Show ${extra.length} earlier edition${extra.length === 1 ? '' : 's'}</div>` : '';
+  // "Show N earlier editions · YEAR(S)›" — the export states the year range the
+  // control reveals and carries a trailing chevron. Years run newest-first, so
+  // the range is oldest–newest.
+  const extraYears = extra.map(y => y.year);
+  const extraRange = extra.length === 1
+    ? `${extraYears[0]}`
+    : `${extraYears[extraYears.length - 1]}–${extraYears[0]}`;
+  const showMoreHtml = extra.length ? `<div class="atourn-showmore" id="atournShowMore-${colPrefix}" onclick="showTournamentMore('${colPrefix}')">Show ${extra.length} earlier edition${extra.length === 1 ? '' : 's'} · ${extraRange}<span class="atourn-showmore-chev">›</span></div>` : '';
 
   // "Went the distance (4+ sets)" is only meaningful in best-of-five, i.e.
   // Grand Slams. Every other ATP event is best-of-three, where 4+ sets is
@@ -8034,7 +8056,7 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
           <span class="pct" style="color:${recColor};">${pct}%</span>
           <span class="pctlbl" style="color:${pctLblColor};">win rate</span>
         </div>
-        <div class="track"><div style="width:${pct}%;background:${trackGradient};"></div></div>
+        <div class="track"><div style="width:${pct}%;background:${trackBar};"></div></div>
         <div class="recordrow">
           <span class="rec" style="color:${recordColor};">${history.totalWon}-${history.totalLost}</span>
           <span class="editions" style="color:${editionsColor};">${history.editionsPlayed} edition${history.editionsPlayed === 1 ? '' : 's'} played</span>
