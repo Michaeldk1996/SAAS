@@ -1369,6 +1369,23 @@ None of the items below is design intent. They exist so nothing here is mistaken
 **Token-sweep set (off-token values recorded as deviations — the complete audited
 list; a developer can work it top to bottom without cross-referencing subsections)**
 
+> **DECISION (TEN-8, 2026-07-31, founder ruling) — two blue systems, migration DEFERRED.**
+> The build runs **two parallel blue systems** and this is a settled decision, not a bug
+> to fix piecemeal:
+> - `--brand #5b9bff` (in the build: `--mc-brand #5b9bff` + `--player-a #6aaeff`) is the
+>   **design-canonical brand. It is canonical for anything NEW** — all new work uses it.
+> - The legacy product accent `#3e7bfa` (`--accent` / `--mx-brand-blue`, ~124 uses = 55
+>   `#3e7bfa` hex + 69 `rgba(62,123,250,…)` across charts, bars, active tabs, CTAs, focus
+>   rings) is a **known, DEFERRED migration**. It stays untouched until the founder says
+>   otherwise. **Do not** migrate it, **do not** repoint the token definitions, **do not**
+>   convert it page-by-page while doing other work. Nobody "fixes" these piecemeal.
+> - **Hover-affordance blues** — the build uses **four values**: `#a9c4ff`, `#7ba4ff`,
+>   `#6aaeff`, `#82b4ff` (the audit list below wrongly includes `#8fbcff`, which is not in
+>   the build). `--brand` should govern all of these eventually; **change nothing now.**
+>
+> The near-miss list below is a factual census only — it is NOT a work queue. No item in it
+> is actioned without an explicit founder go-ahead.
+
 Audit basis: every literal hex in the design sources that is not a documented token.
 63 design-authored values qualify; bundler chrome (the build tool's error overlay —
 `#ff8a80` / `#2a1215` / `#5c2b2e` etc., injected into every compiled file) is

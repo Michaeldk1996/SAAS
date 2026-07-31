@@ -5,6 +5,26 @@ from the Stennisfy export (zip 32, `export/matches-upcoming.html`) — decoded f
 Framer scene-stack so the markup/tokens are the export's real ones, not icon-library or
 eyeballed substitutes.
 
+## DECISION — two blue systems, migration DEFERRED (founder ruling, 2026-07-31)
+
+The build runs **two parallel blue accent systems**. Per founder ruling this is a settled
+decision, **not** a migration to work through:
+
+- **Canonical for anything NEW:** `--brand #5b9bff` — in the build, `--mc-brand #5b9bff`
+  (L155) + `--player-a #6aaeff` (L159). All new work uses `#5b9bff`.
+- **Legacy, left untouched:** `#3e7bfa` — `--accent #3E7BFA` (L20) + `--mx-brand-blue`
+  (L139), ~124 uses (55 `#3e7bfa` hex + 69 `rgba(62,123,250,…)`) across charts, bars,
+  active tabs, CTAs, focus rings; also in `funnel.html` / `verify.html` /
+  `bsp-consult-website.html`. This is a **known, deferred migration**. Do **not** migrate
+  it, do **not** repoint the token definitions, do **not** convert it page-by-page while
+  doing other work. Nobody fixes these piecemeal — only on explicit founder go-ahead.
+- **Hover-affordance blues** — four values in the build: `#a9c4ff`, `#7ba4ff`, `#6aaeff`,
+  `#82b4ff`. `--brand` should govern all of them eventually; **change nothing now.**
+
+Rationale (founder): the two blues are close enough that the difference doesn't matter at
+this stage, and a 124-occurrence swap plus a full-product visual review isn't worth it
+before launch. Full census lives in `design-export/README.md` → Token-sweep set.
+
 ## Card-review round (founder comment 2026-07-29 04:12Z) — what changed
 
 1. **Market Signal — expands in place.** The chip no longer navigates to the Edge page
