@@ -14213,7 +14213,7 @@ function showTournamentProfile(key){
    Nothing is fabricated: missing rounds/values render honest
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
-const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {} };
+const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null };
 // Per-tournament market performance (build-tournament-market.js → tournament-market.json).
 // Real flat-stake yields + favourite reliability from settled closing prices; the
 // Overview panel em-dashes any tournament missing here (thin sample / no join).
@@ -14843,6 +14843,9 @@ function tourxSetView(v){ tourxState.view = v; renderTourxReports(); }
 // mutes/emphasises them across ALL six charts at once. Deselected players stay
 // on the chart as thin, faint context lines (not removed).
 function tourxTogglePP(name){ const m = tourxState.ppSpotOff || (tourxState.ppSpotOff = {}); m[name] = !m[name]; renderTourxReports(); }
+// Player-progression focus (export authority): tapping a player row/chip lights
+// that player and dims the rest across every metric table; tapping again clears.
+function tourxFocusPP(name){ tourxState.ppFocus = (tourxState.ppFocus === name) ? null : name; renderTourxReports(); }
 // Multi-select metric filter. 'all' clears the selection (shows every metric);
 // otherwise toggle the key in/out of tourxState.rvMetrics.
 function tourxToggleRvMetric(key){
@@ -15337,62 +15340,143 @@ function tourxRoundViewHtml(T){
 // selector. With players selected → a side-by-side multi-player comparison
 // (per-round detail, highlighted round). With none → the grouped default
 // (players who reached R16 or deeper, each with six player-vs-field charts).
+// ---- Player-progression control row (design-export §6): a PLAYERS label, one
+// chip per selected player (grey identity swatch + last name + rating + dismiss),
+// an "Add player" dropdown, a Clear action, and the selection-limit hint. No
+// magnifier search field, no "Highlight round" segmented control (both removed).
+function tourxPPControlsHtml(allNames, cap){
+  const lastName = n => n.split(' ').slice(-1)[0];
+  const sel = tourxState.cmpPlayers.filter(n => allNames.includes(n)).slice(0, cap);
+  const full = sel.length >= cap;
+  const chips = sel.map((name, i) => {
+    const c = TOURX_GREYS[i % TOURX_GREYS.length];
+    const focused = tourxState.ppFocus === name;
+    const rt = tourxRating(name);
+    return `<span style="display:inline-flex;align-items:center;gap:9px;white-space:nowrap;background:${focused ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.04)'};border:1px solid ${focused ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)'};border-radius:9px;padding:7px 8px 7px 12px;font-size:13px;font-weight:600;color:#e7e9ee;">
+        <span onclick="tourxFocusPP('${tourxEsc(name)}')" title="Focus this player" style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;"><span style="width:9px;height:9px;border-radius:3px;background:${c};flex:none;"></span>${tourxEsc(lastName(name))} <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#5b6880;">${rt == null ? '—' : rt}</span></span>
+        <span onclick="tourxCmpRemove('${tourxEsc(name)}')" title="Remove" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;">✕</span>
+      </span>`;
+  }).join('');
+  const q = (tourxState.cmpQuery || '').trim().toLowerCase();
+  const options = allNames.filter(n => !sel.includes(n) && (!q || n.toLowerCase().includes(q))).slice(0, 12);
+  const optHtml = options.length
+    ? options.map(n => `<div onclick="tourxCmpAdd('${tourxEsc(n)}', ${cap})" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;"><span style="flex:1;font-size:13px;font-weight:600;color:#dbe6ff;">${tourxEsc(lastName(n))}</span><span style="flex:none;font-size:9.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${tourxRating(n) || '—'}</span></div>`).join('')
+    : `<div style="padding:10px;font-size:12px;color:#5b6880;text-align:center;">No players match.</div>`;
+  const addCtl = full ? '' : `<span style="position:relative;">
+      <span onclick="tourxState.cmpOpen=!tourxState.cmpOpen;renderTourxReports()" style="display:inline-flex;align-items:center;gap:7px;background:#0e1015;border:1px dashed rgba(255,255,255,0.2);border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:600;color:#5b6880;cursor:pointer;"><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1;">+</span> Add player</span>
+      ${tourxState.cmpOpen ? `<div style="position:absolute;left:0;top:calc(100% + 6px);z-index:30;width:250px;background:#0e1015;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:8px;box-shadow:0 16px 34px rgba(0,0,0,0.55);">
+          <input id="tourxCmpSearch" value="${(tourxState.cmpQuery || '').replace(/"/g, '&quot;')}" oninput="tourxCmpInput(this.value)" placeholder="Search roster…" style="width:100%;background:#0b0f18;border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:8px 10px;outline:none;color:#e7e9ee;font-size:12.5px;font-family:inherit;margin-bottom:6px;">
+          <div style="max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:2px;">${optHtml}</div>
+        </div>` : ''}
+    </span>`;
+  const clear = sel.length > 1 ? `<span onclick="tourxCmpClear()" style="font-size:12px;font-weight:600;color:#5b6880;padding:8px 6px;cursor:pointer;">Clear</span>` : '';
+  const hint = `<span style="font-size:11px;color:#5b6880;">${full ? 'Maximum of ' + cap + ' players selected' : 'Compare up to ' + cap + ' players'}</span>`;
+  return `<div style="margin-top:18px;display:flex;align-items:center;gap:14px 16px;flex-wrap:wrap;">
+      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Players</span>
+      <div class="tourx-cmpbar tourx-dd" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${chips}${addCtl}${clear}</div>
+      ${hint}
+    </div>`;
+}
+
+// ---- One per-metric progression table (design-export heatMatrix). Header row of
+// every draw round; one row per selected player with a grey accent bar, rank
+// numeral, name, rating and mono value cells; a FIELD AVG footer row. Exactly one
+// cell per round column is highlighted — the best value among the selected players
+// for that round (lowest when `lower`, else highest) — with a subtle fill and a
+// heavier weight. Absent rounds render an em dash; no charts, axes or gradients.
+function tourxProgressionHeatHtml(rows, rounds, kind, lower, field){
+  const nR = rounds.length, cols = `146px repeat(${nR},1fr)`;
+  const anyFocus = rows.some(r => r.focused);
+  const colBest = rounds.map((_, i) => { const vs = rows.map(r => r.vals[i]).filter(v => v != null); return vs.length ? (lower ? Math.min : Math.max).apply(null, vs) : null; });
+  const cell = (v, dim, best) => v == null
+    ? `<div style="display:flex;align-items:center;justify-content:center;height:34px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4b5672;">—</div>`
+    : `<div style="display:flex;align-items:center;justify-content:center;height:34px;border-radius:7px;background:${best ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)'};font-family:'IBM Plex Mono',monospace;font-weight:${best ? 700 : 400};font-size:12.5px;color:#e7e9ee;opacity:${dim ? 0.26 : 1};">${tourxFmt(v, kind)}</div>`;
+  const header = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:7px;"><div></div>${rounds.map(r => `<div style="text-align:center;font-size:9.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;color:#5b6880;font-weight:600;">${r}</div>`).join('')}</div>`;
+  const body = rows.map((r, si) => {
+    const dim = anyFocus && !r.focused;
+    const nameCell = `<div onclick="tourxFocusPP('${tourxEsc(r.full)}')" title="Focus ${tourxEsc(r.name)}" style="display:flex;align-items:center;gap:9px;min-width:0;border-left:2px solid ${r.focused ? r.color : tourxHexA(r.color, 0.6)};padding-left:10px;cursor:pointer;opacity:${dim ? 0.5 : 1};">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:#5b6880;flex:none;width:11px;">${si + 1}</span>
+        <span style="font-size:13px;font-weight:${r.focused ? 700 : 600};color:${r.focused ? '#e7e9ee' : '#cfd6e6'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tourxEsc(r.name)}</span>
+        <span style="margin-left:auto;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:500;color:#6b7484;flex:none;">${r.rating == null ? '—' : r.rating}</span>
+      </div>`;
+    const valCells = rounds.map((_, i) => `<div>${cell(r.vals[i], dim, r.vals[i] != null && r.vals[i] === colBest[i])}</div>`).join('');
+    return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:center;">${nameCell}${valCells}</div>`;
+  }).join('');
+  const fieldRow = (field && field.length) ? `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,0.07);align-items:center;"><div style="padding-left:12px;font-size:9px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;font-weight:600;font-style:italic;">Field avg</div>${rounds.map((_, i) => `<div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;color:#5b6880;">${field[i] == null ? '—' : tourxFmt(field[i], kind)}</div>`).join('')}</div>` : '';
+  return `<div>${header}${body}${fieldRow}</div>`;
+}
+
+// ---- Player-progression metric grid (design-export §10/§11): two fixed columns,
+// not a flow. SERVE metrics stack down the left under a "Serve" label; RALLY
+// metrics down the right under "Rally", with Total Points Won % appended at the
+// FOOT of the rally column (3 serve cards, 4 rally cards — intentionally uneven).
+// Each card is bordered with its title and a single progression table beneath.
+function tourxProgressionTablesHtml(players, T){
+  const lastName = n => n.split(' ').slice(-1)[0];
+  const rounds = tourxActiveLabels;
+  const field = T.field;
+  const byKey = k => TOURX_METRICS.find(m => m.key === k);
+  const cardFor = m => {
+    const lower = (m.key === 'unforcedErrorsPct'); // best = lowest UE; every other metric (incl. Total Points Won) = highest
+    const rows = players.map((p, i) => ({
+      full: p.name, name: lastName(p.name), rating: tourxRating(p.name),
+      vals: (p.data[m.key] || []).slice(0, rounds.length),
+      color: TOURX_GREYS[i % TOURX_GREYS.length], focused: tourxState.ppFocus === p.name,
+    }));
+    const fld = (field && field.metrics && field.metrics[m.key]) ? field.metrics[m.key].slice(0, rounds.length) : [];
+    const lowerLine = lower ? `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:10px;color:#4b5672;margin-top:3px;">lower is better</div>` : '';
+    return `<div style="border:1px solid rgba(255,255,255,0.09);border-radius:12px;background:#0b1017;padding:14px;">
+        <div style="padding-bottom:11px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;font-weight:600;font-family:'IBM Plex Mono',monospace;">${m.label}</div>${lowerLine}
+        </div>
+        <div style="width:100%;">${tourxProgressionHeatHtml(rows, rounds, m.kind, lower, fld)}</div>
+      </div>`;
+  };
+  const grpLabel = t => `<span style="font-family:'Hanken Grotesk',sans-serif;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;">${t}</span>`;
+  const colStyle = 'display:flex;flex-direction:column;gap:16px;min-width:0;';
+  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
+  const rallyCol = `<div style="${colStyle}">${grpLabel('Rally')}${TOURX_RALLY_KEYS.concat(['totalPointsWonPct']).map(k => cardFor(byKey(k))).join('')}</div>`;
+  const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:#4b5672;margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.</div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px;">${serveCol}${rallyCol}</div>${footer}`;
+}
+
 function tourxPlayerViewHtml(T){
-  const rounds = T.rounds, field = T.field;
-  // Progression charts show ACTIVE players only — a player is eliminated the moment
-  // they have a loss recorded, and is then dropped from the chart, legend, banner and
-  // search entirely (no orphaned line/point/name). Byes are not losses. (T3)
+  // Progression tables show ACTIVE players only — a player is eliminated the moment
+  // they have a loss recorded, and is then dropped from the tables, chips and
+  // add-list entirely (no orphaned row/name). Byes are not losses. (T3)
   const allNames = T.players.filter(p => p.data && p.nRounds > 0 && !p.eliminated).map(p => p.name).sort();
   const selNames = tourxState.cmpPlayers.filter(n => allNames.includes(n)).slice(0, TOURX_PP_CAP);
   const selPlayers = selNames.map(n => T.players.find(p => p.name === n));
-  const controls = `<div style="margin-top:20px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
-      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Players</span>
-      ${tourxPlayerChipBarHtml(allNames, TOURX_PP_CAP)}
-    </div>` + tourxRoundChipRowHtml('Highlight round');
+  const controls = tourxPPControlsHtml(allNames, TOURX_PP_CAP);
 
-  // Comparison mode — one or more players selected: the Handoff #15 progression
-  // grid (six panels, spotlight toggles). Legend + averages callout above it.
+  // Comparison mode — one or more players selected: the design-export progression
+  // tables (serve/rally metric grid, per-round best-value highlight, field-avg row).
   if (selPlayers.length){
-    // Chartable once a player is two rounds INTO THE DRAW — which a bye recipient is
+    // Progression needs two rounds INTO THE DRAW — which a bye recipient reaches
     // after a single win, so depth is measured by drawDepth (byes counted), not by
-    // matches played. Their bye round is printed as "bye" rather than plotted.
+    // matches played. Their bye round renders as an em dash rather than a value.
     const eligible = selPlayers.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated);
     if (!eligible.length){
       const who = selPlayers.length === 1
         ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> is only one round in so far`
         : `None of the selected players have reached the second round yet`;
-      const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once a player is <b style="color:#c3ccdb;">2 rounds</b> into the tournament — a single round is one data point, so there's no trend to plot. ${who}; the progression chart appears here automatically once they've come through their next round. Players who received a first-round <b style="color:#c3ccdb;">bye</b> are included, with "bye" shown in place of that round's figure.</div>`;
+      const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once a player is <b style="color:#c3ccdb;">2 rounds</b> into the tournament — a single round is one data point, so there's no trend to compare. ${who}; the progression tables appear here automatically once they've come through their next round. Players who received a first-round <b style="color:#c3ccdb;">bye</b> are included, with an em dash shown for that round's figure.</div>`;
       return controls + msg;
     }
-    const legend = tourxPPLegendHtml(eligible);
-    const names = eligible.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
-    const dropped = selPlayers.length - eligible.length;
-    const droppedNote = dropped ? ` <b style="color:#eef2f8;">${dropped} selected player${dropped === 1 ? '' : 's'}</b> only one round in ${dropped === 1 ? 'is' : 'are'} hidden until they've come through the next round.` : '';
-    const callout = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
-        <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
-        <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">The <b style="color:#eef2f8;">${names}</b> figures beside each chart title are each player's <b style="color:#eef2f8;">average across all rounds they played</b> — not a single round's value. <b style="color:#eef2f8;">Tap a player's name</b> beside any chart to spotlight or mute them across every chart.${droppedNote}</span>
-      </div>`;
-    return controls + `<div style="margin-top:22px;">${legend}${callout}${tourxCompareCardsHtml(eligible, TOURX_METRICS, field, 'progress')}</div>`;
+    return controls + tourxProgressionTablesHtml(eligible, T);
   }
 
   // No manual selection → auto-populate from the second round onward. Any player
-  // who has played 2+ matches gets a progression line automatically (a chart needs
-  // at least two points to show a trend), so the report is useful without picking
-  // players first. The search above still narrows to specific players afterwards.
+  // two rounds into the draw is shown automatically, so the report is useful
+  // without picking players first; the "Add player" control narrows afterwards.
   const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated)
     .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.drawDepth - a.drawDepth));
   if (!progressable.length){
-    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">The player progression chart is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the chart appears here automatically from the second round onward. You can still search for a player above once they have.</div>`;
+    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#8b93a3;font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
     return controls + msg;
   }
   const autoPlayers = progressable.slice(0, TOURX_PP_CAP);
-  const legend = tourxPPLegendHtml(autoPlayers);
-  const autoNames = autoPlayers.map(p => tourxEsc(p.name.split(' ').slice(-1)[0])).join(' · ');
-  const autoNote = `<div style="display:flex;align-items:center;gap:10px;background:rgba(62,123,250,0.08);border:1px solid rgba(62,123,250,0.22);border-radius:10px;padding:10px 14px;margin:16px 0 30px;">
-      <span style="width:6px;height:6px;border-radius:50%;background:#7ba4ff;flex:none;"></span>
-      <span style="font-size:12.5px;color:#c3ccdb;line-height:1.5;">Auto-showing <b style="color:#eef2f8;">${autoPlayers.length} player${autoPlayers.length === 1 ? '' : 's'}</b> who are 2+ rounds into the draw (<b style="color:#eef2f8;">${autoNames}</b>) — progression appears automatically from the second round onward. <b style="color:#eef2f8;">Search above</b> to focus on specific players. Figures beside each chart are each player's average across all rounds; <b style="color:#eef2f8;">tap a name</b> to spotlight or mute them across every chart.</span>
-    </div>`;
-  return controls + `<div style="margin-top:22px;">${legend}${autoNote}${tourxCompareCardsHtml(autoPlayers, TOURX_METRICS, field, 'progress')}</div>`;
+  return controls + tourxProgressionTablesHtml(autoPlayers, T);
 }
 
 /* ---------- Head-to-head: two players, six metrics, dual-line charts ---------- */
