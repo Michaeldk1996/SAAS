@@ -1366,3 +1366,56 @@ PASS 5 SHIPPED (Completed Matches, 2026-07-31): six alignment fixes, all measure
   upcoming since they aren't finished). REASON: a user checking yesterday's results wants
   tomorrow's card two taps away, not a mode switch — continuous past↔future navigation beats a
   Completed-truncated window. Supersedes the PASS-4 "truncate at Today in Completed" rule.
+
+────────────────────────────────────────────────────────────────────────────
+## AUTH — Login + Verify (both states), export-beside-build (design-export/login.html __bundler/template)
+
+Rebuilt auth.html against the decoded login export. Every measurable value read from the
+template markup (never from the prompt's quoted numbers). Both states in one pass.
+
+EXPORT-BESIDE-BUILD (px / token — export value | build now | was):
+  A1 grid              1fr 1fr, gap 24, pad 24, no max-width   | same | was 400px/1fr, gap 120, max 1400
+  A1 form col          flex, justify-center, pad 32/56, max 560 | same | was max 400, top-anchored
+  A2 brand mb          34                                       | 34   | was 76 (the "high logo, big gap")
+  A2 tile              38×38, r10, bg #0a0d14, bd rgba(91,155,255,0.4) | same | was 44×44 r12 gradient
+  A2 STENNISFY ls      0.02em                                   | 0.02 | was 0.15em
+  A2 ANALYTICS         10px Plex Mono, ls 0.16em, #5b6880       | same | was 9.5px, 0.26em, Hanken
+  A3 panel             r24, pad 44, bd rgba(255,255,255,0.09)   | same | was r16, pad 40/44, bd 0.07
+  A3 card              bg #0a0d14, bd 0.09, pad 18/20, gap 16   | same | was no-bg, bd 0.07, 20/22, gap 20
+  A3 Grass label       11px / 500 / #2ab8a0                     | same | was 13.5px, no weight
+  A3 tourn meta        11px / #4b5672                           | same | was 12.5px / #5b6880
+  A3 mc-dash           22×3                                     | same | was 16×2
+  A3 mc-odds weight    800                                      | 800  | was 600
+  A3 ms bar            h9 r5, fill 74% SOLID #5b9bff, rem 0.16  | same | was h8 r6, gradient fill
+  A3 cap               9px / ls 0.14em / #4b5672                | same | was 11px / 0.12em / #5b6880
+  A3 movement deltas   #4b5672 mono, glyph-only direction      | same (already fixed) | ▼−/▲+ tightened
+  A3 lm-row grid       62/34/1fr/54, gap 10, row-gap 11        | same | was 64/42/1fr/66, gap 14, 20
+  A3 viz-b             19px / 600 / #dfe3ea / lh 1.5           | same | was 15.5px / text-2 / 1.55
+  A3 dots              all 26×4, active = COLOUR only          | same | was 16×5, active WIDTH 30
+  B1 email autofill    dark fill kept, text #e7e9ee (override) | added | was browser near-white bleed
+  B1 email border      rest rgba(91,155,255,0.22), focus .35   | same | (already correct)
+  B2 Continue          #2f6bd8, disabled = SAME fill @ op 0.4  | same | was 2nd navy #1d2f5a on disabled
+  B2 arrow             M5 12h14…, stroke #e7e9ee, 17px, sw2.2  | same | was h13, #fff, 18px
+  B3 social            glyph-only, export G (#5b9bff) + Apple   | same | was full-colour Google logo
+  C  code box border   rest rgba(91,155,255,0.22) (all 6 same) | same | was rgba(255,255,255,0.09)
+  C  verify email      #e7e9ee                                 | same | was text-3, had a <br>
+
+FLAG 1 — README vs EXPORT disagree, market-signal bar (A3). EXPORT paints the fill #5b9bff and
+  the "74% favourite" legend #6aaeff (Player-A blue). README rule: blue is navigation & identity
+  only, never a performance value — and a favourite % IS a performance value. Per instruction I
+  did NOT pick: built to the EXPORT (authoritative for measurable values) and flag the rule
+  conflict. FOUNDER RULING NEEDED: keep export blue, or repaint the bar/label a non-blue
+  performance colour to honour the README rule.
+
+FLAG 2 — Google glyph. Export paints a MONOCHROME #5b9bff Google 'G'; I took it from the export
+  source as instructed. Caveat (external, not README): Google's OAuth brand guidelines require
+  the 4-colour mark on a real sign-in button. Harmless while the button is a "coming soon" stub;
+  revisit before wiring live Google OAuth.
+
+DELIBERATELY LEFT ALONE:
+  - "Use a password instead" link + full password fallback step: NOT in the export (pure-OTP
+    design) but kept — the OTP backend isn't wired (see the header comment in auth.html), so this
+    is the only real working sign-in. Documented, honest, founder-aware.
+  - Panel internal vertical rhythm (.panel-top margin-top:14%) left as flex rather than the
+    export's absolute top:40/bottom:210 — renders equivalently; a refine-pass spacing item.
+  - Brand tile glyph swapped to the export's gradient racquet mark (was a stand-in "T").
