@@ -1467,3 +1467,51 @@ DELIBERATELY LEFT ALONE (refine/confirm pass, not blockers):
   - Year-table drill still renders below the table (build) vs inline-under-row (export) — tied to the
     Match Detail stop-and-report above.
   - Year-cell values keep per-surface colour ({{c.color}} in export = per-surface, so this MATCHES export).
+
+════════════════════════════════════════════════════════════════════════════════
+Tab 2/11: KEY FACTORS  —  pass 1 (player-colour rule + identity style-edge bar)
+════════════════════════════════════════════════════════════════════════════════
+RULING NOW MADE. The founder's 2026-07-31 comment resolves the two-blue-token
+open ruling from Tab 1: "Blue is navigation and identity only, never a performance
+value; Player A #6aaeff, Player B #e7e9ee, fixed by name order regardless of who's
+winning." That kills the orange-for-B system. Applied across the whole Key Factors
+tab this pass.
+
+CHANGED (export-beside-build, every value):
+  player A accent      #8fb4ff / #3E7BFA / #7ba4ff  ->  #6aaeff   (export aColor)
+  player B accent      #eaa869 / #E8934B            ->  #e7e9ee   (export bColor)
+  aks-df-a fill        rgba(62,123,250,.75)         ->  rgba(106,174,255,.75)
+  aks-df-b fill        rgba(232,147,75,.75)         ->  rgba(231,233,238,.75)
+  akh-bar / ako-bar    orange track rgba(232,147,75,.3) -> rgba(231,233,238,.28)
+  odds-move series     v1 #3E7BFA / v2 #E8934B      ->  #6aaeff / #e7e9ee
+  akp-t / akp-c        #7ba4ff / #eaa869            ->  #6aaeff / #e7e9ee
+  style-edge bar       split % blue perf-bar (#3E7BFA @ p1p% width)  ->  full-width
+                       identity gradient linear-gradient(90deg,#6aaeff,#5b9bff),
+                       h8/r5  (export: exactly this — "blue never a performance value";
+                       the split % is already shown as text above the bar in both).
+
+⚑ STRUCTURAL REBUILD ITEMS — data confirmed available, NOT built this pass (queued):
+  1. STENNISFY MODEL card. Export's Key Factors carries a full "Stennisfy Model"
+     card (value columns: adjusted fair odd, value flag pill, Pinnacle open->now with
+     move arrow + gap, best-soft-book + gap). The build has NO model card here — it
+     substitutes a "The read" synthesis + a "Progression" strip, neither of which is
+     in the export's Key Factors. Data IS present to build it: matches.json carries
+     valueSnapshot{fairP1,fairP2,edgeVsPinnacleP1/P2} on 16/47 and pinnacleOpen{p1,p2}
+     on 29/47, plus bestOdds + oddsMovement (Pinnacle now). Buildable with a proper
+     empty state for the ~31 matches lacking a snapshot. NEXT: build to export markup.
+  2. DIMENSION-EDGE card. Export has a standalone "Dimension edge" card (mini radar +
+     top-3 dimension gaps A/B). Build folds dimension bars INTO the Style card instead.
+     styleRadarSvg() + styleRadarFor() exist -> buildable. NEXT: split into own card.
+  3. H2H card. Export H2H card = big score + a "Last meeting" line (date · tourn ·
+     score) + meetings count, NO progress bar. Build shows score + a % split bar +
+     legend and NO last-meeting line. m.h2h -> need last-meeting fields to add that
+     line (check h2h shard). Recoloured the bar this pass; last-meeting line queued.
+  4. ODDS split bar. Export uses two explicit segments (A #6aaeff width aPct + B
+     #e7e9ee width bPct). Build uses track + single fill. Cosmetically equal now
+     (track recoloured to B), rebuild to two-segment queued with vig-removed labels.
+
+DELIBERATELY LEFT ALONE (confirm before deleting — not fabricating, not destroying):
+  - "The read" synthesis block and "Progression" strip are build additions with no
+     export counterpart in Key Factors. They carry real derived signal, so per the
+     confirm-before-delete rule I left them. Founder ruling needed: keep as house
+     extras, or strip to match export exactly?
