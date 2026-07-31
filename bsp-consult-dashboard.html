@@ -14319,7 +14319,10 @@ function renderTournamentsTab(){
   const secs = [['overview', 'Overview'], ['reports', 'Reports']];
   tabs.innerHTML = secs.map(([v, l]) => {
     const a = tourxState.section === v;
-    const style = `font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};`;
+    // §5.4 (design-export authority): active section tab paints blue #5b9bff on
+    // rgba(91,155,255,0.18) with a rgba(91,155,255,0.35) border. The VIEW toggle
+    // (Round/Player/H2H) stays README-white — that lives in tourxReports, not here.
+    const style = `font-weight:${a ? 700 : 600};color:${a ? '#5b9bff' : '#8b93a3'};background:${a ? 'rgba(91,155,255,0.18)' : 'transparent'};border:1px solid ${a ? 'rgba(91,155,255,0.35)' : 'transparent'};`;
     return `<span class="tourx-secttab" style="${style}" onclick="tourxSetSection('${v}')">${l}</span>`;
   }).join('');
   tourxLoadMarket();
