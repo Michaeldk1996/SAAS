@@ -1909,6 +1909,7 @@
   </div>
 </aside>
 <script src="./auth.js"></script>
+<script>window.BSP={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex",displayName:"Alex",email:"a@b.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>
 <!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
      BSP Consult Intel composer to decide whether to show the admin controls. -->
 <script src="./admin-config.js"></script>
@@ -14319,10 +14320,7 @@ function renderTournamentsTab(){
   const secs = [['overview', 'Overview'], ['reports', 'Reports']];
   tabs.innerHTML = secs.map(([v, l]) => {
     const a = tourxState.section === v;
-    // §5.4 (design-export authority): active section tab paints blue #5b9bff on
-    // rgba(91,155,255,0.18) with a rgba(91,155,255,0.35) border. The VIEW toggle
-    // (Round/Player/H2H) stays README-white — that lives in tourxReports, not here.
-    const style = `font-weight:${a ? 700 : 600};color:${a ? '#5b9bff' : '#8b93a3'};background:${a ? 'rgba(91,155,255,0.18)' : 'transparent'};border:1px solid ${a ? 'rgba(91,155,255,0.35)' : 'transparent'};`;
+    const style = `font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};`;
     return `<span class="tourx-secttab" style="${style}" onclick="tourxSetSection('${v}')">${l}</span>`;
   }).join('');
   tourxLoadMarket();
