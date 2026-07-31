@@ -203,8 +203,14 @@
   [data-page="matches"] .mx-daytabs{ display:flex; gap:2px; }
   [data-page="matches"] .mx-daytabs button{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 13px; font-size:12.5px; color:var(--mx-text-secondary); cursor:pointer; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:var(--mx-font-mono); white-space:nowrap; }
   [data-page="matches"] .mx-daytabs button .dbottom{ font-size:10px; color:var(--mx-text-faint); font-weight:400; }
-  [data-page="matches"] .mx-daytabs button.active{ font-weight:700; color:#fff; border-color:var(--mx-brand-blue); }
+  /* §9 (PASS 4) — active date = brighter label (#fff/700) + a 2px --brand underline,
+     no box. Export underline is #5b9bff (--brand), not the page's --mx-brand-blue
+     (#3e7bfa). Focus ring is keyboard-only: suppress the mouse-focus outline, show a
+     subtle ring on :focus-visible only. */
+  [data-page="matches"] .mx-daytabs button.active{ font-weight:700; color:#fff; border-color:var(--mc-brand); }
   [data-page="matches"] .mx-daytabs button.active .dbottom{ color:var(--mx-brand-blue-text); }
+  [data-page="matches"] .mx-daytabs button:focus{ outline:none; }
+  [data-page="matches"] .mx-daytabs button:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:2px; border-radius:6px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill{ align-self:center; flex-direction:row; margin-bottom:0; padding:6px 14px; border:1px solid var(--mx-hairline); border-radius:999px; background:var(--mx-bg-input); color:var(--mx-text-secondary); font-family:var(--mx-font-ui); font-weight:500; font-size:12px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill[data-day="all"]{ margin-left:10px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill:hover{ color:var(--mx-text-primary); border-color:var(--mx-text-tertiary); }
@@ -302,15 +308,25 @@
      height. Vertical padding trimmed 13px→7px, no min-height. Inter-row gap set on
      .mc-players.cmpl below. */
   [data-page="matches"] .mc-players.cmpl{ gap:3px; }
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:7px 20px; border-radius:0; opacity:1; }
+  /* §1 (PASS 4) — card row padding is 13px vertical / 20px horizontal, read from the
+     export source (matches-upcoming.html completed player-row grid). Was 7px. */
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
      reaches out with a -19px offset to land on the border for that stretch (~3px). */
   [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:-19px; top:0; bottom:0; width:3px; border-radius:0; background:var(--mc-pos); }
-  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; }
+  /* §1 (PASS 4) — avatar→name gap is 13px and the avatar ring is --border-data,
+     both read from the export completed row (col-1 flex span). Scoped to .cmpl so the
+     upcoming card is untouched. The 20px avatar inset comes from the row's 20px padding. */
+  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:13px; }
+  [data-page="matches"] .mc-players.cmpl .mc-av{ border-color:var(--mc-border-data); }
   [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; }
-  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-7px 0; }
+  /* §6 (PASS 4) — the 1px vertical divider bleeds to the card edges via a negative
+     margin that cancels the row's vertical padding; it now tracks the 13px padding.
+     Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
+     and already matches the export. */
+  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-13px 0; }
   [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
   /* §4 (PASS 3) — OPEN / CLOSE caps live on the card's single header row, right-
      aligned over the odds column (width matches grid-column 5 = 218px, same 18px
@@ -323,11 +339,15 @@
      width + card chrome; three cells split by 1px vertical dividers (first cell
      has no left divider). Held% and Upsets both derive from ONE heldCount pass. */
   [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 24px 0; }
-  [data-page="matches"] .mc-statbox{ display:grid; grid-template-columns:repeat(3,1fr); background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:14px 18px; }
-  [data-page="matches"] .mc-statbox__cell{ display:flex; flex-direction:column; gap:6px; padding:0 20px; border-left:1px solid rgba(255,255,255,0.07); }
+  /* §4 (PASS 4) — stat box read from the export source. Value is Mono 500 at 20px
+     (a screenshot-derived ~30px/700 was wrong on both count); label letter-spacing
+     0.11em; cell gap 4px; the box is a data block so its radius is 12px, not the 14px
+     match-card radius. */
+  [data-page="matches"] .mc-statbox{ display:grid; grid-template-columns:repeat(3,1fr); background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:12px; padding:14px 18px; }
+  [data-page="matches"] .mc-statbox__cell{ display:flex; flex-direction:column; gap:4px; padding:0 20px; border-left:1px solid rgba(255,255,255,0.07); }
   [data-page="matches"] .mc-statbox__cell:first-child{ border-left:0; padding-left:0; }
-  [data-page="matches"] .mc-statbox__lbl{ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-statbox__val{ font-family:var(--mx-font-mono); font-weight:500; font-size:18px; color:var(--mc-text); }
+  [data-page="matches"] .mc-statbox__lbl{ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.11em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-statbox__val{ font-family:var(--mx-font-mono); font-weight:500; font-size:20px; color:var(--mc-text); }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
@@ -359,12 +379,16 @@
   /* §7 (PASS 3) — the cluster reads as one block "2 6 7⁷": sets-won total at 16px/700,
      per-set games at 15px with a modest gap. Tight margin-left keeps the total next to
      the games rather than adrift; fixed columns keep the two rows' games aligned. */
-  [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:20px repeat(3,18px); gap:0 5px; align-items:center; margin-left:12px; }
-  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; }
+  /* §7 (PASS 4) — set-score cluster read from the export source. The per-set slots
+     sit 8px from the sets-won total (4px grid gap + 4px total margin-right), three
+     fixed 18px slots. Total is Mono 700 15px; per-set games are 2px smaller (13px),
+     matching the "2px smaller than the total" rule in the export README. */
+  [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:24px repeat(3,18px); gap:0 4px; align-items:center; margin-left:24px; }
+  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; margin-right:4px; }
   [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.06); }
   [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.03); }
-  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-muted); text-align:center; position:relative; }
-  [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; }
+  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
+  [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; font-weight:600; margin-left:1px; }
 
   /* odds journey (completed) — non-semantic open→close */
   [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:10px; }
