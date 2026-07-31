@@ -144,6 +144,13 @@ jobs:
       - name: Build market performance shards (best-effort)
         run: node build-odds-performance.js || true
 
+      # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
+      # flat-stake yields backing favourites/underdogs + favourite reliability,
+      # grouped by tournament from the same committed odds-archive/ CSVs. No
+      # network calls. Best-effort: a failure keeps the committed JSON.
+      - name: Build tournament market (best-effort)
+        run: node build-tournament-market.js || true
+
       # MARKET SIZE shards (TEN-8): per-match prediction-market 24h volume from
       # Kalshi (sum of both players' contract legs) and Polymarket (moneyline
       # market). Reads the matches.json the pipeline just wrote. Best-effort —
@@ -233,6 +240,9 @@ jobs:
           # source the builder reads, never fetched by the browser.
           cp odds-performance-index.json _site/ 2>/dev/null || true
           cp -r odds-performance _site/ 2>/dev/null || true
+          # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
+          # by the dashboard; a missing file just em-dashes those two blocks.
+          cp tournament-market.json _site/ 2>/dev/null || true
 
       # Fail loudly if a file the pages reference is missing from the artifact.
       # A 404 on auth.js only shows up as a dead button in the browser, so catch

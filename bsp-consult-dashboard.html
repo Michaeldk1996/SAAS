@@ -2053,11 +2053,16 @@
 .tourx-secttab{ font-size:13.5px; border-radius:9px; padding:9px 18px; cursor:pointer; white-space:nowrap; }
 .tourx-searchresult:hover{ background:rgba(62,123,250,0.08) !important; }
 .tourx-link:hover{ text-decoration:underline; }
-/* Overview two-column: persistent rail + conditions panel */
-#tourxOverview .tourx-ovwrap{ margin-top:24px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0b0f18; overflow:hidden; display:grid; grid-template-columns:320px 1fr; }
-#tourxOverview .tourx-ovleft{ border-right:1px solid rgba(255,255,255,0.07); padding:18px 16px; background:#0d1420; max-height:760px; overflow-y:auto; }
-#tourxOverview .tourx-ovright{ min-width:0; }
-#tourxOverview .tourx-ovrow:hover{ background:rgba(62,123,250,0.06) !important; }
+/* Overview two-column: persistent rail + conditions panel (design-export authority:
+   container fill #0a0d14, rail fixed 270px, flat rows). */
+#tourxOverview .tourx-ovwrap{ margin-top:16px; border:1px solid rgba(255,255,255,0.09); border-radius:12px; background:#0a0d14; overflow:hidden; }
+#tourxOverview .tourx-ovgrid{ display:grid; grid-template-columns:270px minmax(0,1fr); gap:22px; align-items:stretch; padding:22px 24px; }
+#tourxOverview .tourx-ovleft{ position:relative; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; overflow:hidden; min-height:480px; }
+#tourxOverview .tourx-ovleft-inner{ position:absolute; inset:0; padding:14px; display:flex; flex-direction:column; gap:14px; }
+#tourxOverview .tourx-ovright{ min-width:0; padding-left:48px; padding-right:32px; display:flex; flex-direction:column; gap:16px; }
+#tourxOverview .tourlist{ display:flex; flex-direction:column; gap:6px; flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; }
+#tourxOverview .tourlist::-webkit-scrollbar{ display:none; }
+#tourxOverview .tourx-ovrow:hover{ background:rgba(255,255,255,0.03); }
 /* Head-to-head player dropdown */
 .tourx-dd{ position:relative; }
 .tourx-ddpanel{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30; background:#0e1015; border:1px solid rgba(255,255,255,0.12); border-radius:12px; overflow:hidden; max-height:300px; overflow-y:auto; box-shadow:0 30px 60px -30px rgba(0,0,0,0.95); }
@@ -2065,8 +2070,9 @@
 .tourx-chev{ transition:transform 0.18s ease; }
 .tourx-chev.open{ transform:rotate(180deg); }
 @media (max-width:960px){
-  #tourxOverview .tourx-ovwrap{ grid-template-columns:1fr; }
-  #tourxOverview .tourx-ovleft{ border-right:none; border-bottom:1px solid rgba(255,255,255,0.07); max-height:none; }
+  #tourxOverview .tourx-ovgrid{ grid-template-columns:1fr; }
+  #tourxOverview .tourx-ovleft{ min-height:360px; }
+  #tourxOverview .tourx-ovright{ padding-left:0; padding-right:0; }
 }
 @media (max-width:720px){
   #tourxReports .tourx-chartgrid{ grid-template-columns:1fr !important; }
@@ -14201,6 +14207,24 @@ function showTournamentProfile(key){
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
 const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {} };
+// Per-tournament market performance (build-tournament-market.js → tournament-market.json).
+// Real flat-stake yields + favourite reliability from settled closing prices; the
+// Overview panel em-dashes any tournament missing here (thin sample / no join).
+let tourxMarketData = null, tourxMarketLoading = false, tourxMarketFailed = false;
+function tourxLoadMarket(){
+  if (tourxMarketData || tourxMarketLoading || tourxMarketFailed) return;
+  tourxMarketLoading = true;
+  fetch('./tournament-market.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(d => { tourxMarketData = d; tourxMarketLoading = false; if (tourxState.section === 'overview') renderTourxOverview(); })
+    .catch(err => { tourxMarketFailed = true; tourxMarketLoading = false; console.warn('tournament-market.json load failed:', err.message); });
+}
+function tourxMarketFor(name){
+  if (!tourxMarketData || !tourxMarketData.tournaments) return null;
+  const t = tourxMarketData.tournaments[name];
+  if (!t) return null;
+  return Object.assign({}, t, { baseline: tourxMarketData.baseline });
+}
 // Shared comparison-player selection (chips) used by both Round comparison's
 // "All rounds" (cap 2) and Player progression (cap 4). Colours index the chips
 // and the comparison line charts so a player keeps one colour across the view.
@@ -14283,6 +14307,7 @@ function renderTournamentsTab(){
     const style = `font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};`;
     return `<span class="tourx-secttab" style="${style}" onclick="tourxSetSection('${v}')">${l}</span>`;
   }).join('');
+  tourxLoadMarket();
   const ov = document.getElementById('tourxOverview'), rp = document.getElementById('tourxReports');
   const isOverview = tourxState.section === 'overview';
   ov.style.display = isOverview ? '' : 'none';
@@ -14304,10 +14329,10 @@ function tourxConditionRegistry(){
 // left, an enriched conditions panel for the selected tournament on the right.
 function renderTourxOverview(){
   const el = document.getElementById('tourxOverview');
-  el.innerHTML = `<div class="tourx-ovwrap">
-      <div class="tourx-ovleft">${tourxOverviewListHtml()}</div>
+  el.innerHTML = `<div class="tourx-ovwrap"><div class="tourx-ovgrid">
+      <div class="tourx-ovleft"><div class="tourx-ovleft-inner">${tourxOverviewListHtml()}</div></div>
       <div class="tourx-ovright">${tourxConditionsPanelHtml()}</div>
-    </div>`;
+    </div></div>`;
   const inp = document.getElementById('tourxOvSearch');
   if (inp && tourxState.tsOpen){ inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
 }
@@ -14324,37 +14349,36 @@ function tourxOverviewListHtml(){
   const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
   // "This week" = live match-feed tournaments; "This season" = the full conditions catalog.
   const season = (scope === 'week') ? [] : reg.filter(t => !weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
-  const asColor = as => as >= 1.05 ? '#3E7BFA' : as >= 0.95 ? '#cfd6e6' : '#eda869';
+  // Flat rows (design-export authority): no per-row border/fill; only the selected
+  // row gets a translucent surface wash + a left bar in the surface colour.
+  const hexRgb = h => { const n = String(h).replace('#', ''); return parseInt(n.slice(0, 2), 16) + ',' + parseInt(n.slice(2, 4), 16) + ',' + parseInt(n.slice(4, 6), 16); };
   const row = t => {
     const seld = t.name === tourxState.tsSel;
-    const bg = seld ? 'rgba(62,123,250,0.08)' : 'transparent';
-    const border = seld ? 'rgba(62,123,250,0.30)' : 'rgba(255,255,255,0.05)';
-    const accent = seld ? `border-left:3px solid ${TOURX_ACC};` : 'border-left:3px solid transparent;';
-    return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;border-radius:10px;background:${bg};border:1px solid ${border};${accent}margin-bottom:6px;cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-          <span style="width:9px;height:9px;border-radius:3px;background:${TOURX_SURF_COLOR[t.surface] || '#8b93a3'};flex:none;"></span>
-          <div style="min-width:0;"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div><div style="font-size:11px;color:#5b6472;">${tourxCap(t.surface)}</div></div>
-        </div>
-        <span style="font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${asColor(t.abstractSpeed)};">${t.abstractSpeed.toFixed(2)}</span>
+    const sc = TOURX_SURF_COLOR[t.surface] || '#8b93a3';
+    const selBg = seld ? `rgba(${hexRgb(sc)},0.10)` : 'transparent';
+    const selBar = seld ? `inset 2px 0 0 ${sc}` : 'none';
+    return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;background:${selBg};box-shadow:${selBar};cursor:pointer;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${sc};flex:none;"></span>
+        <span style="flex:1;min-width:0;"><span style="display:block;font-size:13.5px;font-weight:${seld ? 600 : 700};color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span><span style="font-size:11px;color:#5b6880;">${tourxCap(t.surface)}</span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#e7e9ee;">${t.abstractSpeed.toFixed(2)}</span>
       </div>`;
   };
   const scopeBtn = (val, label) => {
     const a = scope === val;
-    return `<span onclick="tourxSetScope('${val}')" style="flex:1;text-align:center;font-size:12px;font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};border-radius:8px;padding:7px 0;cursor:pointer;white-space:nowrap;">${label}</span>`;
+    return `<span onclick="tourxSetScope('${val}')" style="flex:1;text-align:center;padding:8px 10px;border-radius:8px;font-size:12.5px;font-weight:${a ? 700 : 600};color:${a ? '#5b9bff' : '#5b6880'};background:${a ? 'rgba(91,155,255,0.18)' : 'transparent'};border:1px solid ${a ? 'rgba(91,155,255,0.35)' : 'transparent'};cursor:pointer;white-space:nowrap;">${label}</span>`;
   };
-  const scopeToggle = `<div style="display:flex;gap:4px;background:#0e1015;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:3px;margin-bottom:10px;">${scopeBtn('week', 'This Week')}${scopeBtn('season', 'This Season')}</div>`;
-  const searchBox = `<div style="display:flex;align-items:center;gap:9px;height:42px;background:#0e1015;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:0 12px;margin-bottom:12px;">
-      <span style="color:#7ba4ff;display:flex;flex:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-      <input id="tourxOvSearch" value="${tourxState.tsQ.replace(/"/g, '&quot;')}" oninput="tourxSearchInput(this.value)" onfocus="tourxState.tsOpen=true" placeholder="Search tournaments…" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#eef2f8;font-size:13px;font-family:'Hanken Grotesk',sans-serif;">
-      ${tourxState.tsQ ? `<span onclick="tourxClearSearch()" style="cursor:pointer;color:#8b93a3;font-size:12px;flex:none;">✕</span>` : ''}
-    </div>`;
-  const groupHead = (txt, dashed) => dashed
-    ? `<div style="margin:16px 4px 9px;padding-top:14px;border-top:1px dashed rgba(255,255,255,0.12);"><span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#7ba4ff;font-family:'IBM Plex Mono',monospace;">${txt}</span></div>`
-    : `<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin:6px 4px 8px;">${txt}</div>`;
+  const scopeToggle = `<div style="display:flex;gap:4px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:11px;padding:4px;">${scopeBtn('week', 'This Week')}${scopeBtn('season', 'This Season')}</div>`;
+  const searchBox = `<label style="display:flex;align-items:center;gap:10px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 12px;">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="flex:none;"><circle cx="9" cy="9" r="6" stroke="#5b6880" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="#5b6880" stroke-width="1.7" stroke-linecap="round"></path></svg>
+      <input id="tourxOvSearch" value="${tourxState.tsQ.replace(/"/g, '&quot;')}" oninput="tourxSearchInput(this.value)" onfocus="tourxState.tsOpen=true" placeholder="Search tournaments..." style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;">
+      ${tourxState.tsQ ? `<span onclick="tourxClearSearch()" style="cursor:pointer;color:#5b6880;font-size:12px;flex:none;">✕</span>` : ''}
+    </label>`;
+  const groupHead = (txt, top) => `<div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5361;${top ? 'padding:12px 6px 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;' : 'padding:4px 6px;'}">${txt}</div>`;
   let body = '';
   if (week.length) body += groupHead('This week', false) + week.map(row).join('');
   if (season.length) body += groupHead('Season', week.length > 0) + season.map(row).join('');
-  if (!week.length && !season.length) body = `<div style="padding:16px 8px;font-size:12.5px;color:#5b6472;">No tournament${scope === 'week' ? ' on tour this week' : ''} matches "${tourxState.tsQ}".</div>`;
+  if (!week.length && !season.length) body = `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No tournament${scope === 'week' ? ' on tour this week' : ''} matches "${tourxState.tsQ}".</div>`;
+  body = `<div class="tourlist">${body}</div>`;
   return scopeToggle + searchBox + body;
 }
 // Right panel: hero abstract-speed, ⓘ explainer, real stat cells, 3-year
@@ -14411,24 +14435,47 @@ function tourxConditionsPanelHtml(){
       <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">Conditions read</div>
       <p style="margin:0;font-size:13.5px;line-height:1.65;color:#aeb8cc;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
     </div>`;
-  // ROI backing favourites / underdogs — HONEST PLACEHOLDER. No per-tournament
-  // ROI source exists locally (see the COURT_CONDITIONS note: betting ROI is
-  // deliberately not carried; tournament-profiles.json has no ROI field). Do NOT
-  // fabricate the mock's -1.1% / -0.2%.
-  const roiTile = label => `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:16px 18px;">
-      <div style="font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${label}</div>
-      <div style="display:flex;align-items:baseline;gap:8px;margin-top:9px;"><span style="font-size:26px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5b6472;">—</span><span style="font-size:12px;color:#8b93a3;">flat-stake yield</span></div>
-      <div style="font-size:11px;color:#5b6472;margin-top:8px;">No per-tournament ROI feed wired</div>
+  // ROI backing favourites / underdogs — REAL flat-stake yields from settled
+  // closing prices (tournament-market.json, built by build-tournament-market.js
+  // from odds-archive/). Threshold-coloured on a ±1.0pp band vs the pooled tour
+  // average, and the caption is computed against that same figure — colour and
+  // caption can never disagree. Em-dash when the tournament is below min sample
+  // or can't be joined; the caption then says why (no dev-facing placeholder).
+  const mkt = tourxMarketFor(c.name);
+  const POS = '#3dd68c', NEG = '#e0616f', MUT = '#5b6880';
+  const fmtRoi = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%';
+  const roiColor = (v, avg) => Math.abs(v - avg) < 1 ? MUT : (v - avg > 0 ? POS : NEG);
+  const roiCmp = (v, avg) => { const d = v - avg; return Math.abs(d) < 1 ? 'in line with tour average' : (d > 0 ? '+' + d.toFixed(1) + 'pp vs tour avg' : d.toFixed(1) + 'pp vs tour avg'); };
+  const roiTile = (label, val, avg) => {
+    const hasVal = val != null && avg != null;
+    const value = hasVal ? fmtRoi(val) : '—';
+    const color = hasVal ? roiColor(val, avg) : MUT;
+    const cap = hasVal ? roiCmp(val, avg) : 'Not enough settled matches at this event for a reliable yield.';
+    return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:15px 18px;">
+      <div style="font-size:11px;font-weight:500;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;">${label}</div>
+      <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${color};">${value}</span><span style="font-size:11.5px;color:#5b6880;">flat-stake yield</span></div>
+      <div style="font-size:11px;color:#4b5672;margin-top:5px;">${cap}</div>
     </div>`;
-  const roiRow = `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">${roiTile('ROI backing favourites')}${roiTile('ROI backing underdogs')}</div>`;
-  // Favourite reliability — HONEST PLACEHOLDER, same reason as ROI above.
-  const reliabilityCard = `<div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:18px 20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Favourite reliability</span>
-        <span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5b6472;">—</span>
+  };
+  const roiRow = `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">${roiTile('ROI backing favourites', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}${roiTile('ROI backing underdogs', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}</div>`;
+  // Favourite reliability — REAL favourite win rate from the same settled set.
+  // Per the export the percentage itself carries NO threshold colour (plain
+  // --text); only the classification label and the paragraph derive from a
+  // ±3.0pp band vs the tour average. Bar is suppressed entirely when there's no data.
+  const frHas = !!mkt;
+  const frV = frHas ? mkt.favRel : null, frAvg = frHas ? mkt.baseline.favRel : null;
+  const frD = frHas ? frV - frAvg : 0;
+  const frLabel = frD >= 3 ? 'Reliable' : frD <= -3 ? 'Upset-prone' : 'Moderate';
+  const frCmp = frHas
+    ? `Favourites win ${frV}% of matches here versus ${frAvg}% across the tour — ${frD >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.' : frD <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.' : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.'}`
+    : 'Not enough settled matches at this event to measure favourite reliability.';
+  const reliabilityCard = `<div style="margin-top:16px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+        <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;">Favourite reliability</span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#e7e9ee;">${frHas ? frV + '%' : '—'}</span>${frHas ? `<span style="font-size:11px;font-weight:600;color:#e7e9ee;">${frLabel}</span>` : ''}</span>
       </div>
-      <div style="margin-top:12px;height:8px;border-radius:5px;background:rgba(255,255,255,0.05);"></div>
-      <div style="font-size:11.5px;color:#5b6472;line-height:1.5;margin-top:12px;">Per-tournament favourite win rate isn't sourced locally — this binds to a tournament-level results-and-prices feed that isn't wired to this build.</div>
+      ${frHas ? `<div style="height:4px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:${frV}%;background:rgba(91,155,255,0.5);border-radius:4px;"></span></div>` : ''}
+      <div style="font-size:12px;color:#5b6880;line-height:1.6;margin-top:${frHas ? '9px' : '11px'};text-wrap:pretty;">${frCmp}</div>
     </div>`;
   const reportPanel = c.hasReport
     ? `<div style="margin-top:16px;border:1px solid rgba(62,123,250,0.24);border-radius:12px;background:linear-gradient(120deg,rgba(62,123,250,0.10),rgba(62,123,250,0.02));padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
@@ -14462,7 +14509,7 @@ function tourxConditionsPanelHtml(){
         <span style="font-size:13px;color:#8b93a3;font-weight:600;">abstract court speed · ${asLabel}</span>
         <span onclick="tourxToggleOvInfo()" title="What is this?" style="align-self:center;display:inline-flex;color:#8b93a3;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
       </div>
-      <div style="margin-top:16px;height:7px;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28));position:relative;"><span style="position:absolute;top:-3px;left:${speedPct}%;width:13px;height:13px;border-radius:50%;background:#eef2f8;border:2px solid #0b0f18;transform:translateX(-50%);"></span></div>
+      <div style="position:relative;margin-top:18px;height:8px;border-radius:5px;background:linear-gradient(90deg,#1a2338,#2a3f66,#2f6bd8);"><span style="position:absolute;top:50%;left:${speedPct}%;width:16px;height:16px;border-radius:50%;background:#e7e9ee;border:3px solid #0a0d14;box-shadow:0 0 0 1px rgba(91,155,255,0.5);transform:translate(-50%,-50%);"></span></div>
       ${sliderLabels}
       ${rankLine}
       ${infoCard}
