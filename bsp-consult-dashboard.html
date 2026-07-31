@@ -2196,7 +2196,6 @@
 [data-page="styles"] .ps-plabel-top{ border-top:1px solid rgba(255,255,255,0.07); padding-top:18px; }
 [data-page="styles"] .ps-adv{ font-size:24px; font-weight:800; margin:13px 0 20px; }
 [data-page="styles"] .ps-gauge{ position:relative; height:8px; border-radius:5px; background:rgba(255,255,255,0.07); }
-[data-page="styles"] .ps-gauge-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:rgba(255,255,255,0.14); }
 [data-page="styles"] .ps-gauge-dot{ position:absolute; top:50%; width:18px; height:18px; border-radius:50%; background:#e7e9ee; border:3px solid #0a0d14; transform:translate(-50%,-50%); }
 [data-page="styles"] .ps-gauge-scale{ display:flex; justify-content:space-between; margin-top:9px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6880; }
 [data-page="styles"] .ps-avgnote{ font-size:14px; color:#5b6880; line-height:1.55; margin-top:18px; }
@@ -4184,11 +4183,15 @@ function psRenderMatrixAndCards(){
     // ----- expanded: matchup analyzer -----
     const edges = idxs.map(j => E[i][j]);
     const avg = edges.length ? Math.round(edges.reduce((s, v) => s + v, 0) / edges.length) : 0;
-    // Verdict bands read from the export (avg ≥25 / ≥6 / ≥−5 / ≥−15). The export
-    // paints the top three bands BLUE and slight-disadvantage near-white — but blue
-    // is forbidden on a performance value, so the verdict is the single coloured
-    // direction element here, mapped to the green/neutral/red vocabulary. (Slider
-    // handle/fill + verdict colour are the open "B" decision — see issue comment.)
+    // Verdict-band thresholds (avg edge ≥25 / ≥6 / ≥−5 / ≥−15) are READ from the
+    // export's verdict ladder. The export paints the top three bands BLUE and
+    // slight-disadvantage near-white; blue is forbidden on a performance value, so
+    // per the founder's (B) ruling — green/neutral/red approved as a scoped Playing
+    // Styles exception, blue rejected — the green/neutral/red *colour assignment*
+    // onto those bands is DERIVED (positive → green, central → neutral, deep-neg → red).
+    // The edge number is carried by exactly two elements: the verdict label carries
+    // the COLOUR, the handle carries the POSITION on a flat neutral track. The track
+    // fill and the handle's colour ring are dropped; the −6 figure stays neutral.
     const adv = avg >= 25 ? ['Strong advantage', '#3dd68c']
       : avg >= 6 ? ['Slight edge', '#3dd68c']
       : avg >= -5 ? ['Even matchups', '#e7e9ee']
@@ -4215,8 +4218,8 @@ function psRenderMatrixAndCards(){
     html += '<div><div class="ps-plabel ps-plabel-top">Style matchup summary</div>';
     if (m){
       html += '<div class="ps-adv" style="color:' + adv[1] + ';">' + adv[0] + '</div>' +
-        '<div class="ps-gauge"><div class="ps-gauge-fill" style="width:' + gaugePos + '%;"></div>' +
-        '<div class="ps-gauge-dot" style="left:' + gaugePos + '%; box-shadow:0 0 0 1.5px ' + adv[1] + ';"></div></div>' +
+        '<div class="ps-gauge">' +
+        '<div class="ps-gauge-dot" style="left:' + gaugePos + '%;"></div></div>' +
         '<div class="ps-gauge-scale"><span>−40</span><span>0</span><span>+40</span></div>' +
         '<div class="ps-avgnote">Average edge <b>' + (avg > 0 ? '+' : '') + avg + '</b> across its ' +
         (PS_NUMWORD[edges.length] || edges.length) + ' style matchup' + (edges.length === 1 ? '' : 's') + '.</div>';
