@@ -1561,3 +1561,96 @@ STOP-AND-REPORT (flagged, not silently invented — export sections are `sc-if` 
     toggle should be retained as a house extra.
   - buildOddsReduced (no-captured-history fallback) left AS-IS — the export markup assumes a
     captured timeline; the reduced view is the honest degraded state, out of export scope.
+
+## 2026-07-31 — Half-pixel font sizes in the export (authored, not a bug; cross-platform risk)
+
+Extracting computed styles from the design export (`design-export/computed-styles.json`,
+`tools/extract-export-styles.mjs`) surfaced a fleet of half-pixel font sizes. Investigated
+authorship across all seven bundles + the Match Analysis modal:
+
+  FINDING — the half-pixels are AUTHORED literal px, not a rendering artefact:
+  - Root font-size is exactly 16px on every page. There is NO `rem` anywhere — 0 inline
+    uses, none in any stylesheet, no `html`/`:root` font-size rule.
+  - That rules out both alternatives: rem-inheritance is impossible (no rem), and browser
+    rounding is impossible (no calc/%/rem; values are exact .5, not artefacts like 13.3333).
+  - Every half-pixel value traces to a literal `px` inline style set by the Framer/DC
+    component (9.5px additionally appears in a stylesheet rule).
+
+  Element coverage (across all 30 extracted page-states, from tokens-observed.json):
+    13.5px ×1856 · 12.5px ×1353 · 11.5px ×1157 · 10.5px ×182 · 9.5px ×302  → ~4,850 elements.
+
+  WHY THIS IS LOGGED (not fixed now): half-device-pixel type rasterises differently across
+  platforms, DPRs and zoom levels, so it is a plausible source of PERSISTENT SMALL DIFFS
+  when the visual-diff harness runs. Before anyone chases a 1px text-metrics delta as a
+  harness bug or an implementation error: it is very likely THIS — a real, authored half-
+  pixel size in the export itself. Real design value, real rendering risk; a decision to
+  keep or round is Michael's, not a bug to silently "correct". These half-pixels are kept in
+  the raw `tokens-observed.json` and excluded only from the readable `tokens-design.json`
+  (integer-px ≤80 filter). See [[extract-export-styles]] / design-export token files.
+
+---
+
+## Match Analysis modal — 11/11 tab parity sweep (TEN-8, 2026-07-31)
+
+Founder directive: "Do all tabs of match analysis please, push the 11/11." Reconciled
+scope: the build modal had **10** tabs; the export has **11** — the missing one is an
+in-modal **News** panel (`analysis.isNews`). So 11/11 = rebuild the existing tabs to export
+parity **+ add News**. Analysis was run per-tab against `design-export/matches-upcoming.html`
+`__bundler/template` (decode `analysis.isX` panels) + `design-export/computed-styles.json`
+`pageStates["modal-*"]` (all 11 present) + `matches.json` (47) coverage.
+
+### SHIPPED this pass (verified 1400px CDP, RAIL_EXACTLY_ELEVEN true, ALL_ELEVEN_PAINTED true, no JS errors)
+- **News tab (11th) ADDED** — commit `10d683b`. Rail item + `aSectionNews` + lazy mount
+  (odds/form pattern) + `buildNewsSection(m)`; reuses `news-feed.json`/`_newsData` filtered
+  to the match's two players by `player_key` (fail-closed surname resolver fallback). Identity
+  colours only, `View all news →` in `#5b9bff`, graceful load/unavailable/empty states.
+  Appended as 11th (existing 10 keep founder-approved README order — see OPEN ruling 0).
+  `news-feed.json` is a git-ignored pipeline artefact (absent locally) → verified via a
+  synthetic fixture in `render-tabs.mjs` (rows:2, segs:3, expands:true).
+- **Global identity colours FLIPPED** — commit `10d683b`. `ANALYSIS_P1/P2_COLOR` + `_RGBA`
+  `#3E7BFA`/`#E8934B` (orange) → ruled pair `#6aaeff`/`#e7e9ee` (106,174,255 / 231,233,238).
+  Propagates to H2H leader, Tournament, radar, recent-results, edge across every tab.
+- **PS + KF residual literals PURGED** — commit `f99277e`. Playing-Style `.psx-track` gradient,
+  `.psr-swatch` a/b, `.psv-more` hover, edge dual-pct/code (both branches), dimension-edge
+  `psd-val`, fared-card accents; recent-results fair-odds bar text+track+fill. All → identity.
+- `render-tabs.mjs` upgraded to 11 tabs (News fixture, depth check, `--remote-allow-origins`).
+
+### REMAINING per-tab measurable restyle (apply-ready; not yet applied — child issues opened)
+Each tab already PAINTS real data; the below are export-token deltas (bg `#0e1015→#0a0d14`,
+borders `.07→.09`, radii, spacing, font sizes) + a few data-backed structural rebuilds. Full
+per-tab before→after specs are in run `PAPERCLIP_RUN_ID` transcript (8 analysis agents).
+- **Match Stats**: `.msheet-val` neutral→identity 14px/700; fraction→stacked sub-line; section
+  band + diverging bar geometry to export. SHARED: `msBarHtml`/`.msheet-bar`/`.msheet-grouphead`
+  also feed Form panel + Profile — scope under `#msStatsSheet` to avoid ripple.
+- **Form**: drop callout; hero fill→outline (border identity @0.34, transparent bg); pills
+  `#3dd68c`/`#e0616f` h7 r4; single-line row rebuild (`formRowHtml`); list container bg/flex.
+  SHARED: `formPanelHtml` (H2H/Tournament) — keep the row→panel contract.
+- **H2H**: 3-card grid + tokens; history-row grid/colours (winner = identity, drop `#3ECF8E`);
+  plain surface-colour text (no chip).
+- **Weather**: stat-card + week-day-card + summary-box tokens; add bordered week-grid wrapper.
+  CSS fully `.wx-*/.wxw-*` scoped (safe).
+- **Tournament**: banner flat `#0b0f18`; meta-grid hairline; card tokens; win-rate NEUTRAL both
+  players + flat identity bar fill; hard surface token `#7ba4ff→#4db8ff` / rail `77,184,255`.
+- **Progression**: it's a TABLE + static sparklines (NOT charts); flip local colour consts
+  (was `#3E7BFA`/`#E8934B`) in `bars`+table; table rebuild per §; `progressionPlot` becomes dead.
+
+### OPEN RULINGS / STOP-AND-REPORT (data absent — NOT fabricated; founder decides in one pass)
+0. **News rail position** — export order puts News 2nd; build keeps README order + News 11th.
+   Confirm append-at-end vs insert-at-2 (would reorder the 10 founder-approved tabs).
+1. **Weather "How conditions affect play" impact grid** (`wImpact`) — 0/47 data. Omitted.
+2. **Weather `analysis.when` match-time** — 0/47. Forecast-header right value omitted.
+3. **Weather icon colour** — export strokes stat-card icons blue `#5b9bff`; ruling says
+   "blue = nav/identity only". Keep build's non-blue metric tints, or adopt export blue?
+4. **Match Stats per-set DURATIONS** — no timing in feed; build currently FABRICATES
+   `(a+b)*4.5` (export itself carries a "placeholder" TODO). Recommend em-dash/omit.
+5. **H2H trend chart** (new block) — derivable from `result`/`p1Won` but needs a mark spec.
+   Also 3-vs-4 stat cards: export shows 3, build has 4 — which to drop.
+6. **Tournament grass/clay surface tokens** — export captured only HARD (Washington); grass
+   `#6ed3a3`/clay `#eda869` unverified. Do not change without a grass/clay capture.
+7. **Tournament year-row result/score columns** — export mock has them; `years[]` has no
+   per-edition result string/score → cannot populate faithfully.
+8. **Playing-Style "Historical by surface"** block — export ships it labelled "Placeholder
+   data — wired from the surface-split matchup matrix"; no per-surface source exists. Omitted.
+9. **Progression table state** — reaches 0/47 locally (all covered matches depth-1 → `bars`;
+   18 have no progression tournament). Build to spec now + verify on live data, or wait?
+10. **News `View all news →`** — News page has no player deep-link; opens unfiltered.
