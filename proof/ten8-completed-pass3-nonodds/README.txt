@@ -1,0 +1,1 @@
+PASS 3 non-odds items §1-§8 + extras, verified render (synthetic data: local matches.json is 07-25 so a scratch harness rewrote 6 completed matches onto 'yesterday' and injected one 7-6(5)/6-7(3) set to exercise tiebreak superscripts §8; layout/CSS is the real working tree).

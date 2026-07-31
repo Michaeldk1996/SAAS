@@ -279,21 +279,31 @@
   /* §5-§9 — Completed row is a CSS grid: name | set-cluster | flex spacer | 1px
      divider | odds journey. Winner gets the accent bar flush to the left edge via
      inset box-shadow (§9); neither row is opacity-dimmed. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ display:none; }
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner{ box-shadow:inset 3px 0 0 var(--mc-pos); }
+  /* §5 (PASS 3) — the two player rows sit close together; the card is ~2/3 its old
+     height. Vertical padding trimmed 13px→7px, no min-height. Inter-row gap set on
+     .mc-players.cmpl below. */
+  [data-page="matches"] .mc-players.cmpl{ gap:3px; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:7px 20px; border-radius:0; opacity:1; }
+  /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
+     spanning the full height of the winner's row (not inset, not floating). The row
+     is inset from the card edge by the card's 18px padding + 1px border, so the bar
+     reaches out with a -19px offset to land on the border for that stretch (~3px). */
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:-19px; top:0; bottom:0; width:3px; border-radius:0; background:var(--mc-pos); }
   [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; }
   [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; }
-  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-13px 0; }
+  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-7px 0; }
   [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
-  /* §5/§7 — OPEN / CLOSE caps header over the odds column, once per card. */
-  [data-page="matches"] .mc-cmpl-head{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; padding:0 20px 2px; }
-  [data-page="matches"] .mc-cmpl-head__odds{ grid-column:5; display:flex; align-items:center; gap:10px; padding-left:18px; }
+  /* §4 (PASS 3) — OPEN / CLOSE caps live on the card's single header row, right-
+     aligned over the odds column (width matches grid-column 5 = 218px, same 18px
+     lead padding as the journey, so OPEN sits over the open figure and CLOSE over
+     the close figure). No longer a second row below the header. */
+  [data-page="matches"] .mc-head .mc-cmpl-head__odds{ width:218px; margin-left:auto; display:flex; align-items:center; gap:10px; padding-left:18px; }
   [data-page="matches"] .mc-cmpl-head__odds .sp{ width:46px; flex:0 0 auto; }
   [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
   /* §3 — Completed summary strip: settled · favourites held · upsets. Full card
      width + card chrome; three cells split by 1px vertical dividers (first cell
      has no left divider). Held% and Upsets both derive from ONE heldCount pass. */
+  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 24px 0; }
   [data-page="matches"] .mc-statbox{ display:grid; grid-template-columns:repeat(3,1fr); background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:14px 18px; }
   [data-page="matches"] .mc-statbox__cell{ display:flex; flex-direction:column; gap:6px; padding:0 20px; border-left:1px solid rgba(255,255,255,0.07); }
   [data-page="matches"] .mc-statbox__cell:first-child{ border-left:0; padding-left:0; }
@@ -327,11 +337,14 @@
      game cells (18px each), column-aligned across the two rows (§6). Colour separates
      total(--text) from games(--muted); it does NOT separate winner from loser — both
      rows are identical here. Positioned by the row grid, next to the name (§6). */
-  [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:24px repeat(3,18px); gap:0 4px; align-items:center; margin-left:24px; }
-  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; }
+  /* §7 (PASS 3) — the cluster reads as one block "2 6 7⁷": sets-won total at 16px/700,
+     per-set games at 15px with a modest gap. Tight margin-left keeps the total next to
+     the games rather than adrift; fixed columns keep the two rows' games aligned. */
+  [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:20px repeat(3,18px); gap:0 5px; align-items:center; margin-left:12px; }
+  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; }
   [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.06); }
   [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.03); }
-  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
+  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-muted); text-align:center; position:relative; }
   [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; }
 
   /* odds journey (completed) — non-semantic open→close */
@@ -354,8 +367,16 @@
      (§6 score-dimming removed: colour separates total from games, not winner from
      loser — see the set-cluster block above.) */
   [data-page="matches"] .mc-players.cmpl .mc-name{ font-weight:700; }
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name{ color:var(--mc-text); }
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name{ color:var(--mc-muted-2); }
+  /* §1 (PASS 3) — with the WON pill gone and identity colour suppressed, brightness +
+     the edge bar are the only two winner signals, so they must point the same way:
+     the winner's NAME and SCORE are bright (--mc-text = #e7e9ee), the loser's are
+     dimmed (--mc-muted). Both name and set-score digits carry the differential. */
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name,
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__total,
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__g{ color:var(--mc-text); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name,
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total,
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__g{ color:var(--mc-muted); }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -1847,6 +1868,11 @@
       <button data-view="completed">Completed</button>
     </div>
   </div>
+
+  <!-- §3 (PASS 3): completed-view day summary sits directly under the status line and
+       ABOVE the date strip + filter row — a day-level summary, not a header for the
+       first card. Filled by renderMatches; empty (and collapsed) in Upcoming. -->
+  <div class="mc-summary-slot" id="mcSummaryStrip"></div>
 
   <div class="mx-controls">
     <div class="mx-daytabsrow">
@@ -4357,13 +4383,37 @@ function mcFormBar(val){
 }
 // Completed set-score cluster for one player: sets-won total tile (winner faint /
 // loser fainter) + per-set games in Mono muted. who = 'p1' | 'p2'.
+// §8 (PASS 3) — parse the score display string ("7-5, 7-6(4)") into per-set tiebreak
+// points, index-aligned to finalScore.sets. Each entry is {p1,p2} tiebreak points for
+// a tiebreak set, or null for a normal set. The parenthetical is the LOSER's tiebreak
+// points; the winner's are 7, or loser+2 when the breaker ran long (7-6(8) = 10-8).
+// Source is display only — sets[] carries games not breaker points, and there is no
+// setstats sidecar for these matches; where display has no "(n)" we render plain.
+function mcTiebreaks(finalScore){
+  const disp = finalScore && typeof finalScore.display === 'string' ? finalScore.display : '';
+  if (!disp) return [];
+  return disp.split(',').map(tok => {
+    const m = tok.trim().match(/^(\d+)-(\d+)(?:\((\d+)\))?$/);
+    if (!m || m[3] == null) return null;
+    const a = +m[1], b = +m[2], loserPts = +m[3];
+    if (a === b) return null;
+    const winnerPts = loserPts <= 5 ? 7 : loserPts + 2;
+    // Fewer games in the set = the tiebreak loser; each side shows its own points.
+    return a > b ? { p1: winnerPts, p2: loserPts } : { p1: loserPts, p2: winnerPts };
+  });
+}
 function mcSetCluster(finalScore, who){
   const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
   const total = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
   const isW = finalScore.winner === who;
+  const tbs = mcTiebreaks(finalScore);
   // Games are DIRECT grid children of .mc-sets (no wrapper) so each per-set cell
   // lands in its own fixed column and lines up across the two player rows (§6).
-  const games = sets.map(s => `<span class="mc-sets__g">${s[who]}</span>`).join('');
+  // Tiebreak sets carry a superscript of this side's own breaker points (§8).
+  const games = sets.map((s, i) => {
+    const tb = (tbs[i] && tbs[i][who] != null) ? `<sup>${tbs[i][who]}</sup>` : '';
+    return `<span class="mc-sets__g">${s[who]}${tb}</span>`;
+  }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
 }
 // Completed odds journey for one player: open → gradient track → close, plus a
@@ -4484,6 +4534,10 @@ function updateMatchesHeaderChrome(){
 function renderMatches(){
   updateMatchesHeaderChrome();
   const list = document.getElementById('matchlist');
+  // §3 (PASS 3): the summary strip lives in its own slot above the date strip, not
+  // inside the card list. Clear it every render; the completed branch below refills.
+  const summarySlot = document.getElementById('mcSummaryStrip');
+  if (summarySlot) summarySlot.innerHTML = '';
   const filtered = getFiltered();
   if (filtered.length === 0){
     list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
@@ -4594,15 +4648,18 @@ function renderMatches(){
     // Review item 7: the export separates date and time with a plain space
     // ("2026-07-20 18:00"), not a middot.
     const rightMeta = isCompleted
-      ? `<span class="mc-altdate">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`
+      ? `<span class="mc-altdate-inl">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`
       : liveOrInt
         ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`
         : `<span class="mc-datetime">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`;
     // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
     // header row itself, right-aligned above their columns. Completed cards have no such
     // columns (set-score cluster + odds journey instead), so they omit the labels.
-    const colHead = isCompleted ? '' :
-      `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
+    // §4 (PASS 3): completed cards carry OPEN/CLOSE right-aligned on the header row
+    // itself (over the odds column); upcoming keeps its two inline column headers.
+    const colHead = isCompleted
+      ? `<span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span>`
+      : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
     const headHtml = `
       <div class="mc-head">
         <span class="mc-surface ${m.surface}">${surfCap}</span>
@@ -4613,7 +4670,6 @@ function renderMatches(){
       </div>`;
     const playersHtml = isCompleted
       ? `<div class="mc-players cmpl">
-          <div class="mc-cmpl-head"><span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span></div>
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span></span>
             ${mcSetCluster(finalScore, 'p1')}
@@ -4677,7 +4733,8 @@ function renderMatches(){
       <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Favourites held</span><span class="mc-statbox__val">${heldPct}</span></div>
       <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Upsets</span><span class="mc-statbox__val">${upsets}</span></div>
     </div>`;
-    cards.unshift(statBoxHtml);
+    if (summarySlot) summarySlot.innerHTML = statBoxHtml;
+    else cards.unshift(statBoxHtml); // fallback if the slot markup is ever absent
   }
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
