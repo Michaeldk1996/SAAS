@@ -15387,10 +15387,14 @@ function tourxPPControlsHtml(allNames, cap){
 function tourxProgressionHeatHtml(rows, rounds, kind, lower, field){
   const nR = rounds.length, cols = `146px repeat(${nR},1fr)`;
   const anyFocus = rows.some(r => r.focused);
-  const colBest = rounds.map((_, i) => { const vs = rows.map(r => r.vals[i]).filter(v => v != null); return vs.length ? (lower ? Math.min : Math.max).apply(null, vs) : null; });
+  // Best-value highlight paints only when there is something to compare (>=2 real
+  // values in the round); a lone value or a column of em dashes gets no highlight.
+  const colBest = rounds.map((_, i) => { const vs = rows.map(r => r.vals[i]).filter(v => v != null); return vs.length >= 2 ? (lower ? Math.min : Math.max).apply(null, vs) : null; });
+  // §1/§2: no per-cell container. Normal cells are plain mono text; ONLY the best
+  // cell per round carries a subtle fill (0.06) + heavier weight (from the export).
   const cell = (v, dim, best) => v == null
     ? `<div style="display:flex;align-items:center;justify-content:center;height:34px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4b5672;">—</div>`
-    : `<div style="display:flex;align-items:center;justify-content:center;height:34px;border-radius:7px;background:${best ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)'};font-family:'IBM Plex Mono',monospace;font-weight:${best ? 700 : 400};font-size:12.5px;color:#e7e9ee;opacity:${dim ? 0.26 : 1};">${tourxFmt(v, kind)}</div>`;
+    : `<div style="display:flex;align-items:center;justify-content:center;height:34px;${best ? 'border-radius:7px;background:rgba(255,255,255,0.06);' : ''}font-family:'IBM Plex Mono',monospace;font-weight:${best ? 700 : 400};font-size:12.5px;color:#e7e9ee;opacity:${dim ? 0.26 : 1};">${tourxFmt(v, kind)}</div>`;
   const header = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:7px;"><div></div>${rounds.map(r => `<div style="text-align:center;font-size:9.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;color:#5b6880;font-weight:600;">${r}</div>`).join('')}</div>`;
   const body = rows.map((r, si) => {
     const dim = anyFocus && !r.focused;
@@ -15409,7 +15413,7 @@ function tourxProgressionHeatHtml(rows, rounds, kind, lower, field){
 // ---- Player-progression metric grid (design-export §10/§11): two fixed columns,
 // not a flow. SERVE metrics stack down the left under a "Serve" label; RALLY
 // metrics down the right under "Rally", with Total Points Won % appended at the
-// FOOT of the rally column (3 serve cards, 4 rally cards — intentionally uneven).
+// FOOT of the SERVE column (4 serve cards, 3 rally cards — intentionally uneven).
 // Each card is bordered with its title and a single progression table beneath.
 function tourxProgressionTablesHtml(players, T){
   const lastName = n => n.split(' ').slice(-1)[0];
@@ -15434,8 +15438,8 @@ function tourxProgressionTablesHtml(players, T){
   };
   const grpLabel = t => `<span style="font-family:'Hanken Grotesk',sans-serif;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;">${t}</span>`;
   const colStyle = 'display:flex;flex-direction:column;gap:16px;min-width:0;';
-  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
-  const rallyCol = `<div style="${colStyle}">${grpLabel('Rally')}${TOURX_RALLY_KEYS.concat(['totalPointsWonPct']).map(k => cardFor(byKey(k))).join('')}</div>`;
+  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.concat(['totalPointsWonPct']).map(k => cardFor(byKey(k))).join('')}</div>`;
+  const rallyCol = `<div style="${colStyle}">${grpLabel('Rally')}${TOURX_RALLY_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
   const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:#4b5672;margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px;">${serveCol}${rallyCol}</div>${footer}`;
 }
