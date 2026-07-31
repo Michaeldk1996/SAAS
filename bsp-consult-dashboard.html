@@ -2132,95 +2132,94 @@
 @media (max-width:720px){
   [data-page="styles"] .ps-cardgrid{ grid-template-columns:1fr; }
 }
-/* ===== Playing Styles redesign — zip 25 handoff (edge grid + expandable archetype rows) ===== */
-[data-page="styles"] .ps-block{ margin-bottom:64px; }
+/* ===== Playing Styles redesign — export-beside-build (playing-styles.html __bundler/template) ===== */
+[data-page="styles"] .ps-block{ margin-bottom:66px; }
 [data-page="styles"] .ps-block:last-child{ margin-bottom:0; }
-[data-page="styles"] .ps-eyebrow{ display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#5b6472; margin-bottom:10px; }
-[data-page="styles"] .ps-blocktitle{ margin:0; font-size:30px; font-weight:800; letter-spacing:-0.02em; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; }
-[data-page="styles"] .ps-blocklead{ margin:12px 0 0; max-width:640px; font-size:13.5px; line-height:1.65; color:#8b93a3; }
-[data-page="styles"] .ps-gnote{ margin:16px 0 0; font-size:12.5px; line-height:1.6; color:#6b7280; }
-[data-page="styles"] .ps-key{ display:flex; gap:20px; margin:20px 0 22px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; }
-[data-page="styles"] .ps-keyitem{ display:inline-flex; align-items:center; gap:7px; }
-[data-page="styles"] .ps-kdash{ width:16px; height:2px; display:inline-block; }
+[data-page="styles"] .ps-eyebrow{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.22em; text-transform:uppercase; color:#5b6880; margin-bottom:0; }
+[data-page="styles"] .ps-blocktitle{ margin:14px 0 0; font-size:40px; font-weight:800; letter-spacing:-0.022em; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; }
+[data-page="styles"] .ps-blocklead{ margin:16px 0 0; max-width:660px; font-size:15px; line-height:1.62; color:#5b6880; }
+[data-page="styles"] .ps-gnote{ margin:10px 0 0; font-size:11px; line-height:1.6; color:#4b5672; }
+[data-page="styles"] .ps-key{ display:flex; gap:26px; margin:28px 0 20px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#5b6880; }
+[data-page="styles"] .ps-keyitem{ display:inline-flex; align-items:center; gap:9px; }
+[data-page="styles"] .ps-kdash{ width:22px; height:3px; border-radius:2px; display:inline-block; }
 
-/* ---- hero: 7x7 edge grid ---- */
-[data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; overflow:hidden; background:#0a0b0f; }
-[data-page="styles"] .ps-ghead{ display:grid; grid-template-columns:196px repeat(var(--ps-n,8),1fr); border-bottom:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.015); }
-[data-page="styles"] .ps-gcorner{ display:flex; align-items:center; padding:0 16px; height:52px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6472; }
-[data-page="styles"] .ps-gcol{ min-height:66px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 6px; text-align:center; border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
-[data-page="styles"] .ps-gcol-code{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; letter-spacing:0.06em; color:#e7e9ee; }
-[data-page="styles"] .ps-gcol-name{ font-size:9px; font-weight:600; letter-spacing:0.02em; color:#6b7280; line-height:1.2; }
-[data-page="styles"] .ps-grow{ display:grid; grid-template-columns:196px repeat(var(--ps-n,8),1fr); border-top:1px solid rgba(255,255,255,0.055); }
-[data-page="styles"] .ps-grow-h{ display:flex; flex-direction:column; justify-content:center; padding:0 16px; height:74px; transition:opacity .12s ease; cursor:default; }
-[data-page="styles"] .ps-grow-name{ font-size:13.5px; font-weight:700; color:#e7e9ee; white-space:nowrap; }
-[data-page="styles"] .ps-grow-code{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:#5b6472; margin-top:3px; }
-[data-page="styles"] .ps-cell2{ height:74px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-left:1px solid rgba(255,255,255,0.04); transition:opacity .12s ease; }
-[data-page="styles"] .ps-edge{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; line-height:1; }
+/* ---- hero: signed-edge matchup grid ---- */
+[data-page="styles"] .ps-gridwrap{ border:1px solid rgba(255,255,255,0.09); border-radius:16px; overflow:hidden; background:#0a0d14; }
+[data-page="styles"] .ps-ghead{ display:grid; grid-template-columns:200px repeat(var(--ps-n,8),minmax(0,1fr)); }
+[data-page="styles"] .ps-gcorner{ display:flex; align-items:center; padding:18px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880; }
+[data-page="styles"] .ps-gcol{ padding:16px 8px; text-align:center; border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; cursor:default; }
+[data-page="styles"] .ps-gcol-code{ display:block; font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:800; letter-spacing:0.02em; color:#e7e9ee; }
+[data-page="styles"] .ps-gcol-name{ display:block; font-size:10px; color:#4b5672; line-height:1.25; margin-top:5px; }
+[data-page="styles"] .ps-grow{ display:grid; grid-template-columns:200px repeat(var(--ps-n,8),minmax(0,1fr)); border-top:1px solid rgba(255,255,255,0.06); }
+[data-page="styles"] .ps-grow-h{ padding:16px 18px; transition:opacity .12s ease; cursor:default; }
+[data-page="styles"] .ps-grow-name{ display:block; font-size:15px; font-weight:700; color:#e7e9ee; white-space:nowrap; }
+[data-page="styles"] .ps-grow-code{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; margin-top:4px; }
+[data-page="styles"] .ps-cell2{ padding:14px 8px; text-align:center; border-left:1px solid rgba(255,255,255,0.05); transition:opacity .12s ease; }
+[data-page="styles"] .ps-edge{ display:block; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:800; line-height:1; }
 [data-page="styles"] .ps-edge-g{ color:#3dd68c; }
 [data-page="styles"] .ps-edge-r{ color:#e0616f; }
-[data-page="styles"] .ps-edge-n{ color:#8b93a3; }
-[data-page="styles"] .ps-edge-d{ color:#4b5361; }
-[data-page="styles"] .ps-wr{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6b7280; }
-[data-page="styles"] .ps-gridwrap.ps-iso .ps-cell2, [data-page="styles"] .ps-gridwrap.ps-iso .ps-gcol, [data-page="styles"] .ps-gridwrap.ps-iso .ps-grow-h{ opacity:0.22; }
+[data-page="styles"] .ps-edge-n{ color:#4b5672; }
+[data-page="styles"] .ps-edge-d{ color:#3a4150; }
+[data-page="styles"] .ps-wr{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; margin-top:4px; }
+[data-page="styles"] .ps-gridwrap.ps-iso .ps-cell2, [data-page="styles"] .ps-gridwrap.ps-iso .ps-gcol, [data-page="styles"] .ps-gridwrap.ps-iso .ps-grow-h{ opacity:0.2; }
 [data-page="styles"] .ps-gridwrap.ps-iso .ps-lit{ opacity:1; }
 
-/* ---- seven expandable archetype rows ---- */
-[data-page="styles"] .ps-rows{ border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:#0a0b0f; overflow:hidden; }
-[data-page="styles"] .ps-arow{ border-top:1px solid rgba(255,255,255,0.06); }
-[data-page="styles"] .ps-arow:first-child{ border-top-color:transparent; }
-[data-page="styles"] .ps-arow-head{ display:grid; grid-template-columns:42px 1fr 312px 24px; align-items:center; gap:20px; padding:20px 22px; cursor:pointer; transition:background .14s ease; }
-[data-page="styles"] .ps-arow-head:hover{ background:rgba(255,255,255,0.02); }
-[data-page="styles"] .ps-arow-idx{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#5b6472; }
+/* ---- eight archetype cards ---- */
+[data-page="styles"] .ps-rows{ display:flex; flex-direction:column; gap:12px; }
+[data-page="styles"] .ps-arow{ border:1px solid rgba(255,255,255,0.09); border-radius:12px; background:#0a0d14; padding:16px 20px; }
+[data-page="styles"] .ps-arow-head{ display:grid; grid-template-columns:26px minmax(0,1fr) minmax(280px,330px) 18px; align-items:start; gap:18px; cursor:pointer; }
+[data-page="styles"] .ps-arow-idx{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:#4b5672; align-self:start; line-height:1; margin-top:7px; }
 [data-page="styles"] .ps-arow-txt{ min-width:0; }
-[data-page="styles"] .ps-arow-title{ display:flex; align-items:baseline; gap:10px; white-space:nowrap; }
-[data-page="styles"] .ps-arow-name{ font-size:17px; font-weight:700; color:#e7e9ee; }
-[data-page="styles"] .ps-arow-count{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6b7280; }
-[data-page="styles"] .ps-arow-desc{ margin:5px 0 0; font-size:12.5px; color:#8b93a3; line-height:1.5; max-width:560px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+[data-page="styles"] .ps-arow-title{ display:flex; align-items:baseline; gap:12px; white-space:nowrap; }
+[data-page="styles"] .ps-arow-name{ font-size:22px; font-weight:800; color:#e7e9ee; }
+[data-page="styles"] .ps-arow-count{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#4b5672; }
+[data-page="styles"] .ps-arow-desc{ margin:6px 0 0; font-size:13.5px; color:#5b6880; line-height:1.5; max-width:660px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+[data-page="styles"] .ps-arow.open .ps-arow-desc{ display:block; -webkit-line-clamp:unset; overflow:visible; }
 [data-page="styles"] .ps-arow-bars{ display:flex; flex-direction:column; gap:9px; }
-[data-page="styles"] .ps-bar{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
-[data-page="styles"] .ps-barlabel{ min-width:120px; }
-[data-page="styles"] .ps-barkey{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.1em; text-transform:uppercase; }
-[data-page="styles"] .ps-barkey-dom{ color:#5f9079; }
-[data-page="styles"] .ps-barkey-weak{ color:#9a626e; }
-[data-page="styles"] .ps-baropp{ font-size:11.5px; font-weight:600; color:#cfd5df; margin-top:1px; }
-[data-page="styles"] .ps-bartrack{ flex:1; height:6px; border-radius:4px; background:rgba(255,255,255,0.05); overflow:hidden; display:block; }
-[data-page="styles"] .ps-barfill{ display:block; height:100%; border-radius:4px; }
-[data-page="styles"] .ps-barpct{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#c8cfda; width:38px; text-align:right; }
-[data-page="styles"] .ps-arow-chev{ display:inline-flex; justify-content:center; color:#5b6472; transition:transform .18s ease; }
+[data-page="styles"] .ps-bar{ display:grid; grid-template-columns:1fr 92px 40px; align-items:center; gap:12px; }
+[data-page="styles"] .ps-barlabel{ min-width:0; }
+[data-page="styles"] .ps-barkey{ display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.11em; text-transform:uppercase; }
+[data-page="styles"] .ps-barkey-dom{ color:#3dd68c; }
+[data-page="styles"] .ps-barkey-weak{ color:#e0616f; }
+[data-page="styles"] .ps-barkey-even{ color:#4b5672; }
+[data-page="styles"] .ps-baropp{ font-size:13px; font-weight:700; color:#e7e9ee; margin-top:3px; }
+[data-page="styles"] .ps-bartrack{ height:6px; border-radius:3px; background:rgba(255,255,255,0.07); overflow:hidden; position:relative; display:block; }
+[data-page="styles"] .ps-barfill{ display:block; height:100%; border-radius:3px; }
+[data-page="styles"] .ps-barpct{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#e7e9ee; text-align:right; }
+[data-page="styles"] .ps-arow-chev{ display:inline-flex; justify-content:center; color:#4b5672; transition:transform .16s ease; }
 [data-page="styles"] .ps-arow.open .ps-arow-chev{ transform:rotate(180deg); }
 
 /* ---- expanded matchup analyzer ---- */
-[data-page="styles"] .ps-arow-panel{ display:none; padding:6px 22px 24px 62px; flex-direction:column; gap:22px; }
-[data-page="styles"] .ps-arow.open .ps-arow-panel{ display:flex; }
-[data-page="styles"] .ps-ptop{ display:grid; grid-template-columns:1fr 1fr; gap:32px; }
-[data-page="styles"] .ps-plabel{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; margin-bottom:12px; }
-[data-page="styles"] .ps-adv{ font-size:15px; font-weight:700; }
-[data-page="styles"] .ps-gauge{ position:relative; height:8px; border-radius:5px; margin-top:14px; background:linear-gradient(90deg,#e0616f,#5b6472 50%,#3dd68c); }
-[data-page="styles"] .ps-gauge-mid{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:rgba(255,255,255,0.45); transform:translateX(-50%); }
-[data-page="styles"] .ps-gauge-dot{ position:absolute; top:50%; width:14px; height:14px; border-radius:50%; background:#0a0b0f; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,0.55); }
-[data-page="styles"] .ps-gauge-scale{ display:flex; justify-content:space-between; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:9px; color:#5b6472; }
-[data-page="styles"] .ps-avgnote{ font-size:12px; color:#8b93a3; line-height:1.55; margin-top:13px; }
-[data-page="styles"] .ps-avgnote b{ color:#dbe0e8; font-family:'IBM Plex Mono',monospace; font-weight:400; }
-[data-page="styles"] .ps-bwgrid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
-[data-page="styles"] .ps-bwcol{ display:flex; flex-direction:column; gap:9px; }
-[data-page="styles"] .ps-bwhead{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; }
-[data-page="styles"] .ps-bwhead-s{ color:#5f9079; }
-[data-page="styles"] .ps-bwhead-w{ color:#9a626e; }
-[data-page="styles"] .ps-bwrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-[data-page="styles"] .ps-bwname{ font-size:12px; color:#dbe0e8; }
-[data-page="styles"] .ps-bwedge{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; }
-[data-page="styles"] .ps-tags{ display:flex; flex-wrap:wrap; gap:8px; }
-[data-page="styles"] .ps-tag{ display:inline-flex; align-items:center; gap:8px; background:#0e1015; border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:6px 10px; }
-[data-page="styles"] .ps-tagname{ font-size:12.5px; font-weight:600; color:#e7e9ee; }
-[data-page="styles"] .ps-tagelo{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b93a3; }
+[data-page="styles"] .ps-arow-panel{ display:none; }
+[data-page="styles"] .ps-arow.open .ps-arow-panel{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:52px; margin-top:36px; padding-left:60px; }
+[data-page="styles"] .ps-plabel{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880; margin:0; }
+[data-page="styles"] .ps-plabel-top{ border-top:1px solid rgba(255,255,255,0.07); padding-top:18px; }
+[data-page="styles"] .ps-adv{ font-size:24px; font-weight:800; margin:13px 0 20px; }
+[data-page="styles"] .ps-gauge{ position:relative; height:8px; border-radius:5px; background:rgba(255,255,255,0.07); }
+[data-page="styles"] .ps-gauge-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:rgba(255,255,255,0.14); }
+[data-page="styles"] .ps-gauge-dot{ position:absolute; top:50%; width:18px; height:18px; border-radius:50%; background:#e7e9ee; border:3px solid #0a0d14; transform:translate(-50%,-50%); }
+[data-page="styles"] .ps-gauge-scale{ display:flex; justify-content:space-between; margin-top:9px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6880; }
+[data-page="styles"] .ps-avgnote{ font-size:14px; color:#5b6880; line-height:1.55; margin-top:18px; }
+[data-page="styles"] .ps-avgnote b{ color:#e7e9ee; font-family:'IBM Plex Mono',monospace; font-weight:700; }
+[data-page="styles"] .ps-bwgrid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:16px; }
+[data-page="styles"] .ps-bwcol{ display:flex; flex-direction:column; }
+[data-page="styles"] .ps-bwhead{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; font-weight:600; margin-bottom:8px; }
+[data-page="styles"] .ps-bwhead-s{ color:#3dd68c; }
+[data-page="styles"] .ps-bwhead-w{ color:#e0616f; }
+[data-page="styles"] .ps-bwrow{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+[data-page="styles"] .ps-bwname{ font-size:13.5px; color:#e7e9ee; }
+[data-page="styles"] .ps-bwedge{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; }
+[data-page="styles"] .ps-tags{ display:flex; flex-wrap:wrap; gap:10px; }
+[data-page="styles"] .ps-tag{ display:inline-flex; align-items:center; gap:9px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:9px 13px; }
+[data-page="styles"] .ps-tagname{ font-size:13px; font-weight:700; color:#e7e9ee; }
+[data-page="styles"] .ps-tagelo{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:#4b5672; }
 [data-page="styles"] .ps-rempty{ font-size:12px; color:#5b6472; }
 @media (max-width:900px){
   [data-page="styles"] .ps-gridwrap{ overflow-x:auto; }
   [data-page="styles"] .ps-ghead, [data-page="styles"] .ps-grow{ min-width:820px; }
-  [data-page="styles"] .ps-arow-head{ grid-template-columns:32px 1fr 24px; }
+  [data-page="styles"] .ps-arow-head{ grid-template-columns:26px 1fr 18px; }
   [data-page="styles"] .ps-arow-bars{ grid-column:1 / -1; margin-top:12px; }
-  [data-page="styles"] .ps-arow-panel{ padding-left:22px; }
-  [data-page="styles"] .ps-ptop{ grid-template-columns:1fr; gap:22px; }
+  [data-page="styles"] .ps-arow.open .ps-arow-panel{ grid-template-columns:1fr; gap:22px; padding-left:0; }
 }
 </style>
 <div class="tabpage" data-page="tournaments">
@@ -2264,7 +2263,7 @@
       <p class="ps-blocklead">Read row beats column. The big figure is the edge — how far above or below an even 50% split the row style wins; the raw win rate sits beneath. Green is a strong matchup, red is weak. Hover to isolate a row and column.</p>
       <div class="ps-key">
         <span class="ps-keyitem"><i class="ps-kdash" style="background:#3dd68c;"></i>Strong</span>
-        <span class="ps-keyitem"><i class="ps-kdash" style="background:#5b6472;"></i>~ Even</span>
+        <span class="ps-keyitem"><i class="ps-kdash" style="background:#4b5672;"></i>~ Even</span>
         <span class="ps-keyitem"><i class="ps-kdash" style="background:#e0616f;"></i>Weak</span>
       </div>
       <div id="psMatrix" class="ps-gridwrap"></div>
@@ -2273,8 +2272,7 @@
     <!-- SEVEN ARCHETYPES -->
     <div class="ps-block">
       <span class="ps-eyebrow">Eight archetypes</span>
-      <h2 class="ps-blocktitle">The styles behind the grid</h2>
-      <div id="psCards" class="ps-rows" style="margin-top:22px;"></div>
+      <div id="psCards" class="ps-rows" style="margin-top:18px;"></div>
     </div>
   </div>
 </div>
@@ -4085,8 +4083,10 @@ async function renderPlayingStyles(){
 }
 const PS_NUMWORD = ['zero','one','two','three','four','five','six','seven','eight'];
 function psFmtEdge(e){ return e > 0 ? ('+' + e) : (e < 0 ? ('−' + Math.abs(e)) : '0'); }
-function psEdgeClass(e){ return e > 0 ? 'ps-edge-g' : (e < 0 ? 'ps-edge-r' : 'ps-edge-n'); }
-function psEdgeColor(e){ return e > 0 ? '#3dd68c' : (e < 0 ? '#e0616f' : '#8b93a3'); }
+// Export band: an edge inside ±2 (win 48–52%) reads as neutral "even", not a
+// win or a loss — matches the export's bandColor/bandTag threshold exactly.
+function psEdgeClass(e){ return e > 2 ? 'ps-edge-g' : (e < -2 ? 'ps-edge-r' : 'ps-edge-n'); }
+function psEdgeColor(e){ return e > 2 ? '#3dd68c' : (e < -2 ? '#e0616f' : '#4b5672'); }
 function psRenderMatrixAndCards(){
   const A = PS_ARCHETYPES, n = A.length;
   // Resolve the pooled grid once — both the grid and the rows read from it.
@@ -4151,21 +4151,25 @@ function psRenderMatrixAndCards(){
     const m = idxs.length;
     const cnt = a.count != null ? a.count : a.players.length;
 
-    const bar = (j, kind) => {
+    // Bar colour + label key off the edge BAND, not rank: >+2 → green "Dom vs",
+    // <−2 → red "Weak vs", within ±2 → neutral "Even vs". Blue is nav/identity
+    // only, never a performance value — a dominance bar is a performance value.
+    const psBandTag = e => e > 2 ? 'Dom vs' : (e < -2 ? 'Weak vs' : 'Even vs');
+    const psBandCls = e => e > 2 ? 'dom' : (e < -2 ? 'weak' : 'even');
+    const bar = (j) => {
       if (j == null) return '';
-      const win = W[i][j];
+      const win = W[i][j], ed = E[i][j];
       return '<div class="ps-bar"><span class="ps-barlabel">' +
-        '<span class="ps-barkey ps-barkey-' + kind + '">' + (kind === 'dom' ? 'Dom vs' : 'Weak vs') + '</span>' +
+        '<span class="ps-barkey ps-barkey-' + psBandCls(ed) + '">' + psBandTag(ed) + '</span>' +
         '<div class="ps-baropp">' + psEsc(A[j].name) + '</div></span>' +
-        '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + (win >= 50 ? '#3E7BFA' : '#e0616f') + ';"></span></span>' +
+        '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + psEdgeColor(ed) + ';"></span></span>' +
         '<span class="ps-barpct">' + win + '%</span></div>';
     };
-    // Two dominant + two weak for EVERY archetype, All-Court Elite included — no
-    // special case. Its strongest matchups are less discriminating than most (it
-    // beats the field) but the row reads the same way as every other row, which is
-    // what matters more than the marginal information in the top bar.
-    const weakest = (k) => idxs.slice(Math.max(0, m - k)).reverse().map((ix) => bar(ix, 'weak')).join('');
-    const bars = !m ? '' : bar(idxs[0], 'dom') + bar(idxs[1], 'dom') + weakest(2);
+    // Two strongest + two weakest matchups by win rate for EVERY archetype, per the
+    // export (top-2 + bottom-2). idxs is already ordered by edge (== win%) desc, so
+    // the ends are the two best and two worst. With ≤4 rated opponents just show all.
+    const barIdx = m <= 4 ? idxs.slice() : idxs.slice(0, 2).concat(idxs.slice(-2).reverse());
+    const bars = barIdx.map(bar).join('');
 
     html += '<div class="ps-arow" id="psArow' + i + '">';
     html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
@@ -4180,10 +4184,15 @@ function psRenderMatrixAndCards(){
     // ----- expanded: matchup analyzer -----
     const edges = idxs.map(j => E[i][j]);
     const avg = edges.length ? Math.round(edges.reduce((s, v) => s + v, 0) / edges.length) : 0;
-    const adv = avg >= 15 ? ['Strong advantage', '#3dd68c']
-      : avg >= 5 ? ['Slight edge', '#5f9079']
-      : avg > -5 ? ['Even matchups', '#8b93a3']
-      : avg > -15 ? ['Slight disadvantage', '#E8934B']
+    // Verdict bands read from the export (avg ≥25 / ≥6 / ≥−5 / ≥−15). The export
+    // paints the top three bands BLUE and slight-disadvantage near-white — but blue
+    // is forbidden on a performance value, so the verdict is the single coloured
+    // direction element here, mapped to the green/neutral/red vocabulary. (Slider
+    // handle/fill + verdict colour are the open "B" decision — see issue comment.)
+    const adv = avg >= 25 ? ['Strong advantage', '#3dd68c']
+      : avg >= 6 ? ['Slight edge', '#3dd68c']
+      : avg >= -5 ? ['Even matchups', '#e7e9ee']
+      : avg >= -15 ? ['Slight disadvantage', '#e7e9ee']
       : ['Struggles broadly', '#e0616f'];
     const gaugePos = Math.max(3, Math.min(97, (avg + 40) / 80 * 100));
     const bwRow = j => '<div class="ps-bwrow"><span class="ps-bwname">' + psEsc(A[j].name) + '</span>' +
@@ -4191,36 +4200,37 @@ function psRenderMatrixAndCards(){
     const strongList = idxs.slice(0, 3).map(bwRow).join('');
     const weakList = [idxs[m - 1], idxs[m - 2], idxs[m - 3]].filter(j => j != null).map(bwRow).join('');
 
-    html += '<div class="ps-arow-panel"><div class="ps-ptop">';
-    html += '<div><div class="ps-plabel">Style matchup summary</div>';
+    // Left column: summary · slider · avg edge · example players. Right column:
+    // best & worst. Two equal columns, matching the export's expanded region.
+    let examplesHtml = '<div class="ps-plabel" style="margin:30px 0 14px;">Example players &middot; by Elo</div><div class="ps-tags">';
+    if (a.players.length){
+      a.players.forEach(p => {
+        examplesHtml += '<span class="ps-tag"><span class="ps-tagname">' + psEsc(p.name) + '</span>' +
+          '<span class="ps-tagelo">' + (p.elo != null ? p.elo : '—') + '</span></span>';
+      });
+    } else examplesHtml += '<div class="ps-rempty">No qualified players.</div>';
+    examplesHtml += '</div>';
+
+    html += '<div class="ps-arow-panel">';
+    html += '<div><div class="ps-plabel ps-plabel-top">Style matchup summary</div>';
     if (m){
       html += '<div class="ps-adv" style="color:' + adv[1] + ';">' + adv[0] + '</div>' +
-        '<div class="ps-gauge"><div class="ps-gauge-mid"></div>' +
-        '<div class="ps-gauge-dot" style="left:' + gaugePos + '%; border:3px solid ' + adv[1] + ';"></div></div>' +
+        '<div class="ps-gauge"><div class="ps-gauge-fill" style="width:' + gaugePos + '%;"></div>' +
+        '<div class="ps-gauge-dot" style="left:' + gaugePos + '%; box-shadow:0 0 0 1.5px ' + adv[1] + ';"></div></div>' +
         '<div class="ps-gauge-scale"><span>−40</span><span>0</span><span>+40</span></div>' +
         '<div class="ps-avgnote">Average edge <b>' + (avg > 0 ? '+' : '') + avg + '</b> across its ' +
         (PS_NUMWORD[edges.length] || edges.length) + ' style matchup' + (edges.length === 1 ? '' : 's') + '.</div>';
     } else html += '<div class="ps-rempty">No rated matchups yet.</div>';
-    html += '</div>';
+    html += examplesHtml + '</div>';
     html += '<div><div class="ps-plabel">Best &amp; worst matchups</div><div class="ps-bwgrid">' +
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-s">Strong against</div>' + strongList + '</div>' +
       '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-w">Weak against</div>' + weakList + '</div>' +
-      '</div></div></div>';
-    // A fixed set of examples, not the roster — the count in the row header is the
-    // real membership number. Badges deliberately omitted here: they belong on the
-    // Player Profile page.
-    html += '<div><div class="ps-plabel">Example players &middot; by Elo</div><div class="ps-tags">';
-    if (a.players.length){
-      a.players.forEach(p => {
-        html += '<span class="ps-tag"><span class="ps-tagname">' + psEsc(p.name) + '</span>' +
-          '<span class="ps-tagelo">' + (p.elo != null ? p.elo : '—') + '</span></span>';
-      });
-    } else html += '<div class="ps-rempty">No qualified players.</div>';
-    html += '</div></div></div></div>';
+      '</div></div>';
+    html += '</div></div>';
   });
   document.getElementById('psCards').innerHTML = html;
 }
-const PS_CHEV = '<svg width="13" height="13" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+const PS_CHEV = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 function psToggleRow(i){
   // One row open at a time, matching the design's single `open` index.
   const el = document.getElementById('psArow' + i);
