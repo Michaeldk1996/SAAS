@@ -370,6 +370,10 @@
   [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:10px; }
   [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; }
   [data-page="matches"] .mc-journey__track{ width:46px; height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
+  /* §5 (PASS 4) — OPEN "no data" em dash + the sparkline's placeholder spacer (matches
+     the 46px track so CLOSE stays aligned with its header while opens are missing). */
+  [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-journey__spacer{ width:46px; flex:0 0 auto; }
   [data-page="matches"] .mc-journey__track::before, [data-page="matches"] .mc-journey__track::after{ content:''; position:absolute; top:-2px; width:6px; height:6px; border-radius:50%; }
   [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
   [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
@@ -1730,6 +1734,11 @@
   [data-page="matches"] .mx-titlerow{ padding:0 40px 0; }
   [data-page="matches"] .mx-controls{ padding:20px 40px 0; }
   [data-page="matches"] .mx-tablewrap{ padding:16px 40px 40px; }
+  /* §3 (PASS 4) — the completed summary strip shares the page's left inset. At this
+     breakpoint the title row and controls move to a 40px inset; the strip's base rule
+     (24px) was never overridden, so it sat 16px left of the H1/date-strip/filter row.
+     Match them. */
+  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 40px 0; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control */
   [data-page="matches"] .mx-titlerow{ align-items:flex-start !important; }
@@ -4464,7 +4473,12 @@ function mcSetCluster(finalScore, who){
 // Any value that was never recorded is omitted, never a placeholder.
 function mcJourney(open, close){
   if (open == null && close == null) return '';
-  if (open == null) return `<span class="mc-journey"><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span></span></span>`;
+  // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
+  // reads as broken, so render an em dash under OPEN ("no data", the design-system
+  // rule), keep the recorded close under CLOSE, and suppress the sparkline + delta.
+  // A fixed-width spacer replaces the track so CLOSE stays aligned with its header.
+  // When openingOdds land the em dash resolves on its own and the track/delta return.
+  if (open == null) return `<span class="mc-journey"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__spacer"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span></span></span>`;
   if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
   const diff = close - open;
   // §7 SETTLED — delta sits BENEATH the close figure; directional filled triangle with a
