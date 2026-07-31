@@ -2063,6 +2063,13 @@
 #tourxOverview .tourlist{ display:flex; flex-direction:column; gap:6px; flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; }
 #tourxOverview .tourlist::-webkit-scrollbar{ display:none; }
 #tourxOverview .tourx-ovrow:hover{ background:rgba(255,255,255,0.03); }
+/* Reports segmented controls — one product-wide standard (design-export authority).
+   Container shell + token active/inactive; hover uses the --border-hover tier. */
+.tx-segwrap{ display:inline-flex; flex-wrap:wrap; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:3px; }
+.tx-seg{ border:1px solid transparent; border-radius:8px; cursor:pointer; white-space:nowrap; color:#5b6880; font-weight:600; transition:border-color .12s ease, background .12s ease, color .12s ease; }
+.tx-seg:hover{ border-color:rgba(91,155,255,0.22); }
+.tx-seg.on{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#e7e9ee; font-weight:700; }
+.tx-seg.on:hover{ border-color:rgba(91,155,255,0.45); }
 /* Head-to-head player dropdown */
 .tourx-dd{ position:relative; }
 .tourx-ddpanel{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30; background:#0e1015; border:1px solid rgba(255,255,255,0.12); border-radius:12px; overflow:hidden; max-height:300px; overflow-y:auto; box-shadow:0 30px 60px -30px rgba(0,0,0,0.95); }
@@ -14244,6 +14251,23 @@ const TOURX_METRICS = [
   { key: 'winnersUnforcedRatio', label: 'Winners / Unforced Errors Ratio',     short: 'W/UE Ratio',      kind: 'ratio' },
   { key: 'totalPointsWonPct',    label: 'Total Points Won %',                  short: 'Total Points Won', kind: 'pct' },
 ];
+// Reports metric-grid ordering (design-export §6 + founder ruling 2026-07-31).
+// The 2-col row-major card grid groups the three SERVE metrics down the left
+// column and the three RALLY metrics down the right column; the overall Total
+// Points Won card is kept, appended to the BOTTOM of the (left) serve column —
+// "keep the 7th card but put it under the serve metrics". Interleaving serve/
+// rally pairs into a row-major grid yields serve-left / rally-right; the trailing
+// serve-family card (Total Points Won) then lands directly beneath the serve column.
+const TOURX_SERVE_KEYS = ['firstServePct', 'firstServeWonPct', 'secondServeWonPct'];
+const TOURX_RALLY_KEYS = ['winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio'];
+function tourxGridOrder(metrics){
+  const serve = metrics.filter(m => TOURX_SERVE_KEYS.includes(m.key));
+  const rally = metrics.filter(m => TOURX_RALLY_KEYS.includes(m.key));
+  const rest  = metrics.filter(m => !TOURX_SERVE_KEYS.includes(m.key) && !TOURX_RALLY_KEYS.includes(m.key));
+  const out = [], rows = Math.max(serve.length, rally.length);
+  for (let i = 0; i < rows; i++){ if (serve[i]) out.push(serve[i]); if (rally[i]) out.push(rally[i]); }
+  return out.concat(rest); // Total Points Won → foot of the serve/left column
+}
 // Human round labels for a 128-draw; data rounds are R1..SF (index-aligned).
 const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const TOURX_TOTAL_WINNERS = [64, 32, 16, 8, 4, 2, 1];
@@ -14766,13 +14790,13 @@ function renderTourxReports(){
 
   // --- view toggle: three report modes ---
   const viewToggle = [['round', 'Round comparison'], ['player', 'Player progression'], ['h2h', 'Head-to-head']].map(([v, l]) => {
-    const a = tourxState.view === v;
-    return `<span onclick="tourxSetView('${v}')" style="font-size:13px;font-weight:${a ? 700 : 600};color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.18)' : 'transparent'};border-radius:8px;padding:7px 16px;cursor:pointer;white-space:nowrap;">${l}</span>`;
+    // View names are interface words → word treatment (export authority).
+    return tourxSegItem(tourxState.view === v, l, `tourxSetView('${v}')`, true);
   }).join('');
   const viewBar = `
     <div style="margin-top:18px;display:flex;align-items:center;gap:11px;">
-      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">View</span>
-      <div style="display:inline-flex;background:#0e1015;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:3px;">${viewToggle}</div>
+      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">View</span>
+      <div class="tx-segwrap" style="gap:0;">${viewToggle}</div>
     </div>`;
 
   let body;
@@ -14784,20 +14808,32 @@ function renderTourxReports(){
   const cmpInp = document.getElementById('tourxCmpSearch');
   if (cmpInp && tourxState.cmpOpen){ cmpInp.focus(); const v = cmpInp.value; cmpInp.setSelectionRange(v.length, v.length); }
 }
+// One segmented-control item — single product-wide standard, read from the
+// design-export bundler (comp 3cc4204d). Token active/inactive live in CSS
+// (.tx-seg / .tx-seg.on); this only sets the per-family typography the export
+// splits on: interface WORDS take the VIEW treatment (Hanken, 13px, pad 7×16),
+// data VALUES (round codes) take the COMPARE-AT-ROUND treatment (mono, 12px,
+// pad 7×12). Both share the .tx-segwrap container shell.
+function tourxSegItem(active, label, onclick, words){
+  const font = words
+    ? "font-size:13px;padding:7px 16px;font-family:'Hanken Grotesk',sans-serif;"
+    : "font-size:12px;padding:7px 12px;font-family:'IBM Plex Mono',monospace;";
+  return `<span class="tx-seg${active ? ' on' : ''}" onclick="${onclick}" style="${font}">${label}</span>`;
+}
 // Round selector — used by Round comparison ("Compare at round") and Player
 // progression ("Highlight round"); both drive the shared tourxState.roundIdx.
 function tourxRoundChipRowHtml(label){
   const chips = [{ label: 'All rounds', idx: null }].concat(tourxActiveLabels.map((r, i) => ({ label: r, idx: i })))
     .map(rc => {
       const active = (rc.idx === tourxState.roundIdx) || (rc.idx == null && tourxState.roundIdx == null);
-      const color = active ? '#eef2f8' : '#8b93a3';
-      const bg = active ? 'rgba(62,123,250,0.16)' : 'transparent';
-      const border = active ? 'rgba(62,123,250,0.45)' : 'rgba(255,255,255,0.1)';
-      return `<span onclick="tourxSetRound(${rc.idx == null ? 'null' : rc.idx})" style="font-size:12px;font-weight:${active ? 700 : 500};font-family:'IBM Plex Mono',monospace;color:${color};background:${bg};border:1px solid ${border};border-radius:8px;padding:7px 11px;cursor:pointer;white-space:nowrap;">${rc.label}</span>`;
+      // Round codes (R32/QF/…) are data values → mono treatment (export authority).
+      return tourxSegItem(active, rc.label, `tourxSetRound(${rc.idx == null ? 'null' : rc.idx})`, false);
     }).join('');
-  return `<div style="margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">${label || 'Compare at round'}</span>
-      <div style="display:inline-flex;gap:5px;flex-wrap:wrap;">${chips}</div>
+  // margin-bottom:16px clears the "Data updates…" note (which pulls up -8px), matching
+  // the export — fixes the control-row / caption collision instead of nudging the text.
+  return `<div style="margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${label || 'Compare at round'}</span>
+      <div class="tx-segwrap">${chips}</div>
     </div>`;
 }
 function tourxSelectTour(name){ tourxState.tour = name; tourxState.roundIdx = null; renderTourxReports(); }
@@ -15036,7 +15072,7 @@ function tourxProgressionGridHtml(players, shownMetrics, field){
   const lastName = nm => nm.split(' ').slice(-1)[0];
   const off = tourxState.ppSpotOff || {};
   const hi = tourxState.roundIdx;
-  const cards = shownMetrics.map(m => {
+  const cards = tourxGridOrder(shownMetrics).map(m => {
     const fld = (field && field.metrics && field.metrics[m.key]) ? field.metrics[m.key] : [];
     // Average toggle-chips: 6px colour dot + name + mono value, unified 11px/400.
     // Tapping toggles that player's spotlight globally; muted → whole chip 0.32.
@@ -15077,7 +15113,7 @@ function tourxCompareCardsHtml(players, shownMetrics, field, mode){
   // dot + name + value, same size/weight for every player). H2H (2) and
   // single-line (1) keep their larger header value pills.
   const useMulti = !(mode === 'rounds' && (players.length === 1 || players.length === 2));
-  const cards = shownMetrics.map(m => {
+  const cards = tourxGridOrder(shownMetrics).map(m => {
     const fld = (field && field.metrics && field.metrics[m.key]) ? field.metrics[m.key] : [];
     const headerVals = players.map((p, i) => {
       const c = TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length];
@@ -15124,18 +15160,19 @@ function tourxRoundFilterBarHtml(T){
   const cap = tourxState.roundIdx == null ? TOURX_RV_CAP : Infinity;
   const sel = tourxState.rvMetrics || [];
   const chip = (key, label) => {
+    // Metric names ("1st Serve %", "All metrics") are interface words → word treatment.
     const a = key === 'all' ? sel.length === 0 : sel.includes(key);
-    return `<span onclick="tourxToggleRvMetric('${key}')" style="font-size:11.5px;font-weight:${a ? 700 : 600};font-family:'IBM Plex Mono',monospace;color:${a ? '#eef2f8' : '#8b93a3'};background:${a ? 'rgba(62,123,250,0.16)' : 'transparent'};border:1px solid ${a ? 'rgba(62,123,250,0.45)' : 'rgba(255,255,255,0.1)'};border-radius:8px;padding:6px 11px;cursor:pointer;white-space:nowrap;">${label}</span>`;
+    return tourxSegItem(a, label, `tourxToggleRvMetric('${key}')`, true);
   };
   const metricChips = [chip('all', 'All metrics')].concat(TOURX_METRICS.map(m => chip(m.key, m.short))).join('');
   return `<div style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
       <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
-        <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Player</span>
+        <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Player</span>
         ${tourxPlayerChipBarHtml(allNames, cap)}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Metric</span>
-        ${metricChips}
+        <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Metric</span>
+        <div class="tx-segwrap">${metricChips}</div>
       </div>
     </div>`;
 }
@@ -15147,7 +15184,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
   // neutral grey ramp by their position in the winners list, so a player's dot is
   // the same colour across all six metric cards regardless of their rank within one.
   const greyOf = {}; entries.forEach((e, i) => { greyOf[e.name] = TOURX_GREYS[i % TOURX_GREYS.length]; });
-  const grid = shownMetrics.map(m => {
+  const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
     const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
@@ -15418,7 +15455,7 @@ function tourxH2HViewHtml(T){
   const pa = pOf(aName), pb = pOf(bName);
   const field = T.field && T.field.metrics ? T.field.metrics : {};
   const lastNN = arr => { for (let i = arr.length - 1; i >= 0; i--){ if (arr[i] != null) return arr[i]; } return null; };
-  const cards = TOURX_METRICS.map(m => {
+  const cards = tourxGridOrder(TOURX_METRICS).map(m => {
     const av = pa.data[m.key], bv = pb.data[m.key];
     const fld = (field[m.key] || []).slice(0, Math.max(av.length, bv.length));
     const aLast = lastNN(av), bLast = lastNN(bv);
