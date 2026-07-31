@@ -11,7 +11,6 @@ sources is the variable `bSpark` (a false positive) — see (h).
 | matches-upcoming.html | 2,786,995 | Todays Matches - Sidebar.dc.html (full dashboard app) |
 | login.html | 446,974 | Login.dc.html |
 | player-profile.html | 555,743 | Player Profile.dc.html |
-| tournaments.html | 428,472 | Tournament Reports.dc.html (Overview + Reports) |
 | stennisfy-model.html | 464,315 | Stennisfy Model.dc.html (Match model + Player ratings) |
 | playing-styles.html | 405,950 | Playing Styles.dc.html |
 | news.html | 409,853 | News.dc.html |
@@ -27,6 +26,10 @@ bundle loads with a clean console.
 
 These exist as STATES of a single build, not separate pages — no approximations
 substituted:
+- **Tournaments (Overview + Reports)** — an in-app page of the dashboard app,
+  bundled inside `matches-upcoming.html`. The standalone `tournaments.html` was
+  **deliberately removed and is not coming back**; do not re-flag its absence. Any
+  Tournaments reference in this report points at `matches-upcoming.html`.
 - **OTP / Verify** — the second state of `login.html`.
 - **Completed Matches** — the second view of the Upcoming/Completed control inside
   the dashboard app.
@@ -69,7 +72,7 @@ transparent/borderless `#5b6880` weight 600; container `#0a0d13` on
 - Player Profile: splits-table tabs ×2; match-panel Summary/Stats/Point-by-point +
   set scopes — player-profile.html
 - Tournaments: View toggle, Compare-at-round chips, tournament chips —
-  tournaments.html
+  matches-upcoming.html (in-app page; standalone `tournaments.html` intentionally removed)
 - Stennisfy Model: Match model / Player ratings; Scope; filter presets —
   stennisfy-model.html
 
@@ -92,7 +95,7 @@ values each ≤18 occurrences, exported verbatim without correction — the off-
 members are gathered in README "Known gaps at handoff → Token-sweep set".
 
 Runtime-composed colours (cannot be read as literals): the `hexA(hex, alpha)`
-helpers in matches-upcoming/tournaments and `rgba(hex, a)` in stennisfy-model
+helpers in matches-upcoming (Tournaments included, as an in-app page) and `rgba(hex, a)` in stennisfy-model
 build rgba() strings from literal hex inputs in the same files. Reported, not
 altered.
 

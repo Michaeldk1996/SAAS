@@ -88,7 +88,22 @@ was substituted.
    Second scoped exception, by explicit decision: the LOST SERVE and BP markers inside
    the match-detail block (shared component + Match Stats tab) render in the negative
    token product-wide — match events, not data quality, but red by decision. SP stays
-   neutral. No other match event, direction or comparison may take --pos / --neg. */
+   neutral. No other match event, direction or comparison may take --pos / --neg.
+   Third scoped exception, by explicit decision (ruling B): on the Playing Styles page
+   only, green/red (--pos/--neg) is permitted for MATCHUP EDGE and DOMINANCE — the hero
+   matchup grid, the DOM VS / WEAK VS bars, and the expanded matchup gauge. Matchup
+   strength is the subject of the page and it already speaks green/red. Colour is
+   carried by the gauge's track fill alone (green/red by the sign of the average edge,
+   neutral #4b5672 inside the even band); the verdict label and the handle stay neutral,
+   position/magnitude uncoloured. No other Playing Styles value takes --pos/--neg.
+     Two things the next person must NOT try to reconcile:
+     - The ±2 EVEN VS band (matrix cells + DOM/WEAK VS bars go neutral within ±2 edge,
+       win 48-52%) is READ verbatim from the export's own threshold.
+     - The green/red/neutral colour ON the matchup gauge is a DECISION, not an export
+       value: the export paints those verdict bands BLUE (#5b9bff), which is forbidden
+       on a performance value, so the blue was deliberately NOT copied. Do not try to
+       reconcile the gauge colour with the blue in the export markup — the numeric
+       cutoffs are the export's, the colour is ours. */
 --pos-bg:          rgba(61,214,140,0.15);   --pos-bd: rgba(61,214,140,0.3);
 --neg-bg:          rgba(224,97,111,0.15);   --neg-bd: rgba(224,97,111,0.3);
 
@@ -1380,8 +1395,10 @@ list; a developer can work it top to bottom without cross-referencing subsection
 >   otherwise. **Do not** migrate it, **do not** repoint the token definitions, **do not**
 >   convert it page-by-page while doing other work. Nobody "fixes" these piecemeal.
 > - **Hover-affordance blues** — the build uses **four values**: `#a9c4ff`, `#7ba4ff`,
->   `#6aaeff`, `#82b4ff` (the audit list below wrongly includes `#8fbcff`, which is not in
->   the build). `--brand` should govern all of these eventually; **change nothing now.**
+>   `#6aaeff`, `#82b4ff` (the audit list below has been corrected to these — `#8fbcff`,
+>   previously listed for playing-styles/news, is **not in the build at all**; the real
+>   anchor hover there is the global `a:hover #6aaeff`). `--brand` should govern all of
+>   these eventually; **change nothing now.**
 >
 > The near-miss list below is a factual census only — it is NOT a work queue. No item in it
 > is actioned without an explicit founder go-ahead.
@@ -1393,8 +1410,11 @@ excluded as not authored.
 
 *Brand-blue near-misses (\u2248 `--brand` #5b9bff / `--player-a` #6aaeff)*
 - `#3a5bd0` — logo gradient dark stop (dashboard, Login, Stennisfy Model)
-- `#3e7bfa` — Account Settings accents; the same family as the Playing style tab's
-  `rgba(62,123,250,0.1)` "leans" pill
+- `#3e7bfa` (`--mx-brand-blue` / `--accent`) — Matches-page active/focus chrome:
+  day-pill, surface-toggle and filter-chip active states, search focus rings, the
+  tournament-profile header border; same family as the Playing style tab's
+  `rgba(62,123,250,0.1)` "leans" pill. **NOT** Account Settings — the shipped
+  `account.html` has zero instances (earlier attribution corrected).
 - `#dbe6ff` — Tournament Reports light-blue text
 - `#2a3f66` / `#1a2338` — dashboard speed-slider gradient stops
 - `#6f7ba0` — Account Settings
@@ -1411,10 +1431,12 @@ excluded as not authored.
 - `#6faf8f` / `#8fe4bd` — dashboard, Account Settings (\u2248 `--pos`)
 - `#c77` — dashboard shorthand (\u2248 `--neg`)
 
-*Link-hover divergence — three hover blues for ONE affordance; one should govern*
+*Link-hover divergence — four hover blues for ONE affordance; one should govern*
 - `a:hover #7ba4ff` — tournaments, account-settings
 - `a:hover #82b4ff` — matches-upcoming (dashboard), stennisfy-model
-- `a:hover #8fbcff` — playing-styles, news
+- `a:hover #6aaeff` — playing-styles, news (the global `a:hover`)
+- `a:hover #a9c4ff` — Login funnel, verify
+  (`#8fbcff` was previously listed here in error — it is not in the build at all.)
 
 *`#fff` / `#ffffff` where `--text` #e7e9ee is the token*
 - Modal shell: tab-rail active text, two large odds figures, H2H strong names,
