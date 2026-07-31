@@ -1,13 +1,15 @@
-# CLAUDE.md — BSP Consult Tennis Edge
+# CLAUDE.md — Stennisfy
 ## Agent briefing — read this fully before touching any file
 
 ---
 
 ## What this project is
 
-BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious ATP bettors. It tracks matches across Grand Slams, ATP 1000s, 500s, 250s, Challengers, and ITF. Members use it daily to analyse matches, odds, and player data for betting decisions.
+Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors. It tracks matches across Grand Slams, ATP 1000s, 500s, 250s, Challengers, and ITF. Members use it daily to analyse matches, odds, and player data for betting decisions.
 
-**Owner:** Michael (BSP Consult) — Belgian, francophone, digital nomad  
+**Product brand:** **Stennisfy** — this is the name rendered throughout the UI. The design export build contains zero rendered "BSP" strings (verified). BSP Consult is the *business* behind the product. "BSP" is deliberately retained in the source folder name, archived backups, the mobile prototype, the Login-options exploration, the Funnel wordmark and the handoff docs — **do not rename those**; they are intentional, not stragglers.
+
+**Owner:** Michael (BSP Consult, the business) — Belgian, francophone, digital nomad  
 **Repo:** `michaeldk1996/SAAS`  
 **Live URL:** `michaeldk1996.github.io/SAAS/`  
 **App domain (future):** `bspconsult.app`  
@@ -36,7 +38,7 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 ### ✅ Built and working
 
 - **Today's Matches page** — live odds, match cards, form indicators, tournament filters, player search, day tabs (Today / Tomorrow / Live & Past)
-- **Match Analysis modal** — tabs: Key Factors, Playing Style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds, Extra Stats
+- **Match Analysis modal** — eleven tabs, in rail order: Key factors, News, Playing style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds. (The former "Extra stats" tab was removed from the build; News was added. Verified against the rendered modal, `design-export/computed-styles.json` state `modal-news`, 2026-07-31.)
 - **Player Profile page** — radar chart (Player DNA), serve/return stat cards, surface performance, recent form, key insights, season win rate chart
 - **Tournament Profile page** — built
 - **Tournament Reports page** — built
@@ -59,7 +61,10 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 
 ### ❌ Not started — these are the remaining priorities
 
-1. **Value % scoring methodology** — the `value %` field is `null` everywhere intentionally. This is BSP Consult's actual product differentiator (W/UE ratio, surface form weighting, fatigue scoring). **Do not invent or approximate this — ask Michael for his scoring logic before building it.**
+1. **Value % scoring methodology — UNRESOLVED (this doc vs `design-export/README.md`; do not resolve without Michael).** Two different things wear one name:
+   - *This doc's position:* the proprietary `value %` (W/UE ratio, surface form weighting, fatigue scoring) is Stennisfy's real differentiator, is `null` everywhere in the data, and must not be invented or approximated — ask Michael for the scoring logic before building it.
+   - *The export's position:* the design already renders a value verdict ("SHARP VALUE" / "NO VALUE") derived from a **no-vig best-price margin** (`ppGap = (1/fair − 1/price) × 100`); the README flags the soft-book price inputs behind it as authored placeholders under "Known gaps".
+   - These are not the same feature: a no-vig price-margin verdict (built, placeholder inputs) vs a proprietary W/UE model score (not built). Do **not** wire the proprietary methodology behind the rendered verdict, or ship the placeholder inputs as if they were the model, until Michael confirms which is intended.
 2. **Playing-style classification** — "Aggressive", "Defensive baseliner", etc. No vendor provides this. Needs Michael's category definitions.
 3. **Sackmann tennis_atp integration** — historical match results, W/L splits, surface splits, tournament records. Being integrated, not complete.
 4. **Sackmann MatchChartingProject integration** — shot-by-shot data, serve/return stats, rally length. Being integrated, not complete.
@@ -122,14 +127,20 @@ BSP Consult Tennis Edge is a tennis betting analytics SaaS dashboard for serious
 
 ---
 
-## Design system — never deviate from this
+## Design system — the export is canonical
 
-- **Aesthetic:** Dark dashboard, near-black backgrounds, flat surfaces, hairline borders only. No gradients, no shadows, no decorative backgrounds.
+**Canonical source of truth:** the Framer design export under `design-export/` **is** the design. Read exact values from `design-export/computed-styles.json` (every element, every state — 30 page-states), the raw token set from `design-export/tokens-observed.json`, and the readable token set from `design-export/tokens-design.json`. The narrative reference is `design-export/README.md`. **Where this doc and the export disagree on anything measurable, the export wins** — on rules, scope and reasoning, the README wins. (This section was corrected on 2026-07-31 after CLAUDE.md was found describing a different product than the export; report any remaining conflict rather than guessing.)
+
+- **Aesthetic:** Dark dashboard, near-black backgrounds (#06070a / #0a0d14), hairline borders (rgba(255,255,255,0.06–0.09)). Surfaces are mostly flat — but the build uses gradients, one shadow, and tinted washes **deliberately**. Do not strip them:
+  - **Gradients** (present, correct): the Recent Form bar (`--brand-deep → --brand`); identity-tinted cards on the Tournament / Overview / Form tabs (`hexA(identity, 0.16) → --card`); the Completed-match odds-journey line (`--muted → brand blue`); the logo mark; the court-speed slider track.
+  - **Shadow** (present, correct): the Match Analysis modal card — `box-shadow: 0 40px 120px rgba(0,0,0,0.6)`. This is the **only** elevation shadow in the build; everything else stays flat.
+  - **Tinted washes** (present, correct): `--brand-wash` rgba(91,155,255,0.08), `--brand-tint` rgba(91,155,255,0.15), `--pos-bg` / `--neg-bg` value tiles, day-card fills. These are surface tints carrying meaning, not decoration — keep them.
 - **Style reference:** Linear, Vercel dashboard, Stripe settings pages — confident typography, generous whitespace, clear hierarchy
-- **Typography:** Five font weights are used, as built in the export: 400 (regular, the bulk of text), 500, 600, 700, and 800 (headings, active pills, large mono figures). The export is canonical here — 600/700/800 across 7,500+ elements is the design, not a violation. Hierarchy through size and weight, not colour. (Verified against `design-export/tokens-observed.json`, 2026-07-31.)
-- **Case:** Sentence case everywhere — never title case or all caps
+- **Typography:** Five font weights are used, as built: 400 (regular, the bulk of text), 500, 600, 700, and 800 (headings, active pills, large mono figures). The export is canonical here — 600/700/800 across 7,500+ elements is the design, not a violation. Hierarchy comes from size and weight, not hue. (Verified against `design-export/tokens-observed.json`, 2026-07-31.)
+- **Case:** Sentence case for prose, headings, body copy and nav. **All-caps is used deliberately** for utility/mono labels — section eyebrows, stat labels, date-group headers and meta ("STAT COMPARISON", "MATCH TIME", "OPEN / CLOSE", "30 JUL 2026", "n OF 17 VALUE LAYERS ACTIVE"), typically letterspaced mono. Never title case. Sentence case for content, caps for mono/utility labels — match the export.
+- **Colour semantics — hue carries meaning, tone carries hierarchy.** Text hierarchy is built from grey tone-levels (`--text` #e7e9ee → `--muted` #5b6880 → `--muted-2` #4b5672 → body prose), never from hue. Hue is reserved for meaning: brand blue #5b9bff for interactive/identity, green #3dd68c / red #e0616f for value verdicts and data-quality, clay #e8a84e for the clay surface, per-player identity tints for *who* a player is. This is why "hierarchy through weight/size, not colour" and the graded grey text system agree — greys are tone, not hue.
 - **Spacing:** Generous — data-dense but never cramped
-- **Stat display:** Neutral only — never use colour to indicate which player has the better stat
+- **Stat display:** Never use hue to indicate *who leads or won* between two players — head-to-head comparison stats stay neutral. (Single-player threshold colouring against a baseline, and value/data-quality verdicts, are a different axis and do use hue — see colour semantics above.)
 - **Expandable panels:** All must have a visible close/dismiss control
 - **Charts:** Preferred over tables for comparison views where possible
 
