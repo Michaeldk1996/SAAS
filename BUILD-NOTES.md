@@ -1515,3 +1515,49 @@ DELIBERATELY LEFT ALONE (confirm before deleting — not fabricating, not destro
      export counterpart in Key Factors. They carry real derived signal, so per the
      confirm-before-delete rule I left them. Founder ruling needed: keep as house
      extras, or strip to match export exactly?
+
+
+## MATCH ANALYSIS MODAL — ODDS tab: rebuild to export (buildOddsSection)
+Founder wake 2026-07-31 "start now with the redesign of match analysis tab odds".
+Authority = design-export/matches-upcoming.html `isOdds` (decoded __bundler/template
+lines 1449–1534); HTML authoritative for every measurable value. Rebuilt the HTML
+emission of `buildOddsSection`, preserving the computation, sparkline, and split-panel
+chart machinery.
+
+Applied to export geometry (inline styles, values read from the export HTML):
+  1. CONTROL BAR — Match Winner dropdown pill (bg #0a0d14, border rgba(255,255,255,.09),
+     radius 10, pad 11/16, min-w 200, label 13.5/600, ▾ #4b5672) + "Chart lines" toggles
+     (uppercase 11px/.12em #5b6880 label; each = 15×15 checkbox bd/bg #5b9bff-on + name
+     12.5px #e7e9ee). Dropdown/toggle handlers unchanged.
+  2. PER-BOOK MOVEMENT — BOOKS badge (#5b9bff outline) + 17px/800 title + subline; table
+     is now a 7-col grid `1.5fr 1fr 1.4fr 0.8fr 1fr 1.4fr 0.8fr` (was a 2-cell stacked
+     layout): name(↗) | aOpen | aSpark+aMain | aDelta | bOpen | bSpark+bMain | bDelta.
+     Header names in player identity colour (A #3E7BFA / B #E8934B). Best price = green
+     cell highlight; deltas coloured up/down. Spark resized to 70×24 for the tighter cell.
+  3. ODDS MOVEMENT — title + subline (fav · N-of-M books · date span) + TWO bordered
+     summary chips (A blue rgba(91,155,255,*), B neutral rgba(123,145,180,*); 22px/800
+     value + coloured %chg) replacing the old FAV-pill tiles. Chart wrapped in the export's
+     bordered box; footnote restyled (oddspapi.io provenance line kept verbatim).
+
+VERIFIED: scripts/render-odds.mjs (CDP, no installs — mirrors render-matchdetail.mjs, and
+serves the odds lazy-shards synthesized from inline matches.json so ensureOddsMovement
+doesn't null the timeline). Opened A. Bublik v Q. Halys (6 books) → VERIFY_PASS: per-book
+title+7-col grid, 6 data rows, 5 header spans (2 span-2), 2 summary chips, 1 market pill,
+6 chart-line toggles, chart SVG present, Opening/Now segment absent, oddspapi footnote.
+Screenshot captured. NOTE the shard-hydration race (ensureOddsMovement overwrites the
+inline oddsMovement ~300ms after open; a 404 nulls it) — the harness serves the shard, as
+production does; see [[render-time-clickability-races-the-data-load]].
+
+STOP-AND-REPORT (flagged, not silently invented — export sections are `sc-if` conditional):
+  - PREDICTION MARKETS table (export: Venue | Liquidity matched + total, BETA). Data source
+    would be m.marketSize (Kalshi/Polymarket, async-hydrated) — but that block is admin/P1
+    gated, the founder network DNS-blocks the venues, and venue volume units are NOT
+    comparable. NOT wired into the public modal without a founder ruling; rendered absent
+    (matches the conditional-absent export state). Needs a ruling to surface here.
+  - STEAM chip (export: conditional sharp-move flag). No steam/sharp field exists on match
+    objects → conditional absent. Would need a sharp-move signal to populate.
+  - Opening/Now snapshot SEGMENT removed to match export (export has no such control); chart
+    fixed to the 'now' emphasis. aOddsSetSnap left defined (unused, harmless). Flag if the
+    toggle should be retained as a house extra.
+  - buildOddsReduced (no-captured-history fallback) left AS-IS — the export markup assumes a
+    captured timeline; the reduced view is the honest degraded state, out of export scope.
