@@ -4034,6 +4034,21 @@ async function loadMatches(){
 
   if (loaded){
     matches = loaded;
+    // PASS 4 "one more thing" — the feed labels one event two ways (e.g. "ATP
+    // Washington" AND "ATP Washington Open"), which was splitting it into two
+    // tournament pills. Canonicalise here, the single choke point every downstream
+    // reader (chips, card header, filter, edge rail, modal) goes through. Rule: fold
+    // "<name> Open|Masters|Cup|Championships" into "<name>" ONLY when "<name>" also
+    // appears in this same batch, so genuinely distinct events are never merged.
+    (function canonicaliseTours(){
+      const names = new Set(matches.map(m => m && m.tour).filter(Boolean));
+      const canon = {};
+      names.forEach(name => {
+        const shorter = name.replace(/\s+(Open|Masters|Cup|Championships?)$/i, '').trim();
+        if (shorter && shorter !== name && names.has(shorter)) canon[name] = shorter;
+      });
+      matches.forEach(m => { if (m && canon[m.tour]) m.tour = canon[m.tour]; });
+    })();
     matchesLoadedOnce = true;
     dataLoadedAt = new Date();
     document.getElementById('dataStatus').classList.remove('error');
