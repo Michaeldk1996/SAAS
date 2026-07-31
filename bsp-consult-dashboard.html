@@ -312,7 +312,15 @@
   /* §5 (PASS 3) — the two player rows sit close together; the card is ~2/3 its old
      height. Vertical padding trimmed 13px→7px, no min-height. Inter-row gap set on
      .mc-players.cmpl below. */
-  [data-page="matches"] .mc-players.cmpl{ gap:3px; }
+  /* §GAP (card-proportions) — the completed card replicates the export's box
+     model: header, the two rows and the footer sit border-to-border (zero margin
+     between blocks), and ALL vertical breathing comes from each block's own 13px
+     padding. Read from design-export/matches-upcoming.html: header→row1 gap 0,
+     row1→row2 gap 0, row2→footer-divider gap 0 (the export measured 0/0/0). The
+     old 10px players margin-top + 3px inter-row gap + 14px foot margin-top made
+     the card ~27px taller than the export. Header's 13px bottom padding (.cmpl
+     .mc-head below) restores the export's ~26px header-text→first-row spacing. */
+  [data-page="matches"] .mc-players.cmpl{ gap:0; margin-top:0; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -443,6 +451,15 @@
   [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name,
   [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total,
   [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__g{ color:var(--mc-muted); }
+
+  /* §GAP (card-proportions) — completed-card box model, scoped via .match-card.cmpl:
+     the header carries its own 13px bottom padding (matches the export header's
+     13px 20px padding) so header-text→first-row reads ~26px like the export, while
+     the block border-to-border gap stays 0. The footer divider sits flush at the
+     second row's bottom (margin-top:0, was 14px), with its 12px padding-top pushing
+     the "Market Signal" label 13px below the divider — the export's exact footer. */
+  [data-page="matches"] .match-card.cmpl .mc-head{ padding-bottom:13px; }
+  [data-page="matches"] .match-card.cmpl .mc-foot{ margin-top:0; }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -4809,7 +4826,7 @@ function renderMatches(){
           </div>
         </div>`;
     return `
-    <article class="match-card mx-match" data-id="${m.id}">
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
