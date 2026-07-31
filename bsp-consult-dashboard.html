@@ -1351,39 +1351,39 @@
   .arr-score{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-dim); flex-shrink:0; }
 
   /* Year-by-year career records table (Overview tab) */
-  .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
   .yr-col{ min-width:0; }
-  .yr-name{ font-size:13px; font-weight:700; color:#eef1f6; margin-bottom:6px; font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero{ border-radius:16px; padding:18px 20px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; }
-  .yr-hero .career-lbl{ position:absolute; top:18px; right:20px; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; font-weight:600; }
-  .yr-hero .recrow{ display:flex; align-items:baseline; gap:10px; }
-  .yr-hero .rec{ font-family:'IBM Plex Mono', monospace; font-size:34px; font-weight:600; line-height:1; letter-spacing:-0.01em; white-space:nowrap; }
-  .yr-hero .pct{ font-size:16px; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
+  .yr-name{ font-size:15px; font-weight:700; color:#eef1f6; margin-bottom:12px; font-family:'Hanken Grotesk', sans-serif; }
+  .yr-hero{ border-radius:16px; padding:22px 24px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; }
+  /* export "CAREER" label sits inline in the header group, IBM Plex Mono, muted (not absolute) */
+  .yr-hero .career-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.16em; font-weight:400; font-family:'IBM Plex Mono', monospace; color:#5b6880; }
+  .yr-hero .recrow{ display:flex; align-items:baseline; gap:12px; }
+  .yr-hero .rec{ font-family:'IBM Plex Mono', monospace; font-size:31px; font-weight:800; line-height:1; letter-spacing:-0.02em; white-space:nowrap; }
+  .yr-hero .pct{ font-size:14px; font-weight:700; font-family:'Hanken Grotesk', sans-serif; }
   .yr-hero .bars{ margin-top:16px; }
-  .yr-hero .bar-row{ display:grid; grid-template-columns:48px 1fr 96px; align-items:center; gap:11px; margin-bottom:8px; }
+  .yr-hero .bar-row{ display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:12px; margin-bottom:8px; }
   .yr-hero .bar-row:last-child{ margin-bottom:0; }
-  .yr-hero .bar-row .lbl{ font-size:12px; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero .bar-row .lbl.clay{ color:#eda869; }
-  .yr-hero .bar-row .lbl.hard{ color:#7ba4ff; }
-  .yr-hero .bar-row .lbl.grass{ color:#6ed3a3; }
-  .yr-hero .bar-row .track{ height:6px; border-radius:4px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  /* export keeps the surface TEXT label neutral #e7e9ee; colour lives on the bar fill only */
+  .yr-hero .bar-row .lbl{ font-size:12.5px; font-weight:400; color:#e7e9ee; font-family:'Hanken Grotesk', sans-serif; }
+  .yr-hero .bar-row .track{ height:7px; border-radius:4px; background:rgba(255,255,255,0.09); overflow:hidden; }
   .yr-hero .bar-row .track div{ height:100%; border-radius:4px; }
   .yr-hero .bar-row .track.clay div{ background:#eda869; }
   .yr-hero .bar-row .track.hard div{ background:#7ba4ff; }
   .yr-hero .bar-row .track.grass div{ background:#6ed3a3; }
-  .yr-hero .bar-row .v{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:#9aa3b2; text-align:right; }
-  .yr-hero .bar-row .v .v-pct{ font-size:10px; color:#6b7280; margin-left:1px; }
+  .yr-hero .bar-row .v{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#5b6880; text-align:right; white-space:nowrap; }
+  .yr-hero .bar-row .v .v-pct{ font-size:12px; color:#5b6880; margin-left:1px; }
+  .yr-hero .bar-note{ font-size:10px; color:#4b5672; margin-top:2px; }
   .yr-summary{ font-size:11px; color:#6b7280; margin-bottom:10px; line-height:1.6; }
   .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
   .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
   .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
   .yr-atponly{ display:inline-block; margin-left:6px; font-size:8.5px; font-weight:700; letter-spacing:0.04em; color:#7f8a9c; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:4px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
-  .yr-legend{ margin-top:12px; font-size:11px; color:#6b7280; line-height:1.5; }
+  .yr-legend{ margin-top:22px; font-size:12px; color:#5b6880; line-height:1.5; text-align:center; }
   .yr-legend .yr-atponly{ margin:0 2px; }
-  .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 14px; flex-wrap:wrap; }
-  .yr-tierlbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
-  .yr-tiertoggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
-  .yr-tiertoggle .opt{ font-size:11px; font-weight:600; color:#8b93a3; padding:4px 11px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
+  .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; flex-wrap:wrap; }
+  .yr-tierlbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:#5b6880; font-family:'Hanken Grotesk',sans-serif; }
+  .yr-tiertoggle{ display:flex; gap:2px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:3px; }
+  .yr-tiertoggle .opt{ font-size:11.5px; font-weight:600; color:#8b93a3; padding:6px 13px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
   .yr-tiertoggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
   .yr-table td.yr-clickable{ cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,0.18); text-underline-offset:2px; }
   .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration-color:rgba(123,164,255,0.7); }
@@ -1430,22 +1430,23 @@
   #ppRecentFormCard div[data-ppek].open{ background:rgba(62,123,250,0.06); }
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-  .yr-season-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.09em; font-weight:600; color:#8b93a3; font-family:'Hanken Grotesk',sans-serif; }
+  .yr-season-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:#5b6880; font-family:'Hanken Grotesk',sans-serif; }
   .yr-season-toggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:2px; }
   .yr-season-toggle .opt{ font-size:10px; font-weight:600; color:#8b93a3; padding:3px 8px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
   .yr-season-toggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
   .yr-season-view.hidden{ display:none; }
   .yr-season-empty{ font-size:11.5px; color:#5b6472; padding:6px 2px; }
-  .yr-surfrec{ display:flex; align-items:center; gap:10px; padding:7px 10px; border:1px solid rgba(255,255,255,0.06); border-radius:8px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
-  .yr-surfrec:hover{ background:#0e1015; }
+  /* export season row: own fill, per-surface 3px left accent (via :has), tighter type */
+  .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:#0b0f18; border:1px solid rgba(255,255,255,0.09); border-left:3px solid rgba(255,255,255,0.2); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
+  .yr-surfrec:hover{ background:rgba(255,255,255,0.04); }
+  .yr-surfrec:has(.yr-surf.clay){ border-left-color:var(--court-clay); }
+  .yr-surfrec:has(.yr-surf.hard){ border-left-color:var(--court-hard); }
+  .yr-surfrec:has(.yr-surf.grass){ border-left-color:var(--court-grass); }
   .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
-  .yr-surfrec.disabled:hover{ background:transparent; }
-  .yr-surfrec .yr-surf{ font-size:11px; font-weight:600; min-width:40px; }
-  .yr-surfrec .yr-surf.clay{ color:var(--court-clay); }
-  .yr-surfrec .yr-surf.hard{ color:var(--court-hard); }
-  .yr-surfrec .yr-surf.grass{ color:var(--court-grass); }
-  .yr-surfrec .rec{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#cfd6e6; }
-  .yr-surfrec .rpct{ font-size:10.5px; color:#6b7280; font-family:'IBM Plex Mono',monospace; }
+  .yr-surfrec.disabled:hover{ background:#0b0f18; }
+  .yr-surfrec .yr-surf{ font-size:13px; font-weight:400; min-width:44px; color:#e7e9ee; }
+  .yr-surfrec .rec{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#e7e9ee; }
+  .yr-surfrec .rpct{ font-size:12px; font-weight:700; color:#e7e9ee; font-family:'IBM Plex Mono',monospace; }
   .yr-surfrec .chev{ margin-left:auto; font-size:10px; color:#5b6472; transition:transform .15s; }
   .yr-surfrec.expanded .chev{ transform:rotate(90deg); }
   .yr-surfmatches{ margin:0 0 7px 8px; border-left:2px solid rgba(255,255,255,0.06); padding-left:10px; }
@@ -1460,13 +1461,14 @@
   .yr-matchrow .sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; flex:none; }
   .yr-matchrow .btm{ font-size:10px; color:#6b7280; margin-top:2px; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
-  .yr-table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; font-weight:600; padding:9px 8px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.06); font-family:'Hanken Grotesk', sans-serif; }
-  .yr-table th:first-child{ color:#6b7280; }
-  .yr-table th.h-total{ color:#8b93a3; }
-  .yr-table th.h-clay{ color:#eda869; }
-  .yr-table th.h-hard{ color:#7ba4ff; }
-  .yr-table th.h-grass{ color:#6ed3a3; }
-  .yr-table td{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.03); color:#9aa3b2; }
+  /* export: header row is UNIFORM #5b6880 across all five columns (no per-surface colour) on #11161f */
+  .yr-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; font-weight:400; padding:11px 14px; background:#11161f; border-bottom:1px solid rgba(255,255,255,0.06); font-family:'Hanken Grotesk', sans-serif; color:#5b6880; }
+  .yr-table th:first-child,
+  .yr-table th.h-total,
+  .yr-table th.h-clay,
+  .yr-table th.h-hard,
+  .yr-table th.h-grass{ color:#5b6880; }
+  .yr-table td{ padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.03); color:#9aa3b2; }
   .yr-table td.yr-year{ color:#cfd4de; font-weight:600; }
   .yr-table tfoot td{ border-top:1px solid rgba(255,255,255,0.1); border-bottom:none; font-weight:700; padding-top:11px; padding-bottom:11px; background:rgba(255,255,255,0.02); color:#eef1f6; }
   .yr-table .yr-col-total{ color:#eef1f6; }
@@ -6258,9 +6260,13 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
   }
   const isP1 = colPrefix === 'p1';
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  const recColor = isP1 ? '#eaf0ff' : '#fff2e6';
-  const pctColor = isP1 ? '#7ba4ff' : '#f0a95f';
-  const lblColor = isP1 ? '#7f93b5' : '#c19a72';
+  // export keeps the career record, win-% and "CAREER" label NEUTRAL — the per-player accent
+  // lives only on the hero border/gradient (careerBg/cardBd), not on these numbers.
+  // (README agrees: a win-% is a performance value, never identity blue.) The accent HEXES
+  // themselves stay on the open "two blue token systems" ruling — untouched here.
+  const recColor = '#e7e9ee';
+  const pctColor = '#e7e9ee';
+  const lblColor = '#5b6880';
 
   const bodyRows = rows.map(r => {
     // `_placeholder` is set by alignYearlyPair() for a year the player has no
@@ -6292,16 +6298,17 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
   const totalPct = totals.total && (totals.total.won + totals.total.lost) > 0 ? Math.round(totals.total.won / (totals.total.won + totals.total.lost) * 100) : null;
   const heroHtml = totals.total ? `
     <div class="yr-hero" style="border-color:${rgba(0.28)}; background:linear-gradient(135deg,${rgba(0.12)},${rgba(0.02)});">
-      <span class="career-lbl" style="color:${lblColor};">Career</span>
       <div class="recrow">
         <span class="rec" style="color:${recColor};">${totals.total.won}-${totals.total.lost}</span>
         ${totalPct != null ? `<span class="pct" style="color:${pctColor};">${totalPct}% win</span>` : ''}
+        <span class="career-lbl" style="color:${lblColor};">Career</span>
       </div>
       <div class="bars">
         ${surfBarHtml(totals.clay, 'clay', 'Clay')}
         ${surfBarHtml(totals.hard, 'hard', 'Hard')}
         ${surfBarHtml(totals.grass, 'grass', 'Grass')}
       </div>
+      <div class="bar-note">Bar length = win rate on that surface</div>
     </div>
   ` : '';
   return `

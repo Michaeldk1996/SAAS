@@ -1419,3 +1419,51 @@ DELIBERATELY LEFT ALONE:
   - Panel internal vertical rhythm (.panel-top margin-top:14%) left as flex rather than the
     export's absolute top:40/bottom:210 — renders equivalently; a refine-pass spacing item.
   - Brand tile glyph swapped to the export's gradient racquet mark (was a stand-in "T").
+
+────────────────────────────────────────────────────────────────────────────
+## MATCH ANALYSIS MODAL — Tab 1/11: OVERVIEW (year-by-year career records), restyle pass
+Source: design-export/matches-upcoming.html __bundler/template, `analysis.isOverview` (decoded L1534–1663).
+Build: bsp-consult-dashboard.html — CSS .yr-* (L1353–1472), renderers buildYearlyTable/buildYearlyTables
+(L6250–6330, 6915–6945). Verified: modal boots (no JS break), 2 heroes + 2 tables render, computed
+styles confirmed (rec 31px/800, headers uniform #5b6880, win-% & surface labels neutral #e7e9ee,
+bar-note #4b5672, season-row per-surface left accent via :has()).
+
+EXPORT-BESIDE-BUILD applied (export | was):
+  grid gap            24        | 20
+  player name         15px      | 13px, mb 12 | 6
+  hero pad            22/24     | 18/20
+  hero rec            31px/800/ls-0.02 | 34px/600/-0.01
+  "CAREER" label      inline, Mono, 10px/0.16em/#5b6880 | absolute, Hanken, accent-tinted
+  win-% colour        NEUTRAL #e7e9ee | #7ba4ff / #f0a95f  (perf value → not identity blue)
+  career rec colour   NEUTRAL #e7e9ee | accent-tinted near-whites
+  surface bar label   NEUTRAL #e7e9ee | per-surface colour (colour lives on bar fill only)
+  bar track           h7 / rgba(.09) | h6 / rgba(.06)
+  bar value           one span, 12px #5b6880 | split #9aa3b2 + #6b7280
+  "Bar length" note   ADDED (#4b5672)        | absent
+  tier label          11px/0.14em/#5b6880/400 | 10.5px/0.09em/#8b93a3/600
+  tier toggle         bg #0a0d13, gap 2, opt 11.5px pad 6/13 | bg #0e1015, gap 3, opt 11px pad 4/11
+  season label        11px/0.14em/#5b6880 | 10px/0.09em/#8b93a3
+  season row          bg #0b0f18, pad 12/15, r10, gap 14, +3px per-surface left accent | no bg, pad 7/10, r8, no accent
+  season surf/rec/pct 13px/14px-700/12px-700 neutral | 11px/13px-600/10.5px per-surface & muted
+  table header        UNIFORM #5b6880, 11px/0.12em, pad 11/14, bg #11161f | per-surface colours, 10px/0.08em
+  table td pad        10/14 | 8
+
+⚑ STOP-AND-REPORT (per your rule — logged, not guessed): the export drills EVERY historical/season
+  match into a full `<dc-import name="Match Detail">` (a complete per-match stats panel). The build's
+  career-history shards are compact (opponent/result/tournament/date) — only a subset carry a box
+  score or point log, and pre-2021 rows aren't drillable. A uniform "Match Detail for every row"
+  CANNOT be satisfied from current shards without new per-match stat payloads. Left the build's
+  existing compact drill in place. NEEDS: either a data source for per-match career stats, or a
+  ruling to keep the compact drill. (This is the only true blocker on this tab.)
+
+⚑ HELD ON OPEN RULING (two blue token systems #3e7bfa vs #5b9bff): the per-player hero border/gradient
+  accent (P1 #3E7BFA / P2 #E8934B) is export-endorsed in principle (export data-binds careerBg/cardBd)
+  but the exact hexes vs README Player-A #6aaeff / Player-B #e7e9ee are the open ruling. Left untouched;
+  only the NEUTRAL text values (rec/pct/label) were aligned to export — those aren't ruling-dependent.
+
+DELIBERATELY LEFT ALONE (refine/confirm pass, not blockers):
+  - Season block keeps its own ATP / Challenger&ITF toggle; the export has only ONE top tier control
+    and no season-level toggle. Removing it is a behaviour change → confirm before deleting.
+  - Year-table drill still renders below the table (build) vs inline-under-row (export) — tied to the
+    Match Detail stop-and-report above.
+  - Year-cell values keep per-surface colour ({{c.color}} in export = per-surface, so this MATCHES export).
