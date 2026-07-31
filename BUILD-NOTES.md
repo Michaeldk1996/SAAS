@@ -1312,3 +1312,37 @@ REMAINING (gaps): §13 shared filter-row chrome (translucent fill + magnifier gl
 across both views) not yet unified; superscript tiebreak points still absent (per-set games
 array lacks TB; only `finalScore.display` carries "7(6)"); Completed filter/sort row is
 rendered+styled but not fully wired to the settled set (deliberate scope per README).
+
+PASS 5 SHIPPED (Completed Matches, 2026-07-31): six alignment fixes, all measured against
+`design-export/matches-upcoming.html` rendered in headless Chrome (export-beside-build below).
+- §1 filter row: the four filter controls (surface trigger, tournament chips, search, sort)
+  now share ONE fill/border read off the export — background `var(--mc-card)` (#0a0d14),
+  border `1px var(--mc-border-data)` (rgba(255,255,255,0.09)). Was #0d0f14 / transparent with
+  a 0.07 hairline (the row read as the brightest band). Now near-transparent, border-defined.
+- §3 avatar + §5 divider: removed the completed row's 20px HORIZONTAL padding (`13px 20px`
+  → `13px 0`). The .match-card's own 16/18px padding already insets the row; the extra 20px
+  was a double-inset. Result: avatar left edge == surface-label left edge (both at card
+  content-left), and the 218px odds column + its 1px divider sit at the card's right content
+  inset (divider 218px in from the right, immediately left of the OPEN column). Winner accent
+  bar (`::before left:-19px`, relative to the row border-box) is unaffected.
+- §4 header OPEN/CLOSE + §6 journey: the mid spacer now GROWS instead of a fixed 46px — in
+  the header (`.mc-cmpl-head__odds .sp{flex:1}`) and in the journey row (`.mc-journey__track`
+  and `.mc-journey__spacer` → `flex:1 1 auto`). CLOSE (label + value) right-anchors hard
+  against the card content inset; OPEN stays at the column's 18px lead; the sparkline stretches
+  like the export. The "no data" em dash sits in the OPEN cell → renders directly under OPEN
+  (the fixed 46px spacer was what pushed it toward the middle).
+
+  EXPORT-BESIDE-BUILD (px, normalised to card content edges L/R):
+    §3 avatar left:        export 0 (=surface label)   | build now 0  (was +20)
+    §4 CLOSE right inset:  export flush (0 from R)      | build now 0  (was 60px short)
+    §5 divider from right: export 218                   | build now 219 (was 239)
+    §6 em dash vs OPEN:    export under OPEN             | build now 0 offset (was −20)
+    §1 control fill:       export #0a0d14 / rgba(255,255,255,0.09) | build now identical
+
+- §2 date rail — DELIBERATE LIVE-APP DIVERGENCE FROM THE EXPORT. The export's Completed view
+  truncates the date rail at Today (no forward days). We diverge: Tomorrow and +2 stay visible
+  and selectable and both rail arrows stay active in BOTH views. Selecting a future day surfaces
+  that day's UPCOMING matches (getFiltered maps completed+future → upcoming; cards render as
+  upcoming since they aren't finished). REASON: a user checking yesterday's results wants
+  tomorrow's card two taps away, not a mode switch — continuous past↔future navigation beats a
+  Completed-truncated window. Supersedes the PASS-4 "truncate at Today in Completed" rule.
