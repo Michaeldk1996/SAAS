@@ -93,17 +93,21 @@ was substituted.
    only, green/red (--pos/--neg) is permitted for MATCHUP EDGE and DOMINANCE — the hero
    matchup grid, the DOM VS / WEAK VS bars, and the expanded matchup gauge. Matchup
    strength is the subject of the page and it already speaks green/red. Colour is
-   carried by the gauge's track fill alone (green/red by the sign of the average edge,
-   neutral #4b5672 inside the even band); the verdict label and the handle stay neutral,
-   position/magnitude uncoloured. No other Playing Styles value takes --pos/--neg.
+   carried by the gauge's track fill alone, keyed off the SAME verdict band as the word
+   so the two can never disagree — Strong advantage / Slight edge green #3dd68c, Slight
+   disadvantage / Struggles broadly red #e0616f, Even matchups neutral #e7e9ee. No band
+   where the label says one thing and the fill says another. The verdict label and the
+   handle stay neutral (#e7e9ee), position/magnitude uncoloured. No other Playing Styles
+   value takes --pos/--neg.
      Two things the next person must NOT try to reconcile:
      - The ±2 EVEN VS band (matrix cells + DOM/WEAK VS bars go neutral within ±2 edge,
-       win 48-52%) is READ verbatim from the export's own threshold.
-     - The green/red/neutral colour ON the matchup gauge is a DECISION, not an export
-       value: the export paints those verdict bands BLUE (#5b9bff), which is forbidden
-       on a performance value, so the blue was deliberately NOT copied. Do not try to
-       reconcile the gauge colour with the blue in the export markup — the numeric
-       cutoffs are the export's, the colour is ours. */
+       win 48-52%) is READ verbatim from the export's own threshold. Likewise the gauge's
+       verdict cutoffs (≥25 / ≥6 / ≥−5 / ≥−15) are the export's own ladder, read as-is.
+     - The verdict-label colour assignment (which band paints green / red / neutral) is a
+       DECISION, not an export value: the export paints those verdict bands BLUE (#5b9bff),
+       which is forbidden on a performance value, so the blue was deliberately NOT copied.
+       Do not try to reconcile the gauge colour with the blue in the export markup — the
+       numeric cutoffs are the export's, the colour is ours. */
 --pos-bg:          rgba(61,214,140,0.15);   --pos-bd: rgba(61,214,140,0.3);
 --neg-bg:          rgba(224,97,111,0.15);   --neg-bd: rgba(224,97,111,0.3);
 
