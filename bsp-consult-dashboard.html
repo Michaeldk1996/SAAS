@@ -2339,9 +2339,13 @@
      switched by the Reading/Compact toggle. Colours are the export's
      literal tokens, not the dashboard --accent system.
      ============================================================ */
-  [data-page="news"] .news-wrap{ max-width:820px; margin:0 auto; padding:28px 24px 48px; }
-  [data-page="news"] .news-wrap.compact{ max-width:none; }
-  [data-page="news"] .news-head{ margin-bottom:20px; }
+  [data-page="news"] .news-wrap{ max-width:1360px; margin:0; padding:30px 40px 70px; }
+  /* Density changes the FEED column width only — never the page. Header + both
+     control rows are anchored to the wrap's fixed left inset and do not move when
+     the toggle flips (export parity: main is fixed, only the feed div reflows). */
+  [data-page="news"] #newsList{ max-width:820px; }
+  [data-page="news"] .news-wrap.compact #newsList{ max-width:none; }
+  [data-page="news"] .news-head{ margin-bottom:18px; }
   [data-page="news"] .news-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:#e7e9ee; }
   [data-page="news"] .news-head p{ margin:0; color:#5b6880; font-size:13.5px; }
   [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:#4b5672; font-family:'IBM Plex Mono',ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
@@ -2351,18 +2355,18 @@
   /* ---- Control rows. Row 1: All-tournaments dropdown then 4 category
      chips. Row 2: search (360px) then Post-intel / Reading / Compact /
      window on the right. Three segmented treatments, per the export. ---- */
-  [data-page="news"] .news-row1{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:11px; }
+  [data-page="news"] .news-row1{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
   [data-page="news"] .news-row2{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
   [data-page="news"] .news-row2 .news-r2right{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
   /* Category chips (Row 1) + All-tournaments dropdown share the same base. */
-  [data-page="news"] .news-chip{ font-size:12.5px; font-weight:600; color:#5b6880; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:6px; padding:7px 13px; cursor:pointer; transition:border-color .12s, color .12s, background .12s; }
+  [data-page="news"] .news-chip{ font-size:12.5px; font-weight:600; color:#5b6880; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:9px 14px; cursor:pointer; transition:border-color .12s, color .12s, background .12s; }
   [data-page="news"] .news-chip:hover{ border-color:rgba(91,155,255,0.28); color:#e7e9ee; }
   [data-page="news"] .news-chip.active{ color:#e7e9ee; background:rgba(91,155,255,0.08); border-color:rgba(91,155,255,0.35); }
   [data-page="news"] .news-chips{ display:contents; }
 
   /* Dropdowns (All tournaments / time window): white-tint fill. */
-  [data-page="news"] .news-dd{ font-size:12.5px; font-weight:600; color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:6px; padding:7px 30px 7px 12px; cursor:pointer;
+  [data-page="news"] .news-dd{ font-size:12.5px; font-weight:600; color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:10px 30px 10px 15px; cursor:pointer;
     appearance:none; -webkit-appearance:none;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235b6880' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat:no-repeat; background-position:right 11px center; }
@@ -2372,20 +2376,23 @@
   /* Search (Row 2, fixed 360px). */
   [data-page="news"] .news-searchwrap{ position:relative; width:360px; max-width:100%; }
   [data-page="news"] .news-searchicon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#5b6880; pointer-events:none; }
-  [data-page="news"] .news-search{ width:100%; box-sizing:border-box; padding:8px 13px 8px 34px; font-size:12.5px; color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:6px; }
+  [data-page="news"] .news-search{ width:100%; box-sizing:border-box; padding:10px 14px 10px 34px; font-size:12.5px; color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; }
   [data-page="news"] .news-search:focus{ outline:none; border-color:rgba(91,155,255,0.35); }
   [data-page="news"] .news-search::placeholder{ color:#5b6880; }
 
   /* Reading / Compact tab pair (the one control on the quoted standard). */
   [data-page="news"] .news-tabs{ display:inline-flex; gap:4px; }
-  [data-page="news"] .news-tab{ font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:1px solid transparent; border-radius:6px; padding:7px 13px; cursor:pointer; transition:color .12s, background .12s, border-color .12s; }
+  [data-page="news"] .news-tab{ font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:1px solid transparent; border-radius:10px; padding:9px 15px; cursor:pointer; transition:color .12s, background .12s, border-color .12s; }
   [data-page="news"] .news-tab:hover{ color:#e7e9ee; }
   [data-page="news"] .news-tab.active{ color:#e7e9ee; font-weight:700; background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); }
 
   /* Post intel — outline control (no solid fill; only Login/Verify are solid). */
-  [data-page="news"] .news-postintel{ font-size:12.5px; font-weight:600; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35); border-radius:6px; padding:7px 13px; cursor:pointer; transition:background .12s, border-color .12s; }
-  [data-page="news"] .news-postintel:hover{ background:rgba(91,155,255,0.10); border-color:rgba(91,155,255,0.5); }
-  [data-page="news"] .news-postintel.active{ background:rgba(91,155,255,0.14); }
+  /* Action label, not a filter chip: transparent fill, blue border only — no fill
+     at rest, on hover, or when the composer is open (export parity). */
+  [data-page="news"] .news-postintel{ font-size:12.5px; font-weight:700; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35); border-radius:10px; padding:10px 15px; cursor:pointer; white-space:nowrap; transition:border-color .12s; }
+  [data-page="news"] .news-postintel:hover{ border-color:rgba(91,155,255,0.5); }
+  [data-page="news"] .news-postintel.active{ border-color:rgba(91,155,255,0.5); }
+  [data-page="news"] .news-postintel .news-picount{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:400; color:#5b6880; margin-left:2px; }
 
   /* ---- Composer: inline expansion panel below the controls (founder only). ---- */
   [data-page="news"] .news-composer{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px; margin-bottom:18px; }
@@ -2408,7 +2415,7 @@
   [data-page="news"] .cmp-msg{ font-size:12px; color:#5b6880; min-height:16px; margin-top:6px; }
 
   /* ---- Date group header: date-only, uppercase mono, rule to the edge. ---- */
-  [data-page="news"] .news-daterow{ display:flex; align-items:center; gap:14px; margin:22px 0 12px; }
+  [data-page="news"] .news-daterow{ display:flex; align-items:center; gap:12px; margin:22px 0 12px; }
   [data-page="news"] .news-daterow:first-child{ margin-top:2px; }
   [data-page="news"] .news-datelabel{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672; white-space:nowrap; }
   [data-page="news"] .news-daterule{ flex:1; height:1px; background:rgba(255,255,255,0.09); }
@@ -2418,6 +2425,7 @@
   [data-page="news"] .news-row{ border-bottom:1px solid rgba(255,255,255,0.09); }
   [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:42px 104px minmax(0,1fr) 16px; gap:12px; align-items:center; padding:10px 6px; cursor:pointer; border:1px solid transparent; border-radius:7px; transition:background .12s, border-color .12s; }
   [data-page="news"] .news-rowhead:hover{ background:rgba(255,255,255,0.02); border-color:rgba(91,155,255,0.22); }
+  [data-page="news"] .news-rowhead:hover .news-rcaret{ color:#e7e9ee; }
   [data-page="news"] .news-rtime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:#4b5672; }
   [data-page="news"] .news-rplayer{ font-size:12px; color:#e7e9ee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-rhead{ font-size:13.5px; font-weight:600; color:#e7e9ee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2437,12 +2445,16 @@
   [data-page="news"] .news-list{ display:flex; flex-direction:column; gap:10px; }
   [data-page="news"] .news-card{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 20px; transition:border-color .12s; }
   [data-page="news"] .news-card:hover{ border-color:rgba(91,155,255,0.22); }
-  [data-page="news"] .news-cardmeta{ display:flex; align-items:center; gap:10px; margin-bottom:9px; flex-wrap:wrap; }
+  /* Reading header line: [ badge · source · player ]  …  [ time, right-aligned ]. */
+  [data-page="news"] .news-cardmeta{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:9px; }
+  [data-page="news"] .news-cardmeta-l{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0; }
+  [data-page="news"] .news-cardsource{ font-size:12px; color:#4b5672; }
+  [data-page="news"] .news-cardsep{ font-size:12px; color:#4b5672; }
   [data-page="news"] .news-cat{ font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:#4b5672; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:6px; padding:3px 9px; white-space:nowrap; }
-  [data-page="news"] .news-cardtime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:#4b5672; }
+  [data-page="news"] .news-cardtime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:#4b5672; flex:none; white-space:nowrap; }
   [data-page="news"] .news-cardplayer{ font-size:12px; color:#e7e9ee; }
   [data-page="news"] .news-cardtitle{ font-size:16px; font-weight:700; line-height:1.35; color:#e7e9ee; margin:0 0 9px; }
-  [data-page="news"] .news-cardbody p{ margin:0 0 12px; font-size:14px; line-height:1.7; color:#a8b0c0; white-space:pre-wrap; }
+  [data-page="news"] .news-cardbody p{ margin:0 0 12px; font-size:14px; line-height:1.7; color:#a8b0c0; white-space:pre-wrap; max-width:68ch; }
   [data-page="news"] .news-cardbody p:last-child{ margin-bottom:0; }
   [data-page="news"] .news-cardbody.clamped p:nth-child(n+6){ display:none; }
   [data-page="news"] .news-more{ margin-top:10px; font-size:12.5px; font-weight:600; color:#5b9bff; background:none; border:none; padding:0; cursor:pointer; }
@@ -3595,16 +3607,29 @@ function newsRenderReadingGroup(items, admin){
     const more = it.bodyParas.length > 5 ? `<button class="news-more" onclick="newsToggleMore(this)">Read more</button>` : '';
     const catBadge = it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : '';
     const acts = (it.kind === 'intel' && admin) ? newsIntelActs(it.intelId, 'news-cardacts') : '';
+    // Header line (export parity): [ badge · source · player ] … [ time, right ].
+    // Source moves into the header for wire items, so the bottom attribution line
+    // is only kept for ASAP/intel (which carry richer prebuilt attribution).
+    const hasLead = !!(catBadge || it.srcRaw);
+    const srcNode = it.srcRaw ? `<span class="news-cardsource">${newsEscape(it.srcRaw)}</span>` : '';
+    const playerNode = it.player
+      ? `${hasLead ? '<span class="news-cardsep">·</span>' : ''}<span class="news-cardplayer">${newsPlayerNode(it)}</span>`
+      : '';
+    const timeAbs = isFinite(it.ts) ? newsEscape(newsFmtDateTime(it.ts)) : '';
+    const srcLine = (it.kind === 'asap' || it.kind === 'intel') ? newsSrcLine(it, 'news-cardsrc') : '';
     return `<article class="news-card">
       <div class="news-cardmeta">
-        ${catBadge}
-        <span class="news-cardtime">${newsEscape(newsFmtTime(it.ts))}</span>
-        <span class="news-cardplayer">${newsPlayerNode(it)}</span>
+        <div class="news-cardmeta-l">
+          ${catBadge}
+          ${srcNode}
+          ${playerNode}
+        </div>
+        <span class="news-cardtime" title="${timeAbs}">${newsEscape(newsFmtTime(it.ts))}</span>
       </div>
       <h3 class="news-cardtitle">${newsEscape(it.title)}</h3>
       <div class="news-cardbody${clamp}">${body}</div>
       ${more}
-      ${newsSrcLine(it, 'news-cardsrc')}
+      ${srcLine}
       ${acts}
     </article>`;
   }).join('') + `</div>`;
@@ -3786,7 +3811,7 @@ function newsRenderComposer(){
   const admin = isBspAdmin();
   if (host){
     host.innerHTML = admin
-      ? `<button class="news-postintel${_composerOpen ? ' active' : ''}" onclick="newsToggleComposer()">Post intel ${(_intelNotes || []).length}/${INTEL_MAX}</button>`
+      ? `<button class="news-postintel${_composerOpen ? ' active' : ''}" onclick="newsToggleComposer()">Post intel <span class="news-picount">${(_intelNotes || []).length}/${INTEL_MAX}</span></button>`
       : '';
   }
   if (!panel) return;
