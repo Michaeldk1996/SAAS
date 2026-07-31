@@ -1909,6 +1909,7 @@
   </div>
 </aside>
 <script src="./auth.js"></script>
+<script>window.BSP={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex",displayName:"Alex",email:"a@b.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>
 <!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
      BSP Consult Intel composer to decide whether to show the admin controls. -->
 <script src="./admin-config.js"></script>
