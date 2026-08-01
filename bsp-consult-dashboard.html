@@ -1490,10 +1490,13 @@
   /* export keeps the surface TEXT label neutral #e7e9ee; colour lives on the bar fill only */
   .yr-hero .bar-row .lbl{ font-size:12.5px; font-weight:400; color:#e7e9ee; font-family:'Hanken Grotesk', sans-serif; }
   .yr-hero .bar-row .track{ height:7px; border-radius:4px; background:rgba(255,255,255,0.09); overflow:hidden; }
-  /* export §1: surface bars are ALL one neutral fill on one neutral track — the
-     row label + column header carry surface identity, so the win-rate bar (a
-     performance value) takes no hue. Fill #e7e9ee, track rgba(255,255,255,0.09). */
+  /* RULING REVERSED (2026-08-01, founder Overview item 1): the career surface bars
+     carry PLAYER IDENTITY by name order — left player (P1) fill is the identity blue
+     #6aaeff, right player (P2) the light neutral #e7e9ee. This is the standing
+     A-blue/B-neutral identity rule applied to the bar fill (fixed by column, never by
+     value); track stays rgba(255,255,255,0.09). Column set on .yr-hero by colPrefix. */
   .yr-hero .bar-row .track div{ height:100%; border-radius:4px; background:#e7e9ee; }
+  .yr-hero.yr-hero-p1 .bar-row .track div{ background:#6aaeff; }
   .yr-hero .bar-row .v{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#5b6880; text-align:right; white-space:nowrap; }
   .yr-hero .bar-row .v .v-pct{ font-size:12px; color:#5b6880; margin-left:1px; }
   .yr-hero .bar-note{ font-size:10px; color:#4b5672; margin-top:2px; }
@@ -1530,15 +1533,18 @@
   .yr-drill-note{ font-size:11.5px; color:#5b6472; padding:7px 2px; }
   .yr-drill-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:5px 2px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:11.5px; }
   .yr-drill-row:last-child{ border-bottom:none; }
-  /* export §6: W/L outcome markers are NEUTRAL, not green/red — green/red is a data-quality
-     signal in this system, and the export paints the loss marker #e7e9ee (see Completed-Matches
-     precedent: drift markers go neutral in both directions). Same for the season-block markers below. */
+  /* RULING REVERSED (2026-08-01, founder Overview item 3): the W/L result letter is
+     coloured by OUTCOME — a completed match's result is a data fact, not a player
+     comparison, so the colour treatment is permitted here. Canonical W #3dd68c /
+     L #e0616f (the product-wide win/loss hues). A `ret.` suffix carries the loss red. */
   .yr-drill-wl{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; text-align:center; }
-  .yr-drill-wl.win{ color:#e7e9ee; }
-  .yr-drill-wl.loss{ color:#e7e9ee; }
+  .yr-drill-wl.win{ color:#3dd68c; }
+  .yr-drill-wl.loss{ color:#e0616f; }
   .yr-drill-opp{ color:#cfd6e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-drill-sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; white-space:nowrap; }
   .yr-drill-end{ font-family:inherit; font-style:italic; color:#6b7280; margin-left:5px; font-size:10.5px; }
+  /* Overview item 3: a `ret.` suffix carries the loss treatment (w/o stays neutral). */
+  .yr-drill-end.ret{ color:#e0616f; }
   .yr-drill-meta{ grid-column:2 / 4; font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* A row that has a box score or a point log on file gets a fourth column for
      the chevron. Rows with neither keep the plain 3-column grid above, so the
@@ -1589,6 +1595,11 @@
   .yr-surfrec .rpct{ font-size:12px; font-weight:700; color:#e7e9ee; font-family:'IBM Plex Mono',monospace; }
   .yr-surfrec .chev{ margin-left:auto; font-size:10px; color:#5b6472; transition:transform .15s; }
   .yr-surfrec.expanded .chev{ transform:rotate(90deg); }
+  /* Overview item 2: the row's 3px left accent carries PLAYER IDENTITY (whose column
+     this is), not surface — left player (P1) blue #6aaeff, right (P2) neutral #e7e9ee.
+     Same name-order rule as the career bars; never coloured by clay/hard/grass. */
+  .yr-surfrec.ovcol-p1{ border-left-color:#6aaeff; }
+  .yr-surfrec.ovcol-p2{ border-left-color:#e7e9ee; }
   .yr-surfmatches{ margin:0 0 7px 8px; border-left:2px solid rgba(255,255,255,0.06); padding-left:10px; }
   .yr-surfmatches.hidden{ display:none; }
   .yr-matchrow{ padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
@@ -1746,6 +1757,29 @@
   .aform-panel-stat{ padding:3px 0 7px; }
   /* The panel's group bands sit tighter than the full-width sheet's. */
   .aform-panel .msheet-grouphead{ margin-top:11px; margin-bottom:5px; padding:7px; font-size:9.5px; }
+  /* Overview item 4: this nested Match Stats block sits inside a match-row drill,
+     inside a career card — it must read as TERTIARY. Stepped down from the shared
+     .aform-* form panel (which the Form tab / Player Profile keep at full size, being
+     primary surfaces). Scoped to .yr-drill so ONLY the Overview instance shrinks.
+     NOTE: the export's modal-overview capture never expands this block, so exact
+     dimensions can't be read from it — these are a principled one-size-down
+     compaction of the shared control, offered pending founder-supplied numbers. */
+  .yr-drill .aform-panel{ padding:9px 11px 10px 34px; }
+  .yr-drill .aform-panel-meta{ font-size:10px; margin-bottom:7px; }
+  .yr-drill .aform-tabs{ gap:3px; border-radius:8px; padding:3px; margin:0 auto 9px; }
+  .yr-drill .aform-tab{ font-size:11px; padding:5px 12px; border-radius:6px; }
+  /* no-solid-fills rule: the active chip is FLAT — distinguished by fill + text
+     weight, never the solid #3E7BFA (reserved product-wide for Login-primary /
+     Verify). Segmented-control standard: rgba(91,155,255,0.22) fill, #e7e9ee text. */
+  :is(.modal-analysis,.pp-formsurface) .yr-drill .aform-tab.active{ background:rgba(91,155,255,0.22); color:#e7e9ee; }
+  /* Overview item 6: left name (P1) carries the identity blue as it does elsewhere,
+     right name (P2) the neutral. */
+  .yr-drill .aform-panel-names{ font-size:10px; margin-bottom:5px; }
+  .yr-drill .aform-panel-names span:first-child{ color:#6aaeff; }
+  .yr-drill .aform-panel-names span:last-child{ color:#e7e9ee; }
+  .yr-drill .aform-panel-stat{ padding:2px 0 5px; }
+  .yr-drill .aform-panel-row{ font-size:11px; padding:3px 0; }
+  .yr-drill .aform-panel .msheet-grouphead{ margin-top:8px; margin-bottom:4px; padding:5px; font-size:9px; }
   .aform-showmore{ display:block; text-align:center; font-size:12px; color:var(--accent); cursor:pointer; padding:8px 0 4px 0; }
   .aform-foot{ font-size:11.5px; color:#5b6472; margin-top:14px; font-family:'Hanken Grotesk', sans-serif; }
   @media (max-width:520px){ .yr-grid{ grid-template-columns:1fr; } }
@@ -6354,7 +6388,7 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix, seasonYear, player
     const rec = tierData[s] || { won: 0, lost: 0, matches: [] };
     const n = rec.won + rec.lost;
     if (n === 0) {
-      return `<div class="yr-surfrec disabled"><span class="yr-surf ${s}">${label}</span><span class="rec">—</span></div>`;
+      return `<div class="yr-surfrec disabled ovcol-${colPrefix}"><span class="yr-surf ${s}">${label}</span><span class="rec">—</span></div>`;
     }
     const id = `${tier}-${s}-${colPrefix}`;
     const pct = Math.round(rec.won / n * 100);
@@ -6363,11 +6397,11 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix, seasonYear, player
     // carries the score→match-stats expander. Needs the player's career shard —
     // if we don't have a key, fall back to a non-clickable record row.
     if (!playerKey) {
-      return `<div class="yr-surfrec disabled ${s}"><span class="yr-surf ${s}">${label}</span><span class="rec">${rec.won}-${rec.lost}</span><span class="rpct">${pct}%</span></div>`;
+      return `<div class="yr-surfrec disabled ${s} ovcol-${colPrefix}"><span class="yr-surf ${s}">${label}</span><span class="rec">${rec.won}-${rec.lost}</span><span class="rpct">${pct}%</span></div>`;
     }
     const grp = `ovs${colPrefix}${tier}${s}`;
     return `
-        <div class="yr-surfrec ${s}" id="seasonRec-${id}" onclick="showOverviewMatches('${playerKey}','${drillYear}','${s}','${colPrefix}','${tier}','seasonMatches-${id}','${grp}','seasonRec-${id}')">
+        <div class="yr-surfrec ${s} ovcol-${colPrefix}" id="seasonRec-${id}" onclick="showOverviewMatches('${playerKey}','${drillYear}','${s}','${colPrefix}','${tier}','seasonMatches-${id}','${grp}','seasonRec-${id}')">
           <span class="yr-surf ${s}">${label}</span>
           <span class="rec">${rec.won}-${rec.lost}</span>
           <span class="rpct">${pct}%</span>
@@ -6499,7 +6533,7 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
   };
   const totalPct = totals.total && (totals.total.won + totals.total.lost) > 0 ? Math.round(totals.total.won / (totals.total.won + totals.total.lost) * 100) : null;
   const heroHtml = totals.total ? `
-    <div class="yr-hero" style="border-color:${rgba(0.28)}; background:linear-gradient(135deg,${rgba(0.12)},${rgba(0.02)});">
+    <div class="yr-hero${isP1 ? ' yr-hero-p1' : ' yr-hero-p2'}" style="border-color:${rgba(0.28)}; background:linear-gradient(135deg,${rgba(0.12)},${rgba(0.02)});">
       <div class="recrow">
         <span class="rec" style="color:${recColor};">${totals.total.won}-${totals.total.lost}</span>
         ${totalPct != null ? `<span class="pct" style="color:${pctColor};">${totalPct}% win</span>` : ''}
@@ -7592,7 +7626,7 @@ function careerScoreHtml(m){
   // next to the marker reads as a broken score, so the marker replaces it.
   const raw = String(m.result || '');
   const score = /\d/.test(raw) ? escapeHtml(raw) : '';
-  return `<span class="yr-drill-sc">${score}${end ? `<span class="yr-drill-end">${end}</span>` : ''}</span>`;
+  return `<span class="yr-drill-sc">${score}${end ? `<span class="yr-drill-end${end === 'ret.' ? ' ret' : ''}">${end}</span>` : ''}</span>`;
 }
 function formPanelHtml(match, idPrefix, playerKey, playerName){
   const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}`;
