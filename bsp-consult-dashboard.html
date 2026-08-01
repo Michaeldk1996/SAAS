@@ -33,7 +33,7 @@
   *{ box-sizing: border-box; }
   body{
     margin:0; background: var(--bg); color: var(--text);
-    font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5;
+    font-family:var(--mx-font-ui); font-size: 14px; line-height: 1.5;
   }
   .display{ font-family:'Space Grotesk', sans-serif; }
   .mono{ font-family:'IBM Plex Mono', monospace; }
@@ -101,7 +101,7 @@
   .circuit-toggle button{
     background:none; border:none; color:var(--text-dim); font-size:12px;
     font-weight:600; padding:6px 16px; border-radius:999px; cursor:pointer;
-    font-family:'Inter', sans-serif;
+    font-family:var(--mx-font-ui);
   }
   .circuit-toggle button.active{ background: var(--accent); color:#fff; }
   .circuit-toggle button:disabled{ cursor:not-allowed; opacity:0.5; }
@@ -118,7 +118,7 @@
   .signalbanner .sb-body{ min-width:0; }
   .signalbanner .sb-title{ font-size:13px; font-weight:600; color:var(--text); }
   .signalbanner .sb-sub{ font-size:11px; color:var(--text-faint); margin-top:2px; }
-  .signalbanner button{ background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:11px; font-weight:600; padding:6px 12px; cursor:pointer; font-family:'Inter', sans-serif; white-space:nowrap; margin-left:auto; }
+  .signalbanner button{ background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:11px; font-weight:600; padding:6px 12px; cursor:pointer; font-family:var(--mx-font-ui); white-space:nowrap; margin-left:auto; }
   .signalbanner button:hover{ color:var(--text); border-color:var(--text-faint); }
 
   .avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--panel-2); }
@@ -631,7 +631,7 @@
   .tourgroup-header{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; padding:0 4px 8px; border-bottom:1px solid var(--border); margin-bottom:6px; }
   .tourgroup-header .tier-dot{ width:8px; height:8px; border-radius:2px; flex-shrink:0; }
   .tourgroup-header .count{ color:var(--text-faint); font-weight:600; text-transform:none; letter-spacing:normal; background:rgba(255,255,255,0.05); border-radius:20px; padding:1px 8px; margin-left:auto; }
-  .tourrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; color:var(--text); border-left:2px solid transparent; }
+  .tourrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-family:var(--mx-font-ui); font-size:13px; color:var(--text); border-left:2px solid transparent; }
   .tourrow:hover{ background:var(--panel-2); border-left-color:var(--tier-color, var(--accent)); }
   .tourrow .flag{ font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:700; letter-spacing:0.02em; color:var(--text-faint); background:var(--panel-2); border:1px solid var(--border); border-radius:5px; width:auto; min-width:28px; padding:2px 5px; text-align:center; flex-shrink:0; }
   .tourrow .rowname{ flex:1; font-weight:500; }
@@ -697,7 +697,7 @@
   .h2hselect{ display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap; }
   .h2hselect select{
     background: var(--panel-2); border:1px solid var(--border); border-radius:6px; color:var(--text);
-    padding:9px 12px; font-size:13px; font-family:'Inter', sans-serif; min-width:180px;
+    padding:9px 12px; font-size:13px; font-family:var(--mx-font-ui); min-width:180px;
   }
   .h2hselect .vslabel{ font-family:'IBM Plex Mono', monospace; color:var(--text-faint); font-size:13px; }
   .h2hcard{ background: var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px; max-width:520px; }
@@ -742,7 +742,7 @@
   .modal p{ color:var(--text-dim); font-size:13px; margin:0 0 18px 0; }
   .modal button{
     background: var(--accent); color:#fff; border:none; border-radius:6px;
-    padding:10px 20px; font-weight:600; font-size:13px; cursor:pointer; font-family:'Inter', sans-serif; width:100%;
+    padding:10px 20px; font-weight:600; font-size:13px; cursor:pointer; font-family:var(--mx-font-ui); width:100%;
   }
   .modal button:hover{ background: var(--accent-hover); }
   .modal .dismiss{ background:none; color:var(--text-faint); margin-top:10px; font-weight:500; }
@@ -1269,7 +1269,7 @@
      inactive is borderless/transparent #5b6880 at 600; active is a SUBTLE tint —
      rgba(91,155,255,0.22) fill, rgba(91,155,255,0.45) border, #e7e9ee at 700 — never
      a saturated solid-blue block. The set-scope row below uses the identical rule. */
-  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:600; color:#5b6880; background:none; border:1px solid transparent; padding:10px 22px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:600; color:#5b6880; background:none; border:1px solid transparent; padding:6px 12px; border-radius:6px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
   .modal-analysis .ms-subtab:hover{ color:#cfd4de; }
   .modal-analysis .ms-subtab.active{ color:#e7e9ee; font-weight:700; background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); }
   .modal-analysis .ms-pane{ display:none; }
@@ -1287,7 +1287,13 @@
      rows, padding 2). Modal-scoped so the Profile/Form set selector — which
      reuses .ms-setsel — keeps its bare-pill treatment, same as the §9 group
      header scoping. */
-  .modal-analysis .ms-setsel{ background:var(--mc-track); border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:2px; }
+  .modal-analysis .ms-setsel{ background:var(--mc-track); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:2px; }
+  /* §3/§4 size correction (founder ruling 2026-08-01): both control rows rendered
+     ~1.5× the design. Sizes read from design-export/match-stats-spec.md §3 (view
+     toggle) and §4 (scope filter). The .ms-setbtn base rule is shared with the
+     Profile/Form set selector (.pp-formsurface) — scope the shrink to the modal so
+     that surface keeps its size. Track radii view/scope 8; buttons radius 6. */
+  .modal-analysis .ms-setbtn{ font-size:10.5px; padding:4px 10px; border-radius:6px; }
   /* Match Stats — one 720px content cap governs both views (Stats / Point by point)
      AND both control rows, so the stat sheet and the point log share the same
      centred column width (README §Match Stats tab: "both standard segmented, centred
