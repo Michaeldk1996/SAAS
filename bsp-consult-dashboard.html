@@ -1388,6 +1388,35 @@
   .modal-analysis .tprogress-card .tpdot:hover .tptip{ opacity:1; visibility:visible; }
   .modal-analysis .progression-summary-text{ margin:12px 0 0; font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; color:var(--text-dim); line-height:1.6; }
   @media (max-width:820px){ .modal-analysis .tprogress-grid{ grid-template-columns:1fr; } }
+  /* Progression tab, table build (structural rebuild per export). One table:
+     METRIC | TREND (inline sparkline) | one column per round played | AVG | FIELD.
+     Player identity only: A #6aaeff, B #e7e9ee, fixed by name order — no orange,
+     no per-metric chart cards. Directional arrows take the player's identity
+     colour (movement vs the previous round), never a red/green treatment. */
+  .modal-analysis .tpg-legend{ display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin:0 0 14px; font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; color:var(--text-dim); }
+  .modal-analysis .tpg-lg{ display:inline-flex; align-items:center; gap:6px; }
+  .modal-analysis .tpg-swatch{ width:16px; height:2.5px; border-radius:2px; display:inline-block; }
+  .modal-analysis .tpg-ldiv{ width:1px; height:12px; background:var(--border); }
+  .modal-analysis .tpg-lkey{ color:var(--text-faint); gap:4px; }
+  .modal-analysis .tpg-lkey .tpg-ar{ color:#e7e9ee; font-weight:400; margin:0; }
+  .modal-analysis .tpg-tablewrap{ overflow-x:auto; }
+  .modal-analysis .tpg-table{ width:100%; border-collapse:collapse; font-family:'Hanken Grotesk', sans-serif; }
+  .modal-analysis .tpg-h{ font-size:10px; font-weight:600; letter-spacing:0.06em; color:var(--text-faint); text-align:center; padding:0 8px 9px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .modal-analysis .tpg-hmetric{ text-align:left; }
+  .modal-analysis .tpg-hfield{ text-align:right; }
+  .modal-analysis .tpg-table td{ padding:9px 8px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:middle; }
+  .modal-analysis .tpg-table tbody tr:last-child td{ border-bottom:none; }
+  .modal-analysis .tpg-metric{ text-align:left; min-width:150px; }
+  .modal-analysis .tpg-mlabel{ font-size:12.5px; font-weight:600; color:var(--text); }
+  .modal-analysis .tpg-sub{ font-size:10px; color:var(--text-faint); margin-top:1px; }
+  .modal-analysis .tpg-trend{ width:60px; text-align:center; }
+  .modal-analysis .tpg-trend svg{ display:inline-block; }
+  .modal-analysis .tpg-round{ text-align:center; }
+  .modal-analysis .tpg-v{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:800; line-height:1.6; white-space:nowrap; }
+  .modal-analysis .tpg-ar{ font-weight:800; margin-right:1px; }
+  .modal-analysis .tpg-avg{ text-align:center; }
+  .modal-analysis .tpg-chip{ display:block; width:max-content; margin:2px auto; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; background:rgba(255,255,255,0.04); border-radius:6px; padding:2.5px 11px; line-height:1.4; }
+  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:400; color:#4b5672; }
   .modal-analysis .aanalysisfooter{ padding:14px 24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; gap:12px; font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; color:#5b6472; flex-shrink:0; flex-wrap:wrap; }
   .modal-analysis .aanalysisfooter .abrand{ font-weight:600; color:#6b7280; font-family:'Hanken Grotesk', sans-serif; letter-spacing:0; }
 
@@ -14029,6 +14058,21 @@ const PROGRESSION_METRIC_ORDER = [
   ['totalPointsWonPct', 'Total Points Won %'],
 ];
 
+// Row order, labels and sub-labels for the Progression TAB table (export build).
+// Deliberately separate from PROGRESSION_METRIC_ORDER above, which the match-card
+// AK block and the AI-summary ranking still consume — reordering that shared list
+// would silently change those other surfaces. Export order puts Total points won
+// fourth and the winners/UE group last; two rows carry a muted sub-label.
+const PROGRESSION_TABLE_METRICS = [
+  { key: 'firstServePct',        label: '1st serve' },
+  { key: 'firstServeWonPct',     label: '1st serve points won' },
+  { key: 'secondServeWonPct',    label: '2nd serve points won' },
+  { key: 'totalPointsWonPct',    label: 'Total points won' },
+  { key: 'winnersPct',           label: 'Winners' },
+  { key: 'unforcedErrorsPct',    label: 'Unforced errors', sub: 'lower is better' },
+  { key: 'winnersUnforcedRatio', label: 'Winners / UE', sub: 'ratio', ratio: true },
+];
+
 // Up to 2 named player line-series (solid, gradient area fill down to the
 // plot baseline) plus 1 optional field-average series (dashed, muted, no
 // fill). Nodes and value labels are rendered as an absolutely-positioned
@@ -14305,8 +14349,9 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
   // field average too. A merely below average but otherwise solid number,
   // like 73% on first serve points won, will never trigger this.
   const weaknessCandidates = candidates.filter(c => c !== strengthPick && c.goodness < 0 && aiSummaryIsAbsWeak(c.metricKey, c.val));
+  let weaknessPick = null;
   if (weaknessCandidates.length) {
-    const weaknessPick = weaknessCandidates.reduce((worst, c) => (!worst || c.goodness < worst.goodness) ? c : worst, null);
+    weaknessPick = weaknessCandidates.reduce((worst, c) => (!worst || c.goodness < worst.goodness) ? c : worst, null);
     const oppSurname = otherSurname(weaknessPick.surname);
     const oppLatest = latestBySurname[oppSurname];
     const oppVal = oppLatest ? oppLatest.metrics[weaknessPick.metricKey] : null;
@@ -14357,8 +14402,17 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
       return { key, label, v1, v2, gap: Math.abs(v1 - v2) };
     }).filter(Boolean);
     if (gaps.length) {
-      const widest = gaps.reduce((b, g) => (!b || g.gap > b.gap) ? g : b, null);
-      sentences.push(`Right now the clearest gap between the two is on ${widest.label.toLowerCase()}: ${p1Surname} at ${aiSummaryFormatValue(widest.key, widest.v1)} against ${p2Surname}'s ${aiSummaryFormatValue(widest.key, widest.v2)}, which comes down to ${AI_SUMMARY_METRIC_CONTEXT[widest.key]}.`);
+      // Prefer a metric the strength/weakness sentences have not already explained,
+      // so this closing line surfaces a genuinely new gap rather than restating a
+      // point (and its verbatim "which comes down to …" context clause) already
+      // made two sentences earlier. If every gap metric is already spoken for, name
+      // the widest but drop the trailing context clause to avoid the exact repeat.
+      const usedKeys = new Set([strengthPick && strengthPick.metricKey, weaknessPick && weaknessPick.metricKey].filter(Boolean));
+      const fresh = gaps.filter(g => !usedKeys.has(g.key));
+      const pool = fresh.length ? fresh : gaps;
+      const widest = pool.reduce((b, g) => (!b || g.gap > b.gap) ? g : b, null);
+      const tail = fresh.length ? `, which comes down to ${AI_SUMMARY_METRIC_CONTEXT[widest.key]}` : '';
+      sentences.push(`Right now the clearest gap between the two is on ${widest.label.toLowerCase()}: ${p1Surname} at ${aiSummaryFormatValue(widest.key, widest.v1)} against ${p2Surname}'s ${aiSummaryFormatValue(widest.key, widest.v2)}${tail}.`);
     }
   }
 
@@ -14557,153 +14611,125 @@ function buildMatchProgressionSection(m){
     return `<div class="acomingsoon">Progression opens once a player has completed an earlier match in this event.</div>`;
   }
 
-  const P1_COLOR = '#3E7BFA', P2_COLOR = '#E8934B';
-  const p1Surname = (m.p1 || '').trim().split(' ').pop().toUpperCase();
-  const p2Surname = (m.p2 || '').trim().split(' ').pop().toUpperCase();
-  // Each player is represented by their last WON round rather than their last
-  // played one: an eliminated player's final match is the one they lost, and the
-  // board asked for the box score they posted while still advancing — Sonego
-  // shows his R1 win, not his R2 defeat. A player who lost their opener has no
-  // won round, so fall back to that opener as their only box score on file.
-  const p1Latest = progressionShownRound(p1Data, st.d1);
-  const p2Latest = progressionShownRound(p2Data, st.d2);
+  // Player identity only — Player A (name order p1) blue, Player B neutral light,
+  // fixed by name order. Progression has no scoped exception: no orange, no
+  // per-metric accent. Directional arrows below take the player's identity colour
+  // (movement vs the previous round), never a red/green treatment — read from the
+  // export, which folds the arrow into the identity-coloured value.
+  const A_COLOR = '#6aaeff', B_COLOR = '#e7e9ee';
+  const p1Surname = (m.p1 || '').trim().split(' ').pop();
+  const p2Surname = (m.p2 || '').trim().split(' ').pop();
+  const rounds = data.rounds;
 
-  // NEITHER player has survived two rounds: there is no line to draw on this
-  // card at all, so the whole section degrades to the side-by-side bar layout.
-  // (A card where only ONE of them qualifies stays in the chart layout below and
-  // mixes that player's line with the other's bar.)
-  if (st.state === 'bars') {
-    // Field average is indexed by the round actually on show, not the draw's
-    // latest — the two players can now be at different rounds (a beaten player
-    // shows an earlier win than his surviving opponent), and one field-average
-    // number cannot describe two rounds at once. When they differ, the line is
-    // omitted rather than compared against the wrong round.
-    const p1Idx = p1Latest ? data.rounds.indexOf(p1Latest.round) : -1;
-    const p2Idx = p2Latest ? data.rounds.indexOf(p2Latest.round) : -1;
-    const shownIdx = p1Idx >= 0 && p2Idx >= 0 ? (p1Idx === p2Idx ? p1Idx : -1) : Math.max(p1Idx, p2Idx);
-    const bar = (val, color, isRatio) => {
-      const max = isRatio ? Math.max(val || 0, 1) * 1.3 : 100;
-      const w = val == null ? 0 : Math.max(2, Math.min(100, (val / max) * 100));
-      return `<div style="flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,0.05);overflow:hidden;"><div style="height:100%;width:${w}%;background:${color};border-radius:5px;"></div></div>`;
-    };
-    const barCards = PROGRESSION_METRIC_ORDER.map(([metricKey, label]) => {
-      const isRatio = metricKey === 'winnersUnforcedRatio';
-      const fmt = v => v == null ? '—' : (isRatio ? v.toFixed(2) : `${v}%`);
-      const p1v = p1Latest ? p1Latest.metrics[metricKey] : null;
-      const p2v = p2Latest ? p2Latest.metrics[metricKey] : null;
-      const fieldArr = data.fieldAverage.metrics[metricKey];
-      const fieldV = Array.isArray(fieldArr) && shownIdx >= 0 ? fieldArr[shownIdx] : null;
-      const row = (name, val, color) => `
-        <div style="display:flex;align-items:center;gap:10px;margin:5px 0;">
-          <span style="width:74px;flex:0 0 auto;font-size:11px;color:#8b93a3;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;">${name}</span>
-          ${bar(val, color, isRatio)}
-          <span style="width:46px;flex:0 0 auto;text-align:right;font-size:12.5px;font-weight:700;color:${color};font-family:'IBM Plex Mono',monospace;">${fmt(val)}</span>
-        </div>`;
-      return `
-        <div class="tprogress-card">
-          <div class="tphead"><div class="tptitle">${label}</div></div>
-          <div style="padding:4px 2px 2px;">
-            ${p1Data ? row(p1Surname, p1v, P1_COLOR) : ''}
-            ${p2Data ? row(p2Surname, p2v, P2_COLOR) : ''}
-            ${fieldV != null ? `<div style="font-size:10.5px;color:#5b6472;font-family:'IBM Plex Mono',monospace;margin-top:6px;">Field avg ${fmt(fieldV)}</div>` : ''}
-          </div>
-        </div>`;
-    }).join('');
-    const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
-    // Name the round each player is shown at, so a card comparing one player's
-    // R1 against another's R2 says so rather than implying a like-for-like round.
-    const shownAt = [
-      p1Data && p1Latest ? `${p1Surname} ${p1Latest.round}` : null,
-      p2Data && p2Latest ? `${p2Surname} ${p2Latest.round}` : null,
-    ].filter(Boolean).join(' · ');
-    const barsNote = `Form going into this match${shownAt ? ` (${shownAt})` : ''} — this match's own stats are excluded. A line trend appears once a player has survived two rounds beforehand.`;
-    return `
-      <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Both players' box-score stats from the rounds they completed BEFORE this match, compared side by side. The match on this card is excluded.">ⓘ</span></div>
-      <div class="tprogress-legend"><div class="note" style="margin:0;">${barsNote}</div></div>
-      <div class="tprogress-grid">${barCards}${aiSummaryHtml}</div>
-    `;
-  }
+  // Per-player metric series aligned to the draw's rounds. A player who has
+  // survived only one round carries just their shown box score; a multi-round
+  // player carries every round they played. Same pre-match scoping the chart
+  // build used (progressionShownRound / depth), so the table cannot disagree
+  // with the window rule the tab has always enforced. Byes and rounds not on
+  // file simply read as a null value at that round → an em dash in the cell.
+  const seriesFor = (pData, d) => {
+    if (!pData) return null;
+    const asBar = !d || d.depth <= 1;
+    const shown = asBar ? [progressionShownRound(pData, d)].filter(Boolean) : pData.rounds;
+    const at = round => shown.find(x => x && x.round === round) || null;
+    return rounds.map(round => { const r = at(round); return r ? r.metrics : null; });
+  };
+  const s1 = p1Data ? seriesFor(p1Data, st.d1) : null;
+  const s2 = p2Data ? seriesFor(p2Data, st.d2) : null;
 
-  // A bye leaves a real gap in the line: the player advanced without posting a
-  // box score, so the round plots as null. Say so on the chart rather than
-  // leaving the reader to read the gap as missing data.
-  const byeNote = [
-    st.d1 && st.d1.byes > 0 ? m.p1 : null,
-    st.d2 && st.d2.byes > 0 ? m.p2 : null,
-  ].filter(Boolean).map(n => `${n} — first round bye`).join(' · ');
+  const fmt = (key, v) => v == null
+    ? '&mdash;'
+    : (key === 'winnersUnforcedRatio' ? (Math.round(v * 100) / 100).toFixed(2) : `${Math.round(v)}%`);
+  const mean = vals => { const v = vals.filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const prevOf = (vals, i) => { for (let j = i - 1; j >= 0; j--) { if (vals[j] != null) return vals[j]; } return null; };
+  const arrow = (cur, prev) => (cur == null || prev == null || cur === prev) ? '' : (cur > prev ? '&#8599;' : '&#8600;');
 
-  // Name any player shown as a bar rather than a line, so the mixed card reads
-  // as a deliberate rule and not a half-drawn chart.
-  const barNote = [
-    p1Data && st.d1 && st.d1.depth <= 1 ? m.p1 : null,
-    p2Data && st.d2 && st.d2.depth <= 1 ? m.p2 : null,
-  ].filter(Boolean).map(n => `${n} — one round won, shown as a bar`).join(' · ');
+  // Inline TREND sparkline: two thin identity-coloured lines with round point
+  // markers, sized to the column. A glyph, not a chart — no axes, no labels. Each
+  // row is scaled to its own two-player min/max so the shape reads at a glance.
+  const sparkline = (rowSeries) => {
+    const all = rowSeries.flatMap(s => s.vals).filter(v => v != null);
+    if (!all.length) return '';
+    let mn = Math.min(...all), mx = Math.max(...all);
+    if (mn === mx) { mn -= 1; mx += 1; }
+    const W = 52, H = 20, pad = 3, n = rounds.length;
+    const xOf = i => n === 1 ? W / 2 : pad + i * ((W - 2 * pad) / (n - 1));
+    const yOf = v => (H - pad) - (v - mn) / (mx - mn) * (H - 2 * pad);
+    let out = '';
+    rowSeries.forEach(s => {
+      const pts = s.vals.map((v, i) => v == null ? null : { x: xOf(i), y: yOf(v) });
+      const valid = pts.filter(Boolean);
+      if (!valid.length) return;
+      let dpath = '', started = false;
+      pts.forEach(p => { if (!p) { started = false; return; } dpath += (started ? 'L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ' '; started = true; });
+      if (valid.length > 1) out += `<path d="${dpath.trim()}" fill="none" stroke="${s.color}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+      valid.forEach(p => { out += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.7" fill="${s.color}"/>`; });
+    });
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${out}</svg>`;
+  };
 
-  const legendHtml = `
-    <div class="item"><span class="dot" style="background:${P1_COLOR}"></span>${m.p1}</div>
-    <div class="item"><span class="dot" style="background:${P2_COLOR}"></span>${m.p2}</div>
-    <div class="item"><span class="dash"></span>Field average</div>
-    ${byeNote ? `<div class="item" style="color:#8b93a3;">${byeNote}</div>` : ''}
-    ${barNote ? `<div class="item" style="color:#8b93a3;">${barNote}</div>` : ''}
-    <div class="note">Mean of every player in the ${bareTour} draw at each round — the benchmark for above/below-tour form. Shows form built BEFORE this match; the match on this card is excluded. A player is charted once they have survived two rounds; until then their one box score shows as a bar.</div>
-  `;
+  const bodyRows = PROGRESSION_TABLE_METRICS.map(mt => {
+    const key = mt.key;
+    const valsA = s1 ? s1.map(mm => mm ? mm[key] : null) : rounds.map(() => null);
+    const valsB = s2 ? s2.map(mm => mm ? mm[key] : null) : rounds.map(() => null);
+    const fieldArr = (data.fieldAverage && data.fieldAverage.metrics[key]) || [];
+    // One benchmark value per row: the draw's field average across the rounds on
+    // show (mean of every player at each round). Quieter than the player chips.
+    const fieldV = mean(rounds.map((_, i) => fieldArr[i] == null ? null : fieldArr[i]));
 
-  const chartsHtml = PROGRESSION_METRIC_ORDER.map(([metricKey, label]) => {
-    const formatValue = metricKey === 'winnersUnforcedRatio' ? (v => v.toFixed(2)) : (v => `${v}%`);
-    // Each player is plotted on their own terms: a player who has survived two
-    // rounds gets a line over every round they played, while one who has not is
-    // reduced to a bar at the single round they won. Both share this plot's axes
-    // and field-average line, so the comparison still reads left to right.
-    const playerSeries = (pData, d, color, fillOpacity) => {
-      if (!pData) return null;
-      const asBar = !d || d.depth <= 1;
-      const shown = asBar ? [progressionShownRound(pData, d)].filter(Boolean) : pData.rounds;
-      const at = round => shown.find(x => x && x.round === round) || null;
-      return {
-        color, fillOpacity, bar: asBar,
-        values: data.rounds.map(round => { const r = at(round); return r ? r.metrics[metricKey] : null; }),
-        opponents: data.rounds.map(round => { const r = at(round); return r ? r.opponent : null; }),
-        // The rounds this player sat out on a bye — every slot before their first
-        // appearance. Marked per PLAYER rather than by relabelling the round tick,
-        // because the axis is shared: at Gstaad, Vacherot's R1 bye sits on the same
-        // tick as Collignon's real R1 match, so "Bye" is true of one man and a lie
-        // about the other. A null here is a bye; a null in `values` at a round the
-        // player did play is a missing box score, and stays an unexplained gap.
-        byes: data.rounds.map((round, i) => !!(d && d.byes > 0 && i < d.firstIdx)),
+    const roundCells = rounds.map((r, i) => {
+      const cell = (vals, color) => {
+        const v = vals[i];
+        const ar = i === 0 ? '' : arrow(v, prevOf(vals, i));
+        return `<div class="tpg-v" style="color:${color}">${ar ? `<span class="tpg-ar">${ar}</span>` : ''}${fmt(key, v)}</div>`;
       };
-    };
-    const series = [
-      playerSeries(p1Data, st.d1, P1_COLOR, 0.30),
-      playerSeries(p2Data, st.d2, P2_COLOR, 0.26),
-    ].filter(Boolean);
-    series.push({ color: 'var(--text-faint)', dashed: true, values: data.fieldAverage.metrics[metricKey] });
+      return `<td class="tpg-round">${p1Data ? cell(valsA, A_COLOR) : ''}${p2Data ? cell(valsB, B_COLOR) : ''}</td>`;
+    }).join('');
 
-    const p1Val = p1Latest && p1Latest.metrics[metricKey] != null ? p1Latest.metrics[metricKey] : null;
-    const p2Val = p2Latest && p2Latest.metrics[metricKey] != null ? p2Latest.metrics[metricKey] : null;
-    const readoutsHtml = `
-      <div class="tpreadouts">
-        ${p1Val != null ? `<div class="tpreadout"><div class="val" style="color:${P1_COLOR}">${formatValue(p1Val)}</div><div class="lbl">${p1Surname} · ${p1Latest.round}</div></div>` : ''}
-        ${p2Val != null ? `<div class="tpreadout"><div class="val" style="color:${P2_COLOR}">${formatValue(p2Val)}</div><div class="lbl">${p2Surname} · ${p2Latest.round}</div></div>` : ''}
-      </div>
-    `;
+    const chip = (vals, color) => `<div class="tpg-chip" style="color:${color}">${fmt(key, mean(vals))}</div>`;
+    const spark = sparkline([
+      ...(p1Data ? [{ color: A_COLOR, vals: valsA }] : []),
+      ...(p2Data ? [{ color: B_COLOR, vals: valsB }] : []),
+    ]);
 
-    return `
-      <div class="tprogress-card">
-        <div class="tphead">
-          <div class="tptitle">${label}</div>
-          ${readoutsHtml}
-        </div>
-        <div class="tpplot">${progressionPlot(data.rounds, series, formatValue)}</div>
-      </div>
-    `;
+    return `<tr>
+      <td class="tpg-metric"><div class="tpg-mlabel">${mt.label}</div>${mt.sub ? `<div class="tpg-sub">${mt.sub}</div>` : ''}</td>
+      <td class="tpg-trend">${spark}</td>
+      ${roundCells}
+      <td class="tpg-avg">${p1Data ? chip(valsA, A_COLOR) : ''}${p2Data ? chip(valsB, B_COLOR) : ''}</td>
+      <td class="tpg-field">${fmt(key, fieldV)}</td>
+    </tr>`;
   }).join('');
 
-  const aiSummaryHtml = buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour);
+  const roundHeads = rounds.map(r => `<th class="tpg-h">${r}</th>`).join('');
+
+  // Legend: two short line swatches with surname only, a divider, then an arrow
+  // key. No field-average swatch — FIELD is a column now. Arrows here are the
+  // neutral key colour; in the table they take each player's identity colour.
+  const legendHtml = `
+    <div class="tpg-legend">
+      ${p1Data ? `<span class="tpg-lg"><span class="tpg-swatch" style="background:${A_COLOR}"></span>${p1Surname}</span>` : ''}
+      ${p2Data ? `<span class="tpg-lg"><span class="tpg-swatch" style="background:${B_COLOR}"></span>${p2Surname}</span>` : ''}
+      <span class="tpg-ldiv"></span>
+      <span class="tpg-lg tpg-lkey"><span class="tpg-ar">&#8599;</span>up <span class="tpg-ar">&#8600;</span>down vs prev round</span>
+    </div>`;
 
   return `
-    <div class="tprogress-title">Player Tournament Progression <span class="tour">— ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players from the rounds they completed BEFORE this match, vs. the field average for each round. The match on this card is excluded.">ⓘ</span></div>
-    <div class="tprogress-legend">${legendHtml}</div>
-    <div class="tprogress-grid">${chartsHtml}${aiSummaryHtml}</div>
+    <div class="tprogress-title">Player Tournament Progression <span class="tour">&mdash; ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players from the rounds they completed BEFORE this match, vs. the field average for each round. The match on this card is excluded.">&#9432;</span></div>
+    ${legendHtml}
+    <div class="tpg-tablewrap">
+      <table class="tpg-table">
+        <thead><tr>
+          <th class="tpg-h tpg-hmetric">Metric</th>
+          <th class="tpg-h">Trend</th>
+          ${roundHeads}
+          <th class="tpg-h">AVG</th>
+          <th class="tpg-h tpg-hfield">Field</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+    ${buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour)}
   `;
 }
 
