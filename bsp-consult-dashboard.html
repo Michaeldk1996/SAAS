@@ -1679,20 +1679,22 @@
   .atourn-card .longtrack{ height:6px; border-radius:4px; background:rgba(255,255,255,0.07); overflow:hidden; margin-top:9px; }
   .atourn-card .longtrack div{ height:100%; border-radius:4px; }
   .atourn-yearhead{ font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; margin:14px 0 8px 0; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-yearrow{ display:grid; grid-template-columns:4px 48px 1fr auto; align-items:center; gap:13px; padding:11px 14px 11px 11px; border:1px solid rgba(255,255,255,0.06); border-radius:11px; background:#0e1015; font-size:12px; margin-bottom:8px; transition:border-color .12s; }
+  /* Export (state modal-tournament): the year row is a light flex card — no left
+     accent bar, no heavy full-width card — with the year in a subtle chip and a
+     neutral #e7e9ee text palette. Border reads blue while the year is expanded. */
+  .atourn-yearrow{ display:flex; align-items:center; gap:14px; padding:12px 15px; border:1px solid rgba(255,255,255,0.09); border-radius:10px; background:#0b0f18; margin-bottom:8px; transition:border-color .12s; }
   .atourn-yearrow:last-child{ margin-bottom:0; }
-  .atourn-yearrow .bar{ width:4px; height:26px; border-radius:3px; background:rgba(255,255,255,0.08); }
-  .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; color:#cfd4de; font-weight:600; font-size:13px; }
-  .atourn-yearrow .rd{ color:#dfe3ea; font-family:'Hanken Grotesk', sans-serif; font-size:13px; }
-  .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:#e7ebf1; font-size:13px; }
-  .atourn-wd{ color:#4b5672; font-style:italic; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-showmore{ font-size:13px; font-weight:600; color:#5b9bff; cursor:pointer; margin-top:6px; }
-  .atourn-showmore:hover{ text-decoration:underline; }
-  .atourn-showmore-chev{ margin-left:4px; font-size:14px; }
+  .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:7px; flex:none; }
+  .atourn-yearrow .exp{ font-size:9px; color:#4b5672; }
+  .atourn-yearrow .rd{ flex:1; min-width:0; color:#e7e9ee; font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; }
+  .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:#e7e9ee; font-size:13px; flex:none; }
   .atourn-yearrow.clickable{ cursor:pointer; }
-  .atourn-yearrow.clickable:hover .yr{ color:var(--accent); }
-  .atourn-yearrow .exp{ font-size:10px; color:#6b7280; margin-left:6px; }
-  .atourn-yearrow.withdrawn{ opacity:0.55; font-style:italic; }
+  .atourn-yearrow.withdrawn{ font-style:italic; }
+  .atourn-yearrow.withdrawn .yr, .atourn-yearrow.withdrawn .rd, .atourn-yearrow.withdrawn .wl{ color:#4b5672; }
+  /* Export centres the "Show N earlier editions" control (display:flex; justify-content:center). */
+  .atourn-showmore{ display:flex; justify-content:center; align-items:center; gap:6px; white-space:nowrap; font-size:13px; font-weight:600; color:#5b9bff; cursor:pointer; margin-top:8px; }
+  .atourn-showmore:hover{ color:#6aaeff; }
+  .atourn-showmore-chev{ font-size:14px; font-family:'IBM Plex Mono', monospace; }
   .atourn-matchlist{ padding:2px 0 8px 0; }
   .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 22px; border-bottom:1px dashed rgba(255,255,255,0.06); font-size:11px; }
   .atourn-matchrow:last-child{ border-bottom:none; }
@@ -7958,26 +7960,38 @@ function toggleTournamentMatch(idPrefix){
 function toggleTournamentYear(id){
   const el = document.getElementById(id);
   if (!el) return;
-  el.style.display = el.style.display === 'none' ? '' : 'none';
+  const nowOpen = el.style.display === 'none';
+  el.style.display = nowOpen ? '' : 'none';
+  // Export: the year row's border reads blue while its matches are expanded, and
+  // the chip chevron flips ▸/▾.
+  const row = el.previousElementSibling;
+  if (row && row.classList.contains('atourn-yearrow')) {
+    row.style.borderColor = nowOpen ? 'rgba(91,155,255,0.35)' : 'rgba(255,255,255,0.09)';
+    const chev = row.querySelector('.exp');
+    if (chev) chev.textContent = nowOpen ? '▾' : '▸';
+  }
 }
-function atournYearRowHtml(y, colPrefix, color, hoverColor, expanded){
+function atournYearRowHtml(y, colPrefix, expanded){
   const matches = Array.isArray(y.matches) ? y.matches : [];
   const listId = `atournMatches-${colPrefix}-${y.year}`;
   const rows = matches.map(x => atournMatchRowHtml(x)).join('');
-  const open = !!expanded && matches.length > 0;
-  // Withdrawal years render as one muted row — "Withdrawal" in italic, an em
-  // dash where the record would be — matching the export (state
-  // modal-tournament). Never a 0-0: not-played is not played-and-lost.
-  const rdCell = y.withdrew ? `<em class="atourn-wd">Withdrawal</em>` : (y.roundReached || '—');
+  const hasMatches = matches.length > 0;
+  const open = !!expanded && hasMatches;
+  // Export (state modal-tournament): the row border reads blue while its matches
+  // are expanded, a faint white otherwise; the chip carries a ▸/▾ chevron.
+  const rowBd = open ? 'rgba(91,155,255,0.35)' : 'rgba(255,255,255,0.09)';
+  const chev = hasMatches ? (open ? '▾' : '▸') : '';
+  // Withdrawal years render muted + italic, an em dash where the record would be —
+  // matching the export. Never a 0-0: not-played is not played-and-lost.
+  const rdCell = y.withdrew ? 'Withdrawal' : (y.roundReached || '—');
   const wlCell = y.withdrew ? '—' : `${y.won}-${y.lost}`;
   return `
-    <div class="atourn-yearrow${matches.length ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${matches.length ? ` onclick="toggleTournamentYear('${listId}')"` : ''} onmouseenter="this.style.borderColor='${hoverColor}';" onmouseleave="this.style.borderColor='';">
-      <span class="bar" style="background:${color};"></span>
-      <span class="yr">${y.year}${matches.length ? '<span class="exp">▾</span>' : ''}</span>
+    <div class="atourn-yearrow${hasMatches ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${hasMatches ? ` onclick="toggleTournamentYear('${listId}')"` : ''} style="border-color:${rowBd};">
+      <span class="yr">${y.year}${chev ? `<span class="exp">${chev}</span>` : ''}</span>
       <span class="rd">${rdCell}</span>
       <span class="wl">${wlCell}</span>
     </div>
-    ${matches.length ? `<div class="atourn-matchlist" id="${listId}" style="display:${open ? '' : 'none'};">${rows}</div>` : ''}
+    ${hasMatches ? `<div class="atourn-matchlist" id="${listId}" style="display:${open ? '' : 'none'};">${rows}</div>` : ''}
   `;
 }
 function showTournamentMore(colPrefix){
@@ -7997,7 +8011,6 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   const total = history.totalWon + history.totalLost;
   const pct = total > 0 ? Math.round(history.totalWon / total * 100) : 0;
   const isP1 = colPrefix === 'p1';
-  const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
   // Colour vocabulary read from design-export/computed-styles.json (state
   // modal-tournament): the player cards share ONE neutral TEXT palette — there
@@ -8018,8 +8031,8 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   // Export default-expands the most recent edition inline (state
   // modal-tournament) so the match detail is the first thing read, not a click
   // away.
-  const visibleRows = visible.map((y, i) => atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3), i === 0)).join('');
-  const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix, playerColor, rgba(0.3))}</div>`).join('');
+  const visibleRows = visible.map((y, i) => atournYearRowHtml(y, colPrefix, i === 0)).join('');
+  const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix)}</div>`).join('');
   // "Show N earlier editions · YEAR(S)›" — the export states the year range the
   // control reveals and carries a trailing chevron. Years run newest-first, so
   // the range is oldest–newest.
