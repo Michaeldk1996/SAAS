@@ -783,12 +783,17 @@
   .modal-analysis .aavatar{ border-radius:50%; display:inline-flex; }
   .modal-analysis .aavatar img,
   .modal-analysis .aavatar .avatar-fallback{ width:34px; height:34px; font-size:12px; flex-shrink:0; border-radius:50%; border:2px solid transparent; box-sizing:border-box; }
-  .modal-analysis #aP1Avatar .avatar-fallback{ background:linear-gradient(135deg,#1c2333,#141824); }
-  .modal-analysis #aP2Avatar .avatar-fallback{ background:linear-gradient(135deg,#241d16,#181410); }
+  /* export §10: identity is A #6aaeff / B neutral, fixed by name order — there is no
+     orange anywhere. Player A's avatar keeps a blue-tinted fallback; Player B's was a
+     brown/orange gradient (the "orange box") — now a neutral slate. */
+  .modal-analysis #aP1Avatar .avatar-fallback{ background:linear-gradient(135deg,#1b2740,#141a26); }
+  .modal-analysis #aP2Avatar .avatar-fallback{ background:linear-gradient(135deg,#20242e,#16181f); }
   .modal-analysis .apname{ font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
   .modal-analysis .aodds{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--text-dim); background:#0e1015; border:1px solid var(--border); border-radius:8px; min-width:30px; height:30px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; flex-shrink:0; }
-  .modal-analysis .aodds.p1{ background:rgba(62,123,250,0.10); border-color:rgba(62,123,250,0.30); color:#9dc0ff; }
-  .modal-analysis .aodds.p2{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.12); color:#e7e9ee; }
+  /* export §10: both odds pills share a neutral box (white-04 fill / white-09 border);
+     only the TEXT carries identity — A #6aaeff, B #e7e9ee — by name order. */
+  .modal-analysis .aodds.p1{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.09); color:#6aaeff; }
+  .modal-analysis .aodds.p2{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.09); color:#e7e9ee; }
   /* Founder pass-3 §8: for a completed/interrupted/live match these header pills
      carry SETS WON, not odds — the export tile is neutral (no identity tint), one
      shared box treatment, winner a touch brighter than the loser. */
@@ -1451,10 +1456,10 @@
   /* export keeps the surface TEXT label neutral #e7e9ee; colour lives on the bar fill only */
   .yr-hero .bar-row .lbl{ font-size:12.5px; font-weight:400; color:#e7e9ee; font-family:'Hanken Grotesk', sans-serif; }
   .yr-hero .bar-row .track{ height:7px; border-radius:4px; background:rgba(255,255,255,0.09); overflow:hidden; }
-  .yr-hero .bar-row .track div{ height:100%; border-radius:4px; }
-  .yr-hero .bar-row .track.clay div{ background:#eda869; }
-  .yr-hero .bar-row .track.hard div{ background:#7ba4ff; }
-  .yr-hero .bar-row .track.grass div{ background:#6ed3a3; }
+  /* export §1: surface bars are ALL one neutral fill on one neutral track — the
+     row label + column header carry surface identity, so the win-rate bar (a
+     performance value) takes no hue. Fill #e7e9ee, track rgba(255,255,255,0.09). */
+  .yr-hero .bar-row .track div{ height:100%; border-radius:4px; background:#e7e9ee; }
   .yr-hero .bar-row .v{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#5b6880; text-align:right; white-space:nowrap; }
   .yr-hero .bar-row .v .v-pct{ font-size:12px; color:#5b6880; margin-left:1px; }
   .yr-hero .bar-note{ font-size:10px; color:#4b5672; margin-top:2px; }
@@ -1462,16 +1467,21 @@
   .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
   .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
   .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
-  .yr-atponly{ display:inline-block; margin-left:6px; font-size:8.5px; font-weight:700; letter-spacing:0.04em; color:#7f8a9c; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:4px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
+  /* export §8: inline ATP chip — muted #5b6880, subtle white-06 fill, r3px, fw700 9px, NO border */
+  .yr-atponly{ display:inline-block; margin-left:6px; font-size:9px; font-weight:700; letter-spacing:0.04em; color:#5b6880; background:rgba(255,255,255,0.06); border-radius:3px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
   .yr-legend{ margin-top:22px; font-size:12px; color:#5b6880; line-height:1.5; text-align:center; }
   .yr-legend .yr-atponly{ margin:0 2px; }
   .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; flex-wrap:wrap; }
   .yr-tierlbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:#5b6880; font-family:'Hanken Grotesk',sans-serif; }
   .yr-tiertoggle{ display:flex; gap:2px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:3px; }
-  .yr-tiertoggle .opt{ font-size:11.5px; font-weight:600; color:#8b93a3; padding:6px 13px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
-  .yr-tiertoggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
-  .yr-table td.yr-clickable{ cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,0.18); text-underline-offset:2px; }
-  .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration-color:rgba(123,164,255,0.7); }
+  /* export §4: one segmented-control standard — inactive transparent/borderless #5b6880 600;
+     active rgba(91,155,255,0.22) fill on rgba(91,155,255,0.45) border, #e7e9ee 700 (no raised white fill) */
+  .yr-tiertoggle .opt{ font-size:11.5px; font-weight:600; color:#5b6880; padding:6px 13px; border:1px solid transparent; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
+  .yr-tiertoggle .opt.active{ color:#e7e9ee; font-weight:700; background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); }
+  /* export §2: year-table data cells carry NO resting link colour or underline — the
+     drill affordance is hover-only (underline appears on hover, resting is a plain value) */
+  .yr-table td.yr-clickable{ cursor:pointer; }
+  .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration:underline; text-decoration-color:rgba(123,164,255,0.7); text-underline-offset:2px; }
   .yr-drill{ margin-top:2px; }
   .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:#c3ccdb; padding:9px 2px 7px; border-top:1px solid rgba(255,255,255,0.06); }
   .yr-drill-head b{ color:#eef2f8; font-family:'IBM Plex Mono',monospace; }
@@ -1480,9 +1490,12 @@
   .yr-drill-note{ font-size:11.5px; color:#5b6472; padding:7px 2px; }
   .yr-drill-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:5px 2px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:11.5px; }
   .yr-drill-row:last-child{ border-bottom:none; }
+  /* export §6: W/L outcome markers are NEUTRAL, not green/red — green/red is a data-quality
+     signal in this system, and the export paints the loss marker #e7e9ee (see Completed-Matches
+     precedent: drift markers go neutral in both directions). Same for the season-block markers below. */
   .yr-drill-wl{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; text-align:center; }
-  .yr-drill-wl.win{ color:#3dd68c; }
-  .yr-drill-wl.loss{ color:#e0616f; }
+  .yr-drill-wl.win{ color:#e7e9ee; }
+  .yr-drill-wl.loss{ color:#e7e9ee; }
   .yr-drill-opp{ color:#cfd6e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-drill-sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; white-space:nowrap; }
   .yr-drill-end{ font-family:inherit; font-style:italic; color:#6b7280; margin-left:5px; font-size:10.5px; }
@@ -1516,17 +1529,16 @@
   .yr-season{ margin-bottom:11px; }
   .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .yr-season-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:#5b6880; font-family:'Hanken Grotesk',sans-serif; }
-  .yr-season-toggle{ display:flex; gap:3px; background:#0e1015; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:2px; }
-  .yr-season-toggle .opt{ font-size:10px; font-weight:600; color:#8b93a3; padding:3px 8px; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
-  .yr-season-toggle .opt.active{ color:#e7e9ee; background:rgba(255,255,255,0.09); }
+  /* export §4: the per-player ATP/Challenger season toggle was removed — one top
+     tier control governs this tab now, so .yr-season-toggle markup is gone (dead CSS dropped). */
   .yr-season-view.hidden{ display:none; }
   .yr-season-empty{ font-size:11.5px; color:#5b6472; padding:6px 2px; }
-  /* export season row: own fill, per-surface 3px left accent (via :has), tighter type */
+  /* export §5: season row keeps its own fill + a 3px left accent, but the accent is NEUTRAL,
+     not surface-coloured — the surface word already carries surface identity. (Export markup
+     paints this accent identity-blue on P1; per the §5 "neutral" ruling the base neutral
+     rgba(255,255,255,0.2) accent stands — see report note.) */
   .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:#0b0f18; border:1px solid rgba(255,255,255,0.09); border-left:3px solid rgba(255,255,255,0.2); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
   .yr-surfrec:hover{ background:rgba(255,255,255,0.04); }
-  .yr-surfrec:has(.yr-surf.clay){ border-left-color:var(--court-clay); }
-  .yr-surfrec:has(.yr-surf.hard){ border-left-color:var(--court-hard); }
-  .yr-surfrec:has(.yr-surf.grass){ border-left-color:var(--court-grass); }
   .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
   .yr-surfrec.disabled:hover{ background:#0b0f18; }
   .yr-surfrec .yr-surf{ font-size:13px; font-weight:400; min-width:44px; color:#e7e9ee; }
@@ -1540,8 +1552,8 @@
   .yr-matchrow:last-child{ border-bottom:none; }
   .yr-matchrow .top{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
   .yr-matchrow .mw{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; width:14px; text-align:center; flex:none; }
-  .yr-matchrow .mw.win{ color:#3dd68c; }
-  .yr-matchrow .mw.loss{ color:#e0616f; }
+  .yr-matchrow .mw.win{ color:#e7e9ee; }
+  .yr-matchrow .mw.loss{ color:#e7e9ee; }
   .yr-matchrow .opp{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfd6e6; flex:1; min-width:0; }
   .yr-matchrow .sc{ font-family:'IBM Plex Mono',monospace; color:#8b93a3; flex:none; }
   .yr-matchrow .btm{ font-size:10px; color:#6b7280; margin-top:2px; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1556,10 +1568,12 @@
   .yr-table td{ padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.03); color:#9aa3b2; }
   .yr-table td.yr-year{ color:#cfd4de; font-weight:600; }
   .yr-table tfoot td{ border-top:1px solid rgba(255,255,255,0.1); border-bottom:none; font-weight:700; padding-top:11px; padding-bottom:11px; background:rgba(255,255,255,0.02); color:#eef1f6; }
-  .yr-table .yr-col-total{ color:#eef1f6; }
-  .yr-table .yr-col-clay{ color:#eda869; }
-  .yr-table .yr-col-hard{ color:#7ba4ff; }
-  .yr-table .yr-col-grass{ color:#6ed3a3; }
+  /* export §1: every year-table value renders #e7e9ee — no per-column hue. Surface is
+     carried by the column header word, not the number measured under it. */
+  .yr-table .yr-col-total{ color:#e7e9ee; }
+  .yr-table .yr-col-clay{ color:#e7e9ee; }
+  .yr-table .yr-col-hard{ color:#e7e9ee; }
+  .yr-table .yr-col-grass{ color:#e7e9ee; }
   .yr-table .yr-na{ color:#5b6472; }
   .yr-table .yr-preera td{ font-style:italic; color:#4b5361; font-family:'Hanken Grotesk', sans-serif; border-bottom-style:dashed; }
 
@@ -6261,7 +6275,9 @@ function cellClass(cell, col){
   return `yr-col-${col}`;
 }
 function cellText(cell){
-  return cell ? `${cell.won}/${cell.lost}` : '—';
+  // export §3: one separator everywhere — a DASH. The hero card, surface rows and
+  // Total row already use won-lost; the year-table cells now match (was won/lost).
+  return cell ? `${cell.won}-${cell.lost}` : '—';
 }
 function sumCells(rows, key){
   let won = 0, lost = 0, has = false;
@@ -6273,9 +6289,9 @@ function sumCells(rows, key){
 function currentSeasonSummary(latestYear){
   if (!latestYear) return '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
   const parts = [];
-  if (latestYear.clay) parts.push(`<span class="yr-surf clay">Clay ${latestYear.clay.won}/${latestYear.clay.lost}</span>`);
-  if (latestYear.hard) parts.push(`<span class="yr-surf hard">Hard ${latestYear.hard.won}/${latestYear.hard.lost}</span>`);
-  if (latestYear.grass) parts.push(`<span class="yr-surf grass">Grass ${latestYear.grass.won}/${latestYear.grass.lost}</span>`);
+  if (latestYear.clay) parts.push(`<span class="yr-surf clay">Clay ${latestYear.clay.won}-${latestYear.clay.lost}</span>`);
+  if (latestYear.hard) parts.push(`<span class="yr-surf hard">Hard ${latestYear.hard.won}-${latestYear.hard.lost}</span>`);
+  if (latestYear.grass) parts.push(`<span class="yr-surf grass">Grass ${latestYear.grass.won}-${latestYear.grass.lost}</span>`);
   return parts.length ? parts.join(' · ') : '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
 }
 // Current-season surface record with an ATP / Challenger & ITF tier filter, each
@@ -6287,7 +6303,8 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
   const surfaces = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
   const total = surfaces.reduce((n, [s]) => n + ((tierData[s]?.won || 0) + (tierData[s]?.lost || 0)), 0);
   if (total === 0) {
-    return `<div class="yr-season-empty">No ${tier === 'atp' ? 'ATP' : 'Challenger / ITF'} singles matches recorded this season.</div>`;
+    const scope = tier === 'atp' ? 'ATP ' : tier === 'chitf' ? 'Challenger / ITF ' : '';
+    return `<div class="yr-season-empty">No ${scope}singles matches recorded this season.</div>`;
   }
   return surfaces.map(([s, label]) => {
     const rec = tierData[s] || { won: 0, lost: 0, matches: [] };
@@ -6312,31 +6329,36 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
         <div class="yr-surfmatches hidden" id="seasonMatches-${id}">${matchRows}</div>`;
   }).join('');
 }
-function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow){
+// export §4: ONE tier control governs this tab (the top "Career records by tier"
+// segmented control). The old per-player ATP / Challenger&ITF toggle above the
+// surface rows is removed — this block now renders for whichever tier that single
+// top control selects. 'all' merges ATP + Challenger&ITF per surface.
+function mergeSeasonTierData(a, b){
+  const out = {};
+  for (const s of ['clay', 'hard', 'grass']){
+    const ca = a && a[s], cb = b && b[s];
+    const won = (ca?.won || 0) + (cb?.won || 0);
+    const lost = (ca?.lost || 0) + (cb?.lost || 0);
+    const matches = [...(ca?.matches || []), ...(cb?.matches || [])]
+      .sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
+    out[s] = { won, lost, matches };
+  }
+  return out;
+}
+function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow, tier){
   const has = seasonSurface && (seasonSurface.atp || seasonSurface.chitf);
   if (!has) return `<div class="yr-summary">${currentSeasonSummary(latestYearRow)}</div>`;
   const atp = seasonSurface.atp || { clay: {}, hard: {}, grass: {} };
   const chitf = seasonSurface.chitf || { clay: {}, hard: {}, grass: {} };
+  const data = tier === 'atp' ? atp : tier === 'chitf' ? chitf : mergeSeasonTierData(atp, chitf);
+  const scope = tier === 'atp' ? 'atp' : tier === 'chitf' ? 'chitf' : 'all';
   return `
     <div class="yr-season">
       <div class="yr-season-head">
         <span class="yr-season-lbl">This season · by surface</span>
-        <div class="yr-season-toggle">
-          <span class="opt active" id="seasonTier-atp-${colPrefix}" onclick="setSeasonTier('${colPrefix}','atp')">ATP</span>
-          <span class="opt" id="seasonTier-chitf-${colPrefix}" onclick="setSeasonTier('${colPrefix}','chitf')">Challenger &amp; ITF</span>
-        </div>
       </div>
-      <div class="yr-season-view" id="seasonView-atp-${colPrefix}">${seasonSurfaceTierViewHtml(atp, 'atp', colPrefix)}</div>
-      <div class="yr-season-view hidden" id="seasonView-chitf-${colPrefix}">${seasonSurfaceTierViewHtml(chitf, 'chitf', colPrefix)}</div>
+      <div class="yr-season-view" id="seasonView-${scope}-${colPrefix}">${seasonSurfaceTierViewHtml(data, scope, colPrefix)}</div>
     </div>`;
-}
-function setSeasonTier(colPrefix, tier){
-  for (const t of ['atp', 'chitf']){
-    const view = document.getElementById(`seasonView-${t}-${colPrefix}`);
-    if (view) view.classList.toggle('hidden', t !== tier);
-    const opt = document.getElementById(`seasonTier-${t}-${colPrefix}`);
-    if (opt) opt.classList.toggle('active', t === tier);
-  }
 }
 function toggleSeasonMatches(id){
   const panel = document.getElementById(`seasonMatches-${id}`);
@@ -6446,7 +6468,7 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
     <div class="yr-col">
       <div class="yr-name">${name}</div>
       ${heroHtml}
-      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0])}
+      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0], tier)}
       <table class="yr-table">
         <thead><tr><th>Year</th><th class="h-total">Total</th><th class="h-clay">Clay</th><th class="h-hard">Hard</th><th class="h-grass">Grass</th></tr></thead>
         <tbody>${bodyRows}</tbody>
@@ -10194,7 +10216,7 @@ function openAnalysisModal(matchId){
   }
   document.getElementById('aP1Avatar').innerHTML = playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key);
   document.getElementById('aP2Avatar').innerHTML = playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key);
-  document.querySelector('#aP1Avatar img, #aP1Avatar .avatar-fallback').style.borderColor = 'rgba(62,123,250,0.55)';
+  document.querySelector('#aP1Avatar img, #aP1Avatar .avatar-fallback').style.borderColor = 'rgba(106,174,255,0.55)';
   document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(231,233,238,0.55)';
 
   const roundText = h2hRoundLabel(m.tournamentRound);
