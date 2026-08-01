@@ -1444,7 +1444,12 @@
   .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
   .yr-col{ min-width:0; }
   .yr-name{ font-size:15px; font-weight:700; color:#eef1f6; margin-bottom:12px; font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero{ border-radius:16px; padding:22px 24px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; }
+  .yr-hero{ border-radius:16px; padding:22px 24px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; min-height:184px; }
+  /* §6: the empty side keeps an aligned career-card placeholder (same slot as a
+     real hero) so both columns' THIS SEASON headers share a baseline and the
+     empty-state message below can't float up a card-height. */
+  .yr-hero.yr-hero-empty{ display:flex; align-items:center; justify-content:center; text-align:center; background:rgba(255,255,255,0.015); }
+  .yr-hero.yr-hero-empty .msg{ font-size:12px; color:#5b6472; line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
   /* export "CAREER" label sits inline in the header group, IBM Plex Mono, muted (not absolute) */
   .yr-hero .career-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.16em; font-weight:400; font-family:'IBM Plex Mono', monospace; color:#5b6880; }
   .yr-hero .recrow{ display:flex; align-items:baseline; gap:12px; }
@@ -1483,6 +1488,12 @@
   .yr-table td.yr-clickable{ cursor:pointer; }
   .yr-table td.yr-clickable:hover{ background:rgba(62,123,250,0.12); text-decoration:underline; text-decoration-color:rgba(123,164,255,0.7); text-underline-offset:2px; }
   .yr-drill{ margin-top:2px; }
+  /* §5: the year-cell drill renders inline in a full-width row beneath its year,
+     collapsing to zero height until it's populated (so unopened years add no gap). */
+  .yr-table tr.yr-dtr:hover td{ background:none; }
+  .yr-table td.yr-dcell{ padding:0; border-bottom:none; }
+  .yr-dcell .yr-drill{ margin:0; }
+  .yr-dcell .yr-drill:not(:empty){ padding:2px 0 9px; }
   .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:#c3ccdb; padding:9px 2px 7px; border-top:1px solid rgba(255,255,255,0.06); }
   .yr-drill-head b{ color:#eef2f8; font-family:'IBM Plex Mono',monospace; }
   .yr-drill-close{ margin-left:auto; cursor:pointer; color:#6b7280; font-size:12px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:5px; }
@@ -1532,11 +1543,14 @@
   /* export §4: the per-player ATP/Challenger season toggle was removed — one top
      tier control governs this tab now, so .yr-season-toggle markup is gone (dead CSS dropped). */
   .yr-season-view.hidden{ display:none; }
-  .yr-season-empty{ font-size:11.5px; color:#5b6472; padding:6px 2px; }
-  /* export §5: season row keeps its own fill + a 3px left accent, but the accent is NEUTRAL,
-     not surface-coloured — the surface word already carries surface identity. (Export markup
-     paints this accent identity-blue on P1; per the §5 "neutral" ruling the base neutral
-     rgba(255,255,255,0.2) accent stands — see report note.) */
+  /* §7: an entirely-empty tier occupies the surface-rows' slot (min-height) so
+     it holds place and doesn't jump up, keeping both columns aligned. */
+  .yr-season-empty{ font-size:11.5px; color:#5b6472; padding:6px 2px; min-height:151px; display:flex; align-items:center; }
+  /* export §2/§3: season row keeps its own fill (#0b0f18, 10px radius, 1px hairline
+     border) plus a 3px left accent. Measured from computed-styles.json (modal-overview):
+     the accent is BLUE-family, not an orange/green surface palette — Clay rgb(106,174,255),
+     Hard/Grass rgb(91,155,255), identical on both players. This reverses the earlier §5
+     "neutral accent" ruling (founder re-requested a visible leading accent — see report). */
   .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:#0b0f18; border:1px solid rgba(255,255,255,0.09); border-left:3px solid rgba(255,255,255,0.2); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
   .yr-surfrec:hover{ background:rgba(255,255,255,0.04); }
   .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
@@ -6299,13 +6313,14 @@ function currentSeasonSummary(latestYear){
 // tournament, date). Driven by m.p{1,2}SeasonSurface (all-tier, per-surface match
 // lists). Falls back to the ATP-only text summary if that field isn't present
 // (e.g. a matches.json written before this field existed).
-function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
+function seasonSurfaceTierViewHtml(tierData, tier, colPrefix, seasonYear, playerKey){
   const surfaces = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
   const total = surfaces.reduce((n, [s]) => n + ((tierData[s]?.won || 0) + (tierData[s]?.lost || 0)), 0);
   if (total === 0) {
     const scope = tier === 'atp' ? 'ATP ' : tier === 'chitf' ? 'Challenger / ITF ' : '';
     return `<div class="yr-season-empty">No ${scope}singles matches recorded this season.</div>`;
   }
+  const drillYear = seasonYear || (new Date().getFullYear());
   return surfaces.map(([s, label]) => {
     const rec = tierData[s] || { won: 0, lost: 0, matches: [] };
     const n = rec.won + rec.lost;
@@ -6314,19 +6329,22 @@ function seasonSurfaceTierViewHtml(tierData, tier, colPrefix){
     }
     const id = `${tier}-${s}-${colPrefix}`;
     const pct = Math.round(rec.won / n * 100);
-    const matchRows = (rec.matches || []).map(mm => `
-        <div class="yr-matchrow">
-          <div class="top"><span class="mw ${mm.won ? 'win' : 'loss'}">${mm.won ? 'W' : 'L'}</span><span class="opp">${escapeHtml(mm.opponent)}</span><span class="sc">${escapeHtml(mm.result || '')}</span></div>
-          <div class="btm">${escapeHtml(mm.tournament || '')}${mm.date ? ' · ' + formatShortDate(new Date(mm.date + 'T00:00:00')) : ''}</div>
-        </div>`).join('');
+    // export §5: the surface row expands inline onto the SAME rich career-history
+    // renderer as the year-table cells (showOverviewMatches), so each match row
+    // carries the score→match-stats expander. Needs the player's career shard —
+    // if we don't have a key, fall back to a non-clickable record row.
+    if (!playerKey) {
+      return `<div class="yr-surfrec disabled ${s}"><span class="yr-surf ${s}">${label}</span><span class="rec">${rec.won}-${rec.lost}</span><span class="rpct">${pct}%</span></div>`;
+    }
+    const grp = `ovs${colPrefix}${tier}${s}`;
     return `
-        <div class="yr-surfrec" id="seasonRec-${id}" onclick="toggleSeasonMatches('${id}')">
+        <div class="yr-surfrec ${s}" id="seasonRec-${id}" onclick="showOverviewMatches('${playerKey}','${drillYear}','${s}','${colPrefix}','${tier}','seasonMatches-${id}','${grp}','seasonRec-${id}')">
           <span class="yr-surf ${s}">${label}</span>
           <span class="rec">${rec.won}-${rec.lost}</span>
           <span class="rpct">${pct}%</span>
           <span class="chev">▸</span>
         </div>
-        <div class="yr-surfmatches hidden" id="seasonMatches-${id}">${matchRows}</div>`;
+        <div class="yr-drill" id="seasonMatches-${id}"></div>`;
   }).join('');
 }
 // export §4: ONE tier control governs this tab (the top "Career records by tier"
@@ -6345,7 +6363,7 @@ function mergeSeasonTierData(a, b){
   }
   return out;
 }
-function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow, tier){
+function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow, tier, playerKey){
   const has = seasonSurface && (seasonSurface.atp || seasonSurface.chitf);
   if (!has) return `<div class="yr-summary">${currentSeasonSummary(latestYearRow)}</div>`;
   const atp = seasonSurface.atp || { clay: {}, hard: {}, grass: {} };
@@ -6357,14 +6375,8 @@ function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow, tier){
       <div class="yr-season-head">
         <span class="yr-season-lbl">This season · by surface</span>
       </div>
-      <div class="yr-season-view" id="seasonView-${scope}-${colPrefix}">${seasonSurfaceTierViewHtml(data, scope, colPrefix)}</div>
+      <div class="yr-season-view" id="seasonView-${scope}-${colPrefix}">${seasonSurfaceTierViewHtml(data, scope, colPrefix, latestYearRow && latestYearRow.year, playerKey)}</div>
     </div>`;
-}
-function toggleSeasonMatches(id){
-  const panel = document.getElementById(`seasonMatches-${id}`);
-  if (panel) panel.classList.toggle('hidden');
-  const rec = document.getElementById(`seasonRec-${id}`);
-  if (rec) rec.classList.toggle('expanded');
 }
 // Career-overview tier filter: 'all' (ATP + Challenger&ITF combined, default),
 // 'atp', or 'chitf'. Selecting a tier re-renders the whole Overview table +
@@ -6398,7 +6410,9 @@ function yrSurfCell(r, surf, colPrefix, playerKey, tier){
   // covers, so those rows stay non-clickable rather than show a misleading subset.
   if (cell && r.allTier && playerKey){
     const drillSurf = surf === 'total' ? 'all' : surf;
-    return `<td class="${cls} yr-clickable" onclick="showYearSurfaceMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}','${tier}')">${txt}</td>`;
+    // §5: drill renders inline beneath THIS year's row (yrDrill-${col}-${year}),
+    // not into a shared bottom panel; groupTag scopes the row accordion per year.
+    return `<td class="${cls} yr-clickable" onclick="showOverviewMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}','${tier}','yrDrill-${colPrefix}-${r.year}','ovd${colPrefix}y${r.year}','')">${txt}</td>`;
   }
   return `<td class="${cls}">${txt}</td>`;
 }
@@ -6432,6 +6446,12 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
       const label = r._placeholder === 'future' ? 'no matches yet' : 'not yet on tour';
       return `<tr class="yr-preera"><td>${r.year}</td><td colspan="4">${label}</td></tr>`;
     }
+    // §5: a full-width inline drill row sits directly beneath each clickable year
+    // (2021+ all-tier rows we actually have match lists for). It stays collapsed to
+    // zero height until a cell in this year is clicked.
+    const drillRow = (r.allTier && playerKey)
+      ? `<tr class="yr-dtr"><td class="yr-dcell" colspan="5"><div class="yr-drill" id="yrDrill-${colPrefix}-${r.year}"></div></td></tr>`
+      : '';
     return `
     <tr>
       <td class="yr-year">${r.year}${r.allTier === false ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
@@ -6439,7 +6459,7 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
       ${yrSurfCell(r, 'clay', colPrefix, playerKey, tier)}
       ${yrSurfCell(r, 'hard', colPrefix, playerKey, tier)}
       ${yrSurfCell(r, 'grass', colPrefix, playerKey, tier)}
-    </tr>
+    </tr>${drillRow}
   `;
   }).join('');
   const totals = { total: sumCellsTier(rows, 'total', tier), clay: sumCellsTier(rows, 'clay', tier), hard: sumCellsTier(rows, 'hard', tier), grass: sumCellsTier(rows, 'grass', tier) };
@@ -6463,12 +6483,16 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
       </div>
       <div class="bar-note">Bar length = win rate on that surface</div>
     </div>
-  ` : '';
+  ` : `
+    <div class="yr-hero yr-hero-empty" style="border-color:${rgba(0.18)};">
+      <div class="msg">No career singles record on file<br>for this player in this tier.</div>
+    </div>
+  `;
   return `
     <div class="yr-col">
       <div class="yr-name">${name}</div>
       ${heroHtml}
-      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0], tier)}
+      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0], tier, playerKey)}
       <table class="yr-table">
         <thead><tr><th>Year</th><th class="h-total">Total</th><th class="h-clay">Clay</th><th class="h-hard">Hard</th><th class="h-grass">Grass</th></tr></thead>
         <tbody>${bodyRows}</tbody>
@@ -6480,7 +6504,6 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
           <td class="${cellClass(totals.grass, 'grass')}">${cellText(totals.grass)}</td>
         </tr></tfoot>
       </table>
-      <div class="yr-drill" id="yrDrill-${colPrefix}"></div>
     </div>
   `;
 }
@@ -6997,13 +7020,35 @@ function switchPbpSet(el, setNo){
   pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
   body.innerHTML = buildPointByPointHtml(_aPbpMatch, _aPbpEntry, setNo);
 }
-async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier){
+// §5: ONE renderer drives both drill surfaces — a season-surface row and a
+// year-table cell both call this, rendering the same rich career-history match
+// list inline into their own container. Only one drill is open per player column
+// (the "block"): opening a second closes the first. Every row whose box score or
+// point log is on file carries the score→match-stats expander (toggleFormPanel).
+const _openOverviewDrill = {};   // colPrefix -> currently-open containerId
+function _clearOverviewTrigger(id){ if (id){ const t = document.getElementById(id); if (t) t.classList.remove('expanded'); } }
+async function showOverviewMatches(playerKey, year, surface, colPrefix, tier, containerId, groupTag, triggerId){
   tier = tier || 'all';
-  const container = document.getElementById(`yrDrill-${colPrefix}`);
+  const container = document.getElementById(containerId);
   if (!container) return;
-  const token = `${playerKey}|${year}|${surface}|${tier}`;
-  if (container.dataset.token === token && container.innerHTML){ container.innerHTML = ''; container.dataset.token = ''; return; } // toggle off
+  const token = `${containerId}|${playerKey}|${year}|${surface}|${tier}`;
+  // Re-clicking the open selection toggles it closed.
+  if (container.dataset.token === token && container.innerHTML){
+    container.innerHTML = ''; container.dataset.token = '';
+    _clearOverviewTrigger(container.dataset.trigger); container.dataset.trigger = '';
+    if (_openOverviewDrill[colPrefix] === containerId) _openOverviewDrill[colPrefix] = '';
+    return;
+  }
+  // One drill open per column: close whichever was previously open here.
+  const prevId = _openOverviewDrill[colPrefix];
+  if (prevId && prevId !== containerId){
+    const prev = document.getElementById(prevId);
+    if (prev){ _clearOverviewTrigger(prev.dataset.trigger); prev.dataset.trigger = ''; prev.innerHTML = ''; prev.dataset.token = ''; }
+  }
+  _openOverviewDrill[colPrefix] = containerId;
   container.dataset.token = token;
+  container.dataset.trigger = triggerId || '';
+  if (triggerId){ const t = document.getElementById(triggerId); if (t) t.classList.add('expanded'); }
   container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
   const all = await loadCareerHistory(playerKey);
   if (container.dataset.token !== token) return; // superseded by a newer click
@@ -7011,7 +7056,7 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
   const surfLabel = surface === 'all' ? 'All surfaces' : surface.charAt(0).toUpperCase() + surface.slice(1);
   const tierLabel = tier === 'all' ? '' : (tier === 'atp' ? ' · ATP' : ' · Challenger & ITF');
   const won = list.filter(mm => mm.won).length, lost = list.length - won;
-  const closeBtn = `<span class="yr-drill-close" onclick="showYearSurfaceMatches('${playerKey}','${year}','${surface}','${colPrefix}','${tier}')" title="Close">✕</span>`;
+  const closeBtn = `<span class="yr-drill-close" onclick="showOverviewMatches('${playerKey}','${year}','${surface}','${colPrefix}','${tier}','${containerId}','${groupTag}','${triggerId || ''}')" title="Close">✕</span>`;
   if (!list.length){
     container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
     requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
@@ -7039,10 +7084,10 @@ async function showYearSurfaceMatches(playerKey, year, surface, colPrefix, tier)
         <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
       </div>`;
     }
-    // Suffix must stay `ovw<i>` — toggleFormPanel strips it to derive the
-    // accordion group, so every row in this drill-down shares one group and
-    // opening a second row closes the first.
-    const idPrefix = `ovd${colPrefix}ovw${i}`;
+    // Suffix must stay `ovw<i>` — toggleFormPanel strips it to derive the accordion
+    // group, so every row in this drill shares one group and opening a second row
+    // closes the first. groupTag makes each drill (year or surface) its own group.
+    const idPrefix = `${groupTag}ovw${i}`;
     return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
       <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
       <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
@@ -7084,6 +7129,9 @@ function buildYearlyTables(m){
     return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
   }
   _overviewMatch = m;
+  // Re-render replaces every drill container, so drop the open-drill tracker to
+  // avoid pointing at a stale (now-empty) container id.
+  _openOverviewDrill.p1 = ''; _openOverviewDrill.p2 = '';
   const tier = overviewTier;
   const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
   const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false);
