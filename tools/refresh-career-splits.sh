@@ -109,7 +109,12 @@ cp career-splits.json /tmp/bsp-new-splits.json
 pushed=0
 for attempt in 1 2 3; do
   git fetch --quiet origin main
-  git reset --quiet --hard origin/main
+  # Path-scoped reset: mixed (not --hard) moves the branch pointer to origin/main
+  # so our single-file commit fast-forwards, but leaves the working tree intact.
+  # A --hard here wiped ANY uncommitted work in the shared tree (e.g. the in-tree
+  # account.html restyle the tooling session measures). Mixed reset + a scoped
+  # `git add career-splits.json` publishes only the data file and never clobbers.
+  git reset --quiet origin/main
   cp /tmp/bsp-new-splits.json career-splits.json
   if git diff --quiet -- career-splits.json; then echo "matched remote after fetch; no-op"; STATUS="no-op"; exit 0; fi
   git add career-splits.json
