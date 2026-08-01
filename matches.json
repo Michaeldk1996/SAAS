@@ -1816,17 +1816,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "15 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
@@ -3270,7 +3264,29 @@
           ]
         }
       }
-    }
+    },
+    "finalScore": {
+      "display": "4-6, 7-5, 6-4",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "47f8a5f6294a8f78a47b84de7c4b63d1",
@@ -6869,11 +6885,11 @@
       "category": "Medium"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2227_c-wong.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9210_a-gea.jpg",
     "oddsMovement": {
@@ -7429,7 +7445,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12151287",
@@ -33264,13 +33283,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.37,
+      "p2": 1.57,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.37,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.57,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 13091,
@@ -34737,13 +34762,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.8,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.8,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 1101,
@@ -38146,13 +38177,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.45,
+      "p2": 2.75,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.45,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.75,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 434,
@@ -39984,13 +40021,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.62,
+      "p2": 1.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.62,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.5,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 388,
@@ -46725,13 +46768,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.41,
+      "p2": 2.97,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.41,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.97,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 1096,
@@ -48411,13 +48460,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.59,
+      "p2": 2.35,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.59,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.35,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 978,
@@ -49691,13 +49746,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.34,
+      "p2": 3.36,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.34,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 3.36,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 10884,
@@ -51304,13 +51365,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.72,
+      "p2": 2.1,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.72,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.1,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 9222,
@@ -54629,13 +54696,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.8,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.8,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 2843,
@@ -62213,7 +62286,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-3",
+      "display": "6-7(4), 4-3",
       "sets": [
         {
           "p1": 6,
@@ -79806,7 +79879,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(6)",
       "sets": [
         {
           "p1": 3,
@@ -97718,7 +97791,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(3)",
       "sets": [
         {
           "p1": 6,
@@ -116274,7 +116347,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-4",
+      "display": "7-6(5), 3-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -154886,7 +154959,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 4-6",
+      "display": "7-6(3), 3-6, 4-6",
       "sets": [
         {
           "p1": 7,
