@@ -1882,9 +1882,11 @@
   .sf-username{ font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sf-userplan{ font-family:var(--sf-font-ui); font-size:11px; color:var(--sf-muted); margin-top:1px; }
   .sf-chev{ color:var(--sf-muted); flex:none; }
-  .sf-upgrade{ display:block; width:100%; margin-top:10px; padding:11px; text-align:center;
-    border:1px solid var(--sf-border-data); border-radius:9px; background:none; color:var(--sf-text);
-    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; }
+  /* Completed-Matches parity item 4 — global Upgrade to Pro: export leaf sbseg is brand-blue
+     700 text on a brand-tint 0.35 border, radius 10, 10px pad (was neutral 600 / 0.09 border / 9 / 11px). */
+  .sf-upgrade{ display:block; width:100%; margin-top:10px; padding:10px; text-align:center;
+    border:1px solid rgba(91,155,255,0.35); border-radius:10px; background:none; color:var(--sf-brand);
+    font-family:var(--sf-font-ui); font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
   .sf-upgrade:hover{ border-color:var(--sf-brand); color:#fff; }
 
   /* item 7 / review-item 4 — content column left-aligned beside the sidebar (export
@@ -1918,15 +1920,17 @@
      the selected-state marker, never a full rectangular outline box. */
   [data-page="matches"] .mx-daytabs button:focus{ outline:none; }
   [data-page="matches"] .mx-daytabs button:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:3px; border-radius:6px; }
-  /* Review item 4 — segmented control locked to README values. Active: 0.22 fill on
-     0.45 border, #e7e9ee weight 700. Inactive: transparent, borderless (a transparent
+  /* Review item 4 — segmented control locked to export leaf (span.seg) values. Active: 0.22 fill on
+     0.45 border, #fff weight 700. Inactive: transparent, borderless (a transparent
      1px border reserves the space so the active state doesn't nudge its neighbour),
-     #5b6880 weight 600. Tighter padding so the container isn't wider than the export. */
+     #5b6880 weight 600. Leaf padding 8x18, radius 9, 13px per the export. */
   [data-page="matches"] .mx-viewseg{ display:inline-flex; background:var(--mx-bg-input); border:1px solid var(--sf-border-subtle);
     border-radius:9px; padding:3px; gap:2px; }
-  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:6px 13px; border-radius:7px;
-    font-family:var(--sf-font-ui); font-size:12.5px; font-weight:600; color:var(--sf-muted); cursor:pointer; }
-  [data-page="matches"] .mx-viewseg button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#e7e9ee; font-weight:700; }
+  /* Completed-Matches parity item 3 — toggle pills to export leaf: 13px, 8x18 pad, radius 9,
+     active #fff (were 12.5px / 6x13 / 7 / #e7e9ee). Font-family already Hanken; untouched. */
+  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:8px 18px; border-radius:9px;
+    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-muted); cursor:pointer; }
+  [data-page="matches"] .mx-viewseg button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#fff; font-weight:700; }
 
   /* item 6 — date-rail arrows as bordered square chevron buttons */
   [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; padding:0 !important; border:1px solid var(--sf-border-subtle) !important;
