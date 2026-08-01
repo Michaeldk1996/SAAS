@@ -146,6 +146,36 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors. 
 
 ---
 
+## Rulings ledger — apply these as tests
+
+**Standing process (founder ruling, 2026-08-01).** Every ruling the founder gives is written into *this file* as a rule the **same day** it is given — not only applied to the tab in front of you and logged in BUILD-NOTES. CLAUDE.md loads automatically every session; a ruling that lives only in a chat has to be re-asked next time. When you record one:
+
+- **State it as a test someone can apply, not a prohibition.** Prohibitions generate edge-case questions; tests resolve them. Model: *"blue answers whose number this is, never whether the number is good"* beats *"never use blue on a performance value"* — the second one made us litigate whether an ace counts as performance.
+- **List exceptions inline with the rule**, not in a separate section, so nobody applies a rule without seeing its carve-outs.
+
+### Default resolution rule (founder ruling, 2026-08-01)
+
+When the export and a documented rule disagree on anything **measurable — spacing, colour, weight, radius, anatomy, layout, ordering — the export wins and you proceed.** Note the divergence in your report so it stays visible, but do **not** hold work waiting on a ruling. (This replaces the old "flag both and never pick." Flagging still happens; waiting does not.)
+
+**Three carve-outs where you still stop and ask, because the export cannot settle them:**
+
+1. **Fabricated or absent data.** If a value isn't in the source, no export mock justifies inventing one. Em dash and report.
+2. **Scope.** If the export shows a section, control or binding with no counterpart in the build's data layer, report before building it.
+3. **Product decisions that post-date the export.** The export is a snapshot; some things were deliberately added or removed after it. Before you delete something *because the export lacks it*, ask first.
+
+### Rulings — each is a test
+
+- **Blue.** Blue (`--brand #5b9bff`) answers *whose* number this is — interactive control or player/tournament identity — never *whether* the number is good. Test: if the blue is signalling quality/performance, it's wrong; recolour or neutralise. *Exceptions inline:* the legacy blue `#3e7bfa` (`--accent`, `--mx-brand-blue`) is frozen — do not migrate it to `--brand` piecemeal, only on explicit founder go-ahead; and on archetype-row bars the winning (≥50) side is accent-blue by export spec, not green.
+- **Green / red.** Green (`#3dd68c`) / red (`#e0616f`) mark a value-or-data-quality *verdict*, or a *comparison the export itself colours* — never a generic "good vs bad", and never which of two players leads a head-to-head stat (H2H comparison stats stay neutral). Test: is this a verdict/data-quality signal, or a comparison the export explicitly colours? If neither, it stays neutral grey. *Exceptions inline:* (a) the Playing Styles 7×7 **Matchup grid** colours each edge green = row wins / red = row loses — approved exception, but only with the canonical tokens `#3dd68c`/`#e0616f`, never the near-miss hues `#3ECF8E`/`#E8607A`; (b) the app-wide near-miss green/red `#3ECF8E`/`#E8607A` (form pills, W/L chips, radar surface map, PS badges) is FLAGGED, not migrated — leave it as-is until a founder go-ahead, since changing PS badges alone would split them from the identical badge elsewhere; (c) the Clay surface tag never renders green — it is orange/terracotta.
+- **Modal tab rail.** The Match Analysis modal has **exactly eleven tabs** and **News is second**. Rail order: Key factors, News, Playing style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds. Test: count = 11 and position 2 = News; if not, it's wrong.
+- **Font weight.** A weight is valid iff it is one of **{400, 500, 600, 700, 800}**. Test: any other weight is wrong. Heavy use of 600/700/800 is the design (verified against `tokens-observed.json`), not a violation — do not "tone it down".
+- **Gradients, shadows, tinted washes.** These are permitted **exactly where the export uses one** — apply where the export element carries it, remove only where the export element doesn't. Test: does the corresponding export element carry the gradient/shadow/wash? Match it. *Exception inline:* the only elevation shadow in the build is the Match Analysis modal card (`box-shadow: 0 40px 120px rgba(0,0,0,0.6)`); every other surface stays flat.
+- **Em dash vs zero.** A field with no value renders an em dash **"—"**, never `0`; a field whose value is genuinely zero renders **`0`**, never an em dash. Test: is the value absent or is it really zero? They are never interchangeable, on any surface.
+- **One container per content block.** Each content block is wrapped in **exactly one** container — no nested duplicate card/panel/border wrappers around the same block. Test: strip to a single enclosing container per block; if a block sits inside two cards, collapse to one.
+- **Empty states fabricate nothing.** An empty state shows only what the data actually is — an em dash, a "no data"/"not measured" label, or nothing — it never invents, approximates, back-fills, or falls back to a placeholder number. Test: every value in the empty state must trace to real source data; if it can't, it must be an em dash or an explicit unavailable label.
+
+---
+
 ## Non-negotiables — these are hard rules
 
 - Never show a pipeline health banner or infrastructure warnings to end users
