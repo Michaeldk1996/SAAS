@@ -1667,7 +1667,7 @@
   .atourn-card .pctrow{ display:flex; align-items:baseline; gap:9px; }
   .atourn-card .pct{ font-family:'IBM Plex Mono', monospace; font-size:46px; font-weight:600; line-height:0.9; letter-spacing:-0.02em; }
   .atourn-card .pctlbl{ font-size:13px; font-weight:600; }
-  .atourn-card .track{ height:9px; background:rgba(255,255,255,0.06); border-radius:5px; overflow:hidden; margin-top:14px; }
+  .atourn-card .track{ height:8px; background:rgba(255,255,255,0.09); border-radius:5px; overflow:hidden; margin-top:14px; }
   .atourn-card .track div{ height:100%; border-radius:5px; }
   .atourn-card .recordrow{ display:flex; justify-content:space-between; margin-top:11px; font-size:12.5px; }
   .atourn-card .recordrow .rec{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
@@ -1704,9 +1704,13 @@
   .atourn-chev{ color:#6b7280; font-size:10px; flex:0 0 auto; transition:transform .16s; }
   .atourn-chev.open{ transform:rotate(90deg); color:#9aa3b2; }
   .atourn-matchrow .d{ color:#6b7280; font-family:'IBM Plex Mono', monospace; flex:0 0 auto; }
-  .atourn-matchrow .opp{ color:#9aa3b2; flex:1 1 auto; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-matchrow .opp.win{ color:#3ECF8E; }
-  .atourn-matchrow .opp.loss{ color:#9aa3b2; }
+  /* Verb (def./Lost to) + opponent name are ONE neutral colour per the export
+     (state modal-tournament): both the verb and the name read #e7e9ee. Green/red
+     are data-quality signals elsewhere, not a match-outcome vocabulary — the
+     verb already states the result, so the win/loss classes carry no colour. */
+  .atourn-matchrow .opp{ color:#e7e9ee; flex:1 1 auto; font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-matchrow .opp.win{ color:#e7e9ee; }
+  .atourn-matchrow .opp.loss{ color:#e7e9ee; }
   .atourn-matchrow .rd{ color:#6b7280; flex:0 0 auto; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-matchrow .sc{ font-family:'IBM Plex Mono', monospace; color:#9aa3b2; flex:0 0 auto; }
 
@@ -7996,17 +8000,18 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
   // Colour vocabulary read from design-export/computed-styles.json (state
-  // modal-tournament): both player cards share ONE neutral palette — there is
-  // no orange in the identity system. Founder ruling (TEN-8, 2026-08-01): the
-  // win-rate bar carries NO identity colour either — the export painted A blue
-  // and B white, but that contradicts the README "no identity colour on a
-  // performance value" rule, and the README wins. Both bars are neutral #e7e9ee.
+  // modal-tournament): the player cards share ONE neutral TEXT palette — there
+  // is no orange in the identity system. The win-rate BAR, however, is fixed by
+  // name order per the export and the founder's second-pass ruling (TEN-8,
+  // 2026-08-01, reversing the earlier README-wins call): Player A's fill reads
+  // rgb(106,174,255)=#6aaeff, Player B's rgb(231,233,238)=#e7e9ee; the track
+  // behind both reads rgba(255,255,255,0.09).
   const recColor = '#e7e9ee';        // big win-rate %   (export fw800 / 44px)
   const pctLblColor = '#e7e9ee';     // "win rate" label (export fw400 / 14px)
   const recordColor = '#e7e9ee';     // record figure    (export fw700 / 14px)
   const editionsColor = '#5b6880';   // "N editions played" (export 12.5px)
   const longAccentColor = isP1 ? '#6aaeff' : '#e7e9ee';  // GS-only; no export ref
-  const trackBar = '#e7e9ee';        // neutral for both — no identity on a perf value
+  const trackBar = isP1 ? '#6aaeff' : '#e7e9ee';  // win-rate fill, by name order (export)
 
   const visible = history.years.slice(0, 3);
   const extra = history.years.slice(3);
