@@ -749,7 +749,12 @@
   .pp-split-head:hover{ background:rgba(255,255,255,0.04); }
   .pp-split-head:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
 
-  .modal-analysis{ max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
+  /* Founder pass-3 §5: the modal shell must read as the same surface as the page
+     behind it, not a lighter panel. Match the page's card token (--mc-card /
+     --sf-card = #0a0d14); the generic .modal's --panel (#12151C) was noticeably
+     lighter. The scrim stays .modal-overlay's rgba(0,0,0,0.65), consistent with
+     every other modal (the inline-expand export carries no modal to measure). */
+  .modal-analysis{ max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; background:#0a0d14; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
 
   /* ---- Header ---- */
   .modal-analysis .ahead2{ position:relative; padding:20px 48px 20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; flex-wrap:wrap; }
@@ -772,17 +777,21 @@
   .modal-analysis .aodds{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--text-dim); background:#0e1015; border:1px solid var(--border); border-radius:8px; min-width:30px; height:30px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; flex-shrink:0; }
   .modal-analysis .aodds.p1{ background:rgba(62,123,250,0.10); border-color:rgba(62,123,250,0.30); color:#9dc0ff; }
   .modal-analysis .aodds.p2{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.12); color:#e7e9ee; }
+  /* Founder pass-3 §8: for a completed/interrupted/live match these header pills
+     carry SETS WON, not odds — the export tile is neutral (no identity tint), one
+     shared box treatment, winner a touch brighter than the loser. */
+  .modal-analysis .aodds.sets{ background:rgba(255,255,255,0.03); border-color:rgba(255,255,255,0.10); color:#e7e9ee; }
+  .modal-analysis .aodds.sets.win{ background:rgba(255,255,255,0.07); }
   .modal-analysis .aodds:empty{ display:none; }
   .modal-analysis .avslabel2{ color:var(--text-faint); font-weight:500; font-size:11px; font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
   /* The score is stated ONCE in the header: sets in the matchup pills, then this
      row. The compact FINAL pill replaces the old full-width green banner, which
      repeated a score the two rows above it already carried. */
   .modal-analysis .ascorerow{ display:flex; align-items:center; gap:11px; }
-  /* Founder ruling §C (2026-08-01, "do as the export"): the export uses NO green
-     FINAL pill — the shared modal header pills take the player identity accent
-     (blue), never green. Recoloured from #4fd190 green to identity blue #6aaeff. */
-  .modal-analysis .afinalpill{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:#6aaeff; background:rgba(106,174,255,0.10); border:1px solid rgba(106,174,255,0.30); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
-  .modal-analysis .afinalpill::before{ content:''; width:5px; height:5px; border-radius:50%; background:#6aaeff; }
+  /* The FINAL pill was removed entirely in founder pass-3 §1 (2026-08-01): the
+     Match Stats tab body now carries the set-by-set line, so the header no longer
+     repeats the result — it keeps only avatars, names, the sets-won pills and the
+     fixture line. (Earlier §C had recoloured this pill green→blue; now it's gone.) */
   .modal-analysis .asetline{ display:flex; align-items:center; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:#aeb6c4; }
   .modal-analysis .asetline span{ white-space:nowrap; }
   .modal-analysis .asetline:empty{ display:none; }
@@ -1155,6 +1164,11 @@
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-track .mstat-seg.p1{ background:var(--accent); }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-track .mstat-seg.p2{ background:var(--court-clay); }
   :is(.modal-analysis,.pp-formsurface) .msheet-names{ display:flex; align-items:center; justify-content:space-between; font-size:14px; font-weight:700; color:#e7e9ee; margin-bottom:14px; }
+  /* Founder pass-3 §2 (2026-08-01): a two-player comparison legend answers "whose
+     number is this", so each name takes its identity colour by NAME ORDER — A
+     #6aaeff, B #e7e9ee — matching the dot beside it (.mstat-dot.p1/.p2 already do). */
+  :is(.modal-analysis,.pp-formsurface) .msheet-names .p1{ color:#6aaeff; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-names .p2{ color:#e7e9ee; }
   /* Export header anatomy (matches-upcoming.html shared match-detail component):
      (1) big sets line "2–1" mono 38px/700, (2) score line "6-4, 3-6, 6-2" mono
      17px/700, (3) "Stat comparison" label LAST — 10px uppercase #4b5672. Founder
@@ -1168,15 +1182,27 @@
      tint, not a table header: the rows beneath it are free-standing, separated by
      hairlines rather than boxed in a bordered table. */
   :is(.modal-analysis,.pp-formsurface) .msheet-grouphead{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#7f8798; text-align:center; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; margin-top:16px; }
+  /* Founder pass-3 §9/§10 — modal-scoped so the Profile/Form stat sheet
+     (.pp-formsurface, same helpers) is untouched. §9: the SERVICE/RETURN/POINTS
+     group label is the export's dark recessed box (#0a0d14 + hairline), NOT a
+     lighter white-tint strip that reads as heavy. §10: the diverging bar's unfilled
+     track is one value from the export — rgba(255,255,255,0.09) — on every row. */
+  .modal-analysis .msheet-grouphead{ font-size:10px; letter-spacing:0.06em; color:#4b5672; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:10px; margin:20px 0 16px; }
+  .modal-analysis .msheet-bar .msheet-half{ background:rgba(255,255,255,0.09); }
   :is(.modal-analysis,.pp-formsurface) .msheet-row{ padding:13px 6px 15px; border-bottom:1px solid rgba(255,255,255,0.045); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-vals{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; margin-bottom:9px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:#e7ebf1; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val.p2{ text-align:right; }
-  /* The fraction is a quiet companion to the value, so it hugs the outside edge:
-     before the number on the left, after it on the right. */
-  :is(.modal-analysis,.pp-formsurface) .msheet-frac{ font-size:11px; color:#6b7280; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val.p1 .msheet-frac{ margin-right:6px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val.p2 .msheet-frac{ margin-left:6px; }
+  /* Founder pass-3 §3/§11 (2026-08-01): percentage on the upper line, the
+     (won/total) fraction stacked directly beneath it in muted mono — NOT inline
+     beside it. Fixed-width side columns lock every left value to one left edge and
+     every right value to one right edge, so the column can't wander when a row has
+     no fraction (export: left min-width 56px flex-start, right min-width 56px
+     flex-end, centre label flex:1). §2: the value takes its player's identity
+     colour by name order — left #6aaeff, right #e7e9ee. */
+  :is(.modal-analysis,.pp-formsurface) .msheet-vals{ display:grid; grid-template-columns:minmax(56px,1fr) auto minmax(56px,1fr); align-items:start; margin-bottom:9px; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-val{ display:flex; flex-direction:column; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:#e7ebf1; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-val.p1{ align-items:flex-start; color:#6aaeff; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-val.p2{ align-items:flex-end; color:#e7e9ee; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-pct{ line-height:1.12; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-frac{ font-size:10.5px; color:#5b6880; margin-top:1px; }
   :is(.modal-analysis,.pp-formsurface) .msheet-label{ font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#8b93a3; text-align:center; padding:0 14px; white-space:nowrap; }
   :is(.modal-analysis,.pp-formsurface) .msheet-na{ color:#5b6472; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
   /* Diverging bar: two tracks meeting at the centre. The left fill is anchored to
@@ -1197,7 +1223,11 @@
      the modal header's score row already carries the result, and green is
      reserved for data quality, not match status.) */
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
-  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:5px; width:max-content; max-width:100%; margin:0 auto 16px; }
+  /* Founder pass-3 §4: the segments carry their own active state, so the outer
+     bordered capsule around the Stats / Point-by-point row was a second container
+     doing nothing — dropped. Both control rows now read as one standard: bare
+     segments, active = subtle rgba(91,155,255,.22) tint, inactive = transparent. */
+  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; }
   .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
   /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
      (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
@@ -1245,19 +1275,26 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-tags.left{ justify-content:flex-end; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tags.right{ justify-content:flex-start; }
   :is(.modal-analysis,.pp-formsurface) .pbp-ballcell{ width:22px; display:flex; justify-content:center; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-ball{ display:flex; color:#8b93a3; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-ball svg{ width:15px; height:15px; display:block; }
+  /* Founder pass-3 §6: the server marker is the export's own tennis-ball glyph
+     (drawn in PBP_BALL below, straight from the export source) at the export's
+     stroke colour #4b5672 and 13px box — not a substituted icon. */
+  :is(.modal-analysis,.pp-formsurface) .pbp-ball{ display:flex; color:#4b5672; }
+  :is(.modal-analysis,.pp-formsurface) .pbp-ball svg{ width:13px; height:13px; display:block; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gnum{ font-family:'IBM Plex Mono', monospace; font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
   /* Export invariant (README "shared match-detail component"): the game-winner's
      number carries --text, the trailing number --muted-2 (#4b5672). Scores take
      NO identity or brand colour — who won the game is read from the score itself,
      the running lead from the set/score rows, not from a colour on the digit. */
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p1{ color:var(--text); }
-  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p2{ color:var(--text); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p1{ color:#e7e9ee; }
+  :is(.modal-analysis,.pp-formsurface) .pbp-gnum .won-p2{ color:#e7e9ee; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gnum .neutral{ color:#4b5672; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gnum .dot{ color:#5b6472; font-weight:400; }
   :is(.modal-analysis,.pp-formsurface) .pbp-gpts{ display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:8px; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-pt{ display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#6f7787; }
+  /* Founder pass-3 §6: point strings render in ONE colour read from the export
+     (#e7e9ee), never three across states. The comma between points is the export's
+     quiet separator (#4a5261) — one form, not a mix of commas and bare spaces. */
+  :is(.modal-analysis,.pp-formsurface) .pbp-pt{ display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#e7e9ee; }
+  :is(.modal-analysis,.pp-formsurface) .pbp-sep{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#4a5261; }
   /* BP renders in the NEGATIVE token, product-wide within the match-detail block
      (README design-tokens note: LOST SERVE and BP are match events, red by explicit
      decision; SP stays neutral). */
@@ -3048,7 +3085,6 @@
           </div>
         </div>
         <div class="ascorerow">
-          <span class="afinalpill" id="aFinalPill" style="display:none;">FINAL</span>
           <div class="asetline" id="aSetLine"></div>
         </div>
       </div>
@@ -6729,16 +6765,22 @@ function pbpSplitSet(s){
 // BP chip; set/match points are not chipped here because they're already stated
 // by the SP/MP tag on the row itself.
 function pbpPointList(points){
-  return (points || []).map(p => {
+  const list = points || [];
+  return list.map((p, i) => {
     const s = escapeHtml(String(p.s || '').replace(/\s*-\s*/, ':'));   // "0 - 15" -> "0:15"
-    return `<span class="pbp-pt">${s}${p.bp ? '<span class="pbp-bp">BP</span>' : ''}</span>`;
+    // Founder pass-3 §6: points are separated by the export's quiet comma
+    // (.pbp-sep, #4a5261) — one form, not a mix of commas and bare spaces. The
+    // comma hugs the point it follows and is dropped after the last one.
+    const sep = i < list.length - 1 ? '<span class="pbp-sep">,</span>' : '';
+    return `<span class="pbp-pt">${s}${p.bp ? '<span class="pbp-bp">BP</span>' : ''}${sep}</span>`;
   }).join('');
 }
 // The point log draws its own tennis ball rather than reusing BSP_ICONS.ball:
 // the shared token is a side-on ball (vertical seams) sized for the stat tiles,
-// where this one is the face-on ball the point log is designed around, at the
-// row's own 15px/1.7 stroke weight.
-const PBP_BALL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M4 8c5 1 11 1 16 0"></path><path d="M4 16c5-1 11-1 16 0"></path></svg>`;
+// where this one is the face-on ball the point log is designed around. Founder
+// pass-3 §6: the glyph, its arc path and 1.8 stroke are taken straight from the
+// export source (rendered at 13px / #4b5672 via .pbp-ball), not substituted.
+const PBP_BALL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0"></path><path d="M4 16a15 15 0 0016 0"></path></svg>`;
 // One row of the point log. Games and tiebreak points share a single 5-column
 // grid (leftTags · leftBall · score · rightBall · rightTags) so the ball, score
 // and tags hold the same columns down the whole set. The digit of whoever won
@@ -6779,8 +6821,8 @@ function buildPointByPointHtml(m, entry, setNo){
     return `<div class="acomingsoon">No point-by-point log on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
   }
   let html = `<div class="pbp-wrap">`;
-  html += `<div class="msheet-names"><span><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
-        + `<span>${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
+  html += `<div class="msheet-names"><span class="p1"><span class="mstat-dot p1"></span>${escapeHtml(m.p1)}</span>`
+        + `<span class="p2">${escapeHtml(m.p2)}<span class="mstat-dot p2"></span></span></div>`;
   shownSets.forEach(s => {
     const si = allSets.indexOf(s);
     const { real, tbPts } = pbpSplitSet(s);
@@ -8259,11 +8301,12 @@ const MSHEET_ALWAYS_SHOW = new Set([
   'Points:Unforced errors',
 ]);
 
-// Grouped stat-sheet row: the two values with the real "(won/total)" fraction on
-// the outside edge (before the number on the left, after it on the right), and a
-// diverging bar beneath. Both values render in the same neutral style regardless
-// of who leads — the bar carries the comparison, and its colour is the player's
-// side, never who is ahead.
+// Grouped stat-sheet row. Founder pass-3 §3 (2026-08-01): the percentage sits on
+// the upper line in the player's identity colour, the real "(won/total)" fraction
+// stacked directly beneath it in muted mono — left-aligned on the left player,
+// right-aligned on the right, no inline hug and no placeholder when the fraction is
+// absent. The diverging bar beneath carries the comparison; its colour is the
+// player's side, never who is ahead.
 function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   if (p1Val == null && p2Val == null) {
     if (!alwaysShow) return '';
@@ -8275,9 +8318,9 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
     return `
     <div class="msheet-row">
       <div class="msheet-vals">
-        <span class="msheet-val p1">${na}</span>
+        <span class="msheet-val p1"><span class="msheet-pct">${na}</span></span>
         <span class="msheet-label">${label}</span>
-        <span class="msheet-val p2">${na}</span>
+        <span class="msheet-val p2"><span class="msheet-pct">${na}</span></span>
       </div>
     </div>
   `;
@@ -8287,9 +8330,9 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
   return `
     <div class="msheet-row">
       <div class="msheet-vals">
-        <span class="msheet-val p1">${frac(p1Raw)}${num(p1Val)}</span>
+        <span class="msheet-val p1"><span class="msheet-pct">${num(p1Val)}</span>${frac(p1Raw)}</span>
         <span class="msheet-label">${label}</span>
-        <span class="msheet-val p2">${num(p2Val)}${frac(p2Raw)}</span>
+        <span class="msheet-val p2"><span class="msheet-pct">${num(p2Val)}</span>${frac(p2Raw)}</span>
       </div>
       ${msBarHtml(p1Val, p2Val)}
     </div>
@@ -8551,20 +8594,17 @@ function buildMatchStatsSheet(m, setNo){
   // blank the entire sheet. When one set is selected, show that set's own score
   // instead of the match score, so the header can never contradict the numbers
   // beneath it (the score array is 0-indexed; sets are 1-indexed).
-  // Export header anatomy (founder ruling §4, 2026-08-01 "yes follow export!"):
-  // a big sets-won line, then the set-by-set score line, then the "Stat
-  // comparison" label LAST. For a single-set view the set's own game score is
-  // the big line, so there is no separate score line beneath it.
+  // Export header anatomy — ONE structure in every state (founder pass-3 §7,
+  // 2026-08-01): the full-match sets line, the set-by-set score line, then the
+  // "Stat comparison" label LAST. The scope selector changes the stats below and is
+  // echoed in the label (· Set N); it never restructures the header. This matches
+  // the export, whose sets/score lines are scope-independent — earlier the per-set
+  // view dropped the score line and swapped the big line to a single set's score,
+  // which read as a second, different anatomy.
   const score = m.finalScore || m.partialScore || {};
-  let bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
-  let scoreLine = score.display || '';
-  let headLabel = 'Stat comparison';
-  if (setNo != null) {
-    headLabel = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
-    const sc = (score.sets || [])[setNo - 1];
-    bigLine = sc ? `${sc.p1}–${sc.p2}` : '';
-    scoreLine = '';
-  }
+  const bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
+  const scoreLine = score.display || '';
+  const headLabel = setNo != null ? `Stat comparison · Set ${escapeHtml(String(setNo))}` : 'Stat comparison';
   const statHeader = (bigLine || scoreLine) ? `
     <div class="msheet-head">
       ${bigLine ? `<div class="msheet-setsbig">${escapeHtml(bigLine)}</div>` : ''}
@@ -8574,7 +8614,7 @@ function buildMatchStatsSheet(m, setNo){
   ` : '';
   return `
     ${suspendedNote}
-    <div class="msheet-names"><span><span class="mstat-dot p1"></span>${m.p1}</span><span>${m.p2}<span class="mstat-dot p2"></span></span></div>
+    <div class="msheet-names"><span class="p1"><span class="mstat-dot p1"></span>${m.p1}</span><span class="p2">${m.p2}<span class="mstat-dot p2"></span></span></div>
     ${statHeader}
     ${groups || '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
   `;
@@ -10019,17 +10059,19 @@ function openAnalysisModal(matchId){
   const p1Pill = document.getElementById('aP1Odds');
   const p2Pill = document.getElementById('aP2Odds');
   const setLine = document.getElementById('aSetLine');
-  const finalPill = document.getElementById('aFinalPill');
-  finalPill.style.display = m.finalScore ? '' : 'none';
   p1Pill.className = 'aodds'; p2Pill.className = 'aodds';
   const setSpans = sets => (sets || []).map(s => `<span>${s.p1}-${s.p2}</span>`).join('');
   if (m.finalScore) {
-    // Completed match — score badges (sets won) + per-set line; winner's pill tinted.
+    // Completed match — the header carries ONLY the sets-won pills now. Founder
+    // pass-3 §1: the per-set score sequence ("7-6 3-6 4-6") and the FINAL pill were
+    // removed because the Match Stats tab body already renders the set-by-set line;
+    // the header was repeating it. §8: the sets-won pills are neutral (no identity
+    // tint), winner a touch brighter — one shared treatment, not two.
     p1Pill.textContent = String(m.finalScore.p1Sets);
     p2Pill.textContent = String(m.finalScore.p2Sets);
-    if (m.finalScore.winner === 'p1') p1Pill.className = 'aodds p1';
-    else if (m.finalScore.winner === 'p2') p2Pill.className = 'aodds p2';
-    setLine.innerHTML = setSpans(m.finalScore.sets);
+    p1Pill.className = 'aodds sets' + (m.finalScore.winner === 'p1' ? ' win' : '');
+    p2Pill.className = 'aodds sets' + (m.finalScore.winner === 'p2' ? ' win' : '');
+    setLine.innerHTML = '';
   } else if (m.interrupted && m.partialScore) {
     // Suspended match — sets won so far + per-set line. Both pills stay neutral
     // (no p1/p2 tint): tinting is the winner cue, and there's no winner yet.
