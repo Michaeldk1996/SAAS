@@ -2119,11 +2119,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/987_p-llamas-ruiz.jpg",
     "oddsMovement": {
@@ -2512,7 +2523,10 @@
       "edgeVsPinnacleP1": 0.0325,
       "edgeVsPinnacleP2": -0.0325,
       "ts": "2026-08-01T09:48:41.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "8bff6c01011320799403c1e56dd3e9f6",
@@ -3885,11 +3899,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/566_a-shevchenko.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "oddsMovement": {
@@ -4658,7 +4683,10 @@
       "edgeVsPinnacleP1": 0.0384,
       "edgeVsPinnacleP2": -0.0384,
       "ts": "2026-08-01T09:48:41.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "867d56bbf1e4d3ffa8a5826451af2fbc",
@@ -5748,11 +5776,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2985_k-nishikori.jpg",
     "oddsMovement": {
@@ -6305,7 +6344,10 @@
       "edgeVsPinnacleP1": -0.04,
       "edgeVsPinnacleP2": 0.04,
       "ts": "2026-08-01T09:48:41.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "65dd19e55f99792377726a8fb0a62a52",
@@ -7859,11 +7901,17 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "oddsMovement": {
@@ -8296,7 +8344,10 @@
       "edgeVsPinnacleP1": 0.0176,
       "edgeVsPinnacleP2": -0.0176,
       "ts": "2026-08-01T09:48:41.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "7a108f442918c304941e320fac514fec",
