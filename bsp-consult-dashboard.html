@@ -768,6 +768,13 @@
   .modal-analysis .atitleblock{ flex:1 1 0; min-width:0; }
   .modal-analysis .atitleblock .atitle{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.01em; color:var(--text); margin-bottom:3px; }
   .modal-analysis .atitleblock .acontext{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; color:#8b93a3; font-weight:500; }
+  .modal-analysis .atitleblock .acontextrow{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  /* Completed-match result restored to the shell (founder ruling 2026-08-01): the
+     sets score ONLY, beside the fixture line — plain mono, neutral #e7e9ee, no pill,
+     no per-set line, no FINAL, no outcome hue. The shell states WHO won (the one fact
+     every tab needs); the Match Stats §2 panel remains the detailed statement of HOW. */
+  .modal-analysis .atitleblock .ashellscore{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; letter-spacing:0.04em; color:#e7e9ee; font-variant-numeric:tabular-nums; }
+  .modal-analysis .atitleblock .ashellscore:empty{ display:none; }
   .modal-analysis .amatchup-center{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:none; }
   .modal-analysis .ahead-spacer{ flex:1 1 0; }
   .modal-analysis .amatchuprow{ display:flex; align-items:center; gap:12px; }
@@ -3107,7 +3114,10 @@
     <div class="ahead2">
       <div class="atitleblock">
         <div class="atitle">Match analysis</div>
-        <div class="acontext" id="aContext"></div>
+        <div class="acontextrow">
+          <div class="acontext" id="aContext"></div>
+          <span class="ashellscore" id="aShellScore"></span>
+        </div>
       </div>
       <div class="amatchup-center">
         <div class="amatchuprow">
@@ -10179,6 +10189,15 @@ function openAnalysisModal(matchId){
 
   const roundText = h2hRoundLabel(m.tournamentRound);
   document.getElementById('aContext').textContent = `${m.tour}${roundText ? ' • ' + roundText : ''}`;
+
+  // Founder ruling (2026-08-01): a COMPLETED match shows a minimal result beside the
+  // fixture line in the shell — the sets score ONLY ("1–2"), plain mono, no pill, no
+  // per-set sequence, no FINAL, no colour. Ten of eleven tab bodies never state the
+  // outcome, so the shell carries the one fact "who won"; the Match Stats §2 panel
+  // still says "how". Upcoming / live / interrupted have no result to state here → ''.
+  document.getElementById('aShellScore').textContent =
+    (m.finalScore && m.finalScore.p1Sets != null && m.finalScore.p2Sets != null)
+      ? `${m.finalScore.p1Sets}–${m.finalScore.p2Sets}` : '';
 
   // Founder ruling A (2026-08-01): a COMPLETED match relocates its full score header
   // into the Match Stats tab (§2 panel), so the shell header drops the matchup row
