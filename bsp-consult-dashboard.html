@@ -1184,27 +1184,22 @@
      frozen mid-match, so they must never be read as a completed box score. */
   .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,0.08); border-left:2px solid #8b93a3; border-radius:10px; background:rgba(255,255,255,0.025); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:#cfd4de; }
   .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
-  /* Inset result banner, drawn at the top of the Match Stats panel per the
-     design handoff. The modal's own #aLiveBar carries the same sentence for
-     every other tab, so it is hidden while this one is on screen — see
-     syncAnalysisLiveBar(). */
-  .modal-analysis .ms-final{ display:flex; align-items:center; gap:12px; background:rgba(62,207,142,0.07); border:1px solid rgba(62,207,142,0.25); border-radius:12px; padding:13px 18px; margin-bottom:22px; }
-  .modal-analysis .ms-final-chk{ width:20px; height:20px; border-radius:5px; background:#2fbf7e; display:flex; align-items:center; justify-content:center; color:#07130d; font-size:12px; font-weight:800; flex-shrink:0; }
-  .modal-analysis .ms-final-score{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#e7ebf1; }
-  .modal-analysis .ms-final-note{ font-size:12.5px; color:#8b93a3; }
-  /* Suspended play has no result, so it reuses the layout in the amber the rest
-     of the app already uses for an interrupted match rather than the green. */
-  .modal-analysis .ms-final.interrupted{ background:rgba(226,139,74,0.07); border-color:rgba(226,139,74,0.25); }
-  .modal-analysis .ms-final.interrupted .ms-final-chk{ background:#E28B4A; }
+  /* (The green inset "Final · <score>" result banner and its CSS were removed:
+     the modal header's score row already carries the result, and green is
+     reserved for data quality, not match status.) */
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
   .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:5px; width:max-content; max-width:100%; margin:0 auto 16px; }
   .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
   /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
      (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
      other and wraps "Point by point" onto two lines, spilling it out of the capsule. */
-  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:700; color:#8b93a3; background:none; border:none; padding:10px 22px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease; }
+  /* One segmented-control standard (export-measured, design-export mock `segMS`):
+     inactive is borderless/transparent #5b6880 at 600; active is a SUBTLE tint —
+     rgba(91,155,255,0.22) fill, rgba(91,155,255,0.45) border, #e7e9ee at 700 — never
+     a saturated solid-blue block. The set-scope row below uses the identical rule. */
+  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:600; color:#5b6880; background:none; border:1px solid transparent; padding:10px 22px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
   .modal-analysis .ms-subtab:hover{ color:#cfd4de; }
-  .modal-analysis .ms-subtab.active{ color:#fff; background:#3E7BFA; }
+  .modal-analysis .ms-subtab.active{ color:#e7e9ee; font-weight:700; background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); }
   .modal-analysis .ms-pane{ display:none; }
   .modal-analysis .ms-pane.active{ display:block; }
   /* Scope selector — mono pills beneath the view toggle. Quieter than .ms-subtab
@@ -1212,9 +1207,9 @@
      width:auto + flex:0 0 auto override the global `.modal button{width:100%}`,
      which would otherwise stretch each pill full-width onto its own line. */
   :is(.modal-analysis,.pp-formsurface) .ms-setsel{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:0 auto 22px; width:max-content; max-width:100%; }
-  :is(.modal-analysis,.pp-formsurface) .ms-setbtn{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; color:#8b93a3; background:transparent; border:1px solid rgba(255,255,255,0.08); padding:8px 17px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
-  :is(.modal-analysis,.pp-formsurface) .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(255,255,255,0.16); }
-  :is(.modal-analysis,.pp-formsurface) .ms-setbtn.active{ color:#fff; border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); }
+  :is(.modal-analysis,.pp-formsurface) .ms-setbtn{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:1px solid transparent; padding:8px 17px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  :is(.modal-analysis,.pp-formsurface) .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(91,155,255,0.25); }
+  :is(.modal-analysis,.pp-formsurface) .ms-setbtn.active{ color:#e7e9ee; font-weight:700; border-color:rgba(91,155,255,0.45); background:rgba(91,155,255,0.22); }
   /* Match Stats — one 720px content cap governs all three views (Summary / Stats /
      Point by point) AND both control rows, so the sheet, the summary grid and the
      point log share the same centred column width (README §Match Stats tab: "both
@@ -1276,7 +1271,7 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-bp{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:700; color:#e0616f; background:rgba(224,97,111,0.15); border:1px solid rgba(224,97,111,0.3); border-radius:4px; padding:1px 5px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag{ font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:700; letter-spacing:0.05em; border-radius:5px; padding:2px 7px; white-space:nowrap; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:#e0616f; background:rgba(224,97,111,0.15); border:1px solid rgba(224,97,111,0.3); }
-  :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:#5b93ff; background:rgba(62,123,250,0.16); border:1px solid rgba(62,123,250,0.4); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:#e7e9ee; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.mp{ color:#2fbf7e; background:rgba(62,207,142,0.16); border:1px solid rgba(62,207,142,0.4); }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
@@ -8245,7 +8240,8 @@ const MATCH_STAT_ORDER = [
 
 // Stats the user always wants to SEE, even when the data source returns no
 // value for this particular match. Rather than silently dropping the row
-// (which reads as "we removed it"), we keep it and flag the cell "N/A". The
+// (which reads as "we removed it"), we keep it and mark the cell with an em
+// dash "—" (the system's one no-data glyph; "N/A" appears nowhere). The
 // api-tennis feed does not carry Winners/Unforced Errors for every fixture.
 const MSHEET_ALWAYS_SHOW = new Set([
   'Points:Winners',
@@ -8264,7 +8260,7 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
     // user still sees it, but flag it honestly rather than dropping or faking it.
     // No bar: there is no magnitude to draw, and a pair of empty tracks would
     // read as a genuine 0-0 rather than as missing data.
-    const na = `<span class="msheet-na" title="Not provided by the data source for this match">N/A</span>`;
+    const na = `<span class="msheet-na" title="Not provided by the data source for this match">—</span>`;
     return `
     <div class="msheet-row">
       <div class="msheet-vals">
@@ -8285,27 +8281,6 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
         <span class="msheet-val p2">${num(p2Val)}${frac(p2Raw)}</span>
       </div>
       ${msBarHtml(p1Val, p2Val)}
-    </div>
-  `;
-}
-
-// Wrap the stat sheet + point-by-point in a Flashscore-style toggle. Point by
-// point lives HERE (a sub-tab of Match Stats) rather than as its own sidebar
-// nav item; the pane is empty until opened, then lazy-loads the sidecar.
-// The design insets the result banner into the panel itself. It only reaches
-// matches that have a point log, so the states are "finished" and "suspended" —
-// live and upcoming never get here and keep using #aLiveBar alone.
-function buildMatchStatsBannerHtml(m){
-  const interrupted = !m.finalScore && m.interrupted;
-  const score = (m.finalScore || m.partialScore || {}).display || '';
-  const label = interrupted
-    ? `${m.liveStatus || 'Interrupted'}${score ? ' · ' + score : ''}`
-    : `Final${score ? ' · ' + score : ''}`;
-  return `
-    <div class="ms-final${interrupted ? ' interrupted' : ''}">
-      <span class="ms-final-chk">${interrupted ? '⏸' : '✓'}</span>
-      <span class="ms-final-score">${escapeHtml(label)}</span>
-      <span class="ms-final-note">${interrupted ? 'match suspended · no result yet' : 'completed match'}</span>
     </div>
   `;
 }
@@ -8453,7 +8428,6 @@ function buildMatchStatsSection(m){
   // content cap so the summary grid, the stat sheet and the point log share the
   // same centred width.
   return `
-    ${buildMatchStatsBannerHtml(m)}
     <div class="ms-cap">
       <div class="ms-subtabs-wrap">
         <div class="ms-subtabs" role="tablist">
@@ -8475,10 +8449,12 @@ function buildMatchStatsSection(m){
 // with the match-detail component (README §Match Stats tab / shared component). One
 // CSS grid: 1fr (name) · auto (sets-won tile) · one minmax(26px,auto) column per
 // set; two identity-coloured score rows over a MATCH TIME row. Score cells come
-// from finalScore.sets (partialScore for an interrupted match). Per-set DURATIONS
-// are deterministic PLACEHOLDERS derived from game count and summing exactly to the
-// total — no per-set timing exists in the feed. TODO: bind real durations when the
-// source carries them; until then a set with unreadable games shows an em dash.
+// from finalScore.sets (partialScore for an interrupted match). MATCH TIME is NOT
+// fabricated: the api-tennis get_fixtures feed carries no duration field — event_time
+// is the match START, and no total or per-set length is returned — so a duration is
+// NEVER computed from a formula (the old `(a+b)*4.5` placeholder was removed). Both
+// the total and every per-set cell render an em dash until a real source field lands;
+// bind here the moment the provider (or a future feed) supplies real durations.
 function buildMatchStatsSummaryHtml(m){
   const fs = m.finalScore || m.partialScore;
   if (!fs || !Array.isArray(fs.sets) || !fs.sets.length){
@@ -8487,23 +8463,16 @@ function buildMatchStatsSummaryHtml(m){
   const sets = fs.sets;
   const n = sets.length;
   const gameOf = (s, who) => { const g = Number(s[who]); return Number.isFinite(g) ? g : null; };
-  // PLACEHOLDER minutes: ~4.5 per game played in the set; the total is their exact
-  // sum, so the row always adds up. A set with no readable games contributes null.
-  const setMins = sets.map(s => {
-    const a = gameOf(s, 'p1'), b = gameOf(s, 'p2');
-    return (a == null || b == null) ? null : Math.max(1, Math.round((a + b) * 4.5));
-  });
-  const totalMins = setMins.reduce((t, x) => t + (x || 0), 0);
-  const fmtTotal = t => t >= 60 ? `${Math.floor(t / 60)}h ${String(t % 60).padStart(2, '0')}m` : `${t}m`;
   const cols = `1fr auto repeat(${n}, minmax(26px,auto))`;
   const tile = (num, isW) => `<span class="ms-sum-tile ${isW ? 'w' : 'l'}">${num == null ? '—' : num}</span>`;
   const gamesRow = who => sets.map(s => { const g = gameOf(s, who); return `<span class="ms-sum-g">${g == null ? '—' : g}</span>`; }).join('');
-  const durRow = setMins.map(x => `<span class="ms-sum-timeset">${x == null ? '—' : x + 'm'}</span>`).join('');
+  // No duration data in the feed → em dash, never a formula (see header note).
+  const durRow = sets.map(() => `<span class="ms-sum-timeset">—</span>`).join('');
   return `
     <div class="ms-sumgrid" style="grid-template-columns:${cols};">
       <span class="ms-sum-name p1">${escapeHtml(m.p1)}</span>${tile(fs.p1Sets, fs.winner === 'p1')}${gamesRow('p1')}
       <span class="ms-sum-name p2">${escapeHtml(m.p2)}</span>${tile(fs.p2Sets, fs.winner === 'p2')}${gamesRow('p2')}
-      <span class="ms-sum-timelabel">Match time</span><span class="ms-sum-timetotal">${totalMins > 0 ? fmtTotal(totalMins) : '—'}</span>${durRow}
+      <span class="ms-sum-timelabel">Match time</span><span class="ms-sum-timetotal">—</span>${durRow}
     </div>
   `;
 }
@@ -10100,7 +10069,7 @@ function openAnalysisModal(matchId){
   document.getElementById('aP1Avatar').innerHTML = playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key);
   document.getElementById('aP2Avatar').innerHTML = playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key);
   document.querySelector('#aP1Avatar img, #aP1Avatar .avatar-fallback').style.borderColor = 'rgba(62,123,250,0.55)';
-  document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(232,147,75,0.6)';
+  document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(231,233,238,0.55)';
 
   const roundText = h2hRoundLabel(m.tournamentRound);
   document.getElementById('aContext').textContent = `${m.tour}${roundText ? ' • ' + roundText : ''}`;
@@ -10120,9 +10089,10 @@ function openAnalysisModal(matchId){
   } else {
     _aLiveBarOn = false;
   }
-  // Mirrors buildMatchStatsSection's own gate: the inset banner exists exactly
-  // when that panel renders the sub-tabs.
-  _aMsInsetBanner = (!!m.finalScore || !!m.interrupted) && !m.live;
+  // The green inset "Final · <score>" banner was removed (the modal header's
+  // score row already carries the result, and green is reserved for data
+  // quality, not status). Nothing suppresses #aLiveBar on Match Stats anymore.
+  _aMsInsetBanner = false;
 
   document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
 
