@@ -170,6 +170,11 @@
     --mc-grass: #2ab8a0;
     --mc-r-match: 14px;
     --mc-r-pill: 6px;
+    /* Match Stats tab named tokens (founder ruling 2026-08-01): the point-log
+       comma separator and the segmented-control track were loose literals; the
+       spec confirms both values, so they get names rather than bare hex. */
+    --mc-comma-faint: #4a5261;
+    --mc-track: #0a0d13;
   }
 
   [data-page="matches"] .mx-titlerow{ padding:24px 24px 0; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; }
@@ -1223,11 +1228,12 @@
      the modal header's score row already carries the result, and green is
      reserved for data quality, not match status.) */
   /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
-  /* Founder pass-3 §4: the segments carry their own active state, so the outer
-     bordered capsule around the Stats / Point-by-point row was a second container
-     doing nothing — dropped. Both control rows now read as one standard: bare
-     segments, active = subtle rgba(91,155,255,.22) tint, inactive = transparent. */
-  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; }
+  /* Founder ruling REVERSED 2026-08-01 (§4 flag): the capsule is the control
+     TRACK, not a redundant card, so the box-in-box rule doesn't apply — put it
+     back. Both control rows sit on the recessed --mc-track (#0a0d13) with a
+     hairline border, per the spec (`#0a0d13 track on both control rows`). Active
+     segment = subtle rgba(91,155,255,.22) tint, inactive = transparent. */
+  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; background:var(--mc-track); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:3px; }
   .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
   /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
      (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
@@ -1249,6 +1255,12 @@
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:1px solid transparent; padding:8px 17px; border-radius:9px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn:hover{ color:#cfd4de; border-color:rgba(91,155,255,0.25); }
   :is(.modal-analysis,.pp-formsurface) .ms-setbtn.active{ color:#e7e9ee; font-weight:700; border-color:rgba(91,155,255,0.45); background:rgba(91,155,255,0.22); }
+  /* Founder ruling 2026-08-01 (§4): the scope row is the second control TRACK,
+     same recessed #0a0d13 capsule as .ms-subtabs (spec: track on BOTH control
+     rows, padding 2). Modal-scoped so the Profile/Form set selector — which
+     reuses .ms-setsel — keeps its bare-pill treatment, same as the §9 group
+     header scoping. */
+  .modal-analysis .ms-setsel{ background:var(--mc-track); border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:2px; }
   /* Match Stats — one 720px content cap governs both views (Stats / Point by point)
      AND both control rows, so the stat sheet and the point log share the same
      centred column width (README §Match Stats tab: "both standard segmented, centred
@@ -1266,6 +1278,13 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-tbhdr{ margin-top:6px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-setscore{ color:#e7ebf1; letter-spacing:normal; text-transform:none; }
   :is(.modal-analysis,.pp-formsurface) .pbp-setscore sup{ font-size:9px; color:#8b93a3; }
+  /* Founder ruling 2026-08-01 (leftover): the point-by-point set/tiebreak divider
+     bands were the light white-tint strip (rgba(255,255,255,0.03)) while the Stats
+     view's SERVICE/RETURN/POINTS group header was moved to the recessed dark box
+     (§9). Two strip treatments doing the same job in one tab — unify them onto the
+     group-header box (#0a0d14 + hairline, radius 9). Modal-scoped so the Form
+     sheet's point log is untouched. Text colours/margins keep their per-band tone. */
+  .modal-analysis :is(.pbp-sethdr,.pbp-tbhdr){ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; }
   /* Every row — game or tiebreak point — is the same 5-column grid, so the ball,
      score and tags line up in one column down the whole set. */
   :is(.modal-analysis,.pp-formsurface) .pbp-grow{ padding:12px 6px; border-bottom:1px solid rgba(255,255,255,0.045); }
@@ -1294,7 +1313,7 @@
      (#e7e9ee), never three across states. The comma between points is the export's
      quiet separator (#4a5261) — one form, not a mix of commas and bare spaces. */
   :is(.modal-analysis,.pp-formsurface) .pbp-pt{ display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#e7e9ee; }
-  :is(.modal-analysis,.pp-formsurface) .pbp-sep{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:#4a5261; }
+  :is(.modal-analysis,.pp-formsurface) .pbp-sep{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--mc-comma-faint); }
   /* BP renders in the NEGATIVE token, product-wide within the match-detail block
      (README design-tokens note: LOST SERVE and BP are match events, red by explicit
      decision; SP stays neutral). */
@@ -8596,15 +8615,17 @@ function buildMatchStatsSheet(m, setNo){
   // beneath it (the score array is 0-indexed; sets are 1-indexed).
   // Export header anatomy — ONE structure in every state (founder pass-3 §7,
   // 2026-08-01): the full-match sets line, the set-by-set score line, then the
-  // "Stat comparison" label LAST. The scope selector changes the stats below and is
-  // echoed in the label (· Set N); it never restructures the header. This matches
-  // the export, whose sets/score lines are scope-independent — earlier the per-set
-  // view dropped the score line and swapped the big line to a single set's score,
-  // which read as a second, different anatomy.
+  // "Stat comparison" label LAST. The scope selector changes the stats below; it
+  // never restructures the header. This matches the export, whose sets/score lines
+  // are scope-independent — earlier the per-set view dropped the score line and
+  // swapped the big line to a single set's score, which read as a second anatomy.
+  // Ruling REVERSED 2026-08-01 (§7 flag): drop the `· Set N` suffix — the active
+  // segment in the scope row above already states the scope, so echoing it in the
+  // label was redundant. The label matches the export: plain "Stat comparison".
   const score = m.finalScore || m.partialScore || {};
   const bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
   const scoreLine = score.display || '';
-  const headLabel = setNo != null ? `Stat comparison · Set ${escapeHtml(String(setNo))}` : 'Stat comparison';
+  const headLabel = 'Stat comparison';
   const statHeader = (bigLine || scoreLine) ? `
     <div class="msheet-head">
       ${bigLine ? `<div class="msheet-setsbig">${escapeHtml(bigLine)}</div>` : ''}

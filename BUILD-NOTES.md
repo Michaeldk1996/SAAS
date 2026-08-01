@@ -349,6 +349,35 @@ geometry can never drift per-surface again. Bar colours were also brought to the
 Plus the modal's own **Match Stats tab** (mounted in `openAnalysisModal` @ 8933) = Copy A.
 Each derives its own `ek` off the row object (`data-ek` on `.aform-panel-wrap`).
 
+### Match Stats tab — spec + founder rulings (2026-08-01)
+Spec of record committed at `design-export/match-stats-spec.md` (authoritative for the Match
+Stats tab **only** — not other tabs, pages, or the modal shell). Rule of precedence: on a
+**measurable** value (size/weight/colour/padding/radius/gap) the `computed-styles.json`
+extraction wins over the spec; on **structure / anatomy / state / data-contract** the spec is
+source. Pass-3 was built against the committed export and is reconciled against this spec — see
+the reconciliation report on TEN-8 for every point where the two differ.
+
+Changes applied this pass:
+- **§4 capsule REVERSED — put back.** The Stats/Point-by-point row AND the set-scope row now
+  sit on the recessed control track `--mc-track (#0a0d13)` + hairline (spec: `#0a0d13` track on
+  both control rows). `.ms-subtabs` gets it directly; `.ms-setsel` via a `.modal-analysis`-scoped
+  rule so the Form sheet's set selector keeps its bare pills.
+- **§7 label — `· Set N` suffix dropped.** `headLabel` in `buildMatchStatsSheet` is now always
+  `"Stat comparison"`; the active scope pill above already states the scope.
+- **pbp set/tiebreak divider bands unified** with the §9 group-header box (`#0a0d14` + hairline,
+  radius 9), modal-scoped — no more two-strip-treatments in one tab.
+- **`#4a5261` named** `--mc-comma-faint` (point-log comma); `#0a0d13` named `--mc-track`.
+- **Legend dots** already correct at build time (A `#6aaeff`, B `#e7e9ee`) — the spec-as-written
+  had them wrong (A `#5b9bff`, B `#6aaeff`); founder correction matches the build, no change.
+- **Tone-vs-hue outcome exception** added to the CLAUDE.md rulings ledger (Stat display line).
+
+**Shared point-log component reaching the Form tab** (founder-noted, not an unreviewed change):
+`buildPointByPointHtml` / `buildSetSelectorHtml` / `pbpRowHtml` and the `.pbp-*` CSS are shared
+via the `:is(.modal-analysis,.pp-formsurface)` selector, so the Match Stats point log and the
+Profile/Form point log render from ONE component. This is intentional reuse — the modal-scoped
+overrides above (`.modal-analysis …`) deliberately keep the Form sheet on the plainer treatment
+where the two should differ (control-track capsules, group-header box, band unification).
+
 ### What changed (before → after)
 - **New shared helper `msBarHtml(rawA, rawB)`** (~6253): the ONE diverging bar. Fixed centre,
   total-normalised — each half = half the track; A's fill = `a/(a+b)` of the LEFT half drawn
