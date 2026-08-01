@@ -1756,3 +1756,29 @@ centred above each bar-pair. (9) Charted-matches caption moved inside the radar 
 
 Per-surface cells below the `minSampleN` floor (default 20) render `n` with an em-dash rate,
 mirroring the pooled cell's existing behaviour.
+
+---
+
+## Player Profile — export-parity on 3 founder rulings (TEN-8, 2026-08-01)
+
+Founder ruled "match the export" on three Player Profile items previously flagged as
+deliberate enrichments (`buildPlayerProfileHtml`, `bsp-consult-dashboard.html`).
+
+- **#11 Surface record card removed.** Deleted `ppSurfaceRecordHtml` and its single call
+  site in the left rail. The export has no rolling-52-week surface-record card; the rail
+  keeps only the **Surface performance** bars block. `PP_SURF_COLORS` retained (used by the
+  form/splits renderers). Verified in render: rail = View-by-surface → stat tiles →
+  Surface performance, no Surface-record card.
+- **#8 Recent form → flat list.** Replaced the tournament-grouped layout
+  (`ppGroupMatchesByTournament` + `ppFormGroupHeader`/`ppFormGroupHtml`, both removed here)
+  with a flat, most-recent-first list: `formMatches` sorted by date desc, one `ppFormRow`
+  per match with the tournament as the inline meta label. `ppRoundLabel` removed (orphaned).
+  Grouping stays in the modal Form tab (`ppGroupMatchesByTournament` still used there).
+- **#2 Archetype line.** Dropped the appended `· <surface> Specialist` tag (export shows a
+  single archetype label) — removed `surfForStyle`/`bestSurf`/`specialist`; `styleLine` is
+  now the archetype label alone. Recoloured the line `#5b9bff` → `#e7e9ee` (primary text;
+  blue is nav/identity only). Size/weight already matched the export (18px/700).
+
+Verified against `design-export/player-profile.html` and a 1400px CDP render of the profile
+(C. Alcaraz). Ruling recorded in the CLAUDE.md rulings ledger. Rebased onto `origin/main`
+(357758e) after a concurrent Playing-Style/H2H rebuild landed; clean 3-way, no conflict.
