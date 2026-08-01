@@ -1401,22 +1401,29 @@
   .modal-analysis .tpg-lkey .tpg-ar{ color:#e7e9ee; font-weight:400; margin:0; }
   .modal-analysis .tpg-tablewrap{ overflow-x:auto; }
   .modal-analysis .tpg-table{ width:100%; border-collapse:collapse; font-family:'Hanken Grotesk', sans-serif; }
-  .modal-analysis .tpg-h{ font-size:10px; font-weight:600; letter-spacing:0.06em; color:var(--text-faint); text-align:center; padding:0 8px 9px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .modal-analysis .tpg-h{ text-align:center; padding:0 8px 9px; border-bottom:1px solid var(--border); white-space:nowrap; color:#5b6880; }
+  /* METRIC · TREND · FIELD — Hanken caps, muted, wide-tracked (computed-styles: 11px/400, 1.54px, uppercase, rgb(91,104,128)). */
+  .modal-analysis .tpg-hcaps{ font-size:11px; font-weight:400; letter-spacing:1.54px; text-transform:uppercase; }
+  /* R1–R4 heads Mono 9.5px 700 muted; AVG head Mono 9.5px 800 bright — distinct from the caps heads. */
+  .modal-analysis .tpg-hround{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; }
+  .modal-analysis .tpg-havg{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:800; color:var(--text); }
   .modal-analysis .tpg-hmetric{ text-align:left; }
-  .modal-analysis .tpg-hfield{ text-align:right; }
+  .modal-analysis .tpg-hfield{ text-align:right; border-left:1px solid rgba(255,255,255,0.07); }
+  /* FIELD methodology sentence — beneath the legend, above the table header (computed-styles + export README place the single intended instance here, full content width; the top-right copy is the export artifact). */
+  .modal-analysis .tpg-method{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; line-height:1.5; color:#5b6880; margin:0 0 14px; }
   .modal-analysis .tpg-table td{ padding:9px 8px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:middle; }
   .modal-analysis .tpg-table tbody tr:last-child td{ border-bottom:none; }
   .modal-analysis .tpg-metric{ text-align:left; min-width:150px; }
   .modal-analysis .tpg-mlabel{ font-size:12.5px; font-weight:600; color:var(--text); }
   .modal-analysis .tpg-sub{ font-size:10px; color:var(--text-faint); margin-top:1px; }
-  .modal-analysis .tpg-trend{ width:60px; text-align:center; }
+  .modal-analysis .tpg-trend{ width:112px; text-align:center; }
   .modal-analysis .tpg-trend svg{ display:inline-block; }
   .modal-analysis .tpg-round{ text-align:center; }
   .modal-analysis .tpg-v{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:800; line-height:1.6; white-space:nowrap; }
   .modal-analysis .tpg-ar{ font-weight:800; margin-right:1px; }
   .modal-analysis .tpg-avg{ text-align:center; }
   .modal-analysis .tpg-chip{ display:block; width:max-content; margin:2px auto; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; background:rgba(255,255,255,0.04); border-radius:6px; padding:2.5px 11px; line-height:1.4; }
-  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:400; color:#4b5672; }
+  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700; color:var(--text); border-left:1px solid rgba(255,255,255,0.07); }
   .modal-analysis .aanalysisfooter{ padding:14px 24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; gap:12px; font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; color:#5b6472; flex-shrink:0; flex-wrap:wrap; }
   .modal-analysis .aanalysisfooter .abrand{ font-weight:600; color:#6b7280; font-family:'Hanken Grotesk', sans-serif; letter-spacing:0; }
 
@@ -7343,6 +7350,115 @@ function weatherWeekSummary(week, surface){
   return rest.length ? `${sentence}; ${rest.join('; ')}.` : `${sentence}.`;
 }
 
+// ---------- "How conditions affect play" — derived from the live forecast -----
+// The three cards (Court pace / Serve advantage / Rally length) each show ONE
+// scalar in [0,1]: the bar fill is its position, the verdict word is its band.
+// They are computed from the same number, so word and fill can never disagree.
+// The scalar has no data-layer field — it is DERIVED from the forecast values
+// already bound on this tab (temperature, wind, humidity) plus the court surface.
+//
+// Physical direction (README "How conditions affect play"): hot/dry/thin air ->
+// faster court, serve advantage up, rallies shorter; cold/humid/heavy air -> the
+// reverse; wind reduces serve advantage and lengthens rallies; surface sets the
+// baseline the weather moves from (clay slower & longer; grass/fast hard the
+// other end). Right-hand pole = higher scalar = fuller bar, matching the export:
+// Court pace fuller = slower; Serve advantage fuller = more server-favoured;
+// Rally length fuller = longer.
+//
+// THRESHOLDS AND COEFFICIENTS ARE A PRODUCT DECISION. They live only in this one
+// object — Michael rules on them; change them here and nowhere else. The vocab
+// arrays are the CLOSED verdict set read from the design export, [low, mid, high]
+// aligned to the scalar bands.
+const WX_IMPACT_MODEL = {
+  courtPace: {                 // fuller = slower
+    label: 'Court pace', endL: 'Faster', endR: 'Slower',
+    surfaceBase: { clay: 0.68, hard: 0.50, grass: 0.34 },
+    temp:     { center: 20, coef: -0.012 },  // warmer -> faster court -> lower
+    humidity: { center: 55, coef:  0.004 },  // humid/heavy air -> slower -> higher
+    wind:     { threshold: 8, coef: 0 },     // negligible on pace
+    neutralLo: 0.42, neutralHi: 0.58,
+    vocab: ['Faster', 'Neutral', 'Slower'],
+  },
+  serveAdvantage: {            // fuller = more server-favoured
+    label: 'Serve advantage', endL: 'Returner', endR: 'Server',
+    base: 0.50,
+    surfaceBase: { clay: -0.03, hard: 0.05, grass: 0.10 },  // added to base
+    temp:     { center: 20, coef:  0.008 },  // hot/thin air -> serve up
+    humidity: { center: 55, coef: -0.0018 }, // humid/heavy -> returner
+    wind:     { threshold: 8, coef: -0.012 },// wind above threshold cuts serve edge
+    neutralLo: 0.40, neutralHi: 0.60,
+    vocab: ['Reduced', 'Neutral', 'Elevated'],
+  },
+  rallyLength: {               // fuller = longer rallies
+    label: 'Rally length', endL: 'Shorter', endR: 'Longer',
+    surfaceBase: { clay: 0.66, hard: 0.50, grass: 0.36 },
+    temp:     { center: 20, coef: -0.010 },  // hot/dry -> shorter
+    humidity: { center: 55, coef:  0.003 },  // humid/heavy -> longer
+    wind:     { threshold: 8, coef:  0.010 },// wind -> longer rallies
+    neutralLo: 0.42, neutralHi: 0.58,
+    vocab: ['Shorter', 'Neutral', 'Longer'],
+  },
+};
+
+function wxSurfaceKey(surface){
+  return /clay/i.test(surface) ? 'clay' : /grass/i.test(surface) ? 'grass' : 'hard';
+}
+
+// The single scalar for one scale, clamped to [0,1].
+function wxScalar(cfg, temp, humidity, wind, surfKey){
+  let s = (cfg.base != null ? cfg.base : 0) + (cfg.surfaceBase[surfKey] != null ? cfg.surfaceBase[surfKey] : cfg.surfaceBase.hard);
+  s += (temp - cfg.temp.center) * cfg.temp.coef;
+  s += (humidity - cfg.humidity.center) * cfg.humidity.coef;
+  s += Math.max(0, wind - cfg.wind.threshold) * cfg.wind.coef;
+  return Math.max(0, Math.min(1, s));
+}
+
+// The verdict word = the band the scalar falls in. Word and fill share the scalar.
+function wxVerdict(cfg, s){
+  if (s < cfg.neutralLo) return cfg.vocab[0];
+  if (s > cfg.neutralHi) return cfg.vocab[2];
+  return cfg.vocab[1];
+}
+
+// Returns the three cards' render data. When the core forecast is absent, the
+// card carries em dashes and NO fill — a neutral verdict would be a claim made
+// from nothing, so it is withheld.
+function weatherImpact(w, surface){
+  const cfgs = [WX_IMPACT_MODEL.courtPace, WX_IMPACT_MODEL.serveAdvantage, WX_IMPACT_MODEL.rallyLength];
+  // Null-safe: Number(null) is 0, which would fabricate a 0°C verdict from a
+  // missing field. Treat null/undefined/'' as absent so the card em-dashes.
+  const num = v => (v === null || v === undefined || v === '') ? NaN : Number(v);
+  const temp = num(w.temperature), hum = num(w.humidity), wind = num(w.windSpeed);
+  const have = Number.isFinite(temp) && Number.isFinite(hum);
+  const surfKey = wxSurfaceKey(surface);
+  return cfgs.map(cfg => {
+    if (!have) return { label: cfg.label, endL: cfg.endL, endR: cfg.endR, available: false };
+    const s = wxScalar(cfg, temp, hum, Number.isFinite(wind) ? wind : 0, surfKey);
+    return { label: cfg.label, endL: cfg.endL, endR: cfg.endR, available: true,
+             verdict: wxVerdict(cfg, s), pct: Math.round(s * 100) };
+  });
+}
+
+// Export-measured section: caps section head, then a repeat(3,1fr) card row.
+// Every literal below is read from design-export/matches-upcoming.html.
+function weatherImpactSection(w, surface){
+  const cards = weatherImpact(w, surface).map(im => {
+    const verdict = im.available ? escapeHtml(im.verdict) : '—';
+    const verdictColor = im.available ? 'var(--text)' : '#5b6880';
+    const fill = im.available ? `<div style="width:${im.pct}%; height:100%; background:#5b6880;"></div>` : '';
+    return `
+      <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:20px 22px;">
+        <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880; margin-bottom:11px;">${escapeHtml(im.label)}</div>
+        <div style="font-size:21px; font-weight:800; color:${verdictColor}; margin-bottom:12px;">${verdict}</div>
+        <div style="height:8px; border-radius:5px; background:rgba(255,255,255,0.09); overflow:hidden;">${fill}</div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:9px; color:#4b5672;"><span>${escapeHtml(im.endL)}</span><span>${escapeHtml(im.endR)}</span></div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="wx-cardlabel" style="margin:22px 0 14px;">How conditions affect play</div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px;">${cards}</div>`;
+}
+
 function buildWeatherSection(m){
   const w = m.weather;
   if (!w) {
@@ -7417,7 +7533,9 @@ function buildWeatherSection(m){
     }
   }
 
-  return `${forecastCard}${summary}${weekSection}${weekNote}`;
+  const impactSection = weatherImpactSection(w, m.surface);
+
+  return `${forecastCard}${impactSection}${summary}${weekSection}${weekNote}`;
 }
 
 /* ---------- FORM TAB ---------- */
@@ -14355,103 +14473,34 @@ function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
     });
   });
 
-  const sentences = [];
-
-  // Sentence 1, biggest strength. A metric only qualifies if the number is
-  // genuinely strong by realistic ATP standards (aiSummaryIsAbsStrong), not
-  // just above average by a couple of points, and it still has to be ahead
-  // of the field average on top of that. Compared against the opponent's
-  // own latest number on the same metric when available.
-  let strengthPick = null;
-  const strengthCandidates = candidates.filter(c => c.goodness > 0 && aiSummaryIsAbsStrong(c.metricKey, c.val));
-  if (strengthCandidates.length) {
-    strengthPick = strengthCandidates.reduce((best, c) => (!best || c.goodness > best.goodness) ? c : best, null);
+  // Refinement pass item 8: the summary now names ONLY the single clearest signal
+  // and what it means — one comparison, one implication, then stop. No reciting of
+  // values that already appear in the rows above, and (structurally) no second
+  // sentence into which a "comes down to …" clause could repeat itself. Prefer a
+  // genuine, above-field strength; fall back to the widest head-to-head gap.
+  let sentence = null;
+  const strengthPick = candidates
+    .filter(c => c.goodness > 0 && aiSummaryIsAbsStrong(c.metricKey, c.val))
+    .reduce((best, c) => (!best || c.goodness > best.goodness) ? c : best, null);
+  if (strengthPick) {
     const oppSurname = otherSurname(strengthPick.surname);
-    const oppLatest = latestBySurname[oppSurname];
-    const oppVal = oppLatest ? oppLatest.metrics[strengthPick.metricKey] : null;
-    const context = AI_SUMMARY_METRIC_CONTEXT[strengthPick.metricKey];
-    const avgFmt = aiSummaryFormatValue(strengthPick.metricKey, Math.round(strengthPick.avg * 10) / 10);
-    const comparison = oppVal != null
-      ? `well ahead of ${oppSurname}'s ${aiSummaryFormatValue(strengthPick.metricKey, oppVal)} and a ${bareTour} field average of ${avgFmt}`
-      : `well ahead of the ${bareTour} field average of ${avgFmt}`;
-    sentences.push(`${strengthPick.surname} has been the sharper of the two on ${strengthPick.label.toLowerCase()} this tournament, sitting at ${aiSummaryFormatValue(strengthPick.metricKey, strengthPick.val)}, ${comparison}. That is a real strength since it comes down to ${context}.`);
-  }
-
-  // Sentence 2, biggest weakness. Same idea in reverse: a number only gets
-  // called a weak spot once it drops below a realistic quality floor for
-  // that metric (aiSummaryIsAbsWeak), and it still needs to sit below the
-  // field average too. A merely below average but otherwise solid number,
-  // like 73% on first serve points won, will never trigger this.
-  const weaknessCandidates = candidates.filter(c => c !== strengthPick && c.goodness < 0 && aiSummaryIsAbsWeak(c.metricKey, c.val));
-  let weaknessPick = null;
-  if (weaknessCandidates.length) {
-    weaknessPick = weaknessCandidates.reduce((worst, c) => (!worst || c.goodness < worst.goodness) ? c : worst, null);
-    const oppSurname = otherSurname(weaknessPick.surname);
-    const oppLatest = latestBySurname[oppSurname];
-    const oppVal = oppLatest ? oppLatest.metrics[weaknessPick.metricKey] : null;
-    const comparison = oppVal != null
-      ? `well behind ${oppSurname}'s ${aiSummaryFormatValue(weaknessPick.metricKey, oppVal)}`
-      : `well below the field average`;
-    sentences.push(`On the other side, ${weaknessPick.surname} has genuinely struggled with ${weaknessPick.label.toLowerCase()}, currently at ${aiSummaryFormatValue(weaknessPick.metricKey, weaknessPick.val)}, ${comparison}. That matters because it comes down to ${AI_SUMMARY_METRIC_CONTEXT[weaknessPick.metricKey]}.`);
-  }
-
-  // Sentence 3 — trend/momentum: needs 2+ real rounds on file for a player;
-  // omitted entirely (not guessed) if neither player has enough history.
-  // Notes the opponent's comparative movement on the same metric when both
-  // have enough history, rather than discussing the player in isolation.
-  const trendCandidates = [];
-  [[p1Data, p1Surname], [p2Data, p2Surname]].forEach(([pData, surname]) => {
-    if (!pData || pData.rounds.length < 2) return;
-    const first = pData.rounds[0], latest = pData.rounds[pData.rounds.length - 1];
-    if (first.round === latest.round) return;
-    const deltas = RANKED.map(([key, label]) => {
-      const fv = first.metrics[key], lv = latest.metrics[key];
-      if (fv == null || lv == null) return null;
-      return { key, label, delta: aiSummaryDirection(key, lv - fv), firstVal: fv, latestVal: lv };
-    }).filter(Boolean);
-    if (!deltas.length) return;
-    const avgDelta = deltas.reduce((sum, d) => sum + d.delta, 0) / deltas.length;
-    const biggest = deltas.reduce((b, d) => (!b || Math.abs(d.delta) > Math.abs(b.delta)) ? d : b, null);
-    trendCandidates.push({ surname, first, latest, avgDelta, biggest });
-  });
-  if (trendCandidates.length) {
-    const pick = trendCandidates.reduce((best, c) => (!best || Math.abs(c.avgDelta) > Math.abs(best.avgDelta)) ? c : best, null);
-    if (Math.abs(pick.avgDelta) >= 2) {
-      const dir = pick.avgDelta > 0 ? 'trending upward' : 'trending downward';
-      const rival = trendCandidates.find(c => c.surname !== pick.surname);
-      const rivalNote = rival && Math.abs(rival.avgDelta) < 2
-        ? `, while ${rival.surname} has held fairly steady over the same stretch`
-        : '';
-      sentences.push(`${pick.surname} has been ${dir} through the draw, with ${pick.biggest.label.toLowerCase()} moving from ${aiSummaryFormatValue(pick.biggest.key, pick.biggest.firstVal)} in ${pick.first.round} to ${aiSummaryFormatValue(pick.biggest.key, pick.biggest.latestVal)} by ${pick.latest.round}${rivalNote}.`);
-    }
-  }
-
-  // Sentence 4, head to head gap: all 7 metrics (including the ratio),
-  // compared player to player directly rather than vs. field average, as a
-  // concluding synthesis (no bet or winner call).
-  if (p1Latest && p2Latest) {
+    sentence = `${strengthPick.surname} has been the sharper of the two on ${strengthPick.label.toLowerCase()} through this draw, ahead of both ${oppSurname} and the ${bareTour} field &mdash; it comes down to ${AI_SUMMARY_METRIC_CONTEXT[strengthPick.metricKey]}.`;
+  } else if (p1Latest && p2Latest) {
     const gaps = PROGRESSION_METRIC_ORDER.map(([key, label]) => {
       const v1 = p1Latest.metrics[key], v2 = p2Latest.metrics[key];
       if (v1 == null || v2 == null) return null;
       return { key, label, v1, v2, gap: Math.abs(v1 - v2) };
     }).filter(Boolean);
-    if (gaps.length) {
-      // Prefer a metric the strength/weakness sentences have not already explained,
-      // so this closing line surfaces a genuinely new gap rather than restating a
-      // point (and its verbatim "which comes down to …" context clause) already
-      // made two sentences earlier. If every gap metric is already spoken for, name
-      // the widest but drop the trailing context clause to avoid the exact repeat.
-      const usedKeys = new Set([strengthPick && strengthPick.metricKey, weaknessPick && weaknessPick.metricKey].filter(Boolean));
-      const fresh = gaps.filter(g => !usedKeys.has(g.key));
-      const pool = fresh.length ? fresh : gaps;
-      const widest = pool.reduce((b, g) => (!b || g.gap > b.gap) ? g : b, null);
-      const tail = fresh.length ? `, which comes down to ${AI_SUMMARY_METRIC_CONTEXT[widest.key]}` : '';
-      sentences.push(`Right now the clearest gap between the two is on ${widest.label.toLowerCase()}: ${p1Surname} at ${aiSummaryFormatValue(widest.key, widest.v1)} against ${p2Surname}'s ${aiSummaryFormatValue(widest.key, widest.v2)}${tail}.`);
+    const widest = gaps.reduce((b, g) => (!b || g.gap > b.gap) ? g : b, null);
+    if (widest) {
+      const higherBetter = widest.key !== 'unforcedErrorsPct';
+      const leader = (higherBetter ? widest.v1 > widest.v2 : widest.v1 < widest.v2) ? p1Surname : p2Surname;
+      sentence = `The clearest gap between the two so far is on ${widest.label.toLowerCase()}, where ${leader} holds the edge &mdash; it comes down to ${AI_SUMMARY_METRIC_CONTEXT[widest.key]}.`;
     }
   }
 
-  const body = sentences.length
-    ? `<p class="progression-summary-text">${sentences.join(' ')}</p>`
+  const body = sentence
+    ? `<p class="progression-summary-text">${sentence}</p>`
     : `<div class="acomingsoon">Not enough round-by-round data yet to generate meaningful insights.</div>`;
 
   return `
@@ -14678,17 +14727,23 @@ function buildMatchProgressionSection(m){
   const prevOf = (vals, i) => { for (let j = i - 1; j >= 0; j--) { if (vals[j] != null) return vals[j]; } return null; };
   const arrow = (cur, prev) => (cur == null || prev == null || cur === prev) ? '' : (cur > prev ? '&#8599;' : '&#8600;');
 
-  // Inline TREND sparkline: two thin identity-coloured lines with round point
-  // markers, sized to the column. A glyph, not a chart — no axes, no labels. Each
-  // row is scaled to its own two-player min/max so the shape reads at a glance.
-  const sparkline = (rowSeries) => {
-    const all = rowSeries.flatMap(s => s.vals).filter(v => v != null);
+  // Inline TREND sparkline: two thin identity-coloured lines with a round point
+  // marker at every round. A glyph, not a chart — no axes, no labels. Each row is
+  // normalised over its OWN data (both players' round values PLUS the field
+  // average for that row), then the domain is padded by max((hi-lo)*0.4, 3pp)
+  // (0.12 for the ratio row) so the line sits at LOW amplitude inside the cell —
+  // it reads as a texture, not a full-bleed chart, and small real moves stay
+  // small. Sized to the 112px TREND column (computed-styles: svg 112x28, 1.75
+  // stroke). domainExtra carries the field series for scaling but is not drawn.
+  const sparkline = (rowSeries, domainExtra, isRatio) => {
+    const all = [...rowSeries.flatMap(s => s.vals), ...(domainExtra || [])].filter(v => v != null);
     if (!all.length) return '';
-    let mn = Math.min(...all), mx = Math.max(...all);
-    if (mn === mx) { mn -= 1; mx += 1; }
-    const W = 52, H = 20, pad = 3, n = rounds.length;
-    const xOf = i => n === 1 ? W / 2 : pad + i * ((W - 2 * pad) / (n - 1));
-    const yOf = v => (H - pad) - (v - mn) / (mx - mn) * (H - 2 * pad);
+    let lo = Math.min(...all), hi = Math.max(...all);
+    const pad = Math.max((hi - lo) * 0.4, isRatio ? 0.12 : 3);
+    lo -= pad; hi += pad;
+    const W = 112, H = 28, padX = 9, padY = 5, n = rounds.length;
+    const xOf = i => n === 1 ? W / 2 : padX + i * ((W - 2 * padX) / (n - 1));
+    const yOf = v => (H - padY) - (v - lo) / (hi - lo) * (H - 2 * padY);
     let out = '';
     rowSeries.forEach(s => {
       const pts = s.vals.map((v, i) => v == null ? null : { x: xOf(i), y: yOf(v) });
@@ -14696,8 +14751,8 @@ function buildMatchProgressionSection(m){
       if (!valid.length) return;
       let dpath = '', started = false;
       pts.forEach(p => { if (!p) { started = false; return; } dpath += (started ? 'L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ' '; started = true; });
-      if (valid.length > 1) out += `<path d="${dpath.trim()}" fill="none" stroke="${s.color}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-      valid.forEach(p => { out += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.7" fill="${s.color}"/>`; });
+      if (valid.length > 1) out += `<path d="${dpath.trim()}" fill="none" stroke="${s.color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>`;
+      valid.forEach(p => { out += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${s.color}"/>`; });
     });
     return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${out}</svg>`;
   };
@@ -14724,7 +14779,7 @@ function buildMatchProgressionSection(m){
     const spark = sparkline([
       ...(p1Data ? [{ color: A_COLOR, vals: valsA }] : []),
       ...(p2Data ? [{ color: B_COLOR, vals: valsB }] : []),
-    ]);
+    ], rounds.map((_, i) => fieldArr[i]), !!mt.ratio);
 
     return `<tr>
       <td class="tpg-metric"><div class="tpg-mlabel">${mt.label}</div>${mt.sub ? `<div class="tpg-sub">${mt.sub}</div>` : ''}</td>
@@ -14735,7 +14790,7 @@ function buildMatchProgressionSection(m){
     </tr>`;
   }).join('');
 
-  const roundHeads = rounds.map(r => `<th class="tpg-h">${r}</th>`).join('');
+  const roundHeads = rounds.map(r => `<th class="tpg-h tpg-hround">${r}</th>`).join('');
 
   // Legend: two short line swatches with surname only, a divider, then an arrow
   // key. No field-average swatch — FIELD is a column now. Arrows here are the
@@ -14751,14 +14806,15 @@ function buildMatchProgressionSection(m){
   return `
     <div class="tprogress-title">Player Tournament Progression <span class="tour">&mdash; ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players from the rounds they completed BEFORE this match, vs. the field average for each round. The match on this card is excluded.">&#9432;</span></div>
     ${legendHtml}
+    <div class="tpg-method">Mean of every player in the ${bareTour} draw at each round &mdash; the benchmark for above/below-tour form. Shows form built BEFORE this match; the match on this card is excluded. A player is charted once they have survived two rounds.</div>
     <div class="tpg-tablewrap">
       <table class="tpg-table">
         <thead><tr>
-          <th class="tpg-h tpg-hmetric">Metric</th>
-          <th class="tpg-h">Trend</th>
+          <th class="tpg-h tpg-hcaps tpg-hmetric">Metric</th>
+          <th class="tpg-h tpg-hcaps">Trend</th>
           ${roundHeads}
-          <th class="tpg-h">AVG</th>
-          <th class="tpg-h tpg-hfield">Field</th>
+          <th class="tpg-h tpg-havg">AVG</th>
+          <th class="tpg-h tpg-hcaps tpg-hfield">Field</th>
         </tr></thead>
         <tbody>${bodyRows}</tbody>
       </table>
