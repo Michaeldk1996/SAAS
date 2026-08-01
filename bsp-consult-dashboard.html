@@ -12167,45 +12167,9 @@ function ppAsapSignalHtml(p){
     </div>
   </div>`;
 }
-// Layer #4A — compact "Surface record" rail card. Career + rolling last-52-weeks
-// W-L and win% per surface, sourced purely from the public career-splits.json
-// aggregate (same figures the Career splits table uses — nothing recomputed or
-// invented). A surface below the M>=10 career sample floor is dropped, and the
-// whole panel self-hides when none clear it (mirrors the Layer #8 A no-data rule).
-// Additive: the left-rail "Surface performance" KPI block is untouched.
-function ppSurfaceRecordHtml(p){
-  const s = careerSplits[String(p.key)];
-  if (!s || !s.career) return '';
-  const rows = ['Hard','Clay','Grass']
-    .map(surf => {
-      const c = s.career[surf];
-      if (!c || typeof c.M !== 'number' || c.M < 10) return null;   // M>=10 sample floor
-      const lr = s.last52 && s.last52[surf];
-      const l = (lr && typeof lr.M === 'number' && lr.M >= 10) ? lr : null;
-      return { surf, c, l };
-    })
-    .filter(Boolean)
-    .sort((a, b) => (b.c.winPct || 0) - (a.c.winPct || 0));   // best surface first
-  if (!rows.length) return '';   // whole panel self-hides — zero blast radius
-  const pct = v => (typeof v === 'number' ? v.toFixed(1) : '—');
-  const rowsHtml = rows.map(r => {
-    const col = PP_SURF_COLORS[r.surf] || '#8b93a3';
-    const last = r.l
-      ? ` · <span style="color:#a7b0c0;">${pct(r.l.winPct)}% ${r.l.W}-${r.l.L} last 52 wks</span>`
-      : ` · <span style="color:#5b6472;">Under 10 in last 52 wks</span>`;
-    return `<div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:9px 11px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <span style="font-size:12px;font-weight:700;color:${col};">${r.surf}</span>
-        <span style="font-size:12.5px;font-weight:800;color:#e7e9ee;font-family:'IBM Plex Mono',monospace;">${pct(r.c.winPct)}%</span>
-      </div>
-      <div style="font-size:11px;color:#8b93a3;margin-top:3px;font-family:'IBM Plex Mono',monospace;">${r.c.W}-${r.c.L} career${last}</div>
-    </div>`;
-  }).join('');
-  return `<div style="display:flex;flex-direction:column;gap:9px;">
-    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface record</span>
-    <div style="display:flex;flex-direction:column;gap:8px;">${rowsHtml}</div>
-  </div>`;
-}
+// Layer #4A "Surface record" rail card was removed to match the export — the
+// design has no rolling-52-week surface-record card in the left rail (the export
+// carries only the "Surface performance" KPI block, which is untouched).
 const PP_SURF_COLORS = { Grass: '#2ab8a0', Hard: '#4db8ff', Clay: '#e8a84e' };
 const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -13658,51 +13622,14 @@ function buildPlayerProfileHtml(p){
   // offering an expander for. It is one row per career year (Djokovic 14,
   // Vallejo 7), bounded so a debut player still gets a useful list.
   const ppFormRowTarget = Math.max(8, Math.min((cy && cy.rows ? cy.rows.length : 8), 14));
-  // Once matches sit under a tournament header the tournament name is redundant
-  // in the row, so the row's meta slot carries the round instead. Feed rounds
-  // arrive prefixed ("ATP Gstaad - Semi-finals"); keep only the round itself.
-  const ppRoundLabel = m => {
-    const r = m.round || '';
-    return r.includes(' - ') ? r.split(' - ').pop().trim() : r;
-  };
-  // One header renderer for both the collapsed list and the season list below,
-  // so the two read as a single continuous list rather than two designs. Only
-  // the season list has room for the date range.
-  const ppFormGroupHeader = (g, withRange) => {
-    const sColor = g.surface ? PP_SURF_COLORS[g.surface] : null;
-    const surfTag = g.surface ? `<span style="font-size:10px;font-weight:600;color:${sColor};background:${ppHexA(sColor,0.13)};border:1px solid ${ppHexA(sColor,0.32)};border-radius:5px;padding:2px 7px;flex:none;">${g.surface}</span>` : '';
-    return `<div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;">
-          <span style="font-size:12.5px;font-weight:700;color:#e7e9ee;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.label}</span>
-          ${surfTag}
-          ${withRange ? `<span style="font-size:10.5px;color:#5b6472;white-space:nowrap;">${g.range}</span>` : ''}
-          <span style="flex:1;"></span>
-          <span style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;white-space:nowrap;">${g.won}–${g.lost}</span>
-        </div>`;
-  };
-  // Grouped by tournament, matching the Match Analysis modal's recent-form tab.
-  // ppGroupMatchesByTournament returns editions newest-first with each edition's
-  // matches newest-first, so the visual order is unchanged from the old flat
-  // list — only the headers are new.
+  // Flat, most-recent-first list matching the export — no per-tournament group
+  // headers. Each row is one match, labelled inline with its tournament. (The
+  // grouped-by-tournament layout the Match Analysis modal Form tab uses via
+  // ppGroupMatchesByTournament is intentionally NOT used here; the export drops it.)
   let ppFormSeq = 0;
-  const shownGroups = ppGroupMatchesByTournament(formMatches);
-  // A match with no date or no resolvable tournament name is dropped by the
-  // grouper. Collect those rather than silently losing them from the card.
-  const groupedKeys = new Set(shownGroups.flatMap(g => g.matches).map(m => String(m.eventKey || '')));
-  const ungrouped = formMatches.filter(m => !groupedKeys.has(String(m.eventKey || '')));
-  const ppFormGroupHtml = (g, withRange) => `
-      <div style="margin-top:12px;">
-        ${ppFormGroupHeader(g, withRange)}
-        ${g.matches.map(m => ppFormRow(m, ppFormSeq++, ppRoundLabel(m))).join('')}
-      </div>`;
-  // The date range is chrome the locked box has no room for; it appears once the
-  // card is expanded to full height.
-  const rowsHtml = (shownGroups.map(g => ppFormGroupHtml(g, ppState.formExpanded)).join('')
-      + (ungrouped.length
-        ? `<div style="margin-top:12px;">
-        <div style="display:flex;align-items:center;padding-bottom:7px;"><span style="font-size:12.5px;font-weight:700;color:#e7e9ee;">Other matches</span></div>
-        ${ungrouped.map(m => ppFormRow(m, ppFormSeq++, m.tournament || '')).join('')}
-      </div>`
-        : ''))
+  const flatMatches = formMatches.slice()
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const rowsHtml = flatMatches.map(m => ppFormRow(m, ppFormSeq++, m.tournament || '')).join('')
     || `<div style="padding:12px 0;font-size:12.5px;color:#5b6472;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
 
@@ -13863,13 +13790,12 @@ function buildPlayerProfileHtml(p){
   const eloInfo = ppEloFor(p);
   const eloTitle = eloInfo.illustrative ? 'Illustrative Elo estimate (no live rating on record)' : 'Live Elo rating · tennisabstract.com';
   const eloPill = `<span title="${eloTitle}" style="white-space:nowrap;display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:#c9b98a;background:rgba(232,179,65,0.1);border:1px solid rgba(232,179,65,0.28);border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ELO ${eloInfo.elo} · No. ${eloInfo.rank}</span>`;
-  // Playing-style line: real archetype (if any) + strongest-surface specialist
-  // tag, only when that surface is clearly the player's best on a real sample.
-  const surfForStyle = surfData.filter(d => { const k = p.kpis[d.s]; const n = k && k.record ? (k.record.won + k.record.lost) : 0; return n >= 20; });
-  const bestSurf = surfForStyle[0];
-  const specialist = (bestSurf && careerWR != null && (bestSurf.wr - careerWR) >= 5) ? bestSurf.s + ' Specialist' : null;
+  // Playing-style line: the archetype label alone, matching the export (which
+  // shows a single archetype such as "Counter Puncher / Solid Defender" with no
+  // surface-specialist tag appended). Rendered in primary text — brand blue is
+  // reserved for navigation/identity and must not colour body copy.
   const _ppStyle = ppStyleFor(p.name);
-  const styleLine = [(_ppStyle && _ppStyle.archetype_label) || p.archetype, specialist].filter(Boolean).join(' · ');
+  const styleLine = (_ppStyle && _ppStyle.archetype_label) || p.archetype || '';
   const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
   const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:13px;background:rgba(255,255,255,0.16);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
@@ -13902,7 +13828,7 @@ function buildPlayerProfileHtml(p){
           <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${p.name}</h1>
           <span style="font-size:13px;font-weight:600;color:#9fb2d4;background:rgba(159,178,212,0.1);border:1px solid rgba(159,178,212,0.32);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
         </div>
-        ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#5b9bff;">${pesc(styleLine)}</div>` : ''}
+        ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#e7e9ee;">${pesc(styleLine)}</div>` : ''}
         <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:14px;color:#8b93a3;flex-wrap:wrap;">${metaHtml}</div>
       </div>
     </div>
@@ -13921,7 +13847,6 @@ function buildPlayerProfileHtml(p){
           <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
           ${surfHtml}
         </div>
-        ${ppSurfaceRecordHtml(p)}
         ${ppStyleCard(p)}
       </div>
 
