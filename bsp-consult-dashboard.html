@@ -1174,6 +1174,26 @@
      #6aaeff, B #e7e9ee — matching the dot beside it (.mstat-dot.p1/.p2 already do). */
   :is(.modal-analysis,.pp-formsurface) .msheet-names .p1{ color:#6aaeff; }
   :is(.modal-analysis,.pp-formsurface) .msheet-names .p2{ color:#e7e9ee; }
+  /* §2 Score header (completed only) — Flashscore-style panel at the TOP of the
+     Match Stats tab. Relocated here from the modal shell header (founder ruling A,
+     2026-08-01): the shell now carries only "Match analysis" + fixture line + close;
+     the full result lives here. Grid = side | center | side. Spec §2. */
+  .modal-analysis .ms-scorehead{ display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:18px 22px 16px; margin:0 auto 16px; max-width:720px; }
+  .modal-analysis .ms-scorehead .msh-side{ display:flex; flex-direction:column; align-items:center; gap:9px; min-width:0; }
+  .modal-analysis .ms-scorehead .msh-av img,
+  .modal-analysis .ms-scorehead .msh-av .avatar-fallback{ width:52px; height:52px; border-radius:50%; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; }
+  .modal-analysis .ms-scorehead .msh-av.a .avatar-fallback{ background:rgba(91,155,255,0.14); color:#6aaeff; }
+  .modal-analysis .ms-scorehead .msh-av.b .avatar-fallback{ background:rgba(123,145,180,0.14); color:#e7e9ee; }
+  /* Ruling B (2026-08-01): BOTH names #e7e9ee — the header names never carry an
+     outcome cue. Winner/loser marking is tone-not-hue only in the point-log game
+     scores; identity hue rides on the legend dot / left stat column / avatar tint. */
+  .modal-analysis .ms-scorehead .msh-name{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:700; color:#e7e9ee; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
+  .modal-analysis .ms-scorehead .msh-name[onclick]{ cursor:pointer; }
+  .modal-analysis .ms-scorehead .msh-center{ display:flex; flex-direction:column; align-items:center; gap:7px; white-space:nowrap; }
+  .modal-analysis .ms-scorehead .msh-date{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.06em; color:#5b6880; }
+  .modal-analysis .ms-scorehead .msh-sets{ font-family:'IBM Plex Mono', monospace; font-size:36px; font-weight:700; letter-spacing:0.06em; color:#e7e9ee; line-height:1; font-variant-numeric:tabular-nums; }
+  .modal-analysis .ms-scorehead .msh-perset{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; letter-spacing:0.08em; color:#5b6880; }
+  .modal-analysis .ms-scorehead .msh-status{ font-family:'Hanken Grotesk', sans-serif; font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.16em; color:#5b6880; }
   /* Export header anatomy (matches-upcoming.html shared match-detail component):
      (1) big sets line "2–1" mono 38px/700, (2) score line "6-4, 3-6, 6-2" mono
      17px/700, (3) "Stat comparison" label LAST — 10px uppercase #4b5672. Founder
@@ -8489,6 +8509,40 @@ function buildNewsSection(m){
   return wrap(`${groups}${viewAll}`);
 }
 
+// §2 Score header (completed only) — the Flashscore-style panel that opens the
+// Match Stats tab. Founder ruling A (2026-08-01): the completed-match score header
+// RELOCATES here from the modal shell (shell → tab); the shell keeps only the title,
+// fixture line and close. avatars + names + sets + per-set line + FINISHED. Names
+// are both #e7e9ee (ruling B); outcome is never cued on the header names.
+function buildMsScoreHead(m){
+  const fs = m.finalScore;
+  if (!fs) return '';   // completed only — upcoming/live/interrupted have no §2 panel
+  const bigSets = (fs.p1Sets != null && fs.p2Sets != null) ? `${fs.p1Sets}–${fs.p2Sets}` : '';
+  const sets = Array.isArray(fs.sets) ? fs.sets : [];
+  const perSet = sets.length
+    ? sets.map(s => `${s.p1}-${s.p2}`).join(', ')
+    : (fs.display || '');
+  let dateStr = '';
+  if (m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) dateStr = `${formatShortDate(d)} ${d.getFullYear()}`; }
+  return `
+    <div class="ms-scorehead">
+      <div class="msh-side">
+        <span class="msh-av a">${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}</span>
+        <span class="msh-name"${profileLinkAttrs(m.p1Key, m.p1)}>${escapeHtml(m.p1)}</span>
+      </div>
+      <div class="msh-center">
+        ${dateStr ? `<div class="msh-date">${escapeHtml(dateStr)}</div>` : ''}
+        ${bigSets ? `<div class="msh-sets">${escapeHtml(bigSets)}</div>` : ''}
+        ${perSet ? `<div class="msh-perset">${escapeHtml(perSet)}</div>` : ''}
+        <div class="msh-status">Finished</div>
+      </div>
+      <div class="msh-side right">
+        <span class="msh-av b">${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}</span>
+        <span class="msh-name"${profileLinkAttrs(m.p2Key, m.p2)}>${escapeHtml(m.p2)}</span>
+      </div>
+    </div>
+  `;
+}
 function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
@@ -8503,6 +8557,7 @@ function buildMatchStatsSection(m){
   // (event_time is the match START only) — with nothing real to show it added no
   // information beyond the score already on the modal header.
   return `
+    ${buildMsScoreHead(m)}
     <div class="ms-cap">
       <div class="ms-subtabs-wrap">
         <div class="ms-subtabs" role="tablist">
@@ -8626,13 +8681,20 @@ function buildMatchStatsSheet(m, setNo){
   const bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
   const scoreLine = score.display || '';
   const headLabel = 'Stat comparison';
-  const statHeader = (bigLine || scoreLine) ? `
+  // Founder ruling A (2026-08-01): for a COMPLETED match the §2 score panel at the
+  // top of the tab (buildMsScoreHead) now carries the sets + per-set line, so the
+  // stat sheet shows ONLY the "STAT COMPARISON" caption (§6) — no second score copy.
+  // An INTERRUPTED match has no §2 panel (result is provisional), so it keeps the
+  // inline sets/score line here as its sole in-tab score.
+  const statHeader = m.finalScore
+    ? `<div class="msheet-head"><div class="msheet-label">${escapeHtml(headLabel)}</div></div>`
+    : ((bigLine || scoreLine) ? `
     <div class="msheet-head">
       ${bigLine ? `<div class="msheet-setsbig">${escapeHtml(bigLine)}</div>` : ''}
       ${scoreLine ? `<div class="msheet-scoreline">${escapeHtml(scoreLine)}</div>` : ''}
       <div class="msheet-label">${escapeHtml(headLabel)}</div>
     </div>
-  ` : '';
+  ` : `<div class="msheet-head"><div class="msheet-label">${escapeHtml(headLabel)}</div></div>`);
   return `
     ${suspendedNote}
     <div class="msheet-names"><span class="p1"><span class="mstat-dot p1"></span>${m.p1}</span><span class="p2">${m.p2}<span class="mstat-dot p2"></span></span></div>
@@ -10083,15 +10145,11 @@ function openAnalysisModal(matchId){
   p1Pill.className = 'aodds'; p2Pill.className = 'aodds';
   const setSpans = sets => (sets || []).map(s => `<span>${s.p1}-${s.p2}</span>`).join('');
   if (m.finalScore) {
-    // Completed match — the header carries ONLY the sets-won pills now. Founder
-    // pass-3 §1: the per-set score sequence ("7-6 3-6 4-6") and the FINAL pill were
-    // removed because the Match Stats tab body already renders the set-by-set line;
-    // the header was repeating it. §8: the sets-won pills are neutral (no identity
-    // tint), winner a touch brighter — one shared treatment, not two.
-    p1Pill.textContent = String(m.finalScore.p1Sets);
-    p2Pill.textContent = String(m.finalScore.p2Sets);
-    p1Pill.className = 'aodds sets' + (m.finalScore.winner === 'p1' ? ' win' : '');
-    p2Pill.className = 'aodds sets' + (m.finalScore.winner === 'p2' ? ' win' : '');
+    // Completed match — the score header RELOCATES to the Match Stats tab (§2 panel,
+    // buildMsScoreHead). Founder ruling A (2026-08-01): the shell drops the matchup
+    // row entirely and carries only "Match analysis" + fixture line + close. The
+    // whole .amatchup-center is hidden below, so nothing is written to the pills here.
+    p1Pill.textContent = ''; p2Pill.textContent = '';
     setLine.innerHTML = '';
   } else if (m.interrupted && m.partialScore) {
     // Suspended match — sets won so far + per-set line. Both pills stay neutral
@@ -10121,6 +10179,13 @@ function openAnalysisModal(matchId){
 
   const roundText = h2hRoundLabel(m.tournamentRound);
   document.getElementById('aContext').textContent = `${m.tour}${roundText ? ' • ' + roundText : ''}`;
+
+  // Founder ruling A (2026-08-01): a COMPLETED match relocates its full score header
+  // into the Match Stats tab (§2 panel), so the shell header drops the matchup row
+  // and shows only "Match analysis" + fixture line + close. Upcoming / live /
+  // interrupted matches have no §2 relocation target, so they keep the shell matchup
+  // (market-odds pills, or live/partial sets-won + per-set line).
+  document.querySelector('.modal-analysis .amatchup-center').style.display = m.finalScore ? 'none' : '';
 
   const liveBar = document.getElementById('aLiveBar');
   liveBar.classList.remove('completed');
