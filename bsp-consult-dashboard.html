@@ -1102,12 +1102,14 @@
      modal surface, and no sibling tab nests a second panel inside .abody. */
   .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
   .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:4px 0; }
-  .modal-analysis .psx-card{ background:#0e1015; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:18px 20px; }
+  .modal-analysis .psx-card{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:18px 20px; }
+  .modal-analysis .psr-col{ display:flex; flex-direction:column; justify-content:center; }
   .modal-analysis .psx-label{ font-size:10.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#5b6472; }
   .modal-analysis .psx-sub{ font-size:13px; color:#c4ccd8; line-height:1.45; margin-top:9px; }
   .modal-analysis .psx-nums{ display:flex; align-items:flex-start; justify-content:space-between; margin-top:16px; }
   .modal-analysis .psx-pct{ font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700; line-height:0.85; }
-  .modal-analysis .psx-code{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; margin-top:5px; }
+  .modal-analysis .psx-code{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; margin-top:5px; color:#5b6880; }
+  .modal-analysis .psx-name{ font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:600; margin-top:3px; }
   .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,#6aaeff,#e7e9ee); opacity:0.9; }
   .modal-analysis .psx-tick{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:rgba(255,255,255,0.45); transform:translateX(-50%); }
   .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:#0e1015; border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,0.45); }
@@ -1119,26 +1121,41 @@
   /* The design uses two different block gaps: 16px above Dimension edge, 20px
      above "How each has fared". Not one shared 18px. */
   .modal-analysis .psx-block{ margin-top:16px; }
-  .modal-analysis .psx-block.psx-block-vs{ margin-top:20px; }
+  .modal-analysis .psx-block.psx-block-vs{ margin-top:28px; padding-top:22px; border-top:1px solid rgba(255,255,255,0.07); }
   .modal-analysis .psr-svg{ width:100%; display:block; }
   .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
   .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:#c4ccd8; }
-  .modal-analysis .psr-swatch{ width:16px; height:10px; border-radius:2px; }
-  .modal-analysis .psr-swatch-a{ background:rgba(106,174,255,0.35); border:1.5px solid #6aaeff; }
-  .modal-analysis .psr-swatch-b{ border:1.5px dashed #e7e9ee; }
+  .modal-analysis .psr-swatch{ width:18px; height:0; }
+  .modal-analysis .psr-swatch-a{ border-top:2px solid #6aaeff; }
+  .modal-analysis .psr-swatch-b{ border-top:2px dashed #e7e9ee; }
   .modal-analysis .psr-n{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#5b6472; margin-top:7px; }
   .modal-analysis .psr-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; text-align:center; font-size:12px; color:#8b93a3; line-height:1.55; padding:0 14px; }
   .modal-analysis .psr-empty-sub{ display:block; margin-top:8px; font-size:11px; color:#5b6472; }
-  .modal-analysis .psd-list{ display:flex; flex-direction:column; gap:14px; }
-  .modal-analysis .psd-row{ display:grid; grid-template-columns:34px 1fr 160px 1fr 34px; align-items:center; gap:12px; }
-  .modal-analysis .psd-val{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; }
-  .modal-analysis .psd-track{ height:8px; border-radius:5px; background:rgba(255,255,255,0.045); display:flex; overflow:hidden; }
-  .modal-analysis .psd-track-a{ justify-content:flex-end; }
-  .modal-analysis .psd-track-b{ justify-content:flex-start; }
-  .modal-analysis .psd-fill{ height:100%; border-radius:5px; }
-  .modal-analysis .psd-mid{ text-align:center; }
-  .modal-analysis .psd-label{ font-size:11.5px; font-weight:600; color:#cfd5df; }
-  .modal-analysis .psd-edge{ font-size:9px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+  .modal-analysis .psd-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:12.5px; font-weight:600; }
+  .modal-analysis .psd-list{ display:flex; flex-direction:column; gap:16px; }
+  .modal-analysis .psd-metric{ text-align:center; font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; color:#cfd5df; margin-bottom:6px; }
+  .modal-analysis .psd-bars{ display:grid; grid-template-columns:36px 1fr 1fr 36px; align-items:center; gap:9px; }
+  .modal-analysis .psd-val{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; }
+  .modal-analysis .psd-val-a{ text-align:right; }
+  .modal-analysis .psd-val-b{ text-align:left; }
+  .modal-analysis .psd-track{ height:8px; background:rgba(255,255,255,0.06); display:flex; overflow:hidden; }
+  .modal-analysis .psd-track-a{ justify-content:flex-end; border-radius:5px 0 0 5px; }
+  .modal-analysis .psd-track-b{ justify-content:flex-start; border-radius:0 5px 5px 0; }
+  .modal-analysis .psd-fill{ height:100%; }
+  /* HISTORICAL BY SURFACE table (inside the style-edge card) */
+  .modal-analysis .pss-block{ margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08); }
+  .modal-analysis .pss-title{ font-size:10.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672; margin-bottom:10px; }
+  .modal-analysis .pss-head{ display:grid; grid-template-columns:1fr 72px 72px; gap:8px; padding:0 8px 8px; font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; color:#4b5672; }
+  .modal-analysis .pss-c1h{ text-align:right; color:#6aaeff; }
+  .modal-analysis .pss-c2h{ text-align:right; color:#e7e9ee; }
+  .modal-analysis .pss-row{ display:grid; grid-template-columns:1fr 72px 72px; gap:8px; align-items:baseline; padding:9px 8px; border-radius:7px; border-left:2px solid transparent; }
+  .modal-analysis .pss-today{ border-left-color:#4db8ff; }
+  .modal-analysis .pss-surf{ display:flex; align-items:baseline; gap:8px; font-size:12.5px; color:#e7e9ee; }
+  .modal-analysis .pss-n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; }
+  .modal-analysis .pss-today-tag{ font-family:'Hanken Grotesk',sans-serif; font-size:9px; color:#4b5672; }
+  .modal-analysis .pss-c1{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; color:#6aaeff; }
+  .modal-analysis .pss-c2{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; color:#e7e9ee; }
+  .modal-analysis .pss-src{ font-size:10.5px; color:#4b5672; margin-top:9px; line-height:1.45; }
   .modal-analysis .psv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .modal-analysis .psv-card{ background:#0e1015; border:1px solid; border-radius:12px; padding:15px 17px; }
   .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; }
@@ -4219,6 +4236,53 @@ function psCellFor(i, j){
   });
   if (!rated || tot < minN) return { pct:null, n:tot };
   return { pct: Math.round(wins / tot * 100), n: tot };
+}
+// Same pooling as psCellFor, but reads one surface plane of matchup-matrix.json's
+// `matrixBySurface` (hard/clay/grass) instead of the pooled matrix. Below the
+// sample floor it returns { pct:null, n } exactly like the pooled cell, so the
+// surface table can render an em-dash percentage against a real n.
+function psSurfaceCellFor(surfaceKey, i, j){
+  if (i === j) return null;
+  const BS = psMatrixData && psMatrixData.matrixBySurface;
+  const M = BS && BS[surfaceKey];
+  if (!M) return null;
+  const minN = (psMatrixData && psMatrixData.minSampleN) || 0;
+  let wins = 0, tot = 0, rated = 0;
+  PS_ARCHETYPES[i].ids.forEach(a => {
+    PS_ARCHETYPES[j].ids.forEach(b => {
+      if (a === b) return;
+      const cell = M[a] && M[a][b];
+      if (!cell || cell.pct == null || !cell.n) return;
+      wins += cell.pct / 100 * cell.n; tot += cell.n; rated++;
+    });
+  });
+  if (!rated || tot < minN) return { pct:null, n:tot };
+  return { pct: Math.round(wins / tot * 100), n: tot };
+}
+// The HISTORICAL BY SURFACE table body — one row per surface, real per-surface
+// win% for p1's archetype (i1) vs p2's (i2). The row matching today's surface
+// gets a left accent bar and an inline "today's surface" label.
+function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
+  const rows = ['clay', 'hard', 'grass'].map(sk => {
+    const cell = psSurfaceCellFor(sk, i1, i2);
+    const n = cell ? cell.n : 0;
+    const pct = cell && cell.pct != null ? cell.pct : null;
+    const isToday = sk === todayKey;
+    const label = sk.charAt(0).toUpperCase() + sk.slice(1);
+    const c1 = pct == null ? '—' : `${pct}%`;
+    const c2 = pct == null ? '—' : `${100 - pct}%`;
+    return `<div class="pss-row${isToday ? ' pss-today' : ''}">
+      <span class="pss-surf">${label}<span class="pss-n">n=${n.toLocaleString()}</span>${isToday ? `<span class="pss-today-tag">today's surface</span>` : ''}</span>
+      <span class="pss-c1">${c1}</span>
+      <span class="pss-c2">${c2}</span>
+    </div>`;
+  }).join('');
+  return `<div class="pss-block">
+    <div class="pss-title">Historical by surface</div>
+    <div class="pss-head"><span>Surface</span><span class="pss-c1h">${psEsc(a1.code)}</span><span class="pss-c2h">${psEsc(a2.code)}</span></div>
+    ${rows}
+    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Cells below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor show n with a dashed rate.</div>
+  </div>`;
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 let psRendered = false;
@@ -10173,6 +10237,9 @@ function styleRadarSvg(dims){
   const ring = f => `<polygon points="${dims.map((_, i) => ptStr(i, f)).join(' ')}" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>`;
   const poly = key => dims.map((d, i) => ptStr(i, Math.max(0, Math.min(100, d[key])) / 100)).join(' ');
   const rings = [0.25, 0.5, 0.75, 1].map(ring).join('');
+  // Scale-ring value labels (25/50/75/100), stacked just right of the centre axis.
+  const ringLabels = [0.25, 0.5, 0.75, 1].map(rr =>
+    `<text x="${(cx + 4).toFixed(1)}" y="${(cy - rr * R + 9).toFixed(1)}" fill="#4b5672" font-size="9" font-family="'IBM Plex Mono',monospace">${Math.round(rr * 100)}</text>`).join('');
   const spokes = dims.map((_, i) => {
     const [x, y] = pt(i, 1);
     return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
@@ -10188,7 +10255,7 @@ function styleRadarSvg(dims){
     const [x, y] = pt(i, Math.max(0, Math.min(100, d[key])) / 100);
     return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${key === 'a' ? 3 : 2.6}" fill="${key === 'a' ? '#7ba4ff' : ANALYSIS_P2_COLOR}"/>`;
   }).join('');
-  return `<svg viewBox="0 0 360 300" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
+  return `<svg viewBox="0 0 360 300" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${ringLabels}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
 }
 
 function styleNoteHtml(text){
@@ -10209,8 +10276,8 @@ function styleEdgeHtml(m, s1, s2){
   if (a1.id === a2.id){
     return `<div class="psx-card">${head}
       <div class="psx-sub">Mirror matchup — both play as ${psEsc(a1.name)}s</div>
-      <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">50%</div><div class="psx-code" style="color:#6aaeff;">${psEsc(a1.code)}</div></div>
-        <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">50%</div><div class="psx-code" style="color:#e7e9ee;">${psEsc(a2.code)}</div></div></div>
+      <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">50%</div><div class="psx-code">${psEsc(a1.code)}</div><div class="psx-name" style="color:#6aaeff;">${psEsc(psShortName(m.p1))}</div></div>
+        <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">50%</div><div class="psx-code">${psEsc(a2.code)}</div><div class="psx-name" style="color:#e7e9ee;">${psEsc(psShortName(m.p2))}</div></div></div>
       <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:50%; border-color:#8b93a3;"></div></div>
       <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
       <div class="psx-tag" style="color:#8b93a3; background:rgba(139,147,163,0.1); border-color:rgba(139,147,163,0.26);">▸ style gives neither player an edge</div>
@@ -10230,12 +10297,12 @@ function styleEdgeHtml(m, s1, s2){
     : `<div class="psx-tag" style="color:${lead.color}; background:${lead.bg}; border-color:${lead.bd};">▸ leans +${lead.pts} pts to the ${psEsc(lead.name.toLowerCase())}</div>`;
   return `<div class="psx-card">${head}
     <div class="psx-sub">${psEsc(p1pct >= p2pct ? a1.name : a2.name)}s beat ${psEsc(p1pct >= p2pct ? a2.name : a1.name)}s</div>
-    <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">${p1pct}%</div><div class="psx-code" style="color:#6aaeff;">${psEsc(a1.code)}</div></div>
-      <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">${p2pct}%</div><div class="psx-code" style="color:#e7e9ee;">${psEsc(a2.code)}</div></div></div>
+    <div class="psx-nums"><div><div class="psx-pct" style="color:#6aaeff;">${p1pct}%</div><div class="psx-code">${psEsc(a1.code)}</div><div class="psx-name" style="color:#6aaeff;">${psEsc(psShortName(m.p1))}</div></div>
+      <div style="text-align:right;"><div class="psx-pct" style="color:#e7e9ee;">${p2pct}%</div><div class="psx-code">${psEsc(a2.code)}</div><div class="psx-name" style="color:#e7e9ee;">${psEsc(psShortName(m.p2))}</div></div></div>
     <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
     <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
     ${tag}
-    <div class="psx-n">n = ${cell.n.toLocaleString()} tour meetings<br><span class="psx-nmuted">pooled across surfaces</span></div>
+    ${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}
   </div>`;
 }
 
@@ -10266,20 +10333,26 @@ function styleDimensionEdgeHtml(m, r1, r2){
   // Same data as the radar, so the same gate — otherwise the bars would quietly
   // publish the exact numbers the radar just refused to draw.
   if (!styleRadarDrawable(r1, r2)) return '';
+  // Player names live in ONE header row, not repeated per metric — the per-row
+  // winner tag was the source of the "same name six times" read. Bars mirror from
+  // the centre and normalise to the larger value so the longer bar = the edge.
   const rows = STYLE_AXES.map(ax => {
     const a = r1.radar[ax.k] ?? 50, b = r2.radar[ax.k] ?? 50;
     const aWins = a > b, tied = a === b;
-    const edge = tied ? { name:'level', color:'#8b93a3' }
-      : (aWins ? { name:psShortName(m.p1), color:'#8fb4ff' } : { name:psShortName(m.p2), color:'#eaa869' });
+    const max = Math.max(a, b) || 1;
+    const aShare = Math.round(a / max * 100), bShare = Math.round(b / max * 100);
     return `<div class="psd-row">
-      <span class="psd-val" style="color:${aWins && !tied ? '#6aaeff' : '#6b7280'}; text-align:right;">${a}</span>
-      <span class="psd-track psd-track-a"><span class="psd-fill" style="width:${a}%; background:${aWins && !tied ? ANALYSIS_P1_COLOR : ANALYSIS_P1_RGBA(0.32)};"></span></span>
-      <div class="psd-mid"><div class="psd-label">${psEsc(ax.label)}</div><div class="psd-edge" style="color:${edge.color};">▸ ${psEsc(edge.name)}</div></div>
-      <span class="psd-track psd-track-b"><span class="psd-fill" style="width:${b}%; background:${!aWins && !tied ? ANALYSIS_P2_COLOR : ANALYSIS_P2_RGBA(0.32)};"></span></span>
-      <span class="psd-val" style="color:${!aWins && !tied ? '#e7e9ee' : '#6b7280'}; text-align:left;">${b}</span>
+      <div class="psd-metric">${psEsc(ax.label)}</div>
+      <div class="psd-bars">
+        <span class="psd-val psd-val-a" style="color:${aWins && !tied ? '#6aaeff' : '#6b7280'};">${a}</span>
+        <span class="psd-track psd-track-a"><span class="psd-fill" style="width:${aShare}%; background:${aWins && !tied ? ANALYSIS_P1_COLOR : ANALYSIS_P1_RGBA(0.32)};"></span></span>
+        <span class="psd-track psd-track-b"><span class="psd-fill" style="width:${bShare}%; background:${!aWins && !tied ? ANALYSIS_P2_COLOR : ANALYSIS_P2_RGBA(0.32)};"></span></span>
+        <span class="psd-val psd-val-b" style="color:${!aWins && !tied ? '#e7e9ee' : '#6b7280'};">${b}</span>
+      </div>
     </div>`;
   }).join('');
-  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:14px;">Dimension edge</div><div class="psd-list">${rows}</div></div>`;
+  const header = `<div class="psd-header"><span style="color:#6aaeff;">${psEsc(psShortName(m.p1))}</span><span style="color:#e7e9ee;">${psEsc(psShortName(m.p2))}</span></div>`;
+  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Dimension edge</div>${header}<div class="psd-list">${rows}</div></div>`;
 }
 
 // "How each has fared vs this style" — walks the player's own form shard, keys
@@ -10441,7 +10514,7 @@ function buildStyleSection(m){
   // the style-edge card. Repeating it cost a full row of vertical space for nothing.
   return `<div class="psx-wrap">
     <div class="psx-top">
-      <div class="psr-col">${styleRadarBlockHtml(m, r1, r2)}</div>
+      <div class="psr-col psx-card">${styleRadarBlockHtml(m, r1, r2)}</div>
       ${styleEdgeHtml(m, s1, s2)}
     </div>
     ${styleDimensionEdgeHtml(m, r1, r2)}

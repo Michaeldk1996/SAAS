@@ -1727,3 +1727,32 @@ Intro sentence · the three record cards (values/sublabels) · `FULL MATCH HISTO
 (rows, identity name colours, dates, tournaments, scores, surface labels, chevrons,
 expansion) · coverage caption · modal shell, tab rail, Download report, disclaimer footer
 · every other tab.
+
+---
+
+## Playing Style tab — export-fidelity rebuild (TEN-8, 2026-08-01)
+
+Modal Match Analysis → Playing style tab, rebuilt against `design-export/matches-upcoming.html`
+per founder's 10-item spec. Renderers: `styleEdgeHtml`, `styleDimensionEdgeHtml`,
+`styleRadarSvg`, `buildStyleSection`; data reader `psSurfaceCellFor` +
+`styleSurfaceTableHtml`; CSS `.pss-*`, reworked `.psd-*`, `.psr-swatch*`, `.psx-*`.
+
+**Ten changes:** (1) `HISTORICAL BY SURFACE` table inside the STYLE VS STYLE EDGE card —
+**real** per-surface win% from `matchup-matrix.json`'s `matrixBySurface` (hard/clay/grass),
+today's-surface accent + label, source caption (NOT placeholder — the data exists).
+(2) Player name under each archetype %. (3) DIMENSION EDGE: one two-name header row,
+per-row winner tag removed. (4) Radar wrapped in a bordered card. (5) Card fill/border
+normalised to `#0a0d14` / `rgba(255,255,255,0.09)`. (6) Radar scale-ring labels 25/50/75/100.
+(7) Legend → solid/dashed line swatches. (8) DIMENSION EDGE labels all-caps, letter-spaced,
+centred above each bar-pair. (9) Charted-matches caption moved inside the radar card.
+(10) Divider above HOW EACH HAS FARED.
+
+**Two intentional divergences from the export:**
+- **Names use `psShortName` (full name minus leading initial), not surname-only.** The
+  export prints surnames; the live modal standardised on `psShortName` everywhere (radar
+  legend, dimension header, fared cards), so the style-edge %s follow suit for consistency.
+- **The "N · N charted matches" caption is retained** (the export omits it) — kept inside
+  the radar card per founder item 9. Do not remove in a later fidelity pass.
+
+Per-surface cells below the `minSampleN` floor (default 20) render `n` with an em-dash rate,
+mirroring the pooled cell's existing behaviour.
