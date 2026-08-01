@@ -1670,7 +1670,7 @@
   .atourn-metacell:last-child{ border-right:none; }
   .atourn-metacell .k{ font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#6b7280; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-metacell .v{ font-size:14.5px; font-weight:700; color:#e7e9ee; margin-top:7px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-bannerdesc{ padding:15px 24px 18px; border-top:1px solid rgba(255,255,255,0.06); font-size:12.5px; color:#8b93a3; line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-bannerdesc{ padding:15px 24px 18px; border-top:1px solid rgba(255,255,255,0.06); font-size:12.5px; color:#5b6880; line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-bannerdesc b{ color:#c3c9d4; font-weight:600; }
   .atourn-col{ min-width:0; }
   .atourn-name{ font-size:13px; font-weight:700; color:#eef1f6; margin-bottom:10px; font-family:'Hanken Grotesk', sans-serif; }
@@ -8086,7 +8086,7 @@ function upgradeTournamentRows(m, token, tourName){
   Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
     const grid = document.getElementById('atournGrid');
     if (!grid || grid.dataset.token !== String(token)) return;
-    let openable = 0, total = 0, n = 0;
+    let n = 0;
     for (const c of cols) {
       for (const y of c.history.years) {
         const matches = Array.isArray(y.matches) ? y.matches : [];
@@ -8094,10 +8094,8 @@ function upgradeTournamentRows(m, token, tourName){
         const list = document.getElementById(`atournMatches-${c.colPrefix}-${y.year}`);
         if (!list) continue;
         list.innerHTML = matches.map(x => {
-          total++;
           const ek = String(x.eventKey || '');
           const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-          if (canOpen) openable++;
           // Suffix must stay `tourn<n>` — toggleFormPanel strips it to derive the
           // accordion group, so both columns share ONE group and opening a second
           // match anywhere in this tab closes the first.
@@ -8111,17 +8109,10 @@ function upgradeTournamentRows(m, token, tourName){
         }).join('');
       }
     }
-    const note = document.getElementById('atournNote');
-    if (!note) return;
-    // The doc's standing rule — report the gap — answered with a live count off
-    // the real indexes rather than a static caveat.
-    note.textContent = total === 0
-      ? ''
-      : (openable === total
-        ? `All ${total} matches on file expand to the full box score and point log.`
-        : (openable === 0
-          ? `These editions predate our provider's per-match coverage, so no match row carries a stat breakdown or point log.`
-          : `${openable} of ${total} match rows expand to a stat breakdown or point log — the remaining ${total - openable} predate our provider's per-match coverage.`));
+    // §7 (ruling B) — the "N of M rows expand…" footer note was removed at the
+    // founder's direction; it was a build-side count with no counterpart in the
+    // export. The rows still upgrade to expandable in place; we just no longer
+    // print a caption about how many.
   });
 }
 function buildTournamentSection(m){
@@ -8164,6 +8155,18 @@ function buildTournamentSection(m){
   const altitudeCell = (cs2 && cs2.altitude != null)
     ? `<div class="atourn-metacell"><div class="k">Altitude</div><div class="v">${cs2.altitude.toLocaleString('en-US')} m</div></div>`
     : `<div class="atourn-metacell"><div class="k">Surface</div><div class="v" style="color:${surfHex};">${surfLabel}</div></div>`;
+  // §3 (ruling A) — the export's block is a per-tournament "conditions read", not
+  // the data-provenance caveat that used to live here. The founder will supply the
+  // bespoke per-tournament prose later; until then we render a surface-true
+  // placeholder keyed off m.surface (real data, not fabricated per-event text) so
+  // the block reads correctly on every court. Swap SURFACE_CONDITIONS for the
+  // authored per-tournament source when it arrives.
+  const SURFACE_CONDITIONS = {
+    hard: `This is a hard court — a true, medium-paced bounce that rewards clean baseline timing and first-strike serving. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
+    clay: `This is a clay court — a slower, higher bounce that lengthens rallies and rewards movement, patience and heavy topspin over flat power. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
+    grass: `This is a grass court — a low, fast, skidding bounce that rewards serving and early, aggressive striking over long baseline exchanges. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
+  };
+  const conditionsText = SURFACE_CONDITIONS[surf] || SURFACE_CONDITIONS.hard;
   const banner = `
     <div class="atourn-banner">
       <div class="atourn-banner-head">
@@ -8180,7 +8183,7 @@ function buildTournamentSection(m){
         ${altitudeCell}
         ${roundName ? `<div class="atourn-metacell"><div class="k">Round</div><div class="v">${roundName}</div></div>` : ''}
       </div>
-      <div class="atourn-bannerdesc">Career record for <b>${m.p1}</b> and <b>${m.p2}</b> at <b>${cleanTourName}</b>, based on every tour-level match on file with this data source. Reflects what our provider has on record, not necessarily every match ever played — check ATP Tour's official tournament history to confirm the complete record.</div>
+      <div class="atourn-bannerdesc">${conditionsText}</div>
     </div>
   `;
   // bsp-pipeline.js now fetches each player's full career at this
@@ -8207,7 +8210,6 @@ function buildTournamentSection(m){
       ${atournPlayerColumn(m.p1, m.p1TournamentHistory, 'p1', isGrandSlam)}
       ${atournPlayerColumn(m.p2, m.p2TournamentHistory, 'p2', isGrandSlam)}
     </div>
-    <div class="anote" id="atournNote" style="margin-top:14px;">Checking which matches have a stat breakdown on file…</div>
   `;
 }
 
