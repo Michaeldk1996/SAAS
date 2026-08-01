@@ -1827,22 +1827,6 @@
   .ah2h-tile .lbl{ font-size:11px; color:#5b6880; text-transform:uppercase; letter-spacing:0.12em; font-weight:400; margin-bottom:12px; font-family:'Hanken Grotesk', sans-serif; }
   .ah2h-tile .val{ font-family:'IBM Plex Mono', monospace; font-size:40px; font-weight:800; color:#e7e9ee; letter-spacing:-0.02em; line-height:1; }
   .ah2h-tile .sub{ font-size:12.5px; color:#4b5672; margin-top:9px; font-family:'Hanken Grotesk', sans-serif; }
-  /* H2H TREND block — a full-width chart of every meeting on a shared baseline.
-     Ticks rise for the left player's wins and fall for the right's; height is
-     proportional to the sets margin. Tick colour is identity (P1 #6aaeff / P2
-     #e7e9ee), never outcome. All values read from computed-styles.json. */
-  .ah2h-trend{ margin:2px 0 24px; }
-  .ah2h-trend-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-  .ah2h-trend-title{ font-size:11px; color:#5b6880; letter-spacing:0.12em; text-transform:uppercase; font-family:'Hanken Grotesk', sans-serif; }
-  .ah2h-trend-legend{ display:flex; gap:14px; }
-  .ah2h-trend-legend .lg{ display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#5b6880; font-family:'Hanken Grotesk', sans-serif; }
-  .ah2h-trend-legend .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
-  .ah2h-trend-names{ font-size:13px; font-weight:600; color:#e7e9ee; margin-bottom:4px; font-family:'Hanken Grotesk', sans-serif; }
-  .ah2h-trend-names .lead{ color:#6aaeff; }
-  .ah2h-trend-names .sep{ color:#4b5672; margin:0 8px; }
-  .ah2h-trend-chart svg{ display:block; width:100%; height:auto; }
-  .ah2h-trend-cap{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#4b5672; margin-top:2px; }
-  .ah2h-trend-sum{ font-size:12px; color:#4b5672; margin-top:8px; font-family:'Hanken Grotesk', sans-serif; }
   .ah2h-listhead{ font-size:11px; color:#5b6880; text-transform:uppercase; letter-spacing:0.05em; margin:18px 0 8px 0; font-family:'Hanken Grotesk', sans-serif; }
   .ah2h-list{ border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; }
   .ah2h-row{ display:grid; grid-template-columns:96px minmax(0,1fr) auto 52px 64px 18px; align-items:center; gap:16px; padding:15px 18px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; transition:background .12s; }
@@ -8312,8 +8296,6 @@ function buildH2HSection(m){
     </div>
   `;
 
-  const trend = buildH2HTrend(m, matchesList);
-
   // Painted static first, then upgraded to expandable rows by upgradeH2HRows
   // once the availability indexes resolve. Rendering the list twice keeps the
   // modal's first paint free of a network wait, and means a row never appears
@@ -8332,93 +8314,7 @@ function buildH2HSection(m){
 
   if (matchesList.length) upgradeH2HRows(m, token);
 
-  return `${callout}${tiles}${trend}${historyList}${cta}`;
-}
-
-// The H2H TREND chart (export state modal-h2h): every meeting on a shared
-// baseline, chronological left→right. A tick rises for m.p1's wins and falls for
-// m.p2's, its height proportional to the sets margin. Tick + name colour is
-// identity (p1 #6aaeff / p2 #e7e9ee), never outcome. Built as one scalable SVG
-// so it holds its proportions at any modal width.
-function h2hSurnameOnly(name){
-  const s = String(name || '').trim();
-  if (!s) return s;
-  const parts = s.split(/\s+/);
-  return parts[parts.length - 1];
-}
-function h2hTrendMonth(date){
-  const mm = /^(\d{4})-(\d{2})/.exec(String(date || ''));
-  if (!mm) return '';
-  const abbr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const mi = +mm[2] - 1;
-  if (mi < 0 || mi > 11) return '';
-  return `${abbr[mi]} ’${mm[1].slice(2)}`;   // e.g. Oct ’25
-}
-function buildH2HTrend(m, matchesList){
-  const meetings = (matchesList || []).filter(x => /^\s*\d+\s*-\s*\d+\s*$/.test(String(x.result || '')));
-  if (meetings.length < 2) return '';               // one meeting is not a trend
-  // matchesList is newest-first; the trend reads oldest→newest.
-  const chron = meetings.slice().reverse();
-  const P1 = ANALYSIS_P1_COLOR, P2 = ANALYSIS_P2_COLOR;
-
-  const W = 1030, H = 150, baseY = 58, monthY = 142;
-  const n = chron.length;
-  // Export geometry (state modal-h2h): a FIXED ~103px step between meetings with
-  // the whole cluster CENTRED — not a span divided across (n-1), which spreads a
-  // few meetings edge-to-edge with huge gaps (three meetings ended up 405px
-  // apart). Compress the step only when a long history would otherwise overrun
-  // the ~150px side margins the win-direction labels need to sit clear in.
-  const STEP = 103, SIDE = 150;
-  const step = n > 1 ? Math.min(STEP, (W - 2 * SIDE) / (n - 1)) : 0;
-  const span = (n - 1) * step;
-  const x0 = (W - span) / 2;
-  const xAt = i => (n > 1 ? x0 + i * step : W / 2);
-
-  const parts = [];
-  // Baseline hugs the tick cluster (export reads as a compact timeline strip, not
-  // a full-width axis) — extend ~50px past the first and last meeting.
-  const baseL = Math.max(24, x0 - 50), baseR = Math.min(W - 24, x0 + span + 50);
-  parts.push(`<line x1="${baseL.toFixed(1)}" y1="${baseY}" x2="${baseR.toFixed(1)}" y2="${baseY}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>`);
-  chron.forEach((x, i) => {
-    const cx = xAt(i);
-    const sm = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
-    const a = +sm[1], b = +sm[2];
-    const margin = Math.abs(a - b) || 1;
-    const h = 7 + 13 * margin;                       // export: margin 2→33, 3→46
-    const up = !!x.p1Won;                             // p1 win rises, p2 win falls
-    const ry = up ? baseY - h : baseY;
-    parts.push(`<line x1="${cx}" y1="${baseY - 30}" x2="${cx}" y2="${baseY + 30}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`);
-    parts.push(`<rect x="${cx - 2}" y="${ry}" width="4" height="${h}" rx="1" fill="${up ? P1 : P2}"/>`);
-    const scY = up ? (baseY - h - 5) : (baseY + h + 11);
-    parts.push(`<text x="${cx}" y="${scY}" text-anchor="middle" fill="#4b5672" font-family="'IBM Plex Mono',monospace" font-size="8.5">${a} - ${b}</text>`);
-    const my = h2hTrendMonth(x.date);
-    if (my) parts.push(`<text x="${cx}" y="${monthY}" text-anchor="middle" fill="#5b6880" font-family="'Hanken Grotesk',sans-serif" font-size="9.5">${escapeHtml(my)}</text>`);
-  });
-  const s1 = escapeHtml(h2hSurnameOnly(m.p1)), s2 = escapeHtml(h2hSurnameOnly(m.p2));
-  parts.push(`<text x="10" y="${baseY - 6}" text-anchor="start" fill="#5b6880" font-family="'IBM Plex Mono',monospace" font-size="10">${s1} win ▲</text>`);
-  parts.push(`<text x="${W - 10}" y="${baseY + 16}" text-anchor="end" fill="#5b6880" font-family="'IBM Plex Mono',monospace" font-size="10">${s2} win ▼</text>`);
-  const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Head-to-head trend">${parts.join('')}</svg>`;
-
-  const p1w = m.h2h.p1Wins, p2w = m.h2h.p2Wins, tot = p1w + p2w;
-  const sum = p1w === p2w
-    ? `Level at ${p1w}-${p2w} over ${tot} meeting${tot === 1 ? '' : 's'}`
-    : `${h2hSurnameOnly(p1w > p2w ? m.p1 : m.p2)} leads ${Math.max(p1w, p2w)}-${Math.min(p1w, p2w)} over ${tot} meeting${tot === 1 ? '' : 's'}`;
-
-  return `
-    <div class="ah2h-trend">
-      <div class="ah2h-trend-head">
-        <div class="ah2h-trend-title">H2H trend</div>
-        <div class="ah2h-trend-legend">
-          <span class="lg"><span class="dot" style="background:${P1};"></span>${s1}</span>
-          <span class="lg"><span class="dot" style="background:${P2};"></span>${s2}</span>
-        </div>
-      </div>
-      <div class="ah2h-trend-names"><span class="lead">${s1}</span><span class="sep">·</span>${s2}</div>
-      <div class="ah2h-trend-chart">${svg}</div>
-      <div class="ah2h-trend-cap">tick height = sets margin</div>
-      <div class="ah2h-trend-sum">${escapeHtml(sum)}</div>
-    </div>
-  `;
+  return `${callout}${tiles}${historyList}${cta}`;
 }
 
 /* ---------- TOURNAMENT SUB-TAB ---------- */

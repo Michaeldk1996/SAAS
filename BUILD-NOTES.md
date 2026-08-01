@@ -1683,3 +1683,47 @@ per-tab before→after specs are in run `PAPERCLIP_RUN_ID` transcript (8 analysi
 9. **Progression table state** — reaches 0/47 locally (all covered matches depth-1 → `bars`;
    18 have no progression tournament). Build to spec now + verify on live data, or wait?
 10. **News `View all news →`** — News page has no player deep-link; opens unfiltered.
+
+---
+
+## H2H TAB — H2H TREND BLOCK REMOVED (founder ruling, 2026-08-01)
+
+**Deliberate divergence from the export.** The design export renders an `H2H TREND`
+block on the Match Analysis **H2H tab**; the product does not. Removed as a product
+decision that post-dates the snapshot — **do not reinstate it in a later fidelity pass,
+and do not flag it as an H2H gap** in future reports. This is the third such
+export-has / product-doesn't divergence, alongside the removed **Extra stats** tab
+(Item 5) and the removed match-detail **Summary** view (Item 4). Mirrored as a one-line
+test in `CLAUDE.md` (Rulings list).
+
+### What the block was
+A full-width SVG timeline of every meeting on a shared baseline (chronological
+oldest→newest): ticks rising for P1 wins / falling for P2 wins with height proportional
+to the sets margin, a player-dot legend, the two-player name line, per-tick set-score
+and axis month labels, `{P1} win ▲` / `{P2} win ▼` direction annotations, a
+`tick height = sets margin` caption, and a running-lead summary line
+(`{Player} leads N-N over N meetings`).
+
+### What was removed (three sites, code deleted — not hidden)
+1. **CSS** — the `.ah2h-trend*` rule set (block comment + `.ah2h-trend`, `-head`, `-title`,
+   `-legend`(+`.lg`,`.dot`), `-names`(+`.lead`,`.sep`), `-chart svg`, `-cap`, `-sum`).
+2. **Call site** — `const trend = buildH2HTrend(m, matchesList);` and the `${trend}`
+   interpolation in the H2H tab return (`${callout}${tiles}${trend}${historyList}${cta}`
+   → `${callout}${tiles}${historyList}${cta}`).
+3. **The exclusive renderer chain** (grep-proved used nowhere else): the block comment,
+   `h2hSurnameOnly`, `h2hTrendMonth`, and `buildH2HTrend` — all deleted.
+
+No commented-out block, no `display:none`. Grep after: zero references to `ah2h-trend`,
+`buildH2HTrend`, `h2hTrendMonth`, `h2hSurnameOnly`.
+
+### Layout after removal
+The three cards (`OVERALL RECORD`, `ON HARD (TODAY'S SURFACE)`, `SETS RECORD`) now flow
+straight into `FULL MATCH HISTORY`. Spacing is the tab's standard section rhythm: the
+`.ah2h-tiles` 22px bottom margin collapses with the `.ah2h-listhead` 18px top margin to
+22px — no spacer element, no CSS change needed.
+
+### Untouched (per founder spec)
+Intro sentence · the three record cards (values/sublabels) · `FULL MATCH HISTORY`
+(rows, identity name colours, dates, tournaments, scores, surface labels, chevrons,
+expansion) · coverage caption · modal shell, tab rail, Download report, disclaimer footer
+· every other tab.
