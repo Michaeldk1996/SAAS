@@ -8008,16 +8008,17 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
   const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
   // Colour vocabulary read from design-export/computed-styles.json (state
-  // modal-tournament): both player cards share ONE neutral palette — the only
-  // identity-carrying mark is the win-rate bar fill (A #6aaeff, B #e7e9ee).
-  // Player B is #e7e9ee, fixed by name order — there is no orange in the
-  // identity system.
+  // modal-tournament): both player cards share ONE neutral palette — there is
+  // no orange in the identity system. Founder ruling (TEN-8, 2026-08-01): the
+  // win-rate bar carries NO identity colour either — the export painted A blue
+  // and B white, but that contradicts the README "no identity colour on a
+  // performance value" rule, and the README wins. Both bars are neutral #e7e9ee.
   const recColor = '#e7e9ee';        // big win-rate %   (export fw800 / 44px)
   const pctLblColor = '#e7e9ee';     // "win rate" label (export fw400 / 14px)
   const recordColor = '#e7e9ee';     // record figure    (export fw700 / 14px)
   const editionsColor = '#5b6880';   // "N editions played" (export 12.5px)
   const longAccentColor = isP1 ? '#6aaeff' : '#e7e9ee';  // GS-only; no export ref
-  const trackBar = isP1 ? '#6aaeff' : '#e7e9ee';         // export bar fill (flat)
+  const trackBar = '#e7e9ee';        // neutral for both — no identity on a perf value
 
   const visible = history.years.slice(0, 3);
   const extra = history.years.slice(3);
