@@ -778,8 +778,11 @@
      row. The compact FINAL pill replaces the old full-width green banner, which
      repeated a score the two rows above it already carried. */
   .modal-analysis .ascorerow{ display:flex; align-items:center; gap:11px; }
-  .modal-analysis .afinalpill{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:#4fd190; background:rgba(62,207,142,0.10); border:1px solid rgba(62,207,142,0.30); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
-  .modal-analysis .afinalpill::before{ content:''; width:5px; height:5px; border-radius:50%; background:#4fd190; }
+  /* Founder ruling §C (2026-08-01, "do as the export"): the export uses NO green
+     FINAL pill — the shared modal header pills take the player identity accent
+     (blue), never green. Recoloured from #4fd190 green to identity blue #6aaeff. */
+  .modal-analysis .afinalpill{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.08em; color:#6aaeff; background:rgba(106,174,255,0.10); border:1px solid rgba(106,174,255,0.30); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .modal-analysis .afinalpill::before{ content:''; width:5px; height:5px; border-radius:50%; background:#6aaeff; }
   .modal-analysis .asetline{ display:flex; align-items:center; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:#aeb6c4; }
   .modal-analysis .asetline span{ white-space:nowrap; }
   .modal-analysis .asetline:empty{ display:none; }
@@ -1152,9 +1155,15 @@
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-track .mstat-seg.p1{ background:var(--accent); }
   :is(.modal-analysis,.pp-formsurface) .mstat-row .mstat-track .mstat-seg.p2{ background:var(--court-clay); }
   :is(.modal-analysis,.pp-formsurface) .msheet-names{ display:flex; align-items:center; justify-content:space-between; font-size:14px; font-weight:700; color:#e7e9ee; margin-bottom:14px; }
+  /* Export header anatomy (matches-upcoming.html shared match-detail component):
+     (1) big sets line "2–1" mono 38px/700, (2) score line "6-4, 3-6, 6-2" mono
+     17px/700, (3) "Stat comparison" label LAST — 10px uppercase #4b5672. Founder
+     ruling §4 (2026-08-01): "yes follow export!" — restructured from the old
+     title-first / score-beside layout. */
   :is(.modal-analysis,.pp-formsurface) .msheet-head{ text-align:center; margin-bottom:6px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-title{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:#5b6472; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-sets{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:#cfd4de; margin-top:4px; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-setsbig{ font-family:'IBM Plex Mono', monospace; font-size:38px; font-weight:700; line-height:1.02; color:#e7ebf1; font-variant-numeric:tabular-nums; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-scoreline{ font-family:'IBM Plex Mono', monospace; font-size:17px; font-weight:700; color:#cfd4de; margin-top:2px; font-variant-numeric:tabular-nums; }
+  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-label{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:#4b5672; margin-top:6px; }
   /* Section band (SERVICE / RETURN / POINTS) — a centred mono caption on a faint
      tint, not a table header: the rows beneath it are free-standing, separated by
      hairlines rather than boxed in a bordered table. */
@@ -8573,18 +8582,25 @@ function buildMatchStatsSheet(m, setNo){
   // blank the entire sheet. When one set is selected, show that set's own score
   // instead of the match score, so the header can never contradict the numbers
   // beneath it (the score array is 0-indexed; sets are 1-indexed).
+  // Export header anatomy (founder ruling §4, 2026-08-01 "yes follow export!"):
+  // a big sets-won line, then the set-by-set score line, then the "Stat
+  // comparison" label LAST. For a single-set view the set's own game score is
+  // the big line, so there is no separate score line beneath it.
   const score = m.finalScore || m.partialScore || {};
-  let headScore = score.display || '';
-  let headTitle = 'Stat comparison';
+  let bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
+  let scoreLine = score.display || '';
+  let headLabel = 'Stat comparison';
   if (setNo != null) {
-    headTitle = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
+    headLabel = `Stat comparison · Set ${escapeHtml(String(setNo))}`;
     const sc = (score.sets || [])[setNo - 1];
-    headScore = sc ? `${sc.p1}-${sc.p2}` : '';
+    bigLine = sc ? `${sc.p1}–${sc.p2}` : '';
+    scoreLine = '';
   }
-  const statHeader = headScore ? `
+  const statHeader = (bigLine || scoreLine) ? `
     <div class="msheet-head">
-      <div class="msheet-title">${headTitle}</div>
-      <div class="msheet-sets">${headScore}</div>
+      ${bigLine ? `<div class="msheet-setsbig">${escapeHtml(bigLine)}</div>` : ''}
+      ${scoreLine ? `<div class="msheet-scoreline">${escapeHtml(scoreLine)}</div>` : ''}
+      <div class="msheet-label">${escapeHtml(headLabel)}</div>
     </div>
   ` : '';
   return `
