@@ -1868,3 +1868,82 @@ shared with "Model confidence" which has no export peer — needs a class split,
 edit) and `.edge-rt-elo` (leader-row emphasis only in the sample, not confirmed uniform).
 Profile career year-cell mono (nested with the tag span), split-section caps (12172/12180),
 career-splits W-L weight (12194, uncertain), radar SVG axis attrs, preset chips.
+
+## Gotcha — mono-vs-Hanken width: the invisible overflow cause (TEN-8, 2026-08-02)
+
+Founder directive (colour-pass approval comment): log the mono-vs-Hanken width
+effect so future overflows that have *no visible cause* are explicable.
+
+**The effect.** `IBM Plex Mono` is monospaced; `Hanken Grotesk` (`--mx-font-ui`)
+is proportional. At the **same** `font-size`, mono lays out roughly **~25–30%
+wider** for typical mixed-case label/number strings (measured on Item 15: the
+string "+3.7% vs Pinnacle open" was 145.2px in Plex Mono vs 114.6px in Hanken at
+11px — a 27% inflation). Nothing else changes: same size, same weight, same
+letter-spacing, same line-height, same colour.
+
+**Why it's invisible.** When a footline/label/cell overflows its rail, the usual
+suspects (font-size, padding, gap, card width, letter-spacing) all read as
+MATCHING the export — you can verify four properties and find nothing. The fifth
+property, `font-family`, is the culprit: the element is rendering in mono where
+the export authors it in Hanken, so the same string simply occupies more px and
+gets clipped by an existing `nowrap/overflow:hidden/text-overflow:ellipsis`. The
+overflow has no cause you can see because the cause is *advance width*, not any
+box metric.
+
+**Debugging rule.** An overflow/clip whose box metrics all match the export →
+diff `font-family` against `design-export/computed-styles.json` for that element
+*before* touching widths or shortening the string. If the element is mono where
+the export is Hanken (or vice-versa), that font swap is the whole bug; fixing the
+family fixes the overflow with zero layout edits. (Instance: Item 15 above,
+`.edge-mcfl` → `var(--mx-font-ui)`.) Corollary: this is why the `.pss-n` /
+Hanken-counts carve-out matters — swapping a count between mono and Hanken
+silently changes how wide it lays out even when it "looks" like a no-op recolour
+or reweight.
+
+## Colour pass — app-wide token substitution (TEN-8, 2026-08-02)
+
+Founder approved the single app-wide substitution (rejecting per-surface
+spot-fixing as fragmenting). Ran across the 5 deployable HTML surfaces
+(`bsp-consult-dashboard.html`, `auth.html`, `account.html`, `funnel.html`,
+`verify.html`). One commit per page; per-hex counts reported to founder.
+
+**Muted-grey tier collapse — "read which, don't assume" resolved by token, not
+guess.** The build carries a documented text ramp (`:root`): `--mx-text-secondary
+#8b93a3`, `--mx-text-tertiary #5b6472`, `--mx-text-faint #4b5361`, plus an
+un-tokenised mid grey `#6b7280`. The export's canonical muted tiers are
+`--muted #5b6880` (rgb 91,104,128) and `--muted-2 #4b5672` (rgb 75,86,114).
+Mapping is tier-for-tier: **secondary `#8b93a3` → `#5b6880`; tertiary `#5b6472`
+→ `#4b5672`**. The mid `#6b7280` is off-token (used for labels/meta/empty-states
+and the psd-val non-winner fallback); mapped to the secondary tier `#5b6880`
+(it is lighter than the tertiary token, sits in the secondary band). Sanity
+check: dashboard split (130+65)=195→`#5b6880` vs 126→`#4b5672` (≈1.5:1) tracks
+the export census 7950:6208 (≈1.3:1) — proportioned, not lopsided. `--mx-text-faint
+#4b5361` was NOT in the migration list and is left untouched.
+
+**Value/identity hues (exact 1:1, no exceptions):** `#4fb98a → #3dd68c` (green),
+`#d9737f → #e0616f` (red), `#8fb6ff → #6aaeff` (near-miss blue / player-A identity
+in the edge panel). `#3ECF8E`/`#E8607A` already 0 (retired in f497400).
+
+**FROZEN, excluded and confirmed:** `#3e7bfa` was NOT migrated — 45 dashboard /
+6 funnel / 1 verify preserved verbatim. The two-blue-system decision (`#3e7bfa`
+legacy vs `#5b9bff` canonical) is not reversed by this pass.
+
+**Orange purge + clay carve-out.** Player-2 identity orange → `#e7e9ee` (name by
+NAME ORDER): `.aodds-tile.dog .aot-name`, `.aodds-chead .aoc-p.b .aoc-nm`,
+`.aomv-tile.dog .t-nm`, `.aextra-names ::after` P2 dot, the odds split-view
+`DOG` const, and the P2 tile borders `rgba(232,147,75,0.34)`→`rgba(231,233,238,0.34)`.
+H2H caveat box neutralised (icon, bg, border, border-left, text off the orange
+family → white/muted tints). Fair-odds track `.arow .atrack` bg
+`rgba(232,147,75,0.28)`→`rgba(255,255,255,0.09)`, and that surface's P2 value
+`#f0a95f`→`#e7e9ee` for coherence. **Clay-surface rail kept its amber**
+(`SURFACE_RAIL clay:'232,147,75'`, L8625) — the one founder exception.
+
+**Identity-audit findings HELD for a ruling (report & leave):** player-A on the
+odds split-view / `.arow` still uses frozen `#3e7bfa` (`FAV` const, track fill)
+and off-palette `#9dc0ff`/`#7ba4ff` — left because the P1 fill is frozen and
+`#7ba4ff` is a widely-reused brand-blue token (`--mx-brand-blue-text`, hard
+surface, RAIN weather, status). Non-enumerated oranges left: weather `SUN`
+`#E8934B` (L7390), `TOURX_CMP_COLORS[1]` categorical `#E8934B` (L15179),
+`.tprofile-header` gradient tint (L650), `.ah2h-smallsample` gold `#E2A945`
+(L1838), and funnel demo oranges `#f0a95f`×2 / `#E8934B` gradient. These are
+identity/orange candidates but outside the founder's enumerated substitution set.
