@@ -1782,3 +1782,35 @@ deliberate enrichments (`buildPlayerProfileHtml`, `bsp-consult-dashboard.html`).
 Verified against `design-export/player-profile.html` and a 1400px CDP render of the profile
 (C. Alcaraz). Ruling recorded in the CLAUDE.md rulings ledger. Rebased onto `origin/main`
 (357758e) after a concurrent Playing-Style/H2H rebuild landed; clean 3-way, no conflict.
+
+---
+
+## Item 15 — Market-context gap-note overflow (TEN-8, 2026-08-02)
+
+Founder order-of-attack: measure export rail/card width, grid gap, gap-note
+font-size + letter-spacing vs build; fix build→export if any diverge; only shorten
+the string if the build already matched on all of those.
+
+**Measured export (design-export/computed-styles.json, `stennisfy-match-model` —
+same 4-column Market-context component) beside build:**
+- Grid gap: export 12.0px (card x 375.0→630.5→886.0→1141.5, each 243.5w) = build `.edge-mctx gap:12px`. MATCH.
+- Card width: export 243.5px = build `repeat(4,minmax(0,1fr))` ≈ 243.5px. MATCH.
+- Gap-note font-size: export 11px = build 11px. MATCH.
+- Gap-note letter-spacing: export normal = build normal. MATCH.
+- **Gap-note font-family: export `"Hanken Grotesk"`, build `"IBM Plex Mono"`. DIVERGED.**
+
+**Cause & fix (step 2 — fix build to export).** `.edge-mcfl` (dashboard ~3168) used
+`font-family:'IBM Plex Mono',monospace`. Plex Mono is monospace (~27% wider per
+char): the gap string "+3.7% vs Pinnacle open" measured 145.2px in mono vs 114.6px
+in Hanken at 11px. The card content is ~211.5px, so the mono footline (who + gap ≈
+196–218px depending on name) overflowed and got clipped by the existing
+`nowrap/overflow:hidden/text-overflow:ellipsis`. The export fits the same string
+because it renders the footline in proportional Hanken — exactly the "same string,
+same rail" the founder predicted. Fix: `font-family:'IBM Plex Mono',monospace`
+→ `var(--mx-font-ui)` (Hanken Grotesk).
+
+**Verified (headless Chrome, explicit 11px):** build gap text now 114.6px —
+byte-identical to the export's 114.6px; full footline 165.5px, well within the
+211.5px card. No string change made (step 3 not reached). This also aligns
+`.edge-mcfl` with the type boundary as the export authors it: all four footline
+kinds (soft-book, opened, gap-note, now) are Hanken in the export.
