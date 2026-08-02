@@ -13788,23 +13788,27 @@ function buildPlayerProfileHtml(p){
   const tournamentCount = careerHistory.length;
   const tournamentDropdownHtml = ppTournamentDropdownHtml(p, ppState.tournamentQuery || '');
   const tournamentResultHtml = ppTournamentResultHtml(p, ppState.tournamentPicked);
+  // Split to match the export: the SEARCH card lives in the left rail (beneath
+  // the playing-style radar); the picked-tournament RESULT renders full-width
+  // below the two-column overview (ppTournResultBlock). onPpTournamentInput /
+  // ppShowTournament update #ppTournResult by id wherever it sits in the DOM.
   const recordSearchCard = `
     <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;position:relative;z-index:5;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;">
-        <div>
+      <div style="padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
           <div style="font-size:15px;font-weight:700;">Record by tournament</div>
-          <div style="font-size:12.5px;color:#8b93a3;margin-top:3px;">Search a tournament to see ${pesc(surname)}'s full career win–loss record there.</div>
+          <span style="font-size:10.5px;color:#5b6472;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${tournamentCount} on record</span>
         </div>
-        <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;padding-top:4px;white-space:nowrap;">${tournamentCount} tournament${tournamentCount===1?'':'s'} on record</span>
+        <div style="font-size:12px;color:#8b93a3;margin-top:4px;line-height:1.5;">Search a tournament to see ${pesc(surname)}'s full career win–loss record there.</div>
       </div>
-      <div style="padding:16px 22px 20px;">
-        <div id="ppTournBox" style="position:relative;max-width:380px;margin-bottom:16px;">
+      <div style="padding:16px 20px 18px;">
+        <div id="ppTournBox" style="position:relative;">
           <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament…" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0e1015;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
           <div id="ppTournDropdown" style="display:${tournamentDropdownHtml?'block':'none'};position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:#111318;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,0.45);max-height:320px;overflow-y:auto;">${tournamentDropdownHtml}</div>
         </div>
-        <div id="ppTournResult">${tournamentResultHtml}</div>
       </div>
     </div>`;
+  const ppTournResultBlock = `<div id="ppTournResult">${tournamentResultHtml}</div>`;
 
   // ---- Header: Elo pill, playing-style line, meta ----
   const eloInfo = ppEloFor(p);
@@ -13853,7 +13857,8 @@ function buildPlayerProfileHtml(p){
       </div>
     </div>
 
-    <!-- TWO-COLUMN BODY -->
+    <!-- TOP OVERVIEW: the two-column split is scoped to this region only. The
+         export closes the grid here so every section below runs full page width. -->
     <div class="pp-shell" style="display:grid;grid-template-columns:340px 1fr;align-items:start;">
 
       <!-- LEFT RAIL -->
@@ -13868,25 +13873,28 @@ function buildPlayerProfileHtml(p){
           ${surfHtml}
         </div>
         ${ppStyleCard(p)}
+        ${recordSearchCard}
       </div>
 
-      <!-- RIGHT MAIN -->
+      <!-- RIGHT: market performance + reliability + by-split -->
       <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
         ${oddsHtml}
         ${ppAsapSignalHtml(p)}
-        <!-- align-items defaults to stretch: both cards take the row's height, so the
-             taller one (usually Career record, which renders a row per career year)
-             sets the height and the other fills to match. Previously align-items:start
-             let each card size to its own content, which is why a player with many
-             seasons on tour showed a Career record box far taller than Recent form. -->
-        <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">${recentFormCard}${careerRecordCard}</div>
-        ${ppCareerSplitsHtml(p)}
-        ${recordSearchCard}
-        <div>
-          <div style="font-size:15px;font-weight:700;margin-bottom:14px;">Key insights</div>
-          <div class="pp-insights" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
-        </div>
       </div>
+    </div>
+
+    <!-- FULL-WIDTH SECTIONS (below the two-column overview) -->
+    <div style="padding:6px 24px 28px;display:flex;flex-direction:column;gap:24px;min-width:0;">
+      ${ppTournResultBlock}
+      <div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:14px;">Key insights</div>
+        <div class="pp-insights" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
+      </div>
+      <!-- align-items defaults to stretch: both cards take the row's height, so the
+           taller one (usually Record by season, which renders a row per career year)
+           sets the height and the other fills to match. -->
+      <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">${recentFormCard}${careerRecordCard}</div>
+      ${ppCareerSplitsHtml(p)}
     </div>
 
     <!-- FOOTER -->
