@@ -1160,11 +1160,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2413_j-shang.jpg",
     "oddsMovement": {
@@ -1963,7 +1969,10 @@
       "edgeVsPinnacleP1": -0.0808,
       "edgeVsPinnacleP2": 0.0808,
       "ts": "2026-08-01T18:16:46.989Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "702197d604aee39050a66d572b226eee",
@@ -3790,11 +3799,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "oddsMovement": {
@@ -4645,7 +4660,10 @@
       "edgeVsPinnacleP1": 0.0271,
       "edgeVsPinnacleP2": -0.0271,
       "ts": "2026-08-02T01:19:30.918Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "3302c08d3c2c0b1fb840c8863280aa3f",
@@ -6418,11 +6436,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2083_j-munar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
@@ -6969,7 +6993,10 @@
       "edgeVsPinnacleP1": 0.0526,
       "edgeVsPinnacleP2": -0.0526,
       "ts": "2026-08-01T18:16:46.989Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "80d0f22c6bbb11363e8bf8cc51e172f5",
@@ -8472,11 +8499,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "40 - A",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "oddsMovement": {
@@ -8807,7 +8840,10 @@
       "edgeVsPinnacleP1": -0.0511,
       "edgeVsPinnacleP2": 0.0511,
       "ts": "2026-08-02T09:46:51.722Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "1b43ef0a26cd2d053abf7677cdbda305",
