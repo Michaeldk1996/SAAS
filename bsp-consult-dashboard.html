@@ -29,6 +29,13 @@
     --value-pos: #4FBF7A;
     --value-neg: #D9695A;
     --radius: 8px;
+    /* Shared UI/mono font tokens. Originally defined only under
+       [data-page="matches"], which left every other page's `font-family:var(--mx-font-ui)`
+       resolving to an undefined var -> invalid -> serif fallback (the shared
+       serif bug on Profile/Odds/H2H/Playing-Style). Defined at :root so all
+       pages inherit Hanken Grotesk / IBM Plex Mono. Matches keeps its own copy. */
+    --mx-font-ui: 'Hanken Grotesk', sans-serif;
+    --mx-font-mono: 'IBM Plex Mono', monospace;
   }
   *{ box-sizing: border-box; }
   body{
@@ -12033,6 +12040,20 @@ const PP_SPLIT_MONO = `font-family:'IBM Plex Mono',monospace;`;
 // through setPpSplitTab -> ppRepaint (never a raw innerHTML write). Active-pill
 // palette is the export's: bg rgba(91,155,255,0.22), border rgba(91,155,255,0.45),
 // colour #e7e9ee, weight 700; inactive is a transparent #5b6880 at weight 600.
+// Export renders every player name in the abbreviated "F. Lastname" form
+// (e.g. "M. Berrettini"), matching the feed's opponent format. The profile
+// subject arrives as a full canonical name ("Matteo Berrettini"), so abbreviate
+// it here for a consistent convention across the page. Already-abbreviated
+// inputs and single-token names pass through unchanged; compound surnames
+// ("Bautista Agut", "de Minaur") keep every token after the first name.
+function ppAbbrevName(name){
+  const s = String(name == null ? '' : name).trim();
+  if (!s) return s;
+  const parts = s.split(/\s+/);
+  if (parts.length < 2) return s;             // single token — leave as-is
+  if (parts[0].includes('.')) return s;       // already an initial form ("M.", "Pe.", "J-L.")
+  return `${parts[0].charAt(0).toUpperCase()}. ${parts.slice(1).join(' ')}`;
+}
 function ppSplitTabsHtml(which){
   const active = ppState.splitsTab[which] || 'results';
   const btns = PP_SPLIT_TABS.map(t => {
@@ -12044,9 +12065,9 @@ function ppSplitTabsHtml(which){
     return `<span class="pp-split-tab" role="button" tabindex="0"
       onclick="setPpSplitTab('${which}','${t.id}')"
       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setPpSplitTab('${which}','${t.id}')}"
-      style="white-space:nowrap;cursor:pointer;padding:8px 18px;border-radius:9px;font-size:13px;font-weight:${wt};color:${col};background:${bg};border:1px solid ${bd};">${t.label}</span>`;
+      style="white-space:nowrap;cursor:pointer;padding:8px 15px;border-radius:7px;font-size:12.5px;font-weight:${wt};color:${col};background:${bg};border:1px solid ${bd};">${t.label}</span>`;
   }).join('');
-  return `<div style="display:inline-flex;gap:4px;background:#0d111a;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:4px;margin-top:18px;">${btns}</div>`;
+  return `<div style="display:inline-flex;gap:4px;background:#0d111a;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:4px;margin-top:18px;">${btns}</div>`;
 }
 // Renders ONLY the active tab's columns as a mini-table across all 5
 // PP_SPLIT_SECTIONS, with continuous zebra striping and per-column header tooltips.
@@ -12645,7 +12666,7 @@ function ppTournamentResultHtml(p, name){
       <div style="position:absolute;top:12px;right:12px;">${dismissBtn}</div>
       <div style="width:44px;height:44px;margin:0 auto 12px;color:#3a4150;opacity:.6;display:flex;align-items:center;justify-content:center;"><span style="display:flex;width:40px;height:40px;">${BSP_ICONS.trophy}</span></div>
       <div style="font-size:13.5px;font-weight:700;color:#c3cad6;">No results at this tournament</div>
-      <div style="font-size:12.5px;color:#6b7280;margin-top:5px;">We have no record of ${pesc(p.name)} playing ${pesc(name)}.</div>
+      <div style="font-size:12.5px;color:#6b7280;margin-top:5px;">We have no record of ${pesc(ppAbbrevName(p.name))} playing ${pesc(name)}.</div>
     </div>`;
   }
   const total = (t.won || 0) + (t.lost || 0);
@@ -12663,7 +12684,7 @@ function ppTournamentResultHtml(p, name){
     ${tile('Titles won', `${t.titles || 0}`, 'at this event', '#F4F6FA')}
     ${tile('Best result', pesc(t.bestResult || '\u2014'), pesc(bestYears.join(', ') || '\u2014'), '#F4F6FA')}
     ${tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#F4F6FA')}
-    ${tile('Win rate', `${wr}%`, 'career', '#3dd68c')}
+    ${tile('Win rate', `${wr}%`, 'career', '#F4F6FA')}
   </div>`;
   const editionsHtml = editions.map(ed => {
     const yy = String(ed.year).slice(-2);
@@ -12690,7 +12711,7 @@ function ppTournamentResultHtml(p, name){
   return `<div style="background:#0b0d12;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px 24px;">
     <div style="display:flex;align-items:center;gap:11px;">
       <span style="width:26px;height:26px;border-radius:8px;background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};display:flex;align-items:center;justify-content:center;flex:none;color:${tint};"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.trophy}</span></span>
-      <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#f2f4f8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pesc(p.name)} at ${pesc(t.name)}</span>
+      <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#f2f4f8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pesc(ppAbbrevName(p.name))} at ${pesc(t.name)}</span>
       ${cat ? `<span style="font-size:10.5px;font-weight:600;color:${tint};background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};border-radius:7px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex:none;">${pesc(cat)}</span>` : ''}
       ${dismissBtn}
     </div>
@@ -13088,7 +13109,7 @@ function buildPlayerProfileHtml(p){
   const ppSurfOrder = ['Grass','Hard','Clay'].slice().sort((a, b) => surfWrOf(b) - surfWrOf(a));
   const chips = ['All', ...ppSurfOrder].map(s => {
     const active = s === surf;
-    return `<span onclick="setPpSurface('${s}')" style="font-size:12px;font-weight:${active?700:600};color:${active?'#dbe6ff':'#8b93a3'};background:${active?'rgba(62,123,250,0.16)':'transparent'};border:1px solid ${active?'rgba(62,123,250,0.45)':'rgba(255,255,255,0.1)'};border-radius:8px;padding:6px 13px;cursor:pointer;">${s==='All'?'All surfaces':s}</span>`;
+    return `<span onclick="setPpSurface('${s}')" style="font-size:12px;font-weight:${active?700:600};color:${active?'#e7e9ee':'#5b6880'};background:${active?'rgba(91,155,255,0.22)':'transparent'};border:1px solid ${active?'rgba(91,155,255,0.45)':'transparent'};border-radius:8px;padding:6px 13px;cursor:pointer;">${s==='All'?'All surfaces':s}</span>`;
   }).join('');
 
   // ---- Recent-form-derived figures (shared by the Recent Form tile + card) ----
@@ -13140,12 +13161,12 @@ function buildPlayerProfileHtml(p){
     ? `Illustrative · ATP #${p.rank||'—'}`
     : (isAll ? `Elo rank #${eloTile.rank} · ATP #${p.rank||'—'}` : (eloTile.degraded ? `No ${surf.toLowerCase()} Elo · general #${eloTile.rank}` : `${surf} Elo rank #${eloTile.rank}`));
   const tileDefs = [
-    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: BLUE, icon: BSP_ICONS.trophy },
-    { label: careerLabel, value: careerValue, sub: careerSub, accent: '#E8934B', icon: BSP_ICONS.chart },
-    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: '#7ba4ff', icon: AKC_ICONS.form },
-    { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#3dd68c', icon: AKC_ICONS.form },
-    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: '#3dd68c', icon: AKC_ICONS.form },
-    { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#E8B341', icon: BSP_ICONS.trophy },
+    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: '#5b9bff', icon: BSP_ICONS.trophy },
+    { label: careerLabel, value: careerValue, sub: careerSub, accent: '#5b9bff', icon: BSP_ICONS.chart },
+    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: '#5b9bff', icon: AKC_ICONS.form },
+    { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#5b9bff', icon: AKC_ICONS.form },
+    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: '#5b9bff', icon: AKC_ICONS.form },
+    { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#5b9bff', icon: BSP_ICONS.trophy },
   ];
   const tilesHtml = tileDefs.map(k => `
     <div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
@@ -13580,8 +13601,7 @@ function buildPlayerProfileHtml(p){
   const formEmptyLabel = formSurf === 'All' ? 'recent' : formSurf.toLowerCase();
   const formChips = ['All','Grass','Hard','Clay'].map(s => {
     const activeChip = s === formSurf;
-    const cc = s === 'All' ? '#7ba4ff' : PP_SURF_COLORS[s];
-    return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?(s==='All'?'#dbe6ff':cc):'#8b93a3'};background:${activeChip?ppHexA(cc,0.16):'transparent'};border:1px solid ${activeChip?ppHexA(cc,0.45):'rgba(255,255,255,0.1)'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
+    return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?'#e7e9ee':'#5b6880'};background:${activeChip?'rgba(91,155,255,0.22)':'transparent'};border:1px solid ${activeChip?'rgba(91,155,255,0.45)':'transparent'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
   }).join('');
   const pillsSrc = formLast10.slice().reverse();
   // Export composition: a thin chronological form STRIP (oldest→newest) — solid
@@ -13607,7 +13627,7 @@ function buildPlayerProfileHtml(p){
       <div id="formRow-${idPrefix}" data-ppek="${ek}" data-ppid="${idPrefix}" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);border-radius:6px;">
         <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3dd68c':'#e0616f'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
         <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
-        <span style="font-size:11.5px;color:#6b7280;white-space:nowrap;">${metaText}</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;flex:none;background:${(PP_SURF_COLORS[((m.surface||'').charAt(0).toUpperCase()+(m.surface||'').slice(1).toLowerCase())]||'#5b6472')};"></span>${metaText}</span>
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
         <span class="pp-form-chev" id="formChev-${idPrefix}" style="flex:none;width:10px;color:#5b6472;font-size:10px;visibility:hidden;transition:transform 150ms ease;">▸</span>
       </div>${formPanelHtml(m, idPrefix, ppState.key, ppPlayerName)}`;
@@ -13686,7 +13706,7 @@ function buildPlayerProfileHtml(p){
     const click = has && year
       ? ` onclick="event.stopPropagation();ppShowYearSurface('${year}','${surfKey}',${rec[0]},${rec[1]})" title="${surfKey === 'all' ? 'All' : surfKey.charAt(0).toUpperCase()+surfKey.slice(1)} matches in ${year}" style="cursor:pointer;`
       : ` style="`;
-    return `<span${click}font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?color:'#4b5361'};text-align:right;${has?`text-decoration:underline;text-decoration-color:${uc};text-underline-offset:3px;`:''}">${val}</span>`;
+    return `<span${click}font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?'#e7e9ee':'#4b5672'};text-align:right;">${val}</span>`;
   };
   let careerRecordCard;
   if (cy){
@@ -13717,7 +13737,7 @@ function buildPlayerProfileHtml(p){
     careerRecordCard = `
       <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Career record</div>
+          <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Record by season</div>
           <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
         </div>
         <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
@@ -13727,7 +13747,7 @@ function buildPlayerProfileHtml(p){
         <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
           <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
-          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#e8a84e')}${totCell(t.hard,'#4db8ff')}${totCell(t.grass,'#2ab8a0')}
+          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#e7e9ee')}${totCell(t.hard,'#e7e9ee')}${totCell(t.grass,'#e7e9ee')}
         </div>
       </div>`;
   } else {
@@ -13825,7 +13845,7 @@ function buildPlayerProfileHtml(p){
       </div>
       <div style="min-width:0;flex:1;">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${p.name}</h1>
+          <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${pesc(ppAbbrevName(p.name))}</h1>
           <span style="font-size:13px;font-weight:600;color:#9fb2d4;background:rgba(159,178,212,0.1);border:1px solid rgba(159,178,212,0.32);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
         </div>
         ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#e7e9ee;">${pesc(styleLine)}</div>` : ''}
