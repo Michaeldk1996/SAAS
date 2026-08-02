@@ -32939,16 +32939,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 4
-      }
-    ],
+    "liveStatus": "Finished",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "oddsMovement": {
@@ -33947,7 +33941,10 @@
       "edgeVsPinnacleP1": 0.0078,
       "edgeVsPinnacleP2": -0.0078,
       "ts": "2026-08-01T09:48:41.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12151476",
@@ -35611,11 +35608,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9210_a-gea.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/431_d-shapovalov.jpg",
     "oddsMovement": {
@@ -36262,7 +36265,10 @@
       "edgeVsPinnacleP1": -0.0288,
       "edgeVsPinnacleP2": 0.0288,
       "ts": "2026-08-01T12:10:29.147Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12151671",
@@ -64867,7 +64873,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 4-6",
+      "display": "7-6(3), 3-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -66863,7 +66869,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 0-6",
+      "display": "7-6(11), 4-6, 0-6",
       "sets": [
         {
           "p1": 7,
@@ -98697,7 +98703,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 3-6, 7-6",
+      "display": "6-1, 3-6, 7-6(6)",
       "sets": [
         {
           "p1": 6,
@@ -114049,7 +114055,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(5), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -184870,7 +184876,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-3",
+      "display": "6-7(4), 4-3",
       "sets": [
         {
           "p1": 6,
@@ -202528,7 +202534,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(6)",
       "sets": [
         {
           "p1": 3,
@@ -234694,7 +234700,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-4",
+      "display": "7-6(5), 3-6, 6-4",
       "sets": [
         {
           "p1": 7,
