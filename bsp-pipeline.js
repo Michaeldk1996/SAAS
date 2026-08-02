@@ -1715,12 +1715,26 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2PhotoUrl: null,
   };
 
-  // Weather doesn't depend on the API-Tennis fixture match, only on tournament + time
-  match.weather = await fetchMatchWeather(oddsEvent.sport_title, oddsEvent.commence_time, venueMap);
+  // Resolve the venue-lookup name for weather / venue facts / court conditions.
+  // The odds feed's `sport_title` is the EVENT name (e.g. "ATP Canadian Open"),
+  // which for city-agnostic event names contains no venue key and resolves to
+  // nothing — so weather, venue and court-speed all came back null for those.
+  // The matched API-Tennis fixture's `tournament_round` carries the actual HOST
+  // CITY ("ATP Montreal - 1/64-finals") — the same real feed signal the
+  // fixture-only build paths already key `tour` off — and tracks the year-by-
+  // year Montreal/Toronto (National Bank Open) alternation with no hardcoded
+  // alias. Prefer it; fall back to sport_title when no fixture matched.
+  const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
+  const venueName = (fixture && fixture.tournament_round
+    ? fixture.tournament_round.split(' - ')[0].trim()
+    : null) || oddsEvent.sport_title;
+
+  // Weather doesn't depend on the API-Tennis fixture match, only on venue + time
+  match.weather = await fetchMatchWeather(venueName, oddsEvent.commence_time, venueMap);
 
   // Curated static reference facts (city/country/category/indoor) — same source
   // of truth as TOURNAMENT_VENUE_HINTS used for weather above, not a new lookup.
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => oddsEvent.sport_title.includes(k));
+  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => venueName.includes(k));
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
   match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
 
@@ -1732,7 +1746,6 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
     : null;
 
-  const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
   if (!fixture) return match; // no API-Tennis match found — stays "coming soon" in the UI
 
   match.tournamentRound = fixture.tournament_round;
