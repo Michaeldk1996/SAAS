@@ -1759,11 +1759,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "oddsMovement": {
@@ -2438,7 +2444,10 @@
       "edgeVsPinnacleP1": -0.0053,
       "edgeVsPinnacleP2": 0.0053,
       "ts": "2026-08-02T12:17:24.145Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "1b43ef0a26cd2d053abf7677cdbda305",
@@ -151391,8 +151400,8 @@
     "live": true,
     "liveStatus": "Interrupted",
     "liveScore": null,
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "interrupted": false,
     "partialScore": null,
     "finalScore": null,
@@ -165126,14 +165135,29 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Interrupted",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "30 - 40",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null,
+    "finalScore": {
+      "display": "7-6(3), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
     "matchStats": {
       "p1": {
         "Service:Aces": 4,
@@ -203423,12 +203447,12 @@
       },
       {
         "set": 2,
-        "p1": 5,
+        "p1": 6,
         "p2": 4
       }
     ],
-    "liveGameScore": "30 - 40",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "interrupted": false,
     "partialScore": null,
     "finalScore": null,
@@ -218463,11 +218487,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Interrupted",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "30 - 40",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2083_j-munar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
@@ -229397,7 +229421,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-6(3), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "80d0f22c6bbb11363e8bf8cc51e172f5",
@@ -230910,12 +230949,12 @@
       },
       {
         "set": 2,
-        "p1": 5,
+        "p1": 6,
         "p2": 4
       }
     ],
-    "liveGameScore": "30 - 40",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "oddsMovement": {
@@ -245747,8 +245786,8 @@
     "live": true,
     "liveStatus": "Interrupted",
     "liveScore": null,
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "oddsMovement": {
