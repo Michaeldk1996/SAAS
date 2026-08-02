@@ -2901,9 +2901,6 @@
      handoff README; the layout deviations that remain are data-driven and
      are listed in the render function's header comment. */
   /* Page header */
-  .edge-eyebrow2{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:#4b5672; }
-  .edge-h1{ font-size:25px; font-weight:800; letter-spacing:-0.015em; color:#e7e9ee; margin-top:5px; }
-  .edge-h1sub{ font-size:13px; color:#5b6880; margin-top:4px; }
   .edge-eyeb{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672; margin-bottom:16px; }
 
   /* Section 1 — matchup */
@@ -3049,7 +3046,7 @@
   .edge-movers{ flex:1; min-width:260px; }
   .edge-cap2{ font-size:9.5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.1em; text-transform:uppercase; color:#4b5672; margin-bottom:10px; }
   /* MARKET SIGNAL block (Section 5 sibling) — Sharp estimates read against Market money */
-  .edge-msig{ margin:0 22px 4px; padding:14px 16px; background:#0a0d14; border:1px solid rgba(255,255,255,0.10); border-radius:12px; }
+  .edge-msig{ margin:16px 22px 4px; padding:14px 16px; background:#0a0d14; border:1px solid rgba(255,255,255,0.10); border-radius:12px; }
   .msig-head{ font-size:9.5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.1em; text-transform:uppercase; color:#4b5672; margin-bottom:12px; }
   .msig-final{ color:#6aaeff; }
   .msig-sect{ margin-bottom:12px; }
@@ -3108,7 +3105,7 @@
   .edge-aifoot{ margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.07); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:11px; color:#4b5672; }
 
   /* ---- Edge sub-tabs (Match model | Player ratings) ---- */
-  .edge-subtabs-wrap{ display:flex; justify-content:flex-start; }
+  .edge-subtabs-wrap{ display:flex; justify-content:flex-start; box-sizing:border-box; width:100%; padding:12px 16px; background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:16px; }
   .edge-subtabs{ display:inline-flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:3px; width:max-content; max-width:100%; }
   .edge-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:600; color:#5b6880; background:none; border:1px solid transparent; padding:8px 16px; border-radius:8px; cursor:pointer; white-space:nowrap; transition:background .15s ease, color .15s ease; }
   .edge-subtab:hover{ color:#cfd4de; }
@@ -6325,21 +6322,16 @@ function renderEdgeModel(id){
   const p2full = P2.name || p2short;
   const surfName = edgeCap(mm.surface || '') || '—';
 
-  // The round arrives as "{tour} - {round}"; strip the repeated tour prefix.
-  let cleanRound = mm.round || '';
-  if (mm.tour && cleanRound.indexOf(mm.tour) === 0){
-    cleanRound = cleanRound.slice(mm.tour.length).replace(/^\s*-\s*/, '');
-  }
-
-  // ── Page header ────────────────────────────────────────────────────────
-  const header = `
-    <div class="edge-head">
-      <div class="edge-eyebrow2">Tennis Edge Model · ${edgeVisibleAdjs(st2.adjustments).length}-layer</div>
-      <div class="edge-h1">${edgeEsc(p1full)} vs ${edgeEsc(p2full)}</div>
-      <div class="edge-h1sub">Stennisfy's proprietary match analysis and value model.</div>
-    </div>`;
+  // The round arrives as "{event} - {round}" (e.g. "ATP Washington - 1/16-finals"),
+  // where the prefix is the venue short-name — NOT mm.tour ("ATP Washington Open"),
+  // so an mm.tour-prefix strip never fires and the whole fixture string leaks into
+  // the ROUND slot. h2hRoundLabel splits on " - " and keeps the round segment alone
+  // ("1/16-finals"); it is idempotent on an already-clean round.
+  const cleanRound = h2hRoundLabel(mm.round) || '';
 
   // ── Section 1: matchup ─────────────────────────────────────────────────
+  // (No page-header text block above the match card — the export has none; the
+  // Match model / Player ratings toggle sits directly above this card.)
   // ELO + playing-style archetype chips (design export: no "ATP No." chip).
   const badge = (elo, arch) => {
     const el = (elo != null) ? `<span class="edge-bdg elo">ELO ${elo}</span>` : '';
@@ -6533,7 +6525,7 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  body.innerHTML = header + section1 + section2 + section3 + section5 + section4b + section6;
+  body.innerHTML = section1 + section2 + section3 + section5 + section4b + section6;
 
   // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
   // tab's movement chart): the container above paints empty from whatever is
@@ -7971,7 +7963,8 @@ function careerScoreHtml(m){
   return `<span class="yr-drill-sc">${score}${end ? `<span class="yr-drill-end${end === 'ret.' ? ' ret' : ''}">${end}</span>` : ''}</span>`;
 }
 function formPanelHtml(match, idPrefix, playerKey, playerName){
-  const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${match.round ? ' — ' + match.round : ''}`;
+  const roundSeg = h2hRoundLabel(match.round);   // form-shard rounds carry the "{event} - {round}" prefix
+  const meta = `${match.date ? match.date + ' — ' : ''}${match.tournament || 'Tournament unknown'}${roundSeg ? ' — ' + roundSeg : ''}`;
   const opponentName = surnameFirstName(match.opponent);
   formPanelCtx[idPrefix] = { match, playerKey, playerName, opponentName };
   // A row whose box score ships inline paints immediately. A row that has to
@@ -8511,7 +8504,7 @@ function atournMatchRowHtml(x, opts){
   const cells = `
       <span class="d">${x.date || '—'}</span>
       <span class="opp ${x.won ? 'win' : 'loss'}">${x.won ? 'def.' : 'Lost to'} ${x.opponent || 'Unknown'}</span>
-      <span class="rd">${x.round || ''}</span>
+      <span class="rd">${h2hRoundLabel(x.round) || ''}</span>
       <span class="sc">${x.result || '—'}</span>`;
   if (!opts || !opts.canOpen) {
     return `<div class="atourn-matchrow">${cells}</div>`;
@@ -8718,7 +8711,7 @@ function buildTournamentSection(m){
   if (!m.p1TournamentHistory && !m.p2TournamentHistory) {
     return `
       <div class="acomingsoon">No tournament-history data on record for ${m.tour} yet.</div>
-      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}${m.tournamentRound ? ' · ' + m.tournamentRound : ''}</div>
+      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}${h2hRoundLabel(m.tournamentRound) ? ' · ' + h2hRoundLabel(m.tournamentRound) : ''}</div>
     `;
   }
   // Grand Slams are best-of-five; every other ATP event is best-of-three.
