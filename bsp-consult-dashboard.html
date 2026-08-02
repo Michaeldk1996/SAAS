@@ -755,9 +755,9 @@
   .modal .dismiss{ background:none; color:var(--text-faint); margin-top:10px; font-weight:500; }
   .modal .dismiss:hover{ background:none; color:var(--text-dim); }
 
-  /* Career splits / Last 52 weeks table. Rows carry an inline zebra background,
-     so the hover has to win with !important or the stripe overrides it. */
-  .pp-split-row:hover{ background:rgba(255,255,255,0.05) !important; }
+  /* Career splits / Last 52 weeks table. Per founder ruling (TEN-8 Profile #6)
+     the per-row white hover highlight was dropped — it read as an unwanted
+     full-row highlight and added no signal. Row colour lives in the Win% cell. */
   .pp-split-head:hover{ background:rgba(255,255,255,0.04); }
   .pp-split-head:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
 
@@ -13800,7 +13800,7 @@ function buildPlayerProfileHtml(p){
           <div style="display:flex;flex-direction:column;gap:22px;">${oddsBars || '<span style="font-size:12.5px;color:#4b5672;line-height:1.55;">No surface has four or more priced matches in this window, so there is nothing to break out.</span>'}</div>
           ${surfMisprice}
         </div>
-        <div style="background:rgba(210,108,124,0.05);border:1px solid rgba(210,108,124,0.24);border-left:3px solid #d46b7b;border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
           <div style="display:inline-flex;align-items:center;gap:9px;color:#e2a24a;"><span style="width:16px;height:16px;display:flex;flex:none;">${BSP_ICONS.bulb}</span><span style="font-size:15px;font-weight:700;color:#e7e9ee;">Read on the market</span></div>
           <div style="font-size:13.5px;color:#c4ccd8;line-height:1.65;text-wrap:pretty;">${readout}</div>
         </div>
