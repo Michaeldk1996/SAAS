@@ -12456,7 +12456,7 @@ function ppStyleCard(p){
   const covNote = st.archetype_data_coverage === 'partial'
     ? `<div style="font-size:10px;color:#6b7280;margin-top:6px;line-height:1.4;">* rally/winner axes use limited shot-charting coverage (${st.mcp_charted || 0} charted matches) — greyed, not fully computed.</div>` : '';
   return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:16px 18px;">
-    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Playing style</span>
+    <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Playing style</span>
     <div style="font-size:15px;font-weight:800;color:#dbe6ff;margin:4px 0 8px;">${pesc(st.archetype_label)}</div>
     ${badges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${badges}</div>` : ''}
     ${ppStyleRadarSvg(st.archetype_scores, partial)}
@@ -13262,9 +13262,9 @@ function buildPlayerProfileHtml(p){
     <div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
         <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
-        <span style="font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
+        <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8b93a3;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
       </div>
-      <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
+      <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
       <div style="font-size:10px;color:#6b7280;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>
     </div>`).join('');
 
@@ -13287,8 +13287,8 @@ function buildPlayerProfileHtml(p){
           <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
         </div>
         <span style="height:6px;border-radius:4px;background:rgba(255,255,255,0.05);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
-        <div style="margin-top:8px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#8b93a3;">${d.rc} career · ${d.wr}%</div>
-        <div style="margin-top:2px;font-size:9.5px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">${d.seasonRc ? `${d.seasonRc} · <span style="color:${d.color};">${d.seasonWr}%</span> in ${seasonYear}` : `No matches in ${seasonYear}`}</div>
+        <div style="margin-top:8px;font-size:11.5px;color:#8b93a3;">${d.rc} career · ${d.wr}%</div>
+        <div style="margin-top:2px;font-size:11.5px;color:#6b7280;">${d.seasonRc ? `${d.seasonRc} · <span style="color:${d.color};">${d.seasonWr}%</span> in ${seasonYear}` : `No matches in ${seasonYear}`}</div>
       </div>`;
   }).join('');
 
@@ -13474,7 +13474,7 @@ function buildPlayerProfileHtml(p){
       <div style="display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:16px;">
         <span style="display:flex;flex-direction:column;gap:3px;">
           <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:7px;height:7px;border-radius:50%;background:${MK_SURF_DOT[s]};"></span>${s}</span>
-          <span style="font-family:${MKMONO};font-size:10px;color:#6b7280;padding-left:15px;">${r.matches} ${r.matches === 1 ? 'match' : 'matches'}</span>
+          <span style="font-size:11px;color:#6b7280;padding-left:15px;">${r.matches} ${r.matches === 1 ? 'match' : 'matches'}</span>
         </span>
         <span style="position:relative;height:8px;border-radius:5px;background:rgba(255,255,255,0.05);display:block;" title="${r.matches} priced matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied · ROI ${signed(r.roi, '%')}">
           <span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:rgba(255,255,255,0.22);"></span>
@@ -13554,13 +13554,13 @@ function buildPlayerProfileHtml(p){
     return `
       <div style="background:#0d111a;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
         <div>
-          <div style="font-size:16px;font-weight:700;">${title}</div>
+          <div style="font-size:20px;font-weight:800;">${title}</div>
           <div style="font-size:12px;color:#8b93a3;margin-top:4px;line-height:1.5;">${plain}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-          <div><div style="font-family:${MKMONO};font-size:21px;font-weight:700;line-height:1;">${n}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Matches</div></div>
-          <div><div style="font-family:${MKMONO};font-size:21px;font-weight:700;line-height:1;color:${gapCol};">${n ? act + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Actual win rate</div></div>
-          <div><div style="font-family:${MKMONO};font-size:21px;font-weight:700;line-height:1;color:#c8cfda;">${n ? imp + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Market implied</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;">${n}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Matches</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:${gapCol};">${n ? act + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Actual win rate</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:#c8cfda;">${n ? imp + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:#8b93a3;margin-top:6px;">Market implied</div></div>
         </div>
         <div>
           <span style="position:relative;height:8px;border-radius:5px;background:rgba(255,255,255,0.05);display:block;">
@@ -13570,7 +13570,7 @@ function buildPlayerProfileHtml(p){
           <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-family:${MKMONO};color:#8b93a3;"><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:${gapCol};"></span>Actual win rate</span><span>| market implied</span></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);">
-          <span style="font-size:11.5px;color:#8b93a3;">Gap vs market expectation</span>
+          <span style="font-size:13.5px;color:#8b93a3;">Gap vs market expectation</span>
           <span style="font-family:${MKMONO};font-size:22px;font-weight:700;color:${gapCol};">${n ? mkPt(g) : '—'}</span>
         </div>
         <div style="display:flex;align-items:flex-start;gap:9px;background:${low ? 'rgba(255,255,255,0.03)' : (pos ? 'rgba(79,185,138,0.08)' : 'rgba(224,106,124,0.08)')};border:1px solid ${low ? 'rgba(255,255,255,0.08)' : (pos ? 'rgba(79,185,138,0.24)' : 'rgba(224,106,124,0.24)')};border-radius:10px;padding:11px 13px;">
@@ -13618,8 +13618,8 @@ function buildPlayerProfileHtml(p){
     return `
       <div style="display:grid;grid-template-columns:132px 1fr 56px;align-items:center;gap:16px;">
         <span style="min-width:0;">
-          <span style="display:block;font-size:12.5px;font-weight:600;color:#dbe0e8;">${label}</span>
-          <span style="display:block;font-family:${MKMONO};font-size:9.5px;color:#6b7280;margin-top:2px;">${r.matches} ${r.matches === 1 ? 'match' : 'matches'}</span>
+          <span style="display:block;font-size:15px;font-weight:700;color:#dbe0e8;">${label}</span>
+          <span style="display:block;font-size:11px;color:#6b7280;margin-top:2px;">${r.matches} ${r.matches === 1 ? 'match' : 'matches'}</span>
         </span>
         <span style="position:relative;height:9px;border-radius:5px;background:rgba(255,255,255,0.05);display:block;" title="${r.matches} priced matches · won ${r.actualWinRate}% vs ${r.expectedWinRate}% implied · ROI ${signed(r.roi, '%')}">
           <span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:rgba(255,255,255,0.2);"></span>
@@ -13647,7 +13647,7 @@ function buildPlayerProfileHtml(p){
       <div style="display:flex;gap:14px;align-items:flex-start;">
         <span style="width:40px;height:40px;border-radius:11px;background:rgba(123,164,255,0.1);border:1px solid rgba(123,164,255,0.28);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;color:#7ba4ff;"><span style="width:19px;height:19px;display:flex;">${BSP_ICONS.target}</span></span>
         <div style="min-width:0;">
-          <div style="font-size:22px;font-weight:800;letter-spacing:-0.01em;color:#e7e9ee;">Market performance</div>
+          <div style="font-size:26px;font-weight:800;letter-spacing:-0.01em;color:#e7e9ee;">Market performance</div>
           <div style="font-size:13.5px;color:#8b93a3;margin-top:5px;max-width:760px;line-height:1.55;">How ${nm} has performed against the closing market's implied probability, over ${winN ? `his last ${o.matches} priced matches` : `${o.matches} priced matches`}${winSpan ? ` between ${winSpan.from} and ${winSpan.to}` : (winN ? '' : ` since ${Object.keys(perf.bySeason || {}).sort()[0] || '2004'}`)}.</div>
         </div>
       </div>
@@ -13715,8 +13715,8 @@ function buildPlayerProfileHtml(p){
     const ek = String(m.eventKey || '');
     return `
       <div id="formRow-${idPrefix}" data-ppek="${ek}" data-ppid="${idPrefix}" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.05);border-radius:6px;">
-        <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3dd68c':'#e0616f'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
-        <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
+        <span style="width:22px;height:22px;border-radius:6px;background:${w?'rgba(62,207,142,0.14)':'rgba(232,96,122,0.14)'};border:1px solid ${w?'rgba(62,207,142,0.4)':'rgba(232,96,122,0.42)'};color:${w?'#3dd68c':'#e0616f'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
+        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;flex:none;background:${(PP_SURF_COLORS[((m.surface||'').charAt(0).toUpperCase()+(m.surface||'').slice(1).toLowerCase())]||'#5b6472')};"></span>${metaText}</span>
         <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:#cfd4de;min-width:44px;text-align:right;">${m.result||''}</span>
         <span class="pp-form-chev" id="formChev-${idPrefix}" style="flex:none;width:10px;color:#5b6472;font-size:10px;visibility:hidden;transition:transform 150ms ease;">▸</span>
@@ -13823,12 +13823,12 @@ function buildPlayerProfileHtml(p){
       </div>`;
     }).join('');
     const t = cy.total;
-    const totCell = (rec, color) => `<span style="font-size:13.5px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${color};text-align:right;">${(rec[0]+rec[1])>0?`${rec[0]}/${rec[1]}`:'—'}</span>`;
+    const totCell = (rec, color) => `<span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${color};text-align:right;">${(rec[0]+rec[1])>0?`${rec[0]}/${rec[1]}`:'—'}</span>`;
     careerRecordCard = `
       <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
           <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Record by season</div>
-          <span style="font-size:11px;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
+          <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
         </div>
         <div style="font-size:12px;color:#8b93a3;margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,0.07);">
@@ -13836,7 +13836,7 @@ function buildPlayerProfileHtml(p){
         </div>
         <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.12);margin-top:4px;">
-          <span style="font-size:13.5px;font-weight:800;color:#f2f4f8;">Total</span>
+          <span style="font-size:14px;font-weight:800;color:#f2f4f8;">Total</span>
           ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#e7e9ee')}${totCell(t.hard,'#e7e9ee')}${totCell(t.grass,'#e7e9ee')}
         </div>
       </div>`;
@@ -13886,7 +13886,7 @@ function buildPlayerProfileHtml(p){
     <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;position:relative;z-index:5;">
       <div style="padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
-          <div style="font-size:15px;font-weight:700;">Record by tournament</div>
+          <div style="font-size:20px;font-weight:800;">Record by tournament</div>
           <span style="font-size:10.5px;color:#5b6472;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${tournamentCount} on record</span>
         </div>
         <div style="font-size:12px;color:#8b93a3;margin-top:4px;line-height:1.5;">Search a tournament to see ${pesc(surname)}'s full career win–loss record there.</div>
@@ -13939,7 +13939,7 @@ function buildPlayerProfileHtml(p){
       </div>
       <div style="min-width:0;flex:1;">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${pesc(ppAbbrevName(p.name))}</h1>
+          <h1 style="margin:0;font-size:44px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${pesc(ppAbbrevName(p.name))}</h1>
           <span style="font-size:13px;font-weight:600;color:#9fb2d4;background:rgba(159,178,212,0.1);border:1px solid rgba(159,178,212,0.32);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
         </div>
         ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:#e7e9ee;">${pesc(styleLine)}</div>` : ''}
@@ -13954,12 +13954,12 @@ function buildPlayerProfileHtml(p){
       <!-- LEFT RAIL -->
       <div class="pp-rail" style="border-right:1px solid rgba(255,255,255,0.06);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">View by surface</span>
+          <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">View by surface</span>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${tilesHtml}</div>
         <div style="display:flex;flex-direction:column;gap:9px;">
-          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
+          <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6472;font-family:'IBM Plex Mono',monospace;">Surface performance</span>
           ${surfHtml}
         </div>
         ${ppStyleCard(p)}
