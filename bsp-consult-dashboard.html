@@ -3014,10 +3014,10 @@
   .edge-rdetail{ grid-column:1 / -1; font-size:11px; color:#5b6880; line-height:1.45; padding-top:4px; }
 
   /* Section 5 — fair price & value */
-  .edge-value{ background:linear-gradient(180deg,#0f1320,#0b0e17); border:1px solid rgba(91,155,255,0.26); border-radius:18px; overflow:hidden; box-shadow:0 24px 60px -34px rgba(70,110,220,0.5); }
+  .edge-value{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; overflow:hidden; }
   .edge-vhead{ padding:15px 22px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(91,155,255,0.05); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
   .edge-ic{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex:none; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.34); }
-  .edge-ic.gold{ background:rgba(224,182,77,0.12); border-color:rgba(224,182,77,0.32); }
+  .edge-ic.gold{ background:rgba(91,155,255,0.12); border-color:rgba(91,155,255,0.32); }
   .edge-vhead .t{ font-size:16px; font-weight:800; color:#e7e9ee; }
   .edge-vhead .s{ font-size:11.5px; color:#5b6880; margin-top:1px; }
   .edge-vhead .net{ margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#6aaeff; }
@@ -3094,7 +3094,7 @@
   .edge-upgrade:hover{ background:rgba(91,155,255,0.08); }
 
   /* Section 6 — written analysis */
-  .edge-ai2{ background:#0c1017; border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:26px 30px; box-shadow:0 20px 50px -34px rgba(0,0,0,0.7); }
+  .edge-ai2{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:26px 30px; }
   .edge-aihead{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
   .edge-aihead .l{ display:flex; align-items:center; gap:11px; }
   .edge-aihead .t{ font-size:16px; font-weight:800; color:#e7e9ee; }
@@ -3150,7 +3150,7 @@
      replaces the Prev/Back/Next stepper). ── */
   .edge-shell.edge-2col{ display:flex; align-items:flex-start; gap:22px; }
   .edge-rail{ width:280px; flex:none; position:sticky; top:14px; display:flex; flex-direction:column;
-    background:#0a0d13; border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;
+    background:#0a0d13; border:0; border-right:1px solid rgba(255,255,255,0.07); border-radius:0; overflow:hidden;
     max-height:calc(100vh - 28px); }
   .edge-rail-top{ display:block; padding:12px 14px 9px; font-size:11px; font-weight:400;
     letter-spacing:0.02em; color:#5b6880; }
@@ -3162,10 +3162,10 @@
     padding:9px 30px 9px 11px; cursor:pointer; }
   .edge-rail-list{ flex:1; overflow-y:auto; padding:2px 10px 10px; display:flex; flex-direction:column; gap:5px; }
   .edge-rail-row{ display:flex; align-items:center; gap:8px; width:100%;
-    background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+    background:#0a0d14; border:1px solid rgba(255,255,255,0.07);
     border-radius:6px; padding:7px 10px; cursor:pointer; text-align:left; font-family:'Hanken Grotesk',sans-serif; }
   .edge-rail-row:hover{ background:rgba(255,255,255,0.045); }
-  .edge-rail-row.on{ background:rgba(62,123,250,0.14); border-color:rgba(62,123,250,0.5); }
+  .edge-rail-row.on{ background:rgba(91,155,255,0.08); border-color:rgba(91,155,255,0.35); }
   .edge-rail-nm{ flex:1; min-width:0; font-size:12px; font-weight:600; color:#c8cfda;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .edge-rail-row.on .edge-rail-nm{ color:#fff; }
@@ -5940,7 +5940,7 @@ function edgeValueStripHtml(adjs){
       <div class="edge-vlbar">${segs.join('')}</div>
       <div class="edge-vllegend">
         <span class="edge-vlkey"><i style="background:#3dd68c"></i>Good</span>
-        <span class="edge-vlkey"><i style="background:#e0b64d"></i>Medium</span>
+        <span class="edge-vlkey"><i style="background:#e8a84e"></i>Medium</span>
         <span class="edge-vlkey"><i style="background:#e0616f"></i>Poor</span>
         <span class="edge-vlnote">Value layers active across this match read</span>
         <span class="edge-vlactive">${active} of ${TOTAL} value layers active</span>
@@ -5993,7 +5993,7 @@ function edgeCovState(a){
 function edgeCovColor(state){
   // Design export: every segment carries colour (no grey run). Good=green,
   // Medium=amber, Poor/missing=rose-red.
-  return state === 'full' ? '#3dd68c' : state === 'partial' ? '#e0b64d' : '#e0616f';
+  return state === 'full' ? '#3dd68c' : state === 'partial' ? '#e8a84e' : '#e0616f';
 }
 
 // Model confidence pill.
@@ -6507,7 +6507,7 @@ function renderEdgeModel(id){
     <div class="edge-ai2">
       <div class="edge-aihead">
         <div class="l">
-          <span class="edge-ic gold"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l1.9 4.2 4.6.5-3.5 3 1 4.5L10 12.4 5.9 14.7l1-4.5-3.5-3 4.6-.5z" stroke="#e0b64d" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+          <span class="edge-ic gold"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l1.9 4.2 4.6.5-3.5 3 1 4.5L10 12.4 5.9 14.7l1-4.5-3.5-3 4.6-.5z" stroke="#5b9bff" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
           <div>
             <div class="t">Stennisfy Analysis</div>
             <div class="edge-aichips">
@@ -12305,18 +12305,17 @@ function ppSplitTabTableHtml(rows, which, tier){
   const grid = `display:grid;grid-template-columns:${tab.grid};`;
   const head = `<div style="${grid}align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
     <span style="position:sticky;left:0;background:#0a0d14;"></span>${
-    tab.cols.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding-left:12px;cursor:help;white-space:nowrap;${PP_SPLIT_MONO}font-size:11px;font-weight:500;color:#5b6880;">${c.k}</span>`).join('')
+    tab.cols.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding-left:12px;cursor:help;white-space:nowrap;${PP_SPLIT_MONO}font-size:11px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;">${c.k}</span>`).join('')
   }</div>`;
-  // The zebra stripe runs continuously down the whole table rather than
-  // restarting per section, so the eye can still track a row across a divider.
-  let stripe = 0;
+  // Rows sit flat on the card surface (export shows no row banding); they are
+  // separated by spacing and the section labels only.
   const body = PP_SPLIT_SECTIONS.map(sec => {
     const keys = sec.keys.filter(k => rows[k]);
     if (!keys.length) return '';
-    const label = `<div class="pp-split-sec" style="${PP_SPLIT_MONO}font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#4b5672;padding:16px 0 8px;">${sec.label}</div>`;
+    const label = `<div class="pp-split-sec" style="${PP_SPLIT_MONO}font-size:10px;font-weight:400;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;padding:16px 0 8px;">${sec.label}</div>`;
     return label + keys.map(k => {
       const r = rows[k];
-      const bg = (stripe++ % 2 === 1) ? 'rgba(255,255,255,0.022)' : 'transparent';
+      const bg = 'transparent';
       // One grade per row, reused by the Win% cell for both its colour and its
       // hover text so the two can never disagree about why the cell is green.
       const g = ppSplitGrade(r, which, k, tier);
@@ -12346,7 +12345,7 @@ function ppSplitCard(title, which, rows, subtitle, tier){
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePpSplits('${which}')}"
          style="display:flex;align-items:center;gap:11px;cursor:pointer;">
       <span style="display:inline-flex;color:#5b9bff;transform:${caret};transition:transform .15s ease;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-      <span style="font-size:20px;font-weight:800;color:#f3f5f9;">${title}</span>
+      <span style="font-size:20px;font-weight:800;color:#e7e9ee;">${title}</span>
     </div>
     <div style="font-size:13px;color:#5b6880;margin-top:6px;margin-left:29px;">${subtitle}</div>
     ${open ? ppSplitTabsHtml(which) + ppServiceSampleHtml(rows, which) + ppSplitTabTableHtml(rows, which, tier) : ''}
@@ -12591,7 +12590,7 @@ function ppStyleCard(p){
   const partial = st.partial_axes || [];
   const covNote = st.archetype_data_coverage === 'partial'
     ? `<div style="font-size:10px;color:#5b6880;margin-top:6px;line-height:1.4;">* rally/winner axes use limited shot-charting coverage (${st.mcp_charted || 0} charted matches) — greyed, not fully computed.</div>` : '';
-  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:16px 18px;">
+  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:16px 18px;">
     <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">Playing style</span>
     <div style="font-size:15px;font-weight:800;color:#dbe6ff;margin:4px 0 8px;">${pesc(st.archetype_label)}</div>
     ${badges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${badges}</div>` : ''}
@@ -12616,7 +12615,7 @@ function ppTrendSvg(series, color){
   let dots = '';
   series.forEach((s, i) => {
     dots += `<text x="${xs[i].toFixed(1)}" y="${(ys[i]-10).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="#e7e9ee" font-family="'IBM Plex Mono',monospace">${s.v}%</text>`;
-    dots += `<circle cx="${xs[i].toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4.5" fill="${color}" stroke="#0e1015" stroke-width="2"/>`;
+    dots += `<circle cx="${xs[i].toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4.5" fill="${color}" stroke="#0a0d14" stroke-width="2"/>`;
     dots += `<text x="${xs[i].toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#4b5672" font-family="'IBM Plex Mono',monospace">'${s.y}</text>`;
   });
   const area = `M${xs[0].toFixed(1)},${(H-padB).toFixed(1)} L` + xs.map((x,i)=>x.toFixed(1)+','+ys[i].toFixed(1)).join(' L') + ` L${xs[n-1].toFixed(1)},${(H-padB).toFixed(1)} Z`;
@@ -12900,7 +12899,7 @@ function ppTournamentResultHtml(p, name){
   const editions = Array.isArray(t.editions) ? t.editions : [];
   const edCount = editions.length;
   const bestYears = Array.isArray(t.bestYears) ? t.bestYears : [];
-  const tile = (label, value, sub, color) => `<div style="flex:1 1 128px;min-width:0;background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;">
+  const tile = (label, value, sub, color) => `<div style="flex:1 1 128px;min-width:0;background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;">
     <div style="font-size:10px;color:#5b6880;text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;">${label}</div>
     <div style="font-size:24px;font-weight:800;color:${color};font-family:'IBM Plex Mono',monospace;line-height:1;margin-top:9px;">${value}</div>
     <div style="font-size:11px;color:#5b6880;margin-top:6px;">${sub}</div>
@@ -12927,7 +12926,7 @@ function ppTournamentResultHtml(p, name){
       </div>`;
     }).join('');
     return `<div style="border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;margin-top:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0e1015;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a0d14;border-bottom:1px solid rgba(255,255,255,0.06);">
         <span style="font-size:13px;font-weight:700;color:#e7e9ee;font-family:'IBM Plex Mono',monospace;">${pesc(t.name)} '${yy}</span>
         <span style="font-size:11px;font-weight:600;color:#e7e9ee;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);border-radius:7px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${pesc(ed.finish || '\u2014')}</span>
       </div>
@@ -13395,7 +13394,7 @@ function buildPlayerProfileHtml(p){
     { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#5b9bff', icon: BSP_ICONS.trophy },
   ];
   const tilesHtml = tileDefs.map(k => `
-    <div style="background:#0e1015;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
+    <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
         <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
         <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
@@ -13417,7 +13416,7 @@ function buildPlayerProfileHtml(p){
   const surfHtml = surfData.map(d => {
     const active = surf !== 'All' && surf === d.s;
     return `
-      <div style="background:${active?ppHexA(d.color,0.08):'#0e1015'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:14px;padding:14px 16px;">
+      <div style="background:${active?ppHexA(d.color,0.08):'#0a0d14'};border:1px solid ${active?ppHexA(d.color,0.4):'rgba(255,255,255,0.07)'};border-radius:14px;padding:14px 16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
           <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
           <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
@@ -13435,7 +13434,7 @@ function buildPlayerProfileHtml(p){
   const perf = _oddsPerfShards[String(p.key)];
   if (perfIndexed && perf === undefined) loadOddsPerfShardThenRerender(p.key);
   const oddsHtml = !perfIndexed ? '' : (!perf ? `
-    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;padding:22px 24px;">
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:22px 24px;">
       <div style="font-size:12.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Loading market performance…</div>
     </div>` : (() => {
   // ---- Window: career (everything in the archive) vs his last N priced matches ----
@@ -13597,7 +13596,7 @@ function buildPlayerProfileHtml(p){
     mkRoleTile('As underdog', dogR, dogN, 8, 'underdog'),
     mkRoleTile('As favourite', favR, favN, 4, 'favourite'),
   ].map(t => `
-    <div style="background:#0d111a;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:9px;">
+    <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:9px;">
       <span style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;">${t.label}</span>
       <span style="font-family:${MKMONO};font-size:32px;font-weight:700;line-height:1;color:${t.color};">${t.value}</span>
       <span style="font-size:11.5px;color:#5b6880;line-height:1.45;">${t.sub}</span>
@@ -13688,7 +13687,7 @@ function buildPlayerProfileHtml(p){
     const gapCol = low ? MKM : (pos ? MKG : MKR);
     const act = r ? r.actualWinRate : 0, imp = r ? r.expectedWinRate : 0;
     return `
-      <div style="background:#0d111a;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
+      <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
         <div>
           <div style="font-size:20px;font-weight:800;">${title}</div>
           <div style="font-size:12px;color:#5b6880;margin-top:4px;line-height:1.5;">${plain}</div>
@@ -13765,12 +13764,12 @@ function buildPlayerProfileHtml(p){
       </div>`;
   };
   const splitsHtml = !splitDefs.length ? '' : `
-    <div style="background:#0d111a;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;">
+    <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
         <span style="font-size:10.5px;font-family:${MKMONO};letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;">Vs market expectation by split · ${winLabel}</span>
         <div style="display:flex;background:#07080b;border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:3px;">${splitDefs.map(d => {
           const on = d.id === activeSplit.id;
-          return `<span onclick="setPpMktSplit('${d.id}')" class="mkt-seg" style="padding:6px 13px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;background:${on ? '#3E7BFA' : 'transparent'};color:${on ? '#fff' : '#5b6880'};">${d.tab}</span>`;
+          return `<span onclick="setPpMktSplit('${d.id}')" class="mkt-seg" style="padding:6px 13px;border-radius:6px;font-size:12px;font-weight:${on ? '700' : '600'};white-space:nowrap;cursor:pointer;background:${on ? 'rgba(91,155,255,0.22)' : 'transparent'};color:${on ? '#e7e9ee' : '#5b6880'};border:1px solid ${on ? 'rgba(91,155,255,0.45)' : 'transparent'};">${d.tab}</span>`;
         }).join('')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:15px;">${activeSplit.rows.map(k => mkSplitRow(activeSplit.label(k), activeSplit.group[k])).join('')}</div>
@@ -13796,7 +13795,7 @@ function buildPlayerProfileHtml(p){
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="pp-odds-tiles">${oddsTiles}</div>
 
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:stretch;" class="pp-odds-lower">
-        <div style="background:#0d111a;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;">
+        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;">
           <div style="font-size:10.5px;font-family:${MKMONO};letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;margin-bottom:22px;">Vs market expectation by surface · ${winLabel}</div>
           <div style="display:flex;flex-direction:column;gap:22px;">${oddsBars || '<span style="font-size:12.5px;color:#4b5672;line-height:1.55;">No surface has four or more priced matches in this window, so there is nothing to break out.</span>'}</div>
           ${surfMisprice}
@@ -13812,7 +13811,7 @@ function buildPlayerProfileHtml(p){
       ${splitsHtml}
 
 
-      <div style="font-size:10.5px;font-family:${MKMONO};color:#4b5361;line-height:1.6;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. ROI = return per 1u flat stake at the average closing price, and it is negative for most players by design: the bookmaker margin has to be beaten before anyone shows a profit. Performance is measured against the closing market, not closing-line value. The match window is a rolling count, not a date range — every figure in this panel, including each split, is recomputed inside whatever window you choose. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
+      <div style="font-size:10.5px;color:#4b5361;line-height:1.6;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. ROI = return per 1u flat stake at the average closing price, and it is negative for most players by design: the bookmaker margin has to be beaten before anyone shows a profit. Performance is measured against the closing market, not closing-line value. The match window is a rolling count, not a date range — every figure in this panel, including each split, is recomputed inside whatever window you choose. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
     </div>`;
   })());
 
@@ -13910,7 +13909,7 @@ function buildPlayerProfileHtml(p){
     : `<div class="pp-form-scroll" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;">${rowsHtml}</div>${formTriggerHtml}`;
 
   const recentFormCard = `
-    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
+    <div id="ppRecentFormCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
         <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Recent form</div>
         <span style="display:inline-flex;align-items:baseline;gap:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#5b6880;"><span style="color:#5b9bff;font-weight:700;">${formHeaderPct}</span> <span style="font-size:10.5px;color:#4b5672;">· last ${pillsSrc.length}</span></span>
@@ -13961,7 +13960,7 @@ function buildPlayerProfileHtml(p){
     const t = cy.total;
     const totCell = (rec, color) => `<span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${color};text-align:right;">${(rec[0]+rec[1])>0?`${rec[0]}/${rec[1]}`:'—'}</span>`;
     careerRecordCard = `
-      <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;">
+      <div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:18px 20px;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
           <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Record by season</div>
           <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">wins / losses</span>
@@ -13977,7 +13976,7 @@ function buildPlayerProfileHtml(p){
         </div>
       </div>`;
   } else {
-    careerRecordCard = `<div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0e1015;padding:18px 20px;">
+    careerRecordCard = `<div id="ppCareerRecordCard" style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:18px 20px;">
       <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;">Career record</div>
       <div style="font-size:12.5px;color:#4b5672;">No year-by-year match history on record for this player yet.</div>
     </div>`;
@@ -14001,7 +14000,7 @@ function buildPlayerProfileHtml(p){
   const insightsHtml = ppInsights.map(x => {
     const a = accentMap[x.accent] || accentMap.blue;
     return `
-      <div style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;background:#0e1015;padding:18px 20px;display:flex;flex-direction:column;gap:11px;">
+      <div style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;background:#0a0d14;padding:18px 20px;display:flex;flex-direction:column;gap:11px;">
         <span style="width:32px;height:32px;border-radius:9px;background:${ppHexA(a.c,0.14)};border:1px solid ${ppHexA(a.c,0.32)};display:flex;align-items:center;justify-content:center;color:${a.c};"><span style="width:16px;height:16px;display:flex;">${a.icon}</span></span>
         <div style="font-size:13.5px;font-weight:700;color:#e7e9ee;">${x.title}</div>
         <div style="font-size:12.5px;color:#5b6880;line-height:1.55;">${x.text}</div>
@@ -14019,7 +14018,7 @@ function buildPlayerProfileHtml(p){
   // below the two-column overview (ppTournResultBlock). onPpTournamentInput /
   // ppShowTournament update #ppTournResult by id wherever it sits in the DOM.
   const recordSearchCard = `
-    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0c0e13;position:relative;z-index:5;">
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;position:relative;z-index:5;">
       <div style="padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
           <div style="font-size:20px;font-weight:800;">Record by tournament</div>
@@ -14029,7 +14028,7 @@ function buildPlayerProfileHtml(p){
       </div>
       <div style="padding:16px 20px 18px;">
         <div id="ppTournBox" style="position:relative;">
-          <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament…" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0e1015;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
+          <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament…" autocomplete="off" style="width:100%;box-sizing:border-box;background:#0a0d14;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
           <div id="ppTournDropdown" style="display:${tournamentDropdownHtml?'block':'none'};position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:#111318;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,0.45);max-height:320px;overflow-y:auto;">${tournamentDropdownHtml}</div>
         </div>
       </div>
@@ -14085,7 +14084,7 @@ function buildPlayerProfileHtml(p){
 
     <!-- TOP OVERVIEW: the two-column split is scoped to this region only. The
          export closes the grid here so every section below runs full page width. -->
-    <div class="pp-shell" style="display:grid;grid-template-columns:340px 1fr;align-items:start;">
+    <div class="pp-shell" style="display:grid;grid-template-columns:360px 1fr;align-items:start;">
 
       <!-- LEFT RAIL -->
       <div class="pp-rail" style="border-right:1px solid rgba(255,255,255,0.06);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;">
@@ -14113,7 +14112,7 @@ function buildPlayerProfileHtml(p){
     <div style="padding:6px 24px 28px;display:flex;flex-direction:column;gap:24px;min-width:0;">
       ${ppTournResultBlock}
       <div>
-        <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:14px;">Key insights</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;margin-bottom:14px;">Key insights</div>
         <div class="pp-insights" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
       </div>
       <!-- align-items defaults to stretch: both cards take the row's height, so the
