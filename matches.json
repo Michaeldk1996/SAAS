@@ -56215,13 +56215,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.54,
+      "p2": 2.47,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.54,
+        "bookmaker": "Superbet"
+      },
+      "p2": {
+        "price": 2.47,
+        "bookmaker": "Superbet"
+      }
     },
     "tournamentRound": "ATP Montreal - 1/64-finals",
     "p1Key": 12951,
