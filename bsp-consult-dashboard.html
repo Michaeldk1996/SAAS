@@ -13423,13 +13423,24 @@ function buildPlayerProfileHtml(p){
   // ---- Market performance (real closing prices — see loadOddsPerfShard) ----
   const gcol = '#3dd68c', rcol = '#e0616f', ncol = '#5b6880';
   const signed = (v, unit) => (v >= 0 ? '+' : '−') + Math.abs(v) + (unit || '');
+  // Single source of truth for the "where the prices come from" wording, so the
+  // footnote, the empty state and the error fallback can never drift apart.
+  const MKT_SOURCE = 'tennis-data.co.uk';
+  const MKT_LEVEL = 'ATP tour level';
+  const mktNoteBox = (msg) => `
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:22px 24px;">
+      <div style="font-size:10.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;margin-bottom:11px;">Market performance</div>
+      <div style="font-size:13px;color:#8892a0;line-height:1.6;text-wrap:pretty;">${msg}</div>
+    </div>`;
   const perfIndexed = oddsPerfIndex[String(p.key)];
   const perf = _oddsPerfShards[String(p.key)];
   if (perfIndexed && perf === undefined) loadOddsPerfShardThenRerender(p.key);
-  const oddsHtml = !perfIndexed ? '' : (!perf ? `
+  const oddsHtml = !perfIndexed ? mktNoteBox(
+      `There is not enough reliable market data on this player at ${MKT_LEVEL} to assess how the market prices him. Closing prices come from ${MKT_SOURCE} and cover ${MKT_LEVEL.toLowerCase()} only — Challenger and qualifying matches are not priced, so lower-ranked players often have too few priced matches to report.`
+    ) : (!perf ? `
     <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:22px 24px;">
       <div style="font-size:12.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Loading market performance…</div>
-    </div>` : (() => {
+    </div>` : (() => { try {
   // ---- Window: career (everything in the archive) vs his last N priced matches ----
   // The form window is a MATCH COUNT, not a calendar range: "last 24 months" meant 50
   // matches for a busy player and 12 for one who missed a season, so the same label
@@ -13804,9 +13815,15 @@ function buildPlayerProfileHtml(p){
       ${splitsHtml}
 
 
-      <div style="font-size:10.5px;color:#4b5361;line-height:1.6;">Closing prices from tennis-data.co.uk, tour level only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. ROI = return per 1u flat stake at the average closing price, and it is negative for most players by design: the bookmaker margin has to be beaten before anyone shows a profit. Performance is measured against the closing market, not closing-line value. The match window is a rolling count, not a date range — every figure in this panel, including each split, is recomputed inside whatever window you choose. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
+      <div style="font-size:10.5px;color:#4b5361;line-height:1.6;">Closing prices from ${MKT_SOURCE}, ${MKT_LEVEL.toLowerCase()} only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. ROI = return per 1u flat stake at the average closing price, and it is negative for most players by design: the bookmaker margin has to be beaten before anyone shows a profit. Performance is measured against the closing market, not closing-line value. The match window is a rolling count, not a date range — every figure in this panel, including each split, is recomputed inside whatever window you choose. The archive currently runs to ${oddsPerfMeta.archiveLatest || (rw && rw.to) || 'its last mirrored season'}, so it ends there, not today.</div>
     </div>`;
-  })());
+  } catch (mktErr) {
+    // A malformed shard must never take the whole profile down: the profile is one
+    // innerHTML write, so an unguarded throw here would blank Recent form, Key insights
+    // and Record by season too. Degrade to a small note instead.
+    console.error('[market-panel] render failed for', p && p.key, mktErr);
+    return mktNoteBox('Market-performance data for this player could not be displayed.');
+  } })());
 
   // ---- Recent form card (carries its own surface filter, expandable season list) ----
   // Computed here rather than with the Career record card below because the form

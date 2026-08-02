@@ -245,6 +245,34 @@ function keyFromArchiveName(name) {
 
 const fullKey = (k) => (k ? `${k.surname}|${k.initials}` : null);
 
+/**
+ * When a profile name carries no dotted initial we cannot tell surname from given
+ * name: "Wu Tung-Lin" is surname-first but "Juncheng Shang" is given-first, and the
+ * heuristic in keyFromOurName has to pick one. That guess is what silently dropped
+ * qualifying players (e.g. Shang: profile drifted "J. Shang" -> "Juncheng Shang", so
+ * his key became "juncheng|s" and stopped matching the archive's "shang|j").
+ *
+ * The archive side is unambiguous -- it always writes "Surname Initials." -- so rather
+ * than guess, we emit BOTH orderings for an un-dotted two-token name and let the
+ * archive join on whichever surname is real. The extra key is registered on the
+ * surname fallback index ONLY (never as the exact/primary key), and resolve()'s
+ * single-candidate guard still blocks it from stealing a row from a real namesake.
+ */
+function ourCandidateKeys(name) {
+  const primary = keyFromOurName(name);
+  if (!primary) return [];
+  const keys = [primary];
+  const toks = String(name).trim().split(/\s+/).filter(Boolean);
+  if (toks.length === 2 && !isInitialToken(toks[0]) && !isInitialToken(toks[1])) {
+    // primary treated toks[0] as the surname; also try toks[1] as the surname.
+    const alt = { surname: normToken(toks[1]), initials: normToken(toks[0])[0] || '' };
+    if (alt.surname && alt.initials && (alt.surname !== primary.surname || alt.initials !== primary.initials)) {
+      keys.push(alt);
+    }
+  }
+  return keys;
+}
+
 // ---------------------------------------------------------------------------
 // Stats
 // ---------------------------------------------------------------------------
@@ -325,12 +353,20 @@ function main() {
   const byFullKey = new Map();
   const bySurname = new Map();
   Object.entries(profiles).forEach(([key, p]) => {
-    const k = keyFromOurName(p.name);
-    if (!k) return;
-    const entry = { key, name: p.name, rank: parseInt(p.rank, 10) || null, k };
-    byFullKey.set(fullKey(k), entry);
-    if (!bySurname.has(k.surname)) bySurname.set(k.surname, []);
-    bySurname.get(k.surname).push(entry);
+    const cands = ourCandidateKeys(p.name);
+    if (!cands.length) return;
+    const primary = cands[0];
+    const entry = { key, name: p.name, rank: parseInt(p.rank, 10) || null, k: primary };
+    // Exact match keys on the primary interpretation only, so an ambiguous alternate
+    // can never overwrite a real player's key.
+    byFullKey.set(fullKey(primary), entry);
+    // Every candidate (primary + any un-dotted alternate) joins the surname fallback,
+    // each carrying its own key so resolve()'s initials guard sees the right initials.
+    cands.forEach((ck) => {
+      const e = ck === primary ? entry : { key, name: p.name, rank: entry.rank, k: ck };
+      if (!bySurname.has(ck.surname)) bySurname.set(ck.surname, []);
+      bySurname.get(ck.surname).push(e);
+    });
   });
 
   const seasons = fs.readdirSync(ARCHIVE_DIR).filter((f) => /^\d{4}\.csv$/.test(f)).sort();

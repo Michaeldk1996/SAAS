@@ -33,6 +33,7 @@ from datetime import date, timedelta
 ARCHIVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'odds-archive')
 FIRST_SEASON = 2004
 ORIGIN = 'http://www.tennis-data.co.uk/{y}/{y}.zip'
+ORIGIN_BARE = 'http://www.tennis-data.co.uk/{y}/{y}.{ext}'
 MIRROR = 'https://raw.githubusercontent.com/nickdatak/Tennis-Match-Predictions/main/data/{y}.{ext}'
 
 # Bookmaker columns seen across the eras. The set is not stable -- 2004 has CB/EX/IW,
@@ -56,13 +57,26 @@ def _fetch(url, timeout=45):
 
 def download_season(year):
     """Return (bytes, ext, source) for a season workbook, trying origin then mirror."""
+    # 1. Origin as a zip -- the historical layout.
     try:
         blob = _fetch(ORIGIN.format(y=year))
         z = zipfile.ZipFile(io.BytesIO(blob))
         name = z.namelist()[0]
         return z.read(name), name.rsplit('.', 1)[-1].lower(), 'origin'
     except Exception as exc:
-        print('  origin unavailable (%s) -- falling back to mirror' % type(exc).__name__)
+        print('  origin zip unavailable (%s)' % type(exc).__name__)
+    # 2. Origin as a bare workbook. The current-season file is now published as
+    #    /{y}/{y}.xlsx with no zip wrapper, so the zip path above 300s (Multiple
+    #    Choices). Fetch the workbook directly; a 300 page comes back as HTML, so
+    #    validate the magic bytes before trusting it.
+    for ext in ('xlsx', 'xls'):
+        try:
+            blob = _fetch(ORIGIN_BARE.format(y=year, ext=ext))
+        except Exception:
+            continue
+        if (ext == 'xlsx' and blob[:2] == b'PK') or (ext == 'xls' and blob[:4] == b'\xd0\xcf\x11\xe0'):
+            return blob, ext, 'origin'
+    # 3. Community mirror -- may lag the origin by a season, so it is the last resort.
     for ext in ('xlsx', 'xls'):
         try:
             return _fetch(MIRROR.format(y=year, ext=ext)), ext, 'mirror'
