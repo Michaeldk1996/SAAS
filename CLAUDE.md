@@ -129,6 +129,22 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors. 
 
 ## Design system — the export is canonical
 
+### STANDING DIRECTIVE — design fidelity (founder ruling, 2026-08-02)
+
+**The design is the specification, not a reference.** Michael designs this product in Claude Design; the export **is** what he designed. Your job is to reproduce it — not to interpret it, improve it, or substitute a reasonable equivalent.
+
+1. **When the export and your instinct disagree, the export wins.** This already holds for measurable values; it also holds for anything that "looks fine either way."
+2. **No generic-convention defaults.** Component-library styling, framework defaults and general design instinct are all *wrong here by default* — this system has specific rules that differ from convention. When you reach for a sensible standard treatment, that is the signal to stop and read the export instead.
+3. **Rebuild rather than restyle.** If a section's structure differs from the export, adjusting colours and spacing on your existing markup will not converge — build the export's structure.
+4. **Read values, never infer them.** `computed-styles.json` is authoritative for every measurable value — padding, margin, width, font size and weight, line height, radius, gap, fill alpha, gradient stop, glyph. No rounding. **No number quoted in a prompt — including the founder's — is a source; treat every quoted value as a hypothesis to verify against the export.**
+5. **Per-tab specs outrank computed styles inside their scope.** Two exist: `design-export/specs/match-stats-tab-spec.md`, `design-export/specs/form-tab-spec.md`.
+
+The three carve-outs where you still stop and ask are unchanged: **fabricated or absent data, scope with no data-layer counterpart, and product decisions that post-date the export.**
+
+**Do not change** without the audit saying so: anything currently signed off; the half-pixel authored sizes (13.5, 12.5, 11.5, 10.5, 9.5 — real design values, source of the sub-pixel diff floor); the two blue systems (`#3e7bfa` legacy vs `#5b9bff` canonical — **frozen, do not migrate**); the handoff decisions list (removed Summary view, removed H2H trend chart, removed Extra Stats tab, uncomputed match time).
+
+---
+
 **Canonical source of truth:** the Framer design export under `design-export/` **is** the design. Read exact values from `design-export/computed-styles.json` (every element, every state — 30 page-states), the raw token set from `design-export/tokens-observed.json`, and the readable token set from `design-export/tokens-design.json`. The narrative reference is `design-export/README.md`. **Where this doc and the export disagree on anything measurable, the export wins** — on rules, scope and reasoning, the README wins. (This section was corrected on 2026-07-31 after CLAUDE.md was found describing a different product than the export; report any remaining conflict rather than guessing.)
 
 **Per-tab dev specs sit above the export within their scope (founder handoff, 2026-08-01).** Where a tab has a dedicated handoff spec — `design-export/specs/match-stats-tab-spec.md`, `design-export/specs/form-tab-spec.md`, and any that follow, one per tab — that spec is **authoritative for that tab**: read exact values from the spec, and fall back to `computed-styles.json` for the tab's own page-state only where the spec is silent. Outside a tab that has its own spec, the export rules (as above). On a spec-vs-export conflict inside a tab's scope, the spec wins — note the divergence in your report and proceed.
