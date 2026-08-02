@@ -40,7 +40,7 @@ const base = `http://127.0.0.1:${port}`;
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile = fs.mkdtempSync('/tmp/ch-profile-');
 const dport = 9400 + Math.floor(port % 500);
-const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${dport}`, `--user-data-dir=${profile}`,
+const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${dport}`, '--remote-allow-origins=*', `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--force-device-scale-factor=1', 'about:blank'], {stdio:'ignore'});
 
 async function cdpTarget() {
@@ -61,9 +61,16 @@ const evaluate = async (expr) => { const r = await c.send('Runtime.evaluate',{ex
 
 await c.send('Page.navigate', {url: `${base}/${previewName}#/players`});
 
-// wait for player-profiles.json to populate the roster
+// wait for player-profiles.json to populate the roster. The app loads it on an
+// idle callback that never fires headless, so invoke the loader explicitly —
+// inside the poll so it retries once the script has finished defining it.
 let loaded=0;
-for(let i=0;i<120;i++){ loaded = await evaluate(`(typeof playerProfiles!=='undefined'&&playerProfiles?Object.keys(playerProfiles).length:0)`).catch(()=>0); if(loaded>0) break; await sleep(250); }
+for(let i=0;i<120;i++){
+  loaded = await evaluate(`(typeof playerProfiles!=='undefined'&&playerProfiles?Object.keys(playerProfiles).length:0)`).catch(()=>0);
+  if(loaded>0) break;
+  await evaluate(`(typeof loadPlayerProfiles==='function') ? loadPlayerProfiles() : null`).catch(()=>{});
+  await sleep(250);
+}
 if(!loaded) throw new Error('playerProfiles never loaded');
 
 // drive the real navigation: activate the Players page, then open the profile
