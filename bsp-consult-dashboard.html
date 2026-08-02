@@ -7446,7 +7446,7 @@ function weatherImpactPhrase(w, surface){
 // plain-English condition, and the design's per-condition tint. Grouped into
 // the four visual buckets the design defines (sun / partly / cloud / rain).
 function wmoWeather(code){
-  const SUN = '#E8934B', PARTLY = '#cbb98a', CLOUD = '#9aa3b2', RAIN = '#7ba4ff';
+  const SUN = '#e8a84e', PARTLY = '#cbb98a', CLOUD = '#9aa3b2', RAIN = '#7ba4ff';
   if (code == null) return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
   if (code === 0) return { icon: BSP_ICONS.wxSun, label: 'Clear', tint: SUN };
   if (code === 1) return { icon: BSP_ICONS.wxSun, label: 'Mainly clear', tint: SUN };
