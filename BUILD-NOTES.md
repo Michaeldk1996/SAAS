@@ -1814,3 +1814,57 @@ byte-identical to the export's 114.6px; full footline 165.5px, well within the
 211.5px card. No string change made (step 3 not reached). This also aligns
 `.edge-mcfl` with the type boundary as the export authors it: all four footline
 kinds (soft-book, opened, gap-note, now) are Hanken in the export.
+
+---
+
+## Typography pass — 5 surfaces to export, FONT PROPERTIES ONLY (TEN-8, 2026-08-02)
+
+Founder directive (comment cd0fa8e6): bring every page/tab's type to the export;
+diagnose the serif fault at the cause first; enforce the Hanken(words)/Plex-Mono(data)
+boundary; "DO NOT CHANGE ... colour ... in this pass. Type only. Log anything else."
+
+**Serif cause — already fixed before the comment, re-verified.** `--mx-font-ui`/
+`--mx-font-mono` were declared only under `[data-page="matches"]`, so `body{font-family:
+var(--mx-font-ui)}` was undefined on every other page + the body-level modal → resolved
+to the CSS initial = Times. Fixed at cause in commit 0e43cfc (2026-08-02 03:25 UTC, ~1h
+before the comment): vars promoted to the first `:root` (lines 37-38) + re-declared on
+`.modal-analysis` (line 774). Re-verified headless (worktree, 2026-08-02): both fonts
+load (`document.fonts.check` true — never a load failure); `body` and all 8 data-page
+contexts (matches/edge/players/styles/h2h/track/news/tournaments) + a modal inheriting
+element all compute `"Hanken Grotesk"` (were Times on every context except matches).
+Single fix, closes serif on every route.
+
+**Scope decision — this pass changed FONT properties only** (family/size/weight/
+letter-spacing/text-transform/line-height). Applied per surface: Playing Style modal
+(8dcffbb, 17 edits), H2H (eee9b7b), Odds (f6f12e1), Stennisfy match-model+ratings
+(2ec7308, 16 edits), Player Profile (9baa844, 23 edits). All values read exactly from
+`design-export/computed-styles.json`; spot-verified against the JSON on every surface.
+
+**Text COLOUR held for a dedicated token pass** (per "DO NOT CHANGE colour"). The
+audits show colour drift is largely SYSTEMIC, not per-element: the build's muted-grey
+`#8b93a3`/`#6b7280`/`#5b6472` vs the export's canonical `#5b6880` (rgb 91,104,128) /
+`#4b5672` (rgb 75,86,114); build green/red `#4fb98a`/`#d9737f` vs canonical `#3dd68c`/
+`#e0616f`; identity blue `#8fb6ff`/`#3E7BFA` vs the export's `#6aaeff`. Spot-fixing these
+per surface would fragment the app (the same off-tokens are used everywhere). Recommend a
+single app-wide token substitution. Specific colour items logged for that pass:
+- H2H `.ah2h-callout` #dfe3ea -> #e7e9ee (near-miss -> canonical body token).
+- Odds per-book header + odds-movement chips: p1 brand-blue #3E7BFA -> data-blue #6aaeff;
+  p2 STALE ORANGE #E8934B -> neutral #e7e9ee (the build's own CSS line 798 says "no orange
+  anywhere" — this is a real bug against the design rule, high priority for the colour pass).
+  Also shell `.apname` header name 14->16px (shell/header, deferred with the shell audit).
+- Playing Style / Stennisfy / Profile: the systemic muted-grey/green-red/blue drift above.
+
+**Font-boundary exceptions where the EXPORT overrides the general rule** (founder: export
+wins, log it). The stated boundary is "counts -> Plex Mono", but the export authors several
+COUNTS in Hanken Grotesk: Profile surface-perf "N career · X%" / "N matches" counts, and
+the Playing-Style `.pss-n` "n=234" surface-table count. Profile count->Hanken applied per
+export; `.pss-n` family flip HELD pending a second verification (contradicts the rule, low
+cost to defer). CLAUDE.md boundary rule may want a carve-out: "data counts that sit inside
+a prose/label context follow the export (Hanken), not the blanket counts->mono rule."
+
+**Other HELD items (out of type-only scope / uncertain):** Stennisfy `.edge-cap2`
+("Biggest movers" wants Hanken 15px/w800 heading + a structural sub-line the build omits;
+shared with "Model confidence" which has no export peer — needs a class split, not a value
+edit) and `.edge-rt-elo` (leader-row emphasis only in the sample, not confirmed uniform).
+Profile career year-cell mono (nested with the tag span), split-section caps (12172/12180),
+career-splits W-L weight (12194, uncertain), radar SVG axis attrs, preset chips.
