@@ -2900,27 +2900,33 @@
   .edge-eyeb{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672; margin-bottom:16px; }
 
   /* Section 1 — matchup */
-  .edge-mtop{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-family:'IBM Plex Mono', monospace; font-size:12px; color:#5b6880; margin-bottom:16px; }
-  .edge-mtop .tour{ color:#c8cfda; font-weight:600; }
-  .edge-mtop .dot{ color:#4b5672; }
-  .edge-vsrow{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .edge-pblk{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:10px; }
-  .edge-pblk .nm{ font-size:23px; font-weight:800; letter-spacing:-0.01em; color:#e7e9ee; }
-  .edge-pblk.r .nm{ text-align:right; }
+  .edge-mtour{ display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; font-family:'IBM Plex Mono', monospace; font-size:12px; color:#4b5672; margin-bottom:18px; }
+  .edge-mtour .tour{ color:#c8cfda; font-weight:600; }
+  .edge-mtour .dot{ color:#4b5672; }
+  .edge-mtour .rnd{ color:#5b6880; }
+  .edge-vsrow{ display:flex; align-items:center; justify-content:center; gap:34px; flex-wrap:wrap; }
+  .edge-pblk{ display:flex; flex-direction:column; gap:10px; min-width:0; align-items:flex-end; }
+  .edge-pblk.r{ align-items:flex-start; }
+  .edge-pname{ display:flex; align-items:center; gap:11px; }
+  .edge-pav{ width:32px; height:32px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; letter-spacing:0.02em; }
+  .edge-pav.a{ background:rgba(91,155,255,0.14); color:#6aaeff; }
+  .edge-pav.b{ background:rgba(255,255,255,0.08); color:#e7e9ee; }
+  .edge-pblk .nm{ font-size:23px; font-weight:800; letter-spacing:-0.01em; }
+  .edge-pblk .nm.a{ color:#6aaeff; }
+  .edge-pblk .nm.b{ color:#e7e9ee; }
   .edge-badges{ display:flex; gap:7px; flex-wrap:wrap; }
   .edge-pblk.r .edge-badges{ justify-content:flex-end; }
-  .edge-bdg{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:#c8cfda; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:4px 8px; }
-  .edge-bdg.elo{ color:#5b9bff; background:rgba(91,155,255,0.12); border-color:rgba(91,155,255,0.32); }
-  .edge-bdg.arch{ font-family:'Hanken Grotesk', sans-serif; color:#aeb8cc; background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); text-transform:capitalize; }
+  .edge-bdg{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:#5b6880; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:4px 8px; }
+  .edge-bdg.elo{ color:#5b6880; background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); }
+  .edge-bdg.arch{ font-family:'Hanken Grotesk', sans-serif; color:#5b6880; background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); text-transform:capitalize; }
   .edge-vs{ width:42px; height:42px; border-radius:50%; border:1px solid rgba(255,255,255,0.12); background:#0d111a; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:#5b6880; flex:none; }
-  .edge-ctxrow{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding-top:14px; margin-top:16px; border-top:1px solid rgba(255,255,255,0.06); }
-  .edge-ctxgrp{ display:inline-flex; align-items:center; gap:9px; }
-  .edge-ctxcap{ font-size:10px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672; }
-  .edge-segs{ display:flex; background:#0d111a; border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:3px; }
-  .edge-seg{ padding:7px 13px; border-radius:6px; font-size:12px; font-weight:600; color:#5b6880; white-space:nowrap; }
-  .edge-seg.on{ background:#3E7BFA; color:#fff; }
-  .edge-ctxnote{ margin-left:auto; font-size:11.5px; color:#5b6880; }
-  .edge-ctxnote strong{ color:#c8cfda; font-weight:600; }
+  .edge-mstrip{ display:flex; justify-content:center; align-items:stretch; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); }
+  .edge-mcol{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 26px; }
+  .edge-mcol:first-child{ padding-left:0; }
+  .edge-mcol:last-child{ padding-right:0; }
+  .edge-mcol + .edge-mcol{ border-left:1px solid rgba(255,255,255,0.06); }
+  .edge-mcol .k{ font-family:'IBM Plex Mono', monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880; }
+  .edge-mcol .v{ font-size:14.5px; font-weight:700; color:#e7e9ee; }
 
   /* Section 2 — base probability estimate cards */
   .edge-estgrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
@@ -3013,6 +3019,8 @@
   .edge-vcol.divider{ border-right:1px solid rgba(255,255,255,0.06); }
   .edge-vtop{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
   .edge-vtop .nm{ font-size:13px; font-weight:700; color:#6aaeff; }
+  .edge-vtop .nm.a{ color:#6aaeff; }
+  .edge-vtop .nm.b{ color:#e7e9ee; }
   .edge-vtop .cap{ font-size:10px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.08em; text-transform:uppercase; color:#4b5672; margin-top:4px; }
   .edge-vtop .od{ font-family:'IBM Plex Mono', monospace; font-size:48px; font-weight:700; line-height:0.82; color:#fff; }
   .edge-vflag{ align-self:flex-start; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:500; letter-spacing:0.05em; border-radius:8px; padding:8px 13px; white-space:nowrap; }
@@ -3061,10 +3069,22 @@
   .edge-mover .rk{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#4b5672; width:14px; flex:none; }
   .edge-mover .nm{ flex:1; color:#c8cfda; min-width:0; }
   .edge-mover .who{ font-weight:600; color:#6aaeff; }
-  .edge-mover .dl{ font-family:'IBM Plex Mono', monospace; font-size:14.5px; font-weight:700; color:#6aaeff; width:56px; text-align:right; flex:none; }
+  .edge-mover .who.a{ color:#6aaeff; }
+  .edge-mover .who.b{ color:#e7e9ee; }
+  .edge-mover .dl{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:#6aaeff; width:56px; text-align:right; flex:none; }
   .edge-confbox{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
   .edge-confbig{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; border-radius:8px; padding:8px 14px; }
   .edge-confsub{ font-size:10.5px; color:#5b6880; }
+  /* Inter-section spacing between rendered model sections (design export: 14px). */
+  #edgeBody{ display:flex; flex-direction:column; gap:14px; }
+  /* Biggest movers — own card (design export). */
+  .edge-movershead{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .edge-movershead .l{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .edge-movers-t{ font-size:15px; font-weight:800; color:#e7e9ee; }
+  .edge-movers-sub{ font-size:11.5px; color:#5b6880; }
+  .edge-moverslist{ display:flex; flex-direction:column; gap:2px; }
+  .edge-upgrade{ display:block; width:max-content; margin:16px auto 0; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:600; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35); border-radius:8px; padding:8px 20px; cursor:pointer; text-decoration:none; }
+  .edge-upgrade:hover{ background:rgba(91,155,255,0.08); }
 
   /* Section 6 — written analysis */
   .edge-ai2{ background:#0c1017; border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:26px 30px; box-shadow:0 20px 50px -34px rgba(0,0,0,0.7); }
@@ -3082,10 +3102,10 @@
 
   /* ---- Edge sub-tabs (Match model | Player ratings) ---- */
   .edge-subtabs-wrap{ display:flex; justify-content:flex-start; }
-  .edge-subtabs{ display:inline-flex; gap:4px; background:#05060a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:5px; width:max-content; max-width:100%; }
-  .edge-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:600; color:#5b6880; background:none; border:none; padding:9px 20px; border-radius:9px; cursor:pointer; white-space:nowrap; transition:background .15s ease, color .15s ease; }
+  .edge-subtabs{ display:inline-flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:3px; width:max-content; max-width:100%; }
+  .edge-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:600; color:#5b6880; background:none; border:1px solid transparent; padding:8px 16px; border-radius:8px; cursor:pointer; white-space:nowrap; transition:background .15s ease, color .15s ease; }
   .edge-subtab:hover{ color:#cfd4de; }
-  .edge-subtab.active{ color:#fff; background:#3E7BFA; font-weight:700; }
+  .edge-subtab.active{ color:#e7e9ee; background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); font-weight:700; }
   .edge-pane{ display:none; }
   .edge-pane.active{ display:block; }
   /* ---- Player ratings leaderboard ---- */
@@ -3122,7 +3142,7 @@
   /* ── Left rail — tournament dropdown + scrollable match list (design export;
      replaces the Prev/Back/Next stepper). ── */
   .edge-shell.edge-2col{ display:flex; align-items:flex-start; gap:22px; }
-  .edge-rail{ width:240px; flex:none; position:sticky; top:14px; display:flex; flex-direction:column;
+  .edge-rail{ width:280px; flex:none; position:sticky; top:14px; display:flex; flex-direction:column;
     background:#0a0d13; border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;
     max-height:calc(100vh - 28px); }
   .edge-rail-top{ display:block; padding:12px 14px 9px; font-size:11px; font-weight:400;
@@ -3157,8 +3177,8 @@
   .edge-mctx{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
   @media (max-width:1050px){ .edge-mctx{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:560px){ .edge-mctx{ grid-template-columns:1fr; } }
-  .edge-mcbox{ background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:12px;
-    padding:15px 16px; display:flex; flex-direction:column; gap:12px; }
+  .edge-mcbox{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px;
+    padding:16px 17px; display:flex; flex-direction:column; gap:14px; }
   .edge-mcbox.base{ border-color:rgba(37,99,235,0.30); }
   .edge-mclbl{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em;
     text-transform:uppercase; color:#5b6880; }
@@ -3174,25 +3194,27 @@
   .edge-mcfl{ font-size:11px; color:#4b5672; font-family:var(--mx-font-ui);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .edge-mcfl .who{ color:#6aaeff; font-weight:600; }
+  .edge-mcfl .who.a{ color:#6aaeff; }
+  .edge-mcfl .who.b{ color:#e7e9ee; }
   .edge-mcfl .up{ color:#3dd68c; } .edge-mcfl .dn{ color:#e0616f; }
 
   /* ── Value layers strip (N of 17) — design export ── */
   .edge-vlbar{ display:flex; gap:4px; }
   .edge-vlseg{ flex:1; height:6px; border-radius:3px; }
   .edge-vllegend{ display:flex; align-items:center; gap:14px; margin-top:13px; flex-wrap:wrap;
-    font-size:11px; font-family:'Hanken Grotesk',sans-serif; color:#5b6880; }
+    font-size:11px; font-family:'Hanken Grotesk',sans-serif; color:#4b5672; }
   .edge-vlkey{ display:inline-flex; align-items:center; gap:6px; }
-  .edge-vlkey i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .edge-vlkey i{ width:6px; height:6px; border-radius:50%; display:inline-block; }
   .edge-vlnote{ margin-left:4px; }
-  .edge-vlactive{ margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; color:#5b6880; }
+  .edge-vlactive{ margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; color:#4b5672; }
 
   /* ── Generate button — Stennisfy Analysis (design export) ── */
-  .edge-genwrap{ display:flex; flex-direction:column; gap:14px; }
-  .edge-genlead{ font-size:13.5px; color:#c8cfda; line-height:1.6; }
-  .edge-genbtn{ align-self:flex-start; font-family:'Hanken Grotesk',sans-serif; font-size:13.5px;
-    font-weight:600; color:#fff; background:#3E7BFA; border:1px solid #3E7BFA; border-radius:10px;
-    padding:11px 20px; cursor:pointer; }
-  .edge-genbtn:hover{ background:#356fe0; }
+  .edge-genwrap{ display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center; }
+  .edge-genlead{ font-size:13.5px; color:#c8cfda; line-height:1.6; max-width:460px; }
+  .edge-genbtn{ align-self:center; font-family:'Hanken Grotesk',sans-serif; font-size:13.5px;
+    font-weight:600; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35); border-radius:11px;
+    padding:12px 24px; cursor:pointer; }
+  .edge-genbtn:hover{ background:rgba(91,155,255,0.08); }
   .edge-regen{ font-size:11.5px; font-weight:600; color:#5b6880; background:rgba(255,255,255,0.04);
     border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:7px 13px; cursor:pointer;
     user-select:none; white-space:nowrap; }
@@ -3201,7 +3223,7 @@
 <div class="tabpage" data-page="edge">
   <div class="edge-shell edge-2col">
     <aside class="edge-rail">
-      <span class="edge-rail-top">Stennisfy Model</span>
+      <span class="edge-rail-top">‹ Stennisfy Model</span>
       <div class="edge-rail-tourwrap">
         <select class="edge-rail-tsel" id="edgeRailTour" onchange="edgeRailTourChange(this.value)"></select>
       </div>
@@ -5485,6 +5507,26 @@ function edgeEsc(s){
 function edgePct(x, dp){ return (x == null || isNaN(x)) ? '—' : (x * 100).toFixed(dp == null ? 1 : dp) + '%'; }
 function edgeOdds(x){ return (x == null || isNaN(x)) ? '—' : Number(x).toFixed(2); }
 function edgeCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+// Abbreviated player-name form (design export): "J. Sinner" (leading initial +
+// surname). Already-abbreviated feed names pass through unchanged; a full name
+// like "Adolfo Daniel Vallejo" collapses to "A. Vallejo". Applied everywhere a
+// player renders on the Stennisfy Model page (header, fair price, movers,
+// market-context footnotes) so long names never clip a one-line footnote.
+function edgeShortName(name){
+  const s = String(name || '').trim();
+  if (!s) return s;
+  if (/^[A-Za-z]\.\s*\S/.test(s)) return s;           // already "X. Surname"
+  const toks = s.split(/\s+/).filter(Boolean);
+  if (toks.length < 2) return s;
+  return toks[0].charAt(0).toUpperCase() + '. ' + toks[toks.length - 1];
+}
+// Avatar initials from a (possibly abbreviated) name: "S. Kwon" -> "SK".
+function edgeInitials(name){
+  const toks = String(name || '').replace(/\./g, ' ').split(/\s+/).filter(Boolean);
+  if (!toks.length) return '?';
+  if (toks.length === 1) return toks[0].slice(0, 2).toUpperCase();
+  return (toks[0].charAt(0) + toks[toks.length - 1].charAt(0)).toUpperCase();
+}
 
 // Open the Edge Model page for a specific match — reached from a match-card link
 // or Prev/Next. This is a deliberate choice, so it becomes the sticky selection.
@@ -5806,11 +5848,11 @@ function edgeMarketContextHtml(m, st1, p1short, p2short){
   const softFoot = (softNameA || softNameB)
     ? `<div class="edge-mcfl">Best soft book · ${edgeEsc(softNameA || softNameB)}</div>` : '';
   const pinOpenFoot = (pinOpenA != null || pinOpenB != null)
-    ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p1short)}</span> opened ${fmt(pinOpenA)}</div>`
-      + `<div class="edge-mcfl"><span class="who">${edgeEsc(p2short)}</span> opened ${fmt(pinOpenB)}</div>` : '';
+    ? `<div class="edge-mcfl"><span class="who a">${edgeEsc(p1short)}</span> opened ${fmt(pinOpenA)}</div>`
+      + `<div class="edge-mcfl"><span class="who b">${edgeEsc(p2short)}</span> opened ${fmt(pinOpenB)}</div>` : '';
   const baseFoot = (gA || gB)
-    ? `${gA ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p1short)}</span> <span class="${gA.cls}">${gA.txt}</span></div>` : ''}`
-      + `${gB ? `<div class="edge-mcfl"><span class="who">${edgeEsc(p2short)}</span> <span class="${gB.cls}">${gB.txt}</span></div>` : ''}` : '';
+    ? `${gA ? `<div class="edge-mcfl"><span class="who a">${edgeEsc(p1short)}</span> <span class="${gA.cls}">${gA.txt}</span></div>` : ''}`
+      + `${gB ? `<div class="edge-mcfl"><span class="who b">${edgeEsc(p2short)}</span> <span class="${gB.cls}">${gB.txt}</span></div>` : ''}` : '';
   const nowFoot = (pinNowA != null || pinNowB != null)
     ? `<div class="edge-mcfl">Opened ${fmt(pinOpenA)} → Now <span class="${mvA.cls}">${fmt(pinNowA)} ${mvA.arrow}</span></div>`
       + `<div class="edge-mcfl">Opened ${fmt(pinOpenB)} → Now <span class="${mvB.cls}">${fmt(pinNowB)} ${mvB.arrow}</span></div>` : '';
@@ -5851,7 +5893,7 @@ function edgeValueStripHtml(adjs){
       <div class="edge-vllegend">
         <span class="edge-vlkey"><i style="background:#3dd68c"></i>Good</span>
         <span class="edge-vlkey"><i style="background:#e0b64d"></i>Medium</span>
-        <span class="edge-vlkey"><i style="background:#4b5672"></i>Poor</span>
+        <span class="edge-vlkey"><i style="background:#e0616f"></i>Poor</span>
         <span class="edge-vlnote">Value layers active across this match read</span>
         <span class="edge-vlactive">${active} of ${TOTAL} value layers active</span>
       </div>
@@ -5901,7 +5943,9 @@ function edgeCovState(a){
   return a.gated ? 'partial' : 'missing';
 }
 function edgeCovColor(state){
-  return state === 'full' ? '#3dd68c' : state === 'partial' ? '#e0b64d' : '#4b5672';
+  // Design export: every segment carries colour (no grey run). Good=green,
+  // Medium=amber, Poor/missing=rose-red.
+  return state === 'full' ? '#3dd68c' : state === 'partial' ? '#e0b64d' : '#e0616f';
 }
 
 // Model confidence pill.
@@ -6227,8 +6271,8 @@ function renderEdgeModel(id){
   const comp = st1.components || {};
   const P1 = (e.players && e.players.p1) || {};
   const P2 = (e.players && e.players.p2) || {};
-  const p1short = mm.p1 || P1.name || 'Player 1';
-  const p2short = mm.p2 || P2.name || 'Player 2';
+  const p1short = edgeShortName(mm.p1 || P1.name || 'Player 1');
+  const p2short = edgeShortName(mm.p2 || P2.name || 'Player 2');
   const p1full = P1.name || p1short;
   const p2full = P2.name || p2short;
   const surfName = edgeCap(mm.surface || '') || '—';
@@ -6248,36 +6292,42 @@ function renderEdgeModel(id){
     </div>`;
 
   // ── Section 1: matchup ─────────────────────────────────────────────────
-  const badge = (rank, elo, arch, right) => {
-    const atp  = rank ? `<span class="edge-bdg">ATP No. ${edgeEsc(String(rank))}</span>` : '';
-    const el   = (elo != null) ? `<span class="edge-bdg elo">ELO ${elo}</span>` : '';
-    const ar   = arch ? `<span class="edge-bdg arch">${edgeEsc(String(arch).replace(/_/g, ' '))}</span>` : '';
-    return right ? ar + el + atp : atp + el + ar;
+  // ELO + playing-style archetype chips (design export: no "ATP No." chip).
+  const badge = (elo, arch) => {
+    const el = (elo != null) ? `<span class="edge-bdg elo">ELO ${elo}</span>` : '';
+    const ar = arch ? `<span class="edge-bdg arch">${edgeEsc(String(arch).replace(/_/g, ' '))}</span>` : '';
+    return el + ar;
   };
-  const segGroup = (cap, opts, active) => `
-    <span class="edge-ctxgrp">
-      <span class="edge-ctxcap">${cap}</span>
-      <span class="edge-segs">${opts.map(o =>
-        `<span class="edge-seg${o.toLowerCase() === String(active).toLowerCase() ? ' on' : ''}">${o}</span>`).join('')}</span>
-    </span>`;
+  const boLabel = mm.bestOf ? 'Bo' + mm.bestOf : '—';
+  // Match header (design export): centred tournament line, a centred name row
+  // with initials avatars (Player A left of name, Player B right), ELO + style
+  // chips under each name, and a static SURFACE / ROUND / FORMAT meta strip.
+  // The surface/best-of controls were display-only (no filtering) and are
+  // replaced by the static strip.
   const section1 = `
     <div class="edge-card">
-      <div class="edge-mtop"><span class="tour">${edgeEsc(mm.tour || '')}</span><span class="dot">·</span><span>${edgeEsc(cleanRound || '—')}</span></div>
+      <div class="edge-mtour"><span class="tour">${edgeEsc(mm.tour || '')}</span><span class="dot">·</span><span class="rnd">${edgeEsc(cleanRound || '—')}</span></div>
       <div class="edge-vsrow">
         <div class="edge-pblk">
-          <div class="nm">${edgeEsc(p1short)}</div>
-          <div class="edge-badges">${badge(m && m.p1Rank, P1.eloAll, P1.archetype, false)}</div>
+          <div class="edge-pname">
+            <span class="edge-pav a">${edgeEsc(edgeInitials(p1short))}</span>
+            <span class="nm a">${edgeEsc(p1short)}</span>
+          </div>
+          <div class="edge-badges">${badge(P1.eloAll, P1.archetype)}</div>
         </div>
         <span class="edge-vs">VS</span>
         <div class="edge-pblk r">
-          <div class="nm">${edgeEsc(p2short)}</div>
-          <div class="edge-badges">${badge(m && m.p2Rank, P2.eloAll, P2.archetype, true)}</div>
+          <div class="edge-pname">
+            <span class="nm b">${edgeEsc(p2short)}</span>
+            <span class="edge-pav b">${edgeEsc(edgeInitials(p2short))}</span>
+          </div>
+          <div class="edge-badges">${badge(P2.eloAll, P2.archetype)}</div>
         </div>
       </div>
-      <div class="edge-ctxrow">
-        ${segGroup('Surface', ['Clay', 'Hard', 'Grass'], surfName)}
-        ${segGroup('Best of', ['Bo3', 'Bo5'], mm.bestOf ? 'Bo' + mm.bestOf : '')}
-        <span class="edge-ctxnote">${edgeEsc(cleanRound || '—')} · priced on <strong>${edgeEsc(surfName)}</strong></span>
+      <div class="edge-mstrip">
+        <div class="edge-mcol"><span class="k">Surface</span><span class="v">${edgeEsc(surfName)}</span></div>
+        <div class="edge-mcol"><span class="k">Round</span><span class="v">${edgeEsc(cleanRound || '—')}</span></div>
+        <div class="edge-mcol"><span class="k">Format</span><span class="v">${edgeEsc(boLabel)}</span></div>
       </div>
     </div>`;
 
@@ -6330,7 +6380,7 @@ function renderEdgeModel(id){
     return `
       <div class="edge-vcol${first ? ' divider' : ''}">
         <div class="edge-vtop">
-          <div><div class="nm">${edgeEsc(name)}</div><div class="cap">Adjusted fair odd</div></div>
+          <div><div class="nm ${side === 'p1' ? 'a' : 'b'}">${edgeEsc(name)}</div><div class="cap">Adjusted fair odd</div></div>
           <span class="od">${edgeOdds(f && f.odds)}</span>
         </div>
         <span class="edge-vflag ${flagCls}">${edgeEsc(flagTxt)}</span>
@@ -6359,24 +6409,33 @@ function renderEdgeModel(id){
         ${valueCol('p2', p2short, fair.p2, false)}
       </div>
       <div id="edgeMarketSize">${buildMarketSignalBlock(m, e, { stateConfirmed: true })}</div>
-      <div class="edge-vfoot">
-        <div class="edge-movers">
-          <div class="edge-cap2">Biggest movers</div>
-          ${movers.length ? movers.map((a, i) => `
-            <div class="edge-mover">
-              <span class="rk">${i + 1}</span>
-              <span class="nm">${edgeEsc(a.name)}</span>
-              <span class="who">${edgeEsc(a.direction === 'p1' ? p1short : p2short)}</span>
-              <span class="dl">+${(Math.abs(a.deltaP1) * 100).toFixed(1)}pp</span>
-            </div>`).join('')
-            : `<div class="edge-mover"><span class="nm" style="color:#4b5672;">No layer moved the price.</span></div>`}
-        </div>
+    </div>`;
+
+  // ── Biggest movers (own card — design export) ──────────────────────────
+  // The three factors that moved the price most, with an Upgrade-to-Pro
+  // outline CTA. The MODEL CONFIDENCE readout is retained (it is a build
+  // addition not present in the export — flagged for the founder rather than
+  // removed here).
+  const section4b = `
+    <div class="edge-card">
+      <div class="edge-movershead">
+        <div class="l"><span class="edge-movers-t">Biggest movers</span><span class="edge-movers-sub">The three factors that moved the price most</span></div>
         <div class="edge-confbox">
-          <span class="edge-cap2" style="margin-bottom:0;">Model confidence</span>
           <span class="edge-confbig edge-pill ${conf.cls}">${conf.label}</span>
           <span class="edge-confsub">${counts.full}/${adjs.length} full · ${counts.partial} partial · ${counts.missing} missing</span>
         </div>
       </div>
+      <div class="edge-moverslist">
+        ${movers.length ? movers.map((a, i) => `
+          <div class="edge-mover">
+            <span class="rk">${i + 1}</span>
+            <span class="nm">${edgeEsc(a.name)}</span>
+            <span class="who ${a.direction === 'p1' ? 'a' : 'b'}">${edgeEsc(a.direction === 'p1' ? p1short : p2short)}</span>
+            <span class="dl">+${(Math.abs(a.deltaP1) * 100).toFixed(1)}pp</span>
+          </div>`).join('')
+          : `<div class="edge-mover"><span class="nm" style="color:#4b5672;">No layer moved the price.</span></div>`}
+      </div>
+      <a class="edge-upgrade" href="account.html">Upgrade to Pro to unlock all factors</a>
     </div>`;
 
   // ── Section 6: written analysis ────────────────────────────────────────
@@ -6426,7 +6485,7 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  body.innerHTML = header + section1 + section2 + section3 + section5 + section6;
+  body.innerHTML = header + section1 + section2 + section3 + section5 + section4b + section6;
 
   // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
   // tab's movement chart): the container above paints empty from whatever is
