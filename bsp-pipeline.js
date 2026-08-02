@@ -3548,7 +3548,7 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      this bump, cached v7 profiles carry no wue field, so layer #8 self-hides
 //      for every non-seed player until the cache ages out — the same ~370-player
 //      strand this version counter exists to prevent.
-const PROFILE_SCHEMA_VERSION = 8;
+const PROFILE_SCHEMA_VERSION = 9;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a

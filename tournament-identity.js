@@ -55,10 +55,11 @@ const CANONICAL_ALIASES = {
   'shanghai masters': 'Shanghai',
   'hamburg masters': 'Hamburg',
 
-  // Canadian Open — alternates host city year to year; TML calls it Canada Masters.
-  'montreal': 'Canadian Open',
-  'toronto': 'Canadian Open',
-  'canada masters': 'Canadian Open',
+  // Canada Masters — alternates host city year to year (Montreal/Toronto); the
+  // TML archive already calls it "Canada Masters", which is the label we keep.
+  'montreal': 'Canada Masters',
+  'toronto': 'Canada Masters',
+  'canada masters': 'Canada Masters',
 
   // Year-end / rename
   'next gen atp finals': 'Next Gen Finals',
