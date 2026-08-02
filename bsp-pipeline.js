@@ -31,6 +31,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
+const { canonicalTournament } = require('./tournament-identity');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
 // never mixed within a match (see atp-entry-fallback.js).
 const { attachWue, lookupWue } = require('./atp-entry-fallback');
@@ -3623,7 +3624,10 @@ async function fetchPlayerCareerHistory(playerKey) {
     if (!isP1 && String(f.second_player_key) !== String(playerKey)) continue;
     const didWin = (f.event_winner === 'First Player' && isP1)
       || (f.event_winner === 'Second Player' && !isP1);
-    const name = normalizeTournamentName(f.tournament_name);
+    // Key on canonical identity, not the raw display string, so city-named
+    // editions of one event (Montreal/Toronto = Canadian Open, every Masters
+    // 1000 = its bare city) resolve to a single record.
+    const { id: tid, display: name } = canonicalTournament(f.tournament_name);
     if (!name) continue;
     const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
     if (!year) continue;
@@ -3632,9 +3636,9 @@ async function fetchPlayerCareerHistory(playerKey) {
     const oppKey = isP1 ? f.second_player_key : f.first_player_key;
     const score = f.event_final_result || '';
 
-    let t = byTournament[name];
+    let t = byTournament[tid];
     if (!t) {
-      t = byTournament[name] = {
+      t = byTournament[tid] = {
         name, won: 0, lost: 0, firstYear: year, lastYear: year, _byEdition: {},
       };
     }
@@ -4503,4 +4507,5 @@ module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTour
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards };
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
+  fetchPlayerCareerHistory };

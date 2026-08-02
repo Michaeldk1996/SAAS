@@ -24,6 +24,7 @@
 // =================================================================
 const fs = require('fs');
 const path = require('path');
+const { canonicalTournament } = require('./tournament-identity');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const TML_CACHE_DIR = path.join(__dirname, 'tml-cache');
@@ -292,36 +293,53 @@ function finalizeTournament(name, byYear) {
 // Merges one player's pre-2021 TML matches into their existing history array.
 // Existing (API) editions win on any shared year; TML only fills missing years.
 function mergePlayer(history, tmlMatches) {
-  const hist = Array.isArray(history) ? history.map((t) => ({ ...t, editions: (t.editions || []).map((e) => ({ ...e })) })) : [];
+  // Group on canonical tournament identity, not display name, so an API "Toronto"
+  // row and a TML "Canada Masters" row land in the same record. Existing (API)
+  // editions win on any shared year; TML only fills missing <=2020 years. This
+  // also consolidates any already-fragmented API rows (e.g. a stale cache that
+  // still holds separate Montreal/Toronto rows) into one identity.
+  const groups = new Map(); // id -> { display, byYear:{year->matches[]}, apiYears:Set }
+  function group(id, display, fromApi) {
+    let g = groups.get(id);
+    if (!g) { g = { display, byYear: {}, apiYears: new Set() }; groups.set(id, g); }
+    if (fromApi) g.display = display; // prefer the API label for the row
+    return g;
+  }
 
-  // Group this player's TML matches by canonical (aliased) tournament name.
-  const tmlByTournament = new Map();
+  // Existing (API) editions first.
+  for (const t of (Array.isArray(history) ? history : [])) {
+    const { id, display } = canonicalTournament(t.name);
+    const g = group(id, display, true);
+    for (const ed of (t.editions || [])) {
+      const y = Number(ed.year);
+      g.apiYears.add(y);
+      if (!(y in g.byYear)) g.byYear[y] = (ed.matches || []).slice();
+    }
+  }
+
+  // TML matches, grouped by canonical id then year.
+  const tml = new Map(); // id -> { display, byYear:{year->matches[]} }
   for (const m of tmlMatches) {
     if (m.year > BACKFILL_UP_TO_YEAR) continue;
-    const display = TOURNAMENT_ALIASES[m.tourney.toLowerCase()] || m.tourney;
-    let g = tmlByTournament.get(display.toLowerCase());
-    if (!g) { g = { display, byYear: {} }; tmlByTournament.set(display.toLowerCase(), g); }
-    (g.byYear[m.year] = g.byYear[m.year] || []).push({ res: m.won ? 'W' : 'L', round: m.round, opp: m.oppName, oppKey: '', score: m.score });
+    const { id, display } = canonicalTournament(m.tourney);
+    let e = tml.get(id);
+    if (!e) { e = { display, byYear: {} }; tml.set(id, e); }
+    (e.byYear[m.year] = e.byYear[m.year] || []).push({ res: m.won ? 'W' : 'L', round: m.round, opp: m.oppName, oppKey: '', score: m.score });
   }
 
   let addedEditions = 0;
-  for (const [lcName, g] of tmlByTournament) {
-    const existingIdx = hist.findIndex((t) => (t.name || '').toLowerCase() === lcName);
-    const byYear = {};
-    if (existingIdx >= 0) {
-      for (const ed of hist[existingIdx].editions) byYear[ed.year] = ed.matches.slice();
-    }
-    for (const [yStr, ms] of Object.entries(g.byYear)) {
+  for (const [id, e] of tml) {
+    const g = group(id, e.display, false);
+    for (const [yStr, ms] of Object.entries(e.byYear)) {
       const y = Number(yStr);
-      if (byYear[y]) continue; // existing/API year wins
-      byYear[y] = ms;
+      if (g.apiYears.has(y) || (y in g.byYear)) continue; // existing/API year wins
+      g.byYear[y] = ms;
       addedEditions++;
     }
-    const display = existingIdx >= 0 ? hist[existingIdx].name : g.display;
-    const rebuilt = finalizeTournament(display, byYear);
-    if (existingIdx >= 0) hist[existingIdx] = rebuilt; else hist.push(rebuilt);
   }
 
+  const hist = [];
+  for (const g of groups.values()) hist.push(finalizeTournament(g.display, g.byYear));
   hist.sort((a, b) => (b.won + b.lost) - (a.won + a.lost));
   return { history: hist, addedEditions };
 }
@@ -454,7 +472,7 @@ async function backfillMatchesTournamentHistory(matches, profiles, opts = {}) {
     if (!byTour) {
       byTour = new Map();
       for (const m of (index.byId.get(tmlId) || [])) {
-        const disp = (TOURNAMENT_ALIASES[m.tourney.toLowerCase()] || m.tourney).toLowerCase();
+        const disp = canonicalTournament(m.tourney).id;
         let arr = byTour.get(disp); if (!arr) { arr = []; byTour.set(disp, arr); }
         arr.push(m);
       }
@@ -465,8 +483,7 @@ async function backfillMatchesTournamentHistory(matches, profiles, opts = {}) {
 
   let patched = 0, addedEditions = 0;
   for (const m of (matches || [])) {
-    const base = normalizeTournamentName(m.tour);
-    const tourLc = (TOURNAMENT_ALIASES[base.toLowerCase()] || base).toLowerCase();
+    const tourLc = canonicalTournament(m.tour).id;
     for (const side of ['p1', 'p2']) {
       const tmlId = apiToTml.get(String(m[side + 'Key']));
       if (!tmlId) continue;
