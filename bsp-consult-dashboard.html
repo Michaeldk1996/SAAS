@@ -2596,6 +2596,11 @@
   [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:#4b5672; font-family:'IBM Plex Mono',ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
   [data-page="news"] .news-livedot{ width:7px; height:7px; border-radius:50%; background:#3dd68c; box-shadow:0 0 0 3px rgba(61,214,140,0.18); flex-shrink:0; }
   [data-page="news"] .news-clock{ color:#5b6880; }
+  /* Stale feed (TEN-8, 2026-08-02): header goes amber and drops the "Live" claim
+     when news-feed.json's own generatedAt is older than NEWS_STALE_HOURS. */
+  [data-page="news"] .news-live.news-stale{ color:#c98b3a; }
+  [data-page="news"] .news-live.news-stale .news-livedot{ background:#e8a84e; box-shadow:0 0 0 3px rgba(232,168,78,0.18); }
+  [data-page="news"] .news-stalebanner{ border:1px solid rgba(232,168,78,0.35); background:rgba(232,168,78,0.07); border-radius:10px; padding:11px 14px; margin:0 0 16px; font-size:12.5px; line-height:1.5; color:#c98b3a; }
 
   /* ---- Control rows. Row 1: All-tournaments dropdown then 4 category
      chips. Row 2: search (360px) then Post-intel / Reading / Compact /
@@ -2721,7 +2726,9 @@
     <div class="news-head">
       <h1>Tennis News</h1>
       <p>Latest market and tour information</p>
-      <div class="news-live"><span class="news-livedot"></span><span>Live feed · updated <span class="news-clock" id="newsClock">--:--:--</span></span></div>
+      <!-- Freshness reflects news-feed.json's OWN generatedAt (last successful
+           fetch), NOT a wall clock. See newsRenderFreshness(). -->
+      <div class="news-live" id="newsLive"><span class="news-livedot"></span><span>Loading feed…</span></div>
     </div>
     <!-- Row 1: All-tournaments dropdown first, then the 4 derived category chips.
          Category is derived client-side (keyword classifier); no category field
@@ -3392,7 +3399,6 @@ const NEWS_CATEGORIES = ['Match Reports', 'Withdrawals & Injuries', 'Tour News',
 let _newsRangeHours = 168;  // default matches the export's "Last 7 days"
 let _newsSearch = '';
 let _newsCat = '';          // '' = all; else one of NEWS_CATEGORIES
-let _newsClockTimer = null;
 let _eloRoster = null;      // surname(lower) -> { label:"I. Surname", elo }
 // View mode (TEN-8 export rebuild). The export is a Reading/Compact toggle, both
 // fully built — Reading = restyled cards (export default), Compact = dense wire
@@ -3525,15 +3531,48 @@ function newsFmtDateTime(ts){
   catch (e) { return new Date(ts).toLocaleString('en-GB'); }
 }
 
-// Live HH:MM:SS clock in the header — absolute, tz-bound. Started once.
-function newsStartClock(){
-  const tick = () => {
-    const el = document.getElementById('newsClock'); if (!el) return;
-    try { el.textContent = new Date().toLocaleTimeString('en-GB', { hour12:false, timeZone:newsTz() }); }
-    catch (e) { el.textContent = new Date().toLocaleTimeString('en-GB', { hour12:false }); }
-  };
-  tick();
-  if (!_newsClockTimer) _newsClockTimer = setInterval(tick, 1000);
+// Feed freshness (TEN-8, 2026-08-02). The header used to tick a live wall clock
+// ("updated 14:28:03"), which lied: it reported the current time, never the
+// feed's own fetch time. When api-tennis get_news went empty ({"success":1}, no
+// result array) the builder correctly kept the last good news-feed.json, so its
+// generatedAt froze — but the ticking clock hid that behind a live label. We now
+// bind the header to news-feed.json's own generatedAt and drop the "Live" claim
+// once it goes stale, so a stalled source is visible instead of masked. Nothing
+// is fabricated or backfilled — only the label tells the truth.
+//
+// NEWS_STALE_HOURS = 24: the pipeline attempts a get_news pull every 15 min, and
+// a healthy feed refreshes several times a day, so a generatedAt older than a
+// full day means the source has genuinely stopped delivering. Adjust if the
+// source's healthy cadence changes.
+const NEWS_STALE_HOURS = 24;
+function newsFreshness(){
+  // generatedAt is ISO-with-Z (Date.toISOString); parse it directly. Do NOT use
+  // newsParseTs here — that helper appends 'Z' for the feed's space-separated
+  // published_at format and would yield "…ZZ" (NaN) on an already-ISO string.
+  const raw = _newsData && _newsData.generatedAt;
+  let g = raw ? Date.parse(raw) : NaN;
+  if (!isFinite(g) && raw) g = newsParseTs(raw); // fallback for a space-separated stamp
+  if (!isFinite(g)) return { known:false };
+  const ageH = (Date.now() - g) / 3600000;
+  return { known:true, ts:g, ageH, stale: ageH > NEWS_STALE_HOURS };
+}
+// Rewrite the header freshness line from the feed's real generatedAt.
+function newsRenderFreshness(){
+  const box = document.getElementById('newsLive'); if (!box) return;
+  const f = newsFreshness();
+  if (!f.known){
+    box.className = 'news-live';
+    box.innerHTML = `<span class="news-livedot"></span><span>Feed status unavailable</span>`;
+    return;
+  }
+  const when = newsEscape(newsFmtDateTime(f.ts));
+  if (f.stale){
+    box.className = 'news-live news-stale';
+    box.innerHTML = `<span class="news-livedot"></span><span>Feed not live · last updated ${when}</span>`;
+  } else {
+    box.className = 'news-live';
+    box.innerHTML = `<span class="news-livedot"></span><span>Live feed · updated ${when}</span>`;
+  }
 }
 
 // Reading / Compact toggle. Persists to localStorage['stennisfy.newsView'].
@@ -3583,7 +3622,7 @@ function newsAgo(ts){
 async function loadNews(){
   try { const v = localStorage.getItem('stennisfy.newsView'); if (v === 'compact' || v === 'reading') _newsView = v; } catch (e) {}
   newsSyncViewUI(); // reflect saved view before data lands
-  newsStartClock();  // live header clock (tz-bound)
+  newsRenderFreshness();  // header freshness from feed's own generatedAt (updates again after load)
   renderNewsChips(); // category filter chips
   newsRenderComposer(); // post-intel control (founder only)
   loadNewsRoster();  // Elo surname map for player attribution — never blocks articles
@@ -3777,8 +3816,17 @@ function renderNews(){
   if (!listEl || !_newsData) return;
 
   newsSyncViewUI();
+  newsRenderFreshness();   // header freshness from feed's own generatedAt
   renderNewsChips();       // category chips (row 1)
   newsRenderComposer();    // post-intel button + inline panel (founder only)
+
+  // Honesty banner (TEN-8): when the feed's generatedAt is stale, say so above
+  // the list rather than presenting old articles under a live label. No backfill.
+  const _fresh = newsFreshness();
+  const staleBanner = (_fresh.known && _fresh.stale)
+    ? `<div class="news-stalebanner">No new articles since ${newsEscape(newsFmtDateTime(_fresh.ts))}. `
+      + `The news source has returned nothing new for ${Math.floor(_fresh.ageH / 24)} day(s) — the items below are the last retrieved, not fresh.</div>`
+    : '';
 
   // Build the unified feed for a given window. Wire articles always; intel + ASAP
   // fold in as ordinary rows, but only when no category filter is active (they
@@ -3815,7 +3863,7 @@ function renderNews(){
   }
 
   if (!items.length){
-    listEl.innerHTML = `<div class="news-empty">`
+    listEl.innerHTML = staleBanner + `<div class="news-empty">`
       + (_newsSearch ? `No items match “${newsEscape(_newsSearch)}”.`
          : _newsCat ? `No ${newsEscape(_newsCat)} items in the last ${_newsRangeHours >= 168 ? '7 days' : _newsRangeHours + ' hours'}.`
          : `No items published in the last ${_newsRangeHours >= 168 ? '7 days' : _newsRangeHours + ' hours'}.`)
@@ -3837,7 +3885,7 @@ function renderNews(){
 
   const admin = isBspAdmin();
   const renderGroup = _newsView === 'compact' ? newsRenderCompactGroup : newsRenderReadingGroup;
-  listEl.innerHTML = widenNote + groups.map(g => {
+  listEl.innerHTML = staleBanner + widenNote + groups.map(g => {
     const header = g.key === '__nodate__' ? ''
       : `<div class="news-daterow"><span class="news-datelabel">${newsEscape(g.key)}</span><span class="news-daterule"></span></div>`;
     return header + renderGroup(g.items, admin);
