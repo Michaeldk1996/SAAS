@@ -1062,6 +1062,12 @@
   .modal-analysis .akm-icon{ width:32px; height:32px; border-radius:9px; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.34); display:flex; align-items:center; justify-content:center; flex:none; }
   .modal-analysis .akm-title{ font-size:16px; font-weight:800; }
   .modal-analysis .akm-sub{ font-size:11.5px; color:#5b6880; margin-top:1px; }
+  /* The card deep-links to the top-level Stennisfy Model page, so it carries a
+     button affordance (hover tint + chevron), matching the tab cards' chevron. */
+  .modal-analysis .akm[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
+  .modal-analysis .akm[role="button"]:hover{ border-color:rgba(91,155,255,0.4); background:#0b0f18; }
+  .modal-analysis .akm[role="button"]:focus-visible{ outline:2px solid rgba(91,155,255,0.55); outline-offset:2px; }
+  .modal-analysis .akm-chev{ margin-left:auto; color:#5b6880; font-size:20px; line-height:1; align-self:center; }
   .modal-analysis .akm-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
   .modal-analysis .akm-col{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
   .modal-analysis .akm-col.divider{ border-right:1px solid rgba(255,255,255,0.09); }
@@ -5004,6 +5010,16 @@ function openPlayerProfileFromMatch(key){
   if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
   document.querySelector('#mainNav button[data-tab="players"]').click();
   showPlayerProfile(key);
+}
+
+// The Key Factors tab's Stennisfy Model card deep-links here: there is no model
+// tab inside this modal (the Stennisfy Model is a top-level page), so this closes
+// the analysis overlay first — otherwise the page switch happens behind it and
+// reads as a dead click — then opens the Edge Model page for this exact match.
+function openEdgeModelFromMatch(id){
+  if (id == null) return;
+  if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
+  if (typeof openEdgeModel === 'function') openEdgeModel(id);
 }
 // Shared clickable-to-profile wiring (avatar AND name). Returns the onclick/
 // style/title attrs when a profile exists for this key, else ''. stopPropagation
@@ -9906,12 +9922,19 @@ function akH2HBlock(m){
 function akTournamentBlock(m){
   // Export header is TWO lines: the tournament in UI type above, then a
   // `TOURNAMENT · {round}` small-caps label beneath (item 18). Round is parsed
-  // from `tournamentRound` ("ATP Montreal - 1/64-finals" → "1/64-finals"); the
-  // ATP-tier suffix the export shows ("· ATP 500") is NOT in the feed, so the
-  // title is the event name alone rather than a fabricated tier.
+  // from `tournamentRound` ("ATP Montreal - 1/64-finals" → "1/64-finals").
+  // The "City · TIER" tier suffix the export shows isn't in the feed's tourBadge
+  // (only "ATP"), but it IS available locally (ruling: fix it with what you have):
+  // the per-draw venue.category the pipeline attaches, falling back to the static
+  // TOURNAMENT_CATALOG lookup by event name. Both are curated public calendar
+  // facts, not invented data; when neither knows the event, the title is the name
+  // alone rather than a fabricated tier.
   const cleanTour = (m.tour || 'Tournament').replace(/^(ATP|WTA)\s+/i, '');
+  const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === cleanTour.toLowerCase());
+  const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';
+  const titleText = tier ? `${cleanTour} · ${tier}` : cleanTour;
   const roundSeg = String(m.tournamentRound || '').split(/\s+-\s+/).slice(1).join(' - ').trim();
-  const title = `<div class="akt-title">${psEsc(cleanTour)}</div>`;
+  const title = `<div class="akt-title">${psEsc(titleText)}</div>`;
   const labelRow = `<div class="akb-head"><span class="akb-label">Tournament${roundSeg ? ` · ${psEsc(roundSeg)}` : ''}</span><span class="akb-chev">›</span></div>`;
   // Right column holds a record when the player has history at this event, or a
   // status word ("first appearance") when he does not (item 19).
@@ -10096,10 +10119,15 @@ function akWeatherBlock(m){
 // on the Pinnacle box's "vs fair" line, per the standing value-badge ruling.
 function akModelBlock(m){
   const icon = `<span class="akm-icon"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" stroke="#5b9bff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 H16 V10" stroke="#5b9bff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
-  const head = `<div class="akm-head">${icon}<div><div class="akm-title">Stennisfy Model</div><div class="akm-sub">Stennisfy adjusted price vs the market</div></div></div>`;
+  const head = `<div class="akm-head">${icon}<div><div class="akm-title">Stennisfy Model</div><div class="akm-sub">Stennisfy adjusted price vs the market</div></div><span class="akm-chev" aria-hidden="true">›</span></div>`;
+  // The card deep-links to the top-level Stennisfy Model page for THIS match
+  // (ruling: "exactly to the stennisfy model"). The empty state links too — the
+  // model page carries its own honest empty state for unpriced matches.
+  const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
+  const nav = ` role="button" tabindex="0" aria-label="Open the Stennisfy Model for this match" onclick="openEdgeModelFromMatch('${idAttr}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEdgeModelFromMatch('${idAttr}')}"`;
   const vs = m.valueSnapshot;
   if (!vs || vs.fairP1 == null || vs.fairP2 == null){
-    return `<div class="akm">${head}<div class="akm-empty">The model has not published an adjusted fair price for this match yet.</div></div>`;
+    return `<div class="akm"${nav}>${head}<div class="akm-empty">The model has not published an adjusted fair price for this match yet.</div></div>`;
   }
   const pin = m.pinnacleOpen || null;
   const pinBookKey = (() => {
@@ -10130,16 +10158,17 @@ function akModelBlock(m){
       ? `Opened ${Number(pinOpen).toFixed(2)}${pinNow != null ? ` → Now <span style="color:${arrowColor};">${pinNow.toFixed(2)} ${arrow}</span>` : ''}`
       : '—';
     const pinBox = `<div class="akm-mkt"><span class="akm-mkt-cap">Pinnacle</span><span class="akm-mkt-px">${pinPx}</span><span class="akm-mkt-mv">${pinMove}</span><span class="akm-mkt-gap" style="color:${pinGapColor};">${pinGap}</span></div>`;
-    // Best soft book box: real price + bookmaker. The "vs fair" gap here uses the
-    // book's RAW implied probability (best odds cannot be de-vigged), so it is an
-    // indicative comparison against the de-vigged fair price — flagged for ruling.
+    // Best soft book box: real price + bookmaker. A "vs fair" pp gap is deliberately
+    // NOT shown here (ruling: take the most logical option). Best odds can't be
+    // de-vigged — the best price per side can come from different books, and even a
+    // single book's price still carries its overround — so fairP − 1/softPx would
+    // fold the book's margin into the "edge", a systematically biased, apples-to-
+    // oranges number next to Pinnacle's real edgeVsPinnacle. The price + book name
+    // are the actionable facts; the gap is em-dashed rather than shown misleadingly.
     const bo = best ? (side === 1 ? best.p1 : best.p2) : null;
     const softPx = bo && bo.price != null ? Number(bo.price) : null;
     const softName = bo && bo.bookmaker ? bo.bookmaker : '';
-    const softEdge = softPx != null && softPx > 0 ? (fairP - 1 / softPx) : null;
-    const softGap = softEdge != null ? `● ${softEdge > 0 ? '+' : '−'}${Math.abs(softEdge * 100).toFixed(1)}pp vs fair` : '● —';
-    const softGapColor = softEdge == null ? '#4b5672' : (softEdge > 0 ? '#4fb98a' : '#d9737f');
-    const softBox = `<div class="akm-mkt"><span class="akm-mkt-cap">Best soft book</span><span class="akm-mkt-px">${softPx != null ? softPx.toFixed(2) : '—'}</span><span class="akm-mkt-mv">${softName ? psEsc(softName) : '—'}</span><span class="akm-mkt-gap" style="color:${softGapColor};">${softGap}</span></div>`;
+    const softBox = `<div class="akm-mkt"><span class="akm-mkt-cap">Best soft book</span><span class="akm-mkt-px">${softPx != null ? softPx.toFixed(2) : '—'}</span><span class="akm-mkt-mv">${softName ? psEsc(softName) : '—'}</span><span class="akm-mkt-gap" style="color:#4b5672;" title="Best-book prices can't be de-vigged, so a like-for-like gap vs the fair price isn't available.">● —</span></div>`;
     return `<div class="akm-col${divider ? ' divider' : ''}">
       <div class="akm-top"><div><span class="akm-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><div class="akm-cap">Adjusted fair odd</div></div><span class="akm-fair">${fairOdd}</span></div>
       ${flag}
@@ -10148,7 +10177,7 @@ function akModelBlock(m){
   };
   const c1 = col(1, m.p1, ANALYSIS_P1_COLOR, vs.fairP1, vs.edgeVsPinnacleP1, true);
   const c2 = col(2, m.p2, ANALYSIS_P2_COLOR, vs.fairP2, vs.edgeVsPinnacleP2, false);
-  return `<div class="akm">${head}<div class="akm-cols">${c1}${c2}</div></div>`;
+  return `<div class="akm"${nav}>${head}<div class="akm-cols">${c1}${c2}</div></div>`;
 }
 
 // --- block: progression ---
