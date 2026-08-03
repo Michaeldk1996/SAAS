@@ -126711,28 +126711,13 @@
         }
       ]
     },
-    "live": false,
+    "live": true,
     "liveStatus": "Interrupted",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "7-6(7), 2-6",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 2,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "matchStats": {
       "p1": {
@@ -142957,28 +142942,24 @@
         }
       ]
     },
-    "live": false,
+    "live": true,
     "liveStatus": "Interrupted",
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "4-6, 6-4",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "matchStats": {
       "p1": {
