@@ -122953,28 +122953,13 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": "Interrupted",
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "3-6, 1-0",
-      "sets": [
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 1,
-          "p2": 0
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "matchStats": {
       "p1": {
@@ -127706,28 +127691,28 @@
       ]
     },
     "live": false,
-    "liveStatus": "Interrupted",
+    "liveStatus": null,
     "liveScore": null,
     "liveGameScore": null,
     "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "4-6, 1-2",
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "4-6, 4-6",
       "sets": [
         {
           "p1": 4,
           "p2": 6
         },
         {
-          "p1": 1,
-          "p2": 2
+          "p1": 4,
+          "p2": 6
         }
       ],
       "p1Sets": 0,
       "p2Sets": 2,
-      "winner": null
+      "winner": "p2"
     },
-    "finalScore": null,
     "matchStats": {
       "p1": {
         "Service:Aces": 0,
@@ -146111,28 +146096,28 @@
       ]
     },
     "live": false,
-    "liveStatus": "Interrupted",
+    "liveStatus": null,
     "liveScore": null,
     "liveGameScore": null,
     "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "6-3, 2-1",
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "6-3, 6-1",
       "sets": [
         {
           "p1": 6,
           "p2": 3
         },
         {
-          "p1": 2,
+          "p1": 6,
           "p2": 1
         }
       ],
       "p1Sets": 2,
       "p2Sets": 0,
-      "winner": null
+      "winner": "p1"
     },
-    "finalScore": null,
     "matchStats": {
       "p1": {
         "Service:Aces": 4,
@@ -168864,24 +168849,29 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": "Interrupted",
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "4-6",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "matchStats": {
       "p1": {
@@ -171987,24 +171977,29 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": "Interrupted",
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "4-5",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 5
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "matchStats": {
       "p1": {
@@ -192419,15 +192414,25 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
         "p1": 4,
-        "p2": 5
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 40",
+    "liveGameScore": "0 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
@@ -195380,22 +195385,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Interrupted",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "oddsMovement": {
@@ -196545,7 +196539,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 6-1",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "b84705609fe51f48fa0406f2661aec1e",
@@ -201962,21 +201971,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "30 - 30",
-    "liveServer": "p2",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2844_m-berrettini.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "oddsMovement": {
@@ -204962,16 +204960,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
         "p1": 4,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 1
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "oddsMovement": {
@@ -207499,16 +207507,10 @@
       ]
     },
     "live": false,
-    "liveStatus": "Interrupted",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/557_a-galarneau.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1083_v-kopriva.jpg",
     "oddsMovement": {
@@ -208808,24 +208810,24 @@
       "edgeVsPinnacleP2": 0.084,
       "ts": "2026-08-01T18:16:46.989Z"
     },
-    "finalScore": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "4-6, 1-2",
+    "finalScore": {
+      "display": "4-6, 4-6",
       "sets": [
         {
           "p1": 4,
           "p2": 6
         },
         {
-          "p1": 1,
-          "p2": 2
+          "p1": 4,
+          "p2": 6
         }
       ],
       "p1Sets": 0,
       "p2Sets": 2,
-      "winner": null
-    }
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12151376",
