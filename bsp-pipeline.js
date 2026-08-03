@@ -2905,10 +2905,18 @@ function formSetsFromFixture(fixture, isFirst) {
 function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // Singles across every tour tier (Atp/Challenger/Itf "... Singles"), never
   // doubles. The wide recent-form fetch carries no event_type_key, so this is
-  // where tour-tier scoping happens. Main-draw, decided matches only.
+  // where tour-tier scoping happens. Decided matches only.
+  //
+  // Qualifying-round matches ARE included here and count toward the form % —
+  // founder ruling 2026-08-03 (TEN-8, "include_and_count"): a player who comes
+  // THROUGH qualifying (e.g. Popyrin beating Kokkinakis to reach Montreal) was
+  // otherwise left showing only his older main-draw form, which reads as stale.
+  // Each row is tagged `qualifying` so the Form tab can mark it 'Q'. This is the
+  // ONLY recent-form path that includes qualifying; every other stat (surface
+  // win %, career/year tables, season rows) still filters to main-draw only.
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
   const clean = (fixtures || [])
-    .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status) && f.event_qualification === 'False')
+    .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status))
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
 
@@ -2932,6 +2940,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
       sets: formSetsFromFixture(f, isFirst),
       retired: f.event_status === 'Retired',
       walkover: f.event_status === 'Walk Over',
+      qualifying: f.event_qualification === 'True',
       eventKey: f.event_key,
     };
   });
