@@ -124,6 +124,25 @@ function lastName(name) {
   return (name || '').trim().split(/\s+/).pop().toLowerCase();
 }
 
+// Cross-feed surname key for matching an Odds-API event to its API-Tennis
+// fixture. The two feeds disagree on three things that break a naive last-token
+// compare and leave the card with no player key (so no recent form / H2H /
+// stats): generational suffixes ("Martin Damm Jr." vs "M. Damm"), compound
+// surnames punctuated differently ("Carreno Busta" vs "Carreno-Busta"), and
+// accents. Normalise all three, drop the suffix, and take the final surname
+// token — the pair still has to match on BOTH players (see findApiTennisFixture),
+// so collapsing to one token keeps collision risk as low as the old lastName().
+const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
+function normSurname(name) {
+  const toks = (name || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .toLowerCase()
+    .replace(/[.\-]/g, ' ')                            // hyphen/dot -> space
+    .trim().split(/\s+/)
+    .filter(t => t && !NAME_SUFFIXES.has(t));
+  return toks[toks.length - 1] || '';
+}
+
 function surfaceFromEvent(event) {
   const s = (event.sport_title || '').toLowerCase();
   if (s.includes('wimbledon')) return 'grass';
@@ -1632,11 +1651,11 @@ async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
 // MERGE — match an Odds API event to its API-Tennis fixture by last name
 // =================================================================
 function findApiTennisFixture(oddsEvent, apiTennisFixtures) {
-  const p1Last = lastName(oddsEvent.home_team);
-  const p2Last = lastName(oddsEvent.away_team);
+  const p1Last = normSurname(oddsEvent.home_team);
+  const p2Last = normSurname(oddsEvent.away_team);
   return apiTennisFixtures.find(f =>
-    (lastName(f.event_first_player) === p1Last && lastName(f.event_second_player) === p2Last) ||
-    (lastName(f.event_first_player) === p2Last && lastName(f.event_second_player) === p1Last)
+    (normSurname(f.event_first_player) === p1Last && normSurname(f.event_second_player) === p2Last) ||
+    (normSurname(f.event_first_player) === p2Last && normSurname(f.event_second_player) === p1Last)
   );
 }
 
@@ -1760,7 +1779,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // happened to list the players in the opposite order from the odds feed.
   // Established once here via the same lastName() comparison already used
   // throughout this file, and used consistently below instead of assuming order.
-  const p1IsFixtureFirst = lastName(fixture.event_first_player) === lastName(oddsEvent.home_team);
+  const p1IsFixtureFirst = normSurname(fixture.event_first_player) === normSurname(oddsEvent.home_team);
   const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
   const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
   match.p1Key = p1Key;
@@ -1794,15 +1813,20 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   if (h2hData) {
     match.h2h = summarizeH2H(h2hData.headToHead, oddsEvent.home_team);
     match.h2h.matches = buildH2HMatchList(h2hData.headToHead, oddsEvent.home_team, surfaceMap);
-    const [p1Form, p2Form] = await Promise.all([
-      buildRecentFormForMatch(p1Key, surfaceMap),
-      buildRecentFormForMatch(p2Key, surfaceMap),
-    ]);
-    match.p1RecentForm = p1Form.pct;
-    match.p2RecentForm = p2Form.pct;
-    match.p1RecentFormMatches = p1Form.matches;
-    match.p2RecentFormMatches = p2Form.matches;
   }
+  // Recent form is a per-player stat (each player's own last-N results) and is
+  // wholly independent of the odds feed and of H2H. It must populate whenever we
+  // have player keys — even when the two have never met or the H2H call errored.
+  // It used to live inside the `if (h2hData)` block above, so any card whose H2H
+  // fetch came back empty rendered blank form bars despite carrying valid keys.
+  const [p1Form, p2Form] = await Promise.all([
+    buildRecentFormForMatch(p1Key, surfaceMap),
+    buildRecentFormForMatch(p2Key, surfaceMap),
+  ]);
+  match.p1RecentForm = p1Form.pct;
+  match.p2RecentForm = p2Form.pct;
+  match.p1RecentFormMatches = p1Form.matches;
+  match.p2RecentFormMatches = p2Form.matches;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
@@ -2498,15 +2522,20 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   if (h2hData) {
     match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
     match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
-    const [p1Form, p2Form] = await Promise.all([
-      buildRecentFormForMatch(p1Key, surfaceMap),
-      buildRecentFormForMatch(p2Key, surfaceMap),
-    ]);
-    match.p1RecentForm = p1Form.pct;
-    match.p2RecentForm = p2Form.pct;
-    match.p1RecentFormMatches = p1Form.matches;
-    match.p2RecentFormMatches = p2Form.matches;
   }
+  // Recent form is a per-player stat (each player's own last-N results) and is
+  // wholly independent of the odds feed and of H2H. It must populate whenever we
+  // have player keys — even when the two have never met or the H2H call errored.
+  // It used to live inside the `if (h2hData)` block above, so any card whose H2H
+  // fetch came back empty rendered blank form bars despite carrying valid keys.
+  const [p1Form, p2Form] = await Promise.all([
+    buildRecentFormForMatch(p1Key, surfaceMap),
+    buildRecentFormForMatch(p2Key, surfaceMap),
+  ]);
+  match.p1RecentForm = p1Form.pct;
+  match.p2RecentForm = p2Form.pct;
+  match.p1RecentFormMatches = p1Form.matches;
+  match.p2RecentFormMatches = p2Form.matches;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
@@ -2654,15 +2683,20 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   if (h2hData) {
     match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
     match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
-    const [p1Form, p2Form] = await Promise.all([
-      buildRecentFormForMatch(p1Key, surfaceMap),
-      buildRecentFormForMatch(p2Key, surfaceMap),
-    ]);
-    match.p1RecentForm = p1Form.pct;
-    match.p2RecentForm = p2Form.pct;
-    match.p1RecentFormMatches = p1Form.matches;
-    match.p2RecentFormMatches = p2Form.matches;
   }
+  // Recent form is a per-player stat (each player's own last-N results) and is
+  // wholly independent of the odds feed and of H2H. It must populate whenever we
+  // have player keys — even when the two have never met or the H2H call errored.
+  // It used to live inside the `if (h2hData)` block above, so any card whose H2H
+  // fetch came back empty rendered blank form bars despite carrying valid keys.
+  const [p1Form, p2Form] = await Promise.all([
+    buildRecentFormForMatch(p1Key, surfaceMap),
+    buildRecentFormForMatch(p2Key, surfaceMap),
+  ]);
+  match.p1RecentForm = p1Form.pct;
+  match.p2RecentForm = p2Form.pct;
+  match.p1RecentFormMatches = p1Form.matches;
+  match.p2RecentFormMatches = p2Form.matches;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
