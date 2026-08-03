@@ -2765,7 +2765,21 @@
       "edgeVsPinnacleP1": -0.084,
       "edgeVsPinnacleP2": 0.084,
       "ts": "2026-08-01T18:16:46.989Z"
-    }
+    },
+    "finalScore": {
+      "display": "0-0",
+      "sets": [
+        {
+          "p1": 0,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 0,
+      "winner": null
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "e9ee4abeb226d92133c912d5b1d2eefe",
@@ -146193,25 +146207,20 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "interrupted": false,
     "partialScore": null,
-    "finalScore": {
-      "display": "0-0",
-      "sets": [
-        {
-          "p1": 0,
-          "p2": 0
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 0,
-      "winner": null
-    },
+    "finalScore": null,
     "matchStats": null,
     "setStats": null,
     "oddsMovement": {
