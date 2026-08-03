@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-08-03T13:50:12.730Z",
+ "updated": "2026-08-03T16:30:21.384Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -1837,6 +1837,15 @@
    "flagged": 38,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-08-03T16:30:21.384Z",
+   "run": "30832205870",
+   "priced": 39,
+   "logged": 203,
+   "flagged": 37,
+   "newlyLogged": 0,
+   "newlyFrozen": 0
   }
  ],
  "flags": {
@@ -3254,7 +3263,7 @@
    "status": "finished",
    "finalScore": "1-6, 6-1, 6-4",
    "modelFairLast": 0.6131,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151052": {
    "key": "12151052",
@@ -3317,7 +3326,7 @@
    "status": "finished",
    "finalScore": "4-6, 7-5, 6-4",
    "modelFairLast": 0.2354,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151283": {
    "key": "12151283",
@@ -3338,7 +3347,7 @@
    "status": "finished",
    "finalScore": "6-7(7), 3-6",
    "modelFairLast": 0.4095,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151287": {
    "key": "12151287",
@@ -3359,7 +3368,7 @@
    "status": "finished",
    "finalScore": "3-6, 7-5, 4-6",
    "modelFairLast": 0.5462,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151373": {
    "key": "12151373",
@@ -3467,10 +3476,10 @@
    "modelFairEntry": 0.3658,
    "valueSnapshot": null,
    "firstSeen": "2026-08-01T00:27:30.979Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.3658,
-   "lastSeen": "2026-08-01T13:27:33.092Z"
+   "status": "finished",
+   "finalScore": "0-0",
+   "modelFairLast": 0.3744,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151380": {
    "key": "12151380",
@@ -3490,8 +3499,8 @@
    "firstSeen": "2026-08-01T00:27:30.979Z",
    "status": "interrupted",
    "finalScore": "7-6(7), 2-5",
-   "modelFairLast": 0.3039,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.3044,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151381": {
    "key": "12151381",
@@ -3572,7 +3581,7 @@
    "status": "finished",
    "finalScore": "7-6(3), 5-3",
    "modelFairLast": 0.6023,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151386": {
    "key": "12151386",
@@ -3644,7 +3653,7 @@
    "status": "finished",
    "finalScore": "3-6, 3-6",
    "modelFairLast": 0.344,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151438": {
    "key": "12151438",
@@ -3860,7 +3869,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-3, 3-6",
    "modelFairLast": 0.3165,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151471": {
    "key": "12151471",
@@ -3881,7 +3890,7 @@
    "status": "finished",
    "finalScore": "6-7(6), 6-4, 6-4",
    "modelFairLast": 0.7066,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151476": {
    "key": "12151476",
@@ -3902,7 +3911,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.4083,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151672": {
    "key": "12151672",
@@ -4049,7 +4058,7 @@
    "status": "interrupted",
    "finalScore": "4-6, 5-4",
    "modelFairLast": 0.4793,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "12151681": {
    "key": "12151681",
@@ -4885,8 +4894,8 @@
    "firstSeen": "2026-08-01T13:27:33.092Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4766,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.4775,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "89000ae58cd0b4f88f03639dcf8e3baa": {
    "key": "89000ae58cd0b4f88f03639dcf8e3baa",
@@ -4928,7 +4937,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7178,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "74dd3f46547ada7019ee9f424ddc8df0": {
    "key": "74dd3f46547ada7019ee9f424ddc8df0",
@@ -4970,7 +4979,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2307,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "3302c08d3c2c0b1fb840c8863280aa3f": {
    "key": "3302c08d3c2c0b1fb840c8863280aa3f",
@@ -5011,8 +5020,8 @@
    "firstSeen": "2026-08-01T17:18:55.120Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4737,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.4781,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "308af4d9a1ee36ced544dc307e3a0967": {
    "key": "308af4d9a1ee36ced544dc307e3a0967",
@@ -5033,7 +5042,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.479,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "7a609fe9cdfc82ed6d9c93e42f5cd6b5": {
    "key": "7a609fe9cdfc82ed6d9c93e42f5cd6b5",
@@ -5054,7 +5063,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6396,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "f0a2c84a147c9366379080657103938f": {
    "key": "f0a2c84a147c9366379080657103938f",
@@ -5075,7 +5084,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.612,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "6fd6d72f6a69fd57d3bf719f6c8ed28f": {
    "key": "6fd6d72f6a69fd57d3bf719f6c8ed28f",
@@ -5096,7 +5105,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3622,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "2620af8a13e0bd459f6cddf8217812ff": {
    "key": "2620af8a13e0bd459f6cddf8217812ff",
@@ -5117,7 +5126,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2731,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "ac67d3a7c8aea695d06a175c5df32e69": {
    "key": "ac67d3a7c8aea695d06a175c5df32e69",
@@ -5137,8 +5146,8 @@
    "firstSeen": "2026-08-01T17:18:55.120Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6806,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.6795,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "015fd7847f4733822f68790fc1d3c88d": {
    "key": "015fd7847f4733822f68790fc1d3c88d",
@@ -5159,7 +5168,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4191,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "702197d604aee39050a66d572b226eee": {
    "key": "702197d604aee39050a66d572b226eee",
@@ -5200,8 +5209,8 @@
    "firstSeen": "2026-08-01T18:18:41.089Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5469,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.5458,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "b84705609fe51f48fa0406f2661aec1e": {
    "key": "b84705609fe51f48fa0406f2661aec1e",
@@ -5222,7 +5231,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5522,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "80d0f22c6bbb11363e8bf8cc51e172f5": {
    "key": "80d0f22c6bbb11363e8bf8cc51e172f5",
@@ -5263,8 +5272,8 @@
    "firstSeen": "2026-08-02T06:24:40.277Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5062,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.5058,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "f709354ee8468a68f8cd8a020e75b699": {
    "key": "f709354ee8468a68f8cd8a020e75b699",
@@ -5284,8 +5293,8 @@
    "firstSeen": "2026-08-02T06:24:40.277Z",
    "status": "live",
    "finalScore": null,
-   "modelFairLast": 0.3865,
-   "lastSeen": "2026-08-02T23:39:53.481Z"
+   "modelFairLast": 0.3931,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "ebf84115a5515cbf9115f35102d69d3d": {
    "key": "ebf84115a5515cbf9115f35102d69d3d",
@@ -5306,7 +5315,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2221,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "e9ee4abeb226d92133c912d5b1d2eefe": {
    "key": "e9ee4abeb226d92133c912d5b1d2eefe",
@@ -5327,7 +5336,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4963,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "99f056f73df7df8250dc68a78321b005": {
    "key": "99f056f73df7df8250dc68a78321b005",
@@ -5347,8 +5356,8 @@
    "firstSeen": "2026-08-02T06:24:40.277Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3172,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.3169,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "32fd756d34f7d41943763c9994e5fee9": {
    "key": "32fd756d34f7d41943763c9994e5fee9",
@@ -5369,7 +5378,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5101,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "4507bf7e74c2470db574de51cd05fa0f": {
    "key": "4507bf7e74c2470db574de51cd05fa0f",
@@ -5389,8 +5398,8 @@
    "firstSeen": "2026-08-02T06:24:40.277Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4241,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.4242,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "90a91956d61f7018e429f2530ee910a7": {
    "key": "90a91956d61f7018e429f2530ee910a7",
@@ -5411,7 +5420,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2502,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "341f3e5250be46d4bb3f0a9ac077f54f": {
    "key": "341f3e5250be46d4bb3f0a9ac077f54f",
@@ -5432,7 +5441,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4846,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "9000d5a71073fa0e6b5e8ec2ef33c4db": {
    "key": "9000d5a71073fa0e6b5e8ec2ef33c4db",
@@ -5453,7 +5462,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5609,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "f83b748a46e5e0b6a8a6598d4e0e2736": {
    "key": "f83b748a46e5e0b6a8a6598d4e0e2736",
@@ -5473,8 +5482,8 @@
    "firstSeen": "2026-08-02T09:12:28.438Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.618,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "modelFairLast": 0.6201,
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "0c212d85147c2b742bbfb0cdaaceaad6": {
    "key": "0c212d85147c2b742bbfb0cdaaceaad6",
@@ -5495,7 +5504,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6217,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "fe34e2f631f79d4a636ca69302fb3497": {
    "key": "fe34e2f631f79d4a636ca69302fb3497",
@@ -5516,7 +5525,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6942,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   },
   "d872deb964ec915a944e2b1707c0d0ab": {
    "key": "d872deb964ec915a944e2b1707c0d0ab",
@@ -5537,7 +5546,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3194,
-   "lastSeen": "2026-08-03T13:50:12.730Z"
+   "lastSeen": "2026-08-03T16:30:21.384Z"
   }
  }
 }
