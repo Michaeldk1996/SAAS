@@ -3939,6 +3939,92 @@ async function runPipeline() {
   }
 
   // -----------------------------------------------------------------
+  // TOURNAMENT-LABEL CANONICALISATION + CROSS-LABEL DEDUP
+  //
+  // The board is assembled from two providers that name the SAME event
+  // differently: The Odds API drives the priced cards (e.g. "ATP Canadian
+  // Open", full player names) and API-Tennis fills fixture-only / completed
+  // cards (e.g. "ATP Montreal", abbreviated "P. Carreno-Busta"). When the two
+  // disagree on the tournament string the event splits into two filter chips
+  // on the Matches page, and a match present in both feeds survives as TWO
+  // cards because the surname-pair dedup above is defeated by initial / accent
+  // / hyphen / "Jr." formatting differences ("Busta" != "Carreno-Busta").
+  //
+  // This one pass, run once the match list is fully assembled, (1) maps every
+  // match.tour through canonicalTour so split labels collapse to one, and
+  // (2) removes cross-label duplicate matchups with a formatting-tolerant
+  // surname match, keeping the richest card. Everything downstream (profiles,
+  // progression, shards, model) then sees one unified, deduped board.
+  // -----------------------------------------------------------------
+  {
+    // Curated aliases a string rule can't derive (city name vs. sponsor /
+    // championship name). Matched case-insensitively. Extend here when a new
+    // event shows up under a city-vs-brand pair the "Open" rule below can't
+    // catch (e.g. Rome / Italian Open).
+    const TOUR_ALIASES = {
+      'atp montreal': 'ATP Canadian Open',
+      'atp toronto': 'ATP Canadian Open', // National Bank Open alternates cities
+    };
+    const presentLower = new Set(matches.map(m => String(m.tour || '').trim().toLowerCase()));
+    const canonicalTour = (name) => {
+      const raw = String(name || '').trim();
+      if (!raw) return raw;
+      const alias = TOUR_ALIASES[raw.toLowerCase()];
+      if (alias) return alias;
+      // General rule: "<X> Open" and "<X>" are the same event. Collapse to the
+      // bare form ONLY when the bare form is actually present on this board, so
+      // genuine Open-named events with no bare twin (US Open, Australian Open)
+      // are never mangled.
+      const m = /^(.*?)\s+open$/i.exec(raw);
+      if (m) {
+        const base = m[1].trim();
+        if (base && presentLower.has(base.toLowerCase())) return base;
+      }
+      return raw;
+    };
+    const SUFFIX = new Set(['jr', 'sr', 'ii', 'iii', 'iv']);
+    const surnameOf = (name) => {
+      const toks = String(name || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+        .toLowerCase()
+        .replace(/[.\-']/g, ' ')                           // hyphens/dots/apostrophes -> space
+        .split(/\s+/)
+        .filter(t => t.length > 1 && !SUFFIX.has(t));      // drop initials + Jr/Sr/…
+      return toks.length ? toks[toks.length - 1] : String(name || '').trim().toLowerCase();
+    };
+    const canonPairKey = (a, b) => [surnameOf(a), surnameOf(b)].sort().join('|');
+
+    const mergedLabels = {};
+    for (const m of matches) {
+      const canon = canonicalTour(m.tour);
+      if (canon !== m.tour) { mergedLabels[m.tour] = canon; m.tour = canon; }
+    }
+    // Keep the richest card in a dup group: finalScore > the-odds-api (hashed
+    // id) > fixture-only ("upcoming-"/"past-" id).
+    const richness = m => (m.finalScore ? 100 : 0)
+      + (/^(upcoming|past)-/.test(String(m.id)) ? 0 : 10)
+      + (m.odds && m.odds.p1 ? 1 : 0);
+    const keptByKey = new Map(); // "<canonTour>::<pair>" -> index kept so far
+    const dropIdx = new Set();
+    let droppedCount = 0;
+    matches.forEach((m, i) => {
+      const k = String(m.tour) + '::' + canonPairKey(m.p1, m.p2);
+      if (!keptByKey.has(k)) { keptByKey.set(k, i); return; }
+      const j = keptByKey.get(k);
+      const keepExisting = richness(matches[j]) >= richness(m);
+      const loser = keepExisting ? i : j;
+      if (!keepExisting) keptByKey.set(k, i);
+      dropIdx.add(loser);
+      droppedCount++;
+    });
+    // Splice from the back so earlier indices stay valid.
+    [...dropIdx].sort((a, b) => b - a).forEach(i => matches.splice(i, 1));
+    const mergeNote = Object.keys(mergedLabels).length
+      ? ` — merged labels ${JSON.stringify(mergedLabels)}` : '';
+    console.log(`Canonicalised tournament labels + removed ${droppedCount} cross-label duplicate card(s)${mergeNote}.`);
+  }
+
+  // -----------------------------------------------------------------
   // HISTORICAL MATCH STATS for Form-tab recent-form matches — real
   // per-match box scores fetched via get_fixtures?match_key=<eventKey>,
   // reusing the same parser (buildMatchStatsFromFixture) already used
