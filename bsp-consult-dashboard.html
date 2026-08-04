@@ -4963,17 +4963,17 @@ function matchDayBucket(m){
     // Past tab only admits finished matches, so nothing would render it at all.
     if (m.interrupted) return 'today';
     if (m.live) return 'past';
-    // A today-dated match stays on Today until it is genuinely finished. Its
-    // scheduled start passing does NOT mean it is over — the result feed lags
-    // the real match clock (and many fixtures, e.g. qualifying / freshly-drawn
-    // R1, never carry a start-relative status at all), so bucketing to 'past'
-    // on start-time alone made a started-but-not-yet-scored match vanish from
-    // every tab: Today drops it (now 'past'), and the Past tab admits only
-    // finished matches. Only a real final score retires it from Today. This is
-    // the same "don't fall into the gap between Today and Past" guard already
-    // applied to interrupted matches above, generalised to all live-window
-    // fixtures.
-    return m.finalScore ? 'past' : 'today';
+    // A today-dated match stays on the Today tab all day — including after it
+    // finishes. The day rail has no separate "Past"/results tab (only
+    // daymin2/yesterday/today/tomorrow/day2), so a today match that retired to
+    // 'past' the moment it was scored fell into a bucket no tab renders and
+    // vanished entirely (founder report, TEN-8: completed-today matches missing
+    // from Today+Completed). A completed today match is still today's match; it
+    // belongs on Today, surfaced via the Completed segmented toggle (which
+    // filters finished vs upcoming within the selected day). This mirrors the
+    // 'yesterday' bucket above, which admits finished and unfinished alike. The
+    // start-time fall-through below no longer applies to today-dated fixtures.
+    return 'today';
   }
   if (matchDay === tomorrow) return 'tomorrow';
   if (matchDay === dayAfterTomorrow) return 'day2';
