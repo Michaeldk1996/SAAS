@@ -1,17 +1,18 @@
 // =================================================================
-// CAREER HISTORY BACKFILL (pre-2021)
+// CAREER HISTORY BACKFILL (archive editions API-Tennis is missing)
 // -----------------------------------------------------------------
 // API-Tennis's get_fixtures feed only returns fixtures back to ~2021, so a
 // player's per-tournament career record (built in bsp-pipeline.js's
 // fetchPlayerCareerHistory) is truncated — e.g. Djokovic's Wimbledon shows
-// 2021+ only, missing his 2005-2020 runs and titles. This module backfills the
-// missing pre-2021 editions from the open TML-Database (Tennismylife) ATP match
+// 2021+ only, missing his 2005-2020 runs and titles (and, it turns out, most of
+// 2021 as well). This module backfills the
+// missing archive editions from the open TML-Database (Tennismylife) ATP match
 // archive, which uses the same schema Jeff Sackmann's tennis_atp pioneered and
 // covers 1968-present. Canonical Sackmann repo (JeffSackmann/tennis_atp) is the
 // origin of this format; TML is used here because it mirrors the same columns
 // and is reliably reachable.
 //
-// It merges TML editions (years <= 2020 only) into each profile's existing
+// It merges TML editions into each profile's existing
 // tournamentHistory, letting existing API editions win on any overlapping year,
 // then recomputes won/lost/titles/bestResult/bestYears/firstYear/lastYear from
 // the combined edition set using the same rules as the API builder. Nothing is
@@ -28,10 +29,18 @@ const { canonicalTournament } = require('./tournament-identity');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const TML_CACHE_DIR = path.join(__dirname, 'tml-cache');
-// API-Tennis reliably covers 2021+, so TML only supplies <=2020. No current ATP
-// player debuted before 2000, so that is a safe download floor.
+// TML fills any edition API-Tennis is MISSING. Because mergePlayer lets the API
+// edition win on ANY year an event already has (per-event, per-year), raising
+// this cap can only backfill genuine holes — it never double-counts or
+// overwrites good API data. The old fixed 2020 cap assumed "API covers 2021+",
+// but API-Tennis's get_fixtures feed actually omits almost all of 2021 (verified
+// 2026-08-04: every top player's 2021 Masters editions were absent — e.g.
+// Zverev's 2021 Madrid title, Tsitsipas's 2021 Monte Carlo title, ~4-5 wins per
+// player per spring Masters), leaving a whole season unrecoverable. Cap at the
+// current year so 2021+ holes get filled too. No current ATP player debuted
+// before 2000, so that is a safe download floor.
 const BACKFILL_FLOOR_YEAR = 2000;
-const BACKFILL_UP_TO_YEAR = 2020;
+const BACKFILL_UP_TO_YEAR = new Date().getFullYear();
 
 // Round depth + labels — must match bsp-pipeline.js so merged editions rank and
 // label identically to the API-built ones.
