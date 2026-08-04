@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-08-04T05:38:20.637Z",
+ "updated": "2026-08-04T08:13:02.028Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -1963,6 +1963,15 @@
    "flagged": 33,
    "newlyLogged": 7,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-08-04T08:13:02.028Z",
+   "run": "30890723811",
+   "priced": 53,
+   "logged": 236,
+   "flagged": 37,
+   "newlyLogged": 12,
+   "newlyFrozen": 4
   }
  ],
  "flags": {
@@ -3536,7 +3545,7 @@
    "status": "finished",
    "finalScore": "0-0",
    "modelFairLast": 0.7064,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151376": {
    "key": "12151376",
@@ -3582,12 +3591,18 @@
    "surface": "hard",
    "tour": "ATP Montreal",
    "modelFairEntry": 0.5316,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.5152,
+    "fairP2": 0.4848,
+    "edgeVsPinnacleP1": 0.0317,
+    "edgeVsPinnacleP2": -0.0317,
+    "ts": "2026-08-04T08:11:21.888Z"
+   },
    "firstSeen": "2026-08-01T00:27:30.979Z",
    "status": "finished",
    "finalScore": "1-6, 2-6",
-   "modelFairLast": 0.5312,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.5152,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151379": {
    "key": "12151379",
@@ -3608,7 +3623,7 @@
    "status": "finished",
    "finalScore": "0-0",
    "modelFairLast": 0.4256,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151380": {
    "key": "12151380",
@@ -3629,7 +3644,7 @@
    "status": "finished",
    "finalScore": "7-6(7), 2-5",
    "modelFairLast": 0.3013,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151381": {
    "key": "12151381",
@@ -3649,8 +3664,8 @@
    "firstSeen": "2026-08-01T00:27:30.979Z",
    "status": "finished",
    "finalScore": "4-6, 4-6",
-   "modelFairLast": 0.5845,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.5837,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151382": {
    "key": "12151382",
@@ -3675,12 +3690,18 @@
    "surface": "hard",
    "tour": "ATP Montreal",
    "modelFairEntry": 0.7582,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.7483,
+    "fairP2": 0.2517,
+    "edgeVsPinnacleP1": 0.0065,
+    "edgeVsPinnacleP2": -0.0065,
+    "ts": "2026-08-04T08:11:21.888Z"
+   },
    "firstSeen": "2026-08-01T00:27:30.979Z",
    "status": "finished",
    "finalScore": "6-1, 3-6, 6-1",
-   "modelFairLast": 0.7551,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.7483,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151384": {
    "key": "12151384",
@@ -3716,7 +3737,7 @@
    "status": "finished",
    "finalScore": "7-6(3), 5-3",
    "modelFairLast": 0.609,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151386": {
    "key": "12151386",
@@ -3762,12 +3783,18 @@
    "surface": "hard",
    "tour": "ATP Montreal",
    "modelFairEntry": 0.2326,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.2125,
+    "fairP2": 0.7875,
+    "edgeVsPinnacleP1": 0.0068,
+    "edgeVsPinnacleP2": -0.0068,
+    "ts": "2026-08-04T08:11:21.888Z"
+   },
    "firstSeen": "2026-08-01T00:27:30.979Z",
    "status": "finished",
    "finalScore": "6-7(5), 4-6",
-   "modelFairLast": 0.2166,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.2125,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151389": {
    "key": "12151389",
@@ -3788,7 +3815,7 @@
    "status": "finished",
    "finalScore": "3-6, 3-6",
    "modelFairLast": 0.3305,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151438": {
    "key": "12151438",
@@ -4004,7 +4031,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-3, 3-6",
    "modelFairLast": 0.3069,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151471": {
    "key": "12151471",
@@ -4025,7 +4052,7 @@
    "status": "finished",
    "finalScore": "6-7(6), 6-4, 6-4",
    "modelFairLast": 0.7024,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151476": {
    "key": "12151476",
@@ -4046,7 +4073,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.4783,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151672": {
    "key": "12151672",
@@ -4082,7 +4109,7 @@
    "status": "finished",
    "finalScore": "0-0",
    "modelFairLast": 0.376,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151674": {
    "key": "12151674",
@@ -4152,12 +4179,18 @@
    "surface": "hard",
    "tour": "ATP Montreal",
    "modelFairEntry": 0.5016,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.5323,
+    "fairP2": 0.4677,
+    "edgeVsPinnacleP1": -0.0635,
+    "edgeVsPinnacleP2": 0.0635,
+    "ts": "2026-08-04T08:11:21.888Z"
+   },
    "firstSeen": "2026-08-02T01:21:41.065Z",
    "status": "finished",
    "finalScore": "7-6(2), 6-7(5), 4-6",
-   "modelFairLast": 0.5037,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.5323,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151679": {
    "key": "12151679",
@@ -4193,7 +4226,7 @@
    "status": "finished",
    "finalScore": "4-6, 5-4",
    "modelFairLast": 0.4662,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151681": {
    "key": "12151681",
@@ -4214,7 +4247,7 @@
    "status": "finished",
    "finalScore": "0-0",
    "modelFairLast": 0.2192,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151682": {
    "key": "12151682",
@@ -4235,7 +4268,7 @@
    "status": "finished",
    "finalScore": "4-5",
    "modelFairLast": 0.496,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151683": {
    "key": "12151683",
@@ -4256,7 +4289,7 @@
    "status": "finished",
    "finalScore": "6-7(2), 1-6",
    "modelFairLast": 0.3269,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151684": {
    "key": "12151684",
@@ -4277,7 +4310,7 @@
    "status": "finished",
    "finalScore": "6-7(1), 6-3, 6-2",
    "modelFairLast": 0.4879,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151685": {
    "key": "12151685",
@@ -4292,7 +4325,7 @@
    "status": "finished",
    "finalScore": "1-6, 6-4, 2-6",
    "modelFairLast": 0.4015,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12151711": {
    "key": "12151711",
@@ -4313,7 +4346,7 @@
    "status": "finished",
    "finalScore": "7-6(2), 6-4",
    "modelFairLast": 0.5957,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "12152168": {
    "key": "12152168",
@@ -5285,7 +5318,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4851,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "89000ae58cd0b4f88f03639dcf8e3baa": {
    "key": "89000ae58cd0b4f88f03639dcf8e3baa",
@@ -5411,7 +5444,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4932,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "308af4d9a1ee36ced544dc307e3a0967": {
    "key": "308af4d9a1ee36ced544dc307e3a0967",
@@ -5452,8 +5485,8 @@
    "firstSeen": "2026-08-01T17:18:55.120Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6374,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.637,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "f0a2c84a147c9366379080657103938f": {
    "key": "f0a2c84a147c9366379080657103938f",
@@ -5495,7 +5528,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3593,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "2620af8a13e0bd459f6cddf8217812ff": {
    "key": "2620af8a13e0bd459f6cddf8217812ff",
@@ -5515,8 +5548,8 @@
    "firstSeen": "2026-08-01T17:18:55.120Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.2818,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.2823,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "ac67d3a7c8aea695d06a175c5df32e69": {
    "key": "ac67d3a7c8aea695d06a175c5df32e69",
@@ -5557,8 +5590,8 @@
    "firstSeen": "2026-08-01T18:18:41.089Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.383,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.3817,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "702197d604aee39050a66d572b226eee": {
    "key": "702197d604aee39050a66d572b226eee",
@@ -5600,7 +5633,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5316,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "b84705609fe51f48fa0406f2661aec1e": {
    "key": "b84705609fe51f48fa0406f2661aec1e",
@@ -5810,7 +5843,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2497,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "341f3e5250be46d4bb3f0a9ac077f54f": {
    "key": "341f3e5250be46d4bb3f0a9ac077f54f",
@@ -5831,7 +5864,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4731,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "9000d5a71073fa0e6b5e8ec2ef33c4db": {
    "key": "9000d5a71073fa0e6b5e8ec2ef33c4db",
@@ -5852,7 +5885,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.557,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "f83b748a46e5e0b6a8a6598d4e0e2736": {
    "key": "f83b748a46e5e0b6a8a6598d4e0e2736",
@@ -5873,7 +5906,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6459,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "0c212d85147c2b742bbfb0cdaaceaad6": {
    "key": "0c212d85147c2b742bbfb0cdaaceaad6",
@@ -5893,8 +5926,8 @@
    "firstSeen": "2026-08-02T09:54:09.649Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6233,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.6235,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "fe34e2f631f79d4a636ca69302fb3497": {
    "key": "fe34e2f631f79d4a636ca69302fb3497",
@@ -5915,7 +5948,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6991,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "d872deb964ec915a944e2b1707c0d0ab": {
    "key": "d872deb964ec915a944e2b1707c0d0ab",
@@ -5935,8 +5968,8 @@
    "firstSeen": "2026-08-03T10:50:53.686Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3219,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.3227,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "9b744a7d1d2550a868acbbba9eaad46f": {
    "key": "9b744a7d1d2550a868acbbba9eaad46f",
@@ -5957,7 +5990,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.183,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "1b2aecb733f29e16b5982e7da22bb3ef": {
    "key": "1b2aecb733f29e16b5982e7da22bb3ef",
@@ -5978,7 +6011,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4401,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "3aa5a82fb7841b1e71bae0f012c8fc74": {
    "key": "3aa5a82fb7841b1e71bae0f012c8fc74",
@@ -5998,8 +6031,8 @@
    "firstSeen": "2026-08-04T00:16:15.993Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.2253,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.2238,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "f7c515c1990107ffef0b702a9737b9f0": {
    "key": "f7c515c1990107ffef0b702a9737b9f0",
@@ -6013,8 +6046,8 @@
    "firstSeen": "2026-08-04T05:38:20.637Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.8276,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "modelFairLast": 0.833,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "471e086d866d8395789165b877b96187": {
    "key": "471e086d866d8395789165b877b96187",
@@ -6029,7 +6062,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   },
   "a4469415d8d5215583c05db76719f39c": {
    "key": "a4469415d8d5215583c05db76719f39c",
@@ -6044,7 +6077,187 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6039,
-   "lastSeen": "2026-08-04T05:38:20.637Z"
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "bdeeac229d88540bf025bd4d2b4d6b53": {
+   "key": "bdeeac229d88540bf025bd4d2b4d6b53",
+   "date": "2026-08-04",
+   "p1": "Brandon Nakashima",
+   "p2": "Daniel Altmaier",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.7623,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.7623,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "00c7b12a13c01860c6e314d52b982a36": {
+   "key": "00c7b12a13c01860c6e314d52b982a36",
+   "date": "2026-08-04",
+   "p1": "Frances Tiafoe",
+   "p2": "Marin Cilic",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.6561,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6561,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "86ae53877ce2aec9dbda5204f08e0557": {
+   "key": "86ae53877ce2aec9dbda5204f08e0557",
+   "date": "2026-08-05",
+   "p1": "Luciano Darderi",
+   "p2": "Gabriel Diallo",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.5364,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5364,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "0af7cfb0eaaddb51ab120b6956e08940": {
+   "key": "0af7cfb0eaaddb51ab120b6956e08940",
+   "date": "2026-08-05",
+   "p1": "Alex Michelsen",
+   "p2": "Francisco Cerundolo",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.4661,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4661,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "0218b801109eb30a011e8f0036ab301d": {
+   "key": "0218b801109eb30a011e8f0036ab301d",
+   "date": "2026-08-05",
+   "p1": "Miomir Kecmanovic",
+   "p2": "Arthur Rinderknech",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.4142,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4142,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "f245d94232bde97a7c9791892bbe3ab2": {
+   "key": "f245d94232bde97a7c9791892bbe3ab2",
+   "date": "2026-08-05",
+   "p1": "Ignacio Buse",
+   "p2": "Cameron Norrie",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.2905,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.2905,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "9d5b8c5a110914e382207850fb49a116": {
+   "key": "9d5b8c5a110914e382207850fb49a116",
+   "date": "2026-08-05",
+   "p1": "Rafael Jodar",
+   "p2": "Corentin Moutet",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.7722,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.7722,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "200a95716a215565e7a9189243a5e2b3": {
+   "key": "200a95716a215565e7a9189243a5e2b3",
+   "date": "2026-08-05",
+   "p1": "Titouan Droguet",
+   "p2": "Felix Auger-Aliassime",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.1302,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1302,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "74087e165a849383d004427c2e05681e": {
+   "key": "74087e165a849383d004427c2e05681e",
+   "date": "2026-08-05",
+   "p1": "Learner Tien",
+   "p2": "Gael Monfils",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.6413,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6413,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "97e233f1afee02169af8fcef9a1bf19f": {
+   "key": "97e233f1afee02169af8fcef9a1bf19f",
+   "date": "2026-08-05",
+   "p1": "Nicolas Mejia",
+   "p2": "Lorenzo Musetti",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.1,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "faf63e949157babf9264d94831818015": {
+   "key": "faf63e949157babf9264d94831818015",
+   "date": "2026-08-05",
+   "p1": "Valentin Vacherot",
+   "p2": "Mariano Navone",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.796,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.796,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
+  },
+  "d469a29752f1f03c980e1de1a1b52bd6": {
+   "key": "d469a29752f1f03c980e1de1a1b52bd6",
+   "date": "2026-08-05",
+   "p1": "Nuno Borges",
+   "p2": "Tomas Martin Etcheverry",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.4537,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-04T08:13:02.028Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4537,
+   "lastSeen": "2026-08-04T08:13:02.028Z"
   }
  }
 }
