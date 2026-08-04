@@ -1680,27 +1680,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7,
-        "p2": 5
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "15 - 40",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2413_j-shang.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2847_a-rublev.jpg",
     "oddsMovement": {
@@ -2970,7 +2954,26 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-5, 4-6, 7-6(5)",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    }
   },
   {
     "id": "f7c515c1990107ffef0b702a9737b9f0",
