@@ -518,7 +518,11 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
     if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
-    if (f.event_qualification !== 'False') continue;
+    // Qualifying rounds ARE counted (founder ruling 2026-08-04, TEN-8): the record
+    // must match Flashscore, which counts every professional match — main draw AND
+    // qualifying. The old `!== 'False'` gate dropped qualifying (and null-flagged)
+    // rows, making our record a strict subset of the public one. No qualification
+    // filter now — decided singles at any level/round count.
     if (!f.event_winner) continue;
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
@@ -573,7 +577,9 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
     if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
-    if (f.event_qualification !== 'False') continue;
+    // Include qualifying rounds — must stay in lockstep with buildAllTierYearly
+    // (this is its row-level twin; the two are tallied against each other) and
+    // match Flashscore. See the ruling note there.
     if (!f.event_winner) continue;
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
@@ -692,7 +698,8 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
 
 // Current-season per-surface record split by tier (ATP vs Challenger & ITF),
 // retaining every contributing match so the Overview record can be expanded on
-// click. Singles, main-draw, decided matches in the given season only — mirrors
+// click. Singles, decided matches (main draw AND qualifying, per the Flashscore
+// ruling) in the given season only — mirrors
 // seasonRowFromFixtures but keeps the match list and separates tiers via
 // event_type_type. Fed the same all-tier fixtures already fetched for recent
 // form (fetchRecentSinglesFixtures — memoized, so no extra API calls), filtered
@@ -707,7 +714,8 @@ function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
     if (!isSingles(f)) continue;
     if (String(f.event_date || '').slice(0, 4) !== String(year)) continue;
     if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
-    if (f.event_qualification !== 'False') continue;
+    // Include qualifying rounds so the current-season surface record matches
+    // Flashscore (founder ruling 2026-08-04, TEN-8). See buildAllTierYearly.
     if (!f.event_winner) continue;
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
@@ -2911,9 +2919,11 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // founder ruling 2026-08-03 (TEN-8, "include_and_count"): a player who comes
   // THROUGH qualifying (e.g. Popyrin beating Kokkinakis to reach Montreal) was
   // otherwise left showing only his older main-draw form, which reads as stale.
-  // Each row is tagged `qualifying` so the Form tab can mark it 'Q'. This is the
-  // ONLY recent-form path that includes qualifying; every other stat (surface
-  // win %, career/year tables, season rows) still filters to main-draw only.
+  // Each row is tagged `qualifying` so the Form tab can mark it 'Q'. As of the
+  // 2026-08-04 ruling, the archive-record surfaces (Record-by-season table, its
+  // drill-down rows, current-season surface record) ALSO include qualifying so
+  // they match Flashscore; provider-aggregate stats (career/surface win %) and
+  // Tennis-Abstract career splits stay on their own sources and are unaffected.
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
   const clean = (fixtures || [])
     .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status))
