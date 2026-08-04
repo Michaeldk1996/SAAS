@@ -3671,7 +3671,12 @@ async function fetchPlayerCareerHistory(playerKey) {
   const byTournament = {};
   for (const f of data.result) {
     if (!f.tournament_name || !f.tournament_round) continue;
-    if (f.event_qualification === 'True') continue;
+    // Count qualifying-round matches too, so the per-tournament record matches
+    // Flashscore and stays in lockstep with the Record-by-season table
+    // (founder ruling 2026-08-04: same rules as Flashscore everywhere we show a
+    // record). Qualifying rows are tagged 'Q' below and rank -1, so they add
+    // to the W/L totals without ever inflating bestResult / titles.
+    const isQualifying = f.event_qualification === 'True';
     if (f.event_winner !== 'First Player' && f.event_winner !== 'Second Player') continue;
     const isP1 = String(f.first_player_key) === String(playerKey);
     if (!isP1 && String(f.second_player_key) !== String(playerKey)) continue;
@@ -3684,7 +3689,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     if (!name) continue;
     const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
     if (!year) continue;
-    const code = careerRoundShort(f.tournament_round);
+    const code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
     const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';
     const oppKey = isP1 ? f.second_player_key : f.first_player_key;
     const score = f.event_final_result || '';
