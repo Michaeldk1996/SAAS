@@ -3608,7 +3608,10 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //      this bump, cached v7 profiles carry no wue field, so layer #8 self-hides
 //      for every non-seed player until the cache ages out — the same ~370-player
 //      strand this version counter exists to prevent.
-const PROFILE_SCHEMA_VERSION = 9;
+// v10 = record-by-tournament set scores flipped to player-first orientation
+//       (fetchPlayerCareerHistory) — forces rebuild so the fix + post-22-Jul
+//       editions (Canada, Cincinnati, ...) reach all cached opponents.
+const PROFILE_SCHEMA_VERSION = 10;
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
@@ -3699,7 +3702,14 @@ async function fetchPlayerCareerHistory(playerKey) {
     const code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
     const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';
     const oppKey = isP1 ? f.second_player_key : f.first_player_key;
-    const score = f.event_final_result || '';
+    // event_final_result is raw fixture order ("player1 sets - player2 sets"),
+    // not self-first. When the profiled player is the second player, flip the
+    // two set counts so the score reads player-first (mirrors buildH2HMatchList).
+    let score = f.event_final_result || '';
+    if (!isP1 && score.includes('-')) {
+      const parts = score.split('-').map(s => s.trim());
+      if (parts.length === 2) score = `${parts[1]} - ${parts[0]}`;
+    }
 
     let t = byTournament[tid];
     if (!t) {
