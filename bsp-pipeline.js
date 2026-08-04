@@ -212,13 +212,15 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
   if (!data.success) return [];
   return (Array.isArray(data.result) ? data.result : []).filter(f =>
     (String(f.first_player_key) === String(secondPlayerKey) || String(f.second_player_key) === String(secondPlayerKey)) &&
-    (f.event_winner === 'First Player' || f.event_winner === 'Second Player') &&
-    // Team events (Laver Cup, United Cup, ATP Cup) come back with
-    // event_qualification: null rather than 'False' in this API — confirmed
-    // live on 2022 ATP Cup / 2023 United Cup / Laver Cup fixtures — so only
-    // exclude actual qualifying-round matches ('True'), don't require an
-    // exact 'False' match.
-    f.event_qualification !== 'True'
+    (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
+    // Qualifying-round meetings ARE counted here (Flashscore rule, TEN-8
+    // 2026-08-04 founder ruling: "add all the head to head meetings"). A
+    // qualifying meeting is a real head-to-head result — e.g. the 2026
+    // Montreal qualifying final Popyrin d. Kokkinakis — so it must show, in
+    // line with the same all-qualifying rule already applied to Recent Form
+    // and every archive-record surface. No event_qualification gate here;
+    // exhibitions are still excluded downstream by the
+    // event_type_type === 'Atp Singles' check in fetchH2H.
   );
 }
 
@@ -296,6 +298,11 @@ function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
         surface: surfaceMap.get(String(m.tournament_key)) || null,
         p1Won,
         result,
+        // A qualifying-round meeting now COUNTS in the H2H (TEN-8 Flashscore
+        // ruling) but its raw round string (e.g. "Montreal - Final") reads
+        // like a main-draw final, so flag it and let the row mark it 'Q' —
+        // same treatment Recent Form already gives qualifying matches.
+        qualifying: m.event_qualification === 'True',
         // The row's identity, and the only way it can reach its own
         // setstats/{ek}.json and pbp/{ek}.json shards — without it an H2H row is
         // text with nothing to join to.

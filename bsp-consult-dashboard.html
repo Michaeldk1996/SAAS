@@ -8352,10 +8352,14 @@ function h2hRowHtml(match, p1, p2, opts){
   const roundText = h2hRoundLabel(match.round);
   const winner = match.p1Won ? p1 : p2;
   const loser = match.p1Won ? p2 : p1;
+  // Qualifying meetings count in the H2H (Flashscore rule) but their raw round
+  // string reads like a main-draw round, so tag it 'Q' — same badge/meaning as
+  // the Recent Form tab uses for qualifying matches.
+  const qTag = match.qualifying ? ' <span class="fsm-q">Q</span>' : '';
   const cells = `
       <span class="date">${match.date || 'Date unknown'}</span>
       <span class="result"><span class="winner">${winner}</span> def. ${loser}</span>
-      <span class="meta">${match.tournament || 'Tournament unknown'}${roundText ? ' · ' + roundText : ''}</span>
+      <span class="meta">${match.tournament || 'Tournament unknown'}${roundText ? ' · ' + roundText : ''}${qTag}</span>
       <span class="score">${match.result || '—'}</span>
       ${surfaceTag}`;
   if (!opts || !opts.canOpen) {
