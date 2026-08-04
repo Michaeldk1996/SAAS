@@ -122953,14 +122953,33 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "0 - 30",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null,
+    "finalScore": {
+      "display": "3-6, 7-6(5), 3-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
     "matchStats": {
       "p1": {
         "Service:Aces": 2,
@@ -168849,30 +168868,33 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null,
+    "finalScore": {
+      "display": "4-6, 6-4, 6-3",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
     "matchStats": {
       "p1": {
         "Service:Aces": 1,
@@ -171978,26 +172000,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 2
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 3
-      }
-    ],
+    "liveStatus": "Finished",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveServer": null,
     "interrupted": false,
     "partialScore": null,
     "finalScore": null,
@@ -192414,26 +192420,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 2
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 3
-      }
-    ],
+    "liveStatus": "Finished",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
     "oddsMovement": {
@@ -201970,11 +201960,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "0 - 30",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2844_m-berrettini.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "oddsMovement": {
@@ -203512,7 +203502,26 @@
     },
     "partialScore": null,
     "interrupted": false,
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 7-6(5), 3-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "ebf84115a5515cbf9115f35102d69d3d",
@@ -204959,27 +204968,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 3,
-        "p1": 4,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "oddsMovement": {
@@ -205857,7 +205850,26 @@
     },
     "partialScore": null,
     "interrupted": false,
-    "finalScore": null
+    "finalScore": {
+      "display": "4-6, 6-4, 6-3",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    }
   },
   {
     "id": "74dd3f46547ada7019ee9f424ddc8df0",
