@@ -3867,9 +3867,15 @@ async function buildPlayerProfiles(matches, surfaceMap) {
 // =================================================================
 async function runPipeline() {
   const today = new Date().toISOString().split('T')[0];
-  // Next 3 days (today + 2 more) so tomorrow's and day-after's matches get
-  // real H2H/stats enrichment too, not just today's.
-  const rangeEnd = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+  // Fixture-fetch horizon must cover how far ahead the ODDS feed posts cards.
+  // fetchAllTennisEvents() has NO date window and returns ATP/Masters markets
+  // several days out, but a card can only be linked to a fixture fetched here.
+  // Too-narrow a window leaves an early card with no fixture match, so
+  // buildMatchObject hits `if (!fixture) return match` and the card renders with
+  // null p1Key/p2Key -> no player photo and no recent-form bars. 5 days keeps the
+  // near-term board fully hydrated; api-tennis is on a paid/unmetered plan so the
+  // few extra ATP-singles fixtures per day cost nothing.
+  const rangeEnd = new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0];
 
   console.log('Fetching odds events...');
   const oddsEvents = await fetchAllTennisEvents();
