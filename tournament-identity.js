@@ -55,11 +55,20 @@ const CANONICAL_ALIASES = {
   'shanghai masters': 'Shanghai',
   'hamburg masters': 'Hamburg',
 
-  // Canada Masters — alternates host city year to year (Montreal/Toronto); the
-  // TML archive already calls it "Canada Masters", which is the label we keep.
+  // Canada Masters — alternates host city year to year (Montreal/Toronto) AND
+  // has been rebranded repeatedly (Rogers Cup -> National Bank Open), while
+  // api-tennis currently labels it "ATP Canadian Open". The TML archive calls
+  // it "Canada Masters", which is the label we keep. All of these are the SAME
+  // Masters 1000 — without every alias here the pre-2021 TML editions (e.g.
+  // Zverev's 2017 title over Federer, 2018) never merge into the live card,
+  // which is labelled "Canadian Open", so the record reads low.
   'montreal': 'Canada Masters',
   'toronto': 'Canada Masters',
   'canada masters': 'Canada Masters',
+  'canadian open': 'Canada Masters',
+  'national bank open': 'Canada Masters',
+  'rogers cup': 'Canada Masters',
+  'canada': 'Canada Masters',
 
   // Year-end / rename
   'next gen atp finals': 'Next Gen Finals',
