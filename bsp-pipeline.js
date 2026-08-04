@@ -509,6 +509,15 @@ function yearlyBreakdown(playerStats) {
     .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
 }
 
+// A pre-match walkover a player GAVE is NOT a loss (founder ruling 2026-08-04,
+// TEN-8: "a pre-match withdrawal is NOT a loss"). Flashscore counts it as neither
+// win nor loss, so every W-L record surface skips it. Fingerprint: the feed's
+// event_status is 'Walk Over' AND the profiled player is the recorded loser. A
+// walkover RECEIVED (he's the winner) stays a win; an in-match 'Retired' stays a
+// loss for the retiree — so we key on event_status, never on the empty scoreline
+// (a retirement the provider stored with no partial score would else be misread).
+const isWalkoverGiven = (f, won) => f.event_status === 'Walk Over' && !won;
+
 // Year-by-year record across ALL tiers (ATP + Challenger + ITF), tallied from the
 // broad recent-form fixtures (which span currentYear-5..now). Seasons older than
 // that window fall back to the provider's ATP-only aggregates (yearlyBreakdown),
@@ -537,6 +546,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     const year = String(f.event_date || '').slice(0, 4);
     if (!/^\d{4}$/.test(year) || parseInt(year, 10) < cutoff) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
     if (!byYear[year]) byYear[year] = { atp: blankTier(), chitf: blankTier() };
     const bucket = byYear[year][tierOf(f)];
     bucket.total[won ? 'won' : 'lost']++;
@@ -601,6 +611,10 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     const rawSurface = surfaceMap.get(String(f.tournament_key));
     const surface = ['clay', 'hard', 'grass'].includes(rawSurface) ? rawSurface : null;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    // Skip a pre-match walkover the player GAVE — kept in lockstep with
+    // buildAllTierYearly, which now skips the same fixture, so this drill-down
+    // list stays 1:1 tallyable against that table's counts (its invariant).
+    if (isWalkoverGiven(f, won)) continue;
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
     if (isSecond && result && result.includes('-')) {
@@ -730,6 +744,7 @@ function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
     const surface = surfaceMap.get(String(f.tournament_key));
     if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
     if (isSecond && result && result.includes('-')) {
@@ -791,6 +806,7 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
+    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss (not decided)
     decidedCount++;
     tally.total[won ? 'won' : 'lost']++;
     const surface = surfaceMap.get(String(f.tournament_key));
@@ -979,6 +995,7 @@ function courtSpeedRecordFromFixtures(fixtures, playerKey, category) {
     const cc = courtConditionsFor(f.tournament_name);
     if (!cc || courtSpeedCategory(cc.speed) !== category) continue;
     const won = isFirst ? f.event_winner === 'First Player' : f.event_winner === 'Second Player';
+    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
     if (won) wins++; else losses++;
   }
   const sampleSize = wins + losses;
@@ -3611,7 +3628,7 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 // v10 = record-by-tournament set scores flipped to player-first orientation
 //       (fetchPlayerCareerHistory) — forces rebuild so the fix + post-22-Jul
 //       editions (Canada, Cincinnati, ...) reach all cached opponents.
-const PROFILE_SCHEMA_VERSION = 10;
+const PROFILE_SCHEMA_VERSION = 11; // v11: pre-match walkover given no longer counts as a loss in season/surface/court-speed records (founder ruling 2026-08-04, TEN-8)
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
@@ -3622,6 +3639,10 @@ const PROFILE_SCHEMA_VERSION = 10;
 const TOURNAMENT_HISTORY_CACHE_PATH = 'player-tournament-history.json';
 const TOURNAMENT_HISTORY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
+// Bump when the record-by-tournament derivation changes so cached history is
+// invalidated instead of waiting out the 7-day TTL. v2: pre-match walkover a
+// player GAVE no longer counts as a loss (founder ruling 2026-08-04, TEN-8).
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 2;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -3711,18 +3732,24 @@ async function fetchPlayerCareerHistory(playerKey) {
       if (parts.length === 2) score = `${parts[1]} - ${parts[0]}`;
     }
 
+    // A pre-match walkover the player GAVE is not a loss (founder ruling
+    // 2026-08-04). Keep the row so the edition still shows he REACHED that round
+    // (its _rank drives the finish badge, e.g. Djokovic Paris '11 stays
+    // "Quarter-final") and tag it 'WD' so the panel renders it neutrally, but
+    // never count it in lost. _won stays false so it can never become a title.
+    const walkoverGiven = isWalkoverGiven(f, didWin);
     let t = byTournament[tid];
     if (!t) {
       t = byTournament[tid] = {
         name, won: 0, lost: 0, firstYear: year, lastYear: year, _byEdition: {},
       };
     }
-    if (didWin) t.won++; else t.lost++;
+    if (didWin) t.won++; else if (!walkoverGiven) t.lost++;
     if (year < t.firstYear) t.firstYear = year;
     if (year > t.lastYear) t.lastYear = year;
     if (!t._byEdition[year]) t._byEdition[year] = [];
     t._byEdition[year].push({
-      res: didWin ? 'W' : 'L', round: code, opp,
+      res: didWin ? 'W' : (walkoverGiven ? 'WD' : 'L'), round: code, opp,
       oppKey: oppKey != null ? String(oppKey) : '', score,
       _rank: ROUND_RANK[code] != null ? ROUND_RANK[code] : -1, _won: didWin,
     });
@@ -3848,6 +3875,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   for (const key of Object.keys(profiles)) {
     const cached = historyCache[key];
     const fresh = cached && cached.builtAt
+      && cached.v === TOURNAMENT_HISTORY_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < TOURNAMENT_HISTORY_MAX_AGE_MS);
     if (fresh) {
       if (cached.history) { profiles[key].tournamentHistory = cached.history; histReused++; }
@@ -3859,7 +3887,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       continue;
     }
     const history = await fetchPlayerCareerHistory(key);
-    historyCache[key] = { builtAt: new Date().toISOString(), history: history || null };
+    historyCache[key] = { builtAt: new Date().toISOString(), v: TOURNAMENT_HISTORY_SCHEMA_VERSION, history: history || null };
     histFetched++;
     if (history) profiles[key].tournamentHistory = history; else histEmpty++;
   }

@@ -12917,11 +12917,15 @@ function ppTournamentResultHtml(p, name){
     const yy = String(ed.year).slice(-2);
     const rows = (ed.matches || []).map(m => {
       const win = m.res === 'W';
-      const bC = win ? '#3dd68c' : '#e0616f';
+      // A pre-match walkover the player gave ('WD') is neither win nor loss
+      // (founder ruling 2026-08-04): render it neutral grey, not a red loss.
+      const wo = m.res === 'WD';
+      const bC = wo ? '#9aa3b2' : (win ? '#3dd68c' : '#e0616f');
       const round = m.round === 'F' ? 'FINAL' : String(m.round || '').toUpperCase();
-      const verb = win ? 'def.' : 'lost to';
+      const verb = wo ? 'w/o to' : (win ? 'def.' : 'lost to');
+      const badge = wo ? 'W/O' : m.res;
       return `<div style="display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid rgba(255,255,255,0.04);">
-        <span style="width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${bC};background:${ppHexA(bC,0.14)};border:1px solid ${ppHexA(bC,0.3)};">${m.res}</span>
+        <span style="width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${bC};background:${ppHexA(bC,0.14)};border:1px solid ${ppHexA(bC,0.3)};">${badge}</span>
         <span style="font-size:11px;font-weight:600;color:#4b5672;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;min-width:40px;">${round}</span>
         <span style="font-size:13px;color:#dfe3ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:#5b6880;">${verb}</span> ${pesc(m.opp || '\u2014')}</span>
         <span style="font-size:12.5px;color:#9aa3b2;font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">${pesc(m.score || '')}</span>
