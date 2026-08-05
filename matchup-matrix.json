@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T14:13:09.742Z",
+  "generatedAt": "2026-08-05T13:26:07.006Z",
   "source": "Computed from BSP 6-axis classification x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.",
@@ -29,6 +29,9 @@
     },
     "all_court": {
       "en": "All-Court Player"
+    },
+    "clay_specialist": {
+      "en": "Clay Specialist"
     }
   },
   "matrix": {
@@ -40,7 +43,7 @@
       },
       "attacking_baseliner": {
         "pct": 46,
-        "n": 1777
+        "n": 1767
       },
       "solid_baseliner": {
         "pct": 43,
@@ -51,16 +54,20 @@
         "n": 891
       },
       "counter_puncher": {
-        "pct": 52,
-        "n": 7469
+        "pct": 51,
+        "n": 7162
       },
       "solid_defender": {
         "pct": 62,
-        "n": 2792
+        "n": 2649
       },
       "all_court": {
         "pct": 53,
         "n": 2351
+      },
+      "clay_specialist": {
+        "pct": 62,
+        "n": 460
       }
     },
     "big_server_baseliner": {
@@ -71,7 +78,7 @@
       "big_server_baseliner": null,
       "attacking_baseliner": {
         "pct": 51,
-        "n": 776
+        "n": 767
       },
       "solid_baseliner": {
         "pct": 61,
@@ -82,47 +89,55 @@
         "n": 319
       },
       "counter_puncher": {
-        "pct": 63,
-        "n": 1569
+        "pct": 62,
+        "n": 1486
       },
       "solid_defender": {
-        "pct": 71,
-        "n": 721
+        "pct": 70,
+        "n": 682
       },
       "all_court": {
         "pct": 67,
         "n": 398
+      },
+      "clay_specialist": {
+        "pct": 77,
+        "n": 131
       }
     },
     "attacking_baseliner": {
       "big_server": {
         "pct": 54,
-        "n": 1777
+        "n": 1767
       },
       "big_server_baseliner": {
         "pct": 49,
-        "n": 776
+        "n": 767
       },
       "attacking_baseliner": null,
       "solid_baseliner": {
         "pct": 57,
-        "n": 914
+        "n": 904
       },
       "all_court_elite": {
         "pct": 22,
-        "n": 569
+        "n": 568
       },
       "counter_puncher": {
         "pct": 57,
-        "n": 3162
+        "n": 2969
       },
       "solid_defender": {
-        "pct": 65,
-        "n": 1785
+        "pct": 64,
+        "n": 1691
       },
       "all_court": {
         "pct": 58,
-        "n": 890
+        "n": 888
+      },
+      "clay_specialist": {
+        "pct": 65,
+        "n": 259
       }
     },
     "solid_baseliner": {
@@ -136,7 +151,7 @@
       },
       "attacking_baseliner": {
         "pct": 43,
-        "n": 914
+        "n": 904
       },
       "solid_baseliner": null,
       "all_court_elite": {
@@ -145,15 +160,19 @@
       },
       "counter_puncher": {
         "pct": 58,
-        "n": 3402
+        "n": 3216
       },
       "solid_defender": {
         "pct": 64,
-        "n": 1369
+        "n": 1267
       },
       "all_court": {
         "pct": 59,
         "n": 998
+      },
+      "clay_specialist": {
+        "pct": 62,
+        "n": 298
       }
     },
     "all_court_elite": {
@@ -167,7 +186,7 @@
       },
       "attacking_baseliner": {
         "pct": 78,
-        "n": 569
+        "n": 568
       },
       "solid_baseliner": {
         "pct": 82,
@@ -176,77 +195,89 @@
       "all_court_elite": null,
       "counter_puncher": {
         "pct": 84,
-        "n": 1872
+        "n": 1800
       },
       "solid_defender": {
         "pct": 89,
-        "n": 627
+        "n": 584
       },
       "all_court": {
         "pct": 86,
         "n": 601
+      },
+      "clay_specialist": {
+        "pct": 90,
+        "n": 116
       }
     },
     "counter_puncher": {
       "big_server": {
-        "pct": 48,
-        "n": 7469
+        "pct": 49,
+        "n": 7162
       },
       "big_server_baseliner": {
-        "pct": 37,
-        "n": 1569
+        "pct": 38,
+        "n": 1486
       },
       "attacking_baseliner": {
         "pct": 43,
-        "n": 3162
+        "n": 2969
       },
       "solid_baseliner": {
         "pct": 42,
-        "n": 3402
+        "n": 3216
       },
       "all_court_elite": {
         "pct": 16,
-        "n": 1872
+        "n": 1800
       },
       "counter_puncher": null,
       "solid_defender": {
         "pct": 61,
-        "n": 7125
+        "n": 5985
       },
       "all_court": {
-        "pct": 51,
-        "n": 5591
+        "pct": 52,
+        "n": 5315
+      },
+      "clay_specialist": {
+        "pct": 57,
+        "n": 1903
       }
     },
     "solid_defender": {
       "big_server": {
         "pct": 38,
-        "n": 2792
+        "n": 2649
       },
       "big_server_baseliner": {
-        "pct": 29,
-        "n": 721
+        "pct": 30,
+        "n": 682
       },
       "attacking_baseliner": {
-        "pct": 35,
-        "n": 1785
+        "pct": 36,
+        "n": 1691
       },
       "solid_baseliner": {
         "pct": 36,
-        "n": 1369
+        "n": 1267
       },
       "all_court_elite": {
         "pct": 11,
-        "n": 627
+        "n": 584
       },
       "counter_puncher": {
         "pct": 39,
-        "n": 7125
+        "n": 5985
       },
       "solid_defender": null,
       "all_court": {
-        "pct": 43,
-        "n": 2055
+        "pct": 44,
+        "n": 1885
+      },
+      "clay_specialist": {
+        "pct": 44,
+        "n": 752
       }
     },
     "all_court": {
@@ -260,7 +291,7 @@
       },
       "attacking_baseliner": {
         "pct": 42,
-        "n": 890
+        "n": 888
       },
       "solid_baseliner": {
         "pct": 41,
@@ -271,14 +302,53 @@
         "n": 601
       },
       "counter_puncher": {
-        "pct": 49,
-        "n": 5591
+        "pct": 48,
+        "n": 5315
       },
       "solid_defender": {
-        "pct": 57,
-        "n": 2055
+        "pct": 56,
+        "n": 1885
       },
-      "all_court": null
+      "all_court": null,
+      "clay_specialist": {
+        "pct": 61,
+        "n": 448
+      }
+    },
+    "clay_specialist": {
+      "big_server": {
+        "pct": 38,
+        "n": 460
+      },
+      "big_server_baseliner": {
+        "pct": 23,
+        "n": 131
+      },
+      "attacking_baseliner": {
+        "pct": 35,
+        "n": 259
+      },
+      "solid_baseliner": {
+        "pct": 38,
+        "n": 298
+      },
+      "all_court_elite": {
+        "pct": 10,
+        "n": 116
+      },
+      "counter_puncher": {
+        "pct": 43,
+        "n": 1903
+      },
+      "solid_defender": {
+        "pct": 56,
+        "n": 752
+      },
+      "all_court": {
+        "pct": 39,
+        "n": 448
+      },
+      "clay_specialist": null
     }
   },
   "surfaceNote": "matrixBySurface splits the same win% construction by court surface (hard/clay/grass). Same minSampleN floor applied per surface; carpet/unknown dropped.",
@@ -297,7 +367,7 @@
         },
         "attacking_baseliner": {
           "pct": 45,
-          "n": 1176
+          "n": 1172
         },
         "solid_baseliner": {
           "pct": 44,
@@ -308,16 +378,20 @@
           "n": 575
         },
         "counter_puncher": {
-          "pct": 53,
-          "n": 4475
+          "pct": 52,
+          "n": 4341
         },
         "solid_defender": {
-          "pct": 63,
-          "n": 1644
+          "pct": 62,
+          "n": 1584
         },
         "all_court": {
           "pct": 53,
           "n": 1430
+        },
+        "clay_specialist": {
+          "pct": 78,
+          "n": 198
         }
       },
       "big_server_baseliner": {
@@ -328,7 +402,7 @@
         "big_server_baseliner": null,
         "attacking_baseliner": {
           "pct": 50,
-          "n": 521
+          "n": 519
         },
         "solid_baseliner": {
           "pct": 64,
@@ -339,47 +413,55 @@
           "n": 205
         },
         "counter_puncher": {
-          "pct": 62,
-          "n": 923
+          "pct": 61,
+          "n": 889
         },
         "solid_defender": {
-          "pct": 68,
-          "n": 424
+          "pct": 67,
+          "n": 410
         },
         "all_court": {
           "pct": 67,
           "n": 222
+        },
+        "clay_specialist": {
+          "pct": 86,
+          "n": 50
         }
       },
       "attacking_baseliner": {
         "big_server": {
           "pct": 55,
-          "n": 1176
+          "n": 1172
         },
         "big_server_baseliner": {
           "pct": 50,
-          "n": 521
+          "n": 519
         },
         "attacking_baseliner": null,
         "solid_baseliner": {
           "pct": 56,
-          "n": 591
+          "n": 586
         },
         "all_court_elite": {
           "pct": 23,
-          "n": 364
+          "n": 363
         },
         "counter_puncher": {
           "pct": 57,
-          "n": 1964
+          "n": 1905
         },
         "solid_defender": {
-          "pct": 67,
-          "n": 1033
+          "pct": 66,
+          "n": 990
         },
         "all_court": {
           "pct": 55,
           "n": 543
+        },
+        "clay_specialist": {
+          "pct": 78,
+          "n": 89
         }
       },
       "solid_baseliner": {
@@ -393,7 +475,7 @@
         },
         "attacking_baseliner": {
           "pct": 44,
-          "n": 591
+          "n": 586
         },
         "solid_baseliner": null,
         "all_court_elite": {
@@ -402,15 +484,19 @@
         },
         "counter_puncher": {
           "pct": 59,
-          "n": 1809
+          "n": 1749
         },
         "solid_defender": {
           "pct": 64,
-          "n": 677
+          "n": 650
         },
         "all_court": {
           "pct": 60,
           "n": 574
+        },
+        "clay_specialist": {
+          "pct": 82,
+          "n": 92
         }
       },
       "all_court_elite": {
@@ -424,7 +510,7 @@
         },
         "attacking_baseliner": {
           "pct": 77,
-          "n": 364
+          "n": 363
         },
         "solid_baseliner": {
           "pct": 84,
@@ -432,78 +518,90 @@
         },
         "all_court_elite": null,
         "counter_puncher": {
-          "pct": 84,
-          "n": 1108
+          "pct": 83,
+          "n": 1082
         },
         "solid_defender": {
           "pct": 87,
-          "n": 344
+          "n": 329
         },
         "all_court": {
           "pct": 87,
           "n": 370
+        },
+        "clay_specialist": {
+          "pct": 98,
+          "n": 42
         }
       },
       "counter_puncher": {
         "big_server": {
-          "pct": 47,
-          "n": 4475
+          "pct": 48,
+          "n": 4341
         },
         "big_server_baseliner": {
-          "pct": 38,
-          "n": 923
+          "pct": 39,
+          "n": 889
         },
         "attacking_baseliner": {
           "pct": 43,
-          "n": 1964
+          "n": 1905
         },
         "solid_baseliner": {
           "pct": 41,
-          "n": 1809
+          "n": 1749
         },
         "all_court_elite": {
-          "pct": 16,
-          "n": 1108
+          "pct": 17,
+          "n": 1082
         },
         "counter_puncher": null,
         "solid_defender": {
           "pct": 62,
-          "n": 3208
+          "n": 2920
         },
         "all_court": {
           "pct": 52,
-          "n": 3066
+          "n": 2998
+        },
+        "clay_specialist": {
+          "pct": 74,
+          "n": 463
         }
       },
       "solid_defender": {
         "big_server": {
-          "pct": 37,
-          "n": 1644
+          "pct": 38,
+          "n": 1584
         },
         "big_server_baseliner": {
-          "pct": 32,
-          "n": 424
+          "pct": 33,
+          "n": 410
         },
         "attacking_baseliner": {
-          "pct": 33,
-          "n": 1033
+          "pct": 34,
+          "n": 990
         },
         "solid_baseliner": {
           "pct": 36,
-          "n": 677
+          "n": 650
         },
         "all_court_elite": {
           "pct": 13,
-          "n": 344
+          "n": 329
         },
         "counter_puncher": {
           "pct": 38,
-          "n": 3208
+          "n": 2920
         },
         "solid_defender": null,
         "all_court": {
-          "pct": 43,
-          "n": 1038
+          "pct": 45,
+          "n": 972
+        },
+        "clay_specialist": {
+          "pct": 59,
+          "n": 173
         }
       },
       "all_court": {
@@ -529,13 +627,52 @@
         },
         "counter_puncher": {
           "pct": 48,
-          "n": 3066
+          "n": 2998
         },
         "solid_defender": {
-          "pct": 57,
-          "n": 1038
+          "pct": 55,
+          "n": 972
         },
-        "all_court": null
+        "all_court": null,
+        "clay_specialist": {
+          "pct": 75,
+          "n": 134
+        }
+      },
+      "clay_specialist": {
+        "big_server": {
+          "pct": 22,
+          "n": 198
+        },
+        "big_server_baseliner": {
+          "pct": 14,
+          "n": 50
+        },
+        "attacking_baseliner": {
+          "pct": 22,
+          "n": 89
+        },
+        "solid_baseliner": {
+          "pct": 18,
+          "n": 92
+        },
+        "all_court_elite": {
+          "pct": 2,
+          "n": 42
+        },
+        "counter_puncher": {
+          "pct": 26,
+          "n": 463
+        },
+        "solid_defender": {
+          "pct": 41,
+          "n": 173
+        },
+        "all_court": {
+          "pct": 25,
+          "n": 134
+        },
+        "clay_specialist": null
       }
     },
     "clay": {
@@ -546,8 +683,8 @@
           "n": 132
         },
         "attacking_baseliner": {
-          "pct": 40,
-          "n": 337
+          "pct": 41,
+          "n": 333
         },
         "solid_baseliner": {
           "pct": 39,
@@ -559,15 +696,19 @@
         },
         "counter_puncher": {
           "pct": 43,
-          "n": 1692
+          "n": 1537
         },
         "solid_defender": {
-          "pct": 54,
-          "n": 751
+          "pct": 55,
+          "n": 682
         },
         "all_court": {
           "pct": 48,
           "n": 439
+        },
+        "clay_specialist": {
+          "pct": 46,
+          "n": 228
         }
       },
       "big_server_baseliner": {
@@ -577,8 +718,8 @@
         },
         "big_server_baseliner": null,
         "attacking_baseliner": {
-          "pct": 46,
-          "n": 166
+          "pct": 45,
+          "n": 159
         },
         "solid_baseliner": {
           "pct": 55,
@@ -589,31 +730,35 @@
           "n": 64
         },
         "counter_puncher": {
-          "pct": 63,
-          "n": 444
+          "pct": 61,
+          "n": 397
         },
         "solid_defender": {
-          "pct": 71,
-          "n": 207
+          "pct": 72,
+          "n": 185
         },
         "all_court": {
           "pct": 61,
           "n": 109
+        },
+        "clay_specialist": {
+          "pct": 71,
+          "n": 76
         }
       },
       "attacking_baseliner": {
         "big_server": {
-          "pct": 60,
-          "n": 337
+          "pct": 59,
+          "n": 333
         },
         "big_server_baseliner": {
-          "pct": 54,
-          "n": 166
+          "pct": 55,
+          "n": 159
         },
         "attacking_baseliner": null,
         "solid_baseliner": {
-          "pct": 59,
-          "n": 218
+          "pct": 58,
+          "n": 214
         },
         "all_court_elite": {
           "pct": 24,
@@ -621,15 +766,19 @@
         },
         "counter_puncher": {
           "pct": 57,
-          "n": 825
+          "n": 704
         },
         "solid_defender": {
-          "pct": 59,
-          "n": 575
+          "pct": 60,
+          "n": 529
         },
         "all_court": {
           "pct": 59,
-          "n": 225
+          "n": 224
+        },
+        "clay_specialist": {
+          "pct": 54,
+          "n": 151
         }
       },
       "solid_baseliner": {
@@ -642,8 +791,8 @@
           "n": 95
         },
         "attacking_baseliner": {
-          "pct": 41,
-          "n": 218
+          "pct": 42,
+          "n": 214
         },
         "solid_baseliner": null,
         "all_court_elite": {
@@ -651,16 +800,20 @@
           "n": 154
         },
         "counter_puncher": {
-          "pct": 59,
-          "n": 1271
+          "pct": 60,
+          "n": 1154
         },
         "solid_defender": {
-          "pct": 62,
-          "n": 562
+          "pct": 63,
+          "n": 494
         },
         "all_court": {
           "pct": 57,
           "n": 298
+        },
+        "clay_specialist": {
+          "pct": 52,
+          "n": 189
         }
       },
       "all_court_elite": {
@@ -682,78 +835,90 @@
         },
         "all_court_elite": null,
         "counter_puncher": {
-          "pct": 86,
-          "n": 520
+          "pct": 87,
+          "n": 477
         },
         "solid_defender": {
-          "pct": 92,
-          "n": 213
+          "pct": 91,
+          "n": 188
         },
         "all_court": {
           "pct": 87,
           "n": 149
+        },
+        "clay_specialist": {
+          "pct": 84,
+          "n": 68
         }
       },
       "counter_puncher": {
         "big_server": {
           "pct": 57,
-          "n": 1692
+          "n": 1537
         },
         "big_server_baseliner": {
-          "pct": 37,
-          "n": 444
+          "pct": 39,
+          "n": 397
         },
         "attacking_baseliner": {
           "pct": 43,
-          "n": 825
+          "n": 704
         },
         "solid_baseliner": {
-          "pct": 41,
-          "n": 1271
+          "pct": 40,
+          "n": 1154
         },
         "all_court_elite": {
-          "pct": 14,
-          "n": 520
+          "pct": 13,
+          "n": 477
         },
         "counter_puncher": null,
         "solid_defender": {
-          "pct": 58,
-          "n": 3190
+          "pct": 59,
+          "n": 2401
         },
         "all_court": {
           "pct": 52,
-          "n": 1757
+          "n": 1566
+        },
+        "clay_specialist": {
+          "pct": 48,
+          "n": 1312
         }
       },
       "solid_defender": {
         "big_server": {
-          "pct": 46,
-          "n": 751
+          "pct": 45,
+          "n": 682
         },
         "big_server_baseliner": {
-          "pct": 29,
-          "n": 207
+          "pct": 28,
+          "n": 185
         },
         "attacking_baseliner": {
-          "pct": 41,
-          "n": 575
+          "pct": 40,
+          "n": 529
         },
         "solid_baseliner": {
-          "pct": 38,
-          "n": 562
+          "pct": 37,
+          "n": 494
         },
         "all_court_elite": {
-          "pct": 8,
-          "n": 213
+          "pct": 9,
+          "n": 188
         },
         "counter_puncher": {
-          "pct": 42,
-          "n": 3190
+          "pct": 41,
+          "n": 2401
         },
         "solid_defender": null,
         "all_court": {
           "pct": 43,
-          "n": 772
+          "n": 674
+        },
+        "clay_specialist": {
+          "pct": 38,
+          "n": 556
         }
       },
       "all_court": {
@@ -767,7 +932,7 @@
         },
         "attacking_baseliner": {
           "pct": 41,
-          "n": 225
+          "n": 224
         },
         "solid_baseliner": {
           "pct": 43,
@@ -779,13 +944,52 @@
         },
         "counter_puncher": {
           "pct": 48,
-          "n": 1757
+          "n": 1566
         },
         "solid_defender": {
           "pct": 57,
-          "n": 772
+          "n": 674
         },
-        "all_court": null
+        "all_court": null,
+        "clay_specialist": {
+          "pct": 52,
+          "n": 290
+        }
+      },
+      "clay_specialist": {
+        "big_server": {
+          "pct": 54,
+          "n": 228
+        },
+        "big_server_baseliner": {
+          "pct": 29,
+          "n": 76
+        },
+        "attacking_baseliner": {
+          "pct": 46,
+          "n": 151
+        },
+        "solid_baseliner": {
+          "pct": 48,
+          "n": 189
+        },
+        "all_court_elite": {
+          "pct": 16,
+          "n": 68
+        },
+        "counter_puncher": {
+          "pct": 52,
+          "n": 1312
+        },
+        "solid_defender": {
+          "pct": 62,
+          "n": 556
+        },
+        "all_court": {
+          "pct": 48,
+          "n": 290
+        },
+        "clay_specialist": null
       }
     },
     "grass": {
@@ -797,7 +1001,7 @@
         },
         "attacking_baseliner": {
           "pct": 57,
-          "n": 250
+          "n": 248
         },
         "solid_baseliner": {
           "pct": 43,
@@ -809,15 +1013,19 @@
         },
         "counter_puncher": {
           "pct": 58,
-          "n": 978
+          "n": 964
         },
         "solid_defender": {
-          "pct": 70,
-          "n": 354
+          "pct": 69,
+          "n": 346
         },
         "all_court": {
           "pct": 59,
           "n": 397
+        },
+        "clay_specialist": {
+          "pct": 92,
+          "n": 24
         }
       },
       "big_server_baseliner": {
@@ -843,18 +1051,22 @@
           "n": 158
         },
         "solid_defender": {
-          "pct": 82,
-          "n": 83
+          "pct": 81,
+          "n": 81
         },
         "all_court": {
           "pct": 79,
           "n": 52
+        },
+        "clay_specialist": {
+          "pct": null,
+          "n": 2
         }
       },
       "attacking_baseliner": {
         "big_server": {
           "pct": 43,
-          "n": 250
+          "n": 248
         },
         "big_server_baseliner": {
           "pct": 34,
@@ -862,24 +1074,28 @@
         },
         "attacking_baseliner": null,
         "solid_baseliner": {
-          "pct": 60,
-          "n": 95
+          "pct": 61,
+          "n": 94
         },
         "all_court_elite": {
           "pct": 14,
           "n": 64
         },
         "counter_puncher": {
-          "pct": 62,
-          "n": 321
+          "pct": 61,
+          "n": 311
         },
         "solid_defender": {
           "pct": 67,
-          "n": 169
+          "n": 166
         },
         "all_court": {
-          "pct": 68,
-          "n": 114
+          "pct": 69,
+          "n": 113
+        },
+        "clay_specialist": {
+          "pct": null,
+          "n": 14
         }
       },
       "solid_baseliner": {
@@ -892,8 +1108,8 @@
           "n": 37
         },
         "attacking_baseliner": {
-          "pct": 40,
-          "n": 95
+          "pct": 39,
+          "n": 94
         },
         "solid_baseliner": null,
         "all_court_elite": {
@@ -901,16 +1117,20 @@
           "n": 42
         },
         "counter_puncher": {
-          "pct": 47,
-          "n": 268
+          "pct": 46,
+          "n": 260
         },
         "solid_defender": {
-          "pct": 68,
-          "n": 122
+          "pct": 67,
+          "n": 116
         },
         "all_court": {
           "pct": 62,
           "n": 105
+        },
+        "clay_specialist": {
+          "pct": null,
+          "n": 15
         }
       },
       "all_court_elite": {
@@ -933,77 +1153,89 @@
         "all_court_elite": null,
         "counter_puncher": {
           "pct": 90,
-          "n": 201
+          "n": 198
         },
         "solid_defender": {
           "pct": 94,
-          "n": 66
+          "n": 64
         },
         "all_court": {
           "pct": 78,
           "n": 69
+        },
+        "clay_specialist": {
+          "pct": null,
+          "n": 5
         }
       },
       "counter_puncher": {
         "big_server": {
           "pct": 42,
-          "n": 978
+          "n": 964
         },
         "big_server_baseliner": {
           "pct": 30,
           "n": 158
         },
         "attacking_baseliner": {
-          "pct": 38,
-          "n": 321
+          "pct": 39,
+          "n": 311
         },
         "solid_baseliner": {
-          "pct": 53,
-          "n": 268
+          "pct": 54,
+          "n": 260
         },
         "all_court_elite": {
           "pct": 10,
-          "n": 201
+          "n": 198
         },
         "counter_puncher": null,
         "solid_defender": {
-          "pct": 64,
-          "n": 621
+          "pct": 63,
+          "n": 576
         },
         "all_court": {
           "pct": 52,
-          "n": 564
+          "n": 552
+        },
+        "clay_specialist": {
+          "pct": 89,
+          "n": 81
         }
       },
       "solid_defender": {
         "big_server": {
-          "pct": 30,
-          "n": 354
+          "pct": 31,
+          "n": 346
         },
         "big_server_baseliner": {
-          "pct": 18,
-          "n": 83
+          "pct": 19,
+          "n": 81
         },
         "attacking_baseliner": {
           "pct": 33,
-          "n": 169
+          "n": 166
         },
         "solid_baseliner": {
-          "pct": 32,
-          "n": 122
+          "pct": 33,
+          "n": 116
         },
         "all_court_elite": {
           "pct": 6,
-          "n": 66
+          "n": 64
         },
         "counter_puncher": {
-          "pct": 36,
-          "n": 621
+          "pct": 37,
+          "n": 576
         },
         "solid_defender": null,
         "all_court": {
-          "pct": 42,
-          "n": 220
+          "pct": 43,
+          "n": 214
+        },
+        "clay_specialist": {
+          "pct": null,
+          "n": 18
         }
       },
       "all_court": {
@@ -1016,8 +1248,8 @@
           "n": 52
         },
         "attacking_baseliner": {
-          "pct": 32,
-          "n": 114
+          "pct": 31,
+          "n": 113
         },
         "solid_baseliner": {
           "pct": 38,
@@ -1029,13 +1261,52 @@
         },
         "counter_puncher": {
           "pct": 48,
-          "n": 564
+          "n": 552
         },
         "solid_defender": {
-          "pct": 58,
-          "n": 220
+          "pct": 57,
+          "n": 214
         },
-        "all_court": null
+        "all_court": null,
+        "clay_specialist": {
+          "pct": null,
+          "n": 19
+        }
+      },
+      "clay_specialist": {
+        "big_server": {
+          "pct": 8,
+          "n": 24
+        },
+        "big_server_baseliner": {
+          "pct": null,
+          "n": 2
+        },
+        "attacking_baseliner": {
+          "pct": null,
+          "n": 14
+        },
+        "solid_baseliner": {
+          "pct": null,
+          "n": 15
+        },
+        "all_court_elite": {
+          "pct": null,
+          "n": 5
+        },
+        "counter_puncher": {
+          "pct": 11,
+          "n": 81
+        },
+        "solid_defender": {
+          "pct": null,
+          "n": 18
+        },
+        "all_court": {
+          "pct": null,
+          "n": 19
+        },
+        "clay_specialist": null
       }
     }
   }

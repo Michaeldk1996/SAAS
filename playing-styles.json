@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T07:55:30.668Z",
+  "generatedAt": "2026-08-05T13:26:06.999Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -69,10 +69,10 @@
       "archetype_scores": {
         "big_server": 69,
         "big_server_baseliner": 89,
-        "attacking_baseliner": 79,
+        "attacking_baseliner": 78,
         "solid_baseliner": 79,
         "counter_puncher": 83,
-        "solid_defender": 56,
+        "solid_defender": 57,
         "all_court": 65
       },
       "archetype_data_coverage": "full",
@@ -95,12 +95,12 @@
       "archetype_label": "All-Court Elite",
       "archetype_scores": {
         "big_server": 30,
-        "big_server_baseliner": 86,
+        "big_server_baseliner": 43,
         "attacking_baseliner": 87,
         "solid_baseliner": 93,
-        "counter_puncher": 96,
+        "counter_puncher": 97,
         "solid_defender": 76,
-        "all_court": 56
+        "all_court": 45
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -150,9 +150,9 @@
       "archetype_scores": {
         "big_server": 15,
         "big_server_baseliner": 21,
-        "attacking_baseliner": 72,
-        "solid_baseliner": 75,
-        "counter_puncher": 93,
+        "attacking_baseliner": 71,
+        "solid_baseliner": 74,
+        "counter_puncher": 94,
         "solid_defender": 79,
         "all_court": 29
       },
@@ -174,9 +174,9 @@
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 16,
-        "big_server_baseliner": 28,
+        "big_server_baseliner": 27,
         "attacking_baseliner": 62,
-        "solid_baseliner": 77,
+        "solid_baseliner": 76,
         "counter_puncher": 81,
         "solid_defender": 81,
         "all_court": 31
@@ -184,7 +184,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "clay_specialist"
+        "grass_specialist"
       ],
       "pressure_score": 65,
       "mcp_charted": 125,
@@ -204,9 +204,9 @@
         "big_server_baseliner": 87,
         "attacking_baseliner": 80,
         "solid_baseliner": 90,
-        "counter_puncher": 21,
+        "counter_puncher": 47,
         "solid_defender": 39,
-        "all_court": 40
+        "all_court": 51
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -236,7 +236,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 68,
+      "pressure_score": 69,
       "mcp_charted": 44,
       "win_pct": 59.2,
       "clay_wr": 53,
@@ -280,8 +280,8 @@
         "attacking_baseliner": 48,
         "solid_baseliner": 51,
         "counter_puncher": 11,
-        "solid_defender": 18,
-        "all_court": 17
+        "solid_defender": 19,
+        "all_court": 18
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -307,15 +307,14 @@
         "big_server_baseliner": 38,
         "attacking_baseliner": 75,
         "solid_baseliner": 89,
-        "counter_puncher": 75,
+        "counter_puncher": 76,
         "solid_defender": 68,
         "all_court": 40
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
-        "pressure_player",
-        "clay_specialist"
+        "pressure_player"
       ],
       "pressure_score": 81,
       "mcp_charted": 171,
@@ -385,8 +384,8 @@
       "archetype_scores": {
         "big_server": 24,
         "big_server_baseliner": 35,
-        "attacking_baseliner": 80,
-        "solid_baseliner": 74,
+        "attacking_baseliner": 79,
+        "solid_baseliner": 73,
         "counter_puncher": 58,
         "solid_defender": 49,
         "all_court": 33
@@ -396,7 +395,7 @@
       "badges": [
         "high_risk_high_reward"
       ],
-      "pressure_score": 78,
+      "pressure_score": 77,
       "mcp_charted": 66,
       "win_pct": 62.6,
       "clay_wr": 63,
@@ -435,11 +434,11 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 61,
-        "big_server_baseliner": 79,
-        "attacking_baseliner": 74,
+        "big_server": 60,
+        "big_server_baseliner": 78,
+        "attacking_baseliner": 73,
         "solid_baseliner": 80,
-        "counter_puncher": 68,
+        "counter_puncher": 69,
         "solid_defender": 57,
         "all_court": 61
       },
@@ -470,7 +469,9 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [],
+      "badges": [
+        "high_risk_high_reward"
+      ],
       "pressure_score": 74,
       "mcp_charted": 31,
       "win_pct": 60.4,
@@ -510,9 +511,9 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Counter Puncher",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 33,
-        "attacking_baseliner": 79,
+        "attacking_baseliner": 78,
         "solid_baseliner": 81,
         "counter_puncher": 80,
         "solid_defender": 67,
@@ -538,7 +539,7 @@
         "big_server": 10,
         "big_server_baseliner": 21,
         "attacking_baseliner": 54,
-        "solid_baseliner": 57,
+        "solid_baseliner": 56,
         "counter_puncher": 92,
         "solid_defender": 78,
         "all_court": 23
@@ -548,7 +549,7 @@
       "badges": [
         "high_risk_high_reward"
       ],
-      "pressure_score": 61,
+      "pressure_score": 62,
       "mcp_charted": 42,
       "win_pct": 54.9,
       "clay_wr": 60,
@@ -563,12 +564,12 @@
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 34,
-        "big_server_baseliner": 72,
+        "big_server_baseliner": 71,
         "attacking_baseliner": 69,
         "solid_baseliner": 69,
-        "counter_puncher": 48,
+        "counter_puncher": 49,
         "solid_defender": 41,
-        "all_court": 40
+        "all_court": 41
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -587,18 +588,18 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 25,
         "attacking_baseliner": 49,
         "solid_baseliner": 51,
         "counter_puncher": 58,
         "solid_defender": 61,
-        "all_court": 29
+        "all_court": 28
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 65,
+      "pressure_score": 66,
       "mcp_charted": 24,
       "win_pct": 53.5,
       "clay_wr": 60,
@@ -612,7 +613,7 @@
       "primary": "big_server_baseliner",
       "archetype_label": "Big Server + Baseliner",
       "archetype_scores": {
-        "big_server": 82,
+        "big_server": 81,
         "big_server_baseliner": 33,
         "attacking_baseliner": 56,
         "solid_baseliner": 60,
@@ -636,22 +637,20 @@
     {
       "name": "L. Darderi",
       "rank": 25,
-      "primary": "attacking_baseliner",
-      "archetype_label": "Attacking Baseliner",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 25,
         "big_server_baseliner": 27,
-        "attacking_baseliner": 53,
-        "solid_baseliner": 54,
-        "counter_puncher": 58,
+        "attacking_baseliner": 52,
+        "solid_baseliner": 53,
+        "counter_puncher": 59,
         "solid_defender": 57,
         "all_court": 32
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 69,
       "mcp_charted": 12,
       "win_pct": 50,
@@ -720,7 +719,7 @@
       "archetype_scores": {
         "big_server": 20,
         "big_server_baseliner": 30,
-        "attacking_baseliner": 56,
+        "attacking_baseliner": 55,
         "solid_baseliner": 71,
         "counter_puncher": 80,
         "solid_defender": 73,
@@ -743,13 +742,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 33,
+        "big_server": 26,
         "big_server_baseliner": 25,
         "attacking_baseliner": 83,
-        "solid_baseliner": 87,
+        "solid_baseliner": 86,
         "counter_puncher": 54,
-        "solid_defender": 47,
-        "all_court": 32
+        "solid_defender": 48,
+        "all_court": 29
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -794,7 +793,7 @@
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 31,
-        "big_server_baseliner": 22,
+        "big_server_baseliner": 21,
         "attacking_baseliner": 63,
         "solid_baseliner": 67,
         "counter_puncher": 28,
@@ -822,9 +821,9 @@
         "big_server_baseliner": 39,
         "attacking_baseliner": 74,
         "solid_baseliner": 92,
-        "counter_puncher": 16,
-        "solid_defender": 38,
-        "all_court": 29
+        "counter_puncher": 17,
+        "solid_defender": 39,
+        "all_court": 30
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -848,7 +847,7 @@
         "attacking_baseliner": 41,
         "solid_baseliner": 37,
         "counter_puncher": 81,
-        "solid_defender": 76,
+        "solid_defender": 77,
         "all_court": 15
       },
       "archetype_data_coverage": "full",
@@ -898,7 +897,7 @@
         "big_server": 36,
         "big_server_baseliner": 25,
         "attacking_baseliner": 76,
-        "solid_baseliner": 78,
+        "solid_baseliner": 77,
         "counter_puncher": 18,
         "solid_defender": 34,
         "all_court": 21
@@ -970,11 +969,11 @@
       "name": "Z. Bergs",
       "rank": 39,
       "primary": "attacking_baseliner",
-      "archetype_label": "Attacking Baseliner",
+      "archetype_label": "Attacking Baseliner / Solid Baseliner",
       "archetype_scores": {
         "big_server": 29,
         "big_server_baseliner": 43,
-        "attacking_baseliner": 65,
+        "attacking_baseliner": 64,
         "solid_baseliner": 54,
         "counter_puncher": 17,
         "solid_defender": 33,
@@ -997,20 +996,20 @@
       "primary": "big_server_baseliner",
       "archetype_label": "Big Server + Baseliner",
       "archetype_scores": {
-        "big_server": 79,
+        "big_server": 78,
         "big_server_baseliner": 35,
         "attacking_baseliner": 53,
         "solid_baseliner": 71,
         "counter_puncher": 13,
         "solid_defender": 33,
-        "all_court": 24
+        "all_court": 25
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [
         "grass_specialist"
       ],
-      "pressure_score": 41,
+      "pressure_score": 42,
       "mcp_charted": 14,
       "win_pct": 50.6,
       "clay_wr": 55,
@@ -1024,13 +1023,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 30,
         "attacking_baseliner": 74,
-        "solid_baseliner": 70,
+        "solid_baseliner": 69,
         "counter_puncher": 62,
         "solid_defender": 51,
-        "all_court": 32
+        "all_court": 31
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -1047,13 +1046,13 @@
       "name": "A. Michelsen",
       "rank": 42,
       "primary": "solid_baseliner",
-      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_label": "Solid Baseliner / Counter Puncher",
       "archetype_scores": {
         "big_server": 19,
         "big_server_baseliner": 18,
         "attacking_baseliner": 58,
         "solid_baseliner": 64,
-        "counter_puncher": 58,
+        "counter_puncher": 59,
         "solid_defender": 54,
         "all_court": 26
       },
@@ -1071,22 +1070,20 @@
     {
       "name": "M. Navone",
       "rank": 44,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Counter Puncher",
       "archetype_scores": {
         "big_server": 5,
         "big_server_baseliner": 15,
         "attacking_baseliner": 38,
         "solid_baseliner": 47,
         "counter_puncher": 98,
-        "solid_defender": 94,
+        "solid_defender": 95,
         "all_court": 14
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 36,
       "mcp_charted": 12,
       "win_pct": 42.4,
@@ -1101,13 +1098,13 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
-        "big_server": 18,
+        "big_server": 14,
         "big_server_baseliner": 16,
         "attacking_baseliner": 48,
         "solid_baseliner": 50,
         "counter_puncher": 70,
         "solid_defender": 64,
-        "all_court": 24
+        "all_court": 22
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -1131,9 +1128,9 @@
         "big_server": 56,
         "big_server_baseliner": 76,
         "attacking_baseliner": 74,
-        "solid_baseliner": 81,
-        "counter_puncher": 65,
-        "solid_defender": 54,
+        "solid_baseliner": 80,
+        "counter_puncher": 66,
+        "solid_defender": 55,
         "all_court": 58
       },
       "archetype_data_coverage": "full",
@@ -1156,7 +1153,7 @@
         "big_server": 67,
         "big_server_baseliner": 90,
         "attacking_baseliner": 84,
-        "solid_baseliner": 83,
+        "solid_baseliner": 82,
         "counter_puncher": 63,
         "solid_defender": 46,
         "all_court": 57
@@ -1178,13 +1175,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 61,
+        "big_server": 30,
         "big_server_baseliner": 82,
         "attacking_baseliner": 77,
         "solid_baseliner": 76,
         "counter_puncher": 70,
         "solid_defender": 52,
-        "all_court": 59
+        "all_court": 46
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -1204,12 +1201,12 @@
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 24,
-        "big_server_baseliner": 21,
+        "big_server_baseliner": 20,
         "attacking_baseliner": 28,
         "solid_baseliner": 32,
         "counter_puncher": 10,
         "solid_defender": 39,
-        "all_court": 17
+        "all_court": 16
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -1228,10 +1225,10 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Solid Baseliner",
       "archetype_scores": {
-        "big_server": 24,
+        "big_server": 23,
         "big_server_baseliner": 25,
-        "attacking_baseliner": 65,
-        "solid_baseliner": 64,
+        "attacking_baseliner": 64,
+        "solid_baseliner": 63,
         "counter_puncher": 48,
         "solid_defender": 47,
         "all_court": 29
@@ -1284,7 +1281,7 @@
         "big_server": 25,
         "big_server_baseliner": 25,
         "attacking_baseliner": 44,
-        "solid_baseliner": 59,
+        "solid_baseliner": 58,
         "counter_puncher": 19,
         "solid_defender": 55,
         "all_court": 22
@@ -1309,9 +1306,9 @@
         "big_server": 92,
         "big_server_baseliner": 42,
         "attacking_baseliner": 72,
-        "solid_baseliner": 91,
+        "solid_baseliner": 90,
         "counter_puncher": 13,
-        "solid_defender": 32,
+        "solid_defender": 33,
         "all_court": 27
       },
       "archetype_data_coverage": "full",
@@ -1358,13 +1355,13 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
-        "big_server": 7,
+        "big_server": 6,
         "big_server_baseliner": 12,
         "attacking_baseliner": 22,
         "solid_baseliner": 9,
-        "counter_puncher": 78,
+        "counter_puncher": 79,
         "solid_defender": 69,
-        "all_court": 4
+        "all_court": 3
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -1389,7 +1386,7 @@
         "big_server": 14,
         "big_server_baseliner": 26,
         "attacking_baseliner": 55,
-        "solid_baseliner": 57,
+        "solid_baseliner": 56,
         "counter_puncher": 87,
         "solid_defender": 78,
         "all_court": 27
@@ -1416,7 +1413,7 @@
         "attacking_baseliner": 56,
         "solid_baseliner": 75,
         "counter_puncher": 66,
-        "solid_defender": 64,
+        "solid_defender": 65,
         "all_court": 45
       },
       "archetype_data_coverage": "full",
@@ -1465,8 +1462,8 @@
         "big_server_baseliner": 19,
         "attacking_baseliner": 54,
         "solid_baseliner": 62,
-        "counter_puncher": 23,
-        "solid_defender": 51,
+        "counter_puncher": 24,
+        "solid_defender": 52,
         "all_court": 22
       },
       "archetype_data_coverage": "partial",
@@ -1489,12 +1486,12 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 23,
-        "big_server_baseliner": 25,
+        "big_server": 22,
+        "big_server_baseliner": 24,
         "attacking_baseliner": 56,
-        "solid_baseliner": 62,
+        "solid_baseliner": 61,
         "counter_puncher": 22,
-        "solid_defender": 54,
+        "solid_defender": 55,
         "all_court": 23
       },
       "archetype_data_coverage": "full",
@@ -1539,7 +1536,7 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 80,
+        "big_server": 79,
         "big_server_baseliner": 33,
         "attacking_baseliner": 52,
         "solid_baseliner": 54,
@@ -1592,7 +1589,7 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
-        "big_server": 10,
+        "big_server": 9,
         "big_server_baseliner": 21,
         "attacking_baseliner": 58,
         "solid_baseliner": 68,
@@ -1647,7 +1644,7 @@
         "attacking_baseliner": 25,
         "solid_baseliner": 32,
         "counter_puncher": 14,
-        "solid_defender": 41,
+        "solid_defender": 42,
         "all_court": 17
       },
       "archetype_data_coverage": "full",
@@ -1664,22 +1661,20 @@
     {
       "name": "S. Baez",
       "rank": 65,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Counter Puncher",
       "archetype_scores": {
         "big_server": 6,
         "big_server_baseliner": 17,
-        "attacking_baseliner": 52,
+        "attacking_baseliner": 51,
         "solid_baseliner": 60,
-        "counter_puncher": 93,
+        "counter_puncher": 94,
         "solid_defender": 93,
         "all_court": 20
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 43,
       "mcp_charted": 50,
       "win_pct": 50.4,
@@ -1699,13 +1694,13 @@
         "attacking_baseliner": 61,
         "solid_baseliner": 75,
         "counter_puncher": 10,
-        "solid_defender": 37,
-        "all_court": 20
+        "solid_defender": 38,
+        "all_court": 21
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 51,
+      "pressure_score": 52,
       "mcp_charted": 44,
       "win_pct": 47.9,
       "clay_wr": 48,
@@ -1721,9 +1716,9 @@
       "archetype_scores": {
         "big_server": 84,
         "big_server_baseliner": 25,
-        "attacking_baseliner": 62,
+        "attacking_baseliner": 61,
         "solid_baseliner": 64,
-        "counter_puncher": 7,
+        "counter_puncher": 8,
         "solid_defender": 16,
         "all_court": 15
       },
@@ -1747,7 +1742,7 @@
         "big_server": 58,
         "big_server_baseliner": 78,
         "attacking_baseliner": 65,
-        "solid_baseliner": 69,
+        "solid_baseliner": 68,
         "counter_puncher": 84,
         "solid_defender": 58,
         "all_court": 59
@@ -1771,7 +1766,7 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender / Solid Baseliner",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 20,
         "attacking_baseliner": 40,
         "solid_baseliner": 51,
@@ -1826,10 +1821,10 @@
       "archetype_scores": {
         "big_server": 37,
         "big_server_baseliner": 24,
-        "attacking_baseliner": 68,
+        "attacking_baseliner": 69,
         "solid_baseliner": 80,
-        "counter_puncher": 10,
-        "solid_defender": 29,
+        "counter_puncher": 11,
+        "solid_defender": 30,
         "all_court": 17
       },
       "archetype_data_coverage": "partial",
@@ -1852,13 +1847,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 6,
+        "big_server": 5,
         "big_server_baseliner": 10,
         "attacking_baseliner": 23,
         "solid_baseliner": 18,
-        "counter_puncher": 72,
+        "counter_puncher": 73,
         "solid_defender": 73,
-        "all_court": 6
+        "all_court": 5
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -1929,14 +1924,14 @@
     {
       "name": "M. Trungelliti",
       "rank": 78,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Counter Puncher",
       "archetype_scores": {
         "big_server": 7,
         "big_server_baseliner": 10,
         "attacking_baseliner": 25,
         "solid_baseliner": 11,
-        "counter_puncher": 71,
+        "counter_puncher": 72,
         "solid_defender": 69,
         "all_court": 5
       },
@@ -1945,9 +1940,7 @@
         "counter_puncher",
         "solid_defender"
       ],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
       "win_pct": 40.5,
@@ -1994,8 +1987,8 @@
         "big_server_baseliner": 16,
         "attacking_baseliner": 31,
         "solid_baseliner": 33,
-        "counter_puncher": 78,
-        "solid_defender": 75,
+        "counter_puncher": 79,
+        "solid_defender": 76,
         "all_court": 13
       },
       "archetype_data_coverage": "partial",
@@ -2022,9 +2015,9 @@
         "big_server_baseliner": 20,
         "attacking_baseliner": 40,
         "solid_baseliner": 43,
-        "counter_puncher": 12,
+        "counter_puncher": 13,
         "solid_defender": 32,
-        "all_court": 18
+        "all_court": 19
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -2043,13 +2036,13 @@
       "primary": "all_court",
       "archetype_label": "All-Court Player",
       "archetype_scores": {
-        "big_server": 30,
+        "big_server": 29,
         "big_server_baseliner": 25,
         "attacking_baseliner": 44,
         "solid_baseliner": 39,
         "counter_puncher": 14,
         "solid_defender": 37,
-        "all_court": 22
+        "all_court": 21
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2075,9 +2068,9 @@
         "big_server_baseliner": 36,
         "attacking_baseliner": 59,
         "solid_baseliner": 59,
-        "counter_puncher": 13,
-        "solid_defender": 27,
-        "all_court": 23
+        "counter_puncher": 14,
+        "solid_defender": 28,
+        "all_court": 24
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -2098,10 +2091,10 @@
       "archetype_scores": {
         "big_server": 33,
         "big_server_baseliner": 17,
-        "attacking_baseliner": 32,
+        "attacking_baseliner": 33,
         "solid_baseliner": 28,
         "counter_puncher": 13,
-        "solid_defender": 22,
+        "solid_defender": 23,
         "all_court": 17
       },
       "archetype_data_coverage": "partial",
@@ -2124,13 +2117,13 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 16,
-        "big_server_baseliner": 16,
+        "big_server": 15,
+        "big_server_baseliner": 15,
         "attacking_baseliner": 28,
         "solid_baseliner": 25,
         "counter_puncher": 22,
-        "solid_defender": 53,
-        "all_court": 14
+        "solid_defender": 54,
+        "all_court": 13
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -2151,7 +2144,7 @@
       "archetype_scores": {
         "big_server": 63,
         "big_server_baseliner": 17,
-        "attacking_baseliner": 41,
+        "attacking_baseliner": 40,
         "solid_baseliner": 36,
         "counter_puncher": 3,
         "solid_defender": 20,
@@ -2176,7 +2169,7 @@
       "archetype_scores": {
         "big_server": 5,
         "big_server_baseliner": 13,
-        "attacking_baseliner": 44,
+        "attacking_baseliner": 43,
         "solid_baseliner": 37,
         "counter_puncher": 94,
         "solid_defender": 85,
@@ -2201,7 +2194,7 @@
       "archetype_scores": {
         "big_server": 13,
         "big_server_baseliner": 12,
-        "attacking_baseliner": 28,
+        "attacking_baseliner": 27,
         "solid_baseliner": 30,
         "counter_puncher": 20,
         "solid_defender": 55,
@@ -2227,18 +2220,18 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
-        "big_server": 16,
+        "big_server": 15,
         "big_server_baseliner": 26,
         "attacking_baseliner": 67,
-        "solid_baseliner": 73,
-        "counter_puncher": 81,
+        "solid_baseliner": 72,
+        "counter_puncher": 82,
         "solid_defender": 75,
-        "all_court": 31
+        "all_court": 30
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 59,
+      "pressure_score": 60,
       "mcp_charted": 42,
       "win_pct": 54.8,
       "clay_wr": 55,
@@ -2272,44 +2265,17 @@
       "top10_wins": 1
     },
     {
-      "name": "L. Pouille",
-      "rank": 94,
-      "primary": "attacking_baseliner",
-      "archetype_label": "Attacking Baseliner / Solid Baseliner",
-      "archetype_scores": {
-        "big_server": 29,
-        "big_server_baseliner": 28,
-        "attacking_baseliner": 53,
-        "solid_baseliner": 44,
-        "counter_puncher": 19,
-        "solid_defender": 36,
-        "all_court": 24
-      },
-      "archetype_data_coverage": "full",
-      "partial_axes": [],
-      "badges": [
-        "high_risk_high_reward"
-      ],
-      "pressure_score": 70,
-      "mcp_charted": 32,
-      "win_pct": 51.6,
-      "clay_wr": 49,
-      "hard_wr": 52,
-      "grass_wr": 56,
-      "top10_wins": 5
-    },
-    {
       "name": "R. Safiullin",
       "rank": 94,
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
         "big_server": 32,
-        "big_server_baseliner": 67,
+        "big_server_baseliner": 66,
         "attacking_baseliner": 64,
-        "solid_baseliner": 66,
-        "counter_puncher": 52,
-        "solid_defender": 45,
+        "solid_baseliner": 65,
+        "counter_puncher": 53,
+        "solid_defender": 46,
         "all_court": 42
       },
       "archetype_data_coverage": "full",
@@ -2354,7 +2320,7 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 79,
+        "big_server": 78,
         "big_server_baseliner": 21,
         "attacking_baseliner": 37,
         "solid_baseliner": 38,
@@ -2384,7 +2350,7 @@
         "attacking_baseliner": 31,
         "solid_baseliner": 18,
         "counter_puncher": 19,
-        "solid_defender": 42,
+        "solid_defender": 43,
         "all_court": 10
       },
       "archetype_data_coverage": "full",
@@ -2404,7 +2370,7 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 75,
+        "big_server": 74,
         "big_server_baseliner": 20,
         "attacking_baseliner": 40,
         "solid_baseliner": 31,
@@ -2433,7 +2399,7 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 12,
-        "big_server_baseliner": 15,
+        "big_server_baseliner": 14,
         "attacking_baseliner": 33,
         "solid_baseliner": 28,
         "counter_puncher": 20,
@@ -2461,7 +2427,7 @@
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 15,
-        "big_server_baseliner": 29,
+        "big_server_baseliner": 28,
         "attacking_baseliner": 73,
         "solid_baseliner": 82,
         "counter_puncher": 91,
@@ -2485,13 +2451,13 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
-        "big_server": 7,
+        "big_server": 6,
         "big_server_baseliner": 12,
         "attacking_baseliner": 31,
-        "solid_baseliner": 21,
-        "counter_puncher": 79,
-        "solid_defender": 68,
-        "all_court": 9
+        "solid_baseliner": 20,
+        "counter_puncher": 80,
+        "solid_defender": 69,
+        "all_court": 8
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2540,10 +2506,10 @@
       "archetype_scores": {
         "big_server": 94,
         "big_server_baseliner": 43,
-        "attacking_baseliner": 71,
+        "attacking_baseliner": 72,
         "solid_baseliner": 95,
         "counter_puncher": 12,
-        "solid_defender": 33,
+        "solid_defender": 34,
         "all_court": 27
       },
       "archetype_data_coverage": "full",
@@ -2563,11 +2529,11 @@
       "name": "B. Bonzi",
       "rank": 101,
       "primary": "solid_baseliner",
-      "archetype_label": "Solid Baseliner / Attacking Baseliner",
+      "archetype_label": "Solid Baseliner",
       "archetype_scores": {
-        "big_server": 29,
+        "big_server": 28,
         "big_server_baseliner": 20,
-        "attacking_baseliner": 56,
+        "attacking_baseliner": 55,
         "solid_baseliner": 66,
         "counter_puncher": 18,
         "solid_defender": 47,
@@ -2590,11 +2556,11 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 61,
+        "big_server": 60,
         "big_server_baseliner": 27,
         "attacking_baseliner": 47,
         "solid_baseliner": 45,
-        "counter_puncher": 16,
+        "counter_puncher": 17,
         "solid_defender": 39,
         "all_court": 25
       },
@@ -2618,7 +2584,7 @@
         "big_server": 31,
         "big_server_baseliner": 26,
         "attacking_baseliner": 43,
-        "solid_baseliner": 55,
+        "solid_baseliner": 54,
         "counter_puncher": 7,
         "solid_defender": 36,
         "all_court": 18
@@ -2653,9 +2619,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 57,
       "mcp_charted": 27,
       "win_pct": 51.5,
@@ -2695,10 +2659,10 @@
       "primary": "all_court",
       "archetype_label": "All-Court Player",
       "archetype_scores": {
-        "big_server": 25,
+        "big_server": 24,
         "big_server_baseliner": 27,
         "attacking_baseliner": 59,
-        "solid_baseliner": 53,
+        "solid_baseliner": 52,
         "counter_puncher": 55,
         "solid_defender": 49,
         "all_court": 31
@@ -2721,12 +2685,12 @@
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
         "big_server": 30,
-        "big_server_baseliner": 32,
+        "big_server_baseliner": 31,
         "attacking_baseliner": 62,
         "solid_baseliner": 72,
         "counter_puncher": 23,
         "solid_defender": 57,
-        "all_court": 28
+        "all_court": 27
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -2773,7 +2737,7 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 29,
+        "big_server": 28,
         "big_server_baseliner": 19,
         "attacking_baseliner": 51,
         "solid_baseliner": 61,
@@ -2798,11 +2762,11 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 67,
+        "big_server": 66,
         "big_server_baseliner": 28,
         "attacking_baseliner": 41,
         "solid_baseliner": 43,
-        "counter_puncher": 12,
+        "counter_puncher": 13,
         "solid_defender": 33,
         "all_court": 21
       },
@@ -2828,7 +2792,7 @@
       "archetype_scores": {
         "big_server": 32,
         "big_server_baseliner": 24,
-        "attacking_baseliner": 38,
+        "attacking_baseliner": 37,
         "solid_baseliner": 25,
         "counter_puncher": 4,
         "solid_defender": 20,
@@ -2883,8 +2847,8 @@
         "big_server_baseliner": 15,
         "attacking_baseliner": 39,
         "solid_baseliner": 19,
-        "counter_puncher": 58,
-        "solid_defender": 53,
+        "counter_puncher": 59,
+        "solid_defender": 54,
         "all_court": 13
       },
       "archetype_data_coverage": "full",
@@ -2906,7 +2870,7 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 3,
+        "big_server": 2,
         "big_server_baseliner": 9,
         "attacking_baseliner": 24,
         "solid_baseliner": 21,
@@ -2932,10 +2896,10 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 18,
-        "big_server_baseliner": 30,
-        "attacking_baseliner": 59,
+        "big_server_baseliner": 29,
+        "attacking_baseliner": 58,
         "solid_baseliner": 58,
-        "counter_puncher": 89,
+        "counter_puncher": 90,
         "solid_defender": 71,
         "all_court": 30
       },
@@ -2961,7 +2925,7 @@
         "attacking_baseliner": 32,
         "solid_baseliner": 26,
         "counter_puncher": 24,
-        "solid_defender": 50,
+        "solid_defender": 51,
         "all_court": 19
       },
       "archetype_data_coverage": "partial",
@@ -2989,13 +2953,13 @@
         "attacking_baseliner": 79,
         "solid_baseliner": 82,
         "counter_puncher": 65,
-        "solid_defender": 56,
-        "all_court": 45
+        "solid_defender": 57,
+        "all_court": 46
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 65,
+      "pressure_score": 66,
       "mcp_charted": 138,
       "win_pct": 60.4,
       "clay_wr": 63,
@@ -3013,7 +2977,7 @@
         "big_server_baseliner": 24,
         "attacking_baseliner": 36,
         "solid_baseliner": 26,
-        "counter_puncher": 9,
+        "counter_puncher": 10,
         "solid_defender": 20,
         "all_court": 13
       },
@@ -3037,7 +3001,7 @@
         "big_server": 7,
         "big_server_baseliner": 15,
         "attacking_baseliner": 35,
-        "solid_baseliner": 38,
+        "solid_baseliner": 37,
         "counter_puncher": 86,
         "solid_defender": 84,
         "all_court": 13
@@ -3063,7 +3027,7 @@
         "big_server_baseliner": 16,
         "attacking_baseliner": 46,
         "solid_baseliner": 53,
-        "counter_puncher": 63,
+        "counter_puncher": 64,
         "solid_defender": 62,
         "all_court": 23
       },
@@ -3084,13 +3048,13 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 7,
+        "big_server": 6,
         "big_server_baseliner": 5,
         "attacking_baseliner": 13,
         "solid_baseliner": 4,
         "counter_puncher": 17,
-        "solid_defender": 41,
-        "all_court": 2
+        "solid_defender": 42,
+        "all_court": 1
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3151,7 +3115,7 @@
         "solid_defender"
       ],
       "badges": [],
-      "pressure_score": 24,
+      "pressure_score": 25,
       "mcp_charted": 9,
       "win_pct": 34.9,
       "clay_wr": 40,
@@ -3190,13 +3154,13 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 8,
+        "big_server": 7,
         "big_server_baseliner": 5,
         "attacking_baseliner": 8,
         "solid_baseliner": 21,
         "counter_puncher": 7,
         "solid_defender": 50,
-        "all_court": 1
+        "all_court": 0
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3219,8 +3183,8 @@
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 6,
-        "big_server_baseliner": 12,
-        "attacking_baseliner": 28,
+        "big_server_baseliner": 11,
+        "attacking_baseliner": 27,
         "solid_baseliner": 22,
         "counter_puncher": 83,
         "solid_defender": 79,
@@ -3243,7 +3207,7 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
-        "big_server": 7,
+        "big_server": 6,
         "big_server_baseliner": 16,
         "attacking_baseliner": 38,
         "solid_baseliner": 30,
@@ -3274,8 +3238,8 @@
         "big_server_baseliner": 16,
         "attacking_baseliner": 32,
         "solid_baseliner": 26,
-        "counter_puncher": 9,
-        "solid_defender": 40,
+        "counter_puncher": 10,
+        "solid_defender": 41,
         "all_court": 13
       },
       "archetype_data_coverage": "partial",
@@ -3329,9 +3293,9 @@
         "big_server": 35,
         "big_server_baseliner": 34,
         "attacking_baseliner": 61,
-        "solid_baseliner": 69,
+        "solid_baseliner": 68,
         "counter_puncher": 8,
-        "solid_defender": 36,
+        "solid_defender": 37,
         "all_court": 21
       },
       "archetype_data_coverage": "partial",
@@ -3382,7 +3346,7 @@
         "big_server": 30,
         "big_server_baseliner": 15,
         "attacking_baseliner": 36,
-        "solid_baseliner": 44,
+        "solid_baseliner": 43,
         "counter_puncher": 1,
         "solid_defender": 23,
         "all_court": 11
@@ -3463,12 +3427,12 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 7,
-        "big_server_baseliner": 4,
-        "attacking_baseliner": 10,
+        "big_server_baseliner": 3,
+        "attacking_baseliner": 9,
         "solid_baseliner": 5,
         "counter_puncher": 7,
-        "solid_defender": 29,
-        "all_court": 2
+        "solid_defender": 30,
+        "all_court": 1
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3490,13 +3454,13 @@
       "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
-        "big_server": 69,
+        "big_server": 68,
         "big_server_baseliner": 22,
         "attacking_baseliner": 55,
         "solid_baseliner": 66,
-        "counter_puncher": 14,
-        "solid_defender": 35,
-        "all_court": 22
+        "counter_puncher": 15,
+        "solid_defender": 36,
+        "all_court": 23
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3515,22 +3479,20 @@
     {
       "name": "F. Coria",
       "rank": 153,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Counter Puncher",
       "archetype_scores": {
         "big_server": 5,
         "big_server_baseliner": 12,
         "attacking_baseliner": 27,
-        "solid_baseliner": 30,
+        "solid_baseliner": 29,
         "counter_puncher": 93,
         "solid_defender": 91,
         "all_court": 7
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 61,
       "mcp_charted": 10,
       "win_pct": 41.8,
@@ -3545,13 +3507,13 @@
       "primary": "big_server",
       "archetype_label": "Big Server",
       "archetype_scores": {
-        "big_server": 71,
+        "big_server": 70,
         "big_server_baseliner": 29,
         "attacking_baseliner": 49,
         "solid_baseliner": 40,
-        "counter_puncher": 6,
-        "solid_defender": 16,
-        "all_court": 14
+        "counter_puncher": 7,
+        "solid_defender": 17,
+        "all_court": 15
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -3575,7 +3537,7 @@
         "attacking_baseliner": 36,
         "solid_baseliner": 37,
         "counter_puncher": 9,
-        "solid_defender": 36,
+        "solid_defender": 37,
         "all_court": 17
       },
       "archetype_data_coverage": "partial",
@@ -3627,8 +3589,8 @@
         "big_server_baseliner": 18,
         "attacking_baseliner": 32,
         "solid_baseliner": 45,
-        "counter_puncher": 68,
-        "solid_defender": 71,
+        "counter_puncher": 69,
+        "solid_defender": 72,
         "all_court": 19
       },
       "archetype_data_coverage": "full",
@@ -3652,9 +3614,9 @@
         "big_server_baseliner": 36,
         "attacking_baseliner": 62,
         "solid_baseliner": 54,
-        "counter_puncher": 12,
-        "solid_defender": 23,
-        "all_court": 21
+        "counter_puncher": 13,
+        "solid_defender": 24,
+        "all_court": 22
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3709,7 +3671,7 @@
         "attacking_baseliner": 4,
         "solid_baseliner": 14,
         "counter_puncher": 4,
-        "solid_defender": 42,
+        "solid_defender": 43,
         "all_court": 0
       },
       "archetype_data_coverage": "partial",
@@ -3727,6 +3689,34 @@
       "top10_wins": 0
     },
     {
+      "name": "A. Bolt",
+      "rank": 169,
+      "primary": "all_court",
+      "archetype_label": "All-Court Player",
+      "archetype_scores": {
+        "big_server": 23,
+        "big_server_baseliner": 19,
+        "attacking_baseliner": 33,
+        "solid_baseliner": 27,
+        "counter_puncher": 9,
+        "solid_defender": 31,
+        "all_court": 16
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": 14,
+      "mcp_charted": 3,
+      "win_pct": 34,
+      "clay_wr": null,
+      "hard_wr": 37,
+      "grass_wr": 27,
+      "top10_wins": 0
+    },
+    {
       "name": "C. H. Tseng",
       "rank": 169,
       "primary": "solid_defender",
@@ -3736,8 +3726,8 @@
         "big_server_baseliner": 7,
         "attacking_baseliner": 18,
         "solid_baseliner": 13,
-        "counter_puncher": 11,
-        "solid_defender": 43,
+        "counter_puncher": 12,
+        "solid_defender": 44,
         "all_court": 4
       },
       "archetype_data_coverage": "partial",
@@ -3774,7 +3764,7 @@
         "solid_defender"
       ],
       "badges": [],
-      "pressure_score": 28,
+      "pressure_score": 29,
       "mcp_charted": 2,
       "win_pct": 36,
       "clay_wr": 31,
@@ -3793,7 +3783,7 @@
         "attacking_baseliner": 46,
         "solid_baseliner": 54,
         "counter_puncher": 9,
-        "solid_defender": 41,
+        "solid_defender": 42,
         "all_court": 19
       },
       "archetype_data_coverage": "full",
@@ -3818,7 +3808,7 @@
         "attacking_baseliner": 17,
         "solid_baseliner": 12,
         "counter_puncher": 9,
-        "solid_defender": 22,
+        "solid_defender": 23,
         "all_court": 11
       },
       "archetype_data_coverage": "partial",
@@ -3846,7 +3836,7 @@
         "attacking_baseliner": 39,
         "solid_baseliner": 41,
         "counter_puncher": 17,
-        "solid_defender": 47,
+        "solid_defender": 48,
         "all_court": 14
       },
       "archetype_data_coverage": "partial",
@@ -3866,15 +3856,15 @@
     {
       "name": "F. Diaz Acosta",
       "rank": 179,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Counter Puncher",
       "archetype_scores": {
         "big_server": 9,
         "big_server_baseliner": 18,
         "attacking_baseliner": 42,
         "solid_baseliner": 40,
         "counter_puncher": 82,
-        "solid_defender": 76,
+        "solid_defender": 77,
         "all_court": 17
       },
       "archetype_data_coverage": "partial",
@@ -3882,9 +3872,7 @@
         "counter_puncher",
         "solid_defender"
       ],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 27,
       "mcp_charted": 4,
       "win_pct": 42.9,
@@ -4003,10 +3991,10 @@
       "archetype_scores": {
         "big_server": 22,
         "big_server_baseliner": 21,
-        "attacking_baseliner": 35,
+        "attacking_baseliner": 34,
         "solid_baseliner": 34,
         "counter_puncher": 24,
-        "solid_defender": 50,
+        "solid_defender": 51,
         "all_court": 21
       },
       "archetype_data_coverage": "partial",
@@ -4015,7 +4003,7 @@
         "solid_defender"
       ],
       "badges": [],
-      "pressure_score": 49,
+      "pressure_score": 50,
       "mcp_charted": 6,
       "win_pct": 45.2,
       "clay_wr": 50,
@@ -4034,7 +4022,7 @@
         "attacking_baseliner": 39,
         "solid_baseliner": 42,
         "counter_puncher": 10,
-        "solid_defender": 33,
+        "solid_defender": 34,
         "all_court": 18
       },
       "archetype_data_coverage": "partial",
@@ -4055,13 +4043,13 @@
       "name": "C. Lestienne",
       "rank": 197,
       "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 8,
         "big_server_baseliner": 6,
         "attacking_baseliner": 17,
         "solid_baseliner": 8,
-        "counter_puncher": 63,
+        "counter_puncher": 64,
         "solid_defender": 53,
         "all_court": 3
       },
@@ -4085,7 +4073,7 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 10,
+        "big_server": 9,
         "big_server_baseliner": 18,
         "attacking_baseliner": 46,
         "solid_baseliner": 51,
@@ -4095,9 +4083,7 @@
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 74,
       "mcp_charted": 11,
       "win_pct": 53.1,
@@ -4145,8 +4131,8 @@
         "attacking_baseliner": 50,
         "solid_baseliner": 63,
         "counter_puncher": 10,
-        "solid_defender": 22,
-        "all_court": 16
+        "solid_defender": 23,
+        "all_court": 17
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -4165,22 +4151,20 @@
     {
       "name": "M. Cecchinato",
       "rank": 228,
-      "primary": "solid_defender",
-      "archetype_label": "Solid Defender",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Solid Defender",
       "archetype_scores": {
-        "big_server": 16,
+        "big_server": 15,
         "big_server_baseliner": 13,
         "attacking_baseliner": 31,
-        "solid_baseliner": 28,
+        "solid_baseliner": 27,
         "counter_puncher": 17,
         "solid_defender": 50,
         "all_court": 13
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 38,
       "mcp_charted": 18,
       "win_pct": 38.6,
@@ -4198,10 +4182,10 @@
         "big_server": 11,
         "big_server_baseliner": 6,
         "attacking_baseliner": 9,
-        "solid_baseliner": 20,
+        "solid_baseliner": 19,
         "counter_puncher": 5,
         "solid_defender": 43,
-        "all_court": 3
+        "all_court": 2
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -4225,8 +4209,8 @@
       "archetype_scores": {
         "big_server": 14,
         "big_server_baseliner": 28,
-        "attacking_baseliner": 72,
-        "solid_baseliner": 75,
+        "attacking_baseliner": 71,
+        "solid_baseliner": 74,
         "counter_puncher": 81,
         "solid_defender": 77,
         "all_court": 31
@@ -4248,19 +4232,17 @@
       "primary": "big_server",
       "archetype_label": "Big Server / Solid Baseliner",
       "archetype_scores": {
-        "big_server": 70,
+        "big_server": 69,
         "big_server_baseliner": 29,
         "attacking_baseliner": 51,
         "solid_baseliner": 62,
         "counter_puncher": 7,
-        "solid_defender": 33,
+        "solid_defender": 34,
         "all_court": 21
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 39,
       "mcp_charted": 26,
       "win_pct": 46.3,
@@ -4278,9 +4260,9 @@
         "big_server": 79,
         "big_server_baseliner": 35,
         "attacking_baseliner": 59,
-        "solid_baseliner": 60,
+        "solid_baseliner": 59,
         "counter_puncher": 5,
-        "solid_defender": 20,
+        "solid_defender": 21,
         "all_court": 18
       },
       "archetype_data_coverage": "partial",
@@ -4306,9 +4288,9 @@
         "big_server": 36,
         "big_server_baseliner": 19,
         "attacking_baseliner": 53,
-        "solid_baseliner": 29,
+        "solid_baseliner": 28,
         "counter_puncher": 1,
-        "solid_defender": 6,
+        "solid_defender": 7,
         "all_court": 6
       },
       "archetype_data_coverage": "partial",
@@ -4332,12 +4314,12 @@
       "archetype_label": "Big Server",
       "archetype_scores": {
         "big_server": 73,
-        "big_server_baseliner": 22,
+        "big_server_baseliner": 21,
         "attacking_baseliner": 57,
         "solid_baseliner": 55,
         "counter_puncher": 4,
         "solid_defender": 19,
-        "all_court": 14
+        "all_court": 13
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -4359,13 +4341,13 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 19,
         "attacking_baseliner": 33,
         "solid_baseliner": 35,
         "counter_puncher": 16,
         "solid_defender": 47,
-        "all_court": 18
+        "all_court": 17
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -4384,11 +4366,11 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 19,
+        "big_server": 18,
         "big_server_baseliner": 22,
         "attacking_baseliner": 52,
         "solid_baseliner": 44,
-        "counter_puncher": 56,
+        "counter_puncher": 57,
         "solid_defender": 52,
         "all_court": 26
       },
@@ -4409,14 +4391,14 @@
     {
       "name": "J. P. Varillas",
       "rank": 255,
-      "primary": "solid_defender",
-      "archetype_label": "Solid Defender / Counter Puncher",
+      "primary": "clay_specialist",
+      "archetype_label": "Clay Specialist / Solid Defender",
       "archetype_scores": {
         "big_server": 11,
         "big_server_baseliner": 20,
         "attacking_baseliner": 44,
         "solid_baseliner": 51,
-        "counter_puncher": 71,
+        "counter_puncher": 72,
         "solid_defender": 78,
         "all_court": 21
       },
@@ -4425,9 +4407,7 @@
         "counter_puncher",
         "solid_defender"
       ],
-      "badges": [
-        "clay_specialist"
-      ],
+      "badges": [],
       "pressure_score": 45,
       "mcp_charted": 9,
       "win_pct": 42.9,
@@ -4446,7 +4426,7 @@
         "big_server_baseliner": 32,
         "attacking_baseliner": 67,
         "solid_baseliner": 74,
-        "counter_puncher": 70,
+        "counter_puncher": 71,
         "solid_defender": 69,
         "all_court": 34
       },
@@ -4474,7 +4454,7 @@
         "big_server_baseliner": 14,
         "attacking_baseliner": 35,
         "solid_baseliner": 28,
-        "counter_puncher": 90,
+        "counter_puncher": 91,
         "solid_defender": 81,
         "all_court": 10
       },
@@ -4501,9 +4481,9 @@
         "big_server": 5,
         "big_server_baseliner": 5,
         "attacking_baseliner": 17,
-        "solid_baseliner": 15,
-        "counter_puncher": 51,
-        "solid_defender": 63,
+        "solid_baseliner": 14,
+        "counter_puncher": 52,
+        "solid_defender": 64,
         "all_court": 3
       },
       "archetype_data_coverage": "partial",
@@ -4530,7 +4510,7 @@
         "big_server_baseliner": 13,
         "attacking_baseliner": 42,
         "solid_baseliner": 41,
-        "counter_puncher": 75,
+        "counter_puncher": 76,
         "solid_defender": 75,
         "all_court": 15
       },
@@ -4556,7 +4536,7 @@
         "attacking_baseliner": 27,
         "solid_baseliner": 25,
         "counter_puncher": 21,
-        "solid_defender": 37,
+        "solid_defender": 38,
         "all_court": 17
       },
       "archetype_data_coverage": "partial",
@@ -4584,7 +4564,7 @@
         "attacking_baseliner": 61,
         "solid_baseliner": 69,
         "counter_puncher": 8,
-        "solid_defender": 15,
+        "solid_defender": 16,
         "all_court": 15
       },
       "archetype_data_coverage": "partial",
@@ -4611,7 +4591,7 @@
         "big_server_baseliner": 17,
         "attacking_baseliner": 24,
         "solid_baseliner": 22,
-        "counter_puncher": 15,
+        "counter_puncher": 16,
         "solid_defender": 44,
         "all_court": 14
       },
@@ -4638,7 +4618,7 @@
         "big_server": 66,
         "big_server_baseliner": 19,
         "attacking_baseliner": 50,
-        "solid_baseliner": 52,
+        "solid_baseliner": 51,
         "counter_puncher": 4,
         "solid_defender": 22,
         "all_court": 14
@@ -4664,9 +4644,9 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 11,
-        "big_server_baseliner": 11,
+        "big_server_baseliner": 10,
         "attacking_baseliner": 23,
-        "solid_baseliner": 22,
+        "solid_baseliner": 21,
         "counter_puncher": 25,
         "solid_defender": 63,
         "all_court": 8
@@ -4716,13 +4696,13 @@
       "primary": "solid_defender",
       "archetype_label": "Solid Defender",
       "archetype_scores": {
-        "big_server": 5,
-        "big_server_baseliner": 17,
+        "big_server": 4,
+        "big_server_baseliner": 16,
         "attacking_baseliner": 46,
-        "solid_baseliner": 52,
-        "counter_puncher": 98,
+        "solid_baseliner": 51,
+        "counter_puncher": 99,
         "solid_defender": 89,
-        "all_court": 17
+        "all_court": 16
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -4736,46 +4716,18 @@
       "top10_wins": 11
     },
     {
-      "name": "M. Polmans",
-      "rank": 391,
-      "primary": "solid_defender",
-      "archetype_label": "Solid Defender",
-      "archetype_scores": {
-        "big_server": 7,
-        "big_server_baseliner": 9,
-        "attacking_baseliner": 16,
-        "solid_baseliner": 13,
-        "counter_puncher": 25,
-        "solid_defender": 66,
-        "all_court": 2
-      },
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 5,
-      "win_pct": 26.1,
-      "clay_wr": 40,
-      "hard_wr": 20,
-      "grass_wr": 33,
-      "top10_wins": 0
-    },
-    {
       "name": "J. Shang",
       "rank": 406,
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 22,
+        "big_server": 21,
         "big_server_baseliner": 16,
         "attacking_baseliner": 56,
         "solid_baseliner": 57,
         "counter_puncher": 22,
         "solid_defender": 49,
-        "all_court": 20
+        "all_court": 19
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -4796,7 +4748,7 @@
       "archetype_scores": {
         "big_server": 6,
         "big_server_baseliner": 12,
-        "attacking_baseliner": 33,
+        "attacking_baseliner": 32,
         "solid_baseliner": 26,
         "counter_puncher": 71,
         "solid_defender": 73,
@@ -4805,7 +4757,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 30,
+      "pressure_score": 31,
       "mcp_charted": 18,
       "win_pct": 41.8,
       "clay_wr": 42,
@@ -4820,8 +4772,8 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 14,
-        "big_server_baseliner": 14,
-        "attacking_baseliner": 25,
+        "big_server_baseliner": 13,
+        "attacking_baseliner": 24,
         "solid_baseliner": 21,
         "counter_puncher": 20,
         "solid_defender": 52,
@@ -4842,42 +4794,17 @@
       "top10_wins": 0
     },
     {
-      "name": "G. Barrere",
-      "rank": 435,
-      "primary": "solid_defender",
-      "archetype_label": "Solid Defender",
-      "archetype_scores": {
-        "big_server": 18,
-        "big_server_baseliner": 17,
-        "attacking_baseliner": 34,
-        "solid_baseliner": 38,
-        "counter_puncher": 15,
-        "solid_defender": 52,
-        "all_court": 15
-      },
-      "archetype_data_coverage": "full",
-      "partial_axes": [],
-      "badges": [],
-      "pressure_score": 23,
-      "mcp_charted": 12,
-      "win_pct": 37.3,
-      "clay_wr": 36,
-      "hard_wr": 36,
-      "grass_wr": 46,
-      "top10_wins": 0
-    },
-    {
       "name": "M. Marterer",
       "rank": 446,
       "primary": "all_court",
       "archetype_label": "All-Court Player",
       "archetype_scores": {
-        "big_server": 24,
+        "big_server": 23,
         "big_server_baseliner": 17,
         "attacking_baseliner": 36,
         "solid_baseliner": 31,
         "counter_puncher": 3,
-        "solid_defender": 29,
+        "solid_defender": 30,
         "all_court": 12
       },
       "archetype_data_coverage": "partial",
@@ -4929,9 +4856,9 @@
         "big_server_baseliner": 15,
         "attacking_baseliner": 26,
         "solid_baseliner": 35,
-        "counter_puncher": 16,
-        "solid_defender": 53,
-        "all_court": 13
+        "counter_puncher": 17,
+        "solid_defender": 54,
+        "all_court": 14
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -4954,10 +4881,10 @@
       "archetype_label": "Solid Defender",
       "archetype_scores": {
         "big_server": 8,
-        "big_server_baseliner": 10,
+        "big_server_baseliner": 9,
         "attacking_baseliner": 28,
         "solid_baseliner": 22,
-        "counter_puncher": 22,
+        "counter_puncher": 23,
         "solid_defender": 59,
         "all_court": 8
       },
@@ -4992,7 +4919,7 @@
       "archetype_data_coverage": "full",
       "partial_axes": [],
       "badges": [],
-      "pressure_score": 33,
+      "pressure_score": 34,
       "mcp_charted": 14,
       "win_pct": 46.5,
       "clay_wr": 39,
@@ -5007,7 +4934,7 @@
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 14,
-        "big_server_baseliner": 26,
+        "big_server_baseliner": 25,
         "attacking_baseliner": 55,
         "solid_baseliner": 59,
         "counter_puncher": 91,
@@ -5032,12 +4959,12 @@
       "archetype_label": "Counter Puncher / Solid Defender",
       "archetype_scores": {
         "big_server": 12,
-        "big_server_baseliner": 13,
+        "big_server_baseliner": 12,
         "attacking_baseliner": 19,
         "solid_baseliner": 9,
         "counter_puncher": 61,
-        "solid_defender": 57,
-        "all_court": 7
+        "solid_defender": 58,
+        "all_court": 6
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -5109,46 +5036,18 @@
       "top10_wins": 0
     },
     {
-      "name": "I. Ivashka",
-      "rank": 772,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher",
-      "archetype_scores": {
-        "big_server": 20,
-        "big_server_baseliner": 20,
-        "attacking_baseliner": 55,
-        "solid_baseliner": 58,
-        "counter_puncher": 79,
-        "solid_defender": 59,
-        "all_court": 27
-      },
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": 51,
-      "mcp_charted": 9,
-      "win_pct": 49.2,
-      "clay_wr": 41,
-      "hard_wr": 53,
-      "grass_wr": 50,
-      "top10_wins": 2
-    },
-    {
       "name": "G. Brouwer",
       "rank": 1067,
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner",
       "archetype_scores": {
         "big_server": 33,
-        "big_server_baseliner": 33,
-        "attacking_baseliner": 47,
+        "big_server_baseliner": 32,
+        "attacking_baseliner": 46,
         "solid_baseliner": 74,
         "counter_puncher": 15,
         "solid_defender": 50,
-        "all_court": 24
+        "all_court": 23
       },
       "archetype_data_coverage": "full",
       "partial_axes": [],
@@ -5160,34 +5059,6 @@
       "hard_wr": 50,
       "grass_wr": 38,
       "top10_wins": 1
-    },
-    {
-      "name": "D. King",
-      "rank": 1183,
-      "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher",
-      "archetype_scores": {
-        "big_server": 4,
-        "big_server_baseliner": 10,
-        "attacking_baseliner": 42,
-        "solid_baseliner": 48,
-        "counter_puncher": 99,
-        "solid_defender": 81,
-        "all_court": 13
-      },
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 1,
-      "win_pct": 64.3,
-      "clay_wr": 44,
-      "hard_wr": 65,
-      "grass_wr": null,
-      "top10_wins": 0
     }
   ]
 }

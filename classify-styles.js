@@ -63,12 +63,13 @@ seedArch('all_court', ['granollers', 'alboran', 'butvilas', 'schwaerzler', 'vasi
 const HRHR_SEED = new Set(['monfils', 'rune']);
 const HRHR_ANTI = new Set(['fritz', 'minaur', 'fils', 'tiafoe', 'shelton']);
 
-// 8 primary archetypes (overhaul).
+// 8 tactical primary archetypes (overhaul) + Clay Specialist as a 9th primary (founder ruling 08-05).
 const ARCH8 = ['big_server', 'big_server_baseliner', 'attacking_baseliner', 'solid_baseliner', 'all_court_elite', 'counter_puncher', 'solid_defender', 'all_court'];
+const ARCH9 = [...ARCH8, 'clay_specialist'];
 const ARCH_LABEL = {
   big_server: 'Big Server', big_server_baseliner: 'Big Server + Baseliner', attacking_baseliner: 'Attacking Baseliner',
   solid_baseliner: 'Solid Baseliner', all_court_elite: 'All-Court Elite', counter_puncher: 'Counter Puncher',
-  solid_defender: 'Solid Defender', all_court: 'All-Court Player',
+  solid_defender: 'Solid Defender', all_court: 'All-Court Player', clay_specialist: 'Clay Specialist',
 };
 function lastName(nm){ const p = String(nm || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.\-]/g, ' ').trim().split(/\s+/); return p[p.length - 1] || ''; }
 
@@ -383,6 +384,24 @@ function pctOf(arr, v) {
     r.reliableLabel = true;
   }
 
+  // ---- Clay Specialist: 9th PRIMARY archetype (founder ruling 08-05) ----
+  // Not a badge on top of a tactical style — a genuine primary. A player qualifies only
+  // if he is clay-DEPENDENT: strong on clay AND weak on BOTH hard and grass, with a big
+  // gap. clay>=30 matches, clay%>=45, hard%<=40, (grass null or <=40), (clay-hard)>=20.
+  // The absolute hard/grass ceilings reject all-surface players (Ruud, Musetti) whose
+  // hard record is also strong. The tactical primary is kept as a mandatory 2nd archetype.
+  for (const r of rows) {
+    if (r.clayM >= 30 && r.clayWr != null && r.clayWr >= 45 &&
+        r.hardWr != null && r.hardWr <= 40 &&
+        (r.grassWr == null || r.grassWr <= 40) &&
+        (r.clayWr - r.hardWr) >= 20) {
+      r.secondaryPrimary = r.primary;
+      r.secondaryLabel = ARCH_LABEL[r.primary] || r.archetype_label;
+      r.primary = 'clay_specialist';
+      r.archetype_label = 'Clay Specialist / ' + r.secondaryLabel;
+    }
+  }
+
   // ---- badges (4) ----
   // Pressure = clutch across the four moments that decide tight matches: tiebreaks
   // (purest pressure games), break points SAVED (serve clutch), break points
@@ -396,18 +415,11 @@ function pctOf(arr, v) {
     const pv = pressureVals[i];
     r.pressureScore = pv == null ? null : Math.round(pv);
     if (pv != null && r.matches >= 60 && pv >= 80) r.badges.push('pressure_player');
-    // Clay Specialist: rewards clay DEPENDENCE, not just dominance. Big clay-vs-hard
-    // gap (>=18) catches grinders like Baez/Cecchinato/Coria whose absolute clay win%
-    // is modest only because they play deep clay fields; an elite-absolute escape
-    // (clay>=65 & gap>=12) keeps players like Ruud whose gap is smaller. Clay must be
-    // the best surface, and >=30 clay matches removes small-sample artifacts.
-    if (r.clayM >= 30 && r.clayWr != null && r.hardWr != null &&
-        ((r.clayWr - r.hardWr) >= 18 || (r.clayWr >= 65 && (r.clayWr - r.hardWr) >= 12)) &&
-        (r.grassWr == null || r.clayWr >= r.grassWr)) r.badges.push('clay_specialist');
-    // Grass Specialist: grass% > 60, grass >= hard + 10, grass matches above the 75th
-    // percentile. Mutually exclusive with clay — a player's best surface is one or the
-    // other, and the clay rule already required clay to be their top surface.
-    if (r.grassWr != null && r.hardWr != null && r.grassWr >= 56 && (r.grassWr - r.hardWr) >= 9 && r.grassM >= 12 && !r.badges.includes('clay_specialist')) r.badges.push('grass_specialist');
+    // Clay Specialist is no longer a badge — it is a primary archetype (assigned above).
+    // Grass Specialist: grass% > 56, grass >= hard + 9, grass matches above the 75th
+    // percentile. Mutually exclusive with the Clay Specialist primary — a player's best
+    // surface is one or the other.
+    if (r.grassWr != null && r.hardWr != null && r.grassWr >= 56 && (r.grassWr - r.hardWr) >= 9 && r.grassM >= 12 && r.primary !== 'clay_specialist') r.badges.push('grass_specialist');
     // High Risk / High Reward: high top-10 ceiling + high upset variance + high
     // unforced-error rate (MCP required). Tight natural gate (>72 on both variance
     // axes) keeps the erratic core near ~9; seed adds the low-error must-includes.
@@ -419,11 +431,11 @@ function pctOf(arr, v) {
   // ---- matchup matrix on 6 primaries (reliable labels only) ----
   const idToPrimary = new Map();
   for (const r of rows) if (r.reliableLabel) for (const id of r.ids) idToPrimary.set(id, r.primary);
-  const winsByPair = {}; for (const A of ARCH8) { winsByPair[A] = {}; for (const B of ARCH8) winsByPair[A][B] = 0; }
+  const winsByPair = {}; for (const A of ARCH9) { winsByPair[A] = {}; for (const B of ARCH9) winsByPair[A][B] = 0; }
   let matrixMatches = 0;
   for (const [wId, lId] of allMatches) { const aw = idToPrimary.get(wId), al = idToPrimary.get(lId); if (!aw || !al) continue; winsByPair[aw][al]++; matrixMatches++; }
   const matrix = {};
-  for (const A of ARCH8) { matrix[A] = {}; for (const B of ARCH8) { if (A === B) { matrix[A][B] = null; continue; } const aw = winsByPair[A][B], bw = winsByPair[B][A], nAB = aw + bw; matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB }; } }
+  for (const A of ARCH9) { matrix[A] = {}; for (const B of ARCH9) { if (A === B) { matrix[A][B] = null; continue; } const aw = winsByPair[A][B], bw = winsByPair[B][A], nAB = aw + bw; matrix[A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB }; } }
 
   // ---- surface-split matchup matrix (hard / clay / grass) ----
   // Same construction as the pooled matrix above, but partitioned by court surface so
@@ -432,7 +444,7 @@ function pctOf(arr, v) {
   // applied per surface, so a cell can be reliable pooled yet null on a thin surface.
   const SURFACES = ['hard', 'clay', 'grass'];
   const winsByPairSurf = {};
-  for (const s of SURFACES) { winsByPairSurf[s] = {}; for (const A of ARCH8) { winsByPairSurf[s][A] = {}; for (const B of ARCH8) winsByPairSurf[s][A][B] = 0; } }
+  for (const s of SURFACES) { winsByPairSurf[s] = {}; for (const A of ARCH9) { winsByPairSurf[s][A] = {}; for (const B of ARCH9) winsByPairSurf[s][A][B] = 0; } }
   const surfaceMatchesCounted = { hard: 0, clay: 0, grass: 0 };
   for (const [wId, lId, surf] of allMatches) {
     if (!winsByPairSurf[surf]) continue;                 // skip 'other'
@@ -442,7 +454,7 @@ function pctOf(arr, v) {
   const matrixBySurface = {};
   for (const s of SURFACES) {
     matrixBySurface[s] = {};
-    for (const A of ARCH8) { matrixBySurface[s][A] = {}; for (const B of ARCH8) {
+    for (const A of ARCH9) { matrixBySurface[s][A] = {}; for (const B of ARCH9) {
       if (A === B) { matrixBySurface[s][A][B] = null; continue; }
       const aw = winsByPairSurf[s][A][B], bw = winsByPairSurf[s][B][A], nAB = aw + bw;
       matrixBySurface[s][A][B] = { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB };
@@ -480,17 +492,17 @@ function pctOf(arr, v) {
     window: `${FROM_YEAR}-${TO_YEAR}`,
     note: 'Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.',
     minSampleN: MATRIX_MIN_N, matchesCounted: matrixMatches,
-    archetypes: Object.fromEntries(ARCH8.map(k => [k, { en: ARCH_LABEL[k] }])),
+    archetypes: Object.fromEntries(ARCH9.map(k => [k, { en: ARCH_LABEL[k] }])),
     matrix,
     surfaceNote: 'matrixBySurface splits the same win% construction by court surface (hard/clay/grass). Same minSampleN floor applied per surface; carpet/unknown dropped.',
     surfaceMatchesCounted, matrixBySurface,
   };
   writeAtomic('matchup-matrix.json', matrixOut);
-  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 8 primaries; surface split hard ${surfaceMatchesCounted.hard} / clay ${surfaceMatchesCounted.clay} / grass ${surfaceMatchesCounted.grass}).`);
+  console.log(`Wrote matchup-matrix.json (${matrixMatches} matches on 9 primaries; surface split hard ${surfaceMatchesCounted.hard} / clay ${surfaceMatchesCounted.clay} / grass ${surfaceMatchesCounted.grass}).`);
 
   // ---- console sanity (current-ATP players = what the dashboard shows) ----
   const counts = {}; outRows.forEach(r => counts[r.primary] = (counts[r.primary] || 0) + 1);
-  console.log('\nPrimary archetype counts (current-ATP):'); for (const k of ARCH8) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
+  console.log('\nPrimary archetype counts (current-ATP):'); for (const k of ARCH9) console.log(`  ${ARCH_LABEL[k].padEnd(20)} ${counts[k] || 0}`);
   const cov = { full: 0, partial: 0 }; outRows.forEach(r => cov[r.coverage]++); console.log(`Coverage: ${cov.full} full / ${cov.partial} partial`);
   console.log('Badges: pressure', outRows.filter(r => r.badges.includes('pressure_player')).length, '| clay', outRows.filter(r => r.badges.includes('clay_specialist')).length, '| grass', outRows.filter(r => r.badges.includes('grass_specialist')).length, '| highRisk', outRows.filter(r => r.badges.includes('high_risk_high_reward')).length);
   console.log('\nSpot-checks:');
