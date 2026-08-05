@@ -2069,11 +2069,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "A - 40",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "oddsMovement": {
@@ -2715,7 +2715,26 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-6(5), 4-6, 4-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    }
   },
   {
     "id": "ff6e6f1d1b6e3139382a543a768c41d6",
@@ -25571,17 +25590,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "40 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "oddsMovement": {
@@ -26439,7 +26452,22 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-5, 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    }
   },
   {
     "id": "43bd849efc6e3de91c16879e55badb71",
@@ -28648,16 +28676,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "15 - 30",
-    "liveServer": "p1",
+    "liveStatus": "Set 2",
+    "liveScore": null,
+    "liveGameScore": "6 - 4",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2841_h-hurkacz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "oddsMovement": {
@@ -32028,15 +32050,9 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "40 - 15",
+    "liveStatus": "Set 2",
+    "liveScore": null,
+    "liveGameScore": "0 - 15",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/427_t-griekspoor.jpg",
@@ -34908,11 +34924,17 @@
       "category": "Medium"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/825_r-collignon.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1926_al-popyrin.jpg",
     "oddsMovement": {
@@ -35491,7 +35513,10 @@
       "edgeVsPinnacleP1": 0.0608,
       "edgeVsPinnacleP2": -0.0608,
       "ts": "2026-08-05T09:40:00.988Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "9d5b8c5a110914e382207850fb49a116",
@@ -37098,16 +37123,21 @@
     },
     "weather": null,
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
         "p2": 1
       }
     ],
-    "liveGameScore": "0 - 15",
-    "liveServer": "p1",
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2674_c-moutet.jpg",
     "oddsMovement": {
