@@ -1792,11 +1792,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "oddsMovement": {
@@ -2467,7 +2467,10 @@
       "edgeVsPinnacleP1": -0.061,
       "edgeVsPinnacleP2": 0.061,
       "ts": "2026-08-05T09:40:00.988Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "97e233f1afee02169af8fcef9a1bf19f",
@@ -4308,11 +4311,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 1",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "4 - 3",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "oddsMovement": {
@@ -4979,7 +4982,10 @@
       "edgeVsPinnacleP1": -0.0324,
       "edgeVsPinnacleP2": 0.0324,
       "ts": "2026-08-04T10:52:14.934Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "faf63e949157babf9264d94831818015",
@@ -6594,11 +6600,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "15 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "oddsMovement": {
@@ -7473,7 +7490,10 @@
       "edgeVsPinnacleP1": 0.1081,
       "edgeVsPinnacleP2": -0.1081,
       "ts": "2026-08-04T10:52:14.934Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "d469a29752f1f03c980e1de1a1b52bd6",
@@ -9577,11 +9597,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1777_t-m-etcheverry.jpg",
     "oddsMovement": {
@@ -10268,7 +10299,10 @@
       "edgeVsPinnacleP1": -0.0843,
       "edgeVsPinnacleP2": 0.0843,
       "ts": "2026-08-04T10:52:14.934Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "7df844cfc9e21f1c3c6a098c1daf87a9",
@@ -12253,11 +12287,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1064_z-bergs.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
     "oddsMovement": {
@@ -12948,7 +12993,10 @@
       "edgeVsPinnacleP1": -0.022,
       "edgeVsPinnacleP2": 0.022,
       "ts": "2026-08-05T09:40:00.988Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "93785a30f32bce26c0127d729b76ab68",
