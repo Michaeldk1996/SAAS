@@ -6568,7 +6568,33 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  body.innerHTML = section1 + section2 + section3 + section5 + section4b + section6;
+  // ── Section 4: per-layer breakdown (design export) ─────────────
+  // One row per visible layer — name + weight tag + coverage dot, the diverging
+  // signal bar, and the resulting probability shift with the favoured side.
+  // edgeVisibleAdjs already dropped self-hiding layers, so every row bears on
+  // THIS read; gated / no-data layers render dimmed with an honest tag rather
+  // than a fake 0.00. This is the "layer breakdown per value" that sits below
+  // the value-layers strip — previously the row builder existed but was never
+  // assembled into the page.
+  const appliedN = adjs.filter(a => a.applied).length;
+  const section4 = `
+    <div class="edge-card">
+      <div class="edge-eyeb" style="margin-bottom:12px;">Layer breakdown</div>
+      <div class="edge-adjhead">
+        <span>Every value layer, and how far it moved the fair price</span>
+        <span>${appliedN} of ${adjs.length} layers applied</span>
+      </div>
+      <div class="edge-adjhead2">
+        <span>Layer</span>
+        <span class="c">${edgeEsc(p1short)} · signal · ${edgeEsc(p2short)}</span>
+        <span class="rt">Favours · shift</span>
+      </div>
+      <div class="edge-adjlist">
+        ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
+      </div>
+    </div>`;
+
+  body.innerHTML = section1 + section2 + section3 + section4 + section5 + section4b + section6;
 
   // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
   // tab's movement chart): the container above paints empty from whatever is
