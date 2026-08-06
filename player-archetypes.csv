@@ -1,0 +1,979 @@
+Pool,Rank,Player,Primary Archetype,Data Coverage,Badges,BigServer score,BigServerBaseliner score,AttackingBaseliner score,SolidBaseliner score,CounterPuncher score,SolidDefender score,AllCourt score,Pressure,MCP Charted,Chall Matches,Win %,Clay WR%,Hard WR%,Grass WR%
+Tour,1,C. Alcaraz,All-Court Elite,full,pressure_player; grass_specialist,24,38,85,91,85,70,40,93,222,,81.2,84,77,90
+Tour,2,J. Sinner,All-Court Elite,full,pressure_player,29,87,89,96,90,71,54,97,298,,78.2,71,81,74
+Tour,3,A. Zverev,Attacking Baseliner,full,pressure_player,69,89,78,79,83,57,65,80,196,,69.9,73,69,66
+Tour,4,N. Djokovic,All-Court Elite,full,pressure_player,30,43,87,93,97,76,45,97,553,,83.4,80,84,86
+Tour,5,F. Auger-Aliassime,Big Server + Baseliner,full,high_risk_high_reward,90,87,72,75,21,32,36,73,102,,60.9,54,63,63
+Tour,6,A. De Minaur,Solid Defender,full,,15,21,71,74,94,79,29,72,140,,63.4,52,66,64
+Tour,7,L. Musetti,Attacking Baseliner,full,grass_specialist,16,27,62,76,81,81,31,65,125,,57.4,66,51,62
+Tour,9,T. Fritz,Big Server + Baseliner,full,,88,87,80,90,47,39,51,69,128,,61,57,61,65
+Tour,9,B. Shelton,Big Server + Baseliner,full,,91,39,70,74,5,15,17,69,44,,59.2,53,62,52
+Tour,10,J. Draper,Attacking Baseliner,full,,68,91,84,85,78,53,64,74,29,,64.1,58,65,68
+Tour,11,A. Bublik,Big Server + Baseliner,full,grass_specialist; high_risk_high_reward,84,36,48,51,11,19,18,62,99,,52.7,50,50,66
+Tour,12,C. Ruud,Attacking Baseliner,full,pressure_player,26,38,75,89,76,68,40,81,171,,65.1,74,58,42
+Tour,13,D. Medvedev,Counter Puncher,full,pressure_player,65,63,80,77,94,59,61,85,286,,70.5,57,74,67
+Tour,14,A. Davidovich Fokina,Counter Puncher,full,,10,20,60,61,83,77,24,51,56,,52.3,54,52,48
+Tour,15,H. Rune,Attacking Baseliner,full,high_risk_high_reward,24,35,79,73,58,49,33,77,66,,62.6,63,63,57
+Tour,16,A. Rublev,Attacking Baseliner,full,,61,85,83,84,71,55,61,68,176,,64,66,63,66
+Tour,17,K. Khachanov,Attacking Baseliner,full,,60,78,73,80,69,57,61,62,80,,58.1,59,57,64
+Tour,18,J. Mensik,Big Server + Baseliner,full,high_risk_high_reward,85,82,59,69,21,34,35,74,31,,60.4,60,63,46
+Tour,19,J. Lehecka,Attacking Baseliner,full,,73,35,72,74,14,30,25,65,61,,57.1,51,58,60
+Tour,20,T. Paul,Solid Baseliner / Counter Puncher,full,,20,33,78,81,80,67,36,58,77,,59.6,54,60,64
+Tour,21,F. Cerundolo,Attacking Baseliner,full,high_risk_high_reward,10,21,54,56,92,78,23,62,42,,54.9,60,50,41
+Tour,21,A. Fils,Attacking Baseliner,full,,34,71,69,69,49,41,41,70,70,,59,60,59,55
+Tour,22,F. Cobolli,Attacking Baseliner,full,,20,25,49,51,58,61,28,66,24,,53.5,60,49,56
+Tour,25,T. Griekspoor,Big Server + Baseliner,full,grass_specialist,81,33,56,60,3,21,16,56,116,,50.2,50,48,63
+Tour,25,L. Darderi,Clay Specialist / Attacking Baseliner,full,,25,27,52,53,59,57,32,69,12,,50,69,23,36
+Tour,26,L. Tien,Counter Puncher,full,pressure_player,14,12,46,32,72,57,17,82,23,,58.1,14,63,57
+Tour,27,A. Rinderknech,Big Server,full,,89,36,51,65,4,17,15,47,22,,47.4,46,48,45
+Tour,28,C. Norrie,Solid Defender,full,,20,30,55,71,80,73,32,66,48,,57.1,62,56,54
+Tour,29,J. Fonseca,Attacking Baseliner,full,,26,25,83,86,54,48,29,50,53,,61.9,57,70,43
+Tour,30,F. Tiafoe,Attacking Baseliner,full,,66,33,63,72,20,46,31,56,66,,52.4,49,53,55
+Tour,31,V. Vacherot,Solid Baseliner / Attacking Baseliner,full,,31,21,63,67,28,51,26,55,10,,60.6,38,75,
+Tour,33,B. Nakashima,Solid Baseliner / Big Server,full,,84,39,74,92,17,39,30,56,40,,54.7,47,56,57
+Tour,35,C. Moutet,Solid Defender,full,,7,14,41,37,81,77,15,52,22,,46,44,46,52
+Tour,35,A. Tabilo,Attacking Baseliner,full,grass_specialist,32,30,43,63,22,50,26,39,23,,49,52,45,57
+Tour,36,U. Humbert,Attacking Baseliner,full,,36,25,76,77,18,34,21,46,58,,53.4,31,58,55
+Tour,36,A. Blockx,Solid Baseliner / Big Server + Baseliner,partial,,39,84,72,87,14,48,31,,4,,66.7,73,50,0
+Tour,37,D. Shapovalov,Big Server / Big Server + Baseliner,full,high_risk_high_reward,79,79,76,68,42,29,43,56,90,,54.7,50,57,47
+Tour,38,J. Munar,Solid Defender,full,,11,20,37,48,89,81,19,25,38,,42.9,48,38,30
+Tour,39,Z. Bergs,Attacking Baseliner / Solid Baseliner,full,,29,43,64,54,17,33,24,42,18,,47.2,36,51,42
+Tour,40,G. Diallo,Big Server + Baseliner,full,grass_specialist,78,35,53,71,13,33,25,42,14,,50.6,55,47,64
+Tour,41,T. Machac,Attacking Baseliner,full,,20,30,74,69,62,51,31,75,31,,55.4,50,58,44
+Tour,42,A. Michelsen,Solid Baseliner / Counter Puncher,full,,19,18,58,64,59,54,26,50,17,,51.1,31,53,56
+Tour,44,M. Navone,Clay Specialist / Counter Puncher,full,,5,15,38,47,98,95,14,36,12,,42.4,55,27,20
+Tour,45,A. Mannarino,Counter Puncher / Solid Defender,full,grass_specialist,14,16,48,50,70,64,22,44,70,,46.8,22,48,58
+Tour,46,S. Korda,Big Server + Baseliner,full,,56,76,74,80,66,55,58,61,49,,59.9,54,61,64
+Tour,47,M. Cilic,Big Server + Baseliner / Attacking Baseliner,full,,67,90,84,82,63,46,57,69,84,,62.9,60,63,70
+Tour,47,G. Dimitrov,Attacking Baseliner,full,,30,82,77,76,70,52,46,70,174,,61.3,59,62,60
+Tour,48,E. Quinn,Big Server,full,,24,20,28,32,10,39,16,,10,,35.9,50,26,50
+Tour,49,F. Marozsan,Attacking Baseliner / Solid Baseliner,full,,23,25,64,63,48,47,29,41,24,,48.8,50,51,27
+Tour,51,T. Atmane,All-Court Player,partial,,32,25,34,24,14,28,20,,1,,34.4,38,33,
+Tour,52,N. Borges,Solid Baseliner / Solid Defender,full,,25,25,44,58,19,55,22,54,18,,46.8,49,48,33
+Tour,53,H. Hurkacz,Big Server + Baseliner,full,,92,42,72,90,13,33,27,62,320,,60.1,57,61,63
+Tour,54,B. Van De Zandschulp,Counter Puncher,full,high_risk_high_reward,21,28,44,45,74,60,27,57,111,,50,51,50,48
+Tour,55,V. Kopriva,Counter Puncher / Solid Defender,partial,,6,12,22,9,79,69,3,,3,,38.5,46,31,0
+Tour,56,R. A. Burruchaga,Counter Puncher / Solid Defender,partial,,11,22,39,58,79,78,22,,1,,46.4,55,33,0
+Tour,57,M. Fucsovics,Counter Puncher,full,,14,26,55,56,87,78,27,41,42,,50.3,54,48,50
+Tour,57,T. M. Etcheverry,Attacking Baseliner,full,,30,61,56,75,66,65,45,38,24,,46.9,51,46,29
+Tour,58,G. Mpetshi Perricard,Big Server,full,,98,35,62,41,0,4,6,64,29,,49.4,47,52,42
+Tour,59,K. Majchrzak,Counter Puncher,partial,,25,19,54,62,24,52,22,38,6,,47.1,40,52,45
+Tour,59,Y. Hanfmann,Solid Baseliner / Attacking Baseliner,full,,22,24,56,61,22,55,23,37,15,,48.3,53,43,37
+Tour,60,R. Opelka,Big Server,full,,96,26,68,62,0,7,8,53,57,,51,42,53,48
+Tour,60,A. Popyrin,Big Server,full,,79,33,52,54,5,20,16,50,34,,44.8,50,45,29
+Tour,61,C. Ugo Carabelli,Solid Defender / Counter Puncher,partial,,6,10,18,16,69,72,4,50,9,,39,47,33,0
+Tour,62,I. Buse,Solid Baseliner / Solid Defender,partial,,18,28,46,74,67,72,29,,2,,56.4,59,50,50
+Tour,63,J. Brooksby,Counter Puncher / Solid Defender,full,,9,21,58,68,92,88,25,75,30,,58.1,57,58,60
+Tour,63,A. Cazaux,Big Server,full,,77,32,43,62,12,33,22,51,12,,44.3,47,44,40
+Tour,64,D. Altmaier,Solid Defender / Solid Baseliner,full,,24,19,25,32,14,42,17,33,22,,37.4,42,34,33
+Tour,65,S. Baez,Clay Specialist / Counter Puncher,full,,6,17,51,60,94,93,20,43,50,,50.4,63,36,27
+Tour,66,L. Sonego,Attacking Baseliner,full,,35,31,61,75,10,38,21,52,44,,47.9,48,46,55
+Tour,67,H. Medjedovic,Big Server,full,,84,25,61,64,8,16,15,64,10,,52,40,60,43
+Tour,68,G. Monfils,Counter Puncher / Big Server + Baseliner,full,high_risk_high_reward,58,78,65,68,84,58,59,76,134,,61.9,58,64,56
+Tour,69,T. A. Tirante,Solid Defender / Solid Baseliner,partial,,20,20,40,51,16,55,18,,3,,43.5,47,33,
+Tour,70,M. Kecmanovic,Counter Puncher / Solid Defender,full,,16,26,62,68,72,71,30,39,48,,48.9,49,49,46
+Tour,71,V. Royer,Solid Baseliner,partial,,37,24,69,80,11,30,17,,5,,43.5,0,45,50
+Tour,72,J. M. Cerundolo,Attacking Baseliner,partial,,5,10,23,18,73,73,5,63,7,,43.1,47,37,0
+Tour,75,S. Tsitsipas,Attacking Baseliner,full,pressure_player,82,83,74,91,51,50,56,82,200,,67,75,65,55
+Tour,77,M. Giron,Counter Puncher,full,,25,25,46,62,22,55,23,40,30,,47.5,39,49,51
+Tour,78,M. Trungelliti,Clay Specialist / Counter Puncher,partial,,7,10,25,11,72,69,5,,2,,40.5,48,20,0
+Tour,79,F. Misolic,Solid Defender,partial,,14,14,23,31,19,59,11,85,5,,48.6,60,27,0
+Tour,79,D. Prizmic,Counter Puncher / Solid Defender,partial,,9,16,31,33,79,76,13,,5,,36.4,44,31,
+Tour,80,M. Bellucci,Big Server,full,,64,20,40,43,13,32,19,,10,,40.9,29,43,43
+Tour,82,S. Ofner,All-Court Player,partial,,29,25,44,39,14,37,21,49,9,,43.1,45,39,47
+Tour,83,J-L. Struff,Big Server,full,,77,36,59,59,14,28,24,36,47,,47,50,46,45
+Tour,84,R. Collignon,Attacking Baseliner,partial,,33,17,33,28,13,23,17,,6,,42.3,20,50,0
+Tour,84,D. Vallejo,Counter Puncher / Solid Defender,partial,,13,24,50,65,86,79,26,,0,,50,56,50,0
+Tour,85,A. Shevchenko,Solid Defender,full,,15,15,28,25,22,54,13,56,20,,44.3,44,46,20
+Tour,86,J. Duckworth,Big Server,full,,63,17,40,36,3,20,11,40,10,,37.4,25,39,36
+Tour,86,D. Merida Aguilar,Solid Baseliner / Solid Defender,partial,,17,28,44,80,30,74,22,,0,,67.6,74,67,0
+Tour,87,D. Dzumhur,Counter Puncher / Solid Defender,full,,5,13,43,37,94,85,13,48,12,,46,48,44,48
+Tour,89,P. Kypson,Big Server / Solid Baseliner,partial,,82,38,65,82,7,33,24,,2,,40,44,36,50
+Tour,90,Z. Svajda,Solid Defender,partial,,13,12,27,30,20,55,12,,3,,29.6,,31,0
+Tour,91,P. Carreno-Busta,Counter Puncher / Solid Defender,full,,15,26,67,72,82,75,30,60,42,,54.8,55,56,30
+Tour,91,Q. Halys,Big Server + Baseliner,full,,86,34,42,45,2,10,9,30,13,,35.8,40,32,47
+Tour,94,R. Safiullin,Attacking Baseliner,full,,32,66,64,65,53,46,42,27,15,,43.5,38,44,47
+Tour,94,M. Landaluce,Solid Baseliner / Attacking Baseliner,partial,,21,30,56,65,20,49,23,,3,,50,54,53,25
+Tour,95,L. Djere,All-Court Player,full,,24,26,46,49,58,57,30,42,31,,48.6,58,40,31
+Tour,95,A. Kovacevic,Big Server,full,,78,21,37,38,3,14,8,26,12,,36,20,40,29
+Tour,96,R. Hijikata,Solid Defender,full,,11,8,31,18,19,43,10,55,12,,40.4,10,44,44
+Tour,97,T. Schoolkate,Big Server,partial,,74,20,40,31,3,7,5,,3,,33.3,0,37,0
+Tour,97,L. van Assche,Solid Defender,partial,,12,14,33,28,20,54,13,35,7,,35.9,38,36,25
+Tour,98,R. Bautista-Agut,Counter Puncher / Solid Defender,full,,15,28,73,82,91,84,33,64,79,,59.8,56,60,67
+Tour,98,C. Taberner,Counter Puncher,partial,,6,12,31,20,80,69,8,,2,,39.1,40,40,0
+Tour,99,A. Vukic,Big Server,full,,71,20,45,51,7,23,15,46,14,,40.8,28,42,48
+Tour,100,M. Berrettini,Big Server + Baseliner,full,grass_specialist,94,43,72,95,12,34,27,73,94,,64.3,73,56,78
+Tour,101,B. Bonzi,Solid Baseliner,full,,28,20,55,66,18,47,21,39,11,,43.3,33,45,43
+Tour,102,J. De Jong,Big Server,full,,60,27,47,45,17,39,25,,34,,45.2,55,41,20
+Tour,103,A. Walton,Solid Baseliner,partial,,31,26,43,54,7,36,18,37,2,,33.3,40,32,33
+Tour,104,C. Garin,Counter Puncher / Solid Defender,full,,13,23,46,50,81,76,23,57,27,,51.5,60,39,48
+Tour,105,A. Muller,Solid Defender,full,,12,13,30,38,57,68,15,52,13,,43.3,49,41,29
+Tour,106,M. Arnaldi,All-Court Player,full,,24,27,59,52,55,49,31,64,21,,50,54,50,17
+Tour,107,B. Coric,Solid Baseliner / Attacking Baseliner,full,,30,31,62,72,23,57,27,59,52,,52.3,54,52,46
+Tour,108,E. Nava,All-Court Player,partial,,26,16,15,10,1,13,6,,5,,28.1,25,30,0
+Tour,109,T. Droguet,Solid Baseliner / Attacking Baseliner,partial,,61,57,75,83,21,42,36,,1,,68,62,82,0
+Tour,113,J. Thompson,Solid Baseliner / Attacking Baseliner,full,,28,19,51,61,19,46,21,46,29,,46.7,32,48,52
+Tour,114,F. Comesana,Big Server,partial,,66,28,41,43,13,33,21,29,9,,42.9,46,41,40
+Tour,115,M. Damm,Big Server,partial,,32,24,37,25,4,20,13,,2,,38.1,38,33,50
+Tour,116,Y. Nishioka,Solid Defender / Counter Puncher,full,,6,8,47,42,71,75,14,60,41,,45.9,38,49,24
+Tour,116,D. Svrcina,Counter Puncher,partial,,3,15,38,38,96,84,12,,2,,45.5,57,38,0
+Tour,117,N. Basilashvili,Counter Puncher / Solid Defender,full,high_risk_high_reward,9,15,39,19,59,54,13,52,32,,46.5,46,47,46
+Tour,118,H. Gaston,Solid Defender,full,,2,9,24,21,64,76,5,71,12,,38.7,44,34,43
+Tour,119,D. Goffin,Solid Defender,full,,18,29,58,58,90,71,30,57,75,,56.6,58,56,53
+Tour,119,J. Faria,Big Server + Baseliner / Solid Baseliner,partial,,36,77,71,73,23,46,34,,3,,65.6,65,57,80
+Tour,121,V. Gaubas,Solid Baseliner / Solid Defender,partial,,18,18,41,59,19,59,17,,2,,53.6,50,50,75
+Tour,122,J. Choinski,Solid Baseliner,partial,,29,17,27,62,10,39,14,,3,,43.5,25,38,71
+Tour,123,J. Fearnley,Solid Defender,partial,,23,21,32,26,24,51,19,,3,,41.9,58,33,40
+Tour,124,N. Budkov Kjaer,Solid Baseliner / Solid Defender,partial,,16,25,48,66,29,65,22,,3,,45.8,46,50,67
+Tour,125,S. Wawrinka,Solid Baseliner / Attacking Baseliner,full,,27,77,79,82,65,57,46,66,138,,60.4,63,61,50
+Tour,127,O. Virtanen,Big Server,full,,61,24,36,26,10,20,13,46,11,,39.5,33,40,50
+Tour,128,R. Carballes Baena,Counter Puncher / Solid Defender,full,,7,15,35,37,86,84,13,48,24,,44.1,49,39,22
+Tour,129,M. McDonald,Counter Puncher / Solid Defender,full,,16,16,46,53,64,62,23,35,25,,44.7,28,47,50
+Tour,130,S. Mochizuki,Solid Defender,partial,,6,5,13,4,17,42,1,,2,,20.6,0,21,20
+Tour,132,D. Lajovic,Solid Defender / Counter Puncher,full,,15,17,44,52,64,72,22,37,42,,43.3,49,40,24
+Tour,133,H. Dellien,Solid Defender,partial,,5,7,16,23,63,78,4,25,9,,34.9,40,24,0
+Tour,133,N. Jarry,Big Server,full,,85,37,62,73,5,23,19,49,48,,49,56,39,50
+Tour,134,T. Barrios Vera,Solid Defender,partial,,7,5,8,21,7,50,0,,4,,29,33,20,33
+Tour,136,P. Martinez,Counter Puncher / Solid Defender,full,,6,11,27,22,83,79,7,40,30,,41.9,47,37,33
+Tour,138,F. Fognini,Counter Puncher,full,high_risk_high_reward,6,16,38,30,84,73,13,66,47,,51.8,57,46,49
+Tour,138,F. Passaro,Solid Defender / Attacking Baseliner,partial,,18,16,32,26,10,41,13,30,2,,35.5,42,25,
+Tour,141,S. Travaglia,Solid Defender / Attacking Baseliner,partial,,24,20,34,23,23,43,20,24,1,,34.9,38,35,17
+Tour,141,L. Klein,Solid Baseliner / Attacking Baseliner,partial,,35,34,61,68,8,37,21,26,3,,33.3,44,29,33
+Tour,147,D. Koepfer,Counter Puncher / Solid Defender,full,,14,17,43,32,58,58,19,65,11,,44.9,46,46,33
+Tour,147,S. Shimabukuro,Big Server / Solid Baseliner,partial,,79,40,72,77,15,38,30,,1,,55.6,67,56,33
+Tour,148,B. Harris,Solid Baseliner / Attacking Baseliner,partial,grass_specialist,30,15,36,43,1,23,11,,3,,36.4,0,19,56
+Tour,150,C. O'Connell,Solid Baseliner,full,,30,24,33,52,11,39,19,41,16,,39.7,36,42,31
+Tour,150,C. Wong,Big Server,partial,,78,23,49,64,17,32,22,,3,,52.9,0,56,0
+Tour,151,L. Nardi,Solid Defender,partial,,7,3,9,5,7,30,1,13,8,,30.9,20,37,20
+Tour,152,Y. Bu,Big Server / Solid Baseliner,partial,,68,22,55,66,15,36,23,23,0,,39.7,0,48,0
+Tour,153,F. Coria,Clay Specialist / Counter Puncher,full,,5,12,27,29,93,91,7,61,10,,41.8,51,23,0
+Tour,154,P. Herbert,Big Server,full,,70,29,49,40,7,17,15,37,15,,43.9,40,45,47
+Tour,154,G. Zeppieri,All-Court Player,partial,,24,20,36,37,9,37,17,,3,,25.9,29,22,0
+Tour,154,N. Basavareddy,Solid Defender,full,,18,10,30,18,15,34,12,,20,,35.7,0,42,0
+Tour,155,D. E. Galan,Solid Defender / Counter Puncher,full,,14,18,32,45,69,72,19,51,14,,41,41,39,55
+Tour,155,A. Pellegrino,Solid Baseliner / Solid Defender,partial,,13,27,59,80,29,79,22,,2,,61.5,65,0,50
+Tour,161,Y. Watanuki,Big Server,partial,,80,36,62,54,13,24,22,33,3,,45.7,43,44,60
+Tour,165,R. Jodar,Solid Baseliner,full,,21,35,76,93,69,67,36,,10,,75.5,82,71,67
+Tour,167,H. Mayot,All-Court Player,partial,,18,15,30,36,8,39,13,,2,,32,29,33,33
+Tour,168,N. Mejia,Solid Defender,partial,,8,3,4,14,4,43,0,,4,,19,50,0,
+Tour,169,A. Bolt,All-Court Player,partial,,23,19,33,27,9,31,16,14,3,,34,,37,27
+Tour,169,C. H. Tseng,Solid Defender,partial,,7,7,18,13,12,44,4,16,3,,25.5,31,26,0
+Tour,171,E. Ymer,Solid Defender,partial,,14,10,26,18,55,48,11,29,2,,36,31,41,0
+Tour,172,T. Monteiro,Solid Baseliner / Attacking Baseliner,full,,29,24,46,54,9,42,19,44,13,,40.7,47,32,22
+Tour,175,H. Grenier,All-Court Player,partial,,25,16,17,12,9,23,11,,3,,30.8,25,31,50
+Tour,179,Y. Wu,Counter Puncher,partial,,14,11,39,41,17,48,14,66,6,,45.9,33,49,20
+Tour,179,F. Diaz Acosta,Clay Specialist / Counter Puncher,partial,,9,18,42,40,82,77,17,27,4,,42.9,52,29,0
+Tour,182,R. Gasquet,Solid Baseliner / Counter Puncher,full,,24,36,76,79,77,66,38,67,95,,59.5,58,59,64
+Tour,182,C. Eubanks,Big Server,full,grass_specialist,88,22,52,45,0,9,6,43,17,,39.3,25,35,58
+Tour,182,M. Zheng,Counter Puncher / Solid Baseliner,partial,,22,34,60,85,95,85,36,,4,,70,75,60,83
+Tour,185,D. Evans,Counter Puncher,full,,15,17,56,55,75,63,24,47,32,,46.6,34,50,43
+Tour,185,A. Fery,Solid Baseliner,partial,,19,23,77,95,84,74,32,,3,,68.2,33,75,73
+Tour,194,B. Tomic,Big Server / Solid Baseliner,full,,68,19,43,59,12,32,19,59,31,,50,32,54,54
+Tour,195,J. Kubler,Solid Defender,partial,,22,21,34,34,24,51,21,50,6,,45.2,50,40,54
+Tour,195,J. Rodionov,All-Court Player,partial,,25,22,39,42,10,34,18,26,2,,40.8,40,43,38
+Tour,197,C. Lestienne,Counter Puncher,partial,,8,6,17,8,64,53,3,48,3,,29,0,35,14
+Tour,202,A. Molcan,Attacking Baseliner,full,,9,18,46,51,87,86,20,74,11,,53.1,63,43,43
+Tour,203,M. Krueger,Solid Defender,partial,,17,15,34,28,16,45,15,,2,,30.6,33,32,20
+Tour,220,L. Harris,Big Server,partial,,84,24,50,63,10,23,17,45,8,,47.9,24,53,45
+Tour,228,M. Cecchinato,Clay Specialist / Solid Defender,full,,15,13,31,27,17,50,13,38,18,,38.6,47,22,18
+Tour,235,K. Coppejans,Solid Defender,partial,,11,6,9,19,5,43,2,,1,,19,27,13,0
+Tour,238,K. Nishikori,Counter Puncher,full,,14,28,71,74,81,77,31,78,72,,65.7,67,66,59
+Tour,239,Z. Zhang,Big Server / Solid Baseliner,full,,69,29,51,62,7,34,21,39,26,,46.3,58,40,43
+Tour,243,D. Stricker,Solid Baseliner,partial,,79,35,59,59,5,21,18,42,3,,44.6,38,46,50
+Tour,244,H. Habib,Attacking Baseliner,partial,,36,19,53,28,1,7,6,,1,,47.8,36,64,
+Tour,244,M. Huesler,Big Server,partial,,73,21,57,55,4,19,13,46,7,,36.9,31,42,25
+Tour,247,T. Seyboth Wild,Solid Defender,full,,20,19,33,35,16,47,17,32,16,,41.1,47,30,50
+Tour,252,S. Kwon,Counter Puncher / Attacking Baseliner,partial,,18,22,52,44,57,52,26,49,6,,47.5,43,50,42
+Tour,255,J. P. Varillas,Clay Specialist / Solid Defender,partial,,11,20,44,51,72,78,21,45,9,,42.9,52,24,0
+Tour,259,B. Hassan,Solid Baseliner / Counter Puncher,partial,,20,32,67,74,71,69,34,,1,,57.1,63,50,
+Tour,269,A. Martin,Counter Puncher / Solid Defender,partial,,4,14,35,28,91,81,10,49,4,,44.4,52,36,21
+Tour,275,S. Nagal,Solid Defender,partial,,5,5,17,14,52,64,3,,4,,28.3,30,28,0
+Tour,281,M. Kukushkin,Counter Puncher / Solid Defender,full,,6,13,42,41,76,75,15,42,17,,42.2,36,45,37
+Tour,285,M. Mmoh,All-Court Player,partial,,22,13,27,25,21,38,17,58,5,,42.3,30,45,25
+Tour,293,B. Gojo,Big Server,partial,,90,27,61,69,8,16,15,37,1,,42.6,14,50,0
+Tour,296,N. Gombos,Solid Defender,partial,,20,17,24,22,16,44,14,23,3,,32.6,42,30,0
+Tour,306,Y. Uchiyama,Big Server,partial,,66,19,50,51,4,22,14,18,3,,31.7,0,36,0
+Tour,330,T. Daniel,Solid Defender,full,,11,10,23,21,25,63,8,34,12,,36.7,40,37,0
+Tour,334,A. Vavassori,All-Court Player,partial,,23,16,24,21,7,26,13,,6,,44,47,50,0
+Tour,340,D. Schwartzman,Solid Defender,full,,4,16,46,51,99,89,16,51,49,,52.5,56,51,38
+Tour,406,J. Shang,Solid Baseliner / Attacking Baseliner,full,,21,16,56,57,22,49,19,45,11,,46.8,17,49,60
+Tour,430,R. Albot,Solid Defender / Counter Puncher,full,,6,12,32,26,71,73,10,31,18,,41.8,42,43,33
+Tour,431,F. Bagnis,Solid Defender,partial,,14,13,24,21,20,52,11,26,5,,33.6,38,26,0
+Tour,446,M. Marterer,All-Court Player,partial,,23,17,36,31,3,30,12,19,7,,34.4,37,33,29
+Tour,454,T. Kokkinakis,Big Server,full,,85,24,46,59,5,20,13,61,28,,44.4,36,46,38
+Tour,454,P. Kotov,Solid Defender,partial,,17,15,26,35,17,54,14,54,7,,43.9,52,38,50
+Tour,515,J. Kovalik,Solid Defender,partial,,8,9,28,22,23,59,8,35,5,,34.1,38,32,0
+Tour,617,M. Ymer,Solid Defender,full,,6,9,34,35,93,81,10,34,14,,46.5,39,49,46
+Tour,639,H. Chung,Counter Puncher,full,,14,25,55,59,91,80,27,47,12,,55.4,55,56,33
+Tour,664,A. Dougaz,Counter Puncher / Solid Defender,partial,,12,12,19,9,61,58,6,,0,,28.6,50,25,
+Tour,670,N. Kyrgios,Big Server,full,pressure_player,97,41,76,79,5,11,17,83,118,,63.2,57,64,65
+Tour,697,B. Balleret,Counter Puncher / Solid Defender,partial,,6,10,21,17,76,74,5,,1,,50,56,42,
+Tour,1067,G. Brouwer,Solid Baseliner,full,,33,32,46,74,15,50,23,,16,,48.1,56,50,38
+Challenger,,Andy Murray,Solid Baseliner / Attacking Baseliner,challenger,,72,93,94,99,78,66,71,,,32,81.3,75,70,93
+Challenger,,Igor Ribeiro Marcondes,Counter Puncher / Solid Baseliner,challenger,,27,40,80,92,95,84,43,,,20,80,83,50,
+Challenger,,Steve Johnson,Big Server / Solid Baseliner,challenger,,87,29,82,86,12,24,21,,,79,70.9,56,74,0
+Challenger,,John Millman,Solid Baseliner / Counter Puncher,challenger,,27,41,82,96,94,82,44,,,40,70,78,71,33
+Challenger,,Pablo Andujar,Counter Puncher,challenger,,9,24,64,66,99,87,26,,,91,69.2,72,50,
+Challenger,,Philipp Kohlschreiber,Solid Baseliner / Counter Puncher,challenger,,22,26,86,91,91,74,35,,,25,68,60,100,
+Challenger,,Ivo Karlovic,Big Server,challenger,,98,28,75,72,0,3,8,,,31,67.7,0,72,60
+Challenger,,Jerome Kym,Big Server / Solid Baseliner,challenger,,92,90,75,92,25,53,46,,,76,67.1,73,58,
+Challenger,,Inaki Montes De La Torre,Counter Puncher,challenger,,12,25,64,63,97,82,27,,,51,66.7,71,66,
+Challenger,,Vasek Pospisil,Big Server,challenger,,89,30,74,78,14,21,21,,,137,66.4,40,67,50
+Challenger,,Elmer Moller,Counter Puncher,challenger,,13,24,44,56,99,79,23,,,77,66.2,68,60,
+Challenger,,Marcel Granollers,Solid Baseliner / Attacking Baseliner,challenger,,67,61,92,96,76,60,61,,,68,66.2,38,71,64
+Challenger,,Karue Sell,Counter Puncher / Solid Baseliner,challenger,,24,38,79,91,93,81,41,,,53,66,70,62,
+Challenger,,J J Wolf,Big Server / Attacking Baseliner,challenger,,85,61,82,79,60,40,52,,,143,65.7,56,67,
+Challenger,,Emil Ruusuvuori,Attacking Baseliner / Solid Baseliner,challenger,,28,27,84,78,78,55,35,,,98,65.3,42,74,0
+Challenger,,Leandro Riedi,Solid Baseliner / Attacking Baseliner,challenger,,38,27,77,81,21,40,24,,,97,64.9,56,69,56
+Challenger,,Ilya Ivashka,All-Court Player,challenger,,69,62,82,81,73,47,57,,,77,64.9,33,69,57
+Challenger,,Pablo Cuevas,Counter Puncher / Attacking Baseliner,challenger,,23,36,82,76,92,71,38,,,62,64.5,64,67,
+Challenger,,Guillermo Olaso,Counter Puncher,challenger,,16,21,72,76,89,71,29,,,28,64.3,40,70,
+Challenger,,Bu Yunchaokete,Solid Baseliner / Attacking Baseliner,challenger,,71,78,79,89,64,59,63,,,114,64,67,65,44
+Challenger,,Lucas Pouille,Big Server + Baseliner / Big Server,challenger,,82,84,82,81,22,42,41,,,89,64,68,65,0
+Challenger,,Marcos Baghdatis,All-Court Player,challenger,,83,86,83,82,65,50,62,,,22,63.6,,64,
+Challenger,,Ricardas Berankis,Solid Baseliner / Attacking Baseliner,challenger,,31,36,72,80,63,62,39,,,166,63.3,75,63,
+Challenger,,Andreas Seppi,Solid Baseliner / Big Server,challenger,,72,25,71,76,23,43,29,,,49,63.3,33,69,57
+Challenger,,Filip Krajinovic,Solid Defender / Counter Puncher,challenger,,15,26,58,78,85,87,30,,,30,63.3,71,44,
+Challenger,,Juan Ignacio Londero,Clay Specialist / Counter Puncher,challenger,,19,33,74,80,90,84,36,,,125,63.2,64,0,
+Challenger,,Kevin Krawietz,Solid Baseliner,challenger,,31,33,60,73,56,58,37,,,68,63.2,66,57,
+Challenger,,Federico Agustin Gomez,All-Court Player,challenger,,67,67,58,60,54,48,52,,,108,63,67,48,
+Challenger,,Blaz Kavcic,Counter Puncher,challenger,,20,30,55,65,97,75,31,,,89,62.9,65,62,
+Challenger,,Federico Delbonis,Counter Puncher,challenger,,21,33,69,72,87,76,36,,,86,62.8,65,43,
+Challenger,,Steve Darcis,Solid Baseliner / Attacking Baseliner,challenger,,36,27,77,87,20,44,24,,,32,62.5,33,74,
+Challenger,,Aleksandre Bakshi,Attacking Baseliner / Solid Baseliner,challenger,,35,36,74,69,22,44,28,,,24,62.5,,63,
+Challenger,,Denis Kudla,Solid Baseliner / Big Server,challenger,,78,27,78,80,22,40,29,,,191,62.3,46,64,67
+Challenger,,Jack Sock,Big Server,challenger,,85,38,66,72,7,25,21,,,69,62.3,67,58,78
+Challenger,,Tristan Boyer,Solid Baseliner / Attacking Baseliner,challenger,,21,31,71,77,70,68,35,,,111,62.2,64,60,
+Challenger,,Bradley Klahn,Big Server,challenger,,92,29,78,78,7,14,16,,,74,62.2,44,66,0
+Challenger,,Micah Braswell,Solid Baseliner / Attacking Baseliner,challenger,,34,34,65,75,19,47,26,,,29,62.1,,62,
+Challenger,,Gregoire Barrere,Solid Baseliner / Attacking Baseliner,challenger,,37,26,76,83,22,45,25,,,215,61.9,47,66,57
+Challenger,,James Trotter,Big Server / Solid Baseliner,challenger,,91,29,75,82,9,16,17,,,107,61.7,20,64,
+Challenger,,Zsombor Piros,Counter Puncher / Solid Defender,challenger,,15,24,59,58,74,68,28,,,242,61.6,63,58,75
+Challenger,,Aslan Karatsev,Counter Puncher,challenger,,24,72,66,67,88,66,44,,,117,61.5,67,57,
+Challenger,,Frank Dancevic,All-Court Player,challenger,,61,83,83,82,72,54,61,,,26,61.5,60,64,
+Challenger,,Pablo Llamas Ruiz,Counter Puncher / Solid Defender,challenger,,12,23,59,70,85,83,27,,,83,61.4,62,59,
+Challenger,,Max Purcell,Solid Baseliner / Big Server,challenger,,78,27,70,79,20,42,29,,,206,61.2,52,62,60
+Challenger,,Murphy Cassone,Big Server / Solid Baseliner,challenger,,82,38,68,73,17,34,28,,,49,61.2,,61,
+Challenger,,Jack Pinnington Jones,Counter Puncher,challenger,,22,21,52,50,91,56,25,,,36,61.1,0,60,80
+Challenger,,Pedro Sousa,Clay Specialist / Counter Puncher,challenger,,11,23,54,69,96,90,25,,,176,60.8,62,33,
+Challenger,,Nicolas Moreno De Alboran,Solid Baseliner / Attacking Baseliner,challenger,,38,38,79,81,22,44,28,,,167,60.5,58,63,
+Challenger,,Christoph Negritu,All-Court Player,challenger,,58,75,65,81,72,64,62,,,43,60.5,63,58,
+Challenger,,Kyle Edmund,Attacking Baseliner / Solid Baseliner,challenger,,61,59,86,79,68,47,54,,,53,60.4,40,67,50
+Challenger,,Daniel Brands,Big Server,challenger,,96,28,65,78,4,12,13,,,48,60.4,0,62,71
+Challenger,,Joris De Loore,Big Server / Solid Baseliner,challenger,,93,29,78,88,10,25,21,,,174,60.3,53,65,57
+Challenger,,Mate Valkusz,Counter Puncher / Solid Defender,challenger,,10,22,52,62,97,87,23,,,118,60.2,66,45,
+Challenger,,August Holmgren,Big Server / Attacking Baseliner,challenger,,86,28,78,77,8,20,18,,,90,60,46,62,
+Challenger,,Carlos Gimeno Valero,Counter Puncher,challenger,,5,16,38,43,100,78,14,,,70,60,59,67,
+Challenger,,Dudi Sela,Counter Puncher,challenger,,14,27,74,71,94,80,31,,,65,60,,60,
+Challenger,,Guido Andreozzi,Counter Puncher,challenger,,15,26,62,62,85,72,29,,,185,59.5,59,62,
+Challenger,,Maxime Cressy,Big Server,challenger,,96,29,75,76,2,5,10,,,157,59.2,38,63,33
+Challenger,,Attila Balazs,Counter Puncher,challenger,,17,28,66,58,83,68,30,,,76,59.2,60,55,
+Challenger,,Albert Ramos,Solid Defender / Counter Puncher,challenger,,12,23,57,74,82,84,27,,,93,59.1,59,50,
+Challenger,,Mark Lajal,Big Server / Solid Baseliner,challenger,,79,54,71,75,55,39,48,,,125,58.4,0,60,50
+Challenger,,Gianluca Mager,Big Server / Big Server + Baseliner,challenger,,75,74,62,72,23,49,41,,,261,58.2,61,46,0
+Challenger,,Bjorn Fratangelo,Solid Baseliner / Big Server,challenger,,78,38,74,84,19,43,32,,,124,58.1,53,60,33
+Challenger,,Dennis Novak,Solid Baseliner / Attacking Baseliner,challenger,,29,31,65,74,58,57,36,,,235,57.9,56,60,70
+Challenger,,Frederik Nielsen,Counter Puncher / Attacking Baseliner,challenger,,19,29,64,62,70,60,31,,,38,57.9,,56,75
+Challenger,,Jan Satral,Counter Puncher / Solid Defender,challenger,,21,30,54,63,77,68,32,,,71,57.7,59,43,
+Challenger,,Seong Chan Hong,All-Court Player,challenger,,21,58,63,65,65,60,40,,,132,57.6,56,59,0
+Challenger,,Noah Rubin,All-Court Player,challenger,,25,28,62,63,63,59,33,,,99,57.6,55,57,80
+Challenger,,Stefan Dostanic,Big Server / Big Server + Baseliner,challenger,,81,78,66,74,23,43,40,,,33,57.6,,58,
+Challenger,,Liam Broady,Solid Baseliner / Attacking Baseliner,challenger,,29,32,71,76,56,54,35,,,237,57.4,52,60,31
+Challenger,,Abedallah Shelbayh,Counter Puncher / Attacking Baseliner,challenger,,23,25,52,46,59,50,29,,,101,57.4,54,59,50
+Challenger,,Felix Gill,Counter Puncher / Solid Defender,challenger,,15,24,56,58,69,66,27,,,61,57.4,61,60,29
+Challenger,,Pedro Cachin,Clay Specialist / Counter Puncher,challenger,,19,30,58,74,80,77,33,,,211,57.3,59,38,
+Challenger,,Illya Marchenko,Big Server / Attacking Baseliner,challenger,,74,26,71,67,20,34,26,,,229,57.2,40,60,20
+Challenger,,Felipe Meligeni Alves,Clay Specialist / Solid Defender,challenger,,20,23,52,68,57,70,28,,,222,57.2,60,31,0
+Challenger,,Paul Jubb,Attacking Baseliner / Solid Baseliner,challenger,,32,36,78,77,57,54,38,,,105,57.1,60,57,53
+Challenger,,Albano Olivetti,Big Server,challenger,,91,28,73,66,0,3,8,,,35,57.1,33,59,
+Challenger,,Edoardo Eremin,Counter Puncher / Attacking Baseliner,challenger,,25,74,79,65,83,61,45,,,21,57.1,57,,
+Challenger,,Feliciano Lopez,Big Server,challenger,,92,29,76,77,3,7,12,,,21,57.1,0,65,50
+Challenger,,Jerzy Janowicz,Big Server,challenger,,96,28,64,82,4,18,15,,,21,57.1,40,63,
+Challenger,,Matteo Gigante,Counter Puncher,challenger,,16,26,57,52,84,67,27,,,160,56.9,57,57,
+Challenger,,Carlos Berlocq,Clay Specialist / Counter Puncher,challenger,,10,22,57,67,89,89,25,,,51,56.9,58,0,
+Challenger,,Enzo Couacaud,All-Court Player,challenger,,59,76,67,65,67,48,55,,,264,56.8,53,60,0
+Challenger,,Nicolas Kicker,Counter Puncher / Solid Defender,challenger,,8,19,56,64,89,85,23,,,118,56.8,56,59,
+Challenger,,Hugo Nys,Big Server,challenger,,70,28,37,45,12,35,20,,,37,56.8,67,52,
+Challenger,,Daniel Cox,All-Court Player,challenger,,25,23,42,40,17,42,21,,,37,56.8,,52,64
+Challenger,,Emilio Gomez,Counter Puncher / Attacking Baseliner,challenger,,25,20,60,59,62,53,29,,,245,56.7,47,61,0
+Challenger,,Bernabe Zapata Miralles,Counter Puncher / Solid Defender,challenger,,9,18,43,58,89,87,20,,,240,56.7,60,48,
+Challenger,,Duje Ajdukovic,Counter Puncher,challenger,,18,26,50,56,84,69,28,,,210,56.7,58,58,0
+Challenger,,Oscar Otte,Big Server,challenger,,85,41,64,68,18,32,28,,,194,56.7,58,55,57
+Challenger,,Tak Khunn Wang,Counter Puncher / Attacking Baseliner,challenger,,16,26,66,66,70,65,30,,,90,56.7,50,59,
+Challenger,,Kyrian Jacquet,Counter Puncher / Solid Defender,challenger,,17,26,52,57,70,64,28,,,143,56.6,60,52,
+Challenger,,Max Hans Rehberg,All-Court Player,challenger,,23,25,58,60,51,56,30,,,99,56.6,56,54,
+Challenger,,Joao Sousa,Solid Baseliner,challenger,,28,22,72,84,23,57,23,,,76,56.6,43,62,
+Challenger,,Cedrik Marcel Stebe,Counter Puncher,challenger,,16,19,62,66,87,70,27,,,92,56.5,46,64,
+Challenger,,Jakub Nicod,Counter Puncher / Solid Defender,challenger,,17,28,59,63,92,82,30,,,23,56.5,59,0,
+Challenger,,Alexis Galarneau,Counter Puncher / Attacking Baseliner,challenger,,18,28,66,63,71,61,31,,,236,56.4,51,58,
+Challenger,,Juan Bautista Torres,Counter Puncher / Solid Defender,challenger,,6,18,46,58,99,91,19,,,165,56.4,57,40,
+Challenger,,Stefan Kozlov,Counter Puncher,challenger,,13,22,49,46,86,69,22,,,197,56.3,56,58,20
+Challenger,,Liam Caruana,Big Server,challenger,,68,20,50,52,9,29,18,,,48,56.3,44,59,
+Challenger,,Dimitar Kuzmanov,Counter Puncher / Solid Defender,challenger,,14,26,67,75,86,80,30,,,233,56.2,56,56,
+Challenger,,Alexander Ritschard,Counter Puncher / Solid Defender,challenger,,21,31,56,62,72,64,32,,,246,56.1,63,51,0
+Challenger,,Alibek Kachmazov,Big Server / Attacking Baseliner,challenger,,62,21,59,52,21,38,25,,,145,55.9,45,57,
+Challenger,,Tennys Sandgren,Big Server,challenger,,88,40,68,77,8,25,22,,,127,55.9,54,56,
+Challenger,,Juan Carlos Prado Angelo,Counter Puncher,challenger,,4,15,42,44,98,84,14,,,59,55.9,56,60,
+Challenger,,Matthew Ebden,Big Server,challenger,,85,41,74,74,17,33,29,,,34,55.9,,42,73
+Challenger,,Andre Ilagan,Counter Puncher / Solid Defender,challenger,,16,25,61,62,70,67,29,,,34,55.9,,56,
+Challenger,,Jason Jung,Solid Baseliner / Attacking Baseliner,challenger,,19,20,65,70,64,57,28,,,226,55.8,21,59,45
+Challenger,,Hynek Barton,Solid Baseliner / Big Server,challenger,,69,35,65,77,22,50,34,,,52,55.8,58,50,
+Challenger,,Martin Klizan,Counter Puncher,challenger,,20,23,55,45,70,59,27,,,97,55.7,56,55,
+Challenger,,Thai Son Kwiatkowski,Big Server,challenger,,77,25,61,59,20,33,25,,,187,55.6,45,58,
+Challenger,,Yuta Shimizu,Counter Puncher,challenger,,17,18,55,61,75,63,26,,,160,55.6,0,56,
+Challenger,,Clement Chidekh,Counter Puncher / Solid Defender,challenger,,15,24,59,55,72,65,27,,,54,55.6,57,57,33
+Challenger,,Stuart Parker,Solid Baseliner / Big Server,challenger,,83,39,74,87,18,43,32,,,45,55.6,,62,17
+Challenger,,Leonardo Mayer,All-Court Player,challenger,,79,84,78,74,60,45,57,,,27,55.6,58,,0
+Challenger,,Facundo Mena,All-Court Player,challenger,,30,63,65,62,61,55,44,,,238,55.5,56,51,
+Challenger,,Damien Wenger,Counter Puncher,challenger,,8,20,50,50,95,78,20,,,56,55.4,55,,
+Challenger,,Vitaliy Sachko,Counter Puncher,challenger,,16,25,51,61,85,74,27,,,221,55.2,55,56,
+Challenger,,Alfredo Perez,Solid Baseliner / Attacking Baseliner,challenger,,65,66,67,72,22,49,40,,,58,55.2,,55,
+Challenger,,David Guez,Counter Puncher,challenger,,12,15,46,42,92,68,18,,,29,55.2,0,57,
+Challenger,,Mika Brunold,Counter Puncher / Solid Defender,challenger,,14,23,53,45,63,55,24,,,29,55.2,50,59,
+Challenger,,Mathias Bourgue,Big Server / Solid Baseliner,challenger,,81,38,68,79,17,38,30,,,301,55.1,50,59,
+Challenger,,Jiri Vesely,Big Server,challenger,,95,29,69,74,8,15,16,,,167,55.1,48,63,43
+Challenger,,Prajnesh Gunneswaran,Big Server / Solid Baseliner,challenger,,76,36,71,74,15,37,28,,,158,55.1,52,56,33
+Challenger,,Andres Andrade,Counter Puncher,challenger,,9,19,43,38,91,77,17,,,49,55.1,61,44,
+Challenger,,Yunseong Chung,Solid Baseliner / Attacking Baseliner,challenger,,28,32,69,73,59,60,36,,,189,55,59,55,33
+Challenger,,Tim Van Rijthoven,Big Server / Solid Baseliner,challenger,,96,29,75,86,2,16,14,,,129,55,40,59,0
+Challenger,,Gianluigi Quinzi,Counter Puncher / Solid Baseliner,challenger,,19,31,74,78,84,78,35,,,80,55,56,50,
+Challenger,,Simone Bolelli,Solid Baseliner,challenger,,27,31,68,95,15,61,22,,,40,55,61,42,
+Challenger,,Tim Puetz,Big Server / Solid Baseliner,challenger,,88,28,76,78,8,19,18,,,20,55,40,60,
+Challenger,,Rei Sakamoto,Big Server,challenger,,71,19,47,49,3,20,12,,,20,55,0,58,
+Challenger,,Blaz Rola,Solid Baseliner / Big Server,challenger,,74,72,68,77,21,46,40,,,193,54.9,53,57,
+Challenger,,Cezar Cretu,Clay Specialist / Counter Puncher,challenger,,10,18,40,44,79,77,18,,,51,54.9,57,0,
+Challenger,,Antoine Escoffier,All-Court Player,challenger,,54,49,62,60,67,48,50,,,263,54.8,44,56,50
+Challenger,,Kris Van Wyk,Counter Puncher,challenger,,24,28,45,33,70,49,26,,,31,54.8,,55,
+Challenger,,Cem Ilkel,Big Server / Solid Baseliner,challenger,,70,23,63,66,15,36,24,,,265,54.7,43,57,33
+Challenger,,Maks Kasnikowski,Solid Baseliner / Attacking Baseliner,challenger,,28,30,58,64,24,54,27,,,117,54.7,51,59,
+Challenger,,Roberto Marcora,Solid Baseliner / Attacking Baseliner,challenger,,31,30,60,68,16,47,24,,,194,54.6,56,53,
+Challenger,,Mikael Torpegaard,All-Court Player,challenger,,69,51,71,66,58,43,50,,,141,54.6,41,58,0
+Challenger,,Gustavo Heide,Attacking Baseliner / Solid Baseliner,challenger,,32,24,71,65,20,38,22,,,110,54.5,53,65,
+Challenger,,Luka Mikrut,Clay Specialist / Counter Puncher,challenger,,17,24,41,46,75,70,24,,,33,54.5,57,33,
+Challenger,,Youssef Hossam,Solid Baseliner / Attacking Baseliner,challenger,,36,33,71,77,9,35,20,,,22,54.5,,55,
+Challenger,,Dominic Thiem,Solid Baseliner / Counter Puncher,challenger,,21,21,64,73,68,61,30,,,22,54.5,47,71,
+Challenger,,Timofey Skatov,Clay Specialist / Solid Defender,challenger,,6,15,43,51,86,90,17,,,180,54.4,57,21,
+Challenger,,Calvin Hemery,Big Server,challenger,,82,37,60,65,14,33,26,,,223,54.3,59,48,
+Challenger,,Yuichi Sugita,Solid Baseliner / Attacking Baseliner,challenger,,27,17,52,61,16,43,19,,,92,54.3,0,58,38
+Challenger,,Mario Vilella Martinez,Clay Specialist / All-Court Player,challenger,,28,58,53,51,60,52,40,,,142,54.2,59,35,0
+Challenger,,Ryan Seggerman,Big Server,challenger,,93,36,55,54,1,17,13,,,59,54.2,60,53,0
+Challenger,,Petros Chrysochos,Counter Puncher / Solid Defender,challenger,,7,13,44,38,74,72,15,,,24,54.2,50,56,
+Challenger,,Patrick Zahraj,Counter Puncher,challenger,,14,14,34,22,93,60,11,,,24,54.2,0,62,
+Challenger,,Tung Lin Wu,Solid Baseliner / Attacking Baseliner,challenger,,33,32,66,76,19,47,26,,,279,54.1,55,54,
+Challenger,,Yan Bai,Counter Puncher / Solid Defender,challenger,,16,24,53,62,74,71,28,,,98,54.1,55,54,
+Challenger,,Darian King,Counter Puncher / Solid Defender,challenger,,9,11,50,49,72,69,18,,,113,54,20,55,67
+Challenger,,Samuel Vincent Ruggeri,Counter Puncher,challenger,,26,32,54,47,71,49,32,,,113,54,54,54,
+Challenger,,Dmitry Popko,Counter Puncher,challenger,,17,26,49,53,80,68,27,,,271,53.9,56,49,
+Challenger,,Altug Celikbilek,Big Server,challenger,,69,22,53,52,22,37,25,,,197,53.8,44,55,0
+Challenger,,Filip Horansky,Counter Puncher / Solid Defender,challenger,,12,19,36,43,86,76,18,,,195,53.8,58,48,0
+Challenger,,Egor Gerasimov,Big Server,challenger,,86,26,59,67,9,22,17,,,143,53.8,31,57,0
+Challenger,,Murkel Alejandro Dellien Velasco,Clay Specialist / Counter Puncher,challenger,,9,18,38,45,92,84,17,,,132,53.8,54,0,
+Challenger,,Ernests Gulbis,Big Server,challenger,,75,32,48,41,15,28,21,,,104,53.8,54,53,
+Challenger,,Adrian Andreev,Solid Defender / Counter Puncher,challenger,,14,22,47,61,71,74,25,,,205,53.7,57,49,
+Challenger,,Facundo Arguello,Counter Puncher,challenger,,11,22,60,62,89,77,25,,,82,53.7,53,60,
+Challenger,,Marvin Moeller,Counter Puncher,challenger,,11,20,45,43,88,71,20,,,82,53.7,51,58,
+Challenger,,Peter Gojowczyk,Big Server,challenger,,79,33,49,45,10,21,17,,,82,53.7,50,55,0
+Challenger,,Alexey Zakharov,Solid Baseliner,challenger,,33,34,63,74,19,51,27,,,67,53.7,67,48,
+Challenger,,Federico Gaio,Attacking Baseliner / Solid Baseliner,challenger,,34,33,58,57,17,39,25,,,334,53.6,58,47,25
+Challenger,,Mats Moraing,Big Server,challenger,,88,39,60,63,12,21,21,,,222,53.6,51,58,17
+Challenger,,Andrew Harris,Attacking Baseliner / Solid Baseliner,challenger,,23,17,60,57,19,46,19,,,110,53.6,45,56,0
+Challenger,,Liam Draxl,Counter Puncher / Solid Baseliner,challenger,,21,29,59,64,70,59,32,,,84,53.6,50,55,
+Challenger,,Marius Copil,Big Server,challenger,,89,27,71,70,4,15,14,,,155,53.5,38,58,67
+Challenger,,Sergio Gutierrez Ferrol,Clay Specialist / Counter Puncher,challenger,,12,20,35,40,90,78,17,,,43,53.5,58,29,
+Challenger,,Alejo Lorenzo Lingua Lavallen,Counter Puncher,challenger,,7,16,47,48,93,82,18,,,43,53.5,53,,
+Challenger,,Giovanni Fonio,Attacking Baseliner / Solid Baseliner,challenger,,30,32,72,71,22,47,26,,,206,53.4,51,60,
+Challenger,,Daniel Masur,Big Server,challenger,,74,34,57,61,19,38,29,,,276,53.3,52,54,75
+Challenger,,Luca Vanni,Big Server,challenger,,89,38,62,70,7,23,20,,,107,53.3,50,55,
+Challenger,,Gauthier Onclin,Counter Puncher / Solid Defender,challenger,,8,17,44,44,80,75,18,,,92,53.3,54,54,0
+Challenger,,Joel Schwaerzler,All-Court Player,challenger,,23,24,54,49,55,54,29,,,30,53.3,54,50,
+Challenger,,Gian Marco Moroni,Counter Puncher,challenger,,12,22,45,52,93,79,22,,,216,53.2,56,41,
+Challenger,,Stefano Napolitano,Solid Baseliner / Attacking Baseliner,challenger,,32,67,68,75,56,55,45,,,194,53.1,53,54,50
+Challenger,,Oleksii Krutykh,Counter Puncher / Solid Defender,challenger,,18,28,63,65,72,68,31,,,160,53.1,54,51,50
+Challenger,,James Mccabe,Big Server,challenger,,75,22,49,52,13,26,18,,,113,53.1,23,59,20
+Challenger,,Raymond Sarmiento,Solid Baseliner,challenger,,38,35,70,81,10,38,22,,,32,53.1,,53,
+Challenger,,Evgeny Donskoy,Solid Baseliner / Attacking Baseliner,challenger,,36,24,71,76,10,32,17,,,202,53,36,55,58
+Challenger,,Zhe Li,Solid Baseliner / Attacking Baseliner,challenger,,29,21,67,76,13,40,18,,,134,53,25,54,
+Challenger,,Gerald Melzer,Attacking Baseliner / Solid Baseliner,challenger,,26,21,66,66,62,54,31,,,119,52.9,53,67,
+Challenger,,Gonzalo Escobar,Attacking Baseliner / Solid Baseliner,challenger,,20,18,65,62,59,57,27,,,87,52.9,48,58,
+Challenger,,Luciano Emanuel Ambrogi,Clay Specialist / Solid Defender,challenger,,9,16,34,51,82,85,17,,,51,52.9,55,25,
+Challenger,,Eliakim Coulibaly,Big Server,challenger,,66,25,29,30,13,32,16,,,34,52.9,75,50,
+Challenger,,Patrick Brady,Counter Puncher,challenger,,11,17,37,34,82,68,16,,,34,52.9,,55,0
+Challenger,,Salvatore Caruso,Counter Puncher / Solid Defender,challenger,,10,19,52,53,80,75,22,,,218,52.8,51,56,33
+Challenger,,Santiago Fa Rodriguez Taverna,Solid Defender / Solid Baseliner,challenger,,22,23,43,50,21,55,22,,,197,52.8,54,45,
+Challenger,,Go Soeda,Solid Baseliner / Attacking Baseliner,challenger,,29,20,64,68,16,42,20,,,144,52.8,25,52,71
+Challenger,,Keegan Smith,Big Server,challenger,,86,26,62,67,8,18,16,,,123,52.8,38,54,
+Challenger,,Alejandro Moro Canas,Counter Puncher / Solid Defender,challenger,,13,21,51,61,78,73,25,,,123,52.8,49,57,50
+Challenger,,Alex Rybakov,Solid Baseliner,challenger,,32,32,60,77,17,50,25,,,150,52.7,59,47,
+Challenger,,Edas Butvilas,Solid Baseliner / Attacking Baseliner,challenger,,38,35,64,73,12,38,23,,,55,52.7,56,51,
+Challenger,,Marc Polmans,Counter Puncher / Attacking Baseliner,challenger,,25,18,53,53,61,50,27,,,249,52.6,45,58,23
+Challenger,,Matthias Bachinger,Big Server,challenger,,74,23,53,60,16,33,22,,,133,52.6,38,57,67
+Challenger,,Gabriel Debru,Solid Defender / Counter Puncher,challenger,,23,22,37,42,59,60,25,,,97,52.6,60,41,
+Challenger,,Hazem Naw,Counter Puncher,challenger,,13,14,42,43,74,59,19,,,57,52.6,29,64,
+Challenger,,Peter Torebko,Counter Puncher,challenger,,21,27,45,34,86,56,23,,,38,52.6,52,60,
+Challenger,,Aidan Mayo,Attacking Baseliner / Solid Baseliner,challenger,,29,29,57,50,20,39,24,,,118,52.5,44,54,
+Challenger,,Enrique Lopez Perez,Big Server,challenger,,84,26,63,60,12,20,18,,,101,52.5,46,57,
+Challenger,,Johan Nikles,Counter Puncher / Solid Defender,challenger,,4,12,28,33,98,92,7,,,80,52.5,55,36,
+Challenger,,Gastao Elias,Counter Puncher / Solid Defender,challenger,,15,24,53,54,77,70,26,,,248,52.4,51,56,
+Challenger,,Henri Squire,Big Server,challenger,,83,33,46,44,10,18,15,,,164,52.4,49,57,67
+Challenger,,Kilian Feldbausch,Counter Puncher,challenger,,6,14,34,40,99,84,12,,,42,52.4,53,50,
+Challenger,,Taisei Ichikawa,Attacking Baseliner / Solid Baseliner,challenger,,20,21,53,52,13,47,18,,,21,52.4,,52,
+Challenger,,Svyatoslav Gulin,All-Court Player,challenger,,17,22,56,55,59,58,27,,,21,52.4,53,50,
+Challenger,,Alexandar Lazarov,Counter Puncher,challenger,,17,27,58,58,91,69,28,,,65,52.3,50,57,
+Challenger,,Alessandro Giannessi,Clay Specialist / Solid Defender,challenger,,10,16,40,42,73,76,18,,,274,52.2,54,14,
+Challenger,,Ryan Peniston,Counter Puncher / Solid Defender,challenger,,14,24,59,55,77,70,27,,,186,52.2,56,52,48
+Challenger,,Ji Sung Nam,Counter Puncher,challenger,,20,20,53,54,81,60,26,,,134,52.2,36,54,
+Challenger,,Paolo Lorenzi,Clay Specialist / Solid Defender,challenger,,20,23,45,51,61,68,27,,,113,52.2,57,25,
+Challenger,,Matias Soto,All-Court Player,challenger,,29,58,55,54,53,49,40,,,69,52.2,53,50,
+Challenger,,Matej Dodig,Solid Defender,challenger,,22,19,28,31,17,45,18,,,46,52.2,54,43,
+Challenger,,Nerman Fatic,Counter Puncher / Solid Defender,challenger,,17,23,41,50,75,67,24,,,175,52,54,43,
+Challenger,,Artem Dubrivnyy,Attacking Baseliner / Solid Baseliner,challenger,,25,24,52,49,10,36,18,,,50,52,47,54,
+Challenger,,Jeroen Vanneste,Counter Puncher / Solid Defender,challenger,,12,19,41,29,66,58,18,,,25,52,52,50,
+Challenger,,Jordi Samper Montana,Counter Puncher / Solid Defender,challenger,,9,18,39,59,96,93,19,,,25,52,60,20,
+Challenger,,Tristan Lamasine,Solid Baseliner / Attacking Baseliner,challenger,,23,18,56,61,55,55,27,,,310,51.9,46,57,
+Challenger,,Jonas Forejtek,Solid Baseliner,challenger,,33,33,65,79,21,51,27,,,183,51.9,49,57,
+Challenger,,Marc Sieber,Counter Puncher,challenger,,14,24,44,53,92,80,23,,,27,51.9,61,33,
+Challenger,,Patrick Maloney,Big Server / Solid Baseliner,challenger,,83,37,64,73,14,33,26,,,27,51.9,,52,
+Challenger,,Andrea Collarini,Clay Specialist / Counter Puncher,challenger,,11,20,47,54,83,81,22,,,321,51.7,53,23,
+Challenger,,Lukas Rosol,Attacking Baseliner / Solid Baseliner,challenger,,33,28,50,50,10,31,20,,,203,51.7,50,52,60
+Challenger,,Andreas Haider Maurer,Counter Puncher,challenger,,26,31,48,40,81,55,29,,,29,51.7,52,,
+Challenger,,Antoine Ghibaudo,Solid Baseliner / Attacking Baseliner,challenger,,30,19,56,57,20,38,21,,,29,51.7,0,56,
+Challenger,,Frederico Ferreira Silva,Counter Puncher / Solid Baseliner,challenger,,16,26,61,68,69,68,30,,,250,51.6,49,54,
+Challenger,,Kacper Zuk,Big Server / Solid Baseliner,challenger,,77,36,64,76,9,36,25,,,153,51.6,54,46,50
+Challenger,,Guilherme Clezar,Solid Baseliner,challenger,,25,24,52,63,14,51,20,,,128,51.6,54,42,
+Challenger,,Brandon Holt,All-Court Player,challenger,,23,61,60,73,67,64,42,,,122,51.6,,52,
+Challenger,,Toby Alex Kodat,Counter Puncher / Solid Defender,challenger,,15,21,38,46,78,72,21,,,64,51.6,56,42,
+Challenger,,Gilbert Soares Klier Junior,Counter Puncher,challenger,,17,20,69,73,84,67,29,,,62,51.6,44,68,
+Challenger,,Ivan Gakhov,All-Court Player,challenger,,30,28,45,50,20,47,25,,,227,51.5,54,38,
+Challenger,,Genaro Alberto Olivieri,Counter Puncher / Solid Defender,challenger,,8,16,42,48,83,80,18,,,200,51.5,51,57,
+Challenger,,Thomas Fabbiano,Solid Defender / Counter Puncher,challenger,,11,20,56,53,65,66,24,,,97,51.5,48,55,40
+Challenger,,Johan Sebastien Tatlot,Counter Puncher,challenger,,10,17,37,28,83,66,14,,,66,51.5,50,55,
+Challenger,,Matheus Pucinelli De Almeida,Clay Specialist / Solid Defender,challenger,,11,21,49,62,79,83,24,,,181,51.4,53,29,0
+Challenger,,Tatsuma Ito,Solid Baseliner / Attacking Baseliner,challenger,,29,20,55,57,19,39,21,,,150,51.3,14,53,50
+Challenger,,Remy Bertola,All-Court Player,challenger,,23,25,57,45,55,48,29,,,115,51.3,49,54,
+Challenger,,Ernesto Escobedo,Big Server / Solid Baseliner,challenger,,81,26,71,73,8,22,18,,,203,51.2,30,54,50
+Challenger,,Sergiy Stakhovsky,Big Server,challenger,,83,34,50,56,6,21,17,,,125,51.2,41,51,73
+Challenger,,Guy Den Ouden,Counter Puncher / Solid Defender,challenger,,13,23,50,54,81,74,25,,,43,51.2,60,39,
+Challenger,,Denis Yevseyev,Counter Puncher,challenger,,9,17,43,45,87,76,18,,,282,51.1,47,54,
+Challenger,,Mirza Basic,Solid Baseliner / Attacking Baseliner,challenger,,32,31,66,72,13,44,22,,,180,51.1,53,50,50
+Challenger,,Lucas Gerch,Counter Puncher,challenger,,20,27,51,44,68,56,28,,,135,51.1,53,48,
+Challenger,,Alexander Sarkissian,Big Server / Attacking Baseliner,challenger,,65,20,56,56,11,27,19,,,94,51.1,0,52,
+Challenger,,Philip Sekulic,Solid Baseliner / Attacking Baseliner,challenger,,32,19,50,52,11,27,17,,,92,51.1,0,53,
+Challenger,,Tommy Robredo,Clay Specialist / Solid Defender,challenger,,10,17,44,47,73,76,19,,,88,51.1,55,27,
+Challenger,,Juan Ignacio Galarza,Clay Specialist / Solid Defender,challenger,,16,20,44,46,65,70,23,,,45,51.1,52,0,
+Challenger,,Manuel Guinard,All-Court Player,challenger,,28,56,46,50,58,52,38,,,257,51,54,46,
+Challenger,,Jelle Sels,Solid Baseliner / Attacking Baseliner,challenger,,29,27,52,55,16,42,23,,,255,51,50,52,
+Challenger,,Antoine Hoang,Solid Baseliner / Attacking Baseliner,challenger,,29,28,56,58,13,37,21,,,198,51,47,53,50
+Challenger,,Joao Menezes,All-Court Player,challenger,,20,24,60,64,64,63,30,,,147,51,48,56,
+Challenger,,Gabi Adrian Boitan,Clay Specialist / Solid Defender,challenger,,24,24,41,42,21,51,22,,,51,51,61,33,
+Challenger,,Garrett Johns,Solid Defender / Solid Baseliner,challenger,,23,17,48,51,23,53,21,,,49,51,44,55,
+Challenger,,Juan Pablo Ficovich,Solid Baseliner / Big Server + Baseliner,challenger,,29,60,57,67,21,54,31,,,277,50.9,53,46,
+Challenger,,Aleksandr Nedovyesov,Solid Baseliner / Counter Puncher,challenger,,30,31,57,68,60,58,36,,,106,50.9,51,51,0
+Challenger,,Carlos Sanchez Jover,Counter Puncher / Solid Defender,challenger,,5,15,40,41,96,86,14,,,118,50.8,52,42,
+Challenger,,Georgii Kravchenko,Counter Puncher / Attacking Baseliner,challenger,,17,26,64,54,70,60,29,,,63,50.8,50,53,
+Challenger,,Andrey Kuznetsov,All-Court Player,challenger,,29,39,52,45,55,43,35,,,63,50.8,39,57,
+Challenger,,Nikola Milojevic,Counter Puncher,challenger,,15,23,47,41,81,66,23,,,209,50.7,53,47,
+Challenger,,Francesco Forti,Big Server / Attacking Baseliner,challenger,,63,28,54,51,14,34,24,,,142,50.7,50,52,
+Challenger,,Andrey Chepelev,Solid Defender / Counter Puncher,challenger,,12,22,50,61,74,77,25,,,69,50.7,52,33,
+Challenger,,Tobias Kamke,Counter Puncher / Solid Defender,challenger,,17,16,56,51,64,58,24,,,170,50.6,36,55,57
+Challenger,,Jakub Paul,Counter Puncher / Solid Defender,challenger,,8,16,43,50,89,82,18,,,79,50.6,50,53,
+Challenger,,Omar Jasika,Counter Puncher / Solid Defender,challenger,,12,13,48,54,70,63,20,,,105,50.5,22,54,25
+Challenger,,Raul Brancaccio,Counter Puncher,challenger,,9,18,42,37,92,75,16,,,244,50.4,51,49,50
+Challenger,,Franco Agamenone,Counter Puncher / Solid Defender,challenger,,8,14,34,35,87,79,13,,,187,50.3,51,46,0
+Challenger,,Francesco Maestrelli,Counter Puncher / Solid Defender,challenger,,26,25,39,37,61,51,27,,,163,50.3,51,49,
+Challenger,,Oriol Roca Batalla,Solid Defender / Solid Baseliner,challenger,,21,24,54,59,55,61,29,,,233,50.2,50,47,
+Challenger,,Ulises Blanch,Big Server,challenger,,83,35,59,54,6,18,17,,,238,50,47,52,
+Challenger,,Nick Hardt,Counter Puncher / Solid Defender,challenger,,8,16,43,36,80,70,16,,,138,50,48,54,
+Challenger,,Laurent Lokoli,Counter Puncher / Solid Defender,challenger,,26,18,40,43,56,47,26,,,136,50,41,53,50
+Challenger,,Daniel Rincon,Clay Specialist / Counter Puncher,challenger,,21,28,45,50,72,62,29,,,112,50,56,35,0
+Challenger,,Lukas Lacko,Big Server,challenger,,85,24,56,58,4,16,12,,,110,50,15,56,50
+Challenger,,Ugo Blanchet,Attacking Baseliner,challenger,,33,29,60,49,12,33,21,,,102,50,52,48,
+Challenger,,Jose Hernandez,Clay Specialist / Solid Defender,challenger,,12,14,29,35,62,71,15,,,94,50,57,35,
+Challenger,,James Ward,Big Server,challenger,,86,24,56,53,3,12,10,,,92,50,33,51,44
+Challenger,,Facundo Juarez,Clay Specialist / Counter Puncher,challenger,,5,14,34,44,93,91,12,,,74,50,51,0,
+Challenger,,Max Houkes,Clay Specialist / Counter Puncher,challenger,,12,20,38,38,91,79,17,,,60,50,51,0,
+Challenger,,Jared Hiltzik,Big Server,challenger,,79,21,41,42,14,25,16,,,56,50,0,54,
+Challenger,,Rogerio Dutra Silva,Counter Puncher / Solid Defender,challenger,,15,16,48,54,70,60,23,,,54,50,45,100,
+Challenger,,Mariano Kestelboim,Counter Puncher,challenger,,5,10,40,50,99,84,13,,,52,50,48,67,
+Challenger,,Santiago Giraldo,Solid Baseliner / Attacking Baseliner,challenger,,32,29,62,63,9,34,19,,,48,50,44,53,
+Challenger,,Yuki Mochizuki,Counter Puncher / Solid Defender,challenger,,9,15,44,49,81,79,18,,,48,50,,50,
+Challenger,,Lautaro Midon,Counter Puncher,challenger,,6,11,39,54,98,87,14,,,46,50,49,60,
+Challenger,,Eric Vanshelboim,Counter Puncher / Solid Defender,challenger,,6,13,34,37,88,83,12,,,44,50,53,42,
+Challenger,,Eliot Spizzirri,Attacking Baseliner / Solid Baseliner,challenger,,26,26,57,56,17,43,22,,,36,50,,50,
+Challenger,,Sam Riffice,All-Court Player,challenger,,27,17,42,48,20,44,21,,,30,50,33,52,
+Challenger,,Trey Hilderbrand,Big Server,challenger,,83,37,55,55,20,32,27,,,28,50,50,50,
+Challenger,,Bastian Malla,Counter Puncher / Solid Defender,challenger,,8,16,46,55,91,86,19,,,24,50,50,,
+Challenger,,Ricardo Rodriguez,Solid Baseliner / Counter Puncher,challenger,,22,18,57,67,58,58,27,,,24,50,33,52,
+Challenger,,Lucas Bouquet,Solid Defender,challenger,,27,22,33,37,18,51,20,,,20,50,63,0,
+Challenger,,Petr Bar Biryukov,Big Server,challenger,,86,34,49,39,5,12,11,,,20,50,,50,
+Challenger,,Buvaysar Gadamauri,Counter Puncher / Solid Defender,challenger,,12,13,47,46,75,67,19,,,20,50,46,57,
+Challenger,,Zdenek Kolar,Counter Puncher / Solid Defender,challenger,,11,18,43,45,74,71,20,,,343,49.9,51,48,
+Challenger,,Maximilian Neuchrist,Big Server,challenger,,81,31,55,58,2,28,17,,,135,49.6,53,48,
+Challenger,,Christian Harrison,All-Court Player,challenger,,22,58,53,59,65,60,39,,,127,49.6,59,48,0
+Challenger,,Benoit Paire,Counter Puncher,challenger,,28,29,40,28,70,50,26,,,123,49.6,55,45,
+Challenger,,Akira Santillan,All-Court Player,challenger,,68,69,63,57,61,47,53,,,204,49.5,52,48,75
+Challenger,,Dayne Kelly,Solid Baseliner / Attacking Baseliner,challenger,,37,33,61,62,18,35,25,,,101,49.5,43,50,50
+Challenger,,Khumoun Sultanov,All-Court Player,challenger,,26,40,60,57,63,49,36,,,99,49.5,33,57,
+Challenger,,Tobias Simon,Big Server,challenger,,94,28,72,64,0,3,8,,,95,49.5,29,52,75
+Challenger,,Luke Saville,Attacking Baseliner / Solid Baseliner,challenger,,31,21,59,51,14,29,18,,,178,49.4,22,52,38
+Challenger,,Brayden Schnur,Big Server,challenger,,78,22,49,56,8,23,15,,,170,49.4,38,49,67
+Challenger,,Shuichi Sekiguchi,All-Court Player,challenger,,21,19,43,37,13,41,17,,,79,49.4,44,50,
+Challenger,,Alvaro Guillen Meza,Clay Specialist / Counter Puncher,challenger,,6,15,33,39,94,86,12,,,79,49.4,51,20,
+Challenger,,Beibit Zhukayev,Big Server,challenger,,90,36,53,48,2,8,10,,,134,49.3,41,50,57
+Challenger,,Saketh Myneni,Big Server,challenger,,84,24,59,64,6,19,15,,,73,49.3,17,52,50
+Challenger,,Evan Furness,Counter Puncher / Solid Defender,challenger,,16,17,32,31,60,59,18,,,187,49.2,54,44,
+Challenger,,Daniel Michalski,Solid Defender / Counter Puncher,challenger,,4,11,32,34,81,83,10,,,122,49.2,50,42,
+Challenger,,Lukas Neumayer,Clay Specialist / Counter Puncher,challenger,,7,16,46,47,85,83,18,,,118,49.2,50,29,
+Challenger,,Lucas Poullain,Solid Defender / Counter Puncher,challenger,,9,20,58,64,79,82,24,,,65,49.2,50,49,
+Challenger,,Riccardo Bonadio,Solid Defender / Counter Puncher,challenger,,16,20,50,52,62,66,25,,,289,49.1,49,48,
+Challenger,,Henri Laaksonen,All-Court Player,challenger,,32,29,47,42,19,39,25,,,175,49.1,49,50,0
+Challenger,,Li Tu,Big Server,challenger,,71,22,56,60,12,28,20,,,112,49.1,0,52,29
+Challenger,,Blaise Bicknell,Solid Defender / Attacking Baseliner,challenger,,18,15,35,30,16,45,15,,,57,49.1,50,48,
+Challenger,,Matija Pecotic,Counter Puncher / Solid Baseliner,challenger,,14,18,67,68,71,67,26,,,49,49,43,54,
+Challenger,,Michael Geerts,Attacking Baseliner / Solid Baseliner,challenger,,33,29,58,58,9,31,19,,,229,48.9,45,52,
+Challenger,,Martin Cuevas,Clay Specialist / All-Court Player,challenger,,31,28,42,35,23,46,26,,,135,48.9,50,0,
+Challenger,,Kirill Kivattsev,Solid Baseliner / Attacking Baseliner,challenger,,34,19,52,53,7,24,15,,,45,48.9,41,69,
+Challenger,,Matteo Martineau,Big Server,challenger,,80,34,54,61,12,29,23,,,213,48.8,47,51,50
+Challenger,,Javier Barranco Cosano,Counter Puncher / Solid Defender,challenger,,8,15,39,39,83,75,15,,,203,48.8,49,50,
+Challenger,,Mateus Alves,Solid Baseliner / Attacking Baseliner,challenger,,35,31,52,62,11,38,22,,,129,48.8,51,33,
+Challenger,,Jules Marie,Solid Defender,challenger,,22,21,33,48,21,59,19,,,84,48.8,60,46,
+Challenger,,Gabriel Decamps,Counter Puncher,challenger,,16,23,46,40,70,56,23,,,80,48.8,43,51,
+Challenger,,Joao Souza,Solid Baseliner / Attacking Baseliner,challenger,,36,34,70,77,14,41,24,,,43,48.8,50,45,
+Challenger,,Guido Ivan Justo,Counter Puncher,challenger,,4,13,35,44,99,88,12,,,43,48.8,49,,
+Challenger,,Dustin Brown,Clay Specialist / Big Server,challenger,,76,30,42,38,5,23,14,,,76,48.7,61,39,0
+Challenger,,Jurgen Briand,All-Court Player,challenger,,29,64,67,61,62,52,43,,,39,48.7,44,50,
+Challenger,,Jay Clarke,Attacking Baseliner / Solid Defender,challenger,,21,22,49,42,20,48,21,,,218,48.6,49,51,23
+Challenger,,Jeremy Jahn,Counter Puncher / Solid Defender,challenger,,15,23,46,45,70,64,24,,,107,48.6,51,41,
+Challenger,,Matteo Donati,Clay Specialist / Solid Defender,challenger,,17,18,45,54,22,65,18,,,72,48.6,52,27,
+Challenger,,Laurynas Grigelis,Big Server,challenger,,69,22,50,50,19,35,23,,,70,48.6,35,55,
+Challenger,,Daniel Gimeno Traver,Clay Specialist / Counter Puncher,challenger,,5,14,30,24,95,82,7,,,97,48.5,51,0,
+Challenger,,Gregoire Jacq,Counter Puncher / Solid Defender,challenger,,13,19,43,46,65,65,22,,,33,48.5,50,47,
+Challenger,,Luca Giacomini,Counter Puncher,challenger,,7,10,34,39,86,74,12,,,33,48.5,44,63,
+Challenger,,Nicola Kuhn,Solid Defender / Solid Baseliner,challenger,,19,21,48,49,21,53,20,,,186,48.4,44,52,
+Challenger,,Andrew Paulson,Attacking Baseliner / Solid Baseliner,challenger,,31,30,60,50,22,42,26,,,93,48.4,47,48,
+Challenger,,Fernando Verdasco,All-Court Player,challenger,,29,19,49,48,21,39,22,,,64,48.4,35,55,50
+Challenger,,Marcelo Arevalo,Big Server,challenger,,76,32,56,59,6,29,20,,,62,48.4,59,41,0
+Challenger,,Tomas Farjat,All-Court Player,challenger,,28,24,35,31,24,45,24,,,62,48.4,48,50,
+Challenger,,Johannes Haerteis,All-Court Player,challenger,,28,16,35,29,12,26,16,,,143,48.3,38,56,
+Challenger,,Scott Griekspoor,Big Server,challenger,,64,25,45,35,6,19,14,,,58,48.3,46,50,
+Challenger,,Baptiste Crepatte,Big Server,challenger,,59,16,42,42,4,24,13,,,58,48.3,30,52,
+Challenger,,Alex Barrena,Counter Puncher / Solid Defender,challenger,,6,13,36,34,91,81,11,,,58,48.3,48,,
+Challenger,,Rudolf Molleker,Big Server,challenger,,65,28,44,41,13,34,22,,,224,48.2,52,34,
+Challenger,,Orlando Luz,Clay Specialist / Solid Baseliner,challenger,,27,27,51,54,17,48,23,,,197,48.2,50,23,
+Challenger,,Gerard Campana Lee,Counter Puncher,challenger,,6,13,35,25,84,72,10,,,85,48.2,48,,
+Challenger,,Clement Tabur,Clay Specialist / Counter Puncher,challenger,,13,20,39,39,71,70,20,,,108,48.1,54,28,
+Challenger,,Michael Redlicki,Big Server,challenger,,74,22,60,58,7,25,17,,,77,48.1,33,49,
+Challenger,,John Patrick Smith,Solid Baseliner,challenger,,33,22,65,77,15,40,20,,,77,48.1,25,52,29
+Challenger,,Daniel Cukierman,Counter Puncher / Solid Defender,challenger,,13,17,32,28,67,61,16,,,77,48.1,55,44,0
+Challenger,,N Sriram Balaji,Big Server,challenger,,83,35,57,62,4,25,18,,,54,48.1,62,41,0
+Challenger,,Eduard Esteve Lobato,Counter Puncher / Solid Defender,challenger,,13,21,47,59,78,76,24,,,54,48.1,48,,
+Challenger,,Ryan Harrison,Big Server,challenger,,75,31,54,50,6,21,17,,,52,48.1,44,49,
+Challenger,,Lucas Miedler,Solid Baseliner / Attacking Baseliner,challenger,,30,26,49,57,11,39,20,,,186,47.8,44,50,
+Challenger,,Adrian Menendez Maceiras,Solid Baseliner / Attacking Baseliner,challenger,,26,18,55,59,17,46,20,,,161,47.8,40,53,20
+Challenger,,Antoine Bellier,Big Server,challenger,,94,36,55,49,1,11,10,,,134,47.8,50,43,50
+Challenger,,Nam Hoang Ly,Solid Defender / Counter Puncher,challenger,,17,19,44,47,58,60,24,,,67,47.8,40,48,
+Challenger,,Karl Friberg,Solid Defender / Counter Puncher,challenger,,14,16,38,44,56,65,20,,,46,47.8,46,50,
+Challenger,,Petr Nouza,Big Server,challenger,,90,36,47,51,5,18,14,,,46,47.8,54,41,
+Challenger,,William Blumberg,Counter Puncher / Solid Baseliner,challenger,,24,32,58,69,77,64,35,,,23,47.8,,48,
+Challenger,,Elliot Benchetrit,All-Court Player,challenger,,25,22,37,40,19,45,22,,,195,47.7,48,47,
+Challenger,,Fabien Reboul,Counter Puncher,challenger,,17,24,44,41,80,62,23,,,63,47.6,47,48,
+Challenger,,Arthur Gea,Clay Specialist / Counter Puncher,challenger,,10,18,35,35,78,72,16,,,63,47.6,53,31,
+Challenger,,Olaf Pieczkowski,Counter Puncher / Solid Defender,challenger,,14,23,45,41,79,72,22,,,21,47.6,55,40,
+Challenger,,Chris Rodesch,Big Server,challenger,,75,22,43,51,14,24,17,,,21,47.6,0,53,
+Challenger,,Mateo Barreiros Reyes,Counter Puncher / Solid Defender,challenger,,6,12,34,23,69,66,10,,,21,47.6,48,,
+Challenger,,Gonzalo Villanueva,Counter Puncher / Solid Defender,challenger,,6,12,33,36,84,84,11,,,244,47.5,49,38,
+Challenger,,Naoki Nakagawa,Big Server,challenger,,64,28,53,49,12,33,22,,,101,47.5,43,49,
+Challenger,,Timo Stodder,Clay Specialist / Counter Puncher,challenger,,5,15,36,36,90,85,12,,,61,47.5,49,0,
+Challenger,,Alejandro Gomez Gb42,Big Server,challenger,,81,35,56,53,9,22,19,,,59,47.5,52,44,
+Challenger,,Ryan Shane,Big Server,challenger,,84,23,40,36,8,11,8,,,40,47.5,25,50,
+Challenger,,Renzo Olivo,Counter Puncher / Solid Defender,challenger,,8,14,32,24,81,71,11,,,302,47.4,48,45,
+Challenger,,Sebastian Fanselow,Solid Defender / Attacking Baseliner,challenger,,20,20,36,27,23,45,19,,,211,47.4,44,50,
+Challenger,,Evan Song,Solid Baseliner / Solid Defender,challenger,,26,23,42,53,18,48,22,,,97,47.4,42,48,
+Challenger,,Robin Haase,Big Server,challenger,,70,28,45,41,9,25,17,,,97,47.4,46,50,
+Challenger,,Oleg Prihodko,Solid Baseliner / Solid Defender,challenger,,22,16,47,55,22,53,20,,,76,47.4,45,58,
+Challenger,,Adolfo Daniel Vallejo,Counter Puncher,challenger,,5,15,39,38,96,83,13,,,76,47.4,49,42,
+Challenger,,Hiroki Moriya,Counter Puncher / Solid Defender,challenger,,12,11,44,36,62,56,17,,,279,47.3,0,47,67
+Challenger,,Miljan Zekic,Solid Defender,challenger,,24,22,34,42,19,54,20,,,150,47.3,48,36,
+Challenger,,Jose Pereira,Counter Puncher / Solid Defender,challenger,,10,20,60,65,88,82,25,,,93,47.3,47,50,
+Challenger,,Joao Lucas Reis Da Silva,Solid Defender / Counter Puncher,challenger,,10,16,34,40,71,73,16,,,144,47.2,49,38,
+Challenger,,Nicolas Barrientos,Clay Specialist / Counter Puncher,challenger,,9,15,34,28,68,67,14,,,72,47.2,56,27,
+Challenger,,Jurgen Zopp,Big Server,challenger,,64,19,46,45,9,28,17,,,53,47.2,41,54,33
+Challenger,,Agustin Velotti,All-Court Player,challenger,,21,18,40,40,7,40,15,,,53,47.2,49,44,
+Challenger,,Alastair Gray,Big Server,challenger,,89,34,47,52,4,18,14,,,36,47.2,,52,17
+Challenger,,Sasi Kumar Mukund,Big Server / Attacking Baseliner,challenger,,63,28,53,49,13,34,23,,,257,47.1,44,48,
+Challenger,,Michael Vrbensky,Solid Defender,challenger,,19,19,34,28,21,51,17,,,155,47.1,50,37,
+Challenger,,Christian Langmo,Big Server,challenger,,85,33,51,48,4,15,13,,,121,47.1,40,49,
+Challenger,,Federico Arnaboldi,Clay Specialist / Solid Defender,challenger,,13,13,26,18,52,57,12,,,85,47.1,53,24,
+Challenger,,Mathys Erhard,Counter Puncher / Solid Defender,challenger,,11,16,31,36,74,73,15,,,68,47.1,50,33,
+Challenger,,Thiemo De Bakker,Big Server,challenger,,75,31,46,62,7,35,21,,,51,47.1,52,39,
+Challenger,,Takanyi Garanganga,Big Server,challenger,,78,30,38,36,6,19,12,,,34,47.1,,47,
+Challenger,,Mohamed Safwat,All-Court Player,challenger,,24,22,44,44,13,43,19,,,215,47,47,47,
+Challenger,,Yannick Maden,Counter Puncher / Solid Defender,challenger,,12,14,51,53,78,70,21,,,134,47,37,50,33
+Challenger,,Mats Rosenkranz,Big Server,challenger,,92,37,55,55,2,11,12,,,134,47,41,49,25
+Challenger,,Blake Ellis,Big Server,challenger,,67,27,45,41,9,29,18,,,100,47,50,47,50
+Challenger,,Henrique Rocha,Counter Puncher / Solid Defender,challenger,,11,17,37,24,68,60,15,,,83,47,48,47,0
+Challenger,,Andrea Arnaboldi,Solid Baseliner / Attacking Baseliner,challenger,,20,20,51,53,11,46,17,,,258,46.9,46,48,
+Challenger,,Arthur De Greef,Counter Puncher / Solid Defender,challenger,,15,21,38,40,68,65,21,,,98,46.9,49,41,
+Challenger,,Pavel Nejedly,Clay Specialist / Counter Puncher,challenger,,3,11,25,17,97,85,3,,,49,46.9,50,20,
+Challenger,,Ryuki Matsuda,Solid Defender / Solid Baseliner,challenger,,13,11,47,51,22,57,15,,,32,46.9,0,48,
+Challenger,,Evgeny Karlovskiy,All-Court Player,challenger,,32,27,39,41,17,33,24,,,263,46.8,42,49,0
+Challenger,,Pedro Sakamoto,Solid Defender / Counter Puncher,challenger,,14,17,44,49,62,67,22,,,186,46.8,46,53,
+Challenger,,Denis Istomin,Solid Baseliner,challenger,,35,20,46,58,8,30,16,,,126,46.8,35,52,0
+Challenger,,Pedro Boscardin Dias,Counter Puncher / Solid Defender,challenger,,10,15,26,18,73,64,10,,,124,46.8,47,38,
+Challenger,,Ruben Bemelmans,Big Server / Solid Baseliner,challenger,,76,23,63,66,8,25,18,,,111,46.8,21,51,58
+Challenger,,Colin Sinclair,Big Server,challenger,,84,32,44,58,4,28,17,,,94,46.8,56,46,
+Challenger,,Blake Mott,All-Court Player,challenger,,25,16,43,38,16,35,18,,,47,46.8,33,50,0
+Challenger,,Leonardo Aboian,Solid Defender / Counter Puncher,challenger,,15,21,41,48,60,63,23,,,47,46.8,47,,
+Challenger,,Nicolas Zanellato,Solid Defender / Counter Puncher,challenger,,6,11,31,33,71,75,11,,,47,46.8,47,,
+Challenger,,Steven Diez,Counter Puncher / Solid Defender,challenger,,8,15,42,42,75,75,17,,,255,46.7,48,45,
+Challenger,,Roberto Quiroz,Attacking Baseliner / Solid Baseliner,challenger,,32,27,54,54,6,31,17,,,210,46.7,46,47,
+Challenger,,Thomaz Bellucci,Counter Puncher / Solid Defender,challenger,,15,22,48,43,69,61,24,,,137,46.7,47,46,
+Challenger,,Valerio Aboian,Clay Specialist / Counter Puncher,challenger,,8,15,29,38,90,86,12,,,75,46.7,48,0,
+Challenger,,Felipe Mantilla,Solid Baseliner / Attacking Baseliner,challenger,,22,16,55,58,17,44,18,,,30,46.7,40,53,
+Challenger,,Elmar Ejupovic,Big Server,challenger,,86,35,55,58,4,21,16,,,161,46.6,48,42,
+Challenger,,Juan Pablo Paz,Counter Puncher / Solid Defender,challenger,,18,20,45,42,61,59,24,,,73,46.6,47,44,
+Challenger,,Filip Cristian Jianu,Solid Defender / Counter Puncher,challenger,,12,15,41,45,68,73,19,,,192,46.4,48,41,
+Challenger,,Danilo Petrovic,Big Server,challenger,,86,34,53,49,7,16,15,,,112,46.4,43,48,
+Challenger,,Cannon Kingsley,Big Server,challenger,,83,36,64,72,8,30,23,,,69,46.4,50,46,
+Challenger,,Max Wiskandt,All-Court Player,challenger,,23,15,45,43,22,39,20,,,28,46.4,0,48,
+Challenger,,Lorenzo Joaquin Rodriguez,Counter Puncher / Solid Defender,challenger,,10,18,41,41,81,76,18,,,28,46.4,48,0,
+Challenger,,Duck Hee Lee,Counter Puncher,challenger,,9,10,32,19,74,57,9,,,121,46.3,18,49,
+Challenger,,Alex Marti Pujolras,Counter Puncher,challenger,,6,13,31,21,98,77,7,,,54,46.3,46,,
+Challenger,,Yanki Erel,Solid Baseliner / Attacking Baseliner,challenger,,21,15,50,51,20,47,19,,,54,46.3,35,51,
+Challenger,,Viktor Durasovic,Attacking Baseliner / Solid Baseliner,challenger,,33,30,60,55,9,30,19,,,234,46.2,45,47,
+Challenger,,Ergi Kirkin,Solid Defender / Counter Puncher,challenger,,13,15,28,28,66,68,14,,,158,46.2,52,35,
+Challenger,,Filippo Baldi,Solid Defender,challenger,,13,13,38,37,19,55,14,,,145,46.2,46,47,0
+Challenger,,Enrico Dalla Valle,Solid Defender / Counter Puncher,challenger,,21,21,41,50,60,62,26,,,130,46.2,47,44,
+Challenger,,Masamichi Imamura,Solid Defender / Counter Puncher,challenger,,13,21,55,63,66,72,26,,,26,46.2,,46,
+Challenger,,Dali Blanch,Counter Puncher / Solid Defender,challenger,,23,21,31,34,56,55,23,,,26,46.2,53,36,
+Challenger,,Max Alcala Gurri,Counter Puncher,challenger,,4,11,26,17,99,86,3,,,26,46.2,48,0,
+Challenger,,Marko Topo,All-Court Player,challenger,,27,22,38,35,11,34,19,,,76,46.1,48,44,
+Challenger,,Lorenzo Giustino,Counter Puncher,challenger,,13,18,33,24,68,57,15,,,326,46,46,47,
+Challenger,,Viktor Troicki,Big Server / Solid Baseliner,challenger,,69,30,42,61,20,48,28,,,50,46,47,36,67
+Challenger,,Carlos Lopez Montagud,Clay Specialist / Solid Defender,challenger,,11,15,44,44,62,75,19,,,50,46,47,0,
+Challenger,,Alexey Vatutin,Counter Puncher,challenger,,6,14,39,35,89,78,13,,,283,45.9,45,47,
+Challenger,,Hernan Casanova,Counter Puncher / Solid Defender,challenger,,5,10,33,36,89,88,10,,,172,45.9,46,43,
+Challenger,,Julian Lenz,Big Server,challenger,,66,28,43,38,15,32,21,,,157,45.9,44,47,
+Challenger,,Gleb Sakharov,All-Court Player,challenger,,27,15,33,37,13,33,17,,,61,45.9,20,59,
+Challenger,,Nino Serdarusic,Big Server,challenger,,67,28,50,56,10,37,23,,,301,45.8,48,42,
+Challenger,,Daniel Dutra Da Silva,Counter Puncher,challenger,,12,19,40,34,79,65,18,,,177,45.8,46,50,
+Challenger,,Guillermo Garcia Lopez,Solid Defender,challenger,,18,17,35,30,18,48,16,,,48,45.8,48,43,0
+Challenger,,Rayane Roumane,Big Server,challenger,,76,27,34,26,8,17,10,,,24,45.8,,46,
+Challenger,,Ye Cong Mo,Attacking Baseliner / Solid Defender,challenger,,23,22,48,34,20,43,21,,,24,45.8,,46,
+Challenger,,Alexander Donski,Big Server,challenger,,75,33,50,46,11,29,21,,,24,45.8,50,40,
+Challenger,,Linang Xiao,Solid Defender,challenger,,10,11,34,26,18,51,11,,,24,45.8,,46,
+Challenger,,Charles Broom,Big Server,challenger,,70,22,52,53,18,32,23,,,94,45.7,0,42,61
+Challenger,,Konstantin Kravchuk,Big Server,challenger,,81,22,56,63,6,24,16,,,46,45.7,25,48,
+Challenger,,Peter Polansky,Big Server,challenger,,63,19,52,43,6,21,14,,,147,45.6,27,50,50
+Challenger,,David Jorda Sanchis,Solid Baseliner / Attacking Baseliner,challenger,,34,29,50,53,8,31,19,,,79,45.6,45,47,
+Challenger,,Rio Noguchi,Counter Puncher / Solid Defender,challenger,,7,10,42,45,72,72,15,,,143,45.5,26,50,40
+Challenger,,Nicolas Alvarez Varona,All-Court Player,challenger,,29,27,51,50,20,45,25,,,134,45.5,46,45,
+Challenger,,Edoardo Lavagno,Clay Specialist / Counter Puncher,challenger,,5,12,28,27,93,87,7,,,99,45.5,47,0,
+Challenger,,Oliver Crawford,All-Court Player,challenger,,22,22,49,48,16,48,20,,,77,45.5,49,41,
+Challenger,,Ignacio Monzon,Clay Specialist / Counter Puncher,challenger,,4,10,23,18,98,89,2,,,55,45.5,46,0,
+Challenger,,Markus Eriksson,Solid Defender,challenger,,16,15,28,34,20,53,15,,,44,45.5,43,50,
+Challenger,,Chien Hsun Lo,All-Court Player,challenger,,22,12,33,26,5,20,11,,,22,45.5,0,48,
+Challenger,,Stefan Palosi,Solid Defender,challenger,,15,14,24,29,25,65,12,,,22,45.5,48,0,
+Challenger,,Maxime Janvier,Big Server,challenger,,71,30,49,42,8,23,17,,,357,45.4,43,47,
+Challenger,,Nicholas David Ionel,Counter Puncher / Solid Defender,challenger,,6,10,31,27,82,79,9,,,108,45.4,46,42,
+Challenger,,Sekou Bangoura,Solid Baseliner / Attacking Baseliner,challenger,,32,21,61,66,11,35,18,,,75,45.3,30,48,
+Challenger,,Teymuraz Gabashvili,All-Court Player,challenger,,26,17,41,31,21,37,20,,,157,45.2,26,54,
+Challenger,,Igor Sijsling,Solid Defender / Counter Puncher,challenger,,19,26,45,60,64,70,28,,,62,45.2,52,38,50
+Challenger,,Matej Sabanov,Counter Puncher,challenger,,8,16,31,21,85,69,10,,,31,45.2,44,45,
+Challenger,,Donald Young,Solid Defender / Attacking Baseliner,challenger,,17,12,38,26,23,45,15,,,122,45.1,36,47,0
+Challenger,,Adam Pavlasek,Solid Defender / Solid Baseliner,challenger,,23,23,44,49,21,54,22,,,71,45.1,47,39,
+Challenger,,Felix Corwin,Counter Puncher,challenger,,25,28,43,31,59,45,27,,,51,45.1,45,45,
+Challenger,,Andrea Basso,Big Server / Attacking Baseliner,challenger,,60,28,54,49,12,30,22,,,51,45.1,43,50,
+Challenger,,Andrea Picchione,Counter Puncher / Solid Defender,challenger,,14,23,52,52,76,72,25,,,51,45.1,50,31,
+Challenger,,Aldin Setkic,Big Server,challenger,,72,19,43,41,5,18,11,,,160,45,34,51,
+Challenger,,Jonathan Mridha,Attacking Baseliner / Solid Baseliner,challenger,,25,26,57,55,22,49,24,,,40,45,45,45,
+Challenger,,Daniel Nguyen,Counter Puncher,challenger,,10,11,32,18,85,60,8,,,40,45,0,46,
+Challenger,,Vlad Andrei Dancu,Solid Defender / Counter Puncher,challenger,,15,22,51,50,61,62,25,,,20,45,45,,
+Challenger,,Takuya Kumasaka,Solid Defender / Counter Puncher,challenger,,5,12,35,34,75,76,12,,,20,45,,45,
+Challenger,,Strong Kirchheimer,Attacking Baseliner / Solid Baseliner,challenger,,30,18,53,52,8,31,16,,,165,44.8,33,47,
+Challenger,,Geoffrey Blancaneaux,Counter Puncher / Solid Defender,challenger,,11,17,38,34,71,62,17,,,284,44.7,43,47,33
+Challenger,,Olukayode Alafia Damina Ayeni,All-Court Player,challenger,,31,23,27,23,11,22,17,,,132,44.7,38,46,0
+Challenger,,Govind Nanda,Solid Defender / Counter Puncher,challenger,,8,15,37,41,77,79,15,,,76,44.7,50,44,
+Challenger,,Corentin Denolly,Counter Puncher / Solid Defender,challenger,,20,18,32,25,52,48,19,,,92,44.6,45,43,
+Challenger,,Fajing Sun,Solid Baseliner / Attacking Baseliner,challenger,,19,15,56,58,20,52,18,,,74,44.6,20,46,
+Challenger,,Luca Potenza,Solid Defender / Counter Puncher,challenger,,8,9,33,24,54,62,11,,,65,44.6,44,46,
+Challenger,,Neil Oberleitner,All-Court Player,challenger,,29,28,49,47,58,47,32,,,65,44.6,44,47,
+Challenger,,Jacopo Berrettini,Solid Defender,challenger,,11,12,23,22,23,60,9,,,99,44.4,47,29,
+Challenger,,Robin Bertrand,Solid Defender,challenger,,15,10,31,25,19,42,13,,,54,44.4,0,47,
+Challenger,,Juan Bautista Otegui,Counter Puncher,challenger,,7,10,31,21,93,68,7,,,54,44.4,43,67,
+Challenger,,Anton Matusevich,Solid Baseliner / Attacking Baseliner,challenger,,33,31,52,54,15,41,24,,,27,44.4,47,33,50
+Challenger,,Alexander Weis,Clay Specialist / Solid Defender,challenger,,15,17,37,35,55,63,19,,,115,44.3,48,0,
+Challenger,,Aidan Mchugh,Solid Baseliner / Attacking Baseliner,challenger,,26,22,45,50,8,39,17,,,106,44.3,50,46,33
+Challenger,,Harry Bourchier,Big Server,challenger,,67,18,39,30,5,17,9,,,70,44.3,33,46,
+Challenger,,Arklon Huertas Del Pino,Clay Specialist / Solid Defender,challenger,,8,14,32,41,84,86,13,,,70,44.3,47,17,
+Challenger,,Matteo Viola,Counter Puncher / Solid Defender,challenger,,5,7,25,17,75,65,5,,,163,44.2,28,52,0
+Challenger,,Di Wu,Solid Defender,challenger,,14,17,46,41,23,58,17,,,77,44.2,43,44,
+Challenger,,Renta Tokuda,Solid Defender,challenger,,15,12,43,43,21,54,15,,,77,44.2,33,45,
+Challenger,,Adria Soriano Barrera,Big Server,challenger,,83,24,62,54,4,15,12,,,43,44.2,36,47,
+Challenger,,Alejandro Gonzalez,Counter Puncher / Solid Defender,challenger,,10,17,42,47,71,71,19,,,118,44.1,40,48,
+Challenger,,Gonzalo Bueno,Counter Puncher / Solid Defender,challenger,,4,10,30,31,90,87,8,,,93,44.1,44,40,
+Challenger,,Ramkumar Ramanathan,Big Server,challenger,,88,34,55,41,2,10,10,,,234,44,40,45,48
+Challenger,,Nikolas Sanchez Izquierdo,Clay Specialist / Counter Puncher,challenger,,6,12,31,26,84,80,9,,,191,44,47,18,
+Challenger,,Federico Iannaccone,Clay Specialist / Counter Puncher,challenger,,5,11,28,24,94,88,6,,,50,44,46,25,
+Challenger,,Juan Carlos Aguilar,Counter Puncher / Solid Defender,challenger,,5,16,47,34,86,77,15,,,25,44,60,40,
+Challenger,,Matias Franco Descotte,Solid Defender,challenger,,18,16,32,39,16,51,15,,,98,43.9,43,44,
+Challenger,,Vincent Millot,Counter Puncher,challenger,,8,9,30,17,68,55,8,,,41,43.9,20,47,
+Challenger,,Juan Sebastian Gomez,Counter Puncher / Solid Defender,challenger,,5,10,22,14,88,78,3,,,41,43.9,46,33,
+Challenger,,Kenny De Schepper,Big Server,challenger,,76,23,52,64,8,24,17,,,203,43.8,32,50,
+Challenger,,Giovanni Oradini,Solid Defender,challenger,,22,18,28,35,14,47,16,,,80,43.8,49,35,
+Challenger,,Igor Gimenez,Counter Puncher,challenger,,4,9,25,16,92,79,3,,,32,43.8,44,,
+Challenger,,Arthur Weber,Solid Defender,challenger,,11,8,39,35,23,56,12,,,39,43.6,20,47,
+Challenger,,Joao Domingues,Solid Defender / Counter Puncher,challenger,,6,13,37,43,83,87,14,,,214,43.5,45,30,
+Challenger,,Yu Hsiou Hsu,All-Court Player,challenger,,24,15,42,42,17,39,18,,,99,43.4,20,46,0
+Challenger,,Cristian Rodriguez,Solid Baseliner / Attacking Baseliner,challenger,,32,28,48,49,7,33,19,,,83,43.4,44,33,
+Challenger,,Viktor Galovic,Big Server,challenger,,73,28,41,52,6,29,17,,,120,43.3,42,44,50
+Challenger,,Brydan Klein,Big Server,challenger,,82,23,50,47,7,12,11,,,67,43.3,0,43,53
+Challenger,,Andres Artunedo Martinavarro,Big Server,challenger,,85,38,56,68,10,28,22,,,30,43.3,,45,0
+Challenger,,Yusuke Takahashi,Solid Defender,challenger,,15,15,35,37,20,57,15,,,162,43.2,50,43,
+Challenger,,Jc Aragone,All-Court Player,challenger,,24,14,32,29,14,30,16,,,155,43.2,13,47,0
+Challenger,,Jose Rubin Statham,Big Server,challenger,,76,32,62,55,6,23,18,,,132,43.2,41,44,
+Challenger,,Uladzimir Ignatik,Big Server,challenger,,82,35,52,70,11,36,24,,,132,43.2,47,40,
+Challenger,,Pol Martin Tiffon,Solid Defender,challenger,,20,19,37,28,20,50,18,,,74,43.2,45,20,
+Challenger,,Kevin King,Big Server,challenger,,69,28,35,38,14,32,19,,,102,43.1,50,43,50
+Challenger,,Robert Strombachs,All-Court Player,challenger,,22,18,35,38,9,38,16,,,65,43.1,44,43,0
+Challenger,,Nicolas Alvarez,Solid Defender,challenger,,17,15,26,30,21,57,14,,,114,43,45,29,
+Challenger,,Maverick Banes,Attacking Baseliner / Solid Baseliner,challenger,,24,14,45,40,9,35,15,,,79,43,33,44,
+Challenger,,Yshai Oliel,Solid Defender / Solid Baseliner,challenger,,21,21,40,49,19,57,19,,,79,43,49,32,
+Challenger,,Dan Added,All-Court Player,challenger,,27,16,37,43,12,36,17,,,126,42.9,32,46,
+Challenger,,Carlos Gomez Herrera,Solid Defender / Solid Baseliner,challenger,,19,20,45,50,21,58,20,,,119,42.9,44,40,
+Challenger,,Miguel Damas,Solid Defender / Counter Puncher,challenger,,6,7,18,17,57,66,5,,,77,42.9,46,35,
+Challenger,,Ryan Nijboer,Counter Puncher,challenger,,13,20,35,32,81,69,17,,,63,42.9,45,30,
+Challenger,,Mischa Zverev,Solid Baseliner / Attacking Baseliner,challenger,,27,19,51,52,24,46,23,,,42,42.9,25,47,
+Challenger,,Yan Bondarevskiy,Counter Puncher / Solid Defender,challenger,,7,10,25,25,68,67,9,,,35,42.9,41,44,
+Challenger,,Mark Whitehouse,Big Server,challenger,,80,20,40,46,3,17,9,,,35,42.9,0,42,50
+Challenger,,Harri Heliovaara,All-Court Player,challenger,,26,15,43,40,14,34,17,,,54,42.6,31,46,
+Challenger,,Dane Sweeny,Solid Defender,challenger,,11,9,36,25,22,50,11,,,113,42.5,30,45,0
+Challenger,,Jacob Grills,Counter Puncher / Solid Defender,challenger,,12,16,32,32,70,66,15,,,73,42.5,46,42,
+Challenger,,Gerard Granollers,Counter Puncher / Solid Defender,challenger,,4,11,37,28,76,74,10,,,59,42.4,43,42,
+Challenger,,Jie Cui,Counter Puncher / Solid Defender,challenger,,16,12,35,28,55,47,17,,,59,42.4,0,44,
+Challenger,,Bogdan Bobrov,Solid Defender,challenger,,18,16,33,36,13,47,15,,,111,42.3,43,43,
+Challenger,,Tom Fawcett,All-Court Player,challenger,,32,29,42,37,19,37,25,,,26,42.3,,42,
+Challenger,,Diego Augusto Barreto Sanchez,Solid Defender / Counter Puncher,challenger,,6,17,47,46,72,78,18,,,26,42.3,50,17,
+Challenger,,Dragos Dima,Solid Defender / Counter Puncher,challenger,,5,11,27,34,81,82,9,,,38,42.1,42,,
+Challenger,,Stefanos Sakellaridis,All-Court Player,challenger,,28,20,27,32,7,34,16,,,38,42.1,50,38,
+Challenger,,Edan Leshem,All-Court Player,challenger,,24,23,37,34,19,45,21,,,100,42,50,42,
+Challenger,,Conner Huertas Del Pino,Counter Puncher / Solid Defender,challenger,,19,18,35,38,57,56,22,,,81,42,41,47,
+Challenger,,Sidharth Rawat,Attacking Baseliner / Solid Baseliner,challenger,,24,36,57,54,22,49,26,,,74,41.9,20,43,
+Challenger,,Kaito Uesugi,Counter Puncher,challenger,,14,19,34,29,77,63,16,,,31,41.9,,42,
+Challenger,,Kaichi Uchida,All-Court Player,challenger,,28,22,38,32,8,29,17,,,288,41.7,42,42,
+Challenger,,Filip Peliwo,Counter Puncher / Solid Defender,challenger,,12,13,24,15,61,55,10,,,151,41.7,39,43,25
+Challenger,,Michail Pervolarakis,All-Court Player,challenger,,16,10,25,15,17,33,12,,,72,41.7,0,43,
+Challenger,,Ajeet Rai,All-Court Player,challenger,,27,21,30,26,15,29,19,,,48,41.7,33,43,
+Challenger,,Sandro Ehrat,Solid Baseliner / Attacking Baseliner,challenger,,32,31,54,63,19,54,26,,,36,41.7,50,13,
+Challenger,,Tom Gentzsch,Big Server,challenger,,80,33,43,44,8,25,17,,,24,41.7,47,25,
+Challenger,,Noah Schachter,Counter Puncher / Solid Defender,challenger,,25,31,43,46,61,54,31,,,24,41.7,53,22,
+Challenger,,Collin Altamirano,All-Court Player,challenger,,26,22,37,39,11,36,19,,,77,41.6,40,42,
+Challenger,,Thomas Fancutt,Big Server,challenger,,83,32,43,35,4,10,9,,,82,41.5,33,43,
+Challenger,,Alexander Erler,All-Court Player,challenger,,32,23,30,24,5,22,14,,,65,41.5,47,34,
+Challenger,,Tibo Colson,Big Server,challenger,,76,28,37,34,3,20,11,,,29,41.4,50,31,
+Challenger,,Roberto Cid,Counter Puncher / Solid Defender,challenger,,7,13,31,23,77,68,10,,,167,41.3,40,43,
+Challenger,,Evgenii Tiurnev,All-Court Player,challenger,,37,29,40,29,9,22,17,,,63,41.3,42,41,
+Challenger,,Evan Zhu,Solid Defender,challenger,,21,17,28,30,12,41,15,,,119,41.2,48,39,
+Challenger,,Lloyd Glasspool,Big Server,challenger,,89,34,55,52,2,18,14,,,51,41.2,,44,17
+Challenger,,Daniil Glinka,Big Server,challenger,,75,23,62,63,14,26,20,,,51,41.2,0,44,
+Challenger,,David Poljak,All-Court Player,challenger,,26,21,31,31,15,37,20,,,95,41.1,41,41,
+Challenger,,Sandro Kopp,Solid Defender / Solid Baseliner,challenger,,16,10,39,43,18,49,14,,,56,41.1,38,63,
+Challenger,,Moez Echargui,Counter Puncher / Solid Defender,challenger,,7,15,31,29,85,76,11,,,144,41,44,35,
+Challenger,,Miliaan Niesten,Counter Puncher / Solid Defender,challenger,,4,11,34,36,95,86,10,,,22,40.9,33,42,
+Challenger,,Harrison Adams,Counter Puncher / Attacking Baseliner,challenger,,27,28,52,44,61,50,31,,,22,40.9,43,40,
+Challenger,,Pedja Krstin,Solid Defender,challenger,,19,16,25,15,20,43,13,,,169,40.8,44,34,
+Challenger,,Makoto Ochi,Solid Defender / Attacking Baseliner,challenger,,16,17,46,40,19,52,17,,,98,40.8,40,41,
+Challenger,,Danylo Kalenichenko,All-Court Player,challenger,,32,25,44,44,6,29,17,,,27,40.7,40,41,
+Challenger,,Gonzalo Lama,Solid Defender / Solid Baseliner,challenger,,17,14,27,34,6,44,11,,,116,40.5,43,13,
+Challenger,,Alen Avidzba,Attacking Baseliner,challenger,,27,23,50,30,7,25,14,,,42,40.5,41,40,
+Challenger,,Luca Castelnuovo,Big Server,challenger,,70,17,33,31,1,13,6,,,42,40.5,30,50,
+Challenger,,Shinji Hazawa,Solid Defender / Solid Baseliner,challenger,,19,18,38,44,18,54,18,,,37,40.5,,41,
+Challenger,,Julian Ocleppo,Big Server,challenger,,59,25,43,40,14,34,22,,,99,40.4,40,42,
+Challenger,,Gianmarco Ferrari,Attacking Baseliner,challenger,,24,20,39,27,6,27,14,,,57,40.4,41,38,
+Challenger,,Marcello Serafini,Solid Defender,challenger,,16,13,22,26,19,53,12,,,52,40.4,42,33,
+Challenger,,Eduardo Ribeiro,Solid Defender,challenger,,10,10,25,31,54,65,12,,,70,40,40,40,
+Challenger,,Shintaro Imai,All-Court Player,challenger,,29,25,39,37,16,38,22,,,60,40,,40,
+Challenger,,Wishaya Trongcharoenchaikul,Big Server,challenger,,74,27,38,27,2,13,7,,,60,40,,40,
+Challenger,,Ruan Roelofse,Big Server,challenger,,91,25,65,51,1,8,8,,,40,40,0,41,
+Challenger,,Quinn Vandecasteele,Counter Puncher,challenger,,22,17,38,22,67,41,18,,,35,40,0,41,
+Challenger,,Joao Pedro Sorgi,Counter Puncher,challenger,,15,21,41,44,81,68,21,,,25,40,40,,
+Challenger,,Moerani Bouzige,All-Court Player,challenger,,30,23,33,27,5,23,14,,,25,40,,40,
+Challenger,,Ozan Baris,Solid Baseliner / Solid Defender,challenger,,26,18,45,51,22,46,22,,,25,40,0,42,
+Challenger,,Gerardo Lopez Villasenor,All-Court Player,challenger,,23,18,39,33,3,30,13,,,20,40,33,41,
+Challenger,,Marsel Ilhan,Attacking Baseliner / Solid Baseliner,challenger,,31,28,54,54,8,39,20,,,20,40,43,38,
+Challenger,,Henry Searle,Big Server,challenger,,85,33,57,48,1,17,13,,,20,40,33,31,75
+Challenger,,Roberto Ortega Olmedo,Solid Defender,challenger,,10,8,33,24,16,46,9,,,138,39.9,32,44,
+Challenger,,Sadio Doumbia,Solid Defender,challenger,,14,9,27,19,20,43,11,,,88,39.8,31,48,
+Challenger,,Benjamin Lock,Big Server,challenger,,61,24,42,47,6,33,18,,,156,39.7,41,39,
+Challenger,,Malek Jaziri,All-Court Player,challenger,,20,16,28,26,10,35,14,,,131,39.7,36,42,
+Challenger,,Matias Zukas,Solid Defender,challenger,,18,15,28,23,10,40,13,,,63,39.7,42,17,
+Challenger,,Peter Heller,Solid Defender,challenger,,13,12,25,32,11,50,10,,,53,39.6,44,25,
+Challenger,,Andrea Guerrieri,Counter Puncher / Solid Defender,challenger,,4,12,31,20,90,81,6,,,38,39.5,44,17,
+Challenger,,David Vega Hernandez,Counter Puncher / Solid Defender,challenger,,10,12,27,18,69,64,9,,,28,39.3,40,33,
+Challenger,,Kiranpal Pannu,Solid Defender,challenger,,19,14,19,21,14,40,12,,,51,39.2,47,36,
+Challenger,,Sem Verbeek,All-Court Player,challenger,,22,11,20,21,4,23,10,,,46,39.1,31,42,
+Challenger,,Tim Smyczek,All-Court Player,challenger,,28,22,35,42,10,37,18,,,23,39.1,,39,
+Challenger,,Marek Gengel,All-Court Player,challenger,,20,11,21,21,16,34,14,,,105,39,20,47,
+Challenger,,Ben Patael,All-Court Player,challenger,,25,20,35,33,13,34,19,,,41,39,36,40,
+Challenger,,Karim Mohamed Maamoun,Solid Defender,challenger,,12,13,35,22,19,50,12,,,36,38.9,40,38,
+Challenger,,Franco Roncadelli,Counter Puncher / Solid Defender,challenger,,4,9,27,28,96,91,5,,,36,38.9,39,,
+Challenger,,Kalin Ivanovski,Big Server,challenger,,70,18,37,42,6,23,12,,,36,38.9,29,45,
+Challenger,,Vladyslav Orlov,Counter Puncher / Solid Defender,challenger,,6,12,37,28,79,72,11,,,103,38.8,38,40,
+Challenger,,Martin Krumich,Counter Puncher,challenger,,8,14,26,17,78,65,8,,,67,38.8,39,38,
+Challenger,,Bruno Kuzuhara,Solid Defender,challenger,,9,9,24,24,17,54,8,,,49,38.8,39,39,
+Challenger,,Vadym Ursu,Counter Puncher,challenger,,6,11,21,6,81,65,2,,,44,38.6,38,39,
+Challenger,,Jumpei Yamasaki,Solid Defender,challenger,,18,10,23,30,19,45,13,,,26,38.5,0,40,
+Challenger,,Dennis Novikov,Big Server,challenger,,75,19,40,28,3,7,5,,,73,38.4,0,41,0
+Challenger,,Tsung Hua Yang,Big Server,challenger,,74,28,36,31,8,23,13,,,94,38.3,39,38,
+Challenger,,Kai Wehnelt,All-Court Player,challenger,,31,24,33,29,16,31,22,,,47,38.3,38,38,
+Challenger,,Goncalo Oliveira,All-Court Player,challenger,,20,17,38,27,13,39,16,,,267,38.2,39,37,
+Challenger,,Matthew Dellavedova,Solid Defender,challenger,,6,6,20,24,53,71,6,,,55,38.2,44,26,
+Challenger,,Jaroslav Pospisil,Solid Defender,challenger,,9,11,24,14,20,53,7,,,34,38.2,42,30,
+Challenger,,Nick Chappell,Solid Defender,challenger,,15,13,30,29,13,43,13,,,155,38.1,32,40,
+Challenger,,Markos Kalovelonis,Big Server,challenger,,82,21,50,30,1,3,3,,,21,38.1,0,44,
+Challenger,,Vladyslav Manafov,Big Server,challenger,,69,18,35,26,2,10,5,,,50,38,31,46,
+Challenger,,Kasidit Samrej,Big Server,challenger,,67,26,35,30,6,20,12,,,29,37.9,,38,
+Challenger,,Tim Handel,All-Court Player,challenger,,28,23,41,39,5,35,16,,,29,37.9,47,22,
+Challenger,,Vaclav Safranek,Clay Specialist / Solid Defender,challenger,,13,9,15,26,9,49,6,,,82,37.8,46,14,
+Challenger,,Nikola Cacic,Attacking Baseliner / Solid Baseliner,challenger,,30,16,43,43,2,24,12,,,37,37.8,25,48,
+Challenger,,Inigo Cervantes Huegun,All-Court Player,challenger,,29,22,28,22,18,40,19,,,61,37.7,40,27,
+Challenger,,Alexis Gautier,All-Court Player,challenger,,33,26,35,28,10,28,19,,,88,37.5,43,32,
+Challenger,,Dominik Palan,Big Server,challenger,,85,22,47,36,2,6,5,,,72,37.5,0,39,
+Challenger,,Stephane Robert,All-Court Player,challenger,,25,14,31,17,21,36,16,,,56,37.5,25,42,50
+Challenger,,Sergey Fomin,Solid Defender,challenger,,10,9,18,17,16,51,6,,,56,37.5,54,21,
+Challenger,,Seita Watanabe,Solid Defender / Counter Puncher,challenger,,12,11,18,18,51,57,9,,,32,37.5,44,35,
+Challenger,,Louis Wessels,All-Court Player,challenger,,24,17,19,16,6,27,11,,,107,37.4,43,22,
+Challenger,,Wilson Leite,Solid Defender / Counter Puncher,challenger,,4,11,26,32,76,82,8,,,126,37.3,39,28,
+Challenger,,Tomislav Brkic,Solid Defender,challenger,,14,11,19,17,13,43,9,,,67,37.3,43,26,
+Challenger,,Saba Purtseladze,All-Court Player,challenger,,36,20,42,33,13,22,18,,,43,37.2,14,48,
+Challenger,,Bor Artnak,Counter Puncher / Solid Defender,challenger,,9,8,22,14,54,50,7,,,35,37.1,25,43,
+Challenger,,Dragos Nicolae Madaras,Solid Defender,challenger,,11,11,21,20,23,59,8,,,46,37,39,20,
+Challenger,,Skander Mansouri,All-Court Player,challenger,,37,26,31,21,4,16,12,,,103,36.9,39,36,
+Challenger,,Ante Pavic,Big Server,challenger,,85,32,40,33,2,13,8,,,71,36.6,41,32,
+Challenger,,Tomas Lipovsek Puches,Counter Puncher,challenger,,4,6,21,5,88,68,0,,,55,36.4,33,56,
+Challenger,,Rodrigo Pacheco Mendez,All-Court Player,challenger,,20,18,38,28,10,33,15,,,55,36.4,33,41,
+Challenger,,Enzo Wallart,All-Court Player,challenger,,23,13,33,31,7,29,13,,,33,36.4,25,38,
+Challenger,,Pol Toledo Bague,Counter Puncher,challenger,,4,7,20,5,77,66,0,,,33,36.4,36,,
+Challenger,,Tiago Cacao,Solid Defender / Counter Puncher,challenger,,4,9,24,23,80,85,5,,,33,36.4,38,0,
+Challenger,,Jaimee Floyd Angele,Big Server / Attacking Baseliner,challenger,,35,16,29,17,2,4,5,,,22,36.4,0,40,
+Challenger,,Rigele Te,Big Server,challenger,,74,20,38,42,7,21,12,,,36,36.1,25,38,
+Challenger,,Sebastian Gima,Solid Defender / Counter Puncher,challenger,,6,10,23,17,67,69,6,,,36,36.1,38,25,
+Challenger,,Mikhail Elgin,All-Court Player,challenger,,32,26,37,45,13,43,22,,,25,36,60,30,
+Challenger,,Giles Hussey,Counter Puncher / Solid Defender,challenger,,17,18,44,37,60,57,22,,,25,36,,42,17
+Challenger,,Evan King,Solid Baseliner / Attacking Baseliner,challenger,,29,15,38,41,4,26,13,,,151,35.8,17,40,33
+Challenger,,Alexander Zhurbin,Solid Defender,challenger,,11,9,12,14,15,48,5,,,42,35.7,40,29,
+Challenger,,Arjun Kadhe,All-Court Player,challenger,,23,16,22,26,5,26,12,,,107,35.5,28,38,
+Challenger,,Milos Karol,Big Server,challenger,,79,21,44,30,2,7,5,,,31,35.5,14,53,
+Challenger,,Aleksandr Braynin,Solid Defender,challenger,,18,13,17,8,22,39,10,,,31,35.5,33,38,
+Challenger,,Mathieu Perchicot,Solid Defender,challenger,,5,6,14,14,18,55,2,,,48,35.4,38,17,
+Challenger,,Pawel Cias,Solid Defender,challenger,,9,11,28,20,25,59,9,,,34,35.3,35,,
+Challenger,,Alessandro Bega,Solid Defender / Counter Puncher,challenger,,8,9,24,25,58,64,9,,,91,35.2,30,37,
+Challenger,,Gilles Simon,Solid Defender,challenger,,16,11,30,29,18,46,13,,,40,35,10,45,0
+Challenger,,Maxime Hamou,Solid Defender,challenger,,14,8,14,20,4,40,5,,,40,35,45,9,
+Challenger,,Ryota Tanuma,Solid Defender / Attacking Baseliner,challenger,,13,10,28,28,5,38,9,,,20,35,,35,
+Challenger,,Mauricio Echazu,Solid Defender / Counter Puncher,challenger,,6,5,16,17,54,63,4,,,20,35,33,40,
+Challenger,,Kyle Seelig,Solid Defender,challenger,,10,9,26,36,11,56,8,,,20,35,50,31,
+Challenger,,Maxence Beauge,Big Server,challenger,,68,26,36,41,3,29,14,,,20,35,50,20,
+Challenger,,Yi Zhou,All-Court Player,challenger,,21,16,27,28,7,32,13,,,20,35,,35,
+Challenger,,Adrian Oetzbach,Counter Puncher,challenger,,8,14,23,10,91,75,4,,,23,34.8,41,17,
+Challenger,,Victor Lilov,Solid Defender,challenger,,9,7,11,16,16,55,3,,,23,34.8,38,0,
+Challenger,,Roy Smith,Big Server,challenger,,80,29,43,30,1,12,7,,,72,34.7,,35,
+Challenger,,Justin Boulais,All-Court Player,challenger,,21,11,31,20,4,19,9,,,49,34.7,0,35,
+Challenger,,John Mcnally,Big Server,challenger,,82,21,44,44,1,14,8,,,26,34.6,0,36,
+Challenger,,Tristan Mccormick,Big Server,challenger,,77,29,39,28,3,17,9,,,26,34.6,44,20,
+Challenger,,Liam Gavrielides,All-Court Player,challenger,,20,15,24,22,4,33,11,,,29,34.5,43,0,
+Challenger,,Victor Estrella,All-Court Player,challenger,,15,7,22,18,4,28,7,,,32,34.4,27,38,
+Challenger,,Christian Lindell,Solid Defender,challenger,,14,13,17,17,20,53,8,,,32,34.4,35,0,
+Challenger,,Colin Markes,All-Court Player,challenger,,20,15,23,14,10,27,12,,,32,34.4,29,36,
+Challenger,,David Pichler,Solid Defender,challenger,,20,17,29,30,11,41,15,,,67,34.3,37,29,
+Challenger,,Patrik Niklas Salminen,Big Server,challenger,,82,22,49,32,3,8,6,,,35,34.3,22,38,
+Challenger,,Mili Poljicak,All-Court Player,challenger,,27,19,21,27,7,34,14,,,38,34.2,43,11,
+Challenger,,Federico Zeballos,Solid Defender,challenger,,17,13,19,11,15,36,10,,,85,34.1,34,34,
+Challenger,,Carlos Boluda Purkiss,Solid Defender,challenger,,7,5,26,25,20,56,6,,,44,34.1,25,50,
+Challenger,,Rafael Matos,Solid Defender,challenger,,11,7,29,31,12,44,9,,,44,34.1,31,60,
+Challenger,,Arthur Reymond,All-Court Player,challenger,,24,17,28,29,4,29,13,,,41,34.1,31,37,0
+Challenger,,Lorenzo Rottoli,Solid Defender / Counter Puncher,challenger,,5,8,16,10,55,60,3,,,41,34.1,36,25,
+Challenger,,Mikalai Haliak,Solid Defender,challenger,,12,6,17,21,9,36,7,,,53,34,13,38,
+Challenger,,Oscar Jose Gutierrez,Solid Defender / Counter Puncher,challenger,,6,7,18,12,61,66,3,,,98,33.7,38,17,
+Challenger,,Gage Brymer,Solid Defender,challenger,,9,7,29,23,9,42,7,,,48,33.3,,33,
+Challenger,,Fabrizio Ornago,All-Court Player,challenger,,22,15,23,18,3,25,10,,,45,33.3,36,29,
+Challenger,,Daniel Munoz de la Nava,Solid Defender,challenger,,17,16,29,17,19,45,13,,,27,33.3,33,,
+Challenger,,Tom Jomby,Big Server,challenger,,27,12,16,13,1,5,4,,,27,33.3,0,36,
+Challenger,,Jake Delaney,Big Server,challenger,,59,21,35,29,1,18,9,,,24,33.3,,33,
+Challenger,,Cooper Williams,Solid Defender / Solid Baseliner,challenger,,19,14,28,31,3,38,11,,,24,33.3,50,30,
+Challenger,,Patrik Rikl,Big Server,challenger,,72,30,49,52,9,31,21,,,21,33.3,33,33,
+Challenger,,Maxime Chazal,Solid Defender,challenger,,13,11,17,16,14,46,7,,,61,32.8,37,25,
+Challenger,,Calum Puttergill,Counter Puncher,challenger,,5,10,21,6,80,67,1,,,52,32.7,33,33,
+Challenger,,Alexander Cozbinov,All-Court Player,challenger,,29,16,30,19,17,26,17,,,43,32.6,0,33,
+Challenger,,Constantin Bittoun Kouzmine,Solid Defender,challenger,,9,9,20,26,19,62,6,,,40,32.5,39,24,
+Challenger,,Juan Alejandro Hernandez Serrano,Solid Defender,challenger,,8,7,18,13,15,43,5,,,37,32.4,28,37,
+Challenger,,Antoine Cornut Chauvinc,All-Court Player,challenger,,21,11,20,24,7,27,11,,,34,32.4,18,39,
+Challenger,,Manish Sureshkumar,Counter Puncher,challenger,,12,8,19,9,61,47,5,,,31,32.3,0,34,
+Challenger,,Sascha Gueymard Wayenburg,Big Server,challenger,,77,21,39,33,6,12,8,,,31,32.3,0,36,
+Challenger,,Lucas Catarina,Solid Defender,challenger,,9,10,34,21,16,46,9,,,59,32.2,26,35,
+Challenger,,Lucas Gomez,Solid Defender,challenger,,11,4,12,11,7,28,5,,,25,32,0,38,
+Challenger,,Yanaki Milev,Solid Defender,challenger,,16,11,17,9,4,32,6,,,25,32,33,0,
+Challenger,,Luis David Martinez,Solid Defender,challenger,,14,8,15,9,16,31,8,,,22,31.8,18,45,
+Challenger,,Kosuke Ogura,Solid Defender,challenger,,6,3,7,10,9,42,0,,,22,31.8,33,29,
+Challenger,,Omni Kumar,Solid Defender,challenger,,17,14,26,22,12,40,12,,,57,31.6,,32,
+Challenger,,Jorge Brian Panta Herreros,Solid Defender,challenger,,14,12,18,27,15,57,8,,,54,31.5,36,11,
+Challenger,,Alberto Barroso Campos,Solid Defender,challenger,,15,9,25,33,16,45,12,,,48,31.3,6,44,
+Challenger,,Marco Bortolotti,Solid Defender / Counter Puncher,challenger,,7,6,18,14,60,64,4,,,45,31.1,32,27,
+Challenger,,Matthew Christopher Romios,Big Server / Solid Baseliner,challenger,,23,10,12,16,2,14,6,,,42,31,0,34,
+Challenger,,Christopher Heyman,All-Court Player,challenger,,15,6,18,24,4,30,7,,,52,30.8,23,38,
+Challenger,,Niki Kaliyanda Poonacha,Big Server / Solid Defender,challenger,,20,12,14,11,1,20,7,,,39,30.8,33,30,
+Challenger,,Nathaniel Lammons,All-Court Player,challenger,,37,25,30,30,2,18,12,,,26,30.8,30,33,0
+Challenger,,Lukas Pokorny,All-Court Player,challenger,,33,16,30,32,2,16,10,,,26,30.8,11,41,
+Challenger,,Gabriele Piraino,Solid Defender,challenger,,4,7,18,14,55,66,3,,,46,30.4,31,0,
+Challenger,,Marcelo Zormann Da Silva,All-Court Player,challenger,,18,10,31,32,5,34,10,,,33,30.3,29,50,
+Challenger,,N Vijay Sundar Prashanth,All-Court Player,challenger,,20,10,22,17,4,21,9,,,30,30,20,33,0
+Challenger,,Lorenzo Claverie,Big Server,challenger,,64,24,41,25,0,18,9,,,20,30,36,17,
+Challenger,,Taha Baadi,All-Court Player,challenger,,21,10,23,18,5,22,10,,,34,29.4,0,30,
+Challenger,,Luca Castagnola,Solid Defender,challenger,,5,3,11,6,15,42,0,,,24,29.2,27,50,
+Challenger,,Joshua Sheehy,All-Court Player,challenger,,17,13,28,20,3,25,9,,,24,29.2,33,28,
+Challenger,,Ray Ho,All-Court Player,challenger,,30,14,21,22,2,12,8,,,31,29,0,30,
+Challenger,,Diego Hidalgo,Solid Defender,challenger,,19,14,19,27,9,40,11,,,52,28.8,30,26,
+Challenger,,Benjamin Sigouin,All-Court Player,challenger,,19,10,22,12,14,29,11,,,35,28.6,0,29,
+Challenger,,Yecong He,Solid Defender,challenger,,10,4,10,16,9,37,4,,,35,28.6,0,32,
+Challenger,,Zihao Xia,Solid Defender,challenger,,5,2,4,11,2,28,0,,,35,28.6,0,32,
+Challenger,,Manuel Sanchez,All-Court Player,challenger,,22,15,16,8,4,15,8,,,28,28.6,22,32,
+Challenger,,Timur Khabibulin,Solid Defender,challenger,,17,13,17,5,18,40,8,,,25,28,40,25,
+Challenger,,Toshihide Matsui,Big Server / Attacking Baseliner,challenger,,30,14,25,11,0,5,4,,,36,27.8,0,29,
+Challenger,,Ezekiel Clark,Solid Defender,challenger,,6,7,20,18,59,72,5,,,47,27.7,67,25,
+Challenger,,Yannick Mertens,Attacking Baseliner / Solid Defender,challenger,,14,7,35,25,1,27,6,,,40,27.5,0,30,
+Challenger,,Riccardo Balzerani,Solid Defender / Counter Puncher,challenger,,6,7,16,9,55,63,2,,,40,27.5,28,0,
+Challenger,,Evan Hoyt,Big Server,challenger,,78,27,36,36,1,18,9,,,22,27.3,,32,0
+Challenger,,Simon Carr,Solid Defender,challenger,,12,7,19,23,14,42,8,,,22,27.3,0,29,
+Challenger,,Sanjar Fayziev,Solid Defender,challenger,,17,12,13,22,10,38,9,,,37,27,26,28,
+Challenger,,Bradley Mousley,Big Server,challenger,,84,20,36,31,0,7,2,,,37,27,0,28,
+Challenger,,Pavel Krainik,Big Server / Solid Defender,challenger,,26,16,14,12,1,23,7,,,26,26.9,50,23,
+Challenger,,Ronald Slobodchikov,Solid Defender,challenger,,4,5,12,4,16,42,0,,,30,26.7,24,33,
+Challenger,,Karol Drzewiecki,All-Court Player,challenger,,28,17,15,17,2,18,9,,,30,26.7,26,27,
+Challenger,,Luca Margaroli,Big Server / Solid Defender,challenger,,25,15,11,9,1,18,6,,,34,26.5,33,24,
+Challenger,,Jonathan Eysseric,Solid Defender,challenger,,17,11,14,15,4,34,7,,,34,26.5,38,17,
+Challenger,,Ricardo Ojeda Lara,Solid Defender,challenger,,5,6,15,23,55,73,4,,,38,26.3,31,17,
+Challenger,,Aleksandre Metreveli,Solid Defender,challenger,,6,2,4,5,3,38,0,,,23,26.1,35,0,
+Challenger,,Preston Brown,All-Court Player,challenger,,23,15,17,6,5,25,8,,,31,25.8,30,18,
+Challenger,,Nathan Ponwith,All-Court Player,challenger,,13,7,23,14,2,21,6,,,60,25,0,25,
+Challenger,,David Perez Sanz,All-Court Player,challenger,,26,17,21,11,7,21,11,,,28,25,20,28,
+Challenger,,Cheong Eui Kim,Solid Defender,challenger,,15,9,11,18,3,30,6,,,24,25,,25,
+Challenger,,Ivan Nedelko,Solid Defender,challenger,,9,9,17,14,18,48,6,,,73,24.7,26,23,
+Challenger,,Pedro Araujo,Solid Defender / Counter Puncher,challenger,,4,7,21,20,77,82,3,,,45,24.4,26,20,
+Challenger,,Ignacio Carou,Solid Defender / Counter Puncher,challenger,,4,6,13,4,61,65,0,,,54,24.1,25,0,
+Challenger,,Gianluca Di Nicola,Solid Defender,challenger,,3,5,14,10,51,63,1,,,25,24,25,0,
+Challenger,,Luis Faria,Counter Puncher / Solid Defender,challenger,,4,7,20,14,77,68,2,,,25,24,23,33,
+Challenger,,Paulo Andre Saraiva Dos Santos,All-Court Player,challenger,,24,16,20,17,4,24,11,,,21,23.8,21,29,
+Challenger,,Tiago Pereira,Solid Defender,challenger,,2,4,9,16,17,57,0,,,21,23.8,27,17,
+Challenger,,Duarte Vale,Solid Defender,challenger,,7,3,9,7,10,38,1,,,35,22.9,18,31,
+Challenger,,Kelsey Stevenson,Solid Defender / Solid Baseliner,challenger,,16,9,12,25,1,30,6,,,22,22.7,20,24,
+Challenger,,Mircea Alexandru Jecan,Solid Defender,challenger,,6,3,6,18,11,48,0,,,40,22.5,21,29,
+Challenger,,Fernando Romboli,Big Server / Attacking Baseliner,challenger,,28,12,21,11,0,10,5,,,30,20,16,27,
+Challenger,,Francesco Ferrari,Solid Defender,challenger,,6,3,9,18,11,47,1,,,20,20,14,23,
+Challenger,,Vlad Victor Cornea,Solid Defender,challenger,,10,7,5,2,2,22,1,,,31,19.4,20,18,
+Challenger,,Hanyi Liu,Big Server / Solid Defender,challenger,,22,8,8,14,0,15,4,,,22,18.2,0,20,
+Challenger,,Xin Gao,Solid Defender,challenger,,14,9,5,18,1,30,3,,,28,17.9,25,17,
+Challenger,,Leo Borg,Solid Defender,challenger,,6,3,3,2,5,29,0,,,29,13.8,13,15,
+Challenger,,Petros Tsitsipas,Solid Defender,challenger,,8,3,2,2,0,19,0,,,25,12,7,18,
+Challenger,,Boris Arias,Solid Defender,challenger,,7,3,2,2,1,18,0,,,22,9.1,0,20,
+Challenger,,Vladimir Uzhylovsky,Big Server,challenger,,22,8,10,2,0,9,1,,,23,8.7,0,20,
+Challenger,,Luis Patino,Solid Defender,challenger,,7,3,2,2,2,22,0,,,24,8.3,0,11,
+Challenger,,Grigoriy Lomakin,Big Server / Solid Defender,challenger,,19,7,5,14,0,17,4,,,37,8.1,0,15,
