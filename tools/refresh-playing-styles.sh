@@ -72,11 +72,15 @@ PREV_TOTAL=$(node -e "try{console.log((require('./playing-styles.json').players|
 # committed Challenger input is missing, so a thin tour-only file is never written)
 node classify-styles.js
 
+# NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if
+# it never sees the line delimiter, and `set -e` would then kill the whole run
+# right before the publish step (the daily job silently never committed). Use
+# console.log (not process.stdout.write), and `|| true` as a belt-and-suspenders.
 read -r NEW_TOTAL NEW_TOUR NEW_CHALL < <(node -e "
   const p=(require('./playing-styles.json').players||[]);
   const tour=p.filter(x=>!x.source).length;
-  process.stdout.write(p.length+' '+tour+' '+(p.length-tour));
-")
+  console.log(p.length+' '+tour+' '+(p.length-tour));
+") || true
 echo "roster: prev_total=$PREV_TOTAL -> total=$NEW_TOTAL (tour=$NEW_TOUR chall=$NEW_CHALL)"
 
 # regression guard
