@@ -51,7 +51,17 @@ seedArch('solid_baseliner', ['stricker']);
 seedArch('big_server_baseliner', ['aliassime', 'shelton', 'fritz', 'bublik', 'mensik', 'soderling', 'korda', 'griekspoor', 'diallo', 'hurkacz', 'berrettini', 'halys']);
 seedArch('attacking_baseliner', ['zverev', 'rublev', 'fils', 'tsitsipas', 'draper', 'rune', 'cerundolo', 'lehecka', 'cobolli', 'tiafoe', 'humbert', 'machac', 'ruud', 'musetti', 'fonseca', 'etcheverry', 'tabilo', 'darderi', 'molcan', 'sonego', 'khachanov', 'dimitrov', 'collignon', 'safiullin']);
 // 'moutet' moved to solid_defender (weak serve, elite return, grinds) per review.
-seedArch('counter_puncher', ['medvedev', 'tien', 'fokina', 'wu', 'fucsovics', 'giron', 'majchrzak', 'nishikori']);
+// 'medvedev' moved to SEED_HYBRID below (founder calibration 08-06): ATP reads him as
+// Big Server / Solid Baseliner; our CP score (94) is driven by his elite return, but the
+// single "Counter Puncher" label undersells his flat serve+baseline game.
+seedArch('counter_puncher', ['tien', 'fokina', 'wu', 'fucsovics', 'giron', 'majchrzak', 'nishikori']);
+// ---- Marquee ATP-label anchors (hybrid overrides). Founder is the authority on the ATP
+// label for these reference names; each carries [primary, secondary] and renders as the
+// exact "Primary / Secondary" hybrid, overriding both the single-label SEED and the argmax.
+// Only surnames listed here are affected — the formula still classifies everyone else. ----
+const SEED_HYBRID = {
+  medvedev: ['big_server', 'solid_baseliner'],   // ATP: Big Server / Solid Baseliner
+};
 seedArch('solid_defender', ['minaur', 'norrie', 'munar', 'nardi', 'assche', 'goffin', 'simon', 'schwartzman', 'wild', 'ymer', 'moutet', 'muller', 'basavareddy']);
 seedArch('all_court', ['granollers', 'alboran', 'butvilas', 'schwaerzler', 'vasilev', 'sousa', 'turcanu', 'bennani', 'loutit', 'monnou']);
 // High Risk / High Reward badge overrides. The natural formula (top-10 ceiling +
@@ -423,6 +433,10 @@ function pctOf(arr, v) {
     if (ELITE_LEGENDS.has(ln)) {
       // Retired all-time greats — force into the elite tier (a current-tour TPW gate can't reach them).
       r.primary = 'all_court_elite'; r.archetype_label = 'All-Court Elite';
+    } else if (SEED_HYBRID[ln]) {
+      const [a, b] = SEED_HYBRID[ln];
+      r.primary = a;
+      r.archetype_label = (b && b !== a) ? `${ARCH_LABEL[a]} / ${ARCH_LABEL[b]}` : ARCH_LABEL[a];
     } else if (SEED[ln]) {
       r.primary = SEED[ln]; r.archetype_label = ARCH_LABEL[r.primary];
     } else if (r.isCurrent && r.TPW != null && r.TPW >= medTPW + 0.04) {
