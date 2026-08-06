@@ -44,23 +44,32 @@ const SEED = {};
 const seedArch = (arch, names) => names.forEach(x => { SEED[x] = arch; });
 // NOTE: 'muller' (A. Muller) removed from big_server — his serve sits bottom-quintile
 // (ace 20th pct, 1st-won 14th, hold 20th); he is a defender, not a big server.
-seedArch('big_server', ['isner', 'raonic', 'karlovic', 'anderson', 'opelka', 'querrey', 'rinderknech', 'damm', 'perricard', 'quinn']);
-seedArch('solid_baseliner', ['stricker']);
-// Big serve + genuine baseline game (not pure serve-bots). Griekspoor/Diallo/Hurkacz/
-// Berrettini/Halys added — all have top-decile serves + a real groundstroke game.
-seedArch('big_server_baseliner', ['aliassime', 'shelton', 'fritz', 'bublik', 'mensik', 'soderling', 'korda', 'griekspoor', 'diallo', 'hurkacz', 'berrettini', 'halys']);
-seedArch('attacking_baseliner', ['zverev', 'rublev', 'fils', 'tsitsipas', 'draper', 'rune', 'cerundolo', 'lehecka', 'cobolli', 'tiafoe', 'humbert', 'machac', 'ruud', 'musetti', 'fonseca', 'etcheverry', 'tabilo', 'darderi', 'molcan', 'sonego', 'khachanov', 'dimitrov', 'collignon', 'safiullin']);
+// 'diallo' moved here from big_server_baseliner (founder recalibration 08-06): reads as a pure Big Server.
+seedArch('big_server', ['isner', 'raonic', 'karlovic', 'anderson', 'opelka', 'querrey', 'rinderknech', 'damm', 'perricard', 'quinn', 'diallo']);
+// 'tabilo' moved here from attacking_baseliner (founder recalibration 08-06): reads as a Solid Baseliner.
+seedArch('solid_baseliner', ['stricker', 'tabilo']);
+// Big serve + genuine baseline game (not pure serve-bots). Griekspoor/Hurkacz/Berrettini/
+// Halys — all have top-decile serves + a real groundstroke game. ('korda'->SEED_HYBRID,
+// 'diallo'->big_server per founder recalibration 08-06.)
+seedArch('big_server_baseliner', ['aliassime', 'shelton', 'fritz', 'bublik', 'mensik', 'soderling', 'griekspoor', 'hurkacz', 'berrettini', 'halys']);
+// 'wu' (Y. Wu) and 'bellucci' (M. Bellucci) added; 'musetti'->SEED_HYBRID, 'tabilo'->solid_baseliner (founder recalibration 08-06).
+seedArch('attacking_baseliner', ['zverev', 'rublev', 'fils', 'tsitsipas', 'draper', 'rune', 'cerundolo', 'lehecka', 'cobolli', 'tiafoe', 'humbert', 'machac', 'ruud', 'fonseca', 'etcheverry', 'darderi', 'molcan', 'sonego', 'khachanov', 'dimitrov', 'collignon', 'safiullin', 'wu', 'bellucci']);
 // 'moutet' moved to solid_defender (weak serve, elite return, grinds) per review.
 // 'medvedev' moved to SEED_HYBRID below (founder calibration 08-06): ATP reads him as
 // Big Server / Solid Baseliner; our CP score (94) is driven by his elite return, but the
 // single "Counter Puncher" label undersells his flat serve+baseline game.
-seedArch('counter_puncher', ['tien', 'fokina', 'wu', 'fucsovics', 'giron', 'majchrzak', 'nishikori']);
+// 'wu' moved to attacking_baseliner (founder recalibration 08-06).
+seedArch('counter_puncher', ['tien', 'fokina', 'fucsovics', 'giron', 'majchrzak', 'nishikori']);
 // ---- Marquee ATP-label anchors (hybrid overrides). Founder is the authority on the ATP
 // label for these reference names; each carries [primary, secondary] and renders as the
 // exact "Primary / Secondary" hybrid, overriding both the single-label SEED and the argmax.
 // Only surnames listed here are affected — the formula still classifies everyone else. ----
 const SEED_HYBRID = {
-  medvedev: ['big_server', 'solid_baseliner'],   // ATP: Big Server / Solid Baseliner
+  medvedev: ['big_server', 'solid_baseliner'],       // ATP: Big Server / Solid Baseliner
+  kovacevic: ['solid_baseliner', 'counter_puncher'], // founder recalibration 08-06
+  atmane: ['big_server', 'attacking_baseliner'],     // founder recalibration 08-06
+  musetti: ['counter_puncher', 'all_court'],         // founder override 08-06
+  korda: ['solid_baseliner', 'all_court'],           // founder override 08-06
 };
 seedArch('solid_defender', ['minaur', 'norrie', 'munar', 'nardi', 'assche', 'goffin', 'simon', 'schwartzman', 'wild', 'ymer', 'moutet', 'muller', 'basavareddy']);
 seedArch('all_court', ['granollers', 'alboran', 'butvilas', 'schwaerzler', 'vasilev', 'sousa', 'turcanu', 'bennani', 'loutit', 'monnou']);
