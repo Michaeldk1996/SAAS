@@ -193,6 +193,59 @@ function pctOf(arr, v) {
     }
   }
 
+  // ---- current-season api-tennis supplement (TML lags the live season) ----
+  // TML's current-season file is nearly empty, so this-year breakouts (Jodar,
+  // Budkov Kjaer) have ~0 TML rows -> fail the floor -> no playing style. Pull
+  // their current-season ATP matches (serve stats inline) from our api-tennis
+  // feed and run each through the SAME accum() under a synthetic id. ONLY roster
+  // players not already TML-qualified are supplemented, so no existing player is
+  // touched and there is no double counting. Failures are non-fatal.
+  try {
+    const apiKey = process.env.API_TENNIS_KEY;
+    if (!apiKey) {
+      console.log('Supplement: API_TENNIS_KEY unset -> skipping current-season supplement (TML-only).');
+    } else {
+      const { supplement } = require('./styles-apitennis-supplement.js');
+      // best TML aggregate per name key -> who already clears the floor
+      const tmlBest = new Map();
+      for (const [, a] of byId) { const nk = nameKey(a.name); if (!nk) continue; const b = tmlBest.get(nk); if (!b || a.matches > b.matches) tmlBest.set(nk, a); }
+      const tmlQualified = new Set();
+      for (const [nk, a] of tmlBest) if (a.matches >= MIN_MATCHES && a.svpt >= MIN_SVPT) tmlQualified.add(nk);
+      // candidates: current-roster players NOT TML-qualified, numeric api key, rank <= cap
+      const SUPP_RANK_MAX = parseInt(process.env.SUPP_RANK_MAX || '400', 10);
+      const seenKey = new Set(), candidates = [];
+      for (const pk in prof) {
+        const p = prof[pk]; if (!p || !p.name) continue;
+        const nk = nameKey(p.name); if (!nk || tmlQualified.has(nk)) continue;
+        const rank = parseInt(p.rank, 10) || 9999; if (rank > SUPP_RANK_MAX) continue;
+        const key = String(p.key || pk); if (!/^\d+$/.test(key) || seenKey.has(key)) continue;
+        seenKey.add(key); candidates.push({ playerKey: key, name: p.name, rank });
+      }
+      candidates.sort((a, b) => a.rank - b.rank);
+      console.log(`Supplement: ${candidates.length} roster players unqualified by TML (rank<=${SUPP_RANK_MAX}).`);
+      if (process.env.SUPP_DRY_RUN) {
+        console.log('Supplement DRY_RUN — candidates:', candidates.map(c => `${c.name}#${c.rank}`).join(', '));
+      } else {
+        const surfaceMap = new Map();
+        try { const sfRaw = require('./tournament-surfaces.json'); const sf = sfRaw.surfaces || sfRaw; for (const k in sf) surfaceMap.set(String(k), sf[k]); } catch (e) {}
+        const dateStop = new Date().toISOString().slice(0, 10);
+        const supp = await supplement(candidates, { apiKey, year: TO_YEAR, dateStop, surfaceMap, cacheDir: path.join(__dirname, 'apitennis-styles-cache'), log: m => console.log(m) });
+        let injected = 0, injectedMatches = 0, cleared = 0;
+        for (const s of supp) {
+          if (!s.fixtures.length) continue;
+          const synthId = 'api:' + s.playerKey;
+          let a = byId.get(synthId); if (!a) { a = newAgg(synthId, s.name); byId.set(synthId, a); }
+          for (const fx of s.fixtures) { accum(a, fx.me, fx.op, fx.won, fx.surface, parseScore('', null), fx.tourneyKey, s.rank, null, fx.oppKey); injectedMatches++; }
+          injected++;
+          if (a.matches >= MIN_MATCHES && a.svpt >= MIN_SVPT) cleared++;
+        }
+        console.log(`Supplement: injected ${injected} players (${injectedMatches} matches); ${cleared} now clear the classification floor.`);
+      }
+    }
+  } catch (e) {
+    console.log('Supplement failed (non-fatal; TML-only classification proceeds):', e && e.message);
+  }
+
   // ---- MCP: charted count, rally length, winner rate ----
   const mcp = new Map();  // key -> { charted, b13,b46,b79,b10, winners, unforced, pts }
   const mcpGet = k => { let m = mcp.get(k); if (!m) { m = { charted: 0, b13: 0, b46: 0, b79: 0, b10: 0, winners: 0, unforced: 0, pts: 0 }; mcp.set(k, m); } return m; };
@@ -276,7 +329,11 @@ function pctOf(arr, v) {
   // players are scored against those same current-tour cutoffs purely to assign them a
   // primary label for the matrix — they are never displayed.
   const sortNum = a => a.slice().sort((x, y) => x - y);
-  const currentRows = rows.filter(r => r.isCurrent);
+  // Percentile basis = current-ATP players sourced from TML ONLY. api-tennis-
+  // supplemented debutants are EXCLUDED from the normalization pool so they can
+  // never shift the tour distribution and flip an existing player's archetype;
+  // they are still scored against these cutoffs and still written to output.
+  const currentRows = rows.filter(r => r.isCurrent && !r.ids.some(id => String(id).startsWith('api:')));
   const cols = {};
   // surface-lean helpers (per row) for the archetype filters
   for (const r of rows) {
@@ -482,6 +539,30 @@ function pctOf(arr, v) {
       win_pct: +r.winPct.toFixed(1), clay_wr: r.clayWr == null ? null : +r.clayWr.toFixed(0), hard_wr: r.hardWr == null ? null : +r.hardWr.toFixed(0), grass_wr: r.grassWr == null ? null : +r.grassWr.toFixed(0), top10_wins: r.top10Distinct,
     })),
   };
+  // ---- merge the embedded Challenger pool (source:'challenger') ----------------
+  // The 783 Challenger players are classified from the static 2018-24 Challenger
+  // archive, not TML, so they are NOT reproduced by this run. They live in a
+  // committed input file; re-embed them here so a full run always yields the
+  // complete 975+ roster and can NEVER silently drop them (as a tour-only run
+  // once did). Tour players win any surname|initial key collision — a player who
+  // has graduated to the tour classifier overrides his stale Challenger record.
+  try {
+    const challFile = path.join(__dirname, 'playing-styles-challengers.json');
+    if (fs.existsSync(challFile)) {
+      const chall = JSON.parse(fs.readFileSync(challFile, 'utf8')).players || [];
+      const tourKeys = new Set(stylesOut.players.map(p => nameKey(p.name)).filter(Boolean));
+      let added = 0;
+      for (const c of chall) { const k = nameKey(c.name); if (k && tourKeys.has(k)) continue; stylesOut.players.push(c); added++; }
+      console.log(`Merged Challenger pool: +${added} of ${chall.length} (tour wins ${chall.length - added} key collisions).`);
+    } else {
+      console.log('WARNING: playing-styles-challengers.json missing — writing TOUR-ONLY styles (Challengers would be dropped). Aborting write.');
+      throw new Error('challenger-input-missing');
+    }
+  } catch (e) {
+    if (e && e.message === 'challenger-input-missing') throw e;
+    console.log('Challenger merge failed:', e && e.message);
+    throw e;   // never publish a partial styles file
+  }
   writeAtomic('playing-styles.json', stylesOut);
   writeAtomic('styles-debug-all.json', { players: rows.map(r => ({ name: r.name, isCurrent: r.isCurrent, primary: r.primary, scores: r.scores, badges: r.badges, win_pct: +r.winPct.toFixed(1), clay_wr: r.clayWr==null?null:+r.clayWr.toFixed(0), hard_wr: r.hardWr==null?null:+r.hardWr.toFixed(0), grass_wr: r.grassWr==null?null:+r.grassWr.toFixed(0), grassM: r.grassM, clayM: r.clayM, tpw: r.TPW==null?null:+(r.TPW*100).toFixed(1), top10: r.top10Distinct, matches: r.matches, pressure_score: r.pressureScore, tbWin: r.tbWin, tbPlayed: r.tbPlayed, tbWon: r.tbWon, bpConv: r.bpConv, brkChances: r.brkChances, brkMade: r.brkMade, decWin: r.decWin, decPlayed: r.decPlayed, decWon: r.decWon, bpSave: r.bpSave, bpFacedSv: r.bpFacedSv, bpSavedSv: r.bpSavedSv, aceR: r.aceR, firstWonPct: r.firstWonPct, holdPct: r.holdPct, SPW: r.SPW, RPW: r.RPW, fastBias: r.fastBias, clayVsHard: r.clayVsHard, upsetWins: r.upsetWins, bigUpsetWins: r.bigUpsetWins, upsetWinRate: r.upsetWinRate })) });
   console.log(`Wrote playing-styles.json (${outRows.length} current players).`);
