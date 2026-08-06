@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- build: TEN-8 value-layers breakdown redeploy run bcfa1878-8245-4207-93df-0f307444fc14 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2516,9 +2515,9 @@
       <div id="psMatrix" class="ps-gridwrap"></div>
       <p id="psMatrixNote" class="ps-gnote" style="display:none;"></p>
     </div>
-    <!-- NINE ARCHETYPES (8 tactical + Clay Specialist) -->
+    <!-- SEVEN ARCHETYPES -->
     <div class="ps-block">
-      <span class="ps-eyebrow">Nine archetypes</span>
+      <span class="ps-eyebrow">Eight archetypes</span>
       <div id="psCards" class="ps-rows" style="margin-top:18px;"></div>
     </div>
   </div>
@@ -4270,9 +4269,6 @@ const PS_ARCHETYPES = [
   { id:'all_court_elite', ids:['all_court_elite'], code:'ACE', name:'All-Court Elite',
     description:'The complete, generational players. Elite serving, returning and at the net — no exploitable weakness anywhere.',
     count:null, players:[] },
-  { id:'clay_specialist', ids:['clay_specialist'], code:'CLY', name:'Clay Specialist',
-    description:'Clay-dependent grinders — strong on clay, weak on both hard and grass. Each carries a second, tactical archetype (shown as "Clay Specialist / …") for how he wins the point.',
-    count:null, players:[] },
 ];
 // Badge pills on the player tags (classify-styles.js emits these four keys).
 // NOTE: no renderer consumes this today — the Playing Style tab's duplicate player
@@ -4305,11 +4301,8 @@ function psCellFor(i, j){
       wins += cell.pct / 100 * cell.n; tot += cell.n; rated++;
     });
   });
-  // Founder ruling (TEN-8): always show the win% regardless of meeting count.
-  // Only genuinely empty pairings (zero meetings) stay blank; low-sample cells
-  // return the rate with a `low` flag so callers flag it rather than hide it.
-  if (!rated || tot < 1) return { pct:null, n:tot };
-  return { pct: Math.round(wins / tot * 100), n: tot, low: tot < minN };
+  if (!rated || tot < minN) return { pct:null, n:tot };
+  return { pct: Math.round(wins / tot * 100), n: tot };
 }
 // Same pooling as psCellFor, but reads one surface plane of matchup-matrix.json's
 // `matrixBySurface` (hard/clay/grass) instead of the pooled matrix. Below the
@@ -4330,8 +4323,8 @@ function psSurfaceCellFor(surfaceKey, i, j){
       wins += cell.pct / 100 * cell.n; tot += cell.n; rated++;
     });
   });
-  if (!rated || tot < 1) return { pct:null, n:tot };
-  return { pct: Math.round(wins / tot * 100), n: tot, low: tot < minN };
+  if (!rated || tot < minN) return { pct:null, n:tot };
+  return { pct: Math.round(wins / tot * 100), n: tot };
 }
 // The HISTORICAL BY SURFACE table body — one row per surface, real per-surface
 // win% for p1's archetype (i1) vs p2's (i2). The row matching today's surface
@@ -4341,12 +4334,10 @@ function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
     const cell = psSurfaceCellFor(sk, i1, i2);
     const n = cell ? cell.n : 0;
     const pct = cell && cell.pct != null ? cell.pct : null;
-    const low = !!(cell && cell.low);
     const isToday = sk === todayKey;
     const label = sk.charAt(0).toUpperCase() + sk.slice(1);
-    const lowStyle = low ? ' style="opacity:.62;border-bottom:1px dashed currentColor;"' : '';
-    const c1 = pct == null ? '—' : `<span${lowStyle}>${pct}%</span>`;
-    const c2 = pct == null ? '—' : `<span${lowStyle}>${100 - pct}%</span>`;
+    const c1 = pct == null ? '—' : `${pct}%`;
+    const c2 = pct == null ? '—' : `${100 - pct}%`;
     return `<div class="pss-row${isToday ? ' pss-today' : ''}">
       <span class="pss-surf">${label}<span class="pss-n">n=${n.toLocaleString()}</span>${isToday ? `<span class="pss-today-tag">today's surface</span>` : ''}</span>
       <span class="pss-c1">${c1}</span>
@@ -4357,7 +4348,7 @@ function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
     <div class="pss-title">Historical by surface</div>
     <div class="pss-head"><span>Surface</span><span class="pss-c1h">${psEsc(a1.code)}</span><span class="pss-c2h">${psEsc(a2.code)}</span></div>
     ${rows}
-    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Low-sample cells (below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor) still show the rate, dashed, so read it as indicative.</div>
+    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Cells below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor show n with a dashed rate.</div>
   </div>`;
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -4420,10 +4411,6 @@ async function renderPlayingStyles(){
     const res = await fetch('./playing-styles.json', { cache:'no-cache' });
     if (res.ok){
       const data = await res.json();
-      // Challenger-tour entries (source:"challenger") ride along in playing-styles.json so the
-      // per-match modal / player cards can show a challenger's style, but this curated overview
-      // page (archetype rosters + counts + dominance) stays tour-only.
-      if (data && Array.isArray(data.players)) data.players = data.players.filter(p => p.source !== 'challenger');
       const byArch = {};
       (data.players || []).forEach(p => { if (!p.primary) return; (byArch[p.primary] = byArch[p.primary] || []).push(p); });
       // Dropping the initial collides real players once a full roster is shown
@@ -5587,6 +5574,15 @@ let edgeCurrentId = null;
 // vs. the tab auto-landing on a default. Keeps a real choice sticky when the tab is
 // re-opened, while letting an auto-default get upgraded once model output loads.
 let edgeUserPicked = false;
+// The per-layer breakdown (Section 4) is a reveal-on-demand block, not shown
+// straight away (founder ruling 2026-08-06): it opens collapsed and expands when
+// the reader clicks its heading, matching the collapsible splits cards on the
+// Player Profile. Persists across matches like the other edge view prefs.
+let edgeLayersOpen = false;
+function toggleEdgeLayers(){
+  edgeLayersOpen = !edgeLayersOpen;
+  renderEdgeModel(edgeCurrentId);
+}
 
 function edgeEsc(s){
   return String(s == null ? '' : s)
@@ -6569,7 +6565,7 @@ function renderEdgeModel(id){
       </div>
     </div>`;
 
-  // ── Section 4: per-layer breakdown (design export) ─────────────
+  // ── Section 4: per-layer breakdown (design export) ─────────────────────
   // One row per visible layer — name + weight tag + coverage dot, the diverging
   // signal bar, and the resulting probability shift with the favoured side.
   // edgeVisibleAdjs already dropped self-hiding layers, so every row bears on
@@ -6578,12 +6574,22 @@ function renderEdgeModel(id){
   // the value-layers strip — previously the row builder existed but was never
   // assembled into the page.
   const appliedN = adjs.filter(a => a.applied).length;
+  const layersCaret = edgeLayersOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
   const section4 = `
     <div class="edge-card">
-      <div class="edge-eyeb" style="margin-bottom:12px;">Layer breakdown</div>
-      <div class="edge-adjhead">
+      <div class="edge-s4head" role="button" tabindex="0" aria-expanded="${edgeLayersOpen}"
+           onclick="toggleEdgeLayers()"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleEdgeLayers()}"
+           style="cursor:pointer;">
+        <span style="display:flex; align-items:center; gap:10px;">
+          <span style="display:inline-flex; color:#5b9bff; transform:${layersCaret}; transition:transform .15s ease;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span class="edge-eyeb" style="margin-bottom:0;">Layer breakdown</span>
+        </span>
+        <span class="edge-net"><strong>${appliedN}</strong> of ${adjs.length} layers applied</span>
+      </div>
+      ${edgeLayersOpen ? `
+      <div class="edge-adjhead" style="margin-top:16px;">
         <span>Every value layer, and how far it moved the fair price</span>
-        <span>${appliedN} of ${adjs.length} layers applied</span>
       </div>
       <div class="edge-adjhead2">
         <span>Layer</span>
@@ -6592,7 +6598,7 @@ function renderEdgeModel(id){
       </div>
       <div class="edge-adjlist">
         ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
-      </div>
+      </div>` : ''}
     </div>`;
 
   body.innerHTML = section1 + section2 + section3 + section4 + section5 + section4b + section6;
@@ -9974,16 +9980,15 @@ function akStyleBlock(m){
   } else {
     const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
     if (!cell || cell.pct == null){
-      summary = 'No tour meetings recorded between these archetypes yet.';
+      summary = 'Too few tour meetings between these archetypes to quote a style edge.';
     } else {
       const p1p = cell.pct, p2p = 100 - cell.pct;
       leftPct = `${p1p}%`; rightPct = `${p2p}%`;
       const leadName = p1p >= p2p ? psShortName(m.p1) : psShortName(m.p2);
       const leadArch = p1p >= p2p ? a1 : a2, offArch = p1p >= p2p ? a2 : a1;
       summary = Math.abs(p1p - 50) < 2
-        ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s are split almost evenly.`
-        : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time — ${psEsc(leadName)} has the style edge.`;
-      if (cell.low) summary += ' Low sample, so read this as indicative.';
+        ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
+        : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — ${psEsc(leadName)} has the style edge.`;
     }
   }
   const edge = `<div class="aks-split"><span class="aks-pct" style="color:${ANALYSIS_P1_COLOR};">${leftPct}</span><span class="aks-vs">Style edge</span><span class="aks-pct" style="color:${ANALYSIS_P2_COLOR};">${rightPct}</span></div>
@@ -10592,7 +10597,7 @@ function styleEdgeHtml(m, s1, s2){
   if (!cell || cell.pct == null){
     return `<div class="psx-card">${head}
       <div class="psx-sub">${psEsc(a1.name)} vs ${psEsc(a2.name)}</div>
-      ${styleNoteHtml('No tour meetings recorded between these two archetypes yet.')}</div>`;
+      ${styleNoteHtml(`Fewer than ${(psMatrixData && psMatrixData.minSampleN) || 20} tour meetings between these two archetypes — not enough to quote a win rate.`)}</div>`;
   }
   const p1pct = cell.pct, p2pct = 100 - cell.pct;
   const lead = p1pct >= p2pct ? { name:a1.name, pts:p1pct - 50, color:'#8fb4ff', bg:ANALYSIS_P1_RGBA(0.1), bd:ANALYSIS_P1_RGBA(0.26) }
@@ -10607,7 +10612,6 @@ function styleEdgeHtml(m, s1, s2){
     <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
     <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
     ${tag}
-    ${cell.low ? styleNoteHtml(`Only ${cell.n.toLocaleString()} tour meeting${cell.n === 1 ? '' : 's'} on record — the win rate is shown but low-sample, so read it as indicative.`) : ''}
     ${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}
   </div>`;
 }
