@@ -4419,6 +4419,10 @@ async function renderPlayingStyles(){
     const res = await fetch('./playing-styles.json', { cache:'no-cache' });
     if (res.ok){
       const data = await res.json();
+      // Challenger-tour entries (source:"challenger") ride along in playing-styles.json so the
+      // per-match modal / player cards can show a challenger's style, but this curated overview
+      // page (archetype rosters + counts + dominance) stays tour-only.
+      if (data && Array.isArray(data.players)) data.players = data.players.filter(p => p.source !== 'challenger');
       const byArch = {};
       (data.players || []).forEach(p => { if (!p.primary) return; (byArch[p.primary] = byArch[p.primary] || []).push(p); });
       // Dropping the initial collides real players once a full roster is shown
