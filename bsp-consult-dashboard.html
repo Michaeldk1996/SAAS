@@ -4304,8 +4304,11 @@ function psCellFor(i, j){
       wins += cell.pct / 100 * cell.n; tot += cell.n; rated++;
     });
   });
-  if (!rated || tot < minN) return { pct:null, n:tot };
-  return { pct: Math.round(wins / tot * 100), n: tot };
+  // Founder ruling (TEN-8): always show the win% regardless of meeting count.
+  // Only genuinely empty pairings (zero meetings) stay blank; low-sample cells
+  // return the rate with a `low` flag so callers flag it rather than hide it.
+  if (!rated || tot < 1) return { pct:null, n:tot };
+  return { pct: Math.round(wins / tot * 100), n: tot, low: tot < minN };
 }
 // Same pooling as psCellFor, but reads one surface plane of matchup-matrix.json's
 // `matrixBySurface` (hard/clay/grass) instead of the pooled matrix. Below the
@@ -4326,8 +4329,8 @@ function psSurfaceCellFor(surfaceKey, i, j){
       wins += cell.pct / 100 * cell.n; tot += cell.n; rated++;
     });
   });
-  if (!rated || tot < minN) return { pct:null, n:tot };
-  return { pct: Math.round(wins / tot * 100), n: tot };
+  if (!rated || tot < 1) return { pct:null, n:tot };
+  return { pct: Math.round(wins / tot * 100), n: tot, low: tot < minN };
 }
 // The HISTORICAL BY SURFACE table body — one row per surface, real per-surface
 // win% for p1's archetype (i1) vs p2's (i2). The row matching today's surface
@@ -4337,10 +4340,12 @@ function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
     const cell = psSurfaceCellFor(sk, i1, i2);
     const n = cell ? cell.n : 0;
     const pct = cell && cell.pct != null ? cell.pct : null;
+    const low = !!(cell && cell.low);
     const isToday = sk === todayKey;
     const label = sk.charAt(0).toUpperCase() + sk.slice(1);
-    const c1 = pct == null ? '—' : `${pct}%`;
-    const c2 = pct == null ? '—' : `${100 - pct}%`;
+    const lowStyle = low ? ' style="opacity:.62;border-bottom:1px dashed currentColor;"' : '';
+    const c1 = pct == null ? '—' : `<span${lowStyle}>${pct}%</span>`;
+    const c2 = pct == null ? '—' : `<span${lowStyle}>${100 - pct}%</span>`;
     return `<div class="pss-row${isToday ? ' pss-today' : ''}">
       <span class="pss-surf">${label}<span class="pss-n">n=${n.toLocaleString()}</span>${isToday ? `<span class="pss-today-tag">today's surface</span>` : ''}</span>
       <span class="pss-c1">${c1}</span>
@@ -4351,7 +4356,7 @@ function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
     <div class="pss-title">Historical by surface</div>
     <div class="pss-head"><span>Surface</span><span class="pss-c1h">${psEsc(a1.code)}</span><span class="pss-c2h">${psEsc(a2.code)}</span></div>
     ${rows}
-    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Cells below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor show n with a dashed rate.</div>
+    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Low-sample cells (below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor) still show the rate, dashed, so read it as indicative.</div>
   </div>`;
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -9908,7 +9913,7 @@ function akStyleBlock(m){
   } else {
     const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
     if (!cell || cell.pct == null){
-      summary = 'Too few tour meetings between these archetypes to quote a style edge.';
+      summary = 'No tour meetings recorded between these archetypes yet.';
     } else {
       const p1p = cell.pct, p2p = 100 - cell.pct;
       leftPct = `${p1p}%`; rightPct = `${p2p}%`;
@@ -9917,6 +9922,7 @@ function akStyleBlock(m){
       summary = Math.abs(p1p - 50) < 2
         ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
         : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — ${psEsc(leadName)} has the style edge.`;
+      if (cell.low) summary += ' Low sample, so read this as indicative.';
     }
   }
   const edge = `<div class="aks-split"><span class="aks-pct" style="color:${ANALYSIS_P1_COLOR};">${leftPct}</span><span class="aks-vs">Style edge</span><span class="aks-pct" style="color:${ANALYSIS_P2_COLOR};">${rightPct}</span></div>
@@ -10525,7 +10531,7 @@ function styleEdgeHtml(m, s1, s2){
   if (!cell || cell.pct == null){
     return `<div class="psx-card">${head}
       <div class="psx-sub">${psEsc(a1.name)} vs ${psEsc(a2.name)}</div>
-      ${styleNoteHtml(`Fewer than ${(psMatrixData && psMatrixData.minSampleN) || 20} tour meetings between these two archetypes — not enough to quote a win rate.`)}</div>`;
+      ${styleNoteHtml('No tour meetings recorded between these two archetypes yet.')}</div>`;
   }
   const p1pct = cell.pct, p2pct = 100 - cell.pct;
   const lead = p1pct >= p2pct ? { name:a1.name, pts:p1pct - 50, color:'#8fb4ff', bg:ANALYSIS_P1_RGBA(0.1), bd:ANALYSIS_P1_RGBA(0.26) }
@@ -10540,6 +10546,7 @@ function styleEdgeHtml(m, s1, s2){
     <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
     <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
     ${tag}
+    ${cell.low ? styleNoteHtml(`Only ${cell.n.toLocaleString()} tour meeting${cell.n === 1 ? '' : 's'} on record — the win rate is shown but low-sample, so read it as indicative.`) : ''}
     ${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}
   </div>`;
 }
