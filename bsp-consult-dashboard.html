@@ -9920,8 +9920,8 @@ function akStyleBlock(m){
       const leadName = p1p >= p2p ? psShortName(m.p1) : psShortName(m.p2);
       const leadArch = p1p >= p2p ? a1 : a2, offArch = p1p >= p2p ? a2 : a1;
       summary = Math.abs(p1p - 50) < 2
-        ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
-        : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — ${psEsc(leadName)} has the style edge.`;
+        ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s are split almost evenly.`
+        : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time — ${psEsc(leadName)} has the style edge.`;
       if (cell.low) summary += ' Low sample, so read this as indicative.';
     }
   }
