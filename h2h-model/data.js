@@ -29,6 +29,29 @@ function load(file) {
   return _cache[file];
 }
 
+// Under-pressure supplement (TEN-8). clutch-rating.js derives from TML (tour-only),
+// so players below its floors — young / Challenger-heavy names like Merida, Buse,
+// Draxl — carry no clutch row, and the model's Clutch layer stays silent for them.
+// clutch-apitennis-supplement.js fills those from api-tennis per-match break-point
+// statistics (ATP-first, component-specific Challenger discount, ITF excluded),
+// written to clutch-supplement.json. Loaded ADDITIVELY — it only supplies a row
+// where clutch-rating.json has none, never overriding a tour-derived rating — so
+// clutch-rating.js can rebuild/clobber its own pool without touching these. Rows
+// share the clutch shape (name + clutchIndex + component %) plus provisional:true /
+// confidence:'med'. Absent file => no-op (pre-supplement behaviour). Mirrors the
+// rank-at-time sidecar loader below.
+let _clutchSuppl;
+function clutchSupplement() {
+  if (_clutchSuppl === undefined) {
+    try {
+      _clutchSuppl = playersOf(load('clutch-supplement.json')) || null;
+    } catch (e) {
+      _clutchSuppl = null; // sidecar absent -> tour-only clutch, as before
+    }
+  }
+  return _clutchSuppl;
+}
+
 // ---- key derivation -------------------------------------------------------
 function stripAccents(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -137,7 +160,18 @@ function resolvePlayer(numericKey, abbrName) {
   const radarOk = Boolean(radarRow && radarRow.ok === true && radarRow.radar);
   const radar = radarOk ? radarRow.radar : null;
 
-  const clutch = matchByAbbr(clutchArr);
+  // Tour-derived pool first; only reach for the api-tennis supplement when it has
+  // no row for this player. Match the supplement on numeric api-tennis key (it
+  // carries playerKey — the strongest join), then fall back to the same name join.
+  let clutch = matchByAbbr(clutchArr);
+  if (!clutch) {
+    const suppl = clutchSupplement();
+    if (suppl) {
+      clutch = (idStr && suppl.find(s => s && String(s.playerKey) === idStr))
+        || matchByAbbr(suppl)
+        || null;
+    }
+  }
   const style = matchByAbbr(stylesArr);
 
   return {
