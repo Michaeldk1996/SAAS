@@ -107,9 +107,24 @@ function resolvePlayer(numericKey, abbrName) {
   const normAbbr = (s) => stripAccents(String(s || '')).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
   const normCands = new Set(abbrCandidates.map(normAbbr).filter(Boolean));
   const matchByAbbr = (arr) => {
-    if (!arr || !normCands.size) return null;
-    for (const cand of abbrCandidates) { const hit = arr.find(x => x && x.name === cand); if (hit) return hit; }
-    return arr.find(x => x && normCands.has(normAbbr(x.name))) || null;
+    if (!arr) return null;
+    if (normCands.size) {
+      for (const cand of abbrCandidates) { const hit = arr.find(x => x && x.name === cand); if (hit) return hit; }
+      const nm = arr.find(x => x && normCands.has(normAbbr(x.name)));
+      if (nm) return nm;
+    }
+    // Last resort: name-format-INDEPENDENT join on eloKey (last|firstInitial).
+    // The abbreviated-candidate forms above cannot reach rows stored under a
+    // FULL name ("Liam Draxl", the challenger supplement), a MIDDLE-INITIAL form
+    // ("T. A. Tirante"), or when the fixture carries a MIDDLE name ("Thiago
+    // Agustin Tirante") that poisons abbrFromFullName. eloKey collapses all of
+    // these to last|firstInitial. Only fires when EXACTLY ONE row carries this
+    // eloKey, so an ambiguous last|initial (e.g. two A. Zverev) never mis-joins.
+    if (eloKey) {
+      const hits = arr.filter(x => x && eloKeyFromFullName(x.name) === eloKey);
+      if (hits.length === 1) return hits[0];
+    }
+    return null;
   };
 
   const elo = (eloKey && eloAll[eloKey]) || null;
