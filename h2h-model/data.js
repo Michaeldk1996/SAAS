@@ -52,6 +52,24 @@ function clutchSupplement() {
   return _clutchSuppl;
 }
 
+// Per-surface under-pressure sidecar (TEN-8). clutch-surface.js splits the same
+// four ATP components by Hard/Clay/Grass for the tour pool. Loaded ADDITIVELY:
+// it only attaches a `bySurface` block onto a clutch row that already exists —
+// the Clutch layer prefers the match-surface index when its floor clears and
+// falls back to the career index otherwise, never overriding it. Sidecar absent
+// => career-only clutch, exactly as before.
+let _clutchSurface;
+function clutchSurface() {
+  if (_clutchSurface === undefined) {
+    try {
+      _clutchSurface = playersOf(load('clutch-surface.json')) || null;
+    } catch (e) {
+      _clutchSurface = null;
+    }
+  }
+  return _clutchSurface;
+}
+
 // ---- key derivation -------------------------------------------------------
 function stripAccents(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -171,6 +189,14 @@ function resolvePlayer(numericKey, abbrName) {
         || matchByAbbr(suppl)
         || null;
     }
+  }
+  // Attach the per-surface index block additively — only onto an existing clutch
+  // row, matched on the same abbreviated-name join. Career index stays authoritative;
+  // the Clutch layer reads bySurface[surface] with a career fallback.
+  if (clutch) {
+    const surfArr = clutchSurface();
+    const surfRow = surfArr ? matchByAbbr(surfArr) : null;
+    if (surfRow && surfRow.bySurface) clutch = { ...clutch, bySurface: surfRow.bySurface };
   }
   const style = matchByAbbr(stylesArr);
 

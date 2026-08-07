@@ -1255,10 +1255,25 @@ function clutch(ctx) {
   const res = base(c.id, 'clutch', 'Under pressure', c.maxMagnitude, 'clutch-rating.json');
   const c1 = ctx.p1.clutch, c2 = ctx.p2.clutch;
   if (!c1 || !c2 || num(c1.clutchIndex) == null || num(c2.clutchIndex) == null) return res;
-  const signal = clamp((c1.clutchIndex - c2.clutchIndex) / c.divisor, -1, 1);
-  const conf = (c1.confidence === 'high' && c2.confidence === 'high') ? 'med' : 'low';
+  // Per-surface preference (#15 upgrade, TEN-8): use the match-surface Under-
+  // Pressure index when that surface's sample cleared the floors (confidence >=
+  // med), else fall back to the career index — mirrors serve/return (#9/#10),
+  // which blend a per-surface rating with a career fallback. bySurface is an
+  // additive sidecar; when it is absent this reduces to the prior career-only path.
+  const surfCat = surfaceCategory(ctx.surface);
+  const pick = (cc) => {
+    const bs = surfCat && cc.bySurface && cc.bySurface[surfCat];
+    if (bs && num(bs.clutchIndex) != null && bs.confidence && bs.confidence !== 'low') {
+      return { idx: bs.clutchIndex, onSurf: true, conf: bs.confidence };
+    }
+    return { idx: cc.clutchIndex, onSurf: false, conf: cc.confidence };
+  };
+  const s1 = pick(c1), s2 = pick(c2);
+  const signal = clamp((s1.idx - s2.idx) / c.divisor, -1, 1);
+  const conf = (s1.conf === 'high' && s2.conf === 'high') ? 'med' : 'low';
+  const surfNote = (s1.onSurf || s2.onSurf) && surfCat ? ` on ${surfCat}` : '';
   return apply(res, signal, conf,
-    `Under-pressure index ${Math.round(c1.clutchIndex)} vs ${Math.round(c2.clutchIndex)}.`);
+    `Under-pressure index${surfNote} ${Math.round(s1.idx)} vs ${Math.round(s2.idx)}.`);
 }
 
 // =========================================================================
