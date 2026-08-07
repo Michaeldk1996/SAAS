@@ -12777,7 +12777,7 @@ function setPpSurface(s){
 // Market-performance filters (v5 single filter-driven panel). Every control below is a
 // pure state write + ppRepaint: the panel recomputes every figure client-side from the
 // shard's per-match `sides` rows, so nothing here needs to know the arithmetic.
-//   mktPeriod  : 'career' | 'season' | 'last2' | 'custom'  (PERIOD pills / slider)
+//   mktPeriod  : 'career' | 'w52' | 'y2' | 'custom'  (PERIOD pills / slider; w52/y2 = rolling)
 //   mktWindow  : N most-recent matches, only read when mktPeriod === 'custom'
 //   mktSurface : 'All' | 'Clay' | 'Hard' | 'Grass'
 //   mktSide    : 'back' (stake the player) | 'fade' (stake the opponent, opp price)
@@ -13606,24 +13606,29 @@ function buildPlayerProfileHtml(p){
   const side = ppState.mktSide === 'fade' ? 'fade' : 'back';
   const sfSel = ['Clay', 'Hard', 'Grass'].includes(ppState.mktSurface) ? ppState.mktSurface : 'All';
   const roleSel = ['fav', 'dog'].includes(ppState.mktRole) ? ppState.mktRole : 'all';
-  const period = ['season', 'last2', 'custom'].includes(ppState.mktPeriod) ? ppState.mktPeriod : 'career';
+  const period = ['w52', 'y2', 'custom'].includes(ppState.mktPeriod) ? ppState.mktPeriod : 'career';
 
   // ---- Row filtering: surface -> period/window -> role ----------------------------
   const bySurface = sfSel === 'All' ? sides.slice() : sides.filter(r => rSurf(r) === surfIdx(sfSel));
   const baseN = bySurface.length; // slider domain (surface-filtered)
-  const nowYear = new Date().getFullYear();
-  const yearOf = r => +String(rDate(r) || '').slice(0, 4);
+  // Rolling windows (founder ruling 2026-08-07): calendar "this season / last N seasons"
+  // shrink through winter and are never comparable between two players read at different
+  // times, so PERIOD is a rolling cut measured from *now* — a stable sample on every read.
+  const nowMs = Date.now();
+  const cutW52 = nowMs - 364 * 864e5;   // last 52 weeks
+  const cutY2 = nowMs - 730 * 864e5;    // last 2 years
+  const rowMs = r => Date.parse(rDate(r));
   let periodRows, periodLabel, crumbPeriod, winReadout;
   if (period === 'custom') {
     const n = Math.min(Math.max(1, +ppState.mktWindow || baseN), baseN);
     periodRows = bySurface.slice(-n);
     periodLabel = `last ${n} matches`; crumbPeriod = `LAST ${n} MATCHES`; winReadout = `LAST ${n} MATCHES`;
-  } else if (period === 'season') {
-    periodRows = bySurface.filter(r => yearOf(r) === nowYear);
-    periodLabel = 'this season'; crumbPeriod = 'THIS SEASON'; winReadout = `THIS SEASON · ${periodRows.length} MATCHES`;
-  } else if (period === 'last2') {
-    periodRows = bySurface.filter(r => yearOf(r) >= nowYear - 1);
-    periodLabel = 'last two seasons'; crumbPeriod = 'LAST 2 SEASONS'; winReadout = `LAST 2 SEASONS · ${periodRows.length} MATCHES`;
+  } else if (period === 'w52') {
+    periodRows = bySurface.filter(r => rowMs(r) >= cutW52);
+    periodLabel = 'last 52 weeks'; crumbPeriod = 'LAST 52 WEEKS'; winReadout = `ALL ${periodRows.length} MATCHES`;
+  } else if (period === 'y2') {
+    periodRows = bySurface.filter(r => rowMs(r) >= cutY2);
+    periodLabel = 'last 2 years'; crumbPeriod = 'LAST 2 YEARS'; winReadout = `ALL ${periodRows.length} MATCHES`;
   } else {
     periodRows = bySurface.slice();
     periodLabel = 'career'; crumbPeriod = 'CAREER'; winReadout = `ALL ${periodRows.length} MATCHES`;
@@ -13663,31 +13668,31 @@ function buildPlayerProfileHtml(p){
   const sideWord = side === 'fade' ? 'Fading' : 'Backing';
 
   // ---- 1. Filter bar --------------------------------------------------------------
-  const seg = (onclick, label, on) => `<span onclick="${onclick}" class="mkt-seg" style="padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:${on ? 700 : 600};white-space:nowrap;cursor:pointer;background:${on ? 'rgba(123,164,255,0.14)' : 'transparent'};color:${on ? '#a9c4ff' : '#5b6880'};border:1px solid ${on ? 'rgba(123,164,255,0.42)' : 'rgba(255,255,255,0.09)'};">${label}</span>`;
-  const groupLabel = t => `<span style="font-size:9px;font-family:${MKMONO};letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;margin-right:2px;">${t}</span>`;
+  // Compact segmented pills housed in a shared container, per the market-performance
+  // handoff (design_handoff_market_performance): pill 5×11 / 11px, active = blue wash,
+  // inactive = transparent. Each group is label-above-housing so the row aligns on one grid.
+  const seg = (onclick, label, on) => `<span onclick="${onclick}" class="mkt-seg" style="padding:5px 11px;border-radius:7px;font-size:11px;font-weight:${on ? 700 : 600};white-space:nowrap;cursor:pointer;color:${on ? '#fff' : '#5b6880'};background:${on ? 'rgba(91,155,255,0.28)' : 'transparent'};border:1px solid ${on ? 'rgba(91,155,255,0.5)' : 'transparent'};">${label}</span>`;
+  const mktGroup = (lab, pills) => `<div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:#4b5672;">${lab}</span><div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:2px;">${pills}</div></div>`;
   const periodBar = [
     seg("setPpMktPeriod('career')", 'Career', period === 'career'),
-    seg("setPpMktPeriod('season')", 'This season', period === 'season'),
-    seg("setPpMktPeriod('last2')", 'Last 2 seasons', period === 'last2'),
+    seg("setPpMktPeriod('w52')", 'Last 52 weeks', period === 'w52'),
+    seg("setPpMktPeriod('y2')", 'Last 2 years', period === 'y2'),
   ].join('');
-  const surfaceBar = ['All', 'Clay', 'Hard', 'Grass'].map(s => {
-    const dot = s === 'All' ? '' : `<span style="width:7px;height:7px;border-radius:50%;background:${SURFACE_HEX[s]};display:inline-block;margin-right:6px;vertical-align:middle;"></span>`;
-    return seg(`setPpMktSurface('${s}')`, dot + s, sfSel === s);
-  }).join('');
+  const surfaceBar = ['All', 'Clay', 'Hard', 'Grass']
+    .map(s => seg(`setPpMktSurface('${s}')`, s, sfSel === s)).join('');
   const sideBar = [
-    seg("setPpMktSide('back')", 'Backing', side === 'back'),
-    seg("setPpMktSide('fade')", 'Fading', side === 'fade'),
+    seg("setPpMktSide('back')", 'Backing ' + nm, side === 'back'),
+    seg("setPpMktSide('fade')", 'Fading ' + nm, side === 'fade'),
   ].join('');
   // WINDOW slider: domain is the surface-filtered set; value is the current sample size,
   // so a PERIOD selection shows its own sample on the track. It commits on `change`.
   const sliderVal = Math.min(Math.max(periodRows.length, 1), baseN);
-  const sliderRow = baseN < 2 ? '' : `
-    <div style="display:flex;flex-direction:column;gap:7px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span style="font-size:9px;font-family:${MKMONO};letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;">Window</span>
-        <span id="ppMktWinLabel" style="font-family:${MKMONO};font-size:11px;font-weight:700;letter-spacing:0.08em;color:#a9c4ff;">${winReadout}</span>
+  const sliderGroup = baseN < 2 ? '' : `
+    <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;">
+      <span style="font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:#4b5672;font-family:${MKMONO};">Window · <span id="ppMktWinLabel" style="color:#8b96b5;">${winReadout}</span></span>
+      <div style="display:flex;align-items:center;height:29px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:0 12px;">
+        <input id="ppMktWinRange" type="range" min="1" max="${baseN}" value="${sliderVal}" oninput="ppMktSliderInput(this)" onchange="setPpMktWindow(this.value)" style="width:100%;accent-color:#5b9bff;cursor:pointer;">
       </div>
-      <input id="ppMktWinRange" type="range" min="1" max="${baseN}" value="${sliderVal}" oninput="ppMktSliderInput(this)" onchange="setPpMktWindow(this.value)" style="width:100%;accent-color:#7ba4ff;cursor:pointer;">
     </div>`;
 
   // ---- Internal surface breakdown (drives badge + narrative; not rendered as bars) --
@@ -13748,48 +13753,56 @@ function buildPlayerProfileHtml(p){
   // opponent's price when fading). Chronological. The path renders at any n>=1; the
   // headline ROI figure above still obeys the n>=20 floor.
   const eq = equitySeries(roleRows);
-  const equitySvg = (() => {
-    if (!eq.length) return `<div style="font-size:12.5px;color:#5b6880;padding:12px 0;">No priced matches to plot under these filters.</div>`;
-    const W = 900, H = 190, PADL = 46, PADR = 14, PADT = 14, PADB = 26;
-    const iw = W - PADL - PADR, ih = H - PADT - PADB;
-    const ts = eq.map(d => Date.parse(d.date)).filter(t => !isNaN(t));
-    const tMin = ts.length ? Math.min(...ts) : 0, tMax = ts.length ? Math.max(...ts) : 0;
-    const xOf = (d, i) => {
-      if (eq.length === 1) return PADL + iw / 2;
-      const t = Date.parse(d.date);
-      if (tMax === tMin || isNaN(t)) return PADL + i / (eq.length - 1) * iw;
-      return PADL + (t - tMin) / (tMax - tMin) * iw;
-    };
-    let vMin = 0, vMax = 0; eq.forEach(d => { if (d.cum < vMin) vMin = d.cum; if (d.cum > vMax) vMax = d.cum; });
-    if (vMin === vMax) { vMin -= 1; vMax += 1; }
-    const padV = (vMax - vMin) * 0.08; vMin -= padV; vMax += padV;
-    const yOf = v => PADT + (vMax - v) / (vMax - vMin) * ih;
-    const zeroY = yOf(0);
-    const pts = eq.map((d, i) => [xOf(d, i), yOf(d.cum)]);
-    const linePath = pts.map((pt, i) => (i ? 'L' : 'M') + mkR1(pt[0]) + ' ' + mkR1(pt[1])).join(' ');
-    const areaPath = `${linePath} L ${mkR1(pts[pts.length - 1][0])} ${mkR1(zeroY)} L ${mkR1(pts[0][0])} ${mkR1(zeroY)} Z`;
-    const zeroFrac = Math.max(0, Math.min(1, (zeroY - PADT) / ih));
-    const gid = 'mkEqGrad' + Math.abs((String(p.key) + side + sfSel + period + roleSel).split('').reduce((a, c) => a + c.charCodeAt(0), 0));
-    let lastYr = null; const yearTicks = [];
-    eq.forEach((d, i) => { const yr = String(d.date).slice(0, 4); if (yr && yr !== lastYr) { lastYr = yr; yearTicks.push({ x: xOf(d, i), yr }); } });
-    const yLabels = [vMax, 0, vMin].map(v => `<text x="${PADL - 8}" y="${mkR1(yOf(v) + 3)}" text-anchor="end" font-family="${MKMONO}" font-size="9" fill="#4b5672">${(v > 0 ? '+' : '') + mkR1(v)}u</text>`).join('');
-    const endCum = eq[eq.length - 1].cum;
-    const dot = eq.length === 1 ? `<circle cx="${mkR1(pts[0][0])}" cy="${mkR1(pts[0][1])}" r="3.5" fill="${endCum >= 0 ? MKG : MKR}"/>` : '';
+  // Fractional-year position for a date string (2026-08-01 -> ~2026.58), so the x-axis is
+  // a true time axis and the year ticks land where the calendar year actually turns.
+  const fracYear = ds => { const t = Date.parse(ds); if (isNaN(t)) return null; const d = new Date(t); const y = d.getUTCFullYear(); const s = Date.UTC(y, 0, 1), e = Date.UTC(y + 1, 0, 1); return y + (t - s) / (e - s); };
+  // Full-height equity curve (handoff spec): viewBox 1000×300 stretched to a fixed pixel
+  // height; axis labels are HTML overlays (NOT SVG <text>, which preserveAspectRatio="none"
+  // would squash into an unreadable smear); fill split green-above / red-below the zero line
+  // via two clipPaths; neutral line. y auto-scales to the data with an 8% + 0.5u pad so a
+  // small-range player still shows the *shape* of the curve rather than a flat band.
+  const CHART_H = 280;
+  const equityChart = (() => {
+    if (!eq.length) return `<div style="border:1px dashed rgba(255,255,255,0.1);border-radius:12px;padding:36px;text-align:center;font-size:12.5px;color:#4b5672;">No priced matches in this window — nothing to chart.</div>`;
+    const t1 = fracYear(new Date().toISOString()) || 2026;
+    const fys = eq.map(d => fracYear(d.date)).filter(v => v != null);
+    const firstYr = fys.length ? Math.floor(Math.min(...fys)) : Math.floor(t1) - 1;
+    const t0 = period === 'w52' ? t1 - 1 : period === 'y2' ? t1 - 2 : firstYr;
+    const pts = [{ x: 0, v: 0 }];
+    eq.forEach(d => { const fy = fracYear(d.date); const x = (fy != null && t1 > t0) ? (fy - t0) / (t1 - t0) : 0; pts.push({ x, v: d.cum }); });
+    let lo = Math.min(0, ...pts.map(p => p.v)), hi = Math.max(0, ...pts.map(p => p.v));
+    const pad = (hi - lo) * 0.08 + 0.5; lo -= pad; hi += pad;
+    const Y = v => (1 - (v - lo) / (hi - lo)) * 300;
+    const X = x => 12 + Math.max(0, Math.min(1, x)) * 976;
+    const linePath = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
+    const areaPath = linePath + ' L' + X(pts[pts.length - 1].x).toFixed(1) + ' ' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ' ' + Y(0).toFixed(1) + ' Z';
+    const span = hi - lo, step = span > 40 ? 20 : span > 20 ? 10 : span > 8 ? 4 : span > 3 ? 2 : span > 1.2 ? 1 : span > 0.6 ? 0.5 : span > 0.3 ? 0.2 : 0.1;
+    const grid = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) { const vr = Math.round(v / step) * step; if (Math.abs(vr) > 1e-6) grid.push({ y: Y(vr), label: (vr > 0 ? '+' : '') + (Math.round(vr * 10) / 10) + 'u' }); }
+    const zeroY = Y(0);
+    const uid = 'mkEq' + Math.abs((String(p.key) + side + sfSel + period + roleSel).split('').reduce((a, c) => a + c.charCodeAt(0), 0));
+    const gridLines = grid.map(g => `<line x1="0" x2="1000" y1="${g.y.toFixed(1)}" y2="${g.y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" vector-effect="non-scaling-stroke"/>`).join('');
+    const yLabels = grid.map(g => `<span style="position:absolute;left:4px;top:${(g.y / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:#8b96b5;">${g.label}</span>`).join('')
+      + `<span style="position:absolute;left:4px;top:${(zeroY / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:#c6ccdb;">0u</span>`;
+    const years = [];
+    for (let y = Math.ceil(t0 - 1e-9); y <= Math.floor(t1 + 1e-9); y++) { const x = (y - t0) / (t1 - t0); if (x >= 0 && x <= 1) years.push({ left: (1.2 + x * 97.6).toFixed(1), label: String(y) }); }
+    const yearLabels = years.map(yr => `<span style="position:absolute;bottom:-17px;left:${yr.left}%;transform:translateX(-50%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:#8b96b5;">${yr.label}</span>`).join('');
     return `
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:200px;display:block;">
-        <defs><linearGradient id="${gid}" x1="0" y1="${PADT}" x2="0" y2="${PADT + ih}" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="${MKG}" stop-opacity="0.30"/>
-          <stop offset="${mkR1(zeroFrac * 100) / 100}" stop-color="${MKG}" stop-opacity="0.05"/>
-          <stop offset="${mkR1(zeroFrac * 100) / 100}" stop-color="${MKR}" stop-opacity="0.05"/>
-          <stop offset="1" stop-color="${MKR}" stop-opacity="0.30"/>
-        </linearGradient></defs>
+      <div style="position:relative;margin:4px 0 26px;">
+        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="display:block;width:100%;height:${CHART_H}px;background:rgba(255,255,255,0.015);border-radius:10px;">
+          ${gridLines}
+          <defs>
+            <clipPath id="${uid}a"><rect x="0" y="0" width="1000" height="${Math.max(0, zeroY).toFixed(1)}"/></clipPath>
+            <clipPath id="${uid}b"><rect x="0" y="${Math.max(0, zeroY).toFixed(1)}" width="1000" height="${Math.max(0, 300 - zeroY).toFixed(1)}"/></clipPath>
+          </defs>
+          <path d="${areaPath}" fill="rgba(61,214,140,0.18)" clip-path="url(#${uid}a)"/>
+          <path d="${areaPath}" fill="rgba(224,97,111,0.18)" clip-path="url(#${uid}b)"/>
+          <line x1="0" x2="1000" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>
+          <path d="${linePath}" fill="none" stroke="#c6ccdb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>
+        </svg>
         ${yLabels}
-        <line x1="${PADL}" y1="${mkR1(zeroY)}" x2="${W - PADR}" y2="${mkR1(zeroY)}" stroke="rgba(255,255,255,0.30)" stroke-width="1" stroke-dasharray="3 3"/>
-        <path d="${areaPath}" fill="url(#${gid})"/>
-        <path d="${linePath}" fill="none" stroke="${endCum >= 0 ? MKG : MKR}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        ${dot}
-        ${yearTicks.map(t => `<line x1="${mkR1(t.x)}" y1="${PADT}" x2="${mkR1(t.x)}" y2="${PADT + ih}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><text x="${mkR1(t.x)}" y="${H - 8}" text-anchor="middle" font-family="${MKMONO}" font-size="9" fill="#4b5672">${t.yr}</text>`).join('')}
-      </svg>`;
+        ${yearLabels}
+      </div>`;
   })();
   const eqEnd = eq.length ? eq[eq.length - 1].cum : 0;
   const equityCard = `
@@ -13798,7 +13811,7 @@ function buildPlayerProfileHtml(p){
         <span style="font-size:10.5px;font-family:${MKMONO};letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;">Equity curve · ${sideWord.toLowerCase()}${roleWord}</span>
         <span style="font-family:${MKMONO};font-size:13px;font-weight:700;color:${eq.length ? (eqEnd >= 0 ? MKG : MKR) : MKM};">${eq.length ? (eqEnd >= 0 ? '+' : '−') + Math.abs(mkR1(eqEnd)) + 'u' : '—'}</span>
       </div>
-      ${equitySvg}
+      ${equityChart}
       <div style="font-size:11px;color:#5b6880;line-height:1.5;">Cumulative profit/loss in units, 1u flat stake every match at the ${side === 'fade' ? 'opponent’s' : 'player’s'} closing price${side === 'fade' ? ` (fading ${nm})` : ''}. Above the dashed zero line is cumulative profit; below it, loss.</div>
     </div>`;
 
@@ -13876,8 +13889,12 @@ function buildPlayerProfileHtml(p){
     </div>`;
 
   // ---- Assemble ------------------------------------------------------------------
+  // Order (founder ruling 2026-08-07): Favourite-vs-Underdog reliability LEADS — it is the
+  // read; the filters / ROI headline / equity curve below are the evidence behind it.
   return `
     <div id="ppMarketPanel" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 28px;display:flex;flex-direction:column;gap:20px;">
+
+      ${roleCmpHtml}
 
       <div style="font-size:10px;font-family:${MKMONO};letter-spacing:0.16em;color:#4b5672;">${crumb}</div>
 
@@ -13890,13 +13907,11 @@ function buildPlayerProfileHtml(p){
         <span style="display:inline-flex;align-items:center;gap:7px;font-family:${MKMONO};font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:${mkBadgeCol};background:${ppHexA(mkBadgeCol, 0.1)};border:1px solid ${ppHexA(mkBadgeCol, 0.32)};border-radius:9px;padding:8px 13px;white-space:nowrap;flex:none;">${mkBadgeTxt}</span>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:14px;background:#080b11;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px 18px;">
-        <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${groupLabel('Period')}${periodBar}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${groupLabel('Surface')}${surfaceBar}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${groupLabel('Side')}${sideBar}</div>
-        </div>
-        ${sliderRow}
+      <div style="display:flex;align-items:flex-end;gap:16px 26px;flex-wrap:wrap;border:1px solid rgba(255,255,255,0.07);border-radius:11px;padding:13px 16px;background:rgba(255,255,255,0.015);">
+        ${mktGroup('Period', periodBar)}
+        ${mktGroup('Surface', surfaceBar)}
+        ${mktGroup('Side', sideBar)}
+        ${sliderGroup}
       </div>
 
       ${headlineHtml}
@@ -13907,10 +13922,6 @@ function buildPlayerProfileHtml(p){
         <div style="display:inline-flex;align-items:center;gap:9px;color:#e2a24a;"><span style="width:16px;height:16px;display:flex;flex:none;">${BSP_ICONS.bulb}</span><span style="font-size:15px;font-weight:700;color:#e7e9ee;">Read on the market</span></div>
         <div style="font-size:13.5px;color:#c4ccd8;line-height:1.65;text-wrap:pretty;">${readout}</div>
       </div>
-
-      ${roleCmpHtml}
-
-      <div style="font-size:10.5px;color:#4b5361;line-height:1.6;">Closing prices from ${MKT_SOURCE}, ${MKT_LEVEL.toLowerCase()} only — Challengers and qualifying are not priced here, and players under ${perf.minMatches} priced matches are omitted. ROI = return per 1u flat stake at the closing price (the opponent’s price when fading); it is negative for most players by design, because the bookmaker margin has to be beaten first. Rates and ROI are shown only above ${SUPP} matches in the active window; below that the record stands alone. Performance is measured against the closing market, not closing-line value. The archive currently runs to ${oddsPerfMeta.archiveLatest || (perf.recentWindow && perf.recentWindow.to) || 'its last mirrored season'}, so it ends there, not today.</div>
     </div>`;
 
   } catch (mktErr) {
@@ -14124,7 +14135,7 @@ function buildPlayerProfileHtml(p){
   // below the two-column overview (ppTournResultBlock). onPpTournamentInput /
   // ppShowTournament update #ppTournResult by id wherever it sits in the DOM.
   const recordSearchCard = `
-    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;position:relative;z-index:5;">
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;position:relative;z-index:5;flex:1;">
       <div style="padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
           <div style="font-size:20px;font-weight:800;">Record by tournament</div>
@@ -14204,7 +14215,7 @@ function buildPlayerProfileHtml(p){
 
     <!-- TOP OVERVIEW: the two-column split is scoped to this region only. The
          export closes the grid here so every section below runs full page width. -->
-    <div class="pp-shell" style="display:grid;grid-template-columns:360px 1fr;align-items:start;">
+    <div class="pp-shell" style="display:grid;grid-template-columns:360px 1fr;align-items:stretch;">
 
       <!-- LEFT RAIL -->
       <div class="pp-rail" style="border-right:1px solid rgba(255,255,255,0.06);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;">

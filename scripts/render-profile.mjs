@@ -83,6 +83,10 @@ const name = await evaluate(`(function(){try{
 let painted=false;
 for(let i=0;i<80;i++){ painted = await evaluate(`(function(){var v=document.getElementById('playerProfileView'); return !!(v&&v.style.display!=='none'&&v.querySelector('.pp-shell'));})()`).catch(()=>false); if(painted) break; await sleep(200); }
 await sleep(700); // let radar SVG / bars settle
+// Market panel loads its odds-perf shard async (loadOddsPerfShardThenRerender), so wait
+// for #ppMarketPanel before shooting — otherwise we race the fetch and miss the panel.
+for(let i=0;i<50;i++){ const has = await evaluate(`!!document.querySelector('#ppMarketPanel')`).catch(()=>false); if(has) break; await sleep(200); }
+await sleep(300);
 
 const probe = await evaluate(`(function(){
   var v=document.getElementById('playerProfileView'); if(!v) return {painted:false};
