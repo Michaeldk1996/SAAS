@@ -91,7 +91,26 @@ function resolvePlayer(numericKey, abbrName) {
   const fullName = (splits && splits.fullName) || (profile && profile.name) || null;
 
   const eloKey = eloKeyFromFullName(fullName);
-  const abbr = abbrName || abbrFromFullName(fullName);
+  // Abbreviated "I. Lastname" key for the clutch / playing-styles join. The feed
+  // does NOT always hand us an abbreviated name: hashed-id fixtures carry the FULL
+  // name (e.g. "Daniel Merida Aguilar", not "D. Merida Aguilar"), and career-splits
+  // fullName can carry a middle name. Both broke the exact-match join, so style +
+  // clutch silently dropped to null on those fixtures ("no style matchup"). Build
+  // every plausible abbreviated form and match on any of them (exact first, then
+  // an accent/case/period-insensitive fallback). `abbr` (the primary key) is kept
+  // as the raw feed name so the returned abbrName / display path is unchanged.
+  const abbrCandidates = [];
+  for (const cand of [abbrName, abbrFromFullName(abbrName), abbrFromFullName(fullName)]) {
+    if (cand && !abbrCandidates.includes(cand)) abbrCandidates.push(cand);
+  }
+  const abbr = abbrName || abbrCandidates[0] || null;
+  const normAbbr = (s) => stripAccents(String(s || '')).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+  const normCands = new Set(abbrCandidates.map(normAbbr).filter(Boolean));
+  const matchByAbbr = (arr) => {
+    if (!arr || !normCands.size) return null;
+    for (const cand of abbrCandidates) { const hit = arr.find(x => x && x.name === cand); if (hit) return hit; }
+    return arr.find(x => x && normCands.has(normAbbr(x.name))) || null;
+  };
 
   const elo = (eloKey && eloAll[eloKey]) || null;
 
@@ -103,12 +122,8 @@ function resolvePlayer(numericKey, abbrName) {
   const radarOk = Boolean(radarRow && radarRow.ok === true && radarRow.radar);
   const radar = radarOk ? radarRow.radar : null;
 
-  const clutch = abbr
-    ? (clutchArr.find(c => c && c.name === abbr) || null)
-    : null;
-  const style = abbr
-    ? (stylesArr.find(s => s && s.name === abbr) || null)
-    : null;
+  const clutch = matchByAbbr(clutchArr);
+  const style = matchByAbbr(stylesArr);
 
   return {
     numericKey: idStr,

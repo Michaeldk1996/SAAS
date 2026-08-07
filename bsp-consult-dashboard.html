@@ -5964,13 +5964,17 @@ function edgeMarketContextHtml(m, st1, p1short, p2short){
 // ── Value-layers strip (design export): 14 fixed segments coloured Good/Medium/
 // Poor by each layer's data-coverage state, plus "N of 14 value layers active"
 // where N is the count of layers that actually applied to THIS match read.
-// TOTAL is 14 — the number of layers the engine actually emits (founder ruling
+// TOTAL is the number of VISIBLE layers for this match (founder ruling
 // 2026-08-07 Q1: the old 17 was a stale spec hard-code that padded the bar with
-// three phantom "Not evaluated" segments corresponding to no real layer).
+// three phantom "Not evaluated" segments corresponding to no real layer). It is
+// derived from the visible-adjustments list (`adjs`), not hard-coded, so a layer
+// that self-hides for THIS match — e.g. Format split (Bo5) on a best-of-3 —
+// drops one real segment instead of leaving a phantom grey one. This keeps the
+// strip in lock-step with the "N of X layers applied" table subtitle below.
 // Returns the strip INNER only (bar + legend); the merged Value-layers card
 // (below) wraps it, so the breakdown table sits in the same block per export §4.
 function edgeValueStripHtml(adjs){
-  const TOTAL = 14;
+  const TOTAL = adjs.length;
   const active = adjs.filter(a => a.applied).length;
   const segs = [];
   for (let i = 0; i < TOTAL; i++){

@@ -370,7 +370,26 @@ function styleMatchup(ctx) {
   const res = base(c.id, 'styleMatchup', 'Style matchup', c.maxMagnitude, 'matchup-matrix.json');
   const a1 = ctx.p1.style && ctx.p1.style.primary;
   const a2 = ctx.p2.style && ctx.p2.style.primary;
-  if (!a1 || !a2) return res; // one side unclassified
+  // Title-Case an archetype key ("solid_baseliner" -> "Solid Baseliner"). The
+  // mirror message keys off the PRIMARY archetype (what makes it a mirror), not
+  // the compound archetype_label, so the two sides can't read as different.
+  const titleCase = (key) =>
+    String(key || '').split('_').map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
+  const shortOf = (p) => p.abbrName || p.fullName || '';
+  if (!a1 || !a2) {
+    // One (or both) sides unclassified — say WHICH, so the empty state reads as an
+    // honest coverage note rather than a bare "No data".
+    if (!a1 && !a2) res.detail = 'Neither player has a classified playing style yet — no style matchup to read.';
+    else res.detail = `${shortOf(!a1 ? ctx.p1 : ctx.p2)} has no classified playing style yet — no style matchup to read.`;
+    return res;
+  }
+  if (a1 === a2) {
+    // Mirror matchup — the matrix diagonal is null by construction (a style vs the
+    // same style is symmetric ~50/50), so there is no directional style edge. Say
+    // so explicitly instead of showing a bare "No data".
+    res.detail = `Mirror matchup — both play as ${titleCase(a1)}, so there is no directional style edge (~50/50).`;
+    return res;
+  }
   const mm = ctx.matchupMatrix;
   const cell = mm && mm.matrix && mm.matrix[a1] && mm.matrix[a1][a2];
   if (!cell || cell.pct == null) return res;
@@ -1197,7 +1216,14 @@ function weather(ctx) {
 function formatSplit(ctx) {
   const c = config.adjustments.formatSplit;
   const res = base(c.id, 'formatSplit', 'Format split (Bo5)', c.maxMagnitude, 'career-splits.json');
-  if (ctx.bestOf !== 5) { res.detail = 'Bo3 match — format split applies to Bo5 (Grand Slams) only.'; return res; }
+  if (ctx.bestOf !== 5) {
+    // Bo3 match — this layer speaks only to Grand-Slam best-of-5, so it is not
+    // applicable here. Hide it entirely (founder ruling 2026-08-07: a Bo5 format
+    // split should not appear on a best-of-3 match) rather than showing an empty row.
+    res.hidden = true;
+    res.detail = 'Bo3 match — format split applies to Bo5 (Grand Slams) only.';
+    return res;
+  }
   function perf(p) {
     const career = p.splits && p.splits.career;
     const c5 = career && career['Best of 5'];
@@ -1218,17 +1244,21 @@ function formatSplit(ctx) {
 }
 
 // =========================================================================
-// 15. CLUTCH RATING — clutch-rating.json clutch index
+// 15. UNDER PRESSURE — clutch-rating.json under-pressure index
 // =========================================================================
+// Labelled "Under pressure" to match the site-wide terminology (the Players
+// ratings table's Under-pressure rating). The underlying clutchIndex IS the ATP
+// Under-Pressure formula: BP saved %, BP converted %, tiebreak win %, deciding-
+// set win % (see clutch-rating.json `method`). Same number, consistent name.
 function clutch(ctx) {
   const c = config.adjustments.clutch;
-  const res = base(c.id, 'clutch', 'Clutch rating', c.maxMagnitude, 'clutch-rating.json');
+  const res = base(c.id, 'clutch', 'Under pressure', c.maxMagnitude, 'clutch-rating.json');
   const c1 = ctx.p1.clutch, c2 = ctx.p2.clutch;
   if (!c1 || !c2 || num(c1.clutchIndex) == null || num(c2.clutchIndex) == null) return res;
   const signal = clamp((c1.clutchIndex - c2.clutchIndex) / c.divisor, -1, 1);
   const conf = (c1.confidence === 'high' && c2.confidence === 'high') ? 'med' : 'low';
   return apply(res, signal, conf,
-    `Clutch ${Math.round(c1.clutchIndex)} vs ${Math.round(c2.clutchIndex)}.`);
+    `Under-pressure index ${Math.round(c1.clutchIndex)} vs ${Math.round(c2.clutchIndex)}.`);
 }
 
 // =========================================================================
