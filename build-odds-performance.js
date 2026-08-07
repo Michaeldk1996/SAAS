@@ -45,7 +45,7 @@ const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const MIN_MATCHES = 30;
 
 /** Bumping this invalidates consumers the same way PROFILE_SCHEMA_VERSION does. */
-const ODDS_PERF_SCHEMA_VERSION = 4;
+const ODDS_PERF_SCHEMA_VERSION = 5;
 
 const SURFACES = ['Hard', 'Clay', 'Grass'];
 
@@ -455,8 +455,8 @@ function main() {
       const lr = num(row.lrank);
 
       [
-        { name: row.winner, won: true, p: pWin, price: aw, best: bestW, fav: aw < al, oppRank: lr },
-        { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw, oppRank: wr },
+        { name: row.winner, won: true, p: pWin, price: aw, best: bestW, fav: aw < al, oppRank: lr, oppPrice: al, oppP: pLose },
+        { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw, oppRank: wr, oppPrice: aw, oppP: pWin },
       ].forEach((side) => {
         const player = resolve(side.name);
         if (!player) return;
@@ -483,6 +483,10 @@ function main() {
           date: row.date, won: side.won, p: side.p, price: side.price, best: side.best,
           fav: side.fav, surface, round: roundExact, level,
           oppBand: side.oppRank ? (OPP_BANDS.find((x) => x.test(side.oppRank)) || {}).id : null,
+          // Opponent's own de-vigged closing price + implied prob, from the SAME CSV row
+          // (the pair is read together above). Fading = backing the opponent at THIS price;
+          // it is not -1x the back figure, so it cannot be derived client-side without it.
+          oppPrice: side.oppPrice, oppP: side.oppP,
         });
       });
     });
@@ -570,6 +574,9 @@ function main() {
       s.round ? ROUND_EXACT_ORDER.indexOf(s.round) : -1,
       s.level ? LEVEL_ORDER.indexOf(s.level) : -1,
       s.oppBand ? OPP_BAND_ORDER.indexOf(s.oppBand) : -1,
+      // Fade side: opponent implied prob (6dp, same basis as p) + opponent closing price.
+      Math.round(s.oppP * 1e6) / 1e6,
+      s.oppPrice,
     ];
 
     const shard = {
@@ -594,7 +601,7 @@ function main() {
       recentByRole,
       recentWindow: recent ? { matches: RECENT_MATCHES, from: recentSpan.from, to: recentSpan.to } : null,
       sidesLegend: {
-        fields: ['date', 'won', 'p', 'price', 'best', 'fav', 'surface', 'round', 'level', 'oppBand'],
+        fields: ['date', 'won', 'p', 'price', 'best', 'fav', 'surface', 'round', 'level', 'oppBand', 'oppP', 'oppPrice'],
         surfaces: sideSurfaces,
         rounds: ROUND_EXACT.map((x) => ({ id: x.id, label: x.label })),
         levels: LEVEL_ORDER,
