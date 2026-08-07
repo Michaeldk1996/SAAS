@@ -2976,14 +2976,21 @@
   .edge-s4head .edge-eyeb{ margin-bottom:0; }
   .edge-net{ font-size:11px; color:#5b6880; }
   .edge-net strong{ font-family:'IBM Plex Mono', monospace; color:#5b9bff; font-weight:700; }
-  .edge-adjhead2{ display:grid; grid-template-columns:minmax(150px,220px) 1fr minmax(112px,150px); gap:12px; padding:0 4px 9px; font-size:9px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.09em; text-transform:uppercase; color:#4b5672; }
+  /* Export §1–2: flat, scannable table — five columns, no per-row card. */
+  .edge-tablecols{ grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; }
+  .edge-adjhead2{ display:grid; grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; padding:0 4px 10px; font-size:9px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.09em; text-transform:uppercase; color:#4b5672; }
   .edge-adjhead2 .c{ text-align:center; }
   .edge-adjhead2 .rt{ text-align:right; }
-  .edge-adjlist{ display:flex; flex-direction:column; gap:7px; }
-  .edge-row{ display:grid; grid-template-columns:minmax(150px,220px) 1fr minmax(112px,150px); gap:12px; align-items:center; padding:11px 16px; border-radius:11px; background:#0d111a; border:1px solid rgba(255,255,255,0.06); }
-  .edge-row.gold{ background:rgba(224,182,77,0.06); border-color:rgba(224,182,77,0.28); padding:15px 16px; }
-  .edge-row.blue{ background:rgba(91,155,255,0.05); border-color:rgba(91,155,255,0.26); padding:15px 16px; }
+  .edge-adjlist{ display:flex; flex-direction:column; }
+  .edge-row{ display:grid; grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; align-items:center; padding:13px 4px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .edge-row:last-child{ border-bottom:none; }
   .edge-row.dim{ opacity:0.55; }
+  .edge-wtc{ display:flex; align-items:center; gap:7px; min-width:0; }
+  .edge-wt.w-inactive{ color:#4b5672; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); }
+  .edge-why{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; line-height:1.45; color:#7a8398; min-width:0; }
+  .edge-why .edge-num{ font-family:'IBM Plex Mono', monospace; color:#aeb8cc; font-size:11.5px; }
+  .edge-why-empty{ color:#4b5672; }
+  .edge-vldiv{ height:1px; background:rgba(255,255,255,0.07); margin:16px 0; }
   .edge-row .lc{ display:flex; flex-direction:column; gap:6px; min-width:0; }
   .edge-row .rname{ font-size:13px; font-weight:700; color:#e7e9ee; }
   .edge-row.gold .rname, .edge-row.blue .rname{ font-size:15px; }
@@ -2997,7 +3004,7 @@
   .edge-dot{ width:6px; height:6px; border-radius:50%; flex:none; }
   .edge-mc{ display:flex; flex-direction:column; gap:6px; min-width:0; }
   .edge-mcrow{ display:flex; align-items:center; gap:12px; }
-  .edge-sc{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; width:46px; flex:none; color:#5b6880; }
+  .edge-sc{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; width:40px; flex:none; color:#5b6880; }
   .edge-sc.a{ text-align:right; }
   .edge-sc.lead{ color:#e7e9ee; }
   .edge-row.gold .edge-sc, .edge-row.blue .edge-sc{ font-size:17px; }
@@ -5578,7 +5585,7 @@ let edgeUserPicked = false;
 // straight away (founder ruling 2026-08-06): it opens collapsed and expands when
 // the reader clicks its heading, matching the collapsible splits cards on the
 // Player Profile. Persists across matches like the other edge view prefs.
-let edgeLayersOpen = false;
+let edgeLayersOpen = true;
 function toggleEdgeLayers(){
   edgeLayersOpen = !edgeLayersOpen;
   renderEdgeModel(edgeCurrentId);
@@ -5954,12 +5961,16 @@ function edgeMarketContextHtml(m, st1, p1short, p2short){
     </div>`;
 }
 
-// ── Value-layers strip (design export): 17 fixed segments coloured Good/Medium/
-// Poor by each layer's data-coverage state, plus "N of 17 value layers active"
+// ── Value-layers strip (design export): 14 fixed segments coloured Good/Medium/
+// Poor by each layer's data-coverage state, plus "N of 14 value layers active"
 // where N is the count of layers that actually applied to THIS match read.
-// Segments beyond the layers the model emitted stay grey (Poor / not evaluated).
+// TOTAL is 14 — the number of layers the engine actually emits (founder ruling
+// 2026-08-07 Q1: the old 17 was a stale spec hard-code that padded the bar with
+// three phantom "Not evaluated" segments corresponding to no real layer).
+// Returns the strip INNER only (bar + legend); the merged Value-layers card
+// (below) wraps it, so the breakdown table sits in the same block per export §4.
 function edgeValueStripHtml(adjs){
-  const TOTAL = 17;
+  const TOTAL = 14;
   const active = adjs.filter(a => a.applied).length;
   const segs = [];
   for (let i = 0; i < TOTAL; i++){
@@ -5972,17 +5983,14 @@ function edgeValueStripHtml(adjs){
     }
   }
   return `
-    <div class="edge-card">
-      <div class="edge-eyeb" style="margin-bottom:14px;">Value layers</div>
       <div class="edge-vlbar">${segs.join('')}</div>
       <div class="edge-vllegend">
         <span class="edge-vlkey"><i style="background:#3dd68c"></i>Good</span>
         <span class="edge-vlkey"><i style="background:#e8a84e"></i>Medium</span>
         <span class="edge-vlkey"><i style="background:#e0616f"></i>Poor</span>
-        <span class="edge-vlnote">Value layers active across this match read</span>
+        <span class="edge-vlnote">Data quality across this match read</span>
         <span class="edge-vlactive">${active} of ${TOTAL} value layers active</span>
-      </div>
-    </div>`;
+      </div>`;
 }
 
 // On-demand reveal of the written analysis (design export "Generate" affordance).
@@ -6064,19 +6072,31 @@ function edgeVisibleAdjs(list){
   return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
 }
 
-// One adjustment row (design Section 4). Style matchup gets the gold anchor
-// treatment, Subjective input the same (both are HIGHEST in the engine), and
-// the winner/UE layer the blue "prominent" treatment the design calls for.
+// WHY column (design export §3): the explanation reads as prose in the body
+// font (Hanken Grotesk), with IBM Plex Mono reserved for the numerals only —
+// mono is for data values, not sentences. We split the raw detail on
+// number-ish tokens (counts, percentages, ratios, N/tier values) and escape
+// each segment, so the mono wrap never lands inside an HTML entity.
+function edgeWhyHtml(detail){
+  const parts = String(detail == null ? '' : detail).split(/(\d[\d.,%/-]*)/g);
+  return parts.map((seg, i) =>
+    (i % 2 === 1) ? `<span class="edge-num">${edgeEsc(seg)}</span>` : edgeEsc(seg)
+  ).join('');
+}
+
+// One adjustment row (design export §1–3): a flat five-column table row —
+// LAYER · WEIGHT · SIGNAL · FAVOURS·SHIFT · WHY — sitting directly on the
+// merged Value-layers card (no per-row card border/background). The WEIGHT
+// column carries the layer's weight pill plus the Good/Medium/Poor data-quality
+// dot (export §5: two different scales, kept visually separate). The pill is the
+// layer's POTENTIAL cap, so on a layer that did not fire it greys to "inactive"
+// (founder ruling 2026-08-07 Q2) — potential never reads as applied.
 function edgeAdjRow(a, p1short, p2short){
   const applied = !!a.applied;
   const w = edgeWeightTag(a.maxMagnitude);
   const cov = edgeCovState(a);
   const signal = a.signal || 0;
   const even = !applied || a.direction === 'neutral' || Math.abs(signal) < 0.02;
-
-  let tone = '';
-  if (a.key === 'styleMatchup' || a.key === 'subjective') tone = ' gold';
-  else if (a.key === 'winnerUE') tone = ' blue';
 
   // Diverging bar: fill grows from the 50% centre toward the favoured side.
   const width = Math.min(50, Math.abs(signal) * 50);
@@ -6107,14 +6127,14 @@ function edgeAdjRow(a, p1short, p2short){
     fav = `<span class="who">${edgeEsc(who)}</span><span class="dl">+${delta.toFixed(1)}pp</span>`;
   }
 
+  const wtCls = applied ? w.cls : 'w-inactive';
+
   return `
-    <div class="edge-row${tone}${applied ? '' : ' dim'}">
-      <div class="lc">
-        <span class="rname">${edgeEsc(a.name)}</span>
-        <span class="edge-tags">
-          <span class="edge-wt ${w.cls}">${w.label}</span>
-          <span class="edge-dot" style="background:${edgeCovColor(cov)}" title="Coverage: ${cov}"></span>
-        </span>
+    <div class="edge-row${applied ? '' : ' dim'}">
+      <div class="lc"><span class="rname">${edgeEsc(a.name)}</span></div>
+      <div class="edge-wtc">
+        <span class="edge-wt ${wtCls}" title="Weight — the layer's potential cap">${w.label}</span>
+        <span class="edge-dot" style="background:${edgeCovColor(cov)}" title="Data quality: ${cov}"></span>
       </div>
       <div class="edge-mc">
         <div class="edge-mcrow">
@@ -6124,7 +6144,7 @@ function edgeAdjRow(a, p1short, p2short){
         </div>
       </div>
       <div class="edge-fav">${fav}</div>
-      ${a.detail ? `<div class="edge-rdetail">${edgeEsc(a.detail)}</div>` : ''}
+      <div class="edge-why">${a.detail ? edgeWhyHtml(a.detail) : '<span class="edge-why-empty">—</span>'}</div>
     </div>`;
 }
 
@@ -6425,7 +6445,7 @@ function renderEdgeModel(id){
   const counts = { full: 0, partial: 0, missing: 0 };
   adjs.forEach(a => { counts[edgeCovState(a)]++; });
   const conf = edgeConfidence(counts.full);
-  const section3 = edgeValueStripHtml(adjs);
+  const section3 = ''; // strip merged into the Value-layers card (section4) per export §4
 
   // Net-shift readout (still used by the Section 5 value card header).
   const netPP = (st2.totalDeltaP1 || 0) * 100;
@@ -6573,28 +6593,34 @@ function renderEdgeModel(id){
   // than a fake 0.00. This is the "layer breakdown per value" that sits below
   // the value-layers strip — previously the row builder existed but was never
   // assembled into the page.
+  // Export §4: ONE merged card — value-layers bar on top, then the reveal
+  // toggle, then the breakdown table below. Default state open (founder ruling
+  // 2026-08-07 change #4). p1short/p2short label the SIGNAL column's two ends.
   const appliedN = adjs.filter(a => a.applied).length;
   const layersCaret = edgeLayersOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+  const toggleLabel = edgeLayersOpen ? 'Hide layer breakdown' : 'Show layer breakdown';
   const section4 = `
     <div class="edge-card">
+      <div class="edge-eyeb" style="margin-bottom:14px;">Value layers</div>
+      ${edgeValueStripHtml(adjs)}
+      <div class="edge-vldiv"></div>
       <div class="edge-s4head" role="button" tabindex="0" aria-expanded="${edgeLayersOpen}"
            onclick="toggleEdgeLayers()"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleEdgeLayers()}"
            style="cursor:pointer;">
         <span style="display:flex; align-items:center; gap:10px;">
           <span style="display:inline-flex; color:#5b9bff; transform:${layersCaret}; transition:transform .15s ease;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-          <span class="edge-eyeb" style="margin-bottom:0;">Layer breakdown</span>
+          <span class="edge-eyeb" style="margin-bottom:0;">${toggleLabel}</span>
         </span>
         <span class="edge-net"><strong>${appliedN}</strong> of ${adjs.length} layers applied</span>
       </div>
       ${edgeLayersOpen ? `
-      <div class="edge-adjhead" style="margin-top:16px;">
-        <span>Every value layer, and how far it moved the fair price</span>
-      </div>
-      <div class="edge-adjhead2">
+      <div class="edge-adjhead2" style="margin-top:16px;">
         <span>Layer</span>
+        <span class="wt">Weight</span>
         <span class="c">${edgeEsc(p1short)} · signal · ${edgeEsc(p2short)}</span>
         <span class="rt">Favours · shift</span>
+        <span class="why">Why</span>
       </div>
       <div class="edge-adjlist">
         ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
