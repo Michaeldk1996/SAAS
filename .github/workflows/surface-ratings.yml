@@ -48,7 +48,11 @@ jobs:
         # Captured before the rebuild overwrites it so the sanity check below can
         # tell a real refresh from a build that quietly lost players.
         run: |
-          echo "PREV_PLAYERS=$(node -e 'try{console.log((require(\"./surface-ratings.json\").players||[]).length)}catch(e){console.log(0)}')" >> "$GITHUB_ENV"
+          # node -e with double-quoted paths inside a single-quoted arg needs NO backslash
+          # escaping; the previous \" form was passed through literally and threw a
+          # SyntaxError, leaving PREV_PLAYERS empty (0) so the regression guard was a no-op.
+          PREV=$(node -e 'let n=0;try{n=(require("./surface-ratings.json").players||[]).length}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_PLAYERS=$PREV" >> "$GITHUB_ENV"
 
       - name: Refresh the current-year TML CSV
         # Force a re-download of the growing current-year file; getCsv only fetches
@@ -74,10 +78,13 @@ jobs:
             console.log(`OK: ${n} players (was ${prev}), generatedAt ${d.generatedAt}.`);
           '
 
-      - name: Commit refreshed surface-ratings.json (+ current-year CSV)
+      - name: Commit refreshed surface-ratings.json
         run: |
-          Y=$(date -u +%Y)
-          git add surface-ratings.json "tml-cache/$Y.csv"
+          # Only surface-ratings.json is committed. tml-cache/ is gitignored (.gitignore),
+          # so the old `git add "tml-cache/$Y.csv"` returned exit 1 under `bash -e` and
+          # aborted this whole step BEFORE the commit — the weekly refresh silently never
+          # landed. The current-year CSV is re-fetched every run, so it need not be tracked.
+          git add surface-ratings.json
           if git diff --cached --quiet; then
             echo "Nothing changed — nothing to commit."
             exit 0
