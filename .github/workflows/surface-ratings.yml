@@ -15,7 +15,9 @@ name: BSP weekly surface-ratings refresh
 # disk). Older years are immutable, so they stay cached and are not re-downloaded.
 # Both the refreshed CSV and surface-ratings.json are committed.
 #
-# No API keys or npm dependencies (Node's built-in fetch + fs).
+# The Challenger fold-in is now sourced live from api-tennis (event 281), so the
+# build needs the API_TENNIS_KEY repo secret (passed to the rebuild step below).
+# Tour-level data still comes from the cached TML CSVs; no npm dependencies.
 # Cadence: Monday 21:00 UTC — an hour after the Elo refresh, so both weekly
 # rating sources land the same evening. workflow_dispatch allows a manual refresh.
 
@@ -63,6 +65,8 @@ jobs:
           echo "Removed tml-cache/$Y.csv (will be re-fetched by the builder)."
 
       - name: Rebuild surface ratings
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node surface-ratings.js
 
       - name: Sanity-check the rebuilt file

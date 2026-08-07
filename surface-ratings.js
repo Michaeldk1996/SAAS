@@ -32,19 +32,30 @@ const TO_YEAR = 2026;
 const SURFACES = ['Hard', 'Clay', 'Grass'];      // Carpet dropped (too few matches)
 const LAST52_DAYS = 364;
 
-// ---- Challenger / qualifying fallback source (Jeff-Sackmann schema) ----------
+// ---- Challenger fallback source (LIVE api-tennis event_type_key=281) ----------
 // TML-Database is ATP main-tour only, so players who are thin at tour level (young
 // or lower-ranked) never accumulate enough tiebreaks / deciding sets / break points
-// to earn an Under-Pressure rating. Sackmann's qual_chall files give the SAME schema
-// for Challenger + Grand-Slam/Masters qualifying — a genuinely different, deeper
-// coverage. We fold these in ONLY for components a player is thin on at tour level,
-// and flag those rows so the provenance is always visible. Same CC BY-NC-SA licence,
-// internal-derivation only. Reachable Sackmann fork mirror (JeffSackmann org is not
-// fetchable in the build env): Milos191405/Tennis-ATP, years 2018-2024.
-const CHALL_BASE = 'https://raw.githubusercontent.com/Milos191405/Tennis-ATP/master/tennis_atp/';
-const CHALL_CACHE = path.join(__dirname, 'chall-cache');
-const CHALL_FROM_YEAR = 2018;
-const CHALL_TO_YEAR = 2024;
+// to earn an Under-Pressure rating — and their serve/return sample is likewise thin.
+// We fold in a Challenger sample ONLY for players thin at tour level, flagging those
+// rows so provenance is always visible. Source is now LIVE api-tennis event 281
+// (Challenger Men Singles), which carries the SAME full per-match serve/return/BP
+// catalog and — unlike the retired static Milos191405/Tennis-ATP mirror (2018-2024) —
+// includes 2025/26 and refreshes weekly via CI. The per-player fetch + contribution
+// build lives in surface-ratings-chall-apitennis.js, which emits contribs in the exact
+// addContribution shape, so the api sample flows through the identical discount + blend.
+const { fetchChallengerContribs } = require('./surface-ratings-chall-apitennis.js');
+const CHALL_FROM_YEAR = 2022;   // request window start (event 281 stats are dense 2024+)
+// Resolve the api-tennis key the SAME way clutch-apitennis-supplement.js does: prefer
+// process.env.API_TENNIS_KEY, else the first apitennis line in the project .env.
+function loadApiKey() {
+  if (process.env.API_TENNIS_KEY) return process.env.API_TENNIS_KEY.trim();
+  for (const p of [path.join(process.env.HOME || '', 'bsp-consult-project', '.env'), path.join(__dirname, '.env')]) {
+    if (!fs.existsSync(p)) continue;
+    const line = fs.readFileSync(p, 'utf8').split(/\r?\n/).find(l => /apitennis|api_tennis/i.test(l) && l.includes('='));
+    if (line) return line.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '');
+  }
+  throw new Error('api-tennis key not found (set API_TENNIS_KEY or add an apitennis line to bsp-consult-project/.env)');
+}
 // Challenger-derived numbers are systematically inflated vs tour level (breaks come
 // easier, holds come easier, pressure points convert more often against weaker fields),
 // so every Challenger-sourced SUCCESS numerator we fold in — for serve, return AND
@@ -104,18 +115,6 @@ async function getCsv(year) {
   const text = await res.text();
   if (!text || text.length < 50) return null;
   if (!fs.existsSync(CACHE)) fs.mkdirSync(CACHE, { recursive: true });
-  fs.writeFileSync(file, text);
-  return text;
-}
-
-async function getChallCsv(year) {
-  const file = path.join(CHALL_CACHE, `qual_chall_${year}.csv`);
-  if (fs.existsSync(file) && fs.statSync(file).size > 0) return fs.readFileSync(file, 'utf8');
-  const res = await fetch(`${CHALL_BASE}atp_matches_qual_chall_${year}.csv`, { headers: { 'User-Agent': 'bsp-consult' } });
-  if (!res.ok) return null;
-  const text = await res.text();
-  if (!text || text.length < 50) return null;
-  if (!fs.existsSync(CHALL_CACHE)) fs.mkdirSync(CHALL_CACHE, { recursive: true });
   fs.writeFileSync(file, text);
   return text;
 }
@@ -378,70 +377,78 @@ function pctOf(sortedArr, v) {
   }
   console.log(`Scanned ${scanned} surface matches → ${byId.size} distinct players.`);
 
-  // ---- Challenger/qualifying scan → parallel challById store.
-  // Same Sackmann schema, so serve, return AND under-pressure inputs are all captured.
-  // They are folded in ONLY for players who are thin at tour level, and every success
-  // numerator is discounted by CHALL_DISCOUNT at rating time (see computeRatings).
+  // ---- Challenger fold-in → parallel challById store, LIVE from api-tennis event 281.
+  // Source replaces the retired static Sackmann mirror. We resolve each pool player's
+  // api-tennis player_key from the ATP get_standings list (same token normalisation used
+  // to match TML ids), fetch that player's Challenger fixtures (event 281), and build
+  // contributions in the identical addContribution shape. They are folded in ONLY for
+  // players thin at tour level, and every success numerator is discounted by
+  // CHALL_DISCOUNT at rating time (see computeRatings). Players outside the ATP ranking
+  // list simply get no fold-in — same as a tour player with no Challenger match.
   const challById = new Map();     // id -> { name, latest, contribs:[] }
-  let challScanned = 0;
-  for (let y = CHALL_FROM_YEAR; y <= CHALL_TO_YEAR; y++) {
-    const text = await getChallCsv(y);
-    if (!text) { console.log(`  chall ${y}: missing`); continue; }
-    const lines = text.split(/\r?\n/).filter(l => l.length);
-    const H = lines[0].split(','); const ix = {}; H.forEach((h, i) => { ix[h] = i; });
-    for (let i = 1; i < lines.length; i++) {
-      const c = lines[i].split(',');
-      const wId = c[ix.winner_id], lId = c[ix.loser_id];
-      if (!wId || !lId) continue;
-      const surface = (c[ix.surface] || '').trim();
-      if (!SURFACES.includes(surface)) continue;
-      const date = ymdToMs(c[ix.tourney_date]);
-      const bestOf = parseInt(c[ix.best_of], 10) || null;
-      const ps = parseScore(c[ix.score], bestOf);
-      challScanned++;
-      // Challenger CSVs carry the SAME serve/return columns as tour (Sackmann schema).
-      // We now capture serve AND return AND under-pressure inputs (previously only the
-      // pressure fields were kept). They are folded into the ratings only for thin players,
-      // and the success side is discounted by CHALL_DISCOUNT inside computeRatings.
-      const W = {
-        svpt: n(c[ix.w_svpt]), firstIn: n(c[ix.w_1stIn]), firstWon: n(c[ix.w_1stWon]),
-        secondWon: n(c[ix.w_2ndWon]), svGms: n(c[ix.w_SvGms]), ace: n(c[ix.w_ace]), df: n(c[ix.w_df]),
-        bpFaced: n(c[ix.w_bpFaced]), bpSaved: n(c[ix.w_bpSaved]),
-      };
-      const L = {
-        svpt: n(c[ix.l_svpt]), firstIn: n(c[ix.l_1stIn]), firstWon: n(c[ix.l_1stWon]),
-        secondWon: n(c[ix.l_2ndWon]), svGms: n(c[ix.l_SvGms]), ace: n(c[ix.l_ace]), df: n(c[ix.l_df]),
-        bpFaced: n(c[ix.l_bpFaced]), bpSaved: n(c[ix.l_bpSaved]),
-      };
-      // winner contribution (opponent = loser)
-      const wc = {
-        date, surface,
-        svpt: W.svpt || 0, firstIn: W.firstIn || 0, firstWon: W.firstWon || 0, secondWon: W.secondWon || 0,
-        svGms: W.svGms || 0, ace: W.ace || 0, df: W.df || 0,
-        bpFaced: W.bpFaced, bpSaved: W.bpFaced != null ? (W.bpSaved || 0) : null,
-        oSvpt: L.svpt || 0, oFirstIn: L.firstIn || 0, oFirstWon: L.firstWon || 0, oSecondWon: L.secondWon || 0, oSvGms: L.svGms || 0,
-        oBpFaced: L.bpFaced, oBpSaved: L.bpFaced != null ? (L.bpSaved || 0) : null,
-        tbPlayed: ps.tbPlayed, tbWon: ps.tbWonByWinner,
-        decPlayed: ps.decPlayed, decWon: ps.decWonByWinner,
-      };
-      // loser contribution (opponent = winner)
-      const lc = {
-        date, surface,
-        svpt: L.svpt || 0, firstIn: L.firstIn || 0, firstWon: L.firstWon || 0, secondWon: L.secondWon || 0,
-        svGms: L.svGms || 0, ace: L.ace || 0, df: L.df || 0,
-        bpFaced: L.bpFaced, bpSaved: L.bpFaced != null ? (L.bpSaved || 0) : null,
-        oSvpt: W.svpt || 0, oFirstIn: W.firstIn || 0, oFirstWon: W.firstWon || 0, oSecondWon: W.secondWon || 0, oSvGms: W.svGms || 0,
-        oBpFaced: W.bpFaced, oBpSaved: W.bpFaced != null ? (W.bpSaved || 0) : null,
-        tbPlayed: ps.tbPlayed, tbWon: ps.tbPlayed - ps.tbWonByWinner,
-        decPlayed: ps.decPlayed, decWon: ps.decPlayed - ps.decWonByWinner,
-      };
-      let aw = challById.get(wId); if (!aw) { aw = { name: c[ix.winner_name], latest: 0, contribs: [] }; challById.set(wId, aw); }
-      let al = challById.get(lId); if (!al) { al = { name: c[ix.loser_name], latest: 0, contribs: [] }; challById.set(lId, al); }
-      aw.contribs.push(wc); if (date && date > aw.latest) aw.latest = date;
-      al.contribs.push(lc); if (date && date > al.latest) al.latest = date;
-    }
+  const apiKey = loadApiKey();
+
+  // 1) ATP standings → name→player_key index, keyed the SAME way as the TML/Sackmann join.
+  let standings = [];
+  {
+    const url = `https://api.api-tennis.com/tennis/?method=get_standings&APIkey=${apiKey}&event_type=ATP`;
+    const sres = await fetch(url);
+    const sjson = sres.ok ? await sres.json() : null;
+    standings = sjson && sjson.success && Array.isArray(sjson.result) ? sjson.result : [];
   }
-  console.log(`Scanned ${challScanned} Challenger/qual surface matches → ${challById.size} distinct players.`);
+  console.log(`Standings: ${standings.length} ATP ranking entries.`);
+  const standIndex = new Map();   // `fi|lastToken` -> [{ playerKey, tokens, surname }]
+  for (const s of standings) {
+    if (!s || s.player_key == null) continue;
+    const t = normTokens(s.player); if (!t.length) continue;
+    const sur = profileSurname(t);
+    const key = t[0][0] + '|' + sur[sur.length - 1];
+    if (!standIndex.has(key)) standIndex.set(key, []);
+    standIndex.get(key).push({ playerKey: s.player_key, tokens: t, surname: sur });
+  }
+
+  // 2) Resolve each pool player → api-tennis player_key (surname-suffix aligned).
+  const candidates = [];
+  const candSeen = new Set();
+  let resolved = 0, unresolved = 0;
+  for (const meta of pool) {
+    const bucket = standIndex.get(meta.fi + '|' + meta.lastTok);
+    const hits = bucket ? bucket.filter(e => endsWithTokens(e.tokens, meta.surname)) : [];
+    if (!hits.length) { unresolved++; continue; }
+    // prefer an exact full-token match, else the first surname-suffix match
+    const exact = hits.find(e => e.tokens.length === (meta.surname.length + 1) &&
+      endsWithTokens(e.tokens, meta.surname) && e.tokens[0][0] === meta.fi);
+    const pick = exact || hits[0];
+    resolved++;
+    if (candSeen.has(pick.playerKey)) continue;   // another pool player already claimed this key
+    candSeen.add(pick.playerKey);
+    candidates.push({ playerKey: pick.playerKey, name: meta.name });
+  }
+  console.log(`Key resolution: ${resolved}/${pool.length} pool players resolved to an ATP player_key (${unresolved} unresolved), ${candidates.length} unique keys to fetch.`);
+
+  // 3) surfaceMap: api-tennis tournament_key (numeric string) -> 'clay'|'hard'|'grass'.
+  const surfaceMap = new Map();
+  try {
+    const tsurf = require('./tournament-surfaces.json').surfaces || {};
+    for (const k in tsurf) { const v = tsurf[k]; if (v === 'clay' || v === 'hard' || v === 'grass') surfaceMap.set(String(k), v); }
+  } catch (e) { console.log('  tournament-surfaces.json missing — Challenger fixtures fold into All-scope only.'); }
+  console.log(`Surface map: ${surfaceMap.size} tournament_key→surface entries.`);
+
+  // 4) Fetch Challenger contributions and populate challById (keyed by api:<player_key>).
+  const dateStop = new Date().toISOString().slice(0, 10);
+  const challContribs = await fetchChallengerContribs(candidates, {
+    apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap, concurrency: 8, log: console.log,
+  });
+  let challScanned = 0, surfResolvedC = 0;
+  for (const { playerKey, name, contribs } of challContribs) {
+    if (!contribs || !contribs.length) continue;
+    let latest = 0;
+    for (const c of contribs) { if (c.date && c.date > latest) latest = c.date; if (c.surface) surfResolvedC++; }
+    challScanned += contribs.length;
+    challById.set('api:' + playerKey, { name, latest, contribs });
+  }
+  const surfPct = challScanned ? (surfResolvedC / challScanned * 100).toFixed(1) : '0.0';
+  console.log(`Scanned ${challScanned} Challenger (event 281) surface matches → ${challById.size} distinct players (${surfResolvedC}/${challScanned} = ${surfPct}% surface-resolved).`);
 
   // ---- index TML ids by (first-initial | last-surname-token) for candidate pruning
   const tmlIndex = new Map();   // `fi|lastToken` -> [ids]
@@ -513,10 +520,13 @@ function pctOf(sortedArr, v) {
     // thin Under-Pressure components inside computeRatings).
     if (ac) {
       for (const c of ac.contribs) {
-        addContribution(chall.career[c.surface], c);
+        // api-tennis contribs may carry surface:null (tournament_key not in the surface
+        // map) — those fold into the All scope only, exactly like a surfaceless match.
+        const hasSurf = SURFACES.includes(c.surface);
+        if (hasSurf) addContribution(chall.career[c.surface], c);
         addContribution(chall.career.All, c);
         if (cutoffAll != null && c.date != null && c.date >= cutoffAll) {
-          addContribution(chall.last52[c.surface], c);
+          if (hasSurf) addContribution(chall.last52[c.surface], c);
           addContribution(chall.last52.All, c);
         }
       }
@@ -581,7 +591,7 @@ function pctOf(sortedArr, v) {
   rows.sort((a, b) => a.rank - b.rank);
   const out = {
     generatedAt: new Date().toISOString(),
-    source: 'Self-derived from Jeff Sackmann tennis_atp schema — tour-level (Tennismylife/TML-Database) with Challenger/qualifying fallback (Milos191405/Tennis-ATP, ' + CHALL_FROM_YEAR + '-' + CHALL_TO_YEAR + ') folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x' + CHALL_DISCOUNT + ' — no ATP/Infosys data',
+    source: 'Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database), with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x' + CHALL_DISCOUNT + ' — no ATP/Infosys data',
     scopes: { career: `${FROM_YEAR}-${TO_YEAR} all qualifying matches`, last52: `matches within ${LAST52_DAYS} days of each player's most recent match` },
     surfaces: [...SURFACES, 'All'],
     method: {
