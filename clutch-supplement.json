@@ -1,0 +1,321 @@
+{
+  "generatedAt": "2026-08-07T03:12:34.391Z",
+  "source": "api-tennis per-match statistics (Tour + Challenger) — provisional under-pressure for players below TML tour floors",
+  "method": "Same four ATP Under-Pressure components as clutch-rating.js; clutchIndex = mean percentile vs the existing clutch-rating.json pool.",
+  "floors": {
+    "minBpFaced": 50,
+    "minBpChances": 50,
+    "minTiebreaks": 10,
+    "minDecidingSets": 8
+  },
+  "players": [
+    {
+      "name": "T. Droguet",
+      "fullName": "Titouan Droguet",
+      "playerKey": 8926,
+      "clutchIndex": 80.5,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 61.6,
+      "bpConvPct": 40.7,
+      "tbWinPct": 64.3,
+      "decWinPct": 60.3,
+      "sample": {
+        "matches": 159,
+        "bpFaced": 874,
+        "bpChances": 1005,
+        "tbPlayed": 70,
+        "decPlayed": 68
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "D. Merida Aguilar",
+      "fullName": "Daniel Merida Aguilar",
+      "playerKey": 978,
+      "clutchIndex": 52.9,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 57.8,
+      "bpConvPct": 44.7,
+      "tbWinPct": 40,
+      "decWinPct": 58.8,
+      "sample": {
+        "matches": 142,
+        "bpFaced": 906,
+        "bpChances": 1025,
+        "tbPlayed": 35,
+        "decPlayed": 51
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "T. Agustin Tirante",
+      "fullName": "Thiago Agustin Tirante",
+      "playerKey": 366,
+      "clutchIndex": 60.2,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 59.2,
+      "bpConvPct": 41.4,
+      "tbWinPct": 55.4,
+      "decWinPct": 51.8,
+      "sample": {
+        "matches": 170,
+        "bpFaced": 851,
+        "bpChances": 1045,
+        "tbPlayed": 65,
+        "decPlayed": 56
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "T. Martin Etcheverry",
+      "fullName": "Tomas Martin Etcheverry",
+      "playerKey": 1777,
+      "clutchIndex": 50.6,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 63.5,
+      "bpConvPct": 36.2,
+      "tbWinPct": 51.8,
+      "decWinPct": 50,
+      "sample": {
+        "matches": 150,
+        "bpFaced": 912,
+        "bpChances": 953,
+        "tbPlayed": 83,
+        "decPlayed": 62
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "I. Buse",
+      "fullName": "Ignacio Buse",
+      "playerKey": 9514,
+      "clutchIndex": 70.7,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 59.6,
+      "bpConvPct": 42.8,
+      "tbWinPct": 57.4,
+      "decWinPct": 55.9,
+      "sample": {
+        "matches": 160,
+        "bpFaced": 1038,
+        "bpChances": 1178,
+        "tbPlayed": 54,
+        "decPlayed": 68
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "R. Jodar",
+      "fullName": "Rafael Jodar",
+      "playerKey": 50323,
+      "clutchIndex": 67.7,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 60.2,
+      "bpConvPct": 44,
+      "tbWinPct": 46.2,
+      "decWinPct": 77.8,
+      "sample": {
+        "matches": 106,
+        "bpFaced": 550,
+        "bpChances": 738,
+        "tbPlayed": 26,
+        "decPlayed": 36
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "J. Manuel Cerundolo",
+      "fullName": "Juan Manuel Cerundolo",
+      "playerKey": 388,
+      "clutchIndex": 70,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 57.6,
+      "bpConvPct": 45.1,
+      "tbWinPct": 53.6,
+      "decWinPct": 65.6,
+      "sample": {
+        "matches": 177,
+        "bpFaced": 1054,
+        "bpChances": 1226,
+        "tbPlayed": 56,
+        "decPlayed": 61
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "J. Faria",
+      "fullName": "Jaime Faria",
+      "playerKey": 824,
+      "clutchIndex": 50.9,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 59.2,
+      "bpConvPct": 38.2,
+      "tbWinPct": 49.3,
+      "decWinPct": 59.7,
+      "sample": {
+        "matches": 162,
+        "bpFaced": 957,
+        "bpChances": 1093,
+        "tbPlayed": 71,
+        "decPlayed": 67
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "A. Blockx",
+      "fullName": "Alexander Blockx",
+      "playerKey": 39913,
+      "clutchIndex": 71.8,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 63.2,
+      "bpConvPct": 40,
+      "tbWinPct": 50,
+      "decWinPct": 68,
+      "sample": {
+        "matches": 150,
+        "bpFaced": 786,
+        "bpChances": 917,
+        "tbPlayed": 52,
+        "decPlayed": 50
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "P. Carreno Busta",
+      "fullName": "Pablo Carreno Busta",
+      "playerKey": 434,
+      "clutchIndex": 59,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 59.1,
+      "bpConvPct": 40.3,
+      "tbWinPct": 59.6,
+      "decWinPct": 50,
+      "sample": {
+        "matches": 127,
+        "bpFaced": 768,
+        "bpChances": 888,
+        "tbPlayed": 47,
+        "decPlayed": 56
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "L. Draxl",
+      "fullName": "Liam Draxl",
+      "playerKey": 3696,
+      "clutchIndex": 74.6,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 60.7,
+      "bpConvPct": 44.7,
+      "tbWinPct": 52.7,
+      "decWinPct": 62.3,
+      "sample": {
+        "matches": 160,
+        "bpFaced": 964,
+        "bpChances": 1088,
+        "tbPlayed": 55,
+        "decPlayed": 61
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "R. Andres Burruchaga",
+      "fullName": "Roman Andres Burruchaga",
+      "playerKey": 9596,
+      "clutchIndex": 59.5,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 56.5,
+      "bpConvPct": 46.9,
+      "tbWinPct": 53.7,
+      "decWinPct": 53.8,
+      "sample": {
+        "matches": 181,
+        "bpFaced": 1192,
+        "bpChances": 1341,
+        "tbPlayed": 54,
+        "decPlayed": 80
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "M. Zheng",
+      "fullName": "Michael Zheng",
+      "playerKey": 9515,
+      "clutchIndex": 57.9,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 64.6,
+      "bpConvPct": 44.5,
+      "tbWinPct": 37.5,
+      "decWinPct": 45.5,
+      "sample": {
+        "matches": 72,
+        "bpFaced": 418,
+        "bpChances": 557,
+        "tbPlayed": 24,
+        "decPlayed": 22
+      },
+      "alreadyInPool": false
+    },
+    {
+      "name": "M. Damm",
+      "fullName": "Martin Damm",
+      "playerKey": 1317,
+      "clutchIndex": 49.8,
+      "atpStyleRating": null,
+      "confidence": "med",
+      "provisional": true,
+      "source": "api-tennis",
+      "bpSavedPct": 66.1,
+      "bpConvPct": 34.6,
+      "tbWinPct": 55.2,
+      "decWinPct": 35.1,
+      "sample": {
+        "matches": 103,
+        "bpFaced": 440,
+        "bpChances": 535,
+        "tbPlayed": 67,
+        "decPlayed": 37
+      },
+      "alreadyInPool": false
+    }
+  ]
+}
