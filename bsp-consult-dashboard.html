@@ -17121,12 +17121,18 @@ function tourxRoundFilterBarHtml(T){
 // Shared bar-chart grid for the round view. `entries` = [{name,last,values{key:num}}],
 // each metric card ranks highest-value-first (incl. unforced errors) and draws a
 // dashed average line across the shown players.
-function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
+function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey, avgLabel){
+  avgLabel = avgLabel || 'Round avg';
   // Stable per-player identity ramp (export authority): each winner steps down the
   // neutral grey ramp by their position in the winners list, so a player's dot is
   // the same colour across all six metric cards regardless of their rank within one.
   const greyOf = {}; entries.forEach((e, i) => { greyOf[e.name] = TOURX_GREYS[i % TOURX_GREYS.length]; });
-  const grid = tourxGridOrder(shownMetrics).map(m => {
+  // Single column in the exact TOURX_METRICS 1-10 order (founder ruling
+  // 2026-08-08): every summary rating sits directly above the components it sums,
+  // and a two-column interleave breaks that top-to-bottom reading. shownMetrics is
+  // a filtered TOURX_METRICS, so it already preserves the canonical order — no
+  // tourxGridOrder() reshuffle here (that stays for Player progression / H2H).
+  const grid = shownMetrics.map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
     const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
@@ -17164,13 +17170,12 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
             <span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;font-weight:500;font-family:'IBM Plex Mono',monospace;">${m.label}</span>
             ${lowerBetter ? `<span style="font-size:10px;letter-spacing:normal;text-transform:none;color:#4b5672;">lower is better</span>` : ''}
           </span>
-          <span style="font-size:10.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">Round avg <b style="color:#cfd6e6;">${hasAvg ? tourxFmt(avg, m.kind) : '—'}</b></span>
+          <span style="font-size:10.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${avgLabel} <b style="color:#cfd6e6;">${hasAvg ? tourxFmt(avg, m.kind) : '—'}</b></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;">${rows || `<div style="font-size:12px;color:#4b5672;padding:4px 0;">—</div>`}</div>
       </div>`;
   }).join('');
-  const cols = shownMetrics.length === 1 ? '1fr' : 'repeat(2,1fr)';
-  return `<div class="tourx-chartgrid" style="display:grid;grid-template-columns:${cols};gap:14px;">${grid}</div>`;
+  return `<div class="tourx-chartgrid" style="display:grid;grid-template-columns:1fr;gap:14px;">${grid}</div>`;
 }
 // Round view. "All rounds" plots the selected player(s) across every round they
 // played (line / head-to-head charts); a specific round shows that round's
@@ -17200,6 +17205,11 @@ function tourxRoundViewHtml(T){
   const hasBox = (p, i) => p.data && p.data[key0] && p.data[key0][i] != null;
   let frontierIdx = -1;
   for (let i = 0; i < rounds.length; i++) if (T.players.some(p => hasBox(p, i))) frontierIdx = i;
+
+  // "Won round i" = a box score there AND either they advanced (box in i+1) or that
+  // round is their latest and they're not eliminated. Shared by the per-round grid
+  // and the All-rounds aggregate so both exclude losers the same way.
+  const wonRound = (p, i) => hasBox(p, i) && (hasBox(p, i + 1) || !p.eliminated);
 
   // Renders the per-round box-score comparison grid for one round. A round whose
   // NEXT round has already been played shows just the winners (players who
@@ -17265,14 +17275,63 @@ function tourxRoundViewHtml(T){
     return barBlock(titleLabel, note, entries, roundAvgByKey);
   };
 
-  // Round comparison is bar-only by design: it ranks each round's winners on
-  // their box-score metrics. For a player's round-by-round TREND (line charts),
-  // use the Player progression view — that's the deliberate split. "All rounds"
-  // here means "the latest played round" (pick any specific round from the chips
-  // above); selected players are filtered into that round's bars by renderRound.
-  if (selIdx == null){
+  // "All rounds" aggregate (founder ruling 2026-08-08). Each player's per-round
+  // figures are AVERAGED across every round they have an ingested box score for —
+  // Shelton's R1+R2+R3 mean, not the frontier round alone. Weighted pooling would
+  // weight a five-setter above a 6-1 6-1, but it needs raw point counts the
+  // progression store doesn't carry (serve %s are stored as percentages, not
+  // counts); over three or four matches the mean/pool gap is small, so the mean is
+  // built from what exists today. Every metric here — including Winners and
+  // Unforced Errors, which are per-point RATES not raw counts — is a per-match
+  // average of its per-round value; there is no count to total. Floor of 2
+  // matches: a single-match player has no round-to-round trend to average and
+  // belongs on that round's own tab (they still appear there).
+  const renderAllRounds = () => {
     if (frontierIdx < 0) return filterBar + dnaCard(`No box scores have been ingested for ${T.name} yet — check back once the first round has been played.`);
-    return renderRound(frontierIdx);
+    const agg = withData.map(p => {
+      const values = {};
+      TOURX_METRICS.forEach(m => {
+        const vals = (p.data[m.key] || []).filter(v => v != null);
+        values[m.key] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      });
+      return { name: p.name, last: p.name.split(' ').slice(-1)[0], values, matches: p.nRounds };
+    }).filter(e => e.matches >= 2);
+    const nAll = agg.length;
+    // Aggregate field reference line per metric: the mean of the shown-population
+    // aggregate values (the same floor-of-2 field the bars are drawn from), the
+    // aggregate analogue of the per-round fieldAverage dashed line.
+    const aggFieldByKey = {};
+    TOURX_METRICS.forEach(m => {
+      const vals = agg.map(e => e.values[m.key]).filter(v => v != null);
+      aggFieldByKey[m.key] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    });
+    let entries = agg;
+    if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
+    if (!entries.length){
+      return filterBar + dnaCard(nAll
+        ? `None of the selected players have 2+ completed matches at ${T.name}. Clear the player filter or switch to a specific round.`
+        : `No player at ${T.name} has 2+ ingested box scores yet — the all-rounds average needs at least two matches per player. Pick a specific round instead.`);
+    }
+    // Match-count chips (founder ruling): per-player match count in the aggregate
+    // view, one chip per shown player, colour-matched to their bar dot. Rendered
+    // once above the grid rather than repeated in all ten metric cards.
+    const greyOf = {}; entries.forEach((e, i) => { greyOf[e.name] = TOURX_GREYS[i % TOURX_GREYS.length]; });
+    const rosterChips = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+        <span style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">Matches</span>
+        ${entries.slice().sort((a, b) => b.matches - a.matches).map(e => `<span style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:#c3ccdb;"><span style="width:6px;height:6px;border-radius:50%;background:${greyOf[e.name]};flex:none;"></span>${e.last} <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5b6880;">${e.matches}</span></span>`).join('')}
+      </div>`;
+    const baseNote = `Each player's per-match average across every round they've played. ${nAll} player${nAll === 1 ? '' : 's'} with 2+ matches shown — single-match players appear on their round's own tab.`;
+    const note = selNames.length ? `Filtered to ${entries.length} of ${nAll} — ${baseNote}` : baseNote;
+    return filterBar + `<div style="margin-top:26px;">${header('All rounds · players ranked by metric')}<div style="font-size:12.5px;color:#4b5672;margin-bottom:16px;">${note}</div>${rosterChips}${tourxRoundChartsHtml(entries, shownMetrics, aggFieldByKey, 'Field avg')}</div>`;
+  };
+
+  // Round comparison is bar-only by design: it ranks players on their box-score
+  // metrics. For a player's round-by-round TREND (line charts), use the Player
+  // progression view — that's the deliberate split. "All rounds" now aggregates
+  // each player's per-match average across every round they've played (ranked
+  // bars), rather than collapsing to the latest round.
+  if (selIdx == null){
+    return renderAllRounds();
   }
 
   // Clamp to the display ladder (NOT the ingested-round count): a selected round
