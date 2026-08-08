@@ -9410,19 +9410,19 @@ const RETURN_RATING_LABEL = 'Return Rating';
 // MOVE here from the old "Points" group (not duplicated).
 const MSHEET_ORDER = [
   ['service', 'Service', [
+    ['@serveRating', SERVE_RATING_LABEL, 'rating'],
     ['Service:Aces', 'Aces', 'count'],
     ['Service:Double Faults', 'Double Faults', 'count'],
     ['Service:1st serve percentage', '1st Serve %', 'pct'],
     ['Service:1st serve points won', '1st Serve Points Won', 'pct'],
     ['Service:2nd serve points won', '2nd Serve Points Won', 'pct'],
     ['Service:Break Points Saved', 'Break Points Saved', 'pct'],
-    ['@serveRating', SERVE_RATING_LABEL, 'rating'],
   ]],
   ['return', 'Return', [
+    ['@returnRating', RETURN_RATING_LABEL, 'rating'],
     ['Return:1st return points won', '1st Return Points Won', 'pct'],
     ['Return:2nd return points won', '2nd Return Points Won', 'pct'],
     ['Return:Break Points Converted', 'Break Points Converted', 'pct'],
-    ['@returnRating', RETURN_RATING_LABEL, 'rating'],
   ]],
   ['pointswon', 'Points Won', [
     ['Points:Winners', 'Winners', 'count'],
@@ -9504,7 +9504,7 @@ function msheetDrHeadHtml(d){
   return `
     <div class="ms-dr">
       <div class="ms-dr-val p1">${fmt(d.drP1)}</div>
-      <div class="ms-dr-mid"><span class="ms-dr-title">Dominance Ratio</span><span class="ms-dr-sub">return points won ratio</span></div>
+      <div class="ms-dr-mid"><span class="ms-dr-title">Dominance Ratio</span></div>
       <div class="ms-dr-val p2">${fmt(d.drP2)}</div>
     </div>`;
 }
