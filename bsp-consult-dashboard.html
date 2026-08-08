@@ -227,6 +227,18 @@
   [data-page="matches"] .mx-daytabs button.mx-daypill[data-day="all"]{ margin-left:10px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill:hover{ color:var(--mx-text-primary); border-color:var(--mx-text-tertiary); }
   [data-page="matches"] .mx-daytabs button.mx-daypill.active{ background:rgba(62,123,250,0.12); border-color:var(--mx-brand-blue); color:#fff; font-weight:600; }
+  /* TEN-8: current tournament day marked with a persistent dot (distinct from the
+     active/selected underline, which moves as the user taps other days). */
+  [data-page="matches"] .mx-daytabs button.is-today .dtop{ position:relative; }
+  [data-page="matches"] .mx-daytabs button.is-today .dtop::before{ content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--mc-brand); margin-right:5px; vertical-align:middle; position:relative; top:-1px; }
+  /* TEN-8: in-list day divider — a lightweight full-width rule inserted only where the
+     member's local calendar date rolls over mid-session. Muted, one row, minimal weight. */
+  [data-page="matches"] .mx-daydivider{ display:flex; align-items:center; gap:10px; margin:8px 2px 4px; color:var(--mx-text-faint); font-size:11px; font-family:var(--mx-font-mono); text-transform:uppercase; letter-spacing:.04em; }
+  [data-page="matches"] .mx-daydivider::before, [data-page="matches"] .mx-daydivider::after{ content:''; flex:1; height:1px; background:var(--mx-hairline); }
+  /* TEN-8: member timezone shown once under the live status line. */
+  [data-page="matches"] .mx-tzline{ margin:2px 0 0; font-size:11px; color:var(--mx-text-faint); font-family:var(--mx-font-ui); }
+  /* TEN-8: relative countdown beside the absolute time on imminent upcoming fixtures. */
+  [data-page="matches"] .mc-rel{ color:var(--mx-text-faint); font-weight:400; }
 
   [data-page="matches"] .mx-filterbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 0; }
   [data-page="matches"] .mx-pilltoggle{ display:flex; background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:999px; padding:3px; gap:2px; }
@@ -2206,6 +2218,7 @@
       <h1 class="mx-h1">Today's Matches</h1>
       <p class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</p>
       <p class="mx-datastatus" id="dataStatus"><span class="dot"></span>Loading…</p>
+      <p class="mx-tzline" id="tzLine"></p>
     </div>
     <!-- Upcoming / Completed segmented control (export item 5) — client-side view
          filter over already-bound matches; no data-layer change. -->
@@ -2225,11 +2238,11 @@
       <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
-          <button data-day="daymin2" id="daymin2Tab"><span id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
-          <button data-day="yesterday">Yesterday<span class="dbottom" id="yesterdayBottom"></span></button>
-          <button class="active" data-day="today">Today<span class="dbottom" id="todayBottom"></span></button>
-          <button data-day="tomorrow">Tomorrow<span class="dbottom" id="tomorrowBottom"></span></button>
-          <button data-day="day2" id="day2Tab"><span id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
+          <button data-day="daymin2" id="daymin2Tab"><span class="dtop" id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
+          <button data-day="yesterday"><span class="dtop" id="yesterdayTop"></span><span class="dbottom" id="yesterdayBottom"></span></button>
+          <button class="active is-today" data-day="today"><span class="dtop" id="todayTop"></span><span class="dbottom" id="todayBottom"></span></button>
+          <button data-day="tomorrow"><span class="dtop" id="tomorrowTop"></span><span class="dbottom" id="tomorrowBottom"></span></button>
+          <button data-day="day2" id="day2Tab"><span class="dtop" id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
         </div>
       </div>
       <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">›</button>
@@ -3557,6 +3570,53 @@ function cardFmtStart(m, withDate){
     : { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() };
   try { return new Date(ms).toLocaleString('en-GB', opts); }
   catch (e){ delete opts.timeZone; return new Date(ms).toLocaleString('en-GB', opts); }
+}
+
+// TEN-8: the member's LOCAL calendar day of a real start instant, both as an
+// ISO key (YYYY-MM-DD) used to detect a mid-session date rollover in the match
+// list, and as a short label ("Sun 9 Aug") for the divider that marks it. Both
+// are bound to the member's resolved timezone — the same tz the card times use —
+// so the divider names the local day the following fixtures fall on. The
+// tournament-day grouping above is untouched; this is a display-only rollover cue.
+function localDayKey(ms){
+  if (!isFinite(ms)) return '';
+  try { return new Date(ms).toLocaleDateString('en-CA', { year:'numeric', month:'2-digit', day:'2-digit', timeZone:newsTz() }); }
+  catch (e){ return new Date(ms).toLocaleDateString('en-CA', { year:'numeric', month:'2-digit', day:'2-digit' }); }
+}
+function localDayLabel(ms){
+  if (!isFinite(ms)) return '';
+  try { return new Date(ms).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', timeZone:newsTz() }); }
+  catch (e){ return new Date(ms).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }); }
+}
+// TEN-8: relative countdown for an imminent, not-yet-started fixture ("· in 15h").
+// Shown only inside a short forward window — it answers "how soon" for the cards a
+// member cares most about and sidesteps the cross-midnight day question entirely.
+// Empty once the start instant has passed (a match in progress is carried by live
+// state, never a fabricated countdown), and empty when there is no usable instant.
+function relStartHtml(m){
+  const ms = cardStartMs(m);
+  if (!isFinite(ms)) return '';
+  const delta = ms - Date.now();
+  const H = 3600000;
+  if (delta <= 0 || delta > 18 * H) return '';
+  const txt = delta < H ? `in ${Math.max(1, Math.round(delta / 60000))}m` : `in ${Math.round(delta / H)}h`;
+  return ` <span class="mc-rel">· ${txt}</span>`;
+}
+// TEN-8: "Times in Asia/Makassar (GMT+8)" — the member's resolved timezone shown
+// once in the header so the relationship between the tournament-day rail and the
+// local times on the cards is visible without opening Settings. Falls back to the
+// device timezone when no manual override is set.
+function memberTzLabel(){
+  let tz;
+  try { tz = newsTz() || Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e){ tz = newsTz(); }
+  if (!tz) return '';
+  let off = '';
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName:'shortOffset' }).formatToParts(new Date());
+    const p = parts.find(x => x.type === 'timeZoneName');
+    if (p && p.value) off = ` (${p.value})`;
+  } catch (e){}
+  return `Times in ${tz}${off}`;
 }
 
 // Feed freshness (TEN-8, 2026-08-02). The header used to tick a live wall clock
@@ -4950,13 +5010,23 @@ const day2Date = new Date(Date.now() + 2 * 86400000);
 const daymin2Label = formatShortDate(daymin2Date);
 const day2Label = formatShortDate(day2Date);
 function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' }); }
-document.getElementById('daymin2Top').textContent = daymin2Label;
-document.getElementById('daymin2Bottom').textContent = weekday(daymin2Date);
-document.getElementById('day2Top').textContent = day2Label;
-document.getElementById('day2Bottom').textContent = weekday(day2Date);
-document.getElementById('yesterdayBottom').textContent = weekday(new Date(Date.now() - 86400000));
-document.getElementById('todayBottom').textContent = weekday(new Date());
-document.getElementById('tomorrowBottom').textContent = weekday(new Date(Date.now() + 86400000));
+// TEN-8: the date rail shows real tournament-day dates as the PRIMARY label
+// ("Thu 6") across all five tabs; the relative word is demoted to a small
+// secondary line on the ±1 days only, and the current tournament day is marked
+// with a persistent dot (button.is-today) rather than the word "Today". These are
+// the same day boundaries matchDayBucket() uses, so a tab's date always names the
+// tournament day whose fixtures it admits — the grouping itself is unchanged.
+const railDate = d => `${weekday(d)} ${d.getDate()}`;
+document.getElementById('daymin2Top').textContent   = railDate(daymin2Date);
+document.getElementById('yesterdayTop').textContent = railDate(new Date(Date.now() - 86400000));
+document.getElementById('todayTop').textContent     = railDate(new Date());
+document.getElementById('tomorrowTop').textContent  = railDate(new Date(Date.now() + 86400000));
+document.getElementById('day2Top').textContent      = railDate(day2Date);
+document.getElementById('daymin2Bottom').textContent   = '';
+document.getElementById('yesterdayBottom').textContent = 'Yesterday';
+document.getElementById('todayBottom').textContent     = 'Today';
+document.getElementById('tomorrowBottom').textContent  = 'Tomorrow';
+document.getElementById('day2Bottom').textContent      = '';
 
 // The pipeline bakes a day-bucket label (m.day) into matches.json at the
 // moment it runs — that label goes stale as soon as real time moves past
@@ -5317,6 +5387,9 @@ function updateMatchesHeaderChrome(){
   const h1  = document.querySelector('[data-page="matches"] .mx-h1');
   const sub = document.querySelector('[data-page="matches"] .mx-subtitle');
   const ds  = document.getElementById('dataStatus');
+  // TEN-8: member timezone, shown once beneath the status line (empty if unresolvable).
+  const tzEl = document.getElementById('tzLine');
+  if (tzEl) tzEl.textContent = memberTzLabel();
   // §12 — sort options depend on the view. Completed offers result-oriented keys
   // (Time · Biggest upset · Largest drift · Closing value); Upcoming keeps its
   // existing keys. If the active sort isn't valid for the view, fall back to 'time'.
@@ -5360,7 +5433,26 @@ function renderMatches(){
     list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
     return;
   }
+  // TEN-8: day dividers only make sense when the list is a single tournament day
+  // sorted chronologically. Off for "All days"/"Past" (mixed dates) and any non-time
+  // sort (odds gap, upset, drift, closing) where order isn't chronological.
+  const dividersOn = state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','day2'].includes(state.day);
+  let prevLocalDay = null;
   const cards = filtered.map(m => {
+    // TEN-8: insert a divider before the first card whose member-local calendar day
+    // differs from the previous card's — i.e. a mid-session rollover past local
+    // midnight. Never before the first card; only when a rollover actually occurs.
+    let dividerHtml = '';
+    if (dividersOn){
+      const dms = cardStartMs(m);
+      if (isFinite(dms)){
+        const dkey = localDayKey(dms);
+        if (prevLocalDay !== null && dkey !== prevLocalDay){
+          dividerHtml = `<div class="mx-daydivider"><span>${localDayLabel(dms)}</span></div>`;
+        }
+        prevLocalDay = dkey;
+      }
+    }
     // "Favori" is honestly derived from real market odds (lower odds = favorite) —
     // not a fabricated stat. Only shown when odds actually exist for this match.
     const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
@@ -5473,7 +5565,7 @@ function renderMatches(){
       ? `<span class="mc-altdate-inl">${startWithDate}</span>`
       : liveOrInt
         ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${cardFmtStart(m, false)}</span>`
-        : `<span class="mc-datetime">${startWithDate}</span>`;
+        : `<span class="mc-datetime">${startWithDate}${relStartHtml(m)}</span>`;
     // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
     // header row itself, right-aligned above their columns. Completed cards have no such
     // columns (set-score cluster + odds journey instead), so they omit the labels.
@@ -5518,6 +5610,7 @@ function renderMatches(){
           </div>
         </div>`;
     return `
+    ${dividerHtml}
     <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
