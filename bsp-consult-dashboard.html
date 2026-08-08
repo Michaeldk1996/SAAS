@@ -320,6 +320,13 @@
   [data-page="matches"] .mc-scoreline{ margin-top:10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
   [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
+  /* TEN-8 "Underway" — display-only state marker for a match whose start instant
+     has passed but which the feed has no final score for (see cardStartMs check in
+     renderMatches). Deliberately NOT a live indicator: neutral muted colour, no
+     warn/red, no dot, no animation — it reads as a state, not an event, and sits in
+     the same .mc-scoreline slot a live score will later occupy. */
+  [data-page="matches"] .mc-scoreline.underway{ align-items:center; }
+  [data-page="matches"] .mc-underway{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; }
 
   /* column headers — inline on the card header row, right-aligned above the two data columns */
   [data-page="matches"] .mc-colhead-inline{ margin-left:auto; margin-right:10px; display:grid; grid-template-columns:130px 120px; gap:12px; }
@@ -5515,6 +5522,16 @@ function renderMatches(){
       scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (isPastDay && !finalScore) {
       scoreLineHtml = `<div class="mc-scoreline">Score pending<span class="note">not yet returned by the data provider</span></div>`;
+    } else if (!finalScore && isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m)) {
+      // TEN-8 "Underway": derived purely from the client clock — the start instant
+      // has passed and the feed carries no final score yet. Independent of m.live,
+      // so it's true even before (or without) the feed's in-play flag, which at our
+      // ~hourly refresh cadence can lag badly. It makes NO score/clock/set claim; it
+      // only asserts "this has started", which is why a member can't bet it. When the
+      // live poller lands, formatLiveScore replaces this in the very same slot.
+      // Guarded on a reliable start instant (cardStartMs finite) — a match with no
+      // usable start time gets nothing here, never a guess.
+      scoreLineHtml = `<div class="mc-scoreline underway"><span class="mc-underway">Underway</span></div>`;
     }
     const p1IsWinner = finalScore && finalScore.winner === 'p1';
     const p2IsWinner = finalScore && finalScore.winner === 'p2';
