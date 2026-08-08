@@ -424,6 +424,14 @@
   [data-page="matches"] .mc-story__upprice{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-text); flex:none; }
   [data-page="matches"] .mc-story__vp{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); }
   [data-page="matches"] .mc-story__faint{ font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted-2); opacity:0.85; }
+  /* §4 (Batch B) — one-tournament context bar under the filters. Only rendered in
+     Results when exactly one tournament chip is active; hidden otherwise. */
+  [data-page="matches"] .mc-contextbar[hidden]{ display:none; }
+  [data-page="matches"] .mc-contextbar{ margin:12px 24px 0; padding:9px 14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:10px; font-family:var(--mx-font-ui); font-size:12.5px; color:var(--mc-muted); }
+  [data-page="matches"] .mc-contextbar strong{ color:var(--mc-text); font-weight:700; }
+  [data-page="matches"] .mc-contextbar .mc-ctx-sep{ color:var(--mc-muted-2); opacity:0.7; }
+  [data-page="matches"] .mc-ctx-link{ background:none; border:none; padding:0; margin-left:auto; font:inherit; color:var(--mc-player-a); cursor:pointer; white-space:nowrap; }
+  [data-page="matches"] .mc-ctx-link:hover{ text-decoration:underline; }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
@@ -2126,6 +2134,7 @@
      (24px) was never overridden, so it sat 16px left of the H1/date-strip/filter row.
      Match them. */
   [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 40px 0; }
+  [data-page="matches"] .mc-contextbar{ margin:12px 40px 0; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control */
   [data-page="matches"] .mx-titlerow{ align-items:flex-start !important; }
@@ -2326,6 +2335,8 @@
       </div>
     </div>
   </div>
+
+  <div class="mc-contextbar" id="mcContextBar" hidden></div>
 
   <div class="mx-tablewrap">
     <div class="mx-table">
@@ -3453,8 +3464,8 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // from the active sidebar tab now that the Upcoming/Completed toggle is gone.
   const pageId = (tab === 'results') ? 'matches' : tab;
   document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === pageId));
-  if (tab === 'results') { state.view = 'completed'; renderMatches(); }
-  else if (tab === 'matches') { state.view = 'upcoming'; renderMatches(); }
+  if (tab === 'results') { state.view = 'completed'; buildTournamentFilters(); renderMatches(); }
+  else if (tab === 'matches') { state.view = 'upcoming'; buildTournamentFilters(); renderMatches(); }
   // Re-entering the Players tab always lands on the player list, never a
   // stale open profile from a previous visit.
   if (tab === 'players') showPlayerList();
@@ -4950,11 +4961,13 @@ async function loadMatches(){
 function buildTournamentFilters(){
   const group = document.getElementById('tournamentGroup');
   if (!group) return;
-  // Only tournaments still in play get a chip. Once every match for a tournament
-  // is finished it's complete, so its chip is dropped — even though its finished
-  // cards still linger in the match list for 48h (only the filter chip goes).
+  // Matches (upcoming) chips = tournaments still in play; once every match for a
+  // tournament is finished it drops off. Results (completed) chips = tournaments that
+  // HAVE a settled match, so the settled-only view can still be filtered/contextualised
+  // even after the tournament has left the in-play set. (§3 Batch B.)
+  const completed = state.view === 'completed';
   const tournaments = [...new Set(
-    matches.filter(isUpcomingOrLive).map(m => m.tour).filter(Boolean)
+    matches.filter(completed ? isFinishedMatch : isUpcomingOrLive).map(m => m.tour).filter(Boolean)
   )].sort();
   // Drop selections whose tournament has since finished, else a stale name would
   // filter every card away with no chip left to clear it.
@@ -5018,6 +5031,27 @@ function closingScore(m){ // strongest closing favourite first (lowest favourite
   if (c1 == null) return c2; if (c2 == null) return c1;
   return Math.min(c1, c2);
 }
+// Batch B — "Biggest move": largest signed-% open→close move on either side, as a
+// FRACTION of the opening price (same basis as the odds-journey delta and the
+// "Biggest market move" story panel). 0 when a match has no open/close pair.
+function moveScore(m){
+  const o1 = m.openingOdds?.p1, o2 = m.openingOdds?.p2;
+  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
+  const p1 = (o1 != null && c1 != null && o1 > 0) ? Math.abs(c1 / o1 - 1) : 0;
+  const p2 = (o2 != null && c2 != null && o2 > 0) ? Math.abs(c2 / o2 - 1) : 0;
+  return Math.max(p1, p2);
+}
+// Batch B — "Market got it wrong": the closing FAVOURITE lost. Ranked by how strong a
+// favourite the market made them (implied prob at close), so the most confident market
+// miss sits first. Matches where the favourite won, or that lack a result/closing pair,
+// score -1 and sink to the bottom.
+function marketWrongScore(m){
+  const fscore = m.finalScore; if (!fscore) return -1;
+  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
+  if (c1 == null || c2 == null) return -1;
+  const favWho = c1 < c2 ? 'p1' : 'p2';
+  return fscore.winner !== favWho ? (1 / Math.min(c1, c2)) : -1;
+}
 // §9 (PASS 3) — "Largest drift" and "Closing value" both need open→close odds, which
 // are parked until the odds feed lands. They stay disabled (dimmed, with a note) until
 // at least one settled match actually carries an opening AND a closing price; then they
@@ -5033,7 +5067,7 @@ function syncSortDropdown(completed){
   if (!menu || !label) return;
   const oddsLanded = _mcOddsLanded();
   const opts = completed
-    ? [['time','Time',false],['upset','Biggest upset',false],['drift','Largest drift',!oddsLanded],['closing','Closing value',!oddsLanded]]
+    ? [['time','Finish time',false],['move','Biggest move',!oddsLanded],['upset','Biggest upset',false],['marketwrong','Market got it wrong',!oddsLanded]]
     : [['time','Time',false],['oddsgap','Biggest odds gap',false],['surface','Surface',false]];
   // If the active sort isn't valid for this view — or is disabled — fall back to Time.
   if (!opts.some(o => o[0] === state.sort && !o[2])) state.sort = 'time';
@@ -5074,7 +5108,9 @@ function getFiltered(){
       ? 'upcoming' : state.view;
     if (effView === 'completed' && !isFinishedMatch(m)) return false;
     if (effView === 'upcoming' && isFinishedMatch(m)) return false;
-    if (state.surface !== 'all' && m.surface !== state.surface) return false;
+    // §3 (Batch B) — surface is not a Results filter (its control is hidden there), so
+    // skip the predicate in completed view; the Matches surface selection is untouched.
+    if (state.view !== 'completed' && state.surface !== 'all' && m.surface !== state.surface) return false;
     if (state.tournaments.size && !state.tournaments.has(m.tour)) return false;
     if (state.search){
       const q = state.search.toLowerCase();
@@ -5086,6 +5122,8 @@ function getFiltered(){
   if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
   else if (state.sort === 'surface') out.sort((a,b) => surfaceOrder[a.surface] - surfaceOrder[b.surface]);
   else if (state.sort === 'upset') out.sort((a,b) => upsetScore(b) - upsetScore(a));
+  else if (state.sort === 'move') out.sort((a,b) => moveScore(b) - moveScore(a));
+  else if (state.sort === 'marketwrong') out.sort((a,b) => marketWrongScore(b) - marketWrongScore(a));
   else if (state.sort === 'drift') out.sort((a,b) => driftScore(b) - driftScore(a));
   else if (state.sort === 'closing') out.sort((a,b) => closingScore(a) - closingScore(b));
   else out.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
@@ -5507,14 +5545,46 @@ function updateMatchesHeaderChrome(){
   if (sub) sub.textContent = completed
     ? 'Settled ATP results with the full opening-to-closing odds journey.'
     : 'Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.';
-  // §2 (PASS 5) — Tomorrow / +2 tabs and the forward chevron stay visible and active in
-  // BOTH views now (supersedes the earlier PASS-4 "truncate at Today in Completed" rule).
+  // §2 (Batch B, founder review 2026-08-08) — Results is a BACKWARD-looking rail:
+  // no future days, Today is the rightmost tab, and the forward chevron is dead.
+  // (Supersedes the PASS-5 "future tabs visible in both views" rule for Results only —
+  // Matches keeps the full forward rail.) The relative-word sub-labels (Yesterday /
+  // Tomorrow) are dropped in Results so the dates carry the rail; the back chevron
+  // carries the 7-day retention notice.
   const tomo = document.querySelector('#dayTabs button[data-day="tomorrow"]');
   const d2   = document.getElementById('day2Tab');
   const fwd  = document.getElementById('dayTabsRight');
-  if (tomo) tomo.style.display = '';
-  if (d2)   d2.style.display   = '';
-  if (fwd){ fwd.disabled = false; fwd.style.opacity = ''; fwd.style.pointerEvents = ''; }
+  const back = document.getElementById('dayTabsLeft');
+  const yBot = document.getElementById('yesterdayBottom');
+  const tBot = document.getElementById('tomorrowBottom');
+  const surfDD = document.getElementById('surfaceDropdown');
+  if (completed){
+    // A future day could be the active tab when the user lands on Results — snap
+    // back to Today before it filters an empty (upcoming) day into a settled view.
+    if (state.day === 'tomorrow' || state.day === 'day2'){
+      state.day = 'today';
+      const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
+      if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
+    }
+    if (tomo) tomo.style.display = 'none';
+    if (d2)   d2.style.display   = 'none';
+    if (fwd){ fwd.disabled = true; fwd.style.opacity = '0.35'; fwd.style.pointerEvents = 'none'; }
+    if (yBot) yBot.textContent = '';
+    if (tBot) tBot.textContent = '';
+    if (back) back.title = 'Results are kept for 7 days';
+    if (surfDD){ surfDD.style.display = 'none'; surfDD.classList.remove('open'); }
+    // Surface is not filterable in Results (control hidden). getFiltered() skips the
+    // surface predicate in completed view, so a surface pick left over from the Matches
+    // page can't silently filter Results — and the Matches selection is preserved.
+  } else {
+    if (tomo) tomo.style.display = '';
+    if (d2)   d2.style.display   = '';
+    if (fwd){ fwd.disabled = false; fwd.style.opacity = ''; fwd.style.pointerEvents = ''; }
+    if (yBot) yBot.textContent = 'Yesterday';
+    if (tBot) tBot.textContent = 'Tomorrow';
+    if (back) back.title = 'Scroll left';
+    if (surfDD) surfDD.style.display = '';
+  }
   // §2 — status line: muted 'Settled · <date>' in Completed, live clock in Upcoming.
   if (ds && !ds.classList.contains('error')){
     if (completed){
@@ -5530,8 +5600,26 @@ function updateMatchesHeaderChrome(){
   }
 }
 
+// §4 (Batch B) — the one-tournament context bar. Shows only in Results when exactly
+// one tournament chip is active: "Showing X · N of M settled · full breakdown →".
+// N/M are counted within the active day bucket so they track the visible day tab.
+function renderContextBar(){
+  const bar = document.getElementById('mcContextBar');
+  if (!bar) return;
+  const single = (state.view === 'completed' && state.tournaments.size === 1)
+    ? [...state.tournaments][0] : null;
+  if (!single){ bar.hidden = true; bar.innerHTML = ''; return; }
+  const dayMatches = matches.filter(m => m.tour === single && matchDayBucket(m) === state.day);
+  const M = dayMatches.length;
+  const N = dayMatches.filter(isFinishedMatch).length;
+  const safe = single.replace(/</g, '&lt;');
+  bar.hidden = false;
+  bar.innerHTML = `Showing <strong>${safe}</strong> <span class="mc-ctx-sep">·</span> ${N} of ${M} settled`
+    + `<button class="mc-ctx-link" id="mcCtxLink" type="button">See the full tournament breakdown →</button>`;
+}
 function renderMatches(){
   updateMatchesHeaderChrome();
+  renderContextBar();
   const list = document.getElementById('matchlist');
   // §3 (PASS 3): the summary strip lives in its own slot above the date strip, not
   // inside the card list. Clear it every render; the completed branch below refills.
@@ -11414,6 +11502,13 @@ document.getElementById('tournamentGroup').addEventListener('click', e => {
   renderMatches();
 });
 document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
+// §4 (Batch B) — context-bar link jumps to the full Tournaments page. The bar is
+// re-rendered each renderMatches, so the button is bound by delegation on its slot.
+document.getElementById('mcContextBar').addEventListener('click', e => {
+  if (!e.target.closest('#mcCtxLink')) return;
+  const t = document.querySelector('#mainNav button[data-tab="tournaments"]');
+  if (t) t.click();
+});
 // §9 (PASS 3) — custom sort dropdown: toggle on trigger, pick on option click
 // (disabled options are inert), close on outside click. Mirrors the surface dropdown.
 document.getElementById('sortBtn').addEventListener('click', e => {
