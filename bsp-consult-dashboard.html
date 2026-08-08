@@ -1082,6 +1082,25 @@
   .modal-analysis .akw-unit{ font-size:11px; font-weight:500; color:#5b6880; }
   .modal-analysis .akw-sub{ font-size:11px; color:#4b5672; }
   .modal-analysis .akw-note{ margin-left:auto; font-size:12px; color:#5b6880; white-space:nowrap; }
+  /* TEN-8 layout fix — paired-panel player labels (Playing style, Recent form,
+     Dimension edge, Odds, Tournament) show surname only and NEVER wrap to a second
+     line: they truncate with an ellipsis and reveal the full name on hover, so both
+     columns stay the same height and the W/L pips line up. */
+  .modal-analysis .aks-names{ gap:8px; }
+  .modal-analysis .aks-nm{ min-width:0; max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .modal-analysis .akf-grid > div{ min-width:0; }
+  .modal-analysis .akf-nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .modal-analysis .akt-row{ gap:10px; }
+  .modal-analysis .akt-nm{ min-width:0; flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .modal-analysis .akt-rec, .modal-analysis .akt-note{ flex:0 0 auto; }
+  .modal-analysis .ako-names{ gap:8px; }
+  .modal-analysis .ako-names span{ min-width:0; max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .modal-analysis .akd-key{ min-width:0; max-width:46%; }
+  .modal-analysis .akd-nmlbl{ display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
+  /* TEN-8 layout fix — weather commentary sits to the RIGHT of the label, vertically
+     centred against it (align-items:center on .akw-strip), and wraps internally into a
+     bounded block instead of dropping full-width below the stat row. */
+  .modal-analysis .akw-note{ flex:0 1 360px; white-space:normal; line-height:1.45; }
   /* Stennisfy Model card */
   .modal-analysis .akm{ width:100%; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; overflow:hidden; margin-top:18px; }
   .modal-analysis .akm-head{ padding:15px 22px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
@@ -4467,6 +4486,19 @@ function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 let psRendered = false;
 function psShortName(name){ return String(name || '').replace(/^[A-Z]\.\s*/, '').trim(); }
+// Surname-only label for the paired panels INSIDE the match-analysis modal. Full
+// names live in the modal header (there's room); the side-by-side panels (Playing
+// style, Recent form, Dimension edge, Odds, Tournament) show the surname only so
+// both columns are the same height and the W/L pips line up. Drops a leading given
+// name or initial — "Daniel Merida Aguilar" -> "Merida Aguilar", "T. Griekspoor"
+// -> "Griekspoor" — keeping compound surnames whole. When a surname is still wide
+// enough to wrap, the CSS truncates it with an ellipsis (full name on hover), never
+// a second line. Display-only: never used for lookups/matching.
+function akSurname(name){
+  const s = psShortName(name);                       // strip any "X. " initial prefix first
+  const parts = s.split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? parts.slice(1).join(' ') : s;
+}
 // Elo lookup — mirrors fetch-elo.js's key logic (last surname token + first initial,
 // with a unique-last-token fallback). Keep the two in sync.
 function psEloNorm(name){
@@ -10175,7 +10207,7 @@ function akStyleBlock(m){
       : `${psShortName(!a1 ? m.p1 : m.p2)} has no style classification yet — it needs a fuller tour-level record.`;
     return akCard('style', `${head}<div class="akb-empty">${psEsc(msg)}</div>`);
   }
-  const names = `<div class="aks-names"><span class="aks-nm" style="color:${ANALYSIS_P1_COLOR};">${psEsc(psShortName(m.p1))}</span><span class="aks-nm" style="color:${ANALYSIS_P2_COLOR};">${psEsc(psShortName(m.p2))}</span></div>
+  const names = `<div class="aks-names"><span class="aks-nm" title="${psEsc(m.p1)}" style="color:${ANALYSIS_P1_COLOR};">${psEsc(akSurname(m.p1))}</span><span class="aks-nm" title="${psEsc(m.p2)}" style="color:${ANALYSIS_P2_COLOR};">${psEsc(akSurname(m.p2))}</span></div>
     <div class="aks-arch"><span>${psEsc(a1.code)} · ${psEsc(a1.name)}</span><span>${psEsc(a2.code)} · ${psEsc(a2.name)}</span></div>`;
   let leftPct = '—', rightPct = '—', summary;
   if (a1.id === a2.id){
@@ -10211,9 +10243,9 @@ function akStyleBlock(m){
 function akDimEdgeBlock(m){
   const legend = `<div class="akd-head">
     <span class="akd-legend"><span class="akb-label">Dimension edge</span>
-      <span class="akd-key" style="color:${ANALYSIS_P1_COLOR};"><span class="akd-line"></span>${psEsc(psShortName(m.p1))}</span>
+      <span class="akd-key" style="color:${ANALYSIS_P1_COLOR};" title="${psEsc(m.p1)}"><span class="akd-line"></span><span class="akd-nmlbl">${psEsc(akSurname(m.p1))}</span></span>
       <span class="akd-dash">—</span>
-      <span class="akd-key" style="color:${ANALYSIS_P2_COLOR};"><span class="akd-line"></span>${psEsc(psShortName(m.p2))}</span>
+      <span class="akd-key" style="color:${ANALYSIS_P2_COLOR};" title="${psEsc(m.p2)}"><span class="akd-line"></span><span class="akd-nmlbl">${psEsc(akSurname(m.p2))}</span></span>
     </span>
     <span class="akb-chev">›</span>
   </div>`;
@@ -10239,7 +10271,7 @@ function akSeasonOf(m){
 function akFormBlock(m){
   const col = (name, rows, pct, accent) => {
     if (!Array.isArray(rows) || !rows.length){
-      return `<div><div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div><div class="akf-na">No recent rows on record.</div></div>`;
+      return `<div><div class="akf-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</div><div class="akf-na">No recent rows on record.</div></div>`;
     }
     const last5 = rows.slice(0, 5);
     const dots = last5.map(r => `<span class="akf-dot ${r.won ? 'w' : 'l'}">${r.won ? 'W' : 'L'}</span>`).join('');
@@ -10266,7 +10298,7 @@ function akFormBlock(m){
       : seasonal ? `${surfName} ${season}`
       : `${surfName} · last ${surfAll.length}`;
     return `<div>
-      <div class="akf-nm" style="color:${accent};">${psEsc(psShortName(name))}</div>
+      <div class="akf-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</div>
       <div class="akf-dots">${dots}</div>
       <div class="akf-stat top"><span>Last ${last10.length}</span><b>${Math.round(w10 / last10.length * 100)}%</b></div>
       <div class="akf-stat sub"><span>${psEsc(surfLabel)}</span><b>${surfRows.length ? `${sw}–${surfRows.length - sw}` : '—'}</b></div>
@@ -10327,8 +10359,8 @@ function akTournamentBlock(m){
   // Right column holds a record when the player has history at this event, or a
   // status word ("first appearance") when he does not (item 19).
   const row = (name, th, accent) => {
-    if (!th) return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><span class="akt-note">first appearance</span></div>`;
-    return `<div class="akt-row"><span class="akt-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><span class="akt-rec">${th.totalWon}–${th.totalLost}</span></div>`;
+    if (!th) return `<div class="akt-row"><span class="akt-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</span><span class="akt-note">first appearance</span></div>`;
+    return `<div class="akt-row"><span class="akt-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</span><span class="akt-rec">${th.totalWon}–${th.totalLost}</span></div>`;
   };
   const cs = m.courtSpeed;
   let cond = '';
@@ -10468,7 +10500,7 @@ function akOddsBlock(m){
   const move = akOddsMoveSvg(m);
   return akCard('odds', `${head}
     <div class="ako-prices"><span class="ako-p" style="color:${ANALYSIS_P1_COLOR};">${Number(m.odds.p1).toFixed(2)}</span><span class="ako-p" style="color:${ANALYSIS_P2_COLOR};">${Number(m.odds.p2).toFixed(2)}</span></div>
-    <div class="ako-names"><span>${psEsc(psShortName(m.p1))}</span><span>${psEsc(psShortName(m.p2))}</span></div>
+    <div class="ako-names"><span title="${psEsc(m.p1)}">${psEsc(akSurname(m.p1))}</span><span title="${psEsc(m.p2)}">${psEsc(akSurname(m.p2))}</span></div>
     <div class="ako-split"><div style="width:${f1.toFixed(1)}%; background:${ANALYSIS_P1_COLOR};"></div><div style="width:${f2.toFixed(1)}%; background:${ANALYSIS_P2_COLOR};"></div></div>
     <div class="ako-vig"><span>${f1.toFixed(1)}%</span><span>vig removed</span><span>${f2.toFixed(1)}%</span></div>
     <div class="ako-sub">Implied win probability${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>
