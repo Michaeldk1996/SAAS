@@ -3535,6 +3535,29 @@ function newsFmtDateTime(ts){
   try { return new Date(ts).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() }); }
   catch (e) { return new Date(ts).toLocaleString('en-GB'); }
 }
+// Match-card start time bound to the member's timezone (TEN-8). Cards used to print
+// the pipeline-baked `m.time`, which is UTC wall-clock — so a GMT+8 member saw 00:50
+// for a fixture that starts 08:50 their time. The real instant is m.startTs (ISO epoch);
+// if absent, reconstruct it from the baked UTC fields (`${date}T${time}:00Z` is the true
+// instant, since m.date/m.time are UTC). withDate=false → "08:50"; withDate=true →
+// "Sat 08 Aug, 08:50" — identical opts to the Account Settings preview. Dash when there
+// is no usable instant; never a fabricated 00:00.
+function cardStartMs(m){
+  if (m && m.startTs != null){ const t = new Date(m.startTs).getTime(); if (isFinite(t)) return t; }
+  if (m && m.date && /^\d{2}:\d{2}/.test(m.time || '')){
+    const t = Date.parse(`${m.date}T${m.time.slice(0,5)}:00Z`); if (isFinite(t)) return t;
+  }
+  return NaN;
+}
+function cardFmtStart(m, withDate){
+  const ms = cardStartMs(m);
+  if (!isFinite(ms)) return '—';
+  const opts = withDate
+    ? { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() }
+    : { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() };
+  try { return new Date(ms).toLocaleString('en-GB', opts); }
+  catch (e){ delete opts.timeZone; return new Date(ms).toLocaleString('en-GB', opts); }
+}
 
 // Feed freshness (TEN-8, 2026-08-02). The header used to tick a live wall clock
 // ("updated 14:28:03"), which lied: it reported the current time, never the
@@ -5441,11 +5464,16 @@ function renderMatches(){
     // always shown now, not just the bare time and not only when the day differs.
     // Review item 7: the export separates date and time with a plain space
     // ("2026-07-20 18:00"), not a middot.
+    // Timestamps are rendered in the member's resolved timezone (TEN-8) via cardFmtStart,
+    // not the raw baked UTC m.date/m.time. Date is shown only when it isn't redundant with
+    // the selected day strip (showAltDate) — inside a day-specific view the time alone reads
+    // cleaner; Upcoming, Completed and live cards all use the same rule for consistency.
+    const startWithDate = cardFmtStart(m, showAltDate);
     const rightMeta = isCompleted
-      ? `<span class="mc-altdate-inl">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`
+      ? `<span class="mc-altdate-inl">${startWithDate}</span>`
       : liveOrInt
-        ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${m.time || ''}</span>`
-        : `<span class="mc-datetime">${m.date || ''}${m.time ? ' ' + m.time : ''}</span>`;
+        ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${cardFmtStart(m, false)}</span>`
+        : `<span class="mc-datetime">${startWithDate}</span>`;
     // Upcoming cards carry the two column headers (Odds · Implied, then Recent form) on the
     // header row itself, right-aligned above their columns. Completed cards have no such
     // columns (set-score cluster + odds journey instead), so they omit the labels.
@@ -5836,7 +5864,10 @@ function edgeRailPick(id){ edgeShowPane('model'); openEdgeModel(id); }
 // the Matches page; falls back to the weekday of the match date otherwise. Never
 // fabricates a time — an absent m.time simply drops that half of the label.
 function edgeWhenLabel(m){
-  const t = (m && /^\d{2}:\d{2}/.test(m.time || '')) ? m.time.slice(0, 5) : '';
+  // Same tz fix as the match cards (TEN-8): render the start time in the member's
+  // resolved zone, not the baked UTC m.time. Empty (not a dash) when no instant, so
+  // the day/time label simply drops that half.
+  const t = isFinite(cardStartMs(m)) ? cardFmtStart(m, false) : '';
   let day = '';
   const b = (typeof matchDayBucket === 'function') ? matchDayBucket(m) : null;
   if (b === 'today') day = 'Today';
