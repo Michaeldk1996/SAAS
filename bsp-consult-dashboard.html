@@ -2319,18 +2319,18 @@
 
   <div class="mx-controls">
     <div class="mx-daytabsrow">
-      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">‹</button>
+      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left" style="display:none">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
-          <button data-day="daymin3" id="daymin3Tab"><span class="dtop" id="daymin3Top"></span><span class="dbottom" id="daymin3Bottom"></span></button>
-          <button data-day="daymin2" id="daymin2Tab"><span class="dtop" id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
+          <button data-day="daymin3" id="daymin3Tab" style="display:none"><span class="dtop" id="daymin3Top"></span><span class="dbottom" id="daymin3Bottom"></span></button>
+          <button data-day="daymin2" id="daymin2Tab" style="display:none"><span class="dtop" id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
           <button data-day="yesterday"><span class="dtop" id="yesterdayTop"></span><span class="dbottom" id="yesterdayBottom"></span></button>
           <button class="active is-today" data-day="today"><span class="dtop" id="todayTop"></span><span class="dbottom" id="todayBottom"></span></button>
           <button data-day="tomorrow"><span class="dtop" id="tomorrowTop"></span><span class="dbottom" id="tomorrowBottom"></span></button>
           <button data-day="day2" id="day2Tab"><span class="dtop" id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
         </div>
       </div>
-      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right">›</button>
+      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right" style="display:none">›</button>
     </div>
     <div class="mx-filterbar">
       <div class="mx-surfacedd" id="surfaceDropdown">
@@ -5598,7 +5598,16 @@ function updateMatchesHeaderChrome(){
   const tdTop = document.getElementById('todayTop');
   const tdBot = document.getElementById('todayBottom');
   const surfDD = document.getElementById('surfaceDropdown');
+  const dm3 = document.getElementById('daymin3Tab');
+  const dm2 = document.getElementById('daymin2Tab');
   if (completed){
+    // Results keeps its 4-day backward retention rail (daymin3 · daymin2 · yesterday ·
+    // today) with the back chevron carrying the "kept for 4 days" notice — restore any
+    // display the Matches branch hid.
+    if (dm3)  dm3.style.display  = '';
+    if (dm2)  dm2.style.display  = '';
+    if (back) back.style.display = '';
+    if (fwd)  fwd.style.display  = '';
     // A future day could be the active tab when the user lands on Results — snap
     // back to Today before it filters an empty (upcoming) day into a settled view.
     if (state.day === 'tomorrow' || state.day === 'day2'){
@@ -5623,16 +5632,33 @@ function updateMatchesHeaderChrome(){
     // surface predicate in completed view, so a surface pick left over from the Matches
     // page can't silently filter Results — and the Matches selection is preserved.
   } else {
+    // Task 2 (founder review 2026-08-08) — the Matches rail is a tight 4-tab window:
+    // yesterday · today · +2 days forward, no paging arrows, everything visible at once.
+    // The deep-history tabs (daymin2/daymin3) belong to Results' retention rail only, so
+    // they're hidden here; if one was the active day (carried over from Results), snap to
+    // Today so filtering can't target an invisible tab.
+    if (dm3) dm3.style.display = 'none';
+    if (dm2) dm2.style.display = 'none';
+    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'past'){
+      state.day = 'today';
+      const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
+      if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
+    }
     if (tomo) tomo.style.display = '';
     if (d2)   d2.style.display   = '';
-    if (fwd){ fwd.disabled = false; fwd.style.opacity = ''; fwd.style.pointerEvents = ''; }
-    if (yBot) yBot.textContent = 'Yesterday';
-    if (tBot) tBot.textContent = 'Tomorrow';
-    // Matches (upcoming) view keeps the date-primary rail with "Today" as the sub-line.
-    if (tdTop) tdTop.textContent = railDate(new Date());
-    if (tdBot) tdBot.textContent = 'Today';
-    if (back) back.title = 'Scroll left';
-    if (surfDD) surfDD.style.display = '';
+    // No paging arrows — the four tabs always fit, so both chevrons stay hidden.
+    if (fwd)  fwd.style.display = 'none';
+    if (back) back.style.display = 'none';
+    // Labels: dates only on the flanking tabs (drop the Yesterday/Tomorrow sub-words);
+    // the current-day tab is a single "• Today" (dot from .is-today), matching Results.
+    if (yBot) yBot.textContent = '';
+    if (tBot) tBot.textContent = '';
+    if (tdTop) tdTop.textContent = 'Today';
+    if (tdBot) tdBot.textContent = '';
+    // Surface filter dropped — on a single-surface swing it can only return everything or
+    // nothing; surface is already the coloured chip on every card. state.surface stays
+    // 'all' (the only control that set it is now gone), so getFiltered is unaffected.
+    if (surfDD){ surfDD.style.display = 'none'; surfDD.classList.remove('open'); }
   }
   // §2 — status line: live clock in Upcoming; NONE in Results.
   // §9 (founder review 2026-08-08) — the 'Settled · <date>' line duplicated the
