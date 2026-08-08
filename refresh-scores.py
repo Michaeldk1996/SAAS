@@ -22,14 +22,28 @@ Uses only the standard library. Reads API_TENNIS_KEY from .env (same as the
 pipeline). Idempotent and safe to run repeatedly.
 """
 import json, os, sys, urllib.request, urllib.error
+from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MATCHES = os.path.join(HERE, 'matches.json')
+# Append-only background telemetry: one JSON line per run recording how many of
+# today's started-but-scoreless matches (the exact population the client renders
+# as "Underway") exist, split by feed state. No display/behaviour change — pure
+# logging so a real rate accrues over weeks. Added per TEN-8 wake 2026-08-08.
+AUDIT = os.path.join(HERE, 'underway-audit.jsonl')
 API_BASE = 'https://api.api-tennis.com/tennis/'
 FINISHED = ('Finished', 'Retired', 'Walk Over')
 # Suspended mid-play (rain/light/curfew): not live, not decided. Mirrors
 # INTERRUPTED_STATUSES in bsp-pipeline.js — keep the two in step.
 INTERRUPTED = ('Interrupted', 'Suspended')
+# Best-guess terminal statuses OUTSIDE the FINISHED set — a match that is over
+# (or was awarded/withdrawn) but carries no completable scoreline. This list is
+# provisional: I could not reach the live feed from the run environment to
+# enumerate api-tennis's exact abandonment vocabulary, so any not-live status
+# NOT matched here is logged verbatim under `unknownStatuses` in the audit
+# record, letting the real vocabulary surface over the coming weeks.
+TERMINAL_OTHER = ('Abandoned', 'Cancelled', 'Canceled', 'Awarded',
+                  'Postponed', 'Walkover', 'Default', 'Def.', 'Removed')
 # Preferred single bookmaker for the headline (m.odds) line, in order.
 BOOKMAKER_PREF = ('bet365', 'Betano', '1xBet', 'Pinnacle', 'Marathonbet',
                   'Unibet', '888sport', 'William Hill', 'Betfair')
@@ -184,6 +198,108 @@ def fetch_odds(key, event_key, p1_is_first):
     return parse_home_away(block, p1_is_first)
 
 
+def _start_ms(m):
+    """Match start instant in epoch-ms, mirroring cardStartMs() in the client:
+    prefer the ISO startTs, else fall back to date + HH:MM parsed as UTC.
+    Returns None when neither yields a usable instant (never a guess)."""
+    ts = m.get('startTs')
+    if isinstance(ts, str) and ts:
+        try:
+            return datetime.fromisoformat(ts.replace('Z', '+00:00')).timestamp() * 1000
+        except ValueError:
+            pass
+    d, t = m.get('date'), m.get('time')
+    if d and isinstance(t, str) and len(t) >= 5 and t[2] == ':':
+        try:
+            return datetime.fromisoformat(f'{d}T{t[:5]}:00+00:00').timestamp() * 1000
+        except ValueError:
+            pass
+    return None
+
+
+def audit_underway(matches, index, now):
+    """Background telemetry ONLY — mutates no match record and changes nothing
+    the client renders. Counts today's started-but-scoreless matches (the exact
+    set the card renders as "Underway": no finalScore, start instant passed) and
+    breaks them down by feed state so a real rate accrues over weeks.
+
+    The `overButScoreless` rollup (retired/walkover/abandoned) is the population
+    the founder flagged as WRONGLY shown as in-progress — a match that is over
+    but whose feed representation carries no completable scoreline, so the
+    client's `!finalScore` Underway guard lets it through. `genuinelyUnresolved`
+    is the benign remainder (still playing / feed lag / not yet returned)."""
+    now_ms = now.timestamp() * 1000
+    today = now.strftime('%Y-%m-%d')
+    pop = []  # started-today, no final score
+    for m in matches:
+        if m.get('date') != today or m.get('finalScore'):
+            continue
+        sm = _start_ms(m)
+        if sm is not None and now_ms >= sm:
+            pop.append(m)
+
+    feed_live = not_live = 0
+    cat = {'retired': 0, 'walkover': 0, 'abandonedOrOther': 0,
+           'interrupted': 0, 'finishedNoScore': 0, 'noFixture': 0, 'unresolved': 0}
+    unknown = {}
+    for m in pop:
+        p1k, p2k = m.get('p1Key'), m.get('p2Key')
+        f = (index.get((m.get('date'), frozenset({str(p1k), str(p2k)})))
+             if p1k is not None and p2k is not None else None)
+        if (m.get('live') is True) or (f is not None and f.get('event_live') == '1'):
+            feed_live += 1
+            continue
+        not_live += 1
+        status = f.get('event_status') if f else None
+        if f is None:
+            cat['noFixture'] += 1
+        elif status == 'Retired':
+            cat['retired'] += 1
+        elif status == 'Walk Over':
+            cat['walkover'] += 1
+        elif status in INTERRUPTED:
+            cat['interrupted'] += 1
+        elif status == 'Finished':
+            cat['finishedNoScore'] += 1
+        elif status in TERMINAL_OTHER:
+            cat['abandonedOrOther'] += 1
+        else:
+            # In-play with a lagging live flag ('Set N', etc.) OR a terminal
+            # status we haven't catalogued yet — record it raw so the real
+            # vocabulary is learnable from the accumulated log.
+            cat['unresolved'] += 1
+            if status:
+                unknown[status] = unknown.get(status, 0) + 1
+
+    over_scoreless = cat['retired'] + cat['walkover'] + cat['abandonedOrOther']
+    genuinely_unresolved = (cat['unresolved'] + cat['noFixture']
+                            + cat['finishedNoScore'] + cat['interrupted'])
+    rec = {
+        'ts': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'day': today,
+        'startedNoScore': len(pop),
+        'feedLive': feed_live,
+        'notLive': not_live,
+        'overButScoreless': over_scoreless,
+        'genuinelyUnresolved': genuinely_unresolved,
+        'byStatus': cat,
+    }
+    if unknown:
+        rec['unknownStatuses'] = unknown
+    try:
+        with open(AUDIT, 'a') as fh:
+            fh.write(json.dumps(rec) + '\n')
+    except OSError as e:
+        print(f'(underway audit: could not append to {AUDIT}: {e})', file=sys.stderr)
+    print(f"Underway audit: {len(pop)} started-today no-score "
+          f"({feed_live} feed-live, {not_live} not-live) — "
+          f"over-but-scoreless {over_scoreless} "
+          f"(ret {cat['retired']}, w/o {cat['walkover']}, abnd/other {cat['abandonedOrOther']}), "
+          f"genuinely unresolved {genuinely_unresolved}"
+          + (f"; unknown statuses {unknown}" if unknown else "") + ".")
+    return rec
+
+
 def main():
     key = read_key()
     if not key:
@@ -286,6 +402,12 @@ def main():
 
     with open(MATCHES, 'w') as fh:
         json.dump(matches, fh, indent=2, ensure_ascii=False)
+
+    # Background telemetry — no effect on matches.json above; safe to fail soft.
+    try:
+        audit_underway(matches, index, datetime.now(timezone.utc))
+    except Exception as e:  # never let telemetry break a score refresh
+        print(f'(underway audit skipped: {e})', file=sys.stderr)
 
     print(f'Refreshed matches.json: {finals} final scores, {lives} live, '
           f'{interrupted_n} interrupted/suspended, {odds_added} odds added, '
