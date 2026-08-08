@@ -4980,9 +4980,17 @@ function buildTournamentFilters(){
   // tournament is finished it drops off. Results (completed) chips = tournaments that
   // HAVE a settled match, so the settled-only view can still be filtered/contextualised
   // even after the tournament has left the in-play set. (§3 Batch B.)
+  // Task 2 (founder review 2026-08-08) — Matches chips are scoped to the SELECTED day,
+  // not the whole window: "one per tournament with matches that day, derived from the
+  // day's data." matchDayBucket(m) === state.day keys them off the same buckets that
+  // drive the rail, so switching days re-derives the row (renderMatches rebuilds it
+  // after the day-snap). Scoped to the upcoming view only — Results keeps its shipped
+  // behaviour (chips = every tournament with a settled match in the retention window).
   const completed = state.view === 'completed';
   const tournaments = [...new Set(
-    matches.filter(completed ? isFinishedMatch : isUpcomingOrLive).map(m => m.tour).filter(Boolean)
+    matches
+      .filter(m => completed ? isFinishedMatch(m) : (isUpcomingOrLive(m) && matchDayBucket(m) === state.day))
+      .map(m => m.tour).filter(Boolean)
   )].sort();
   // Drop selections whose tournament has since finished, else a stale name would
   // filter every card away with no chip left to clear it.
@@ -5699,6 +5707,10 @@ function renderContextBar(){
 }
 function renderMatches(){
   updateMatchesHeaderChrome();
+  // Rebuild the day-scoped tournament chips AFTER the chrome snap so they key off the
+  // effective (post-snap) state.day — this also covers day-tab clicks, whose handler
+  // only calls renderMatches. buildTournamentFilters preserves the current selection.
+  buildTournamentFilters();
   renderContextBar();
   const list = document.getElementById('matchlist');
   // §3 (PASS 3): the summary strip lives in its own slot above the date strip, not
