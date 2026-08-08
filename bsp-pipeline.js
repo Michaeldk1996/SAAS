@@ -1997,6 +1997,16 @@ const MATCH_STAT_DEFS = [
   { type: 'Points', name: 'Winners', kind: 'count' },
   { type: 'Points', name: 'Unforced errors', kind: 'count' },
   { type: 'Points', name: 'Total Points Won', kind: 'pct' },
+  // Added for the modal Match Stats derived stats (TEN-8, 2026-08-08): the two
+  // aggregate points splits back the new "Points Won" section rows and the
+  // Dominance Ratio headline (return-points-won ratio); the two Games rows are
+  // the hold%/return-games% components of the Serve/Return Rating sums. All four
+  // are native won/total in the feed (verified live at ATP + Challenger, 100%
+  // present) so they carry a real fraction, not a derived percentage.
+  { type: 'Points', name: 'Service Points Won', kind: 'pct' },
+  { type: 'Points', name: 'Return Points Won', kind: 'pct' },
+  { type: 'Games', name: 'Service games won', kind: 'pct' },
+  { type: 'Games', name: 'Return games won', kind: 'pct' },
 ];
 
 // Shared by buildMatchStatsFromFixture() and buildTournamentProgression() —

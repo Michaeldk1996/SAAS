@@ -1342,6 +1342,17 @@
   :is(.modal-analysis,.pp-formsurface) .msheet-frac{ font-size:10.5px; color:#5b6880; margin-top:1px; }
   :is(.modal-analysis,.pp-formsurface) .msheet-label{ font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#5b6880; text-align:center; padding:0 14px; white-space:nowrap; }
   :is(.modal-analysis,.pp-formsurface) .msheet-na{ color:#4b5672; font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
+  /* Dominance Ratio headline — the single best one-number summary of who
+     controlled the match (return-points-won ratio). Two large tabular figures
+     in the fixed identity colours (A #6aaeff, B #e7e9ee), centred label between.
+     Not a bar row: it's a headline pair above the Service section. */
+  .modal-analysis .ms-dr{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:11px; padding:14px 22px; margin:0 auto 18px; max-width:720px; }
+  .modal-analysis .ms-dr .ms-dr-val{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+  .modal-analysis .ms-dr .ms-dr-val.p1{ color:#6aaeff; text-align:left; }
+  .modal-analysis .ms-dr .ms-dr-val.p2{ color:#e7e9ee; text-align:right; }
+  .modal-analysis .ms-dr .ms-dr-mid{ display:flex; flex-direction:column; align-items:center; gap:3px; white-space:nowrap; }
+  .modal-analysis .ms-dr .ms-dr-title{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#7f8798; }
+  .modal-analysis .ms-dr .ms-dr-sub{ font-family:'Hanken Grotesk', sans-serif; font-size:10px; letter-spacing:0.02em; color:#4b5672; }
   /* Diverging bar: two tracks meeting at the centre. The left fill is anchored to
      the centre (justify-content:flex-end) and grows leftward, the right grows
      rightward, so each side's length reads as its share of the raw stat. Colour
@@ -9344,6 +9355,122 @@ const MSHEET_ALWAYS_SHOW = new Set([
   'Points:Unforced errors',
 ]);
 
+// Serve Rating display label — OUR OWN four-component formula (1st serve % +
+// 1st serve points won % + 2nd serve points won % + service games won %). It
+// lands within ~9 points of the TNNS / ATP published figure but is NOT identical
+// to either, so it must not imply parity with an official rating. Founder will
+// decide final naming — this single const is the one place to change it.
+const SERVE_RATING_LABEL = 'Serve Rating';
+const RETURN_RATING_LABEL = 'Return Rating';
+
+// Modal Match Stats sheet layout (TEN-8, 2026-08-08). SEPARATE from
+// MATCH_STAT_ORDER (which the Form-tab inline panel still iterates, incl. its
+// `lowerBetter` 4th field) so this restructure — Serve/Return Rating rows, the
+// new "Points Won" group, Pressure Points — touches ONLY the modal sheet and
+// leaves the Form tab untouched. Rows keyed with a leading '@' are DERIVED
+// (computed in msheetDerived), not a direct feed key. Winners & Unforced Errors
+// MOVE here from the old "Points" group (not duplicated).
+const MSHEET_ORDER = [
+  ['service', 'Service', [
+    ['Service:Aces', 'Aces', 'count'],
+    ['Service:Double Faults', 'Double Faults', 'count'],
+    ['Service:1st serve percentage', '1st Serve %', 'pct'],
+    ['Service:1st serve points won', '1st Serve Points Won', 'pct'],
+    ['Service:2nd serve points won', '2nd Serve Points Won', 'pct'],
+    ['Service:Break Points Saved', 'Break Points Saved', 'pct'],
+    ['@serveRating', SERVE_RATING_LABEL, 'rating'],
+  ]],
+  ['return', 'Return', [
+    ['Return:1st return points won', '1st Return Points Won', 'pct'],
+    ['Return:2nd return points won', '2nd Return Points Won', 'pct'],
+    ['Return:Break Points Converted', 'Break Points Converted', 'pct'],
+    ['@returnRating', RETURN_RATING_LABEL, 'rating'],
+  ]],
+  ['pointswon', 'Points Won', [
+    ['Points:Winners', 'Winners', 'count'],
+    ['Points:Unforced errors', 'Unforced Errors', 'count'],
+    ['Points:Service Points Won', 'Service Points Won', 'pct'],
+    ['Points:Return Points Won', 'Return Points Won', 'pct'],
+    ['@pressure', 'Pressure Points', 'pressure'],
+    ['Points:Total Points Won', 'Total Points Won', 'pct'],
+  ]],
+];
+
+// Derived per-match stats computed client-side from the feed's real components
+// (never fabricated). Fail-closed: any component key ABSENT from the box score
+// collapses the whole derived stat to a dash. The one documented exception is
+// the ratings' zero-attempts rule — a component that is PRESENT but null (e.g.
+// Break Points Converted on a 0/0 no-break-points match) contributes ZERO, it
+// is not excluded (matches the reference implementation: 13 + 23 + 0 + 0 = 36).
+const MSHEET_SERVE_RATING_KEYS = [
+  'Service:1st serve percentage', 'Service:1st serve points won',
+  'Service:2nd serve points won', 'Games:Service games won',
+];
+const MSHEET_RETURN_RATING_KEYS = [
+  'Return:1st return points won', 'Return:2nd return points won',
+  'Return:Break Points Converted', 'Games:Return games won',
+];
+// Sum of the ROUNDED whole-number percentages (not the unrounded values — the
+// reference implementation rounds first, and unrounded gives a different total).
+// Returns null (→ dash) if any component key is missing from this box score.
+function msheetRatingSum(p, keys){
+  if (!p) return null;
+  let sum = 0;
+  for (const k of keys){
+    if (!(k in p)) return null;              // genuine gap → whole stat dashes
+    const v = p[k];
+    sum += Math.round(v == null ? 0 : v);    // present-but-null = 0-attempts → 0
+  }
+  return sum;
+}
+// Pressure Points: a player's share of ALL break points in the match =
+// (break points they saved on serve + break points they converted on return) /
+// (total break points in the match). The denominator (BP faced + BP had) is
+// identical for both players, so the two shares always sum to 100%. BP faced /
+// BP had come off the raw fractions (Break Points Saved total / Break Points
+// Converted total); a player with zero break points on that side simply carries
+// no raw entry there and contributes 0 to both numerator and denominator. Zero
+// break points in the whole match → null (dash), never 0%.
+function msheetPressure(p){
+  const raw = (p && p.raw) || {};
+  const sv = raw['Service:Break Points Saved'];      // {won: saved, total: faced}
+  const cv = raw['Return:Break Points Converted'];   // {won: converted, total: had}
+  const faced = sv ? sv.total : 0, saved = sv ? sv.won : 0;
+  const had   = cv ? cv.total : 0, conv  = cv ? cv.won : 0;
+  const den = faced + had;
+  if (den <= 0) return { pct: null, raw: null };
+  const num = saved + conv;
+  return { pct: Math.round((num / den) * 100), raw: { won: num, total: den } };
+}
+// Dominance Ratio: (A's return points won %) / (B's return points won %). The
+// two figures are reciprocal (multiply to 1). Undefined — dash both — if either
+// player's return points won % is missing or zero (no divide-by-zero).
+function msheetDerived(stats){
+  const d = { p1: {}, p2: {} };
+  d.p1.serveRating  = msheetRatingSum(stats.p1, MSHEET_SERVE_RATING_KEYS);
+  d.p2.serveRating  = msheetRatingSum(stats.p2, MSHEET_SERVE_RATING_KEYS);
+  d.p1.returnRating = msheetRatingSum(stats.p1, MSHEET_RETURN_RATING_KEYS);
+  d.p2.returnRating = msheetRatingSum(stats.p2, MSHEET_RETURN_RATING_KEYS);
+  const pr1 = msheetPressure(stats.p1), pr2 = msheetPressure(stats.p2);
+  d.p1.pressurePct = pr1.pct; d.p1.pressureRaw = pr1.raw;
+  d.p2.pressurePct = pr2.pct; d.p2.pressureRaw = pr2.raw;
+  const ra = stats.p1['Points:Return Points Won'], rb = stats.p2['Points:Return Points Won'];
+  if (ra == null || rb == null || ra <= 0 || rb <= 0){ d.drP1 = null; d.drP2 = null; }
+  else { d.drP1 = Math.round((ra / rb) * 100) / 100; d.drP2 = Math.round((rb / ra) * 100) / 100; }
+  return d;
+}
+// Dominance Ratio headline pair, above the Service section. Two-decimal format
+// (1.22 / 0.82); em dash for both when undefined.
+function msheetDrHeadHtml(d){
+  const fmt = v => v == null ? '<span class="msheet-na" title="Undefined — a player won no return points">—</span>' : v.toFixed(2);
+  return `
+    <div class="ms-dr">
+      <div class="ms-dr-val p1">${fmt(d.drP1)}</div>
+      <div class="ms-dr-mid"><span class="ms-dr-title">Dominance Ratio</span><span class="ms-dr-sub">return points won ratio</span></div>
+      <div class="ms-dr-val p2">${fmt(d.drP2)}</div>
+    </div>`;
+}
+
 // Grouped stat-sheet row. Founder pass-3 §3 (2026-08-01): the percentage sits on
 // the upper line in the player's identity colour, the real "(won/total)" fraction
 // stacked directly beneath it in muted mono — left-aligned on the left player,
@@ -9650,9 +9777,20 @@ function buildMatchStatsSheet(m, setNo){
   const suspendedNote = m.interrupted
     ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
     : '';
-  const groups = MATCH_STAT_ORDER.map(([, groupLabel, rows]) => {
+  const derived = msheetDerived(stats);
+  const groups = MSHEET_ORDER.map(([, groupLabel, rows]) => {
     const rowsHtml = rows
       .map(([key, label, kind]) => {
+        // Derived rows (leading '@') are computed client-side from real feed
+        // components, always shown (dash when an input is missing). Ratings are
+        // plain integers (no raw fraction); Pressure Points carries its own
+        // numerator/denominator fraction (e.g. "9/18").
+        if (key === '@serveRating')
+          return msheetRowHtml(label, 'rating', derived.p1.serveRating, derived.p2.serveRating, null, null, true);
+        if (key === '@returnRating')
+          return msheetRowHtml(label, 'rating', derived.p1.returnRating, derived.p2.returnRating, null, null, true);
+        if (key === '@pressure')
+          return msheetRowHtml(label, 'pct', derived.p1.pressurePct, derived.p2.pressurePct, derived.p1.pressureRaw, derived.p2.pressureRaw, true);
         // Show the fraction wherever the feed carried real won/total counts —
         // it never derives one from the percentage, so a row without raw counts
         // (Aces, 1st Serve %) simply shows the value alone.
@@ -9703,6 +9841,7 @@ function buildMatchStatsSheet(m, setNo){
     ${suspendedNote}
     <div class="msheet-names"><span class="p1"><span class="mstat-dot p1"></span>${m.p1}</span><span class="p2">${m.p2}<span class="mstat-dot p2"></span></span></div>
     ${statHeader}
+    ${groups ? msheetDrHeadHtml(derived) : ''}
     ${groups || '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
   `;
 }
