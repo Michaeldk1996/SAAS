@@ -15630,8 +15630,8 @@ const TOURX_METRICS = [
   { key: 'firstServePct',        label: '1st Serve %',                         short: '1st Serve %',     kind: 'pct' },
   { key: 'firstServeWonPct',     label: '1st Serve Points Won %',              short: '1st Serve Won',   kind: 'pct' },
   { key: 'secondServeWonPct',    label: '2nd Serve Points Won %',              short: '2nd Serve Won',   kind: 'pct' },
-  { key: 'winnersPct',           label: 'Winners (% of points)',               short: 'Winners',         kind: 'pct' },
-  { key: 'unforcedErrorsPct',    label: 'Unforced Errors (% of points)',       short: 'Unforced Errors', kind: 'pct' },
+  { key: 'winnersPct',           label: 'Winners (per point)',                 short: 'Winners',         kind: 'perpoint' },
+  { key: 'unforcedErrorsPct',    label: 'Unforced Errors (per point)',         short: 'Unforced Errors', kind: 'perpoint' },
   { key: 'winnersUnforcedRatio', label: 'Winners / Unforced Errors Ratio',     short: 'W/UE Ratio',      kind: 'ratio' },
   { key: 'totalPointsWonPct',    label: 'Total Points Won %',                  short: 'Total Points Won', kind: 'pct' },
 ];
@@ -15699,9 +15699,19 @@ function tourxTournamentCategory(tourName){
 // Display ladder sized to the draw, anchored at the Final. Never fewer slots
 // than rounds actually played, so a fully-completed event whose live fixtures
 // have aged out of matches.json still gets its full ladder.
-function tourxRoundLabelsFor(tourName, playedRounds){
-  const cat = tourxTournamentCategory(tourName);
-  let n = cat === 'Grand Slam' ? 7 : cat === 'ATP Masters 1000' ? 6 : 5;
+function tourxRoundLabelsFor(tourName, playedRounds, drawSize){
+  // The live feed labels Masters events "ATP 1000" (not "ATP Masters 1000"), so
+  // match on the 1000/Slam tokens — otherwise a Masters draw collapses onto the
+  // 5-round ATP-250 ladder and its Round of 32 is mislabelled "QF" (TEN-8).
+  const cat = String(tourxTournamentCategory(tourName) || '').toLowerCase();
+  const isSlam = cat.indexOf('slam') >= 0;
+  const isMasters = cat.indexOf('1000') >= 0 || cat.indexOf('masters') >= 0;
+  let n = isSlam ? 7 : isMasters ? 6 : 5;
+  // Draw size is the authoritative round count: a 96/128-draw plays 7 rounds
+  // (ceil(log2(size))), so its deep rounds (R32→F) land on the right labels even
+  // when the category default under-sizes the ladder. A 96-draw Masters therefore
+  // gets the full R128→F ladder, and its Round of 32 reads "R32", not "QF".
+  if (drawSize && drawSize > 1) n = Math.max(n, Math.ceil(Math.log2(drawSize)));
   n = Math.max(n, (playedRounds || []).length);
   n = Math.min(Math.max(n, 1), TOURX_ROUND_LABELS.length);
   return TOURX_ROUND_LABELS.slice(TOURX_ROUND_LABELS.length - n);
@@ -15709,7 +15719,14 @@ function tourxRoundLabelsFor(tourName, playedRounds){
 
 function tourxHexA(hex, a){ const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
 function tourxCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
-function tourxFmt(v, kind){ return kind === 'ratio' ? Number(v).toFixed(2) : (Number.isInteger(v) ? v : Number(v).toFixed(1)) + '%'; }
+// 'perpoint' renders a percent-of-points metric (e.g. Winners 24.5%) as a fixed
+// two-place per-point ratio (0.25). v is a percentage, so the ratio is v/100 to
+// two decimals = round(v)/100; toFixed(2) keeps the column aligned (0.10 not 0.1).
+function tourxFmt(v, kind){
+  if (kind === 'ratio') return Number(v).toFixed(2);
+  if (kind === 'perpoint') return (Math.round(Number(v)) / 100).toFixed(2);
+  return (Number.isInteger(v) ? v : Number(v).toFixed(1)) + '%';
+}
 // Court-speed value colour by real category (Fast → blue, Medium → light, Slow → clay).
 function tourxSpeedColor(cat){ return cat === 'Fast' ? '#3E7BFA' : cat === 'Slow' ? '#eda869' : '#cfd6e6'; }
 // Bounce descriptor derived from real surface + altitude + speed category —
@@ -16060,7 +16077,7 @@ function tourxBuildTournament(name){
   if (!t) return null;
   const rounds = t.rounds || [];
   // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam).
-  const roundLabels = tourxRoundLabelsFor(name, rounds);
+  const roundLabels = tourxRoundLabelsFor(name, rounds, (t.players || []).length);
   // Same draw-arithmetic guard the modal's Progression chart got in bb4e1e6.
   // Absence of an opening-round match reads as a bye, and a round the 7-day feed
   // window has dropped is absent in exactly the same way — which is how a stored
@@ -16698,9 +16715,14 @@ function tourxRoundViewHtml(T){
       const arr = T.field && T.field.metrics && T.field.metrics[m.key];
       roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
     });
-    const totW = Math.pow(2, tourxActiveLabels.length - rIdx);
+    // Denominator = players who actually reached (played) this round in the data,
+    // not a theoretical 2^k. Byes and non-power-of-two draws (a 96-draw Masters)
+    // break the power-of-two assumption — that is how "15 of 8 reached QF" arose.
+    // Counting the real field keeps the numerator a genuine subset of it. The view
+    // shows the round's advancers, so the rest lost here or lack an ingested box.
+    const totW = T.players.filter(p => hasBox(p, rIdx)).length || nAll;
     const titleLabel = `${roundLabel} · players ranked by metric`;
-    const baseNote = `${nAll} of ${totW} player${totW === 1 ? '' : 's'} who reached ${roundLabel}${nAll < totW ? ' shown — others have no per-match data ingested.' : ' shown.'}`;
+    const baseNote = `${nAll} of ${totW} player${totW === 1 ? '' : 's'} who reached ${roundLabel} shown${nAll < totW ? ' — the rest lost this round or have no ingested box score.' : '.'}`;
     const note = selNames.length ? `Filtered to ${entries.length} of ${nAll} winners — ${baseNote}` : baseNote;
     return barBlock(titleLabel, note, entries, roundAvgByKey);
   };
