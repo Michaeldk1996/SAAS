@@ -3528,6 +3528,15 @@ function newsTz(){
   try { const t = localStorage.getItem('stennisfy.tz'); return (t && String(t).trim()) || undefined; }
   catch (e) { return undefined; }
 }
+// Header "Live · updated HH:MM:SS" clock. Bind it to the same member tz as the
+// card/row times (via newsTz) so the "updated" time and the fixture times are
+// read in one zone. Was device-local with no timeZone arg, so a member on an
+// override zone saw an "updated" clock that didn't line up with their card
+// times — which read as "the list is stale/broken" (TEN-8). Invalid tz → local.
+function headerClockFmt(d){
+  try { return d.toLocaleTimeString(undefined, { timeZone: newsTz() }); }
+  catch (e) { return d.toLocaleTimeString(); }
+}
 // Absolute HH:MM for a row timestamp; '—' for undated items (never a zero-time).
 function newsFmtTime(ts){
   if (!isFinite(ts)) return '—';
@@ -4820,7 +4829,7 @@ async function loadMatches(){
     dataLoadedAt = new Date();
     document.getElementById('dataStatus').classList.remove('error');
     document.getElementById('dataStatus').innerHTML =
-      `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${dataLoadedAt.toLocaleTimeString()}</span>`;
+      `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${headerClockFmt(dataLoadedAt)}</span>`;
     // Completed view overrides the live line with the muted 'Settled · <date>' chrome.
     if (typeof updateMatchesHeaderChrome === 'function') updateMatchesHeaderChrome();
   } else if (matchesLoadedOnce){
@@ -5415,7 +5424,7 @@ function updateMatchesHeaderChrome(){
     } else {
       ds.classList.remove('settled');
       if (dataLoadedAt){
-        ds.innerHTML = `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${dataLoadedAt.toLocaleTimeString()}</span>`;
+        ds.innerHTML = `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${headerClockFmt(dataLoadedAt)}</span>`;
       }
     }
   }
