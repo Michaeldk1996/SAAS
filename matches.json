@@ -17493,7 +17493,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "394b70b2b5f51b7e16f580e390e3cf0e",
@@ -19419,22 +19421,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
     "oddsMovement": {
@@ -21016,7 +21007,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-3, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "8a1deb0fc6b46b8184e97845839049e9",
@@ -51154,7 +51162,9 @@
       "edgeVsPinnacleP1": -0.0376,
       "edgeVsPinnacleP2": 0.0376,
       "ts": "2026-08-06T06:19:24.140Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152464",
@@ -53202,7 +53212,9 @@
       }
     },
     "finishedAt": "2026-08-06T02:09:59.920Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152465",
@@ -69355,7 +69367,9 @@
       "edgeVsPinnacleP1": -0.0485,
       "edgeVsPinnacleP2": 0.0485,
       "ts": "2026-08-06T06:19:24.140Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152498",
@@ -71635,7 +71649,9 @@
       }
     },
     "finishedAt": "2026-08-06T02:09:59.920Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152509",
@@ -74191,7 +74207,9 @@
       }
     },
     "finishedAt": "2026-08-06T02:09:59.920Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152511",
@@ -76515,7 +76533,9 @@
       }
     },
     "finishedAt": "2026-08-06T02:09:59.920Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152578",
@@ -93375,7 +93395,9 @@
       "edgeVsPinnacleP1": 0.0288,
       "edgeVsPinnacleP2": -0.0288,
       "ts": "2026-08-07T03:42:07.164Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152642",
@@ -104250,7 +104272,9 @@
       "edgeVsPinnacleP1": 0.075,
       "edgeVsPinnacleP2": -0.075,
       "ts": "2026-08-07T03:42:07.164Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152795",
@@ -115465,7 +115489,9 @@
       "edgeVsPinnacleP1": -0.1191,
       "edgeVsPinnacleP2": 0.1191,
       "ts": "2026-08-07T01:39:13.010Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152796",
@@ -137444,7 +137470,9 @@
       "edgeVsPinnacleP1": -0.0447,
       "edgeVsPinnacleP2": 0.0447,
       "ts": "2026-08-07T03:42:07.164Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152832",
@@ -147337,7 +147365,9 @@
       "edgeVsPinnacleP1": 0.0415,
       "edgeVsPinnacleP2": -0.0415,
       "ts": "2026-08-06T06:19:24.140Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152573",
@@ -149394,7 +149424,9 @@
       "edgeVsPinnacleP1": 0.0072,
       "edgeVsPinnacleP2": -0.0072,
       "ts": "2026-08-07T01:39:13.010Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152794",
@@ -157967,7 +157999,9 @@
       "edgeVsPinnacleP1": -0.0157,
       "edgeVsPinnacleP2": 0.0157,
       "ts": "2026-08-07T21:25:01.783Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152804",
@@ -167498,7 +167532,9 @@
       "edgeVsPinnacleP1": 0.0154,
       "edgeVsPinnacleP2": -0.0154,
       "ts": "2026-08-07T06:49:19.849Z"
-    }
+    },
+    "retired": true,
+    "walkover": false
   },
   {
     "id": "past-12152814",
@@ -169503,7 +169539,9 @@
       }
     },
     "finishedAt": "2026-08-07T01:39:13.010Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152851",
@@ -173096,7 +173134,9 @@
       "edgeVsPinnacleP1": -0.01,
       "edgeVsPinnacleP2": 0.01,
       "ts": "2026-08-08T00:53:58.183Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152852",
@@ -194148,7 +194188,9 @@
       "edgeVsPinnacleP1": 0.0798,
       "edgeVsPinnacleP2": -0.0798,
       "ts": "2026-08-07T21:25:01.783Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152853",
@@ -197641,7 +197683,9 @@
       "edgeVsPinnacleP1": -0.002,
       "edgeVsPinnacleP2": 0.002,
       "ts": "2026-08-07T21:25:01.783Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152862",
@@ -200046,7 +200090,9 @@
       }
     },
     "finishedAt": "2026-08-07T03:42:07.164Z",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152854",
@@ -203192,7 +203238,9 @@
           ]
         }
       }
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "4d13cee224a182f9a26fb3495a4f9cf8",
@@ -206373,7 +206421,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "d7a7ebf89a7fa7a9bb7675162f430ae9",
@@ -236116,7 +236166,9 @@
       "edgeVsPinnacleP1": 0.1287,
       "edgeVsPinnacleP2": -0.1287,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152177",
@@ -250760,7 +250812,9 @@
       "edgeVsPinnacleP1": -0.0547,
       "edgeVsPinnacleP2": 0.0547,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152179",
@@ -275132,7 +275186,9 @@
       "edgeVsPinnacleP1": -0.0712,
       "edgeVsPinnacleP2": 0.0712,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152181",
@@ -295154,7 +295210,9 @@
       "edgeVsPinnacleP1": 0.0111,
       "edgeVsPinnacleP2": -0.0111,
       "ts": "2026-08-05T09:40:00.988Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152182",
@@ -305659,7 +305717,9 @@
       "edgeVsPinnacleP1": -0.0862,
       "edgeVsPinnacleP2": 0.0862,
       "ts": "2026-08-05T18:57:16.425Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152198",
@@ -315436,7 +315496,9 @@
       "edgeVsPinnacleP1": 0.1057,
       "edgeVsPinnacleP2": -0.1057,
       "ts": "2026-08-05T06:15:49.474Z"
-    }
+    },
+    "retired": true,
+    "walkover": false
   },
   {
     "id": "past-12152204",
@@ -327029,7 +327091,9 @@
       "edgeVsPinnacleP1": -0.0067,
       "edgeVsPinnacleP2": 0.0067,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152205",
@@ -344329,7 +344393,9 @@
       "edgeVsPinnacleP1": 0.057,
       "edgeVsPinnacleP2": -0.057,
       "ts": "2026-08-06T05:27:29.132Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152206",
@@ -358147,7 +358213,9 @@
       "edgeVsPinnacleP1": -0.071,
       "edgeVsPinnacleP2": 0.071,
       "ts": "2026-08-06T05:27:29.132Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152339",
@@ -370623,7 +370691,9 @@
       "edgeVsPinnacleP1": -0.0528,
       "edgeVsPinnacleP2": 0.0528,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152340",
@@ -384876,7 +384946,9 @@
       "edgeVsPinnacleP1": -0.0066,
       "edgeVsPinnacleP2": 0.0066,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152341",
@@ -397758,7 +397830,9 @@
       "edgeVsPinnacleP1": -0.0656,
       "edgeVsPinnacleP2": 0.0656,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152342",
@@ -414315,7 +414389,9 @@
       "edgeVsPinnacleP1": 0.0566,
       "edgeVsPinnacleP2": -0.0566,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152466",
@@ -422991,7 +423067,9 @@
       "edgeVsPinnacleP1": -0.1268,
       "edgeVsPinnacleP2": 0.1268,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152497",
@@ -430451,7 +430529,9 @@
       "edgeVsPinnacleP1": 0.0859,
       "edgeVsPinnacleP2": -0.0859,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152499",
@@ -441484,7 +441564,9 @@
       "edgeVsPinnacleP1": 0.0953,
       "edgeVsPinnacleP2": -0.0953,
       "ts": "2026-08-06T02:09:59.920Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152508",
@@ -456940,7 +457022,9 @@
       "edgeVsPinnacleP1": 0.0661,
       "edgeVsPinnacleP2": -0.0661,
       "ts": "2026-08-06T05:27:29.132Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152512",
@@ -473955,7 +474039,9 @@
       "edgeVsPinnacleP1": -0.0057,
       "edgeVsPinnacleP2": 0.0057,
       "ts": "2026-08-06T05:27:29.132Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "past-12152569",
@@ -489237,7 +489323,9 @@
       "edgeVsPinnacleP1": -0.0403,
       "edgeVsPinnacleP2": 0.0403,
       "ts": "2026-08-05T21:53:42.924Z"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "d13c42c72a41e1837707761aa78dc879",
@@ -491906,7 +491994,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "2ca6cd8d8b146012369bd4790544bee3",
@@ -494988,7 +495078,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "ddc9ec8922662892ff4bf1d2a68d711c",
@@ -497672,7 +497764,9 @@
       "p1Sets": 0,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "e25f27a69a64d0d6d9b9cf782227d38e",
@@ -529395,7 +529489,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": true,
+    "walkover": false
   },
   {
     "id": "ed78c4f7d62457d3c7df289178e8700a",
@@ -540304,7 +540400,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "b50e5e34e830727fa4c146721d6f5c0b",
@@ -556752,7 +556850,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "9446116c98de2a8c00d8c02e23a671c1",
@@ -578312,7 +578412,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "26859a4412e5cfc711741afaf58d7a5e",
@@ -588881,7 +588983,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "63136c9ff1cd85f1723a2b15bab34f27",
@@ -618150,7 +618254,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "5705a422889bf0ba13b65b4a95d6b390",
@@ -620843,7 +620949,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "74087e165a849383d004427c2e05681e",
@@ -623535,7 +623643,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "9a3098e1ae90d73004b2cb5c99cb7dae",
@@ -638572,7 +638682,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "9d5b8c5a110914e382207850fb49a116",
@@ -655431,7 +655543,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "0af7cfb0eaaddb51ab120b6956e08940",
@@ -658244,7 +658358,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "a821a5606366c67549db1febfc784891",
@@ -674824,7 +674940,9 @@
       "p1Sets": 1,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "0de69b807d1f7ec5e536d276ca41b594",
@@ -716904,7 +717022,9 @@
       "p1Sets": 0,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "0218b801109eb30a011e8f0036ab301d",
@@ -719641,7 +719761,9 @@
       "p1Sets": 1,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "ff6e6f1d1b6e3139382a543a768c41d6",
@@ -732165,7 +732287,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "93785a30f32bce26c0127d729b76ab68",
@@ -740405,7 +740529,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "5f048e744a563365b0d035c4e461fd1f",
@@ -743374,7 +743500,9 @@
       "p1Sets": 2,
       "p2Sets": 0,
       "winner": "p1"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "43bd849efc6e3de91c16879e55badb71",
@@ -746595,7 +746723,9 @@
       "p1Sets": 2,
       "p2Sets": 0,
       "winner": "p1"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "61767792f8b00ecdbb496c875941e2bd",
@@ -748969,7 +749099,9 @@
       "p1Sets": 0,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "97e233f1afee02169af8fcef9a1bf19f",
@@ -751687,7 +751819,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "7df844cfc9e21f1c3c6a098c1daf87a9",
@@ -754609,7 +754743,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "faf63e949157babf9264d94831818015",
@@ -757245,7 +757381,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "d469a29752f1f03c980e1de1a1b52bd6",
@@ -760202,7 +760340,9 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "20d258a5024408ea7dc4af638f7a5e80",
@@ -763162,7 +763302,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "f10e7e49e4dc7c50b2aedc4656c929e4",
@@ -770303,7 +770445,9 @@
       "p1Sets": 2,
       "p2Sets": 0,
       "winner": "p1"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "f245d94232bde97a7c9791892bbe3ab2",
@@ -781545,7 +781689,9 @@
       "p1Sets": 0,
       "p2Sets": 2,
       "winner": "p2"
-    }
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "a4469415d8d5215583c05db76719f39c",
@@ -801213,7 +801359,9 @@
       "winner": "p2"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "86ae53877ce2aec9dbda5204f08e0557",
@@ -803955,6 +804103,8 @@
       "winner": "p1"
     },
     "interrupted": false,
-    "partialScore": null
+    "partialScore": null,
+    "retired": true,
+    "walkover": false
   }
 ]
