@@ -2319,6 +2319,7 @@
       <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
+          <button data-day="daymin3" id="daymin3Tab"><span class="dtop" id="daymin3Top"></span><span class="dbottom" id="daymin3Bottom"></span></button>
           <button data-day="daymin2" id="daymin2Tab"><span class="dtop" id="daymin2Top"></span><span class="dbottom" id="daymin2Bottom"></span></button>
           <button data-day="yesterday"><span class="dtop" id="yesterdayTop"></span><span class="dbottom" id="yesterdayBottom"></span></button>
           <button class="active is-today" data-day="today"><span class="dtop" id="todayTop"></span><span class="dbottom" id="todayBottom"></span></button>
@@ -5097,7 +5098,7 @@ function getFiltered(){
       const bucket = matchDayBucket(m);
       if (state.day === 'all') {
         // "All days" = every upcoming day; hide finished/past matches (keep live).
-        const isPast = bucket === 'past' || bucket === 'yesterday' || bucket === 'daymin2';
+        const isPast = bucket === 'past' || bucket === 'yesterday' || bucket === 'daymin2' || bucket === 'daymin3';
         if (isPast && !m.live) return false;
       } else if (state.day === 'past') {
         // "Past" = finished matches only, kept for 24h after they finished.
@@ -5146,8 +5147,10 @@ function getFiltered(){
 function formatShortDate(d){
   return `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
 }
+const daymin3Date = new Date(Date.now() - 3 * 86400000);
 const daymin2Date = new Date(Date.now() - 2 * 86400000);
 const day2Date = new Date(Date.now() + 2 * 86400000);
+const daymin3Label = formatShortDate(daymin3Date);
 const daymin2Label = formatShortDate(daymin2Date);
 const day2Label = formatShortDate(day2Date);
 function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' }); }
@@ -5158,11 +5161,13 @@ function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' });
 // the same day boundaries matchDayBucket() uses, so a tab's date always names the
 // tournament day whose fixtures it admits — the grouping itself is unchanged.
 const railDate = d => `${weekday(d)} ${d.getDate()}`;
+document.getElementById('daymin3Top').textContent   = railDate(daymin3Date);
 document.getElementById('daymin2Top').textContent   = railDate(daymin2Date);
 document.getElementById('yesterdayTop').textContent = railDate(new Date(Date.now() - 86400000));
 document.getElementById('todayTop').textContent     = railDate(new Date());
 document.getElementById('tomorrowTop').textContent  = railDate(new Date(Date.now() + 86400000));
 document.getElementById('day2Top').textContent      = railDate(day2Date);
+document.getElementById('daymin3Bottom').textContent   = '';
 document.getElementById('daymin2Bottom').textContent   = '';
 document.getElementById('yesterdayBottom').textContent = 'Yesterday';
 document.getElementById('todayBottom').textContent     = 'Today';
@@ -5189,12 +5194,14 @@ function matchDayBucket(m){
   // bucketed to Tomorrow and the default Today tab rendered empty.
   const dateStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const matchDay = m.date;
+  const threeDaysAgo = dateStr(new Date(now.getTime() - 3 * dayMs));
   const twoDaysAgo = dateStr(new Date(now.getTime() - 2 * dayMs));
   const yesterday = dateStr(new Date(now.getTime() - dayMs));
   const today = dateStr(now);
   const tomorrow = dateStr(new Date(now.getTime() + dayMs));
   const dayAfterTomorrow = dateStr(new Date(now.getTime() + 2 * dayMs));
 
+  if (matchDay === threeDaysAgo) return 'daymin3';
   if (matchDay === twoDaysAgo) return 'daymin2';
   if (matchDay === yesterday) return 'yesterday';
   if (matchDay === today) {
@@ -5231,6 +5238,7 @@ function statusLabel(m){
   if (m.live) return `LIVE${m.liveStatus ? ' · ' + m.liveStatus : ''}`;
   const day = matchDayBucket(m);
   if (day === 'past') return 'Finished';
+  if (day === 'daymin3') return daymin3Label;
   if (day === 'daymin2') return daymin2Label;
   if (day === 'yesterday') return 'Yesterday';
   if (day === 'today') return 'Today';
@@ -5530,7 +5538,7 @@ function mcSigPanel(m){
 // forward-date truncation. Called at the top of every renderMatches so it always tracks
 // the current view + selected day. No data-layer change.
 function settledDateLabel(){
-  const off = { today:0, yesterday:-1, daymin2:-2, tomorrow:1, day2:2 }[state.day];
+  const off = { today:0, yesterday:-1, daymin2:-2, daymin3:-3, tomorrow:1, day2:2 }[state.day];
   if (off === undefined) return '';
   const d = new Date(Date.now() + off * 86400000);
   return `${d.getDate()} ${d.toLocaleDateString('en-US',{ month:'short' })} ${d.getFullYear()}`;
@@ -5561,7 +5569,9 @@ function updateMatchesHeaderChrome(){
   // (Supersedes the PASS-5 "future tabs visible in both views" rule for Results only —
   // Matches keeps the full forward rail.) The relative-word sub-labels (Yesterday /
   // Tomorrow) are dropped in Results so the dates carry the rail; the back chevron
-  // carries the 7-day retention notice.
+  // carries the retention notice. Retention window is 4 days — today + 3 prior
+  // (daymin3), the "3 day maximum after today" the founder settled on 2026-08-08,
+  // overriding the export's §2 "kept for 7 days".
   const tomo = document.querySelector('#dayTabs button[data-day="tomorrow"]');
   const d2   = document.getElementById('day2Tab');
   const fwd  = document.getElementById('dayTabsRight');
@@ -5582,7 +5592,7 @@ function updateMatchesHeaderChrome(){
     if (fwd){ fwd.disabled = true; fwd.style.opacity = '0.35'; fwd.style.pointerEvents = 'none'; }
     if (yBot) yBot.textContent = '';
     if (tBot) tBot.textContent = '';
-    if (back) back.title = 'Results are kept for 7 days';
+    if (back) back.title = 'Results are kept for 4 days';
     if (surfDD){ surfDD.style.display = 'none'; surfDD.classList.remove('open'); }
     // Surface is not filterable in Results (control hidden). getFiltered() skips the
     // surface predicate in completed view, so a surface pick left over from the Matches
@@ -5644,7 +5654,7 @@ function renderMatches(){
   // TEN-8: day dividers only make sense when the list is a single tournament day
   // sorted chronologically. Off for "All days"/"Past" (mixed dates) and any non-time
   // sort (odds gap, upset, drift, closing) where order isn't chronological.
-  const dividersOn = state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','day2'].includes(state.day);
+  const dividersOn = state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
   let prevLocalDay = null;
   const cards = filtered.map(m => {
     // TEN-8: insert a divider before the first card whose member-local calendar day
@@ -5672,7 +5682,7 @@ function renderMatches(){
     // (never blank/guessed) if this is a past-day match whose score wasn't
     // returned by the API.
     const dayBucket = matchDayBucket(m);
-    const isPastDay = dayBucket === 'daymin2' || dayBucket === 'yesterday';
+    const isPastDay = dayBucket === 'daymin3' || dayBucket === 'daymin2' || dayBucket === 'yesterday';
     const finalScore = m.finalScore || null;
     // Score at the point of suspension. Same shape as finalScore, so it renders
     // through the same code paths — but it is NEVER a result, so it must not
@@ -5774,7 +5784,7 @@ function renderMatches(){
     // Per the export spec no relative "Today" tag appears — the date strip above already
     // states the selected day; a card whose day differs shows its actual date, muted.
     const liveOrInt = m.live || m.interrupted;
-    const daySpecific = ['today','yesterday','tomorrow','daymin2','day2'].includes(state.day);
+    const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
     const showAltDate = (state.day === 'all' || state.day === 'past' || (daySpecific && dayBucket !== state.day));
     // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
     // always shown now, not just the bare time and not only when the day differs.

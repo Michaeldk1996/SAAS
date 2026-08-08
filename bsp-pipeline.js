@@ -157,18 +157,20 @@ function computeDay(commenceTime) {
   const dateStr = d => d.toISOString().split('T')[0];
   const matchDay = dateStr(matchDate);
 
+  const threeDaysAgo = dateStr(new Date(now.getTime() - 3 * dayMs));
   const twoDaysAgo = dateStr(new Date(now.getTime() - 2 * dayMs));
   const yesterday = dateStr(new Date(now.getTime() - dayMs));
   const today = dateStr(now);
   const tomorrow = dateStr(new Date(now.getTime() + dayMs));
   const dayAfterTomorrow = dateStr(new Date(now.getTime() + 2 * dayMs));
 
+  if (matchDay === threeDaysAgo) return 'daymin3';
   if (matchDay === twoDaysAgo) return 'daymin2';
   if (matchDay === yesterday) return 'yesterday';
   if (matchDay === today) return matchDate < now ? 'past' : 'today';
   if (matchDay === tomorrow) return 'tomorrow';
   if (matchDay === dayAfterTomorrow) return 'day2';
-  if (matchDate < now) return 'past'; // older than 2 days ago
+  if (matchDate < now) return 'past'; // older than 3 days ago
   return 'later'; // further out than day2 — visible only under "All days"
 }
 
@@ -4057,10 +4059,12 @@ async function runPipeline() {
     matches.push(await buildUpcomingMatchObject(fixture, surfaceMap, venueMap));
   }
 
-  // Completed matches for the Today / Yesterday / 2-days-ago tabs: a 3-day
-  // trailing window that now INCLUDES today, so a match that finishes today
-  // gets its real score + box-score stats on the very next run instead of
-  // waiting until it rolls into "yesterday". Sourced directly from get_fixtures
+  // Completed matches for the Today / Yesterday / 2-days-ago / 3-days-ago tabs:
+  // a 4-day trailing window (today + 3 prior) that INCLUDES today, so a match
+  // that finishes today gets its real score + box-score stats on the very next
+  // run instead of waiting until it rolls into "yesterday". The 3-day-back floor
+  // matches the Results rail's retention window (founder ruling 2026-08-08:
+  // "3 day maximum after today, so 4 days"). Sourced directly from get_fixtures
   // since finished matches have no betting-odds event to build from. Same
   // 'Finished'/'Retired'/'Walk Over' filter already used elsewhere
   // (courtSpeedRecordFromFixtures, seasonRowFromFixtures) for a genuinely
@@ -4068,15 +4072,15 @@ async function runPipeline() {
   // main-tour-only scope the odds-driven Today/Tomorrow tabs already have.
   const dayMs = 86400000;
   const dateStr = d => d.toISOString().split('T')[0];
-  const twoDaysAgo = dateStr(new Date(Date.now() - 2 * dayMs));
-  console.log(`Fetching finished fixtures (${twoDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
-  const pastFixtures = await fetchApiTennisFixtures(twoDaysAgo, today);
+  const threeDaysAgo = dateStr(new Date(Date.now() - 3 * dayMs));
+  console.log(`Fetching finished fixtures (${threeDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
+  const pastFixtures = await fetchApiTennisFixtures(threeDaysAgo, today);
   const finishedPastFixtures = pastFixtures.filter(f =>
     (['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || isInterruptedFixture(f))
     && f.event_qualification !== 'True'
   );
   const interruptedCount = finishedPastFixtures.filter(isInterruptedFixture).length;
-  console.log(`Found ${finishedPastFixtures.length} played matches in the 3-day trailing window (incl. today)`
+  console.log(`Found ${finishedPastFixtures.length} played matches in the 4-day trailing window (incl. today)`
     + ` — ${interruptedCount} of them interrupted/suspended (partial score + stats, no result).`);
   for (const fixture of finishedPastFixtures) {
     const pastMatch = await buildPastMatchObject(fixture, surfaceMap, venueMap);
