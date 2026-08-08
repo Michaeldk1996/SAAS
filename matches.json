@@ -2065,7 +2065,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -2074,11 +2074,16 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 3
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 5,
+        "p2": 6
       }
     ],
-    "liveGameScore": "40 - 40",
+    "liveGameScore": "30 - 30",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
@@ -2842,7 +2847,10 @@
       "edgeVsPinnacleP1": 0.0098,
       "edgeVsPinnacleP2": -0.0098,
       "ts": "2026-08-07T17:57:28.950Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "f3f3dddf74d29f44be6d9bbe2e4abc86",
