@@ -408,6 +408,22 @@
   [data-page="matches"] .mc-statbox__cell:first-child{ border-left:0; padding-left:0; }
   [data-page="matches"] .mc-statbox__lbl{ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.11em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-statbox__val{ font-family:var(--mx-font-mono); font-weight:500; font-size:20px; color:var(--mc-text); }
+  /* §5 (founder ruling 2026-08-08) — the day summary is three STORY panels, not settled/
+     held/upset counters. Each panel is flex:1; a panel with nothing to show is absent,
+     never a zero (Biggest move / Upsets). README §5 tokens: label 10.5px uppercase 0.12em. */
+  [data-page="matches"] .mc-story-strip{ display:flex; gap:12px; }
+  [data-page="matches"] .mc-story{ flex:1 1 0; min-width:0; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:12px; padding:15px 19px; display:flex; flex-direction:column; gap:8px; }
+  [data-page="matches"] .mc-story__lbl{ font-family:var(--mx-font-ui); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-story__move{ display:flex; align-items:baseline; gap:8px; }
+  [data-page="matches"] .mc-story__od{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); letter-spacing:-0.01em; }
+  [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); font-size:12px; color:var(--mc-muted); line-height:1.45; }
+  [data-page="matches"] .mc-story__ctx strong{ color:var(--mc-text); font-weight:700; }
+  [data-page="matches"] .mc-story__ups{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-story__upname{ font-family:var(--mx-font-ui); font-size:13px; color:var(--mc-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-story__upname strong{ color:var(--mc-text); font-weight:700; }
+  [data-page="matches"] .mc-story__upprice{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-text); flex:none; }
+  [data-page="matches"] .mc-story__vp{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); }
+  [data-page="matches"] .mc-story__faint{ font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted-2); opacity:0.85; }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
@@ -445,8 +461,10 @@
      matching the "2px smaller than the total" rule in the export README. */
   [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:24px repeat(3,18px); gap:0 4px; align-items:center; margin-left:24px; }
   [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; margin-right:4px; }
-  [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.06); }
-  [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.03); }
+  /* §6 — sets-won tile: winner white-on-light-fill, loser muted-on-fainter-fill (README
+     §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
+  [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.10); }
+  [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.05); }
   [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
   [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; font-weight:600; margin-left:1px; }
 
@@ -467,11 +485,19 @@
   [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
   [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
   [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
-  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
-  /* §7 SETTLED — delta stacked beneath the close figure; the ▲/▼ glyph carries direction,
-     the colour carries nothing: --muted-2, Plex Mono, every row, both directions. Green/red
-     on odds deltas exists ONLY on the Match Analysis Odds tab. The export HTML's green/red is
-     a known export-vs-README divergence (README is authoritative) — logged in BUILD-NOTES. */
+  [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); font-weight:600; color:var(--mc-muted-2); font-size:11px; }
+  /* §7 SETTLED — the open→close delta reads as a PERCENTAGE, coloured by DIRECTION per the
+     founder's ruling (2026-08-08, overriding the earlier neutral-delta divergence): a price
+     that DRIFTED out (+, close>open) is green #3dd68c, one that SHORTENED (−) is red #e0645b.
+     Red/green stay reserved for price direction only — never match outcome (README §Colors).
+     The direction class also tints the sparkline into the same colour (README §6 "gradient
+     into direction color"). Missing-open rows carry no direction class → neutral, no delta. */
+  [data-page="matches"] .mc-drift.pos{ color:#3dd68c; }
+  [data-page="matches"] .mc-drift.neg{ color:#e0645b; }
+  [data-page="matches"] .mc-journey.pos .mc-journey__track{ background:linear-gradient(90deg, var(--mc-muted), #3dd68c); }
+  [data-page="matches"] .mc-journey.pos .mc-journey__track::after{ background:#3dd68c; }
+  [data-page="matches"] .mc-journey.neg .mc-journey__track{ background:linear-gradient(90deg, var(--mc-muted), #e0645b); }
+  [data-page="matches"] .mc-journey.neg .mc-journey__track::after{ background:#e0645b; }
   [data-page="matches"] .mc-journey__clwrap{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:1px; }
   /* §5/§11 — Completed card identity: no Player-A/B blue. The winner's name is bright
      (--mc-text, 15px 700), the loser's is muted; brightness + the winner accent bar
@@ -5382,9 +5408,19 @@ function mcTermCell(m, who){
   const lbl = m.retired ? 'Retired' : m.walkover ? 'Walkover' : 'Final';
   return `<span class="mc-sets mc-sets--term"><span class="mc-termchip">${lbl}</span></span>`;
 }
-// Completed odds journey for one player: open → gradient track → close, plus a
-// purely-directional drift glyph. Non-semantic (never coloured by shorten/drift).
-// Any value that was never recorded is omitted, never a placeholder.
+// Signed percentage move of a price from open→close, as the odds journey and the
+// day-summary "Biggest move" panel both display it: pct = round((close/open − 1)×100),
+// a real minus sign, direction class (pos = drifted out / neg = shortened). Returns
+// null-safe zeros when either leg is missing so callers can guard on {pct}.
+function oddsPctDelta(open, close){
+  if (open == null || close == null || open <= 0) return { pct: 0, dir: '', sign: '', text: '' };
+  const pct = Math.round((close / open - 1) * 100);
+  const dir = pct > 0 ? 'pos' : pct < 0 ? 'neg' : '';
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
+  return { pct, dir, sign, text: `${sign}${Math.abs(pct)}%` };
+}
+// Completed odds journey for one player: open → gradient track → close, plus the
+// signed-percentage delta (direction-coloured). Any value never recorded is omitted.
 function mcJourney(open, close){
   if (open == null && close == null) return '';
   // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
@@ -5394,17 +5430,13 @@ function mcJourney(open, close){
   // When openingOdds land the em dash resolves on its own and the track/delta return.
   if (open == null) return `<span class="mc-journey"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__spacer"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span></span></span>`;
   if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
-  const diff = close - open;
-  // §7 SETTLED — delta sits BENEATH the close figure; directional filled triangle with a
-  // true minus sign. Colour is --muted-2 in BOTH directions (README is affirmative and
-  // page-specific; green/red is scoped to the Match Analysis Odds tab only). The glyph is
-  // the only thing that encodes direction. The .pos/.neg class stays for structure but
-  // carries no colour — see BUILD-NOTES for the export-vs-README divergence log.
-  const dir = diff > 0 ? 'pos' : diff < 0 ? 'neg' : '';
-  const glyph = diff > 0 ? '▲' : diff < 0 ? '▼' : '·';
-  const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
-  const drift = Math.abs(diff) >= 0.005 ? `<span class="mc-drift ${dir}">${glyph}${sign}${Math.abs(diff).toFixed(2)}</span>` : '';
-  return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span></span>`;
+  // §7 SETTLED (founder ruling 2026-08-08) — the delta reads as ONE object with the close:
+  // a signed PERCENTAGE of the opening price (close/open − 1), not the raw price difference.
+  // Direction drives colour on both the delta and the sparkline (.pos=drifted green /
+  // .neg=shortened red). A true minus sign is used for the negative sign.
+  const d = oddsPctDelta(open, close);
+  const drift = d.pct !== 0 ? `<span class="mc-drift ${d.dir}">${d.text}</span>` : '';
+  return `<span class="mc-journey ${d.dir}"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span></span>`;
 }
 // Market Signal panel — expands IN PLACE beneath the card (review item 1), never
 // navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
@@ -5716,33 +5748,81 @@ function renderMatches(){
     </article>
   `;
   });
-  // §3 — Completed summary strip, prepended once above the cards in Completed view.
-  // Computed over the SAME filtered list that is rendered. Held% and Upsets both
-  // derive from ONE heldCount/denominator pass, so they can never disagree on
-  // screen: favourite = lower CLOSING odds; favHeld = that player won; a match with
-  // a missing close is excluded from BOTH heldCount and the denominator but still
-  // counted in "Matches settled". Upsets = denominator − heldCount (never recomputed).
+  // §5 (founder ruling 2026-08-08) — the day summary is three STORY panels, computed
+  // over the SAME filtered list that is rendered. Each panel is built only when it has
+  // something real to say; a panel with nothing to show is ABSENT, never a zero.
+  //  1. Biggest market move — the single largest |open→close %| across either player.
+  //  2. Upsets — up to 3 winners who closed as the underdog (winner's close > loser's),
+  //     longest closing price first; each row names both players + the winner's price.
+  //  3. Value picks — the model's positive-edge side (valueSnapshot.edgeVsPinnacle) graded
+  //     against the result for THIS day. The rolling ROI/CLV headline needs a persistent
+  //     graded-pick log that doesn't exist yet (matches.json is a ~3-day window), so it is
+  //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
-    const closeOf = (m, who) => m.closingOdds?.[who] ?? m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null;
-    const settled = filtered.length;
-    let heldCount = 0, denom = 0;
+    const openOf  = (m, who) => (m.finalScore ? (m.openingOdds?.[who] ?? null) : null);
+    const closeOf = (m, who) => (m.finalScore ? (m.closingOdds?.[who] ?? m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null) : null);
+
+    // 1. Biggest market move — per (match, player) with both legs recorded.
+    let bmv = null;
     filtered.forEach(m => {
-      const fscore = m.finalScore; if (!fscore) return;
-      const c1 = closeOf(m, 'p1'), c2 = closeOf(m, 'p2');
-      if (c1 == null || c2 == null) return;
-      denom++;
-      const favWon = (c1 < c2) ? (fscore.winner === 'p1') : (fscore.winner === 'p2');
-      if (favWon) heldCount++;
+      if (!m.finalScore) return;
+      ['p1', 'p2'].forEach(who => {
+        const o = openOf(m, who), c = closeOf(m, who);
+        if (o == null || c == null || o <= 0) return;
+        const d = oddsPctDelta(o, c);
+        if (d.pct === 0) return;
+        if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
+          bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
+                  tour: m.tour, round: roundBadgeText(m.tournamentRound) };
+        }
+      });
     });
-    const heldPct = (settled && denom) ? Math.round(heldCount / denom * 100) + '%' : '—';
-    const upsets = denom ? String(denom - heldCount) : '—';
-    const statBoxHtml = `<div class="mc-statbox">
-      <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Matches settled</span><span class="mc-statbox__val">${settled}</span></div>
-      <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Favourites held</span><span class="mc-statbox__val">${heldPct}</span></div>
-      <div class="mc-statbox__cell"><span class="mc-statbox__lbl">Upsets</span><span class="mc-statbox__val">${upsets}</span></div>
-    </div>`;
-    if (summarySlot) summarySlot.innerHTML = statBoxHtml;
-    else cards.unshift(statBoxHtml); // fallback if the slot markup is ever absent
+
+    // 2. Upsets — winner closed longer than the loser (was the underdog).
+    const upsetRows = [];
+    filtered.forEach(m => {
+      const fs = m.finalScore; if (!fs) return;
+      const w = fs.winner, l = w === 'p1' ? 'p2' : 'p1';
+      const wc = closeOf(m, w), lc = closeOf(m, l);
+      if (wc == null || lc == null || wc <= lc) return;
+      upsetRows.push({ winner: w === 'p1' ? m.p1 : m.p2, loser: l === 'p1' ? m.p1 : m.p2, price: wc });
+    });
+    upsetRows.sort((a, b) => b.price - a.price);
+
+    // 3. Value picks — the positive-edge side, graded for this day.
+    let vpPicks = 0, vpWon = 0;
+    filtered.forEach(m => {
+      const vs = m.valueSnapshot, fs = m.finalScore;
+      if (!vs || !fs) return;
+      const e1 = vs.edgeVsPinnacleP1, e2 = vs.edgeVsPinnacleP2;
+      if (e1 == null && e2 == null) return;
+      const pick = (e1 ?? -1) >= (e2 ?? -1) ? 'p1' : 'p2';
+      const edge = pick === 'p1' ? e1 : e2;
+      if (edge == null || edge < 0.005) return;   // value flag: model edge over the sharp book
+      vpPicks++;
+      if (fs.winner === pick) vpWon++;
+    });
+
+    const panels = [];
+    if (bmv) {
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
+        + `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
+        + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div></div>`);
+    }
+    if (upsetRows.length) {
+      const rows = upsetRows.slice(0, 3).map(u =>
+        `<div class="mc-story__ups"><span class="mc-story__upname"><strong>${u.winner}</strong> d. ${u.loser}</span><span class="mc-story__upprice">${u.price.toFixed(2)}</span></div>`).join('');
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>${rows}</div>`);
+    }
+    if (vpPicks > 0) {
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Value picks</div>`
+        + `<div class="mc-story__vp">${vpWon} of ${vpPicks}</div>`
+        + `<div class="mc-story__ctx">graded value picks won this day</div>`
+        + `<div class="mc-story__faint">Rolling ROI shows after 20 graded picks</div></div>`);
+    }
+    const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
+    if (summarySlot) summarySlot.innerHTML = stripHtml;
+    else if (stripHtml) cards.unshift(stripHtml); // fallback if the slot markup is ever absent
   }
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
