@@ -2180,6 +2180,10 @@
   <nav class="sf-nav" id="mainNav">
     <!-- Sidebar glyphs are the export's exact path set (zip 32 nav array), not icon-library substitutes: viewBox 0 0 20 20. -->
     <button class="active" data-tab="matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</button>
+    <!-- Results (TEN-8): settled matches, promoted from the old Upcoming/Completed
+         toggle to a first-class sidebar tab directly under Matches (founder ruling
+         2026-08-08). Reuses the matches page in state.view='completed'. -->
+    <button data-tab="results"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7M4 9h7M4 13h4"/><path d="M12 12.6l1.7 1.7 3.3-3.7"/></svg>Results</button>
     <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
     <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
     <!-- Review item 2: Stennisfy Model = a line-chart glyph (axis + rising trend line), not the star/arrow. Matches the Playing-Styles bar-chart glyph weight. -->
@@ -2253,12 +2257,10 @@
       <p class="mx-datastatus" id="dataStatus"><span class="dot"></span>Loading…</p>
       <p class="mx-tzline" id="tzLine"></p>
     </div>
-    <!-- Upcoming / Completed segmented control (export item 5) — client-side view
-         filter over already-bound matches; no data-layer change. -->
-    <div class="mx-viewseg" id="viewSeg">
-      <button class="active" data-view="upcoming">Upcoming</button>
-      <button data-view="completed">Completed</button>
-    </div>
+    <!-- Upcoming/Completed segmented control removed (TEN-8, founder ruling
+         2026-08-08): Completed is now the sidebar "Results" tab. Upcoming vs
+         completed is driven by which sidebar tab is active (state.view), set in
+         the #mainNav handler. -->
   </div>
 
   <!-- §3 (PASS 3): completed-view day summary sits directly under the status line and
@@ -3420,7 +3422,13 @@ document.getElementById('mainNav').addEventListener('click', e => {
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const tab = btn.dataset.tab;
-  document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === tab));
+  // Results (TEN-8) has no page of its own — it IS the matches page rendered in
+  // the settled/completed view. Map it to data-page="matches" and drive the view
+  // from the active sidebar tab now that the Upcoming/Completed toggle is gone.
+  const pageId = (tab === 'results') ? 'matches' : tab;
+  document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === pageId));
+  if (tab === 'results') { state.view = 'completed'; renderMatches(); }
+  else if (tab === 'matches') { state.view = 'upcoming'; renderMatches(); }
   // Re-entering the Players tab always lands on the player list, never a
   // stale open profile from a previous visit.
   if (tab === 'players') showPlayerList();
@@ -5463,7 +5471,7 @@ function updateMatchesHeaderChrome(){
   // (Time · Biggest upset · Largest drift · Closing value); Upcoming keeps its
   // existing keys. If the active sort isn't valid for the view, fall back to 'time'.
   syncSortDropdown(completed);
-  if (h1)  h1.textContent  = completed ? 'Completed Matches' : "Today's Matches";
+  if (h1)  h1.textContent  = completed ? 'Results' : "Today's Matches";
   if (sub) sub.textContent = completed
     ? 'Settled ATP results with the full opening-to-closing odds journey.'
     : 'Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.';
@@ -11342,8 +11350,11 @@ document.addEventListener('click', e => {
   const dd = document.getElementById('sortDropdown');
   if (dd && !dd.contains(e.target)) dd.classList.remove('open');
 });
-// Upcoming / Completed segmented control (export item 5).
-document.getElementById('viewSeg').addEventListener('click', e => {
+// Upcoming/Completed segmented control removed (TEN-8) — the view is now driven
+// by the Matches / Results sidebar tabs. Listener guarded in case the element is
+// ever reintroduced.
+const _viewSeg = document.getElementById('viewSeg');
+if (_viewSeg) _viewSeg.addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]');
   if (!btn) return;
   document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('active', b === btn));
