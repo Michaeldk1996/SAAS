@@ -359,6 +359,13 @@
      the card ~27px taller than the export. Header's 13px bottom padding (.cmpl
      .mc-head below) restores the export's ~26px header-text→first-row spacing. */
   [data-page="matches"] .mc-players.cmpl{ gap:0; margin-top:0; }
+  /* §2 (founder review 2026-08-08) — Results cards use the EXPORT box model: the card is a
+     bare bordered box with NO padding of its own; the header, each player row and the footer
+     each carry their own 13px 20px / 12px 20px padding and sit border-to-border (0 gap). This
+     replaces the old "card padding 16/18 + row 13/0" approximation so header→rows, row→row and
+     the footer divider all match the export's exact separation. Radius/border are the shared
+     tokens (14px, rgba 0.09). overflow:hidden clips the full-width dividers to the round corners. */
+  [data-page="matches"] .match-card.cmpl{ padding:0; overflow:hidden; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -367,12 +374,12 @@
      surface label (§3) AND pushes the 218px odds column + its 1px divider to the card's
      right content inset so CLOSE lands hard against it and the divider sits 218px in from
      the right, immediately left of the OPEN column (§5). */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 0; border-radius:0; opacity:1; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
      reaches out with a -19px offset to land on the border for that stretch (~3px). */
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:-19px; top:0; bottom:0; width:3px; border-radius:0; background:var(--mc-pos); }
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 2px 2px 0; background:var(--mc-pos); }
   /* §1 (PASS 4) — avatar→name gap is 13px and the avatar ring is --border-data,
      both read from the export completed row (col-1 flex span). Scoped to .cmpl so the
      upcoming card is untouched. The 20px avatar inset comes from the row's 20px padding. */
@@ -487,10 +494,17 @@
   /* Direction bar: 64px lane; the inner bar width is set inline (∝ |delta%| × 2.2,
      clamped 10–56px). Gradient tints into the direction colour; a ▸ arrowhead marks
      the close end. An empty lane (missing open) shows a thin neutral rule, no arrow. */
-  [data-page="matches"] .mc-journey__lane{ width:64px; flex:none; height:6px; position:relative; display:flex; align-items:center; }
-  [data-page="matches"] .mc-journey__bar{ height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
+  /* §1 (founder review 2026-08-08) — open · bar · close · delta share ONE vertical centre
+     line (align-items:center on .mc-journey), and the bar sits centred in its 64px lane
+     (justify-content:center), so the whole object reads through the MIDDLE of the numbers,
+     not near their baseline. Export tokens: bar height 3px, radius 2px. */
+  [data-page="matches"] .mc-journey__lane{ width:64px; flex:none; height:16px; position:relative; display:flex; align-items:center; justify-content:center; }
+  [data-page="matches"] .mc-journey__bar{ height:3px; border-radius:2px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
   [data-page="matches"] .mc-journey__bar::after{ content:'\25B8'; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:9px; line-height:1; color:var(--mc-brand); }
-  [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:1px solid var(--mc-border-subtle); }
+  /* §3 (founder review 2026-08-08) — a missing open means no movement to depict: NO bar
+     and NO rule. The lane stays an invisible 64px spacer so CLOSE holds its column under
+     the header; nothing renders between the em-dash and the close. */
+  [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:0; }
   [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:44px; flex:none; }
   [data-page="matches"] .mc-journey__delta{ font-family:var(--mx-font-mono); font-weight:600; font-size:11px; color:var(--mc-muted-2); width:44px; text-align:right; flex:none; }
@@ -533,8 +547,11 @@
      the block border-to-border gap stays 0. The footer divider sits flush at the
      second row's bottom (margin-top:0, was 14px), with its 12px padding-top pushing
      the "Market Signal" label 13px below the divider — the export's exact footer. */
-  [data-page="matches"] .match-card.cmpl .mc-head{ padding-bottom:13px; }
-  [data-page="matches"] .match-card.cmpl .mc-foot{ margin-top:0; }
+  [data-page="matches"] .match-card.cmpl .mc-head{ padding:13px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
+  [data-page="matches"] .match-card.cmpl .mc-foot{ margin:0; padding:12px 20px; border-top-color:rgba(255,255,255,0.05); }
+  /* §2 — with the completed card carrying no padding, the Market Signal expander spans the
+     full card width on its own (no negative-margin bleed); upcoming keeps its -18px bleed. */
+  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ margin:0; }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -4986,16 +5003,28 @@ function buildTournamentFilters(){
   // drive the rail, so switching days re-derives the row (renderMatches rebuilds it
   // after the day-snap). Scoped to the upcoming view only — Results keeps its shipped
   // behaviour (chips = every tournament with a settled match in the retention window).
+  // §6 (founder review 2026-08-08) — Results chips are scoped to the SELECTED DAY's
+  // settled matches ("one chip per tournament with settled matches that day, derived
+  // from the day's data"), matching how Matches scopes its chips. daymin3…today only.
   const completed = state.view === 'completed';
   const tournaments = [...new Set(
     matches
-      .filter(m => completed ? isFinishedMatch(m) : (isUpcomingOrLive(m) && matchDayBucket(m) === state.day))
+      .filter(m => completed
+        ? (isFinishedMatch(m) && matchDayBucket(m) === state.day)
+        : (isUpcomingOrLive(m) && matchDayBucket(m) === state.day))
       .map(m => m.tour).filter(Boolean)
   )].sort();
-  // Drop selections whose tournament has since finished, else a stale name would
-  // filter every card away with no chip left to clear it.
+  // Drop selections whose tournament isn't in the current day's set, else a stale name
+  // would filter every card away with no chip left to clear it.
   for (const sel of state.tournaments) if (!tournaments.includes(sel)) state.tournaments.delete(sel);
-  group.innerHTML = tournaments.map(t => {
+  // §6 — Results leads the row with an "All tournaments" chip (single-select per the
+  // export: active when nothing specific is picked; clicking it clears back to All).
+  // The chip carries an empty data-tournament as its sentinel. Matches keeps its shipped
+  // multi-select row with no All chip.
+  const allChip = completed
+    ? `<button class="mx-chip${state.tournaments.size === 0 ? ' active' : ''}" data-tournament="" aria-pressed="${state.tournaments.size === 0}">All tournaments</button>`
+    : '';
+  group.innerHTML = allChip + tournaments.map(t => {
     const active = state.tournaments.has(t);
     // The × on a selected chip removes just that tournament; clicking anywhere
     // on the chip toggles it the same way. No selections at all = show every one.
@@ -5615,7 +5644,10 @@ function updateMatchesHeaderChrome(){
     if (dm3)  dm3.style.display  = '';
     if (dm2)  dm2.style.display  = '';
     if (back) back.style.display = '';
-    if (fwd)  fwd.style.display  = '';
+    // §5 (founder review 2026-08-08) — Results has no future days, so the forward
+    // chevron is REMOVED entirely (display:none), not merely disabled. Today is the
+    // rightmost tab; the rail only ever pages backward through the retention window.
+    if (fwd)  fwd.style.display  = 'none';
     // A future day could be the active tab when the user lands on Results — snap
     // back to Today before it filters an empty (upcoming) day into a settled view.
     if (state.day === 'tomorrow' || state.day === 'day2'){
@@ -5625,7 +5657,6 @@ function updateMatchesHeaderChrome(){
     }
     if (tomo) tomo.style.display = 'none';
     if (d2)   d2.style.display   = 'none';
-    if (fwd){ fwd.disabled = true; fwd.style.opacity = '0.35'; fwd.style.pointerEvents = 'none'; }
     if (yBot) yBot.textContent = '';
     if (tBot) tBot.textContent = '';
     // §1 (founder review 2026-08-08) — Flashscore convention: the current-day tab
@@ -11719,11 +11750,19 @@ document.addEventListener('click', e => {
 document.getElementById('tournamentGroup').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tournament]'); if (!btn) return;
   const value = btn.dataset.tournament;
-  // Each chip toggles independently — several can be selected at once. Clicking a
-  // selected chip (or its ×, which lives inside that same button) removes only it.
-  // Removing the last one empties the set, which reads as "all tournaments".
-  if (state.tournaments.has(value)) state.tournaments.delete(value);
-  else state.tournaments.add(value);
+  // §6 (founder review 2026-08-08) — Results is SINGLE-SELECT (export §3): the empty
+  // "All tournaments" sentinel clears the set; picking a tournament selects only it;
+  // clicking the active one deselects back to All. Matches keeps its multi-select toggle.
+  if (state.view === 'completed') {
+    if (value === '' || state.tournaments.has(value)) state.tournaments.clear();
+    else { state.tournaments.clear(); state.tournaments.add(value); }
+  } else {
+    // Each chip toggles independently — several can be selected at once. Clicking a
+    // selected chip (or its ×, which lives inside that same button) removes only it.
+    // Removing the last one empties the set, which reads as "all tournaments".
+    if (state.tournaments.has(value)) state.tournaments.delete(value);
+    else state.tournaments.add(value);
+  }
   buildTournamentFilters();
   renderMatches();
 });
