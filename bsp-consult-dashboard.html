@@ -17704,6 +17704,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     scope: 'w52',
     ctxSurface: 'Hard', ctxRound: 'QF', ctxFormat: 3, ctxTier: 'Masters',
     flash: false, loading: false,
+    tourSel: null,
     meetOpen: false, styleOpen: false, resOpen: false,
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
   };
@@ -17935,31 +17936,68 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       { label: 'Format', pills: [[3, 'Best of 3'], [5, 'Best of 5']].map(f2 => pill(f2[1], S.ctxFormat === f2[0], bindH(() => setCtx({ ctxFormat: f2[0] })), '#5b9bff')) },
     ];
 
-    // current tournament
-    const at = a.tour, bt = b.tour;
-    const resRows = (tt, side) => tt && tt.results ? tt.results.map((r2, i2) => {
-      const rkey2 = side + i2, open = S.yrOpen === rkey2;
-      return { year: r2[0], res: r2[1], open, chev: open ? '▾' : '›',
-        hOpen: bindH(() => setState(s2 => ({ yrOpen: s2.yrOpen === rkey2 ? null : rkey2 }))),
-        matches: (r2[2] || []).map(mm => ({ rd: mm[0], opp: mm[1], score: mm[2] })) };
-    }) : [];
-    if (!at && !bt) {
-      view.tourney = { title: '—', empty: true, present: false, emptyText: 'Neither player has a logged draw at a current event.' };
+    // current tournament — selectable across both players' whole-career history
+    // (item 4). The member picks any tournament either player has played; the card
+    // shows both players' career record and per-edition results at that event.
+    const FINISH_RANK = { 'Won': 8, 'Final': 7, 'Semi-final': 6, 'Quarter-final': 5,
+      'Round of 16': 4, 'Round of 32': 3, 'Round of 64': 2, 'Round of 128': 1 };
+    const tHistA = a.tourHist || [], tHistB = b.tourHist || [];
+    const findT = (hist, nm) => { const n = String(nm || '').toLowerCase();
+      return hist.find(t2 => String(t2.name).toLowerCase() === n) || null; };
+    const careerWL = hist => hist.reduce((ac, t2) => [ac[0] + (t2.won || 0), ac[1] + (t2.lost || 0)], [0, 0]);
+    const winPct = wl => (wl && (wl[0] + wl[1])) ? wl[0] / (wl[0] + wl[1]) * 100 : null;
+    // union of tournament names, ranked: both-played first, then by combined matches.
+    const tMap = {};
+    const tally = (hist, key) => hist.forEach(t2 => { if (!t2.name) return;
+      const s = tMap[t2.name] || (tMap[t2.name] = { name: t2.name, a: 0, b: 0 });
+      s[key] = (t2.won || 0) + (t2.lost || 0); });
+    tally(tHistA, 'a'); tally(tHistB, 'b');
+    const tourList = Object.values(tMap).sort((x, y) => {
+      const xb = (x.a > 0 && x.b > 0) ? 1 : 0, yb = (y.a > 0 && y.b > 0) ? 1 : 0;
+      if (xb !== yb) return yb - xb;
+      const xm = x.a + x.b, ym = y.a + y.b; if (xm !== ym) return ym - xm;
+      return x.name.localeCompare(y.name);
+    });
+    if (!tourList.length) {
+      view.tourney = { title: '—', empty: true, present: false,
+        emptyText: 'No career tournament history on record for either player yet.' };
     } else {
+      const selName = (S.tourSel && tMap[S.tourSel]) ? S.tourSel : tourList[0].name;
+      const aT = findT(tHistA, selName), bT = findT(tHistB, selName);
+      const bestOf = tt => { if (!tt || !Array.isArray(tt.editions) || !tt.editions.length) return null;
+        let best = null, br = -1;
+        tt.editions.forEach(ed => { const r = FINISH_RANK[ed.finish] != null ? FINISH_RANK[ed.finish] : 0;
+          if (r > br) { br = r; best = ed.finish; } });
+        return best; };
+      const wlOf = tt => tt ? [tt.won || 0, tt.lost || 0] : null;
+      const deltaOf = (tt, hist) => { const here = winPct(wlOf(tt)), all = winPct(careerWL(hist));
+        return (here != null && all != null) ? here - all : null; };
+      const resRows = (tt, side) => tt && Array.isArray(tt.editions) ? tt.editions
+        .slice().sort((x, y) => (y.year || 0) - (x.year || 0)).map((ed, i2) => {
+          const rkey2 = side + i2, open = S.yrOpen === rkey2;
+          return { year: String(ed.year || '—'), res: ed.finish || '—', open, chev: open ? '▾' : '›',
+            hOpen: bindH(() => setState(s2 => ({ yrOpen: s2.yrOpen === rkey2 ? null : rkey2 }))),
+            matches: (ed.matches || []).map(mm => ({ rd: mm.round || '—', opp: mm.opp || '—', score: mm.score || '—' })) };
+        }) : [];
+      const aBestF = bestOf(aT), bBestF = bestOf(bT);
+      const aWl = wlOf(aT), bWl = wlOf(bT);
+      const aD = deltaOf(aT, tHistA), bD = deltaOf(bT, tHistB);
       view.tourney = {
-        title: (at && at.event) || (bt && bt.event) || 'Current event',
-        empty: false, present: true,
-        aBest: at && at.best ? 'Best · ' + at.best : '—',
-        bBest: bt && bt.best ? 'Best · ' + bt.best : '—',
-        aWl: at && at.wl ? at.wl[0] + '–' + at.wl[1] + ' here' : '—',
-        bWl: bt && bt.wl ? bt.wl[0] + '–' + bt.wl[1] + ' here' : '—',
-        aDelta: at && at.delta != null ? (at.delta > 0 ? '+' : '−') + Math.abs(at.delta).toFixed(1) + 'pp' : '—',
-        bDelta: bt && bt.delta != null ? (bt.delta > 0 ? '+' : '−') + Math.abs(bt.delta).toFixed(1) + 'pp' : '—',
-        aDeltaColor: at && at.delta != null ? (at.delta > 0 ? '#3dd68c' : '#e0616f') : '#3f4860',
-        bDeltaColor: bt && bt.delta != null ? (bt.delta > 0 ? '#3dd68c' : '#e0616f') : '#3f4860',
-        aDeltaSub: at && at.delta != null ? (at.delta > 0 ? 'wins more here' : 'wins less here') : 'no comparison held',
-        bDeltaSub: bt && bt.delta != null ? (bt.delta > 0 ? 'wins more here' : 'wins less here') : 'no comparison held',
-        aResults: resRows(at, 'a'), bResults: resRows(bt, 'b'),
+        title: selName, empty: false, present: true,
+        options: tourList.map(t2 => ({ name: t2.name, selected: t2.name === selName,
+          label: t2.name + (t2.a > 0 && t2.b > 0 ? '' : t2.a > 0 ? ' · ' + a.short + ' only' : ' · ' + b.short + ' only') })),
+        hSelect: bindH(e => setState({ tourSel: e && e.target ? e.target.value : selName, resOpen: false, yrOpen: null })),
+        aBest: aBestF ? 'Best · ' + aBestF : '—',
+        bBest: bBestF ? 'Best · ' + bBestF : '—',
+        aWl: aWl ? aWl[0] + '–' + aWl[1] + ' here' : '—',
+        bWl: bWl ? bWl[0] + '–' + bWl[1] + ' here' : '—',
+        aDelta: aD != null ? (aD >= 0 ? '+' : '−') + Math.abs(aD).toFixed(1) + 'pp' : '—',
+        bDelta: bD != null ? (bD >= 0 ? '+' : '−') + Math.abs(bD).toFixed(1) + 'pp' : '—',
+        aDeltaColor: aD != null ? (aD >= 0 ? '#3dd68c' : '#e0616f') : '#3f4860',
+        bDeltaColor: bD != null ? (bD >= 0 ? '#3dd68c' : '#e0616f') : '#3f4860',
+        aDeltaSub: aD != null ? (aD >= 0 ? 'wins more here' : 'wins less here') : (aWl ? 'no career baseline' : 'not played here'),
+        bDeltaSub: bD != null ? (bD >= 0 ? 'wins more here' : 'wins less here') : (bWl ? 'no career baseline' : 'not played here'),
+        aResults: resRows(aT, 'a'), bResults: resRows(bT, 'b'),
         resOpen: S.resOpen,
         resLabel: S.resOpen ? 'Hide results at this event' : 'Show results at this event',
         resChev: S.resOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -18080,24 +18118,43 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       cards: [mkCard(a, am, A_COL, 'rgba(106,174,255,0.24)'), mkCard(b, bm, '#e7e9ee', 'rgba(255,255,255,0.12)')],
     };
 
-    // model
-    const amo = a.model, bmo = b.model;
-    if (!amo || !bmo) {
+    // model — Stennisfy "likely opening price" from blended Elo (item 1, TEN-8).
+    // Blend weight comes from our own Elo grid-search research: overall (general)
+    // Elo carries the most signal and surface Elo ALONE is the weakest of every
+    // split, so general is weighted above surface. Surface follows the context
+    // pills (Hard→hard Elo, Clay→clay, Grass→grass), each blended with general.
+    //   blended = MODEL_ELO_W.general·generalElo + MODEL_ELO_W.surface·surfaceElo
+    //   P(A) = 1 / (1 + 10^(-(blendedA - blendedB)/400))   → fair, no-vig price 1/P
+    const MODEL_ELO_W = { general: 0.65, surface: 0.35 };
+    const eloSurfFn = fn('edgeEloSurf');
+    const surfL = String(S.ctxSurface || 'Hard').toLowerCase();
+    const blendElo = full => {
+      if (!eloSurfFn) return null;
+      const gen = eloSurfFn(full, 'all');
+      if (gen == null) return null;                    // no overall Elo → can't price
+      const surfRaw = eloSurfFn(full, surfL);
+      const surf = surfRaw == null ? gen : surfRaw;     // surface falls back to overall
+      return { blended: MODEL_ELO_W.general * gen + MODEL_ELO_W.surface * surf,
+               gen: gen, surfRaw: surfRaw };
+    };
+    const beA = blendElo(a.full), beB = blendElo(b.full);
+    if (!beA || !beB) {
       view.model = { empty: true, present: false,
-        emptyText: 'The model has no priced projection for ' + (!amo ? a.full : b.full) + ', so no fair price or gap can be shown for this pairing yet.' };
+        emptyText: 'No Elo rating on record for ' + (!beA ? a.full : b.full) + ' yet, so a model price can’t be shown for this pairing.' };
     } else {
-      const gap2 = (a.elo != null && b.elo != null) ? Math.abs(a.elo - b.elo) : null;
-      const favSign = (a.elo || 0) >= (b.elo || 0) ? 1 : -1;
-      const fav = favSign > 0 ? a : b;
-      const eloP = gap2 != null ? 1 / (1 + Math.pow(10, -gap2 / 400)) : null;
-      const midP = 1 / ((amo.lo + amo.hi) / 2);
+      const pA = 1 / (1 + Math.pow(10, -(beA.blended - beB.blended) / 400));
+      const pB = 1 - pA;
+      const dec = p => (p > 0 ? 1 / p : null);
+      const favIsA = pA >= pB;
       view.model = { empty: false, present: true,
-        aOpen: amo.lo.toFixed(2) + ' – ' + amo.hi.toFixed(2), bOpen: bmo.lo.toFixed(2) + ' – ' + bmo.hi.toFixed(2),
         priceCol: S.flash ? '#5b9bff' : '#e7e9ee',
         aName: a.full, bName: b.full, aMono: a.mono, bMono: b.mono,
-        eloGap: gap2 != null ? String(gap2) : '—', eloPct: eloP != null ? (eloP * 100).toFixed(0) : '—', favShort: fav.short,
-        midPct: (midP * 100).toFixed(0),
-        hasFoot: gap2 != null,
+        aOpen: dec(pA) != null ? dec(pA).toFixed(2) : '—', bOpen: dec(pB) != null ? dec(pB).toFixed(2) : '—',
+        aPct: (pA * 100).toFixed(0) + '%', bPct: (pB * 100).toFixed(0) + '%',
+        hasFoot: true,
+        blendLabel: S.ctxSurface + ' Elo · general ' + Math.round(MODEL_ELO_W.general * 100) + '% / surface ' + Math.round(MODEL_ELO_W.surface * 100) + '%',
+        favShort: favIsA ? a.short : b.short, favPct: (Math.max(pA, pB) * 100).toFixed(0),
+        eloGap: String(Math.abs(Math.round(beA.blended - beB.blended))),
       };
     }
 
@@ -18283,6 +18340,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
             <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
               <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#4b5672;">Likely opening price</span>
               <span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,2.2vw,28px); font-weight:800; color:${m.priceCol}; transition:color 260ms ease; line-height:1.05;">${E(m.aOpen)}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">${E(m.aPct)} implied</span>
             </div>
           </div>
           <div style="display:flex; flex-direction:column; align-items:center; gap:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.02); border-radius:14px; padding:18px 20px;">
@@ -18293,11 +18351,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
             <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
               <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#4b5672;">Likely opening price</span>
               <span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,2.2vw,28px); font-weight:800; color:${m.priceCol}; transition:color 260ms ease; line-height:1.05;">${E(m.bOpen)}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">${E(m.bPct)} implied</span>
             </div>
           </div>
         </div>
         ${m.hasFoot ? `<div style="display:flex; justify-content:center;">
-          <span style="font-size:11px; color:#4b5672; text-align:center;">Elo gap <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">${E(m.eloGap)}</span> implies <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">~${E(m.eloPct)}%</span> for ${E(m.favShort)} — the model midpoint sits at <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">${E(m.midPct)}%</span>.</span>
+          <span style="font-size:11px; color:#4b5672; text-align:center;">Blended <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">${E(m.blendLabel)}</span> — a <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">${E(m.eloGap)}</span>-point edge puts <span style="color:#8b96b5;">${E(m.favShort)}</span> at <span style="font-family:'IBM Plex Mono',monospace; color:#8b96b5;">~${E(m.favPct)}%</span>. Fair, no-vig prices.</span>
         </div>` : ''}
       </div>`}
     </div>`;
@@ -18448,10 +18507,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function tourneyCard(v) {
     const t = v.tourney;
     return `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:15px;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672;">Current tournament</span>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672;">Tournament</span>
         <span style="flex:1; height:1px; background:rgba(255,255,255,0.06);"></span>
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#8b96b5;">${E(t.title)}</span>
+        ${t.empty ? '' : `<select data-hchange="${t.hSelect}" title="Choose a tournament" style="background:#0a0d14; color:#e7e9ee; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:11px; max-width:280px; cursor:pointer;">
+          ${t.options.map(o => `<option value="${E(o.name)}"${o.selected ? ' selected' : ''}>${E(o.label)}</option>`).join('')}
+        </select>`}
       </div>
       ${t.empty ? `<div style="padding:22px 0; text-align:center; font-size:13px; color:#4b5672;">${E(t.emptyText)}</div>` : `
       <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,220px) minmax(0,1fr); gap:14px; align-items:center;">
@@ -18568,6 +18629,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     });
     root.querySelectorAll('[data-hinput]').forEach(el => {
       el.addEventListener('input', e => { const fn = handlers[+el.dataset.hinput]; if (fn) fn(e); });
+    });
+    root.querySelectorAll('[data-hchange]').forEach(el => {
+      el.addEventListener('change', e => { const fn = handlers[+el.dataset.hchange]; if (fn) fn(e); });
     });
   }
   function render() {
@@ -18693,6 +18757,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       });
       if (Object.keys(surf).length) { e.surf = surf; e.season = { w, l }; }
     }
+    // whole-career tournament history (item 4 — powers the tournament selector).
+    e.tourHist = (prof && Array.isArray(prof.tournamentHistory)) ? prof.tournamentHistory : null;
     // news
     e.news = newsFor(e.full);
     e.__rich = true;
@@ -18711,7 +18777,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         key: key, short: short, full: p.name, mono: monoOf(p.name), ctry: p.country || '—', rank: rank, elo: null,
         arch: null, archDesc: null, thin: false, radar: null, ratingsBySurf: null,
         season: null, surf: null, serve: null, ret: null, press: null,
-        market: null, model: null, tour: null, vsStyle: null, lastVs: null, news: [], __rich: false,
+        market: null, model: null, tour: null, tourHist: null, vsStyle: null, lastVs: null, news: [], __rich: false,
       };
     });
     Object.keys(P2).forEach(k => ROSTER2.push(k));
