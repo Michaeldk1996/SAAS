@@ -368,6 +368,11 @@ def main():
             m['finalScore'] = None
             lives += 1
         elif f.get('event_status') in FINISHED:
+            status = f.get('event_status')
+            # Terminal markers so the card can show a truthful "Retired"/"Walkover"
+            # chip (TEN-8). Kept in lockstep with bsp-pipeline.js's stamping.
+            m['retired'] = (status == 'Retired')
+            m['walkover'] = (status == 'Walk Over')
             fs = build_final_score(f, p1_is_first)
             if fs:
                 m['finalScore'] = fs
@@ -382,6 +387,15 @@ def main():
                 m['liveStatus'] = m['liveScore'] = m['liveGameScore'] = m['liveServer'] = None
                 finals += 1
             else:
+                # Terminal but scoreless (walkover, or a retirement so early no set
+                # parsed): there is no result to write, but the match IS over. Clear
+                # the live/underway apparatus so the card renders the terminal chip
+                # instead of "Underway" for the rest of the day.
+                m['finalScore'] = None
+                m['live'] = False
+                m['interrupted'] = False
+                m['partialScore'] = None
+                m['liveStatus'] = m['liveScore'] = m['liveGameScore'] = m['liveServer'] = None
                 unchanged += 1
         elif f.get('event_status') in INTERRUPTED:
             # Play is suspended: no result to write, but the partial score is

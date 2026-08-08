@@ -327,6 +327,13 @@
      the same .mc-scoreline slot a live score will later occupy. */
   [data-page="matches"] .mc-scoreline.underway{ align-items:center; }
   [data-page="matches"] .mc-underway{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; }
+  /* TEN-8 terminal chip — "Retired"/"Walkover" status marker. Same neutral,
+     state-not-event treatment as Underway (no red, no dot). On a retirement it
+     replaces the partial set-score cluster (the "game" has no added value once a
+     player retired — founder's call); on a scoreless walkover it sits in the
+     .mc-scoreline slot in place of the wrong "Underway" marker. */
+  [data-page="matches"] .mc-termchip{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; white-space:nowrap; }
+  [data-page="matches"] .mc-players.cmpl .mc-sets--term{ display:flex; align-items:center; }
 
   /* column headers — inline on the card header row, right-aligned above the two data columns */
   [data-page="matches"] .mc-colhead-inline{ margin-left:auto; margin-right:10px; display:grid; grid-template-columns:130px 120px; gap:12px; }
@@ -5321,6 +5328,17 @@ function mcSetCluster(finalScore, who){
   }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
 }
+// TEN-8 — a retired match is decided (winner known) but its partial set score has
+// no added value, so the founder's call is to drop the games and show a status
+// chip in the cluster slot instead. The winner row carries the chip; the loser row
+// gets an empty cell so the two-row grid stays aligned. Winner emphasis (the accent
+// bar + brighter name) still comes from the existing `.winner` row class.
+function mcTermCell(m, who){
+  const isW = m.finalScore && m.finalScore.winner === who;
+  if (!isW) return `<span class="mc-sets mc-sets--term"></span>`;
+  const lbl = m.retired ? 'Retired' : m.walkover ? 'Walkover' : 'Final';
+  return `<span class="mc-sets mc-sets--term"><span class="mc-termchip">${lbl}</span></span>`;
+}
 // Completed odds journey for one player: open → gradient track → close, plus a
 // purely-directional drift glyph. Non-semantic (never coloured by shorten/drift).
 // Any value that was never recorded is omitted, never a placeholder.
@@ -5518,6 +5536,12 @@ function renderMatches(){
     let scoreLineHtml = '';
     if (partialScore) {
       scoreLineHtml = `<div class="mc-scoreline"><span class="lbl">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
+    } else if (m.retired || m.walkover) {
+      // TEN-8 — terminal but no final score (a walkover has none; a retirement so
+      // early no set parsed). The match IS over, so it must never read "Underway":
+      // show the truthful chip in the score slot regardless of day/feed-live flag.
+      const lbl = m.retired ? 'Retired' : 'Walkover';
+      scoreLineHtml = `<div class="mc-scoreline underway"><span class="mc-termchip">${lbl}</span></div>`;
     } else if (m.live) {
       scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (isPastDay && !finalScore) {
@@ -5612,13 +5636,13 @@ function renderMatches(){
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span></span>
-            ${mcSetCluster(finalScore, 'p1')}
+            ${(m.retired || m.walkover) ? mcTermCell(m, 'p1') : mcSetCluster(finalScore, 'p1')}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span></span>
-            ${mcSetCluster(finalScore, 'p2')}
+            ${(m.retired || m.walkover) ? mcTermCell(m, 'p2') : mcSetCluster(finalScore, 'p2')}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close)}
           </div>

@@ -2549,6 +2549,14 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     // feed leaves event_winner unset for a suspended match and we never infer one.
     partialScore: interrupted ? (sc => sc && { ...sc, winner: null })(buildFinalScore(fixture)) : null,
     finalScore: interrupted ? null : buildFinalScore(fixture),
+    // Terminal-but-not-normally-scored markers, stamped from the feed's
+    // event_status so the render side (which otherwise can't see event_status)
+    // can show a truthful "Retired"/"Walkover" chip. A retirement carries a
+    // partial finalScore, but the founder's call (TEN-8) is to drop the
+    // now-valueless partial games and show only the chip. A walkover has no
+    // scoreline at all, so this flag is what keeps it from rendering "Underway".
+    retired: fixture.event_status === 'Retired',
+    walkover: fixture.event_status === 'Walk Over',
     matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
     setStats: buildSetStatsFromFixture(fixture, p1Key, p2Key),
   };
