@@ -213,7 +213,7 @@
   [data-page="matches"] .mx-daytabschevron{ background:none; border:none; color:var(--mx-text-faint); cursor:pointer; padding:8px 4px; flex-shrink:0; font-size:14px; }
   [data-page="matches"] .mx-daytabschevron:hover{ color:var(--mx-text-secondary); }
   [data-page="matches"] .mx-daytabs{ display:flex; gap:2px; }
-  [data-page="matches"] .mx-daytabs button{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 13px; font-size:12.5px; color:var(--mx-text-secondary); cursor:pointer; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:var(--mx-font-mono); white-space:nowrap; }
+  [data-page="matches"] .mx-daytabs button{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 13px; font-size:13.5px; font-weight:700; color:var(--mx-text-secondary); cursor:pointer; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:var(--mx-font-ui); white-space:nowrap; }
   [data-page="matches"] .mx-daytabs button .dbottom{ font-size:10px; color:var(--mx-text-faint); font-weight:400; }
   /* §9 (PASS 4) — active date = brighter label (#fff/700) + a 2px --brand underline,
      no box. Export underline is #5b9bff (--brand), not the page's --mx-brand-blue
@@ -5595,6 +5595,8 @@ function updateMatchesHeaderChrome(){
   const back = document.getElementById('dayTabsLeft');
   const yBot = document.getElementById('yesterdayBottom');
   const tBot = document.getElementById('tomorrowBottom');
+  const tdTop = document.getElementById('todayTop');
+  const tdBot = document.getElementById('todayBottom');
   const surfDD = document.getElementById('surfaceDropdown');
   if (completed){
     // A future day could be the active tab when the user lands on Results — snap
@@ -5609,6 +5611,12 @@ function updateMatchesHeaderChrome(){
     if (fwd){ fwd.disabled = true; fwd.style.opacity = '0.35'; fwd.style.pointerEvents = 'none'; }
     if (yBot) yBot.textContent = '';
     if (tBot) tBot.textContent = '';
+    // §1 (founder review 2026-08-08) — Flashscore convention: the current-day tab
+    // reads just "Today" (with the persistent blue dot from .is-today), NOT the date
+    // with "Today" demoted to a sub-line. The date is dropped and the sub-line cleared
+    // so the tab is a single centred "• Today". Other tabs keep weekday+date (Wed 5…).
+    if (tdTop) tdTop.textContent = 'Today';
+    if (tdBot) tdBot.textContent = '';
     if (back) back.title = 'Results are kept for 4 days';
     if (surfDD){ surfDD.style.display = 'none'; surfDD.classList.remove('open'); }
     // Surface is not filterable in Results (control hidden). getFiltered() skips the
@@ -5620,6 +5628,9 @@ function updateMatchesHeaderChrome(){
     if (fwd){ fwd.disabled = false; fwd.style.opacity = ''; fwd.style.pointerEvents = ''; }
     if (yBot) yBot.textContent = 'Yesterday';
     if (tBot) tBot.textContent = 'Tomorrow';
+    // Matches (upcoming) view keeps the date-primary rail with "Today" as the sub-line.
+    if (tdTop) tdTop.textContent = railDate(new Date());
+    if (tdBot) tdBot.textContent = 'Today';
     if (back) back.title = 'Scroll left';
     if (surfDD) surfDD.style.display = '';
   }
