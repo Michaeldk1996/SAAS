@@ -16042,23 +16042,30 @@ const TOURX_RV_CAP = 4, TOURX_PP_CAP = 4;
 // highest-value-first in the round view (incl. unforced errors). `short`
 // is used by the round-view metric filter chips.
 const TOURX_METRICS = [
+  // Headline derived ratings (founder ruling 2026-08-08): the four summary metrics
+  // lead each family. Serve/Return Rating are our own summed-component ratings
+  // (same formula as the Match-Stats modal); Dominance Ratio and Pressure Points
+  // are the single-number reads of return dominance and big-point control. Total
+  // Points Won was removed — it hugs 50% by construction and added little.
+  { key: 'serveRating',          label: 'Serve Rating',                        short: 'Serve Rating',    kind: 'rating' },
   { key: 'firstServePct',        label: '1st Serve %',                         short: '1st Serve %',     kind: 'pct' },
   { key: 'firstServeWonPct',     label: '1st Serve Points Won %',              short: '1st Serve Won',   kind: 'pct' },
   { key: 'secondServeWonPct',    label: '2nd Serve Points Won %',              short: '2nd Serve Won',   kind: 'pct' },
+  { key: 'returnRating',         label: 'Return Rating',                       short: 'Return Rating',   kind: 'rating' },
+  { key: 'dominanceRatio',       label: 'Dominance Ratio',                     short: 'Dominance',       kind: 'ratio' },
+  { key: 'pressurePct',          label: 'Pressure Points',                     short: 'Pressure',        kind: 'pct' },
   { key: 'winnersPct',           label: 'Winners (per point)',                 short: 'Winners',         kind: 'perpoint' },
   { key: 'unforcedErrorsPct',    label: 'Unforced Errors (per point)',         short: 'Unforced Errors', kind: 'perpoint' },
   { key: 'winnersUnforcedRatio', label: 'Winners / Unforced Errors Ratio',     short: 'W/UE Ratio',      kind: 'ratio' },
-  { key: 'totalPointsWonPct',    label: 'Total Points Won %',                  short: 'Total Points Won', kind: 'pct' },
 ];
-// Reports metric-grid ordering (design-export §6 + founder ruling 2026-07-31).
-// The 2-col row-major card grid groups the three SERVE metrics down the left
-// column and the three RALLY metrics down the right column; the overall Total
-// Points Won card is kept, appended to the BOTTOM of the (left) serve column —
-// "keep the 7th card but put it under the serve metrics". Interleaving serve/
-// rally pairs into a row-major grid yields serve-left / rally-right; the trailing
-// serve-family card (Total Points Won) then lands directly beneath the serve column.
-const TOURX_SERVE_KEYS = ['firstServePct', 'firstServeWonPct', 'secondServeWonPct'];
-const TOURX_RALLY_KEYS = ['winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio'];
+// Reports metric-grid ordering (design-export §6 + founder rulings 2026-07-31 /
+// 2026-08-08). The 2-col row-major card grid groups the SERVE-family metrics down
+// the left column (Serve Rating heads the four serve cards) and the RETURN/RALLY
+// metrics down the right (Return Rating, Dominance Ratio, Pressure Points, then
+// the winners/UE trio). Interleaving the two lists row-major yields serve-left /
+// return-right; the right column simply runs two cards longer.
+const TOURX_SERVE_KEYS = ['serveRating', 'firstServePct', 'firstServeWonPct', 'secondServeWonPct'];
+const TOURX_RALLY_KEYS = ['returnRating', 'dominanceRatio', 'pressurePct', 'winnersPct', 'unforcedErrorsPct', 'winnersUnforcedRatio'];
 function tourxGridOrder(metrics){
   const serve = metrics.filter(m => TOURX_SERVE_KEYS.includes(m.key));
   const rally = metrics.filter(m => TOURX_RALLY_KEYS.includes(m.key));
@@ -16139,6 +16146,7 @@ function tourxCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 // two decimals = round(v)/100; toFixed(2) keeps the column aligned (0.10 not 0.1).
 function tourxFmt(v, kind){
   if (kind === 'ratio') return Number(v).toFixed(2);
+  if (kind === 'rating') return String(Math.round(Number(v)));   // summed-component rating — whole number, no % suffix
   if (kind === 'perpoint') return (Math.round(Number(v)) / 100).toFixed(2);
   return (Number.isInteger(v) ? v : Number(v).toFixed(1)) + '%';
 }
@@ -16487,6 +16495,55 @@ function tourxOpenReport(name){ tourxState.section = 'reports'; tourxState.tour 
 /* ---------- Section 2: Tournament Reports ---------- */
 // Shape a tournament-progression.json entry into per-player metric arrays +
 // derived round-reached, without inventing anything.
+// The four headline ratings are DERIVED per round from the raw components stored
+// in tournament-progression.json — never a direct feed key. Same definitions as
+// the Match-Stats modal (msheetDerived / msheetRatingSum / msheetPressure), just
+// fed from the progression JSON's per-round shape. Fail-closed: any missing
+// component collapses that rating to null (→ em dash), matching the modal.
+const TOURX_DERIVED_KEYS = ['serveRating', 'returnRating', 'dominanceRatio', 'pressurePct'];
+function tourxFracPct(fr){ return (fr && fr.total) ? (fr.won / fr.total * 100) : null; }
+function tourxDerivedMetrics(m, oppM){
+  m = m || {};
+  const out = { serveRating: null, returnRating: null, dominanceRatio: null, pressurePct: null };
+  // Serve Rating = 1st serve % + 1st serve points won % + 2nd serve points won %
+  //              + service games won % (svHold). Sum of the rounded components.
+  const svHoldPct = (m.svHold && m.svHold.total) ? (m.svHold.won / m.svHold.total * 100) : null;
+  if (m.firstServePct != null && m.firstServeWonPct != null && m.secondServeWonPct != null && svHoldPct != null){
+    out.serveRating = Math.round(m.firstServePct) + Math.round(m.firstServeWonPct) + Math.round(m.secondServeWonPct) + Math.round(svHoldPct);
+  }
+  // Return Rating = 1st return won % + 2nd return won % + break points converted %
+  //               + return games won %.
+  const r1 = tourxFracPct(m.ret1), r2 = tourxFracPct(m.ret2), bc = tourxFracPct(m.bpConv), rg = tourxFracPct(m.retGames);
+  if (r1 != null && r2 != null && bc != null && rg != null){
+    out.returnRating = Math.round(r1) + Math.round(r2) + Math.round(bc) + Math.round(rg);
+  }
+  // Dominance Ratio = (return points won %) / (service points LOST %). Reads
+  // exactly the same as the modal's per-player ratio: a player's return points are
+  // the opponent's service points, so this is (ret won %)/(100 − serve won %).
+  const retTot = (m.ret1 && m.ret2) ? (m.ret1.total + m.ret2.total) : 0;
+  const retWonPct = retTot > 0 ? ((m.ret1.won + m.ret2.won) / retTot * 100) : null;
+  let servePtsWonPct = null;
+  if (m.firstServePct != null && m.firstServeWonPct != null && m.secondServeWonPct != null){
+    const f = m.firstServePct / 100;
+    servePtsWonPct = f * m.firstServeWonPct + (1 - f) * m.secondServeWonPct;
+  }
+  if (retWonPct != null && servePtsWonPct != null){
+    const lost = 100 - servePtsWonPct;
+    if (lost > 0) out.dominanceRatio = Math.round(retWonPct / lost * 100) / 100;
+  }
+  // Pressure Points = (break points saved + break points converted) / (all break
+  // points in the match). Break points SAVED aren't stored, but a player's BP
+  // faced = the opponent's BP had, and BP saved = faced − (opponent converted), so
+  // the opponent's bpConv row supplies them. Both players' shares sum to 100.
+  if (m.bpConv && oppM && oppM.bpConv){
+    const faced = oppM.bpConv.total, convByOpp = oppM.bpConv.won;
+    const saved = faced - convByOpp;
+    const had = m.bpConv.total, conv = m.bpConv.won;
+    const den = faced + had;
+    if (den > 0) out.pressurePct = Math.round((saved + conv) / den * 100);
+  }
+  return out;
+}
 function tourxBuildTournament(name){
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
   if (!t) return null;
@@ -16502,6 +16559,11 @@ function tourxBuildTournament(name){
   // fails that test the round is missing, not byed, and this table prints a
   // blank rather than the word "bye" for anybody in the draw.
   const byesCredible = progressionByesCredible(t);
+  // Opponent-row index (name|round → that player's round metrics) so a player's
+  // Pressure Points can borrow the opponent's break-point counts for the same
+  // match — see tourxDerivedMetrics.
+  const roundMetricsIndex = {};
+  (t.players || []).forEach(pp => (pp.rounds || []).forEach(rr => { if (rr && rr.round) roundMetricsIndex[pp.name + '|' + rr.round] = rr.metrics || {}; }));
   const players = (t.players || []).map(p => {
     // Place every match at the index of its OWN round label, not its position in
     // p.rounds. A bye recipient's first match is labelled e.g. R16, so it must land
@@ -16514,7 +16576,15 @@ function tourxBuildTournament(name){
     (p.rounds || []).forEach(r => {
       const idx = rounds.indexOf(r.round);
       if (idx < 0) return;
-      TOURX_METRICS.forEach(m => { data[m.key][idx] = r.metrics ? r.metrics[m.key] : null; });
+      TOURX_METRICS.forEach(m => { data[m.key][idx] = (r.metrics && !TOURX_DERIVED_KEYS.includes(m.key)) ? r.metrics[m.key] : null; });
+      // The four headline ratings aren't stored in the feed JSON — derive them from
+      // the raw per-round components (Pressure Points also needs the opponent row).
+      const oppRm = r.opponent ? roundMetricsIndex[r.opponent + '|' + r.round] : null;
+      const der = tourxDerivedMetrics(r.metrics, oppRm);
+      data.serveRating[idx]    = der.serveRating;
+      data.returnRating[idx]   = der.returnRating;
+      data.dominanceRatio[idx] = der.dominanceRatio;
+      data.pressurePct[idx]    = der.pressurePct;
       opponents[idx] = r.opponent || null;   // opponent faced in that round, index-aligned to metrics
     });
     let maxWonIdx = -1;
@@ -16556,7 +16626,21 @@ function tourxBuildTournament(name){
     const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_PHRASE[finishRound] || '—';
     return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, data, opponents, byes, drawDepth, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
   });
-  return { name, rounds, roundLabels, players, field: t.fieldAverage || null };
+  // Field-average reference line per metric. The feed JSON only ships averages for
+  // the raw metrics, so the four derived ratings get a client-side per-round mean
+  // across every player who has data that round (the same population the dashed
+  // line represents for the raw metrics).
+  const baseField = t.fieldAverage || { rounds: rounds, metrics: {}, sampleSize: [] };
+  const field = Object.assign({}, baseField, { metrics: Object.assign({}, baseField.metrics || {}) });
+  TOURX_DERIVED_KEYS.forEach(key => {
+    field.metrics[key] = rounds.map((_, i) => {
+      const vals = players.map(p => p.data[key][i]).filter(v => v != null);
+      if (!vals.length) return null;
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      return key === 'dominanceRatio' ? Math.round(mean * 100) / 100 : Math.round(mean);
+    });
+  });
+  return { name, rounds, roundLabels, players, field };
 }
 // Map a finish round to a player-view group + "Reached" label. Rounds earlier
 // than R16 are not shown individually (return null), matching the design.
@@ -17232,10 +17316,10 @@ function tourxProgressionHeatHtml(rows, rounds, kind, lower, field){
 }
 
 // ---- Player-progression metric grid (design-export §10/§11): two fixed columns,
-// not a flow. SERVE metrics stack down the left under a "Serve" label; RALLY
-// metrics down the right under "Rally", with Total Points Won % appended at the
-// FOOT of the SERVE column (4 serve cards, 3 rally cards — intentionally uneven).
-// Each card is bordered with its title and a single progression table beneath.
+// not a flow. SERVE metrics stack down the left under a "Serve" label (Serve
+// Rating heads the four serve cards); RETURN/RALLY metrics down the right under
+// "Rally" (Return Rating, Dominance Ratio, Pressure Points, then the winners/UE
+// trio — six cards). Each card is bordered with its title and a progression table.
 function tourxProgressionTablesHtml(players, T){
   const lastName = n => n.split(' ').slice(-1)[0];
   const rounds = tourxActiveLabels;
@@ -17259,7 +17343,7 @@ function tourxProgressionTablesHtml(players, T){
   };
   const grpLabel = t => `<span style="font-family:'Hanken Grotesk',sans-serif;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;">${t}</span>`;
   const colStyle = 'display:flex;flex-direction:column;gap:16px;min-width:0;';
-  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.concat(['totalPointsWonPct']).map(k => cardFor(byKey(k))).join('')}</div>`;
+  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
   const rallyCol = `<div style="${colStyle}">${grpLabel('Rally')}${TOURX_RALLY_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
   const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:#4b5672;margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px;">${serveCol}${rallyCol}</div>${footer}`;
@@ -17389,7 +17473,7 @@ function tourxH2HViewHtml(T){
 // value pills with overlap avoidance, and hover/click "vs opponent" tooltips.
 function tourxH2HChartSvg(aVals, bVals, field, aOpp, bOpp, kind, rounds, uid){
   const mono = "'IBM Plex Mono',monospace", cA = TOURX_H2H_A, cB = TOURX_H2H_B;
-  const fmt = v => kind === 'ratio' ? Number(v).toFixed(2) : (Number.isInteger(v) ? v : Number(v).toFixed(1)) + '%';
+  const fmt = v => tourxFmt(v, kind);   // respects every kind incl. 'rating' (no % suffix) and 'perpoint'
   const W = 360, H = 214, padL = 30, padR = 30, padT = 50, padB = 30;
   // Axis always spans the full draw ladder; lines simply end where data ends. (§3.5)
   const L = Math.max(rounds.length, aVals.length, bVals.length, field.length, 1);
