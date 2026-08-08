@@ -2204,6 +2204,11 @@
   [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; padding:0 !important; border:1px solid var(--sf-border-subtle) !important;
     border-radius:8px; background:transparent !important; display:grid; place-items:center; color:var(--sf-text-3) !important; font-size:18px; font-weight:400; line-height:1; }
   [data-page="matches"] .mx-daytabschevron:hover{ border-color:var(--sf-brand) !important; color:#fff !important; }
+  /* date-rail arrows — disabled state (paged to the edge of the window). Visibly
+     distinct from the active state: muted, no hover reaction, no pointer cursor.
+     Rendered (never hidden) so a rail edge always reads as a limit, not a break. */
+  [data-page="matches"] .mx-daytabschevron.is-disabled{ opacity:.32; cursor:default; pointer-events:none; }
+  [data-page="matches"] .mx-daytabschevron.is-disabled:hover{ border-color:var(--sf-border-subtle) !important; color:var(--sf-text-3) !important; }
 
   /* item 8 — header date-time (left cluster, mono/muted) */
   [data-page="matches"] .mc-datetime{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
@@ -5638,10 +5643,12 @@ function updateMatchesHeaderChrome(){
     if (dm3)  dm3.style.display  = '';
     if (dm2)  dm2.style.display  = '';
     if (back) back.style.display = '';
-    // §5 (founder review 2026-08-08) — Results has no future days, so the forward
-    // chevron is REMOVED entirely (display:none), not merely disabled. Today is the
-    // rightmost tab; the rail only ever pages backward through the retention window.
-    if (fwd)  fwd.style.display  = 'none';
+    // Date-rail arrows (founder task 2026-08-08, supersedes the earlier §5 "forward
+    // chevron removed" rule): BOTH arrows render on Results. The forward arrow is
+    // shown but disabled while Today is the rightmost tab, and becomes active once the
+    // member has paged back — a bare rail end reads as unfinished. Enable/disable is
+    // computed by syncDayArrows() from the active day's position in the visible window.
+    if (fwd)  fwd.style.display  = '';
     // A future day could be the active tab when the user lands on Results — snap
     // back to Today before it filters an empty (upcoming) day into a settled view.
     if (state.day === 'tomorrow' || state.day === 'day2'){
@@ -5679,9 +5686,14 @@ function updateMatchesHeaderChrome(){
     }
     if (tomo) tomo.style.display = '';
     if (d2)   d2.style.display   = '';
-    // No paging arrows — the four tabs always fit, so both chevrons stay hidden.
-    if (fwd)  fwd.style.display = 'none';
-    if (back) back.style.display = 'none';
+    // Date-rail arrows (founder task 2026-08-08): BOTH arrows render on Matches too,
+    // bounded by this rail's range (yesterday · today · +1 · +2). syncDayArrows()
+    // disables left when yesterday is the active/leftmost tab and right at the +2 day.
+    if (fwd)  fwd.style.display = '';
+    if (back) back.style.display = '';
+    // The back-chevron tooltip is the Results retention note; it must not leak into
+    // Matches (shared element), so clear it here.
+    if (back) back.title = '';
     // Labels: dates only on the flanking tabs (drop the Yesterday/Tomorrow sub-words);
     // the current-day tab is a single "• Today" (dot from .is-today), matching Results.
     if (yBot) yBot.textContent = '';
@@ -5711,6 +5723,45 @@ function updateMatchesHeaderChrome(){
       }
     }
   }
+  // Re-sync the paging arrows to the active day's position within the now-visible
+  // window (which day tabs are shown was decided by the branches above).
+  syncDayArrows();
+}
+
+// Date-rail paging arrows (founder task 2026-08-08). The rail is a stepper: each
+// press moves the active day one step through the *visible* day tabs (left = one day
+// older, right = one day newer), never skipping a tab — an empty day still renders,
+// so the step size stays predictable. The arrows disable at the window edges:
+// left when the oldest visible tab is active, right when the newest (Today on
+// Results, +2 on Matches) is active; both disable when a single tab is all there is.
+function visibleDayButtons(){
+  return [...document.querySelectorAll('#dayTabs button[data-day]')]
+    .filter(b => b.style.display !== 'none');
+}
+function syncDayArrows(){
+  const left  = document.getElementById('dayTabsLeft');
+  const right = document.getElementById('dayTabsRight');
+  if (!left || !right) return;
+  const btns = visibleDayButtons();
+  const idx  = btns.findIndex(b => b.dataset.day === state.day);
+  const atLeftEdge  = idx <= 0;
+  const atRightEdge = idx < 0 || idx >= btns.length - 1;
+  left.classList.toggle('is-disabled', atLeftEdge);
+  right.classList.toggle('is-disabled', atRightEdge);
+  left.setAttribute('aria-disabled', atLeftEdge ? 'true' : 'false');
+  right.setAttribute('aria-disabled', atRightEdge ? 'true' : 'false');
+  left.setAttribute('aria-label', 'Previous day');
+  right.setAttribute('aria-label', 'Next day');
+}
+function stepDay(dir){ // dir: -1 = older (left), +1 = newer (right)
+  const btns = visibleDayButtons();
+  const idx  = btns.findIndex(b => b.dataset.day === state.day);
+  if (idx < 0) return;
+  const next = btns[idx + dir];
+  if (!next) return; // at an edge — arrow is disabled, nothing to do
+  setActiveButton(document.getElementById('dayTabs'), next);
+  state.day = next.dataset.day;
+  renderMatches(); // re-runs updateMatchesHeaderChrome → syncDayArrows
 }
 
 // §4 (Batch B) — the one-tournament context bar. Shows only in Results when exactly
@@ -11795,11 +11846,16 @@ if (_viewSeg) _viewSeg.addEventListener('click', e => {
   state.view = btn.dataset.view;
   renderMatches();
 });
+// Date-rail arrows page the active day one step at a time (see stepDay/syncDayArrows).
+// Disabled arrows carry .is-disabled (pointer-events:none) so a dead press does nothing;
+// the class check is a belt-and-braces guard in case that CSS is ever overridden.
 document.getElementById('dayTabsLeft').addEventListener('click', () => {
-  document.getElementById('dayTabsScroll').scrollBy({ left: -120, behavior: 'smooth' });
+  if (document.getElementById('dayTabsLeft').classList.contains('is-disabled')) return;
+  stepDay(-1);
 });
 document.getElementById('dayTabsRight').addEventListener('click', () => {
-  document.getElementById('dayTabsScroll').scrollBy({ left: 120, behavior: 'smooth' });
+  if (document.getElementById('dayTabsRight').classList.contains('is-disabled')) return;
+  stepDay(1);
 });
 function openModal(){ openInfoModal('favorites'); }
 // Reuses #favModal for both the favorites-upsell trigger (star icon on a match
