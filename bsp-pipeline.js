@@ -2306,8 +2306,32 @@ async function fetchProgressionFixtures(windowStart, today) {
   return merged;
 }
 
+// City-vs-brand tournament aliases. The api-tennis feed labels events by their
+// HOST CITY (`tournament_name` = "Montreal" / "Toronto"), while the odds feed —
+// and therefore our canonical, merged board — labels them by the sponsor /
+// championship BRAND ("ATP Canadian Open"). One shared source of truth, consumed
+// BOTH by the match-merge canon pass (city -> canonical, below) and the
+// tournament-progression join (canonical -> the feed city names to match
+// fixtures on, and the display key to store the report under). Without this the
+// progression fetch substring-matches "Canadian Open" against a feed that only
+// ever says "Montreal", finds nothing, and the event silently has no report even
+// while its matches are finishing. Extend when a new city-vs-brand pair appears.
+const TOUR_CITY_TO_CANONICAL = {
+  'Montreal': 'ATP Canadian Open',
+  'Toronto': 'ATP Canadian Open', // National Bank Open alternates cities year to year
+};
+// Feed city name(s) for a canonical brand tour ([] for ordinary events, whose
+// feed name already equals their bare tour name).
+const tourFeedCities = (canonicalTour) =>
+  Object.keys(TOUR_CITY_TO_CANONICAL).filter(city => TOUR_CITY_TO_CANONICAL[city] === canonicalTour);
+
 async function buildTournamentProgression(tourName) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
+  // Names to match the feed's `tournament_name` against: for a sponsor-brand
+  // event the feed uses the host city (Montreal/Toronto), never the brand; for
+  // every other event the bare tour name already equals the feed name.
+  const feedCities = tourFeedCities(tourName);
+  const matchNames = feedCities.length ? feedCities : [bareName];
   const today = new Date();
   const windowStart = new Date(today.getTime() - PROGRESSION_WINDOW_DAYS * 86400000);
 
@@ -2315,7 +2339,7 @@ async function buildTournamentProgression(tourName) {
   if (!fixtures) return null;
 
   const played = fixtures.filter(f =>
-    f.tournament_name && f.tournament_name.includes(bareName) &&
+    f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm)) &&
     // A round-less fixture cannot sit anywhere on the ladder; keeping it would
     // add a phantom leading round and shift every real label by one.
     typeof f.tournament_round === 'string' && f.tournament_round.trim() !== '' &&
@@ -2399,7 +2423,15 @@ async function buildTournamentProgression(tourName) {
     fieldSampleSize.push(sampleCount);
   }
 
+  // The feed name the matched fixtures actually carry (e.g. "Montreal") — this is
+  // the host-city string the dashboard's Tournaments catalog gates the report on,
+  // so the caller stores brand-aliased events under it instead of the brand name.
+  const feedNameCounts = {};
+  for (const f of played) feedNameCounts[f.tournament_name] = (feedNameCounts[f.tournament_name] || 0) + 1;
+  const feedName = Object.keys(feedNameCounts).sort((a, b) => feedNameCounts[b] - feedNameCounts[a])[0] || bareName;
+
   return {
+    feedName,
     rounds: roundLabels,
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
@@ -4067,13 +4099,13 @@ async function runPipeline() {
   // -----------------------------------------------------------------
   {
     // Curated aliases a string rule can't derive (city name vs. sponsor /
-    // championship name). Matched case-insensitively. Extend here when a new
-    // event shows up under a city-vs-brand pair the "Open" rule below can't
-    // catch (e.g. Rome / Italian Open).
-    const TOUR_ALIASES = {
-      'atp montreal': 'ATP Canadian Open',
-      'atp toronto': 'ATP Canadian Open', // National Bank Open alternates cities
-    };
+    // championship name). Matched case-insensitively. Derived from the shared
+    // TOUR_CITY_TO_CANONICAL map (defined near buildTournamentProgression) so the
+    // merge canon and the progression join can never drift apart. Extend the
+    // shared map when a new city-vs-brand pair appears (e.g. Rome / Italian Open).
+    const TOUR_ALIASES = Object.fromEntries(
+      Object.entries(TOUR_CITY_TO_CANONICAL).map(([city, canon]) => [`atp ${city.toLowerCase()}`, canon])
+    );
     const presentLower = new Set(matches.map(m => String(m.tour || '').trim().toLowerCase()));
     const canonicalTour = (name) => {
       const raw = String(name || '').trim();
@@ -4495,11 +4527,17 @@ async function runPipeline() {
   const progressionTournaments = {};
   for (const tourName of activeTournamentNames) {
     const progression = await buildTournamentProgression(tourName);
-    // Keyed by the bare tournament name (stripping "ATP ") to match
-    // TOURNAMENT_CATALOG's own `name` field, e.g. "Wimbledon" not "ATP
-    // Wimbledon" — that's the key showTournamentProfile(key) actually
-    // receives client-side, confirmed by reading TOURNAMENT_CATALOG.
-    if (progression) progressionTournaments[tourName.replace(/^ATP\s+/, '').trim()] = progression;
+    if (!progression) continue;
+    // Keyed by the name the client's Tournaments catalog gates the report on. For
+    // an ordinary event that's the bare tournament name (stripping "ATP "), e.g.
+    // "Wimbledon" not "ATP Wimbledon" — the key showTournamentProfile(key)
+    // receives client-side. For a sponsor-brand event (Canadian Open) the catalog
+    // and the feed both key by HOST CITY, so store under the resolved feed city
+    // ("Montreal") — otherwise a "Canadian Open" key would never light up the
+    // "Montreal" tile and the report would stay invisible all tournament.
+    const bare = tourName.replace(/^ATP\s+/, '').trim();
+    const key = tourFeedCities(tourName).length ? progression.feedName : bare;
+    progressionTournaments[key] = progression;
   }
   writeJsonAtomic('tournament-progression.json', {
     fetchedAt: new Date().toISOString(),
