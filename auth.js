@@ -34,11 +34,93 @@
   var SDK_VERSION = '10.12.5';
   var SDK_BASE = 'https://www.gstatic.com/firebasejs/' + SDK_VERSION + '/';
 
+  // Legacy default. The timezone field used to store fixed-offset labels like
+  // this; those are wrong half the year (DST) and are no longer written. Kept
+  // only so the migration map below can recognise the old values on read.
   var DEFAULT_TZ = '(GMT+01:00) Amsterdam';
   var NOTIF_KEYS = ['favouritePlayers', 'valuePicks', 'openingOdds', 'sharpMoney'];
 
+  // The seven fixed-offset labels the old dropdown wrote → their IANA identifiers.
+  // Used for display only; we do NOT silently rewrite stored values (a stored
+  // label is treated as "automatic" on read — see publicUser — because the field
+  // was inert and its default was auto-assigned at signup).
+  var LEGACY_TZ_MAP = {
+    '(GMT+00:00) London':       'Europe/London',
+    '(GMT+01:00) Amsterdam':    'Europe/Amsterdam',
+    '(GMT+01:00) Paris':        'Europe/Paris',
+    '(GMT+02:00) Athens':       'Europe/Athens',
+    '(GMT-05:00) New York':     'America/New_York',
+    '(GMT-08:00) Los Angeles':  'America/Los_Angeles',
+    '(GMT+10:00) Sydney':       'Australia/Sydney'
+  };
+  // Canonical localStorage key the app reads to format times (newsTz() in the
+  // dashboard reads exactly this). We keep it in sync with the resolved zone so
+  // the setting actually takes effect app-wide. The two companion keys record
+  // the auto/manual flag and the manual choice for pre-auth/logged-out resolves.
+  var TZ_KEY = 'stennisfy.tz';
+  var TZ_MODE_KEY = 'stennisfy.tz.mode';
+  var TZ_MANUAL_KEY = 'stennisfy.tz.manual';
+
   function defaultNotif() {
     return { favouritePlayers: false, valuePicks: false, openingOdds: false, sharpMoney: false };
+  }
+
+  // True iff `z` is an IANA identifier this runtime accepts (never for a
+  // fixed-offset label — those start with "(GMT"). DST is handled by the id.
+  function isValidIana(z) {
+    if (!z || typeof z !== 'string' || z.charAt(0) === '(') return false;
+    try { new Intl.DateTimeFormat('en-GB', { timeZone: z }); return true; }
+    catch (e) { return false; }
+  }
+  // The device's current zone — what Flashscore follows. '' if unavailable.
+  function detectDeviceTz() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }
+    catch (e) { return ''; }
+  }
+  // Live "GMT±HH:MM" for an IANA id, computed now so DST is always correct.
+  // '' if the id is unusable.
+  function tzOffsetLabel(zone) {
+    if (!isValidIana(zone)) return '';
+    try {
+      // Computed against "now" so the offset reflects the zone's current DST state.
+      var parts = new Intl.DateTimeFormat('en-GB', { timeZone: zone, timeZoneName: 'longOffset' })
+        .formatToParts(new Date());
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === 'timeZoneName') {
+          return parts[i].value === 'GMT' ? 'GMT+00:00' : parts[i].value; // normalise bare "GMT" → "GMT+00:00"
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+  // The active zone + whether it's automatic or a manual override.
+  // Order of precedence: signed-in manual override → per-device manual override
+  // (localStorage, covers pre-auth) → device detection.
+  function resolveTz() {
+    var u = _cachedUser;
+    if (u && u.timezoneMode === 'manual' && isValidIana(u.timezone)) {
+      return { zone: u.timezone, mode: 'manual' };
+    }
+    try {
+      var lm = global.localStorage.getItem(TZ_MANUAL_KEY);
+      if (isValidIana(lm)) return { zone: lm, mode: 'manual' };
+    } catch (e) {}
+    return { zone: detectDeviceTz(), mode: 'auto' };
+  }
+  // Write the resolved zone into the canonical key so every render site that
+  // reads it picks up the member's choice. Runs on module load (device default)
+  // and again on every auth-state change (applies a signed-in manual override).
+  // For an automatic member the written zone equals browser-local, so surfaces
+  // that previously fell back to browser-local are unchanged.
+  function syncActiveTimezone() {
+    try {
+      var r = resolveTz();
+      var ls = global.localStorage;
+      if (r.zone) ls.setItem(TZ_KEY, r.zone);
+      ls.setItem(TZ_MODE_KEY, r.mode);
+      if (r.mode === 'manual' && r.zone) ls.setItem(TZ_MANUAL_KEY, r.zone);
+      else ls.removeItem(TZ_MANUAL_KEY);
+    } catch (e) {}
   }
 
   /* ---------- module state ---------- */
@@ -92,6 +174,7 @@
           var done = function (u) {
             _cachedUser = u;
             _authResolved = true;
+            syncActiveTimezone(); // apply a signed-in manual override (or device default)
             _firstAuthResolve(u);
             notifyAuth(u);
           };
@@ -129,6 +212,15 @@
   function publicUser(fbUser, data) {
     data = data || {};
     var notif = Object.assign(defaultNotif(), data.notifications || {});
+    // Timezone (Flashscore model): expose an IANA id + an explicit auto/manual
+    // flag. A stored IANA id with mode 'manual' is a real override; anything
+    // else (empty, or a legacy fixed-offset label) resolves to 'automatic' so
+    // device detection applies. We never rewrite the stored value here.
+    var tzRaw = data.timezone;
+    var tzMode = (data.timezoneMode === 'manual' || data.timezoneMode === 'auto') ? data.timezoneMode : null;
+    var tzId = isValidIana(tzRaw) ? tzRaw : '';
+    if (!tzMode) tzMode = tzId ? 'manual' : 'auto';   // infer flag for docs written before it existed
+    if (tzMode === 'manual' && !tzId) tzMode = 'auto'; // manual with no valid id is meaningless
     return {
       uid: fbUser.uid,
       name: data.fullName || fbUser.displayName || '',
@@ -136,7 +228,8 @@
       emailVerified: !!fbUser.emailVerified,
       plan: data.plan || 'free',
       oddsFormat: data.oddsFormat || 'decimal',
-      timezone: data.timezone || DEFAULT_TZ,
+      timezone: tzMode === 'manual' ? tzId : '',
+      timezoneMode: tzMode,
       favouriteBookmakers: Array.isArray(data.favouriteBookmakers) ? data.favouriteBookmakers : [],
       notifications: notif,
       createdAt: data.createdAt || null
@@ -231,7 +324,8 @@
           plan: 'free',
           oddsFormat: 'decimal',
           favouriteBookmakers: [],
-          timezone: DEFAULT_TZ,
+          timezone: '',            // empty = automatic; device detection resolves it
+          timezoneMode: 'auto',
           notifications: defaultNotif(),
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
@@ -359,7 +453,12 @@
           }
         }
         if (patch.plan === 'free' || patch.plan === 'edge' || patch.plan === 'pro') updates.plan = patch.plan;
-        if (typeof patch.timezone === 'string' && patch.timezone) updates.timezone = patch.timezone;
+        // Timezone: store IANA ids only (never offsets). '' clears to automatic.
+        if (typeof patch.timezone === 'string') {
+          if (patch.timezone === '') updates.timezone = '';
+          else if (isValidIana(patch.timezone)) updates.timezone = patch.timezone;
+        }
+        if (patch.timezoneMode === 'auto' || patch.timezoneMode === 'manual') updates.timezoneMode = patch.timezoneMode;
         if (patch.oddsFormat === 'decimal' || patch.oddsFormat === 'fractional' || patch.oddsFormat === 'american') {
           updates.oddsFormat = patch.oddsFormat;
         }
@@ -419,11 +518,28 @@
     /* --- preferences (convenience wrappers) --- */
     getPreferences: function () {
       var u = _cachedUser;
-      if (!u) return { oddsFormat: 'decimal', timezone: DEFAULT_TZ, notifications: defaultNotif() };
-      return { oddsFormat: u.oddsFormat, timezone: u.timezone, notifications: u.notifications };
+      if (!u) return { oddsFormat: 'decimal', timezone: '', timezoneMode: 'auto', notifications: defaultNotif() };
+      return { oddsFormat: u.oddsFormat, timezone: u.timezone, timezoneMode: u.timezoneMode, notifications: u.notifications };
     },
     setOddsFormat: function (fmt) { return BSP.updateProfile({ oddsFormat: fmt }); },
-    setTimezone: function (tz) { return BSP.updateProfile({ timezone: tz }); },
+    // Manual override: pin the member to an IANA zone; detection stops applying.
+    setTimezone: function (tz) {
+      return BSP.updateProfile({ timezone: tz, timezoneMode: 'manual' }).then(function (u) {
+        syncActiveTimezone(); return u;
+      });
+    },
+    // Return to automatic: clear the override so device detection wins again.
+    clearTimezone: function () {
+      return BSP.updateProfile({ timezone: '', timezoneMode: 'auto' }).then(function (u) {
+        syncActiveTimezone(); return u;
+      });
+    },
+    // Timezone helpers shared with the settings UI and any render site.
+    detectTimezone: function () { return detectDeviceTz(); },
+    resolveTimezone: function () { return resolveTz(); },      // { zone, mode }
+    activeTimezone: function () { return resolveTz().zone; },  // just the IANA id
+    tzOffsetLabel: function (zone) { return tzOffsetLabel(zone); },
+    isValidTimezone: function (zone) { return isValidIana(zone); },
     setNotifications: function (notifications) { return BSP.updateProfile({ notifications: notifications }); },
 
     /* --- odds formatting --- */
@@ -467,6 +583,12 @@
   BSP.isValidEmail = isValidEmail;
   BSP.NOTIF_KEYS = NOTIF_KEYS;
   global.BSP = BSP;
+
+  // Detect on every page load (Flashscore model): write the device zone into the
+  // canonical key immediately, before Firebase resolves. A per-device manual
+  // override in localStorage takes precedence; a signed-in override is applied a
+  // moment later when onAuthStateChanged fires (see the `done` closure).
+  syncActiveTimezone();
 
   // Kick off SDK init eagerly so the session restores as early as possible.
   ensureInit().catch(function () {});

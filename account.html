@@ -163,6 +163,32 @@
   .tz-wrap{ position:relative; }
   .tz-wrap .dd-caret{ position:absolute; right:13px; top:50%; transform:translateY(-50%); pointer-events:none; }
 
+  /* timezone — device-follow control with searchable IANA override + live preview */
+  .row.tz-row{ align-items:flex-start; }
+  .tz-block{ display:flex; flex-direction:column; gap:8px; width:300px; max-width:46vw; }
+  .tz-status{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .tz-status .tz-zone{ font-size:13px; color:var(--sf-text); font-weight:600; }
+  .tz-status .tz-off{ font-size:11.5px; color:var(--sf-muted); font-variant-numeric:tabular-nums; }
+  .tz-status .tz-mode{ font-size:10.5px; letter-spacing:.4px; text-transform:uppercase;
+    color:#6aaeff; background:rgba(91,155,255,0.12); border-radius:5px; padding:2px 7px; }
+  .tz-status .tz-mode.manual{ color:#d8b46a; background:rgba(216,180,106,0.13); }
+  .tz-auto{ font-size:11.5px; color:#6aaeff; background:none; border:none; cursor:pointer; padding:0; margin-left:auto; text-decoration:underline; }
+  .tz-auto:hover{ color:#8cc2ff; }
+  .tz-combo{ position:relative; }
+  .tz-input{ width:100%; box-sizing:border-box; }
+  .tz-list{ position:absolute; left:0; right:0; top:calc(100% + 6px); max-height:260px; overflow-y:auto;
+    background:#0d1119; border:1px solid var(--sf-border-data); border-radius:10px; padding:5px; z-index:40;
+    box-shadow:0 14px 34px rgba(0,0,0,0.55); display:none; }
+  .tz-list.open{ display:block; }
+  .tz-opt{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:8px 9px;
+    border-radius:6px; cursor:pointer; }
+  .tz-opt:hover, .tz-opt.hi{ background:rgba(255,255,255,0.05); }
+  .tz-opt-z{ font-size:12.5px; color:var(--sf-text); }
+  .tz-opt-o{ font-size:11px; color:var(--sf-muted); font-variant-numeric:tabular-nums; flex:none; }
+  .tz-more, .tz-empty{ font-size:11.5px; color:var(--sf-muted); padding:8px 9px; }
+  .tz-preview{ font-size:12px; color:var(--sf-muted); }
+  .tz-preview .tz-prev-val{ color:var(--sf-text); }
+
   /* toggles (notifications) — track 44x24, white 20px knob (export-measured) */
   .tog{ width:44px; height:24px; border-radius:12px; flex:none; position:relative; cursor:pointer;
     background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); transition:background .12s,border-color .12s; }
@@ -301,23 +327,26 @@
         </div>
       </div>
     </div>
-    <div class="row">
+    <div class="row tz-row">
       <div class="row-l">
         <div class="rl">Timezone</div>
-        <div class="rs">Sets the time on every match card, alert and report.</div>
+        <div class="rs">Follows your device automatically. Override it here only if detection is wrong.</div>
       </div>
       <div class="row-r">
-        <div class="tz-wrap">
-          <select class="dd-btn" id="inTz">
-            <option>(GMT+00:00) London</option>
-            <option>(GMT+01:00) Amsterdam</option>
-            <option>(GMT+01:00) Paris</option>
-            <option>(GMT+02:00) Athens</option>
-            <option>(GMT-05:00) New York</option>
-            <option>(GMT-08:00) Los Angeles</option>
-            <option>(GMT+10:00) Sydney</option>
-          </select>
-          <span class="dd-caret">▾</span>
+        <div class="tz-block">
+          <div class="tz-status">
+            <span class="tz-zone" id="tzZone">—</span>
+            <span class="tz-off" id="tzOff"></span>
+            <span class="tz-mode" id="tzMode">Automatic</span>
+            <button class="tz-auto" id="tzAuto" type="button" style="display:none">Use automatic</button>
+          </div>
+          <div class="tz-combo">
+            <input class="dd-btn tz-input" id="tzSearch" type="text" autocomplete="off" spellcheck="false"
+              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tzList"
+              placeholder="Change zone — search a city or region">
+            <div class="tz-list" id="tzList" role="listbox"></div>
+          </div>
+          <div class="tz-preview">Next match: <span class="tz-prev-val" id="tzPrevVal">…</span></div>
         </div>
       </div>
     </div>
@@ -520,13 +549,102 @@
       .catch(function(err){ user.favouriteBookmakers=prev; renderBookMenu(); toast(err.message||'Could not save.'); });
   }
 
-  /* ---------- timezone ---------- */
-  function renderTz(){ $('inTz').value = user.timezone || '(GMT+01:00) Amsterdam'; }
-  function saveTz(){
-    var tz=$('inTz').value, prev=user.timezone;
-    user.timezone=tz;
-    BSP.setTimezone(tz).then(function(u){ user=u; toast('Timezone updated'); })
-      .catch(function(err){ user.timezone=prev; renderTz(); toast(err.message||'Could not save.'); });
+  /* ---------- timezone (Flashscore model: detect every load, manual override sticks) ---------- */
+  var IANA_ZONES = [];
+  try { IANA_ZONES = Intl.supportedValuesOf('timeZone') || []; } catch(e){ IANA_ZONES = []; }
+  var _fixtures = null;        // upcoming fixtures with a usable startTs
+  var _fixturesLoaded = false;
+  var _hiZone = null;          // zone currently highlighted in the list (for hover preview)
+
+  function zoneDisplay(z){ return String(z||'').replace(/_/g,' '); }
+  function offParen(z){ var o = BSP.tzOffsetLabel(z); return o ? '('+o+')' : ''; }
+
+  function renderTz(){
+    var r = BSP.resolveTimezone();          // { zone, mode }
+    var zone = r.zone || '';
+    $('tzZone').textContent = zone ? zoneDisplay(zone) : 'Unknown';
+    $('tzOff').textContent = offParen(zone);
+    var modeEl = $('tzMode');
+    if (r.mode === 'manual'){
+      modeEl.textContent = 'Manually set'; modeEl.classList.add('manual');
+      $('tzAuto').style.display = '';
+    } else {
+      modeEl.textContent = 'Automatic'; modeEl.classList.remove('manual');
+      $('tzAuto').style.display = 'none';
+    }
+    $('tzSearch').value = '';
+    closeList();
+    updatePreview(zone);
+  }
+
+  function fmtZoneRow(z){
+    return '<div class="tz-opt" role="option" data-zone="'+esc(z)+'">'
+      + '<span class="tz-opt-z">'+esc(zoneDisplay(z))+'</span>'
+      + '<span class="tz-opt-o">'+esc(offParen(z))+'</span></div>';
+  }
+  function renderList(q){
+    q = String(q||'').trim().toLowerCase();
+    var list = $('tzList');
+    var all = IANA_ZONES.filter(function(z){
+      return !q || zoneDisplay(z).toLowerCase().indexOf(q) >= 0;
+    });
+    if (!all.length){
+      list.innerHTML = '<div class="tz-empty">No zones match “'+esc(q)+'”</div>';
+      openList(); return;
+    }
+    var capped = all.slice(0, 60);
+    list.innerHTML = capped.map(fmtZoneRow).join('')
+      + (all.length > capped.length ? '<div class="tz-more">'+(all.length-capped.length)+' more — keep typing to narrow</div>' : '');
+    list.querySelectorAll('.tz-opt').forEach(function(o){
+      var z = o.getAttribute('data-zone');
+      // mousedown (not click) so the option resolves before the input's blur closes the list
+      o.onmousedown = function(e){ e.preventDefault(); chooseZone(z); };
+      o.onmouseenter = function(){ _hiZone = z; updatePreview(z); };
+    });
+    openList();
+  }
+  function openList(){ $('tzList').classList.add('open'); $('tzSearch').setAttribute('aria-expanded','true'); }
+  function closeList(){ $('tzList').classList.remove('open'); $('tzSearch').setAttribute('aria-expanded','false'); _hiZone=null; }
+
+  function chooseZone(z){
+    if (!BSP.isValidTimezone(z)) { toast('That is not a valid timezone.'); return; }
+    closeList();
+    BSP.setTimezone(z).then(function(u){ if(u) user=u; renderTz(); toast('Timezone set to '+zoneDisplay(z)); })
+      .catch(function(err){ renderTz(); toast(err.message||'Could not save.'); });
+  }
+  function useAutomatic(){
+    BSP.clearTimezone().then(function(u){ if(u) user=u; renderTz(); toast('Following your device automatically'); })
+      .catch(function(err){ renderTz(); toast(err.message||'Could not save.'); });
+  }
+
+  /* live preview — a real upcoming fixture in the given zone; dash if none/unknown */
+  function loadFixtures(){
+    return fetch('matches.json', { cache:'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        var arr = Array.isArray(j) ? j : (j && typeof j==='object' ? Object.values(j) : []);
+        _fixtures = arr.filter(function(m){ return m && m.startTs != null && isFinite(new Date(m.startTs).getTime()); });
+        _fixturesLoaded = true;
+      })
+      .catch(function(){ _fixtures = []; _fixturesLoaded = true; });
+  }
+  function nm(x){ return typeof x==='string' ? x : (x && (x.name||x.player||x.short) || ''); }
+  function updatePreview(zone){
+    var el = $('tzPrevVal');
+    if (!_fixturesLoaded){ el.textContent = '…'; return; }
+    var now = Date.now(), best = null, bestT = Infinity;
+    (_fixtures||[]).forEach(function(m){
+      var t = new Date(m.startTs).getTime();
+      if (isFinite(t) && t > now && t < bestT){ bestT = t; best = m; }
+    });
+    if (!best){ el.textContent = '—'; return; }   // no upcoming fixture → dash, never a placeholder time
+    var opts = { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false };
+    if (zone) opts.timeZone = zone;
+    var s;
+    try { s = new Date(bestT).toLocaleString('en-GB', opts); }
+    catch(e){ delete opts.timeZone; s = new Date(bestT).toLocaleString('en-GB', opts); }
+    var vs = nm(best.p1) && nm(best.p2) ? '  ·  '+nm(best.p1)+' v '+nm(best.p2) : '';
+    el.textContent = s + vs;
   }
 
   /* ---------- notifications ---------- */
@@ -566,7 +684,11 @@
   $('cancelBtn').onclick = function(){ renderProfile(); openEdit(false); };
   $('saveBtn').onclick = saveProfile;
   document.querySelectorAll('#segwrap .seg').forEach(function(s){ s.onclick=function(){ setOdds(s.getAttribute('data-fmt')); }; });
-  $('inTz').onchange = saveTz;
+  $('tzSearch').oninput = function(){ renderList(this.value); };
+  $('tzSearch').onfocus = function(){ renderList(this.value); };
+  $('tzSearch').onblur  = function(){ setTimeout(function(){ closeList(); updatePreview(BSP.activeTimezone()); }, 120); };
+  $('tzSearch').onkeydown = function(e){ if(e.key==='Escape'){ closeList(); this.blur(); } };
+  $('tzAuto').onclick = useAutomatic;
   $('bookBtn').onclick = function(e){ e.stopPropagation(); $('bookMenu').classList.toggle('open'); };
   document.addEventListener('click', function(){ $('bookMenu').classList.remove('open'); });
   $('pwToggle').onclick = function(){ $('pwReveal').classList.toggle('open'); };
@@ -587,6 +709,7 @@
     renderOdds();
     renderBookMenu();
     renderTz();
+    loadFixtures().then(function(){ updatePreview(BSP.activeTimezone()); });
     renderNotif();
     // Password last-changed: Firebase exposes no password-change timestamp, so
     // the sublabel renders an em dash (never the export's standby "3 months ago").
