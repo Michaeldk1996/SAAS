@@ -4347,15 +4347,44 @@ async function runPipeline() {
     // No prior matches.json (first run) — nothing pinned to carry forward.
   }
 
-  let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0;
+  // True match-start instant (UTC) for the closing cutoff. Prefer the real epoch
+  // in m.startTs (present only when an Odds API event was merged). For the
+  // api-tennis-only `past-<eventKey>` matches — which is every match that carries
+  // a closing — startTs is ABSENT and m.time is the api-tennis account-timezone
+  // wall clock (~UTC+2 in this data), NOT UTC. Parsing it as UTC (the old code)
+  // put the cutoff ~2h late, so the entire in-play tick stream sat "before start"
+  // and the last in-play price was pinned as the close (TEN-8: an in-play blow-out
+  // like 2.00 -> 29.00 stamped as the closing line). When startTs is missing we
+  // instead read the in-play ONSET off the reference book's own tick cadence:
+  // pre-match quotes are minutes/hours apart, in-play quotes arrive every few
+  // seconds, so the first instant where >= ONSET_K of that book's quotes land
+  // inside an ONSET_W window is the match starting. Erring early keeps the cut
+  // inside the pre-match window (safe) — it can never select an in-play price.
+  const ONSET_K = 6, ONSET_W = 180000; // 6 quotes within 3 min == in play
+  const inPlayOnset = (series) => {
+    const t = [...(series.p1 || []), ...(series.p2 || [])]
+      .map(p => Date.parse(p[0])).sort((a, b) => a - b);
+    for (let i = 0; i + ONSET_K - 1 < t.length; i++) {
+      if (t[i + ONSET_K - 1] - t[i] <= ONSET_W) return t[i];
+    }
+    return null;
+  };
+  const lastAtOrBefore = (arr, cut) => {
+    let chosen = null;
+    for (const pt of arr) { if (Date.parse(pt[0]) <= cut) chosen = pt; }
+    return chosen;
+  };
+
+  let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
+      closeHealed = 0, closeDashed = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
-    // Carry forward already-pinned values without recomputing them. A pinned
-    // closing is only inherited for a completed match, so an upcoming match can
-    // never resurrect a stale closing written by an earlier pipeline version.
+    // Carry the opening forward verbatim (first tick, never affected by in-play).
+    // The closing is handled in the derivation block below with a pre-start
+    // validity check, so an in-play close pinned by an earlier pipeline version
+    // is not blindly resurrected here.
     if (carried && carried.openingOdds) { m.openingOdds = carried.openingOdds; openPreserved++; }
-    if (carried && carried.closingOdds && m.finalScore) { m.closingOdds = carried.closingOdds; closePreserved++; }
 
     const books = m.oddsMovement && m.oddsMovement.books;
     if (!books || !Object.keys(books).length) continue;
@@ -4378,22 +4407,32 @@ async function runPipeline() {
       openDerived++;
     }
 
-    // closingOdds: last point at/before match start — completed matches only,
-    // and only if not already pinned from an earlier run.
-    if (m.finalScore && !m.closingOdds) {
-      const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time || '') ? m.time : '00:00'}:00Z`);
-      const lastBeforeStart = arr => {
-        if (!Number.isFinite(startMs)) return arr[arr.length - 1];
-        let chosen = null;
-        for (const pt of arr) { if (Date.parse(pt[0]) <= startMs) chosen = pt; }
-        return chosen || arr[arr.length - 1];
-      };
-      const c1 = lastBeforeStart(p1), c2 = lastBeforeStart(p2);
-      m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
-      closeDerived++;
+    // closingOdds: last real quote at/before the match start — completed matches
+    // only. A close pinned by an earlier run is kept ONLY if it is a genuine
+    // pre-start quote; an in-play price (close.at after the start we now compute)
+    // is discarded and re-derived, so old corrupt pins self-heal. If no reliable
+    // start is found, or no quote exists before it, the close is left UNSET so it
+    // dashes at display rather than showing an in-play price (data-honesty rule:
+    // never approximate — dash where the pre-match close is missing).
+    if (m.finalScore) {
+      const startMs = (typeof m.startTs === 'string' && m.startTs)
+        ? Date.parse(m.startTs)
+        : (() => { const o = inPlayOnset(s); return Number.isFinite(o) ? o - 1 : NaN; })();
+      const prior = carried && carried.closingOdds;
+      const priorOk = prior && Number.isFinite(startMs)
+        && Number.isFinite(Date.parse(prior.at)) && Date.parse(prior.at) <= startMs;
+      if (priorOk) {
+        m.closingOdds = prior; closePreserved++;
+      } else if (Number.isFinite(startMs)) {
+        const c1 = lastAtOrBefore(p1, startMs), c2 = lastAtOrBefore(p2, startMs);
+        if (c1 && c2) {
+          m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
+          if (prior) closeHealed++; else closeDerived++;   // prior present == corrupt in-play pin replaced
+        } else if (prior) { closeDashed++; }                // had a bad pin, no pre-start quote -> dash
+      } else if (prior) { closeDashed++; }                  // can't locate start -> dash rather than keep in-play
     }
   }
-  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved.`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (in-play pin replaced) / ${closeDashed} dashed (no pre-match quote).`);
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability
