@@ -423,6 +423,8 @@
   [data-page="matches"] .mc-story__upname strong{ color:var(--mc-text); font-weight:700; }
   [data-page="matches"] .mc-story__upprice{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-text); flex:none; }
   [data-page="matches"] .mc-story__vp{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); }
+  /* §8 — Value-picks insufficient-history headline: UI text, not a fabricated ROI number. */
+  [data-page="matches"] .mc-story__vpempty{ font-family:var(--mx-font-ui); font-weight:600; font-size:14px; color:var(--mc-muted); }
   [data-page="matches"] .mc-story__faint{ font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted-2); opacity:0.85; }
   /* §4 (Batch B) — one-tournament context bar under the filters. Only rendered in
      Results when exactly one tournament chip is active; hidden otherwise. */
@@ -476,23 +478,25 @@
   [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
   [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; font-weight:600; margin-left:1px; }
 
-  /* odds journey (completed) — non-semantic open→close */
-  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:10px; }
-  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; }
-  /* §6 (PASS 5) — the sparkline GROWS to fill the column (was a fixed 46px), so the CLOSE
-     value right-anchors to the odds column's right edge (under the CLOSE header) and OPEN
-     stays at the column's 18px lead. Matches the export, whose track stretches. */
-  [data-page="matches"] .mc-journey__track{ flex:1 1 auto; min-width:22px; height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
-  /* §6 (PASS 5) — OPEN "no data" em dash sits in the OPEN cell (the journey's 18px lead),
-     so it renders directly under the OPEN header. The placeholder spacer GROWS like the
-     track so the recorded CLOSE still right-anchors under CLOSE while opens are missing —
-     the dash is never displaced toward the middle by a fixed-width spacer. */
+  /* odds journey (completed) — non-semantic open→close, as ONE right-anchored object.
+     §2/§6 (founder review 2026-08-08): fixed columns open(40) · lane(64) · close(44) ·
+     delta(44), so the direction bar's LENGTH — not a stretched track — carries the move
+     size. The whole object right-anchors under the OPEN/CLOSE header of the odds column. */
+  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; width:40px; text-align:right; flex:none; }
+  /* Direction bar: 64px lane; the inner bar width is set inline (∝ |delta%| × 2.2,
+     clamped 10–56px). Gradient tints into the direction colour; a ▸ arrowhead marks
+     the close end. An empty lane (missing open) shows a thin neutral rule, no arrow. */
+  [data-page="matches"] .mc-journey__lane{ width:64px; flex:none; height:6px; position:relative; display:flex; align-items:center; }
+  [data-page="matches"] .mc-journey__bar{ height:2px; border-radius:1px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
+  [data-page="matches"] .mc-journey__bar::after{ content:'\25B8'; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:9px; line-height:1; color:var(--mc-brand); }
+  [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:1px solid var(--mc-border-subtle); }
   [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-journey__spacer{ flex:1 1 auto; min-width:22px; }
-  [data-page="matches"] .mc-journey__track::before, [data-page="matches"] .mc-journey__track::after{ content:''; position:absolute; top:-2px; width:6px; height:6px; border-radius:50%; }
-  [data-page="matches"] .mc-journey__track::before{ left:-3px; background:var(--mc-muted); }
-  [data-page="matches"] .mc-journey__track::after{ right:-3px; background:var(--mc-brand); }
-  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:15px; }
+  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:44px; flex:none; }
+  [data-page="matches"] .mc-journey__delta{ font-family:var(--mx-font-mono); font-weight:600; font-size:11px; color:var(--mc-muted-2); width:44px; text-align:right; flex:none; }
+  [data-page="matches"] .mc-journey__delta.pos{ color:#3dd68c; }
+  [data-page="matches"] .mc-journey__delta.neg{ color:#e0645b; }
+  /* .mc-drift retained for the day-summary story panels (Biggest market move). */
   [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); font-weight:600; color:var(--mc-muted-2); font-size:11px; }
   /* §7 SETTLED — the open→close delta reads as a PERCENTAGE, coloured by DIRECTION per the
      founder's ruling (2026-08-08, overriding the earlier neutral-delta divergence): a price
@@ -502,11 +506,10 @@
      into direction color"). Missing-open rows carry no direction class → neutral, no delta. */
   [data-page="matches"] .mc-drift.pos{ color:#3dd68c; }
   [data-page="matches"] .mc-drift.neg{ color:#e0645b; }
-  [data-page="matches"] .mc-journey.pos .mc-journey__track{ background:linear-gradient(90deg, var(--mc-muted), #3dd68c); }
-  [data-page="matches"] .mc-journey.pos .mc-journey__track::after{ background:#3dd68c; }
-  [data-page="matches"] .mc-journey.neg .mc-journey__track{ background:linear-gradient(90deg, var(--mc-muted), #e0645b); }
-  [data-page="matches"] .mc-journey.neg .mc-journey__track::after{ background:#e0645b; }
-  [data-page="matches"] .mc-journey__clwrap{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:1px; }
+  [data-page="matches"] .mc-journey.pos .mc-journey__bar{ background:linear-gradient(90deg, var(--mc-muted), #3dd68c); }
+  [data-page="matches"] .mc-journey.pos .mc-journey__bar::after{ color:#3dd68c; }
+  [data-page="matches"] .mc-journey.neg .mc-journey__bar{ background:linear-gradient(90deg, var(--mc-muted), #e0645b); }
+  [data-page="matches"] .mc-journey.neg .mc-journey__bar::after{ color:#e0645b; }
   /* §5/§11 — Completed card identity: no Player-A/B blue. The winner's name is bright
      (--mc-text, 15px 700), the loser's is muted; brightness + the winner accent bar
      carry the winner/loser signal. STATE-SCOPED — never re-applied to Upcoming.
@@ -5485,15 +5488,29 @@ function mcJourney(open, close){
   // rule), keep the recorded close under CLOSE, and suppress the sparkline + delta.
   // A fixed-width spacer replaces the track so CLOSE stays aligned with its header.
   // When openingOdds land the em dash resolves on its own and the track/delta return.
-  if (open == null) return `<span class="mc-journey"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__spacer"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span></span></span>`;
+  // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
+  // no delta. Layout holds its fixed columns so CLOSE stays under its header.
+  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close">${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
   if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
-  // §7 SETTLED (founder ruling 2026-08-08) — the delta reads as ONE object with the close:
-  // a signed PERCENTAGE of the opening price (close/open − 1), not the raw price difference.
-  // Direction drives colour on both the delta and the sparkline (.pos=drifted green /
-  // .neg=shortened red). A true minus sign is used for the negative sign.
+  // §2/§6 SETTLED (founder review 2026-08-08) — the odds journey is ONE object:
+  //   open (40px) · direction bar (64px lane) · close (44px) · delta (44px, inline).
+  // The BAR LENGTH encodes the move size — width ∝ |delta%|, per the export exactly
+  // |delta%| × 2.2, clamped to a 10–56px bar inside the 64px lane (a small move is a
+  // short bar, a big move a long one). A 0% move still shows the 10px minimum so the
+  // lane never reads empty. The delta is a signed PERCENTAGE (close/open − 1), inline
+  // to the right of the close — NOT stacked on a second line. Direction drives colour
+  // on both the bar and the delta (.pos=drifted green / .neg=shortened red).
   const d = oddsPctDelta(open, close);
-  const drift = d.pct !== 0 ? `<span class="mc-drift ${d.dir}">${d.text}</span>` : '';
-  return `<span class="mc-journey ${d.dir}"><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__track"></span><span class="mc-journey__clwrap"><span class="mc-journey__close">${close.toFixed(2)}</span>${drift}</span></span>`;
+  const barW = Math.max(10, Math.min(56, Math.round(Math.abs(d.pct) * 2.2)));
+  const delta = d.pct !== 0
+    ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
+    : `<span class="mc-journey__delta"></span>`;
+  return `<span class="mc-journey ${d.dir}">`
+    + `<span class="mc-journey__open">${open.toFixed(2)}</span>`
+    + `<span class="mc-journey__lane"><span class="mc-journey__bar" style="width:${barW}px"></span></span>`
+    + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
+    + delta
+    + `</span>`;
 }
 // Market Signal panel — expands IN PLACE beneath the card (review item 1), never
 // navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
@@ -5606,13 +5623,18 @@ function updateMatchesHeaderChrome(){
     if (back) back.title = 'Scroll left';
     if (surfDD) surfDD.style.display = '';
   }
-  // §2 — status line: muted 'Settled · <date>' in Completed, live clock in Upcoming.
+  // §2 — status line: live clock in Upcoming; NONE in Results.
+  // §9 (founder review 2026-08-08) — the 'Settled · <date>' line duplicated the
+  // date-rail selection and isn't in the export, so Results shows no status line at
+  // all (the separate #tzLine "Times in …" stays). Hidden, not just cleared, so it
+  // reserves no vertical space above the rail.
   if (ds && !ds.classList.contains('error')){
     if (completed){
-      ds.classList.add('settled');
-      const lbl = settledDateLabel();
-      ds.innerHTML = `<span class="dot"></span><span class="mx-settled-txt">Settled</span> <span class="mx-clock">· ${lbl || 'recent'}</span>`;
+      ds.classList.remove('settled');
+      ds.innerHTML = '';
+      ds.style.display = 'none';
     } else {
+      ds.style.display = '';
       ds.classList.remove('settled');
       if (dataLoadedAt){
         ds.innerHTML = `<span class="dot"></span><span class="mx-live-txt">Live · updated</span> <span class="mx-clock">${headerClockFmt(dataLoadedAt)}</span>`;
@@ -5924,10 +5946,16 @@ function renderMatches(){
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>${rows}</div>`);
     }
     if (vpPicks > 0) {
+      // §8 (founder review 2026-08-08) — the headline is a ROLLING ROI figure, not the
+      // day record. That needs a persistent graded-pick log across a long window, which
+      // matches.json (a ~3-day rolling file) does NOT hold. Per README §5.3 (data-
+      // defensive) we therefore render the export's insufficient-history state rather
+      // than dressing the day count as a headline. The real day contribution stays as an
+      // honest secondary line — never fabricate a rolling ROI from partial data.
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Value picks</div>`
-        + `<div class="mc-story__vp">${vpWon} of ${vpPicks}</div>`
-        + `<div class="mc-story__ctx">graded value picks won this day</div>`
-        + `<div class="mc-story__faint">Rolling ROI shows after 20 graded picks</div></div>`);
+        + `<div class="mc-story__vpempty">Not enough pick history yet</div>`
+        + `<div class="mc-story__faint">The rolling record shows after 20 graded picks</div>`
+        + `<div class="mc-story__ctx">This day: ${vpWon} of ${vpPicks}</div></div>`);
     }
     const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
     if (summarySlot) summarySlot.innerHTML = stripHtml;
