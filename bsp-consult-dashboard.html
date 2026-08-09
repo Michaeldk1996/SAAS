@@ -17673,7 +17673,7 @@ function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
 
 /* ---------- HEAD TO HEAD (full comparison page — TEN-8) ---------- */
 // Expose the `let`-scoped datasets the H2H module reads (not window props otherwise).
-window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches };
+window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards };
 
 /* ============================================================================
    HEAD-TO-HEAD PAGE  (ported from design_handoff_head_to_head, high-fidelity)
@@ -17803,9 +17803,50 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }).join(' ');
   }
 
-  // ---- match detail: HONEST. Real set-score summary; stats/pbp show the
-  //      design's "not ingested" empty states rather than fabricated numbers. ----
-  function meetingDetail(score, key, aName, bName) {
+  // ---- match detail: HONEST. Real set-score summary; real per-match stats where we
+  //      hold them (historical-match-stats.json, oriented by profile key), and real
+  //      point-by-point where ingested. Meetings we don't cover show a truthful
+  //      "not ingested" state — never a fabricated number. ----
+  // historical-match-stats.json is a build input the main dashboard never fetches; load
+  // it lazily the first time a meeting is opened, then repaint.
+  let _hms = null, _hmsLoading = false;
+  function ensureHms() {
+    if (_hms || _hmsLoading) return;
+    _hmsLoading = true;
+    fetch('./historical-match-stats.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : {}).then(d => { _hms = d || {}; render(); })
+      .catch(() => { _hms = {}; });
+  }
+  function hmsEntry(ek) {
+    if (ek == null) return null;
+    if (!_hms) { ensureHms(); return undefined; }     // undefined = still loading
+    return _hms[String(ek)] || null;
+  }
+  // Point-by-point: reuse the dashboard's own loader/global (keyed by bare eventKey).
+  function pbpEntry(ek) {
+    if (ek == null) return null;
+    const pbp = G('pointByPoint');
+    if (pbp && typeof pbp === 'object') { const e = pbp[String(ek)]; if (e) return e; }
+    const lp = fn('loadPointByPoint');
+    if (lp) { try { lp().then(() => render()); } catch (e) {} return undefined; }  // loading
+    return null;
+  }
+  // 12 stats we carry per meeting, with higher-is-better + display unit.
+  const MS_DEFS = [
+    ['1st serve %', 'Service:1st serve percentage', true, '%'],
+    ['1st serve pts won', 'Service:1st serve points won', true, '%'],
+    ['2nd serve pts won', 'Service:2nd serve points won', true, '%'],
+    ['Aces', 'Service:Aces', true, ''],
+    ['Double faults', 'Service:Double Faults', false, ''],
+    ['Break pts saved', 'Service:Break Points Saved', true, '%'],
+    ['1st return pts won', 'Return:1st return points won', true, '%'],
+    ['2nd return pts won', 'Return:2nd return points won', true, '%'],
+    ['Break pts converted', 'Return:Break Points Converted', true, '%'],
+    ['Winners', 'Points:Winners', true, ''],
+    ['Unforced errors', 'Points:Unforced errors', false, ''],
+    ['Total points won', 'Points:Total Points Won', true, ''],
+  ];
+  function meetingDetail(score, key, aName, bName, eventKey, aKey, bKey) {
     const S = state;
     const sets = score.split(' ').map(s => s.split('-').map(Number)).filter(x => x.length === 2 && !isNaN(x[0]) && !isNaN(x[1]));
     const seg = on => on
@@ -17814,9 +17855,49 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const view = S.mView;
     const viewTabs = [['stats', 'Stats'], ['points', 'Point by point']].map(tv =>
       Object.assign({ label: tv[1], hid: bindH(() => setState({ mView: tv[0] })) }, seg(view === tv[0])));
+
+    // real per-match stats, oriented so column A is always aName.
+    let statRows = null, statsState = 'none';   // none | loading | ready
+    if (eventKey != null) {
+      const ent = hmsEntry(eventKey);
+      if (ent === undefined) statsState = 'loading';
+      else if (ent && ent.matchStats && ent.p1Key != null && aKey != null) {
+        const aIsP1 = String(ent.p1Key) === String(aKey);
+        const aIsP2 = String(ent.p2Key) === String(aKey);
+        const bMatches = bKey == null || String(ent.p1Key) === String(bKey) || String(ent.p2Key) === String(bKey);
+        if ((aIsP1 || aIsP2) && bMatches) {
+          const av = aIsP1 ? ent.matchStats.p1 : ent.matchStats.p2;
+          const bv = aIsP1 ? ent.matchStats.p2 : ent.matchStats.p1;
+          const rows = MS_DEFS.map(def => {
+            const va = av && typeof av[def[1]] === 'number' ? av[def[1]] : null;
+            const vb = bv && typeof bv[def[1]] === 'number' ? bv[def[1]] : null;
+            if (va == null && vb == null) return null;
+            const hb = def[2], unit = def[3];
+            let aWin = false, bWin = false;
+            if (va != null && vb != null && va !== vb) { aWin = hb ? va > vb : va < vb; bWin = !aWin; }
+            const fmt = v => v == null ? '—' : (unit === '%' ? (Math.round(v * 10) / 10) + '%' : String(Math.round(v)));
+            return { label: def[0], aTxt: fmt(va), bTxt: fmt(vb), aWin, bWin };
+          }).filter(Boolean);
+          if (rows.length) { statRows = rows; statsState = 'ready'; }
+        }
+      }
+    }
+
+    // real point-by-point (rare for historical meetings until the backfill lands).
+    let pbpHtml = null, pbpState = 'none';
+    if (view === 'points' && eventKey != null) {
+      const pe = pbpEntry(eventKey);
+      if (pe === undefined) pbpState = 'loading';
+      else if (pe) {
+        const build = fn('buildPointByPointHtml');
+        if (build) { try { pbpHtml = build({ p1: pe.p1 || aName, p2: pe.p2 || bName, id: 'past-' + eventKey }, pe, null); pbpState = 'ready'; } catch (e) { pbpHtml = null; } }
+      }
+    }
+
     return {
       viewTabs, aName, bName,
       isStats: view === 'stats', isPoints: view === 'points',
+      statRows, statsState, pbpHtml, pbpState,
       sumA: { setsWon: String(sets.filter(s2 => s2[0] > s2[1]).length), cells: sets.map(s2 => ({ g: String(s2[0]) })) },
       sumB: { setsWon: String(sets.filter(s2 => s2[1] > s2[0]).length), cells: sets.map(s2 => ({ g: String(s2[1]) })) },
     };
@@ -17830,14 +17911,26 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       `<span style="justify-self:center; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#e7e9ee; background:rgba(255,255,255,0.06); border-radius:5px; padding:1px 7px;">${E(sw)}</span>` +
       cells.map(sg => `<span style="justify-self:center; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#5b6880;">${E(sg.g)}</span>`).join('');
     const empty = msg => `<div style="min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; color:#4b5672;">${E(msg)}</div>`;
+    const statTable = rows => `<div style="max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:5px;">
+      ${rows.map(r => `<div style="display:grid; grid-template-columns:64px 1fr 64px; align-items:center; column-gap:12px; padding:5px 4px; border-bottom:1px solid rgba(255,255,255,0.04);">
+        <span style="justify-self:start; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:${r.aWin ? 800 : 600}; color:${r.aWin ? '#6aaeff' : '#c6ccdb'};">${E(r.aTxt)}</span>
+        <span style="justify-self:center; font-size:11px; letter-spacing:0.02em; color:#6b7690; text-align:center;">${E(r.label)}</span>
+        <span style="justify-self:end; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:${r.bWin ? 800 : 600}; color:${r.bWin ? '#e7e9ee' : '#c6ccdb'};">${E(r.bTxt)}</span>
+      </div>`).join('')}</div>`;
+    const statsPane = d.statsState === 'ready' ? statTable(d.statRows)
+      : d.statsState === 'loading' ? empty('Loading match stats…')
+      : empty('Match stats aren’t on file for this meeting.');
+    const pointsPane = d.pbpState === 'ready' ? `<div style="max-width:640px; margin:0 auto;">${d.pbpHtml}</div>`
+      : d.pbpState === 'loading' ? empty('Loading point-by-point…')
+      : empty('Point-by-point isn’t ingested for this meeting yet.');
     return `<div style="max-width:720px; margin:0 auto;">
       <div style="display:flex; width:max-content; margin:0 auto 12px; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:3px;">${d.viewTabs.map(seg).join('')}</div>
       <div style="display:grid; grid-template-columns:${cols}; column-gap:14px; row-gap:6px; align-items:center; padding:8px; max-width:420px; margin:0 auto 12px;">
         ${scoreRow(d.aName, '#6aaeff', d.sumA.setsWon, d.sumA.cells)}
         ${scoreRow(d.bName, '#e7e9ee', d.sumB.setsWon, d.sumB.cells)}
       </div>
-      ${d.isStats ? empty('Per-set stats aren’t ingested for this meeting — final score only.') : ''}
-      ${d.isPoints ? empty('Point-by-point isn’t ingested for this meeting — final score only.') : ''}
+      ${d.isStats ? statsPane : ''}
+      ${d.isPoints ? pointsPane : ''}
     </div>`;
   }
 
@@ -17918,7 +18011,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
               winColor: m[5] === a.short ? A_COL : B_COL,
               open, chev: open ? '▾' : '→',
               hOpen: bindH(() => setState(s2 => ({ mOpen: s2.mOpen === mkey ? null : mkey, mView: 'stats', mSScope: 'match', mPScope: 's1' }))),
-              detail: open ? meetingDetail(m[4], mkey, a.short, b.short) : null,
+              detail: open ? meetingDetail(m[4], mkey, a.short, b.short, m[6], a.key, b.key) : null,
             };
           });
           const wa = rows.filter(r => r.winner === a.short).length;
@@ -18006,20 +18099,28 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }
 
     // performance stats
-    const sv = p => p.serve ? p.serve[S.scope] : null;
-    const rt = p => p.ret ? p.ret[S.scope] : null;
-    const pr = p => p.press ? p.press[S.scope] : null;
+    // 'career'/'w52' read the pooled/last-52 arrays; 'surface' reads the real per-surface row.
+    const scoped = (p, kind) => S.scope === 'surface'
+      ? (p.splitBySurf && p.splitBySurf[kind] ? p.splitBySurf[kind][S.ctxSurface] : null)
+      : (p[kind] ? p[kind][S.scope] : null);
+    const sv = p => scoped(p, 'serve');
+    const rt = p => scoped(p, 'ret');
+    const pr = p => scoped(p, 'press');
     const at5 = sv(a), bt5 = sv(b), ar = rt(a), br = rt(b), ap = pr(a), bp = pr(b);
     const g = (arr, i) => arr ? arr[i] : null;
     const SERVE_LBL = ['1st serve %', '1st serve pts won', '2nd serve pts won', 'Ace %', 'Double fault %', 'Hold %'];
     const RET_LBL = ['1st return pts won', '2nd return pts won', 'Break pts converted', 'Return games won'];
+    const upA = (a.upBySurf && a.upBySurf[S.ctxSurface]) || {}, upB = (b.upBySurf && b.upBySurf[S.ctxSurface]) || {};
     const pressRows = [
-      row('Break pts saved', g(ap, 0), g(bp, 0), { aName: a.short, bName: b.short }),
-      row('Deciding-set record', ap && ap[1] ? ap[1][1] : null, bp && bp[1] ? bp[1][1] : null, {
-        aText: ap && ap[1] ? ap[1][0] : '—', bText: bp && bp[1] ? bp[1][0] : '—', aSub: ap && ap[1] ? ap[1][1].toFixed(0) + '% won' : null, bSub: bp && bp[1] ? bp[1][1].toFixed(0) + '% won' : null, aName: a.short, bName: b.short }),
+      row('Break pts saved', NUM(upA.bpSaved), NUM(upB.bpSaved), { aName: a.short, bName: b.short,
+        note: 'Career · ' + S.ctxSurface + ' — share of break points saved on serve.' }),
+      row('Deciding-set win %', NUM(upA.dec), NUM(upB.dec), { aName: a.short, bName: b.short,
+        note: 'Career · ' + S.ctxSurface + ' — matches decided in the final set.' }),
       row('Tiebreak record', ap && ap[2] ? ap[2][1] : null, bp && bp[2] ? bp[2][1] : null, {
-        aText: ap && ap[2] ? ap[2][0] : '—', bText: bp && bp[2] ? bp[2][0] : '—', aSub: ap && ap[2] ? ap[2][1].toFixed(0) + '% won' : null, bSub: bp && bp[2] ? bp[2][1].toFixed(0) + '% won' : null, aName: a.short, bName: b.short }),
-      row('Serving to stay in set', g(ap, 3), g(bp, 3), { aName: a.short, bName: b.short }),
+        aText: ap && ap[2] ? ap[2][0] : '—', bText: bp && bp[2] ? bp[2][0] : '—',
+        aSub: ap && ap[2] ? Math.round(ap[2][1]) + '% won' : null, bSub: bp && bp[2] ? Math.round(bp[2][1]) + '% won' : null, aName: a.short, bName: b.short }),
+      row('Serving to stay in set', null, null, { aName: a.short, bName: b.short,
+        note: 'Not ingested — needs per-game serving sequences (point-by-point).' }),
     ];
     const raA = (a.ratingsBySurf && a.ratingsBySurf[S.ctxSurface]) || {}, raB = (b.ratingsBySurf && b.ratingsBySurf[S.ctxSurface]) || {};
     const ratingRow = (label, ka) => row(label, raA[ka] != null ? raA[ka] : null, raB[ka] != null ? raB[ka] : null, {
@@ -18038,13 +18139,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         emptyText: 'No return rating or split held for either player at this scope.',
         rows: [ratingRow('Return rating', 'ret')].concat(retDetail) },
       { title: 'Under pressure', scopeNote: view.scopeLabel,
-        empty: raA.up == null && raB.up == null && !ap && !bp,
+        empty: raA.up == null && raB.up == null && !ap && !bp && !Object.keys(upA).length && !Object.keys(upB).length,
         emptyText: 'No pressure rating or split held for either player at this scope.',
         rows: [ratingRow('Under pressure rating', 'up')].concat(pressRows) },
     ];
 
     // playing styles
-    const lastRowsOf = (me, opp, side) => ((me.lastVs && opp.arch && me.lastVs[opp.arch]) || []).map((m, i) => {
+    const lastRowsOf = (me, opp, side) => ((me.lastVs && opp.archKey && me.lastVs[opp.archKey]) || []).map((m, i) => {
       const skey = 'sv' + side + i;
       const open = S.mOpen === skey;
       const oppName = m[2].replace(/^(def\.|lost to)\s*/, '');
@@ -18054,12 +18155,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         line: m[2] + ' · ' + m[3], meta: m[0] + ' · ' + m[1],
         open, chev: open ? '▾' : '→',
         hOpen: bindH(() => setState(s2 => ({ mOpen: s2.mOpen === skey ? null : skey, mView: 'stats', mSScope: 'match', mPScope: 's1' }))),
-        detail: open ? meetingDetail(m[3], skey, me.short, oppName) : null,
+        detail: open ? meetingDetail(m[3], skey, me.short, oppName, m[5], me.key, m[6]) : null,
       };
     });
     const r0 = 96;
-    const aRec = a.vsStyle && b.arch ? a.vsStyle[b.arch] : null;
-    const bRec = b.vsStyle && a.arch ? b.vsStyle[a.arch] : null;
+    const aRec = a.vsStyle && b.archKey ? a.vsStyle[b.archKey] : null;
+    const bRec = b.vsStyle && a.archKey ? b.vsStyle[a.archKey] : null;
     view.style = {
       aArch: a.arch || '—', bArch: b.arch || '—',
       aDesc: a.arch ? (a.archDesc || '') : 'No archetype classified — not enough tagged matches.',
@@ -18116,6 +18217,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       empty: !am && !bm,
       emptyText: 'No odds archive entries for either player.',
       cards: [mkCard(a, am, A_COL, 'rgba(106,174,255,0.24)'), mkCard(b, bm, '#e7e9ee', 'rgba(255,255,255,0.12)')],
+      curve: {
+        a: a.marketCurve || [], b: b.marketCurve || [],
+        aName: a.short, bName: b.short, aColor: A_COL, bColor: '#e7e9ee',
+        aPl: am ? am.pl : null, bPl: bm ? bm.pl : null,
+      },
     };
 
     // model — Stennisfy "likely opening price" from blended Elo (item 1, TEN-8).
@@ -18579,10 +18685,51 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ${blk.empty ? `<div style="padding:20px 0; text-align:center; font-size:13px; color:#4b5672;">${E(blk.emptyText)}</div>` : blk.rows.map(statRow).join('')}
     </div>`;
   }
+  // Dual-line cumulative profit curve (design item 6). Both players share one x (fractional
+  // year) and y (units) frame; 0u baseline dashed; A solid, B dashed; end dot coloured by sign.
+  function curveSVG(cv) {
+    const a = cv.a || [], b = cv.b || [];
+    if (!a.length && !b.length) return '';
+    const W = 900, H = 240, L = 46, R = 92, TOPP = 16, BOTP = 22;
+    const all = a.concat(b);
+    let xMin = Infinity, xMax = -Infinity, uMin = 0, uMax = 0;
+    all.forEach(p => { if (p.x < xMin) xMin = p.x; if (p.x > xMax) xMax = p.x; if (p.u < uMin) uMin = p.u; if (p.u > uMax) uMax = p.u; });
+    if (!isFinite(xMin)) return '';
+    const uPad = Math.max(1, (uMax - uMin) * 0.12); uMax += uPad; uMin -= uPad;
+    const xSpan = (xMax - xMin) || 1, uSpan = (uMax - uMin) || 1;
+    const px = x => L + (x - xMin) / xSpan * (W - L - R);
+    const py = u => TOPP + (uMax - u) / uSpan * (H - TOPP - BOTP);
+    const pathOf = s => s.length ? 'M' + s.map(p => px(p.x).toFixed(1) + ',' + py(p.u).toFixed(1)).join(' L') : '';
+    const y0 = py(0);
+    const end = (s, col) => { if (!s.length) return ''; const p = s[s.length - 1];
+      const c = p.u >= 0 ? '#3dd68c' : '#e0616f';
+      return `<circle cx="${px(p.x).toFixed(1)}" cy="${py(p.u).toFixed(1)}" r="4.5" fill="${c}" stroke="#0a0d14" stroke-width="1.5"/>`; };
+    const uLabel = u => (u >= 0 ? '+' : '') + Math.round(u) + 'u';
+    const gLines = [uMax - uPad * 0.6, 0, uMin + uPad * 0.6].filter((u, i, arr) => arr.indexOf(u) === i);
+    const plTxt = (nm, pl, col) => `<span style="color:${col};">${E(nm)}</span> <span style="font-family:'IBM Plex Mono',monospace; color:${pl == null ? '#4b5672' : (pl >= 0 ? '#3dd68c' : '#e0616f')};">${pl == null ? '—' : (pl >= 0 ? '+' : '') + pl.toFixed(2) + 'u'}</span>`;
+    const nMatch = Math.max(a.length, b.length);
+    return `<div style="background:#080b11; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:16px 18px 10px; margin-top:2px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+        <div style="display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672;">Profit curve</span>
+          <span style="font-size:12px; font-weight:700;">${plTxt(cv.aName, cv.aPl, cv.aColor)}</span>
+          <span style="font-size:12px; font-weight:700;">${plTxt(cv.bName, cv.bPl, cv.bColor)}</span>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#3f4860;">1u / match · closing odds · ${nMatch} matches</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block; height:220px;">
+        ${gLines.map(u => `<line x1="${L}" y1="${py(u).toFixed(1)}" x2="${W - R}" y2="${py(u).toFixed(1)}" stroke="rgba(255,255,255,${u === 0 ? 0.18 : 0.06})" stroke-width="1" ${u === 0 ? 'stroke-dasharray="4 4"' : ''}/>
+          <text x="${L - 8}" y="${(py(u) + 4).toFixed(1)}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#4b5672">${uLabel(u)}</text>`).join('')}
+        <path d="${pathOf(a)}" fill="none" stroke="${cv.aColor}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${pathOf(b)}" fill="none" stroke="${cv.bColor}" stroke-width="2.2" stroke-dasharray="7 5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${end(a, cv.aColor)}${end(b, cv.bColor)}
+      </svg>
+    </div>`;
+  }
   function marketCard(v) {
     const m = v.market;
     return `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px;">
-      ${sectionHead('Market performance', 'Odds archive · last 52 weeks')}
+      ${sectionHead('Market performance', 'Odds archive · performance vs the closing market')}
       ${m.empty ? `<div style="padding:20px 0; text-align:center; font-size:13px; color:#4b5672;">${E(m.emptyText)}</div>` : ''}
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px;">
         ${m.cards.map(c => `<div style="background:#0a0d14; border:1px solid ${c.bd}; border-radius:14px; padding:18px 20px; display:flex; flex-direction:column; gap:11px;">
@@ -18597,6 +18744,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           <span style="font-size:12.5px; line-height:1.55; color:#8b96b5;">${E(c.summary)}</span>
         </div>`).join('')}
       </div>
+      ${m.empty ? '' : curveSVG(m.curve)}
     </div>`;
   }
   function newsCard(v) {
@@ -18723,6 +18871,125 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     });
   }
 
+  // ---- Batch-2 data adapters (TEN-8): serve/return/pressure splits, market
+  //      performance + profit curve, and record-vs-archetype. Every field is read
+  //      from a real source the Player Profile page already consumes; nothing is
+  //      fabricated — a genuinely absent value returns null and renders as an em dash.
+  const NUM = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+  // Clean 9-value display names for the machine `primary` archetype (NOT the 37
+  // fine-grained hybrid archetype_label — those fragment record-vs-style to noise).
+  const ARCH_DISP = { all_court: 'All-Court', all_court_elite: 'All-Court Elite',
+    attacking_baseliner: 'Attacking Baseliner', big_server: 'Big Server',
+    big_server_baseliner: 'Big Server + Baseliner', counter_puncher: 'Counter Puncher',
+    solid_baseliner: 'Solid Baseliner', solid_defender: 'Solid Defender', clay_specialist: 'Clay Specialist' };
+
+  // One career-splits player object (players[key]) -> serve/ret/press arrays, mirroring
+  // the profile splits panel (ppCareerSplitsHtml -> PP_SPLIT_TABS). career-splits stores no
+  // overall/total row, so career/w52 "overall" pool the surface rows weighted by their own
+  // sample; per-surface reads the real rows. Break-pts-saved and deciding-set are absent from
+  // this file (they come from surface-ratings, see pressUnderFrom) so press carries tiebreak only.
+  function splitArrays(cs) {
+    if (!cs) return null;
+    const serveOf = r => r ? [NUM(r.firstInPct), NUM(r.firstWonPct), NUM(r.secondWonPct), NUM(r.aPct), NUM(r.dfPct), NUM(r.hldPct)] : null;
+    const retOf = r => r ? [NUM(r.ret1WonPct), NUM(r.ret2WonPct), NUM(r.bpConvPct), NUM(r.brkPct)] : null;
+    const tbOf = r => { if (!r) return null; const w = NUM(r.tbW), l = NUM(r.tbL), pct = NUM(r.tbPct);
+      return (w != null && l != null && (w + l) > 0) ? [w + '-' + l, pct != null ? pct : w / (w + l) * 100] : null; };
+    const pressOf = r => [null, null, tbOf(r), null];   // [bpSaved, decidingSet, tiebreak, servingToStay]
+    const POOL = ['Hard', 'Clay', 'Grass', 'Carpet'];
+    const pooled = (block, fields, wKey) => {
+      const n = fields.length, out = new Array(n).fill(0), wsum = new Array(n).fill(0); let any = false;
+      POOL.forEach(s => { const r = block && block[s]; if (!r) return; const w = NUM(r[wKey]); if (w == null || w <= 0) return;
+        fields.forEach((f, i) => { const v = r[f]; if (typeof v === 'number' && isFinite(v)) { out[i] += v * w; wsum[i] += w; any = true; } }); });
+      return any ? out.map((x, i) => wsum[i] ? x / wsum[i] : null) : null;
+    };
+    const pooledTb = block => { let w = 0, l = 0, any = false;
+      POOL.forEach(s => { const r = block && block[s]; if (r && typeof r.tbW === 'number' && typeof r.tbL === 'number') { w += r.tbW; l += r.tbL; any = true; } });
+      return (any && (w + l) > 0) ? [null, null, [w + '-' + l, w / (w + l) * 100], null] : [null, null, null, null]; };
+    const C = cs.career || {}, W = cs.last52 || {};
+    return {
+      serve: { career: pooled(C, ['firstInPct', 'firstWonPct', 'secondWonPct', 'aPct', 'dfPct', 'hldPct'], 'MS'), w52: pooled(W, ['firstInPct', 'firstWonPct', 'secondWonPct', 'aPct', 'dfPct', 'hldPct'], 'MS') },
+      ret: { career: pooled(C, ['ret1WonPct', 'ret2WonPct', 'bpConvPct', 'brkPct'], 'M'), w52: pooled(W, ['ret1WonPct', 'ret2WonPct', 'bpConvPct', 'brkPct'], 'M') },
+      press: { career: pooledTb(C), w52: pooledTb(W) },
+      bySurf: {
+        serve: { Hard: serveOf(C.Hard), Clay: serveOf(C.Clay), Grass: serveOf(C.Grass) },
+        ret: { Hard: retOf(C.Hard), Clay: retOf(C.Clay), Grass: retOf(C.Grass) },
+        press: { Hard: pressOf(C.Hard), Clay: pressOf(C.Clay), Grass: pressOf(C.Grass) },
+      },
+    };
+  }
+
+  // surface-ratings underPressure per surface -> { Hard|Clay|Grass: {bpSaved, dec, tb} } (career).
+  // Fills Break-points-saved and Deciding-set — the two rows career-splits does not carry.
+  function pressUnderFrom(fullName) {
+    const sr = DV('surfaceRatings'); const players = (sr && sr.players) || [];
+    const rec = players.find(p => p.name === fullName); if (!rec || !rec.surfaces) return null;
+    const out = {};
+    ['Hard', 'Clay', 'Grass'].forEach(s => { const up = rec.surfaces[s] && rec.surfaces[s].career && rec.surfaces[s].career.underPressure;
+      if (up) out[s] = { bpSaved: NUM(up.bpSavedPct), dec: NUM(up.decWinPct), tb: NUM(up.tbWinPct) }; });
+    return Object.keys(out).length ? out : null;
+  }
+
+  // odds-performance shard -> the H2H p.market object (fav/dog records, expected win%, flat P/L).
+  // drift is null: the archive (tennis-data.co.uk) has no opening price, so open->close is unmeasurable.
+  function marketFrom(shard) {
+    if (!shard) return null;
+    const role = shard.byRole || {}, fav = role.favourite || null, dog = role.underdog || null;
+    const recAr = r => (r && r.wins != null && r.losses != null) ? [r.wins, r.losses] : null;
+    let pl = null; const sides = shard.sides, leg = shard.sidesLegend;
+    if (Array.isArray(sides) && leg && Array.isArray(leg.fields)) {
+      const iWon = leg.fields.indexOf('won'), iPrice = leg.fields.indexOf('price');
+      if (iWon >= 0 && iPrice >= 0) { pl = 0; for (const r of sides) pl += r[iWon] ? (r[iPrice] - 1) : -1; }
+    }
+    if (pl == null && shard.overall && shard.overall.roi != null && shard.overall.matches) pl = shard.overall.roi / 100 * shard.overall.matches;
+    return { fav: recAr(fav), dog: recAr(dog),
+      favImp: fav ? Number(fav.expectedWinRate != null ? fav.expectedWinRate : 0) : null,
+      dogImp: dog ? Number(dog.expectedWinRate != null ? dog.expectedWinRate : 0) : null,
+      pl: pl, drift: null };
+  }
+  // Cumulative-units profit series from a shard's per-match rows (1u flat, closing price, chronological).
+  function profitCurve(shard) {
+    const out = []; if (!shard) return out;
+    const sides = shard.sides, leg = shard.sidesLegend;
+    if (!Array.isArray(sides) || !leg || !Array.isArray(leg.fields)) return out;
+    const iDate = leg.fields.indexOf('date'), iWon = leg.fields.indexOf('won'), iPrice = leg.fields.indexOf('price');
+    if (iWon < 0 || iPrice < 0) return out;
+    const fracYear = ds => { const t = Date.parse(ds); if (isNaN(t)) return null;
+      const d = new Date(t), y = d.getUTCFullYear(), s = Date.UTC(y, 0, 1), e = Date.UTC(y + 1, 0, 1); return y + (t - s) / (e - s); };
+    let cum = 0;
+    for (let i = 0; i < sides.length; i++) { const r = sides[i]; cum += r[iWon] ? (r[iPrice] - 1) : -1;
+      out.push({ x: iDate >= 0 ? fracYear(r[iDate]) : i, u: Math.round(cum * 1e4) / 1e4 }); }
+    return out;
+  }
+
+  // Career record vs each archetype, from tournamentHistory (opponent names -> primary label).
+  function vsStyleCareer(prof, styleLookupFn) {
+    if (!prof || !Array.isArray(prof.tournamentHistory)) return null;
+    const out = {};
+    prof.tournamentHistory.forEach(t => (t.editions || []).forEach(ed => (ed.matches || []).forEach(m => {
+      const lab = styleLookupFn(m.opp); if (!lab) return;
+      if (!out[lab]) out[lab] = [0, 0];
+      if (m.res === 'W') out[lab][0]++; else if (m.res === 'L') out[lab][1]++;
+    })));
+    return Object.keys(out).length ? out : null;
+  }
+  // Recent meetings vs each archetype, from recentForm (clean date + set scores). Tuple shape
+  // matches lastRowsOf(): [dateStr, tournament, "def./lost to Opp", score, "W"/"L", eventKey].
+  function lastVsRecent(prof, styleLookupFn) {
+    const rows = prof && prof.recentForm && prof.recentForm.matches;
+    if (!Array.isArray(rows)) return null;
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dstr = d => { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (+m[3]) + ' ' + MON[(+m[2]) - 1] + " '" + m[1].slice(2) : (d || '—'); };
+    const scoreLine = r => { if (r.retired) return 'ret.'; if (r.walkover) return 'w/o';
+      if (Array.isArray(r.sets) && r.sets.length) return r.sets.map(s => { let g = s.p + '-' + s.o; if (s.pTb != null || s.oTb != null) g += '(' + Math.min(s.pTb || 0, s.oTb || 0) + ')'; return g; }).join(' ');
+      return String(r.result || '').replace(/\s*-\s*/, '–'); };
+    const opp = n => String(n || '').replace(/^[A-Z]\.\s*/, '').trim();
+    const CAP = 5, out = {};
+    rows.forEach(r => { const lab = styleLookupFn(r.opponent); if (!lab) return;
+      if (!out[lab]) out[lab] = []; if (out[lab].length >= CAP) return;
+      out[lab].push([dstr(r.date), r.tournament || '—', (r.won ? 'def. ' : 'lost to ') + opp(r.opponent), scoreLine(r), r.won ? 'W' : 'L', r.eventKey || null, r.opponentKey != null ? r.opponentKey : null]); });
+    return Object.keys(out).length ? out : null;
+  }
+
   // Enrich a light P entry with real metrics on first selection.
   function enrich(shortKey) {
     const e = P[shortKey]; if (!e || e.__rich) return;
@@ -18732,7 +18999,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const styleFor = fn('ppStyleFor');
     const st = styleFor ? styleFor(e.full) : null;
     if (st) {
-      e.arch = st.archetype_label || null;
+      // Key record-vs-style on the clean 9-value `primary`; show its display name.
+      e.archKey = st.primary || null;
+      e.arch = (st.primary && ARCH_DISP[st.primary]) || st.archetype_label || null;
       e.thin = st.archetype_data_coverage === 'partial' || (Array.isArray(st.partial_axes) && st.partial_axes.length > 0);
     }
     // 6-axis DNA radar
@@ -18759,6 +19028,28 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }
     // whole-career tournament history (item 4 — powers the tournament selector).
     e.tourHist = (prof && Array.isArray(prof.tournamentHistory)) ? prof.tournamentHistory : null;
+
+    // record vs opponent's archetype (career) + recent meetings vs that style (Batch-2 item 2).
+    const lookup = styleFor ? (nm => { const s = styleFor(nm); return s ? s.primary : null; }) : (() => null);
+    e.vsStyle = prof ? vsStyleCareer(prof, lookup) : null;
+    e.lastVs = prof ? lastVsRecent(prof, lookup) : null;
+
+    // serve / return / under-pressure splits (Batch-2 item 4).
+    const csAll = DV('careerSplits') || {};
+    const sa = splitArrays(e.key != null ? csAll[String(e.key)] : null);
+    if (sa) { e.serve = sa.serve; e.ret = sa.ret; e.press = sa.press; e.splitBySurf = sa.bySurf; }
+    e.upBySurf = pressUnderFrom(e.full);
+
+    // market performance + profit curve (Batch-2 items 5 & 6). Shard is lazily fetched;
+    // if it isn't cached yet, load it and repaint this player's card when it arrives.
+    const shards = DV('oddsPerfShards') || {};
+    const pk = e.key != null ? String(e.key) : null;
+    if (pk != null) {
+      if (pk in shards) { e.market = marketFrom(shards[pk]); e.marketCurve = profitCurve(shards[pk]); }
+      else { const lo = fn('loadOddsPerfShard');
+        if (lo) lo(e.key).then(sh => { e.market = marketFrom(sh); e.marketCurve = profitCurve(sh); render(); }).catch(() => {}); }
+    }
+
     // news
     e.news = newsFor(e.full);
     e.__rich = true;
@@ -18805,6 +19096,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           roundLbl ? roundLbl(mt.round) : (mt.round || '—'),
           mt.result || '—',
           mt.p1Won ? sa : sb,
+          mt.eventKey != null ? mt.eventKey : null,
         ]);
       });
       const years = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
@@ -18840,7 +19132,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }, 300);
   }
 
-  window.H2HPage = { render, ensureInit, _debug: () => ({ P, H2H, ROSTER, state }) };
+  window.H2HPage = { render, ensureInit, _debug: () => ({ P, H2H, ROSTER, state }),
+    _selftest: (an, bn) => { enrich(an); enrich(bn); setState({ aSel: an, bSel: bn, aOpen: false, bOpen: false, loading: false }); return { a: P[an], b: P[bn] }; } };
 })();
 
 
