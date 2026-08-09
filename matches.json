@@ -19,8 +19,8 @@
     },
     "bestOdds": {
       "p1": {
-        "price": 1.86,
-        "bookmaker": "Matchbook"
+        "price": 1.85,
+        "bookmaker": "Betfair"
       },
       "p2": {
         "price": 2.16,
@@ -1472,7 +1472,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 3,
       "totalLost": 3,
       "longMatches": 0,
@@ -1480,26 +1480,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Martin Etcheverry",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -1525,7 +1509,32 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12151386
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Martin Etcheverry",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-06",
               "opponent": "L. Sonego",
@@ -1563,7 +1572,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -1758,8 +1767,8 @@
     },
     "weather": {
       "temperature": 23.4,
-      "windSpeed": 16.3,
-      "humidity": 78,
+      "windSpeed": 16.2,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 3 – 9, 2026",
@@ -1846,11 +1855,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -1866,7 +1875,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/978_d-merida-aguilar.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -1961,6 +1970,10 @@
             [
               "2026-08-09T03:33:53.332Z",
               1.847
+            ],
+            [
+              "2026-08-09T07:59:22.765Z",
+              1.847
             ]
           ],
           "p2": [
@@ -2051,6 +2064,10 @@
             [
               "2026-08-09T03:33:53.332Z",
               2.07
+            ],
+            [
+              "2026-08-09T07:59:22.765Z",
+              2.07
             ]
           ]
         },
@@ -2069,7 +2086,7 @@
               1.769
             ],
             [
-              "2026-08-09T06:43:49.126Z",
+              "2026-08-09T09:23:51.483Z",
               1.769
             ]
           ],
@@ -2087,7 +2104,7 @@
               2.0
             ],
             [
-              "2026-08-09T06:43:49.126Z",
+              "2026-08-09T09:23:51.483Z",
               2.0
             ]
           ]
@@ -2145,6 +2162,18 @@
             [
               "2026-08-08T22:24:27.300Z",
               1.811
+            ],
+            [
+              "2026-08-09T07:46:57.435Z",
+              1.802
+            ],
+            [
+              "2026-08-09T09:26:30.432Z",
+              1.833
+            ],
+            [
+              "2026-08-09T09:32:28.356Z",
+              1.842
             ]
           ],
           "p2": [
@@ -2199,6 +2228,18 @@
             [
               "2026-08-08T22:24:27.300Z",
               2.043
+            ],
+            [
+              "2026-08-09T07:46:57.435Z",
+              2.055
+            ],
+            [
+              "2026-08-09T09:26:30.432Z",
+              2.015
+            ],
+            [
+              "2026-08-09T09:32:28.356Z",
+              2.004
             ]
           ]
         },
@@ -2352,18 +2393,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.47,
-      "p2": 2.91,
+      "p1": 1.43,
+      "p2": 3.05,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.47,
-        "bookmaker": "Betfair"
+        "price": 1.48,
+        "bookmaker": "BetOnline.ag"
       },
       "p2": {
         "price": 3.1,
-        "bookmaker": "Unibet (NL)"
+        "bookmaker": "Betfair"
       }
     },
     "tournamentRound": "ATP Montreal - 1/8-finals",
@@ -3689,6 +3730,31 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 2,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -3724,31 +3790,6 @@
               "result": "2 - 0"
             }
           ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 2,
-          "won": 2,
-          "lost": 0,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
         }
       ]
     },
@@ -3761,7 +3802,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -3955,8 +3996,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 24.3,
-      "windSpeed": 16.7,
+      "temperature": 24.2,
+      "windSpeed": 15.7,
       "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
@@ -4044,11 +4085,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -4064,7 +4105,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -4179,6 +4220,14 @@
             [
               "2026-08-09T05:39:08.110Z",
               1.469
+            ],
+            [
+              "2026-08-09T07:55:51.631Z",
+              1.442
+            ],
+            [
+              "2026-08-09T07:56:25.851Z",
+              1.434
             ]
           ],
           "p2": [
@@ -4293,6 +4342,14 @@
             [
               "2026-08-09T05:39:08.110Z",
               2.91
+            ],
+            [
+              "2026-08-09T07:55:51.631Z",
+              3.02
+            ],
+            [
+              "2026-08-09T07:56:25.851Z",
+              3.05
             ]
           ]
         },
@@ -4303,7 +4360,7 @@
               1.357
             ],
             [
-              "2026-08-09T06:43:29.613Z",
+              "2026-08-09T09:23:31.100Z",
               1.357
             ]
           ],
@@ -4313,7 +4370,7 @@
               3.0
             ],
             [
-              "2026-08-09T06:43:29.613Z",
+              "2026-08-09T09:23:31.100Z",
               3.0
             ]
           ]
@@ -4367,6 +4424,14 @@
             [
               "2026-08-09T03:56:03.128Z",
               1.417
+            ],
+            [
+              "2026-08-09T07:21:38.692Z",
+              1.438
+            ],
+            [
+              "2026-08-09T08:11:02.376Z",
+              1.428
             ]
           ],
           "p2": [
@@ -4417,6 +4482,14 @@
             [
               "2026-08-09T03:56:03.128Z",
               2.976
+            ],
+            [
+              "2026-08-09T07:21:38.692Z",
+              2.887
+            ],
+            [
+              "2026-08-09T08:11:02.376Z",
+              2.928
             ]
           ]
         },
@@ -4457,6 +4530,10 @@
             [
               "2026-08-09T04:38:19.633Z",
               1.41
+            ],
+            [
+              "2026-08-09T07:22:43.438Z",
+              1.42
             ]
           ],
           "p2": [
@@ -4495,6 +4572,10 @@
             [
               "2026-08-09T04:38:19.633Z",
               2.95
+            ],
+            [
+              "2026-08-09T07:22:43.438Z",
+              2.9
             ]
           ]
         },
@@ -4543,6 +4624,10 @@
             [
               "2026-08-09T03:52:30.807Z",
               1.39
+            ],
+            [
+              "2026-08-09T07:24:32.142Z",
+              1.4
             ]
           ],
           "p2": [
@@ -4585,6 +4670,10 @@
             [
               "2026-08-09T03:52:30.807Z",
               3.0
+            ],
+            [
+              "2026-08-09T07:24:32.142Z",
+              2.92
             ]
           ]
         },
@@ -4654,18 +4743,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.08,
-      "p2": 1.84,
+      "p1": 2.09,
+      "p2": 1.83,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.14,
+        "price": 2.16,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.87,
-        "bookmaker": "Betfair"
+        "price": 1.85,
+        "bookmaker": "Matchbook"
       }
     },
     "tournamentRound": "ATP Montreal - 1/8-finals",
@@ -5777,23 +5866,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Schoolkate",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 2,
           "lost": 0,
@@ -5816,17 +5889,58 @@
               "eventKey": 12152569
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Schoolkate",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 10,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 12,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 2,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "Z. Bergs",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152794
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "J. Brooksby",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152341
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 6,
@@ -5880,27 +5994,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 4,
-          "won": 3,
+          "matchCount": 2,
+          "won": 1,
           "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "Z. Bergs",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152794
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "J. Brooksby",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152341
-            },
             {
               "date": "2024-08-08",
               "opponent": "A. Popyrin",
@@ -6104,9 +6202,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 23.1,
-      "windSpeed": 13.4,
-      "humidity": 63,
+      "temperature": 22.9,
+      "windSpeed": 14.2,
+      "humidity": 65,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 3 – 9, 2026",
@@ -6193,11 +6291,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -6213,7 +6311,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -6276,6 +6374,10 @@
             [
               "2026-08-09T03:33:01.977Z",
               2.08
+            ],
+            [
+              "2026-08-09T07:56:57.036Z",
+              2.09
             ]
           ],
           "p2": [
@@ -6338,6 +6440,10 @@
             [
               "2026-08-09T03:33:01.977Z",
               1.84
+            ],
+            [
+              "2026-08-09T07:56:57.036Z",
+              1.833
             ]
           ]
         },
@@ -6348,7 +6454,7 @@
               2.0
             ],
             [
-              "2026-08-09T06:41:14.815Z",
+              "2026-08-09T09:21:07.927Z",
               2.0
             ]
           ],
@@ -6358,7 +6464,7 @@
               1.769
             ],
             [
-              "2026-08-09T06:41:14.815Z",
+              "2026-08-09T09:21:07.927Z",
               1.769
             ]
           ]
@@ -6617,11 +6723,11 @@
     },
     "bestOdds": {
       "p1": {
-        "price": 3.55,
+        "price": 3.5,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.38,
+        "price": 1.39,
         "bookmaker": "Betfair"
       }
     },
@@ -7968,7 +8074,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -7999,6 +8105,24 @@
               "eventKey": 12151384
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -8045,30 +8169,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 2,
           "lost": 0,
@@ -8089,6 +8190,29 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152464
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
             }
           ]
         }
@@ -8254,9 +8378,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 22.2,
-      "windSpeed": 9.7,
-      "humidity": 69,
+      "temperature": 21.3,
+      "windSpeed": 13.2,
+      "humidity": 67,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 3 – 9, 2026",
@@ -8343,11 +8467,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -8363,7 +8487,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -8498,7 +8622,7 @@
               3.1
             ],
             [
-              "2026-08-09T06:41:16.488Z",
+              "2026-08-09T09:21:09.970Z",
               3.1
             ]
           ],
@@ -8508,7 +8632,7 @@
               1.333
             ],
             [
-              "2026-08-09T06:41:16.488Z",
+              "2026-08-09T09:21:09.970Z",
               1.333
             ]
           ]
@@ -8733,21 +8857,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.97,
-      "p2": 1.92,
+      "p1": 1.98,
+      "p2": 1.91,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.97,
-        "bookmaker": "Pinnacle"
+        "price": 1.99,
+        "bookmaker": "Matchbook"
       },
       "p2": {
         "price": 2,
         "bookmaker": "Betfair"
       }
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Montreal - Quarter-finals",
     "p1Key": 50323,
     "p2Key": 1759,
     "h2h": {
@@ -9991,15 +10115,90 @@
         "chitf": null
       }
     ],
-    "p1TournamentHistory": null,
-    "p2TournamentHistory": {
-      "editionsPlayed": 2,
-      "totalWon": 1,
-      "totalLost": 2,
+    "p1TournamentHistory": {
+      "editionsPlayed": 1,
+      "totalWon": 3,
+      "totalLost": 0,
       "longMatches": 0,
       "longMatchesPlayed": 3,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "J. Lehecka",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153031
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "L. Musetti",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152814
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "C. Moutet",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152205
+            }
+          ]
+        }
+      ]
+    },
+    "p2TournamentHistory": {
+      "editionsPlayed": 3,
+      "totalWon": 4,
+      "totalLost": 2,
+      "longMatches": 0,
+      "longMatchesPlayed": 6,
+      "longMatchPct": 0,
+      "years": [
+        {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "C. Norrie",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153017
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "M. Navone",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152795
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "Z. Svajda",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152466
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -10031,11 +10230,12 @@
           "roundReached": "1/32-finals",
           "matches": [
             {
-              "date": "",
+              "date": "2024-08-07",
               "opponent": "U. Humbert",
               "round": "1/32-finals",
               "won": false,
-              "result": "0 - 2"
+              "result": "0 - 2",
+              "eventKey": 11972148
             }
           ]
         }
@@ -10163,13 +10363,135 @@
         }
       },
       "surfaceLabel": "hard",
-      "courtSpeedRecord": null
+      "courtSpeedRecord": {
+        "p1": {
+          "wins": 7,
+          "losses": 1,
+          "sampleSize": 8,
+          "pct": 87.5
+        },
+        "p2": {
+          "wins": 9,
+          "losses": 2,
+          "sampleSize": 11,
+          "pct": 81.8
+        }
+      }
     },
     "matchStats": null,
     "setStats": null,
-    "venue": null,
-    "courtSpeed": null,
-    "weather": null,
+    "venue": {
+      "city": "Montreal",
+      "country": "CA",
+      "category": "ATP 1000",
+      "indoor": false
+    },
+    "courtSpeed": {
+      "speed": 60,
+      "altitude": 30,
+      "abstractSpeed": 1.02,
+      "abstractSpeedYear": 2025,
+      "as2023": 1.07,
+      "as2024": null,
+      "as2025": 1.02,
+      "firstServeWon": 72,
+      "serviceHold": 79,
+      "cpi": 37.8,
+      "cpiYear": 2025,
+      "category": "Medium"
+    },
+    "weather": {
+      "temperature": 22.6,
+      "windSpeed": 11,
+      "humidity": 67,
+      "source": "Open-Meteo",
+      "historical": false,
+      "weekRange": "Aug 10 – 16, 2026",
+      "week": [
+        {
+          "date": "2026-08-10",
+          "dow": "Mon",
+          "label": "Aug 10",
+          "code": 3,
+          "hi": 23,
+          "lo": 17,
+          "rain": 59,
+          "wind": 15,
+          "humidity": 77,
+          "isMatch": true,
+          "available": true
+        },
+        {
+          "date": "2026-08-11",
+          "dow": "Tue",
+          "label": "Aug 11",
+          "code": 53,
+          "hi": 26,
+          "lo": 17,
+          "rain": 59,
+          "wind": 24,
+          "humidity": 73,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-12",
+          "dow": "Wed",
+          "label": "Aug 12",
+          "code": 51,
+          "hi": 21,
+          "lo": 17,
+          "rain": 19,
+          "wind": 11,
+          "humidity": 72,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-13",
+          "dow": "Thu",
+          "label": "Aug 13",
+          "code": 80,
+          "hi": 20,
+          "lo": 15,
+          "rain": 54,
+          "wind": 26,
+          "humidity": 86,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-14",
+          "dow": "Fri",
+          "label": "Aug 14",
+          "code": 3,
+          "hi": 18,
+          "lo": 11,
+          "rain": 54,
+          "wind": 24,
+          "humidity": 63,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-15",
+          "dow": "Sat",
+          "label": "Aug 15",
+          "code": 3,
+          "hi": 21,
+          "lo": 13,
+          "rain": 12,
+          "wind": 24,
+          "humidity": 56,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-16",
+          "available": false
+        }
+      ]
+    },
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -10179,7 +10501,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -10193,6 +10515,10 @@
             ],
             [
               "2026-08-09T06:33:47.794Z",
+              1.98
+            ],
+            [
+              "2026-08-09T09:15:05.464Z",
               1.98
             ]
           ],
@@ -10208,6 +10534,40 @@
             [
               "2026-08-09T06:33:47.794Z",
               1.909
+            ],
+            [
+              "2026-08-09T09:15:05.464Z",
+              1.909
+            ]
+          ]
+        },
+        "1xBet": {
+          "p1": [
+            [
+              "2026-08-09T07:12:57.486Z",
+              1.961
+            ],
+            [
+              "2026-08-09T07:38:11.386Z",
+              1.951
+            ],
+            [
+              "2026-08-09T09:23:51.377Z",
+              1.93
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-09T07:12:57.486Z",
+              1.88
+            ],
+            [
+              "2026-08-09T07:38:11.386Z",
+              1.89
+            ],
+            [
+              "2026-08-09T09:23:51.377Z",
+              1.91
             ]
           ]
         },
@@ -10220,6 +10580,10 @@
             [
               "2026-08-09T05:50:41.557Z",
               1.91
+            ],
+            [
+              "2026-08-09T07:55:43.129Z",
+              1.91
             ]
           ],
           "p2": [
@@ -10230,10 +10594,55 @@
             [
               "2026-08-09T05:50:41.557Z",
               1.9
+            ],
+            [
+              "2026-08-09T07:55:43.129Z",
+              1.9
+            ]
+          ]
+        },
+        "Betano": {
+          "p1": [
+            [
+              "2026-08-09T07:23:00.393Z",
+              1.9
+            ],
+            [
+              "2026-08-09T09:09:51.604Z",
+              1.87
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-09T07:23:00.393Z",
+              1.9
+            ],
+            [
+              "2026-08-09T09:09:51.604Z",
+              1.93
             ]
           ]
         }
       }
+    },
+    "openingOdds": {
+      "p1": 1.97,
+      "p2": 1.917,
+      "bookmaker": "Pinnacle",
+      "at": "2026-08-09T05:46:29.566Z"
+    },
+    "pinnacleOpen": {
+      "p1": 1.97,
+      "p2": 1.917,
+      "ts": "2026-08-09T05:46:29.566Z",
+      "vfP1": 0.4932
+    },
+    "valueSnapshot": {
+      "fairP1": 0.4627,
+      "fairP2": 0.5373,
+      "edgeVsPinnacleP1": -0.0282,
+      "edgeVsPinnacleP2": 0.0282,
+      "ts": "2026-08-09T09:05:27.760Z"
     }
   },
   {
@@ -11791,7 +12200,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -11799,10 +12208,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -11828,7 +12237,25 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12152198
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "T. Paul",
@@ -11842,7 +12269,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 5,
       "totalWon": 6,
       "totalLost": 4,
       "longMatches": 0,
@@ -11850,33 +12277,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "B. Shelton",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "E. Quinn",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -11902,7 +12306,39 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152199
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "B. Shelton",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2"
             },
+            {
+              "date": "",
+              "opponent": "E. Quinn",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "A. Rublev",
@@ -12136,11 +12572,11 @@
           "dow": "Mon",
           "label": "Aug 10",
           "code": 3,
-          "hi": 21,
+          "hi": 23,
           "lo": 17,
-          "rain": 61,
-          "wind": 12,
-          "humidity": 83,
+          "rain": 59,
+          "wind": 15,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -12148,12 +12584,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 80,
+          "code": 53,
           "hi": 26,
           "lo": 17,
-          "rain": 61,
+          "rain": 59,
           "wind": 24,
-          "humidity": 74,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -12164,7 +12600,7 @@
           "code": 51,
           "hi": 21,
           "lo": 17,
-          "rain": 18,
+          "rain": 19,
           "wind": 11,
           "humidity": 72,
           "isMatch": false,
@@ -12177,7 +12613,7 @@
           "code": 80,
           "hi": 20,
           "lo": 15,
-          "rain": 48,
+          "rain": 54,
           "wind": 26,
           "humidity": 86,
           "isMatch": false,
@@ -12190,7 +12626,7 @@
           "code": 3,
           "hi": 18,
           "lo": 11,
-          "rain": 48,
+          "rain": 54,
           "wind": 24,
           "humidity": 63,
           "isMatch": false,
@@ -12203,7 +12639,7 @@
           "code": 3,
           "hi": 21,
           "lo": 13,
-          "rain": 13,
+          "rain": 12,
           "wind": 24,
           "humidity": 56,
           "isMatch": false,
@@ -13392,6 +13828,31 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 2,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -13427,42 +13888,42 @@
               "result": "2 - 0"
             }
           ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 2,
-          "won": 2,
-          "lost": 0,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 14,
+      "editionsPlayed": 15,
       "totalWon": 25,
       "totalLost": 15,
       "longMatches": 0,
       "longMatchesPlayed": 39,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2026-08-06",
+              "opponent": "L. Tien",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12152207
+            },
+            {
+              "date": "2026-08-04",
+              "opponent": "K. Majchrzak",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12151381
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 1,
@@ -13481,27 +13942,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 1,
-          "lost": 2,
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
           "roundReached": "1/32-finals",
           "matches": [
-            {
-              "date": "2026-08-06",
-              "opponent": "L. Tien",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "1 - 2",
-              "eventKey": 12152207
-            },
-            {
-              "date": "2026-08-04",
-              "opponent": "K. Majchrzak",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12151381
-            },
             {
               "date": "2024-08-08",
               "opponent": "T. Kokkinakis",
@@ -14165,11 +14610,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -32630,23 +33075,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "J. Pablo Ficovich",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
@@ -32669,6 +33098,22 @@
               "eventKey": 12151674
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "J. Pablo Ficovich",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
         }
       ]
     },
@@ -32681,30 +33126,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 2,
           "lost": 0,
@@ -32725,6 +33147,29 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152464
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
             }
           ]
         }
@@ -32977,11 +33422,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -35171,23 +35616,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "N. Arseneault",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
@@ -35210,11 +35639,27 @@
               "eventKey": 12151376
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "N. Arseneault",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 13,
       "totalLost": 6,
       "longMatches": 0,
@@ -35222,10 +35667,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
-          "won": 2,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -35243,7 +35688,25 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152465
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2024-08-08",
               "opponent": "B. Nakashima",
@@ -35669,11 +36132,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -51418,7 +51881,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 3,
       "totalLost": 4,
       "longMatches": 0,
@@ -51426,10 +51889,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 3,
-          "won": 1,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
           "roundReached": "1/32-finals",
           "matches": [
             {
@@ -51439,7 +51902,25 @@
               "won": false,
               "result": "0 - 2",
               "eventKey": 12152498
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2024-08-08",
               "opponent": "N. Borges",
@@ -51524,7 +52005,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -51805,11 +52286,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -53886,13 +54367,30 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 9,
       "totalWon": 14,
       "totalLost": 8,
       "longMatches": 0,
       "longMatchesPlayed": 22,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2026-08-06",
+              "opponent": "B. Van De Zandschulp",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12152509
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -53918,19 +54416,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 2,
+          "matchCount": 1,
           "won": 0,
-          "lost": 2,
-          "roundReached": "1/32-finals",
+          "lost": 1,
+          "roundReached": "1/16-finals",
           "matches": [
-            {
-              "date": "2026-08-06",
-              "opponent": "B. Van De Zandschulp",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12152509
-            },
             {
               "date": "2024-08-08",
               "opponent": "A. Davidovich Fokina",
@@ -54147,7 +54637,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -54178,6 +54668,24 @@
               "eventKey": 12151384
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -54462,11 +54970,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -56356,13 +56864,30 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 16,
       "totalLost": 8,
       "longMatches": 0,
       "longMatchesPlayed": 24,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "2026-08-06",
+              "opponent": "T. Atmane",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12152511
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 6,
@@ -56416,19 +56941,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
+          "matchCount": 2,
           "won": 1,
-          "lost": 2,
-          "roundReached": "1/32-finals",
+          "lost": 1,
+          "roundReached": "1/16-finals",
           "matches": [
-            {
-              "date": "2026-08-06",
-              "opponent": "T. Atmane",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12152511
-            },
             {
               "date": "2024-08-08",
               "opponent": "M. Arnaldi",
@@ -56632,23 +57149,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "E. Nava",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -56677,6 +57178,22 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12151373
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "E. Nava",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
             }
           ]
         }
@@ -56929,11 +57446,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -58530,7 +59047,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -58538,10 +59055,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -58567,7 +59084,25 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12152198
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "T. Paul",
@@ -58589,23 +59124,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "J. Duckworth",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -58634,6 +59153,22 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12151389
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "J. Duckworth",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
             }
           ]
         }
@@ -58886,11 +59421,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -76232,7 +76767,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -76267,7 +76802,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 6,
       "totalLost": 3,
       "longMatches": 0,
@@ -76275,33 +76810,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
           "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "C. Ruud",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "F. Bagnis",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -76335,7 +76847,39 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12151380
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "C. Ruud",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
             },
+            {
+              "date": "",
+              "opponent": "F. Bagnis",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "K. Nishikori",
@@ -76611,11 +77155,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -86763,7 +87307,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 2,
       "totalLost": 2,
       "longMatches": 0,
@@ -86771,10 +87315,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 2,
-          "lost": 2,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -86800,7 +87344,25 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12151375
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "T. Fritz",
@@ -86814,7 +87376,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
@@ -86822,33 +87384,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "J. Lehecka",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "P. Carreno Busta",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -86874,7 +87413,39 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152466
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "J. Lehecka",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2"
             },
+            {
+              "date": "",
+              "opponent": "P. Carreno Busta",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "U. Humbert",
@@ -87045,9 +87616,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.1,
-      "windSpeed": 9,
-      "humidity": 83,
+      "temperature": 27.5,
+      "windSpeed": 7.8,
+      "humidity": 68,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Aug 3 – 9, 2026",
@@ -87056,12 +87627,12 @@
           "date": "2026-08-03",
           "dow": "Mon",
           "label": "Aug 3",
-          "code": 65,
+          "code": 63,
           "hi": 22,
-          "lo": 18,
-          "rain": 77,
-          "wind": 21,
-          "humidity": 91,
+          "lo": 20,
+          "rain": null,
+          "wind": 18,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         },
@@ -87069,11 +87640,11 @@
           "date": "2026-08-04",
           "dow": "Tue",
           "label": "Aug 4",
-          "code": 0,
-          "hi": 25,
-          "lo": 15,
-          "rain": 7,
-          "wind": 17,
+          "code": 1,
+          "hi": 26,
+          "lo": 16,
+          "rain": null,
+          "wind": 15,
           "humidity": 70,
           "isMatch": false,
           "available": true
@@ -87083,11 +87654,11 @@
           "dow": "Wed",
           "label": "Aug 5",
           "code": 0,
-          "hi": 27,
-          "lo": 16,
-          "rain": 0,
+          "hi": 28,
+          "lo": 17,
+          "rain": null,
           "wind": 12,
-          "humidity": 67,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -87095,12 +87666,12 @@
           "date": "2026-08-06",
           "dow": "Thu",
           "label": "Aug 6",
-          "code": 3,
-          "hi": 27,
+          "code": 61,
+          "hi": 28,
           "lo": 19,
-          "rain": 30,
-          "wind": 13,
-          "humidity": 76,
+          "rain": null,
+          "wind": 17,
+          "humidity": 79,
           "isMatch": true,
           "available": true
         },
@@ -87109,11 +87680,11 @@
           "dow": "Fri",
           "label": "Aug 7",
           "code": 3,
-          "hi": 27,
-          "lo": 21,
-          "rain": 10,
-          "wind": 11,
-          "humidity": 84,
+          "hi": 28,
+          "lo": 20,
+          "rain": null,
+          "wind": 9,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -87121,12 +87692,12 @@
           "date": "2026-08-08",
           "dow": "Sat",
           "label": "Aug 8",
-          "code": 80,
+          "code": 63,
           "hi": 27,
-          "lo": 21,
-          "rain": 38,
-          "wind": 16,
-          "humidity": 85,
+          "lo": 19,
+          "rain": null,
+          "wind": 18,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -87134,12 +87705,12 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 63,
           "hi": 25,
-          "lo": 18,
-          "rain": 25,
-          "wind": 17,
-          "humidity": 84,
+          "lo": 19,
+          "rain": null,
+          "wind": 19,
+          "humidity": 79,
           "isMatch": false,
           "available": true
         }
@@ -98518,23 +99089,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Vukic",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "1 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -98573,6 +99128,31 @@
               "eventKey": 12151388
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Vukic",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -98684,6 +99264,31 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-06",
+              "opponent": "C. Norrie",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12152796
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "J. Duckworth",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152168
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -98722,28 +99327,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-06",
-              "opponent": "C. Norrie",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2",
-              "eventKey": 12152796
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "J. Duckworth",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152168
-            }
-          ]
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -99030,107 +99619,7 @@
       "cpiYear": 2025,
       "category": "Medium"
     },
-    "weather": {
-      "temperature": 26.2,
-      "windSpeed": 8.9,
-      "humidity": 80,
-      "source": "Open-Meteo",
-      "historical": true,
-      "weekRange": "Aug 3 – 9, 2026",
-      "week": [
-        {
-          "date": "2026-08-03",
-          "dow": "Mon",
-          "label": "Aug 3",
-          "code": 65,
-          "hi": 22,
-          "lo": 18,
-          "rain": 77,
-          "wind": 21,
-          "humidity": 91,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-04",
-          "dow": "Tue",
-          "label": "Aug 4",
-          "code": 0,
-          "hi": 25,
-          "lo": 15,
-          "rain": 7,
-          "wind": 17,
-          "humidity": 70,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-05",
-          "dow": "Wed",
-          "label": "Aug 5",
-          "code": 0,
-          "hi": 27,
-          "lo": 16,
-          "rain": 0,
-          "wind": 12,
-          "humidity": 67,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-06",
-          "dow": "Thu",
-          "label": "Aug 6",
-          "code": 3,
-          "hi": 27,
-          "lo": 19,
-          "rain": 30,
-          "wind": 13,
-          "humidity": 76,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-08-07",
-          "dow": "Fri",
-          "label": "Aug 7",
-          "code": 3,
-          "hi": 27,
-          "lo": 21,
-          "rain": 10,
-          "wind": 11,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-08",
-          "dow": "Sat",
-          "label": "Aug 8",
-          "code": 80,
-          "hi": 27,
-          "lo": 21,
-          "rain": 38,
-          "wind": 16,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-09",
-          "dow": "Sun",
-          "label": "Aug 9",
-          "code": 45,
-          "hi": 25,
-          "lo": 18,
-          "rain": 25,
-          "wind": 17,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -120599,7 +121088,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -120642,7 +121131,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 1,
           "won": 0,
           "lost": 1,
@@ -120907,11 +121396,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -130406,6 +130895,39 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "R. Jodar",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12153031
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "A. Blockx",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152573
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "V. Kopriva",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152178
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 3,
           "won": 2,
@@ -130437,36 +130959,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "R. Jodar",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12153031
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "A. Blockx",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152573
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "V. Kopriva",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152178
-            }
-          ]
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -130502,23 +131000,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "D. Svrcina",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
@@ -130539,6 +131021,22 @@
               "won": true,
               "result": " - ",
               "eventKey": 12151771
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "D. Svrcina",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
             }
           ]
         }
@@ -130791,11 +131289,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -132700,23 +133198,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "E. Nava",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 1,
           "lost": 1,
@@ -132739,17 +133221,58 @@
               "eventKey": 12152342
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "E. Nava",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 10,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 12,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 2,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "Z. Bergs",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152794
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "J. Brooksby",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152341
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 6,
@@ -132803,27 +133326,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 4,
-          "won": 3,
+          "matchCount": 2,
+          "won": 1,
           "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "Z. Bergs",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152794
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "J. Brooksby",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152341
-            },
             {
               "date": "2024-08-08",
               "opponent": "A. Popyrin",
@@ -133114,11 +133621,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -141659,13 +142166,38 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 8,
       "totalLost": 8,
       "longMatches": 0,
       "longMatchesPlayed": 16,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "A. Rinderknech",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 1",
+              "eventKey": 12152804
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "M. Cilic",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152197
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 3,
@@ -141698,27 +142230,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 1,
-          "lost": 2,
-          "roundReached": "1/16-finals",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
           "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "A. Rinderknech",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 1",
-              "eventKey": 12152804
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "M. Cilic",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152197
-            },
             {
               "date": "2024-08-07",
               "opponent": "A. Tabilo",
@@ -141867,7 +142383,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 4,
       "totalLost": 4,
       "longMatches": 0,
@@ -141875,26 +142391,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
           "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Galarneau",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 4,
-          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -141920,7 +142420,32 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152179
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Galarneau",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "F. Cobolli",
@@ -142133,8 +142658,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 22.6,
-      "windSpeed": 7,
+      "temperature": 22.4,
+      "windSpeed": 9,
       "humidity": 89,
       "source": "Open-Meteo",
       "historical": true,
@@ -142144,12 +142669,12 @@
           "date": "2026-08-03",
           "dow": "Mon",
           "label": "Aug 3",
-          "code": 63,
+          "code": 65,
           "hi": 22,
-          "lo": 20,
-          "rain": null,
-          "wind": 18,
-          "humidity": 89,
+          "lo": 18,
+          "rain": 77,
+          "wind": 21,
+          "humidity": 91,
           "isMatch": false,
           "available": true
         },
@@ -142157,11 +142682,11 @@
           "date": "2026-08-04",
           "dow": "Tue",
           "label": "Aug 4",
-          "code": 1,
-          "hi": 26,
-          "lo": 16,
-          "rain": null,
-          "wind": 15,
+          "code": 0,
+          "hi": 25,
+          "lo": 15,
+          "rain": 7,
+          "wind": 17,
           "humidity": 70,
           "isMatch": false,
           "available": true
@@ -142171,11 +142696,11 @@
           "dow": "Wed",
           "label": "Aug 5",
           "code": 0,
-          "hi": 28,
-          "lo": 17,
-          "rain": null,
+          "hi": 27,
+          "lo": 16,
+          "rain": 0,
           "wind": 12,
-          "humidity": 66,
+          "humidity": 67,
           "isMatch": false,
           "available": true
         },
@@ -142183,12 +142708,12 @@
           "date": "2026-08-06",
           "dow": "Thu",
           "label": "Aug 6",
-          "code": 61,
-          "hi": 28,
+          "code": 3,
+          "hi": 27,
           "lo": 19,
-          "rain": null,
-          "wind": 17,
-          "humidity": 79,
+          "rain": 30,
+          "wind": 13,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -142197,11 +142722,11 @@
           "dow": "Fri",
           "label": "Aug 7",
           "code": 3,
-          "hi": 28,
-          "lo": 20,
-          "rain": null,
-          "wind": 9,
-          "humidity": 80,
+          "hi": 27,
+          "lo": 21,
+          "rain": 10,
+          "wind": 11,
+          "humidity": 84,
           "isMatch": true,
           "available": true
         },
@@ -142209,12 +142734,12 @@
           "date": "2026-08-08",
           "dow": "Sat",
           "label": "Aug 8",
-          "code": 63,
+          "code": 80,
           "hi": 27,
-          "lo": 19,
-          "rain": null,
-          "wind": 18,
-          "humidity": 83,
+          "lo": 21,
+          "rain": 38,
+          "wind": 16,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -142222,12 +142747,12 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 61,
+          "code": 3,
           "hi": 25,
           "lo": 19,
-          "rain": null,
+          "rain": 25,
           "wind": 16,
-          "humidity": 80,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         }
@@ -150970,7 +151495,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -151013,6 +151538,31 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "R. Jodar",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12152814
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "N. Mejia",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152177
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 2,
           "won": 1,
@@ -151037,28 +151587,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "R. Jodar",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12152814
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "N. Mejia",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152177
-            }
-          ]
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -151339,11 +151873,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -153359,7 +153893,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -153390,6 +153924,24 @@
               "eventKey": 12151384
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -153428,7 +153980,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 14,
       "totalLost": 6,
       "longMatches": 0,
@@ -153436,10 +153988,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 4,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -153465,7 +154017,25 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12151675
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
+          "matches": [
             {
               "date": "2024-08-11",
               "opponent": "A. Popyrin",
@@ -153892,11 +154462,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -156950,7 +157520,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -156985,13 +157555,46 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 5,
       "totalLost": 3,
       "longMatches": 0,
       "longMatchesPlayed": 8,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "D. Merida Aguilar",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12152852
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "F. Cerundolo",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152206
+            },
+            {
+              "date": "2026-08-04",
+              "opponent": "J-L. Struff",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12151383
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 4,
@@ -157031,35 +157634,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 4,
-          "won": 2,
-          "lost": 2,
-          "roundReached": "1/16-finals",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
           "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "D. Merida Aguilar",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2",
-              "eventKey": 12152852
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "F. Cerundolo",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152206
-            },
-            {
-              "date": "2026-08-04",
-              "opponent": "J-L. Struff",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12151383
-            },
             {
               "date": "2024-08-06",
               "opponent": "K. Nishikori",
@@ -157319,11 +157898,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -178258,7 +178837,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 3,
       "totalLost": 3,
       "longMatches": 0,
@@ -178266,26 +178845,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Martin Etcheverry",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -178311,7 +178874,32 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12151386
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Martin Etcheverry",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-06",
               "opponent": "L. Sonego",
@@ -178341,13 +178929,38 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 7,
       "totalLost": 4,
       "longMatches": 0,
       "longMatchesPlayed": 11,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-07",
+              "opponent": "T. Griekspoor",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12152853
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "F. Marozsan",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152512
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -178373,27 +178986,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
-          "roundReached": "1/16-finals",
+          "matchCount": 5,
+          "won": 4,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
-            {
-              "date": "2026-08-07",
-              "opponent": "T. Griekspoor",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2",
-              "eventKey": 12152853
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "F. Marozsan",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152512
-            },
             {
               "date": "2024-08-11",
               "opponent": "K. Nishikori",
@@ -178708,11 +179305,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -182073,7 +182670,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 5,
       "totalWon": 6,
       "totalLost": 4,
       "longMatches": 0,
@@ -182081,33 +182678,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "B. Shelton",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "E. Quinn",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -182133,7 +182707,39 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152199
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "B. Shelton",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2"
             },
+            {
+              "date": "",
+              "opponent": "E. Quinn",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "A. Rublev",
@@ -182204,7 +182810,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -182485,11 +183091,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -184420,7 +185026,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 5,
       "totalLost": 3,
       "longMatches": 0,
@@ -184428,10 +185034,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
-          "won": 2,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -184449,7 +185055,25 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152497
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "S. Korda",
@@ -184529,23 +185153,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Schoolkate",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 2,
           "lost": 0,
@@ -184566,6 +185174,22 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152569
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Schoolkate",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
             }
           ]
         }
@@ -184818,11 +185442,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -186842,13 +187466,46 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 11,
       "totalLost": 3,
       "longMatches": 0,
       "longMatchesPlayed": 14,
       "longMatchPct": 0,
       "years": [
+        {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "T. A. Tirante",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12152815
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "R. Collignon",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152499
+            },
+            {
+              "date": "2026-08-04",
+              "opponent": "R. A. Burruchaga",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12151677
+            }
+          ]
+        },
         {
           "year": "2025",
           "matchCount": 4,
@@ -186888,35 +187545,11 @@
         },
         {
           "year": "2024",
-          "matchCount": 9,
-          "won": 8,
-          "lost": 1,
-          "roundReached": "1/16-finals",
+          "matchCount": 6,
+          "won": 6,
+          "lost": 0,
+          "roundReached": "Final",
           "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "T. A. Tirante",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12152815
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "R. Collignon",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152499
-            },
-            {
-              "date": "2026-08-04",
-              "opponent": "R. A. Burruchaga",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12151677
-            },
             {
               "date": "2024-08-13",
               "opponent": "A. Rublev",
@@ -187031,7 +187664,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -187312,11 +187945,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -195880,23 +196513,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "E. Nava",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -195927,6 +196544,22 @@
               "eventKey": 12151373
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "E. Nava",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
         }
       ]
     },
@@ -195939,30 +196572,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 2,
           "won": 2,
           "lost": 0,
@@ -195983,6 +196593,29 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152464
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
             }
           ]
         }
@@ -196235,11 +196868,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -199316,6 +199949,31 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 2,
+          "won": 2,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -199351,36 +200009,11 @@
               "result": "2 - 0"
             }
           ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 2,
-          "won": 2,
-          "lost": 0,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 13,
       "totalLost": 6,
       "longMatches": 0,
@@ -199388,10 +200021,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
-          "won": 2,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -199409,7 +200042,25 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152465
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2024-08-08",
               "opponent": "B. Nakashima",
@@ -199835,11 +200486,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -202414,7 +203065,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 6,
       "totalLost": 3,
       "longMatches": 0,
@@ -202422,33 +203073,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
           "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "C. Ruud",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "F. Bagnis",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -202482,7 +203110,39 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12151380
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "C. Ruud",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
             },
+            {
+              "date": "",
+              "opponent": "F. Bagnis",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "K. Nishikori",
@@ -202512,7 +203172,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -202520,10 +203180,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -202549,7 +203209,25 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12152198
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "T. Paul",
@@ -202809,11 +203487,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -221600,7 +222278,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 4,
       "totalWon": 4,
       "totalLost": 4,
       "longMatches": 0,
@@ -221608,26 +222286,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
           "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Galarneau",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 4,
-          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -221653,7 +222315,32 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152179
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Galarneau",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "F. Cobolli",
@@ -221709,7 +222396,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 5,
       "totalWon": 6,
       "totalLost": 4,
       "longMatches": 0,
@@ -221717,33 +222404,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "B. Shelton",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "E. Quinn",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -221769,7 +222433,39 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152199
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "B. Shelton",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2"
             },
+            {
+              "date": "",
+              "opponent": "E. Quinn",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2024-08-10",
               "opponent": "A. Rublev",
@@ -222078,11 +222774,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -243135,7 +243831,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
@@ -243143,33 +243839,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "J. Lehecka",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "1 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "P. Carreno Busta",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 3,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -243195,7 +243868,39 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152466
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "J. Lehecka",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 2"
             },
+            {
+              "date": "",
+              "opponent": "P. Carreno Busta",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2024-08-07",
               "opponent": "U. Humbert",
@@ -243217,23 +243922,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Vukic",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "1 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -243272,6 +243961,31 @@
               "eventKey": 12151388
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Vukic",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -243621,11 +244335,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -244092,7 +244806,6 @@
         }
       }
     },
-    "finishedAt": "2026-08-09T06:12:41.237Z",
     "oddsMovement": {
       "market": "Match Winner",
       "capturedAt": "2026-08-09T06:51:02Z",
@@ -256714,6 +257427,32 @@
           ]
         }
       }
+    },
+    "finishedAt": "2026-08-09T06:12:41.237Z",
+    "openingOdds": {
+      "p1": 1.4,
+      "p2": 3,
+      "bookmaker": "bet365",
+      "at": "2026-08-07T11:28:01.384Z"
+    },
+    "closingOdds": {
+      "p1": 1.444,
+      "p2": 2.75,
+      "bookmaker": "bet365",
+      "at": "2026-08-09T01:50:18.451Z"
+    },
+    "pinnacleOpen": {
+      "p1": 1.454,
+      "p2": 2.93,
+      "ts": "2026-08-07T15:04:45.301Z",
+      "vfP1": 0.6683
+    },
+    "valueSnapshot": {
+      "fairP1": 0.7377,
+      "fairP2": 0.2623,
+      "edgeVsPinnacleP1": 0.0467,
+      "edgeVsPinnacleP2": -0.0467,
+      "ts": "2026-08-09T09:05:27.760Z"
     }
   },
   {
@@ -258089,6 +258828,39 @@
       "longMatchPct": 0,
       "years": [
         {
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "R. Jodar",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12153031
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "A. Blockx",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152573
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "V. Kopriva",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152178
+            }
+          ]
+        },
+        {
           "year": "2025",
           "matchCount": 3,
           "won": 2,
@@ -258120,36 +258892,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "R. Jodar",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12153031
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "A. Blockx",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152573
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "V. Kopriva",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152178
-            }
-          ]
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -258185,7 +258933,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2024",
+          "year": "2026",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -258466,11 +259214,11 @@
           "date": "2026-08-09",
           "dow": "Sun",
           "label": "Aug 9",
-          "code": 45,
+          "code": 3,
           "hi": 25,
-          "lo": 18,
+          "lo": 19,
           "rain": 25,
-          "wind": 17,
+          "wind": 16,
           "humidity": 84,
           "isMatch": true,
           "available": true
@@ -310901,7 +311649,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -332905,7 +333653,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -352371,7 +353119,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -438003,7 +438751,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -448563,7 +449311,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-09T06:51:02Z",
+      "capturedAt": "2026-08-09T09:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
