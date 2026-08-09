@@ -17690,7 +17690,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     Clay: { c: '#d9737f', b: 'rgba(217,115,127,0.32)' },
     Grass: { c: '#3dd68c', b: 'rgba(61,214,140,0.32)' },
   };
-  const SCOPES = [['career', 'Career'], ['w52', 'Last 52 weeks'], ['surface', 'Current surface']];
+  const SCOPES = [['career', 'Career'], ['w52', 'Last 52 weeks']];
   // Real six-spoke DNA radar axes (from player-profiles dna), in ppDnaVals order.
   const AXES = ['Serve', 'Return', 'Baseline', 'Movement', 'Net play', 'Clutch'];
 
@@ -17937,6 +17937,61 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   // ============================ VIEW COMPUTATION ============================
+  // Reconstruct the head-to-head meetings list from a player's whole-career
+  // tournamentHistory, joined to the opponent on numeric oppKey (no name matching).
+  // buildH2HData() can only supply meetings for pairs playing *today* (from the fixture
+  // feed's h2h block); every other pair otherwise reads "never met" even though the
+  // store holds the meetings (e.g. Sinner–Shelton, 9 in tournamentHistory). Output
+  // mirrors an H2H entry: { a, b, meetings:[[year,[[date,tour,surf,round,score,winner,eventKey,sets],...]],...] }.
+  const H2H_ROUND = { R128: 'R128', R64: 'R64', R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', F: 'F', RR: 'RR', BR: 'BR', Q1: 'Q1', Q2: 'Q2', Q3: 'Q3' };
+  function h2hFromHist(a, b) {
+    if (!a || !b || a.key == null || b.key == null) return null;
+    const seen = {}, byYear = {};
+    let aWins = 0, bWins = 0;
+    // Walk one player's history and orient every meeting to player A. We read BOTH
+    // players' histories (deduped on year|tournament|round) because ~1% of pairs are
+    // asymmetric — only one side records a given meeting — so reading a single side
+    // would make the panel's result depend on selection order.
+    const collect = (owner, oppKey, ownerIsA) => {
+      if (!Array.isArray(owner.tourHist)) return;
+      owner.tourHist.forEach(t => (t.editions || []).forEach(ed => (ed.matches || []).forEach(mt => {
+        if (String(mt.oppKey) !== String(oppKey)) return;
+        if (mt.res !== 'W' && mt.res !== 'L') return;
+        const yr = String(ed.year || t.lastYear || '—');
+        const round = H2H_ROUND[mt.round] || mt.round || '—';
+        const dk = yr + '|' + (t.name || '') + '|' + round;
+        if (seen[dk]) return;                        // same meeting recorded by both players
+        seen[dk] = 1;
+        const aWon = ownerIsA ? (mt.res === 'W') : (mt.res === 'L');
+        if (aWon) aWins++; else bWins++;
+        // `score` is the raw match set tally in the original p1–p2 order (NOT oriented to
+        // the profile player), so orient it by the winner instead: in a completed match the
+        // winner holds the larger set count. A-first => winner's count first when A won.
+        const nums = String(mt.score || '').match(/\d+/g);
+        let setsStr = '—';
+        if (nums && nums.length === 2) {
+          const hi = Math.max(+nums[0], +nums[1]), lo = Math.min(+nums[0], +nums[1]);
+          setsStr = aWon ? (hi + '–' + lo) : (lo + '–' + hi);
+        }
+        (byYear[yr] = byYear[yr] || []).push([
+          '',                                        // no exact date in tournamentHistory
+          t.name || '—',                             // tournament
+          '',                                        // surface not carried here -> renders as —
+          round,                                     // round
+          '',                                        // no game-level score, only the set tally below
+          aWon ? a.short : b.short,                  // winner (short name)
+          null,                                      // no eventKey -> no per-meeting stat drill-in
+          setsStr || null,                           // pre-formatted set tally (player A first)
+        ]);
+      })));
+    };
+    collect(a, b.key, true);
+    collect(b, a.key, false);
+    if (aWins + bWins === 0) return null;
+    const meetings = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
+    return { a: aWins, b: bWins, meetings: meetings };
+  }
+
   function renderVals() {
     const S = state;
     const a = P[S.aSel] || null, b = P[S.bSel] || null;
@@ -17982,7 +18037,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
 
     // H2H
     const key = [a.short, b.short].join('|'), rkey = [b.short, a.short].join('|');
-    const raw = H2H[key] ? { d: H2H[key], flip: false } : (H2H[rkey] ? { d: H2H[rkey], flip: true } : null);
+    // Prefer today's-fixture meetings (they carry real dates, surfaces and eventKeys for
+    // the stat drill-in); otherwise rebuild the meetings from career tournamentHistory
+    // by numeric oppKey so non-today pairs stop reading "never met" (TEN-8, item 2).
+    let raw = H2H[key] ? { d: H2H[key], flip: false } : (H2H[rkey] ? { d: H2H[rkey], flip: true } : null);
+    if (!raw) { const hist = h2hFromHist(a, b); if (hist) raw = { d: hist, flip: false }; }
     if (!raw) {
       view.h2h = { none: true, some: false, meetingsLine: 'No meetings on record' };
     } else {
@@ -18007,8 +18066,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
             const wa2 = ss.filter(x => x[0] > x[1]).length;
             const surf = SURF[m[2]] ? m[2] : 'Hard';
             return {
+              // m[7] (set tally) is pre-formatted for tournamentHistory rows that carry no
+              // game-level score; today's-fixture rows derive it from the set scores in m[4].
               date: m[0], tour: m[1], surf: m[2] || '—', round: m[3], score: m[4], winner: m[5],
-              sets: wa2 + '-' + (ss.length - wa2),
+              sets: m[7] != null ? m[7] : (wa2 + '-' + (ss.length - wa2)),
               surfColor: (SURF[m[2]] || SURF.Hard).c, surfBd: (SURF[m[2]] || SURF.Hard).b,
               winColor: m[5] === a.short ? A_COL : B_COL,
               open, chev: open ? '▾' : '→',
@@ -18100,49 +18161,37 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       };
     }
 
-    // performance stats
-    // 'career'/'w52' read the pooled/last-52 arrays; 'surface' reads the real per-surface row.
-    const scoped = (p, kind) => S.scope === 'surface'
-      ? (p.splitBySurf && p.splitBySurf[kind] ? p.splitBySurf[kind][S.ctxSurface] : null)
-      : (p[kind] ? p[kind][S.scope] : null);
-    const sv = p => scoped(p, 'serve');
-    const rt = p => scoped(p, 'ret');
-    const pr = p => scoped(p, 'press');
-    const at5 = sv(a), bt5 = sv(b), ar = rt(a), br = rt(b), ap = pr(a), bp = pr(b);
-    const g = (arr, i) => arr ? arr[i] : null;
-    const SERVE_LBL = ['1st serve %', '1st serve pts won', '2nd serve pts won', 'Ace %', 'Double fault %', 'Hold %'];
-    const RET_LBL = ['1st return pts won', '2nd return pts won', 'Break pts converted', 'Return games won'];
+    // performance stats — Serve / Return / Under-pressure ratings sourced from
+    // surface-ratings.json (career; surface chosen by the pills above). The old per-stat
+    // component splits (1st-serve %, aces, return points, tiebreak record…) came from
+    // career-splits and were surface-split, so a "Career" / "Last 52 weeks" scope label
+    // misrepresented them — dropped per founder ruling (TEN-8, item 5). Under-pressure
+    // keeps its three surface-ratings rows (break pts saved, deciding set, tiebreak).
     const upA = (a.upBySurf && a.upBySurf[S.ctxSurface]) || {}, upB = (b.upBySurf && b.upBySurf[S.ctxSurface]) || {};
     const pressRows = [
       row('Break pts saved', NUM(upA.bpSaved), NUM(upB.bpSaved), { aName: a.short, bName: b.short,
         note: 'Career · ' + S.ctxSurface + ' — share of break points saved on serve.' }),
       row('Deciding-set win %', NUM(upA.dec), NUM(upB.dec), { aName: a.short, bName: b.short,
         note: 'Career · ' + S.ctxSurface + ' — matches decided in the final set.' }),
-      row('Tiebreak record', ap && ap[2] ? ap[2][1] : null, bp && bp[2] ? bp[2][1] : null, {
-        aText: ap && ap[2] ? ap[2][0] : '—', bText: bp && bp[2] ? bp[2][0] : '—',
-        aSub: ap && ap[2] ? Math.round(ap[2][1]) + '% won' : null, bSub: bp && bp[2] ? Math.round(bp[2][1]) + '% won' : null, aName: a.short, bName: b.short }),
-      row('Serving to stay in set', null, null, { aName: a.short, bName: b.short,
-        note: 'Not ingested — needs per-game serving sequences (point-by-point).' }),
+      row('Tiebreak win %', NUM(upA.tb), NUM(upB.tb), { aName: a.short, bName: b.short,
+        note: 'Career · ' + S.ctxSurface + ' — tiebreaks won.' }),
     ];
     const raA = (a.ratingsBySurf && a.ratingsBySurf[S.ctxSurface]) || {}, raB = (b.ratingsBySurf && b.ratingsBySurf[S.ctxSurface]) || {};
     const ratingRow = (label, ka) => row(label, raA[ka] != null ? raA[ka] : null, raB[ka] != null ? raB[ka] : null, {
       fmt: v => String(Math.round(v)), diffFmt: v => String(Math.round(v)), unit: '', aName: a.short, bName: b.short,
       note: 'Stennisfy rating — from the model ratings board (' + S.ctxSurface + ', career).' });
-    const serveDetail = SERVE_LBL.map((l, i) => row(l, g(at5, i), g(bt5, i), { higherBetter: i !== 4, aName: a.short, bName: b.short }));
-    const retDetail = RET_LBL.map((l, i) => row(l, g(ar, i), g(br, i), { aName: a.short, bName: b.short }));
-    // Always surface the real Stennisfy rating; per-stat splits show em dashes until wired (data-honesty).
     view.statBlocks = [
       { title: 'Serve', tabs: tabs('scope', S.scope),
-        empty: raA.serve == null && raB.serve == null && !at5 && !bt5,
-        emptyText: 'No serve rating or split held for either player at this scope.',
-        rows: [ratingRow('Serve rating', 'serve')].concat(serveDetail) },
+        empty: raA.serve == null && raB.serve == null,
+        emptyText: 'No serve rating held for either player at this surface.',
+        rows: [ratingRow('Serve rating', 'serve')] },
       { title: 'Return', scopeNote: view.scopeLabel,
-        empty: raA.ret == null && raB.ret == null && !ar && !br,
-        emptyText: 'No return rating or split held for either player at this scope.',
-        rows: [ratingRow('Return rating', 'ret')].concat(retDetail) },
+        empty: raA.ret == null && raB.ret == null,
+        emptyText: 'No return rating held for either player at this surface.',
+        rows: [ratingRow('Return rating', 'ret')] },
       { title: 'Under pressure', scopeNote: view.scopeLabel,
-        empty: raA.up == null && raB.up == null && !ap && !bp && !Object.keys(upA).length && !Object.keys(upB).length,
-        emptyText: 'No pressure rating or split held for either player at this scope.',
+        empty: raA.up == null && raB.up == null && !Object.keys(upA).length && !Object.keys(upB).length,
+        emptyText: 'No pressure rating or split held for either player at this surface.',
         rows: [ratingRow('Under pressure rating', 'up')].concat(pressRows) },
     ];
 
