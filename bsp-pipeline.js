@@ -2009,6 +2009,13 @@ const MATCH_STAT_DEFS = [
   { type: 'Points', name: 'Return Points Won', kind: 'pct' },
   { type: 'Games', name: 'Service games won', kind: 'pct' },
   { type: 'Games', name: 'Return games won', kind: 'pct' },
+  // Net points won (TEN-8, 2026-08-09, founder request). Native won/total pair
+  // the feed carries at match AND per-set for ~65% of finished singles — clumped
+  // by event (same advanced tier as Winners/Unforced Errors), so it rides the
+  // identical sparse-coverage rule: real fraction (e.g. 15/18 → 83%) when the
+  // tournament reports it, dash '—' when it doesn't (MSHEET_ALWAYS_SHOW). Was
+  // parsed then dropped before this line was added.
+  { type: 'Points', name: 'Net points won', kind: 'pct' },
 ];
 
 // Shared by buildMatchStatsFromFixture() and buildTournamentProgression() —
