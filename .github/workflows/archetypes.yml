@@ -1,0 +1,91 @@
+name: BSP weekly archetypes refresh
+
+# Rebuilds archetypes-classified.json (13-archetype playing-style classifier:
+# Serve-Dominant, Solid-Baseliner, Attacking-Baseliner, etc.) from the cached
+# TML match CSVs, then commits it to main.
+#
+# No API key required — all source data is from the public TML-Database mirror
+# (raw.githubusercontent.com/Tennismylife/TML-Database). The current-year CSV
+# is deleted before the rebuild so classify-archetypes.js re-fetches it
+# (getCsv only downloads a year it doesn't already have cached).
+#
+# Why weekly: archetype labels are career-aggregate; they only shift as players
+# accumulate new matches. Weekly is enough to catch in-season evolution without
+# hammering the TML mirror.
+#
+# Cadence: Monday 23:00 UTC — one hour after the clutch-ratings refresh.
+# workflow_dispatch allows a manual refresh at any time.
+
+on:
+  schedule:
+    - cron: '0 23 * * 1'    # Mondays 23:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-archetypes
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record committed player count (regression baseline)
+        run: |
+          PREV=$(node -e 'let n=0;try{n=(require("./archetypes-classified.json").players||[]).length}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_PLAYERS=$PREV" >> "$GITHUB_ENV"
+
+      - name: Evict current-year TML CSV so it is re-fetched
+        run: |
+          Y=$(date -u +%Y)
+          rm -f "tml-cache/$Y.csv"
+          echo "Removed tml-cache/$Y.csv (will be re-fetched by classify-archetypes.js)."
+
+      - name: Rebuild archetypes
+        run: node classify-archetypes.js
+
+      - name: Sanity-check rebuilt file
+        run: |
+          node -e '
+            const d = require("./archetypes-classified.json");
+            const n = (d.players || []).length;
+            const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
+            if (!n) { console.error("::error::archetypes-classified.json has no players — refusing to commit"); process.exit(1); }
+            if (prev > 0 && n < Math.floor(prev * 0.95)) {
+              console.error("::error::player count regressed " + prev + " -> " + n + " — refusing to commit");
+              process.exit(1);
+            }
+            console.log("OK: " + n + " players (was " + prev + "), generatedAt " + d.generatedAt + ".");
+          '
+
+      - name: Commit refreshed archetypes-classified.json
+        run: |
+          git add archetypes-classified.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-archetypes-bot"
+          git config user.email "bsp-archetypes-bot@users.noreply.github.com"
+          git commit -m "chore(archetypes): weekly archetype classifier refresh [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push archetypes-classified.json after 3 attempts."
+          exit 1

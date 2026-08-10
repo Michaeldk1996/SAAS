@@ -1,0 +1,105 @@
+name: BSP weekly style-radar refresh
+
+# Rebuilds radar-calibration.json + style-radar.json from the Match Charting
+# Project (Sackmann/JeffSackmann), the only open dataset with hand-charted per-
+# shot data for ATP tour players.
+#
+# Two-step rebuild (both artifacts committed together):
+#   1. Download the three MCP stats CSVs from the public JeffSackmann GitHub
+#      (charting-m-stats-Overview, NetPoints, Rally) into /tmp/mcp-radar.
+#   2. node tools/build-radar-calibration.js — computes empirical percentile
+#      breakpoints and per-player 0-100 radar scores; emits radar-calibration.json.
+#   3. node tools/build-style-radar.js — strips the internal MCP raw rates and
+#      emits the shippable style-radar.json (percentiles + charted-match count only).
+#
+# No API key required. All source data is public GitHub (raw.githubusercontent.com).
+#
+# Why weekly: the MCP charting corpus grows as volunteers add new matches. A weekly
+# refresh picks up newly charted matches without any manual intervention.
+#
+# Cadence: Tuesday 00:00 UTC — right after the Monday refresh cluster. workflow_dispatch
+# allows a manual refresh at any time.
+
+on:
+  schedule:
+    - cron: '0 0 * * 2'    # Tuesdays 00:00 UTC (Monday night)
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-style-radar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record committed player count (regression baseline)
+        run: |
+          PREV=$(node -e 'let n=0;try{n=require("./style-radar.json").playerCount||0}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_PLAYERS=$PREV" >> "$GITHUB_ENV"
+
+      - name: Download MCP charting CSVs
+        run: |
+          MCP_DIR=/tmp/mcp-radar
+          mkdir -p "$MCP_DIR"
+          BASE="https://raw.githubusercontent.com/JeffSackmann/tennis_MatchChartingProject/master"
+          for f in charting-m-stats-Overview.csv charting-m-stats-NetPoints.csv charting-m-stats-Rally.csv; do
+            echo "Fetching $f …"
+            curl -sSL --retry 3 "$BASE/$f" -o "$MCP_DIR/$f"
+            wc -l "$MCP_DIR/$f"
+          done
+
+      - name: Rebuild radar calibration
+        env:
+          RADAR_MCP_DIR: /tmp/mcp-radar
+        run: node tools/build-radar-calibration.js
+
+      - name: Derive shippable style-radar.json
+        run: node tools/build-style-radar.js
+
+      - name: Sanity-check rebuilt style-radar.json
+        run: |
+          node -e '
+            const d = require("./style-radar.json");
+            const n = d.playerCount || Object.keys(d.players || {}).length;
+            const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
+            if (!n) { console.error("::error::style-radar.json has no players — refusing to commit"); process.exit(1); }
+            if (prev > 0 && n < Math.floor(prev * 0.95)) {
+              console.error("::error::player count regressed " + prev + " -> " + n + " — refusing to commit");
+              process.exit(1);
+            }
+            console.log("OK: " + n + " players (was " + prev + "), generatedAt " + d.generatedAt + ".");
+          '
+
+      - name: Commit refreshed radar-calibration.json + style-radar.json
+        run: |
+          git add radar-calibration.json style-radar.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-radar-bot"
+          git config user.email "bsp-radar-bot@users.noreply.github.com"
+          git commit -m "chore(style-radar): weekly MCP radar recalibration [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push radar files after 3 attempts."
+          exit 1
