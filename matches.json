@@ -13,17 +13,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.85,
-      "p2": 2.07,
+      "p1": 1.8,
+      "p2": 2.13,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.86,
-        "bookmaker": "Betfair"
+        "price": 1.85,
+        "bookmaker": "GTbets"
       },
       "p2": {
-        "price": 2.14,
+        "price": 2.16,
         "bookmaker": "Betfair"
       }
     },
@@ -1557,9 +1557,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 23.9,
-      "windSpeed": 3.4,
-      "humidity": 66,
+      "temperature": 23.7,
+      "windSpeed": 2.8,
+      "humidity": 64,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -1570,10 +1570,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -1581,12 +1581,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": false,
           "available": true
         },
@@ -1666,7 +1666,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -1769,6 +1769,42 @@
             [
               "2026-08-10T09:28:22.392Z",
               1.847
+            ],
+            [
+              "2026-08-10T11:05:57.853Z",
+              1.833
+            ],
+            [
+              "2026-08-10T11:11:01.003Z",
+              1.847
+            ],
+            [
+              "2026-08-10T11:11:57.782Z",
+              1.819
+            ],
+            [
+              "2026-08-10T11:11:58.102Z",
+              1.806
+            ],
+            [
+              "2026-08-10T11:12:02.554Z",
+              1.819
+            ],
+            [
+              "2026-08-10T11:35:49.814Z",
+              1.84
+            ],
+            [
+              "2026-08-10T11:35:54.847Z",
+              1.833
+            ],
+            [
+              "2026-08-10T11:46:12.178Z",
+              1.806
+            ],
+            [
+              "2026-08-10T11:46:34.139Z",
+              1.8
             ]
           ],
           "p2": [
@@ -1871,6 +1907,42 @@
             [
               "2026-08-10T09:28:22.392Z",
               2.07
+            ],
+            [
+              "2026-08-10T11:05:57.853Z",
+              2.09
+            ],
+            [
+              "2026-08-10T11:11:01.003Z",
+              2.07
+            ],
+            [
+              "2026-08-10T11:11:57.782Z",
+              2.11
+            ],
+            [
+              "2026-08-10T11:11:58.102Z",
+              2.12
+            ],
+            [
+              "2026-08-10T11:12:02.554Z",
+              2.11
+            ],
+            [
+              "2026-08-10T11:35:49.814Z",
+              2.08
+            ],
+            [
+              "2026-08-10T11:35:54.847Z",
+              2.09
+            ],
+            [
+              "2026-08-10T11:46:12.178Z",
+              2.13
+            ],
+            [
+              "2026-08-10T11:46:34.139Z",
+              2.13
             ]
           ]
         },
@@ -1881,8 +1953,16 @@
               1.87
             ],
             [
-              "2026-08-10T10:13:44.386Z",
+              "2026-08-10T10:40:44.528Z",
               1.87
+            ],
+            [
+              "2026-08-10T10:49:12.345Z",
+              1.741
+            ],
+            [
+              "2026-08-10T12:59:04.422Z",
+              1.741
             ]
           ],
           "p2": [
@@ -1891,8 +1971,16 @@
               1.87
             ],
             [
-              "2026-08-10T10:13:44.386Z",
+              "2026-08-10T10:40:44.528Z",
               1.87
+            ],
+            [
+              "2026-08-10T10:49:12.345Z",
+              2.05
+            ],
+            [
+              "2026-08-10T12:59:04.422Z",
+              2.05
             ]
           ]
         },
@@ -1965,6 +2053,18 @@
             [
               "2026-08-10T08:45:31.213Z",
               1.82
+            ],
+            [
+              "2026-08-10T10:48:18.416Z",
+              1.811
+            ],
+            [
+              "2026-08-10T12:40:48.519Z",
+              1.78
+            ],
+            [
+              "2026-08-10T12:46:19.926Z",
+              1.802
             ]
           ],
           "p2": [
@@ -2035,6 +2135,18 @@
             [
               "2026-08-10T08:45:31.213Z",
               2.032
+            ],
+            [
+              "2026-08-10T10:48:18.416Z",
+              2.043
+            ],
+            [
+              "2026-08-10T12:40:48.519Z",
+              2.084
+            ],
+            [
+              "2026-08-10T12:46:19.926Z",
+              2.055
             ]
           ]
         },
@@ -2059,6 +2171,10 @@
             [
               "2026-08-10T07:01:10.090Z",
               1.81
+            ],
+            [
+              "2026-08-10T12:41:14.557Z",
+              1.79
             ]
           ],
           "p2": [
@@ -2081,6 +2197,10 @@
             [
               "2026-08-10T07:01:10.090Z",
               2.0
+            ],
+            [
+              "2026-08-10T12:41:14.557Z",
+              2.029
             ]
           ]
         },
@@ -2117,6 +2237,14 @@
             [
               "2026-08-10T07:03:05.350Z",
               1.78
+            ],
+            [
+              "2026-08-10T12:39:38.866Z",
+              1.75
+            ],
+            [
+              "2026-08-10T12:57:10.123Z",
+              1.72
             ]
           ],
           "p2": [
@@ -2151,6 +2279,14 @@
             [
               "2026-08-10T07:03:05.350Z",
               2.02
+            ],
+            [
+              "2026-08-10T12:39:38.866Z",
+              2.07
+            ],
+            [
+              "2026-08-10T12:57:10.123Z",
+              2.1
             ]
           ]
         },
@@ -2169,7 +2305,7 @@
               1.8
             ],
             [
-              "2026-08-10T09:37:58.799Z",
+              "2026-08-10T12:53:56.531Z",
               1.8
             ]
           ],
@@ -2187,7 +2323,7 @@
               2.0
             ],
             [
-              "2026-08-10T09:37:58.799Z",
+              "2026-08-10T12:53:56.531Z",
               2.0
             ]
           ]
@@ -2228,7 +2364,7 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.07,
+      "p1": 3.06,
       "p2": 1.43,
       "bookmaker": "Pinnacle"
     },
@@ -2238,7 +2374,7 @@
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.45,
+        "price": 1.44,
         "bookmaker": "Betfair"
       }
     },
@@ -4129,9 +4265,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 18.7,
-      "windSpeed": 10.9,
-      "humidity": 94,
+      "temperature": 20.8,
+      "windSpeed": 6.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -4142,10 +4278,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -4153,12 +4289,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": true,
           "available": true
         },
@@ -5496,7 +5632,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 1,
       "longMatches": 0,
@@ -5505,11 +5641,19 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 2,
-          "won": 2,
+          "matchCount": 3,
+          "won": 3,
           "lost": 0,
-          "roundReached": "1/16-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "B. Van De Zandschulp",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153174
+            },
             {
               "date": "2026-08-08",
               "opponent": "T. Atmane",
@@ -5548,23 +5692,6 @@
               "round": "1/32-finals",
               "won": true,
               "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "B. Van De Zandschulp",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153174
             }
           ]
         }
@@ -5885,10 +6012,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -5896,12 +6023,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": true,
           "available": true
         },
@@ -5981,7 +6108,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -6044,7 +6171,7 @@
               1.909
             ],
             [
-              "2026-08-10T10:05:44.384Z",
+              "2026-08-10T12:50:23.473Z",
               1.909
             ]
           ],
@@ -6054,7 +6181,7 @@
               1.833
             ],
             [
-              "2026-08-10T10:05:44.384Z",
+              "2026-08-10T12:50:23.473Z",
               1.833
             ]
           ]
@@ -6076,6 +6203,38 @@
             [
               "2026-08-10T07:58:28.214Z",
               1.983
+            ],
+            [
+              "2026-08-10T10:42:33.921Z",
+              1.993
+            ],
+            [
+              "2026-08-10T11:30:29.808Z",
+              1.972
+            ],
+            [
+              "2026-08-10T11:35:41.759Z",
+              1.983
+            ],
+            [
+              "2026-08-10T11:46:34.412Z",
+              1.972
+            ],
+            [
+              "2026-08-10T11:52:05.061Z",
+              1.983
+            ],
+            [
+              "2026-08-10T12:18:48.826Z",
+              2.004
+            ],
+            [
+              "2026-08-10T12:29:29.969Z",
+              1.983
+            ],
+            [
+              "2026-08-10T12:40:27.410Z",
+              1.993
             ]
           ],
           "p2": [
@@ -6094,6 +6253,38 @@
             [
               "2026-08-10T07:58:28.214Z",
               1.861
+            ],
+            [
+              "2026-08-10T10:42:33.921Z",
+              1.852
+            ],
+            [
+              "2026-08-10T11:30:29.808Z",
+              1.871
+            ],
+            [
+              "2026-08-10T11:35:41.759Z",
+              1.861
+            ],
+            [
+              "2026-08-10T11:46:34.412Z",
+              1.871
+            ],
+            [
+              "2026-08-10T11:52:05.061Z",
+              1.861
+            ],
+            [
+              "2026-08-10T12:18:48.826Z",
+              1.842
+            ],
+            [
+              "2026-08-10T12:29:29.969Z",
+              1.861
+            ],
+            [
+              "2026-08-10T12:40:27.410Z",
+              1.852
             ]
           ]
         },
@@ -6140,7 +6331,7 @@
               2.0
             ],
             [
-              "2026-08-10T09:38:13.836Z",
+              "2026-08-10T12:54:10.894Z",
               2.0
             ]
           ],
@@ -6150,7 +6341,7 @@
               1.8
             ],
             [
-              "2026-08-10T09:38:13.836Z",
+              "2026-08-10T12:54:10.894Z",
               1.8
             ]
           ]
@@ -6197,11 +6388,11 @@
     },
     "bestOdds": {
       "p1": {
-        "price": 2.84,
+        "price": 2.88,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.53,
+        "price": 1.52,
         "bookmaker": "Betfair"
       }
     },
@@ -7737,10 +7928,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -7748,12 +7939,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": true,
           "available": true
         },
@@ -7833,7 +8024,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -7928,7 +8119,7 @@
               2.65
             ],
             [
-              "2026-08-10T10:06:31.974Z",
+              "2026-08-10T12:51:25.269Z",
               2.65
             ]
           ],
@@ -7938,7 +8129,7 @@
               1.455
             ],
             [
-              "2026-08-10T10:06:31.974Z",
+              "2026-08-10T12:51:25.269Z",
               1.455
             ]
           ]
@@ -8100,7 +8291,7 @@
               2.625
             ],
             [
-              "2026-08-10T09:39:26.922Z",
+              "2026-08-10T12:55:14.325Z",
               2.625
             ]
           ],
@@ -8110,7 +8301,7 @@
               1.5
             ],
             [
-              "2026-08-10T09:39:26.922Z",
+              "2026-08-10T12:55:14.325Z",
               1.5
             ]
           ]
@@ -32516,7 +32707,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
@@ -32525,11 +32716,19 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/16-finals",
+          "lost": 1,
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "J. Mensik",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12153174
+            },
             {
               "date": "2026-08-07",
               "opponent": "H. Hurkacz",
@@ -32567,20 +32766,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 1,
+          "matchCount": 0,
           "won": 0,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "J. Mensik",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12153174
-            }
-          ]
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -33120,7 +33311,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 7-5",
+      "display": "3-6, 7-6(4), 7-5",
       "sets": [
         {
           "p1": 3,
@@ -36571,7 +36762,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 6-1",
+      "display": "6-4, 6-7(4), 6-1",
       "sets": [
         {
           "p1": 6,
@@ -64145,7 +64336,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6",
+      "display": "6-7(6), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -75270,7 +75461,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 1,
       "longMatches": 0,
@@ -75279,11 +75470,19 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 2,
-          "won": 2,
+          "matchCount": 3,
+          "won": 3,
           "lost": 0,
-          "roundReached": "1/16-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "B. Van De Zandschulp",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153174
+            },
             {
               "date": "2026-08-08",
               "opponent": "T. Atmane",
@@ -75322,23 +75521,6 @@
               "round": "1/32-finals",
               "won": true,
               "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "B. Van De Zandschulp",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153174
             }
           ]
         }
@@ -101531,7 +101713,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-5, 5-7",
+      "display": "6-7(4), 7-5, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -123092,7 +123274,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(8)",
       "sets": [
         {
           "p1": 6,
@@ -174275,7 +174457,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
@@ -174284,11 +174466,19 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/16-finals",
+          "lost": 1,
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "J. Mensik",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12153174
+            },
             {
               "date": "2026-08-07",
               "opponent": "H. Hurkacz",
@@ -174326,20 +174516,12 @@
         },
         {
           "year": "2024",
-          "matchCount": 1,
+          "matchCount": 0,
           "won": 0,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "J. Mensik",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12153174
-            }
-          ]
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2023",
@@ -174378,7 +174560,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 1,
       "longMatches": 0,
@@ -174387,11 +174569,19 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 2,
-          "won": 2,
+          "matchCount": 3,
+          "won": 3,
           "lost": 0,
-          "roundReached": "1/16-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "B. Van De Zandschulp",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153174
+            },
             {
               "date": "2026-08-08",
               "opponent": "T. Atmane",
@@ -174430,23 +174620,6 @@
               "round": "1/32-finals",
               "won": true,
               "result": "2 - 0"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "B. Van De Zandschulp",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153174
             }
           ]
         }
@@ -174623,10 +174796,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -174634,12 +174807,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": false,
           "available": true
         },
@@ -187020,10 +187193,10 @@
           "label": "Aug 10",
           "code": 3,
           "hi": 24,
-          "lo": 18,
-          "rain": 46,
+          "lo": 19,
+          "rain": 52,
           "wind": 14,
-          "humidity": 75,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -187031,12 +187204,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 55,
+          "code": 51,
           "hi": 24,
           "lo": 17,
-          "rain": 49,
+          "rain": 61,
           "wind": 15,
-          "humidity": 81,
+          "humidity": 79,
           "isMatch": false,
           "available": true
         },
@@ -187115,7 +187288,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -189163,7 +189336,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -261275,7 +261448,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -282039,7 +282212,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T10:13:50Z",
+      "capturedAt": "2026-08-10T12:59:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
