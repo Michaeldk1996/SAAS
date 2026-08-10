@@ -1,0 +1,87 @@
+name: BSP weekly W/UE harvest
+
+# Maintains wue-store.json — per-player Winners/Unforced-Errors coverage for BOTH
+# pools (Tour + Challenger, 383 players) from the api-tennis box-score feed.
+#
+# Founder directive (TEN-8, 2026-08-10): the W/UE store must be maintained, not
+# pulled once. This replaces the one-off boxscore-wue-agg.json (pulled once, one
+# pool, dated 14 Jan, left to rot). Incremental in effect: every run re-fetches the
+# full 2024-03..today window per player, so newly-played matches are always picked
+# up and coverage tracks the live season.
+#
+# Roster: wue-roster.json (committed). Requires repo secret API_TENNIS_KEY.
+#
+# Cadence: Monday 19:00 UTC — ahead of surface-ratings (21:00), clutch (22:00) and
+# archetypes (23:00) so downstream sample-floor gates read a fresh store.
+# workflow_dispatch allows a manual refresh at any time.
+
+on:
+  schedule:
+    - cron: '0 19 * * 1'    # Mondays 19:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-wue-harvest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record committed coverage (regression baseline)
+        run: |
+          PREV=$(node -e 'let n=0;try{n=Object.values(require("./wue-store.json").players||{}).filter(p=>p.n_wue>0).length}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_WITHWUE=$PREV" >> "$GITHUB_ENV"
+
+      - name: Harvest W/UE (both pools)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node tools/harvest-wue-store.mjs
+
+      - name: Sanity-check store
+        run: |
+          node -e '
+            const d = require("./wue-store.json");
+            const players = Object.values(d.players || {});
+            const withWue = players.filter(p => p.n_wue > 0).length;
+            const prev = parseInt(process.env.PREV_WITHWUE, 10) || 0;
+            if (players.length < 300) { console.error("::error::only " + players.length + " players — refusing to commit"); process.exit(1); }
+            if (prev > 0 && withWue < Math.floor(prev * 0.9)) {
+              console.error("::error::coverage regressed " + prev + " -> " + withWue + " players-with-W/UE — refusing to commit");
+              process.exit(1);
+            }
+            console.log("OK: " + players.length + " players, " + withWue + " with W/UE (was " + prev + "), horizon " + d._meta.horizon + ".");
+          '
+
+      - name: Commit refreshed wue-store.json
+        run: |
+          git add wue-store.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-wue-bot"
+          git config user.email "bsp-wue-bot@users.noreply.github.com"
+          git commit -m "chore(wue): weekly Winners/UE coverage harvest [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push wue-store.json after 3 attempts."
+          exit 1
