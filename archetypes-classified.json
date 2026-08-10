@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T03:31:00.997Z",
+  "generatedAt": "2026-08-10T09:51:44.655Z",
   "source": "Jeff Sackmann tennis_atp schema via Tennismylife/TML-Database",
   "window": "2010-2026 (career aggregate)",
   "minMatches": 20,
@@ -55,17 +55,17 @@
     }
   },
   "counts": {
-    "counter": 14,
+    "counter": 12,
     "soloffsrv": 43,
     "soloff": 22,
     "bsbl": 29,
-    "soldef": 17,
-    "attlift": 7,
+    "soldef": 16,
+    "attirreg": 8,
+    "attlift": 6,
     "terrien": 30,
     "bigsrv": 9,
-    "attirreg": 7,
     "allcourt": 6,
-    "attpower": 2,
+    "attpower": 1,
     "sv": 1
   },
   "players": [
@@ -891,8 +891,8 @@
     {
       "name": "T. Machac",
       "rank": 41,
-      "archetype": "attpower",
-      "confidence": "med",
+      "archetype": "soloff",
+      "confidence": "low",
       "matches": 139,
       "winPct": 55.4,
       "aceR": 6.99,
@@ -1832,27 +1832,6 @@
       "clayShare": 18.3,
       "clayWr": 37.5,
       "hardWr": 44.4
-    },
-    {
-      "name": "L. Pouille",
-      "rank": 94,
-      "archetype": "soloffsrv",
-      "confidence": "confirmed",
-      "matches": 279,
-      "winPct": 51.6,
-      "aceR": 8.65,
-      "dfR": 4.4,
-      "firstInPct": 55.9,
-      "firstWonPct": 73.2,
-      "secondWonPct": 50.6,
-      "servePtsWon": 63.2,
-      "holdPct": 78,
-      "retPtsWon": 35.6,
-      "retSecondWon": 48.5,
-      "breakPct": 20.9,
-      "clayShare": 28.3,
-      "clayWr": 49.4,
-      "hardWr": 51.8
     },
     {
       "name": "L. Djere",
@@ -2905,6 +2884,27 @@
       "hardWr": 0
     },
     {
+      "name": "A. Bolt",
+      "rank": 169,
+      "archetype": "soloffsrv",
+      "confidence": "confirmed",
+      "matches": 50,
+      "winPct": 34,
+      "aceR": 8.68,
+      "dfR": 3.43,
+      "firstInPct": 60.5,
+      "firstWonPct": 70.1,
+      "secondWonPct": 50.2,
+      "servePtsWon": 62.2,
+      "holdPct": 75.6,
+      "retPtsWon": 34.2,
+      "retSecondWon": 47,
+      "breakPct": 16.9,
+      "clayShare": 0,
+      "clayWr": null,
+      "hardWr": 37.1
+    },
+    {
       "name": "E. Ymer",
       "rank": 171,
       "archetype": "attirreg",
@@ -3096,7 +3096,7 @@
     {
       "name": "J. Kubler",
       "rank": 195,
-      "archetype": "attlift",
+      "archetype": "attirreg",
       "confidence": "med",
       "matches": 62,
       "winPct": 45.2,
@@ -3640,27 +3640,6 @@
       "hardWr": 51.3
     },
     {
-      "name": "M. Polmans",
-      "rank": 391,
-      "archetype": "soldef",
-      "confidence": "med",
-      "matches": 23,
-      "winPct": 26.1,
-      "aceR": 4.11,
-      "dfR": 3.98,
-      "firstInPct": 65.7,
-      "firstWonPct": 64.8,
-      "secondWonPct": 46.6,
-      "servePtsWon": 58.6,
-      "holdPct": 70.3,
-      "retPtsWon": 37,
-      "retSecondWon": 49,
-      "breakPct": 19,
-      "clayShare": 21.7,
-      "clayWr": 40,
-      "hardWr": 20
-    },
-    {
       "name": "J. Shang",
       "rank": 406,
       "archetype": "soloff",
@@ -3722,27 +3701,6 @@
       "clayShare": 73.1,
       "clayWr": 37.8,
       "hardWr": 25.8
-    },
-    {
-      "name": "G. Barrere",
-      "rank": 435,
-      "archetype": "soloff",
-      "confidence": "low",
-      "matches": 102,
-      "winPct": 37.3,
-      "aceR": 5.83,
-      "dfR": 2.97,
-      "firstInPct": 62.5,
-      "firstWonPct": 69.1,
-      "secondWonPct": 50.5,
-      "servePtsWon": 62.1,
-      "holdPct": 75.7,
-      "retPtsWon": 35.2,
-      "retSecondWon": 47.8,
-      "breakPct": 18.8,
-      "clayShare": 27.5,
-      "clayWr": 35.7,
-      "hardWr": 36.1
     },
     {
       "name": "M. Marterer",
@@ -3934,27 +3892,6 @@
       "hardWr": 44.4
     },
     {
-      "name": "I. Ivashka",
-      "rank": 772,
-      "archetype": "counter",
-      "confidence": "med",
-      "matches": 181,
-      "winPct": 49.2,
-      "aceR": 7.06,
-      "dfR": 3.88,
-      "firstInPct": 61.6,
-      "firstWonPct": 71.3,
-      "secondWonPct": 48.8,
-      "servePtsWon": 62.7,
-      "holdPct": 77.5,
-      "retPtsWon": 37.8,
-      "retSecondWon": 51.1,
-      "breakPct": 23.2,
-      "clayShare": 21.5,
-      "clayWr": 41,
-      "hardWr": 52.6
-    },
-    {
       "name": "G. Brouwer",
       "rank": 1067,
       "archetype": "attlift",
@@ -3974,27 +3911,6 @@
       "clayShare": 33.3,
       "clayWr": 55.6,
       "hardWr": 50
-    },
-    {
-      "name": "D. King",
-      "rank": 1183,
-      "archetype": "counter",
-      "confidence": "med",
-      "matches": 56,
-      "winPct": 64.3,
-      "aceR": 2.44,
-      "dfR": 3.38,
-      "firstInPct": 65.3,
-      "firstWonPct": 62.7,
-      "secondWonPct": 49.2,
-      "servePtsWon": 58,
-      "holdPct": 65.8,
-      "retPtsWon": 42.7,
-      "retSecondWon": 54.5,
-      "breakPct": 36.5,
-      "clayShare": 16.1,
-      "clayWr": 44.4,
-      "hardWr": 65.1
     }
   ]
 }
