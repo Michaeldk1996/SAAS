@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T22:59:47.179Z",
+  "generatedAt": "2026-08-10T10:03:42.907Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -2279,13 +2279,13 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
-        "big_server": 17,
-        "big_server_baseliner": 28,
-        "attacking_baseliner": 49,
+        "big_server": 18,
+        "big_server_baseliner": 29,
+        "attacking_baseliner": 52,
         "solid_baseliner": 81,
-        "counter_puncher": 31,
+        "counter_puncher": 33,
         "solid_defender": 73,
-        "all_court": 23
+        "all_court": 25
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2295,9 +2295,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 68.6,
+      "win_pct": 69.4,
       "clay_wr": 74,
-      "hard_wr": 70,
+      "hard_wr": 73,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -4062,7 +4062,7 @@
         "big_server_baseliner": 35,
         "attacking_baseliner": 77,
         "solid_baseliner": 93,
-        "counter_puncher": 71,
+        "counter_puncher": 72,
         "solid_defender": 68,
         "all_court": 36
       },
@@ -4071,9 +4071,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 10,
-      "win_pct": 76,
+      "win_pct": 76.5,
       "clay_wr": 82,
-      "hard_wr": 72,
+      "hard_wr": 73,
       "grass_wr": 67,
       "top10_wins": 0
     },
