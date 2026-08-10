@@ -13,17 +13,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.84,
-      "p2": 2.08,
+      "p1": 1.82,
+      "p2": 2.1,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.86,
+        "price": 1.85,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 2.14,
+        "price": 2.16,
         "bookmaker": "Betfair"
       }
     },
@@ -1557,9 +1557,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 22.5,
-      "windSpeed": 1.8,
-      "humidity": 76,
+      "temperature": 21.5,
+      "windSpeed": 14.4,
+      "humidity": 81,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -1568,12 +1568,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": true,
           "available": true
         },
@@ -1581,12 +1581,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": false,
           "available": true
         },
@@ -1597,7 +1597,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -1610,7 +1610,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -1623,7 +1623,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -1636,7 +1636,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -1649,7 +1649,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -1666,7 +1666,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -1849,6 +1849,22 @@
             [
               "2026-08-10T15:34:20.390Z",
               1.833
+            ],
+            [
+              "2026-08-10T15:58:47.073Z",
+              1.819
+            ],
+            [
+              "2026-08-10T18:16:01.558Z",
+              1.813
+            ],
+            [
+              "2026-08-10T18:16:01.909Z",
+              1.813
+            ],
+            [
+              "2026-08-10T18:18:00.576Z",
+              1.819
             ]
           ],
           "p2": [
@@ -2023,6 +2039,22 @@
             [
               "2026-08-10T15:34:20.390Z",
               2.09
+            ],
+            [
+              "2026-08-10T15:58:47.073Z",
+              2.1
+            ],
+            [
+              "2026-08-10T18:16:01.558Z",
+              2.11
+            ],
+            [
+              "2026-08-10T18:16:01.909Z",
+              2.12
+            ],
+            [
+              "2026-08-10T18:18:00.576Z",
+              2.11
             ]
           ]
         },
@@ -2041,7 +2073,7 @@
               1.741
             ],
             [
-              "2026-08-10T15:51:19.348Z",
+              "2026-08-10T18:48:08.240Z",
               1.741
             ]
           ],
@@ -2059,7 +2091,7 @@
               2.05
             ],
             [
-              "2026-08-10T15:51:19.348Z",
+              "2026-08-10T18:48:08.240Z",
               2.05
             ]
           ]
@@ -2161,6 +2193,14 @@
             [
               "2026-08-10T15:27:25.568Z",
               1.78
+            ],
+            [
+              "2026-08-10T18:23:40.142Z",
+              1.771
+            ],
+            [
+              "2026-08-10T18:30:04.735Z",
+              1.802
             ]
           ],
           "p2": [
@@ -2259,6 +2299,14 @@
             [
               "2026-08-10T15:27:25.568Z",
               2.084
+            ],
+            [
+              "2026-08-10T18:23:40.142Z",
+              2.095
+            ],
+            [
+              "2026-08-10T18:30:04.735Z",
+              2.055
             ]
           ]
         },
@@ -2295,6 +2343,10 @@
             [
               "2026-08-10T15:47:36.905Z",
               1.72
+            ],
+            [
+              "2026-08-10T18:30:01.136Z",
+              1.75
             ]
           ],
           "p2": [
@@ -2329,6 +2381,10 @@
             [
               "2026-08-10T15:47:36.905Z",
               2.13
+            ],
+            [
+              "2026-08-10T18:30:01.136Z",
+              2.09
             ]
           ]
         },
@@ -2373,6 +2429,14 @@
             [
               "2026-08-10T12:57:10.123Z",
               1.72
+            ],
+            [
+              "2026-08-10T18:29:30.984Z",
+              1.75
+            ],
+            [
+              "2026-08-10T18:42:53.701Z",
+              1.72
             ]
           ],
           "p2": [
@@ -2414,6 +2478,14 @@
             ],
             [
               "2026-08-10T12:57:10.123Z",
+              2.1
+            ],
+            [
+              "2026-08-10T18:29:30.984Z",
+              2.07
+            ],
+            [
+              "2026-08-10T18:42:53.701Z",
               2.1
             ]
           ]
@@ -2500,17 +2572,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.07,
+      "p1": 3.06,
       "p2": 1.43,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.2,
+        "price": 3.15,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.44,
+        "price": 1.45,
         "bookmaker": "Betfair"
       }
     },
@@ -4401,9 +4473,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 20.3,
-      "windSpeed": 7.8,
-      "humidity": 87,
+      "temperature": 20.6,
+      "windSpeed": 8,
+      "humidity": 88,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -4412,12 +4484,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": false,
           "available": true
         },
@@ -4425,12 +4497,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": true,
           "available": true
         },
@@ -4441,7 +4513,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -4454,7 +4526,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -4467,7 +4539,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -4480,7 +4552,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -4493,7 +4565,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -4525,16 +4597,16 @@
     "value": null,
     "odds": {
       "p1": 2.11,
-      "p2": 1.81,
+      "p2": 1.8,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.16,
+        "price": 2.2,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.85,
+        "price": 1.82,
         "bookmaker": "Betfair"
       }
     },
@@ -6146,12 +6218,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": false,
           "available": true
         },
@@ -6159,12 +6231,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": true,
           "available": true
         },
@@ -6175,7 +6247,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -6188,7 +6260,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -6201,7 +6273,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -6214,7 +6286,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -6227,7 +6299,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -6244,7 +6316,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -6287,6 +6359,18 @@
             [
               "2026-08-10T15:23:52.307Z",
               2.13
+            ],
+            [
+              "2026-08-10T17:41:20.720Z",
+              2.13
+            ],
+            [
+              "2026-08-10T17:42:01.635Z",
+              2.12
+            ],
+            [
+              "2026-08-10T17:42:06.313Z",
+              2.11
             ]
           ],
           "p2": [
@@ -6337,6 +6421,18 @@
             [
               "2026-08-10T15:23:52.307Z",
               1.787
+            ],
+            [
+              "2026-08-10T17:41:20.720Z",
+              1.787
+            ],
+            [
+              "2026-08-10T17:42:01.635Z",
+              1.8
+            ],
+            [
+              "2026-08-10T17:42:06.313Z",
+              1.8
             ]
           ]
         },
@@ -6347,7 +6443,7 @@
               1.909
             ],
             [
-              "2026-08-10T15:56:55.687Z",
+              "2026-08-10T18:38:54.392Z",
               1.909
             ]
           ],
@@ -6357,7 +6453,7 @@
               1.833
             ],
             [
-              "2026-08-10T15:56:55.687Z",
+              "2026-08-10T18:38:54.392Z",
               1.833
             ]
           ]
@@ -6447,6 +6543,42 @@
             [
               "2026-08-10T15:39:37.952Z",
               2.084
+            ],
+            [
+              "2026-08-10T15:59:29.386Z",
+              2.113
+            ],
+            [
+              "2026-08-10T16:19:25.751Z",
+              2.084
+            ],
+            [
+              "2026-08-10T16:25:56.672Z",
+              2.113
+            ],
+            [
+              "2026-08-10T17:05:19.898Z",
+              2.095
+            ],
+            [
+              "2026-08-10T17:11:51.061Z",
+              2.084
+            ],
+            [
+              "2026-08-10T17:51:04.717Z",
+              2.055
+            ],
+            [
+              "2026-08-10T18:04:07.891Z",
+              2.084
+            ],
+            [
+              "2026-08-10T18:23:21.420Z",
+              2.055
+            ],
+            [
+              "2026-08-10T18:36:17.086Z",
+              2.066
             ]
           ],
           "p2": [
@@ -6533,6 +6665,42 @@
             [
               "2026-08-10T15:39:37.952Z",
               1.78
+            ],
+            [
+              "2026-08-10T15:59:29.386Z",
+              1.759
+            ],
+            [
+              "2026-08-10T16:19:25.751Z",
+              1.78
+            ],
+            [
+              "2026-08-10T16:25:56.672Z",
+              1.759
+            ],
+            [
+              "2026-08-10T17:05:19.898Z",
+              1.771
+            ],
+            [
+              "2026-08-10T17:11:51.061Z",
+              1.78
+            ],
+            [
+              "2026-08-10T17:51:04.717Z",
+              1.802
+            ],
+            [
+              "2026-08-10T18:04:07.891Z",
+              1.78
+            ],
+            [
+              "2026-08-10T18:23:21.420Z",
+              1.802
+            ],
+            [
+              "2026-08-10T18:36:17.086Z",
+              1.793
             ]
           ]
         },
@@ -6629,6 +6797,14 @@
             [
               "2026-08-10T12:54:10.894Z",
               2.0
+            ],
+            [
+              "2026-08-10T18:03:39.998Z",
+              2.1
+            ],
+            [
+              "2026-08-10T18:51:37.609Z",
+              2.1
             ]
           ],
           "p2": [
@@ -6639,6 +6815,14 @@
             [
               "2026-08-10T12:54:10.894Z",
               1.8
+            ],
+            [
+              "2026-08-10T18:03:39.998Z",
+              1.727
+            ],
+            [
+              "2026-08-10T18:51:37.609Z",
+              1.727
             ]
           ]
         }
@@ -6684,11 +6868,11 @@
     },
     "bestOdds": {
       "p1": {
-        "price": 2.86,
-        "bookmaker": "Betfair"
+        "price": 2.9,
+        "bookmaker": "Matchbook"
       },
       "p2": {
-        "price": 1.53,
+        "price": 1.52,
         "bookmaker": "Betfair"
       }
     },
@@ -8222,12 +8406,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": false,
           "available": true
         },
@@ -8235,12 +8419,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": true,
           "available": true
         },
@@ -8251,7 +8435,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -8264,7 +8448,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -8277,7 +8461,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -8290,7 +8474,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -8303,7 +8487,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -8320,7 +8504,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -8371,6 +8555,18 @@
             [
               "2026-08-10T15:06:34.765Z",
               2.74
+            ],
+            [
+              "2026-08-10T18:06:43.245Z",
+              2.76
+            ],
+            [
+              "2026-08-10T18:06:43.582Z",
+              2.76
+            ],
+            [
+              "2026-08-10T18:07:15.991Z",
+              2.86
             ]
           ],
           "p2": [
@@ -8421,6 +8617,18 @@
             [
               "2026-08-10T15:06:34.765Z",
               1.507
+            ],
+            [
+              "2026-08-10T18:06:43.245Z",
+              1.51
+            ],
+            [
+              "2026-08-10T18:06:43.582Z",
+              1.51
+            ],
+            [
+              "2026-08-10T18:07:15.991Z",
+              1.483
             ]
           ]
         },
@@ -8431,7 +8639,7 @@
               2.65
             ],
             [
-              "2026-08-10T15:43:17.074Z",
+              "2026-08-10T18:39:50.901Z",
               2.65
             ]
           ],
@@ -8441,7 +8649,7 @@
               1.455
             ],
             [
-              "2026-08-10T15:43:17.074Z",
+              "2026-08-10T18:39:50.901Z",
               1.455
             ]
           ]
@@ -8479,6 +8687,10 @@
             [
               "2026-08-10T14:04:11.839Z",
               2.735
+            ],
+            [
+              "2026-08-10T18:16:56.033Z",
+              2.774
             ]
           ],
           "p2": [
@@ -8513,6 +8725,10 @@
             [
               "2026-08-10T14:04:11.839Z",
               1.479
+            ],
+            [
+              "2026-08-10T18:16:56.033Z",
+              1.468
             ]
           ]
         },
@@ -175114,12 +175330,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": true,
           "available": true
         },
@@ -175127,12 +175343,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": false,
           "available": true
         },
@@ -175143,7 +175359,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -175156,7 +175372,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -175169,7 +175385,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -175182,7 +175398,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -175195,7 +175411,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -187511,12 +187727,12 @@
           "date": "2026-08-10",
           "dow": "Mon",
           "label": "Aug 10",
-          "code": 82,
-          "hi": 23,
+          "code": 3,
+          "hi": 26,
           "lo": 19,
           "rain": 37,
           "wind": 14,
-          "humidity": 77,
+          "humidity": 74,
           "isMatch": true,
           "available": true
         },
@@ -187524,12 +187740,12 @@
           "date": "2026-08-11",
           "dow": "Tue",
           "label": "Aug 11",
-          "code": 51,
+          "code": 3,
           "hi": 25,
           "lo": 16,
-          "rain": 52,
+          "rain": 58,
           "wind": 17,
-          "humidity": 76,
+          "humidity": 78,
           "isMatch": false,
           "available": true
         },
@@ -187540,7 +187756,7 @@
           "code": 3,
           "hi": 24,
           "lo": 15,
-          "rain": 14,
+          "rain": 17,
           "wind": 18,
           "humidity": 59,
           "isMatch": false,
@@ -187553,7 +187769,7 @@
           "code": 51,
           "hi": 23,
           "lo": 15,
-          "rain": 47,
+          "rain": 53,
           "wind": 13,
           "humidity": 69,
           "isMatch": false,
@@ -187566,7 +187782,7 @@
           "code": 80,
           "hi": 22,
           "lo": 12,
-          "rain": 47,
+          "rain": 53,
           "wind": 21,
           "humidity": 76,
           "isMatch": false,
@@ -187579,7 +187795,7 @@
           "code": 3,
           "hi": 22,
           "lo": 12,
-          "rain": 6,
+          "rain": 18,
           "wind": 19,
           "humidity": 59,
           "isMatch": false,
@@ -187592,7 +187808,7 @@
           "code": 3,
           "hi": 20,
           "lo": 14,
-          "rain": 12,
+          "rain": 11,
           "wind": 17,
           "humidity": 64,
           "isMatch": false,
@@ -189656,7 +189872,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -261768,7 +261984,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -282532,7 +282748,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-10T15:57:24Z",
+      "capturedAt": "2026-08-10T18:52:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
