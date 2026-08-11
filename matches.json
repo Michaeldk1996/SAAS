@@ -1657,22 +1657,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7.7,
-        "p2": 6.5
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
@@ -11027,7 +11016,27 @@
       "edgeVsPinnacleP1": -0.0282,
       "edgeVsPinnacleP2": 0.0282,
       "ts": "2026-08-09T09:05:27.760Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(5), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "ec5999036ea917ac4a6bf1548d7f6457",
@@ -64308,7 +64317,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6",
+      "display": "6-7(6), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -101670,7 +101679,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-5, 5-7",
+      "display": "6-7(4), 7-5, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -123131,7 +123140,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(8)",
       "sets": [
         {
           "p1": 6,
@@ -187127,7 +187136,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -202228,24 +202237,19 @@
         }
       ]
     },
-    "live": false,
+    "live": true,
     "liveStatus": "Interrupted",
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "3-4",
-      "sets": [
-        {
-          "p1": 3,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "retired": false,
     "walkover": false,
@@ -208361,28 +208365,13 @@
         }
       ]
     },
-    "live": false,
+    "live": true,
     "liveStatus": "Interrupted",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "2-6, 7-6(2)",
-      "sets": [
-        {
-          "p1": 2,
-          "p2": 6
-        },
-        {
-          "p1": 7,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 1,
-      "winner": null
-    },
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "retired": false,
     "walkover": false,
@@ -244258,28 +244247,24 @@
         }
       ]
     },
-    "live": false,
+    "live": true,
     "liveStatus": "Interrupted",
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
-    "interrupted": true,
-    "partialScore": {
-      "display": "6-3, 3-3",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 3
-        },
-        {
-          "p1": 3,
-          "p2": 3
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 0,
-      "winner": null
-    },
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
+    "interrupted": false,
+    "partialScore": null,
     "finalScore": null,
     "retired": false,
     "walkover": false,
@@ -389145,7 +389130,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(8)",
       "sets": [
         {
           "p1": 6,
@@ -416314,7 +416299,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-5, 5-7",
+      "display": "6-7(4), 7-5, 5-7",
       "sets": [
         {
           "p1": 6,
