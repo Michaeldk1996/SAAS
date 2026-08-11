@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-08-11T18:41:11.779Z",
+ "updated": "2026-08-11T19:50:40.696Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -3574,6 +3574,15 @@
    "flagged": 32,
    "newlyLogged": 1,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-08-11T19:50:40.696Z",
+   "run": "31529547440",
+   "priced": 38,
+   "logged": 367,
+   "flagged": 31,
+   "newlyLogged": 3,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -6800,7 +6809,7 @@
    "status": "finished",
    "finalScore": "6-7(6), 3-6",
    "modelFairLast": 0.4514,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12152804": {
    "key": "12152804",
@@ -6857,7 +6866,7 @@
    "status": "finished",
    "finalScore": "3-6, 4-6",
    "modelFairLast": 0.506,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12152832": {
    "key": "12152832",
@@ -6962,7 +6971,7 @@
    "status": "finished",
    "finalScore": "5-7, 4-6",
    "modelFairLast": 0.207,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12152862": {
    "key": "12152862",
@@ -6998,7 +7007,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-2",
    "modelFairLast": 0.4327,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153016": {
    "key": "12153016",
@@ -7019,7 +7028,7 @@
    "status": "finished",
    "finalScore": "6-4, 3-6, 5-7",
    "modelFairLast": 0.6151,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153017": {
    "key": "12153017",
@@ -7039,8 +7048,8 @@
    "firstSeen": "2026-08-07T01:41:29.641Z",
    "status": "finished",
    "finalScore": "6-2, 7-6(8)",
-   "modelFairLast": 0.7383,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.738,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153031": {
    "key": "12153031",
@@ -7060,8 +7069,8 @@
    "firstSeen": "2026-08-07T02:51:59.888Z",
    "status": "finished",
    "finalScore": "3-6, 3-6",
-   "modelFairLast": 0.4478,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.4486,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153040": {
    "key": "12153040",
@@ -7082,7 +7091,7 @@
    "status": "finished",
    "finalScore": "6-7(4), 7-5, 4-4",
    "modelFairLast": 0.359,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153149": {
    "key": "12153149",
@@ -7103,7 +7112,7 @@
    "status": "finished",
    "finalScore": "3-6, 1-6",
    "modelFairLast": 0.5261,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153174": {
    "key": "12153174",
@@ -7124,7 +7133,7 @@
    "status": "finished",
    "finalScore": "4-6, 5-7",
    "modelFairLast": 0.2277,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153178": {
    "key": "12153178",
@@ -7139,7 +7148,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-7(3)",
    "modelFairLast": 0.4897,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153179": {
    "key": "12153179",
@@ -7160,7 +7169,7 @@
    "status": "finished",
    "finalScore": "6-4, 6-4",
    "modelFairLast": 0.7576,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153354": {
    "key": "12153354",
@@ -7170,12 +7179,33 @@
    "surface": "hard",
    "tour": "ATP Canadian Open",
    "modelFairEntry": 0.2364,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.2537,
+    "fairP2": 0.7463,
+    "edgeVsPinnacleP1": -0.0615,
+    "edgeVsPinnacleP2": 0.0615,
+    "ts": "2026-08-11T19:48:50.491Z"
+   },
    "firstSeen": "2026-08-11T18:41:11.779Z",
    "status": "finished",
    "finalScore": "2-6, 3-6",
-   "modelFairLast": 0.2364,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.2537,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
+  },
+  "12153368": {
+   "key": "12153368",
+   "date": "2026-08-11",
+   "p1": "R. Jodar",
+   "p2": "A. Fils",
+   "surface": "hard",
+   "tour": "ATP Canadian Open",
+   "modelFairEntry": 0.4545,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-11T19:50:40.696Z",
+   "status": "interrupted",
+   "finalScore": "5-4",
+   "modelFairLast": 0.4545,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153790": {
    "key": "12153790",
@@ -7190,7 +7220,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7018,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153791": {
    "key": "12153791",
@@ -7274,10 +7304,10 @@
     "ts": "2026-08-11T10:13:40.820Z"
    },
    "firstSeen": "2026-08-10T22:37:25.052Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.5421,
-   "lastSeen": "2026-08-11T10:15:29.539Z"
+   "status": "interrupted",
+   "finalScore": "3-4",
+   "modelFairLast": 0.5429,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153797": {
    "key": "12153797",
@@ -7325,10 +7355,10 @@
     "ts": "2026-08-11T10:13:40.820Z"
    },
    "firstSeen": "2026-08-10T22:37:25.052Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.2932,
-   "lastSeen": "2026-08-11T10:15:29.539Z"
+   "status": "interrupted",
+   "finalScore": "2-6, 7-6(2)",
+   "modelFairLast": 0.3046,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153801": {
    "key": "12153801",
@@ -7343,7 +7373,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.317,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153802": {
    "key": "12153802",
@@ -7376,10 +7406,10 @@
     "ts": "2026-08-11T10:13:40.820Z"
    },
    "firstSeen": "2026-08-10T22:37:25.052Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.6728,
-   "lastSeen": "2026-08-11T10:15:29.539Z"
+   "status": "finished",
+   "finalScore": "1-6, 6-1, 2-6",
+   "modelFairLast": 0.6694,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153804": {
    "key": "12153804",
@@ -7418,10 +7448,10 @@
     "ts": "2026-08-11T10:13:40.820Z"
    },
    "firstSeen": "2026-08-10T22:37:25.052Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.7439,
-   "lastSeen": "2026-08-11T10:15:29.539Z"
+   "status": "finished",
+   "finalScore": "6-7(3), 6-2, 7-5",
+   "modelFairLast": 0.7443,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153806": {
    "key": "12153806",
@@ -7457,7 +7487,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.5564,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153808": {
    "key": "12153808",
@@ -7511,10 +7541,10 @@
     "ts": "2026-08-11T10:13:40.820Z"
    },
    "firstSeen": "2026-08-10T22:37:25.052Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.6654,
-   "lastSeen": "2026-08-11T10:15:29.539Z"
+   "status": "interrupted",
+   "finalScore": "6-3, 3-3",
+   "modelFairLast": 0.6719,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "12153811": {
    "key": "12153811",
@@ -7550,7 +7580,37 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3647,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
+  },
+  "12154093": {
+   "key": "12154093",
+   "date": "2026-08-12",
+   "p1": "A. Shevchenko",
+   "p2": "C. O'Connell",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.499,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-11T19:50:40.696Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.499,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
+  },
+  "12154094": {
+   "key": "12154094",
+   "date": "2026-08-12",
+   "p1": "C. Wong",
+   "p2": "O. Virtanen",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.4455,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-11T19:50:40.696Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4455,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
@@ -10222,8 +10282,8 @@
    "firstSeen": "2026-08-09T22:01:44.676Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.343,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.3452,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "ec5999036ea917ac4a6bf1548d7f6457": {
    "key": "ec5999036ea917ac4a6bf1548d7f6457",
@@ -10243,8 +10303,8 @@
    "firstSeen": "2026-08-10T05:42:04.099Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4486,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.4433,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "2849c8e4f691b7da4db027049604d279": {
    "key": "2849c8e4f691b7da4db027049604d279",
@@ -10412,7 +10472,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6418,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "961acb4705be0ba96b4124a7975a9720": {
    "key": "961acb4705be0ba96b4124a7975a9720",
@@ -10432,8 +10492,8 @@
    "firstSeen": "2026-08-11T11:09:44.205Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3438,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.3436,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "d5f595af46c1f8fe5d44bef1ae5810a1": {
    "key": "d5f595af46c1f8fe5d44bef1ae5810a1",
@@ -10453,8 +10513,8 @@
    "firstSeen": "2026-08-11T11:09:44.205Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.122,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.1212,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "152ae29ea8716f886ae43d4a796e1635": {
    "key": "152ae29ea8716f886ae43d4a796e1635",
@@ -10475,7 +10535,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4942,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "d740c69e22d8bea5a9178c4e8243f2e3": {
    "key": "d740c69e22d8bea5a9178c4e8243f2e3",
@@ -10496,7 +10556,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2613,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "eb99ccc54290d4e08526e51fcea919b6": {
    "key": "eb99ccc54290d4e08526e51fcea919b6",
@@ -10537,8 +10597,8 @@
    "firstSeen": "2026-08-11T11:09:44.205Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7305,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.7297,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "e84fd7b49e7d37b8c96c030856eafffe": {
    "key": "e84fd7b49e7d37b8c96c030856eafffe",
@@ -10558,8 +10618,8 @@
    "firstSeen": "2026-08-11T11:09:44.205Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6674,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.6683,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "f24b0f912e143f49c0b9880cc3d226d5": {
    "key": "f24b0f912e143f49c0b9880cc3d226d5",
@@ -10580,7 +10640,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2248,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "c61a191f053251a8c0594559006a26a1": {
    "key": "c61a191f053251a8c0594559006a26a1",
@@ -10600,8 +10660,8 @@
    "firstSeen": "2026-08-11T12:01:23.925Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7432,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.7391,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "3676aaf3ae8e1e9940833843724a69ad": {
    "key": "3676aaf3ae8e1e9940833843724a69ad",
@@ -10621,8 +10681,8 @@
    "firstSeen": "2026-08-11T12:01:23.925Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5405,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.538,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   },
   "1deabebdcfbbdf50f921bfd02608ba4d": {
    "key": "1deabebdcfbbdf50f921bfd02608ba4d",
@@ -10642,8 +10702,8 @@
    "firstSeen": "2026-08-11T12:01:23.925Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4712,
-   "lastSeen": "2026-08-11T18:41:11.779Z"
+   "modelFairLast": 0.4733,
+   "lastSeen": "2026-08-11T19:50:40.696Z"
   }
  }
 }
