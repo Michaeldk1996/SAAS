@@ -13,8 +13,8 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.05,
-      "p2": 1.43,
+      "p1": 2.99,
+      "p2": 1.45,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
@@ -24,7 +24,7 @@
       },
       "p2": {
         "price": 1.45,
-        "bookmaker": "Betfair"
+        "bookmaker": "Pinnacle"
       }
     },
     "tournamentRound": "ATP Montreal - Quarter-finals",
@@ -1554,7 +1554,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -1562,10 +1562,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
+          "year": "2024",
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -1591,25 +1591,7 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12152198
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-07",
               "opponent": "T. Paul",
@@ -1623,46 +1605,13 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 4,
       "totalWon": 6,
       "totalLost": 4,
       "longMatches": 0,
       "longMatchesPlayed": 10,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "A. Rinderknech",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12153040
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "T. Droguet",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152862
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "D. Altmaier",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152199
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -1688,11 +1637,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 2,
+          "matchCount": 6,
+          "won": 5,
           "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "A. Rinderknech",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12153040
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "T. Droguet",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152862
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "D. Altmaier",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152199
+            },
             {
               "date": "2024-08-10",
               "opponent": "A. Rublev",
@@ -1914,9 +1887,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 22.2,
+      "temperature": 21.9,
       "windSpeed": 14.1,
-      "humidity": 70,
+      "humidity": 69,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -1940,10 +1913,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -1954,8 +1927,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -1965,11 +1938,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -1978,11 +1951,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -1991,11 +1964,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -2003,12 +1976,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -2023,7 +1996,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -2250,6 +2223,22 @@
             [
               "2026-08-11T02:54:23.222Z",
               3.01
+            ],
+            [
+              "2026-08-11T05:08:06.296Z",
+              2.99
+            ],
+            [
+              "2026-08-11T05:08:06.935Z",
+              2.99
+            ],
+            [
+              "2026-08-11T05:08:29.512Z",
+              3.07
+            ],
+            [
+              "2026-08-11T05:08:45.771Z",
+              2.99
             ]
           ],
           "p2": [
@@ -2484,6 +2473,22 @@
             [
               "2026-08-11T02:54:23.222Z",
               1.444
+            ],
+            [
+              "2026-08-11T05:08:06.296Z",
+              1.448
+            ],
+            [
+              "2026-08-11T05:08:06.935Z",
+              1.448
+            ],
+            [
+              "2026-08-11T05:08:29.512Z",
+              1.432
+            ],
+            [
+              "2026-08-11T05:08:45.771Z",
+              1.448
             ]
           ]
         },
@@ -2494,7 +2499,7 @@
               2.9
             ],
             [
-              "2026-08-11T04:16:04.542Z",
+              "2026-08-11T07:00:51.649Z",
               2.9
             ]
           ],
@@ -2504,7 +2509,7 @@
               1.385
             ],
             [
-              "2026-08-11T04:16:04.542Z",
+              "2026-08-11T07:00:51.649Z",
               1.385
             ]
           ]
@@ -2933,18 +2938,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.7,
-      "p2": 2.29,
+      "p1": 1.69,
+      "p2": 2.3,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.77,
+        "price": 1.75,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 2.33,
-        "bookmaker": "Unibet (SE)"
+        "price": 2.35,
+        "bookmaker": "BetAnything"
       }
     },
     "tournamentRound": "ATP Montreal - Quarter-finals",
@@ -4200,7 +4205,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -4235,46 +4240,13 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 6,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "C. Norrie",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153017
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "M. Navone",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152795
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "Z. Svajda",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152466
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -4300,11 +4272,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 1,
-          "won": 0,
+          "matchCount": 4,
+          "won": 3,
           "lost": 1,
-          "roundReached": "1/32-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "C. Norrie",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153017
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "M. Navone",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152795
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "Z. Svajda",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152466
+            },
             {
               "date": "2024-08-07",
               "opponent": "U. Humbert",
@@ -4477,9 +4473,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 23.3,
-      "windSpeed": 13.3,
-      "humidity": 64,
+      "temperature": 23.2,
+      "windSpeed": 14.4,
+      "humidity": 62,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -4503,10 +4499,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -4517,8 +4513,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -4528,11 +4524,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -4541,11 +4537,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -4554,11 +4550,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -4566,12 +4562,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -4586,7 +4582,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -4941,6 +4937,14 @@
             [
               "2026-08-11T02:54:58.148Z",
               1.689
+            ],
+            [
+              "2026-08-11T04:34:05.103Z",
+              1.694
+            ],
+            [
+              "2026-08-11T05:11:27.962Z",
+              1.694
             ]
           ],
           "p2": [
@@ -5279,6 +5283,14 @@
             [
               "2026-08-11T02:54:58.148Z",
               2.32
+            ],
+            [
+              "2026-08-11T04:34:05.103Z",
+              2.3
+            ],
+            [
+              "2026-08-11T05:11:27.962Z",
+              2.3
             ]
           ]
         },
@@ -5305,7 +5317,7 @@
               1.714
             ],
             [
-              "2026-08-11T04:02:46.314Z",
+              "2026-08-11T06:47:33.617Z",
               1.714
             ]
           ],
@@ -5331,7 +5343,7 @@
               2.1
             ],
             [
-              "2026-08-11T04:02:46.314Z",
+              "2026-08-11T06:47:33.617Z",
               2.1
             ]
           ]
@@ -6043,6 +6055,10 @@
             [
               "2026-08-11T03:06:07.314Z",
               1.667
+            ],
+            [
+              "2026-08-11T05:29:08.776Z",
+              1.667
             ]
           ],
           "p2": [
@@ -6085,6 +6101,10 @@
             [
               "2026-08-11T03:06:07.314Z",
               2.2
+            ],
+            [
+              "2026-08-11T05:29:08.776Z",
+              2.2
             ]
           ]
         }
@@ -6124,18 +6144,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.13,
-      "p2": 1.8,
+      "p1": 2.11,
+      "p2": 1.82,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.2,
+        "price": 2.18,
         "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.82,
-        "bookmaker": "LeoVegas (SE)"
+        "price": 1.83,
+        "bookmaker": "Betfair"
       }
     },
     "tournamentRound": "ATP Montreal - Quarter-finals",
@@ -7376,7 +7396,30 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -7407,73 +7450,17 @@
               "eventKey": 12152464
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
-            }
-          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 3,
       "totalWon": 11,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 13,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "J. Fonseca",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153178
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "Z. Bergs",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152794
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "J. Brooksby",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152341
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 6,
@@ -7527,11 +7514,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 2,
-          "won": 1,
+          "matchCount": 5,
+          "won": 4,
           "lost": 1,
-          "roundReached": "1/16-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "J. Fonseca",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153178
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "Z. Bergs",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152794
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "J. Brooksby",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152341
+            },
             {
               "date": "2024-08-08",
               "opponent": "A. Popyrin",
@@ -7735,9 +7746,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 23.4,
-      "windSpeed": 11.4,
-      "humidity": 55,
+      "temperature": 23.5,
+      "windSpeed": 14.8,
+      "humidity": 51,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -7761,10 +7772,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -7775,8 +7786,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -7786,11 +7797,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -7799,11 +7810,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -7812,11 +7823,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -7824,12 +7835,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -7844,7 +7855,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -8003,7 +8014,7 @@
               2.05
             ],
             [
-              "2026-08-11T04:14:54.533Z",
+              "2026-08-11T06:59:45.365Z",
               2.05
             ]
           ],
@@ -8021,7 +8032,7 @@
               1.741
             ],
             [
-              "2026-08-11T04:14:54.533Z",
+              "2026-08-11T06:59:45.365Z",
               1.741
             ]
           ]
@@ -8462,14 +8473,14 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.86,
-      "p2": 1.48,
+      "p1": 2.76,
+      "p2": 1.51,
       "bookmaker": "Pinnacle"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.94,
-        "bookmaker": "Matchbook"
+        "price": 2.92,
+        "bookmaker": "Betfair"
       },
       "p2": {
         "price": 1.51,
@@ -9713,7 +9724,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -9764,39 +9775,6 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "T. A. Tirante",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153179
-            },
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
-        },
-        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -9830,6 +9808,39 @@
               "round": "1/64-finals",
               "won": true,
               "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "T. A. Tirante",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153179
+            },
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
             }
           ]
         }
@@ -10021,10 +10032,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -10035,8 +10046,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -10046,11 +10057,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -10059,11 +10070,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -10072,11 +10083,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -10084,12 +10095,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -10104,7 +10115,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -10263,7 +10274,7 @@
               2.65
             ],
             [
-              "2026-08-11T04:15:57.477Z",
+              "2026-08-11T07:00:46.442Z",
               2.65
             ]
           ],
@@ -10273,7 +10284,7 @@
               1.455
             ],
             [
-              "2026-08-11T04:15:57.477Z",
+              "2026-08-11T07:00:46.442Z",
               1.455
             ]
           ]
@@ -10323,6 +10334,10 @@
             [
               "2026-08-10T20:37:59.423Z",
               2.813
+            ],
+            [
+              "2026-08-11T05:03:05.305Z",
+              2.795
             ]
           ],
           "p2": [
@@ -10369,6 +10384,10 @@
             [
               "2026-08-10T20:37:59.423Z",
               1.457
+            ],
+            [
+              "2026-08-11T05:03:05.305Z",
+              1.462
             ]
           ]
         },
@@ -10453,7 +10472,7 @@
               2.72
             ],
             [
-              "2026-08-11T03:57:34.968Z",
+              "2026-08-11T04:49:47.526Z",
               2.72
             ]
           ],
@@ -10479,7 +10498,7 @@
               1.45
             ],
             [
-              "2026-08-11T03:57:34.968Z",
+              "2026-08-11T04:49:47.526Z",
               1.45
             ]
           ]
@@ -12102,9 +12121,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
+      "temperature": 35.2,
+      "windSpeed": 25.2,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -12127,11 +12146,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -12140,9 +12159,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -12152,12 +12171,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -12165,12 +12184,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -12179,11 +12198,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -12191,12 +12210,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -12224,18 +12243,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 4.2,
-      "p2": 1.2,
-      "bookmaker": "Superbet"
+      "p1": 4.44,
+      "p2": 1.12,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 4.2,
-        "bookmaker": "Superbet"
+        "price": 4.44,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.2,
-        "bookmaker": "Superbet"
+        "price": 1.12,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -13659,9 +13678,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -13684,11 +13703,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -13697,9 +13716,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -13709,12 +13728,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -13722,12 +13741,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -13736,11 +13755,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -13748,12 +13767,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -13768,8 +13787,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              5.5
+            ],
+            [
+              "2026-08-11T06:59:12.877Z",
+              5.5
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.125
+            ],
+            [
+              "2026-08-11T06:59:12.877Z",
+              1.125
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -13818,6 +13859,14 @@
             ],
             [
               "2026-08-11T03:42:07.862Z",
+              5.2
+            ],
+            [
+              "2026-08-11T05:39:40.464Z",
+              5.25
+            ],
+            [
+              "2026-08-11T06:50:12.304Z",
               5.2
             ]
           ],
@@ -13873,6 +13922,18 @@
             [
               "2026-08-11T03:42:07.862Z",
               1.118
+            ],
+            [
+              "2026-08-11T04:23:17.626Z",
+              1.117
+            ],
+            [
+              "2026-08-11T05:39:40.464Z",
+              1.116
+            ],
+            [
+              "2026-08-11T06:50:12.304Z",
+              1.117
             ]
           ]
         },
@@ -13901,6 +13962,10 @@
             [
               "2026-08-11T03:43:11.626Z",
               5.2
+            ],
+            [
+              "2026-08-11T06:38:33.698Z",
+              5.2
             ]
           ],
           "p2": [
@@ -13926,6 +13991,10 @@
             ],
             [
               "2026-08-11T03:43:11.626Z",
+              1.13
+            ],
+            [
+              "2026-08-11T06:38:33.698Z",
               1.13
             ]
           ]
@@ -13993,11 +14062,19 @@
             [
               "2026-08-11T03:42:34.669Z",
               5.5
+            ],
+            [
+              "2026-08-11T06:40:30.051Z",
+              5.5
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:34.669Z",
+              1.143
+            ],
+            [
+              "2026-08-11T06:40:30.051Z",
               1.143
             ]
           ]
@@ -14024,18 +14101,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.43,
-      "p2": 2.72,
-      "bookmaker": "Superbet"
+      "p1": 1.42,
+      "p2": 2.66,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.43,
-        "bookmaker": "Superbet"
+        "price": 1.42,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 2.72,
-        "bookmaker": "Superbet"
+        "price": 2.66,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": null,
@@ -15977,9 +16054,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -16002,11 +16079,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -16015,9 +16092,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -16027,12 +16104,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -16040,12 +16117,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -16054,11 +16131,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -16066,12 +16143,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -16086,8 +16163,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:20:42.541Z",
+              1.417
+            ],
+            [
+              "2026-08-11T06:59:16.300Z",
+              1.417
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:20:42.541Z",
+              2.75
+            ],
+            [
+              "2026-08-11T06:59:16.300Z",
+              2.75
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -16116,6 +16215,30 @@
             ],
             [
               "2026-08-11T03:21:38.455Z",
+              1.42
+            ],
+            [
+              "2026-08-11T04:44:03.546Z",
+              1.41
+            ],
+            [
+              "2026-08-11T05:25:45.764Z",
+              1.42
+            ],
+            [
+              "2026-08-11T05:46:52.765Z",
+              1.41
+            ],
+            [
+              "2026-08-11T06:01:09.187Z",
+              1.42
+            ],
+            [
+              "2026-08-11T06:43:18.903Z",
+              1.41
+            ],
+            [
+              "2026-08-11T06:57:17.554Z",
               1.42
             ]
           ],
@@ -16146,6 +16269,30 @@
             ],
             [
               "2026-08-11T03:21:38.455Z",
+              2.655
+            ],
+            [
+              "2026-08-11T04:44:03.546Z",
+              2.694
+            ],
+            [
+              "2026-08-11T05:25:45.764Z",
+              2.655
+            ],
+            [
+              "2026-08-11T05:46:52.765Z",
+              2.694
+            ],
+            [
+              "2026-08-11T06:01:09.187Z",
+              2.655
+            ],
+            [
+              "2026-08-11T06:43:18.903Z",
+              2.694
+            ],
+            [
+              "2026-08-11T06:57:17.554Z",
               2.655
             ]
           ]
@@ -16219,11 +16366,19 @@
             [
               "2026-08-11T03:42:38.122Z",
               1.4
+            ],
+            [
+              "2026-08-11T05:34:53.775Z",
+              1.4
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:38.122Z",
+              2.75
+            ],
+            [
+              "2026-08-11T05:34:53.775Z",
               2.75
             ]
           ]
@@ -16250,18 +16405,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.88,
-      "p2": 1.9,
-      "bookmaker": "Superbet"
+      "p1": 1.83,
+      "p2": 1.83,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.88,
-        "bookmaker": "Superbet"
+        "price": 1.83,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.9,
-        "bookmaker": "Superbet"
+        "price": 1.83,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -17878,9 +18033,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
+      "temperature": 35.2,
+      "windSpeed": 25.2,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -17903,11 +18058,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -17916,9 +18071,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -17928,12 +18083,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -17941,12 +18096,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -17955,11 +18110,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -17967,12 +18122,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -17987,8 +18142,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/55163_n-budkov-kjaer.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.87
+            ],
+            [
+              "2026-08-11T06:59:11.175Z",
+              1.87
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.87
+            ],
+            [
+              "2026-08-11T06:59:11.175Z",
+              1.87
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -18023,6 +18200,20 @@
             ]
           ]
         },
+        "Betsson": {
+          "p1": [
+            [
+              "2026-08-11T04:42:04.763Z",
+              1.85
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:42:04.763Z",
+              1.86
+            ]
+          ]
+        },
         "Betano": {
           "p1": [
             [
@@ -18042,11 +18233,19 @@
             [
               "2026-08-11T03:42:32.730Z",
               1.833
+            ],
+            [
+              "2026-08-11T05:34:55.817Z",
+              1.833
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:32.730Z",
+              1.833
+            ],
+            [
+              "2026-08-11T05:34:55.817Z",
               1.833
             ]
           ]
@@ -18073,18 +18272,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.53,
-      "p2": 2.34,
-      "bookmaker": "1xBet"
+      "p1": 1.51,
+      "p2": 2.23,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.53,
-        "bookmaker": "1xBet"
+        "price": 1.51,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.34,
-        "bookmaker": "1xBet"
+        "price": 2.23,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -19839,9 +20038,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21,
-      "windSpeed": 17.8,
-      "humidity": 88,
+      "temperature": 34.4,
+      "windSpeed": 24.8,
+      "humidity": 40,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -19864,11 +20063,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -19877,9 +20076,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -19889,12 +20088,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -19902,12 +20101,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -19916,11 +20115,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -19928,12 +20127,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -19948,8 +20147,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/827_h-rocha.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:35:42.580Z",
+              1.526
+            ],
+            [
+              "2026-08-11T06:59:14.598Z",
+              1.526
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:35:42.580Z",
+              2.4
+            ],
+            [
+              "2026-08-11T06:59:14.598Z",
+              2.4
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -19967,6 +20188,18 @@
             [
               "2026-08-11T02:33:27.814Z",
               1.53
+            ],
+            [
+              "2026-08-11T06:29:08.471Z",
+              1.48
+            ],
+            [
+              "2026-08-11T06:36:12.073Z",
+              1.46
+            ],
+            [
+              "2026-08-11T06:43:11.191Z",
+              1.45
             ]
           ],
           "p2": [
@@ -19985,6 +20218,18 @@
             [
               "2026-08-11T02:33:27.814Z",
               2.341
+            ],
+            [
+              "2026-08-11T06:29:08.471Z",
+              2.474
+            ],
+            [
+              "2026-08-11T06:36:12.073Z",
+              2.525
+            ],
+            [
+              "2026-08-11T06:43:11.191Z",
+              2.564
             ]
           ]
         },
@@ -19997,6 +20242,14 @@
             [
               "2026-08-11T04:11:20.417Z",
               1.53
+            ],
+            [
+              "2026-08-11T06:22:27.752Z",
+              1.47
+            ],
+            [
+              "2026-08-11T06:30:35.173Z",
+              1.45
             ]
           ],
           "p2": [
@@ -20007,6 +20260,14 @@
             [
               "2026-08-11T04:11:20.417Z",
               2.33
+            ],
+            [
+              "2026-08-11T06:22:27.752Z",
+              2.49
+            ],
+            [
+              "2026-08-11T06:30:35.173Z",
+              2.55
             ]
           ]
         },
@@ -20019,6 +20280,14 @@
             [
               "2026-08-11T02:49:00.888Z",
               1.55
+            ],
+            [
+              "2026-08-11T06:16:59.985Z",
+              1.5
+            ],
+            [
+              "2026-08-11T06:23:18.045Z",
+              1.47
             ]
           ],
           "p2": [
@@ -20029,6 +20298,18 @@
             [
               "2026-08-11T02:49:00.888Z",
               2.35
+            ],
+            [
+              "2026-08-11T06:16:59.985Z",
+              2.45
+            ],
+            [
+              "2026-08-11T06:23:18.045Z",
+              2.55
+            ],
+            [
+              "2026-08-11T06:29:55.647Z",
+              2.57
             ]
           ]
         },
@@ -20037,11 +20318,19 @@
             [
               "2026-08-11T03:42:37.306Z",
               1.533
+            ],
+            [
+              "2026-08-11T05:31:15.281Z",
+              1.533
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:37.306Z",
+              2.375
+            ],
+            [
+              "2026-08-11T05:31:15.281Z",
               2.375
             ]
           ]
@@ -20068,18 +20357,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 5.3,
-      "p2": 1.14,
-      "bookmaker": "Betano"
+      "p1": 5.5,
+      "p2": 1.12,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 5.3,
-        "bookmaker": "Betano"
+        "price": 5.5,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.14,
-        "bookmaker": "Betano"
+        "price": 1.12,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": null,
@@ -21189,9 +21478,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 25.5,
-      "windSpeed": 8.4,
-      "humidity": 65,
+      "temperature": 32.3,
+      "windSpeed": 19.5,
+      "humidity": 56,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -21214,11 +21503,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -21227,9 +21516,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -21239,12 +21528,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -21252,12 +21541,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -21266,11 +21555,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -21278,12 +21567,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -21298,18 +21587,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/767_o-virtanen.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.796Z",
               6.0
+            ],
+            [
+              "2026-08-11T06:59:11.173Z",
+              6.0
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.796Z",
+              1.111
+            ],
+            [
+              "2026-08-11T06:59:11.173Z",
               1.111
             ]
           ]
@@ -21351,6 +21648,18 @@
             [
               "2026-08-11T03:14:18.694Z",
               5.35
+            ],
+            [
+              "2026-08-11T05:32:32.951Z",
+              5.4
+            ],
+            [
+              "2026-08-11T05:39:35.208Z",
+              5.35
+            ],
+            [
+              "2026-08-11T05:53:50.353Z",
+              5.15
             ]
           ],
           "p2": [
@@ -21393,6 +21702,22 @@
             [
               "2026-08-11T03:14:18.694Z",
               1.11
+            ],
+            [
+              "2026-08-11T05:32:32.951Z",
+              1.109
+            ],
+            [
+              "2026-08-11T05:39:35.208Z",
+              1.11
+            ],
+            [
+              "2026-08-11T05:53:50.353Z",
+              1.119
+            ],
+            [
+              "2026-08-11T06:21:59.175Z",
+              1.12
             ]
           ]
         },
@@ -21405,6 +21730,10 @@
             [
               "2026-08-11T01:05:33.164Z",
               5.6
+            ],
+            [
+              "2026-08-11T05:57:54.935Z",
+              5.4
             ]
           ],
           "p2": [
@@ -21427,6 +21756,10 @@
             [
               "2026-08-11T02:58:04.168Z",
               5.4
+            ],
+            [
+              "2026-08-11T05:57:19.012Z",
+              5.3
             ]
           ],
           "p2": [
@@ -21445,11 +21778,19 @@
             [
               "2026-08-11T03:42:33.895Z",
               6.5
+            ],
+            [
+              "2026-08-11T05:34:57.743Z",
+              6.5
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:33.895Z",
+              1.111
+            ],
+            [
+              "2026-08-11T05:34:57.743Z",
               1.111
             ]
           ]
@@ -21476,18 +21817,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.65,
-      "p2": 2.17,
-      "bookmaker": "Superbet"
+      "p1": 1.62,
+      "p2": 2.2,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.65,
-        "bookmaker": "Superbet"
+        "price": 1.62,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 2.17,
-        "bookmaker": "Superbet"
+        "price": 2.2,
+        "bookmaker": "Betano"
       }
     },
     "tournamentRound": null,
@@ -23430,9 +23771,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 29,
-      "windSpeed": 15.2,
-      "humidity": 58,
+      "temperature": 35,
+      "windSpeed": 22.5,
+      "humidity": 42,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -23455,11 +23796,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -23468,9 +23809,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -23480,12 +23821,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -23493,12 +23834,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -23507,11 +23848,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -23519,12 +23860,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -23539,18 +23880,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.796Z",
               1.625
+            ],
+            [
+              "2026-08-11T06:59:16.297Z",
+              1.625
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.796Z",
+              2.25
+            ],
+            [
+              "2026-08-11T06:59:16.297Z",
               2.25
             ]
           ]
@@ -23580,6 +23929,10 @@
             [
               "2026-08-11T03:15:10.960Z",
               1.61
+            ],
+            [
+              "2026-08-11T06:08:27.937Z",
+              1.6
             ]
           ],
           "p2": [
@@ -23606,6 +23959,10 @@
             [
               "2026-08-11T03:15:10.960Z",
               2.176
+            ],
+            [
+              "2026-08-11T06:08:27.937Z",
+              2.196
             ]
           ]
         },
@@ -23618,6 +23975,10 @@
             [
               "2026-08-11T02:32:40.415Z",
               1.62
+            ],
+            [
+              "2026-08-11T06:06:24.878Z",
+              1.61
             ]
           ],
           "p2": [
@@ -23628,6 +23989,10 @@
             [
               "2026-08-11T02:32:40.415Z",
               2.15
+            ],
+            [
+              "2026-08-11T06:06:24.878Z",
+              2.18
             ]
           ]
         },
@@ -23644,6 +24009,10 @@
             [
               "2026-08-11T02:49:01.358Z",
               1.65
+            ],
+            [
+              "2026-08-11T06:04:05.493Z",
+              1.62
             ]
           ],
           "p2": [
@@ -23658,6 +24027,10 @@
             [
               "2026-08-11T02:49:01.358Z",
               2.15
+            ],
+            [
+              "2026-08-11T06:04:05.493Z",
+              2.2
             ]
           ]
         },
@@ -23666,11 +24039,19 @@
             [
               "2026-08-11T03:42:38.872Z",
               1.615
+            ],
+            [
+              "2026-08-11T05:34:45.941Z",
+              1.615
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:38.872Z",
+              2.2
+            ],
+            [
+              "2026-08-11T05:34:45.941Z",
               2.2
             ]
           ]
@@ -23697,17 +24078,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.5,
-      "p2": 1.5,
+      "p1": 2.47,
+      "p2": 1.52,
       "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.5,
+        "price": 2.47,
         "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.5,
+        "price": 1.52,
         "bookmaker": "Superbet"
       }
     },
@@ -25334,9 +25715,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
+      "temperature": 35.2,
+      "windSpeed": 25.2,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -25359,11 +25740,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -25372,9 +25753,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -25384,12 +25765,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -25397,12 +25778,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -25411,11 +25792,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -25423,12 +25804,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -25443,8 +25824,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.65
+            ],
+            [
+              "2026-08-11T06:59:11.174Z",
+              2.65
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.455
+            ],
+            [
+              "2026-08-11T06:59:11.174Z",
+              1.455
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -25466,6 +25869,22 @@
             [
               "2026-08-11T03:42:33.847Z",
               2.474
+            ],
+            [
+              "2026-08-11T04:37:16.196Z",
+              2.504
+            ],
+            [
+              "2026-08-11T04:57:50.001Z",
+              2.545
+            ],
+            [
+              "2026-08-11T05:11:42.413Z",
+              2.564
+            ],
+            [
+              "2026-08-11T05:39:52.501Z",
+              2.594
             ]
           ],
           "p2": [
@@ -25488,6 +25907,68 @@
             [
               "2026-08-11T03:42:33.847Z",
               1.48
+            ],
+            [
+              "2026-08-11T04:37:16.196Z",
+              1.47
+            ],
+            [
+              "2026-08-11T04:57:50.001Z",
+              1.454
+            ],
+            [
+              "2026-08-11T05:11:42.413Z",
+              1.45
+            ],
+            [
+              "2026-08-11T05:39:52.501Z",
+              1.44
+            ]
+          ]
+        },
+        "Betsson": {
+          "p1": [
+            [
+              "2026-08-11T04:42:16.131Z",
+              2.48
+            ],
+            [
+              "2026-08-11T04:58:13.367Z",
+              2.48
+            ],
+            [
+              "2026-08-11T05:06:06.991Z",
+              2.55
+            ],
+            [
+              "2026-08-11T05:13:59.610Z",
+              2.6
+            ],
+            [
+              "2026-08-11T06:00:53.560Z",
+              2.65
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:42:16.131Z",
+              1.48
+            ],
+            [
+              "2026-08-11T04:58:13.367Z",
+              1.48
+            ],
+            [
+              "2026-08-11T05:06:06.991Z",
+              1.46
+            ],
+            [
+              "2026-08-11T05:13:59.610Z",
+              1.44
+            ],
+            [
+              "2026-08-11T06:00:53.560Z",
+              1.43
             ]
           ]
         },
@@ -25500,6 +25981,18 @@
             [
               "2026-08-11T04:04:08.632Z",
               2.5
+            ],
+            [
+              "2026-08-11T04:54:16.473Z",
+              2.55
+            ],
+            [
+              "2026-08-11T05:13:30.772Z",
+              2.57
+            ],
+            [
+              "2026-08-11T06:05:01.700Z",
+              2.62
             ]
           ],
           "p2": [
@@ -25510,6 +26003,14 @@
             [
               "2026-08-11T04:04:08.632Z",
               1.5
+            ],
+            [
+              "2026-08-11T04:54:16.473Z",
+              1.47
+            ],
+            [
+              "2026-08-11T06:05:01.700Z",
+              1.45
             ]
           ]
         },
@@ -25518,12 +26019,28 @@
             [
               "2026-08-11T03:42:32.344Z",
               2.5
+            ],
+            [
+              "2026-08-11T05:34:59.368Z",
+              2.5
+            ],
+            [
+              "2026-08-11T05:48:49.740Z",
+              2.625
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:32.344Z",
               1.5
+            ],
+            [
+              "2026-08-11T05:34:59.368Z",
+              1.5
+            ],
+            [
+              "2026-08-11T05:48:49.740Z",
+              1.444
             ]
           ]
         }
@@ -25549,17 +26066,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.05,
-      "p2": 1.72,
+      "p1": 1.98,
+      "p2": 1.78,
       "bookmaker": "Betano"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.05,
+        "price": 1.98,
         "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.72,
+        "price": 1.78,
         "bookmaker": "Betano"
       }
     },
@@ -27139,9 +27656,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21,
-      "windSpeed": 17.8,
-      "humidity": 88,
+      "temperature": 34.4,
+      "windSpeed": 24.8,
+      "humidity": 40,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -27164,11 +27681,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -27177,9 +27694,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -27189,12 +27706,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -27202,12 +27719,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -27216,11 +27733,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -27228,12 +27745,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -27248,8 +27765,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1754_d-svrcina.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.05
+            ],
+            [
+              "2026-08-11T06:59:09.474Z",
+              2.05
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.741
+            ],
+            [
+              "2026-08-11T06:59:09.474Z",
+              1.741
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -27283,6 +27822,26 @@
             [
               "2026-08-11T03:56:30.472Z",
               2.009
+            ],
+            [
+              "2026-08-11T04:30:51.763Z",
+              1.98
+            ],
+            [
+              "2026-08-11T06:01:39.454Z",
+              1.99
+            ],
+            [
+              "2026-08-11T06:08:37.967Z",
+              1.98
+            ],
+            [
+              "2026-08-11T06:15:38.937Z",
+              1.97
+            ],
+            [
+              "2026-08-11T06:22:43.360Z",
+              1.94
             ]
           ],
           "p2": [
@@ -27317,6 +27876,48 @@
             [
               "2026-08-11T03:56:30.472Z",
               1.7
+            ],
+            [
+              "2026-08-11T04:30:51.763Z",
+              1.72
+            ],
+            [
+              "2026-08-11T06:01:39.454Z",
+              1.71
+            ],
+            [
+              "2026-08-11T06:08:37.967Z",
+              1.72
+            ],
+            [
+              "2026-08-11T06:15:38.937Z",
+              1.73
+            ],
+            [
+              "2026-08-11T06:22:43.360Z",
+              1.75
+            ]
+          ]
+        },
+        "Betsson": {
+          "p1": [
+            [
+              "2026-08-11T04:42:02.691Z",
+              2.0
+            ],
+            [
+              "2026-08-11T06:00:14.359Z",
+              1.97
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:42:02.691Z",
+              1.73
+            ],
+            [
+              "2026-08-11T06:00:14.359Z",
+              1.75
             ]
           ]
         },
@@ -27337,6 +27938,10 @@
             [
               "2026-08-11T04:04:08.059Z",
               2.02
+            ],
+            [
+              "2026-08-11T05:58:28.289Z",
+              1.98
             ]
           ],
           "p2": [
@@ -27355,6 +27960,10 @@
             [
               "2026-08-11T04:04:08.059Z",
               1.75
+            ],
+            [
+              "2026-08-11T05:58:28.289Z",
+              1.78
             ]
           ]
         },
@@ -27363,11 +27972,19 @@
             [
               "2026-08-11T03:54:38.852Z",
               2.0
+            ],
+            [
+              "2026-08-11T06:14:56.613Z",
+              2.0
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:54:38.852Z",
+              1.727
+            ],
+            [
+              "2026-08-11T06:14:56.613Z",
               1.727
             ]
           ]
@@ -27394,18 +28011,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.44,
-      "p2": 1.49,
-      "bookmaker": "1xBet"
+      "p1": 2.35,
+      "p2": 1.46,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.44,
-        "bookmaker": "1xBet"
+        "price": 2.35,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.49,
-        "bookmaker": "1xBet"
+        "price": 1.46,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -29552,9 +30169,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 29,
-      "windSpeed": 15.2,
-      "humidity": 58,
+      "temperature": 35,
+      "windSpeed": 22.5,
+      "humidity": 42,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -29577,11 +30194,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -29590,9 +30207,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -29602,12 +30219,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -29615,12 +30232,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -29629,11 +30246,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -29641,12 +30258,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -29661,18 +30278,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.796Z",
               2.5
+            ],
+            [
+              "2026-08-11T06:59:16.298Z",
+              2.5
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.796Z",
+              1.5
+            ],
+            [
+              "2026-08-11T06:59:16.298Z",
               1.5
             ]
           ]
@@ -29702,6 +30327,10 @@
             [
               "2026-08-11T02:40:21.627Z",
               2.445
+            ],
+            [
+              "2026-08-11T05:32:42.410Z",
+              2.474
             ]
           ],
           "p2": [
@@ -29728,6 +30357,10 @@
             [
               "2026-08-11T02:40:21.627Z",
               1.49
+            ],
+            [
+              "2026-08-11T05:32:42.410Z",
+              1.48
             ]
           ]
         },
@@ -29788,11 +30421,19 @@
             [
               "2026-08-11T03:42:39.249Z",
               2.5
+            ],
+            [
+              "2026-08-11T05:36:20.746Z",
+              2.5
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:39.249Z",
+              1.5
+            ],
+            [
+              "2026-08-11T05:36:20.746Z",
               1.5
             ]
           ]
@@ -29819,17 +30460,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.4,
-      "p2": 1.29,
+      "p1": 3.5,
+      "p2": 1.28,
       "bookmaker": "Betano"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.4,
+        "price": 3.5,
         "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.29,
+        "price": 1.28,
         "bookmaker": "Betano"
       }
     },
@@ -31327,9 +31968,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -31352,11 +31993,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -31365,9 +32006,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -31377,12 +32018,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -31390,12 +32031,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -31404,11 +32045,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -31416,12 +32057,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -31449,18 +32090,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.92,
-      "p2": 1.38,
-      "bookmaker": "Superbet"
+      "p1": 3.12,
+      "p2": 1.25,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.92,
-        "bookmaker": "Superbet"
+        "price": 3.12,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.38,
-        "bookmaker": "Superbet"
+        "price": 1.25,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -33362,9 +34003,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -33387,11 +34028,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -33400,9 +34041,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -33412,12 +34053,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -33425,12 +34066,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -33439,11 +34080,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -33451,12 +34092,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -33484,18 +34125,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.25,
-      "p2": 1.31,
-      "bookmaker": "Betano"
+      "p1": 3.22,
+      "p2": 1.24,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.25,
-        "bookmaker": "Betano"
+        "price": 3.22,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.31,
-        "bookmaker": "Betano"
+        "price": 1.24,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -35165,9 +35806,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21,
-      "windSpeed": 17.8,
-      "humidity": 88,
+      "temperature": 34.4,
+      "windSpeed": 24.8,
+      "humidity": 40,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -35190,11 +35831,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -35203,9 +35844,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -35215,12 +35856,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -35228,12 +35869,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -35242,11 +35883,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -35254,12 +35895,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -35274,8 +35915,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/12951_j-fearnley.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:35:42.580Z",
+              3.6
+            ],
+            [
+              "2026-08-11T06:59:14.597Z",
+              3.6
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:35:42.580Z",
+              1.263
+            ],
+            [
+              "2026-08-11T06:59:14.597Z",
+              1.263
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -35297,6 +35960,10 @@
             [
               "2026-08-11T04:16:37.334Z",
               3.345
+            ],
+            [
+              "2026-08-11T04:23:26.045Z",
+              3.41
             ]
           ],
           "p2": [
@@ -35319,6 +35986,10 @@
             [
               "2026-08-11T04:16:37.334Z",
               1.28
+            ],
+            [
+              "2026-08-11T04:23:26.045Z",
+              1.27
             ]
           ]
         },
@@ -35377,6 +36048,10 @@
             [
               "2026-08-11T04:11:22.270Z",
               3.3
+            ],
+            [
+              "2026-08-11T04:29:06.058Z",
+              3.35
             ]
           ],
           "p2": [
@@ -35395,6 +36070,10 @@
             [
               "2026-08-11T04:11:22.270Z",
               1.3
+            ],
+            [
+              "2026-08-11T04:29:06.058Z",
+              1.29
             ]
           ]
         },
@@ -35403,11 +36082,19 @@
             [
               "2026-08-11T03:42:36.917Z",
               3.5
+            ],
+            [
+              "2026-08-11T05:34:48.149Z",
+              3.5
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:36.917Z",
+              1.286
+            ],
+            [
+              "2026-08-11T05:34:48.149Z",
               1.286
             ]
           ]
@@ -35436,16 +36123,16 @@
     "odds": {
       "p1": 1.36,
       "p2": 3,
-      "bookmaker": "Betano"
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
         "price": 1.36,
-        "bookmaker": "Betano"
+        "bookmaker": "Superbet"
       },
       "p2": {
         "price": 3,
-        "bookmaker": "Betano"
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": null,
@@ -36605,9 +37292,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 29,
-      "windSpeed": 15.2,
-      "humidity": 58,
+      "temperature": 35,
+      "windSpeed": 22.5,
+      "humidity": 42,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -36630,11 +37317,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -36643,9 +37330,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -36655,12 +37342,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -36668,12 +37355,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -36682,11 +37369,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -36694,12 +37381,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -36714,18 +37401,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/52663_t-svajda.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.796Z",
               1.357
+            ],
+            [
+              "2026-08-11T06:59:12.877Z",
+              1.357
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.796Z",
+              3.0
+            ],
+            [
+              "2026-08-11T06:59:12.877Z",
               3.0
             ]
           ]
@@ -36775,6 +37470,18 @@
             [
               "2026-08-11T04:16:38.930Z",
               1.36
+            ],
+            [
+              "2026-08-11T05:04:35.700Z",
+              1.37
+            ],
+            [
+              "2026-08-11T06:01:10.738Z",
+              1.36
+            ],
+            [
+              "2026-08-11T06:57:21.587Z",
+              1.373
             ]
           ],
           "p2": [
@@ -36821,6 +37528,18 @@
             [
               "2026-08-11T04:16:38.930Z",
               2.894
+            ],
+            [
+              "2026-08-11T05:04:35.700Z",
+              2.853
+            ],
+            [
+              "2026-08-11T06:01:10.738Z",
+              2.894
+            ],
+            [
+              "2026-08-11T06:57:21.587Z",
+              2.843
             ]
           ]
         },
@@ -36845,6 +37564,10 @@
             [
               "2026-08-11T03:07:52.348Z",
               1.35
+            ],
+            [
+              "2026-08-11T06:38:33.995Z",
+              1.35
             ]
           ],
           "p2": [
@@ -36866,6 +37589,10 @@
             ],
             [
               "2026-08-11T03:07:52.348Z",
+              2.95
+            ],
+            [
+              "2026-08-11T06:38:33.995Z",
               2.95
             ]
           ]
@@ -36905,11 +37632,19 @@
             [
               "2026-08-11T04:09:49.214Z",
               1.364
+            ],
+            [
+              "2026-08-11T06:15:32.131Z",
+              1.364
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:09:49.214Z",
+              3.0
+            ],
+            [
+              "2026-08-11T06:15:32.131Z",
               3.0
             ]
           ]
@@ -36936,17 +37671,17 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.04,
-      "p2": 1.65,
+      "p1": 1.98,
+      "p2": 1.7,
       "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.04,
+        "price": 1.98,
         "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.65,
+        "price": 1.7,
         "bookmaker": "Sbo"
       }
     },
@@ -38554,9 +39289,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -38579,11 +39314,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -38592,9 +39327,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -38604,12 +39339,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -38617,12 +39352,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -38631,11 +39366,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -38643,12 +39378,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -38663,8 +39398,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:25:42.512Z",
+              2.05
+            ],
+            [
+              "2026-08-11T06:59:12.878Z",
+              2.05
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:25:42.512Z",
+              1.741
+            ],
+            [
+              "2026-08-11T06:59:12.878Z",
+              1.741
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -38732,6 +39489,10 @@
             [
               "2026-08-11T03:15:01.551Z",
               2.02
+            ],
+            [
+              "2026-08-11T06:38:34.628Z",
+              2.02
             ]
           ],
           "p2": [
@@ -38745,6 +39506,10 @@
             ],
             [
               "2026-08-11T03:15:01.551Z",
+              1.71
+            ],
+            [
+              "2026-08-11T06:38:34.628Z",
               1.71
             ]
           ]
@@ -38784,12 +39549,28 @@
             [
               "2026-08-11T03:42:35.424Z",
               2.1
+            ],
+            [
+              "2026-08-11T05:06:24.122Z",
+              2.1
+            ],
+            [
+              "2026-08-11T05:31:14.898Z",
+              2.0
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:35.424Z",
               1.667
+            ],
+            [
+              "2026-08-11T05:06:24.122Z",
+              1.667
+            ],
+            [
+              "2026-08-11T05:31:14.898Z",
+              1.727
             ]
           ]
         }
@@ -38815,18 +39596,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.54,
-      "p2": 2.32,
-      "bookmaker": "1xBet"
+      "p1": 1.5,
+      "p2": 2.26,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.54,
-        "bookmaker": "1xBet"
+        "price": 1.5,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.32,
-        "bookmaker": "1xBet"
+        "price": 2.26,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -40597,9 +41378,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 25.5,
-      "windSpeed": 8.4,
-      "humidity": 65,
+      "temperature": 32.3,
+      "windSpeed": 19.5,
+      "humidity": 56,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -40622,11 +41403,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -40635,9 +41416,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -40647,12 +41428,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -40660,12 +41441,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -40674,11 +41455,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -40686,12 +41467,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -40706,18 +41487,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1308_d-sweeny.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.899Z",
               1.526
+            ],
+            [
+              "2026-08-11T06:59:14.594Z",
+              1.526
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.899Z",
+              2.4
+            ],
+            [
+              "2026-08-11T06:59:14.594Z",
               2.4
             ]
           ]
@@ -40857,11 +41646,19 @@
             [
               "2026-08-11T03:42:36.166Z",
               1.533
+            ],
+            [
+              "2026-08-11T05:35:00.249Z",
+              1.533
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:36.166Z",
+              2.375
+            ],
+            [
+              "2026-08-11T05:35:00.249Z",
               2.375
             ]
           ]
@@ -40888,18 +41685,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.75,
-      "p2": 1.94,
-      "bookmaker": "1xBet"
+      "p1": 1.7,
+      "p2": 1.98,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.75,
-        "bookmaker": "1xBet"
+        "price": 1.7,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.94,
-        "bookmaker": "1xBet"
+        "price": 1.98,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -42705,9 +43502,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
+      "temperature": 35.2,
+      "windSpeed": 25.2,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -42730,11 +43527,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -42743,9 +43540,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -42755,12 +43552,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -42768,12 +43565,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -42782,11 +43579,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -42794,12 +43591,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -42814,8 +43611,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.741
+            ],
+            [
+              "2026-08-11T06:59:09.473Z",
+              1.741
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.05
+            ],
+            [
+              "2026-08-11T06:59:09.473Z",
+              2.05
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -42837,6 +43656,18 @@
             [
               "2026-08-11T04:10:41.249Z",
               1.72
+            ],
+            [
+              "2026-08-11T04:24:22.158Z",
+              1.71
+            ],
+            [
+              "2026-08-11T05:12:36.258Z",
+              1.7
+            ],
+            [
+              "2026-08-11T05:40:44.145Z",
+              1.69
             ]
           ],
           "p2": [
@@ -42859,6 +43690,40 @@
             [
               "2026-08-11T04:10:41.249Z",
               1.98
+            ],
+            [
+              "2026-08-11T04:24:22.158Z",
+              1.99
+            ],
+            [
+              "2026-08-11T05:12:36.258Z",
+              2.009
+            ],
+            [
+              "2026-08-11T05:40:44.145Z",
+              2.02
+            ]
+          ]
+        },
+        "Betsson": {
+          "p1": [
+            [
+              "2026-08-11T04:42:03.539Z",
+              1.75
+            ],
+            [
+              "2026-08-11T05:13:20.919Z",
+              1.73
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:42:03.539Z",
+              1.96
+            ],
+            [
+              "2026-08-11T05:13:20.919Z",
+              2.0
             ]
           ]
         },
@@ -42871,6 +43736,10 @@
             [
               "2026-08-11T04:04:08.223Z",
               1.78
+            ],
+            [
+              "2026-08-11T05:07:05.664Z",
+              1.75
             ]
           ],
           "p2": [
@@ -42881,6 +43750,10 @@
             [
               "2026-08-11T04:04:08.223Z",
               1.98
+            ],
+            [
+              "2026-08-11T05:07:05.664Z",
+              2.02
             ]
           ]
         },
@@ -42889,11 +43762,19 @@
             [
               "2026-08-11T03:42:31.599Z",
               1.727
+            ],
+            [
+              "2026-08-11T05:34:50.929Z",
+              1.727
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:31.599Z",
+              2.0
+            ],
+            [
+              "2026-08-11T05:34:50.929Z",
               2.0
             ]
           ]
@@ -44610,107 +45491,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 25.5,
-      "windSpeed": 8.4,
-      "humidity": 65,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Aug 10 – 16, 2026",
-      "week": [
-        {
-          "date": "2026-08-10",
-          "dow": "Mon",
-          "label": "Aug 10",
-          "code": 3,
-          "hi": 33,
-          "lo": 23,
-          "rain": 11,
-          "wind": 19,
-          "humidity": 73,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-11",
-          "dow": "Tue",
-          "label": "Aug 11",
-          "code": 63,
-          "hi": 31,
-          "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-08-12",
-          "dow": "Wed",
-          "label": "Aug 12",
-          "code": 65,
-          "hi": 27,
-          "lo": 20,
-          "rain": 45,
-          "wind": 19,
-          "humidity": 90,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-13",
-          "dow": "Thu",
-          "label": "Aug 13",
-          "code": 81,
-          "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-14",
-          "dow": "Fri",
-          "label": "Aug 14",
-          "code": 53,
-          "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-15",
-          "dow": "Sat",
-          "label": "Aug 15",
-          "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-16",
-          "dow": "Sun",
-          "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -44720,18 +45501,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/987_p-llamas-ruiz.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.796Z",
               1.741
+            ],
+            [
+              "2026-08-11T06:59:14.595Z",
+              1.741
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.796Z",
+              2.05
+            ],
+            [
+              "2026-08-11T06:59:14.595Z",
               2.05
             ]
           ]
@@ -44757,6 +45546,10 @@
             [
               "2026-08-11T03:15:10.390Z",
               1.76
+            ],
+            [
+              "2026-08-11T04:44:25.795Z",
+              1.75
             ]
           ],
           "p2": [
@@ -44783,6 +45576,10 @@
             [
               "2026-08-11T03:15:10.390Z",
               1.93
+            ],
+            [
+              "2026-08-11T04:44:25.795Z",
+              1.94
             ]
           ]
         },
@@ -44859,11 +45656,19 @@
             [
               "2026-08-11T03:42:36.539Z",
               1.727
+            ],
+            [
+              "2026-08-11T05:34:45.527Z",
+              1.727
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:36.539Z",
+              2.0
+            ],
+            [
+              "2026-08-11T05:34:45.527Z",
               2.0
             ]
           ]
@@ -44891,17 +45696,17 @@
     "value": null,
     "odds": {
       "p1": 1.09,
-      "p2": 6.5,
-      "bookmaker": "Superbet"
+      "p2": 5.85,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
       "p1": {
         "price": 1.09,
-        "bookmaker": "Superbet"
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 6.5,
-        "bookmaker": "Superbet"
+        "price": 5.85,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": null,
@@ -46803,107 +47608,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Aug 10 – 16, 2026",
-      "week": [
-        {
-          "date": "2026-08-10",
-          "dow": "Mon",
-          "label": "Aug 10",
-          "code": 3,
-          "hi": 33,
-          "lo": 23,
-          "rain": 11,
-          "wind": 19,
-          "humidity": 73,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-11",
-          "dow": "Tue",
-          "label": "Aug 11",
-          "code": 63,
-          "hi": 31,
-          "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-08-12",
-          "dow": "Wed",
-          "label": "Aug 12",
-          "code": 65,
-          "hi": 27,
-          "lo": 20,
-          "rain": 45,
-          "wind": 19,
-          "humidity": 90,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-13",
-          "dow": "Thu",
-          "label": "Aug 13",
-          "code": 81,
-          "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-14",
-          "dow": "Fri",
-          "label": "Aug 14",
-          "code": 53,
-          "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-15",
-          "dow": "Sat",
-          "label": "Aug 15",
-          "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-08-16",
-          "dow": "Sun",
-          "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -46913,8 +47618,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2980_h-dellien.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.111
+            ],
+            [
+              "2026-08-11T06:59:11.175Z",
+              1.111
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              6.0
+            ],
+            [
+              "2026-08-11T06:59:11.175Z",
+              6.0
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -46968,6 +47695,26 @@
             [
               "2026-08-11T03:28:35.740Z",
               1.09
+            ],
+            [
+              "2026-08-11T05:11:42.614Z",
+              1.091
+            ],
+            [
+              "2026-08-11T06:22:16.256Z",
+              1.092
+            ],
+            [
+              "2026-08-11T06:50:24.144Z",
+              1.093
+            ],
+            [
+              "2026-08-11T06:57:23.794Z",
+              1.092
+            ],
+            [
+              "2026-08-11T07:04:25.239Z",
+              1.093
             ]
           ],
           "p2": [
@@ -47010,6 +47757,22 @@
             [
               "2026-08-11T03:21:39.132Z",
               5.9
+            ],
+            [
+              "2026-08-11T05:11:42.614Z",
+              5.85
+            ],
+            [
+              "2026-08-11T06:50:24.144Z",
+              5.8
+            ],
+            [
+              "2026-08-11T06:57:23.794Z",
+              5.85
+            ],
+            [
+              "2026-08-11T07:04:25.239Z",
+              5.8
             ]
           ]
         },
@@ -47062,11 +47825,19 @@
             [
               "2026-08-11T03:42:33.508Z",
               1.111
+            ],
+            [
+              "2026-08-11T05:09:22.004Z",
+              1.111
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:33.508Z",
+              6.5
+            ],
+            [
+              "2026-08-11T05:09:22.004Z",
               6.5
             ]
           ]
@@ -47093,18 +47864,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.06,
+      "p1": 1.99,
       "p2": 1.68,
-      "bookmaker": "1xBet"
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.06,
-        "bookmaker": "1xBet"
+        "price": 1.99,
+        "bookmaker": "Sbo"
       },
       "p2": {
         "price": 1.68,
-        "bookmaker": "1xBet"
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -49080,9 +49851,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21.7,
-      "windSpeed": 22,
-      "humidity": 92,
+      "temperature": 35.6,
+      "windSpeed": 23,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -49105,11 +49876,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -49118,9 +49889,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -49130,12 +49901,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -49143,12 +49914,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -49157,11 +49928,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -49169,12 +49940,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -49189,8 +49960,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/359_s-ofner.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.15
+            ],
+            [
+              "2026-08-11T06:59:12.878Z",
+              2.15
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.69
+            ],
+            [
+              "2026-08-11T06:59:12.878Z",
+              1.69
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -49216,6 +50009,14 @@
             [
               "2026-08-11T03:15:10.693Z",
               2.05
+            ],
+            [
+              "2026-08-11T06:36:42.327Z",
+              2.079
+            ],
+            [
+              "2026-08-11T06:57:40.445Z",
+              2.098
             ]
           ],
           "p2": [
@@ -49242,6 +50043,18 @@
             [
               "2026-08-11T03:15:10.693Z",
               1.67
+            ],
+            [
+              "2026-08-11T04:44:26.202Z",
+              1.666
+            ],
+            [
+              "2026-08-11T05:40:10.606Z",
+              1.67
+            ],
+            [
+              "2026-08-11T06:57:40.445Z",
+              1.66
             ]
           ]
         },
@@ -49286,11 +50099,19 @@
             [
               "2026-08-11T04:09:53.575Z",
               2.1
+            ],
+            [
+              "2026-08-11T06:17:22.939Z",
+              2.1
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:09:53.575Z",
+              1.667
+            ],
+            [
+              "2026-08-11T06:17:22.939Z",
               1.667
             ]
           ]
@@ -49318,17 +50139,17 @@
     "value": null,
     "odds": {
       "p1": 1.4,
-      "p2": 2.8,
-      "bookmaker": "Betano"
+      "p2": 2.85,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
         "price": 1.4,
-        "bookmaker": "Betano"
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.8,
-        "bookmaker": "Betano"
+        "price": 2.85,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": null,
@@ -50971,9 +51792,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 29,
-      "windSpeed": 15.2,
-      "humidity": 58,
+      "temperature": 35,
+      "windSpeed": 22.5,
+      "humidity": 42,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -50996,11 +51817,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -51009,9 +51830,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -51021,12 +51842,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -51034,12 +51855,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -51048,11 +51869,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -51060,12 +51881,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -51080,18 +51901,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2410_g-heide.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.899Z",
               1.357
+            ],
+            [
+              "2026-08-11T06:59:16.299Z",
+              1.357
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.899Z",
+              3.0
+            ],
+            [
+              "2026-08-11T06:59:16.299Z",
               3.0
             ]
           ]
@@ -51117,6 +51946,22 @@
             [
               "2026-08-11T03:21:38.780Z",
               1.36
+            ],
+            [
+              "2026-08-11T05:32:45.407Z",
+              1.35
+            ],
+            [
+              "2026-08-11T05:54:03.242Z",
+              1.343
+            ],
+            [
+              "2026-08-11T06:01:09.291Z",
+              1.34
+            ],
+            [
+              "2026-08-11T06:29:18.065Z",
+              1.36
             ]
           ],
           "p2": [
@@ -51139,6 +51984,22 @@
             [
               "2026-08-11T03:21:38.780Z",
               2.894
+            ],
+            [
+              "2026-08-11T05:32:45.407Z",
+              2.943
+            ],
+            [
+              "2026-08-11T05:54:03.242Z",
+              2.973
+            ],
+            [
+              "2026-08-11T06:01:09.291Z",
+              2.993
+            ],
+            [
+              "2026-08-11T06:29:18.065Z",
+              2.894
             ]
           ]
         },
@@ -51155,6 +52016,18 @@
             [
               "2026-08-11T02:46:38.617Z",
               1.37
+            ],
+            [
+              "2026-08-11T05:03:07.514Z",
+              1.37
+            ],
+            [
+              "2026-08-11T05:42:36.450Z",
+              1.36
+            ],
+            [
+              "2026-08-11T06:06:07.713Z",
+              1.36
             ]
           ],
           "p2": [
@@ -51169,6 +52042,18 @@
             [
               "2026-08-11T02:46:38.617Z",
               2.85
+            ],
+            [
+              "2026-08-11T05:03:07.514Z",
+              2.85
+            ],
+            [
+              "2026-08-11T05:42:36.450Z",
+              2.9
+            ],
+            [
+              "2026-08-11T06:06:07.713Z",
+              2.9
             ]
           ]
         },
@@ -51185,6 +52070,10 @@
             [
               "2026-08-11T02:49:01.659Z",
               1.39
+            ],
+            [
+              "2026-08-11T05:44:27.184Z",
+              1.38
             ]
           ],
           "p2": [
@@ -51199,6 +52088,10 @@
             [
               "2026-08-11T02:49:01.659Z",
               2.82
+            ],
+            [
+              "2026-08-11T05:44:27.184Z",
+              2.92
             ]
           ]
         },
@@ -51207,11 +52100,19 @@
             [
               "2026-08-11T03:42:39.629Z",
               1.364
+            ],
+            [
+              "2026-08-11T06:36:40.300Z",
+              1.364
             ]
           ],
           "p2": [
             [
               "2026-08-11T03:42:39.629Z",
+              3.0
+            ],
+            [
+              "2026-08-11T06:36:40.300Z",
               3.0
             ]
           ]
@@ -51238,18 +52139,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.66,
-      "p2": 2.1,
-      "bookmaker": "1xBet"
+      "p1": 1.65,
+      "p2": 2.04,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.66,
-        "bookmaker": "1xBet"
+        "price": 1.65,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.1,
-        "bookmaker": "1xBet"
+        "price": 2.04,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -52876,9 +53777,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 21,
-      "windSpeed": 17.8,
-      "humidity": 88,
+      "temperature": 34.4,
+      "windSpeed": 24.8,
+      "humidity": 40,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -52901,11 +53802,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -52914,9 +53815,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -52926,12 +53827,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -52939,12 +53840,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -52953,11 +53854,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -52965,12 +53866,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -52985,8 +53886,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/17463_d-blanch.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.69
+            ],
+            [
+              "2026-08-11T06:59:09.474Z",
+              1.69
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.15
+            ],
+            [
+              "2026-08-11T06:59:09.474Z",
+              2.15
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -53022,6 +53945,28 @@
             [
               "2026-08-11T03:15:10.133Z",
               2.079
+            ]
+          ]
+        },
+        "Betsson": {
+          "p1": [
+            [
+              "2026-08-11T04:42:16.338Z",
+              1.67
+            ],
+            [
+              "2026-08-11T05:06:06.422Z",
+              1.67
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:42:16.338Z",
+              2.08
+            ],
+            [
+              "2026-08-11T05:06:06.422Z",
+              2.08
             ]
           ]
         },
@@ -53061,18 +54006,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.22,
+      "p1": 2.07,
       "p2": 1.63,
-      "bookmaker": "Superbet"
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.22,
-        "bookmaker": "Superbet"
+        "price": 2.07,
+        "bookmaker": "Sbo"
       },
       "p2": {
         "price": 1.63,
-        "bookmaker": "Superbet"
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -54612,9 +55557,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 15.3,
-      "humidity": 95,
+      "temperature": 35.2,
+      "windSpeed": 25.2,
+      "humidity": 38,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -54637,11 +55582,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -54650,9 +55595,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -54662,12 +55607,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -54675,12 +55620,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -54689,11 +55634,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -54701,12 +55646,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -54721,8 +55666,30 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/15184_t-samuel.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
+        "William Hill": {
+          "p1": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              2.15
+            ],
+            [
+              "2026-08-11T07:02:36.776Z",
+              2.15
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-11T04:30:42.841Z",
+              1.69
+            ],
+            [
+              "2026-08-11T07:02:36.776Z",
+              1.69
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -54748,6 +55715,18 @@
             [
               "2026-08-11T03:42:35.178Z",
               2.108
+            ],
+            [
+              "2026-08-11T06:15:12.080Z",
+              2.06
+            ],
+            [
+              "2026-08-11T06:22:16.710Z",
+              2.05
+            ],
+            [
+              "2026-08-11T06:50:24.617Z",
+              2.06
             ]
           ],
           "p2": [
@@ -54774,6 +55753,18 @@
             [
               "2026-08-11T03:42:35.178Z",
               1.65
+            ],
+            [
+              "2026-08-11T06:15:12.080Z",
+              1.68
+            ],
+            [
+              "2026-08-11T06:22:16.710Z",
+              1.67
+            ],
+            [
+              "2026-08-11T06:50:24.617Z",
+              1.68
             ]
           ]
         },
@@ -54794,6 +55785,10 @@
             [
               "2026-08-11T02:46:33.444Z",
               2.13
+            ],
+            [
+              "2026-08-11T04:32:07.024Z",
+              2.1
             ]
           ],
           "p2": [
@@ -54812,6 +55807,10 @@
             [
               "2026-08-11T02:46:33.444Z",
               1.64
+            ],
+            [
+              "2026-08-11T04:32:07.024Z",
+              1.65
             ]
           ]
         },
@@ -54840,6 +55839,10 @@
             [
               "2026-08-11T03:43:28.473Z",
               2.15
+            ],
+            [
+              "2026-08-11T04:38:16.053Z",
+              2.12
             ]
           ],
           "p2": [
@@ -54866,6 +55869,10 @@
             [
               "2026-08-11T03:43:28.473Z",
               1.65
+            ],
+            [
+              "2026-08-11T04:38:16.053Z",
+              1.67
             ]
           ]
         },
@@ -54874,11 +55881,19 @@
             [
               "2026-08-11T04:09:40.067Z",
               2.1
+            ],
+            [
+              "2026-08-11T06:11:09.014Z",
+              2.1
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:09:40.067Z",
+              1.667
+            ],
+            [
+              "2026-08-11T06:11:09.014Z",
               1.667
             ]
           ]
@@ -56226,9 +57241,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 25.5,
-      "windSpeed": 8.4,
-      "humidity": 65,
+      "temperature": 32.3,
+      "windSpeed": 19.5,
+      "humidity": 56,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 10 – 16, 2026",
@@ -56251,11 +57266,11 @@
           "dow": "Tue",
           "label": "Aug 11",
           "code": 63,
-          "hi": 31,
+          "hi": 36,
           "lo": 21,
-          "rain": 40,
-          "wind": 28,
-          "humidity": 77,
+          "rain": 39,
+          "wind": 26,
+          "humidity": 66,
           "isMatch": true,
           "available": true
         },
@@ -56264,9 +57279,9 @@
           "dow": "Wed",
           "label": "Aug 12",
           "code": 65,
-          "hi": 27,
+          "hi": 25,
           "lo": 20,
-          "rain": 45,
+          "rain": 38,
           "wind": 19,
           "humidity": 90,
           "isMatch": false,
@@ -56276,12 +57291,12 @@
           "date": "2026-08-13",
           "dow": "Thu",
           "label": "Aug 13",
-          "code": 81,
+          "code": 80,
           "hi": 30,
-          "lo": 20,
-          "rain": 49,
-          "wind": 15,
-          "humidity": 88,
+          "lo": 19,
+          "rain": 53,
+          "wind": 33,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -56289,12 +57304,12 @@
           "date": "2026-08-14",
           "dow": "Fri",
           "label": "Aug 14",
-          "code": 53,
+          "code": 51,
           "hi": 30,
-          "lo": 20,
-          "rain": 63,
-          "wind": 12,
-          "humidity": 71,
+          "lo": 21,
+          "rain": 58,
+          "wind": 15,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -56303,11 +57318,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 32,
-          "lo": 17,
-          "rain": 23,
-          "wind": 12,
-          "humidity": 68,
+          "hi": 30,
+          "lo": 15,
+          "rain": 19,
+          "wind": 13,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         },
@@ -56315,12 +57330,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 2,
-          "hi": 39,
-          "lo": 21,
-          "rain": 18,
-          "wind": 20,
-          "humidity": 62,
+          "code": 3,
+          "hi": 38,
+          "lo": 22,
+          "rain": 12,
+          "wind": 21,
+          "humidity": 59,
           "isMatch": false,
           "available": true
         }
@@ -56335,18 +57350,26 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8431_s-c-hong.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "William Hill": {
           "p1": [
             [
               "2026-08-11T04:15:40.899Z",
               1.125
+            ],
+            [
+              "2026-08-11T06:59:12.876Z",
+              1.125
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:15:40.899Z",
+              5.5
+            ],
+            [
+              "2026-08-11T06:59:12.876Z",
               5.5
             ]
           ]
@@ -56428,6 +57451,26 @@
             [
               "2026-08-11T04:09:36.322Z",
               1.143
+            ],
+            [
+              "2026-08-11T04:37:02.542Z",
+              1.13
+            ],
+            [
+              "2026-08-11T05:04:23.843Z",
+              1.128
+            ],
+            [
+              "2026-08-11T05:32:36.385Z",
+              1.127
+            ],
+            [
+              "2026-08-11T06:29:09.035Z",
+              1.126
+            ],
+            [
+              "2026-08-11T07:04:11.980Z",
+              1.125
             ]
           ],
           "p2": [
@@ -56494,6 +57537,18 @@
             [
               "2026-08-11T04:09:36.322Z",
               4.7
+            ],
+            [
+              "2026-08-11T04:37:02.542Z",
+              4.95
+            ],
+            [
+              "2026-08-11T05:04:23.843Z",
+              5.0
+            ],
+            [
+              "2026-08-11T07:04:11.980Z",
+              5.05
             ]
           ]
         },
@@ -56518,6 +57573,10 @@
             [
               "2026-08-11T03:50:09.630Z",
               1.15
+            ],
+            [
+              "2026-08-11T05:03:04.057Z",
+              1.14
             ]
           ],
           "p2": [
@@ -56540,6 +57599,10 @@
             [
               "2026-08-11T03:50:09.630Z",
               4.8
+            ],
+            [
+              "2026-08-11T05:03:04.057Z",
+              5.0
             ]
           ]
         },
@@ -56572,6 +57635,10 @@
             [
               "2026-08-11T04:02:39.098Z",
               1.17
+            ],
+            [
+              "2026-08-11T04:59:43.649Z",
+              1.16
             ]
           ],
           "p2": [
@@ -56602,6 +57669,14 @@
             [
               "2026-08-11T04:02:39.098Z",
               4.7
+            ],
+            [
+              "2026-08-11T04:59:43.649Z",
+              4.75
+            ],
+            [
+              "2026-08-11T05:06:08.530Z",
+              4.85
             ]
           ]
         },
@@ -56610,11 +57685,19 @@
             [
               "2026-08-11T04:09:46.664Z",
               1.143
+            ],
+            [
+              "2026-08-11T05:34:55.048Z",
+              1.143
             ]
           ],
           "p2": [
             [
               "2026-08-11T04:09:46.664Z",
+              5.5
+            ],
+            [
+              "2026-08-11T05:34:55.048Z",
               5.5
             ]
           ]
@@ -57968,7 +59051,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 5,
       "totalLost": 3,
       "longMatches": 0,
@@ -57976,10 +59059,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
+          "year": "2024",
+          "matchCount": 4,
+          "won": 2,
+          "lost": 2,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -57997,25 +59080,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152497
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
-        },
-        {
-          "year": "2024",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-10",
               "opponent": "S. Korda",
@@ -58095,7 +59160,23 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Schoolkate",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -58124,22 +59205,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152569
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Schoolkate",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
             }
           ]
         }
@@ -60414,46 +61479,13 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 3,
       "totalWon": 11,
       "totalLost": 3,
       "longMatches": 0,
       "longMatchesPlayed": 14,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "T. A. Tirante",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12152815
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "R. Collignon",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152499
-            },
-            {
-              "date": "2026-08-04",
-              "opponent": "R. A. Burruchaga",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12151677
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 4,
@@ -60493,11 +61525,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 6,
-          "won": 6,
-          "lost": 0,
-          "roundReached": "Final",
+          "matchCount": 9,
+          "won": 8,
+          "lost": 1,
+          "roundReached": "1/16-finals",
           "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "T. A. Tirante",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12152815
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "R. Collignon",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152499
+            },
+            {
+              "date": "2026-08-04",
+              "opponent": "R. A. Burruchaga",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12151677
+            },
             {
               "date": "2024-08-13",
               "opponent": "A. Rublev",
@@ -60612,7 +61668,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -69467,7 +70523,23 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "E. Nava",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -69498,22 +70570,6 @@
               "eventKey": 12151373
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "E. Nava",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
         }
       ]
     },
@@ -69526,7 +70582,30 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -69555,29 +70634,6 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152464
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
             }
           ]
         }
@@ -72909,39 +73965,6 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "T. A. Tirante",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153179
-            },
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
-        },
-        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -72977,11 +74000,44 @@
               "result": "2 - 0"
             }
           ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "T. A. Tirante",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153179
+            },
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
+            }
+          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 13,
       "totalLost": 6,
       "longMatches": 0,
@@ -72989,10 +74045,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
+          "year": "2024",
+          "matchCount": 4,
+          "won": 2,
+          "lost": 2,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -73010,25 +74066,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12152465
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
-        },
-        {
-          "year": "2024",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-08",
               "opponent": "B. Nakashima",
@@ -76033,35 +77071,11 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "1/8-finals",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
           "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "L. Darderi",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "1 - 2",
-              "eventKey": 12153016
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "Y. Hanfmann",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152642
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "T. M. Etcheverry",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152182
-            },
             {
               "date": "2026-08-04",
               "opponent": "A. Kovacevic",
@@ -76097,11 +77111,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
+          "matchCount": 6,
+          "won": 4,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "L. Darderi",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12153016
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "Y. Hanfmann",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152642
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "T. M. Etcheverry",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152182
+            },
             {
               "date": "2024-08-10",
               "opponent": "K. Nishikori",
@@ -76131,7 +77169,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -76139,10 +77177,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
+          "year": "2024",
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -76168,25 +77206,7 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12152198
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-07",
               "opponent": "T. Paul",
@@ -95228,7 +96248,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 3,
       "totalWon": 4,
       "totalLost": 4,
       "longMatches": 0,
@@ -95236,10 +96256,26 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
           "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Galarneau",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 6,
+          "won": 4,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -95265,32 +96301,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152179
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Galarneau",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-10",
               "opponent": "F. Cobolli",
@@ -95346,46 +96357,13 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 4,
       "totalWon": 6,
       "totalLost": 4,
       "longMatches": 0,
       "longMatchesPlayed": 10,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-08",
-              "opponent": "A. Rinderknech",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12153040
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "T. Droguet",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152862
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "D. Altmaier",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152199
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -95411,11 +96389,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 3,
-          "won": 2,
+          "matchCount": 6,
+          "won": 5,
           "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-08",
+              "opponent": "A. Rinderknech",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12153040
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "T. Droguet",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152862
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "D. Altmaier",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152199
+            },
             {
               "date": "2024-08-10",
               "opponent": "A. Rublev",
@@ -116772,46 +117774,13 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 4,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 6,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "C. Norrie",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153017
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "M. Navone",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152795
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "Z. Svajda",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152466
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 2,
@@ -116837,11 +117806,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 1,
-          "won": 0,
+          "matchCount": 4,
+          "won": 3,
           "lost": 1,
-          "roundReached": "1/32-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "C. Norrie",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153017
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "M. Navone",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152795
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "Z. Svajda",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152466
+            },
             {
               "date": "2024-08-07",
               "opponent": "U. Humbert",
@@ -116863,7 +117856,23 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Vukic",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -116902,31 +117911,6 @@
               "eventKey": 12151388
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Vukic",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "1 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
         },
         {
           "year": "2023",
@@ -131760,39 +132744,6 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "R. Jodar",
-              "round": "1/8-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12153031
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "A. Blockx",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152573
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "V. Kopriva",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152178
-            }
-          ]
-        },
-        {
           "year": "2025",
           "matchCount": 3,
           "won": 2,
@@ -131824,12 +132775,36 @@
         },
         {
           "year": "2024",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "R. Jodar",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12153031
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "A. Blockx",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152573
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "V. Kopriva",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152178
+            }
+          ]
         },
         {
           "year": "2023",
@@ -131865,7 +132840,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -142628,7 +143603,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 3,
       "totalWon": 3,
       "totalLost": 4,
       "longMatches": 0,
@@ -142636,10 +143611,26 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 3,
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
           "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Martin Etcheverry",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 5,
+          "won": 3,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -142673,32 +143664,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12151386
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Martin Etcheverry",
-              "round": "1/32-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
-        },
-        {
-          "year": "2024",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2024-08-06",
               "opponent": "L. Sonego",
@@ -142736,7 +143702,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -152825,39 +153791,6 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-09",
-              "opponent": "T. A. Tirante",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153179
-            },
-            {
-              "date": "2026-08-08",
-              "opponent": "T. Paul",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152870
-            },
-            {
-              "date": "2026-08-06",
-              "opponent": "G. Monfils",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12152207
-            }
-          ]
-        },
-        {
           "year": "2025",
           "matchCount": 4,
           "won": 3,
@@ -152893,6 +153826,39 @@
               "result": "2 - 0"
             }
           ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 3,
+          "lost": 0,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "2026-08-09",
+              "opponent": "T. A. Tirante",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153179
+            },
+            {
+              "date": "2026-08-08",
+              "opponent": "T. Paul",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152870
+            },
+            {
+              "date": "2026-08-06",
+              "opponent": "G. Monfils",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12152207
+            }
+          ]
         }
       ]
     },
@@ -152905,7 +153871,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -168450,7 +169416,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2024",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -168489,24 +169455,6 @@
               "eventKey": 12151384
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
-        },
-        {
-          "year": "2024",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
         },
         {
           "year": "2023",
@@ -168553,7 +169501,30 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "T. Boyer",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 3,
           "lost": 0,
@@ -168582,29 +169553,6 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12152464
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "A. Davidovich Fokina",
-              "round": "1/16-finals",
-              "won": false,
-              "result": "0 - 2"
-            },
-            {
-              "date": "",
-              "opponent": "T. Boyer",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0"
             }
           ]
         }
@@ -168794,10 +169742,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -168808,8 +169756,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -168819,11 +169767,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -168832,11 +169780,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -168845,11 +169793,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -168857,12 +169805,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -180815,7 +181763,23 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Schoolkate",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "0 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2024",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -180846,66 +181810,17 @@
               "eventKey": 12152569
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "",
-              "opponent": "T. Schoolkate",
-              "round": "1/64-finals",
-              "won": false,
-              "result": "0 - 2"
-            }
-          ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 4,
+      "editionsPlayed": 3,
       "totalWon": 11,
       "totalLost": 2,
       "longMatches": 0,
       "longMatchesPlayed": 13,
       "longMatchPct": 0,
       "years": [
-        {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
-          "matches": [
-            {
-              "date": "2026-08-10",
-              "opponent": "J. Fonseca",
-              "round": "1/8-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12153178
-            },
-            {
-              "date": "2026-08-07",
-              "opponent": "Z. Bergs",
-              "round": "1/16-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152794
-            },
-            {
-              "date": "2026-08-05",
-              "opponent": "J. Brooksby",
-              "round": "1/32-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12152341
-            }
-          ]
-        },
         {
           "year": "2025",
           "matchCount": 6,
@@ -180959,11 +181874,35 @@
         },
         {
           "year": "2024",
-          "matchCount": 2,
-          "won": 1,
+          "matchCount": 5,
+          "won": 4,
           "lost": 1,
-          "roundReached": "1/16-finals",
+          "roundReached": "1/8-finals",
           "matches": [
+            {
+              "date": "2026-08-10",
+              "opponent": "J. Fonseca",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12153178
+            },
+            {
+              "date": "2026-08-07",
+              "opponent": "Z. Bergs",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152794
+            },
+            {
+              "date": "2026-08-05",
+              "opponent": "J. Brooksby",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12152341
+            },
             {
               "date": "2024-08-08",
               "opponent": "A. Popyrin",
@@ -181191,10 +182130,10 @@
           "label": "Aug 11",
           "code": 65,
           "hi": 24,
-          "lo": 17,
+          "lo": 16,
           "rain": 72,
-          "wind": 16,
-          "humidity": 82,
+          "wind": 17,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -181205,8 +182144,8 @@
           "code": 65,
           "hi": 22,
           "lo": 15,
-          "rain": 15,
-          "wind": 14,
+          "rain": 9,
+          "wind": 16,
           "humidity": 79,
           "isMatch": false,
           "available": true
@@ -181216,11 +182155,11 @@
           "dow": "Thu",
           "label": "Aug 13",
           "code": 61,
-          "hi": 25,
+          "hi": 24,
           "lo": 15,
-          "rain": 68,
-          "wind": 13,
-          "humidity": 73,
+          "rain": 57,
+          "wind": 18,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -181229,11 +182168,11 @@
           "dow": "Fri",
           "label": "Aug 14",
           "code": 80,
-          "hi": 20,
+          "hi": 22,
           "lo": 13,
-          "rain": 68,
-          "wind": 16,
-          "humidity": 78,
+          "rain": 57,
+          "wind": 17,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -181242,11 +182181,11 @@
           "dow": "Sat",
           "label": "Aug 15",
           "code": 3,
-          "hi": 24,
-          "lo": 12,
-          "rain": 10,
-          "wind": 17,
-          "humidity": 54,
+          "hi": 22,
+          "lo": 11,
+          "rain": 9,
+          "wind": 15,
+          "humidity": 57,
           "isMatch": false,
           "available": true
         },
@@ -181254,12 +182193,12 @@
           "date": "2026-08-16",
           "dow": "Sun",
           "label": "Aug 16",
-          "code": 63,
-          "hi": 19,
+          "code": 55,
+          "hi": 18,
           "lo": 13,
-          "rain": 9,
-          "wind": 22,
-          "humidity": 75,
+          "rain": 13,
+          "wind": 10,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         }
@@ -183321,7 +184260,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-11T04:16:50Z",
+      "capturedAt": "2026-08-11T07:01:17Z",
       "books": {
         "Pinnacle": {
           "p1": [
