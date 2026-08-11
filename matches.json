@@ -1658,15 +1658,15 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Interrupted",
     "liveScore": [
       {
         "set": 1,
-        "p1": 3,
-        "p2": 0
+        "p1": 5,
+        "p2": 4
       }
     ],
-    "liveGameScore": "40 - 15",
+    "liveGameScore": "0 - 30",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
@@ -3726,7 +3726,10 @@
       "edgeVsPinnacleP1": -0.0282,
       "edgeVsPinnacleP2": 0.0282,
       "ts": "2026-08-09T09:05:27.760Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "ec5999036ea917ac4a6bf1548d7f6457",
@@ -10510,27 +10513,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6.3,
-        "p2": 7.7
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 2
-      },
-      {
-        "set": 3,
-        "p1": 6,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1308_d-sweeny.jpg",
     "oddsMovement": {
@@ -26585,7 +26572,31 @@
       "edgeVsPinnacleP1": 0.1125,
       "edgeVsPinnacleP2": -0.1125,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-7(3), 6-2, 7-5",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 7,
+          "p2": 5
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "69daea59d60cff2089090ea412633f17",
@@ -28860,21 +28871,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 40",
-    "liveServer": "p2",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2675_d-lajovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
@@ -29737,7 +29737,10 @@
       "edgeVsPinnacleP1": -0.0374,
       "edgeVsPinnacleP2": 0.0374,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "9a89ab0545c89f9506176828712d72ad",
@@ -31024,22 +31027,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "30 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9222_g-mpetshi-perricard.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/52663_t-svajda.jpg",
     "oddsMovement": {
@@ -31918,7 +31910,31 @@
       "edgeVsPinnacleP1": 0.0577,
       "edgeVsPinnacleP2": -0.0577,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "1-6, 6-1, 2-6",
+      "sets": [
+        {
+          "p1": 1,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "47b748fd15cde03265af5a3c69250811",
@@ -33695,9 +33711,14 @@
         "set": 1,
         "p1": 6,
         "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 3
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "40 - 40",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2410_g-heide.jpg",
@@ -34601,7 +34622,10 @@
       "edgeVsPinnacleP1": -0.0701,
       "edgeVsPinnacleP2": 0.0701,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "a7fc988ecdbe1712588d3728945df4bb",
@@ -36671,11 +36695,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "oddsMovement": {
@@ -37574,7 +37604,10 @@
       "edgeVsPinnacleP1": -0.0185,
       "edgeVsPinnacleP2": 0.0185,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "75d7f4b2f2c9876163de0cabc70121fc",
@@ -39487,10 +39520,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2985_k-nishikori.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
@@ -40402,7 +40441,10 @@
       "edgeVsPinnacleP1": 0.0593,
       "edgeVsPinnacleP2": -0.0593,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "5e0670500517324c26122ec75540fdb8",
@@ -223033,21 +223075,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 6
-      }
-    ],
-    "liveGameScore": "-",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
@@ -229982,7 +230013,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "2-6, 3-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "2849c8e4f691b7da4db027049604d279",
@@ -247745,11 +247793,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "oddsMovement": {
@@ -248487,7 +248541,10 @@
       "p2": 2.049,
       "bookmaker": "1xBet",
       "at": "2026-08-10T23:50:19.794Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12153797",
@@ -255790,16 +255847,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p2",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2675_d-lajovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
@@ -260184,22 +260235,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9222_g-mpetshi-perricard.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/52663_t-svajda.jpg",
     "oddsMovement": {
@@ -261068,7 +261108,28 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "1-6, 6-1, 2-6",
+      "sets": [
+        {
+          "p1": 1,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12153804",
@@ -262801,10 +262862,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2985_k-nishikori.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
@@ -263711,7 +263778,10 @@
       "p2": 1.653,
       "bookmaker": "1xBet",
       "at": "2026-08-10T23:50:17.937Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12153805",
@@ -265608,11 +265678,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "15 - 15",
-    "liveServer": "p2",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1308_d-sweeny.jpg",
     "oddsMovement": {
@@ -281657,7 +281727,28 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(3), 6-2, 7-5",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 7,
+          "p2": 5
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12153806",
@@ -291868,15 +291959,20 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 2,
-        "p2": 1
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 3
       }
     ],
-    "liveGameScore": "15 - 30",
+    "liveGameScore": "40 - 40",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2410_g-heide.jpg",
