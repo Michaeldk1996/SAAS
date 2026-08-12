@@ -202240,8 +202240,8 @@
     "live": true,
     "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": "40 - 40",
-    "liveServer": "p2",
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "interrupted": false,
     "partialScore": null,
     "finalScore": null,
@@ -208359,14 +208359,33 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "-",
+    "liveGameScore": null,
     "liveServer": null,
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null,
+    "finalScore": {
+      "display": "2-6, 7-6(2), 7-6(7)",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
     "retired": false,
     "walkover": false,
     "matchStats": {
@@ -275355,10 +275374,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "-",
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2675_d-lajovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
@@ -284269,7 +284288,28 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "2-6, 7-6(2), 7-6(7)",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "9a89ab0545c89f9506176828712d72ad",
@@ -297589,8 +297629,8 @@
     "live": true,
     "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": "40 - 40",
-    "liveServer": "p2",
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "oddsMovement": {
