@@ -49577,7 +49577,27 @@
       "edgeVsPinnacleP1": -0.0553,
       "edgeVsPinnacleP2": 0.0553,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-7(2), 1-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "961acb4705be0ba96b4124a7975a9720",
@@ -52363,7 +52383,31 @@
       "edgeVsPinnacleP1": -0.0794,
       "edgeVsPinnacleP2": 0.0794,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 6-4, 7-6(4)",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "d5f595af46c1f8fe5d44bef1ae5810a1",
@@ -53914,17 +53958,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1207_m-echargui.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "oddsMovement": {
@@ -55947,7 +55985,31 @@
       "edgeVsPinnacleP1": -0.0194,
       "edgeVsPinnacleP2": 0.0194,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-5, 2-6, 4-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "3676aaf3ae8e1e9940833843724a69ad",
@@ -58350,7 +58412,31 @@
       "edgeVsPinnacleP1": -0.0076,
       "edgeVsPinnacleP2": 0.0076,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "2-6, 6-3, 4-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "d740c69e22d8bea5a9178c4e8243f2e3",
@@ -61078,7 +61164,27 @@
       "edgeVsPinnacleP1": -0.029,
       "edgeVsPinnacleP2": 0.029,
       "ts": "2026-08-11T15:41:32.145Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "2-6, 1-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "5be7706779ccf641f13f3edba5699e53",
@@ -62794,11 +62900,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2853_j-wolf.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1880_s-mochizuki.jpg",
     "oddsMovement": {
@@ -63273,7 +63385,10 @@
       "edgeVsPinnacleP1": 0.0253,
       "edgeVsPinnacleP2": -0.0253,
       "ts": "2026-08-12T00:09:46.701Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "c61a191f053251a8c0594559006a26a1",
@@ -65303,11 +65418,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9608_s-shimabukuro.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2980_h-dellien.jpg",
     "oddsMovement": {
@@ -67066,7 +67192,10 @@
       "edgeVsPinnacleP1": -0.0425,
       "edgeVsPinnacleP2": 0.0425,
       "ts": "2026-08-11T11:58:34.076Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "96d04e74c6877e5d4e6da85d8350c728",
@@ -78933,13 +79062,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.37,
+      "p2": 1.57,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.37,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.57,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1101,
@@ -81164,13 +81299,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.66,
+      "p2": 2.2,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.66,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.2,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 358,
@@ -83130,13 +83271,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.2,
+      "p2": 1.66,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.2,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.66,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 9596,
@@ -86932,13 +87079,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.1,
+      "p2": 1.72,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.1,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.72,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 3317,
@@ -89064,13 +89217,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.4,
+      "p2": 1.33,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.4,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.33,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2978,
@@ -91141,13 +91300,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.4,
+      "p2": 1.33,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.4,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.33,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 39864,
@@ -92704,13 +92869,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.8,
+      "p2": 2.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.8,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2981,
@@ -94606,13 +94777,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.8,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.8,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 978,
@@ -96680,13 +96857,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.2,
+      "p2": 4.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.2,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 4.5,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 10884,
@@ -98458,13 +98641,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.2,
+      "p2": 1.36,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.2,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.36,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2674,
@@ -102257,13 +102446,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.66,
+      "p2": 2.2,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.66,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.2,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1103,
@@ -104046,13 +104241,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.75,
+      "p2": 1.28,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.75,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.28,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 954,
@@ -106136,13 +106337,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.72,
+      "p2": 2.1,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.72,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.1,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2413,
@@ -107685,13 +107892,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.53,
+      "p2": 2.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.53,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.5,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 431,
@@ -110023,13 +110236,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.57,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.37,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2986,
@@ -111876,13 +112095,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.5,
+      "p2": 2.62,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.5,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.62,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 366,
@@ -113886,13 +114111,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 4.0,
+      "p2": 1.25,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 4.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.25,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 401,
@@ -115916,13 +116147,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.8,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.8,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2972,
@@ -119751,7 +119988,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(8)",
       "sets": [
         {
           "p1": 6,
@@ -183756,7 +183993,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -257122,14 +257359,33 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "30 - 30",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null,
+    "finalScore": {
+      "display": "4-6, 7-6(5), 6-4",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
     "retired": false,
     "walkover": false,
     "matchStats": {
@@ -444935,7 +445191,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(8)",
       "sets": [
         {
           "p1": 6,
