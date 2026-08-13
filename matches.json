@@ -3864,26 +3864,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 3
-      },
-      {
-        "set": 3,
-        "p1": 5,
-        "p2": 7
-      }
-    ],
-    "liveGameScore": "-",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9608_s-shimabukuro.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2853_j-wolf.jpg",
@@ -16819,7 +16803,31 @@
       "edgeVsPinnacleP1": 0,
       "edgeVsPinnacleP2": 0,
       "ts": "2026-08-12T14:59:47.410Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 6-3, 5-7",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 5,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "2cef130db2870bc53dbac4bb36238fd6",
@@ -63869,13 +63877,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.6,
+      "p2": 2.25,
+      "bookmaker": "10Bet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.6,
+        "bookmaker": "10Bet"
+      },
+      "p2": {
+        "price": 2.25,
+        "bookmaker": "10Bet"
+      }
     },
     "tournamentRound": null,
     "p1Key": 360,
@@ -83090,7 +83104,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -94723,7 +94737,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -110765,7 +110779,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -339579,7 +339593,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7, 1-6",
+      "display": "6-7(2), 1-6",
       "sets": [
         {
           "p1": 6,
@@ -342385,7 +342399,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 6-4, 7-6",
+      "display": "4-6, 6-4, 7-6(4)",
       "sets": [
         {
           "p1": 4,
@@ -359720,7 +359734,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6, 7-6",
+      "display": "2-6, 7-6(2), 7-6(7)",
       "sets": [
         {
           "p1": 2,
@@ -389739,7 +389753,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -407685,7 +407699,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 6-4",
+      "display": "4-6, 7-6(5), 6-4",
       "sets": [
         {
           "p1": 4,
@@ -426026,7 +426040,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 7-5",
+      "display": "6-7(3), 6-2, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -467185,7 +467199,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7, 6-2, 7-5",
+      "display": "6-7(3), 6-2, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -478394,7 +478408,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6, 7-6",
+      "display": "2-6, 7-6(2), 7-6(7)",
       "sets": [
         {
           "p1": 2,
