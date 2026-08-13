@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-08-13T22:06:33.109Z",
+ "updated": "2026-08-13T23:44:12.896Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -3943,6 +3943,15 @@
    "flagged": 25,
    "newlyLogged": 1,
    "newlyFrozen": 3
+  },
+  {
+   "ts": "2026-08-13T23:44:12.896Z",
+   "run": "31754632364",
+   "priced": 46,
+   "logged": 449,
+   "flagged": 25,
+   "newlyLogged": 16,
+   "newlyFrozen": 2
   }
  ],
  "flags": {
@@ -7493,7 +7502,7 @@
    "status": "finished",
    "finalScore": "4-6, 5-7",
    "modelFairLast": 0.2327,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153178": {
    "key": "12153178",
@@ -7508,7 +7517,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-7(3)",
    "modelFairLast": 0.4825,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153179": {
    "key": "12153179",
@@ -7549,8 +7558,8 @@
    "firstSeen": "2026-08-11T18:41:11.779Z",
    "status": "finished",
    "finalScore": "2-6, 3-6",
-   "modelFairLast": 0.2491,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.2471,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153368": {
    "key": "12153368",
@@ -7571,7 +7580,7 @@
    "status": "finished",
    "finalScore": "5-4",
    "modelFairLast": 0.4868,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153464": {
    "key": "12153464",
@@ -7592,7 +7601,7 @@
    "status": "finished",
    "finalScore": "3-6, 2-6",
    "modelFairLast": 0.3387,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153472": {
    "key": "12153472",
@@ -7607,7 +7616,7 @@
    "status": "finished",
    "finalScore": "3-6, 1-6",
    "modelFairLast": 0.4065,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12153790": {
    "key": "12153790",
@@ -8027,7 +8036,7 @@
    "status": "finished",
    "finalScore": "6-7(3), 4-6",
    "modelFairLast": 0.6251,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154167": {
    "key": "12154167",
@@ -8063,7 +8072,7 @@
    "status": "finished",
    "finalScore": "6-7(4), 6-2, 3-6",
    "modelFairLast": 0.3791,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154170": {
    "key": "12154170",
@@ -8129,7 +8138,7 @@
    "status": "finished",
    "finalScore": "6-3, 7-5",
    "modelFairLast": 0.2776,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154174": {
    "key": "12154174",
@@ -8194,8 +8203,8 @@
    "firstSeen": "2026-08-11T22:35:35.595Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3453,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.3459,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154178": {
    "key": "12154178",
@@ -8205,12 +8214,18 @@
    "surface": "hard",
    "tour": "ATP Cincinnati",
    "modelFairEntry": 0.2189,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.3241,
+    "fairP2": 0.6759,
+    "edgeVsPinnacleP1": -0.1004,
+    "edgeVsPinnacleP2": 0.1004,
+    "ts": "2026-08-13T23:42:08.786Z"
+   },
    "firstSeen": "2026-08-11T22:35:35.595Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.2717,
-   "lastSeen": "2026-08-12T15:01:38.240Z"
+   "status": "finished",
+   "finalScore": "6-3, 7-6(3)",
+   "modelFairLast": 0.3241,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154179": {
    "key": "12154179",
@@ -8231,7 +8246,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-1, 6-4",
    "modelFairLast": 0.5913,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154180": {
    "key": "12154180",
@@ -8281,8 +8296,8 @@
    "firstSeen": "2026-08-11T22:35:35.595Z",
    "status": "finished",
    "finalScore": "6-1, 6-4",
-   "modelFairLast": 0.6512,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.6516,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154183": {
    "key": "12154183",
@@ -8307,12 +8322,18 @@
    "surface": "hard",
    "tour": "ATP Cincinnati",
    "modelFairEntry": 0.5935,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.607,
+    "fairP2": 0.393,
+    "edgeVsPinnacleP1": -0.0477,
+    "edgeVsPinnacleP2": 0.0477,
+    "ts": "2026-08-13T23:42:08.786Z"
+   },
    "firstSeen": "2026-08-11T22:35:35.595Z",
-   "status": "upcoming",
-   "finalScore": null,
-   "modelFairLast": 0.6082,
-   "lastSeen": "2026-08-12T15:01:38.240Z"
+   "status": "finished",
+   "finalScore": "7-6(9), 6-7(7), 7-6(4)",
+   "modelFairLast": 0.607,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154185": {
    "key": "12154185",
@@ -8333,7 +8354,7 @@
    "status": "finished",
    "finalScore": "3-6, 3-6",
    "modelFairLast": 0.2561,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154186": {
    "key": "12154186",
@@ -8384,7 +8405,7 @@
    "status": "finished",
    "finalScore": "2-6, 3-6",
    "modelFairLast": 0.3797,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "12154238": {
    "key": "12154238",
@@ -8519,7 +8540,247 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.85,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154633": {
+   "key": "12154633",
+   "date": "2026-08-14",
+   "p1": "K. Jacquet",
+   "p2": "D. Vallejo",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.6979,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6979,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154634": {
+   "key": "12154634",
+   "date": "2026-08-14",
+   "p1": "V. Kopriva",
+   "p2": "Q. Halys",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.3836,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.3836,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154635": {
+   "key": "12154635",
+   "date": "2026-08-14",
+   "p1": "S. Shimabukuro",
+   "p2": "H. Hurkacz",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.1828,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1828,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154636": {
+   "key": "12154636",
+   "date": "2026-08-14",
+   "p1": "C. Wong",
+   "p2": "D. Altmaier",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.5448,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5448,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154637": {
+   "key": "12154637",
+   "date": "2026-08-14",
+   "p1": "T. Droguet",
+   "p2": "M. Berrettini",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.3136,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.3136,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154638": {
+   "key": "12154638",
+   "date": "2026-08-14",
+   "p1": "Y. Hanfmann",
+   "p2": "L. van Assche",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.6201,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6201,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154639": {
+   "key": "12154639",
+   "date": "2026-08-14",
+   "p1": "J.J. Wolf",
+   "p2": "J. Duckworth",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.5405,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5405,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154640": {
+   "key": "12154640",
+   "date": "2026-08-14",
+   "p1": "M. Lajal",
+   "p2": "J. M. Cerundolo",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.4535,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4535,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154641": {
+   "key": "12154641",
+   "date": "2026-08-14",
+   "p1": "C. O'Connell",
+   "p2": "K. Majchrzak",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.3629,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.3629,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154642": {
+   "key": "12154642",
+   "date": "2026-08-14",
+   "p1": "F. Marozsan",
+   "p2": "M. Zheng",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.5805,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5805,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154643": {
+   "key": "12154643",
+   "date": "2026-08-14",
+   "p1": "H. Medjedovic",
+   "p2": "M. Trungelliti",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.8829,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.8829,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154644": {
+   "key": "12154644",
+   "date": "2026-08-14",
+   "p1": "A. Walton",
+   "p2": "N. Mejia",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.8297,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.8297,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154645": {
+   "key": "12154645",
+   "date": "2026-08-15",
+   "p1": "J. Faria",
+   "p2": "J. Brooksby",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.4041,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4041,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154665": {
+   "key": "12154665",
+   "date": "2026-08-15",
+   "p1": "R. Jodar",
+   "p2": "D. Shapovalov",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.7166,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.7166,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154666": {
+   "key": "12154666",
+   "date": "2026-08-15",
+   "p1": "M. Kecmanovic",
+   "p2": "F. Cobolli",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.348,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.348,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
+  },
+  "12154667": {
+   "key": "12154667",
+   "date": "2026-08-15",
+   "p1": "J-L. Struff",
+   "p2": "A. Tabilo",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.3064,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-13T23:44:12.896Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.3064,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
@@ -11864,7 +12125,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2552,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "2ee6f4af9d563a284d0d4bbb6bc9cf05": {
    "key": "2ee6f4af9d563a284d0d4bbb6bc9cf05",
@@ -11884,8 +12145,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.8034,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.8038,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "648cfb4cc8fc9788131de25db096c187": {
    "key": "648cfb4cc8fc9788131de25db096c187",
@@ -11905,8 +12166,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4511,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.4515,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "cbb11e879ab28e78921c07861b67be44": {
    "key": "cbb11e879ab28e78921c07861b67be44",
@@ -11989,8 +12250,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4632,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.4652,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "509167fafcaab04dcc7ddde64be44725": {
    "key": "509167fafcaab04dcc7ddde64be44725",
@@ -12008,10 +12269,10 @@
     "ts": "2026-08-12T19:26:16.750Z"
    },
    "firstSeen": "2026-08-12T17:16:29.478Z",
-   "status": "upcoming",
+   "status": "live",
    "finalScore": null,
-   "modelFairLast": 0.3899,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.3895,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "2cef130db2870bc53dbac4bb36238fd6": {
    "key": "2cef130db2870bc53dbac4bb36238fd6",
@@ -12032,7 +12293,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.3776,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "4da8ccbac0a53c5032aa76f22eaf5c1e": {
    "key": "4da8ccbac0a53c5032aa76f22eaf5c1e",
@@ -12115,8 +12376,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5075,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.5081,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "3d2f0d4cab73b8a66554ecbf7d5b3bb2": {
    "key": "3d2f0d4cab73b8a66554ecbf7d5b3bb2",
@@ -12155,10 +12416,10 @@
     "ts": "2026-08-12T19:26:16.750Z"
    },
    "firstSeen": "2026-08-12T17:16:29.478Z",
-   "status": "upcoming",
+   "status": "live",
    "finalScore": null,
    "modelFairLast": 0.4723,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "5782d36eac063401284681c5afe6cabb": {
    "key": "5782d36eac063401284681c5afe6cabb",
@@ -12178,8 +12439,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6225,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.6226,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "e89be7bc445c6a2ae314fbebcc24bbbe": {
    "key": "e89be7bc445c6a2ae314fbebcc24bbbe",
@@ -12200,7 +12461,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1879,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "55203cc873e5a02a692c1ab186b1bb4d": {
    "key": "55203cc873e5a02a692c1ab186b1bb4d",
@@ -12221,7 +12482,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5317,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "e723dde12617d39b432ea4de1747708f": {
    "key": "e723dde12617d39b432ea4de1747708f",
@@ -12241,8 +12502,8 @@
    "firstSeen": "2026-08-13T02:39:53.556Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6791,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "modelFairLast": 0.6774,
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   },
   "33445cba10fd821009f6520983627515": {
    "key": "33445cba10fd821009f6520983627515",
@@ -12299,7 +12560,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4954,
-   "lastSeen": "2026-08-13T22:06:33.109Z"
+   "lastSeen": "2026-08-13T23:44:12.896Z"
   }
  }
 }
