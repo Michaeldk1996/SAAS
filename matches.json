@@ -3995,11 +3995,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7011_j-draper.jpg",
     "oddsMovement": {
@@ -4450,7 +4456,10 @@
       "edgeVsPinnacleP1": -0.04,
       "edgeVsPinnacleP2": 0.04,
       "ts": "2026-08-12T21:05:40.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "33445cba10fd821009f6520983627515",
@@ -258691,11 +258700,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7011_j-draper.jpg",
     "oddsMovement": {
@@ -259133,7 +259148,10 @@
       "p2": 1.385,
       "bookmaker": "1xBet",
       "at": "2026-08-12T04:01:11.447Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154174",
