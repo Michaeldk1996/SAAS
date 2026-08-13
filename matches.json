@@ -4402,22 +4402,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7.7,
-        "p2": 6.3
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "0 - 40",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/731_m-lajal.jpg",
     "oddsMovement": {
@@ -5180,7 +5169,31 @@
       "edgeVsPinnacleP1": -0.0068,
       "edgeVsPinnacleP2": 0.0068,
       "ts": "2026-08-13T12:28:41.957Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(3), 3-6, 4-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "59754f2a97aefb64cddf9307017736a7",
@@ -6974,16 +6987,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
-        "p1": 1,
-        "p2": 2
+        "p1": 5,
+        "p2": 7
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 4
       }
     ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/827_h-rocha.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "oddsMovement": {
@@ -7778,7 +7796,10 @@
       "edgeVsPinnacleP1": 0.1004,
       "edgeVsPinnacleP2": -0.1004,
       "ts": "2026-08-13T12:28:41.957Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "cbb11e879ab28e78921c07861b67be44",
@@ -9568,16 +9589,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
-        "p1": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 3,
+        "p1": 6,
         "p2": 4
       }
     ],
-    "liveGameScore": "40 - 30",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 15",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1103_c-norrie.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "oddsMovement": {
@@ -11444,7 +11475,10 @@
       "edgeVsPinnacleP1": -0.0181,
       "edgeVsPinnacleP2": 0.0181,
       "ts": "2026-08-12T21:05:40.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "b4aae8b5af0569e0fc263e3254abd9a4",
@@ -16223,11 +16257,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "40 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/5979_j-choinski.jpg",
     "oddsMovement": {
@@ -16946,7 +16986,10 @@
       "edgeVsPinnacleP1": -0.0574,
       "edgeVsPinnacleP2": 0.0574,
       "ts": "2026-08-12T21:05:40.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "0a72bf929216acd2dcd46c9e4e05df43",
@@ -18906,11 +18949,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9596_r-a-burruchaga.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
     "oddsMovement": {
@@ -20033,7 +20082,10 @@
       "edgeVsPinnacleP1": -0.1051,
       "edgeVsPinnacleP2": 0.1051,
       "ts": "2026-08-12T21:05:40.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "2e9923ceba317a5a9048ad6e48180156",
@@ -76176,7 +76228,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7(3)",
+      "display": "3-6, 6-7",
       "sets": [
         {
           "p1": 3,
@@ -87809,7 +87861,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -103851,7 +103903,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(3), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -135013,27 +135065,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 3,
-        "p1": 2,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/731_m-lajal.jpg",
     "oddsMovement": {
@@ -135780,7 +135816,28 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-6(3), 3-6, 4-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "8495e0e3a6dde35993045cf05c0dacd0",
@@ -256072,11 +256129,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9596_r-a-burruchaga.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
     "oddsMovement": {
@@ -257186,7 +257249,10 @@
       "p2": 1.67,
       "bookmaker": "Betsson",
       "at": "2026-08-12T03:50:13.341Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154170",
@@ -276985,7 +277051,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
@@ -276994,12 +277060,17 @@
       },
       {
         "set": 2,
-        "p1": 3,
+        "p1": 6,
         "p2": 1
+      },
+      {
+        "set": 3,
+        "p1": 6,
+        "p2": 4
       }
     ],
-    "liveGameScore": "0 - 15",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 15",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1103_c-norrie.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "oddsMovement": {
@@ -291251,11 +291322,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "40 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/5979_j-choinski.jpg",
     "oddsMovement": {
@@ -291969,7 +292046,10 @@
       "p2": 2.6,
       "bookmaker": "Betsson",
       "at": "2026-08-12T03:50:12.222Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154185",
@@ -356610,7 +356690,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7(2), 1-6",
+      "display": "6-7, 1-6",
       "sets": [
         {
           "p1": 6,
@@ -359416,7 +359496,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 6-4, 7-6(4)",
+      "display": "4-6, 6-4, 7-6",
       "sets": [
         {
           "p1": 4,
@@ -376751,7 +376831,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6(2), 7-6(7)",
+      "display": "2-6, 7-6, 7-6",
       "sets": [
         {
           "p1": 2,
@@ -406770,7 +406850,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6(5), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -424716,7 +424796,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6(5), 6-4",
+      "display": "4-6, 7-6, 6-4",
       "sets": [
         {
           "p1": 4,
@@ -443057,7 +443137,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(3), 6-2, 7-5",
+      "display": "6-7, 6-2, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -484216,7 +484296,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7(3), 6-2, 7-5",
+      "display": "6-7, 6-2, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -495425,7 +495505,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6(2), 7-6(7)",
+      "display": "2-6, 7-6, 7-6",
       "sets": [
         {
           "p1": 2,
