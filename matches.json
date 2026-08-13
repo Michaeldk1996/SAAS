@@ -6609,10 +6609,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": null,
-    "liveGameScore": "5 - 3",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 7,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/731_m-lajal.jpg",
     "oddsMovement": {
@@ -9052,16 +9068,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 1
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1103_c-norrie.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "oddsMovement": {
@@ -12372,11 +12393,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "30 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/827_h-rocha.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "oddsMovement": {
@@ -13023,7 +13050,10 @@
       "edgeVsPinnacleP1": 0.1004,
       "edgeVsPinnacleP2": -0.1004,
       "ts": "2026-08-13T12:28:41.957Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "0a72bf929216acd2dcd46c9e4e05df43",
@@ -75153,7 +75183,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -86786,7 +86816,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -102828,7 +102858,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -128958,10 +128988,26 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": null,
-    "liveGameScore": "5 - 3",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 7,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/731_m-lajal.jpg",
     "oddsMovement": {
@@ -272501,16 +272547,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 1
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1103_c-norrie.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "oddsMovement": {
@@ -401433,7 +401484,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
