@@ -45816,13 +45816,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.87,
+      "p2": 1.87,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.87,
+        "bookmaker": "Sbo"
+      },
+      "p2": {
+        "price": 1.87,
+        "bookmaker": "Sbo"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/64-finals",
     "p1Key": 731,
@@ -53202,13 +53208,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.53,
+      "p2": 2.5,
+      "bookmaker": "888Sport"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.53,
+        "bookmaker": "888Sport"
+      },
+      "p2": {
+        "price": 2.5,
+        "bookmaker": "888Sport"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/64-finals",
     "p1Key": 10070,
@@ -83152,7 +83164,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -99224,7 +99236,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -481175,7 +481187,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
