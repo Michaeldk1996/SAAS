@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T23:39:51.260Z",
+  "generatedAt": "2026-08-14T23:01:38.969Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -912,6 +912,34 @@
       "hard_wr": 58,
       "grass_wr": 55,
       "top10_wins": 8
+    },
+    {
+      "name": "A. Blockx",
+      "rank": 36,
+      "primary": "solid_baseliner",
+      "archetype_label": "Solid Baseliner / Big Server + Baseliner",
+      "archetype_scores": {
+        "big_server": 40,
+        "big_server_baseliner": 83,
+        "attacking_baseliner": 70,
+        "solid_baseliner": 86,
+        "counter_puncher": 13,
+        "solid_defender": 46,
+        "all_court": 30
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 4,
+      "win_pct": 64.5,
+      "clay_wr": 73,
+      "hard_wr": 43,
+      "grass_wr": 0,
+      "top10_wins": 0
     },
     {
       "name": "D. Shapovalov",
@@ -2171,15 +2199,15 @@
       "name": "D. Vallejo",
       "rank": 84,
       "primary": "counter_puncher",
-      "archetype_label": "Counter Puncher / Solid Defender",
+      "archetype_label": "Counter Puncher",
       "archetype_scores": {
-        "big_server": 13,
-        "big_server_baseliner": 24,
-        "attacking_baseliner": 50,
-        "solid_baseliner": 65,
-        "counter_puncher": 86,
-        "solid_defender": 79,
-        "all_court": 26
+        "big_server": 15,
+        "big_server_baseliner": 26,
+        "attacking_baseliner": 55,
+        "solid_baseliner": 69,
+        "counter_puncher": 87,
+        "solid_defender": 74,
+        "all_court": 28
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2189,9 +2217,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 50,
+      "win_pct": 52,
       "clay_wr": 56,
-      "hard_wr": 50,
+      "hard_wr": 60,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -2905,13 +2933,13 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 62,
+        "big_server": 63,
         "big_server_baseliner": 58,
-        "attacking_baseliner": 76,
-        "solid_baseliner": 83,
-        "counter_puncher": 23,
-        "solid_defender": 43,
-        "all_court": 37
+        "attacking_baseliner": 75,
+        "solid_baseliner": 82,
+        "counter_puncher": 21,
+        "solid_defender": 42,
+        "all_court": 36
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2921,9 +2949,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 67.9,
+      "win_pct": 65.5,
       "clay_wr": 62,
-      "hard_wr": 79,
+      "hard_wr": 73,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -3544,12 +3572,12 @@
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 21,
-        "big_server_baseliner": 32,
-        "attacking_baseliner": 65,
-        "solid_baseliner": 59,
-        "counter_puncher": 86,
-        "solid_defender": 67,
-        "all_court": 33
+        "big_server_baseliner": 30,
+        "attacking_baseliner": 55,
+        "solid_baseliner": 54,
+        "counter_puncher": 80,
+        "solid_defender": 66,
+        "all_court": 31
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3559,9 +3587,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 60,
+      "win_pct": 57.1,
       "clay_wr": 56,
-      "hard_wr": 50,
+      "hard_wr": 43,
       "grass_wr": 80,
       "top10_wins": 0
     },
@@ -3707,13 +3735,13 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server",
       "archetype_scores": {
-        "big_server": 75,
-        "big_server_baseliner": 40,
-        "attacking_baseliner": 73,
-        "solid_baseliner": 77,
-        "counter_puncher": 21,
-        "solid_defender": 44,
-        "all_court": 34
+        "big_server": 74,
+        "big_server_baseliner": 38,
+        "attacking_baseliner": 71,
+        "solid_baseliner": 75,
+        "counter_puncher": 18,
+        "solid_defender": 42,
+        "all_court": 31
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3723,9 +3751,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 55.2,
+      "win_pct": 53.3,
       "clay_wr": 67,
-      "hard_wr": 55,
+      "hard_wr": 52,
       "grass_wr": 33,
       "top10_wins": 0
     },
@@ -4385,12 +4413,12 @@
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
         "big_server": 22,
-        "big_server_baseliner": 34,
-        "attacking_baseliner": 60,
+        "big_server_baseliner": 35,
+        "attacking_baseliner": 69,
         "solid_baseliner": 85,
-        "counter_puncher": 97,
-        "solid_defender": 83,
-        "all_court": 36
+        "counter_puncher": 96,
+        "solid_defender": 81,
+        "all_court": 38
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -4400,9 +4428,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 4,
-      "win_pct": 72.7,
+      "win_pct": 73.9,
       "clay_wr": 75,
-      "hard_wr": 67,
+      "hard_wr": 69,
       "grass_wr": 83,
       "top10_wins": 0
     },
@@ -16068,29 +16096,6 @@
       "win_pct": 44.4,
       "clay_wr": 43,
       "hard_wr": 67,
-      "grass_wr": null,
-      "matches": 54,
-      "source": "challenger"
-    },
-    {
-      "name": "Alexander Blockx",
-      "primary": "solid_baseliner",
-      "archetype_label": "Solid Baseliner / Big Server + Baseliner",
-      "archetype_scores": {
-        "big_server": 32,
-        "big_server_baseliner": 65,
-        "attacking_baseliner": 63,
-        "solid_baseliner": 75,
-        "counter_puncher": 55,
-        "solid_defender": 54,
-        "all_court": 44
-      },
-      "archetype_data_coverage": "challenger",
-      "partial_axes": [],
-      "badges": [],
-      "win_pct": 61.1,
-      "clay_wr": 57,
-      "hard_wr": 62,
       "grass_wr": null,
       "matches": 54,
       "source": "challenger"

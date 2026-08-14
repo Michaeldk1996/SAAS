@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-13T23:39:51.304Z",
+  "generatedAt": "2026-08-14T23:01:38.978Z",
   "source": "Computed from BSP 6-axis classification x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.",
   "minSampleN": 20,
-  "matchesCounted": 70245,
+  "matchesCounted": 70259,
   "archetypes": {
     "big_server": {
       "en": "Big Server"
@@ -47,7 +47,7 @@
       },
       "solid_baseliner": {
         "pct": 44,
-        "n": 1618
+        "n": 1619
       },
       "all_court_elite": {
         "pct": 16,
@@ -82,7 +82,7 @@
       },
       "solid_baseliner": {
         "pct": 61,
-        "n": 411
+        "n": 412
       },
       "all_court_elite": {
         "pct": 22,
@@ -117,7 +117,7 @@
       "attacking_baseliner": null,
       "solid_baseliner": {
         "pct": 57,
-        "n": 1029
+        "n": 1030
       },
       "all_court_elite": {
         "pct": 22,
@@ -143,15 +143,15 @@
     "solid_baseliner": {
       "big_server": {
         "pct": 56,
-        "n": 1618
+        "n": 1619
       },
       "big_server_baseliner": {
         "pct": 39,
-        "n": 411
+        "n": 412
       },
       "attacking_baseliner": {
         "pct": 43,
-        "n": 1029
+        "n": 1030
       },
       "solid_baseliner": null,
       "all_court_elite": {
@@ -160,11 +160,11 @@
       },
       "counter_puncher": {
         "pct": 58,
-        "n": 3246
+        "n": 3251
       },
       "solid_defender": {
         "pct": 64,
-        "n": 1357
+        "n": 1361
       },
       "all_court": {
         "pct": 59,
@@ -225,7 +225,7 @@
       },
       "solid_baseliner": {
         "pct": 42,
-        "n": 3246
+        "n": 3251
       },
       "all_court_elite": {
         "pct": 15,
@@ -260,7 +260,7 @@
       },
       "solid_baseliner": {
         "pct": 36,
-        "n": 1357
+        "n": 1361
       },
       "all_court_elite": {
         "pct": 11,
@@ -353,9 +353,9 @@
   },
   "surfaceNote": "matrixBySurface splits the same win% construction by court surface (hard/clay/grass). Same minSampleN floor applied per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 38877,
+    "hard": 38890,
     "clay": 22206,
-    "grass": 7474
+    "grass": 7475
   },
   "matrixBySurface": {
     "hard": {
@@ -371,7 +371,7 @@
         },
         "solid_baseliner": {
           "pct": 45,
-          "n": 1020
+          "n": 1021
         },
         "all_court_elite": {
           "pct": 17,
@@ -406,7 +406,7 @@
         },
         "solid_baseliner": {
           "pct": 64,
-          "n": 268
+          "n": 269
         },
         "all_court_elite": {
           "pct": 22,
@@ -467,11 +467,11 @@
       "solid_baseliner": {
         "big_server": {
           "pct": 55,
-          "n": 1020
+          "n": 1021
         },
         "big_server_baseliner": {
           "pct": 36,
-          "n": 268
+          "n": 269
         },
         "attacking_baseliner": {
           "pct": 44,
@@ -484,11 +484,11 @@
         },
         "counter_puncher": {
           "pct": 59,
-          "n": 1758
+          "n": 1763
         },
         "solid_defender": {
           "pct": 64,
-          "n": 708
+          "n": 712
         },
         "all_court": {
           "pct": 60,
@@ -549,7 +549,7 @@
         },
         "solid_baseliner": {
           "pct": 41,
-          "n": 1758
+          "n": 1763
         },
         "all_court_elite": {
           "pct": 16,
@@ -584,7 +584,7 @@
         },
         "solid_baseliner": {
           "pct": 36,
-          "n": 708
+          "n": 712
         },
         "all_court_elite": {
           "pct": 13,
@@ -1074,8 +1074,8 @@
         },
         "attacking_baseliner": null,
         "solid_baseliner": {
-          "pct": 60,
-          "n": 98
+          "pct": 61,
+          "n": 99
         },
         "all_court_elite": {
           "pct": 14,
@@ -1108,8 +1108,8 @@
           "n": 36
         },
         "attacking_baseliner": {
-          "pct": 40,
-          "n": 98
+          "pct": 39,
+          "n": 99
         },
         "solid_baseliner": null,
         "all_court_elite": {
