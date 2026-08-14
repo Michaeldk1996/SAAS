@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-08-14T06:07:01.190Z",
+ "updated": "2026-08-14T07:54:35.864Z",
  "runs": [
   {
    "ts": "2026-07-25T07:55:55.177Z",
@@ -3988,6 +3988,15 @@
    "flagged": 23,
    "newlyLogged": 17,
    "newlyFrozen": 3
+  },
+  {
+   "ts": "2026-08-14T07:54:35.864Z",
+   "run": "31781522671",
+   "priced": 49,
+   "logged": 476,
+   "flagged": 24,
+   "newlyLogged": 2,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -7595,7 +7604,7 @@
    "status": "finished",
    "finalScore": "2-6, 3-6",
    "modelFairLast": 0.2512,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12153368": {
    "key": "12153368",
@@ -7616,7 +7625,7 @@
    "status": "finished",
    "finalScore": "5-4",
    "modelFairLast": 0.4868,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12153464": {
    "key": "12153464",
@@ -7637,7 +7646,7 @@
    "status": "finished",
    "finalScore": "3-6, 2-6",
    "modelFairLast": 0.3387,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12153472": {
    "key": "12153472",
@@ -7652,7 +7661,7 @@
    "status": "finished",
    "finalScore": "3-6, 1-6",
    "modelFairLast": 0.4035,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12153790": {
    "key": "12153790",
@@ -8072,7 +8081,7 @@
    "status": "finished",
    "finalScore": "6-7(3), 4-6",
    "modelFairLast": 0.6321,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154167": {
    "key": "12154167",
@@ -8108,7 +8117,7 @@
    "status": "finished",
    "finalScore": "6-7(4), 6-2, 3-6",
    "modelFairLast": 0.3791,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154170": {
    "key": "12154170",
@@ -8129,7 +8138,7 @@
    "status": "finished",
    "finalScore": "1-3",
    "modelFairLast": 0.4599,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154171": {
    "key": "12154171",
@@ -8150,7 +8159,7 @@
    "status": "finished",
    "finalScore": "2-6, 7-6(5), 6-3",
    "modelFairLast": 0.4064,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154172": {
    "key": "12154172",
@@ -8186,7 +8195,7 @@
    "status": "finished",
    "finalScore": "6-3, 7-5",
    "modelFairLast": 0.2776,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154174": {
    "key": "12154174",
@@ -8251,8 +8260,8 @@
    "firstSeen": "2026-08-11T22:35:35.595Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3443,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3444,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154178": {
    "key": "12154178",
@@ -8273,7 +8282,7 @@
    "status": "finished",
    "finalScore": "6-3, 7-6(3)",
    "modelFairLast": 0.3241,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154179": {
    "key": "12154179",
@@ -8294,7 +8303,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-1, 6-4",
    "modelFairLast": 0.5913,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154180": {
    "key": "12154180",
@@ -8345,7 +8354,7 @@
    "status": "finished",
    "finalScore": "6-1, 6-4",
    "modelFairLast": 0.6517,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154183": {
    "key": "12154183",
@@ -8355,12 +8364,18 @@
    "surface": "hard",
    "tour": "ATP Cincinnati",
    "modelFairEntry": 0.4813,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.5123,
+    "fairP2": 0.4877,
+    "edgeVsPinnacleP1": -0.1071,
+    "edgeVsPinnacleP2": 0.1071,
+    "ts": "2026-08-14T07:52:58.062Z"
+   },
    "firstSeen": "2026-08-11T22:35:35.595Z",
    "status": "finished",
    "finalScore": "6-7(0), 6-7(4)",
-   "modelFairLast": 0.4516,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.5123,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154184": {
    "key": "12154184",
@@ -8381,7 +8396,7 @@
    "status": "finished",
    "finalScore": "7-6(9), 6-7(7), 7-6(4)",
    "modelFairLast": 0.607,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154185": {
    "key": "12154185",
@@ -8402,7 +8417,7 @@
    "status": "finished",
    "finalScore": "3-6, 3-6",
    "modelFairLast": 0.2561,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154186": {
    "key": "12154186",
@@ -8453,7 +8468,7 @@
    "status": "finished",
    "finalScore": "2-6, 3-6",
    "modelFairLast": 0.3767,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154238": {
    "key": "12154238",
@@ -8579,7 +8594,7 @@
    "status": "finished",
    "finalScore": "6-3, 7-6(4)",
    "modelFairLast": 0.6893,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154559": {
    "key": "12154559",
@@ -8819,7 +8834,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7158,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "12154666": {
    "key": "12154666",
@@ -12269,7 +12284,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2551,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "2ee6f4af9d563a284d0d4bbb6bc9cf05": {
    "key": "2ee6f4af9d563a284d0d4bbb6bc9cf05",
@@ -12289,8 +12304,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.8007,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.8006,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "648cfb4cc8fc9788131de25db096c187": {
    "key": "648cfb4cc8fc9788131de25db096c187",
@@ -12310,8 +12325,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4487,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.4486,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "cbb11e879ab28e78921c07861b67be44": {
    "key": "cbb11e879ab28e78921c07861b67be44",
@@ -12394,8 +12409,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4652,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.4658,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "509167fafcaab04dcc7ddde64be44725": {
    "key": "509167fafcaab04dcc7ddde64be44725",
@@ -12436,8 +12451,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3759,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3758,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "4da8ccbac0a53c5032aa76f22eaf5c1e": {
    "key": "4da8ccbac0a53c5032aa76f22eaf5c1e",
@@ -12520,8 +12535,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5043,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.5042,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "3d2f0d4cab73b8a66554ecbf7d5b3bb2": {
    "key": "3d2f0d4cab73b8a66554ecbf7d5b3bb2",
@@ -12583,8 +12598,8 @@
    "firstSeen": "2026-08-12T17:16:29.478Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6214,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.6216,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "e89be7bc445c6a2ae314fbebcc24bbbe": {
    "key": "e89be7bc445c6a2ae314fbebcc24bbbe",
@@ -12605,7 +12620,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1879,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "55203cc873e5a02a692c1ab186b1bb4d": {
    "key": "55203cc873e5a02a692c1ab186b1bb4d",
@@ -12704,7 +12719,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4997,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "e1c816c6cc0d8ae274b94a4e7aaa1a7c": {
    "key": "e1c816c6cc0d8ae274b94a4e7aaa1a7c",
@@ -12719,7 +12734,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6584,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "63de568a68ea702e8747d93823acc76b": {
    "key": "63de568a68ea702e8747d93823acc76b",
@@ -12734,7 +12749,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5676,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "5bb3e0af3a441163651f8fe9a8ed24b1": {
    "key": "5bb3e0af3a441163651f8fe9a8ed24b1",
@@ -12749,7 +12764,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.1932,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "0394b204ab59b0d58190b4d1b7091f12": {
    "key": "0394b204ab59b0d58190b4d1b7091f12",
@@ -12763,8 +12778,8 @@
    "firstSeen": "2026-08-14T04:32:46.153Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3652,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3427,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "46b64b5633750386a344956a8f633e93": {
    "key": "46b64b5633750386a344956a8f633e93",
@@ -12778,8 +12793,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5405,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.5846,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "004bb16f84524dd6732e063a9ccb9b75": {
    "key": "004bb16f84524dd6732e063a9ccb9b75",
@@ -12793,8 +12808,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6201,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.6049,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "b2b3d4815ce07b69091af0a2dd774ebb": {
    "key": "b2b3d4815ce07b69091af0a2dd774ebb",
@@ -12808,8 +12823,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3136,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3236,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "8ba1992997fbe3aa6cbf7d943b69e8a4": {
    "key": "8ba1992997fbe3aa6cbf7d943b69e8a4",
@@ -12823,8 +12838,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3629,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3624,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "d47cfe884feef26b212042f1b0509091": {
    "key": "d47cfe884feef26b212042f1b0509091",
@@ -12838,8 +12853,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4535,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.4705,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "f7ed85f6580daba81546ca573c427c4b": {
    "key": "f7ed85f6580daba81546ca573c427c4b",
@@ -12853,8 +12868,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.8297,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.7707,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "f33423aff855fa1119b99ab7ceaf24bf": {
    "key": "f33423aff855fa1119b99ab7ceaf24bf",
@@ -12868,8 +12883,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5805,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.5333,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "7c3317ee13a125988b8cf1de75a83e72": {
    "key": "7c3317ee13a125988b8cf1de75a83e72",
@@ -12883,8 +12898,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.8829,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.8233,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "37cb4f797eb736fbbe08b3d216b1879e": {
    "key": "37cb4f797eb736fbbe08b3d216b1879e",
@@ -12898,8 +12913,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4141,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.4203,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "d89559eaf844fea4855bcbff13365257": {
    "key": "d89559eaf844fea4855bcbff13365257",
@@ -12913,8 +12928,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3063,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3244,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "96e3d4bffe77632e3210338121298653": {
    "key": "96e3d4bffe77632e3210338121298653",
@@ -12928,8 +12943,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.7165,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.6771,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "f551af92d39ffa1017a768094e863aba": {
    "key": "f551af92d39ffa1017a768094e863aba",
@@ -12944,7 +12959,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.85,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "8e15f2e40f7ec7066f5afc8efb01a34d": {
    "key": "8e15f2e40f7ec7066f5afc8efb01a34d",
@@ -12958,8 +12973,8 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3483,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.3934,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "2e4d462d3dd145a203bc4362a0c05647": {
    "key": "2e4d462d3dd145a203bc4362a0c05647",
@@ -12974,7 +12989,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.9,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   },
   "5d30f10b08e2450aa2271da247559fbe": {
    "key": "5d30f10b08e2450aa2271da247559fbe",
@@ -12988,8 +13003,38 @@
    "firstSeen": "2026-08-14T06:07:01.190Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.4161,
-   "lastSeen": "2026-08-14T06:07:01.190Z"
+   "modelFairLast": 0.4811,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
+  },
+  "5d725de44edafc7a3cca450e7f31e9cc": {
+   "key": "5d725de44edafc7a3cca450e7f31e9cc",
+   "date": "2026-08-15",
+   "p1": "Mattia Bellucci",
+   "p2": "Jakub Mensik",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.1864,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-14T07:54:35.864Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1864,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
+  },
+  "13aa444236e8a33dd795f43a8ae2d193": {
+   "key": "13aa444236e8a33dd795f43a8ae2d193",
+   "date": "2026-08-15",
+   "p1": "Luciano Darderi",
+   "p2": "Rinky Hijikata",
+   "surface": "hard",
+   "tour": "ATP Cincinnati",
+   "modelFairEntry": 0.4858,
+   "valueSnapshot": null,
+   "firstSeen": "2026-08-14T07:54:35.864Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4858,
+   "lastSeen": "2026-08-14T07:54:35.864Z"
   }
  }
 }
