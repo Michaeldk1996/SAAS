@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T23:01:38.969Z",
+  "generatedAt": "2026-08-15T22:31:22.443Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -919,13 +919,13 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Big Server + Baseliner",
       "archetype_scores": {
-        "big_server": 40,
-        "big_server_baseliner": 83,
+        "big_server": 81,
+        "big_server_baseliner": 84,
         "attacking_baseliner": 70,
         "solid_baseliner": 86,
         "counter_puncher": 13,
-        "solid_defender": 46,
-        "all_court": 30
+        "solid_defender": 44,
+        "all_court": 37
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -935,9 +935,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 4,
-      "win_pct": 64.5,
+      "win_pct": 65.6,
       "clay_wr": 73,
-      "hard_wr": 43,
+      "hard_wr": 50,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -2201,13 +2201,13 @@
       "primary": "counter_puncher",
       "archetype_label": "Counter Puncher",
       "archetype_scores": {
-        "big_server": 15,
-        "big_server_baseliner": 26,
-        "attacking_baseliner": 55,
-        "solid_baseliner": 69,
+        "big_server": 16,
+        "big_server_baseliner": 19,
+        "attacking_baseliner": 57,
+        "solid_baseliner": 70,
         "counter_puncher": 87,
-        "solid_defender": 74,
-        "all_court": 28
+        "solid_defender": 72,
+        "all_court": 27
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2217,9 +2217,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 52,
+      "win_pct": 53.8,
       "clay_wr": 56,
-      "hard_wr": 60,
+      "hard_wr": 67,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -2280,12 +2280,12 @@
       "archetype_label": "Solid Baseliner / Solid Defender",
       "archetype_scores": {
         "big_server": 17,
-        "big_server_baseliner": 28,
-        "attacking_baseliner": 45,
+        "big_server_baseliner": 29,
+        "attacking_baseliner": 52,
         "solid_baseliner": 81,
-        "counter_puncher": 32,
+        "counter_puncher": 33,
         "solid_defender": 75,
-        "all_court": 22
+        "all_court": 24
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -2295,9 +2295,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 67.6,
+      "win_pct": 68.4,
       "clay_wr": 74,
-      "hard_wr": 67,
+      "hard_wr": 69,
       "grass_wr": 0,
       "top10_wins": 0
     },
@@ -2463,11 +2463,11 @@
       "primary": "solid_baseliner",
       "archetype_label": "Solid Baseliner / Attacking Baseliner",
       "archetype_scores": {
-        "big_server": 21,
+        "big_server": 20,
         "big_server_baseliner": 31,
         "attacking_baseliner": 57,
-        "solid_baseliner": 67,
-        "counter_puncher": 23,
+        "solid_baseliner": 65,
+        "counter_puncher": 24,
         "solid_defender": 50,
         "all_court": 24
       },
@@ -2479,9 +2479,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 51.5,
+      "win_pct": 52.9,
       "clay_wr": 54,
-      "hard_wr": 56,
+      "hard_wr": 59,
       "grass_wr": 25,
       "top10_wins": 0
     },
@@ -3172,13 +3172,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server + Baseliner",
       "archetype_scores": {
-        "big_server": 37,
-        "big_server_baseliner": 79,
-        "attacking_baseliner": 81,
+        "big_server": 29,
+        "big_server_baseliner": 81,
+        "attacking_baseliner": 83,
         "solid_baseliner": 76,
-        "counter_puncher": 25,
-        "solid_defender": 44,
-        "all_court": 35
+        "counter_puncher": 60,
+        "solid_defender": 46,
+        "all_court": 43
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3188,9 +3188,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 67.6,
+      "win_pct": 68.6,
       "clay_wr": 65,
-      "hard_wr": 67,
+      "hard_wr": 70,
       "grass_wr": 80,
       "top10_wins": 0
     },
