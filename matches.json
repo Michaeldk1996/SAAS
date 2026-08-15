@@ -7879,6 +7879,11 @@
         "set": 1,
         "p1": 3,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 5
       }
     ],
     "liveGameScore": "0 - 0",
@@ -10954,7 +10959,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -10963,12 +10968,17 @@
       },
       {
         "set": 2,
-        "p1": 3,
-        "p2": 4
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1905_n-djokovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "oddsMovement": {
@@ -18125,9 +18135,14 @@
         "set": 2,
         "p1": 6,
         "p2": 2
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "0 - 30",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
@@ -20666,11 +20681,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
@@ -21181,7 +21202,10 @@
       "edgeVsPinnacleP1": -0.0581,
       "edgeVsPinnacleP2": 0.0581,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154727",
@@ -29253,16 +29277,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
         "p1": 1,
-        "p2": 0
+        "p2": 2
       }
     ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "30 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1106_a-de-minaur.jpg",
     "oddsMovement": {
@@ -256150,9 +256179,14 @@
         "set": 2,
         "p1": 6,
         "p2": 2
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "0 - 30",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
@@ -259070,7 +259104,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -259079,12 +259113,17 @@
       },
       {
         "set": 2,
-        "p1": 3,
-        "p2": 4
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1905_n-djokovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "oddsMovement": {
@@ -264524,16 +264563,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
         "p1": 1,
-        "p2": 0
+        "p2": 2
       }
     ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "30 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1106_a-de-minaur.jpg",
     "oddsMovement": {
@@ -273058,11 +273102,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
@@ -273573,7 +273623,10 @@
       "edgeVsPinnacleP1": -0.0818,
       "edgeVsPinnacleP2": 0.0818,
       "ts": "2026-08-14T12:11:35.184Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "d89559eaf844fea4855bcbff13365257",
@@ -275805,6 +275858,11 @@
         "set": 1,
         "p1": 3,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 5
       }
     ],
     "liveGameScore": "0 - 0",
