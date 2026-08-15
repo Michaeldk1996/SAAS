@@ -23015,11 +23015,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "oddsMovement": {
@@ -24326,7 +24332,10 @@
       "edgeVsPinnacleP1": -0.0599,
       "edgeVsPinnacleP2": 0.0599,
       "ts": "2026-08-12T21:05:40.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "96e3d4bffe77632e3210338121298653",
@@ -100323,7 +100332,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -116395,7 +116404,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -118883,7 +118892,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 3-6",
+      "display": "6-7(4), 6-2, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -125177,7 +125186,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(3)",
       "sets": [
         {
           "p1": 6,
@@ -144826,7 +144835,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 7-6",
+      "display": "7-6(9), 6-7(7), 7-6(4)",
       "sets": [
         {
           "p1": 7,
@@ -378461,7 +378470,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 7-6",
+      "display": "7-6(9), 6-7(7), 7-6(4)",
       "sets": [
         {
           "p1": 7,
@@ -393153,7 +393162,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 3-6",
+      "display": "6-7(4), 6-2, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -395687,7 +395696,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(3)",
       "sets": [
         {
           "p1": 6,
@@ -419866,7 +419875,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 3-6, 4-6",
+      "display": "7-6(3), 3-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -445827,7 +445836,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 4-6",
+      "display": "7-6(3), 3-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -551805,7 +551814,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(4), 7-6(2)",
       "sets": [
         {
           "p1": 7,
@@ -554621,7 +554630,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 2-6, 6-3",
+      "display": "7-6(5), 2-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -578590,7 +578599,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7, 1-6",
+      "display": "6-7(2), 1-6",
       "sets": [
         {
           "p1": 6,
@@ -581396,7 +581405,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 6-4, 7-6",
+      "display": "4-6, 6-4, 7-6(4)",
       "sets": [
         {
           "p1": 4,
