@@ -1659,7 +1659,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -1668,12 +1668,12 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 1
+        "p1": 2,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 15",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1192_m-arnaldi.jpg",
     "oddsMovement": {
@@ -4584,7 +4584,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -4593,11 +4593,11 @@
       },
       {
         "set": 2,
-        "p1": 2,
-        "p2": 3
+        "p1": 5,
+        "p2": 4
       }
     ],
-    "liveGameScore": "40 - 40",
+    "liveGameScore": "15 - 15",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
@@ -13349,7 +13349,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -13358,11 +13358,11 @@
       },
       {
         "set": 2,
-        "p1": 2,
-        "p2": 1
+        "p1": 4,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 15",
+    "liveGameScore": "0 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
@@ -22774,11 +22774,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "oddsMovement": {
@@ -23509,7 +23515,10 @@
       "edgeVsPinnacleP1": -0.1231,
       "edgeVsPinnacleP2": 0.1231,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154728",
@@ -248098,7 +248107,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -248107,11 +248116,11 @@
       },
       {
         "set": 2,
-        "p1": 2,
-        "p2": 1
+        "p1": 4,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 15",
+    "liveGameScore": "0 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
@@ -250696,7 +250705,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -250705,11 +250714,11 @@
       },
       {
         "set": 2,
-        "p1": 2,
-        "p2": 3
+        "p1": 5,
+        "p2": 4
       }
     ],
-    "liveGameScore": "40 - 40",
+    "liveGameScore": "15 - 15",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
@@ -253403,7 +253412,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Interrupted",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
@@ -253412,12 +253421,12 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 1
+        "p1": 2,
+        "p2": 3
       }
     ],
-    "liveGameScore": "40 - 15",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1192_m-arnaldi.jpg",
     "oddsMovement": {
@@ -261341,11 +261350,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "oddsMovement": {
@@ -262063,7 +262078,10 @@
       "p2": 1.385,
       "bookmaker": "1xBet",
       "at": "2026-08-14T19:47:48.681Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "34007b316b794dc6ebc83d00a63f37c1",
