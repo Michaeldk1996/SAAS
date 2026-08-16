@@ -15685,11 +15685,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "oddsMovement": {
@@ -16496,7 +16502,10 @@
       "edgeVsPinnacleP1": -0.0607,
       "edgeVsPinnacleP2": 0.0607,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154780",
@@ -29161,11 +29170,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "oddsMovement": {
@@ -30284,7 +30299,10 @@
       "edgeVsPinnacleP1": -0.0532,
       "edgeVsPinnacleP2": 0.0532,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154817",
@@ -34487,11 +34505,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "oddsMovement": {
@@ -35574,7 +35598,10 @@
       "edgeVsPinnacleP1": 0.1019,
       "edgeVsPinnacleP2": -0.1019,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154822",
@@ -454750,11 +454777,11 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 2,
+        "p2": 4
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "0 - 40",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
@@ -462812,12 +462839,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 2,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "oddsMovement": {
@@ -477063,12 +477090,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 2,
+        "p2": 3
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveGameScore": "15 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
     "oddsMovement": {
