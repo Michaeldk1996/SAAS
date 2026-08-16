@@ -56378,13 +56378,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.14,
+      "p2": 5.8,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.14,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 5.8,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 1980,
