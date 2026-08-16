@@ -15686,16 +15686,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Retired",
     "liveScore": [
       {
         "set": 1,
-        "p1": 6,
+        "p1": 7,
         "p2": 5
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 0",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "oddsMovement": {
@@ -20971,10 +20976,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2972_b-van-de-zandschulp.jpg",
@@ -21682,7 +21693,10 @@
       "edgeVsPinnacleP1": 0.0655,
       "edgeVsPinnacleP2": -0.0655,
       "ts": "2026-08-15T11:54:12.258Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154789",
@@ -29171,16 +29185,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
         "p1": 4,
-        "p2": 5
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 2
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "oddsMovement": {
@@ -34512,9 +34531,14 @@
         "set": 1,
         "p1": 4,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 4
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "15 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
@@ -452022,10 +452046,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/40058_j-fonseca.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2972_b-van-de-zandschulp.jpg",
@@ -452726,7 +452756,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "31f5c33bc7fcabad1fdcdf1e5c1d6a22",
@@ -454773,16 +454806,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Retired",
     "liveScore": [
       {
         "set": 1,
-        "p1": 6,
+        "p1": 7,
         "p2": 5
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "15 - 0",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "oddsMovement": {
@@ -462835,16 +462873,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
         "p1": 4,
-        "p2": 5
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 2
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/395_m-trungelliti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "oddsMovement": {
@@ -477092,9 +477135,14 @@
         "set": 1,
         "p1": 4,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 4
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "15 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9515_m-zheng.jpg",
