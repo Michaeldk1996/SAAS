@@ -19177,13 +19177,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.22,
+      "p2": 4.33,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.22,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 4.33,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 40058,
@@ -21057,13 +21063,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.5,
+      "p2": 1.53,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.5,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.53,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 9515,
@@ -22878,13 +22890,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.5,
+      "p2": 2.62,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.5,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.62,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 2847,
@@ -25299,13 +25317,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.1,
+      "p2": 1.72,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.1,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.72,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 2838,
@@ -27744,13 +27768,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 5.0,
+      "p2": 1.16,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 5.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.16,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 388,
@@ -30011,13 +30041,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.25,
+      "p2": 4.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.25,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 4.0,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Cincinnati - 1/16-finals",
     "p1Key": 2832,
@@ -304634,22 +304670,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "40 - A",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
     "oddsMovement": {
@@ -313939,7 +313964,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 4-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "96e3d4bffe77632e3210338121298653",
