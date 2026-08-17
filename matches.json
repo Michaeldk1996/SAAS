@@ -1778,10 +1778,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
@@ -2417,7 +2423,10 @@
       "edgeVsPinnacleP1": -0.0284,
       "edgeVsPinnacleP2": 0.0284,
       "ts": "2026-08-16T11:48:43.548Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154933",
@@ -4273,10 +4282,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
@@ -4944,7 +4959,10 @@
       "edgeVsPinnacleP1": -0.0256,
       "edgeVsPinnacleP2": 0.0256,
       "ts": "2026-08-16T11:48:43.548Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154936",
