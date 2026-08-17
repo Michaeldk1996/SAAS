@@ -4844,10 +4844,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
@@ -5987,7 +5993,10 @@
       "edgeVsPinnacleP1": 0.0031,
       "edgeVsPinnacleP2": -0.0031,
       "ts": "2026-08-16T11:48:43.548Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12154952",
@@ -324622,7 +324631,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Interrupted",
     "liveScore": [
       {
         "set": 1,
@@ -324632,11 +324641,11 @@
       {
         "set": 2,
         "p1": 1,
-        "p2": 2
+        "p2": 5
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/8174_a-fery.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1106_a-de-minaur.jpg",
     "oddsMovement": {
