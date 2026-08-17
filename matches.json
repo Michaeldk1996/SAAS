@@ -1779,7 +1779,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 3",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
@@ -1793,12 +1793,12 @@
       },
       {
         "set": 3,
-        "p1": 3,
-        "p2": 3
+        "p1": 5,
+        "p2": 7
       }
     ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p1",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39913_a-blockx.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "oddsMovement": {
@@ -4292,11 +4292,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "40 - 0",
-    "liveServer": "p2",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "oddsMovement": {
@@ -4966,7 +4966,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "7-6(5), 7-6(4)",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12154936",
