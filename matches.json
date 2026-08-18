@@ -2358,11 +2358,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "oddsMovement": {
@@ -3525,7 +3531,10 @@
       "edgeVsPinnacleP1": -0.077,
       "edgeVsPinnacleP2": 0.077,
       "ts": "2026-08-17T12:04:12.201Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155080",
