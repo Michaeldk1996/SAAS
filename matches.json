@@ -1980,11 +1980,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10070_a-walton.jpg",
     "oddsMovement": {
@@ -2803,7 +2809,10 @@
       "edgeVsPinnacleP1": -0.0435,
       "edgeVsPinnacleP2": 0.0435,
       "ts": "2026-08-17T12:04:12.201Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155053",
@@ -19145,13 +19154,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.11,
+      "p2": 6.5,
+      "bookmaker": "888Sport"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.11,
+        "bookmaker": "888Sport"
+      },
+      "p2": {
+        "price": 6.5,
+        "bookmaker": "888Sport"
+      }
     },
     "tournamentRound": null,
     "p1Key": 2832,
@@ -247604,7 +247619,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -247613,11 +247628,16 @@
       },
       {
         "set": 2,
-        "p1": 6,
+        "p1": 7,
         "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
       }
     ],
-    "liveGameScore": "2 - 2",
+    "liveGameScore": "15 - 15",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
