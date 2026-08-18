@@ -1982,24 +1982,8 @@
     },
     "live": true,
     "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 3,
-        "p1": 3,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "40 - 40",
+    "liveScore": null,
+    "liveGameScore": "5 - 3",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10070_a-walton.jpg",
@@ -4995,11 +4979,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/388_j-m-cerundolo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2073_f-auger-aliassime.jpg",
     "oddsMovement": {
@@ -5518,7 +5508,10 @@
       "edgeVsPinnacleP1": -0.0749,
       "edgeVsPinnacleP2": 0.0749,
       "ts": "2026-08-17T12:04:12.201Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155081",
