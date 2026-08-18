@@ -4507,11 +4507,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2959_j-lehecka.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
@@ -5278,7 +5284,10 @@
       "edgeVsPinnacleP1": 0.0255,
       "edgeVsPinnacleP2": -0.0255,
       "ts": "2026-08-16T11:48:43.548Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155036",
@@ -336507,15 +336516,9 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "15 - 0",
+    "liveStatus": "Set 2",
+    "liveScore": null,
+    "liveGameScore": "0 - 0",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/13091_t-atmane.jpg",
