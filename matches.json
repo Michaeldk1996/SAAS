@@ -1846,11 +1846,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "oddsMovement": {
@@ -2821,7 +2827,10 @@
       "edgeVsPinnacleP1": -0.0677,
       "edgeVsPinnacleP2": 0.0677,
       "ts": "2026-08-18T12:04:00.115Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155493",
@@ -177465,21 +177474,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 2,
-        "p1": 5,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "40 - 30",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "oddsMovement": {
