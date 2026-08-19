@@ -5675,11 +5675,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "40 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
     "oddsMovement": {
@@ -6726,7 +6732,10 @@
       "edgeVsPinnacleP1": 0.0695,
       "edgeVsPinnacleP2": -0.0695,
       "ts": "2026-08-18T12:04:00.115Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12155823",
@@ -178395,7 +178404,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -178404,11 +178413,16 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 1
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 0
       }
     ],
-    "liveGameScore": "30 - 40",
+    "liveGameScore": "0 - 0",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
