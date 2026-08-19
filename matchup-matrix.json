@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-18T22:37:57.462Z",
+  "generatedAt": "2026-08-19T23:12:08.531Z",
   "source": "Computed from BSP 6-axis classification x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype (primary label) vs column, over matches where both players have a reliably-determined primary label. Cells below the sample floor show n but no pct.",
   "minSampleN": 20,
-  "matchesCounted": 70244,
+  "matchesCounted": 70259,
   "archetypes": {
     "big_server": {
       "en": "Big Server"
@@ -94,7 +94,7 @@
       },
       "solid_defender": {
         "pct": 71,
-        "n": 637
+        "n": 639
       },
       "all_court": {
         "pct": 67,
@@ -129,7 +129,7 @@
       },
       "solid_defender": {
         "pct": 63,
-        "n": 1718
+        "n": 1722
       },
       "all_court": {
         "pct": 57,
@@ -163,8 +163,8 @@
         "n": 3244
       },
       "solid_defender": {
-        "pct": 64,
-        "n": 1356
+        "pct": 63,
+        "n": 1359
       },
       "all_court": {
         "pct": 59,
@@ -234,7 +234,7 @@
       "counter_puncher": null,
       "solid_defender": {
         "pct": 61,
-        "n": 5877
+        "n": 5878
       },
       "all_court": {
         "pct": 52,
@@ -252,15 +252,15 @@
       },
       "big_server_baseliner": {
         "pct": 29,
-        "n": 637
+        "n": 639
       },
       "attacking_baseliner": {
         "pct": 37,
-        "n": 1718
+        "n": 1722
       },
       "solid_baseliner": {
-        "pct": 36,
-        "n": 1356
+        "pct": 37,
+        "n": 1359
       },
       "all_court_elite": {
         "pct": 11,
@@ -268,7 +268,7 @@
       },
       "counter_puncher": {
         "pct": 39,
-        "n": 5877
+        "n": 5878
       },
       "solid_defender": null,
       "all_court": {
@@ -276,8 +276,8 @@
         "n": 1881
       },
       "clay_specialist": {
-        "pct": 44,
-        "n": 752
+        "pct": 43,
+        "n": 755
       }
     },
     "all_court": {
@@ -341,8 +341,8 @@
         "n": 1893
       },
       "solid_defender": {
-        "pct": 56,
-        "n": 752
+        "pct": 57,
+        "n": 755
       },
       "all_court": {
         "pct": 39,
@@ -353,8 +353,8 @@
   },
   "surfaceNote": "matrixBySurface splits the same win% construction by court surface (hard/clay/grass). Same minSampleN floor applied per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 38879,
-    "clay": 22202,
+    "hard": 38890,
+    "clay": 22206,
     "grass": 7475
   },
   "matrixBySurface": {
@@ -418,7 +418,7 @@
         },
         "solid_defender": {
           "pct": 68,
-          "n": 379
+          "n": 381
         },
         "all_court": {
           "pct": 68,
@@ -453,7 +453,7 @@
         },
         "solid_defender": {
           "pct": 66,
-          "n": 999
+          "n": 1003
         },
         "all_court": {
           "pct": 54,
@@ -488,7 +488,7 @@
         },
         "solid_defender": {
           "pct": 64,
-          "n": 707
+          "n": 709
         },
         "all_court": {
           "pct": 60,
@@ -558,7 +558,7 @@
         "counter_puncher": null,
         "solid_defender": {
           "pct": 62,
-          "n": 2857
+          "n": 2858
         },
         "all_court": {
           "pct": 52,
@@ -576,15 +576,15 @@
         },
         "big_server_baseliner": {
           "pct": 32,
-          "n": 379
+          "n": 381
         },
         "attacking_baseliner": {
           "pct": 34,
-          "n": 999
+          "n": 1003
         },
         "solid_baseliner": {
           "pct": 36,
-          "n": 707
+          "n": 709
         },
         "all_court_elite": {
           "pct": 13,
@@ -592,7 +592,7 @@
         },
         "counter_puncher": {
           "pct": 38,
-          "n": 2857
+          "n": 2858
         },
         "solid_defender": null,
         "all_court": {
@@ -601,7 +601,7 @@
         },
         "clay_specialist": {
           "pct": 59,
-          "n": 173
+          "n": 174
         }
       },
       "all_court": {
@@ -666,7 +666,7 @@
         },
         "solid_defender": {
           "pct": 41,
-          "n": 173
+          "n": 174
         },
         "all_court": {
           "pct": 25,
@@ -805,7 +805,7 @@
         },
         "solid_defender": {
           "pct": 62,
-          "n": 518
+          "n": 519
         },
         "all_court": {
           "pct": 57,
@@ -901,7 +901,7 @@
         },
         "solid_baseliner": {
           "pct": 38,
-          "n": 518
+          "n": 519
         },
         "all_court_elite": {
           "pct": 9,
@@ -918,7 +918,7 @@
         },
         "clay_specialist": {
           "pct": 38,
-          "n": 556
+          "n": 558
         }
       },
       "all_court": {
@@ -983,7 +983,7 @@
         },
         "solid_defender": {
           "pct": 62,
-          "n": 556
+          "n": 558
         },
         "all_court": {
           "pct": 48,

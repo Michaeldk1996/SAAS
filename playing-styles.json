@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T22:37:57.456Z",
+  "generatedAt": "2026-08-19T23:12:08.522Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -3172,13 +3172,13 @@
       "primary": "attacking_baseliner",
       "archetype_label": "Attacking Baseliner / Big Server + Baseliner",
       "archetype_scores": {
-        "big_server": 29,
-        "big_server_baseliner": 80,
+        "big_server": 59,
+        "big_server_baseliner": 81,
         "attacking_baseliner": 83,
-        "solid_baseliner": 76,
+        "solid_baseliner": 75,
         "counter_puncher": 62,
-        "solid_defender": 46,
-        "all_court": 43
+        "solid_defender": 44,
+        "all_court": 54
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3188,9 +3188,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 69.4,
+      "win_pct": 70.3,
       "clay_wr": 65,
-      "hard_wr": 73,
+      "hard_wr": 75,
       "grass_wr": 80,
       "top10_wins": 0
     },
@@ -3276,6 +3276,34 @@
       "clay_wr": 58,
       "hard_wr": 33,
       "grass_wr": 40,
+      "top10_wins": 0
+    },
+    {
+      "name": "N. Budkov Kjaer",
+      "rank": 124,
+      "primary": "solid_defender",
+      "archetype_label": "Solid Defender / Solid Baseliner",
+      "archetype_scores": {
+        "big_server": 14,
+        "big_server_baseliner": 23,
+        "attacking_baseliner": 44,
+        "solid_baseliner": 63,
+        "counter_puncher": 31,
+        "solid_defender": 69,
+        "all_court": 21
+      },
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3,
+      "win_pct": 46.2,
+      "clay_wr": 46,
+      "hard_wr": 50,
+      "grass_wr": 67,
       "top10_wins": 0
     },
     {
@@ -4061,9 +4089,9 @@
         "big_server": 21,
         "big_server_baseliner": 35,
         "attacking_baseliner": 77,
-        "solid_baseliner": 93,
+        "solid_baseliner": 92,
         "counter_puncher": 73,
-        "solid_defender": 68,
+        "solid_defender": 69,
         "all_court": 36
       },
       "archetype_data_coverage": "full",
@@ -4071,9 +4099,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 10,
-      "win_pct": 76.4,
+      "win_pct": 75,
       "clay_wr": 82,
-      "hard_wr": 73,
+      "hard_wr": 71,
       "grass_wr": 67,
       "top10_wins": 0
     },
