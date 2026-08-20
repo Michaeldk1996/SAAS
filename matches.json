@@ -2456,13 +2456,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.5,
+      "p2": 1.3,
+      "bookmaker": "888Sport"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.5,
+        "bookmaker": "888Sport"
+      },
+      "p2": {
+        "price": 1.3,
+        "bookmaker": "888Sport"
+      }
     },
     "tournamentRound": "ATP Cincinnati - Quarter-finals",
     "p1Key": 366,
