@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T23:12:08.522Z",
+  "generatedAt": "2026-08-20T22:31:06.165Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -3169,16 +3169,16 @@
     {
       "name": "J. Faria",
       "rank": 119,
-      "primary": "attacking_baseliner",
-      "archetype_label": "Attacking Baseliner / Big Server + Baseliner",
+      "primary": "all_court",
+      "archetype_label": "All-Court Player",
       "archetype_scores": {
-        "big_server": 59,
-        "big_server_baseliner": 81,
-        "attacking_baseliner": 83,
-        "solid_baseliner": 75,
-        "counter_puncher": 62,
+        "big_server": 73,
+        "big_server_baseliner": 79,
+        "attacking_baseliner": 81,
+        "solid_baseliner": 73,
+        "counter_puncher": 58,
         "solid_defender": 44,
-        "all_court": 54
+        "all_court": 55
       },
       "archetype_data_coverage": "partial",
       "partial_axes": [
@@ -3188,9 +3188,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 70.3,
+      "win_pct": 68.4,
       "clay_wr": 65,
-      "hard_wr": 75,
+      "hard_wr": 69,
       "grass_wr": 80,
       "top10_wins": 0
     },
