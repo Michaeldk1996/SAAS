@@ -1790,9 +1790,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 22.1,
-      "windSpeed": 6.7,
-      "humidity": 76,
+      "temperature": 22.5,
+      "windSpeed": 4,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -1853,12 +1853,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": true,
           "available": true
         },
@@ -1866,7 +1866,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -1879,12 +1879,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -1899,7 +1899,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-20T21:24:13Z",
+      "capturedAt": "2026-08-21T01:05:15Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -2022,6 +2022,46 @@
             [
               "2026-08-20T21:21:20.857Z",
               3.87
+            ],
+            [
+              "2026-08-20T21:27:09.888Z",
+              3.85
+            ],
+            [
+              "2026-08-20T21:48:23.258Z",
+              3.82
+            ],
+            [
+              "2026-08-20T21:54:28.206Z",
+              3.82
+            ],
+            [
+              "2026-08-20T21:54:33.872Z",
+              3.89
+            ],
+            [
+              "2026-08-20T23:15:02.109Z",
+              3.8
+            ],
+            [
+              "2026-08-20T23:15:09.018Z",
+              3.8
+            ],
+            [
+              "2026-08-21T00:04:14.995Z",
+              3.91
+            ],
+            [
+              "2026-08-21T00:10:17.809Z",
+              3.93
+            ],
+            [
+              "2026-08-21T00:30:33.021Z",
+              3.93
+            ],
+            [
+              "2026-08-21T00:30:33.341Z",
+              3.96
             ]
           ],
           "p2": [
@@ -2152,6 +2192,46 @@
             [
               "2026-08-20T21:21:20.857Z",
               1.304
+            ],
+            [
+              "2026-08-20T21:27:09.888Z",
+              1.307
+            ],
+            [
+              "2026-08-20T21:48:23.258Z",
+              1.311
+            ],
+            [
+              "2026-08-20T21:54:28.206Z",
+              1.311
+            ],
+            [
+              "2026-08-20T21:54:33.872Z",
+              1.303
+            ],
+            [
+              "2026-08-20T23:15:02.109Z",
+              1.306
+            ],
+            [
+              "2026-08-20T23:15:09.018Z",
+              1.306
+            ],
+            [
+              "2026-08-21T00:04:14.995Z",
+              1.3
+            ],
+            [
+              "2026-08-21T00:10:17.809Z",
+              1.299
+            ],
+            [
+              "2026-08-21T00:30:33.021Z",
+              1.298
+            ],
+            [
+              "2026-08-21T00:30:33.341Z",
+              1.295
             ]
           ]
         },
@@ -2162,8 +2242,16 @@
               3.8
             ],
             [
-              "2026-08-20T20:31:23.969Z",
+              "2026-08-21T00:30:44.109Z",
               3.8
+            ],
+            [
+              "2026-08-21T00:31:04.322Z",
+              4.0
+            ],
+            [
+              "2026-08-21T00:37:52.713Z",
+              4.0
             ]
           ],
           "p2": [
@@ -2172,8 +2260,16 @@
               1.25
             ],
             [
-              "2026-08-20T20:31:23.969Z",
+              "2026-08-21T00:30:44.109Z",
               1.25
+            ],
+            [
+              "2026-08-21T00:31:04.322Z",
+              1.222
+            ],
+            [
+              "2026-08-21T00:37:52.713Z",
+              1.222
             ]
           ]
         },
@@ -2234,6 +2330,50 @@
             [
               "2026-08-20T17:16:34.323Z",
               3.78
+            ],
+            [
+              "2026-08-20T21:43:36.194Z",
+              3.83
+            ],
+            [
+              "2026-08-20T21:51:13.615Z",
+              3.83
+            ],
+            [
+              "2026-08-20T22:09:59.021Z",
+              3.78
+            ],
+            [
+              "2026-08-21T00:20:02.804Z",
+              3.78
+            ],
+            [
+              "2026-08-21T00:21:03.278Z",
+              3.74
+            ],
+            [
+              "2026-08-21T00:27:05.532Z",
+              3.74
+            ],
+            [
+              "2026-08-21T00:28:59.395Z",
+              3.56
+            ],
+            [
+              "2026-08-21T00:32:49.384Z",
+              3.74
+            ],
+            [
+              "2026-08-21T00:33:57.389Z",
+              3.56
+            ],
+            [
+              "2026-08-21T00:35:05.558Z",
+              3.56
+            ],
+            [
+              "2026-08-21T00:36:26.221Z",
+              3.74
             ]
           ],
           "p2": [
@@ -2292,6 +2432,50 @@
             [
               "2026-08-20T17:16:34.323Z",
               1.313
+            ],
+            [
+              "2026-08-20T21:43:36.194Z",
+              1.308
+            ],
+            [
+              "2026-08-20T21:51:13.615Z",
+              1.308
+            ],
+            [
+              "2026-08-20T22:09:59.021Z",
+              1.313
+            ],
+            [
+              "2026-08-21T00:20:02.804Z",
+              1.313
+            ],
+            [
+              "2026-08-21T00:21:03.278Z",
+              1.285
+            ],
+            [
+              "2026-08-21T00:27:05.532Z",
+              1.285
+            ],
+            [
+              "2026-08-21T00:28:59.395Z",
+              1.304
+            ],
+            [
+              "2026-08-21T00:32:49.384Z",
+              1.285
+            ],
+            [
+              "2026-08-21T00:33:57.389Z",
+              1.304
+            ],
+            [
+              "2026-08-21T00:35:05.558Z",
+              1.304
+            ],
+            [
+              "2026-08-21T00:36:26.221Z",
+              1.285
             ]
           ]
         },
@@ -2322,8 +2506,12 @@
               3.7
             ],
             [
-              "2026-08-20T21:20:52.539Z",
+              "2026-08-21T00:30:47.976Z",
               3.7
+            ],
+            [
+              "2026-08-21T00:37:38.010Z",
+              3.6
             ]
           ],
           "p2": [
@@ -2352,8 +2540,12 @@
               1.28
             ],
             [
-              "2026-08-20T21:20:52.539Z",
+              "2026-08-21T00:30:47.976Z",
               1.28
+            ],
+            [
+              "2026-08-21T00:37:38.010Z",
+              1.27
             ]
           ]
         },
@@ -2382,6 +2574,10 @@
             [
               "2026-08-20T19:04:56.412Z",
               3.7
+            ],
+            [
+              "2026-08-21T00:29:00.612Z",
+              3.7
             ]
           ],
           "p2": [
@@ -2408,6 +2604,10 @@
             [
               "2026-08-20T19:04:56.412Z",
               1.27
+            ],
+            [
+              "2026-08-21T00:29:00.612Z",
+              1.27
             ]
           ]
         },
@@ -2430,7 +2630,7 @@
               3.75
             ],
             [
-              "2026-08-20T20:49:55.674Z",
+              "2026-08-21T00:25:48.271Z",
               3.75
             ]
           ],
@@ -2452,7 +2652,7 @@
               1.286
             ],
             [
-              "2026-08-20T20:49:55.674Z",
+              "2026-08-21T00:25:48.271Z",
               1.286
             ]
           ]
@@ -2483,7 +2683,7 @@
     "id": "upcoming-12156150",
     "day": "tomorrow",
     "date": "2026-08-21",
-    "time": "17:00",
+    "time": "21:00",
     "p1": "T. Fritz",
     "p2": "B. Nakashima",
     "tour": "ATP Cincinnati",
@@ -4761,9 +4961,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 27.1,
-      "windSpeed": 1.5,
-      "humidity": 65,
+      "temperature": 30,
+      "windSpeed": 4,
+      "humidity": 42,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -4824,12 +5024,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": true,
           "available": true
         },
@@ -4837,7 +5037,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -4850,12 +5050,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -4870,7 +5070,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-20T21:24:13Z",
+      "capturedAt": "2026-08-21T01:05:15Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -5033,6 +5233,14 @@
             [
               "2026-08-20T21:21:20.857Z",
               1.54
+            ],
+            [
+              "2026-08-20T22:51:34.311Z",
+              1.546
+            ],
+            [
+              "2026-08-20T23:42:29.140Z",
+              1.546
             ]
           ],
           "p2": [
@@ -5183,6 +5391,14 @@
             [
               "2026-08-20T21:21:20.857Z",
               2.63
+            ],
+            [
+              "2026-08-20T22:51:34.311Z",
+              2.65
+            ],
+            [
+              "2026-08-20T23:42:29.140Z",
+              2.65
             ]
           ]
         },
@@ -5193,7 +5409,7 @@
               1.526
             ],
             [
-              "2026-08-20T20:31:23.788Z",
+              "2026-08-21T00:54:08.243Z",
               1.526
             ]
           ],
@@ -5203,7 +5419,7 @@
               2.4
             ],
             [
-              "2026-08-20T20:31:23.788Z",
+              "2026-08-21T00:54:08.243Z",
               2.4
             ]
           ]
@@ -5229,6 +5445,14 @@
             [
               "2026-08-20T21:21:00.636Z",
               1.552
+            ],
+            [
+              "2026-08-20T21:46:34.938Z",
+              1.542
+            ],
+            [
+              "2026-08-20T22:23:02.616Z",
+              1.552
             ]
           ],
           "p2": [
@@ -5251,6 +5475,14 @@
             [
               "2026-08-20T21:21:00.636Z",
               2.621
+            ],
+            [
+              "2026-08-20T21:46:34.938Z",
+              2.652
+            ],
+            [
+              "2026-08-20T22:23:02.616Z",
+              2.621
             ]
           ]
         },
@@ -5265,7 +5497,7 @@
               1.52
             ],
             [
-              "2026-08-20T21:18:37.832Z",
+              "2026-08-21T00:14:16.829Z",
               1.52
             ]
           ],
@@ -5279,7 +5511,7 @@
               2.55
             ],
             [
-              "2026-08-20T21:18:37.832Z",
+              "2026-08-21T00:14:16.829Z",
               2.55
             ]
           ]
@@ -5303,7 +5535,7 @@
               1.5
             ],
             [
-              "2026-08-20T09:40:07.269Z",
+              "2026-08-20T21:36:15.538Z",
               1.5
             ]
           ],
@@ -5325,7 +5557,7 @@
               2.57
             ],
             [
-              "2026-08-20T09:40:07.269Z",
+              "2026-08-20T21:36:15.538Z",
               2.57
             ]
           ]
@@ -5353,7 +5585,7 @@
               1.533
             ],
             [
-              "2026-08-20T20:54:11.431Z",
+              "2026-08-21T00:47:53.105Z",
               1.533
             ]
           ],
@@ -5379,7 +5611,7 @@
               2.5
             ],
             [
-              "2026-08-20T20:54:11.431Z",
+              "2026-08-21T00:47:53.105Z",
               2.5
             ]
           ]
@@ -5408,9 +5640,9 @@
   },
   {
     "id": "upcoming-12156151",
-    "day": "tomorrow",
-    "date": "2026-08-21",
-    "time": "17:00",
+    "day": "day2",
+    "date": "2026-08-22",
+    "time": "01:00",
     "p1": "L. Musetti",
     "p2": "F. Tiafoe",
     "tour": "ATP Cincinnati",
@@ -7605,9 +7837,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 27.1,
-      "windSpeed": 1.5,
-      "humidity": 65,
+      "temperature": 24.9,
+      "windSpeed": 6.8,
+      "humidity": 57,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -7668,38 +7900,38 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
-          "isMatch": true,
+          "humidity": 70,
+          "isMatch": false,
           "available": true
         },
         {
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
           "wind": 17,
           "humidity": 69,
-          "isMatch": false,
+          "isMatch": true,
           "available": true
         },
         {
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -10626,12 +10858,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -10639,7 +10871,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -10652,12 +10884,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -22187,12 +22419,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -22200,7 +22432,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -22213,12 +22445,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -30613,12 +30845,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -30626,7 +30858,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -30639,12 +30871,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -32302,9 +32534,16 @@
           ]
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8,
           "matches": [
+            {
+              "opponent": "T. Paul",
+              "result": "2 - 1",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": true
+            },
             {
               "opponent": "R. Jodar",
               "result": "2 - 1",
@@ -32765,7 +33004,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 31,
+          "won": 32,
           "lost": 17
         },
         "clay": {
@@ -32773,7 +33012,7 @@
           "lost": 7
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8
         },
         "grass": {
@@ -32782,7 +33021,7 @@
         },
         "atp": {
           "total": {
-            "won": 31,
+            "won": 32,
             "lost": 17
           },
           "clay": {
@@ -32790,7 +33029,7 @@
             "lost": 7
           },
           "hard": {
-            "won": 12,
+            "won": 13,
             "lost": 8
           },
           "grass": {
@@ -33174,19 +33413,27 @@
     },
     "p2TournamentHistory": {
       "editionsPlayed": 3,
-      "totalWon": 5,
+      "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
-      "longMatchesPlayed": 7,
+      "longMatchesPlayed": 8,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
-          "won": 3,
+          "matchCount": 4,
+          "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals",
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "T. Paul",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "R. Jodar",
@@ -33299,28 +33546,28 @@
         "p2": {
           "matchCount": 65,
           "stats": {
-            "Service:Aces": 6.1,
+            "Service:Aces": 6.2,
             "Service:Double Faults": 3,
-            "Service:1st Serve Points Won": 72.3,
-            "Service:2nd Serve Points Won": 52.4,
+            "Service:1st Serve Points Won": 72.4,
+            "Service:2nd Serve Points Won": 52.5,
             "Service:Break Points Saved": 63.2,
-            "Return:Break Points Converted": 38.9,
-            "Points:Service Points Won": 63.5,
+            "Return:Break Points Converted": 38.7,
+            "Points:Service Points Won": 63.6,
             "Points:Return Points Won": 35.9,
             "Points:Total Points Won": 49.9,
-            "Points:Winners": 25.4,
-            "Points:Unforced Errors": 28.4
+            "Points:Winners": 25.5,
+            "Points:Unforced Errors": 28.5
           },
           "samples": {
             "Service:Aces": 65,
             "Service:Double Faults": 65,
-            "Service:1st Serve Points Won": 3056,
-            "Service:2nd Serve Points Won": 2433,
+            "Service:1st Serve Points Won": 3065,
+            "Service:2nd Serve Points Won": 2444,
             "Service:Break Points Saved": 397,
-            "Return:Break Points Converted": 375,
-            "Points:Service Points Won": 5488,
-            "Points:Return Points Won": 5343,
-            "Points:Total Points Won": 10831,
+            "Return:Break Points Converted": 380,
+            "Points:Service Points Won": 5509,
+            "Points:Return Points Won": 5377,
+            "Points:Total Points Won": 10886,
             "Points:Winners": 59,
             "Points:Unforced Errors": 59
           }
@@ -33359,28 +33606,28 @@
         "p2": {
           "matchCount": 49,
           "stats": {
-            "Service:Aces": 6,
+            "Service:Aces": 6.1,
             "Service:Double Faults": 3.5,
-            "Service:1st Serve Points Won": 70.3,
-            "Service:2nd Serve Points Won": 51.4,
+            "Service:1st Serve Points Won": 70.5,
+            "Service:2nd Serve Points Won": 51.6,
             "Service:Break Points Saved": 60.6,
-            "Return:Break Points Converted": 35.4,
-            "Points:Service Points Won": 61.8,
-            "Points:Return Points Won": 34.8,
-            "Points:Total Points Won": 48.5,
-            "Points:Winners": 23.6,
-            "Points:Unforced Errors": 29.4
+            "Return:Break Points Converted": 35.2,
+            "Points:Service Points Won": 61.9,
+            "Points:Return Points Won": 34.9,
+            "Points:Total Points Won": 48.6,
+            "Points:Winners": 23.8,
+            "Points:Unforced Errors": 29.6
           },
           "samples": {
             "Service:Aces": 49,
             "Service:Double Faults": 49,
-            "Service:1st Serve Points Won": 2145,
-            "Service:2nd Serve Points Won": 1781,
+            "Service:1st Serve Points Won": 2154,
+            "Service:2nd Serve Points Won": 1792,
             "Service:Break Points Saved": 350,
-            "Return:Break Points Converted": 302,
-            "Points:Service Points Won": 3924,
-            "Points:Return Points Won": 3824,
-            "Points:Total Points Won": 7748,
+            "Return:Break Points Converted": 307,
+            "Points:Service Points Won": 3945,
+            "Points:Return Points Won": 3858,
+            "Points:Total Points Won": 7803,
             "Points:Winners": 41,
             "Points:Unforced Errors": 41
           }
@@ -33395,10 +33642,10 @@
           "pct": 42.9
         },
         "p2": {
-          "wins": 11,
+          "wins": 12,
           "losses": 8,
-          "sampleSize": 19,
-          "pct": 57.9
+          "sampleSize": 20,
+          "pct": 60
         }
       }
     },
@@ -33486,12 +33733,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -33499,7 +33746,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -33512,12 +33759,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -36626,12 +36873,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -36639,7 +36886,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -36652,12 +36899,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -39821,12 +40068,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -39834,7 +40081,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -39847,12 +40094,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -43083,12 +43330,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -43096,7 +43343,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -43109,12 +43356,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -46574,12 +46821,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -46587,7 +46834,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -46600,12 +46847,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -58306,8 +58553,15 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9,
+          "lost": 10,
           "matches": [
+            {
+              "opponent": "F. Cobolli",
+              "result": "1 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": false
+            },
             {
               "opponent": "A. Zverev",
               "result": "2 - 1",
@@ -59018,7 +59272,7 @@
         "allTier": true,
         "total": {
           "won": 36,
-          "lost": 15
+          "lost": 16
         },
         "clay": {
           "won": 11,
@@ -59026,7 +59280,7 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9
+          "lost": 10
         },
         "grass": {
           "won": 6,
@@ -59035,7 +59289,7 @@
         "atp": {
           "total": {
             "won": 36,
-            "lost": 15
+            "lost": 16
           },
           "clay": {
             "won": 11,
@@ -59043,7 +59297,7 @@
           },
           "hard": {
             "won": 18,
-            "lost": 9
+            "lost": 10
           },
           "grass": {
             "won": 6,
@@ -59748,18 +60002,26 @@
     "p1TournamentHistory": {
       "editionsPlayed": 8,
       "totalWon": 11,
-      "totalLost": 7,
+      "totalLost": 8,
       "longMatches": 0,
-      "longMatchesPlayed": 18,
+      "longMatchesPlayed": 19,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "F. Cobolli",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "A. Zverev",
@@ -60036,28 +60298,28 @@
           "stats": {
             "Service:Aces": 6.9,
             "Service:Double Faults": 2,
-            "Service:1st Serve Points Won": 74.8,
-            "Service:2nd Serve Points Won": 55.2,
-            "Service:Break Points Saved": 65.9,
+            "Service:1st Serve Points Won": 74.6,
+            "Service:2nd Serve Points Won": 55.3,
+            "Service:Break Points Saved": 66.1,
             "Return:Break Points Converted": 41.3,
-            "Points:Winners": 27.2,
-            "Points:Unforced Errors": 29.2,
-            "Points:Service Points Won": 67,
-            "Points:Return Points Won": 38,
-            "Points:Total Points Won": 52.3
+            "Points:Winners": 27.3,
+            "Points:Unforced Errors": 29.5,
+            "Points:Service Points Won": 66.9,
+            "Points:Return Points Won": 37.9,
+            "Points:Total Points Won": 52.2
           },
           "samples": {
             "Service:Aces": 55,
             "Service:Double Faults": 55,
-            "Service:1st Serve Points Won": 2821,
-            "Service:2nd Serve Points Won": 1823,
-            "Service:Break Points Saved": 252,
+            "Service:1st Serve Points Won": 2838,
+            "Service:2nd Serve Points Won": 1840,
+            "Service:Break Points Saved": 257,
             "Return:Break Points Converted": 332,
             "Points:Winners": 52,
             "Points:Unforced Errors": 52,
-            "Points:Service Points Won": 4630,
-            "Points:Return Points Won": 4855,
-            "Points:Total Points Won": 9485
+            "Points:Service Points Won": 4664,
+            "Points:Return Points Won": 4874,
+            "Points:Total Points Won": 9538
           }
         },
         "p2": {
@@ -60094,30 +60356,30 @@
         "p1": {
           "matchCount": 51,
           "stats": {
-            "Service:Aces": 7.2,
+            "Service:Aces": 7.3,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54.8,
-            "Service:Break Points Saved": 64.8,
+            "Service:1st Serve Points Won": 75.4,
+            "Service:2nd Serve Points Won": 54.9,
+            "Service:Break Points Saved": 65.1,
             "Return:Break Points Converted": 41.6,
-            "Points:Winners": 27.5,
-            "Points:Unforced Errors": 28.1,
-            "Points:Service Points Won": 67.4,
-            "Points:Return Points Won": 38.7,
-            "Points:Total Points Won": 52.5
+            "Points:Winners": 27.7,
+            "Points:Unforced Errors": 28.5,
+            "Points:Service Points Won": 67.3,
+            "Points:Return Points Won": 38.6,
+            "Points:Total Points Won": 52.4
           },
           "samples": {
             "Service:Aces": 51,
             "Service:Double Faults": 51,
-            "Service:1st Serve Points Won": 2497,
-            "Service:2nd Serve Points Won": 1619,
-            "Service:Break Points Saved": 256,
+            "Service:1st Serve Points Won": 2514,
+            "Service:2nd Serve Points Won": 1636,
+            "Service:Break Points Saved": 261,
             "Return:Break Points Converted": 370,
             "Points:Winners": 42,
             "Points:Unforced Errors": 42,
-            "Points:Service Points Won": 4115,
-            "Points:Return Points Won": 4456,
-            "Points:Total Points Won": 8571
+            "Points:Service Points Won": 4149,
+            "Points:Return Points Won": 4475,
+            "Points:Total Points Won": 8624
           }
         },
         "p2": {
@@ -60154,9 +60416,9 @@
       "courtSpeedRecord": {
         "p1": {
           "wins": 19,
-          "losses": 8,
-          "sampleSize": 27,
-          "pct": 70.4
+          "losses": 9,
+          "sampleSize": 28,
+          "pct": 67.9
         },
         "p2": {
           "wins": 2,
@@ -60250,12 +60512,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -60263,7 +60525,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -60276,12 +60538,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -63435,12 +63697,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -63448,7 +63710,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -63461,12 +63723,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -67106,12 +67368,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -67119,7 +67381,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -67132,12 +67394,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -69806,12 +70068,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -69819,7 +70081,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -69832,12 +70094,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -72011,12 +72273,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -72024,7 +72286,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -72037,12 +72299,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -75682,12 +75944,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -75695,7 +75957,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -75708,12 +75970,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -79895,12 +80157,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -79908,7 +80170,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -79921,12 +80183,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -83933,12 +84195,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -83946,7 +84208,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -83959,12 +84221,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -87457,12 +87719,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -87470,7 +87732,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -87483,12 +87745,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -91094,12 +91356,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -91107,7 +91369,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -91120,12 +91382,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -94171,12 +94433,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -94184,7 +94446,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -94197,12 +94459,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -97834,12 +98096,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -97847,7 +98109,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -97860,12 +98122,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -100298,9 +100560,16 @@
           ]
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8,
           "matches": [
+            {
+              "opponent": "T. Paul",
+              "result": "2 - 1",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": true
+            },
             {
               "opponent": "R. Jodar",
               "result": "2 - 1",
@@ -100683,7 +100952,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 31,
+          "won": 32,
           "lost": 17
         },
         "clay": {
@@ -100691,7 +100960,7 @@
           "lost": 7
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8
         },
         "grass": {
@@ -100700,7 +100969,7 @@
         },
         "atp": {
           "total": {
-            "won": 31,
+            "won": 32,
             "lost": 17
           },
           "clay": {
@@ -100708,7 +100977,7 @@
             "lost": 7
           },
           "hard": {
-            "won": 12,
+            "won": 13,
             "lost": 8
           },
           "grass": {
@@ -101075,19 +101344,27 @@
     },
     "p2TournamentHistory": {
       "editionsPlayed": 3,
-      "totalWon": 5,
+      "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
-      "longMatchesPlayed": 7,
+      "longMatchesPlayed": 8,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
-          "won": 3,
+          "matchCount": 4,
+          "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals",
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "T. Paul",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "R. Jodar",
@@ -101200,28 +101477,28 @@
         "p2": {
           "matchCount": 65,
           "stats": {
-            "Service:Aces": 6.1,
+            "Service:Aces": 6.2,
             "Service:Double Faults": 3,
-            "Service:1st Serve Points Won": 72.3,
+            "Service:1st Serve Points Won": 72.4,
             "Service:2nd Serve Points Won": 52.5,
             "Service:Break Points Saved": 63.2,
-            "Return:Break Points Converted": 38.9,
-            "Points:Service Points Won": 63.5,
+            "Return:Break Points Converted": 38.7,
+            "Points:Service Points Won": 63.6,
             "Points:Return Points Won": 35.9,
             "Points:Total Points Won": 49.9,
-            "Points:Winners": 25.4,
-            "Points:Unforced Errors": 28.4
+            "Points:Winners": 25.5,
+            "Points:Unforced Errors": 28.5
           },
           "samples": {
             "Service:Aces": 65,
             "Service:Double Faults": 65,
-            "Service:1st Serve Points Won": 3056,
-            "Service:2nd Serve Points Won": 2435,
+            "Service:1st Serve Points Won": 3065,
+            "Service:2nd Serve Points Won": 2444,
             "Service:Break Points Saved": 397,
-            "Return:Break Points Converted": 375,
-            "Points:Service Points Won": 5490,
-            "Points:Return Points Won": 5343,
-            "Points:Total Points Won": 10833,
+            "Return:Break Points Converted": 380,
+            "Points:Service Points Won": 5509,
+            "Points:Return Points Won": 5377,
+            "Points:Total Points Won": 10886,
             "Points:Winners": 59,
             "Points:Unforced Errors": 59
           }
@@ -101260,28 +101537,28 @@
         "p2": {
           "matchCount": 49,
           "stats": {
-            "Service:Aces": 6,
+            "Service:Aces": 6.1,
             "Service:Double Faults": 3.5,
-            "Service:1st Serve Points Won": 70.4,
-            "Service:2nd Serve Points Won": 51.5,
+            "Service:1st Serve Points Won": 70.5,
+            "Service:2nd Serve Points Won": 51.6,
             "Service:Break Points Saved": 60.6,
-            "Return:Break Points Converted": 35.4,
-            "Points:Service Points Won": 61.8,
-            "Points:Return Points Won": 34.8,
-            "Points:Total Points Won": 48.5,
-            "Points:Winners": 23.6,
-            "Points:Unforced Errors": 29.4
+            "Return:Break Points Converted": 35.2,
+            "Points:Service Points Won": 61.9,
+            "Points:Return Points Won": 34.9,
+            "Points:Total Points Won": 48.6,
+            "Points:Winners": 23.8,
+            "Points:Unforced Errors": 29.6
           },
           "samples": {
             "Service:Aces": 49,
             "Service:Double Faults": 49,
-            "Service:1st Serve Points Won": 2145,
-            "Service:2nd Serve Points Won": 1783,
+            "Service:1st Serve Points Won": 2154,
+            "Service:2nd Serve Points Won": 1792,
             "Service:Break Points Saved": 350,
-            "Return:Break Points Converted": 302,
-            "Points:Service Points Won": 3926,
-            "Points:Return Points Won": 3824,
-            "Points:Total Points Won": 7750,
+            "Return:Break Points Converted": 307,
+            "Points:Service Points Won": 3945,
+            "Points:Return Points Won": 3858,
+            "Points:Total Points Won": 7803,
             "Points:Winners": 41,
             "Points:Unforced Errors": 41
           }
@@ -101296,10 +101573,10 @@
           "pct": 71.4
         },
         "p2": {
-          "wins": 11,
+          "wins": 12,
           "losses": 8,
-          "sampleSize": 19,
-          "pct": 57.9
+          "sampleSize": 20,
+          "pct": 60
         }
       }
     },
@@ -101387,12 +101664,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -101400,7 +101677,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -101413,12 +101690,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -105045,12 +105322,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -105058,7 +105335,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -105071,12 +105348,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -107237,8 +107514,15 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9,
+          "lost": 10,
           "matches": [
+            {
+              "opponent": "F. Cobolli",
+              "result": "1 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": false
+            },
             {
               "opponent": "A. Zverev",
               "result": "2 - 1",
@@ -107969,7 +108253,7 @@
         "allTier": true,
         "total": {
           "won": 36,
-          "lost": 15
+          "lost": 16
         },
         "clay": {
           "won": 11,
@@ -107977,7 +108261,7 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9
+          "lost": 10
         },
         "grass": {
           "won": 6,
@@ -107986,7 +108270,7 @@
         "atp": {
           "total": {
             "won": 36,
-            "lost": 15
+            "lost": 16
           },
           "clay": {
             "won": 11,
@@ -107994,7 +108278,7 @@
           },
           "hard": {
             "won": 18,
-            "lost": 9
+            "lost": 10
           },
           "grass": {
             "won": 6,
@@ -108753,18 +109037,26 @@
     "p2TournamentHistory": {
       "editionsPlayed": 8,
       "totalWon": 11,
-      "totalLost": 7,
+      "totalLost": 8,
       "longMatches": 0,
-      "longMatchesPlayed": 18,
+      "longMatchesPlayed": 19,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "F. Cobolli",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "A. Zverev",
@@ -109027,28 +109319,28 @@
           "stats": {
             "Service:Aces": 6.9,
             "Service:Double Faults": 2,
-            "Service:1st Serve Points Won": 74.8,
-            "Service:2nd Serve Points Won": 55.2,
-            "Service:Break Points Saved": 65.9,
+            "Service:1st Serve Points Won": 74.6,
+            "Service:2nd Serve Points Won": 55.3,
+            "Service:Break Points Saved": 66.1,
             "Return:Break Points Converted": 41.3,
-            "Points:Winners": 27.2,
-            "Points:Unforced Errors": 29.2,
-            "Points:Service Points Won": 67,
-            "Points:Return Points Won": 38,
-            "Points:Total Points Won": 52.3
+            "Points:Winners": 27.3,
+            "Points:Unforced Errors": 29.5,
+            "Points:Service Points Won": 66.9,
+            "Points:Return Points Won": 37.9,
+            "Points:Total Points Won": 52.2
           },
           "samples": {
             "Service:Aces": 55,
             "Service:Double Faults": 55,
-            "Service:1st Serve Points Won": 2821,
-            "Service:2nd Serve Points Won": 1823,
-            "Service:Break Points Saved": 252,
+            "Service:1st Serve Points Won": 2838,
+            "Service:2nd Serve Points Won": 1840,
+            "Service:Break Points Saved": 257,
             "Return:Break Points Converted": 332,
             "Points:Winners": 52,
             "Points:Unforced Errors": 52,
-            "Points:Service Points Won": 4630,
-            "Points:Return Points Won": 4855,
-            "Points:Total Points Won": 9485
+            "Points:Service Points Won": 4664,
+            "Points:Return Points Won": 4874,
+            "Points:Total Points Won": 9538
           }
         }
       },
@@ -109085,30 +109377,30 @@
         "p2": {
           "matchCount": 51,
           "stats": {
-            "Service:Aces": 7.2,
+            "Service:Aces": 7.3,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54.8,
-            "Service:Break Points Saved": 64.8,
+            "Service:1st Serve Points Won": 75.4,
+            "Service:2nd Serve Points Won": 54.9,
+            "Service:Break Points Saved": 65.1,
             "Return:Break Points Converted": 41.6,
-            "Points:Winners": 27.5,
-            "Points:Unforced Errors": 28.1,
-            "Points:Service Points Won": 67.4,
-            "Points:Return Points Won": 38.7,
-            "Points:Total Points Won": 52.5
+            "Points:Winners": 27.7,
+            "Points:Unforced Errors": 28.5,
+            "Points:Service Points Won": 67.3,
+            "Points:Return Points Won": 38.6,
+            "Points:Total Points Won": 52.4
           },
           "samples": {
             "Service:Aces": 51,
             "Service:Double Faults": 51,
-            "Service:1st Serve Points Won": 2497,
-            "Service:2nd Serve Points Won": 1619,
-            "Service:Break Points Saved": 256,
+            "Service:1st Serve Points Won": 2514,
+            "Service:2nd Serve Points Won": 1636,
+            "Service:Break Points Saved": 261,
             "Return:Break Points Converted": 370,
             "Points:Winners": 42,
             "Points:Unforced Errors": 42,
-            "Points:Service Points Won": 4115,
-            "Points:Return Points Won": 4456,
-            "Points:Total Points Won": 8571
+            "Points:Service Points Won": 4149,
+            "Points:Return Points Won": 4475,
+            "Points:Total Points Won": 8624
           }
         }
       },
@@ -109122,9 +109414,9 @@
         },
         "p2": {
           "wins": 19,
-          "losses": 8,
-          "sampleSize": 27,
-          "pct": 70.4
+          "losses": 9,
+          "sampleSize": 28,
+          "pct": 67.9
         }
       }
     },
@@ -109212,12 +109504,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -109225,7 +109517,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -109238,12 +109530,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -113164,12 +113456,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -113177,7 +113469,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -113190,12 +113482,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -116094,12 +116386,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -116107,7 +116399,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -116120,12 +116412,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -131729,12 +132021,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -131742,7 +132034,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -131755,12 +132047,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -135421,12 +135713,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
           "rain": 4,
           "wind": 11,
-          "humidity": 72,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -135434,7 +135726,7 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 55,
+          "code": 95,
           "hi": 28,
           "lo": 19,
           "rain": 43,
@@ -135447,12 +135739,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
           "rain": 43,
-          "wind": 15,
-          "humidity": 69,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -136670,12 +136962,14 @@
     }
   },
   {
-    "id": "upcoming-12156114",
-    "day": "today",
+    "id": "past-12156114",
+    "day": "past",
     "date": "2026-08-20",
-    "time": "21:00",
+    "time": "21:45",
     "p1": "T. Paul",
     "p2": "F. Cobolli",
+    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
+    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "tour": "ATP Cincinnati",
     "tourBadge": "ATP",
     "surface": "hard",
@@ -136701,9 +136995,19 @@
     "p2Key": 372,
     "h2h": {
       "p1Wins": 0,
-      "p2Wins": 1,
-      "record": "0-1",
+      "p2Wins": 2,
+      "record": "0-2",
       "matches": [
+        {
+          "date": "2026-08-20",
+          "tournament": "Cincinnati",
+          "round": "ATP Cincinnati - Quarter-finals",
+          "surface": "hard",
+          "p1Won": false,
+          "result": "1 - 2",
+          "qualifying": false,
+          "eventKey": 12156114
+        },
         {
           "date": "2024-08-12",
           "tournament": "ATP Cincinnati",
@@ -136839,8 +137143,15 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9,
+          "lost": 10,
           "matches": [
+            {
+              "opponent": "F. Cobolli",
+              "result": "1 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": false
+            },
             {
               "opponent": "A. Zverev",
               "result": "2 - 1",
@@ -137276,9 +137587,16 @@
           ]
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8,
           "matches": [
+            {
+              "opponent": "T. Paul",
+              "result": "2 - 1",
+              "tournament": "Cincinnati",
+              "date": "2026-08-20",
+              "won": true
+            },
             {
               "opponent": "R. Jodar",
               "result": "2 - 1",
@@ -137494,7 +137812,7 @@
         "allTier": true,
         "total": {
           "won": 36,
-          "lost": 15
+          "lost": 16
         },
         "clay": {
           "won": 11,
@@ -137502,7 +137820,7 @@
         },
         "hard": {
           "won": 18,
-          "lost": 9
+          "lost": 10
         },
         "grass": {
           "won": 6,
@@ -137511,7 +137829,7 @@
         "atp": {
           "total": {
             "won": 36,
-            "lost": 15
+            "lost": 16
           },
           "clay": {
             "won": 11,
@@ -137519,7 +137837,7 @@
           },
           "hard": {
             "won": 18,
-            "lost": 9
+            "lost": 10
           },
           "grass": {
             "won": 6,
@@ -137944,7 +138262,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 31,
+          "won": 32,
           "lost": 17
         },
         "clay": {
@@ -137952,7 +138270,7 @@
           "lost": 7
         },
         "hard": {
-          "won": 12,
+          "won": 13,
           "lost": 8
         },
         "grass": {
@@ -137961,7 +138279,7 @@
         },
         "atp": {
           "total": {
-            "won": 31,
+            "won": 32,
             "lost": 17
           },
           "clay": {
@@ -137969,7 +138287,7 @@
             "lost": 7
           },
           "hard": {
-            "won": 12,
+            "won": 13,
             "lost": 8
           },
           "grass": {
@@ -138294,18 +138612,26 @@
     "p1TournamentHistory": {
       "editionsPlayed": 8,
       "totalWon": 11,
-      "totalLost": 7,
+      "totalLost": 8,
       "longMatches": 0,
-      "longMatchesPlayed": 18,
+      "longMatchesPlayed": 19,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
+          "matchCount": 4,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "F. Cobolli",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "A. Zverev",
@@ -138534,19 +138860,27 @@
     },
     "p2TournamentHistory": {
       "editionsPlayed": 3,
-      "totalWon": 5,
+      "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
-      "longMatchesPlayed": 7,
+      "longMatchesPlayed": 8,
       "longMatchPct": 0,
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
-          "won": 3,
+          "matchCount": 4,
+          "won": 4,
           "lost": 0,
-          "roundReached": "1/8-finals",
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-20",
+              "opponent": "T. Paul",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12156114
+            },
             {
               "date": "2026-08-19",
               "opponent": "R. Jodar",
@@ -138628,121 +138962,121 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 54,
+          "matchCount": 55,
           "stats": {
-            "Service:Aces": 6.8,
+            "Service:Aces": 6.9,
             "Service:Double Faults": 2,
             "Service:1st Serve Points Won": 74.6,
             "Service:2nd Serve Points Won": 55.3,
-            "Service:Break Points Saved": 65.9,
-            "Return:Break Points Converted": 41.2,
+            "Service:Break Points Saved": 66.1,
+            "Return:Break Points Converted": 41.3,
             "Points:Winners": 27.3,
-            "Points:Unforced Errors": 29.3,
+            "Points:Unforced Errors": 29.5,
             "Points:Service Points Won": 66.9,
-            "Points:Return Points Won": 38,
+            "Points:Return Points Won": 37.9,
             "Points:Total Points Won": 52.2
           },
           "samples": {
-            "Service:Aces": 54,
-            "Service:Double Faults": 54,
-            "Service:1st Serve Points Won": 2789,
-            "Service:2nd Serve Points Won": 1808,
-            "Service:Break Points Saved": 249,
-            "Return:Break Points Converted": 328,
-            "Points:Winners": 51,
-            "Points:Unforced Errors": 51,
-            "Points:Service Points Won": 4583,
-            "Points:Return Points Won": 4790,
-            "Points:Total Points Won": 9373
+            "Service:Aces": 55,
+            "Service:Double Faults": 55,
+            "Service:1st Serve Points Won": 2838,
+            "Service:2nd Serve Points Won": 1840,
+            "Service:Break Points Saved": 257,
+            "Return:Break Points Converted": 332,
+            "Points:Winners": 52,
+            "Points:Unforced Errors": 52,
+            "Points:Service Points Won": 4664,
+            "Points:Return Points Won": 4874,
+            "Points:Total Points Won": 9538
           }
         },
         "p2": {
-          "matchCount": 64,
+          "matchCount": 65,
           "stats": {
-            "Service:Aces": 6.1,
+            "Service:Aces": 6.2,
             "Service:Double Faults": 3,
-            "Service:1st Serve Points Won": 72.5,
-            "Service:2nd Serve Points Won": 52.3,
-            "Service:Break Points Saved": 63.4,
-            "Return:Break Points Converted": 39,
+            "Service:1st Serve Points Won": 72.4,
+            "Service:2nd Serve Points Won": 52.5,
+            "Service:Break Points Saved": 63.2,
+            "Return:Break Points Converted": 38.7,
             "Points:Service Points Won": 63.6,
-            "Points:Return Points Won": 36,
+            "Points:Return Points Won": 35.9,
             "Points:Total Points Won": 49.9,
-            "Points:Winners": 25.6,
+            "Points:Winners": 25.5,
             "Points:Unforced Errors": 28.5
           },
           "samples": {
-            "Service:Aces": 64,
-            "Service:Double Faults": 64,
-            "Service:1st Serve Points Won": 3020,
-            "Service:2nd Serve Points Won": 2405,
-            "Service:Break Points Saved": 393,
-            "Return:Break Points Converted": 372,
-            "Points:Service Points Won": 5425,
-            "Points:Return Points Won": 5296,
-            "Points:Total Points Won": 10721,
-            "Points:Winners": 58,
-            "Points:Unforced Errors": 58
+            "Service:Aces": 65,
+            "Service:Double Faults": 65,
+            "Service:1st Serve Points Won": 3065,
+            "Service:2nd Serve Points Won": 2444,
+            "Service:Break Points Saved": 397,
+            "Return:Break Points Converted": 380,
+            "Points:Service Points Won": 5509,
+            "Points:Return Points Won": 5377,
+            "Points:Total Points Won": 10886,
+            "Points:Winners": 59,
+            "Points:Unforced Errors": 59
           }
         }
       },
       "surface": {
         "p1": {
-          "matchCount": 50,
+          "matchCount": 51,
           "stats": {
-            "Service:Aces": 7.2,
+            "Service:Aces": 7.3,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.4,
             "Service:2nd Serve Points Won": 54.9,
-            "Service:Break Points Saved": 64.8,
-            "Return:Break Points Converted": 41.5,
+            "Service:Break Points Saved": 65.1,
+            "Return:Break Points Converted": 41.6,
             "Points:Winners": 27.7,
-            "Points:Unforced Errors": 28.2,
+            "Points:Unforced Errors": 28.5,
             "Points:Service Points Won": 67.3,
-            "Points:Return Points Won": 38.7,
+            "Points:Return Points Won": 38.6,
             "Points:Total Points Won": 52.4
           },
           "samples": {
-            "Service:Aces": 50,
-            "Service:Double Faults": 50,
-            "Service:1st Serve Points Won": 2465,
-            "Service:2nd Serve Points Won": 1604,
-            "Service:Break Points Saved": 253,
-            "Return:Break Points Converted": 366,
-            "Points:Winners": 41,
-            "Points:Unforced Errors": 41,
-            "Points:Service Points Won": 4068,
-            "Points:Return Points Won": 4391,
-            "Points:Total Points Won": 8459
+            "Service:Aces": 51,
+            "Service:Double Faults": 51,
+            "Service:1st Serve Points Won": 2514,
+            "Service:2nd Serve Points Won": 1636,
+            "Service:Break Points Saved": 261,
+            "Return:Break Points Converted": 370,
+            "Points:Winners": 42,
+            "Points:Unforced Errors": 42,
+            "Points:Service Points Won": 4149,
+            "Points:Return Points Won": 4475,
+            "Points:Total Points Won": 8624
           }
         },
         "p2": {
-          "matchCount": 48,
+          "matchCount": 49,
           "stats": {
-            "Service:Aces": 6,
+            "Service:Aces": 6.1,
             "Service:Double Faults": 3.5,
-            "Service:1st Serve Points Won": 70.6,
-            "Service:2nd Serve Points Won": 51.3,
-            "Service:Break Points Saved": 60.7,
-            "Return:Break Points Converted": 35.5,
-            "Points:Service Points Won": 61.8,
+            "Service:1st Serve Points Won": 70.5,
+            "Service:2nd Serve Points Won": 51.6,
+            "Service:Break Points Saved": 60.6,
+            "Return:Break Points Converted": 35.2,
+            "Points:Service Points Won": 61.9,
             "Points:Return Points Won": 34.9,
-            "Points:Total Points Won": 48.5,
-            "Points:Winners": 23.9,
+            "Points:Total Points Won": 48.6,
+            "Points:Winners": 23.8,
             "Points:Unforced Errors": 29.6
           },
           "samples": {
-            "Service:Aces": 48,
-            "Service:Double Faults": 48,
-            "Service:1st Serve Points Won": 2109,
-            "Service:2nd Serve Points Won": 1753,
-            "Service:Break Points Saved": 346,
-            "Return:Break Points Converted": 299,
-            "Points:Service Points Won": 3861,
-            "Points:Return Points Won": 3777,
-            "Points:Total Points Won": 7638,
-            "Points:Winners": 40,
-            "Points:Unforced Errors": 40
+            "Service:Aces": 49,
+            "Service:Double Faults": 49,
+            "Service:1st Serve Points Won": 2154,
+            "Service:2nd Serve Points Won": 1792,
+            "Service:Break Points Saved": 350,
+            "Return:Break Points Converted": 307,
+            "Points:Service Points Won": 3945,
+            "Points:Return Points Won": 3858,
+            "Points:Total Points Won": 7803,
+            "Points:Winners": 41,
+            "Points:Unforced Errors": 41
           }
         }
       },
@@ -138750,20 +139084,18 @@
       "courtSpeedRecord": {
         "p1": {
           "wins": 19,
-          "losses": 8,
-          "sampleSize": 27,
-          "pct": 70.4
+          "losses": 9,
+          "sampleSize": 28,
+          "pct": 67.9
         },
         "p2": {
-          "wins": 11,
+          "wins": 12,
           "losses": 8,
-          "sampleSize": 19,
-          "pct": 57.9
+          "sampleSize": 20,
+          "pct": 60
         }
       }
     },
-    "matchStats": null,
-    "setStats": null,
     "venue": {
       "city": "Cincinnati",
       "country": "US",
@@ -138785,11 +139117,11 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 26.4,
-      "windSpeed": 4,
-      "humidity": 65,
+      "temperature": 26.9,
+      "windSpeed": 3.9,
+      "humidity": 62,
       "source": "Open-Meteo",
-      "historical": false,
+      "historical": true,
       "weekRange": "Aug 17 – 23, 2026",
       "week": [
         {
@@ -138836,7 +139168,7 @@
           "dow": "Thu",
           "label": "Aug 20",
           "code": 61,
-          "hi": 26,
+          "hi": 27,
           "lo": 18,
           "rain": 48,
           "wind": 14,
@@ -138848,12 +139180,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 0,
+          "code": 2,
           "hi": 30,
           "lo": 18,
-          "rain": 5,
-          "wind": 10,
-          "humidity": 73,
+          "rain": 4,
+          "wind": 11,
+          "humidity": 70,
           "isMatch": false,
           "available": true
         },
@@ -138862,11 +139194,11 @@
           "dow": "Sat",
           "label": "Aug 22",
           "code": 95,
-          "hi": 27,
-          "lo": 18,
-          "rain": 40,
-          "wind": 15,
-          "humidity": 71,
+          "hi": 28,
+          "lo": 19,
+          "rain": 43,
+          "wind": 17,
+          "humidity": 69,
           "isMatch": false,
           "available": true
         },
@@ -138874,12 +139206,12 @@
           "date": "2026-08-23",
           "dow": "Sun",
           "label": "Aug 23",
-          "code": 3,
-          "hi": 27,
+          "code": 0,
+          "hi": 28,
           "lo": 16,
-          "rain": 40,
-          "wind": 15,
-          "humidity": 69,
+          "rain": 43,
+          "wind": 14,
+          "humidity": 66,
           "isMatch": false,
           "available": true
         }
@@ -138890,8 +139222,585 @@
     "liveScore": null,
     "liveGameScore": null,
     "liveServer": null,
-    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
-    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "6-2, 3-6, 4-6",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false,
+    "matchStats": {
+      "p1": {
+        "Service:Aces": 12,
+        "Service:Double Faults": 3,
+        "Service:1st serve percentage": 60,
+        "Service:1st serve points won": 75.5,
+        "Service:2nd serve points won": 53.1,
+        "Service:Break Points Saved": 75,
+        "Return:1st return points won": 31.1,
+        "Return:2nd return points won": 35.9,
+        "Return:Break Points Converted": 50,
+        "Points:Winners": 28,
+        "Points:Unforced errors": 39,
+        "Points:Total Points Won": 49.7,
+        "Points:Service Points Won": 66.7,
+        "Points:Return Points Won": 33.3,
+        "Games:Service games won": 84.6,
+        "Games:Return games won": 14.3,
+        "Points:Net points won": 50,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 37,
+            "total": 49
+          },
+          "Service:2nd serve points won": {
+            "won": 17,
+            "total": 32
+          },
+          "Service:Break Points Saved": {
+            "won": 6,
+            "total": 8
+          },
+          "Return:1st return points won": {
+            "won": 14,
+            "total": 45
+          },
+          "Return:2nd return points won": {
+            "won": 14,
+            "total": 39
+          },
+          "Return:Break Points Converted": {
+            "won": 2,
+            "total": 4
+          },
+          "Points:Total Points Won": {
+            "won": 82,
+            "total": 165
+          },
+          "Points:Service Points Won": {
+            "won": 54,
+            "total": 81
+          },
+          "Points:Return Points Won": {
+            "won": 28,
+            "total": 84
+          },
+          "Games:Service games won": {
+            "won": 11,
+            "total": 13
+          },
+          "Games:Return games won": {
+            "won": 2,
+            "total": 14
+          },
+          "Points:Net points won": {
+            "won": 7,
+            "total": 14
+          }
+        },
+        "wue": {
+          "winners": 28,
+          "unforcedErrors": 39,
+          "ratio": 0.72,
+          "source": "api-tennis"
+        }
+      },
+      "p2": {
+        "Service:Aces": 10,
+        "Service:Double Faults": 1,
+        "Service:1st serve percentage": 54,
+        "Service:1st serve points won": 68.9,
+        "Service:2nd serve points won": 64.1,
+        "Service:Break Points Saved": 50,
+        "Return:1st return points won": 24.5,
+        "Return:2nd return points won": 46.9,
+        "Return:Break Points Converted": 25,
+        "Points:Winners": 21,
+        "Points:Unforced errors": 30,
+        "Points:Total Points Won": 50.3,
+        "Points:Service Points Won": 66.7,
+        "Points:Return Points Won": 33.3,
+        "Games:Service games won": 85.7,
+        "Games:Return games won": 15.4,
+        "Points:Net points won": 80,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 31,
+            "total": 45
+          },
+          "Service:2nd serve points won": {
+            "won": 25,
+            "total": 39
+          },
+          "Service:Break Points Saved": {
+            "won": 2,
+            "total": 4
+          },
+          "Return:1st return points won": {
+            "won": 12,
+            "total": 49
+          },
+          "Return:2nd return points won": {
+            "won": 15,
+            "total": 32
+          },
+          "Return:Break Points Converted": {
+            "won": 2,
+            "total": 8
+          },
+          "Points:Total Points Won": {
+            "won": 83,
+            "total": 165
+          },
+          "Points:Service Points Won": {
+            "won": 56,
+            "total": 84
+          },
+          "Points:Return Points Won": {
+            "won": 27,
+            "total": 81
+          },
+          "Games:Service games won": {
+            "won": 12,
+            "total": 14
+          },
+          "Games:Return games won": {
+            "won": 2,
+            "total": 13
+          },
+          "Points:Net points won": {
+            "won": 4,
+            "total": 5
+          }
+        },
+        "wue": {
+          "winners": 21,
+          "unforcedErrors": 30,
+          "ratio": 0.7,
+          "source": "api-tennis"
+        }
+      },
+      "wueSource": "api-tennis"
+    },
+    "setStats": {
+      "1": {
+        "p1": {
+          "Service:Aces": 5,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 75,
+          "Service:1st serve points won": 93.3,
+          "Service:2nd serve points won": 40,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 53.8,
+          "Return:2nd return points won": 40,
+          "Return:Break Points Converted": 66.7,
+          "Points:Winners": 8,
+          "Points:Unforced errors": 9,
+          "Points:Total Points Won": 62.8,
+          "Points:Service Points Won": 80,
+          "Points:Return Points Won": 47.8,
+          "Games:Service games won": 100,
+          "Games:Return games won": 50,
+          "Points:Net points won": 33.3,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 14,
+              "total": 15
+            },
+            "Service:2nd serve points won": {
+              "won": 2,
+              "total": 5
+            },
+            "Return:1st return points won": {
+              "won": 7,
+              "total": 13
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 10
+            },
+            "Return:Break Points Converted": {
+              "won": 2,
+              "total": 3
+            },
+            "Points:Total Points Won": {
+              "won": 27,
+              "total": 43
+            },
+            "Points:Service Points Won": {
+              "won": 16,
+              "total": 20
+            },
+            "Points:Return Points Won": {
+              "won": 11,
+              "total": 23
+            },
+            "Games:Service games won": {
+              "won": 4,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 2,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 1,
+              "total": 3
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 2,
+          "Service:Double Faults": 0,
+          "Service:1st serve percentage": 57,
+          "Service:1st serve points won": 46.2,
+          "Service:2nd serve points won": 60,
+          "Service:Break Points Saved": 33.3,
+          "Return:1st return points won": 6.7,
+          "Return:2nd return points won": 60,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 3,
+          "Points:Unforced errors": 10,
+          "Points:Total Points Won": 37.2,
+          "Points:Service Points Won": 52.2,
+          "Points:Return Points Won": 20,
+          "Games:Service games won": 50,
+          "Games:Return games won": 0,
+          "Points:Net points won": null,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 6,
+              "total": 13
+            },
+            "Service:2nd serve points won": {
+              "won": 6,
+              "total": 10
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 3
+            },
+            "Return:1st return points won": {
+              "won": 1,
+              "total": 15
+            },
+            "Return:2nd return points won": {
+              "won": 3,
+              "total": 5
+            },
+            "Points:Total Points Won": {
+              "won": 16,
+              "total": 43
+            },
+            "Points:Service Points Won": {
+              "won": 12,
+              "total": 23
+            },
+            "Points:Return Points Won": {
+              "won": 4,
+              "total": 20
+            },
+            "Games:Service games won": {
+              "won": 2,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 4
+            }
+          }
+        }
+      },
+      "2": {
+        "p1": {
+          "Service:Aces": 5,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 65,
+          "Service:1st serve points won": 80,
+          "Service:2nd serve points won": 37.5,
+          "Service:Break Points Saved": 66.7,
+          "Return:1st return points won": 35,
+          "Return:2nd return points won": 35.3,
+          "Return:Break Points Converted": 0,
+          "Points:Winners": 12,
+          "Points:Unforced errors": 12,
+          "Points:Total Points Won": 46.7,
+          "Points:Service Points Won": 65.2,
+          "Points:Return Points Won": 35.1,
+          "Games:Service games won": 75,
+          "Games:Return games won": 0,
+          "Points:Net points won": 25,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 12,
+              "total": 15
+            },
+            "Service:2nd serve points won": {
+              "won": 3,
+              "total": 8
+            },
+            "Service:Break Points Saved": {
+              "won": 2,
+              "total": 3
+            },
+            "Return:1st return points won": {
+              "won": 7,
+              "total": 20
+            },
+            "Return:2nd return points won": {
+              "won": 6,
+              "total": 17
+            },
+            "Return:Break Points Converted": {
+              "won": 0,
+              "total": 1
+            },
+            "Points:Total Points Won": {
+              "won": 28,
+              "total": 60
+            },
+            "Points:Service Points Won": {
+              "won": 15,
+              "total": 23
+            },
+            "Points:Return Points Won": {
+              "won": 13,
+              "total": 37
+            },
+            "Games:Service games won": {
+              "won": 3,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 5
+            },
+            "Points:Net points won": {
+              "won": 1,
+              "total": 4
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 5,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 54,
+          "Service:1st serve points won": 65,
+          "Service:2nd serve points won": 64.7,
+          "Service:Break Points Saved": 100,
+          "Return:1st return points won": 20,
+          "Return:2nd return points won": 62.5,
+          "Return:Break Points Converted": 33.3,
+          "Points:Winners": 9,
+          "Points:Unforced errors": 8,
+          "Points:Total Points Won": 53.3,
+          "Points:Service Points Won": 64.9,
+          "Points:Return Points Won": 34.8,
+          "Games:Service games won": 100,
+          "Games:Return games won": 25,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 13,
+              "total": 20
+            },
+            "Service:2nd serve points won": {
+              "won": 11,
+              "total": 17
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 1
+            },
+            "Return:1st return points won": {
+              "won": 3,
+              "total": 15
+            },
+            "Return:2nd return points won": {
+              "won": 5,
+              "total": 8
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 3
+            },
+            "Points:Total Points Won": {
+              "won": 32,
+              "total": 60
+            },
+            "Points:Service Points Won": {
+              "won": 24,
+              "total": 37
+            },
+            "Points:Return Points Won": {
+              "won": 8,
+              "total": 23
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 5
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 2,
+              "total": 2
+            }
+          }
+        }
+      },
+      "3": {
+        "p1": {
+          "Service:Aces": 2,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 50,
+          "Service:1st serve points won": 57.9,
+          "Service:2nd serve points won": 63.2,
+          "Service:Break Points Saved": 80,
+          "Return:1st return points won": 0,
+          "Return:2nd return points won": 33.3,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 8,
+          "Points:Unforced errors": 18,
+          "Points:Total Points Won": 43.5,
+          "Points:Service Points Won": 60.5,
+          "Points:Return Points Won": 16.7,
+          "Games:Service games won": 80,
+          "Games:Return games won": 0,
+          "Points:Net points won": 71.4,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 11,
+              "total": 19
+            },
+            "Service:2nd serve points won": {
+              "won": 12,
+              "total": 19
+            },
+            "Service:Break Points Saved": {
+              "won": 4,
+              "total": 5
+            },
+            "Return:1st return points won": {
+              "won": 0,
+              "total": 12
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 12
+            },
+            "Points:Total Points Won": {
+              "won": 27,
+              "total": 62
+            },
+            "Points:Service Points Won": {
+              "won": 23,
+              "total": 38
+            },
+            "Points:Return Points Won": {
+              "won": 4,
+              "total": 24
+            },
+            "Games:Service games won": {
+              "won": 4,
+              "total": 5
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 5
+            },
+            "Points:Net points won": {
+              "won": 5,
+              "total": 7
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 3,
+          "Service:Double Faults": 0,
+          "Service:1st serve percentage": 50,
+          "Service:1st serve points won": 100,
+          "Service:2nd serve points won": 66.7,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 42.1,
+          "Return:2nd return points won": 36.8,
+          "Return:Break Points Converted": 20,
+          "Points:Winners": 9,
+          "Points:Unforced errors": 12,
+          "Points:Total Points Won": 56.5,
+          "Points:Service Points Won": 83.3,
+          "Points:Return Points Won": 39.5,
+          "Games:Service games won": 100,
+          "Games:Return games won": 20,
+          "Points:Net points won": 66.7,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 12,
+              "total": 12
+            },
+            "Service:2nd serve points won": {
+              "won": 8,
+              "total": 12
+            },
+            "Return:1st return points won": {
+              "won": 8,
+              "total": 19
+            },
+            "Return:2nd return points won": {
+              "won": 7,
+              "total": 19
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 5
+            },
+            "Points:Total Points Won": {
+              "won": 35,
+              "total": 62
+            },
+            "Points:Service Points Won": {
+              "won": 20,
+              "total": 24
+            },
+            "Points:Return Points Won": {
+              "won": 15,
+              "total": 38
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 5
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 5
+            },
+            "Points:Net points won": {
+              "won": 2,
+              "total": 3
+            }
+          }
+        }
+      }
+    },
     "oddsMovement": {
       "market": "Match Winner",
       "capturedAt": "2026-08-20T21:24:13Z",
@@ -140294,6 +141203,7 @@
         }
       }
     },
+    "finishedAt": "2026-08-20T23:52:30.904Z",
     "openingOdds": {
       "p1": 1.42,
       "p2": 3.08,
@@ -140312,30 +141222,6 @@
       "edgeVsPinnacleP1": 0.014,
       "edgeVsPinnacleP2": -0.014,
       "ts": "2026-08-20T05:59:50.260Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": {
-      "display": "6-2, 3-6, 4-6",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 2
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "retired": false,
-    "walkover": false
+    }
   }
 ]
