@@ -1890,11 +1890,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
@@ -2677,7 +2688,10 @@
       "edgeVsPinnacleP1": -0.0465,
       "edgeVsPinnacleP2": 0.0465,
       "ts": "2026-08-20T11:57:16.310Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156150",
