@@ -23,7 +23,7 @@
       },
       "p2": {
         "price": 1.34,
-        "bookmaker": "Pncl"
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Cincinnati - Semi-finals",
@@ -1419,7 +1419,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -1427,10 +1427,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
+          "year": "2025",
+          "matchCount": 5,
           "won": 4,
-          "lost": 0,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -1464,16 +1464,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -1528,7 +1519,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -1567,15 +1558,6 @@
               "eventKey": 12154761
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
         },
         {
           "year": "2024",
@@ -1781,9 +1763,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 24,
-      "windSpeed": 6.9,
-      "humidity": 79,
+      "temperature": 26.6,
+      "windSpeed": 15.5,
+      "humidity": 59,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -1859,10 +1841,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": true,
           "available": true
         },
@@ -1873,7 +1855,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -1890,7 +1872,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-22T03:38:29Z",
+      "capturedAt": "2026-08-22T06:33:33Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -2013,6 +1995,38 @@
             [
               "2026-08-22T01:40:26.121Z",
               3.3
+            ],
+            [
+              "2026-08-22T03:52:05.696Z",
+              3.25
+            ],
+            [
+              "2026-08-22T03:54:32.570Z",
+              3.18
+            ],
+            [
+              "2026-08-22T03:54:36.852Z",
+              3.2
+            ],
+            [
+              "2026-08-22T05:11:20.892Z",
+              3.2
+            ],
+            [
+              "2026-08-22T05:11:45.397Z",
+              3.1
+            ],
+            [
+              "2026-08-22T05:11:50.185Z",
+              3.11
+            ],
+            [
+              "2026-08-22T05:11:56.467Z",
+              3.12
+            ],
+            [
+              "2026-08-22T06:30:51.870Z",
+              3.11
             ]
           ],
           "p2": [
@@ -2135,6 +2149,34 @@
             [
               "2026-08-22T01:40:26.121Z",
               1.387
+            ],
+            [
+              "2026-08-22T03:52:05.696Z",
+              1.393
+            ],
+            [
+              "2026-08-22T03:54:32.570Z",
+              1.408
+            ],
+            [
+              "2026-08-22T03:54:36.852Z",
+              1.404
+            ],
+            [
+              "2026-08-22T05:11:20.892Z",
+              1.404
+            ],
+            [
+              "2026-08-22T05:11:45.397Z",
+              1.425
+            ],
+            [
+              "2026-08-22T05:11:50.185Z",
+              1.421
+            ],
+            [
+              "2026-08-22T06:30:51.870Z",
+              1.421
             ]
           ]
         },
@@ -2145,7 +2187,7 @@
               3.1
             ],
             [
-              "2026-08-22T03:13:58.180Z",
+              "2026-08-22T06:24:50.975Z",
               3.1
             ]
           ],
@@ -2155,7 +2197,7 @@
               1.333
             ],
             [
-              "2026-08-22T03:13:58.180Z",
+              "2026-08-22T06:24:50.975Z",
               1.333
             ]
           ]
@@ -2213,6 +2255,18 @@
             [
               "2026-08-22T01:52:57.211Z",
               3.23
+            ],
+            [
+              "2026-08-22T04:30:57.123Z",
+              3.16
+            ],
+            [
+              "2026-08-22T05:10:23.960Z",
+              3.16
+            ],
+            [
+              "2026-08-22T06:17:52.722Z",
+              3.11
             ]
           ],
           "p2": [
@@ -2267,6 +2321,18 @@
             [
               "2026-08-22T01:52:57.211Z",
               1.396
+            ],
+            [
+              "2026-08-22T04:30:57.123Z",
+              1.41
+            ],
+            [
+              "2026-08-22T05:10:23.960Z",
+              1.41
+            ],
+            [
+              "2026-08-22T06:17:52.722Z",
+              1.42
             ]
           ]
         },
@@ -2291,6 +2357,22 @@
             [
               "2026-08-22T01:42:58.599Z",
               3.3
+            ],
+            [
+              "2026-08-22T03:50:20.815Z",
+              3.25
+            ],
+            [
+              "2026-08-22T03:56:51.237Z",
+              3.2
+            ],
+            [
+              "2026-08-22T04:09:54.932Z",
+              3.15
+            ],
+            [
+              "2026-08-22T06:12:34.085Z",
+              3.1
             ]
           ],
           "p2": [
@@ -2313,6 +2395,22 @@
             [
               "2026-08-22T01:42:58.599Z",
               1.34
+            ],
+            [
+              "2026-08-22T03:50:20.815Z",
+              1.35
+            ],
+            [
+              "2026-08-22T03:56:51.237Z",
+              1.36
+            ],
+            [
+              "2026-08-22T04:09:54.932Z",
+              1.37
+            ],
+            [
+              "2026-08-22T06:12:34.085Z",
+              1.38
             ]
           ]
         },
@@ -2349,6 +2447,22 @@
             [
               "2026-08-22T01:45:04.107Z",
               3.2
+            ],
+            [
+              "2026-08-22T03:47:59.629Z",
+              3.15
+            ],
+            [
+              "2026-08-22T03:59:06.787Z",
+              3.1
+            ],
+            [
+              "2026-08-22T04:10:13.015Z",
+              3.05
+            ],
+            [
+              "2026-08-22T06:11:46.076Z",
+              3.0
             ]
           ],
           "p2": [
@@ -2383,6 +2497,18 @@
             [
               "2026-08-22T01:45:04.107Z",
               1.35
+            ],
+            [
+              "2026-08-22T03:59:06.787Z",
+              1.36
+            ],
+            [
+              "2026-08-22T04:10:13.015Z",
+              1.37
+            ],
+            [
+              "2026-08-22T06:11:46.076Z",
+              1.38
             ]
           ]
         },
@@ -2419,6 +2545,14 @@
             [
               "2026-08-22T02:15:12.632Z",
               3.4
+            ],
+            [
+              "2026-08-22T04:05:02.270Z",
+              3.4
+            ],
+            [
+              "2026-08-22T06:20:23.646Z",
+              3.2
             ]
           ],
           "p2": [
@@ -2453,6 +2587,14 @@
             [
               "2026-08-22T02:15:12.632Z",
               1.333
+            ],
+            [
+              "2026-08-22T04:05:02.270Z",
+              1.333
+            ],
+            [
+              "2026-08-22T06:20:23.646Z",
+              1.364
             ]
           ]
         }
@@ -2491,18 +2633,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.77,
-      "p2": 2.05,
-      "bookmaker": "Superbet"
+      "p1": 1.82,
+      "p2": 2,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.77,
-        "bookmaker": "Superbet"
+        "price": 1.82,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 2.05,
-        "bookmaker": "Superbet"
+        "price": 2,
+        "bookmaker": "Betano"
       }
     },
     "tournamentRound": "ATP Cincinnati - Semi-finals",
@@ -4269,7 +4411,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -4277,10 +4419,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 4,
-          "lost": 0,
+          "year": "2025",
+          "matchCount": 6,
+          "won": 5,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -4314,16 +4456,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -4429,7 +4562,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 10,
+      "editionsPlayed": 9,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -4437,12 +4570,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "year": "2025",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "L. Musetti",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "F. Auger-Aliassime",
@@ -4466,23 +4607,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "L. Musetti",
-              "round": "Quarter-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-13",
@@ -4967,10 +5091,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -4981,7 +5105,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": true,
@@ -6907,9 +7031,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -6920,10 +7044,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -6932,11 +7056,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -6945,11 +7069,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -6957,12 +7081,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -6970,12 +7094,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -8556,9 +8680,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -8569,10 +8693,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -8581,11 +8705,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -8594,11 +8718,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -8606,12 +8730,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -8619,12 +8743,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -10383,9 +10507,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -10396,10 +10520,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -10408,11 +10532,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -10421,11 +10545,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -10433,12 +10557,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -10446,12 +10570,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -12129,9 +12253,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -12142,10 +12266,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -12154,11 +12278,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -12167,11 +12291,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -12179,12 +12303,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -12192,12 +12316,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -14261,9 +14385,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -14274,10 +14398,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -14286,11 +14410,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -14299,11 +14423,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -14311,12 +14435,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -14324,12 +14448,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -15824,9 +15948,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -15837,10 +15961,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -15849,11 +15973,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -15862,11 +15986,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -15874,12 +15998,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -15887,12 +16011,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -15929,17 +16053,17 @@
     "value": null,
     "odds": {
       "p1": 1.12,
-      "p2": 6.0,
-      "bookmaker": "bet365"
+      "p2": 6,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
       "p1": {
         "price": 1.12,
-        "bookmaker": "bet365"
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 6.0,
-        "bookmaker": "bet365"
+        "price": 6,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -17170,9 +17294,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -17183,10 +17307,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -17195,11 +17319,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -17208,11 +17332,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -17220,12 +17344,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -17233,12 +17357,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -19225,9 +19349,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -19238,10 +19362,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -19250,11 +19374,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -19263,11 +19387,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -19275,12 +19399,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -19288,12 +19412,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -19330,7 +19454,7 @@
     "value": null,
     "odds": {
       "p1": 1.4,
-      "p2": 3.0,
+      "p2": 3,
       "bookmaker": "bet365"
     },
     "bestOdds": {
@@ -19339,7 +19463,7 @@
         "bookmaker": "bet365"
       },
       "p2": {
-        "price": 3.0,
+        "price": 3,
         "bookmaker": "bet365"
       }
     },
@@ -21392,9 +21516,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -21405,10 +21529,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -21417,11 +21541,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -21430,11 +21554,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -21442,12 +21566,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -21455,12 +21579,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -23378,9 +23502,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -23391,10 +23515,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -23403,11 +23527,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -23416,11 +23540,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -23428,12 +23552,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -23441,12 +23565,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -25355,9 +25479,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 9.9,
-      "humidity": 31,
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -25368,10 +25492,10 @@
           "label": "Aug 24",
           "code": 3,
           "hi": 32,
-          "lo": 18,
+          "lo": 19,
           "rain": 1,
-          "wind": 15,
-          "humidity": 42,
+          "wind": 14,
+          "humidity": 41,
           "isMatch": true,
           "available": true
         },
@@ -25380,11 +25504,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
-          "lo": 17,
+          "hi": 33,
+          "lo": 18,
           "rain": 1,
           "wind": 12,
-          "humidity": 42,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -25393,11 +25517,11 @@
           "dow": "Wed",
           "label": "Aug 26",
           "code": 3,
-          "hi": 32,
+          "hi": 34,
           "lo": 19,
-          "rain": 39,
-          "wind": 10,
-          "humidity": 46,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
           "isMatch": false,
           "available": true
         },
@@ -25405,12 +25529,12 @@
           "date": "2026-08-27",
           "dow": "Thu",
           "label": "Aug 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 21,
-          "rain": 59,
-          "wind": 14,
-          "humidity": 79,
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
           "isMatch": false,
           "available": true
         },
@@ -25418,12 +25542,12 @@
           "date": "2026-08-28",
           "dow": "Fri",
           "label": "Aug 28",
-          "code": 3,
+          "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 59,
-          "wind": 10,
-          "humidity": 69,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -27300,7 +27424,89 @@
       "cpiYear": null,
       "category": "Medium"
     },
-    "weather": null,
+    "weather": {
+      "temperature": 29.1,
+      "windSpeed": 6.5,
+      "humidity": 32,
+      "source": "Open-Meteo",
+      "historical": false,
+      "weekRange": "Aug 24 – 30, 2026",
+      "week": [
+        {
+          "date": "2026-08-24",
+          "dow": "Mon",
+          "label": "Aug 24",
+          "code": 3,
+          "hi": 32,
+          "lo": 19,
+          "rain": 1,
+          "wind": 14,
+          "humidity": 41,
+          "isMatch": true,
+          "available": true
+        },
+        {
+          "date": "2026-08-25",
+          "dow": "Tue",
+          "label": "Aug 25",
+          "code": 3,
+          "hi": 33,
+          "lo": 18,
+          "rain": 1,
+          "wind": 12,
+          "humidity": 40,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-26",
+          "dow": "Wed",
+          "label": "Aug 26",
+          "code": 3,
+          "hi": 34,
+          "lo": 19,
+          "rain": 19,
+          "wind": 12,
+          "humidity": 40,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-27",
+          "dow": "Thu",
+          "label": "Aug 27",
+          "code": 51,
+          "hi": 32,
+          "lo": 22,
+          "rain": 62,
+          "wind": 12,
+          "humidity": 54,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-28",
+          "dow": "Fri",
+          "label": "Aug 28",
+          "code": 53,
+          "hi": 34,
+          "lo": 20,
+          "rain": 62,
+          "wind": 13,
+          "humidity": 64,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-08-29",
+          "available": false
+        },
+        {
+          "date": "2026-08-30",
+          "available": false
+        }
+      ]
+    },
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -28981,7 +29187,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 2,
       "totalLost": 1,
       "longMatches": 0,
@@ -28990,8 +29196,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 3,
-          "won": 2,
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-08-14",
+              "opponent": "M. Lajal",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12154640
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
           "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
@@ -29010,21 +29233,13 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154778
-            },
-            {
-              "date": "2026-08-14",
-              "opponent": "M. Lajal",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12154640
             }
           ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 7,
       "totalWon": 14,
       "totalLost": 8,
       "longMatches": 0,
@@ -29032,10 +29247,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 7,
+          "won": 5,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -29061,16 +29276,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154730
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-14",
               "opponent": "B. Bonzi",
@@ -29436,9 +29642,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 23.3,
-      "windSpeed": 4.8,
-      "humidity": 73,
+      "temperature": 22.4,
+      "windSpeed": 2.9,
+      "humidity": 63,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Aug 17 – 23, 2026",
@@ -29447,10 +29653,10 @@
           "date": "2026-08-17",
           "dow": "Mon",
           "label": "Aug 17",
-          "code": 61,
-          "hi": 29,
-          "lo": 22,
-          "rain": null,
+          "code": 55,
+          "hi": 28,
+          "lo": 21,
+          "rain": 44,
           "wind": 15,
           "humidity": 85,
           "isMatch": false,
@@ -29460,12 +29666,12 @@
           "date": "2026-08-18",
           "dow": "Tue",
           "label": "Aug 18",
-          "code": 51,
+          "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": null,
-          "wind": 9,
-          "humidity": 78,
+          "rain": 7,
+          "wind": 14,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -29473,11 +29679,11 @@
           "date": "2026-08-19",
           "dow": "Wed",
           "label": "Aug 19",
-          "code": 61,
-          "hi": 27,
-          "lo": 20,
-          "rain": null,
-          "wind": 12,
+          "code": 3,
+          "hi": 26,
+          "lo": 17,
+          "rain": 32,
+          "wind": 11,
           "humidity": 79,
           "isMatch": true,
           "available": true
@@ -29486,12 +29692,12 @@
           "date": "2026-08-20",
           "dow": "Thu",
           "label": "Aug 20",
-          "code": 65,
+          "code": 61,
           "hi": 27,
-          "lo": 19,
-          "rain": null,
-          "wind": 11,
-          "humidity": 83,
+          "lo": 18,
+          "rain": 48,
+          "wind": 14,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -29499,12 +29705,12 @@
           "date": "2026-08-21",
           "dow": "Fri",
           "label": "Aug 21",
-          "code": 51,
-          "hi": 28,
-          "lo": 19,
-          "rain": null,
-          "wind": 7,
-          "humidity": 81,
+          "code": 3,
+          "hi": 31,
+          "lo": 18,
+          "rain": 8,
+          "wind": 12,
+          "humidity": 77,
           "isMatch": false,
           "available": true
         },
@@ -29512,18 +29718,27 @@
           "date": "2026-08-22",
           "dow": "Sat",
           "label": "Aug 22",
-          "code": 51,
-          "hi": 27,
-          "lo": 20,
-          "rain": null,
-          "wind": 17,
-          "humidity": 79,
+          "code": 3,
+          "hi": 28,
+          "lo": 19,
+          "rain": 34,
+          "wind": 23,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-08-23",
-          "available": false
+          "dow": "Sun",
+          "label": "Aug 23",
+          "code": 3,
+          "hi": 26,
+          "lo": 16,
+          "rain": 10,
+          "wind": 19,
+          "humidity": 65,
+          "isMatch": false,
+          "available": true
         }
       ]
     },
@@ -32001,7 +32216,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 2,
       "totalLost": 2,
       "longMatches": 0,
@@ -32009,10 +32224,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 4,
+          "won": 2,
+          "lost": 2,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -32030,16 +32245,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154764
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-10",
               "opponent": "A. Rublev",
@@ -32061,7 +32267,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 10,
+      "editionsPlayed": 9,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -32069,12 +32275,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "year": "2025",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "L. Musetti",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "F. Auger-Aliassime",
@@ -32098,23 +32312,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "L. Musetti",
-              "round": "Quarter-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-13",
@@ -32597,10 +32794,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -32611,7 +32808,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -35905,9 +36102,26 @@
       "years": [
         {
           "year": "2026",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-08-13",
+              "opponent": "J. Choinski",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154184
+            }
+          ]
+        },
+        {
+          "year": "2025",
           "matchCount": 5,
-          "won": 4,
-          "lost": 1,
+          "won": 3,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -35943,23 +36157,6 @@
               "eventKey": 12154680
             },
             {
-              "date": "2026-08-13",
-              "opponent": "J. Choinski",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154184
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
               "date": "2025-08-08",
               "opponent": "L. Nardi",
               "round": "1/64-finals",
@@ -35972,7 +36169,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 3,
       "totalLost": 2,
       "longMatches": 0,
@@ -35980,10 +36177,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 5,
+          "won": 3,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -36009,16 +36206,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154686
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-12",
               "opponent": "L. Nardi",
@@ -36275,10 +36463,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -36289,7 +36477,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -39472,7 +39660,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -39507,7 +39695,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -39515,10 +39703,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
+          "year": "2025",
+          "matchCount": 5,
           "won": 4,
-          "lost": 0,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -39552,16 +39740,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -39843,10 +40022,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -39857,7 +40036,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -42997,7 +43176,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -43036,15 +43215,6 @@
               "eventKey": 12154761
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
         },
         {
           "year": "2024",
@@ -43091,7 +43261,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 6,
       "totalWon": 7,
       "totalLost": 7,
       "longMatches": 0,
@@ -43099,10 +43269,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
+          "year": "2025",
+          "matchCount": 4,
           "won": 2,
-          "lost": 1,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -43128,16 +43298,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154729
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-10",
               "opponent": "R. Opelka",
@@ -43516,10 +43677,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -43530,7 +43691,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -46878,7 +47039,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 11,
+      "editionsPlayed": 10,
       "totalWon": 18,
       "totalLost": 10,
       "longMatches": 0,
@@ -46886,10 +47047,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 8,
+          "won": 6,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -46915,16 +47076,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154630
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 5,
-          "won": 4,
-          "lost": 1,
-          "roundReached": "Semi-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-17",
               "opponent": "C. Alcaraz",
@@ -47214,7 +47366,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 7,
       "totalWon": 11,
       "totalLost": 8,
       "longMatches": 0,
@@ -47222,10 +47374,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 6,
+          "won": 4,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -47259,16 +47411,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154728
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-12",
               "opponent": "A. Mannarino",
@@ -47698,10 +47841,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -47712,7 +47855,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -51106,7 +51249,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 8,
       "totalWon": 12,
       "totalLost": 9,
       "longMatches": 0,
@@ -51114,10 +51257,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 7,
+          "won": 5,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -51151,16 +51294,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154780
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-14",
               "opponent": "T. Atmane",
@@ -51379,7 +51513,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -51388,8 +51522,25 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 4,
-          "won": 3,
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-08-14",
+              "opponent": "K. Majchrzak",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12154641
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
           "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
@@ -51416,14 +51567,6 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12154779
-            },
-            {
-              "date": "2026-08-14",
-              "opponent": "K. Majchrzak",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12154641
             }
           ]
         }
@@ -51665,10 +51808,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -51679,7 +51822,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -54131,9 +54274,26 @@
       "years": [
         {
           "year": "2026",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-08-14",
+              "opponent": "T. Kokkinakis",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154168
+            }
+          ]
+        },
+        {
+          "year": "2025",
           "matchCount": 4,
-          "won": 3,
-          "lost": 1,
+          "won": 2,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -54160,23 +54320,6 @@
               "result": "2 - 0",
               "eventKey": 12154789
             },
-            {
-              "date": "2026-08-14",
-              "opponent": "T. Kokkinakis",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154168
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
             {
               "date": "2025-08-07",
               "opponent": "A. Rinderknech",
@@ -54215,7 +54358,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -54223,10 +54366,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 4,
-          "lost": 0,
+          "year": "2025",
+          "matchCount": 6,
+          "won": 5,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -54260,16 +54403,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -54610,10 +54744,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -54624,7 +54758,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -69830,7 +69964,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -69873,7 +70007,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 5,
       "totalLost": 6,
       "longMatches": 0,
@@ -69881,12 +70015,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
+          "year": "2025",
+          "matchCount": 5,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "lost": 2,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "F. Tiafoe",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "J. Faria",
@@ -69910,23 +70052,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154760
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 0,
-          "lost": 2,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "F. Tiafoe",
-              "round": "Quarter-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-09",
@@ -70260,10 +70385,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -70274,7 +70399,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -73176,7 +73301,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 10,
+      "editionsPlayed": 9,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -73184,12 +73309,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "year": "2025",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "L. Musetti",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "F. Auger-Aliassime",
@@ -73213,23 +73346,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "L. Musetti",
-              "round": "Quarter-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-13",
@@ -73477,7 +73593,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 7,
       "totalWon": 14,
       "totalLost": 8,
       "longMatches": 0,
@@ -73485,10 +73601,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 7,
+          "won": 5,
+          "lost": 2,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -73514,16 +73630,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154730
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-14",
               "opponent": "B. Bonzi",
@@ -73967,10 +74074,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -73981,7 +74088,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -76849,7 +76956,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 7,
       "totalWon": 11,
       "totalLost": 8,
       "longMatches": 0,
@@ -76857,10 +76964,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 6,
+          "won": 4,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -76894,16 +77001,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154728
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-12",
               "opponent": "A. Mannarino",
@@ -77098,7 +77196,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 3,
+      "editionsPlayed": 2,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -77106,10 +77204,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
+          "year": "2025",
+          "matchCount": 5,
           "won": 4,
-          "lost": 0,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -77143,16 +77241,7 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/32-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -77434,10 +77523,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -77448,7 +77537,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -80969,9 +81058,26 @@
       "years": [
         {
           "year": "2026",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2026-08-13",
+              "opponent": "J. Choinski",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154184
+            }
+          ]
+        },
+        {
+          "year": "2025",
           "matchCount": 5,
-          "won": 4,
-          "lost": 1,
+          "won": 3,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -81007,23 +81113,6 @@
               "eventKey": 12154680
             },
             {
-              "date": "2026-08-13",
-              "opponent": "J. Choinski",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154184
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 1,
-          "won": 0,
-          "lost": 1,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
               "date": "2025-08-08",
               "opponent": "L. Nardi",
               "round": "1/64-finals",
@@ -81044,7 +81133,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
+          "year": "2025",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -81083,15 +81172,6 @@
               "eventKey": 12154761
             }
           ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 0,
-          "won": 0,
-          "lost": 0,
-          "roundReached": "Withdrawal",
-          "matches": [],
-          "withdrew": true
         },
         {
           "year": "2024",
@@ -81373,10 +81453,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -81387,7 +81467,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -84346,7 +84426,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 8,
       "totalWon": 12,
       "totalLost": 9,
       "longMatches": 0,
@@ -84354,10 +84434,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
+          "year": "2025",
+          "matchCount": 7,
+          "won": 5,
+          "lost": 2,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -84391,16 +84471,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154780
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 3,
-          "won": 2,
-          "lost": 1,
-          "roundReached": "1/8-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-14",
               "opponent": "T. Atmane",
@@ -84619,7 +84690,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -84627,10 +84698,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 4,
-          "won": 4,
-          "lost": 0,
+          "year": "2025",
+          "matchCount": 6,
+          "won": 5,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -84664,16 +84735,7 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
-          "lost": 1,
-          "roundReached": "1/16-finals",
-          "matches": [
+            },
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -85014,10 +85076,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -85028,7 +85090,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
@@ -88312,7 +88374,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 5,
       "totalWon": 5,
       "totalLost": 6,
       "longMatches": 0,
@@ -88320,12 +88382,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
+          "year": "2025",
+          "matchCount": 5,
           "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "lost": 2,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "F. Tiafoe",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "J. Faria",
@@ -88349,23 +88419,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154760
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 0,
-          "lost": 2,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "F. Tiafoe",
-              "round": "Quarter-finals",
-              "won": false,
-              "result": "0 - 2",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-09",
@@ -88464,7 +88517,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 10,
+      "editionsPlayed": 9,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -88472,12 +88525,20 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2026",
-          "matchCount": 3,
-          "won": 3,
-          "lost": 0,
-          "roundReached": "1/8-finals",
+          "year": "2025",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
           "matches": [
+            {
+              "date": "2026-08-22",
+              "opponent": "L. Musetti",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12156151
+            },
             {
               "date": "2026-08-20",
               "opponent": "F. Auger-Aliassime",
@@ -88501,23 +88562,6 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 3,
-          "lost": 1,
-          "roundReached": "Quarter-finals",
-          "matches": [
-            {
-              "date": "2026-08-22",
-              "opponent": "L. Musetti",
-              "round": "Quarter-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12156151
             },
             {
               "date": "2025-08-13",
@@ -89000,10 +89044,10 @@
           "label": "Aug 22",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 27,
+          "lo": 19,
+          "rain": 34,
           "wind": 23,
-          "humidity": 73,
+          "humidity": 72,
           "isMatch": true,
           "available": true
         },
@@ -89014,7 +89058,7 @@
           "code": 3,
           "hi": 26,
           "lo": 16,
-          "rain": 11,
+          "rain": 10,
           "wind": 19,
           "humidity": 65,
           "isMatch": false,
