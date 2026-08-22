@@ -21225,7 +21225,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 7-6, 3-6",
+      "display": "1-6, 7-6(7), 3-6",
       "sets": [
         {
           "p1": 1,
@@ -24896,7 +24896,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(4), 7-6(6)",
       "sets": [
         {
           "p1": 7,
@@ -37700,7 +37700,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-6, 6-1",
+      "display": "6-7(3), 7-6(4), 6-1",
       "sets": [
         {
           "p1": 6,
@@ -45277,7 +45277,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-4, 7-6",
+      "display": "4-6, 6-4, 7-6(3)",
       "sets": [
         {
           "p1": 4,
@@ -59237,7 +59237,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 3-6",
+      "display": "6-4, 6-7(3), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -67092,7 +67092,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 4-6",
+      "display": "6-4, 6-7(6), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -74004,7 +74004,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 3-6",
+      "display": "3-6, 7-6(5), 3-6",
       "sets": [
         {
           "p1": 3,
@@ -108316,11 +108316,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "15 - 0",
-    "liveServer": "p1",
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
     "oddsMovement": {
@@ -108902,6 +108902,23 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-7(2), 5-7",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 5,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   }
 ]
