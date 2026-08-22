@@ -1881,11 +1881,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
@@ -2892,7 +2898,10 @@
       "edgeVsPinnacleP1": 0.006,
       "edgeVsPinnacleP2": -0.006,
       "ts": "2026-08-21T09:09:01.933Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156416",
