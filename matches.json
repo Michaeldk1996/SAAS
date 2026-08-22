@@ -23,7 +23,7 @@
       },
       "p2": {
         "price": 1.34,
-        "bookmaker": "Superbet"
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Cincinnati - Semi-finals",
@@ -1419,7 +1419,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -1427,10 +1427,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
+          "year": "2026",
+          "matchCount": 4,
           "won": 4,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -1464,7 +1464,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -1519,7 +1528,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
+          "year": "2026",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -1558,6 +1567,15 @@
               "eventKey": 12154761
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2024",
@@ -1763,9 +1781,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 26.6,
-      "windSpeed": 15.5,
-      "humidity": 59,
+      "temperature": 27.7,
+      "windSpeed": 17,
+      "humidity": 55,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -1842,9 +1860,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -1853,11 +1871,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -1872,7 +1890,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-22T06:33:33Z",
+      "capturedAt": "2026-08-22T09:23:14Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -2027,6 +2045,26 @@
             [
               "2026-08-22T06:30:51.870Z",
               3.11
+            ],
+            [
+              "2026-08-22T06:33:46.435Z",
+              3.1
+            ],
+            [
+              "2026-08-22T06:34:57.468Z",
+              3.18
+            ],
+            [
+              "2026-08-22T06:57:10.919Z",
+              3.14
+            ],
+            [
+              "2026-08-22T07:10:41.984Z",
+              3.25
+            ],
+            [
+              "2026-08-22T07:12:24.890Z",
+              3.31
             ]
           ],
           "p2": [
@@ -2177,6 +2215,26 @@
             [
               "2026-08-22T06:30:51.870Z",
               1.421
+            ],
+            [
+              "2026-08-22T06:33:46.435Z",
+              1.423
+            ],
+            [
+              "2026-08-22T06:34:57.468Z",
+              1.408
+            ],
+            [
+              "2026-08-22T06:57:10.919Z",
+              1.416
+            ],
+            [
+              "2026-08-22T07:10:41.984Z",
+              1.395
+            ],
+            [
+              "2026-08-22T07:12:24.890Z",
+              1.384
             ]
           ]
         },
@@ -2187,7 +2245,7 @@
               3.1
             ],
             [
-              "2026-08-22T06:24:50.975Z",
+              "2026-08-22T07:05:23.326Z",
               3.1
             ]
           ],
@@ -2197,7 +2255,7 @@
               1.333
             ],
             [
-              "2026-08-22T06:24:50.975Z",
+              "2026-08-22T07:05:23.326Z",
               1.333
             ]
           ]
@@ -2267,6 +2325,18 @@
             [
               "2026-08-22T06:17:52.722Z",
               3.11
+            ],
+            [
+              "2026-08-22T06:46:00.962Z",
+              3.11
+            ],
+            [
+              "2026-08-22T07:15:29.635Z",
+              3.16
+            ],
+            [
+              "2026-08-22T08:31:49.171Z",
+              3.29
             ]
           ],
           "p2": [
@@ -2333,6 +2403,18 @@
             [
               "2026-08-22T06:17:52.722Z",
               1.42
+            ],
+            [
+              "2026-08-22T06:46:00.962Z",
+              1.42
+            ],
+            [
+              "2026-08-22T07:15:29.635Z",
+              1.41
+            ],
+            [
+              "2026-08-22T08:31:49.171Z",
+              1.385
             ]
           ]
         },
@@ -2373,6 +2455,18 @@
             [
               "2026-08-22T06:12:34.085Z",
               3.1
+            ],
+            [
+              "2026-08-22T07:14:42.225Z",
+              3.05
+            ],
+            [
+              "2026-08-22T07:40:57.848Z",
+              3.1
+            ],
+            [
+              "2026-08-22T08:19:36.579Z",
+              3.15
             ]
           ],
           "p2": [
@@ -2411,6 +2505,18 @@
             [
               "2026-08-22T06:12:34.085Z",
               1.38
+            ],
+            [
+              "2026-08-22T07:14:42.225Z",
+              1.39
+            ],
+            [
+              "2026-08-22T07:40:57.848Z",
+              1.38
+            ],
+            [
+              "2026-08-22T08:19:36.579Z",
+              1.37
             ]
           ]
         },
@@ -2463,6 +2569,26 @@
             [
               "2026-08-22T06:11:46.076Z",
               3.0
+            ],
+            [
+              "2026-08-22T07:16:33.386Z",
+              2.95
+            ],
+            [
+              "2026-08-22T07:44:00.502Z",
+              3.0
+            ],
+            [
+              "2026-08-22T08:00:49.581Z",
+              3.1
+            ],
+            [
+              "2026-08-22T08:17:35.268Z",
+              3.15
+            ],
+            [
+              "2026-08-22T09:02:32.146Z",
+              3.15
             ]
           ],
           "p2": [
@@ -2509,6 +2635,26 @@
             [
               "2026-08-22T06:11:46.076Z",
               1.38
+            ],
+            [
+              "2026-08-22T07:16:33.386Z",
+              1.39
+            ],
+            [
+              "2026-08-22T07:44:00.502Z",
+              1.38
+            ],
+            [
+              "2026-08-22T08:00:49.581Z",
+              1.36
+            ],
+            [
+              "2026-08-22T08:17:35.268Z",
+              1.35
+            ],
+            [
+              "2026-08-22T09:02:32.146Z",
+              1.35
             ]
           ]
         },
@@ -2553,6 +2699,10 @@
             [
               "2026-08-22T06:20:23.646Z",
               3.2
+            ],
+            [
+              "2026-08-22T08:43:27.896Z",
+              3.2
             ]
           ],
           "p2": [
@@ -2595,6 +2745,10 @@
             [
               "2026-08-22T06:20:23.646Z",
               1.364
+            ],
+            [
+              "2026-08-22T08:43:27.896Z",
+              1.364
             ]
           ]
         }
@@ -2633,18 +2787,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.82,
-      "p2": 2,
-      "bookmaker": "Betano"
+      "p1": 1.84,
+      "p2": 1.98,
+      "bookmaker": "Unibet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.82,
-        "bookmaker": "Betano"
+        "price": 1.84,
+        "bookmaker": "Unibet"
       },
       "p2": {
-        "price": 2,
-        "bookmaker": "Betano"
+        "price": 1.98,
+        "bookmaker": "Unibet"
       }
     },
     "tournamentRound": "ATP Cincinnati - Semi-finals",
@@ -4411,7 +4565,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -4419,10 +4573,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -4456,7 +4610,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -4562,7 +4725,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 10,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -4570,10 +4733,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 6,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -4607,7 +4770,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "H. Rune",
@@ -5013,9 +5185,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 24.1,
-      "windSpeed": 16.8,
-      "humidity": 57,
+      "temperature": 24.5,
+      "windSpeed": 17.6,
+      "humidity": 54,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 17 – 23, 2026",
@@ -5092,9 +5264,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -5103,11 +5275,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": true,
           "available": true
         }
@@ -5135,18 +5307,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.37,
-      "bookmaker": "bet365"
+      "p1": 1.53,
+      "p2": 2.32,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.57,
-        "bookmaker": "bet365"
+        "price": 1.53,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.37,
-        "bookmaker": "bet365"
+        "price": 2.32,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -7045,9 +7217,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -7071,7 +7243,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -7084,7 +7256,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -7097,7 +7269,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -7135,18 +7307,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.2,
-      "p2": 1.36,
-      "bookmaker": "bet365"
+      "p1": 2.5,
+      "p2": 1.46,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.2,
-        "bookmaker": "bet365"
+        "price": 2.5,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.36,
-        "bookmaker": "bet365"
+        "price": 1.46,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -8694,9 +8866,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -8720,7 +8892,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -8733,7 +8905,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -8746,7 +8918,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -8784,18 +8956,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.5,
-      "p2": 2.62,
-      "bookmaker": "bet365"
+      "p1": 1.56,
+      "p2": 2.25,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.5,
-        "bookmaker": "bet365"
+        "price": 1.56,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.62,
-        "bookmaker": "bet365"
+        "price": 2.25,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -10527,9 +10699,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -10553,7 +10725,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -10566,7 +10738,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -10579,7 +10751,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -10617,18 +10789,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.72,
-      "p2": 2.1,
-      "bookmaker": "bet365"
+      "p1": 1.6,
+      "p2": 2.17,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.72,
-        "bookmaker": "bet365"
+        "price": 1.6,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.1,
-        "bookmaker": "bet365"
+        "price": 2.17,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -12279,9 +12451,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -12305,7 +12477,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -12318,7 +12490,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -12331,7 +12503,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -14411,9 +14583,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -14437,7 +14609,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -14450,7 +14622,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -14463,7 +14635,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -14501,18 +14673,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.3,
-      "p2": 1.61,
-      "bookmaker": "bet365"
+      "p1": 2.17,
+      "p2": 1.6,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.3,
-        "bookmaker": "bet365"
+        "price": 2.17,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.61,
-        "bookmaker": "bet365"
+        "price": 1.6,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -15974,9 +16146,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -16000,7 +16172,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -16013,7 +16185,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -16026,7 +16198,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -16065,17 +16237,17 @@
     "value": null,
     "odds": {
       "p1": 1.12,
-      "p2": 6,
-      "bookmaker": "1xBet"
+      "p2": 6.5,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
       "p1": {
         "price": 1.12,
-        "bookmaker": "1xBet"
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 6,
-        "bookmaker": "1xBet"
+        "price": 6.5,
+        "bookmaker": "Betano"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -17320,9 +17492,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -17346,7 +17518,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -17359,7 +17531,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -17372,7 +17544,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -17410,18 +17582,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.2,
-      "p2": 1.66,
-      "bookmaker": "bet365"
+      "p1": 2.12,
+      "p2": 1.63,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.2,
-        "bookmaker": "bet365"
+        "price": 2.12,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 1.66,
-        "bookmaker": "bet365"
+        "price": 1.63,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -19375,9 +19547,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -19401,7 +19573,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -19414,7 +19586,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -19427,7 +19599,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -19466,17 +19638,17 @@
     "value": null,
     "odds": {
       "p1": 1.4,
-      "p2": 3,
-      "bookmaker": "bet365"
+      "p2": 2.67,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
         "price": 1.4,
-        "bookmaker": "bet365"
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 3,
-        "bookmaker": "bet365"
+        "price": 2.67,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -21542,9 +21714,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -21568,7 +21740,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -21581,7 +21753,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -21594,7 +21766,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -23528,9 +23700,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -23554,7 +23726,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -23567,7 +23739,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -23580,7 +23752,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -23618,18 +23790,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.53,
-      "p2": 2.5,
-      "bookmaker": "bet365"
+      "p1": 1.52,
+      "p2": 2.35,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.53,
-        "bookmaker": "bet365"
+        "price": 1.52,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.5,
-        "bookmaker": "bet365"
+        "price": 2.35,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -25505,9 +25677,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -25531,7 +25703,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -25544,7 +25716,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -25557,7 +25729,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -25595,18 +25767,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.5,
-      "p2": 2.62,
-      "bookmaker": "bet365"
+      "p1": 1.44,
+      "p2": 2.55,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.5,
-        "bookmaker": "bet365"
+        "price": 1.44,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.62,
-        "bookmaker": "bet365"
+        "price": 2.55,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -27451,9 +27623,9 @@
           "code": 3,
           "hi": 32,
           "lo": 19,
-          "rain": 1,
+          "rain": 0,
           "wind": 14,
-          "humidity": 41,
+          "humidity": 42,
           "isMatch": true,
           "available": true
         },
@@ -27477,7 +27649,7 @@
           "code": 3,
           "hi": 34,
           "lo": 19,
-          "rain": 19,
+          "rain": 10,
           "wind": 12,
           "humidity": 40,
           "isMatch": false,
@@ -27490,7 +27662,7 @@
           "code": 51,
           "hi": 32,
           "lo": 22,
-          "rain": 62,
+          "rain": 52,
           "wind": 12,
           "humidity": 54,
           "isMatch": false,
@@ -27503,7 +27675,7 @@
           "code": 53,
           "hi": 34,
           "lo": 20,
-          "rain": 62,
+          "rain": 52,
           "wind": 13,
           "humidity": 64,
           "isMatch": false,
@@ -29199,7 +29371,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 2,
       "totalLost": 1,
       "longMatches": 0,
@@ -29208,25 +29380,8 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "2026-08-14",
-              "opponent": "M. Lajal",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12154640
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 2,
-          "won": 1,
+          "matchCount": 3,
+          "won": 2,
           "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
@@ -29245,13 +29400,21 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154778
+            },
+            {
+              "date": "2026-08-14",
+              "opponent": "M. Lajal",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12154640
             }
           ]
         }
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 14,
       "totalLost": 8,
       "longMatches": 0,
@@ -29259,10 +29422,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -29288,7 +29451,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154730
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-14",
               "opponent": "B. Bonzi",
@@ -29733,9 +29905,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -29744,11 +29916,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -32228,7 +32400,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 2,
       "totalLost": 2,
       "longMatches": 0,
@@ -32236,10 +32408,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 4,
-          "won": 2,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
           "roundReached": "1/16-finals",
           "matches": [
             {
@@ -32257,7 +32429,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154764
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-10",
               "opponent": "A. Rublev",
@@ -32279,7 +32460,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 10,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -32287,10 +32468,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 6,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -32324,7 +32505,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "H. Rune",
@@ -32807,9 +32997,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -32818,11 +33008,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -36114,26 +36304,9 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "2026-08-13",
-              "opponent": "J. Choinski",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154184
-            }
-          ]
-        },
-        {
-          "year": "2025",
           "matchCount": 5,
-          "won": 3,
-          "lost": 2,
+          "won": 4,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -36169,6 +36342,23 @@
               "eventKey": 12154680
             },
             {
+              "date": "2026-08-13",
+              "opponent": "J. Choinski",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154184
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
               "date": "2025-08-08",
               "opponent": "L. Nardi",
               "round": "1/64-finals",
@@ -36181,7 +36371,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 1,
+      "editionsPlayed": 2,
       "totalWon": 3,
       "totalLost": 2,
       "longMatches": 0,
@@ -36189,10 +36379,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
-          "won": 3,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -36218,7 +36408,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154686
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-12",
               "opponent": "L. Nardi",
@@ -36476,9 +36675,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -36487,11 +36686,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -39672,7 +39871,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
+          "year": "2026",
           "matchCount": 3,
           "won": 2,
           "lost": 1,
@@ -39707,7 +39906,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -39715,10 +39914,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
+          "year": "2026",
+          "matchCount": 4,
           "won": 4,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -39752,7 +39951,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -40035,9 +40243,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -40046,11 +40254,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -43188,7 +43396,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
+          "year": "2026",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -43227,6 +43435,15 @@
               "eventKey": 12154761
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2024",
@@ -43273,7 +43490,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 6,
+      "editionsPlayed": 7,
       "totalWon": 7,
       "totalLost": 7,
       "longMatches": 0,
@@ -43281,10 +43498,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 4,
+          "year": "2026",
+          "matchCount": 3,
           "won": 2,
-          "lost": 2,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -43310,7 +43527,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154729
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-10",
               "opponent": "R. Opelka",
@@ -43690,9 +43916,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -43701,11 +43927,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -47051,7 +47277,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 10,
+      "editionsPlayed": 11,
       "totalWon": 18,
       "totalLost": 10,
       "longMatches": 0,
@@ -47059,10 +47285,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 8,
-          "won": 6,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -47088,7 +47314,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154630
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 5,
+          "won": 4,
+          "lost": 1,
+          "roundReached": "Semi-finals",
+          "matches": [
             {
               "date": "2025-08-17",
               "opponent": "C. Alcaraz",
@@ -47378,7 +47613,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 11,
       "totalLost": 8,
       "longMatches": 0,
@@ -47386,10 +47621,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 4,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -47423,7 +47658,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154728
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-12",
               "opponent": "A. Mannarino",
@@ -47854,9 +48098,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -47865,11 +48109,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -51261,7 +51505,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 9,
       "totalWon": 12,
       "totalLost": 9,
       "longMatches": 0,
@@ -51269,10 +51513,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -51306,7 +51550,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154780
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-14",
               "opponent": "T. Atmane",
@@ -51525,7 +51778,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 1,
       "totalWon": 3,
       "totalLost": 1,
       "longMatches": 0,
@@ -51534,25 +51787,8 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "2026-08-14",
-              "opponent": "K. Majchrzak",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 0",
-              "eventKey": 12154641
-            }
-          ]
-        },
-        {
-          "year": "2025",
-          "matchCount": 3,
-          "won": 2,
+          "matchCount": 4,
+          "won": 3,
           "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
@@ -51579,6 +51815,14 @@
               "won": true,
               "result": "1 - 0",
               "eventKey": 12154779
+            },
+            {
+              "date": "2026-08-14",
+              "opponent": "K. Majchrzak",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12154641
             }
           ]
         }
@@ -51821,9 +52065,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -51832,11 +52076,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -54286,26 +54530,9 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "2026-08-14",
-              "opponent": "T. Kokkinakis",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154168
-            }
-          ]
-        },
-        {
-          "year": "2025",
           "matchCount": 4,
-          "won": 2,
-          "lost": 2,
+          "won": 3,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -54332,6 +54559,23 @@
               "result": "2 - 0",
               "eventKey": 12154789
             },
+            {
+              "date": "2026-08-14",
+              "opponent": "T. Kokkinakis",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154168
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
             {
               "date": "2025-08-07",
               "opponent": "A. Rinderknech",
@@ -54370,7 +54614,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -54378,10 +54622,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -54415,7 +54659,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -54757,9 +55010,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -54768,11 +55021,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -69976,7 +70229,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
+          "year": "2026",
           "matchCount": 4,
           "won": 3,
           "lost": 1,
@@ -70019,7 +70272,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 5,
       "totalLost": 6,
       "longMatches": 0,
@@ -70027,10 +70280,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
+          "year": "2026",
+          "matchCount": 4,
           "won": 3,
-          "lost": 2,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -70064,7 +70317,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154760
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-09",
               "opponent": "B. Bonzi",
@@ -70398,9 +70660,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -70409,11 +70671,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -73313,7 +73575,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 10,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -73321,10 +73583,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 6,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -73358,7 +73620,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "H. Rune",
@@ -73605,7 +73876,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 14,
       "totalLost": 8,
       "longMatches": 0,
@@ -73613,10 +73884,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
           "roundReached": "1/8-finals",
           "matches": [
             {
@@ -73642,7 +73913,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154730
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-14",
               "opponent": "B. Bonzi",
@@ -74087,9 +74367,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -74098,11 +74378,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -76968,7 +77248,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 7,
+      "editionsPlayed": 8,
       "totalWon": 11,
       "totalLost": 8,
       "longMatches": 0,
@@ -76976,10 +77256,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 4,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -77013,7 +77293,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154728
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-12",
               "opponent": "A. Mannarino",
@@ -77208,7 +77497,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 2,
+      "editionsPlayed": 3,
       "totalWon": 6,
       "totalLost": 2,
       "longMatches": 0,
@@ -77216,10 +77505,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
+          "year": "2026",
+          "matchCount": 4,
           "won": 4,
-          "lost": 1,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -77253,7 +77542,16 @@
               "won": true,
               "result": "2 - 1",
               "eventKey": 12154666
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-10",
               "opponent": "T. Atmane",
@@ -77536,9 +77834,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -77547,11 +77845,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -81070,26 +81368,9 @@
       "years": [
         {
           "year": "2026",
-          "matchCount": 1,
-          "won": 1,
-          "lost": 0,
-          "roundReached": "1/64-finals",
-          "matches": [
-            {
-              "date": "2026-08-13",
-              "opponent": "J. Choinski",
-              "round": "1/64-finals",
-              "won": true,
-              "result": "2 - 1",
-              "eventKey": 12154184
-            }
-          ]
-        },
-        {
-          "year": "2025",
           "matchCount": 5,
-          "won": 3,
-          "lost": 2,
+          "won": 4,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -81125,6 +81406,23 @@
               "eventKey": 12154680
             },
             {
+              "date": "2026-08-13",
+              "opponent": "J. Choinski",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12154184
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
               "date": "2025-08-08",
               "opponent": "L. Nardi",
               "round": "1/64-finals",
@@ -81145,7 +81443,7 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
+          "year": "2026",
           "matchCount": 4,
           "won": 4,
           "lost": 0,
@@ -81184,6 +81482,15 @@
               "eventKey": 12154761
             }
           ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
         },
         {
           "year": "2024",
@@ -81466,9 +81773,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -81477,11 +81784,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -84438,7 +84745,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 8,
+      "editionsPlayed": 9,
       "totalWon": 12,
       "totalLost": 9,
       "longMatches": 0,
@@ -84446,10 +84753,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 5,
-          "lost": 2,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -84483,7 +84790,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154780
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-14",
               "opponent": "T. Atmane",
@@ -84702,7 +85018,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 7,
       "totalLost": 5,
       "longMatches": 0,
@@ -84710,10 +85026,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 6,
-          "won": 5,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -84747,7 +85063,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154822
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "A. Zverev",
@@ -85089,9 +85414,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": false,
           "available": true
         },
@@ -85100,11 +85425,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
@@ -88386,7 +88711,7 @@
       }
     ],
     "p1TournamentHistory": {
-      "editionsPlayed": 5,
+      "editionsPlayed": 6,
       "totalWon": 5,
       "totalLost": 6,
       "longMatches": 0,
@@ -88394,10 +88719,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 5,
+          "year": "2026",
+          "matchCount": 4,
           "won": 3,
-          "lost": 2,
+          "lost": 1,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -88431,7 +88756,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154760
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
             {
               "date": "2025-08-09",
               "opponent": "B. Bonzi",
@@ -88529,7 +88863,7 @@
       ]
     },
     "p2TournamentHistory": {
-      "editionsPlayed": 9,
+      "editionsPlayed": 10,
       "totalWon": 17,
       "totalLost": 9,
       "longMatches": 0,
@@ -88537,10 +88871,10 @@
       "longMatchPct": 0,
       "years": [
         {
-          "year": "2025",
-          "matchCount": 7,
-          "won": 6,
-          "lost": 1,
+          "year": "2026",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
           "roundReached": "Quarter-finals",
           "matches": [
             {
@@ -88574,7 +88908,16 @@
               "won": true,
               "result": "2 - 0",
               "eventKey": 12154790
-            },
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
             {
               "date": "2025-08-13",
               "opponent": "H. Rune",
@@ -89057,9 +89400,9 @@
           "code": 3,
           "hi": 28,
           "lo": 19,
-          "rain": 34,
-          "wind": 23,
-          "humidity": 72,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 73,
           "isMatch": true,
           "available": true
         },
@@ -89068,11 +89411,11 @@
           "dow": "Sun",
           "label": "Aug 23",
           "code": 3,
-          "hi": 26,
+          "hi": 27,
           "lo": 16,
-          "rain": 10,
+          "rain": 9,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 61,
           "isMatch": false,
           "available": true
         }
