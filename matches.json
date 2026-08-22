@@ -89558,21 +89558,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 6
-      }
-    ],
-    "liveGameScore": "-",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
@@ -90915,6 +90904,23 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 4-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   }
 ]
