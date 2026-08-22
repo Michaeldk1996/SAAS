@@ -2510,14 +2510,23 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156491",
