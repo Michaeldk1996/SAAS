@@ -161,7 +161,7 @@ async function fetchAdminLogFromFirestore(){
   }catch(e){ DATA.errors.push('admin/log (Firestore): '+e.message); return null; }
 }
 
-let DATA = { model:null, matches:null, health:null, harvest:null, adminLog:null, errors:[] };
+let DATA = { model:null, matches:null, health:null, harvest:null, adminLog:null, marketHealth:null, errors:[] };
 
 async function boot(){
   const app = document.getElementById('app');
@@ -193,6 +193,11 @@ async function boot(){
   ]);
   DATA.model=model; DATA.matches=matches; DATA.health=health;
   DATA.harvest = await getJson('./atp-entry-harvest-state.json').catch(()=>null); // not exposed => null
+  // TEN-8 P1: market-size matcher coverage + 24h-vs-all-time divergence. Written
+  // by fetch-market-size.js (HEALTH_PATH). Like admin-log.json it is a private
+  // artifact; if it is not in the Pages _site copy list the fetch 404s and the
+  // card renders a clear "not published" stub rather than breaking.
+  DATA.marketHealth = await getJson('./market-size-health.json').catch(()=>null);
   // TEN-8: the ledger is served from Firestore (doc `admin/log`), readable ONLY
   // by the founder's own token (see firestore.rules). This is the genuinely
   // private path — admin-log.json is deliberately NOT published to Pages, so the
@@ -206,6 +211,7 @@ async function boot(){
     'model generated ' + esc(fmtTs(model&&model.generatedAt)) + ' · pipeline last-success ' + esc(fmtTs(health&&health.lastSuccess));
 
   renderSection1();
+  renderMarketSize();   // TEN-8 P1: appended into Section 1 after it renders
   renderSection2();
   renderSection3();
   renderSection4();
@@ -306,6 +312,61 @@ function matchCard(id,m){
 }
 
 function kv(k,v){ return '<div class="kv"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
+
+// ---- TEN-8 P1: Market Size coverage + 24h-vs-all-time divergence ----------
+// Reads market-size-health.json (fetch-market-size.js output):
+//   counters: { total, kalshi:{matched,no_market,matcher_failed},
+//               polymarket:{...}, both_present, neither_present }
+//   divergence: [ { key, tour, match, venue, v24, allTime, ratio, settled } ]
+// Capture-workflow liveness is deliberately NOT shown here (parked thread) —
+// this card reports only the matcher counters and the per-match size gap.
+function msNum(x){ return x==null||!isFinite(x)?'—':Math.round(+x).toLocaleString('en-US'); }
+function renderMarketSize(){
+  const tab=document.getElementById('tab1'); if(!tab) return;
+  const mh=DATA.marketHealth;
+  if(!mh || !mh.counters){
+    tab.appendChild($('<div class="card"><div class="hd"><div class="title">Market Size — coverage &amp; divergence</div><div><span class="pill dim">no health file</span></div></div>'
+      +'<div class="body"><div class="stub"><code>market-size-health.json</code> is not readable here. It is written by <code>fetch-market-size.js</code> each pipeline run; if it is not in the Pages <code>_site</code> copy list the same-origin fetch 404s (same posture as <code>admin-log.json</code>). Publish it to the admin surface, or view from a local checkout, to populate this card.</div></div></div>'));
+    return;
+  }
+  const c=mh.counters;
+  const venueRow=(name,v)=>{ if(!v) return '';
+    const tot=(v.matched||0)+(v.no_market||0)+(v.matcher_failed||0);
+    const rate=tot>0?v.matched/tot:null;
+    const pill = rate==null?'<span class="pill dim">—</span>'
+      : rate>=0.9?'<span class="pill good">'+pct(rate)+'</span>'
+      : rate>=0.75?'<span class="pill warn">'+pct(rate)+'</span>'
+      : '<span class="pill bad">'+pct(rate)+'</span>';
+    return '<tr><td>'+esc(name)+'</td><td class="num">'+(v.matched||0)+'</td><td class="num">'+(v.no_market||0)
+      +'</td><td class="num">'+(v.matcher_failed||0)+'</td><td class="num">'+pill+'</td></tr>';
+  };
+  // Divergence: how often the displayed 24h figure understates a mature market.
+  const div=(mh.divergence||[]).filter(d=>d && d.ratio!=null && isFinite(d.ratio));
+  const understated=div.filter(d=>d.ratio<0.5);        // 24h < half of all-time
+  const deep=div.filter(d=>d.ratio<0.25);              // 24h < a quarter of all-time
+  const worst=div.slice().sort((a,b)=>a.ratio-b.ratio).slice(0,12);
+  const divRows=worst.map(d=>'<tr><td>'+esc(d.match||d.key)+'</td><td>'+esc(d.venue)+'</td>'
+    +'<td class="num">'+msNum(d.v24)+'</td><td class="num">'+msNum(d.allTime)+'</td>'
+    +'<td class="num">'+pct(d.ratio)+'</td><td class="num">'+(d.settled?'<span class="detail">frozen</span>':'live')+'</td></tr>').join('')
+    || '<tr><td colspan="6" class="detail">No matched markets with both 24h and all-time figures yet.</td></tr>';
+
+  const gen = fmtTs(mh.generatedAt);
+  const totMatched=(c.kalshi&&c.kalshi.matched||0)+(c.polymarket&&c.polymarket.matched||0);
+  let h='<div class="card open"><div class="hd"><div class="title">Market Size — coverage &amp; 24h-vs-all-time</div>'
+    +'<div class="sub">'+ (c.total!=null?c.total+' board matches · ':'') +'generated '+esc(gen)+'</div></div><div class="body">';
+  h+='<div class="grid">'+kv('Both venues present',esc(c.both_present!=null?c.both_present:'—'))
+    +kv('Neither present',esc(c.neither_present!=null?c.neither_present:'—'))
+    +kv('Venue markets matched',totMatched)+'</div>';
+  h+='<table><thead><tr><th>Venue</th><th class="num">matched</th><th class="num">no_market</th><th class="num">matcher_failed</th><th class="num">match rate</th></tr></thead><tbody>'
+    + venueRow('Kalshi',c.kalshi) + venueRow('Polymarket',c.polymarket) + '</tbody></table>';
+  h+='<div class="grid" style="margin-top:10px">'
+    +kv('24h &lt; ½ of all-time', '<span class="'+(understated.length?'warn':'pos')+'">'+understated.length+'</span> / '+div.length+' matched <span class="detail">('+pct(div.length?understated.length/div.length:null)+' understate a mature market)</span>')
+    +kv('24h &lt; ¼ of all-time', deep.length+' / '+div.length)+'</div>';
+  h+='<div class="detail" style="margin-top:6px">Most divergent markets (lowest 24h ÷ all-time first) — a low ratio means the 24h figure the block displays is a small slice of a mature market:</div>';
+  h+='<table><thead><tr><th>Match</th><th>Venue</th><th class="num">24h</th><th class="num">all-time</th><th class="num">24h÷all</th><th class="num">state</th></tr></thead><tbody>'+divRows+'</tbody></table>';
+  h+='</div></div>';
+  tab.appendChild($(h));
+}
 function edgeCell(x){ if(x==null||!isFinite(x)) return '—'; return '<span class="'+(x>0?'pos':x<0?'neg':'')+'">'+pp(x)+'</span>'; }
 function statePill(s){ return s===2?'<span class="pill good">State 2</span>':s===1?'<span class="pill warn">State 1</span>':'<span class="pill dim">State '+esc(s)+'</span>'; }
 function stateLabel(s){ return s===1?'1 · single-book':s===2?'2 · Pinnacle confirmed':s===3?'3 · Elo-only':String(s); }
