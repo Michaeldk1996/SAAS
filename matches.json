@@ -17818,13 +17818,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.68,
+      "p2": 2.02,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.68,
+        "bookmaker": "Sbo"
+      },
+      "p2": {
+        "price": 2.02,
+        "bookmaker": "Sbo"
+      }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
     "p1Key": 1096,
