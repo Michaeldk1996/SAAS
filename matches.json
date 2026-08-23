@@ -11613,13 +11613,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.51,
+      "p2": 2.55,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.51,
+        "bookmaker": "Superbet"
+      },
+      "p2": {
+        "price": 2.55,
+        "bookmaker": "Superbet"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1759,
