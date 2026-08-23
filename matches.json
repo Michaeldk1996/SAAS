@@ -1657,14 +1657,23 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1849_y-wu.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156420",
@@ -5705,7 +5714,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
@@ -5714,12 +5723,12 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 1
+        "p1": 2,
+        "p2": 6
       }
     ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p2",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9222_g-mpetshi-perricard.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "oddsMovement": {
@@ -10445,16 +10454,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 3,
-        "p2": 5
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 3
       }
     ],
-    "liveGameScore": "30 - 15",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9608_s-shimabukuro.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "oddsMovement": {
