@@ -16938,6 +16938,23 @@ function tourxRoundChipRowHtml(label){
       <div class="tx-segwrap">${chips}</div>
     </div>`;
 }
+// Standalone metric filter row (design-export segmented control). Shares the same
+// tourxState.rvMetrics / tourxToggleRvMetric machinery as the Round-comparison
+// filter bar; used on its own by Player progression so the founder can pick which
+// metric cards render (founder request 2026-08-24). Empty selection = all metrics.
+function tourxMetricFilterRowHtml(){
+  const sel = tourxState.rvMetrics || [];
+  const chip = (key, label) => {
+    // Metric names ("1st Serve %", "All metrics") are interface words → word treatment.
+    const a = key === 'all' ? sel.length === 0 : sel.includes(key);
+    return tourxSegItem(a, label, `tourxToggleRvMetric('${key}')`, true);
+  };
+  const metricChips = [chip('all', 'All metrics')].concat(TOURX_METRICS.map(m => chip(m.key, m.short))).join('');
+  return `<div style="margin-top:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Metric</span>
+      <div class="tx-segwrap">${metricChips}</div>
+    </div>`;
+}
 function tourxSelectTour(name){ tourxState.tour = name; tourxState.roundIdx = null; renderTourxReports(); }
 function tourxSetRound(idx){ tourxState.roundIdx = idx; renderTourxReports(); }
 function tourxSetView(v){ tourxState.view = v; renderTourxReports(); }
@@ -17545,20 +17562,36 @@ function tourxProgressionTablesHtml(players, T){
   };
   const grpLabel = t => `<span style="font-family:'Hanken Grotesk',sans-serif;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;">${t}</span>`;
   const colStyle = 'display:flex;flex-direction:column;gap:16px;min-width:0;';
-  const serveCol = `<div style="${colStyle}">${grpLabel('Serve')}${TOURX_SERVE_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
-  const rallyCol = `<div style="${colStyle}">${grpLabel('Rally')}${TOURX_RALLY_KEYS.map(k => cardFor(byKey(k))).join('')}</div>`;
+  // Metric filter (shared tourxState.rvMetrics): empty = every metric; otherwise
+  // only the selected keys render, keeping each key in its serve/rally column. A
+  // column with no surviving metric is dropped and the grid collapses to one col.
+  const sel = tourxState.rvMetrics || [];
+  const show = k => sel.length === 0 || sel.includes(k);
+  const serveKeys = TOURX_SERVE_KEYS.filter(show);
+  const rallyKeys = TOURX_RALLY_KEYS.filter(show);
+  const cols = [];
+  if (serveKeys.length) cols.push(`<div style="${colStyle}">${grpLabel('Serve')}${serveKeys.map(k => cardFor(byKey(k))).join('')}</div>`);
+  if (rallyKeys.length) cols.push(`<div style="${colStyle}">${grpLabel('Rally')}${rallyKeys.map(k => cardFor(byKey(k))).join('')}</div>`);
+  const gridCols = cols.length === 1 ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))';
   const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:#4b5672;margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.</div>`;
-  return `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px;">${serveCol}${rallyCol}</div>${footer}`;
+  return `<div class="tourx-ppgrid" style="display:grid;grid-template-columns:${gridCols};gap:16px;margin-top:24px;">${cols.join('')}</div>${footer}`;
 }
 
 function tourxPlayerViewHtml(T){
-  // Progression tables show ACTIVE players only — a player is eliminated the moment
-  // they have a loss recorded, and is then dropped from the tables, chips and
-  // add-list entirely (no orphaned row/name). Byes are not losses. (T3)
-  const allNames = T.players.filter(p => p.data && p.nRounds > 0 && !p.eliminated).map(p => p.name).sort();
+  // Player pool: everyone with round data. Eliminated players are RETAINED here
+  // (overriding the earlier live-only T3 ruling) so a finished tournament's past
+  // rounds stay reviewable — every player but the champion is "eliminated" once an
+  // event completes, which previously emptied this whole view. Founder request
+  // 2026-08-24: add a Round filter and keep past-round data reachable.
+  const allNames = T.players.filter(p => p.data && p.nRounds > 0).map(p => p.name).sort();
   const selNames = tourxState.cmpPlayers.filter(n => allNames.includes(n)).slice(0, TOURX_PP_CAP);
   const selPlayers = selNames.map(n => T.players.find(p => p.name === n));
-  const controls = tourxPPControlsHtml(allNames, TOURX_PP_CAP);
+  // Two filter rows below the player chips: a Round selector (scopes the auto pool
+  // to players who reached that round or deeper) and a Metric selector (which cards
+  // render). Both reuse the shared Round-comparison state (roundIdx / rvMetrics).
+  const controls = tourxPPControlsHtml(allNames, TOURX_PP_CAP)
+    + tourxRoundChipRowHtml('Round')
+    + tourxMetricFilterRowHtml();
 
   // Comparison mode — one or more players selected: the design-export progression
   // tables (serve/rally metric grid, per-round best-value highlight, field-avg row).
@@ -17566,7 +17599,7 @@ function tourxPlayerViewHtml(T){
     // Progression needs two rounds INTO THE DRAW — which a bye recipient reaches
     // after a single win, so depth is measured by drawDepth (byes counted), not by
     // matches played. Their bye round renders as an em dash rather than a value.
-    const eligible = selPlayers.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated);
+    const eligible = selPlayers.filter(p => p.data && p.drawDepth >= 2);
     if (!eligible.length){
       const who = selPlayers.length === 1
         ? `<b style="color:#c3ccdb;">${tourxEsc(selPlayers[0].name)}</b> is only one round in so far`
@@ -17580,10 +17613,20 @@ function tourxPlayerViewHtml(T){
   // No manual selection → auto-populate from the second round onward. Any player
   // two rounds into the draw is shown automatically, so the report is useful
   // without picking players first; the "Add player" control narrows afterwards.
-  const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && !p.eliminated)
+  // The Round filter scopes the pool: a specific round keeps only players whose
+  // draw reached that round or deeper (drawDepth-1 >= roundIdx), so a finished
+  // event's quarter/semi/final field can be reviewed round by round. "All rounds"
+  // (roundIdx null) keeps the deepest players overall (champion + runs surface first).
+  const rIdx = tourxState.roundIdx;
+  const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && (rIdx == null || (p.drawDepth - 1) >= rIdx))
     .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.drawDepth - a.drawDepth));
   if (!progressable.length){
-    const msg = `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#5b6880;font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
+    // Distinguish the two empty cases: a round filter that no player has reached
+    // yet (live event) vs. no player two rounds deep at all (event barely started).
+    const roundLbl = rIdx != null ? (tourxActiveLabels[rIdx] || tourxActiveLabels[tourxActiveLabels.length - 1]) : null;
+    const msg = roundLbl
+      ? `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#5b6880;font-size:13.5px;line-height:1.6;">No player at <b style="color:#c3ccdb;">${T.name}</b> has reached <b style="color:#c3ccdb;">${roundLbl}</b> yet. Pick an earlier round above, or choose <b style="color:#c3ccdb;">All rounds</b> to see everyone two rounds into the draw.</div>`
+      : `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#5b6880;font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
     return controls + msg;
   }
   const autoPlayers = progressable.slice(0, TOURX_PP_CAP);
