@@ -12038,10 +12038,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10070_a-walton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/412_j-de-jong.jpg",
@@ -12485,7 +12491,10 @@
       "edgeVsPinnacleP1": -0.0108,
       "edgeVsPinnacleP2": 0.0108,
       "ts": "2026-08-23T15:01:49.899Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156808",
@@ -17625,10 +17634,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9519_s-gorzny.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/76018_c-hewitt.jpg",
@@ -18225,7 +18240,10 @@
       "p2": 1.806,
       "ts": "2026-08-24T08:32:07.203Z",
       "vfP1": 0.4647
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156811",
@@ -41038,7 +41056,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(9), 6-4, 3-6",
+      "display": "6-7, 6-4, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -45054,7 +45072,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(2), 5-7",
+      "display": "6-7, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -56831,7 +56849,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6(3), 1-6",
+      "display": "4-6, 7-6, 1-6",
       "sets": [
         {
           "p1": 4,
@@ -83590,10 +83608,15 @@
         "set": 1,
         "p1": 4,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 4
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "A - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1096_k-majchrzak.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
@@ -86559,7 +86582,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
@@ -86568,12 +86591,12 @@
       },
       {
         "set": 2,
-        "p1": 2,
-        "p2": 3
+        "p1": 7,
+        "p2": 5
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/18341_d-suresh.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
     "oddsMovement": {
@@ -89277,16 +89300,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
         "p1": 2,
         "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 6
       }
     ],
-    "liveGameScore": "0 - 30",
-    "liveServer": "p2",
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/5778_q-vandecasteele.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "oddsMovement": {
