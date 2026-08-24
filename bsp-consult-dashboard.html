@@ -11912,6 +11912,11 @@ function closeModal(){ document.getElementById('favModal').classList.remove('ope
 function getPlayersFromMatches(){
   const map = new Map();
   matches.forEach(m => {
+    // Players page = pre-match opportunities only (Option A, founder-confirmed).
+    // Drop a player the moment his match goes live or finishes: once in play the
+    // card has no purpose and m.bestOdds drifts to a stale in-play price (the
+    // "Jodar 26.00" bug). A match is pre-match iff it is neither live nor settled.
+    if (m.live || m.finalScore != null) return;
     [{name:m.p1, key:m.p1Key, photo:m.p1PhotoUrl, odds:m.bestOdds?.p1 || null},
      {name:m.p2, key:m.p2Key, photo:m.p2PhotoUrl, odds:m.bestOdds?.p2 || null}].forEach(p => {
       // Identity = player_key when present, else the display name. Keying on the
