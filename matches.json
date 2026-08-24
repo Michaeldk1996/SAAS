@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.5,
-      "p2": 2.57,
-      "bookmaker": "Superbet"
+      "p1": 1.49,
+      "p2": 2.8,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.5,
-        "bookmaker": "Superbet"
+        "price": 1.49,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.57,
-        "bookmaker": "Superbet"
+        "price": 2.8,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -2046,9 +2046,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 30,
-      "windSpeed": 14.9,
-      "humidity": 30,
+      "temperature": 30.3,
+      "windSpeed": 14,
+      "humidity": 33,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -2061,8 +2061,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -2071,11 +2071,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -2085,10 +2085,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -2099,7 +2099,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -2112,7 +2112,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -2125,7 +2125,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -2138,7 +2138,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -2155,7 +2155,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -2218,6 +2218,42 @@
             [
               "2026-08-24T12:39:17.188Z",
               1.495
+            ],
+            [
+              "2026-08-24T13:14:57.725Z",
+              1.476
+            ],
+            [
+              "2026-08-24T13:15:55.815Z",
+              1.487
+            ],
+            [
+              "2026-08-24T13:16:06.388Z",
+              1.5
+            ],
+            [
+              "2026-08-24T13:18:06.631Z",
+              1.52
+            ],
+            [
+              "2026-08-24T13:18:06.935Z",
+              1.512
+            ],
+            [
+              "2026-08-24T13:19:39.232Z",
+              1.51
+            ],
+            [
+              "2026-08-24T13:57:55.184Z",
+              1.49
+            ],
+            [
+              "2026-08-24T14:57:56.451Z",
+              1.473
+            ],
+            [
+              "2026-08-24T15:13:50.844Z",
+              1.48
             ]
           ],
           "p2": [
@@ -2280,6 +2316,42 @@
             [
               "2026-08-24T12:39:17.188Z",
               2.78
+            ],
+            [
+              "2026-08-24T13:14:57.725Z",
+              2.85
+            ],
+            [
+              "2026-08-24T13:15:55.815Z",
+              2.8
+            ],
+            [
+              "2026-08-24T13:16:06.388Z",
+              2.76
+            ],
+            [
+              "2026-08-24T13:18:06.631Z",
+              2.69
+            ],
+            [
+              "2026-08-24T13:18:06.935Z",
+              2.71
+            ],
+            [
+              "2026-08-24T13:19:39.232Z",
+              2.73
+            ],
+            [
+              "2026-08-24T13:57:55.184Z",
+              2.8
+            ],
+            [
+              "2026-08-24T14:57:56.451Z",
+              2.85
+            ],
+            [
+              "2026-08-24T15:13:50.844Z",
+              2.83
             ]
           ]
         },
@@ -2406,6 +2478,30 @@
             [
               "2026-08-24T12:23:18.821Z",
               1.48
+            ],
+            [
+              "2026-08-24T13:16:34.168Z",
+              1.48
+            ],
+            [
+              "2026-08-24T13:47:00.560Z",
+              1.47
+            ],
+            [
+              "2026-08-24T14:46:58.590Z",
+              1.47
+            ],
+            [
+              "2026-08-24T15:02:42.733Z",
+              1.46
+            ],
+            [
+              "2026-08-24T15:09:56.624Z",
+              1.454
+            ],
+            [
+              "2026-08-24T15:32:08.720Z",
+              1.45
             ]
           ],
           "p2": [
@@ -2508,6 +2604,26 @@
             [
               "2026-08-24T12:23:18.821Z",
               2.649
+            ],
+            [
+              "2026-08-24T13:16:34.168Z",
+              2.649
+            ],
+            [
+              "2026-08-24T13:47:00.560Z",
+              2.678
+            ],
+            [
+              "2026-08-24T14:46:58.590Z",
+              2.678
+            ],
+            [
+              "2026-08-24T15:02:42.733Z",
+              2.717
+            ],
+            [
+              "2026-08-24T15:09:56.624Z",
+              2.747
             ]
           ]
         },
@@ -2620,6 +2736,14 @@
             [
               "2026-08-24T12:30:24.445Z",
               1.5
+            ],
+            [
+              "2026-08-24T12:46:02.287Z",
+              1.48
+            ],
+            [
+              "2026-08-24T15:04:50.700Z",
+              1.47
             ]
           ],
           "p2": [
@@ -2726,6 +2850,14 @@
             [
               "2026-08-24T12:30:24.445Z",
               2.55
+            ],
+            [
+              "2026-08-24T12:46:02.287Z",
+              2.6
+            ],
+            [
+              "2026-08-24T15:04:50.700Z",
+              2.65
             ]
           ]
         },
@@ -2924,6 +3056,14 @@
             [
               "2026-08-24T12:17:39.020Z",
               1.571
+            ],
+            [
+              "2026-08-24T13:12:25.038Z",
+              1.5
+            ],
+            [
+              "2026-08-24T15:27:28.038Z",
+              1.5
             ]
           ],
           "p2": [
@@ -2978,6 +3118,14 @@
             [
               "2026-08-24T12:17:39.020Z",
               2.375
+            ],
+            [
+              "2026-08-24T13:12:25.038Z",
+              2.625
+            ],
+            [
+              "2026-08-24T15:27:28.038Z",
+              2.625
             ]
           ]
         }
@@ -4258,9 +4406,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 28.2,
-      "windSpeed": 9.5,
-      "humidity": 40,
+      "temperature": 28.6,
+      "windSpeed": 7.5,
+      "humidity": 41,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -4273,8 +4421,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -4283,11 +4431,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -4297,10 +4445,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -4311,7 +4459,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -4324,7 +4472,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -4337,7 +4485,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -4350,7 +4498,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -4367,7 +4515,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/76018_c-hewitt.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -7358,9 +7506,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.6,
-      "windSpeed": 5.8,
-      "humidity": 47,
+      "temperature": 27,
+      "windSpeed": 5.6,
+      "humidity": 44,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -7373,8 +7521,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -7383,11 +7531,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -7397,10 +7545,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -7411,7 +7559,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -7424,7 +7572,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -7437,7 +7585,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -7450,7 +7598,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -7467,7 +7615,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -9915,9 +10063,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.6,
-      "windSpeed": 5.8,
-      "humidity": 47,
+      "temperature": 27,
+      "windSpeed": 5.6,
+      "humidity": 44,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -9930,8 +10078,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -9940,11 +10088,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -9954,10 +10102,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -9968,7 +10116,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -9981,7 +10129,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -9994,7 +10142,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -10007,7 +10155,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -10024,7 +10172,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2833_m-fucsovics.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -10373,18 +10521,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.65,
-      "p2": 2.25,
-      "bookmaker": "Superbet"
+      "p1": 1.72,
+      "p2": 2.22,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.65,
-        "bookmaker": "Superbet"
+        "price": 1.72,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.25,
-        "bookmaker": "Superbet"
+        "price": 2.22,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -12246,9 +12394,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 30,
-      "windSpeed": 14.9,
-      "humidity": 30,
+      "temperature": 30.3,
+      "windSpeed": 14,
+      "humidity": 33,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -12261,8 +12409,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -12271,11 +12419,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -12285,10 +12433,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -12299,7 +12447,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -12312,7 +12460,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -12325,7 +12473,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -12338,7 +12486,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -12355,7 +12503,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1083_v-kopriva.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -12414,6 +12562,26 @@
             [
               "2026-08-24T11:55:37.207Z",
               1.746
+            ],
+            [
+              "2026-08-24T13:12:16.585Z",
+              1.735
+            ],
+            [
+              "2026-08-24T14:06:48.609Z",
+              1.724
+            ],
+            [
+              "2026-08-24T14:45:01.313Z",
+              1.675
+            ],
+            [
+              "2026-08-24T14:45:31.085Z",
+              1.689
+            ],
+            [
+              "2026-08-24T15:03:12.407Z",
+              1.675
             ]
           ],
           "p2": [
@@ -12472,6 +12640,26 @@
             [
               "2026-08-24T11:55:37.207Z",
               2.19
+            ],
+            [
+              "2026-08-24T13:12:16.585Z",
+              2.21
+            ],
+            [
+              "2026-08-24T14:06:48.609Z",
+              2.22
+            ],
+            [
+              "2026-08-24T14:45:01.313Z",
+              2.32
+            ],
+            [
+              "2026-08-24T14:45:31.085Z",
+              2.29
+            ],
+            [
+              "2026-08-24T15:03:12.407Z",
+              2.31
             ]
           ]
         },
@@ -12566,6 +12754,18 @@
             [
               "2026-08-24T12:16:04.207Z",
               1.67
+            ],
+            [
+              "2026-08-24T13:12:40.329Z",
+              1.68
+            ],
+            [
+              "2026-08-24T14:46:56.308Z",
+              1.68
+            ],
+            [
+              "2026-08-24T14:54:55.762Z",
+              1.67
             ]
           ],
           "p2": [
@@ -12635,6 +12835,18 @@
             ],
             [
               "2026-08-24T12:16:04.207Z",
+              2.199
+            ],
+            [
+              "2026-08-24T13:12:40.329Z",
+              2.18
+            ],
+            [
+              "2026-08-24T14:46:56.308Z",
+              2.18
+            ],
+            [
+              "2026-08-24T14:54:55.762Z",
               2.199
             ]
           ]
@@ -12854,8 +13066,16 @@
               1.615
             ],
             [
-              "2026-08-24T12:19:05.289Z",
+              "2026-08-24T14:05:27.495Z",
               1.615
+            ],
+            [
+              "2026-08-24T14:23:38.172Z",
+              1.727
+            ],
+            [
+              "2026-08-24T15:28:57.318Z",
+              1.727
             ]
           ],
           "p2": [
@@ -12892,8 +13112,16 @@
               2.3
             ],
             [
-              "2026-08-24T12:19:05.289Z",
+              "2026-08-24T14:05:27.495Z",
               2.3
+            ],
+            [
+              "2026-08-24T14:23:38.172Z",
+              2.1
+            ],
+            [
+              "2026-08-24T15:28:57.318Z",
+              2.1
             ]
           ]
         }
@@ -12932,18 +13160,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.52,
-      "p2": 2.55,
-      "bookmaker": "Betano"
+      "p1": 1.58,
+      "p2": 2.53,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.52,
-        "bookmaker": "Betano"
+        "price": 1.58,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.55,
-        "bookmaker": "Betano"
+        "price": 2.53,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -14774,9 +15002,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 29.9,
-      "windSpeed": 11.7,
-      "humidity": 31,
+      "temperature": 30.2,
+      "windSpeed": 12.3,
+      "humidity": 30,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -14789,8 +15017,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -14799,11 +15027,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -14813,10 +15041,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -14827,7 +15055,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -14840,7 +15068,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -14853,7 +15081,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -14866,7 +15094,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -14883,7 +15111,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/412_j-de-jong.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -14902,6 +15130,18 @@
             [
               "2026-08-24T02:53:27.381Z",
               1.568
+            ],
+            [
+              "2026-08-24T12:55:52.664Z",
+              1.555
+            ],
+            [
+              "2026-08-24T14:02:25.180Z",
+              1.564
+            ],
+            [
+              "2026-08-24T14:02:25.485Z",
+              1.578
             ]
           ],
           "p2": [
@@ -14920,6 +15160,18 @@
             [
               "2026-08-24T02:53:27.381Z",
               2.56
+            ],
+            [
+              "2026-08-24T12:55:52.664Z",
+              2.59
+            ],
+            [
+              "2026-08-24T14:02:25.180Z",
+              2.56
+            ],
+            [
+              "2026-08-24T14:02:25.485Z",
+              2.53
             ]
           ]
         },
@@ -15002,6 +15254,14 @@
             [
               "2026-08-24T11:04:52.157Z",
               1.55
+            ],
+            [
+              "2026-08-24T14:54:37.091Z",
+              1.55
+            ],
+            [
+              "2026-08-24T15:24:07.197Z",
+              1.553
             ]
           ],
           "p2": [
@@ -15060,6 +15320,14 @@
             [
               "2026-08-24T11:04:52.157Z",
               2.447
+            ],
+            [
+              "2026-08-24T14:54:37.091Z",
+              2.447
+            ],
+            [
+              "2026-08-24T15:24:07.197Z",
+              2.457
             ]
           ]
         },
@@ -15202,7 +15470,7 @@
               1.533
             ],
             [
-              "2026-08-24T12:16:46.442Z",
+              "2026-08-24T15:26:31.125Z",
               1.533
             ]
           ],
@@ -15232,7 +15500,7 @@
               2.5
             ],
             [
-              "2026-08-24T12:16:46.442Z",
+              "2026-08-24T15:26:31.125Z",
               2.5
             ]
           ]
@@ -15272,18 +15540,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.9,
-      "p2": 1.39,
-      "bookmaker": "Superbet"
+      "p1": 3,
+      "p2": 1.35,
+      "bookmaker": "10Bet"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.9,
-        "bookmaker": "Superbet"
+        "price": 3,
+        "bookmaker": "10Bet"
       },
       "p2": {
-        "price": 1.39,
-        "bookmaker": "Superbet"
+        "price": 1.35,
+        "bookmaker": "10Bet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -16908,9 +17176,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 30,
-      "windSpeed": 14.9,
-      "humidity": 30,
+      "temperature": 30.3,
+      "windSpeed": 14,
+      "humidity": 33,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -16923,8 +17191,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -16933,11 +17201,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -16947,10 +17215,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -16961,7 +17229,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -16974,7 +17242,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -16987,7 +17255,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -17000,7 +17268,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -17017,7 +17285,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -17138,8 +17406,20 @@
               3.15
             ],
             [
-              "2026-08-24T12:30:33.804Z",
+              "2026-08-24T14:10:47.581Z",
               3.15
+            ],
+            [
+              "2026-08-24T14:59:55.012Z",
+              3.17
+            ],
+            [
+              "2026-08-24T15:10:55.633Z",
+              3.17
+            ],
+            [
+              "2026-08-24T15:18:47.071Z",
+              3.19
             ]
           ],
           "p2": [
@@ -17260,8 +17540,20 @@
               1.395
             ],
             [
-              "2026-08-24T12:30:33.804Z",
+              "2026-08-24T14:10:47.581Z",
               1.395
+            ],
+            [
+              "2026-08-24T14:59:55.012Z",
+              1.4
+            ],
+            [
+              "2026-08-24T15:10:55.633Z",
+              1.4
+            ],
+            [
+              "2026-08-24T15:18:47.071Z",
+              1.396
             ]
           ]
         },
@@ -17338,6 +17630,18 @@
             [
               "2026-08-24T12:39:48.544Z",
               3.15
+            ],
+            [
+              "2026-08-24T12:53:48.970Z",
+              3.1
+            ],
+            [
+              "2026-08-24T14:49:20.168Z",
+              3.1
+            ],
+            [
+              "2026-08-24T15:12:03.743Z",
+              3.15
             ]
           ],
           "p2": [
@@ -17412,6 +17716,18 @@
             [
               "2026-08-24T12:39:48.544Z",
               1.36
+            ],
+            [
+              "2026-08-24T12:53:48.970Z",
+              1.37
+            ],
+            [
+              "2026-08-24T14:49:20.168Z",
+              1.37
+            ],
+            [
+              "2026-08-24T15:12:03.743Z",
+              1.36
             ]
           ]
         },
@@ -17432,6 +17748,22 @@
             [
               "2026-08-24T12:01:38.950Z",
               3.15
+            ],
+            [
+              "2026-08-24T12:50:31.576Z",
+              3.1
+            ],
+            [
+              "2026-08-24T12:58:19.806Z",
+              3.15
+            ],
+            [
+              "2026-08-24T13:38:53.395Z",
+              3.05
+            ],
+            [
+              "2026-08-24T15:09:01.260Z",
+              3.15
             ]
           ],
           "p2": [
@@ -17450,6 +17782,22 @@
             [
               "2026-08-24T12:01:38.950Z",
               1.35
+            ],
+            [
+              "2026-08-24T12:50:31.576Z",
+              1.36
+            ],
+            [
+              "2026-08-24T12:58:19.806Z",
+              1.35
+            ],
+            [
+              "2026-08-24T13:38:53.395Z",
+              1.36
+            ],
+            [
+              "2026-08-24T15:09:01.260Z",
+              1.35
             ]
           ]
         },
@@ -17460,8 +17808,16 @@
               3.0
             ],
             [
-              "2026-08-24T12:14:26.212Z",
+              "2026-08-24T14:17:55.008Z",
               3.0
+            ],
+            [
+              "2026-08-24T14:32:14.318Z",
+              3.4
+            ],
+            [
+              "2026-08-24T15:24:12.562Z",
+              3.4
             ]
           ],
           "p2": [
@@ -17470,8 +17826,16 @@
               1.4
             ],
             [
-              "2026-08-24T12:14:26.212Z",
+              "2026-08-24T14:17:55.008Z",
               1.4
+            ],
+            [
+              "2026-08-24T14:32:14.318Z",
+              1.333
+            ],
+            [
+              "2026-08-24T15:24:12.562Z",
+              1.333
             ]
           ]
         }
@@ -17510,18 +17874,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.65,
-      "p2": 1.26,
-      "bookmaker": "Superbet"
+      "p1": 3.32,
+      "p2": 1.33,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.65,
-        "bookmaker": "Superbet"
+        "price": 3.32,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.26,
-        "bookmaker": "Superbet"
+        "price": 1.33,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -19376,9 +19740,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 30,
-      "windSpeed": 14.9,
-      "humidity": 30,
+      "temperature": 30.3,
+      "windSpeed": 14,
+      "humidity": 33,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -19391,8 +19755,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -19401,11 +19765,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -19415,10 +19779,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -19429,7 +19793,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -19442,7 +19806,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -19455,7 +19819,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -19468,7 +19832,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -19485,7 +19849,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -19568,6 +19932,34 @@
             [
               "2026-08-24T12:29:14.756Z",
               3.55
+            ],
+            [
+              "2026-08-24T14:11:11.433Z",
+              3.55
+            ],
+            [
+              "2026-08-24T14:41:17.153Z",
+              3.58
+            ],
+            [
+              "2026-08-24T14:49:19.931Z",
+              3.69
+            ],
+            [
+              "2026-08-24T14:58:25.412Z",
+              3.74
+            ],
+            [
+              "2026-08-24T15:11:21.031Z",
+              3.74
+            ],
+            [
+              "2026-08-24T15:12:05.945Z",
+              3.52
+            ],
+            [
+              "2026-08-24T15:13:52.407Z",
+              3.52
             ]
           ],
           "p2": [
@@ -19650,6 +20042,34 @@
             [
               "2026-08-24T12:29:14.756Z",
               1.328
+            ],
+            [
+              "2026-08-24T14:11:11.433Z",
+              1.328
+            ],
+            [
+              "2026-08-24T14:41:17.153Z",
+              1.333
+            ],
+            [
+              "2026-08-24T14:49:19.931Z",
+              1.318
+            ],
+            [
+              "2026-08-24T14:58:25.412Z",
+              1.312
+            ],
+            [
+              "2026-08-24T15:11:21.031Z",
+              1.312
+            ],
+            [
+              "2026-08-24T15:12:05.945Z",
+              1.342
+            ],
+            [
+              "2026-08-24T15:13:52.407Z",
+              1.342
             ]
           ]
         },
@@ -19702,6 +20122,46 @@
             [
               "2026-08-24T12:32:55.644Z",
               3.26
+            ],
+            [
+              "2026-08-24T12:47:00.286Z",
+              3.32
+            ],
+            [
+              "2026-08-24T13:19:18.893Z",
+              3.26
+            ],
+            [
+              "2026-08-24T13:27:17.114Z",
+              3.32
+            ],
+            [
+              "2026-08-24T13:34:25.110Z",
+              3.26
+            ],
+            [
+              "2026-08-24T13:52:28.089Z",
+              3.26
+            ],
+            [
+              "2026-08-24T14:08:26.024Z",
+              3.32
+            ],
+            [
+              "2026-08-24T14:23:19.035Z",
+              3.26
+            ],
+            [
+              "2026-08-24T14:38:27.788Z",
+              3.32
+            ],
+            [
+              "2026-08-24T14:49:33.289Z",
+              3.32
+            ],
+            [
+              "2026-08-24T15:19:35.791Z",
+              3.385
             ]
           ],
           "p2": [
@@ -19752,6 +20212,46 @@
             [
               "2026-08-24T12:32:55.644Z",
               1.34
+            ],
+            [
+              "2026-08-24T12:47:00.286Z",
+              1.33
+            ],
+            [
+              "2026-08-24T13:19:18.893Z",
+              1.34
+            ],
+            [
+              "2026-08-24T13:27:17.114Z",
+              1.33
+            ],
+            [
+              "2026-08-24T13:34:25.110Z",
+              1.34
+            ],
+            [
+              "2026-08-24T13:52:28.089Z",
+              1.34
+            ],
+            [
+              "2026-08-24T14:08:26.024Z",
+              1.33
+            ],
+            [
+              "2026-08-24T14:23:19.035Z",
+              1.34
+            ],
+            [
+              "2026-08-24T14:38:27.788Z",
+              1.33
+            ],
+            [
+              "2026-08-24T14:49:33.289Z",
+              1.33
+            ],
+            [
+              "2026-08-24T15:19:35.791Z",
+              1.32
             ]
           ]
         },
@@ -19816,7 +20316,7 @@
               3.75
             ],
             [
-              "2026-08-24T12:22:05.839Z",
+              "2026-08-24T14:49:01.861Z",
               3.75
             ]
           ],
@@ -19826,7 +20326,7 @@
               1.286
             ],
             [
-              "2026-08-24T12:22:05.839Z",
+              "2026-08-24T14:49:01.861Z",
               1.286
             ]
           ]
@@ -19866,18 +20366,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.7,
-      "p2": 2.15,
-      "bookmaker": "Betano"
+      "p1": 1.72,
+      "p2": 2.07,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.7,
-        "bookmaker": "Betano"
+        "price": 1.72,
+        "bookmaker": "Superbet"
       },
       "p2": {
-        "price": 2.15,
-        "bookmaker": "Betano"
+        "price": 2.07,
+        "bookmaker": "Superbet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -21457,9 +21957,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 29.9,
-      "windSpeed": 11.7,
-      "humidity": 31,
+      "temperature": 30.2,
+      "windSpeed": 12.3,
+      "humidity": 30,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -21472,8 +21972,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -21482,11 +21982,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -21496,10 +21996,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -21510,7 +22010,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -21523,7 +22023,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -21536,7 +22036,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -21549,7 +22049,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -21566,7 +22066,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/53790_m-rottgering.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -21607,8 +22107,20 @@
               1.769
             ],
             [
-              "2026-08-24T12:35:59.184Z",
+              "2026-08-24T13:36:06.796Z",
               1.769
+            ],
+            [
+              "2026-08-24T14:48:12.393Z",
+              1.719
+            ],
+            [
+              "2026-08-24T14:49:00.918Z",
+              1.662
+            ],
+            [
+              "2026-08-24T15:21:21.997Z",
+              1.662
             ]
           ],
           "p2": [
@@ -21649,8 +22161,20 @@
               2.13
             ],
             [
-              "2026-08-24T12:35:59.184Z",
+              "2026-08-24T13:36:06.796Z",
               2.13
+            ],
+            [
+              "2026-08-24T14:48:12.393Z",
+              2.22
+            ],
+            [
+              "2026-08-24T14:49:00.918Z",
+              2.31
+            ],
+            [
+              "2026-08-24T15:21:21.997Z",
+              2.31
             ]
           ]
         },
@@ -21703,6 +22227,22 @@
             [
               "2026-08-24T12:11:40.796Z",
               1.72
+            ],
+            [
+              "2026-08-24T14:49:35.235Z",
+              1.72
+            ],
+            [
+              "2026-08-24T14:57:34.531Z",
+              1.67
+            ],
+            [
+              "2026-08-24T15:26:59.994Z",
+              1.68
+            ],
+            [
+              "2026-08-24T15:34:26.409Z",
+              1.67
             ]
           ],
           "p2": [
@@ -21757,6 +22297,22 @@
             [
               "2026-08-24T12:11:40.796Z",
               2.122
+            ],
+            [
+              "2026-08-24T14:49:35.235Z",
+              2.122
+            ],
+            [
+              "2026-08-24T14:57:34.531Z",
+              2.199
+            ],
+            [
+              "2026-08-24T15:26:59.994Z",
+              2.18
+            ],
+            [
+              "2026-08-24T15:34:26.409Z",
+              2.199
             ]
           ]
         },
@@ -21769,6 +22325,18 @@
             [
               "2026-08-24T11:00:50.668Z",
               1.72
+            ],
+            [
+              "2026-08-24T12:55:31.033Z",
+              1.72
+            ],
+            [
+              "2026-08-24T14:54:26.834Z",
+              1.7
+            ],
+            [
+              "2026-08-24T15:02:44.705Z",
+              1.67
             ]
           ],
           "p2": [
@@ -21779,6 +22347,18 @@
             [
               "2026-08-24T11:00:50.668Z",
               2.09
+            ],
+            [
+              "2026-08-24T12:55:31.033Z",
+              2.09
+            ],
+            [
+              "2026-08-24T14:54:26.834Z",
+              2.12
+            ],
+            [
+              "2026-08-24T15:02:44.705Z",
+              2.16
             ]
           ]
         },
@@ -21789,7 +22369,7 @@
               1.727
             ],
             [
-              "2026-08-24T12:22:05.426Z",
+              "2026-08-24T15:16:44.217Z",
               1.727
             ]
           ],
@@ -21799,7 +22379,7 @@
               2.1
             ],
             [
-              "2026-08-24T12:22:05.426Z",
+              "2026-08-24T15:16:44.217Z",
               2.1
             ]
           ]
@@ -23504,9 +24084,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 29.9,
-      "windSpeed": 11.7,
-      "humidity": 31,
+      "temperature": 30.2,
+      "windSpeed": 12.3,
+      "humidity": 30,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -23519,8 +24099,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -23529,11 +24109,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -23543,10 +24123,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -23557,7 +24137,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -23570,7 +24150,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -23583,7 +24163,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -23596,7 +24176,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -23626,18 +24206,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.83,
+      "p1": 1.92,
       "p2": 1.95,
-      "bookmaker": "Superbet"
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.83,
-        "bookmaker": "Superbet"
+        "price": 1.92,
+        "bookmaker": "Pncl"
       },
       "p2": {
         "price": 1.95,
-        "bookmaker": "Superbet"
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -24619,9 +25199,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 29.9,
-      "windSpeed": 11.7,
-      "humidity": 31,
+      "temperature": 30.2,
+      "windSpeed": 12.3,
+      "humidity": 30,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -24634,8 +25214,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -24644,11 +25224,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -24658,10 +25238,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -24672,7 +25252,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -24685,7 +25265,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -24698,7 +25278,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -24711,7 +25291,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -24728,7 +25308,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/76018_c-hewitt.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -24787,6 +25367,42 @@
             [
               "2026-08-24T12:35:34.724Z",
               1.884
+            ],
+            [
+              "2026-08-24T12:50:09.513Z",
+              1.892
+            ],
+            [
+              "2026-08-24T12:55:47.910Z",
+              1.892
+            ],
+            [
+              "2026-08-24T12:56:07.459Z",
+              1.917
+            ],
+            [
+              "2026-08-24T12:56:08.084Z",
+              1.9
+            ],
+            [
+              "2026-08-24T13:05:38.827Z",
+              1.9
+            ],
+            [
+              "2026-08-24T13:31:30.150Z",
+              1.909
+            ],
+            [
+              "2026-08-24T13:35:41.711Z",
+              1.909
+            ],
+            [
+              "2026-08-24T14:04:54.528Z",
+              1.917
+            ],
+            [
+              "2026-08-24T15:32:19.405Z",
+              1.909
             ]
           ],
           "p2": [
@@ -24857,6 +25473,42 @@
             [
               "2026-08-24T12:35:34.724Z",
               1.99
+            ],
+            [
+              "2026-08-24T12:50:09.513Z",
+              1.98
+            ],
+            [
+              "2026-08-24T12:55:47.910Z",
+              1.97
+            ],
+            [
+              "2026-08-24T12:56:07.459Z",
+              1.952
+            ],
+            [
+              "2026-08-24T12:56:08.084Z",
+              1.97
+            ],
+            [
+              "2026-08-24T13:05:38.827Z",
+              1.97
+            ],
+            [
+              "2026-08-24T13:31:30.150Z",
+              1.961
+            ],
+            [
+              "2026-08-24T13:35:41.711Z",
+              1.961
+            ],
+            [
+              "2026-08-24T14:04:54.528Z",
+              1.952
+            ],
+            [
+              "2026-08-24T15:32:19.405Z",
+              1.961
             ]
           ]
         },
@@ -24957,6 +25609,10 @@
             [
               "2026-08-24T11:00:32.109Z",
               1.9
+            ],
+            [
+              "2026-08-24T14:49:36.327Z",
+              1.9
             ]
           ],
           "p2": [
@@ -25039,6 +25695,18 @@
             [
               "2026-08-24T12:11:41.912Z",
               1.89
+            ],
+            [
+              "2026-08-24T13:01:12.386Z",
+              1.9
+            ],
+            [
+              "2026-08-24T13:19:21.945Z",
+              1.89
+            ],
+            [
+              "2026-08-24T14:49:36.327Z",
+              1.89
             ]
           ]
         },
@@ -25095,6 +25763,10 @@
             [
               "2026-08-24T10:55:39.576Z",
               1.91
+            ],
+            [
+              "2026-08-24T12:58:14.063Z",
+              1.87
             ]
           ],
           "p2": [
@@ -25145,6 +25817,10 @@
             [
               "2026-08-24T10:55:39.576Z",
               1.86
+            ],
+            [
+              "2026-08-24T12:58:14.063Z",
+              1.9
             ]
           ]
         },
@@ -25163,7 +25839,7 @@
               1.909
             ],
             [
-              "2026-08-24T12:14:01.096Z",
+              "2026-08-24T14:39:00.143Z",
               1.909
             ]
           ],
@@ -25181,7 +25857,7 @@
               1.909
             ],
             [
-              "2026-08-24T12:14:01.096Z",
+              "2026-08-24T14:39:00.143Z",
               1.909
             ]
           ]
@@ -25214,18 +25890,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.55,
-      "p2": 1.48,
-      "bookmaker": "Superbet"
+      "p1": 2.66,
+      "p2": 1.47,
+      "bookmaker": "Marathon"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.55,
-        "bookmaker": "Superbet"
+        "price": 2.66,
+        "bookmaker": "Marathon"
       },
       "p2": {
-        "price": 1.48,
-        "bookmaker": "Superbet"
+        "price": 1.47,
+        "bookmaker": "Marathon"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/32-finals",
@@ -26771,9 +27447,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 28.2,
-      "windSpeed": 11.3,
-      "humidity": 35,
+      "temperature": 28.5,
+      "windSpeed": 12.2,
+      "humidity": 34,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -26786,8 +27462,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -26796,11 +27472,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -26810,10 +27486,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -26824,7 +27500,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -26837,7 +27513,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -26850,7 +27526,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -26863,7 +27539,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -26880,7 +27556,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -26915,6 +27591,18 @@
             [
               "2026-08-24T12:30:59.291Z",
               2.66
+            ],
+            [
+              "2026-08-24T12:49:52.136Z",
+              2.68
+            ],
+            [
+              "2026-08-24T12:56:30.787Z",
+              2.7
+            ],
+            [
+              "2026-08-24T13:01:02.606Z",
+              2.7
             ]
           ],
           "p2": [
@@ -26945,6 +27633,18 @@
             [
               "2026-08-24T12:30:59.291Z",
               1.518
+            ],
+            [
+              "2026-08-24T12:49:52.136Z",
+              1.515
+            ],
+            [
+              "2026-08-24T12:56:30.787Z",
+              1.51
+            ],
+            [
+              "2026-08-24T13:01:02.606Z",
+              1.51
             ]
           ]
         },
@@ -26977,6 +27677,14 @@
             [
               "2026-08-24T12:11:22.003Z",
               2.678
+            ],
+            [
+              "2026-08-24T13:00:51.659Z",
+              2.649
+            ],
+            [
+              "2026-08-24T14:49:20.202Z",
+              2.649
             ]
           ],
           "p2": [
@@ -27007,6 +27715,14 @@
             [
               "2026-08-24T12:11:22.003Z",
               1.47
+            ],
+            [
+              "2026-08-24T13:00:51.659Z",
+              1.48
+            ],
+            [
+              "2026-08-24T14:49:20.202Z",
+              1.48
             ]
           ]
         },
@@ -27015,6 +27731,10 @@
             [
               "2026-08-24T02:18:30.431Z",
               2.6
+            ],
+            [
+              "2026-08-24T12:55:33.029Z",
+              2.55
             ]
           ],
           "p2": [
@@ -27025,6 +27745,10 @@
             [
               "2026-08-24T08:05:14.236Z",
               1.47
+            ],
+            [
+              "2026-08-24T12:55:33.029Z",
+              1.49
             ]
           ]
         },
@@ -27035,7 +27759,7 @@
               2.625
             ],
             [
-              "2026-08-24T12:14:36.381Z",
+              "2026-08-24T15:24:23.889Z",
               2.625
             ]
           ],
@@ -27045,7 +27769,7 @@
               1.5
             ],
             [
-              "2026-08-24T12:14:36.381Z",
+              "2026-08-24T15:24:23.889Z",
               1.5
             ]
           ]
@@ -28958,9 +29682,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 28.2,
-      "windSpeed": 11.3,
-      "humidity": 35,
+      "temperature": 28.5,
+      "windSpeed": 12.2,
+      "humidity": 34,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -28973,8 +29697,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -28983,11 +29707,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -28997,10 +29721,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -29011,7 +29735,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -29024,7 +29748,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -29037,7 +29761,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -29050,7 +29774,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -29067,7 +29791,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1073_h-grenier.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
         "Pinnacle": {
           "p1": [
@@ -29152,8 +29876,16 @@
               1.203
             ],
             [
-              "2026-08-24T12:34:54.473Z",
+              "2026-08-24T13:34:59.704Z",
               1.203
+            ],
+            [
+              "2026-08-24T14:55:49.378Z",
+              1.176
+            ],
+            [
+              "2026-08-24T15:28:26.788Z",
+              1.175
             ]
           ],
           "p2": [
@@ -29238,8 +29970,16 @@
               4.94
             ],
             [
-              "2026-08-24T12:34:54.473Z",
+              "2026-08-24T13:34:59.704Z",
               4.94
+            ],
+            [
+              "2026-08-24T14:55:49.378Z",
+              5.47
+            ],
+            [
+              "2026-08-24T15:28:26.788Z",
+              5.49
             ]
           ]
         },
@@ -29284,6 +30024,38 @@
             [
               "2026-08-24T12:33:00.869Z",
               1.208
+            ],
+            [
+              "2026-08-24T13:19:24.150Z",
+              1.208
+            ],
+            [
+              "2026-08-24T13:52:33.273Z",
+              1.21
+            ],
+            [
+              "2026-08-24T14:08:31.217Z",
+              1.208
+            ],
+            [
+              "2026-08-24T14:49:38.536Z",
+              1.208
+            ],
+            [
+              "2026-08-24T15:05:10.576Z",
+              1.183
+            ],
+            [
+              "2026-08-24T15:12:28.362Z",
+              1.182
+            ],
+            [
+              "2026-08-24T15:27:01.767Z",
+              1.173
+            ],
+            [
+              "2026-08-24T15:34:29.676Z",
+              1.175
             ]
           ],
           "p2": [
@@ -29326,6 +30098,26 @@
             [
               "2026-08-24T12:33:00.869Z",
               4.42
+            ],
+            [
+              "2026-08-24T14:49:38.536Z",
+              4.42
+            ],
+            [
+              "2026-08-24T15:05:10.576Z",
+              4.8
+            ],
+            [
+              "2026-08-24T15:12:28.362Z",
+              4.845
+            ],
+            [
+              "2026-08-24T15:27:01.767Z",
+              5.0
+            ],
+            [
+              "2026-08-24T15:34:29.676Z",
+              4.94
             ]
           ]
         },
@@ -29350,6 +30142,18 @@
             [
               "2026-08-24T12:35:07.735Z",
               1.19
+            ],
+            [
+              "2026-08-24T15:00:52.516Z",
+              1.18
+            ],
+            [
+              "2026-08-24T15:09:15.792Z",
+              1.17
+            ],
+            [
+              "2026-08-24T15:25:23.701Z",
+              1.16
             ]
           ],
           "p2": [
@@ -29372,6 +30176,18 @@
             [
               "2026-08-24T12:35:07.735Z",
               4.5
+            ],
+            [
+              "2026-08-24T15:00:52.516Z",
+              4.8
+            ],
+            [
+              "2026-08-24T15:09:15.792Z",
+              4.9
+            ],
+            [
+              "2026-08-24T15:25:23.701Z",
+              5.0
             ]
           ]
         }
@@ -29410,18 +30226,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.35,
-      "p2": 1.55,
-      "bookmaker": "10Bet"
+      "p1": 2.33,
+      "p2": 1.65,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.35,
-        "bookmaker": "10Bet"
+        "price": 2.33,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 1.55,
-        "bookmaker": "10Bet"
+        "price": 1.65,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -31069,8 +31885,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 25.5,
-      "windSpeed": 8.9,
+      "temperature": 25.8,
+      "windSpeed": 9.1,
       "humidity": 40,
       "source": "Open-Meteo",
       "historical": false,
@@ -31084,8 +31900,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -31094,11 +31910,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -31108,10 +31924,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -31122,7 +31938,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -31135,7 +31951,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -31148,7 +31964,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -31161,7 +31977,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -31176,7 +31992,20 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
-    "oddsMovement": null
+    "pinnacleOpen": {
+      "p1": 2.33,
+      "p2": 1.65,
+      "ts": null,
+      "vfP1": 0.4146
+    },
+    "oddsMovement": null,
+    "valueSnapshot": {
+      "fairP1": 0.3716,
+      "fairP2": 0.6284,
+      "edgeVsPinnacleP1": -0.043,
+      "edgeVsPinnacleP2": 0.043,
+      "ts": "2026-08-24T15:02:06.341Z"
+    }
   },
   {
     "id": "upcoming-12156814",
@@ -31191,18 +32020,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.85,
-      "p2": 1.9,
-      "bookmaker": "10Bet"
+      "p1": 2,
+      "p2": 1.88,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.85,
-        "bookmaker": "10Bet"
+        "price": 2,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 1.9,
-        "bookmaker": "10Bet"
+        "price": 1.88,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -32957,9 +33786,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 22.5,
-      "windSpeed": 9.2,
-      "humidity": 52,
+      "temperature": 22.7,
+      "windSpeed": 9.3,
+      "humidity": 50,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -32972,8 +33801,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -32982,11 +33811,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -32996,10 +33825,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -33010,7 +33839,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -33023,7 +33852,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -33036,7 +33865,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -33049,7 +33878,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -33064,7 +33893,20 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
-    "oddsMovement": null
+    "pinnacleOpen": {
+      "p1": 2,
+      "p2": 1.88,
+      "ts": null,
+      "vfP1": 0.4845
+    },
+    "oddsMovement": null,
+    "valueSnapshot": {
+      "fairP1": 0.4975,
+      "fairP2": 0.5025,
+      "edgeVsPinnacleP1": 0.013,
+      "edgeVsPinnacleP2": -0.013,
+      "ts": "2026-08-24T15:02:06.341Z"
+    }
   },
   {
     "id": "upcoming-12156826",
@@ -33079,18 +33921,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.69,
-      "p2": 2.17,
-      "bookmaker": "1xBet"
+      "p1": 1.64,
+      "p2": 2.25,
+      "bookmaker": "Unibet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.69,
-        "bookmaker": "1xBet"
+        "price": 1.64,
+        "bookmaker": "Unibet"
       },
       "p2": {
-        "price": 2.17,
-        "bookmaker": "1xBet"
+        "price": 2.25,
+        "bookmaker": "Unibet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -34871,9 +35713,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.8,
-      "windSpeed": 6.9,
-      "humidity": 36,
+      "temperature": 25.8,
+      "windSpeed": 7.7,
+      "humidity": 37,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -34886,8 +35728,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -34896,11 +35738,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -34910,10 +35752,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -34924,7 +35766,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -34937,7 +35779,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -34950,7 +35792,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -34963,7 +35805,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -34980,8 +35822,54 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10148_f-marozsan.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
+        "Pinnacle": {
+          "p1": [
+            [
+              "2026-08-24T15:30:10.701Z",
+              1.699
+            ],
+            [
+              "2026-08-24T15:30:19.420Z",
+              1.74
+            ],
+            [
+              "2026-08-24T15:36:08.424Z",
+              1.729
+            ],
+            [
+              "2026-08-24T15:37:23.007Z",
+              1.724
+            ],
+            [
+              "2026-08-24T15:37:40.110Z",
+              1.714
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-24T15:30:10.701Z",
+              2.24
+            ],
+            [
+              "2026-08-24T15:30:19.420Z",
+              2.18
+            ],
+            [
+              "2026-08-24T15:36:08.424Z",
+              2.2
+            ],
+            [
+              "2026-08-24T15:37:23.007Z",
+              2.21
+            ],
+            [
+              "2026-08-24T15:37:40.110Z",
+              2.22
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -35022,6 +35910,10 @@
             ],
             [
               "2026-08-24T10:32:32.839Z",
+              1.69
+            ],
+            [
+              "2026-08-24T14:49:19.921Z",
               1.69
             ]
           ],
@@ -35064,6 +35956,10 @@
             ],
             [
               "2026-08-24T10:32:32.839Z",
+              2.17
+            ],
+            [
+              "2026-08-24T14:49:19.921Z",
               2.17
             ]
           ]
@@ -35113,7 +36009,7 @@
               1.727
             ],
             [
-              "2026-08-24T12:14:35.493Z",
+              "2026-08-24T14:39:50.701Z",
               1.727
             ]
           ],
@@ -35123,7 +36019,7 @@
               2.1
             ],
             [
-              "2026-08-24T12:14:35.493Z",
+              "2026-08-24T14:39:50.701Z",
               2.1
             ]
           ]
@@ -35150,18 +36046,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.54,
-      "p2": 2.3,
-      "bookmaker": "Superbet"
+      "p1": 1.6,
+      "p2": 2.25,
+      "bookmaker": "10Bet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.54,
-        "bookmaker": "Superbet"
+        "price": 1.6,
+        "bookmaker": "10Bet"
       },
       "p2": {
-        "price": 2.3,
-        "bookmaker": "Superbet"
+        "price": 2.25,
+        "bookmaker": "10Bet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -36990,9 +37886,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.8,
-      "windSpeed": 6.9,
-      "humidity": 36,
+      "temperature": 25.8,
+      "windSpeed": 7.7,
+      "humidity": 37,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -37005,8 +37901,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -37015,11 +37911,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -37029,10 +37925,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -37043,7 +37939,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -37056,7 +37952,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -37069,7 +37965,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -37082,7 +37978,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -37099,8 +37995,46 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
+        "Pinnacle": {
+          "p1": [
+            [
+              "2026-08-24T15:29:38.484Z",
+              1.649
+            ],
+            [
+              "2026-08-24T15:29:43.348Z",
+              1.641
+            ],
+            [
+              "2026-08-24T15:29:43.961Z",
+              1.645
+            ],
+            [
+              "2026-08-24T15:34:28.761Z",
+              1.636
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-24T15:29:38.484Z",
+              2.34
+            ],
+            [
+              "2026-08-24T15:29:43.348Z",
+              2.35
+            ],
+            [
+              "2026-08-24T15:29:43.961Z",
+              2.35
+            ],
+            [
+              "2026-08-24T15:34:28.761Z",
+              2.37
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -37125,6 +38059,10 @@
             ],
             [
               "2026-08-24T11:04:46.937Z",
+              1.6
+            ],
+            [
+              "2026-08-24T14:46:32.788Z",
               1.6
             ]
           ],
@@ -37152,6 +38090,10 @@
             [
               "2026-08-24T11:04:46.937Z",
               2.333
+            ],
+            [
+              "2026-08-24T14:46:32.788Z",
+              2.333
             ]
           ]
         },
@@ -37164,6 +38106,10 @@
             [
               "2026-08-24T11:01:39.375Z",
               1.57
+            ],
+            [
+              "2026-08-24T15:31:30.344Z",
+              1.58
             ]
           ],
           "p2": [
@@ -37174,6 +38120,10 @@
             [
               "2026-08-24T11:01:39.375Z",
               2.37
+            ],
+            [
+              "2026-08-24T15:31:30.344Z",
+              2.33
             ]
           ]
         },
@@ -37184,7 +38134,7 @@
               1.571
             ],
             [
-              "2026-08-24T12:14:48.878Z",
+              "2026-08-24T14:40:16.377Z",
               1.571
             ]
           ],
@@ -37194,7 +38144,7 @@
               2.375
             ],
             [
-              "2026-08-24T12:14:48.878Z",
+              "2026-08-24T14:40:16.377Z",
               2.375
             ]
           ]
@@ -37221,18 +38171,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.85,
-      "p2": 1.85,
-      "bookmaker": "Sbo"
+      "p1": 1.87,
+      "p2": 1.92,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.85,
-        "bookmaker": "Sbo"
+        "price": 1.87,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.85,
-        "bookmaker": "Sbo"
+        "price": 1.92,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -39054,9 +40004,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.8,
-      "windSpeed": 6.9,
-      "humidity": 36,
+      "temperature": 25.8,
+      "windSpeed": 7.7,
+      "humidity": 37,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -39069,8 +40019,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -39079,11 +40029,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -39093,10 +40043,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -39107,7 +40057,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -39120,7 +40070,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -39133,7 +40083,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -39146,7 +40096,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -39163,8 +40113,22 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
+        "Pinnacle": {
+          "p1": [
+            [
+              "2026-08-24T15:29:07.416Z",
+              1.98
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-24T15:29:07.416Z",
+              1.892
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -39206,6 +40170,14 @@
             [
               "2026-08-24T12:01:42.187Z",
               1.86
+            ],
+            [
+              "2026-08-24T12:51:03.000Z",
+              1.87
+            ],
+            [
+              "2026-08-24T14:46:28.805Z",
+              1.87
             ]
           ],
           "p2": [
@@ -39248,6 +40220,14 @@
             [
               "2026-08-24T12:01:42.187Z",
               1.93
+            ],
+            [
+              "2026-08-24T12:51:03.000Z",
+              1.92
+            ],
+            [
+              "2026-08-24T14:46:28.805Z",
+              1.92
             ]
           ]
         },
@@ -39284,6 +40264,10 @@
             [
               "2026-08-24T12:01:59.983Z",
               1.88
+            ],
+            [
+              "2026-08-24T12:58:36.585Z",
+              1.88
             ]
           ],
           "p2": [
@@ -39318,6 +40302,10 @@
             [
               "2026-08-24T12:01:59.983Z",
               1.9
+            ],
+            [
+              "2026-08-24T12:58:36.585Z",
+              1.9
             ]
           ]
         },
@@ -39328,7 +40316,7 @@
               1.909
             ],
             [
-              "2026-08-24T12:14:50.528Z",
+              "2026-08-24T14:40:18.979Z",
               1.909
             ]
           ],
@@ -39338,7 +40326,7 @@
               1.909
             ],
             [
-              "2026-08-24T12:14:50.528Z",
+              "2026-08-24T14:40:18.979Z",
               1.909
             ]
           ]
@@ -39365,18 +40353,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.56,
-      "p2": 2.19,
-      "bookmaker": "Sbo"
+      "p1": 1.58,
+      "p2": 2.38,
+      "bookmaker": "Unibet"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.56,
-        "bookmaker": "Sbo"
+        "price": 1.58,
+        "bookmaker": "Unibet"
       },
       "p2": {
-        "price": 2.19,
-        "bookmaker": "Sbo"
+        "price": 2.38,
+        "bookmaker": "Unibet"
       }
     },
     "tournamentRound": "ATP Winston-Salem - 1/16-finals",
@@ -41230,9 +42218,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 26.8,
-      "windSpeed": 6.9,
-      "humidity": 36,
+      "temperature": 25.8,
+      "windSpeed": 7.7,
+      "humidity": 37,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Aug 24 – 30, 2026",
@@ -41245,8 +42233,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": false,
           "available": true
         },
@@ -41255,11 +42243,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": true,
           "available": true
         },
@@ -41269,10 +42257,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -41283,7 +42271,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -41296,7 +42284,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -41309,7 +42297,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -41322,7 +42310,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -41339,8 +42327,82 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-08-24T12:41:42Z",
+      "capturedAt": "2026-08-24T15:35:39Z",
       "books": {
+        "Pinnacle": {
+          "p1": [
+            [
+              "2026-08-24T15:30:37.451Z",
+              1.595
+            ],
+            [
+              "2026-08-24T15:30:49.325Z",
+              1.657
+            ],
+            [
+              "2026-08-24T15:31:10.492Z",
+              1.719
+            ],
+            [
+              "2026-08-24T15:31:30.002Z",
+              1.813
+            ],
+            [
+              "2026-08-24T15:31:48.447Z",
+              1.813
+            ],
+            [
+              "2026-08-24T15:32:14.552Z",
+              1.729
+            ],
+            [
+              "2026-08-24T15:32:17.601Z",
+              1.729
+            ],
+            [
+              "2026-08-24T15:37:12.158Z",
+              1.763
+            ]
+          ],
+          "p2": [
+            [
+              "2026-08-24T15:30:37.451Z",
+              2.46
+            ],
+            [
+              "2026-08-24T15:30:49.325Z",
+              2.33
+            ],
+            [
+              "2026-08-24T15:31:10.492Z",
+              2.21
+            ],
+            [
+              "2026-08-24T15:31:30.002Z",
+              2.08
+            ],
+            [
+              "2026-08-24T15:31:48.447Z",
+              2.08
+            ],
+            [
+              "2026-08-24T15:32:14.552Z",
+              2.19
+            ],
+            [
+              "2026-08-24T15:32:16.682Z",
+              2.19
+            ],
+            [
+              "2026-08-24T15:32:17.601Z",
+              2.2
+            ],
+            [
+              "2026-08-24T15:37:12.158Z",
+              2.14
+            ]
+          ]
+        },
         "1xBet": {
           "p1": [
             [
@@ -41377,6 +42439,10 @@
             ],
             [
               "2026-08-24T09:54:56.916Z",
+              1.61
+            ],
+            [
+              "2026-08-24T14:46:40.035Z",
               1.61
             ]
           ],
@@ -41416,6 +42482,10 @@
             [
               "2026-08-24T09:54:56.916Z",
               2.314
+            ],
+            [
+              "2026-08-24T14:46:40.035Z",
+              2.314
             ]
           ]
         },
@@ -41424,12 +42494,20 @@
             [
               "2026-08-24T06:52:41.215Z",
               1.62
+            ],
+            [
+              "2026-08-24T15:33:47.981Z",
+              1.67
             ]
           ],
           "p2": [
             [
               "2026-08-24T06:52:41.215Z",
               2.27
+            ],
+            [
+              "2026-08-24T15:33:47.981Z",
+              2.17
             ]
           ]
         },
@@ -41440,7 +42518,7 @@
               1.615
             ],
             [
-              "2026-08-24T12:14:00.690Z",
+              "2026-08-24T14:38:59.604Z",
               1.615
             ]
           ],
@@ -41450,7 +42528,7 @@
               2.3
             ],
             [
-              "2026-08-24T12:14:00.690Z",
+              "2026-08-24T14:38:59.604Z",
               2.3
             ]
           ]
@@ -80649,8 +81727,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -80659,11 +81737,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -80673,10 +81751,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -80687,7 +81765,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -80700,7 +81778,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -80713,7 +81791,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -80726,7 +81804,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
@@ -82990,8 +84068,8 @@
           "hi": 30,
           "lo": 17,
           "rain": 1,
-          "wind": 15,
-          "humidity": 61,
+          "wind": 14,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -83000,11 +84078,11 @@
           "dow": "Tue",
           "label": "Aug 25",
           "code": 3,
-          "hi": 31,
+          "hi": 30,
           "lo": 16,
           "rain": 0,
-          "wind": 12,
-          "humidity": 49,
+          "wind": 13,
+          "humidity": 48,
           "isMatch": false,
           "available": true
         },
@@ -83014,10 +84092,10 @@
           "label": "Aug 26",
           "code": 51,
           "hi": 33,
-          "lo": 19,
-          "rain": 12,
+          "lo": 18,
+          "rain": 31,
           "wind": 12,
-          "humidity": 52,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         },
@@ -83028,7 +84106,7 @@
           "code": 81,
           "hi": 25,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 15,
           "humidity": 89,
           "isMatch": false,
@@ -83041,7 +84119,7 @@
           "code": 3,
           "hi": 33,
           "lo": 20,
-          "rain": 65,
+          "rain": 61,
           "wind": 10,
           "humidity": 74,
           "isMatch": false,
@@ -83054,7 +84132,7 @@
           "code": 51,
           "hi": 34,
           "lo": 21,
-          "rain": 32,
+          "rain": 36,
           "wind": 11,
           "humidity": 64,
           "isMatch": false,
@@ -83067,7 +84145,7 @@
           "code": 51,
           "hi": 35,
           "lo": 21,
-          "rain": 18,
+          "rain": 21,
           "wind": 13,
           "humidity": 67,
           "isMatch": false,
