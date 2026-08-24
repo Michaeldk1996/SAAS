@@ -2146,10 +2146,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1096_k-majchrzak.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
@@ -3149,7 +3155,10 @@
       "edgeVsPinnacleP1": -0.017,
       "edgeVsPinnacleP2": 0.017,
       "ts": "2026-08-23T15:01:49.899Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156423",
@@ -17276,10 +17285,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/18341_d-suresh.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
@@ -17859,7 +17874,10 @@
       "edgeVsPinnacleP1": -0.0081,
       "edgeVsPinnacleP2": 0.0081,
       "ts": "2026-08-24T11:58:36.674Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156807",
@@ -19840,10 +19858,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/5778_q-vandecasteele.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
@@ -20351,7 +20375,10 @@
       "edgeVsPinnacleP1": 0.0027,
       "edgeVsPinnacleP2": -0.0027,
       "ts": "2026-08-24T11:58:36.674Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156808",
