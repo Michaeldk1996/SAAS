@@ -231,6 +231,12 @@
      active/selected underline, which moves as the user taps other days). */
   [data-page="matches"] .mx-daytabs button.is-today .dtop{ position:relative; }
   [data-page="matches"] .mx-daytabs button.is-today .dtop::before{ content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--mc-brand); margin-right:5px; vertical-align:middle; position:relative; top:-1px; }
+  /* Cross-date results search (TEN-8 Option A): rail is dimmed and de-highlighted while a
+     name is typed in Results — the list spans multiple days, so no single tab is "current". */
+  [data-page="matches"] .mx-daytabs.is-searching button{ opacity:.42; color:var(--mx-text-secondary); border-bottom-color:transparent; }
+  [data-page="matches"] .mx-daytabs.is-searching button.active{ color:var(--mx-text-secondary); border-bottom-color:transparent; }
+  [data-page="matches"] .mx-daytabs.is-searching button.active .dbottom{ color:var(--mx-text-faint); }
+  [data-page="matches"] .mx-daytabs.is-searching button.is-today .dtop::before{ background:var(--mx-text-faint); }
   /* TEN-8: in-list day divider — a lightweight full-width rule inserted only where the
      member's local calendar date rolls over mid-session. Muted, one row, minimal weight. */
   [data-page="matches"] .mx-daydivider{ display:flex; align-items:center; gap:10px; margin:8px 2px 4px; color:var(--mx-text-faint); font-size:11px; font-family:var(--mx-font-mono); text-transform:uppercase; letter-spacing:.04em; }
@@ -5131,9 +5137,18 @@ function syncSortDropdown(completed){
     return `<button class="mx-sortopt${key === state.sort ? ' active' : ''}" role="option" data-sort="${key}"${disabled ? ' disabled' : ''}>${lbl}<span class="ck">✓</span></button>`;
   }).join('');
 }
+// Cross-date results search (TEN-8, founder Option A 2026-08-24): when a name is typed
+// in the Completed/Results view, the search spans EVERY settled match the payload holds
+// — the retained 4-day window — instead of only the active date tab. It's a pure
+// client-side filter change: matches.json already carries the whole settled set, so no
+// extra fetch/payload. Upcoming view is unaffected (day-scoped as before).
+function resultsCrossDateSearch(){
+  return state.view === 'completed' && !!(state.search && state.search.trim());
+}
 function getFiltered(){
+  const crossDate = resultsCrossDateSearch();
   let out = matches.filter(m => {
-    {
+    if (!crossDate) {
       const bucket = matchDayBucket(m);
       if (state.day === 'all') {
         // "All days" = every upcoming day; hide finished/past matches (keep live).
@@ -5170,7 +5185,8 @@ function getFiltered(){
     return true;
   });
   const surfaceOrder = { clay:0, hard:1, grass:2 };
-  if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
+  if (crossDate) out.sort((a,b) => cardStartMs(b) - cardStartMs(a));  // cross-date search: most recent first
+  else if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
   else if (state.sort === 'surface') out.sort((a,b) => surfaceOrder[a.surface] - surfaceOrder[b.surface]);
   else if (state.sort === 'upset') out.sort((a,b) => upsetScore(b) - upsetScore(a));
   else if (state.sort === 'move') out.sort((a,b) => moveScore(b) - moveScore(a));
@@ -5723,6 +5739,13 @@ function updateMatchesHeaderChrome(){
       }
     }
   }
+  // Cross-date results search (TEN-8 Option A): while a name is typed in Results the list
+  // spans every retained day, so the rail no longer describes what's on screen. Dim the
+  // tabs and drop the active/Today highlight (the blue underline + persistent dot) so
+  // "Today" isn't lit while yesterday's or Saturday's match is showing. Clearing the box
+  // removes the class and the previously selected day (still held in state.day) re-lights.
+  const dayTabsEl = document.getElementById('dayTabs');
+  if (dayTabsEl) dayTabsEl.classList.toggle('is-searching', resultsCrossDateSearch());
   // Re-sync the paging arrows to the active day's position within the now-visible
   // window (which day tabs are shown was decided by the branches above).
   syncDayArrows();
@@ -5801,7 +5824,10 @@ function renderMatches(){
   // TEN-8: day dividers only make sense when the list is a single tournament day
   // sorted chronologically. Off for "All days"/"Past" (mixed dates) and any non-time
   // sort (odds gap, upset, drift, closing) where order isn't chronological.
-  const dividersOn = state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
+  // Cross-date search mixes days in most-recent-first order (not a single-day chronological
+  // strip), so the mid-session rollover dividers don't apply — every card carries its own
+  // date inline (showAltDate below) instead.
+  const dividersOn = !resultsCrossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
   let prevLocalDay = null;
   const cards = filtered.map(m => {
     // TEN-8: insert a divider before the first card whose member-local calendar day
@@ -5932,7 +5958,9 @@ function renderMatches(){
     // states the selected day; a card whose day differs shows its actual date, muted.
     const liveOrInt = m.live || m.interrupted;
     const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
-    const showAltDate = (state.day === 'all' || state.day === 'past' || (daySpecific && dayBucket !== state.day));
+    // Cross-date search shows every row's date (the list spans multiple days), so the
+    // selected-day strip no longer names the card's day.
+    const showAltDate = (state.day === 'all' || state.day === 'past' || resultsCrossDateSearch() || (daySpecific && dayBucket !== state.day));
     // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
     // always shown now, not just the bare time and not only when the day differs.
     // Review item 7: the export separates date and time with a plain space
