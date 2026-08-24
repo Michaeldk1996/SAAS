@@ -12048,8 +12048,8 @@
       },
       {
         "set": 2,
-        "p1": 1,
-        "p2": 2
+        "p1": 5,
+        "p2": 4
       }
     ],
     "liveGameScore": "40 - 30",
@@ -14205,11 +14205,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/5979_j-choinski.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/53790_m-rottgering.jpg",
     "oddsMovement": {
@@ -14744,7 +14750,10 @@
       "edgeVsPinnacleP1": 0.0614,
       "edgeVsPinnacleP2": -0.0614,
       "ts": "2026-08-24T11:58:36.674Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156809",
@@ -16525,16 +16534,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 2,
-        "p2": 2
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 0
       }
     ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1317_m-damm.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9219_a-shelbayh.jpg",
     "oddsMovement": null,
@@ -17649,21 +17663,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 1
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 5
-      }
-    ],
+    "liveStatus": "Set 3",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9519_s-gorzny.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/76018_c-hewitt.jpg",
     "oddsMovement": {
