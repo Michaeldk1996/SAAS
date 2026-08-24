@@ -1815,6 +1815,14 @@
   .wxw-rv{ color:#9aa3b2; white-space:nowrap; }
   .wxw-na{ font-size:10px; color:#4b5672; text-align:center; line-height:1.3; margin-top:14px; }
   .wxw-note{ margin-top:14px; }
+  /* Clickable day cards: the selected day drives the per-day read block below. */
+  .wxw-day.is-clickable{ cursor:pointer; transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
+  .wxw-day.is-clickable:hover{ border-color:rgba(62,123,250,0.35); }
+  .wxw-day.is-selected{ background:rgba(62,123,250,0.10); border-color:rgba(62,123,250,0.6); box-shadow:0 0 0 1px rgba(62,123,250,0.35); }
+  .wxw-day.is-selected .wxw-dow{ color:#dbe6ff; }
+  .wxw-dayread{ margin-top:14px; }
+  .wxw-dayread .wxw-dr-head{ display:block; font-size:12.5px; font-weight:800; color:#e7e9ee; margin-bottom:5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.01em; }
+  .wxw-dayread .wxw-dr-body{ display:block; }
   @media (max-width:760px){
     .wxw-grid{ grid-template-columns:repeat(3,1fr); }
     .wxw-head{ flex-direction:column; align-items:flex-start; gap:4px; }
@@ -8356,6 +8364,67 @@ function weatherImpactSection(w, surface){
     <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px;">${cards}</div>`;
 }
 
+// ---------- Per-day weather read (clickable day cards) ----------------------
+// Rain probability -> plain-English schedule-risk clause, using the same
+// thresholds as wxRainColor() (>=60 high / >=35 moderate / else low).
+function wxRainRiskPhrase(rain){
+  if (rain == null) return '';
+  if (rain >= 60) return `high rain risk (${rain}%) — expect possible interruptions or schedule delays`;
+  if (rain >= 35) return `moderate rain risk (${rain}%) — some chance of stoppages`;
+  return `low rain risk (${rain}%) — play should run to schedule`;
+}
+// Plain-terms conditions line for one day. The match day uses the precise
+// forecast-at-match-time temperature (sharper than the daily high); other days
+// use the daily high, which is what drives how the court plays.
+function wxDayConditionLine(d, isMatch, w){
+  const cond = wmoWeather(d.code).label;
+  const bits = [];
+  if (isMatch && w && w.temperature != null) bits.push(`${Math.round(w.temperature)}°C at match time`);
+  else if (d.hi != null) bits.push(`${d.hi}°C high`);
+  if (cond && cond !== '—') bits.push(cond.toLowerCase());
+  if (d.wind != null) bits.push(`${d.wind} km/h wind`);
+  if (d.rain != null) bits.push(`${d.rain}% rain`);
+  return bits.join(', ');
+}
+// The full read block for one day: plain-terms conditions, what that does to the
+// court (reusing weatherImpactPhrase), and any rain schedule risk. On the match
+// day the court read uses the exact match-time forecast; other days build a
+// pseudo-forecast from that day's high/wind/humidity so the same deterministic
+// rules apply. Zero tokens — templated from the numbers like the rest of the tab.
+function wxDayReadHtml(state, i){
+  const d = (state.week || [])[i];
+  if (!d || !d.available) return '';
+  const isMatch = !!d.isMatch;
+  const w = state.w;
+  const condLine = wxDayConditionLine(d, isMatch, w);
+  const pseudo = (isMatch && w) ? w : { temperature: d.hi, windSpeed: d.wind, humidity: d.humidity };
+  const court = (pseudo.temperature != null) ? weatherImpactPhrase(pseudo, state.surface) : '';
+  const rain = wxRainRiskPhrase(d.rain);
+  const sentences = [];
+  if (court) sentences.push(court);
+  if (rain) sentences.push(rain.charAt(0).toUpperCase() + rain.slice(1) + '.');
+  const headLabel = `${d.dow}${isMatch ? ' · match day' : ''}`;
+  return `<span class="wxw-dr-head">${escapeHtml(headLabel)} — ${escapeHtml(condLine)}</span>`
+       + `<span class="wxw-dr-body">${sentences.join(' ')}</span>`;
+}
+// Module-level state so the inline day-card onclick can re-render the read block
+// after the modal's innerHTML has already been painted.
+let _aWxState = null;
+function aSelectWxDay(i){
+  if (!_aWxState) return;
+  const d = (_aWxState.week || [])[i];
+  if (!d || !d.available) return;
+  _aWxState.sel = i;
+  const root = document.getElementById('aSectionWeather');
+  if (root){
+    root.querySelectorAll('.wxw-day[data-wxidx]').forEach(el => {
+      el.classList.toggle('is-selected', Number(el.getAttribute('data-wxidx')) === i);
+    });
+  }
+  const read = document.getElementById('wxwDayRead');
+  if (read) read.innerHTML = wxDayReadHtml(_aWxState, i);
+}
+
 function buildWeatherSection(m){
   const w = m.weather;
   if (!w) {
@@ -8393,7 +8462,11 @@ function buildWeatherSection(m){
   let weekSection = '';
   let weekNote = '';
   if (Array.isArray(w.week) && w.week.length) {
-    const cards = w.week.map(d => {
+    // Default selected day = the match day; fall back to the first day with data.
+    let selIdx = w.week.findIndex(d => d.available && d.isMatch);
+    if (selIdx < 0) selIdx = w.week.findIndex(d => d.available);
+    _aWxState = { week: w.week, surface: m.surface, w: w, sel: selIdx };
+    const cards = w.week.map((d, i) => {
       if (!d.available) {
         const dow = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
         const dlabel = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -8404,7 +8477,8 @@ function buildWeatherSection(m){
       }
       const cond = wmoWeather(d.code);
       const rainColor = wxRainColor(d.rain);
-      return `<div class="wxw-day${d.isMatch ? ' is-match' : ''}">
+      const selCls = i === selIdx ? ' is-selected' : '';
+      return `<div class="wxw-day is-clickable${d.isMatch ? ' is-match' : ''}${selCls}" data-wxidx="${i}" role="button" tabindex="0" onclick="aSelectWxDay(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aSelectWxDay(${i})}">
         ${d.isMatch ? '<span class="wxw-badge">Match</span>' : ''}
         <div class="wxw-dhead"><div class="wxw-dow">${d.dow}</div><div class="wxw-date">${d.label}</div></div>
         <span class="wxw-ico" style="color:${cond.tint}">${cond.icon}</span>
@@ -8417,12 +8491,16 @@ function buildWeatherSection(m){
         </div>
       </div>`;
     }).join('');
+    // Per-day read block: swaps to the selected card's day (default = match day).
+    const dayRead = selIdx >= 0
+      ? `<div class="wx-summary wxw-dayread"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span id="wxwDayRead">${wxDayReadHtml(_aWxState, selIdx)}</span></div>`
+      : '';
     weekSection = `
       <div class="wxw-head">
         <span class="wx-cardlabel" style="margin:0;">Tournament week · Mon–Sun</span>
         <span class="wxw-ctx">${escapeHtml(m.tour || '')}${w.weekRange ? ' · ' + w.weekRange : ''}</span>
       </div>
-      <div class="wxw-grid">${cards}</div>`;
+      <div class="wxw-grid">${cards}</div>${dayRead}`;
 
     const prose = weatherWeekSummary(w.week, m.surface);
     if (prose) {
