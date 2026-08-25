@@ -16055,11 +16055,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "oddsMovement": {
@@ -16684,7 +16690,10 @@
       "edgeVsPinnacleP1": -0.015,
       "edgeVsPinnacleP2": 0.015,
       "ts": "2026-08-25T18:05:52.121Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156826",
@@ -114397,7 +114406,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -114407,10 +114416,15 @@
       {
         "set": 2,
         "p1": 4,
-        "p2": 5
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "15 - 40",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
@@ -117761,10 +117775,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": "3 - 3",
-    "liveServer": "p1",
+    "liveGameScore": "30 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -120515,12 +120529,12 @@
       },
       {
         "set": 3,
-        "p1": 1,
-        "p2": 0
+        "p1": 3,
+        "p2": 5
       }
     ],
-    "liveGameScore": "0 - 30",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10070_a-walton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "oddsMovement": {
