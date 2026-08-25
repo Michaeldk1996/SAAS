@@ -1952,11 +1952,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2972_b-van-de-zandschulp.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "oddsMovement": {
@@ -2361,7 +2367,10 @@
       "edgeVsPinnacleP1": 0.064,
       "edgeVsPinnacleP2": -0.064,
       "ts": "2026-08-24T17:59:42.684Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156843",
@@ -4314,12 +4323,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
+        "p1": 1,
         "p2": 0
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "oddsMovement": {
@@ -15014,12 +15023,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
+        "p1": 2,
         "p2": 0
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -17515,11 +17524,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10070_a-walton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "oddsMovement": {
@@ -18188,7 +18203,10 @@
       "edgeVsPinnacleP1": 0.0072,
       "edgeVsPinnacleP2": -0.0072,
       "ts": "2026-08-25T12:00:08.300Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157220",
@@ -47287,7 +47305,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 1-6",
+      "display": "4-6, 7-6(3), 1-6",
       "sets": [
         {
           "p1": 4,
@@ -67448,7 +67466,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -74084,7 +74102,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(7)",
       "sets": [
         {
           "p1": 4,
@@ -98479,7 +98497,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -100071,7 +100089,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 6-7, 4-6",
+      "display": "6-1, 6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -103547,7 +103565,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 6-3",
+      "display": "7-6(4), 4-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -108592,7 +108610,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 3-6",
+      "display": "6-7(6), 6-4, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -111738,7 +111756,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(6)",
       "sets": [
         {
           "p1": 4,
