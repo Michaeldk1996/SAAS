@@ -18751,16 +18751,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Finished",
+    "liveScore": null,
+    "liveGameScore": "-",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/52682_f-balshaw.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "oddsMovement": {
@@ -20845,21 +20839,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "30 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Finished",
+    "liveScore": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
     "pinnacleOpen": {
@@ -22759,11 +22742,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
     "pinnacleOpen": {
@@ -22779,7 +22768,10 @@
       "edgeVsPinnacleP1": 0.013,
       "edgeVsPinnacleP2": -0.013,
       "ts": "2026-08-24T15:02:06.341Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156826",
@@ -37253,7 +37245,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 3",
+    "liveStatus": "Finished",
     "liveScore": [
       {
         "set": 1,
@@ -37267,12 +37259,12 @@
       },
       {
         "set": 3,
-        "p1": 1,
-        "p2": 2
+        "p1": 4,
+        "p2": 6
       }
     ],
-    "liveGameScore": "A - 40",
-    "liveServer": "p2",
+    "liveGameScore": "0 - 0",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1739_j-clarke.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/37897_r-sakamoto.jpg",
     "oddsMovement": null,
