@@ -26183,7 +26183,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 1-6",
+      "display": "4-6, 7-6(3), 1-6",
       "sets": [
         {
           "p1": 4,
@@ -46334,7 +46334,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -52985,7 +52985,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(7)",
       "sets": [
         {
           "p1": 4,
@@ -77455,7 +77455,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -79062,7 +79062,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 6-7, 4-6",
+      "display": "6-1, 6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -82538,7 +82538,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 6-3",
+      "display": "7-6(4), 4-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -87598,7 +87598,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 3-6",
+      "display": "6-7(6), 6-4, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -90744,7 +90744,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(6)",
       "sets": [
         {
           "p1": 4,
@@ -144402,10 +144402,21 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Finished",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 30",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10148_f-marozsan.jpg",
@@ -145047,7 +145058,10 @@
       "edgeVsPinnacleP1": -0.0541,
       "edgeVsPinnacleP2": 0.0541,
       "ts": "2026-08-24T17:59:42.684Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157269",
@@ -147082,16 +147096,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
+    "liveStatus": "Finished",
+    "liveScore": null,
     "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1073_h-grenier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
     "oddsMovement": {
