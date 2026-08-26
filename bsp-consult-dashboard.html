@@ -1265,6 +1265,7 @@
   .modal-analysis .pss-c2{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; color:#e7e9ee; }
   .modal-analysis .pss-src{ font-size:10.5px; color:#4b5672; margin-top:9px; line-height:1.45; }
   .modal-analysis .psv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .modal-analysis .psv-grid.psv-grid-solo{ grid-template-columns:1fr; }
   .modal-analysis .psv-card{ background:#0e1015; border:1px solid; border-radius:12px; padding:15px 17px; }
   .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; }
   .modal-analysis .psv-title{ font-size:14px; font-weight:700; }
@@ -1289,8 +1290,21 @@
   .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:color .12s ease; }
   .modal-analysis .psv-more:hover{ color:#6aaeff; }
   .modal-analysis .psv-more:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; border-radius:4px; }
+  /* Archetype-labels header — its own block, fed by v5.1 classification (tour results),
+     independent of the charted radar. Board ruling 2026-08-26: each block on the Playing
+     style tab suppresses on its own data source, so a missing radar never blanks the labels. */
+  .modal-analysis .psl-labels{ margin-bottom:20px; }
+  .modal-analysis .psl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:9px; }
+  .modal-analysis .psl-side{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:13px 16px; }
+  .modal-analysis .psl-nm{ font-size:14px; font-weight:700; }
+  .modal-analysis .psl-arch{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; margin-top:4px; }
+  .modal-analysis .psx-top.psx-top-solo{ grid-template-columns:1fr; }
+  /* Personal record vs the general-matrix expectation — a single-player value read
+     against a baseline, so it stays neutral grey (the +/− sign carries direction). */
+  .modal-analysis .psv-delta{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#5b6880; margin-top:3px; }
   @media (max-width:900px){
     .modal-analysis .psx-top{ grid-template-columns:1fr; }
+    .modal-analysis .psl-grid{ grid-template-columns:1fr; }
     .modal-analysis .psv-grid{ grid-template-columns:1fr; }
     .modal-analysis .psd-row{ grid-template-columns:28px 1fr 110px 1fr 28px; gap:8px; }
   }
@@ -11559,7 +11573,7 @@ function psvRenderList(side){
   if (list) list.innerHTML = psvListHtml(side);
 }
 function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
-function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
+function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side, ownArch){
   const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
   const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
     <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
@@ -11570,26 +11584,42 @@ function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel,
   }
   const w = rows.filter(r => r.won).length, l = rows.length - w;
   const pct = Math.round((w / rows.length) * 100);
+  // "Personally" delta — this player's own win rate vs the general-matrix expectation for
+  // the pairing (board ruling 2026-08-26). Needs the player's OWN archetype to read the
+  // matrix cell, so it only appears when both are classified. Neutral tone; the sign carries
+  // direction (a single-player value read against a baseline, not a two-player comparison).
+  let deltaHtml = '';
+  if (ownArch){
+    const cell = psCellFor(psArchIndex(ownArch.id), psArchIndex(oppArch.id));
+    if (cell && cell.pct != null){
+      const d = pct - cell.pct;
+      const sign = d > 0 ? '+' : (d < 0 ? '−' : '±');
+      deltaHtml = `<div class="psv-delta">${sign}${Math.abs(d)} pts vs ${cell.pct}% style avg</div>`;
+    }
+  }
   // Rendered static here and upgraded in place by upgradeStyleVsRows once the
   // availability indexes resolve — same two-pass contract as the H2H list.
   _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r, null) };
-  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
+  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span>${deltaHtml}</div>`,
     `<div class="psv-list" id="psvList-${side}">${psvListHtml(side)}</div>`);
 }
 
 function styleVsArchetypeHtml(m, s1, s2){
   const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
-  if (!a1 || !a2) return '';
+  // Each side keys off the OPPONENT's archetype, so p1's list needs a2 and p2's needs a1 —
+  // one classified player is enough for one column (board ruling 2026-08-26). The delta vs
+  // the general matrix additionally needs the player's OWN archetype (passed last, gated inside).
+  if (!a1 && !a2) return '';
   // 24 months back from today, clamped by the 40-row shard cap.
   const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
-  const r1 = styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since);
-  const r2 = styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since);
+  const r1 = a2 ? styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since) : null;
+  const r2 = a1 ? styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since) : null;
   if (!r1 && !r2) return '';
+  const cards = [];
+  if (a2) cards.push(styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1', a1));
+  if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2', a2));
   return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
-    <div class="psv-grid">
-      ${styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1')}
-      ${styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2')}
-    </div></div>`;
+    <div class="psv-grid${cards.length < 2 ? ' psv-grid-solo' : ''}">${cards.join('')}</div></div>`;
 }
 
 // Second pass: turn the two "vs this style" lists into expandable rows once the
@@ -11601,11 +11631,13 @@ function styleVsArchetypeHtml(m, s1, s2){
 function upgradeStyleVsRows(m, token){
   const a1 = ppStyleFor(m.p1) && psArchFor(ppStyleFor(m.p1).primary);
   const a2 = ppStyleFor(m.p2) && psArchFor(ppStyleFor(m.p2).primary);
-  if (!a1 || !a2) return;
+  // Mirror styleVsArchetypeHtml: each side needs only its OPPONENT classified, so upgrade
+  // whichever column actually rendered (board ruling 2026-08-26).
+  if (!a1 && !a2) return;
   const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
   const sides = [
-    { side:'p1', rows: styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since), key: m.p1Key, name: m.p1 },
-    { side:'p2', rows: styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since), key: m.p2Key, name: m.p2 },
+    { side:'p1', rows: a2 ? styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since) : null, key: m.p1Key, name: m.p1 },
+    { side:'p2', rows: a1 ? styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since) : null, key: m.p2Key, name: m.p2 },
   ];
   if (!sides.some(s => s.rows && s.rows.length)) return;
   Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
@@ -11637,21 +11669,51 @@ function upgradeStyleVsRows(m, token){
   });
 }
 
+// Archetype labels — their own block, driven by the v5.1 classification (tour results),
+// NOT by shot charting. Names whoever carries a label; an unclassified player reads
+// "Not yet classified" rather than blanking the tab (board ruling 2026-08-26). Colours are
+// identity-only per the Blue rule — p1 blue, p2 neutral — the label never signals quality.
+function styleArchLabelsHtml(m, a1, a2){
+  const side = (name, arch, color) => {
+    const label = arch ? `${psEsc(arch.code)} · ${psEsc(arch.name)}` : 'Not yet classified';
+    return `<div class="psl-side">
+      <div class="psl-nm" style="color:${color};" title="${psEsc(name)}">${psEsc(psShortName(name))}</div>
+      <div class="psl-arch" style="color:${arch ? color : '#5b6880'};">${label}</div>
+    </div>`;
+  };
+  return `<div class="psl-labels">
+    <div class="psx-label">Playing-style archetypes</div>
+    <div class="psl-grid">${side(m.p1, a1, '#6aaeff')}${side(m.p2, a2, '#e7e9ee')}</div>
+  </div>`;
+}
+
+// The tab is a stack of blocks that each stand or fall on their OWN data source, so a
+// missing input suppresses only its block — never the whole tab (board ruling 2026-08-26):
+//   · radar + dimension edge      ← shot charting (10+ charted matches for BOTH)
+//   · archetype labels            ← v5.1 classification (per player)
+//   · style-vs-style edge         ← general matrix (BOTH classified)
+//   · recent-vs-style + record    ← tour results (each side needs only its OPPONENT classified)
 function buildStyleSection(m){
   const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
   const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
-  // Nothing at all landed — say which feed is empty rather than showing a blank tab.
-  if (!s1 && !s2 && !r1 && !r2){
-    return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history for a playing-style profile. Style classification needs a full ATP/Challenger record — it is thin at ITF and qualifying level.</div>`;
+  const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  const radarOK = styleRadarDrawable(r1, r2);
+  // Neither player classified AND no drawable radar → every block is a "not available"
+  // panel. Collapse the two overlapping empty states into ONE honest message about the
+  // binding constraint (classification, from tour results — not charting).
+  if (!a1 && !a2 && !radarOK){
+    return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
   }
-  // No player header here by design: the modal header directly above already carries
-  // both names, avatars and odds, and the archetype is restated inside the radar and
-  // the style-edge card. Repeating it cost a full row of vertical space for nothing.
+  // Style-vs-style edge needs BOTH archetypes (it reads the general matrix cell). When it
+  // is suppressed the radar takes the full width rather than sitting beside an empty column.
+  const edgeHtml = (a1 && a2) ? styleEdgeHtml(m, s1, s2) : '';
+  const radarCard = `<div class="psr-col psx-card">${styleRadarBlockHtml(m, r1, r2)}</div>`;
+  const topHtml = edgeHtml
+    ? `<div class="psx-top">${radarCard}${edgeHtml}</div>`
+    : `<div class="psx-top psx-top-solo">${radarCard}</div>`;
   return `<div class="psx-wrap">
-    <div class="psx-top">
-      <div class="psr-col psx-card">${styleRadarBlockHtml(m, r1, r2)}</div>
-      ${styleEdgeHtml(m, s1, s2)}
-    </div>
+    ${styleArchLabelsHtml(m, a1, a2)}
+    ${topHtml}
     ${styleDimensionEdgeHtml(m, r1, r2)}
     ${styleVsArchetypeHtml(m, s1, s2)}
   </div>`;
