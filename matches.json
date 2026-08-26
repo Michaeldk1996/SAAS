@@ -12,13 +12,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.3,
+      "p2": 1.6,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.3,
+        "bookmaker": "Superbet"
+      },
+      "p2": {
+        "price": 1.6,
+        "bookmaker": "Superbet"
+      }
     },
     "tournamentRound": null,
     "p1Key": 55163,
@@ -1976,13 +1982,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.54,
+      "p2": 2.42,
+      "bookmaker": "Superbet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.54,
+        "bookmaker": "Superbet"
+      },
+      "p2": {
+        "price": 2.42,
+        "bookmaker": "Superbet"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1102,
@@ -144402,21 +144414,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 6
-      }
-    ],
-    "liveGameScore": "0 - 30",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10148_f-marozsan.jpg",
@@ -145061,7 +145062,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "3-6, 4-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12157269",
@@ -147095,10 +147113,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
+    "live": false,
+    "liveStatus": null,
     "liveScore": null,
-    "liveGameScore": "0 - 0",
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1073_h-grenier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
@@ -147637,7 +147655,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "5-7, 6-7(2)",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12157286",
