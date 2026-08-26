@@ -13917,13 +13917,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.32,
+      "p2": 1.33,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.32,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 1.33,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Winston-Salem - 1/8-finals",
     "p1Key": 2978,
