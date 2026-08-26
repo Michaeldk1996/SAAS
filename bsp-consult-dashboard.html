@@ -13520,13 +13520,23 @@ function ppStyleCard(p){
   const partial = st.partial_axes || [];
   const covNote = st.archetype_data_coverage === 'partial'
     ? `<div style="font-size:10px;color:#5b6880;margin-top:6px;line-height:1.4;">* rally/winner axes use limited shot-charting coverage (${st.mcp_charted || 0} charted matches) — greyed, not fully computed.</div>` : '';
+  // Board taxonomy (TEN-12, 2026-08-26): archetype_label is a free string; an
+  // unclassified player reads "Not yet classified" (muted). `variety` renders as a
+  // neutral "+ Variety Player" chip. The old-taxonomy radar (archetype_scores) is
+  // retired — cleared for every player until the axes are redesigned — so the card
+  // draws the radar only while scores are still present and otherwise degrades to
+  // label-only.
+  const labelTxt = st.archetype_label || 'Not yet classified';
+  const labelColor = st.archetype_label ? '#dbe6ff' : '#5b6880';
+  const varietyChip = st.variety ? `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:#e7e9ee;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);border-radius:7px;padding:3px 9px;margin-left:8px;vertical-align:middle;">+ Variety Player</span>` : '';
+  const hasRadar = st.archetype_scores && Object.keys(st.archetype_scores).length > 0;
   return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:16px;background:#0a0d14;padding:16px 18px;">
     <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">Playing style</span>
-    <div style="font-size:15px;font-weight:800;color:#dbe6ff;margin:4px 0 8px;">${pesc(st.archetype_label)}</div>
+    <div style="font-size:15px;font-weight:800;color:${labelColor};margin:4px 0 8px;">${pesc(labelTxt)}${varietyChip}</div>
     ${badges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${badges}</div>` : ''}
-    ${ppStyleRadarSvg(st.archetype_scores, partial)}
+    ${hasRadar ? `${ppStyleRadarSvg(st.archetype_scores, partial)}
     <div style="font-size:10px;color:#4b5672;text-align:center;margin-top:2px;">Dashed line = tour average (50 on each axis)</div>
-    ${covNote}
+    ${covNote}` : ''}
   </div>`;
 }
 
@@ -14984,7 +14994,11 @@ function buildPlayerProfileHtml(p){
   // surface-specialist tag appended). Rendered in primary text — brand blue is
   // reserved for navigation/identity and must not colour body copy.
   const _ppStyle = ppStyleFor(p.name);
-  const styleLine = (_ppStyle && _ppStyle.archetype_label) || p.archetype || '';
+  // Board taxonomy (TEN-12): the header carries ONLY the board archetype_label.
+  // The old `p.archetype` pipeline field is retired taxonomy — never fall back to
+  // it. An unclassified player shows no header style line (the "Playing style" card
+  // below carries the explicit "Not yet classified" state instead).
+  const styleLine = (_ppStyle && _ppStyle.archetype_label) || '';
   const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
   const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:13px;background:rgba(255,255,255,0.16);"></span>':''}<span>${pesc(m)}</span>`).join('');
 
@@ -19205,8 +19219,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const st = styleFor ? styleFor(e.full) : null;
     if (st) {
       // Key record-vs-style on the clean 9-value `primary`; show its display name.
+      // Board taxonomy (TEN-12): `primary` is retired and cleared for every player,
+      // so this edge/matchup surface degrades to empty — it does NOT fall back to
+      // the free-string archetype_label (which belongs on the profile card, not in
+      // the record-vs-style readout that groups on the old machine key).
       e.archKey = st.primary || null;
-      e.arch = (st.primary && ARCH_DISP[st.primary]) || st.archetype_label || null;
+      e.arch = (st.primary && ARCH_DISP[st.primary]) || null;
       e.thin = st.archetype_data_coverage === 'partial' || (Array.isArray(st.partial_axes) && st.partial_axes.length > 0);
     }
     // 6-axis DNA radar

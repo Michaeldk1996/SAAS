@@ -72,6 +72,16 @@ PREV_TOTAL=$(node -e "try{console.log((require('./playing-styles.json').players|
 # committed Challenger input is missing, so a thin tour-only file is never written)
 node classify-styles.js
 
+# Re-apply the board-finalized v5.1 archetype labels (TEN-12) over the fresh
+# classify-styles output. classify-styles.js emits the OLD free-string taxonomy
+# plus a per-player `primary`/`archetype_scores` radar; this step overwrites
+# archetype_label with the board labels (surname + first-initial match), sets the
+# `variety` chip flag, and CLEARS the retired `primary`/`archetype_scores` so the
+# old radar/grid/badge taxonomy stays retired across every daily regeneration.
+# Held labels for roster debutants auto-apply the day classify-styles.js first
+# admits them (see tools/board-archetypes.json + tools/apply-board-archetypes.js).
+node tools/apply-board-archetypes.js
+
 # NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if
 # it never sees the line delimiter, and `set -e` would then kill the whole run
 # right before the publish step (the daily job silently never committed). Use

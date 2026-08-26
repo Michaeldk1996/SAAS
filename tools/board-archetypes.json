@@ -1,0 +1,1322 @@
+{
+  "generatedFrom": "michael_correction-normalization-log-2026-08-25.csv (board-finalized v5.1 archetypes, TEN-12)",
+  "note": "Board-finalized playing-style labels. Applied over classify-styles.js output by tools/apply-board-archetypes.js on every daily refresh so they survive regeneration. Match on surname + first initial (accent-folded). `variety` renders as a '+ Variety Player' chip. Applying clears the old-taxonomy `primary` and `archetype_scores` for every player (labelled and unlabelled) — the retired radar/grid taxonomy is regenerated separately when the axes are redesigned.",
+  "count": 263,
+  "players": [
+    {
+      "name": "A. Tabilo",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "A. Walton",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "B. Nakashima",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Moutet",
+      "label": "Counterpuncher",
+      "variety": true
+    },
+    {
+      "name": "C. Norrie",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "F. Marozsan",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "J. Fonseca",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Shang",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Thompson",
+      "label": "Big Server + Complete Baseliner",
+      "variety": true
+    },
+    {
+      "name": "K. Khachanov",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "K. Majchrzak",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "L. Musetti",
+      "label": "Counterpuncher",
+      "variety": true
+    },
+    {
+      "name": "M. Giron",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "M. Kecmanovic",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. Collignon",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. M. Etcheverry",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "V. Vacherot",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Y. Bu",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Bolt",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Bublik",
+      "label": "Big Server + Complete Baseliner",
+      "variety": true
+    },
+    {
+      "name": "A. Cazaux",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Fils",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Rinderknech",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "A. Rublev",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Zverev",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "B. Gojo",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "B. Shelton",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Alcaraz",
+      "label": "All Court Elite",
+      "variety": false
+    },
+    {
+      "name": "C. Ruud",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "E. Quinn",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "F. Auger-Aliassime",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Cobolli",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Comesana",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "F. Passaro",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Tiafoe",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "G. Dimitrov",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "G. Monfils",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "H. Hurkacz",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Medjedovic",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "H. Rune",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "J-L. Struff",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "J. De Jong",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "J. Draper",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Lehecka",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Mensik",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Sinner",
+      "label": "All Court Elite",
+      "variety": false
+    },
+    {
+      "name": "L. Sonego",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "N. Djokovic",
+      "label": "All Court Elite",
+      "variety": false
+    },
+    {
+      "name": "N. Kyrgios",
+      "label": "Big Server + First Strike",
+      "variety": true
+    },
+    {
+      "name": "O. Virtanen",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "Q. Halys",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "R. Safiullin",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Korda",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Kwon",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Tsitsipas",
+      "label": "Big Server + Complete Baseliner",
+      "variety": true
+    },
+    {
+      "name": "S. Wawrinka",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. A. Tirante",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Fritz",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Kokkinakis",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Machac",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "T. Paul",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "T. Seyboth Wild",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "U. Humbert",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Y. Hanfmann",
+      "label": "Big Server + First Strike",
+      "variety": true
+    },
+    {
+      "name": "Z. Svajda",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "D. Shapovalov",
+      "label": "Big Server + First Strike",
+      "variety": true
+    },
+    {
+      "name": "E. Nava",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Habib",
+      "label": "Big Server",
+      "variety": false
+    },
+    {
+      "name": "N. Basilashvili",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "N. Jarry",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "S. Ofner",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Y. Watanuki",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "A. Davidovich Fokina",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "A. De Minaur",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "A. Mannarino",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "A. Martin",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "A. Michelsen",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Molcan",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "B. Van De Zandschulp",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "C. Garin",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "C. H. Tseng",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "C. Taberner",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Ugo Carabelli",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Dzumhur",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "D. E. Galan",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Evans",
+      "label": "Solid Baseliner",
+      "variety": true
+    },
+    {
+      "name": "D. Goffin",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "D. Lajovic",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D.Medvedev",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "D. Prizmic",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "F. Cerundolo",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Diaz Acosta",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Chung",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "H. Dellien",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "H. Gaston",
+      "label": "Solid Defender",
+      "variety": true
+    },
+    {
+      "name": "H. Mayot",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Brooksby",
+      "label": "Counterpuncher",
+      "variety": true
+    },
+    {
+      "name": "J. Fearnley",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "J. M. Cerundolo",
+      "label": "Solid Defender",
+      "variety": true
+    },
+    {
+      "name": "J. Munar",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. P. Varillas",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "K. Coppejans",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "K. Nishikori",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "L. Darderi",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "L. Djere",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "L. Nardi",
+      "label": "Solid Baseliner",
+      "variety": true
+    },
+    {
+      "name": "L. Tien",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "L. van Assche",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Arnaldi",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "M. Krueger",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Kukushkin",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Navone",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "M. Trungelliti",
+      "label": "Solid Defender",
+      "variety": true
+    },
+    {
+      "name": "N. Basavareddy",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "N. Borges",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "N. Mejia",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "P. Carreno-Busta",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "P. Martinez",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. Albot",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "R. Bautista-Agut",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "R. Carballes Baena",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "R. Hijikata",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Baez",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "S. Mochizuki",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "S. Nagal",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Travaglia",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Barrios Vera",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Daniel",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "V. Kopriva",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "Y. Nishioka",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "Y. Wu",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Kovacevic",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Muller",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Popyrin",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "A. Shevchenko",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Vavassori",
+      "label": "Big Server",
+      "variety": true
+    },
+    {
+      "name": "A. Vukic",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "B. Bonzi",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "B. Coric",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "B. Harris",
+      "label": "Big Server",
+      "variety": false
+    },
+    {
+      "name": "B. Tomic",
+      "label": "Counterpuncher",
+      "variety": true
+    },
+    {
+      "name": "C. Eubanks",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "C. O'Connell",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "C. Wong",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "D. Altmaier",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "D. Koepfer",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Schwartzman",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "D. Stricker",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "E. Ymer",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Bagnis",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Coria",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "F. Fognini",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "F. Misolic",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "G. Diallo",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "G. Mpetshi Perricard",
+      "label": "Big Server",
+      "variety": false
+    },
+    {
+      "name": "G. Zeppieri",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "I. Ivashka",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Duckworth",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "J. Kovalik",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Kubler",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Rodionov",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "L. Harris",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "L. Klein",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "L. Pouille",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Bellucci",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "M. Berrettini",
+      "label": "Big Server + First Strike",
+      "variety": true
+    },
+    {
+      "name": "M. Cecchinato",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "M. Cilic",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "M. Damm",
+      "label": "Big Server",
+      "variety": false
+    },
+    {
+      "name": "M. Fucsovics",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Huesler",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "M. Marterer",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. McDonald",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "P. Herbert",
+      "label": "Big Server",
+      "variety": true
+    },
+    {
+      "name": "P. Kotov",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. Gasquet",
+      "label": "Solid Defender",
+      "variety": true
+    },
+    {
+      "name": "R. Opelka",
+      "label": "Big Server",
+      "variety": false
+    },
+    {
+      "name": "T. Atmane",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Griekspoor",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "T. Monteiro",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Schoolkate",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "V. Royer",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Y. Uchiyama",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "Z. Bergs",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Z. Zhang",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Fery",
+      "label": "Counterpuncher",
+      "variety": true
+    },
+    {
+      "name": "A. Shelbayh",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "E. Spizzirri",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Blockx",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Kouame",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Landaluce",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Jodar",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Galarneau",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Gea",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Moro Canas",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Svrcina",
+      "label": "Solid Baseliner",
+      "variety": true
+    },
+    {
+      "name": "D. Sweeny",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "G. Loffhagen",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "G. Onclin",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Rocha",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Squire",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "M. Gigante",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. A. Burruchaga",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Faurel",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "T. Samuel",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Skatov",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "G. Cadenasso",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Smith",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "L. Draxl",
+      "label": "Counterpuncher",
+      "variety": false
+    },
+    {
+      "name": "G. Heide",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Sakellaridis",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. Pacheco Mendez",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "R. Sakamoto",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "V. Gaubas",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "N. Budkov Kjaer",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Martineau",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "E. Moller",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "P. Kypson",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Engel",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "J. Pinnington Jones",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Lajal",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Maestrelli",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "S. Napolitano",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Monday",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "U. Blanchet",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "N. Moreno De Alboran",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "B. Holt",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. Meligeni Alves",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Hewitt",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "M. Rottgering",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "H. Bernet",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Dedura",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "Z. Piros",
+      "label": "Attacking Baseliner",
+      "variety": true
+    },
+    {
+      "name": "Y. Zhou",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "S. Shimabukuro",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "T. Boyer",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Droguet",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "T. Gentzsch",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "P. Llamas Ruiz",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "L. Riedi",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "L. Pavlovic",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "A. Holmgren",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "A. Pellegrino",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "A. Ramos",
+      "label": "Solid Defender",
+      "variety": false
+    },
+    {
+      "name": "B. Zhukayev",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "D. Merida Aguilar",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "D. Rincon",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "D. Vallejo",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Dar. Blanch",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "E. Butvilas",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "F. Cina",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "F. A. Gomez",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "I. Buse",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Faria",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. K. Trotter",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "J. Kym",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "J. McCabe",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. P. Ficovich",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "K. Jacquet",
+      "label": "Attacking Baseliner",
+      "variety": false
+    },
+    {
+      "name": "C. Rodesch",
+      "label": "Big Server + First Strike",
+      "variety": false
+    },
+    {
+      "name": "C. Tabur",
+      "label": "Solid Baseliner",
+      "variety": false
+    },
+    {
+      "name": "J. Choinski",
+      "label": "Big Server + Complete Baseliner",
+      "variety": false
+    },
+    {
+      "name": "Mmoh",
+      "label": "Solid Baseliner",
+      "variety": false
+    }
+  ]
+}
