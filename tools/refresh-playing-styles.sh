@@ -81,6 +81,7 @@ node classify-styles.js
 # Held labels for roster debutants auto-apply the day classify-styles.js first
 # admits them (see tools/board-archetypes.json + tools/apply-board-archetypes.js).
 node tools/apply-board-archetypes.js
+node tools/build-matchup-matrix.js
 
 # NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if
 # it never sees the line delimiter, and `set -e` would then kill the whole run
@@ -99,6 +100,13 @@ if ! node -e "
   if (t < prev*0.95) { console.error('REGRESSION: total '+prev+' -> '+t); process.exit(1); }
   if (tour < 190)    { console.error('REGRESSION: tour '+tour+' < 190'); process.exit(1); }
   if (chall < 700)   { console.error('REGRESSION: challengers dropped to '+chall); process.exit(1); }
+  // archetype_label assertion: at least 200 tour players must carry a board label
+  const ps = require('./playing-styles.json');
+  const labelled = (ps.players||[]).filter(p => !p.source && p.archetype_label);
+  if (labelled.length < 200) { console.error('REGRESSION: archetype_label present on only '+labelled.length+' tour players (expected >=200)'); process.exit(1); }
+  // retired-primary assertion: primary must be null/absent on every player
+  const withPrimary = (ps.players||[]).filter(p => p.primary);
+  if (withPrimary.length > 0) { console.error('REGRESSION: retired primary field still set on '+withPrimary.length+' players'); process.exit(1); }
 "; then STATUS="regression"; exit 1; fi
 
 if git diff --quiet -- playing-styles.json matchup-matrix.json; then
