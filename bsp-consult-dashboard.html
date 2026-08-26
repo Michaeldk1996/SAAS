@@ -11878,6 +11878,14 @@ function openAnalysisModal(matchId){
   Promise.all([loadStyleRadar(), ensurePsMatrix()]).then(() => {
     if (_aStyleMatch !== m) return;
     renderStyleSection(m);
+    // Key Factors' "Playing style" card reads the matchup matrix too
+    // (akStyleBlock -> psCellFor). It paints once at open, before the matrix
+    // shard lands, and is otherwise only repainted off the form/odds shards —
+    // so if the matrix resolves LAST, the card is stuck on "too few tour
+    // meetings" for pairings that in fact have ample history. Repaint it here on
+    // the same stale-guard, matching the form/odds late-repaint pattern.
+    const keyEl = document.getElementById('aSectionKey');
+    if (keyEl) keyEl.innerHTML = buildKeyFactorsSection(m);
   });
 
   document.getElementById('aSectionTournament').innerHTML = buildTournamentSection(m);
