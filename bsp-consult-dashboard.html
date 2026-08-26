@@ -11673,17 +11673,26 @@ function upgradeStyleVsRows(m, token){
 // NOT by shot charting. Names whoever carries a label; an unclassified player reads
 // "Not yet classified" rather than blanking the tab (board ruling 2026-08-26). Colours are
 // identity-only per the Blue rule — p1 blue, p2 neutral — the label never signals quality.
-function styleArchLabelsHtml(m, a1, a2){
-  const side = (name, arch, color) => {
-    const label = arch ? `${psEsc(arch.code)} · ${psEsc(arch.name)}` : 'Not yet classified';
+function styleArchLabelsHtml(m, s1, s2){
+  // v5.1 board taxonomy: the label is the free-string `archetype_label`, NOT the retired
+  // primary/PS_ARCHETYPES id — apply-board-archetypes.js clears `primary` on every nightly
+  // refresh, so psArchFor(primary) is null for every player and would read "Not yet
+  // classified" for the whole tour (incl. Alcaraz/Sinner). Mirror the profile card
+  // (archetype_label || "Not yet classified") and add the neutral "+ Variety Player" chip.
+  const side = (name, st, color) => {
+    const lab = st && st.archetype_label;
+    const label = lab || 'Not yet classified';
+    const chip = (st && st.variety)
+      ? ` <span style="display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#e7e9ee;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);border-radius:7px;padding:2px 7px;margin-left:6px;vertical-align:middle;">+ Variety Player</span>`
+      : '';
     return `<div class="psl-side">
       <div class="psl-nm" style="color:${color};" title="${psEsc(name)}">${psEsc(psShortName(name))}</div>
-      <div class="psl-arch" style="color:${arch ? color : '#5b6880'};">${label}</div>
+      <div class="psl-arch" style="color:${lab ? color : '#5b6880'};">${psEsc(label)}${chip}</div>
     </div>`;
   };
   return `<div class="psl-labels">
     <div class="psx-label">Playing-style archetypes</div>
-    <div class="psl-grid">${side(m.p1, a1, '#6aaeff')}${side(m.p2, a2, '#e7e9ee')}</div>
+    <div class="psl-grid">${side(m.p1, s1, '#6aaeff')}${side(m.p2, s2, '#e7e9ee')}</div>
   </div>`;
 }
 
@@ -11696,12 +11705,17 @@ function styleArchLabelsHtml(m, a1, a2){
 function buildStyleSection(m){
   const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
   const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
+  // Two SEPARATE axes: the board label (archetype_label, free string) drives the label
+  // block + the empty state; the retired primary/PS_ARCHETYPES id (a1/a2) still gates the
+  // style-vs-style matrix cell. primary is cleared nightly, so a1/a2 stay null until the
+  // matchup matrix is rebuilt on the v5.1 taxonomy (escalated separately).
   const a1 = s1 && psArchFor(s1.primary), a2 = s2 && psArchFor(s2.primary);
+  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
   const radarOK = styleRadarDrawable(r1, r2);
   // Neither player classified AND no drawable radar → every block is a "not available"
   // panel. Collapse the two overlapping empty states into ONE honest message about the
   // binding constraint (classification, from tour results — not charting).
-  if (!a1 && !a2 && !radarOK){
+  if (!lab1 && !lab2 && !radarOK){
     return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
   }
   // Style-vs-style edge needs BOTH archetypes (it reads the general matrix cell). When it
@@ -11712,7 +11726,7 @@ function buildStyleSection(m){
     ? `<div class="psx-top">${radarCard}${edgeHtml}</div>`
     : `<div class="psx-top psx-top-solo">${radarCard}</div>`;
   return `<div class="psx-wrap">
-    ${styleArchLabelsHtml(m, a1, a2)}
+    ${styleArchLabelsHtml(m, s1, s2)}
     ${topHtml}
     ${styleDimensionEdgeHtml(m, r1, r2)}
     ${styleVsArchetypeHtml(m, s1, s2)}
