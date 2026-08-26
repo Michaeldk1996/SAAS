@@ -1878,11 +1878,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "oddsMovement": {
@@ -2327,7 +2333,10 @@
       "edgeVsPinnacleP1": 0.0476,
       "edgeVsPinnacleP2": -0.0476,
       "ts": "2026-08-26T11:50:18.690Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157610",
@@ -4359,11 +4368,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "30 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2972_b-van-de-zandschulp.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "oddsMovement": {
@@ -4992,7 +5012,10 @@
       "edgeVsPinnacleP1": -0.0177,
       "edgeVsPinnacleP2": 0.0177,
       "ts": "2026-08-26T11:50:18.690Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157628",
@@ -7326,11 +7349,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "15 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "oddsMovement": {
@@ -7779,7 +7813,10 @@
       "edgeVsPinnacleP1": 0.0112,
       "edgeVsPinnacleP2": -0.0112,
       "ts": "2026-08-26T11:50:18.690Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157663",
@@ -26077,7 +26114,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 1-6",
+      "display": "4-6, 7-6(3), 1-6",
       "sets": [
         {
           "p1": 4,
@@ -46243,7 +46280,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -52894,7 +52931,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(7)",
       "sets": [
         {
           "p1": 4,
@@ -77364,7 +77401,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -78971,7 +79008,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 6-7, 4-6",
+      "display": "6-1, 6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -82462,7 +82499,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 6-3",
+      "display": "7-6(4), 4-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -84754,7 +84791,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(4)",
       "sets": [
         {
           "p1": 4,
@@ -87537,7 +87574,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 3-6",
+      "display": "6-7(6), 6-4, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -90683,7 +90720,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(6)",
       "sets": [
         {
           "p1": 4,
@@ -93084,7 +93121,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 7-6",
+      "display": "6-1, 7-6(6)",
       "sets": [
         {
           "p1": 6,
@@ -107358,7 +107395,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 6-7, 6-7",
+      "display": "6-3, 6-7(7), 6-7(5)",
       "sets": [
         {
           "p1": 6,
@@ -110404,7 +110441,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(10), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -113816,7 +113853,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(5)",
       "sets": [
         {
           "p1": 6,
@@ -117321,7 +117358,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6, 6-3",
+      "display": "2-6, 7-6(5), 6-3",
       "sets": [
         {
           "p1": 2,
@@ -126568,7 +126605,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 6-7",
+      "display": "1-6, 6-7(6)",
       "sets": [
         {
           "p1": 1,
@@ -159763,7 +159800,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(1)",
       "sets": [
         {
           "p1": 6,
@@ -171137,11 +171174,11 @@
       "category": "Medium"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/767_o-virtanen.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1858_j-pinnington-jones.jpg",
     "oddsMovement": {
@@ -172323,7 +172360,10 @@
           ]
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12156423",
