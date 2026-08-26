@@ -132,6 +132,14 @@ const getJSON = url => new Promise((res, rej) => {
   })()`);
   console.log('STYLES GRID:', JSON.stringify(grid, null, 2));
 
+  // ---- 3b. Solid Baseliner residual-bucket caveat renders under the grid ----
+  const caveat = await evalJs(`(() => {
+    const notes = [...document.querySelectorAll('.ps-gnote')].map(n => n.textContent.replace(/\\s+/g,' ').trim());
+    const hit = notes.find(t => /Solid Baseliner is the residual bucket/i.test(t));
+    return { present: !!hit, text: hit ? hit.slice(0, 200) : null, allNotes: notes };
+  })()`);
+  console.log('SLB CAVEAT:', JSON.stringify(caveat, null, 2));
+
   // make the styles page visible for the screenshot, then shoot #psMatrix region
   await evalJs(`(() => { const mx=document.getElementById('psMatrix'); if(mx){ let p=mx; while(p){ p.style.display='block'; p.style.visibility='visible'; if(p.hasAttribute&&p.hasAttribute('data-page')) p.setAttribute('data-page','styles'); p=p.parentElement; } mx.scrollIntoView(); } return 'shown'; })()`);
   await new Promise(r => setTimeout(r, 500));
@@ -143,7 +151,8 @@ const getJSON = url => new Promise((res, rej) => {
   const pass = !edge.error && !edge.fallback && edge.pcts.length > 0 && edge.n
     && !mirror.error && mirror.isMirror
     && !grid.error && grid.ratedCells >= 20
-    && !keyCard.error && !keyCard.tooFew;
+    && !keyCard.error && !keyCard.tooFew
+    && caveat.present;
   console.log('console errors:', errors.length ? JSON.stringify(errors.slice(0, 5)) : 'none');
   console.log(pass ? 'PASS: modal edge resolves a real %/n (fix works), mirror reads 50%/n, grid populated'
                    : 'FAIL: see above');
