@@ -1762,14 +1762,33 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Finished",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 3,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "15 - 15",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1317_m-damm.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10148_f-marozsan.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12157954",
@@ -16191,7 +16210,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -22857,7 +22876,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(7)",
       "sets": [
         {
           "p1": 4,
@@ -47357,7 +47376,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -48964,7 +48983,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 6-7, 4-6",
+      "display": "6-1, 6-7(3), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -52470,7 +52489,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 6-3",
+      "display": "7-6(4), 4-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -54762,7 +54781,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(4)",
       "sets": [
         {
           "p1": 4,
@@ -57545,7 +57564,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 3-6",
+      "display": "6-7(6), 6-4, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -60691,7 +60710,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(6)",
       "sets": [
         {
           "p1": 4,
@@ -63107,7 +63126,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 7-6",
+      "display": "6-1, 7-6(6)",
       "sets": [
         {
           "p1": 6,
@@ -77426,7 +77445,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 6-7, 6-7",
+      "display": "6-3, 6-7(7), 6-7(5)",
       "sets": [
         {
           "p1": 6,
@@ -80487,7 +80506,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(10), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -83914,7 +83933,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(5)",
       "sets": [
         {
           "p1": 6,
@@ -87434,7 +87453,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6, 6-3",
+      "display": "2-6, 7-6(5), 6-3",
       "sets": [
         {
           "p1": 2,
@@ -96711,7 +96730,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 6-7",
+      "display": "1-6, 6-7(6)",
       "sets": [
         {
           "p1": 1,
@@ -129936,7 +129955,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6",
+      "display": "6-2, 7-6(1)",
       "sets": [
         {
           "p1": 6,
@@ -165589,17 +165608,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 7
-      }
-    ],
-    "liveGameScore": "30 - 15",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/55163_n-budkov-kjaer.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/421_c-oaposconnell.jpg",
     "oddsMovement": {
@@ -180192,7 +180205,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "5-7, 4-6",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12157608",
@@ -182167,21 +182197,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Finished",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 1
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "-",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/37936_a-ilagan.jpg",
@@ -190403,7 +190422,24 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "6-1, 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   },
   {
     "id": "upcoming-12157286",
