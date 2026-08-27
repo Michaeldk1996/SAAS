@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T00:06:14.748Z",
+  "generatedAt": "2026-08-27T22:42:54.333Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1538,6 +1538,24 @@
       "archetype_label": "Attacking Baseliner"
     },
     {
+      "name": "M. Landaluce",
+      "rank": 94,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 3,
+      "win_pct": 50,
+      "clay_wr": 54,
+      "hard_wr": 53,
+      "grass_wr": 25,
+      "top10_wins": 0,
+      "archetype_label": "Attacking Baseliner"
+    },
+    {
       "name": "L. Djere",
       "rank": 95,
       "archetype_data_coverage": "full",
@@ -2296,9 +2314,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 60,
+      "win_pct": 61.9,
       "clay_wr": 73,
-      "hard_wr": 40,
+      "hard_wr": 50,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Solid Defender"
@@ -8259,19 +8277,6 @@
       "grass_wr": null,
       "matches": 66,
       "source": "challenger"
-    },
-    {
-      "name": "Martin Landaluce",
-      "archetype_data_coverage": "challenger",
-      "partial_axes": [],
-      "badges": [],
-      "win_pct": 56.1,
-      "clay_wr": 52,
-      "hard_wr": 60,
-      "grass_wr": null,
-      "matches": 66,
-      "source": "challenger",
-      "archetype_label": "Attacking Baseliner"
     },
     {
       "name": "Dudi Sela",
