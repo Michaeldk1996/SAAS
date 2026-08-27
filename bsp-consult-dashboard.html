@@ -11738,6 +11738,14 @@ function upgradeStyleVsRows(m, token){
 // resolves the same player the rest of the tab is about.
 function stylePersonalCard(playerName, ownArch, oppArch, oppLabel, accent, rgba){
   const bp = psMatrixData && psMatrixData.byPlayer;
+  // id-space guard (TEN-88): `oppLabel` is the opponent's DISPLAY label (archetype_label)
+  // and byPlayer.vs is keyed by that label — NEVER by a machine id (.id). The paired
+  // ownArch.id/oppArch.id below stay in machine-id space for psArchIndex/psCellFor. If a
+  // refactor ever passes oppArch.id into this label slot, bp[..].vs[id] silently misses →
+  // n=0 → "no tour meetings" — the exact TEN-88 #1 regression. Warn if a machine id lands here.
+  if (oppLabel && PS_ARCHETYPES.some(a => a.id === oppLabel && !(a.ids || []).includes(oppLabel))) {
+    console.warn('[stylePersonalCard] machine id in label slot — pass archetype_label, not .id:', oppLabel);
+  }
   const rec = bp && oppLabel ? bp[styleKey(playerName)] : null;
   const vs = rec && rec.vs && rec.vs[oppLabel];
   const w = vs ? (vs.w || 0) : 0, l = vs ? (vs.l || 0) : 0, n = w + l;
@@ -11772,7 +11780,8 @@ function stylePersonalHtml(m, s1, s2, a1, a2){
     stylePersonalCard(m.p2, a2, a1, lab1, '#e7e9ee', ANALYSIS_P2_RGBA),
   ];
   return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Personally · career record vs this style</div>
-    <div class="psv-grid">${cards.join('')}</div></div>`;
+    <div class="psv-grid">${cards.join('')}</div>
+    <div class="psx-note">n = vs classified opponents only — matches against players without a style label aren't counted.</div></div>`;
 }
 
 // Archetype labels — their own block, driven by the v5.1 classification (tour results),
