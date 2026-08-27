@@ -3720,6 +3720,19 @@ const ROUND_RANK = {
 // a false main-draw title. canonicalTournament folds Roland Garros into
 // "French Open"; the extra alias is defensive.
 const GRAND_SLAM_NAMES = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
+// TEN-89 tour-wide (interaction 358dd5c0): round-robin / team events legitimately
+// contain a WIN after a (group-stage or bronze-match) LOSS, so the qualifying-merge
+// structural net below must NOT fire on them. Hand-checked against live data (56
+// single-elim events fixed, 0 legit round-robin edition touched). This name test
+// is only needed for events that carry no `RR` round code — the Olympics
+// (bronze-medal match) and the year-end Finals under their short label; every real
+// team cup in the data already carries `RR` rounds and is caught structurally
+// below. So the team cups are matched by SPECIFIC name, deliberately NOT a bare
+// `\bcup\b` — a broad "cup" would wrongly exempt a single-elimination event merely
+// named "… Cup" (e.g. the Kremlin Cup, an ATP 250 through 2021) and hide its
+// qualifying merges. `\bfinals\b` catches the ATP Finals as just "Finals"/"Tour
+// Finals" (never a city); `masters cup` is the pre-2009 year-end event.
+const ROUND_ROBIN_NAMES = /davis cup|atp cup|united cup|world team|world cup|billie jean|laver|hopman|tour finals|atp finals|nitto|next ?gen|olympic|\bfinals\b|masters cup/i;
 // Full-word labels for a finish/round code (used for edition finish badges and
 // the tournament-level "best result").
 const ROUND_FULL = {
@@ -3853,7 +3866,6 @@ async function fetchPlayerCareerHistory(playerKey) {
     const years = Object.keys(t._byEdition).map(Number).sort((a, b) => b - a);
     let titles = 0;
     let bestScore = -1, bestResult = '', bestYears = [];
-    const isSlam = GRAND_SLAM_NAMES.has(t.name);
     t.editions = years.map((y) => {
       // Order a year's matches earliest round → latest (final last).
       const ms = t._byEdition[y].slice().sort((a, b) => a._rank - b._rank);
@@ -3863,9 +3875,19 @@ async function fetchPlayerCareerHistory(playerKey) {
       // eliminated at their first main-draw LOSS, so any WIN at a round DEEPER
       // than that loss belongs to the earlier qualifying ladder served under the
       // same key. Retag those to 'Q'. Result/round based, so orientation-safe.
-      // (Round-robin/team events are never Slams, so this is safe here; a
-      // tour-wide extension would need an explicit round-robin exemption.)
-      if (isSlam) {
+      //
+      // TEN-89 tour-wide (interaction 358dd5c0, founder answered "yes"): this net
+      // now runs for EVERY single-elimination event, not only Slams — the same
+      // qualifying-merge shows up across ATP 250/500/1000 (feed serves qualifying
+      // under the main-draw key). The set-count test above stays Slam-only (it
+      // assumes best-of-five), but the structural net is format-agnostic. Only
+      // round-robin / team events must be exempt, since a win after a group-stage
+      // or bronze loss is legitimate there. Two-gate detection: an explicit name
+      // allowlist (Olympics/year-end Finals carry no RR round) OR any edition that
+      // contains an `RR` round code (catches an RR-format edition served under a
+      // plain city name, e.g. Adelaide 2007). isSlam is a subset of !isRoundRobin.
+      const isRoundRobin = ROUND_ROBIN_NAMES.test(t.name) || ms.some((m) => m.round === 'RR');
+      if (!isRoundRobin) {
         let firstLossRank = Infinity;
         // Exclude 'Q' rows: a qualifying loss ranks -1 and would otherwise sort
         // first and retag every main-draw win. (ms is shallow→deep.)

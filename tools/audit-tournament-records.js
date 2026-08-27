@@ -33,7 +33,16 @@ const path = require('path');
 const FILE = process.argv.slice(2).find((a) => !a.startsWith('--')) || path.join(__dirname, '..', 'player-profiles.json');
 const PROJECT_FIX = process.argv.includes('--project-fix');
 const GRAND_SLAMS = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
-const ROUND_ROBIN_TOURNEYS = /\bcup\b|tour finals|atp finals|nitto|next gen|world team|hopman|laver|olympic/i;
+// Round-robin / team events: a WIN after a group-stage or bronze-match LOSS is
+// legitimate there, so the structural qualifying-merge net must never fire on
+// them. Name allowlist (Olympics + year-end Finals carry no RR round, so the
+// name test is required) OR any edition carrying an `RR` round code. Team cups
+// are matched by SPECIFIC name, never a bare `\bcup\b`, so a single-elim event
+// named "… Cup" (e.g. Kremlin Cup) is NOT wrongly exempted. Kept in lockstep
+// with bsp-pipeline.js ROUND_ROBIN_NAMES (TEN-89 tour-wide).
+const ROUND_ROBIN_TOURNEYS = /davis cup|atp cup|united cup|world team|world cup|billie jean|laver|hopman|tour finals|atp finals|nitto|next ?gen|olympic|\bfinals\b|masters cup/i;
+const isRoundRobin = (name, ed) => ROUND_ROBIN_TOURNEYS.test(name)
+  || (Array.isArray(ed && ed.matches) && ed.matches.some((m) => m.round === 'RR'));
 const RANK = { F: 7, SF: 6, QF: 5, R16: 4, R32: 3, R64: 2, R128: 1, R256: 0 };
 const rank = (r) => (RANK[r] != null ? RANK[r] : -1); // 'Q'/'WD'/unknown -> -1
 
@@ -46,17 +55,21 @@ const isRet = (m) => m.ret === true || m.res === 'WD' || m.walkover === true;
 // Bug A fix, applied in memory for --project-fix. Mutates an edition's matches:
 // a Slam WIN decided in <3 sets that isn't a retirement can only be qualifying.
 function applyBugAFix(tourneyName, ed) {
-  if (!GRAND_SLAMS.has(tourneyName)) return;
   // (i) set-count: a best-of-3 qualifying WIN (winner < 3 sets, non-RET) can't be
-  // a best-of-5 main-draw win.
-  for (const m of (ed.matches || [])) {
-    if (m.round === 'Q' || m.res !== 'W' || isRet(m)) continue;
-    const s = sets(m.score);
-    if (s && Math.max(s[0], s[1]) < 3) m.round = 'Q';
+  // a best-of-5 main-draw win. Slam-only — it assumes a best-of-five main draw.
+  if (GRAND_SLAMS.has(tourneyName)) {
+    for (const m of (ed.matches || [])) {
+      if (m.round === 'Q' || m.res !== 'W' || isRet(m)) continue;
+      const s = sets(m.score);
+      if (s && Math.max(s[0], s[1]) < 3) m.round = 'Q';
+    }
   }
   // (ii) structural: a player is eliminated at their first main-draw LOSS, so any
   // WIN at a deeper round belongs to the earlier qualifying ladder (catches a
   // 3-set qualifying final that (i) misses). Result-based, orientation-independent.
+  // TEN-89 tour-wide: runs for EVERY single-elimination event; round-robin/team
+  // events are exempt (a group/bronze win after a loss is legitimate there).
+  if (isRoundRobin(tourneyName, ed)) return;
   const ladder = (ed.matches || []).filter((m) => m.round !== 'Q' && m.res !== 'WD')
     .slice().sort((a, b) => rank(a.round) - rank(b.round));
   let firstLossRank = Infinity;
@@ -77,7 +90,7 @@ function applyBugAFix(tourneyName, ed) {
 
 function auditEdition(tourneyName, ed, viol, ctx) {
   const isSlam = GRAND_SLAMS.has(tourneyName);
-  const isRR = ROUND_ROBIN_TOURNEYS.test(tourneyName);
+  const isRR = isRoundRobin(tourneyName, ed);
   const matches = Array.isArray(ed.matches) ? ed.matches : [];
   const md = matches.filter((m) => m.round !== 'Q' && m.res !== 'WD');
   const bump = (n) => { viol[n]++; if (isSlam) viol[n + 'Slam']++; };
@@ -99,7 +112,9 @@ function auditEdition(tourneyName, ed, viol, ctx) {
     }
   }
   // Rule 3 — a "Won" badge requires a final WIN and no main-draw losses.
-  if (ed.finishWon === true || ed.finish === 'Won') {
+  // Round-robin titles are exempt: winning a year-end/team event after dropping a
+  // group-stage match is legitimate (e.g. Djokovic, Nitto Finals 2015).
+  if (!isRR && (ed.finishWon === true || ed.finish === 'Won')) {
     const wonFinal = md.some((m) => m.round === 'F' && m.res === 'W');
     const anyLoss = md.some((m) => m.res === 'L');
     if (!wonFinal || anyLoss) { bump('rule3'); ctx.rule3.push(`${ctx.player} · ${tourneyName} '${ed.year}`); }
@@ -148,6 +163,14 @@ function main() {
   }
 
   const slamStructural = viol.rule1Slam + viol.rule2Slam + viol.rule3Slam + viol.rule4Slam;
+  // TEN-89 tour-wide (interaction 358dd5c0): the qualifying-merge fix now runs
+  // across every single-elimination event, so the "impossible" classes — a win
+  // after an elimination (rule 2), a false "Won" badge (rule 3), a best-of-five
+  // win in under three sets (rule 4) — must read ZERO tour-wide, not just for
+  // Slams. Rule 1 (a duplicate round with no win-after-loss, e.g. a qualifying
+  // R32 win alongside a main-draw R32 loss) is a separate, lower-severity display
+  // class the merge fix does not target; it is reported but never blocks.
+  const tourWideStructural = viol.rule2 + viol.rule3 + viol.rule4 + viol.rule1Slam;
   console.log(`\nTEN-89 tournament-record audit — ${path.basename(FILE)}${PROJECT_FIX ? '  [--project-fix]' : ''}`);
   console.log(`Players: ${Object.keys(players).length} · editions: ${editions} (${slamEditions} Grand-Slam)\n`);
   const row = (n, label, v, vs) => console.log(`  Rule ${n}  ${label.padEnd(50)} ${String(v).padStart(6)}   (Slam ${vs})`);
@@ -168,11 +191,14 @@ function main() {
     if (ctx[rn].length) console.log(`\n  ${rn} examples: ${ctx[rn].slice(0, 4).join(' | ')}`);
   }
 
-  if (slamStructural > 0) {
-    console.error(`\nFAIL — ${slamStructural} Slam structural violation(s). Tournament records are not valid.`);
+  console.log(`  Tour-wide structural (rules 2-4 + Slam rule 1 · fail-closed):  ${tourWideStructural}`);
+  console.log(`  Rule 1 non-Slam duplicate-round (reported, non-blocking):     ${viol.rule1 - viol.rule1Slam}`);
+
+  if (tourWideStructural > 0) {
+    console.error(`\nFAIL — ${tourWideStructural} structural violation(s) (Slam: ${slamStructural}). Tournament records are not valid.`);
     process.exit(1);
   }
-  console.log('\nPASS — no Slam structural violations.');
+  console.log('\nPASS — no structural violations (win-after-loss / false title / best-of-5 sub-3-set).');
 }
 
 main();
