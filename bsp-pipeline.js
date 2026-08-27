@@ -3701,7 +3701,10 @@ const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
 // Bump when the record-by-tournament derivation changes so cached history is
 // invalidated instead of waiting out the 7-day TTL. v2: pre-match walkover a
 // player GAVE no longer counts as a loss (founder ruling 2026-08-04, TEN-8).
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 2;
+// v3 (TEN-89): Slam qualifying rows the event_qualification flag misses are
+// reclassified to 'Q'; retirement/walkover flags carried per match. Bumping the
+// version busts the 7-day history cache so every player rebuilds with the fix.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 3;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -3709,6 +3712,14 @@ const TOURNAMENT_HISTORY_SCHEMA_VERSION = 2;
 const ROUND_RANK = {
   F: 7, SF: 6, QF: 5, R16: 4, R32: 3, R64: 2, R128: 1, R256: 0,
 };
+// Grand-Slam canonical display names (best-of-five main draws). Used to
+// reclassify api-tennis's mislabelled Slam qualifying rows (TEN-89 Bug A):
+// the feed serves the qualifying draw under the SAME tournament_key as the
+// main draw, tags it with the qualifying bracket's own "QF/SF/Final" and leaves
+// event_qualification=null, so the qualifying "Final" win would otherwise stamp
+// a false main-draw title. canonicalTournament folds Roland Garros into
+// "French Open"; the extra alias is defensive.
+const GRAND_SLAM_NAMES = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
 // Full-word labels for a finish/round code (used for edition finish badges and
 // the tournament-level "best result").
 const ROUND_FULL = {
@@ -3779,7 +3790,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     if (!name) continue;
     const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
     if (!year) continue;
-    const code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
+    let code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
     const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';
     const oppKey = isP1 ? f.second_player_key : f.first_player_key;
     // event_final_result is raw fixture order ("player1 sets - player2 sets"),
@@ -3789,6 +3800,22 @@ async function fetchPlayerCareerHistory(playerKey) {
     if (!isP1 && score.includes('-')) {
       const parts = score.split('-').map(s => s.trim());
       if (parts.length === 2) score = `${parts[1]} - ${parts[0]}`;
+    }
+    // TEN-89 Bug A: recover the Slam qualifying rows the event_qualification flag
+    // misses. A genuine Grand-Slam main-draw win is best-of-five (the winner
+    // takes 3 sets); any WIN decided in fewer than 3 sets that is NOT a
+    // retirement/walkover can only be a best-of-three qualifying match served
+    // under the main-draw key. Reclassify it to 'Q' (rank -1) so it still counts
+    // in W/L but never inflates titles/best-result — the same treatment the
+    // event_qualification path already gives, per the 2026-08-04 record ruling.
+    const _isRet = f.event_status === 'Retired';
+    const _isWo = f.event_status === 'Walk Over';
+    if (code !== 'Q' && didWin && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
+      // Winner sets = max of the two, so this holds whichever way the score
+      // string is ordered (defence-in-depth against any orientation regression).
+      const sc = String(score).split('-').map((s) => parseInt(s.trim(), 10));
+      const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
+      if (Number.isFinite(winnerSets) && winnerSets < 3) code = 'Q';
     }
 
     // A pre-match walkover the player GAVE is not a loss (founder ruling
@@ -3811,6 +3838,11 @@ async function fetchPlayerCareerHistory(playerKey) {
       res: didWin ? 'W' : (walkoverGiven ? 'WD' : 'L'), round: code, opp,
       oppKey: oppKey != null ? String(oppKey) : '', score,
       _rank: ROUND_RANK[code] != null ? ROUND_RANK[code] : -1, _won: didWin,
+      // TEN-89 Part 2: carry event_status so the "over 3.5 sets" box can exclude
+      // retirements and walkovers, which distort the rate. Both are dropped from
+      // the pipeline elsewhere; kept here for the profile editions only.
+      ...(_isRet ? { ret: true } : {}),
+      ...(_isWo ? { walkover: true } : {}),
     });
   }
 
@@ -3821,9 +3853,29 @@ async function fetchPlayerCareerHistory(playerKey) {
     const years = Object.keys(t._byEdition).map(Number).sort((a, b) => b - a);
     let titles = 0;
     let bestScore = -1, bestResult = '', bestYears = [];
+    const isSlam = GRAND_SLAM_NAMES.has(t.name);
     t.editions = years.map((y) => {
       // Order a year's matches earliest round → latest (final last).
       const ms = t._byEdition[y].slice().sort((a, b) => a._rank - b._rank);
+      // TEN-89 Bug A (structural safety net). The per-match set-count test above
+      // retags best-of-3 qualifying WINS, but a Slam qualifying final can carry a
+      // 3-set score (e.g. Wimbledon 2021), which set-count misses. A player is
+      // eliminated at their first main-draw LOSS, so any WIN at a round DEEPER
+      // than that loss belongs to the earlier qualifying ladder served under the
+      // same key. Retag those to 'Q'. Result/round based, so orientation-safe.
+      // (Round-robin/team events are never Slams, so this is safe here; a
+      // tour-wide extension would need an explicit round-robin exemption.)
+      if (isSlam) {
+        let firstLossRank = Infinity;
+        // Exclude 'Q' rows: a qualifying loss ranks -1 and would otherwise sort
+        // first and retag every main-draw win. (ms is shallow→deep.)
+        for (const m of ms) { if (m.res === 'L' && m.round !== 'Q') { firstLossRank = m._rank; break; } }
+        if (firstLossRank !== Infinity) {
+          for (const m of ms) {
+            if (m._won && m.round !== 'Q' && m._rank > firstLossRank) { m.round = 'Q'; m._rank = -1; }
+          }
+        }
+      }
       // The deepest-round match is where the player exited (or the final won).
       const deepest = ms.reduce((best, m) => (m._rank > best._rank ? m : best), ms[0]);
       const finishWon = deepest._won && deepest.round === 'F';
@@ -3835,7 +3887,11 @@ async function fetchPlayerCareerHistory(playerKey) {
       else if (finishScore === bestScore) { bestYears.push(y); }
       return {
         year: y, finish, finishWon,
-        matches: ms.map((m) => ({ res: m.res, round: m.round, opp: m.opp, oppKey: m.oppKey, score: m.score })),
+        matches: ms.map((m) => ({
+          res: m.res, round: m.round, opp: m.opp, oppKey: m.oppKey, score: m.score,
+          ...(m.ret ? { ret: true } : {}),
+          ...(m.walkover ? { walkover: true } : {}),
+        })),
       };
     });
     t.titles = titles;

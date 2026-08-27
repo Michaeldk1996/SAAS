@@ -183,11 +183,14 @@ async function buildTmlIndex(log) {
 
       // surface/date/display-name carried for the Overview year-table drill-down.
       const meta = { surface: tmlSurface(r.surface), date: tmlDate(r.tourney_date), tournamentName: r.tourney_name };
+      // TEN-89 Part 2: the raw TML score marks retirements ("... RET"); setCounts
+      // drops the token, so capture it here for the over-3.5 exclusion downstream.
+      const ret = /\bRET\b|Retired/i.test(String(r.score || ''));
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc);
     }
   }
@@ -293,7 +296,7 @@ function finalizeTournament(name, byYear) {
     else if (finishScore === bestScore) { bestYears.push(y); }
     return {
       year: y, finish, finishWon,
-      matches: ms.map((m) => ({ res: m.res, round: m.round, opp: m.opp, oppKey: m.oppKey, score: m.score })),
+      matches: ms.map((m) => ({ res: m.res, round: m.round, opp: m.opp, oppKey: m.oppKey, score: m.score, ...(m.ret ? { ret: true } : {}), ...(m.walkover ? { walkover: true } : {}) })),
     };
   });
   return { name, won, lost, firstYear, lastYear, titles, bestResult, bestYears, editions };
@@ -333,7 +336,14 @@ function mergePlayer(history, tmlMatches) {
     const { id, display } = canonicalTournament(m.tourney);
     let e = tml.get(id);
     if (!e) { e = { display, byYear: {} }; tml.set(id, e); }
-    (e.byYear[m.year] = e.byYear[m.year] || []).push({ res: m.won ? 'W' : 'L', round: m.round, opp: m.oppName, oppKey: '', score: m.score });
+    // TEN-89 Bug B: scoreDisplay() renders "oppSets - playerSets", but the
+    // profile-editions renderer prints the stored score verbatim next to a
+    // res-derived "def./lost to", so it needs player-first "playerSets - oppSets"
+    // (exactly what the API builder stores). The two OTHER scoreDisplay consumers
+    // (buildArchiveHistories via flipSets, embedded matches via swapScore) already
+    // compensate; this profile-editions path did not, so every pre-2021 edition
+    // printed its score reversed. Flip it here, at the single uncompensated site.
+    (e.byYear[m.year] = e.byYear[m.year] || []).push({ res: m.won ? 'W' : 'L', round: m.round, opp: m.oppName, oppKey: '', score: flipSets(m.score), ...(m.ret ? { ret: true } : {}) });
   }
 
   let addedEditions = 0;
