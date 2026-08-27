@@ -3700,14 +3700,35 @@ function newsFmtDateTime(ts){
 // Match-card start time bound to the member's timezone (TEN-8). Cards used to print
 // the pipeline-baked `m.time`, which is UTC wall-clock — so a GMT+8 member saw 00:50
 // for a fixture that starts 08:50 their time. The real instant is m.startTs (ISO epoch);
-// if absent, reconstruct it from the baked UTC fields (`${date}T${time}:00Z` is the true
-// instant, since m.date/m.time are UTC). withDate=false → "08:50"; withDate=true →
+// if absent, reconstruct it from m.date/m.time — but those are UTC ONLY on odds-API
+// records (which carry startTs anyway); on api-tennis-only records (no startTs) they
+// are the feed ACCOUNT zone (Central European), which cardStartMs corrects for below
+// (TEN-80). withDate=false → "08:50"; withDate=true →
 // "Sat 08 Aug, 08:50" — identical opts to the Account Settings preview. Dash when there
 // is no usable instant; never a fabricated 00:00.
+// Real UTC offset (minutes) of the api-tennis account timezone at instant `ms`.
+// Records without a startTs carry `event_time` in the feed's ACCOUNT zone, which
+// is Central European (CET/CEST), NOT UTC (TEN-80, TEN-8 closing-odds review).
+// Read the live offset from Intl so the correction follows DST automatically
+// (+120 CEST / +60 CET); fall back to CEST if longOffset is unavailable.
+function acctTzOffsetMin(ms){
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone:'Europe/Berlin', timeZoneName:'longOffset' }).formatToParts(ms);
+    const tzn = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
+    const mt = /GMT([+-])(\d{2}):?(\d{2})?/.exec(tzn);
+    if (mt){ const sign = mt[1] === '-' ? -1 : 1; return sign * (parseInt(mt[2], 10) * 60 + parseInt(mt[3] || '0', 10)); }
+  } catch (e){}
+  return 120;
+}
 function cardStartMs(m){
   if (m && m.startTs != null){ const t = new Date(m.startTs).getTime(); if (isFinite(t)) return t; }
   if (m && m.date && /^\d{2}:\d{2}/.test(m.time || '')){
-    const t = Date.parse(`${m.date}T${m.time.slice(0,5)}:00Z`); if (isFinite(t)) return t;
+    // No startTs → api-tennis-only record whose `time` is the feed ACCOUNT zone
+    // (Central European), NOT UTC. The baked `...:00Z` parse alone reads it 1–2h
+    // LATE (TEN-80: cards lingered underway, "Underway" chip fired ~2h late).
+    // Correct by the account zone's real offset for that calendar date (DST-safe).
+    const naive = Date.parse(`${m.date}T${m.time.slice(0,5)}:00Z`);
+    if (isFinite(naive)) return naive - acctTzOffsetMin(naive) * 60000;
   }
   return NaN;
 }
@@ -12116,6 +12137,15 @@ function getPlayersFromMatches(){
     // card has no purpose and m.bestOdds drifts to a stale in-play price (the
     // "Jodar 26.00" bug). A match is pre-match iff it is neither live nor settled.
     if (m.live || m.finalScore != null) return;
+    // Event-driven cut (TEN-80): also drop once the start instant has passed on the
+    // client clock. The feed's live flag lags our ~hourly pipeline by up to an hour,
+    // so a just-started match can still read live:false with no finalScore; without
+    // this it lingers as a bettable card on an already-underway match — the one
+    // genuinely harmful case. Same client-clock trigger the Matches "Underway" chip
+    // uses (cardStartMs, now timezone-correct). No usable start instant → never
+    // dropped here (never a guess).
+    const startMs = cardStartMs(m);
+    if (isFinite(startMs) && Date.now() >= startMs) return;
     [{name:m.p1, key:m.p1Key, photo:m.p1PhotoUrl, odds:m.bestOdds?.p1 || null},
      {name:m.p2, key:m.p2Key, photo:m.p2PhotoUrl, odds:m.bestOdds?.p2 || null}].forEach(p => {
       // Identity = player_key when present, else the display name. Keying on the
