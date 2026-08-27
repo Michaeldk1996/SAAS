@@ -14072,13 +14072,55 @@ function ppTournamentResultHtml(p, name){
     <div style="font-size:24px;font-weight:800;color:${color};font-family:'IBM Plex Mono',monospace;line-height:1;margin-top:9px;">${value}</div>
     <div style="font-size:11px;color:#5b6880;margin-top:6px;">${sub}</div>
   </div>`;
+  // TEN-89 Part 2: at a Grand Slam, two tiles change. "Titles won" -> the player's
+  // combined W-L across all four majors (betting-relevant career context, not just
+  // this event); "Last played" -> how often his matches at THIS major go past 3.5
+  // sets. Every other tournament keeps the original five tiles unchanged. Both new
+  // figures are derived in the pipeline (profile.gsCareer, t.over35) with a graceful
+  // fallback so a not-yet-rebuilt profile still renders the old tile rather than a
+  // blank. Basis is stated below the tiles (founder: "a member should be able to
+  // tell what's counted").
+  const isSlam = /^Grand Slam/.test(ppTournamentCategory(name));
+  let titlesTile, lastTile, slamBasis = '';
+  if (isSlam){
+    const gs = p && p.gsCareer;
+    const o = t.over35;
+    // gsCareer and over35 are derived together by the pipeline: a not-yet-rebuilt
+    // profile has BOTH absent, so each tile falls back to its ORIGINAL form (and
+    // the basis caption is dropped) rather than showing a half-migrated card or
+    // mislabelling not-yet-derived data as "no matches". A present over35 with
+    // sample 0 is a real state (only qualifying / retirements at this major) and
+    // correctly reads "\u2014".
+    const gsShown = gs && (gs.won + gs.lost) > 0;
+    if (gsShown){
+      const gsTot = gs.won + gs.lost;
+      const gsWr = Math.round((gs.won / gsTot) * 100);
+      titlesTile = tile('Grand Slam career', `${gs.won}\u2013${gs.lost}`, `${gsWr}% win rate \u00b7 all four majors`, '#F4F6FA');
+    } else {
+      titlesTile = tile('Titles won', `${t.titles || 0}`, 'at this event', '#F4F6FA');
+    }
+    if (o){
+      const oVal = o.sample > 0 ? `${Math.round((o.count / o.sample) * 100)}%` : '\u2014';
+      const oSub = o.sample > 0 ? `${o.count} of ${o.sample} match${o.sample === 1 ? '' : 'es'}` : 'no completed main-draw matches';
+      lastTile = tile('Over 3.5 sets', oVal, oSub, '#F4F6FA');
+    } else {
+      lastTile = tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#F4F6FA');
+    }
+    // Only caption the basis when at least one new box is actually on screen.
+    if (gsShown || o){
+      slamBasis = `<div style="font-size:10.5px;color:#4b5672;margin-top:10px;line-height:1.55;font-family:'IBM Plex Mono',monospace;">Grand Slam career: all four majors \u00b7 main draw \u00b7 incl. retirements.<br>Over 3.5 sets: main draw \u00b7 completed matches only \u00b7 retirements &amp; walkovers excluded.</div>`;
+    }
+  } else {
+    titlesTile = tile('Titles won', `${t.titles || 0}`, 'at this event', '#F4F6FA');
+    lastTile = tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#F4F6FA');
+  }
   const tilesHtml = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
     ${tile('W\u2013L record', `${t.won}\u2013${t.lost}`, 'career', '#F4F6FA')}
-    ${tile('Titles won', `${t.titles || 0}`, 'at this event', '#F4F6FA')}
+    ${titlesTile}
     ${tile('Best result', pesc(t.bestResult || '\u2014'), pesc(bestYears.join(', ') || '\u2014'), '#F4F6FA')}
-    ${tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#F4F6FA')}
+    ${lastTile}
     ${tile('Win rate', `${wr}%`, 'career', '#F4F6FA')}
-  </div>`;
+  </div>${slamBasis}`;
   const editionsHtml = editions.map(ed => {
     const yy = String(ed.year).slice(-2);
     const rows = (ed.matches || []).map(m => {

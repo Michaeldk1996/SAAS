@@ -3926,6 +3926,64 @@ async function fetchPlayerCareerHistory(playerKey) {
   return list;
 }
 
+// TEN-89 Part 2 — the two Grand-Slam profile boxes (founder rulings 2026-08-27,
+// interaction f7ebc630, accepted). Derived from the FINAL merged editions
+// (API + TML backfill), so both figures cover the whole career.
+//
+//   profile.gsCareer = { won, lost }   W-L across all four majors, MAIN DRAW only
+//     (qualifying rows — 'Q' from the Bug-A reclassification, or a raw 'Q1'/'Q2'/
+//     'Q3' from an archive edition — are dropped), INCLUDING retirements and
+//     walkover-received wins. This matches the official record: a retirement is a
+//     real result and the tour counts a walkover received as a win. Only a
+//     walkover the player GAVE ('WD', neither win nor loss) is left out.
+//     Basis label on the page: "all four majors · main draw · incl. retirements".
+//
+//   t.over35 = { count, sample }   on each Grand-Slam tournament — how often this
+//     player's matches at THIS major run past 3.5 sets (i.e. 4 or 5 sets in a
+//     best-of-five main draw). MAIN DRAW only (qualifying is best-of-three, can't
+//     be pooled) and COMPLETED matches only: retirements AND walkovers are
+//     excluded because a match that stopped early tells you nothing about how long
+//     it would have gone. Basis label: "main draw · completed matches only ·
+//     retirements & walkovers excluded".
+//
+// A qualifying-round code. 'QF' (quarter-final) deliberately does NOT match.
+const isQualifyingRound = (r) => r === 'Q' || /^Q\d+$/.test(String(r || ''));
+// Total sets in an edition score "a - b" (set counts, player-first). Orientation
+// is irrelevant to the sum, so this is regression-safe against any score flip.
+function totalSetsOfScore(score) {
+  const parts = String(score || '').split('-').map((s) => parseInt(s.trim(), 10));
+  if (parts.length !== 2 || !parts.every(Number.isFinite)) return null;
+  return parts[0] + parts[1];
+}
+// Attaches gsCareer to the profile and over35 to each Grand-Slam tournament.
+// Returns true if the player has any Grand-Slam main-draw history.
+function deriveSlamBoxes(profile) {
+  const hist = Array.isArray(profile && profile.tournamentHistory) ? profile.tournamentHistory : [];
+  let gsWon = 0, gsLost = 0, anySlam = false;
+  for (const t of hist) {
+    if (!GRAND_SLAM_NAMES.has(t.name)) continue;
+    let count = 0, sample = 0;
+    for (const ed of (t.editions || [])) {
+      for (const m of (ed.matches || [])) {
+        if (isQualifyingRound(m.round)) continue;      // main draw only
+        // Grand-Slam career W-L: retirements + walkover-received wins count; a
+        // walkover GIVEN ('WD') is neither.
+        if (m.res === 'W') { gsWon++; anySlam = true; }
+        else if (m.res === 'L') { gsLost++; anySlam = true; }
+        // Over-3.5: completed matches only.
+        if (m.ret || m.walkover || m.res === 'WD') continue;
+        const sets = totalSetsOfScore(m.score);
+        if (sets == null) continue;                    // unscored → length unknown
+        sample++;
+        if (sets >= 4) count++;
+      }
+    }
+    t.over35 = { count, sample };
+  }
+  if (anySlam) profile.gsCareer = { won: gsWon, lost: gsLost };
+  return anySlam;
+}
+
 // Orchestrates the full per-player build. Seed = every unique player in this
 // run's matches[] (built fresh). Then every 1st-degree opponent of those seed
 // players is added to the searchable pool via a TTL cache, so player search can
@@ -4042,6 +4100,14 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // (a TML outage just logs and skips, leaving the 2021+ records intact).
   console.log('Backfilling pre-2021 career history from TML-Database archive...');
   await backfillProfilesHistory(profiles, { log: (m) => console.log(m) });
+
+  // TEN-89 Part 2: derive the two Grand-Slam profile boxes. Runs HERE — after the
+  // TML backfill — so both figures span the player's whole career (API 2021+ plus
+  // the pre-2021 majors TML fills in), not just the feed-reachable years. Pure
+  // derivation from the final merged editions, so it needs no cache/schema bump.
+  let gsBoxed = 0;
+  for (const key of Object.keys(profiles)) if (deriveSlamBoxes(profiles[key])) gsBoxed++;
+  console.log(`Grand-Slam profile boxes: gsCareer + per-major over-3.5 derived for ${gsBoxed} player(s).`);
 
   // Tour average over the seed set only (falls back to the whole pool if, on
   // some odd run, no seed profile built), so existing "vs tour avg" insights
@@ -4887,4 +4953,4 @@ module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTour
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
-  fetchPlayerCareerHistory };
+  fetchPlayerCareerHistory, deriveSlamBoxes };

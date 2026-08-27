@@ -194,11 +194,38 @@ function main() {
   console.log(`  Tour-wide structural (rules 2-4 + Slam rule 1 · fail-closed):  ${tourWideStructural}`);
   console.log(`  Rule 1 non-Slam duplicate-round (reported, non-blocking):     ${viol.rule1 - viol.rule1Slam}`);
 
-  if (tourWideStructural > 0) {
-    console.error(`\nFAIL — ${tourWideStructural} structural violation(s) (Slam: ${slamStructural}). Tournament records are not valid.`);
+  // TEN-89 Part 2 invariants (fail-closed). The two Grand-Slam profile boxes are
+  // derived (profile.gsCareer, t.over35); these are impossibilities, never a
+  // legitimate data quirk, so any hit blocks the refresh:
+  //   - over35.count must be within [0, sample]
+  //   - over35 must exist ONLY on a Grand-Slam tournament
+  //   - gsCareer counts must be non-negative
+  const p2 = [];
+  for (const key of Object.keys(players)) {
+    const p = players[key];
+    if (!p || !Array.isArray(p.tournamentHistory)) continue;
+    for (const t of p.tournamentHistory) {
+      if (t.over35) {
+        if (!GRAND_SLAMS.has(t.name)) p2.push(`${p.name || key} · over35 on non-Slam "${t.name}"`);
+        const { count, sample } = t.over35;
+        if (!(Number.isInteger(count) && Number.isInteger(sample) && count >= 0 && sample >= 0 && count <= sample)) {
+          p2.push(`${p.name || key} · ${t.name} over35 impossible ${count}/${sample}`);
+        }
+      }
+    }
+    if (p.gsCareer && (!(p.gsCareer.won >= 0) || !(p.gsCareer.lost >= 0))) {
+      p2.push(`${p.name || key} · gsCareer negative ${p.gsCareer.won}-${p.gsCareer.lost}`);
+    }
+  }
+  console.log(`  Part-2 Grand-Slam box invariants (fail-closed):               ${p2.length}`);
+  if (p2.length) console.log(`    e.g. ${p2.slice(0, 4).join(' | ')}`);
+
+  if (tourWideStructural > 0 || p2.length > 0) {
+    console.error(`\nFAIL — ${tourWideStructural} structural violation(s) (Slam: ${slamStructural})`
+      + `${p2.length ? ` + ${p2.length} Part-2 box invariant violation(s)` : ''}. Tournament records are not valid.`);
     process.exit(1);
   }
-  console.log('\nPASS — no structural violations (win-after-loss / false title / best-of-5 sub-3-set).');
+  console.log('\nPASS — no structural violations (win-after-loss / false title / best-of-5 sub-3-set) and Part-2 boxes valid.');
 }
 
 main();
