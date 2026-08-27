@@ -81,6 +81,16 @@ node classify-styles.js
 # Held labels for roster debutants auto-apply the day classify-styles.js first
 # admits them (see tools/board-archetypes.json + tools/apply-board-archetypes.js).
 node tools/apply-board-archetypes.js
+
+# TEN-88 option B: refresh the current-season finished-fixture cache that the
+# matrix builder folds into the per-player CAREER meeting pool (the TML mirror
+# stops mid-January, so without this the live season is ~99% absent from every
+# "vs this style" list). NON-FATAL: the fetch guards its own output (an api
+# outage or a thin pull keeps the last-good cache and exits non-zero), and the
+# builder tolerates an absent/stale cache, so a fixture-feed hiccup must never
+# abort the whole styles refresh. `|| echo ...` returns 0 so set -e can't kill it.
+node tools/fetch-apitennis-fixtures.js || echo "WARN: api fixture fetch failed; matrix builds on last-good cache"
+
 node tools/build-matchup-matrix.js
 
 # NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if

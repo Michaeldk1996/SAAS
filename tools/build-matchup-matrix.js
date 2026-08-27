@@ -48,6 +48,18 @@ const OUT = path.join(ROOT, 'matchup-matrix.json');
 // these are separate files (the shards carry the heavy per-meeting rows).
 const OUT_MEET_DIR = path.join(ROOT, 'style-meetings');
 const OUT_MEET_INDEX = path.join(ROOT, 'style-meetings-index.json');
+// TEN-88 option B supplement: the community TML mirror stops publishing the
+// current season past mid-January, so the career-meetings pool loses ~99% of the
+// live season (the Fery-vs-Cobolli "no meetings" gap). This flat cache of the
+// season's finished ATP fixtures (written by tools/fetch-apitennis-fixtures.js)
+// is folded into the CAREER split ONLY — the aggregate matrix cells stay
+// TML-only and byte-stable. Absent cache => TML-only build (no throw).
+const API_SUPP = path.join(TML_CACHE, 'apitennis-2026.json');
+// Canonical tournament_key -> surface map (built by bsp-pipeline.js, corrections
+// applied). Used to give api-supplement rows the SAME surface tag TML rows carry
+// so a member can't tell which source a meeting row came from.
+const SURFACE_MAP = path.join(ROOT, 'tournament-surfaces.json');
+const SUPP_DEDUP_TOL_DAYS = 1;   // TML tourney_date vs api event_date drift by <=1 day (TZ/attribution)
 
 const FROM_YEAR = 2000, TO_YEAR = 2026;   // must match classify-styles.js window
 const MATRIX_MIN_N = 20;                   // off-diagonal cell needs this many real matches
@@ -134,6 +146,42 @@ function flipScore(score) {
   }).join(' ');
 }
 
+// ---- api-supplement helpers (TEN-88 option B) ----
+// api-tennis encodes a tie-break set as decimals in `scores`: "7.7"/"6.5" means
+// 7 games (tb 7) vs 6 games (tb 5), i.e. the tennis score 7-6(5) — the suffix is
+// the LOSER's tie-break points, perspective-independent. Rebuild the game-level
+// string in FIRST-PLAYER order (the same order TML scores are stored in before
+// bump() flips them), so the row renderer shows an identical "6-7(5) 6-2 6-1".
+function apiScoreP1(sets) {
+  return (sets || []).map(pair => {
+    const a = String(pair[0] == null ? '' : pair[0]).split('.');
+    const b = String(pair[1] == null ? '' : pair[1]).split('.');
+    const tie = a[1] != null || b[1] != null;
+    if (tie) return `${a[0]}-${b[0]}(${Math.min(Number(a[1] || 0), Number(b[1] || 0))})`;
+    return `${a[0]}-${b[0]}`;
+  }).join(' ');
+}
+// Winner-perspective score (what TML stores): flip to winner-first if p2 won, then
+// append the same RET marker TML carries for a retirement so the two are identical.
+function apiScoreWinnerPerspective(sets, winner, status) {
+  let s = apiScoreP1(sets);
+  if (winner === '2') s = flipScore(s);
+  if (status === 'Retired') s = (s + ' RET').trim();
+  return s;
+}
+function daysApart(a, b) {
+  const t1 = Date.parse(a + 'T00:00:00Z'), t2 = Date.parse(b + 'T00:00:00Z');
+  return (!Number.isFinite(t1) || !Number.isFinite(t2)) ? Infinity : Math.abs(t1 - t2) / 86400000;
+}
+// api round is "Brisbane - 1/16-finals" (tournament-prefixed) or ""; strip the
+// prefix. Round is stored but not shown in the row, so this is best-effort.
+function apiRound(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const i = s.indexOf(' - ');
+  return (i >= 0 ? s.slice(i + 3) : s).trim() || null;
+}
+
 // ---- client-parity player key (TEN-88 #2) ----
 // The per-player split (`byPlayer`) is looked up on the front end by the SAME
 // surname|initial key the dashboard already builds for every player
@@ -181,6 +229,23 @@ function main() {
   const byPlayer = {};                       // clientKey -> { name, vs: { <oppLabel>: {w,l} } }
   const meetings = {};                        // clientKey -> { name, vs: { <oppLabel>: [rows] } }
   let bpCounted = 0;
+  // Canonical display name for an api opponent. api-tennis AND the roster both
+  // store abbreviated names ("F. Cobolli"); TML rows carry the FULL name
+  // ("Flavio Cobolli"), and the row renderer's psShortName() keeps a full name
+  // intact but strips an abbreviated one to a bare surname — so an un-normalised
+  // api row is a visible tell. TML is the authoritative full-name source, so we
+  // harvest full names from it (below, in the TML loop) and map api opponents
+  // through here; a player never seen in TML falls back to their api name.
+  const fullNameByCK = new Map();
+  const canonicalName = (name) => {
+    const k = clientKey(name);
+    return (k && fullNameByCK.get(k)) || name;
+  };
+  // Dedup index for the api supplement: pairKey (sorted client-key pair) -> [dates].
+  // TML tourney_date and api event_date drift by <=1 day, so the api ingest drops a
+  // fixture whose pair matches a TML meeting within SUPP_DEDUP_TOL_DAYS.
+  const pairKey = (a, b) => { const ca = clientKey(a), cb = clientKey(b); return (ca && cb) ? [ca, cb].sort().join('~') : null; };
+  const tmlPairDates = new Map();
   // bump() owns BOTH the w/l aggregate and the per-meeting row so they can never
   // drift: every counted endpoint increments the count AND pushes exactly one row
   // under the same key, so meetings[k].vs[opp].length === byPlayer[k].vs[opp].(w+l).
@@ -227,6 +292,9 @@ function main() {
       const c = lines[i].split(',');
       const wn = c[ix.winner_name], ln = c[ix.loser_name];
       if (!wn || !ln) continue;
+      // Harvest TML full names (the api supplement renders opponents through these).
+      const _kw = clientKey(wn); if (_kw && !fullNameByCK.has(_kw)) fullNameByCK.set(_kw, wn);
+      const _kl = clientKey(ln); if (_kl && !fullNameByCK.has(_kl)) fullNameByCK.set(_kl, ln);
       tmlTotal++;
       const wl = lookup(wn), ll = lookup(ln);
       if (!wl || !ll) continue;                 // at least one endpoint outside the deployed pool
@@ -244,7 +312,54 @@ function main() {
       bump(wn, ll, true,  { ...meta, opponent: ln });
       bump(ln, wl, false, { ...meta, opponent: wn });
       if (winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
+      // Record this meeting's pair+date so the api supplement can dedup against it.
+      const pk = pairKey(wn, ln); if (pk && meta.date) { (tmlPairDates.get(pk) || tmlPairDates.set(pk, []).get(pk)).push(meta.date); }
     }
+  }
+
+  // ---- api-tennis current-season supplement (TEN-88 option B) ----
+  // Folded into the CAREER split (byPlayer + meeting shards) ONLY; the aggregate
+  // `wins`/`winsSurf` matrix stays TML-only so published matrix cells are unchanged.
+  // Both endpoints must resolve to a labelled primary (same pool rule as TML); a
+  // fixture already covered by TML (pair within +/-1 day) is dropped; Walk Over is
+  // excluded (not a played match); Retired counts. Fields are normalised on ingest
+  // (canonical names, TML-format score, tournament_key -> surface) so a member
+  // cannot tell a supplemented row from a TML one.
+  const supp = { loaded: false, walkover: 0, unlabelled: 0, deduped: 0, added: 0, noWinner: 0, surfaced: 0 };
+  if (fs.existsSync(API_SUPP)) {
+    supp.loaded = true;
+    const cache = JSON.parse(fs.readFileSync(API_SUPP, 'utf8'));
+    const surfMap = fs.existsSync(SURFACE_MAP)
+      ? new Map(Object.entries(JSON.parse(fs.readFileSync(SURFACE_MAP, 'utf8')).surfaces || {}))
+      : new Map();
+    for (const r of (cache.fixtures || [])) {
+      if (r.status === 'Walk Over') { supp.walkover++; continue; }
+      if (!r.winner || !r.date) { supp.noWinner++; continue; }
+      const wl = lookup(r.p1), ll = lookup(r.p2);       // p1/p2 archetypes (winner not yet applied)
+      if (!wl || !ll) { supp.unlabelled++; continue; }  // at least one endpoint outside the deployed pool
+      const pk = pairKey(r.p1, r.p2);
+      const tmlDates = pk ? tmlPairDates.get(pk) : null;
+      if (tmlDates && tmlDates.some(d => daysApart(d, r.date) <= SUPP_DEDUP_TOL_DAYS)) { supp.deduped++; continue; }
+      const p1won = r.winner === '1';
+      const winLabel = p1won ? wl : ll, loseLabel = p1won ? ll : wl;
+      const winName = canonicalName(p1won ? r.p1 : r.p2), loseName = canonicalName(p1won ? r.p2 : r.p1);
+      const surf = surfMap.get(String(r.tournament_key)) || null;   // 'clay'|'hard'|'grass'|null
+      if (surf) supp.surfaced++;
+      const meta = {
+        surface: surf,
+        tournament: r.tournament || null,
+        score: apiScoreWinnerPerspective(r.sets, r.winner, r.status),   // winner-perspective, TML format
+        date: r.date,
+        round: apiRound(r.round),
+      };
+      // Winner beat a `loseLabel` opponent; loser lost to a `winLabel` opponent.
+      bump(winName,  loseLabel, true,  { ...meta, opponent: loseName });
+      bump(loseName, winLabel,  false, { ...meta, opponent: winName });
+      supp.added++;
+    }
+    console.log(`  api supplement: +${supp.added} matches (deduped ${supp.deduped}, walkover ${supp.walkover}, unlabelled ${supp.unlabelled}, surfaced ${supp.surfaced}/${supp.added}).`);
+  } else {
+    console.log('  api supplement: cache absent — TML-only build.');
   }
 
   // ---- assemble grid (full NxN incl. diagonal) ----
@@ -284,7 +399,8 @@ function main() {
     surfaceNote: 'matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.',
     surfaceMatchesCounted: surfaceCounted,
     matrixBySurface,
-    byPlayerNote: 'TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over the same pool as the matrix (both endpoints in the deployed labelled roster — TML tour-level only). Keyed by surname|initial (the dashboard\'s player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash).',
+    byPlayerNote: 'TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over both endpoints in the deployed labelled roster. Pool = TML tour history (2000-2026) SUPPLEMENTED with the current-season finished ATP fixtures from api-tennis (TEN-88 option B) — the TML mirror stops mid-January, so without the supplement the live season is ~99% absent. The two sources are deduped on roster-identity pair within 1 day, and api rows are field-normalised (canonical names, TML-format score, tournament_key->surface) so a row is source-agnostic. This is the CAREER split only; the aggregate matrix/matrixBySurface cells above stay TML-only and unchanged. Keyed by surname|initial (the dashboard\'s player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash), and only counts matches vs a CLASSIFIED opponent.',
+    byPlayerSupplement: { source: 'api-tennis 2026 finished fixtures', loaded: supp.loaded, matchesAdded: supp.added, dedupedAgainstTml: supp.deduped, walkoverExcluded: supp.walkover, dedupTolDays: SUPP_DEDUP_TOL_DAYS },
     byPlayerPlayers: Object.keys(byPlayer).length,
     byPlayerEndpointsCounted: bpCounted,
     byPlayer,
@@ -332,7 +448,7 @@ function main() {
 
   // ---- console sanity ----
   console.log(`Wrote matchup-matrix.json — ${PRIMARIES.length} primaries, ${counted}/${tmlTotal} matches (${retention}% retention).`);
-  console.log(`Per-player split: ${Object.keys(byPlayer).length} players, ${bpCounted} player-endpoints (2 per counted match = ${counted * 2}; drop = ambiguous/unkeyed).`);
+  console.log(`Per-player split: ${Object.keys(byPlayer).length} players, ${bpCounted} player-endpoints (TML ${counted} + api-supp ${supp.added} = ${counted + supp.added} matches x2 = ${(counted + supp.added) * 2} endpoints before ambiguous/unkeyed drops).`);
   console.log(`Meeting shards: ${index.length} players, ${meetRows} rows, reconciled clean vs byPlayer.`);
   console.log('Players per primary:');
   for (const l of PRIMARIES) console.log(`  ${String(playerCount[l]).padStart(3)}  ${l}`);
