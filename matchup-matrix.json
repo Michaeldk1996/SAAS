@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T00:06:15.260Z",
+  "generatedAt": "2026-08-27T09:24:11.414Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct.",
@@ -1179,6 +1179,7706 @@
           "pct": 50,
           "n": 7,
           "note": "same archetype — coin flip on style"
+        }
+      }
+    }
+  },
+  "byPlayerNote": "TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over the same pool as the matrix (both endpoints in the deployed labelled roster — TML tour-level only). Keyed by surname|initial (the dashboard's player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash).",
+  "byPlayerPlayers": 243,
+  "byPlayerEndpointsCounted": 27110,
+  "byPlayer": {
+    "martin|a": {
+      "name": "A. Martin",
+      "vs": {
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "gasquet|r": {
+      "name": "R. Gasquet",
+      "vs": {
+        "Solid Defender": {
+          "w": 11,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 41,
+          "l": 36
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 19
+        },
+        "Attacking Baseliner": {
+          "w": 30,
+          "l": 40
+        },
+        "Solid Baseliner": {
+          "w": 17,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 19,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 18
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "monfils|g": {
+      "name": "G. Monfils",
+      "vs": {
+        "Solid Defender": {
+          "w": 24,
+          "l": 13
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 29
+        },
+        "Attacking Baseliner": {
+          "w": 45,
+          "l": 41
+        },
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 10
+        },
+        "Counterpuncher": {
+          "w": 32,
+          "l": 19
+        },
+        "Solid Baseliner": {
+          "w": 26,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 13,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "djokovic|n": {
+      "name": "N. Djokovic",
+      "vs": {
+        "Counterpuncher": {
+          "w": 116,
+          "l": 11
+        },
+        "Attacking Baseliner": {
+          "w": 102,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 35,
+          "l": 6
+        },
+        "Big Server + First Strike": {
+          "w": 55,
+          "l": 6
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 45,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 49,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 9,
+          "l": 10
+        }
+      }
+    },
+    "wawrinka|s": {
+      "name": "S. Wawrinka",
+      "vs": {
+        "Solid Defender": {
+          "w": 15,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 21,
+          "l": 14
+        },
+        "All Court Elite": {
+          "w": 8,
+          "l": 25
+        },
+        "Counterpuncher": {
+          "w": 24,
+          "l": 27
+        },
+        "Attacking Baseliner": {
+          "w": 34,
+          "l": 33
+        },
+        "Solid Baseliner": {
+          "w": 30,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 13
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "cilic|m": {
+      "name": "M. Cilic",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 33,
+          "l": 42
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 27
+        },
+        "Counterpuncher": {
+          "w": 45,
+          "l": 34
+        },
+        "Solid Baseliner": {
+          "w": 36,
+          "l": 9
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 8
+        },
+        "Big Server + First Strike": {
+          "w": 12,
+          "l": 12
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 14,
+          "l": 16
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "fognini|f": {
+      "name": "F. Fognini",
+      "vs": {
+        "Solid Defender": {
+          "w": 12,
+          "l": 11
+        },
+        "Counterpuncher": {
+          "w": 24,
+          "l": 23
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 15
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 13
+        },
+        "Solid Baseliner": {
+          "w": 31,
+          "l": 20
+        },
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 47
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 21
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "nishikori|k": {
+      "name": "K. Nishikori",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 22,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 11,
+          "l": 11
+        },
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 17
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 20
+        },
+        "Solid Baseliner": {
+          "w": 29,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 29,
+          "l": 12
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 14,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 4,
+          "l": 2
+        }
+      }
+    },
+    "kukushkin|m": {
+      "name": "M. Kukushkin",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 17,
+          "l": 26
+        },
+        "Solid Defender": {
+          "w": 8,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 11,
+          "l": 25
+        },
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 12
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "zhang|z": {
+      "name": "Z. Zhang",
+      "vs": {
+        "Counterpuncher": {
+          "w": 4,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 20,
+          "l": 23
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "tomic|b": {
+      "name": "B. Tomic",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 14
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 8
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 2
+        }
+      }
+    },
+    "goffin|d": {
+      "name": "D. Goffin",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 32,
+          "l": 40
+        },
+        "Counterpuncher": {
+          "w": 32,
+          "l": 35
+        },
+        "Solid Baseliner": {
+          "w": 27,
+          "l": 17
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 18,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 22,
+          "l": 17
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 11,
+          "l": 18
+        },
+        "Big Server": {
+          "w": 11,
+          "l": 2
+        }
+      }
+    },
+    "mannarino|a": {
+      "name": "A. Mannarino",
+      "vs": {
+        "Solid Defender": {
+          "w": 12,
+          "l": 12
+        },
+        "Counterpuncher": {
+          "w": 19,
+          "l": 40
+        },
+        "Attacking Baseliner": {
+          "w": 50,
+          "l": 39
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 14
+        },
+        "Solid Baseliner": {
+          "w": 20,
+          "l": 22
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 22,
+          "l": 28
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 10
+        }
+      }
+    },
+    "dimitrov|g": {
+      "name": "G. Dimitrov",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 65,
+          "l": 37
+        },
+        "Solid Defender": {
+          "w": 20,
+          "l": 14
+        },
+        "Solid Baseliner": {
+          "w": 35,
+          "l": 14
+        },
+        "Counterpuncher": {
+          "w": 46,
+          "l": 27
+        },
+        "All Court Elite": {
+          "w": 4,
+          "l": 22
+        },
+        "Big Server + First Strike": {
+          "w": 27,
+          "l": 17
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 23,
+          "l": 24
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "evans|d": {
+      "name": "D. Evans",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 41
+        },
+        "Counterpuncher": {
+          "w": 20,
+          "l": 27
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 24
+        },
+        "Big Server + First Strike": {
+          "w": 15,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 20,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 6
+        }
+      }
+    },
+    "agut|r": {
+      "name": "R. Bautista-Agut",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 60,
+          "l": 49
+        },
+        "Counterpuncher": {
+          "w": 26,
+          "l": 28
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 15
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 19,
+          "l": 25
+        },
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 20
+        },
+        "Solid Defender": {
+          "w": 15,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 48,
+          "l": 31
+        },
+        "Big Server": {
+          "w": 7,
+          "l": 3
+        }
+      }
+    },
+    "fucsovics|m": {
+      "name": "M. Fucsovics",
+      "vs": {
+        "Solid Defender": {
+          "w": 12,
+          "l": 10
+        },
+        "Solid Baseliner": {
+          "w": 14,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 20,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 37,
+          "l": 47
+        },
+        "Counterpuncher": {
+          "w": 19,
+          "l": 24
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 9,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "albot|r": {
+      "name": "R. Albot",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 17
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 13
+        },
+        "Attacking Baseliner": {
+          "w": 11,
+          "l": 22
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "garin|c": {
+      "name": "C. Garin",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 19,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 12
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 17
+        },
+        "Attacking Baseliner": {
+          "w": 24,
+          "l": 29
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        }
+      }
+    },
+    "lajovic|d": {
+      "name": "D. Lajovic",
+      "vs": {
+        "Counterpuncher": {
+          "w": 11,
+          "l": 29
+        },
+        "Attacking Baseliner": {
+          "w": 32,
+          "l": 51
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 20
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 18
+        },
+        "Solid Baseliner": {
+          "w": 27,
+          "l": 15
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "trungelliti|m": {
+      "name": "M. Trungelliti",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 3
+        }
+      }
+    },
+    "dzumhur|d": {
+      "name": "D. Dzumhur",
+      "vs": {
+        "Solid Defender": {
+          "w": 6,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 16
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 15,
+          "l": 40
+        },
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 13
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 5
+        }
+      }
+    },
+    "busta|p": {
+      "name": "P. Carreno-Busta",
+      "vs": {
+        "Counterpuncher": {
+          "w": 29,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 40,
+          "l": 30
+        },
+        "All Court Elite": {
+          "w": 4,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 25,
+          "l": 16
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 15,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 17
+        },
+        "Solid Defender": {
+          "w": 11,
+          "l": 14
+        }
+      }
+    },
+    "cecchinato|m": {
+      "name": "M. Cecchinato",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 16
+        },
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 16
+        },
+        "Solid Defender": {
+          "w": 11,
+          "l": 9
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 10
+        },
+        "Counterpuncher": {
+          "w": 10,
+          "l": 19
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 4
+        }
+      }
+    },
+    "pouille|l": {
+      "name": "Lucas Pouille",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 12
+        },
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 10,
+          "l": 15
+        },
+        "Solid Defender": {
+          "w": 11,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 11
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        }
+      }
+    },
+    "kyrgios|n": {
+      "name": "N. Kyrgios",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 12,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 16,
+          "l": 13
+        },
+        "Attacking Baseliner": {
+          "w": 25,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 17,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 12,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 4
+        }
+      }
+    },
+    "ymer|e": {
+      "name": "E. Ymer",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 18
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 1
+        }
+      }
+    },
+    "zverev|a": {
+      "name": "A. Zverev",
+      "vs": {
+        "Counterpuncher": {
+          "w": 68,
+          "l": 22
+        },
+        "Attacking Baseliner": {
+          "w": 110,
+          "l": 27
+        },
+        "Solid Baseliner": {
+          "w": 48,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 53,
+          "l": 19
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 37,
+          "l": 30
+        },
+        "Solid Defender": {
+          "w": 25,
+          "l": 15
+        },
+        "All Court Elite": {
+          "w": 15,
+          "l": 21
+        }
+      }
+    },
+    "mcdonald|m": {
+      "name": "M. McDonald",
+      "vs": {
+        "Counterpuncher": {
+          "w": 16,
+          "l": 25
+        },
+        "Solid Baseliner": {
+          "w": 13,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 28,
+          "l": 34
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 10,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        }
+      }
+    },
+    "struff|j": {
+      "name": "J-L. Struff",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 49,
+          "l": 42
+        },
+        "Big Server + First Strike": {
+          "w": 15,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 16,
+          "l": 36
+        },
+        "Solid Baseliner": {
+          "w": 30,
+          "l": 23
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 16,
+          "l": 23
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 17
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "herbert|p": {
+      "name": "P. Herbert",
+      "vs": {
+        "All Court Elite": {
+          "w": 0,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 20
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 7
+        },
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 9
+        }
+      }
+    },
+    "baena|r": {
+      "name": "R. Carballes Baena",
+      "vs": {
+        "Counterpuncher": {
+          "w": 12,
+          "l": 18
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 14
+        },
+        "Solid Baseliner": {
+          "w": 20,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 28,
+          "l": 35
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 6
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "duckworth|j": {
+      "name": "J. Duckworth",
+      "vs": {
+        "Solid Defender": {
+          "w": 3,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 18
+        },
+        "Big Server + First Strike": {
+          "w": 10,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 13
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "coric|b": {
+      "name": "B. Coric",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 26,
+          "l": 31
+        },
+        "Counterpuncher": {
+          "w": 15,
+          "l": 28
+        },
+        "Solid Baseliner": {
+          "w": 17,
+          "l": 16
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 22
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 22,
+          "l": 18
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 12,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 2
+        }
+      }
+    },
+    "schwartzman|d": {
+      "name": "D. Schwartzman",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 14,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 38,
+          "l": 29
+        },
+        "Counterpuncher": {
+          "w": 24,
+          "l": 27
+        },
+        "Big Server + First Strike": {
+          "w": 16,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 37,
+          "l": 16
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "khachanov|k": {
+      "name": "K. Khachanov",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 36,
+          "l": 21
+        },
+        "Counterpuncher": {
+          "w": 34,
+          "l": 30
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 19,
+          "l": 25
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 71,
+          "l": 36
+        },
+        "Big Server + First Strike": {
+          "w": 30,
+          "l": 20
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 18
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "kokkinakis|t": {
+      "name": "T. Kokkinakis",
+      "vs": {
+        "Counterpuncher": {
+          "w": 7,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 23,
+          "l": 11
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 15
+        }
+      }
+    },
+    "jarry|n": {
+      "name": "N. Jarry",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 22,
+          "l": 19
+        },
+        "Attacking Baseliner": {
+          "w": 21,
+          "l": 29
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 11,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 10,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "nishioka|y": {
+      "name": "Y. Nishioka",
+      "vs": {
+        "Counterpuncher": {
+          "w": 19,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 13,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 26,
+          "l": 36
+        },
+        "Solid Baseliner": {
+          "w": 21,
+          "l": 21
+        },
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 13
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        }
+      }
+    },
+    "bagnis|f": {
+      "name": "F. Bagnis",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 17
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "varillas|j": {
+      "name": "J. P. Varillas",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 6
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "rublev|a": {
+      "name": "A. Rublev",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 45,
+          "l": 18
+        },
+        "Attacking Baseliner": {
+          "w": 88,
+          "l": 48
+        },
+        "Solid Defender": {
+          "w": 17,
+          "l": 8
+        },
+        "Big Server + First Strike": {
+          "w": 33,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 49,
+          "l": 29
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 36,
+          "l": 34
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 5,
+          "l": 16
+        }
+      }
+    },
+    "tiafoe|f": {
+      "name": "F. Tiafoe",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 18,
+          "l": 20
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 22,
+          "l": 35
+        },
+        "Counterpuncher": {
+          "w": 27,
+          "l": 32
+        },
+        "Solid Baseliner": {
+          "w": 45,
+          "l": 20
+        },
+        "Attacking Baseliner": {
+          "w": 56,
+          "l": 34
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 8
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "halys|q": {
+      "name": "Q. Halys",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 26
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 8
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "basilashvili|n": {
+      "name": "N. Basilashvili",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 17
+        },
+        "Solid Baseliner": {
+          "w": 23,
+          "l": 19
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 21
+        },
+        "Attacking Baseliner": {
+          "w": 16,
+          "l": 20
+        },
+        "Big Server + First Strike": {
+          "w": 16,
+          "l": 14
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "fritz|t": {
+      "name": "T. Fritz",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 33,
+          "l": 15
+        },
+        "Counterpuncher": {
+          "w": 43,
+          "l": 45
+        },
+        "Attacking Baseliner": {
+          "w": 81,
+          "l": 38
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 33,
+          "l": 26
+        },
+        "Big Server + First Strike": {
+          "w": 32,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 6,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 20
+        },
+        "Solid Defender": {
+          "w": 16,
+          "l": 3
+        }
+      }
+    },
+    "chung|h": {
+      "name": "H. Chung",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 2
+        }
+      }
+    },
+    "dellien|h": {
+      "name": "H. Dellien",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 8
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 9
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 12
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "djere|l": {
+      "name": "L. Djere",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 20,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 11
+        },
+        "Attacking Baseliner": {
+          "w": 40,
+          "l": 37
+        },
+        "Counterpuncher": {
+          "w": 13,
+          "l": 17
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 14
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 8
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "thompson|j": {
+      "name": "J. Thompson",
+      "vs": {
+        "Counterpuncher": {
+          "w": 15,
+          "l": 37
+        },
+        "Attacking Baseliner": {
+          "w": 32,
+          "l": 33
+        },
+        "Solid Baseliner": {
+          "w": 13,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 11,
+          "l": 18
+        },
+        "Big Server + First Strike": {
+          "w": 12,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 7,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "kovalik|j": {
+      "name": "J. Kovalik",
+      "vs": {
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "mmoh|m": {
+      "name": "M. Mmoh",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 4
+        }
+      }
+    },
+    "daniel|t": {
+      "name": "T. Daniel",
+      "vs": {
+        "Solid Defender": {
+          "w": 2,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 6,
+          "l": 13
+        },
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 18,
+          "l": 23
+        },
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "coppejans|k": {
+      "name": "K. Coppejans",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "paul|t": {
+      "name": "T. Paul",
+      "vs": {
+        "Counterpuncher": {
+          "w": 23,
+          "l": 23
+        },
+        "Attacking Baseliner": {
+          "w": 58,
+          "l": 33
+        },
+        "Solid Baseliner": {
+          "w": 31,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 18,
+          "l": 22
+        },
+        "Big Server + First Strike": {
+          "w": 18,
+          "l": 17
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 7
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "marterer|m": {
+      "name": "M. Marterer",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 10
+        },
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 11
+        }
+      }
+    },
+    "medvedev|d": {
+      "name": "D. Medvedev",
+      "vs": {
+        "Counterpuncher": {
+          "w": 62,
+          "l": 27
+        },
+        "Big Server + First Strike": {
+          "w": 36,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 51,
+          "l": 20
+        },
+        "Solid Baseliner": {
+          "w": 52,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 14,
+          "l": 24
+        },
+        "Attacking Baseliner": {
+          "w": 90,
+          "l": 31
+        },
+        "Big Server": {
+          "w": 10,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 11,
+          "l": 2
+        }
+      }
+    },
+    "shapovalov|d": {
+      "name": "D. Shapovalov",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 16
+        },
+        "Attacking Baseliner": {
+          "w": 54,
+          "l": 38
+        },
+        "Counterpuncher": {
+          "w": 20,
+          "l": 30
+        },
+        "Solid Baseliner": {
+          "w": 33,
+          "l": 15
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 20,
+          "l": 30
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 3
+        }
+      }
+    },
+    "opelka|r": {
+      "name": "R. Opelka",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 16,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 23,
+          "l": 23
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 15
+        },
+        "Attacking Baseliner": {
+          "w": 19,
+          "l": 24
+        },
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "eubanks|c": {
+      "name": "C. Eubanks",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 21
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "monteiro|t": {
+      "name": "T. Monteiro",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 25
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 9,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 15,
+          "l": 19
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "ivashka|i": {
+      "name": "Ilya Ivashka",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 14,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 6
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 11
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "majchrzak|k": {
+      "name": "K. Majchrzak",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 9
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "hurkacz|h": {
+      "name": "H. Hurkacz",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 27,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 13,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 57,
+          "l": 41
+        },
+        "Counterpuncher": {
+          "w": 26,
+          "l": 17
+        },
+        "Solid Baseliner": {
+          "w": 16,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 30,
+          "l": 22
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "bublik|a": {
+      "name": "A. Bublik",
+      "vs": {
+        "Solid Defender": {
+          "w": 7,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 20,
+          "l": 22
+        },
+        "Solid Baseliner": {
+          "w": 26,
+          "l": 15
+        },
+        "Attacking Baseliner": {
+          "w": 44,
+          "l": 49
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 19,
+          "l": 24
+        },
+        "Big Server + First Strike": {
+          "w": 20,
+          "l": 15
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 7
+        }
+      }
+    },
+    "bolt|a": {
+      "name": "A. Bolt",
+      "vs": {
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "oconnell|c": {
+      "name": "C. O'Connell",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 19
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 8,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 15
+        },
+        "Big Server + First Strike": {
+          "w": 10,
+          "l": 13
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 14
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        }
+      }
+    },
+    "uchiyama|y": {
+      "name": "Y. Uchiyama",
+      "vs": {
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "ruud|c": {
+      "name": "C. Ruud",
+      "vs": {
+        "Solid Defender": {
+          "w": 20,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 36,
+          "l": 14
+        },
+        "Big Server + First Strike": {
+          "w": 37,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 65,
+          "l": 38
+        },
+        "Counterpuncher": {
+          "w": 32,
+          "l": 26
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 29,
+          "l": 21
+        },
+        "Big Server": {
+          "w": 6,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 14
+        }
+      }
+    },
+    "munar|j": {
+      "name": "J. Munar",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 21
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 26
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 37,
+          "l": 38
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 9,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 6
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "hanfmann|y": {
+      "name": "Y. Hanfmann",
+      "vs": {
+        "Counterpuncher": {
+          "w": 9,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 13,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 21,
+          "l": 23
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 8
+        },
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "tsitsipas|s": {
+      "name": "S. Tsitsipas",
+      "vs": {
+        "Solid Defender": {
+          "w": 18,
+          "l": 16
+        },
+        "Solid Baseliner": {
+          "w": 52,
+          "l": 8
+        },
+        "Big Server + First Strike": {
+          "w": 28,
+          "l": 22
+        },
+        "Counterpuncher": {
+          "w": 52,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 75,
+          "l": 40
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 37,
+          "l": 21
+        },
+        "All Court Elite": {
+          "w": 8,
+          "l": 21
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 3
+        }
+      }
+    },
+    "berrettini|m": {
+      "name": "M. Berrettini",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 49,
+          "l": 24
+        },
+        "Counterpuncher": {
+          "w": 26,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 16,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 24,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 16,
+          "l": 23
+        },
+        "Big Server + First Strike": {
+          "w": 16,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "muller|a": {
+      "name": "A. Muller",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 14,
+          "l": 9
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 11
+        },
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 20
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "bonzi|b": {
+      "name": "B. Bonzi",
+      "vs": {
+        "Solid Defender": {
+          "w": 6,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 12,
+          "l": 22
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 8
+        }
+      }
+    },
+    "napolitano|s": {
+      "name": "Stefano Napolitano",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "norrie|c": {
+      "name": "C. Norrie",
+      "vs": {
+        "Counterpuncher": {
+          "w": 31,
+          "l": 24
+        },
+        "Solid Baseliner": {
+          "w": 36,
+          "l": 17
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 14,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 60,
+          "l": 37
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 21,
+          "l": 29
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 12
+        }
+      }
+    },
+    "travaglia|s": {
+      "name": "S. Travaglia",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 7
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "ofner|s": {
+      "name": "S. Ofner",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 13
+        },
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "wu|y": {
+      "name": "Y. Wu",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "minaur|a": {
+      "name": "A. De Minaur",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 35,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 17,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 36,
+          "l": 35
+        },
+        "Big Server + First Strike": {
+          "w": 30,
+          "l": 14
+        },
+        "Counterpuncher": {
+          "w": 37,
+          "l": 18
+        },
+        "Attacking Baseliner": {
+          "w": 84,
+          "l": 31
+        },
+        "Big Server": {
+          "w": 8,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 22
+        }
+      }
+    },
+    "nagal|s": {
+      "name": "S. Nagal",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "kubler|j": {
+      "name": "J. Kubler",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 8
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "kwon|s": {
+      "name": "S. Kwon",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 12
+        },
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 6,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 11,
+          "l": 21
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        }
+      }
+    },
+    "sonego|l": {
+      "name": "L. Sonego",
+      "vs": {
+        "Solid Defender": {
+          "w": 13,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 16,
+          "l": 28
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 22
+        },
+        "Solid Baseliner": {
+          "w": 22,
+          "l": 22
+        },
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 15
+        },
+        "Attacking Baseliner": {
+          "w": 44,
+          "l": 41
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "taberner|c": {
+      "name": "C. Taberner",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "moutet|c": {
+      "name": "C. Moutet",
+      "vs": {
+        "Solid Defender": {
+          "w": 6,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 14
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 14
+        },
+        "Solid Baseliner": {
+          "w": 16,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 31,
+          "l": 27
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 13,
+          "l": 9
+        }
+      }
+    },
+    "griekspoor|t": {
+      "name": "T. Griekspoor",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 30
+        },
+        "Solid Baseliner": {
+          "w": 21,
+          "l": 15
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 11,
+          "l": 29
+        },
+        "Counterpuncher": {
+          "w": 13,
+          "l": 8
+        },
+        "Big Server + First Strike": {
+          "w": 21,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 15
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "korda|s": {
+      "name": "S. Korda",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 33,
+          "l": 32
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 24,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 30,
+          "l": 12
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 13,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 8
+        }
+      }
+    },
+    "gaston|h": {
+      "name": "H. Gaston",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 14,
+          "l": 27
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 7
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "galan|d": {
+      "name": "D. E. Galan",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 15
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 22
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 11
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 3
+        }
+      }
+    },
+    "habib|h": {
+      "name": "H. Habib",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "wong|c": {
+      "name": "C. Wong",
+      "vs": {
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "martinez|p": {
+      "name": "P. Martinez",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 8,
+          "l": 7
+        },
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 36
+        },
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 11,
+          "l": 14
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 13
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "coria|f": {
+      "name": "F. Coria",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 13
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 11
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 11,
+          "l": 21
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "aliassime|f": {
+      "name": "F. Auger-Aliassime",
+      "vs": {
+        "Solid Defender": {
+          "w": 11,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 58,
+          "l": 32
+        },
+        "Big Server + First Strike": {
+          "w": 31,
+          "l": 19
+        },
+        "Counterpuncher": {
+          "w": 37,
+          "l": 26
+        },
+        "Solid Baseliner": {
+          "w": 31,
+          "l": 20
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 24,
+          "l": 23
+        },
+        "Big Server": {
+          "w": 6,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 7,
+          "l": 10
+        }
+      }
+    },
+    "huesler|m": {
+      "name": "M. Huesler",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 18
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "watanuki|y": {
+      "name": "Y. Watanuki",
+      "vs": {
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 4
+        }
+      }
+    },
+    "krueger|m": {
+      "name": "M. Krueger",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "koepfer|d": {
+      "name": "D. Koepfer",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 4,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 17,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 5
+        }
+      }
+    },
+    "humbert|u": {
+      "name": "U. Humbert",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 45,
+          "l": 38
+        },
+        "Counterpuncher": {
+          "w": 23,
+          "l": 24
+        },
+        "Big Server + First Strike": {
+          "w": 20,
+          "l": 19
+        },
+        "Solid Baseliner": {
+          "w": 18,
+          "l": 18
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 20,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "harris|l": {
+      "name": "L. Harris",
+      "vs": {
+        "Counterpuncher": {
+          "w": 9,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 5
+        },
+        "Solid Baseliner": {
+          "w": 8,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 15
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 9,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "tseng|c": {
+      "name": "C. H. Tseng",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "popyrin|a": {
+      "name": "A. Popyrin",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 19
+        },
+        "Counterpuncher": {
+          "w": 13,
+          "l": 19
+        },
+        "Attacking Baseliner": {
+          "w": 33,
+          "l": 34
+        },
+        "Solid Baseliner": {
+          "w": 15,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 20
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 5
+        }
+      }
+    },
+    "rodionov|j": {
+      "name": "J. Rodionov",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 6
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "wild|t": {
+      "name": "T. Seyboth Wild",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 18
+        },
+        "Counterpuncher": {
+          "w": 6,
+          "l": 6
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 5
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 6
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "nava|e": {
+      "name": "E. Nava",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 3
+        }
+      }
+    },
+    "giron|m": {
+      "name": "M. Giron",
+      "vs": {
+        "Counterpuncher": {
+          "w": 19,
+          "l": 19
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 26,
+          "l": 34
+        },
+        "Solid Baseliner": {
+          "w": 19,
+          "l": 14
+        },
+        "Big Server + First Strike": {
+          "w": 19,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 11,
+          "l": 33
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "kecmanovic|m": {
+      "name": "M. Kecmanovic",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 55,
+          "l": 47
+        },
+        "Counterpuncher": {
+          "w": 19,
+          "l": 33
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 19
+        },
+        "Solid Baseliner": {
+          "w": 23,
+          "l": 16
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 18,
+          "l": 16
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 10
+        }
+      }
+    },
+    "sinner|j": {
+      "name": "J. Sinner",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 83,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 43,
+          "l": 20
+        },
+        "Big Server + First Strike": {
+          "w": 33,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 32,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 47,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 23,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 4,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 12,
+          "l": 14
+        }
+      }
+    },
+    "fokina|a": {
+      "name": "A. Davidovich Fokina",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 26,
+          "l": 22
+        },
+        "Counterpuncher": {
+          "w": 26,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 10
+        },
+        "Solid Baseliner": {
+          "w": 23,
+          "l": 16
+        },
+        "Attacking Baseliner": {
+          "w": 36,
+          "l": 46
+        },
+        "Big Server + First Strike": {
+          "w": 9,
+          "l": 13
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 8
+        }
+      }
+    },
+    "brooksby|j": {
+      "name": "J. Brooksby",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 21,
+          "l": 13
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        }
+      }
+    },
+    "gojo|b": {
+      "name": "B. Gojo",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 9
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "zandschulp|b": {
+      "name": "B. Van De Zandschulp",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 15,
+          "l": 17
+        },
+        "Big Server + First Strike": {
+          "w": 16,
+          "l": 13
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 30,
+          "l": 39
+        },
+        "Counterpuncher": {
+          "w": 15,
+          "l": 13
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 6
+        }
+      }
+    },
+    "tabilo|a": {
+      "name": "A. Tabilo",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 22,
+          "l": 23
+        },
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 14
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 10
+        }
+      }
+    },
+    "cerundolo|f": {
+      "name": "F. Cerundolo",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 45,
+          "l": 27
+        },
+        "Solid Defender": {
+          "w": 12,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 15,
+          "l": 13
+        },
+        "Solid Baseliner": {
+          "w": 24,
+          "l": 22
+        },
+        "Big Server + First Strike": {
+          "w": 13,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 9
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 11,
+          "l": 13
+        }
+      }
+    },
+    "nakashima|b": {
+      "name": "B. Nakashima",
+      "vs": {
+        "Counterpuncher": {
+          "w": 17,
+          "l": 16
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 18
+        },
+        "Attacking Baseliner": {
+          "w": 42,
+          "l": 36
+        },
+        "Big Server + First Strike": {
+          "w": 17,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 14
+        },
+        "Solid Defender": {
+          "w": 6,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "alcaraz|c": {
+      "name": "C. Alcaraz",
+      "vs": {
+        "Solid Defender": {
+          "w": 18,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 37,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 36,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 37,
+          "l": 12
+        },
+        "Attacking Baseliner": {
+          "w": 72,
+          "l": 16
+        },
+        "Big Server + First Strike": {
+          "w": 32,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 6,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 14,
+          "l": 11
+        }
+      }
+    },
+    "musetti|l": {
+      "name": "L. Musetti",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 43,
+          "l": 38
+        },
+        "Counterpuncher": {
+          "w": 26,
+          "l": 10
+        },
+        "Solid Baseliner": {
+          "w": 26,
+          "l": 12
+        },
+        "Big Server + First Strike": {
+          "w": 21,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 25,
+          "l": 28
+        },
+        "Big Server": {
+          "w": 6,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 19
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 6
+        }
+      }
+    },
+    "vera|t": {
+      "name": "T. Barrios Vera",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "mayot|h": {
+      "name": "H. Mayot",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "machac|t": {
+      "name": "T. Machac",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 12
+        },
+        "Counterpuncher": {
+          "w": 11,
+          "l": 9
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 28,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 2,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        }
+      }
+    },
+    "vukic|a": {
+      "name": "A. Vukic",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 10,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 11
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 18
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 12,
+          "l": 17
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "altmaier|d": {
+      "name": "D. Altmaier",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 13,
+          "l": 12
+        },
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 14
+        },
+        "Attacking Baseliner": {
+          "w": 15,
+          "l": 32
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 9
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 4
+        }
+      }
+    },
+    "kotov|p": {
+      "name": "P. Kotov",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 10,
+          "l": 17
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 6
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 5
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "safiullin|r": {
+      "name": "R. Safiullin",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 8,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 16,
+          "l": 19
+        },
+        "Counterpuncher": {
+          "w": 9,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 9
+        },
+        "Big Server + First Strike": {
+          "w": 9,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "zeppieri|g": {
+      "name": "G. Zeppieri",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "pellegrino|a": {
+      "name": "A. Pellegrino",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "nardi|l": {
+      "name": "L. Nardi",
+      "vs": {
+        "Counterpuncher": {
+          "w": 1,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 10,
+          "l": 14
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "bergs|z": {
+      "name": "Z. Bergs",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 11
+        },
+        "Attacking Baseliner": {
+          "w": 18,
+          "l": 21
+        },
+        "Big Server + First Strike": {
+          "w": 7,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 8
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "schoolkate|t": {
+      "name": "T. Schoolkate",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "cerundolo|j": {
+      "name": "J. M. Cerundolo",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 5
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 3
+        }
+      }
+    },
+    "etcheverry|t": {
+      "name": "T. M. Etcheverry",
+      "vs": {
+        "Solid Defender": {
+          "w": 9,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 14,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 12,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 25,
+          "l": 38
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 13
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 5
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 12
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 2
+        }
+      }
+    },
+    "tirante|t": {
+      "name": "T. A. Tirante",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "acosta|f": {
+      "name": "F. Diaz Acosta",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        }
+      }
+    },
+    "klein|l": {
+      "name": "L. Klein",
+      "vs": {
+        "Solid Defender": {
+          "w": 3,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 6
+        }
+      }
+    },
+    "molcan|a": {
+      "name": "A. Molcan",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 11,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 4,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 6
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 7
+        }
+      }
+    },
+    "rinderknech|a": {
+      "name": "A. Rinderknech",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 17,
+          "l": 15
+        },
+        "Attacking Baseliner": {
+          "w": 22,
+          "l": 39
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 11,
+          "l": 16
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 14,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 17
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "rune|h": {
+      "name": "H. Rune",
+      "vs": {
+        "Solid Defender": {
+          "w": 14,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 45,
+          "l": 24
+        },
+        "Big Server + First Strike": {
+          "w": 20,
+          "l": 12
+        },
+        "All Court Elite": {
+          "w": 6,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 21,
+          "l": 10
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 15,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 27,
+          "l": 14
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "baez|s": {
+      "name": "S. Baez",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 38,
+          "l": 33
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 14,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 22
+        },
+        "Solid Baseliner": {
+          "w": 27,
+          "l": 18
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 11
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "mochizuki|s": {
+      "name": "S. Mochizuki",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "draper|j": {
+      "name": "J. Draper",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 3,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 17,
+          "l": 12
+        },
+        "Counterpuncher": {
+          "w": 25,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 21
+        },
+        "Solid Defender": {
+          "w": 7,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 8,
+          "l": 4
+        }
+      }
+    },
+    "borges|n": {
+      "name": "N. Borges",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 9
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 23,
+          "l": 34
+        },
+        "Solid Baseliner": {
+          "w": 15,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "stricker|d": {
+      "name": "D. Stricker",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 14
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "cazaux|a": {
+      "name": "A. Cazaux",
+      "vs": {
+        "Counterpuncher": {
+          "w": 5,
+          "l": 9
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 10,
+          "l": 9
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 10
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "medjedovic|h": {
+      "name": "H. Medjedovic",
+      "vs": {
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 19,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "cobolli|f": {
+      "name": "F. Cobolli",
+      "vs": {
+        "Counterpuncher": {
+          "w": 9,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 5,
+          "l": 9
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 8,
+          "l": 10
+        },
+        "Attacking Baseliner": {
+          "w": 33,
+          "l": 20
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "kopriva|v": {
+      "name": "V. Kopriva",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 12
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "svajda|z": {
+      "name": "Z. Svajda",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "alves|f": {
+      "name": "Felipe Meligeni Alves",
+      "vs": {
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "skatov|t": {
+      "name": "Timofey Skatov",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "holmgren|a": {
+      "name": "August Holmgren",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "vavassori|a": {
+      "name": "A. Vavassori",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "mejia|n": {
+      "name": "N. Mejia",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "lehecka|j": {
+      "name": "J. Lehecka",
+      "vs": {
+        "Counterpuncher": {
+          "w": 16,
+          "l": 20
+        },
+        "Attacking Baseliner": {
+          "w": 30,
+          "l": 18
+        },
+        "Big Server + First Strike": {
+          "w": 15,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 20
+        },
+        "Solid Defender": {
+          "w": 8,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 21,
+          "l": 7
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 8
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "piros|z": {
+      "name": "Zsombor Piros",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "ficovich|j": {
+      "name": "Juan Pablo Ficovich",
+      "vs": {
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "shang|j": {
+      "name": "J. Shang",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 10,
+          "l": 14
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "virtanen|o": {
+      "name": "O. Virtanen",
+      "vs": {
+        "Counterpuncher": {
+          "w": 3,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "galarneau|a": {
+      "name": "Alexis Galarneau",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "arnaldi|m": {
+      "name": "M. Arnaldi",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 9,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 23,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 8
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 9
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "passaro|f": {
+      "name": "F. Passaro",
+      "vs": {
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 1
+        }
+      }
+    },
+    "carabelli|c": {
+      "name": "C. Ugo Carabelli",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 12
+        },
+        "Solid Baseliner": {
+          "w": 6,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 5,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "jong|j": {
+      "name": "J. De Jong",
+      "vs": {
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "squire|h": {
+      "name": "Henri Squire",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "misolic|f": {
+      "name": "F. Misolic",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 7,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "hijikata|r": {
+      "name": "R. Hijikata",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 9,
+          "l": 9
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 16
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 6
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "mendez|r": {
+      "name": "Rodrigo Pacheco Mendez",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "shelton|b": {
+      "name": "B. Shelton",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 40,
+          "l": 22
+        },
+        "Counterpuncher": {
+          "w": 12,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 10,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 9,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 16
+        },
+        "Solid Baseliner": {
+          "w": 18,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 12
+        },
+        "Big Server": {
+          "w": 3,
+          "l": 2
+        }
+      }
+    },
+    "holt|b": {
+      "name": "Brandon Holt",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        }
+      }
+    },
+    "tien|l": {
+      "name": "L. Tien",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 12,
+          "l": 13
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 5,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 10,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "vacherot|v": {
+      "name": "V. Vacherot",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 0
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "diallo|g": {
+      "name": "G. Diallo",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 17,
+          "l": 10
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "kovacevic|a": {
+      "name": "A. Kovacevic",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 8,
+          "l": 11
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 6
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 16
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 3,
+          "l": 10
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 7
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        }
+      }
+    },
+    "zhukayev|b": {
+      "name": "Beibit Zhukayev",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "shevchenko|a": {
+      "name": "A. Shevchenko",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 13,
+          "l": 9
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 11
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 9
+        },
+        "Attacking Baseliner": {
+          "w": 14,
+          "l": 21
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 2
+        }
+      }
+    },
+    "shimabukuro|s": {
+      "name": "S. Shimabukuro",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "landaluce|m": {
+      "name": "Martin Landaluce",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "assche|l": {
+      "name": "L. van Assche",
+      "vs": {
+        "Counterpuncher": {
+          "w": 3,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 9,
+          "l": 15
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "fils|a": {
+      "name": "A. Fils",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 29,
+          "l": 21
+        },
+        "Solid Defender": {
+          "w": 4,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 11
+        },
+        "Big Server + First Strike": {
+          "w": 15,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 3
+        },
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 13,
+          "l": 11
+        }
+      }
+    },
+    "sakellaridis|s": {
+      "name": "Stefanos Sakellaridis",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "svrcina|d": {
+      "name": "D. Svrcina",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "bellucci|m": {
+      "name": "M. Bellucci",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 3
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "marozsan|f": {
+      "name": "F. Marozsan",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 22,
+          "l": 25
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 16,
+          "l": 9
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 6
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 10
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "darderi|l": {
+      "name": "L. Darderi",
+      "vs": {
+        "Solid Defender": {
+          "w": 9,
+          "l": 7
+        },
+        "Solid Baseliner": {
+          "w": 11,
+          "l": 8
+        },
+        "Attacking Baseliner": {
+          "w": 16,
+          "l": 16
+        },
+        "Big Server + First Strike": {
+          "w": 5,
+          "l": 6
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 8
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "shelbayh|a": {
+      "name": "Abedallah Shelbayh",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "fonseca|j": {
+      "name": "J. Fonseca",
+      "vs": {
+        "Solid Defender": {
+          "w": 3,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 14,
+          "l": 9
+        },
+        "Counterpuncher": {
+          "w": 8,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "riedi|l": {
+      "name": "Leandro Riedi",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "rincon|d": {
+      "name": "Daniel Rincon",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "prizmic|d": {
+      "name": "D. Prizmic",
+      "vs": {
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "ruiz|p": {
+      "name": "P. Llamas Ruiz",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "kypson|p": {
+      "name": "P. Kypson",
+      "vs": {
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "perricard|g": {
+      "name": "G. Mpetshi Perricard",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 7,
+          "l": 11
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 7
+        },
+        "Attacking Baseliner": {
+          "w": 13,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "choinski|j": {
+      "name": "J. Choinski",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "michelsen|a": {
+      "name": "A. Michelsen",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 6,
+          "l": 11
+        },
+        "Solid Baseliner": {
+          "w": 13,
+          "l": 7
+        },
+        "Counterpuncher": {
+          "w": 14,
+          "l": 15
+        },
+        "Attacking Baseliner": {
+          "w": 18,
+          "l": 19
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 6,
+          "l": 5
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 4
+        }
+      }
+    },
+    "fery|a": {
+      "name": "A. Fery",
+      "vs": {
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "spizzirri|e": {
+      "name": "Eliot Spizzirri",
+      "vs": {
+        "Counterpuncher": {
+          "w": 3,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "quinn|e": {
+      "name": "E. Quinn",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 6
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "alboran|n": {
+      "name": "Nicolas Moreno De Alboran",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "droguet|t": {
+      "name": "T. Droguet",
+      "vs": {
+        "Counterpuncher": {
+          "w": 3,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "mensik|j": {
+      "name": "J. Mensik",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 10,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 12,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 11,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 19,
+          "l": 18
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 10
+        },
+        "All Court Elite": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "gaubas|v": {
+      "name": "V. Gaubas",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "kjaer|n": {
+      "name": "N. Budkov Kjaer",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "butvilas|e": {
+      "name": "Edas Butvilas",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "buse|i": {
+      "name": "I. Buse",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "zhou|y": {
+      "name": "Yi Zhou",
+      "vs": {
+        "Counterpuncher": {
+          "w": 3,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 5
+        }
+      }
+    },
+    "atmane|t": {
+      "name": "T. Atmane",
+      "vs": {
+        "Counterpuncher": {
+          "w": 2,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 4
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 4
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "bu|y": {
+      "name": "Y. Bu",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 13
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 7,
+          "l": 8
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 7
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "sweeny|d": {
+      "name": "Dane Sweeny",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "lajal|m": {
+      "name": "Mark Lajal",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "blockx|a": {
+      "name": "A. Blockx",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "harris|b": {
+      "name": "B. Harris",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 4
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 3,
+          "l": 7
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "walton|a": {
+      "name": "A. Walton",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 10
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 4
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Big Server + First Strike": {
+          "w": 4,
+          "l": 8
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 4,
+          "l": 1
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "mccabe|j": {
+      "name": "James Mccabe",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "heide|g": {
+      "name": "Gustavo Heide",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 3,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        }
+      }
+    },
+    "rodesch|c": {
+      "name": "Chris Rodesch",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "gomez|f": {
+      "name": "Federico Agustin Gomez",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 2
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "comesana|f": {
+      "name": "F. Comesana",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 11,
+          "l": 12
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Solid Defender": {
+          "w": 3,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "burruchaga|r": {
+      "name": "R. A. Burruchaga",
+      "vs": {
+        "Counterpuncher": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "navone|m": {
+      "name": "M. Navone",
+      "vs": {
+        "Solid Defender": {
+          "w": 2,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 16,
+          "l": 15
+        },
+        "Big Server + First Strike": {
+          "w": 3,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 5,
+          "l": 8
+        },
+        "Solid Baseliner": {
+          "w": 2,
+          "l": 7
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 2,
+          "l": 7
+        },
+        "Big Server": {
+          "w": 2,
+          "l": 0
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "damm|m": {
+      "name": "M. Damm",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "blanch|d": {
+      "name": "Dali Blanch",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "rocha|h": {
+      "name": "Henrique Rocha",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "gigante|m": {
+      "name": "Matteo Gigante",
+      "vs": {
+        "Solid Defender": {
+          "w": 1,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "canas|a": {
+      "name": "Alejandro Moro Canas",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "martineau|m": {
+      "name": "Matteo Martineau",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "fearnley|j": {
+      "name": "J. Fearnley",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 3,
+          "l": 2
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 4,
+          "l": 4
+        },
+        "Big Server + First Strike": {
+          "w": 2,
+          "l": 5
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 5
+        },
+        "Attacking Baseliner": {
+          "w": 7,
+          "l": 6
+        },
+        "Solid Defender": {
+          "w": 1,
+          "l": 1
+        }
+      }
+    },
+    "blanchet|u": {
+      "name": "Ugo Blanchet",
+      "vs": {
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "faria|j": {
+      "name": "J. Faria",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 4,
+          "l": 7
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "jacquet|k": {
+      "name": "K. Jacquet",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "collignon|r": {
+      "name": "R. Collignon",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 8,
+          "l": 4
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 4
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 3
+        }
+      }
+    },
+    "moller|e": {
+      "name": "Elmer Moller",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 5
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "kym|j": {
+      "name": "Jerome Kym",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "basavareddy|n": {
+      "name": "N. Basavareddy",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 3
+        },
+        "Attacking Baseliner": {
+          "w": 6,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 5
+        },
+        "All Court Elite": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 3
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "boyer|t": {
+      "name": "Tristan Boyer",
+      "vs": {
+        "Solid Defender": {
+          "w": 1,
+          "l": 0
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Big Server + First Strike": {
+          "w": 1,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 2,
+          "l": 5
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "onclin|g": {
+      "name": "Gauthier Onclin",
+      "vs": {
+        "Big Server": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "trotter|j": {
+      "name": "James Trotter",
+      "vs": {
+        "Big Server + Complete Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "sakamoto|r": {
+      "name": "Rei Sakamoto",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "tabur|c": {
+      "name": "Clement Tabur",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 0
+        }
+      }
+    },
+    "royer|v": {
+      "name": "V. Royer",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 5,
+          "l": 3
+        },
+        "Big Server + Complete Baseliner": {
+          "w": 1,
+          "l": 2
+        },
+        "Counterpuncher": {
+          "w": 2,
+          "l": 2
+        },
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 3
+        },
+        "Big Server + First Strike": {
+          "w": 0,
+          "l": 2
+        },
+        "Solid Defender": {
+          "w": 2,
+          "l": 0
+        }
+      }
+    },
+    "jones|j": {
+      "name": "Jack Pinnington Jones",
+      "vs": {
+        "Counterpuncher": {
+          "w": 0,
+          "l": 1
+        },
+        "Solid Baseliner": {
+          "w": 1,
+          "l": 0
+        },
+        "Attacking Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "draxl|l": {
+      "name": "Liam Draxl",
+      "vs": {
+        "Solid Baseliner": {
+          "w": 0,
+          "l": 1
+        }
+      }
+    },
+    "jodar|r": {
+      "name": "R. Jodar",
+      "vs": {
+        "Attacking Baseliner": {
+          "w": 1,
+          "l": 1
+        },
+        "Counterpuncher": {
+          "w": 1,
+          "l": 0
         }
       }
     }

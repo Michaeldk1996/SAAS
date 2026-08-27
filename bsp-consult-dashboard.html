@@ -1302,6 +1302,10 @@
   /* Personal record vs the general-matrix expectation — a single-player value read
      against a baseline, so it stays neutral grey (the +/− sign carries direction). */
   .modal-analysis .psv-delta{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#5b6880; margin-top:3px; }
+  /* "Personally" (TEN-88 #2): the career record's baseline line — muted matrix
+     average with a signed, colour-coded delta (green above / red below). */
+  .modal-analysis .psv-base{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880; margin-top:9px; padding-top:9px; border-top:1px solid rgba(255,255,255,0.06); }
+  .modal-analysis .psv-basedelta{ font-weight:700; margin-left:4px; }
   @media (max-width:900px){
     .modal-analysis .psx-top{ grid-template-columns:1fr; }
     .modal-analysis .psl-grid{ grid-template-columns:1fr; }
@@ -11416,7 +11420,12 @@ function ensurePsMatrix(){
 // Matching only `ids` (the prior form) returned -1 for every machine id, which
 // silently collapsed the style-vs-style cell to "not enough history".
 function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => a.id === id || (a.ids || []).includes(id)); }
-function psArchFor(id){ return PS_ARCHETYPES.find(a => (a.ids || [a.id]).includes(id)) || null; }
+// Accept a MACHINE id (a.id) as well as a display label (a.ids[]), exactly as the
+// sibling psArchIndex already does. Without the `a.id === id` clause this resolves
+// labels only, so callers that pass a machine id (styleVsArchetypeList gets a2.id)
+// silently get null and every "vs this style" list came back empty (TEN-88 #1). A
+// machine id never equals a display-label string, so the extra clause is additive.
+function psArchFor(id){ return PS_ARCHETYPES.find(a => a.id === id || (a.ids || [a.id]).includes(id)) || null; }
 
 function hexToRgba(hex, a){
   const h = String(hex).replace('#','');
@@ -11509,7 +11518,6 @@ function styleEdgeHtml(m, s1, s2){
     <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
     <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
     ${tag}
-    ${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}
   </div>`;
 }
 
@@ -11631,7 +11639,11 @@ function psvRenderList(side){
   if (list) list.innerHTML = psvListHtml(side);
 }
 function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
-function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side, ownArch){
+// The recent-window DETAIL list: this player's last-40-match meetings vs the
+// opponent's archetype. The career aggregate + matrix delta live in the
+// "Personally" block above this one (TEN-88 #2) — this card is just the window
+// summary + the expandable match list.
+function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
   const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
   const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
     <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
@@ -11642,31 +11654,19 @@ function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel,
   }
   const w = rows.filter(r => r.won).length, l = rows.length - w;
   const pct = Math.round((w / rows.length) * 100);
-  // "Personally" delta — this player's own win rate vs the general-matrix expectation for
-  // the pairing (board ruling 2026-08-26). Needs the player's OWN archetype to read the
-  // matrix cell, so it only appears when both are classified. Neutral tone; the sign carries
-  // direction (a single-player value read against a baseline, not a two-player comparison).
-  let deltaHtml = '';
-  if (ownArch){
-    const cell = psCellFor(psArchIndex(ownArch.id), psArchIndex(oppArch.id));
-    if (cell && cell.pct != null){
-      const d = pct - cell.pct;
-      const sign = d > 0 ? '+' : (d < 0 ? '−' : '±');
-      deltaHtml = `<div class="psv-delta">${sign}${Math.abs(d)} pts vs ${cell.pct}% style avg</div>`;
-    }
-  }
   // Rendered static here and upgraded in place by upgradeStyleVsRows once the
   // availability indexes resolve — same two-pass contract as the H2H list.
   _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r, null) };
-  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span>${deltaHtml}</div>`,
+  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
     `<div class="psv-list" id="psvList-${side}">${psvListHtml(side)}</div>`);
 }
 
 function styleVsArchetypeHtml(m, s1, s2){
   const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
   // Each side keys off the OPPONENT's archetype, so p1's list needs a2 and p2's needs a1 —
-  // one classified player is enough for one column (board ruling 2026-08-26). The delta vs
-  // the general matrix additionally needs the player's OWN archetype (passed last, gated inside).
+  // one classified player is enough for one column (board ruling 2026-08-26). This is now the
+  // recent-window DETAIL list only; the career aggregate + matrix delta live in the
+  // "Personally" block above (stylePersonalHtml, TEN-88 #2).
   if (!a1 && !a2) return '';
   // 24 months back from today, clamped by the 40-row shard cap.
   const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
@@ -11674,8 +11674,8 @@ function styleVsArchetypeHtml(m, s1, s2){
   const r2 = a1 ? styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since) : null;
   if (!r1 && !r2) return '';
   const cards = [];
-  if (a2) cards.push(styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1', a1));
-  if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2', a2));
+  if (a2) cards.push(styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1'));
+  if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2'));
   return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
     <div class="psv-grid${cards.length < 2 ? ' psv-grid-solo' : ''}">${cards.join('')}</div></div>`;
 }
@@ -11725,6 +11725,54 @@ function upgradeStyleVsRows(m, token){
       }
     }
   });
+}
+
+// "Personally" — each player's CAREER record vs the OPPONENT's archetype, all
+// surfaces pooled, from the per-player split in matchup-matrix.json (byPlayer,
+// TEN-88 #2). Distinct from the last-40 list further down: that is the recent
+// detail; this is the career aggregate, and the delta against the general-matrix
+// cell — how this specific player handles that archetype vs the archetype average
+// — is the actionable read. Sample ladder (board spec): n>=10 shows the %, 5-9 is
+// flagged small-sample, <5 shows W-L only (no %), 0 shows a dash. The record keys
+// off the same surname|initial styleKey the front end uses everywhere else, so it
+// resolves the same player the rest of the tab is about.
+function stylePersonalCard(playerName, ownArch, oppArch, oppLabel, accent, rgba){
+  const bp = psMatrixData && psMatrixData.byPlayer;
+  const rec = bp && oppLabel ? bp[styleKey(playerName)] : null;
+  const vs = rec && rec.vs && rec.vs[oppLabel];
+  const w = vs ? (vs.w || 0) : 0, l = vs ? (vs.l || 0) : 0, n = w + l;
+  const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">all surfaces · tour career</div></div>`;
+  // Matrix baseline read in THIS player's direction (own archetype vs opponent's).
+  const cell = (ownArch && oppArch && ownArch.id !== oppArch.id) ? psCellFor(psArchIndex(ownArch.id), psArchIndex(oppArch.id)) : null;
+  const base = cell && cell.pct != null ? cell.pct : null;
+  let recHtml, baseHtml = '';
+  if (n === 0){
+    recHtml = `<span class="psv-none">— no tour meetings</span>`;
+  } else if (n < 5){
+    recHtml = `<span class="psv-wl">W${w}–L${l}</span> <span class="psv-pct">n=${n}</span>`;
+  } else {
+    const pct = Math.round(w / n * 100), small = n < 10;
+    recHtml = `<span class="psv-wl">W${w}–L${l}</span> <span class="psv-pct"${small ? ' style="opacity:.6;"' : ''}>${pct}% · n=${n}${small ? ' · small sample' : ''}</span>`;
+    if (base != null){
+      const d = pct - base, sign = d > 0 ? '+' : (d < 0 ? '−' : '±');
+      const dc = d > 0 ? '#3dd68c' : (d < 0 ? '#e0616f' : '#8b93a3');
+      baseHtml = `<div class="psv-base">matrix avg ${base}% <span class="psv-basedelta" style="color:${dc};">${sign}${Math.abs(d)}</span></div>`;
+    }
+  }
+  return `<div class="psv-card" style="border-color:${rgba(0.2)};">
+    <div class="psv-head">${title}<div class="psv-rec">${recHtml}</div></div>${baseHtml}</div>`;
+}
+function stylePersonalHtml(m, s1, s2, a1, a2){
+  // Needs BOTH classified: each card reads the opponent's archetype for the record
+  // and both archetypes for the matrix baseline. Mirrors the style-vs-style edge gate.
+  if (!a1 || !a2) return '';
+  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
+  const cards = [
+    stylePersonalCard(m.p1, a1, a2, lab2, '#6aaeff', ANALYSIS_P1_RGBA),
+    stylePersonalCard(m.p2, a2, a1, lab1, '#e7e9ee', ANALYSIS_P2_RGBA),
+  ];
+  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Personally · career record vs this style</div>
+    <div class="psv-grid">${cards.join('')}</div></div>`;
 }
 
 // Archetype labels — their own block, driven by the v5.1 classification (tour results),
@@ -11783,9 +11831,21 @@ function buildStyleSection(m){
   const topHtml = edgeHtml
     ? `<div class="psx-top">${radarCard}${edgeHtml}</div>`
     : `<div class="psx-top psx-top-solo">${radarCard}</div>`;
+  // "Historical by surface" was extracted from inside the edge card so the career
+  // "Personally" block can sit between the general edge and the per-surface split
+  // (board order, TEN-88 #2). Same gate the edge used for it: both classified, a
+  // real (non-mirror) pairing above the pooled-sample floor.
+  const pooledCell = (a1 && a2 && a1.id !== a2.id) ? psCellFor(psArchIndex(a1.id), psArchIndex(a2.id)) : null;
+  const surfaceHtml = (pooledCell && pooledCell.pct != null)
+    ? `<div class="psx-block">${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}</div>`
+    : '';
+  // Order (board spec, TEN-88 #2): archetypes → radar + style-vs-style edge →
+  // Personally (career) → historical by surface → dimension edge → last-40 list.
   return `<div class="psx-wrap">
     ${styleArchLabelsHtml(m, s1, s2)}
     ${topHtml}
+    ${stylePersonalHtml(m, s1, s2, a1, a2)}
+    ${surfaceHtml}
     ${styleDimensionEdgeHtml(m, r1, r2)}
     ${styleVsArchetypeHtml(m, s1, s2)}
   </div>`;

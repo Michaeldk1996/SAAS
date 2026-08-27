@@ -108,6 +108,21 @@ function surfaceOf(raw) {
   return s.includes('clay') ? 'clay' : s.includes('grass') ? 'grass' : s.includes('hard') ? 'hard' : 'other';
 }
 
+// ---- client-parity player key (TEN-88 #2) ----
+// The per-player split (`byPlayer`) is looked up on the front end by the SAME
+// surname|initial key the dashboard already builds for every player
+// (psEloNorm -> styleKey in bsp-consult-dashboard.html). These two helpers are a
+// byte-for-byte mirror of that pair — keep them in sync so a career record keys
+// to the right player card.
+function psEloNorm(name) {
+  return String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function clientKey(name) {
+  const p = psEloNorm(name).split(' ').filter(Boolean);
+  return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0];
+}
+
 function main() {
   const styles = JSON.parse(fs.readFileSync(STYLES, 'utf8'));
   const labelled = (styles.players || []).filter(p => p.archetype_label);
@@ -123,6 +138,32 @@ function main() {
   for (const p of labelled) playerCount[p.archetype_label]++;
 
   const { lookup } = buildLabelIndex(labelled);
+
+  // ---- per-player career split (TEN-88 #2) ----
+  // Keyed by client key (surname|initial). A client key that two DIFFERENT
+  // labelled players collapse onto is dropped, so we never merge two players'
+  // records under one card. This is the same collision the front-end byKey has,
+  // so nothing is lost that the client could have distinguished anyway.
+  const CK_AMB = Symbol('ck_amb');
+  const byClientKey = new Map();
+  for (const p of labelled) {
+    const k = clientKey(p.name);
+    if (!k) continue;
+    if (!byClientKey.has(k)) byClientKey.set(k, { name: p.name, label: p.archetype_label });
+    else { const cur = byClientKey.get(k); if (cur !== CK_AMB && cur.name !== p.name) byClientKey.set(k, CK_AMB); }
+  }
+  const byPlayer = {};                       // clientKey -> { name, vs: { <oppLabel>: {w,l} } }
+  let bpCounted = 0;
+  const bump = (name, oppLabel, won) => {
+    const k = clientKey(name);
+    if (!k) return;
+    const slot = byClientKey.get(k);
+    if (!slot || slot === CK_AMB) return;    // subject not a unique labelled player
+    const e = byPlayer[k] || (byPlayer[k] = { name: slot.name, vs: {} });
+    const v = e.vs[oppLabel] || (e.vs[oppLabel] = { w: 0, l: 0 });
+    if (won) { v.w++; } else { v.l++; }
+    bpCounted++;
+  };
 
   // ---- tally matches where BOTH endpoints resolve to a labelled primary ----
   const wins = {}, winsSurf = {};
@@ -146,6 +187,10 @@ function main() {
       const wl = lookup(wn), ll = lookup(ln);
       if (!wl || !ll) continue;                 // at least one endpoint outside the deployed pool
       wins[wl][ll]++; counted++;
+      // Same pool, split per player: the winner beat an `ll`-archetype opponent;
+      // the loser lost to a `wl`-archetype opponent. All surfaces pooled.
+      bump(wn, ll, true);
+      bump(ln, wl, false);
       const surf = surfaceOf(c[ix.surface]);
       if (winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
     }
@@ -188,6 +233,10 @@ function main() {
     surfaceNote: 'matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.',
     surfaceMatchesCounted: surfaceCounted,
     matrixBySurface,
+    byPlayerNote: 'TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over the same pool as the matrix (both endpoints in the deployed labelled roster — TML tour-level only). Keyed by surname|initial (the dashboard\'s player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash).',
+    byPlayerPlayers: Object.keys(byPlayer).length,
+    byPlayerEndpointsCounted: bpCounted,
+    byPlayer,
   };
 
   const tmp = OUT + '.tmp';
@@ -196,6 +245,7 @@ function main() {
 
   // ---- console sanity ----
   console.log(`Wrote matchup-matrix.json — ${PRIMARIES.length} primaries, ${counted}/${tmlTotal} matches (${retention}% retention).`);
+  console.log(`Per-player split: ${Object.keys(byPlayer).length} players, ${bpCounted} player-endpoints (2 per counted match = ${counted * 2}; drop = ambiguous/unkeyed).`);
   console.log('Players per primary:');
   for (const l of PRIMARIES) console.log(`  ${String(playerCount[l]).padStart(3)}  ${l}`);
   console.log('Below-floor off-diagonal cells (n < ' + MATRIX_MIN_N + '):');
