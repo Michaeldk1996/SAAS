@@ -230,6 +230,12 @@ jobs:
           cp archetypes-classified.json _site/ 2>/dev/null || true
           cp matchup-matrix.json _site/ 2>/dev/null || true
           cp playing-styles.json _site/ 2>/dev/null || true
+          # TEN-88 option B: per-player CAREER meeting shards + their index gate the
+          # "vs this style" detail list on the Playing-style tab. The index gates the
+          # fetch, so committed-but-not-copied = silent 404 and the list falls back to
+          # its honest empty state. Publish both or neither.
+          cp style-meetings-index.json _site/ 2>/dev/null || true
+          cp -r style-meetings _site/ 2>/dev/null || true
           # Six-axis style radar for the Match Analysis "Playing style" tab.
           # Percentile block only — tools/build-style-radar.js strips the raw
           # Match Charting rates, which are internal-only and must not be served.
@@ -256,9 +262,16 @@ jobs:
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
+                   style-meetings-index.json \
                    odds-performance-index.json odds-index.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
+          # style-meetings-index.json gates the "vs this style" detail list exactly
+          # like form-index gates the Form tab, but the rows live in the shard DIR —
+          # index present + dir empty (a silent `cp -r` failure) would 404 every
+          # shard. Enforce the diff's "publish both or neither".
+          [ -d _site/style-meetings ] && [ -n "$(ls -A _site/style-meetings 2>/dev/null)" ] \
+            || { echo "MISSING from _site: style-meetings/ shard dir is absent or empty"; exit 1; }
           echo "All referenced files present in _site."
 
       - name: Upload Pages artifact

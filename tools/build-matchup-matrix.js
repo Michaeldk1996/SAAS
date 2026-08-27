@@ -41,6 +41,13 @@ const ROOT = path.join(__dirname, '..');
 const STYLES = path.join(ROOT, 'playing-styles.json');
 const TML_CACHE = path.join(ROOT, 'tml-cache');
 const OUT = path.join(ROOT, 'matchup-matrix.json');
+// TEN-88 option B: per-player CAREER meeting shards — the detail view under the
+// "Personally" career record. One shard per player, lazily fetched, keyed by the
+// SAME surname|initial the byPlayer aggregate uses, so the row list reconciles to
+// the Personally `n` by construction. matchup-matrix.json stays byte-identical —
+// these are separate files (the shards carry the heavy per-meeting rows).
+const OUT_MEET_DIR = path.join(ROOT, 'style-meetings');
+const OUT_MEET_INDEX = path.join(ROOT, 'style-meetings-index.json');
 
 const FROM_YEAR = 2000, TO_YEAR = 2026;   // must match classify-styles.js window
 const MATRIX_MIN_N = 20;                   // off-diagonal cell needs this many real matches
@@ -108,6 +115,25 @@ function surfaceOf(raw) {
   return s.includes('clay') ? 'clay' : s.includes('grass') ? 'grass' : s.includes('hard') ? 'hard' : 'other';
 }
 
+// TML tourney_date is YYYYMMDD; the client's row renderer keys/sorts on an ISO
+// date string, so normalise here.
+function isoDate(raw) {
+  const s = String(raw || '').trim();
+  return /^\d{8}$/.test(s) ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : (s || null);
+}
+// TML scores are winner-perspective ("6-7(5) 6-2 6-1"). A meeting row is shown
+// from the SUBJECT player's side, so a loss must read loser-first. Flip each set
+// token's two game counts while preserving the tie-break suffix "(5)" and any
+// trailing "RET"/"W/O" marker.
+function flipScore(score) {
+  const s = String(score || '').trim();
+  if (!s) return s;
+  return s.split(/\s+/).map(tok => {
+    const m = tok.match(/^(\d+)-(\d+)(\(\d+\))?$/);
+    return m ? `${m[2]}-${m[1]}${m[3] || ''}` : tok;   // non-set tokens (RET, W/O) pass through
+  }).join(' ');
+}
+
 // ---- client-parity player key (TEN-88 #2) ----
 // The per-player split (`byPlayer`) is looked up on the front end by the SAME
 // surname|initial key the dashboard already builds for every player
@@ -153,8 +179,12 @@ function main() {
     else { const cur = byClientKey.get(k); if (cur !== CK_AMB && cur.name !== p.name) byClientKey.set(k, CK_AMB); }
   }
   const byPlayer = {};                       // clientKey -> { name, vs: { <oppLabel>: {w,l} } }
+  const meetings = {};                        // clientKey -> { name, vs: { <oppLabel>: [rows] } }
   let bpCounted = 0;
-  const bump = (name, oppLabel, won) => {
+  // bump() owns BOTH the w/l aggregate and the per-meeting row so they can never
+  // drift: every counted endpoint increments the count AND pushes exactly one row
+  // under the same key, so meetings[k].vs[opp].length === byPlayer[k].vs[opp].(w+l).
+  const bump = (name, oppLabel, won, meeting) => {
     const k = clientKey(name);
     if (!k) return;
     const slot = byClientKey.get(k);
@@ -163,6 +193,20 @@ function main() {
     const v = e.vs[oppLabel] || (e.vs[oppLabel] = { w: 0, l: 0 });
     if (won) { v.w++; } else { v.l++; }
     bpCounted++;
+    const me = meetings[k] || (meetings[k] = { name: slot.name, vs: {} });
+    const list = me.vs[oppLabel] || (me.vs[oppLabel] = []);
+    // Row shape mirrors the api-tennis form-shard row the client already renders
+    // (won/opponent/surface/tournament/result/date), MINUS eventKey — TML carries
+    // no api-tennis key, so these rows are static (never open a box-score panel).
+    list.push({
+      won: !!won,
+      opponent: meeting.opponent,
+      surface: meeting.surface,
+      tournament: meeting.tournament,
+      result: won ? meeting.score : flipScore(meeting.score),
+      date: meeting.date,
+      round: meeting.round || null,
+    });
   };
 
   // ---- tally matches where BOTH endpoints resolve to a labelled primary ----
@@ -189,9 +233,16 @@ function main() {
       wins[wl][ll]++; counted++;
       // Same pool, split per player: the winner beat an `ll`-archetype opponent;
       // the loser lost to a `wl`-archetype opponent. All surfaces pooled.
-      bump(wn, ll, true);
-      bump(ln, wl, false);
       const surf = surfaceOf(c[ix.surface]);
+      const meta = {
+        surface: surf === 'other' ? null : surf,
+        tournament: c[ix.tourney_name] || null,
+        score: c[ix.score] || '',
+        date: isoDate(c[ix.tourney_date]),
+        round: c[ix.round] || null,
+      };
+      bump(wn, ll, true,  { ...meta, opponent: ln });
+      bump(ln, wl, false, { ...meta, opponent: wn });
       if (winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
     }
   }
@@ -243,9 +294,46 @@ function main() {
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2) + '\n');
   fs.renameSync(tmp, OUT);
 
+  // ---- per-player meeting shards (TEN-88 option B) ----
+  // Filename is the client key with '|' -> '-' (the pipe is awkward in a URL/path);
+  // the client applies the identical transform to styleKey(name). Rows sorted
+  // newest-first to match the form list's convention.
+  const slugOf = k => k.replace(/\|/g, '-');
+  fs.rmSync(OUT_MEET_DIR, { recursive: true, force: true });
+  fs.mkdirSync(OUT_MEET_DIR, { recursive: true });
+  const index = [];
+  let meetRows = 0;
+  for (const k of Object.keys(meetings).sort()) {
+    const rec = meetings[k];
+    for (const opp of Object.keys(rec.vs)) {
+      rec.vs[opp].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      meetRows += rec.vs[opp].length;
+    }
+    const slug = slugOf(k);
+    fs.writeFileSync(path.join(OUT_MEET_DIR, `${slug}.json`),
+      JSON.stringify({ key: k, name: rec.name, vs: rec.vs }) + '\n');
+    index.push(slug);
+  }
+  index.sort();
+  fs.writeFileSync(OUT_MEET_INDEX, JSON.stringify(index) + '\n');
+
+  // Reconciliation invariant: every (player, oppLabel) meeting list length MUST
+  // equal that cell's byPlayer w+l. If this ever fails the detail list would
+  // disagree with the "Personally" record above it — the exact thing TEN-88 fixes.
+  let mism = 0;
+  for (const k of Object.keys(byPlayer)) {
+    const agg = byPlayer[k].vs, det = (meetings[k] && meetings[k].vs) || {};
+    for (const opp of Object.keys(agg)) {
+      const want = agg[opp].w + agg[opp].l, got = (det[opp] || []).length;
+      if (want !== got) { console.error(`RECONCILE MISMATCH ${k} vs ${opp}: byPlayer=${want} rows=${got}`); mism++; }
+    }
+  }
+  if (mism) throw new Error(`${mism} meeting-shard reconciliation mismatches — refusing to write a detail list that disagrees with the career record`);
+
   // ---- console sanity ----
   console.log(`Wrote matchup-matrix.json — ${PRIMARIES.length} primaries, ${counted}/${tmlTotal} matches (${retention}% retention).`);
   console.log(`Per-player split: ${Object.keys(byPlayer).length} players, ${bpCounted} player-endpoints (2 per counted match = ${counted * 2}; drop = ambiguous/unkeyed).`);
+  console.log(`Meeting shards: ${index.length} players, ${meetRows} rows, reconciled clean vs byPlayer.`);
   console.log('Players per primary:');
   for (const l of PRIMARIES) console.log(`  ${String(playerCount[l]).padStart(3)}  ${l}`);
   console.log('Below-floor off-diagonal cells (n < ' + MATRIX_MIN_N + '):');

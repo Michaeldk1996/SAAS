@@ -7809,6 +7809,52 @@ function ensureFormRows(m){
   });
 }
 
+// TEN-88 option B — per-player CAREER meeting shards. The "vs this style" list is
+// the DETAIL view of the Personally career record, so it reads the same source
+// the record aggregates (build-matchup-matrix.js emits both from one tally loop).
+// Keyed by the SAME surname|initial styleKey the record uses, filename = key with
+// '|' -> '-'. There is deliberately NO fallback to the form shards: a missing or
+// id-mismatched shard LOGS and shows an honest empty state rather than silently
+// rendering the wrong (last-40) list — that silent fallback is the exact failure
+// the founder flagged.
+let _styleMeetIndex = null, _styleMeetIndexPromise = null;
+const _styleMeetShards = {}, _styleMeetShardPromises = {};
+function _styleMeetSlug(name){ const k = styleKey(name); return k ? k.replace(/\|/g, '-') : null; }
+function loadStyleMeetIndex(){
+  if (_styleMeetIndex) return Promise.resolve(_styleMeetIndex);
+  if (_styleMeetIndexPromise) return _styleMeetIndexPromise;
+  _styleMeetIndexPromise = fetch('./style-meetings-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : [])
+    .then(d => { _styleMeetIndex = new Set(Array.isArray(d) ? d : []); return _styleMeetIndex; })
+    .catch(() => { _styleMeetIndex = new Set(); return _styleMeetIndex; });
+  return _styleMeetIndexPromise;
+}
+function loadStyleMeetShard(name){
+  const slug = _styleMeetSlug(name);
+  if (!slug) return Promise.resolve(null);
+  if (slug in _styleMeetShards) return Promise.resolve(_styleMeetShards[slug]);
+  if (_styleMeetShardPromises[slug]) return _styleMeetShardPromises[slug];
+  _styleMeetShardPromises[slug] = loadStyleMeetIndex()
+    .then(idx => idx.has(slug)
+      ? fetch(`./style-meetings/${slug}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)
+      : null)
+    .then(d => { _styleMeetShards[slug] = (d && d.vs) ? d.vs : null; return _styleMeetShards[slug]; })
+    .catch(err => { console.warn(`[styleVs] meeting shard ${slug} load failed:`, err.message); _styleMeetShards[slug] = null; return null; });
+  return _styleMeetShardPromises[slug];
+}
+// Loads both players' meeting maps onto the match. `null` = no shard for that
+// player (unclassified / zero counted meetings); a present object is keyed by the
+// opponent's raw archetype_label.
+function ensureStyleMeetings(m){
+  if (m._styleMeetLoaded) return Promise.resolve(m);
+  return Promise.all([loadStyleMeetShard(m.p1), loadStyleMeetShard(m.p2)]).then(([p1, p2]) => {
+    m.p1StyleMeetings = p1;
+    m.p2StyleMeetings = p2;
+    m._styleMeetLoaded = true;
+    return m;
+  });
+}
+
 let _setStatsIndex = null, _setStatsIndexPromise = null;
 const _setStatsShards = {}, _setStatsShardPromises = {};
 
@@ -11422,8 +11468,8 @@ function ensurePsMatrix(){
 function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => a.id === id || (a.ids || []).includes(id)); }
 // Accept a MACHINE id (a.id) as well as a display label (a.ids[]), exactly as the
 // sibling psArchIndex already does. Without the `a.id === id` clause this resolves
-// labels only, so callers that pass a machine id (styleVsArchetypeList gets a2.id)
-// silently get null and every "vs this style" list came back empty (TEN-88 #1). A
+// labels only, so callers that pass a machine id (psArchFor via psCellFor) silently
+// get null and matrix cells came back empty (TEN-88 #1). A
 // machine id never equals a display-label string, so the extra clause is additive.
 function psArchFor(id){ return PS_ARCHETYPES.find(a => a.id === id || (a.ids || [a.id]).includes(id)) || null; }
 
@@ -11570,57 +11616,28 @@ function styleDimensionEdgeHtml(m, r1, r2){
   return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Dimension edge</div>${header}<div class="psd-list">${rows}</div></div>`;
 }
 
-// "How each has fared vs this style" — walks the player's own form shard, keys
-// every opponent back through playing-styles.json and keeps the ones whose
-// archetype matches the man across the net. Form shards are capped at 40 rows,
-// so this is a recent-window read, not a career one; the header says so.
-function styleVsArchetypeList(rows, oppArchId, sinceIso){
-  if (!Array.isArray(rows)) return null;
-  // The page merges All-Court Elite into All-Court Player, so one displayed
-  // archetype can cover several classifier ids — match on the whole set.
-  const arch = psArchFor(oppArchId);
-  const ids = arch ? (arch.ids || [arch.id]) : [oppArchId];
-  const out = [];
-  for (const r of rows){
-    if (sinceIso && r.date && r.date < sinceIso) continue;
-    const st = ppStyleFor(r.opponent);
-    if (!st || !ids.includes(st.archetype_label)) continue;
-    out.push(r);
-  }
-  return out;
-}
-// One "vs this style" meeting. Static by default; `opts.canOpen` upgrades it to
-// the same expandable row the Form / H2H / Tournament lists use, so a meeting
-// here opens the same Match Stats + Point by point panes as everywhere else.
-function styleVsArchetypeRowHtml(r, opts){
+// One "vs this style" career meeting. These rows come from the TML-sourced
+// per-player meeting shard (TEN-88 option B), which carries no api-tennis
+// eventKey, so the row is always static — there is no box-score panel to open.
+function styleVsArchetypeRowHtml(r){
   const res = r.won ? 'W' : 'L';
   const rc = r.won ? '#3dd68c' : '#e0616f';
   const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
   const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
-  const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/, '–'));
+  const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/g, '–'));
   const cells = `
       <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
       <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
       <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
       <span class="psv-score">${psEsc(score)}</span>`;
-  if (!opts || !opts.canOpen) return `<div class="psv-row">${cells}<span></span></div>`;
-  const idPrefix = opts.idPrefix;
-  // The row IS already a form-row shape (it came straight off the form shard),
-  // so it needs no adapting — it carries date/tournament/round/result/won/
-  // opponent/eventKey and, for most rows, an inline box score as well.
-  return `<div class="psv-row psv-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
-      ${cells}
-      <span class="psv-chev" id="formChev-${idPrefix}">▸</span>
-    </div>
-    ${formPanelHtml(r, idPrefix, opts.playerKey, opts.playerName)}`;
+  return `<div class="psv-row">${cells}<span></span></div>`;
 }
 
 const PSV_ROW_CAP = 5;
 // "+N more" is a real control, so the extra rows have to be reachable after the
-// list is already in the DOM. Both render passes (the static build below and the
-// availability upgrade in upgradeStyleVsRows) publish their full row list and
-// their own row renderer here; the toggle re-renders through whichever is
-// current, so expanding after the upgrade lands still yields clickable rows.
+// list is already in the DOM. styleVsArchetypeCard publishes the side's full row
+// list + its row renderer here; the toggle re-renders through it, so expanding
+// after a late repaint still yields the complete list.
 const _psvSides = { p1:null, p2:null };
 const _psvOpen  = { p1:false, p2:false };
 function psvListHtml(side){
@@ -11639,92 +11656,68 @@ function psvRenderList(side){
   if (list) list.innerHTML = psvListHtml(side);
 }
 function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
-// The recent-window DETAIL list: this player's last-40-match meetings vs the
-// opponent's archetype. The career aggregate + matrix delta live in the
-// "Personally" block above this one (TEN-88 #2) — this card is just the window
-// summary + the expandable match list.
+// The CAREER meeting DETAIL list: this player's full tour-career meetings vs the
+// opponent's archetype (TEN-88 option B). It is the detail view of the "Personally"
+// record above — same rows the record aggregates — so the W–L·n here reconciles to
+// that block. Rows are static (meeting shards carry no eventKey).
 function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
   const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
   const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
     <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
-  if (!rows) return card('', styleNoteHtml('Form rows still loading.'));
+  if (!rows) return card('', styleNoteHtml('Career meetings still loading.'));
   if (!rows.length){
-    return card(`<div class="psv-rec"><span class="psv-none">no meetings</span></div>`,
-      styleNoteHtml(`No ${oppArch.name.toLowerCase()} in ${psShortName(playerName)}'s last 40 matches.`));
+    return card(`<div class="psv-rec"><span class="psv-none">no tour meetings</span></div>`,
+      styleNoteHtml(`No tour meetings vs a ${oppArch.name.toLowerCase()} on record.`));
   }
   const w = rows.filter(r => r.won).length, l = rows.length - w;
   const pct = Math.round((w / rows.length) * 100);
-  // Rendered static here and upgraded in place by upgradeStyleVsRows once the
-  // availability indexes resolve — same two-pass contract as the H2H list.
-  _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r, null) };
+  // Static rows behind the shared "+N more" control (psvListHtml reads _psvSides).
+  _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r) };
   return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
     `<div class="psv-list" id="psvList-${side}">${psvListHtml(side)}</div>`);
 }
 
+// Resolve a side's CAREER meeting rows from its per-player shard (TEN-88 option B).
+// Returns null while the shard is still loading (card shows "loading"), or an array
+// once loaded. Deliberately does NOT fall back to the form shards: if the shard is
+// absent, or present but missing the opponent's label while the Personally record
+// shows meetings for it (an id-space mismatch — the founder's flagged failure), it
+// LOGS and returns [] so the fault is visible, not disguised as "no meetings".
+function styleMeetRowsFor(m, side, oppLabel, playerName){
+  if (!m._styleMeetLoaded) return null;              // still loading
+  if (!oppLabel) return [];
+  const vs = side === 'p1' ? m.p1StyleMeetings : m.p2StyleMeetings;
+  const wkey = '_styleMeetWarn_' + side;             // warn once per side per match
+  if (vs == null){
+    if (!m[wkey]){ m[wkey] = 1; console.warn(`[styleVs] no career-meeting shard for ${styleKey(playerName)} (${playerName}) — classified vs "${oppLabel}"; not falling back to form shards.`); }
+    return [];
+  }
+  const rows = vs[oppLabel];
+  if (rows == null){
+    const bp = psMatrixData && psMatrixData.byPlayer && psMatrixData.byPlayer[styleKey(playerName)];
+    const agg = bp && bp.vs && bp.vs[oppLabel];
+    if (agg && (agg.w + agg.l) > 0 && !m[wkey]){ m[wkey] = 1; console.warn(`[styleVs] label "${oppLabel}" missing in meeting shard for ${styleKey(playerName)} but Personally n=${agg.w + agg.l} — id-space mismatch.`); }
+    return [];
+  }
+  return rows;
+}
+
 function styleVsArchetypeHtml(m, s1, s2){
   const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
+  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
   // Each side keys off the OPPONENT's archetype, so p1's list needs a2 and p2's needs a1 —
-  // one classified player is enough for one column (board ruling 2026-08-26). This is now the
-  // recent-window DETAIL list only; the career aggregate + matrix delta live in the
-  // "Personally" block above (stylePersonalHtml, TEN-88 #2).
+  // one classified player is enough for one column (board ruling 2026-08-26). This is the
+  // CAREER meeting DETAIL list (TEN-88 option B): the same rows the "Personally" record above
+  // aggregates, keyed on the OPPONENT's archetype_label so the row count reconciles to that n.
   if (!a1 && !a2) return '';
-  // 24 months back from today, clamped by the 40-row shard cap.
-  const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
-  const r1 = a2 ? styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since) : null;
-  const r2 = a1 ? styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since) : null;
-  if (!r1 && !r2) return '';
+  const r1 = a2 ? styleMeetRowsFor(m, 'p1', lab2, m.p1) : null;
+  const r2 = a1 ? styleMeetRowsFor(m, 'p2', lab1, m.p2) : null;
   const cards = [];
   if (a2) cards.push(styleVsArchetypeCard(m.p1, r1, a2, '#6aaeff', ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1'));
   if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2'));
-  return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">How each has fared vs this style · last 40 matches</div>
+  if (!cards.length) return '';
+  return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">Career meetings vs this style</div>
     <div class="psv-grid${cards.length < 2 ? ' psv-grid-solo' : ''}">${cards.join('')}</div></div>`;
-}
-
-// Second pass: turn the two "vs this style" lists into expandable rows once the
-// box-score / point-log availability indexes have loaded. Mirrors
-// upgradeH2HRows — render static synchronously, upgrade a task later, and guard
-// the repaint with a token so a fast reopen of a DIFFERENT match cannot paint
-// stale rows into the new one. The style tab repaints up to three times as its
-// own shards land, so every paint re-runs this.
-function upgradeStyleVsRows(m, token){
-  const a1 = ppStyleFor(m.p1) && psArchFor(ppStyleFor(m.p1).archetype_label);
-  const a2 = ppStyleFor(m.p2) && psArchFor(ppStyleFor(m.p2).archetype_label);
-  // Mirror styleVsArchetypeHtml: each side needs only its OPPONENT classified, so upgrade
-  // whichever column actually rendered (board ruling 2026-08-26).
-  if (!a1 && !a2) return;
-  const since = new Date(Date.now() - 730 * 864e5).toISOString().slice(0, 10);
-  const sides = [
-    { side:'p1', rows: a2 ? styleVsArchetypeList(m.p1RecentFormMatches, a2.id, since) : null, key: m.p1Key, name: m.p1 },
-    { side:'p2', rows: a1 ? styleVsArchetypeList(m.p2RecentFormMatches, a1.id, since) : null, key: m.p2Key, name: m.p2 },
-  ];
-  if (!sides.some(s => s.rows && s.rows.length)) return;
-  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
-    const host = document.getElementById('aSectionStyle');
-    if (!host || host.dataset.psvToken !== String(token)) return;
-    for (const s of sides){
-      if (!s.rows || !s.rows.length) continue;
-      const list = document.getElementById('psvList-' + s.side);
-      if (!list) continue;
-      // Openability is decided per row at render time, so the renderer closes over
-      // the resolved indexes and stays correct for rows revealed later by "+N more".
-      const renderRow = (r, i) => {
-        const ek = String(r.eventKey || '');
-        const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-        // Suffix must stay `psv<i>` — toggleFormPanel strips it to derive the
-        // accordion group. The two cards get distinct prefixes so each column
-        // is its own accordion, matching the Form tab's two-column behaviour.
-        return styleVsArchetypeRowHtml(r, canOpen
-          ? { canOpen:true, idPrefix:`psv${s.side}psv${i}`, playerKey:s.key, playerName:s.name }
-          : null);
-      };
-      const openable = s.rows.slice(0, PSV_ROW_CAP)
-        .filter(r => { const ek = String(r.eventKey || ''); return !!ek && (msIdx.has(ek) || pbpIdx.has(ek)); }).length;
-      if (openable){
-        _psvSides[s.side] = { rows: s.rows, renderRow: renderRow };
-        psvRenderList(s.side);
-      }
-    }
-  });
 }
 
 // "Personally" — each player's CAREER record vs the OPPONENT's archetype, all
@@ -11872,7 +11865,10 @@ function renderStyleSection(m){
   _psvSides.p1 = null; _psvSides.p2 = null;
   el.innerHTML = buildStyleSection(m);
   el.dataset.psvToken = String(token);
-  upgradeStyleVsRows(m, token);
+  // TEN-88 option B: the "vs this style" list is now the CAREER meeting detail from
+  // per-player shards (TML-sourced, no api-tennis eventKey), so its rows are static —
+  // there is nothing to upgrade to an openable box-score row, and re-sourcing from the
+  // form shards here would clobber the meeting rows with the old last-40 list.
 }
 
 function openAnalysisModal(matchId){
@@ -11966,7 +11962,10 @@ function openAnalysisModal(matchId){
   // the form sections: the user can open a second match mid-flight.
   _aStyleMatch = m;
   renderStyleSection(m);
-  Promise.all([loadStyleRadar(), ensurePsMatrix()]).then(() => {
+  // ensureStyleMeetings loads the per-player CAREER meeting shards that feed the
+  // "vs this style" detail list (TEN-88 option B); folded in here so the one repaint
+  // below has radar + matrix + meetings all resolved.
+  Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m)]).then(() => {
     if (_aStyleMatch !== m) return;
     renderStyleSection(m);
     // Key Factors' "Playing style" card reads the matchup matrix too
@@ -12014,7 +12013,9 @@ function openAnalysisModal(matchId){
     if (_aFormMatch !== m) return;
     document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
     document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
-    // "vs this style" reads the same rows, so the style tab gets a third paint.
+    // The style tab's "vs this style" list now reads its OWN career-meeting shards
+    // (not the form rows), but the radar/dimension blocks still repaint here; the
+    // meeting shards are cached by now, so this paint keeps the list intact.
     renderStyleSection(m);
   });
 

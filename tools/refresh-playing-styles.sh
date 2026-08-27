@@ -123,7 +123,11 @@ for attempt in 1 2 3; do
   cp /tmp/bsp-styles.json playing-styles.json
   cp /tmp/bsp-matrix.json matchup-matrix.json
   if git diff --quiet -- playing-styles.json matchup-matrix.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
+  # build-matchup-matrix.js also (re)wrote the per-player CAREER meeting shards
+  # (TEN-88 option B); they survive the mixed reset above as working-tree changes,
+  # so stage them alongside. -A picks up shards deleted when a player drops out.
   git add playing-styles.json matchup-matrix.json
+  git add -A style-meetings-index.json style-meetings
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
   HUMAN_NOW=$(printf '%dm%02ds' $(( ELAPSED_NOW / 60 )) $(( ELAPSED_NOW % 60 )))
   git -c user.name='BSP Styles Bot' -c user.email='bot@bspconsult.local' \
