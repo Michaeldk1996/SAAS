@@ -65,9 +65,20 @@ eq('US Open over35', uso.over35, { count: 2, sample: 3 });
 const wim = profile.tournamentHistory.find(t => t.name === 'Wimbledon');
 eq('Wimbledon over35', wim.over35, { count: 2, sample: 2 });
 
+// TEN-89 2026-08-28: per-Slam main-draw W-L drives the record + win-rate tiles on
+// the Slam card (founder ruling: whole card is main-draw-only). US Open main draw:
+// W = R128,R64,R32,R16(w/o),QF(ret),R128'20 = 6 ; L = SF(ret) = 1.
+eq('US Open mainDraw', uso.mainDraw, { won: 6, lost: 1 });
+// Wimbledon main draw: W = F = 1 ; L = F = 1.
+eq('Wimbledon mainDraw', wim.mainDraw, { won: 1, lost: 1 });
+
+// All-majors over-3.5 aggregate (founder item 4): US Open {2,3} + Wimbledon {2,2}.
+eq('gsOver35', profile.gsOver35, { count: 4, sample: 5 });
+
 // Non-Slam tournament must be untouched.
 const mia = profile.tournamentHistory.find(t => t.name === 'Miami');
 eq('non-Slam has no over35', mia.over35, undefined);
+eq('non-Slam has no mainDraw', mia.mainDraw, undefined);
 
 // A player with zero Slam history: no gsCareer, returns false.
 const noSlam = { name: 'X', tournamentHistory: [ { name: 'Miami', editions: [ { year: 2022, matches: [ { res: 'W', round: 'F', score: '2 - 0' } ] } ] } ] };

@@ -3815,15 +3815,25 @@ async function fetchPlayerCareerHistory(playerKey) {
       if (parts.length === 2) score = `${parts[1]} - ${parts[0]}`;
     }
     // TEN-89 Bug A: recover the Slam qualifying rows the event_qualification flag
-    // misses. A genuine Grand-Slam main-draw win is best-of-five (the winner
-    // takes 3 sets); any WIN decided in fewer than 3 sets that is NOT a
-    // retirement/walkover can only be a best-of-three qualifying match served
-    // under the main-draw key. Reclassify it to 'Q' (rank -1) so it still counts
-    // in W/L but never inflates titles/best-result — the same treatment the
-    // event_qualification path already gives, per the 2026-08-04 record ruling.
+    // misses. A completed Grand-Slam MAIN-DRAW match is best-of-five, so the
+    // winner always takes 3 sets — the max set count is 3. Any completed match
+    // served under the main-draw key whose winner took FEWER than 3 sets can only
+    // be a best-of-three qualifying match, whether the profiled player WON it
+    // (2-0, 2-1) or LOST it (0-2, 1-2). Reclassify it to 'Q' (rank -1) so it still
+    // counts in W/L but never inflates titles/best-result.
+    //
+    // NOTE (2026-08-28, founder Bonzi US Open '21 card): the original test was
+    // WIN-ONLY (`didWin && …`), so it retagged the qualifying WINS but left the
+    // qualifying LOSSES (0-2, 1-2) reading as main-draw QF/SF/F. Those leaked into
+    // every box — promoting a false best-result (a qualifying SF read as a real
+    // one), inflating the record, and dragging the over-3.5 sample down with a
+    // best-of-three "under 3.5" match. Dropping `didWin` and testing the winner's
+    // set count (max of the two, orientation-safe) catches wins AND losses.
+    // Retirements/walkovers are excluded: a main-draw match that stopped early can
+    // legitimately show <3 winner sets and must stay main draw.
     const _isRet = f.event_status === 'Retired';
     const _isWo = f.event_status === 'Walk Over';
-    if (code !== 'Q' && didWin && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
+    if (code !== 'Q' && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
       // Winner sets = max of the two, so this holds whichever way the score
       // string is ordered (defence-in-depth against any orientation regression).
       const sc = String(score).split('-').map((s) => parseInt(s.trim(), 10));
@@ -3959,17 +3969,20 @@ function totalSetsOfScore(score) {
 // Returns true if the player has any Grand-Slam main-draw history.
 function deriveSlamBoxes(profile) {
   const hist = Array.isArray(profile && profile.tournamentHistory) ? profile.tournamentHistory : [];
-  let gsWon = 0, gsLost = 0, anySlam = false;
+  let gsWon = 0, gsLost = 0, gsO35Count = 0, gsO35Sample = 0, anySlam = false;
   for (const t of hist) {
     if (!GRAND_SLAM_NAMES.has(t.name)) continue;
-    let count = 0, sample = 0;
+    let count = 0, sample = 0, mdWon = 0, mdLost = 0;
     for (const ed of (t.editions || [])) {
       for (const m of (ed.matches || [])) {
         if (isQualifyingRound(m.round)) continue;      // main draw only
-        // Grand-Slam career W-L: retirements + walkover-received wins count; a
-        // walkover GIVEN ('WD') is neither.
-        if (m.res === 'W') { gsWon++; anySlam = true; }
-        else if (m.res === 'L') { gsLost++; anySlam = true; }
+        // Main-draw W-L at THIS major. Founder ruling 2026-08-28: the whole Grand-
+        // Slam card is main-draw-only, so the record tile drops qualifying too —
+        // this is what makes all five boxes share one denominator (Bonzi US Open:
+        // 5-3 = 8 main-draw matches = the over-3.5 sample of 8). Retirements count
+        // (a real result); a walkover GIVEN ('WD') is neither W nor L.
+        if (m.res === 'W') { mdWon++; gsWon++; anySlam = true; }
+        else if (m.res === 'L') { mdLost++; gsLost++; anySlam = true; }
         // Over-3.5: completed matches only.
         if (m.ret || m.walkover || m.res === 'WD') continue;
         const sets = totalSetsOfScore(m.score);
@@ -3979,8 +3992,18 @@ function deriveSlamBoxes(profile) {
       }
     }
     t.over35 = { count, sample };
+    t.mainDraw = { won: mdWon, lost: mdLost };
+    gsO35Count += count;
+    gsO35Sample += sample;
   }
-  if (anySlam) profile.gsCareer = { won: gsWon, lost: gsLost };
+  if (anySlam) {
+    profile.gsCareer = { won: gsWon, lost: gsLost };
+    // All-majors over-3.5 aggregate (founder item 4, 2026-08-28): the same
+    // completed-main-draw sample pooled across the four Slams, shown beside the
+    // this-event figure so a member can compare "long at THIS major" vs "long at
+    // Slams generally". Same basis as the per-event box.
+    profile.gsOver35 = { count: gsO35Count, sample: gsO35Sample };
+  }
   return anySlam;
 }
 

@@ -55,11 +55,15 @@ const isRet = (m) => m.ret === true || m.res === 'WD' || m.walkover === true;
 // Bug A fix, applied in memory for --project-fix. Mutates an edition's matches:
 // a Slam WIN decided in <3 sets that isn't a retirement can only be qualifying.
 function applyBugAFix(tourneyName, ed) {
-  // (i) set-count: a best-of-3 qualifying WIN (winner < 3 sets, non-RET) can't be
-  // a best-of-5 main-draw win. Slam-only — it assumes a best-of-five main draw.
+  // (i) set-count: a completed Slam main-draw match is best-of-5, so the winner
+  // takes 3 sets. Any completed match here (WIN 2-0/2-1 OR LOSS 0-2/1-2) whose
+  // winner took < 3 sets, non-RET, can only be a best-of-3 qualifying match served
+  // under the main-draw key. Slam-only — it assumes a best-of-five main draw.
+  // (2026-08-28: was WIN-only, which left the qualifying LOSSES leaking — the
+  // Bonzi US Open '21 card class. Dropping the res check catches both.)
   if (GRAND_SLAMS.has(tourneyName)) {
     for (const m of (ed.matches || [])) {
-      if (m.round === 'Q' || m.res !== 'W' || isRet(m)) continue;
+      if (m.round === 'Q' || isRet(m)) continue;
       const s = sets(m.score);
       if (s && Math.max(s[0], s[1]) < 3) m.round = 'Q';
     }
@@ -119,12 +123,16 @@ function auditEdition(tourneyName, ed, viol, ctx) {
     const anyLoss = md.some((m) => m.res === 'L');
     if (!wonFinal || anyLoss) { bump('rule3'); ctx.rule3.push(`${ctx.player} · ${tourneyName} '${ed.year}`); }
   }
-  // Rule 4 — best-of-five (Slam main draw): no WIN in fewer than 3 sets (non-RET).
+  // Rule 4 — best-of-five (Slam main draw): no match, WIN or LOSS, decided in
+  // fewer than 3 sets by the winner (non-RET). A completed best-of-5 always ends
+  // 3-x, so a <3 winner-set match under the main-draw key is a leaked best-of-3
+  // qualifying row (2026-08-28: extended from win-only to catch qualifying LOSSES,
+  // the Bonzi US Open '21 class).
   if (isSlam) {
     for (const m of md) {
-      if (m.res !== 'W' || isRet(m)) continue;
+      if (isRet(m)) continue;
       const s = sets(m.score);
-      if (s && Math.max(s[0], s[1]) < 3) { bump('rule4'); ctx.rule4.push(`${ctx.player} · ${tourneyName} '${ed.year} ${m.round} ${m.score}`); }
+      if (s && Math.max(s[0], s[1]) < 3) { bump('rule4'); ctx.rule4.push(`${ctx.player} · ${tourneyName} '${ed.year} ${m.round} ${m.score} (${m.res})`); }
     }
   }
   // Rule 5 (soft) — best-of-three: no WIN under 2 sets (non-RET).
@@ -194,12 +202,17 @@ function main() {
   console.log(`  Tour-wide structural (rules 2-4 + Slam rule 1 · fail-closed):  ${tourWideStructural}`);
   console.log(`  Rule 1 non-Slam duplicate-round (reported, non-blocking):     ${viol.rule1 - viol.rule1Slam}`);
 
-  // TEN-89 Part 2 invariants (fail-closed). The two Grand-Slam profile boxes are
-  // derived (profile.gsCareer, t.over35); these are impossibilities, never a
-  // legitimate data quirk, so any hit blocks the refresh:
+  // TEN-89 Part 2 invariants (fail-closed). The Grand-Slam profile boxes are
+  // derived (profile.gsCareer, profile.gsOver35, t.over35, t.mainDraw); these are
+  // impossibilities, never a legitimate data quirk, so any hit blocks the refresh:
   //   - over35.count must be within [0, sample]
-  //   - over35 must exist ONLY on a Grand-Slam tournament
-  //   - gsCareer counts must be non-negative
+  //   - over35 / mainDraw must exist ONLY on a Grand-Slam tournament
+  //   - gsCareer / gsOver35 counts must be non-negative; gsOver35.count <= sample
+  //   - DENOMINATOR RECONCILIATION (founder 2026-08-28): the over-3.5 sample is a
+  //     subset of the main-draw matches, so t.over35.sample must never exceed
+  //     mainDraw.won+mainDraw.lost. This is the exact class the founder caught on
+  //     the Bonzi card (W-L said 12, over-3.5 said 9) — encode it so it can't
+  //     silently return.
   const p2 = [];
   for (const key of Object.keys(players)) {
     const p = players[key];
@@ -212,9 +225,24 @@ function main() {
           p2.push(`${p.name || key} · ${t.name} over35 impossible ${count}/${sample}`);
         }
       }
+      if (t.mainDraw) {
+        if (!GRAND_SLAMS.has(t.name)) p2.push(`${p.name || key} · mainDraw on non-Slam "${t.name}"`);
+        const { won, lost } = t.mainDraw;
+        if (!(won >= 0 && lost >= 0)) p2.push(`${p.name || key} · ${t.name} mainDraw negative ${won}-${lost}`);
+        // over-3.5 sample ⊆ main draw: it can never exceed the main-draw match count.
+        if (t.over35 && t.over35.sample > (won + lost)) {
+          p2.push(`${p.name || key} · ${t.name} over35 sample ${t.over35.sample} > main-draw ${won + lost} (denominators disagree)`);
+        }
+      }
     }
     if (p.gsCareer && (!(p.gsCareer.won >= 0) || !(p.gsCareer.lost >= 0))) {
       p2.push(`${p.name || key} · gsCareer negative ${p.gsCareer.won}-${p.gsCareer.lost}`);
+    }
+    if (p.gsOver35) {
+      const { count, sample } = p.gsOver35;
+      if (!(Number.isInteger(count) && Number.isInteger(sample) && count >= 0 && sample >= 0 && count <= sample)) {
+        p2.push(`${p.name || key} · gsOver35 impossible ${count}/${sample}`);
+      }
     }
   }
   console.log(`  Part-2 Grand-Slam box invariants (fail-closed):               ${p2.length}`);
