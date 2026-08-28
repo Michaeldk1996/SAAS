@@ -3704,7 +3704,13 @@ const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
 // v3 (TEN-89): Slam qualifying rows the event_qualification flag misses are
 // reclassified to 'Q'; retirement/walkover flags carried per match. Bumping the
 // version busts the 7-day history cache so every player rebuilds with the fix.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 3;
+// v4 (TEN-89, 2026-08-28): the qualifying tagger was WIN-ONLY, so qualifying
+// LOSSES (0-2, 1-2) kept main-draw round codes and leaked into every Slam box.
+// The widened tagger lives inside fetchPlayerCareerHistory (cached under this
+// version), and deriveSlamBoxes reads that cached history — so without this bump
+// the v3-cached histories keep the leaked QF/SF-coded losses and the boxes stay
+// wrong for up to 7 days. Bumping to 4 forces every player to re-tag.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 4;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
