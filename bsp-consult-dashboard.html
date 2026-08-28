@@ -13793,7 +13793,14 @@ function ppGroupMatchesByTournament(matches){
   const editions = [];
   byName.forEach((ms, key) => {
     // Walk each name's matches oldest-first so a gap marks an edition boundary.
-    const asc = ms.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    // Within a shared date, break the tie by round depth (shallower first, since
+    // this list is reversed to newest-first below) so same-day matches at one
+    // event don't rely on ingest/draw order (TEN-93 harden). Every match here is
+    // the same tournament, so no same-event guard is needed; recentForm rounds are
+    // the composite "{Event} - {round}" form, so strip the prefix before ranking.
+    const gDepth = (m) => careerRoundDepth(String(m && m.round || '').split(' - ').pop());
+    const asc = ms.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))
+      || (gDepth(a) - gDepth(b)));
     let current = [];
     asc.forEach(m => {
       const prev = current[current.length - 1];
