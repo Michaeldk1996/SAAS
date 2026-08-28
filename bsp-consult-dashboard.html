@@ -5245,12 +5245,17 @@ function syncSortDropdown(completed){
 // in the Completed/Results view, the search spans EVERY settled match the payload holds
 // — the retained 4-day window — instead of only the active date tab. It's a pure
 // client-side filter change: matches.json already carries the whole settled set, so no
-// extra fetch/payload. Upcoming view is unaffected (day-scoped as before).
-function resultsCrossDateSearch(){
-  return state.view === 'completed' && !!(state.search && state.search.trim());
-}
+// extra fetch/payload. (TEN-95 2026-08-28: this cross-date behaviour now applies to the
+// Upcoming/Matches view too — see crossDateSearch() below; it is no longer Results-only.)
+// TEN-95 (founder 2026-08-28): a query drops the DATE constraint in EVERY view, not just
+// Results — so a player's next match is found on the Matches (upcoming) board without first
+// knowing which day it falls on. Only the date drops: the upcoming/completed split, the
+// tournament filter and the surface filter all still apply. Reach is the loaded window only
+// (the retained ~4-6 day payload) — see the "loaded window" empty state in renderMatches.
+// (Supersedes the old Results-only resultsCrossDateSearch(); Results is view==='completed' + this.)
+function crossDateSearch(){ return !!(state.search && state.search.trim()); }
 function getFiltered(){
-  const crossDate = resultsCrossDateSearch();
+  const crossDate = crossDateSearch();
   let out = matches.filter(m => {
     if (!crossDate) {
       const bucket = matchDayBucket(m);
@@ -5289,7 +5294,9 @@ function getFiltered(){
     return true;
   });
   const surfaceOrder = { clay:0, hard:1, grass:2 };
-  if (crossDate) out.sort((a,b) => cardStartMs(b) - cardStartMs(a));  // cross-date search: most recent first
+  if (crossDate) out.sort((a,b) => state.view === 'completed'
+    ? cardStartMs(b) - cardStartMs(a)   // Results search: most recent first
+    : cardStartMs(a) - cardStartMs(b));  // Matches (upcoming) search: nearest upcoming first (TEN-95)
   else if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
   else if (state.sort === 'surface') out.sort((a,b) => surfaceOrder[a.surface] - surfaceOrder[b.surface]);
   else if (state.sort === 'upset') out.sort((a,b) => upsetScore(b) - upsetScore(a));
@@ -5849,7 +5856,7 @@ function updateMatchesHeaderChrome(){
   // "Today" isn't lit while yesterday's or Saturday's match is showing. Clearing the box
   // removes the class and the previously selected day (still held in state.day) re-lights.
   const dayTabsEl = document.getElementById('dayTabs');
-  if (dayTabsEl) dayTabsEl.classList.toggle('is-searching', resultsCrossDateSearch());
+  if (dayTabsEl) dayTabsEl.classList.toggle('is-searching', crossDateSearch());
   // Re-sync the paging arrows to the active day's position within the now-visible
   // window (which day tabs are shown was decided by the branches above).
   syncDayArrows();
@@ -5922,7 +5929,16 @@ function renderMatches(){
   if (summarySlot) summarySlot.innerHTML = '';
   const filtered = getFiltered();
   if (filtered.length === 0){
-    list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
+    if (crossDateSearch()){
+      // TEN-95: cross-date search only reaches the loaded payload window, so a bare "no
+      // matches" would misread as "this player has no match" when the truth is "not within
+      // the days on file". Name the window explicitly.
+      const ds = matches.map(m => m.date).filter(Boolean).sort();
+      const range = ds.length ? (ds[0] === ds[ds.length - 1] ? ds[0] : `${ds[0]} – ${ds[ds.length - 1]}`) : '';
+      list.innerHTML = `<div class="mx-empty">No match for “${escapeHtml(state.search.trim())}” in the loaded window${range ? ` (${range})` : ''}. The board only holds the most recent days of fixtures — a match outside that window won’t appear here.</div>`;
+    } else {
+      list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
+    }
     return;
   }
   // TEN-8: day dividers only make sense when the list is a single tournament day
@@ -5931,7 +5947,7 @@ function renderMatches(){
   // Cross-date search mixes days in most-recent-first order (not a single-day chronological
   // strip), so the mid-session rollover dividers don't apply — every card carries its own
   // date inline (showAltDate below) instead.
-  const dividersOn = !resultsCrossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
+  const dividersOn = !crossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
   let prevLocalDay = null;
   const cards = filtered.map(m => {
     // TEN-8: insert a divider before the first card whose member-local calendar day
@@ -6064,7 +6080,7 @@ function renderMatches(){
     const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
     // Cross-date search shows every row's date (the list spans multiple days), so the
     // selected-day strip no longer names the card's day.
-    const showAltDate = (state.day === 'all' || state.day === 'past' || resultsCrossDateSearch() || (daySpecific && dayBucket !== state.day));
+    const showAltDate = (state.day === 'all' || state.day === 'past' || crossDateSearch() || (daySpecific && dayBucket !== state.day));
     // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
     // always shown now, not just the bare time and not only when the day differs.
     // Review item 7: the export separates date and time with a plain space
