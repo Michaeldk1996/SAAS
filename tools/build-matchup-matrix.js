@@ -146,6 +146,67 @@ function flipScore(score) {
   }).join(' ');
 }
 
+// ---- closing-odds join (TEN-88 #2 odds) ----
+// Tennis-Data odds-archive/<year>.csv carries a closing price per match. Each
+// meeting row is tagged with the closing odds of BOTH players (subject + opponent)
+// so the row can show them. Per the founder's ruling the book is NOT labelled on
+// the row — it is a closing price for context, not a sharp reference we price
+// against. Book policy:
+//   2026+  -> Bet365 (b365w/b365l): Pinnacle dropped current-season coverage.
+//   <=2025 -> Pinnacle (psw/psl) primary, Bet365 fallback where Pinnacle absent.
+// No price on either side (unmatched / team event / spelling residue) => dash.
+const ODDS_DIR = path.join(ROOT, 'odds-archive');
+// odds-archive names are "Surname(s) I." (surname first); the roster/TML key is
+// "Firstname Surname". Reduce both to the SAME surname|initial space so they join.
+function oddsKey(name) {
+  const t = psEloNorm(name).split(' ').filter(Boolean);
+  const i = t.findIndex(x => x.length === 1);          // first single-letter token = first-name initial
+  if (i <= 0) return null;                              // no initial, or nothing before it
+  return t[i - 1] + '|' + t[i];                         // last surname word + first initial
+}
+function oddsNum(s) { const v = parseFloat(s); return Number.isFinite(v) && v > 1 ? +v.toFixed(2) : null; }
+// pairKey(sorted surname|initial) -> [ {date, wkey, lkey, cols:{psw,psl,b365w,b365l}} ]
+function buildOddsIndex() {
+  const idx = new Map();
+  let files = 0, rows = 0;
+  for (const f of (fs.existsSync(ODDS_DIR) ? fs.readdirSync(ODDS_DIR) : [])) {
+    if (!/^\d{4}\.csv$/.test(f)) continue;
+    files++;
+    const lines = fs.readFileSync(path.join(ODDS_DIR, f), 'utf8').split(/\r?\n/).filter(l => l.length);
+    if (!lines.length) continue;
+    const H = lines[0].split(','); const ix = {}; H.forEach((h, i) => { ix[h] = i; });
+    for (let i = 1; i < lines.length; i++) {
+      const c = lines[i].split(',');
+      const wk = oddsKey(c[ix.winner]), lk = oddsKey(c[ix.loser]);
+      if (!wk || !lk || wk === lk) continue;
+      const pk = [wk, lk].sort().join('~');
+      const rec = { date: c[ix.date] || null, wkey: wk, lkey: lk,
+        cols: { psw: c[ix.psw], psl: c[ix.psl], b365w: c[ix.b365w], b365l: c[ix.b365l] } };
+      (idx.get(pk) || idx.set(pk, []).get(pk)).push(rec); rows++;
+    }
+  }
+  return { idx, files, rows };
+}
+// Return the closing odds oriented to the actual match winner/loser, or nulls.
+function oddsLookup(oddsIdx, winnerCK, loserCK, isoStr, year) {
+  if (!winnerCK || !loserCK) return { w: null, l: null };
+  const cands = oddsIdx.get([winnerCK, loserCK].sort().join('~'));
+  if (!cands || !cands.length) return { w: null, l: null };
+  let rec = cands[0];
+  if (cands.length > 1 && isoStr) {                    // same pair met >once -> nearest date
+    let best = Infinity;
+    for (const r of cands) { const d = daysApart(r.date, isoStr); if (d < best) { best = d; rec = r; } }
+  }
+  const pick = (winnerCol) => {
+    const ps = oddsNum(winnerCol ? rec.cols.psw : rec.cols.psl);
+    const b3 = oddsNum(winnerCol ? rec.cols.b365w : rec.cols.b365l);
+    return year >= 2026 ? b3 : (ps != null ? ps : b3);
+  };
+  if (rec.wkey === winnerCK) return { w: pick(true),  l: pick(false) };
+  if (rec.wkey === loserCK)  return { w: pick(false), l: pick(true)  };   // sources disagree on winner
+  return { w: null, l: null };
+}
+
 // ---- api-supplement helpers (TEN-88 option B) ----
 // api-tennis encodes a tie-break set as decimals in `scores`: "7.7"/"6.5" means
 // 7 games (tb 7) vs 6 games (tb 5), i.e. the tennis score 7-6(5) — the suffix is
@@ -229,6 +290,9 @@ function main() {
   const byPlayer = {};                       // clientKey -> { name, vs: { <oppLabel>: {w,l} } }
   const meetings = {};                        // clientKey -> { name, vs: { <oppLabel>: [rows] } }
   let bpCounted = 0;
+  // Closing-odds index (built once) + row-level coverage counters for the report.
+  const { idx: oddsIdx, files: oddsFiles, rows: oddsSrcRows } = buildOddsIndex();
+  const odds = { rows: 0, priced: 0, rows26: 0, priced26: 0 };
   // Canonical display name for an api opponent. api-tennis AND the roster both
   // store abbreviated names ("F. Cobolli"); TML rows carry the FULL name
   // ("Flavio Cobolli"), and the row renderer's psShortName() keeps a full name
@@ -263,6 +327,10 @@ function main() {
     // Row shape mirrors the api-tennis form-shard row the client already renders
     // (won/opponent/surface/tournament/result/date), MINUS eventKey — TML carries
     // no api-tennis key, so these rows are static (never open a box-score panel).
+    // Closing odds are stored winner/loser on the meta; render them from the
+    // SUBJECT's side (self = this player's price, opp = the opponent's price).
+    const oddsSelf = won ? meeting.wodds : meeting.lodds;
+    const oddsOpp  = won ? meeting.lodds : meeting.wodds;
     list.push({
       won: !!won,
       opponent: meeting.opponent,
@@ -271,7 +339,12 @@ function main() {
       result: won ? meeting.score : flipScore(meeting.score),
       date: meeting.date,
       round: meeting.round || null,
+      oddsSelf: oddsSelf == null ? null : oddsSelf,
+      oddsOpp: oddsOpp == null ? null : oddsOpp,
     });
+    odds.rows++;
+    if (oddsSelf != null || oddsOpp != null) odds.priced++;
+    if (String(meeting.date || '').slice(0, 4) >= '2026') { odds.rows26++; if (oddsSelf != null || oddsOpp != null) odds.priced26++; }
   };
 
   // ---- tally matches where BOTH endpoints resolve to a labelled primary ----
@@ -309,6 +382,8 @@ function main() {
         date: isoDate(c[ix.tourney_date]),
         round: c[ix.round] || null,
       };
+      const _od = oddsLookup(oddsIdx, _kw, _kl, meta.date, y);   // winner/loser closing odds
+      meta.wodds = _od.w; meta.lodds = _od.l;
       bump(wn, ll, true,  { ...meta, opponent: ln });
       bump(ln, wl, false, { ...meta, opponent: wn });
       if (winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
@@ -325,7 +400,7 @@ function main() {
   // excluded (not a played match); Retired counts. Fields are normalised on ingest
   // (canonical names, TML-format score, tournament_key -> surface) so a member
   // cannot tell a supplemented row from a TML one.
-  const supp = { loaded: false, walkover: 0, unlabelled: 0, deduped: 0, added: 0, noWinner: 0, surfaced: 0 };
+  const supp = { loaded: false, walkover: 0, unlabelled: 0, deduped: 0, added: 0, noWinner: 0, surfaced: 0, matrix: 0 };
   if (fs.existsSync(API_SUPP)) {
     supp.loaded = true;
     const cache = JSON.parse(fs.readFileSync(API_SUPP, 'utf8'));
@@ -345,16 +420,25 @@ function main() {
       const winName = canonicalName(p1won ? r.p1 : r.p2), loseName = canonicalName(p1won ? r.p2 : r.p1);
       const surf = surfMap.get(String(r.tournament_key)) || null;   // 'clay'|'hard'|'grass'|null
       if (surf) supp.surfaced++;
+      const _oy = Number(String(r.date).slice(0, 4)) || TO_YEAR;
+      const _od = oddsLookup(oddsIdx, clientKey(winName), clientKey(loseName), r.date, _oy);
       const meta = {
         surface: surf,
         tournament: r.tournament || null,
         score: apiScoreWinnerPerspective(r.sets, r.winner, r.status),   // winner-perspective, TML format
         date: r.date,
         round: apiRound(r.round),
+        wodds: _od.w, lodds: _od.l,
       };
       // Winner beat a `loseLabel` opponent; loser lost to a `winLabel` opponent.
       bump(winName,  loseLabel, true,  { ...meta, opponent: loseName });
       bump(loseName, winLabel,  false, { ...meta, opponent: winName });
+      // Fold the supplement into the AGGREGATE matrix too (founder ruling
+      // 2026-08-27: a matrix that stops mid-January describes a field that has
+      // moved on). Same pool rule as TML — both endpoints already resolved to a
+      // labelled primary above. Surface tally only when the fixture is surfaced.
+      wins[winLabel][loseLabel]++; supp.matrix++;
+      if (surf && winsSurf[surf]) { winsSurf[surf][winLabel][loseLabel]++; surfaceCounted[surf]++; }
       supp.added++;
     }
     console.log(`  api supplement: +${supp.added} matches (deduped ${supp.deduped}, walkover ${supp.walkover}, unlabelled ${supp.unlabelled}, surfaced ${supp.surfaced}/${supp.added}).`);
@@ -384,14 +468,16 @@ function main() {
     generatedAt: new Date().toISOString(),
     source: 'Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results',
     window: `${FROM_YEAR}-${TO_YEAR}`,
-    note: 'Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct.',
+    note: 'Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.',
     varietyNote: 'Keyed on the 8 base archetype labels only. The `variety` modifier is ignored — "X + Variety Player" counts as X.',
     bigServerFloorNote: 'The bare "Big Server" primary is the thinnest bucket (' + (playerCount['Big Server'] || 0) + ' players). If a future review moves any of them, its off-diagonal cells can fall below the sample floor — watch this row. All Court Elite (' + (playerCount['All Court Elite'] || 0) + ' players) x Big Server is already below the floor and correctly shows n with no pct.',
     minSampleN: MATRIX_MIN_N,
     rosterBasis: 'deployed',
     playersLabelled: labelled.length,
     playerCountByPrimary: playerCount,
-    matchesCounted: counted,
+    matchesCounted: counted + supp.matrix,
+    tmlMatchesCounted: counted,
+    supplementMatchesInMatrix: supp.matrix,
     matchesInWindow: tmlTotal,
     retentionPct: retention,
     archetypes: Object.fromEntries(PRIMARIES.map(k => [k, { en: k }])),
@@ -399,8 +485,16 @@ function main() {
     surfaceNote: 'matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.',
     surfaceMatchesCounted: surfaceCounted,
     matrixBySurface,
-    byPlayerNote: 'TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over both endpoints in the deployed labelled roster. Pool = TML tour history (2000-2026) SUPPLEMENTED with the current-season finished ATP fixtures from api-tennis (TEN-88 option B) — the TML mirror stops mid-January, so without the supplement the live season is ~99% absent. The two sources are deduped on roster-identity pair within 1 day, and api rows are field-normalised (canonical names, TML-format score, tournament_key->surface) so a row is source-agnostic. This is the CAREER split only; the aggregate matrix/matrixBySurface cells above stay TML-only and unchanged. Keyed by surname|initial (the dashboard\'s player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash), and only counts matches vs a CLASSIFIED opponent.',
-    byPlayerSupplement: { source: 'api-tennis 2026 finished fixtures', loaded: supp.loaded, matchesAdded: supp.added, dedupedAgainstTml: supp.deduped, walkoverExcluded: supp.walkover, dedupTolDays: SUPP_DEDUP_TOL_DAYS },
+    byPlayerNote: 'TEN-88 #2: per-player CAREER record vs each opponent archetype, all surfaces pooled, over both endpoints in the deployed labelled roster. Pool = TML tour history (2000-2026) SUPPLEMENTED with the current-season finished ATP fixtures from api-tennis (TEN-88 option B) — the TML mirror stops mid-January, so without the supplement the live season is ~99% absent. The two sources are deduped on roster-identity pair within 1 day, and api rows are field-normalised (canonical names, TML-format score, tournament_key->surface) so a row is source-agnostic. As of the 2026-08-27 ruling the same supplement is also folded into the aggregate matrix/matrixBySurface cells above (both were TML-only before). Each meeting row also carries closing odds for both players (oddsSelf/oddsOpp): Bet365 for 2026, Pinnacle (Bet365 fallback) before, unlabelled per ruling, dash where no price. Keyed by surname|initial (the dashboard\'s player key); value is { name, vs: { <archetype_label>: {w,l} } }. Ambiguous keys (two labelled players collapsing to one key) are omitted. n is often small — the client applies a sample ladder (n>=10 shows %, 5-9 small-sample, <5 W-L only, 0 dash), and only counts matches vs a CLASSIFIED opponent.',
+    byPlayerSupplement: { source: 'api-tennis 2026 finished fixtures', loaded: supp.loaded, matchesAdded: supp.added, foldedIntoMatrix: supp.matrix, dedupedAgainstTml: supp.deduped, walkoverExcluded: supp.walkover, dedupTolDays: SUPP_DEDUP_TOL_DAYS },
+    oddsCoverage: {
+      note: 'Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.',
+      sourceFiles: oddsFiles, sourceRows: oddsSrcRows,
+      rows: odds.rows, priced: odds.priced,
+      pricedPct: odds.rows ? +(odds.priced / odds.rows * 100).toFixed(1) : 0,
+      rows2026: odds.rows26, priced2026: odds.priced26,
+      priced2026Pct: odds.rows26 ? +(odds.priced26 / odds.rows26 * 100).toFixed(1) : 0,
+    },
     byPlayerPlayers: Object.keys(byPlayer).length,
     byPlayerEndpointsCounted: bpCounted,
     byPlayer,

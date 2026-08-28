@@ -1275,7 +1275,7 @@
   .modal-analysis .psv-pct{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#5b6880; }
   .modal-analysis .psv-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#4b5672; }
   .modal-analysis .psv-list{ display:flex; flex-direction:column; margin-top:8px; }
-  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
+  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.05); }
   /* Expandable variant — same accordion machinery as the H2H and Form rows, so
      a meeting here opens the same box score / point log as everywhere else. */
   .modal-analysis .psv-row.psv-open{ cursor:pointer; transition:background .12s; margin:0 -8px; padding-left:8px; padding-right:8px; border-radius:6px; }
@@ -1287,6 +1287,9 @@
   .modal-analysis .psv-opp{ font-size:13.5px; color:#dbe0e8; }
   .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880; }
   .modal-analysis .psv-score{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#c4ccd8; min-width:34px; text-align:right; }
+  /* Closing odds (both players, subject first). Book unlabelled per ruling — a
+     closing price for context, not a sharp reference. Dash where no price. */
+  .modal-analysis .psv-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#7c8aa5; min-width:74px; text-align:right; white-space:nowrap; }
   .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:color .12s ease; }
   .modal-analysis .psv-more:hover{ color:#6aaeff; }
   .modal-analysis .psv-more:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; border-radius:4px; }
@@ -11625,11 +11628,14 @@ function styleVsArchetypeRowHtml(r){
   const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
   const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
   const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/g, '–'));
+  const od = v => (v == null ? '—' : Number(v).toFixed(2));
+  const odds = (r.oddsSelf == null && r.oddsOpp == null) ? '—' : `${od(r.oddsSelf)} · ${od(r.oddsOpp)}`;
   const cells = `
       <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
       <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
       <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
-      <span class="psv-score">${psEsc(score)}</span>`;
+      <span class="psv-score">${psEsc(score)}</span>
+      <span class="psv-odds" title="closing odds — ${psEsc(psShortName(r.opponent))} priced second">${odds}</span>`;
   return `<div class="psv-row">${cells}<span></span></div>`;
 }
 
