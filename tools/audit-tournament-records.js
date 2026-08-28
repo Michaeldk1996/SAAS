@@ -248,6 +248,40 @@ function main() {
   console.log(`  Part-2 Grand-Slam box invariants (fail-closed):               ${p2.length}`);
   if (p2.length) console.log(`    e.g. ${p2.slice(0, 4).join(' | ')}`);
 
+  // TEN-89 Record-by-season panel (interaction 0c006daf, 2026-08-28). The season
+  // drill reads career-history/{key}.json rows RAW, so a qualifying match served
+  // under a Slam main-draw key must NOT carry a main-draw round label. A completed
+  // Slam MAIN draw is best-of-five, so a row at a Grand Slam whose round is a
+  // main-draw label (i.e. NOT "Qualifying") with a winner who took <3 sets — and
+  // that is not a retirement/walkover — is a leaked qualifying row, the exact class
+  // playerMatchHistory now relabels. Report-only (soft): the shards are rebuilt on
+  // a schedule and this must not fail-close the whole refresh on a transient state.
+  let seasonLeak = 0; const seasonEx = [];
+  try {
+    const dir = path.join(__dirname, '..', 'career-history');
+    const shardFiles = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'index.json') : [];
+    for (const sf of shardFiles) {
+      let shard;
+      try { shard = JSON.parse(fs.readFileSync(path.join(dir, sf), 'utf8')); } catch (e) { continue; }
+      for (const m of (shard.matches || [])) {
+        const t = String(m.tournament || '');
+        if (![...GRAND_SLAMS].some((g) => t.includes(g))) continue;
+        const rd = String(m.round || '');
+        if (rd === 'Qualifying' || rd === 'Q' || /^Q\d+$/.test(rd)) continue; // already tagged
+        if (m.retired || m.walkover) continue;                                // early stop is legit
+        const s = sets(m.result);
+        if (s && Math.max(s[0], s[1]) < 3) {
+          seasonLeak++;
+          if (seasonEx.length < 4) seasonEx.push(`${shard.key} · ${t} '${m.year} ${rd} ${m.result}`);
+        }
+      }
+    }
+    console.log(`  Season-panel Slam qualifying leak (career-history · soft):     ${seasonLeak}${shardFiles.length ? '' : ' (no shards on disk — skipped)'}`);
+    if (seasonLeak) console.log(`    e.g. ${seasonEx.join(' | ')}`);
+  } catch (e) {
+    console.log(`  Season-panel check skipped (${e.message})`);
+  }
+
   if (tourWideStructural > 0 || p2.length > 0) {
     console.error(`\nFAIL — ${tourWideStructural} structural violation(s) (Slam: ${slamStructural})`
       + `${p2.length ? ` + ${p2.length} Part-2 box invariant violation(s)` : ''}. Tournament records are not valid.`);

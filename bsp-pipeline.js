@@ -639,7 +639,74 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // `ret.`/`w/o` instead of rendering what reads as a wrong result.
     const retired = f.event_status === 'Retired';
     const walkover = f.event_status === 'Walk Over';
-    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures', ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
+    // TEN-89 (Record-by-season panel; founder rulings, interaction 0c006daf,
+    // 2026-08-28). The season drill (showOverviewMatches) reads this row's `round`
+    // RAW, so a qualifying match served under the main-draw key — api-tennis merges
+    // the qualifying draw under the same tournament_key and labels it with the
+    // qualifying bracket's own "Final"/"Semi-finals" — reads as a main-draw round.
+    // Classify qualifying with the SAME discriminator the editions path
+    // (fetchPlayerCareerHistory) uses, so the two panels agree everywhere a record
+    // is shown (the whole point of this ticket):
+    //   (1) event_qualification === 'True' — PRIMARY, reliable at ATP 250/500 where
+    //       the main draw is also best-of-three, so set-count can't discriminate
+    //       (this is what catches the Choinski Dubai/Doha/Rotterdam 2026 case);
+    //   (2) Slam set-count net — a completed Grand-Slam MAIN draw is best-of-five,
+    //       so a winner who took <3 sets (and it isn't a ret/walkover) is a
+    //       best-of-three qualifying match mislabelled with a main-draw round;
+    //   (3) a structural first-loss net (post-pass below, after edition grouping),
+    //       guarded by a '1/N-finals' hard main-draw certifier against the ~3.5%
+    //       contradiction residual.
+    // Founder ruling: LABEL ONLY. Qualifying rows stay COUNTED in the season W-L
+    // totals (Flashscore rule 2026-08-04) — `won` and row presence are untouched,
+    // so buildAllTierYearly's tallies and this list's row counts still reconcile;
+    // only the displayed round string becomes the universal "Qualifying".
+    const { id: _tid, display: _cname } = canonicalTournament(f.tournament_name);
+    const _short = careerRoundShort(f.tournament_round);
+    const _frac = /1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || ''); // main-draw certifier
+    let _qual = f.event_qualification === 'True';
+    if (!_qual && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover) {
+      const sc = String(result).split('-').map(s => parseInt(s.trim(), 10));
+      const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
+      if (Number.isFinite(winnerSets) && winnerSets < 3) _qual = true;
+    }
+    // Edition key uses tournament_season (NOT the display `year`, which is the
+    // event_date calendar year): a late-December edition carries the NEXT season's
+    // number (e.g. Brisbane played 2024-12-30 is season 2025), so keying on the
+    // calendar year would merge it with THIS January's edition of the same event
+    // and corrupt the first-loss anchor below. Mirrors fetchPlayerCareerHistory,
+    // which keys editions on tournament_season for exactly this reason.
+    const _season = String(f.tournament_season || year);
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
+      _tid, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
+      ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
+  }
+  // (3) Structural first-loss net — edition-grouped, mirrors the editions path.
+  // A player is eliminated at their first main-draw LOSS, so any WIN at a deeper
+  // round belongs to the qualifying ladder served under the same key. Round-robin
+  // / team events are exempt (a win after a group-stage or bronze loss is legit);
+  // '1/N-finals' rows are certified main draw and never retagged by this net.
+  const _byEd = new Map();
+  for (const r of out) {
+    const k = `${r._tid}|${r._season}`;
+    if (!_byEd.has(k)) _byEd.set(k, []);
+    _byEd.get(k).push(r);
+  }
+  for (const [, ms] of _byEd) {
+    const isRoundRobin = ROUND_ROBIN_NAMES.test(ms[0]._cname || '') || ms.some(m => m._short === 'RR');
+    if (isRoundRobin) continue;
+    const sorted = ms.slice().sort((a, b) => a._rank - b._rank); // shallow → deep
+    let firstLossRank = Infinity;
+    for (const m of sorted) { if (!m.won && m._short !== 'Q') { firstLossRank = m._rank; break; } }
+    if (firstLossRank === Infinity) continue;
+    for (const m of sorted) {
+      if (m.won && m._short !== 'Q' && !m._frac && m._rank > firstLossRank) { m._qual = true; m._short = 'Q'; m._rank = -1; }
+    }
+  }
+  // Apply the founder's universal label, then drop the scratch fields so the
+  // shipped shard row shape is unchanged apart from the corrected `round`.
+  for (const r of out) {
+    if (r._qual) r.round = 'Qualifying';
+    delete r._tid; delete r._cname; delete r._season; delete r._frac; delete r._qual; delete r._short; delete r._rank;
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;
@@ -3687,7 +3754,12 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 // v10 = record-by-tournament set scores flipped to player-first orientation
 //       (fetchPlayerCareerHistory) — forces rebuild so the fix + post-22-Jul
 //       editions (Canada, Cincinnati, ...) reach all cached opponents.
-const PROFILE_SCHEMA_VERSION = 11; // v11: pre-match walkover given no longer counts as a loss in season/surface/court-speed records (founder ruling 2026-08-04, TEN-8)
+// v12 = playerMatchHistory (the careerMatches feeding the Record-by-season drill
+//       shard) now classifies qualifying rows and relabels them "Qualifying"
+//       (TEN-89, interaction 0c006daf). careerMatches lives inside the cached
+//       profile, so without this bump the ~370 cached opponents keep the raw
+//       "Final"/"Semi-finals" qualifying labels until the cache ages out.
+const PROFILE_SCHEMA_VERSION = 12; // v12: Record-by-season drill relabels qualifying rows "Qualifying" (founder ruling 2026-08-28, TEN-89)
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
