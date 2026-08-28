@@ -3114,6 +3114,13 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
       retired: f.event_status === 'Retired',
       walkover: f.event_status === 'Walk Over',
       qualifying: f.event_qualification === 'True',
+      // Tour tier for the recent-form name restyle (TEN-104). event_type_type is
+      // the only reliable tier source (the tournament name alone can't tell an
+      // ATP 250 from a same-city Challenger). ITF events name their grade in the
+      // tournament name ("M15 Cancun") rather than the tour type, so fall back to
+      // the M/W-grade prefix; anything else at non-ATP tier is a Challenger.
+      tier: /atp/i.test(f.event_type_type || '') ? 'atp'
+        : (/^\s*[MW]\d{2}\b/.test(f.tournament_name || '') ? 'itf' : 'challenger'),
       eventKey: f.event_key,
     };
   });
@@ -3779,7 +3786,7 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //       wins to "Qualifying" (TEN-89 re-key, founder ruling 2026-08-28). Bumped
 //       so the ~370 cached opponent profiles rebuild with the corrected labels
 //       instead of serving the stripped careerMatches until they age out.
-const PROFILE_SCHEMA_VERSION = 13; // v13: qualifying net keys editions on tournament_key, not canonical id (TEN-89 re-key, 2026-08-28)
+const PROFILE_SCHEMA_VERSION = 14; // v14: recent-form rows carry `tier` (atp/challenger/itf) for the name restyle (TEN-104, 2026-08-29)
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
