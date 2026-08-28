@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T22:42:54.333Z",
+  "generatedAt": "2026-08-28T22:31:14.138Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1033,9 +1033,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 57.1,
+      "win_pct": 58.1,
       "clay_wr": 59,
-      "hard_wr": 56,
+      "hard_wr": 60,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -1944,9 +1944,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 50,
+      "win_pct": 52,
       "clay_wr": 57,
-      "hard_wr": 47,
+      "hard_wr": 50,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner",
@@ -2029,9 +2029,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 56.7,
+      "win_pct": 54.8,
       "clay_wr": 50,
-      "hard_wr": 75,
+      "hard_wr": 60,
       "grass_wr": 75,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -2184,6 +2184,24 @@
       "archetype_label": "Solid Baseliner"
     },
     {
+      "name": "L. Draxl",
+      "rank": 132,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 2,
+      "win_pct": 60,
+      "clay_wr": 60,
+      "hard_wr": 58,
+      "grass_wr": 0,
+      "top10_wins": 0,
+      "archetype_label": "Counterpuncher"
+    },
+    {
       "name": "H. Dellien",
       "rank": 133,
       "archetype_data_coverage": "partial",
@@ -2314,9 +2332,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 61.9,
+      "win_pct": 59.1,
       "clay_wr": 73,
-      "hard_wr": 50,
+      "hard_wr": 43,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Solid Defender"
@@ -2846,9 +2864,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 69.2,
+      "win_pct": 70.4,
       "clay_wr": 33,
-      "hard_wr": 75,
+      "hard_wr": 77,
       "grass_wr": 73,
       "top10_wins": 0,
       "archetype_label": "Counterpuncher",
@@ -2976,6 +2994,24 @@
       "archetype_label": "Big Server + First Strike"
     },
     {
+      "name": "F. Cina",
+      "rank": 225,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 4,
+      "win_pct": 60,
+      "clay_wr": 57,
+      "hard_wr": 75,
+      "grass_wr": 50,
+      "top10_wins": 0,
+      "archetype_label": "Attacking Baseliner"
+    },
+    {
       "name": "M. Cecchinato",
       "rank": 228,
       "archetype_data_coverage": "full",
@@ -3050,9 +3086,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 66.7,
+      "win_pct": 63.6,
       "clay_wr": 33,
-      "hard_wr": 85,
+      "hard_wr": 79,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -7336,19 +7372,6 @@
       "grass_wr": null,
       "matches": 85,
       "source": "challenger"
-    },
-    {
-      "name": "Liam Draxl",
-      "archetype_data_coverage": "challenger",
-      "partial_axes": [],
-      "badges": [],
-      "win_pct": 53.6,
-      "clay_wr": 50,
-      "hard_wr": 55,
-      "grass_wr": null,
-      "matches": 84,
-      "source": "challenger",
-      "archetype_label": "Counterpuncher"
     },
     {
       "name": "Jules Marie",
