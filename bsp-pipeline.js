@@ -676,8 +676,21 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // and corrupt the first-loss anchor below. Mirrors fetchPlayerCareerHistory,
     // which keys editions on tournament_season for exactly this reason.
     const _season = String(f.tournament_season || year);
+    // TEN-89 re-key (founder ruling 2026-08-28): the first-loss net below groups
+    // editions on the feed's tournament_key, NOT the canonical display id. A
+    // tournament's qualifying and main draw share a tournament_key, while two
+    // same-city events of different tiers (a Rome Challenger vs the Rome Masters,
+    // both canonicalising to "Rome") carry DISTINCT keys. Keying the net on the
+    // canonical id merged them into one edition bucket, so the net read the
+    // Masters main-draw loss as the Challenger's first loss and stripped the
+    // Challenger's genuine deep-round wins to "Qualifying" — real results deleted.
+    // Challenger tier is invisible to fetchPlayerCareerHistory (event_type_key=265,
+    // ATP-only) but present in this all-tier path, which is why only this path saw
+    // it. tournament_key is verified stable across seasons, so pairing it with
+    // _season still separates editions correctly.
+    const _tkey = f.tournament_key != null ? String(f.tournament_key) : `name:${_tid}`;
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
-      _tid, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
+      _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
   // (3) Structural first-loss net — edition-grouped, mirrors the editions path.
@@ -687,7 +700,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
   // '1/N-finals' rows are certified main draw and never retagged by this net.
   const _byEd = new Map();
   for (const r of out) {
-    const k = `${r._tid}|${r._season}`;
+    const k = `${r._tkey}|${r._season}`;
     if (!_byEd.has(k)) _byEd.set(k, []);
     _byEd.get(k).push(r);
   }
@@ -706,7 +719,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
   // shipped shard row shape is unchanged apart from the corrected `round`.
   for (const r of out) {
     if (r._qual) r.round = 'Qualifying';
-    delete r._tid; delete r._cname; delete r._season; delete r._frac; delete r._qual; delete r._short; delete r._rank;
+    delete r._tid; delete r._tkey; delete r._cname; delete r._season; delete r._frac; delete r._qual; delete r._short; delete r._rank;
   }
   out.sort((a, b) => new Date(b.date) - new Date(a.date));
   return out;
@@ -3759,7 +3772,14 @@ const MAX_OPPONENT_BUILDS_PER_RUN = 400;
 //       (TEN-89, interaction 0c006daf). careerMatches lives inside the cached
 //       profile, so without this bump the ~370 cached opponents keep the raw
 //       "Final"/"Semi-finals" qualifying labels until the cache ages out.
-const PROFILE_SCHEMA_VERSION = 12; // v12: Record-by-season drill relabels qualifying rows "Qualifying" (founder ruling 2026-08-28, TEN-89)
+// v13 = the qualifying re-label net (v12) now groups editions on the feed's
+//       tournament_key, not the canonical display id, so a same-city Challenger
+//       and Masters (both "Rome") no longer merge into one edition bucket and the
+//       first-loss net can no longer strip the Challenger's genuine deep-round
+//       wins to "Qualifying" (TEN-89 re-key, founder ruling 2026-08-28). Bumped
+//       so the ~370 cached opponent profiles rebuild with the corrected labels
+//       instead of serving the stripped careerMatches until they age out.
+const PROFILE_SCHEMA_VERSION = 13; // v13: qualifying net keys editions on tournament_key, not canonical id (TEN-89 re-key, 2026-08-28)
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
