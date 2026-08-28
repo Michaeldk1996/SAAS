@@ -14120,7 +14120,16 @@ function ppTournamentResultHtml(p, name){
       const smp = (c, s) => s > 0 ? `${c} of ${s} match${s === 1 ? '' : 'es'}` : 'no completed main-draw matches';
       bestTile = tile('Over 3.5 \u00b7 this event', pct(o.count, o.sample), smp(o.count, o.sample), '#F4F6FA');
       lastTile = tile('Over 3.5 \u00b7 all majors', pct(gso.count, gso.sample), smp(gso.count, gso.sample), '#F4F6FA');
-      slamBasis = `<div style="font-size:10.5px;color:#4b5672;margin-top:10px;line-height:1.55;font-family:'IBM Plex Mono',monospace;">All boxes: main draw only. W\u2013L &amp; Grand Slam career: incl. retirements (a walkover received is a win, a walkover given is neither).<br>Over 3.5 sets: completed matches only \u00b7 retirements &amp; walkovers excluded \u00b7 this event vs. all four majors combined.</div>`;
+      // Explicit reconciliation of the two all-majors samples so a member never
+      // has to subtract 15\u201321 (=36) vs 20/34 and wonder where the 2 went. The gap
+      // is career main-draw total minus the completed-only over-3.5 sample, which
+      // by construction equals the retirements + walkovers-received removed from
+      // that sample (founder ruling 2026-08-28: state the gap, don't make them infer it).
+      const gap = gsTot - gso.sample;
+      const reconLine = gap > 0
+        ? `<br>Reconciles: ${gsTot} main-draw matches at the majors \u00b7 ${gap} excluded from the over-3.5 sample (retirements &amp; walkovers).`
+        : '';
+      slamBasis = `<div style="font-size:10.5px;color:#4b5672;margin-top:10px;line-height:1.55;font-family:'IBM Plex Mono',monospace;">All boxes: main draw only. W\u2013L &amp; Grand Slam career: incl. retirements (a walkover received is a win, a walkover given is neither).<br>Over 3.5 sets: completed matches only \u00b7 retirements &amp; walkovers excluded \u00b7 this event vs. all four majors combined.${reconLine}</div>`;
     }
   }
   const tilesHtml = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
