@@ -188,10 +188,10 @@ async function buildTmlIndex(log) {
       const ret = /\bRET\b|Retired/i.test(String(r.score || ''));
       // Winner's row entry.
       pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret });
-      trackIdentity(identity, wId, r.winner_name, r.winner_ioc);
+      trackIdentity(identity, wId, r.winner_name, r.winner_ioc, year);
       // Loser's row entry.
       pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret });
-      trackIdentity(identity, lId, r.loser_name, r.loser_ioc);
+      trackIdentity(identity, lId, r.loser_name, r.loser_ioc, year);
     }
   }
   if (log) log(`  TML index: ${filesLoaded} year files, ${rowCount} matches, ${byId.size} players.`);
@@ -204,18 +204,67 @@ function pushMatch(byId, id, m) {
   arr.push(m);
 }
 
-function trackIdentity(identity, id, name, ioc) {
+function trackIdentity(identity, id, name, ioc, year) {
   let idn = identity.get(id);
-  if (!idn) { idn = { key: nameKey(name), names: new Map(), iocs: new Set() }; identity.set(id, idn); }
+  if (!idn) { idn = { key: nameKey(name), names: new Map(), iocs: new Set(), maxYear: 0, minYear: 9999 }; identity.set(id, idn); }
   idn.names.set(name, (idn.names.get(name) || 0) + 1);
   if (ioc) idn.iocs.add(String(ioc).toUpperCase());
+  const y = Number(year);
+  if (Number.isFinite(y) && y > 0) {
+    if (y > idn.maxYear) idn.maxYear = y;
+    if (y < idn.minYear) idn.minYear = y;
+  }
 }
 
-// Maps API profile key -> TML player id by (last name + first initial). On a key
-// collision (e.g. two players share a surname+initial) the match is dropped
-// unless a country hint disambiguates — never guessed.
-function reconcile(profiles, identity, countryToIoc, log) {
-  // Group TML ids by nameKey.
+// API `country` is a full English name; TML carries 3-letter IOC codes. This maps
+// one to the other so a surname+initial collision can be narrowed by nationality.
+// Best-effort secondary filter only — the active-era tiebreak resolves the cases
+// (Ruud father/son, etc.) where nationality is shared.
+const COUNTRY_TO_IOC = {
+  'argentina': 'ARG', 'australia': 'AUS', 'austria': 'AUT', 'belgium': 'BEL',
+  'benin': 'BEN', 'bolivia': 'BOL', 'bosnia and herzegovina': 'BIH', 'brazil': 'BRA',
+  'bulgaria': 'BUL', 'canada': 'CAN', 'chile': 'CHI', 'china': 'CHN', 'colombia': 'COL',
+  'croatia': 'CRO', 'cyprus': 'CYP', 'czech republic': 'CZE', 'czechia': 'CZE',
+  'denmark': 'DEN', 'ecuador': 'ECU', 'estonia': 'EST', 'finland': 'FIN', 'france': 'FRA',
+  'georgia': 'GEO', 'germany': 'GER', 'greece': 'GRE', 'hong kong': 'HKG', 'hungary': 'HUN',
+  'india': 'IND', 'israel': 'ISR', 'italy': 'ITA', 'japan': 'JPN', 'jordan': 'JOR',
+  'kazakhstan': 'KAZ', 'lebanon': 'LBN', 'lithuania': 'LTU', 'luxembourg': 'LUX',
+  'mexico': 'MEX', 'moldova': 'MDA', 'monaco': 'MON', 'morocco': 'MAR', 'netherlands': 'NED',
+  'new zealand': 'NZL', 'north macedonia': 'MKD', 'norway': 'NOR', 'pakistan': 'PAK',
+  'paraguay': 'PAR', 'peru': 'PER', 'poland': 'POL', 'portugal': 'POR', 'qatar': 'QAT',
+  'romania': 'ROU', 'serbia': 'SRB', 'slovakia': 'SVK', 'slovenia': 'SLO',
+  'south africa': 'RSA', 'south korea': 'KOR', 'spain': 'ESP', 'sweden': 'SWE',
+  'switzerland': 'SUI', 'taiwan': 'TPE', 'chinese taipei': 'TPE', 'tunisia': 'TUN',
+  'turkey': 'TUR', 'turkiye': 'TUR', 'usa': 'USA', 'united states': 'USA', 'ukraine': 'UKR',
+  'united arab emirates': 'UAE', 'united kingdom': 'GBR', 'great britain': 'GBR',
+  'uzbekistan': 'UZB', 'venezuela': 'VEN', 'russia': 'RUS', 'belarus': 'BLR',
+  'latvia': 'LAT', 'dominican republic': 'DOM', 'egypt': 'EGY', 'thailand': 'THA',
+};
+
+// Canonical surname signature: first-name initial + hyphen-folded, order-insensitive
+// surname token SET. Only the FIRST whitespace token is the given name (its first
+// char is the initial); every later token is a surname token, with hyphens folded
+// to spaces so API's single-token "Carreno-Busta" == TML's "Carreno Busta". The
+// first token is left intact (never hyphen-split), so a compound GIVEN name like
+// "Jan-Lennard Struff" keeps surname {struff} rather than corrupting to
+// {lennard,struff} — the regression the naive fold would cause.
+function surnameSig(name) {
+  const s = deaccent(name).toLowerCase().replace(/[.]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const parts = s.split(' ');
+  if (parts.length < 2) return null;
+  const initial = parts[0].charAt(0);
+  const toks = parts.slice(1).join(' ').replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+  if (!initial || !toks.length) return null;
+  const set = new Set(toks);
+  return { initial, set, canon: `${initial}|${[...set].sort().join(' ')}` };
+}
+
+function isSubset(a, b) { for (const t of a) if (!b.has(t)) return false; return true; }
+
+// Legacy (surname|initial, raw) matcher — retained only so the before/after audit
+// can measure exactly what the upgrade changes. Not used by the pipeline.
+function reconcileLegacy(profiles, identity, countryToIoc, log) {
   const byNameKey = new Map();
   for (const [id, idn] of identity) {
     if (!idn.key) continue;
@@ -223,22 +272,93 @@ function reconcile(profiles, identity, countryToIoc, log) {
     if (!arr) { arr = []; byNameKey.set(idn.key, arr); }
     arr.push(id);
   }
-
+  const c2i = countryToIoc || {};
   const apiToTml = new Map();
-  let matched = 0, collided = 0, unmatched = 0;
   for (const [apiKey, p] of Object.entries(profiles)) {
     const k = nameKey(p.name);
-    if (!k) { unmatched++; continue; }
+    if (!k) continue;
     const cands = byNameKey.get(k);
-    if (!cands || !cands.length) { unmatched++; continue; }
-    if (cands.length === 1) { apiToTml.set(apiKey, cands[0]); matched++; continue; }
-    // Collision — try country/IOC.
-    const ioc = countryToIoc[String(p.country || '').toLowerCase()];
+    if (!cands || !cands.length) continue;
+    if (cands.length === 1) { apiToTml.set(apiKey, cands[0]); continue; }
+    const ioc = c2i[String(p.country || '').toLowerCase()];
     const narrowed = ioc ? cands.filter((id) => identity.get(id).iocs.has(ioc)) : [];
-    if (narrowed.length === 1) { apiToTml.set(apiKey, narrowed[0]); matched++; }
-    else collided++;
+    if (narrowed.length === 1) apiToTml.set(apiKey, narrowed[0]);
   }
-  if (log) log(`  Reconciled ${matched} players to TML (collisions ${collided}, unmatched ${unmatched}).`);
+  return apiToTml;
+}
+
+// Maps API profile key -> TML player id. Three tiers, each strictly safer than the
+// last: (1) exact canonical surname-set match; (2) API-truncation subset match
+// (apiSet ⊂ tmlSet, same initial — the direction is fixed because API drops
+// trailing surname parts, never the reverse, which is what mis-joined
+// "Silva" ⊂ "Reis Da Silva"); (3) collisions resolved by IOC then active-era
+// (our API players are current, so the latest-extending TML identity wins) with a
+// >=4yr separation guard so two genuinely co-active people are never merged. A
+// still-ambiguous case is dropped, never guessed.
+function reconcile(profiles, identity, countryToIoc, log) {
+  const c2i = (countryToIoc && Object.keys(countryToIoc).length) ? countryToIoc : COUNTRY_TO_IOC;
+  const idSig = new Map();     // tmlId -> { initial, set, canon, maxYear, iocs }
+  const byCanon = new Map();   // canon -> [tmlId]
+  for (const [id, idn] of identity) {
+    let best = null, bestN = -1;
+    for (const [nm, n] of idn.names) if (n > bestN) { best = nm; bestN = n; }
+    const sig = surnameSig(best);
+    if (!sig) continue;
+    idSig.set(id, { ...sig, maxYear: idn.maxYear || 0, iocs: idn.iocs });
+    let arr = byCanon.get(sig.canon); if (!arr) { arr = []; byCanon.set(sig.canon, arr); }
+    arr.push(id);
+  }
+
+  function disambiguate(p, cands) {
+    if (cands.length === 1) return cands[0];
+    let pool = cands;
+    const ioc = c2i[String(p.country || '').toLowerCase()];
+    if (ioc) {
+      const narrowed = cands.filter((id) => idSig.get(id).iocs.has(ioc));
+      if (narrowed.length === 1) return narrowed[0];
+      if (narrowed.length) pool = narrowed;
+      // Country is known but NO candidate carries it: the API player is almost
+      // certainly a third person absent from TML (e.g. Venezuelan "A. Hernandez"
+      // vs Mexico's Alex Hernandez). Refuse rather than let the era tiebreak
+      // graft someone else's matches on. Never applies to a unique-canon match
+      // (returned above), so it cannot regress an existing match.
+      else return null;
+    }
+    let top = null, second = null;
+    for (const id of pool) {
+      const my = idSig.get(id).maxYear;
+      if (top === null || my > idSig.get(top).maxYear) { second = top; top = id; }
+      else if (second === null || my > idSig.get(second).maxYear) second = id;
+    }
+    if (top !== null && (second === null || idSig.get(top).maxYear - idSig.get(second).maxYear >= 4)) return top;
+    return null;
+  }
+
+  const apiToTml = new Map();
+  let matched = 0, viaSubset = 0, viaDisambig = 0, collided = 0, unmatched = 0;
+  for (const [apiKey, p] of Object.entries(profiles)) {
+    const sig = surnameSig(p.name);
+    if (!sig) { unmatched++; continue; }
+    let cands = byCanon.get(sig.canon);
+    let usedSubset = false;
+    if (!cands || !cands.length) {
+      const sub = [];
+      for (const [id, r] of idSig) {
+        if (r.initial !== sig.initial) continue;
+        if (r.set.size <= sig.set.size) continue;      // TML must be strictly longer
+        if (isSubset(sig.set, r.set)) sub.push(id);
+      }
+      if (sub.length) { cands = sub; usedSubset = true; }
+    }
+    if (!cands || !cands.length) { unmatched++; continue; }
+    const wasMulti = cands.length > 1;
+    const pick = disambiguate(p, cands);
+    if (pick === null || pick === undefined) { collided++; continue; }
+    apiToTml.set(apiKey, pick);
+    matched++;
+    if (usedSubset) viaSubset++; else if (wasMulti) viaDisambig++;
+  }
+  if (log) log(`  Reconciled ${matched} players to TML (+${viaSubset} subset, +${viaDisambig} disambiguated; collisions ${collided}, unmatched ${unmatched}).`);
   return apiToTml;
 }
 
@@ -554,5 +674,5 @@ module.exports = {
   backfillMatchesTournamentHistory,
   buildArchiveHistories,
   // exported for testing
-  _internal: { buildTmlIndex, reconcile, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
+  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
 };
