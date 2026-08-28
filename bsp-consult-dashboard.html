@@ -1293,6 +1293,35 @@
   .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; padding-top:7px; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:color .12s ease; }
   .modal-analysis .psv-more:hover{ color:#6aaeff; }
   .modal-analysis .psv-more:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; border-radius:4px; }
+  /* TEN-88 restyle — career-meetings list grouped by tournament, coloured square marker,
+     separate sets/game columns, both-side closing odds. Blocks stack full-width so the
+     wide row (date · marker · opp · round · sets · games · odds×2) has room. */
+  .modal-analysis .psvstack{ display:flex; flex-direction:column; gap:16px; }
+  .modal-analysis .psvcard-full{ background:#0e1015; border:1px solid; border-radius:12px; padding:16px 18px; }
+  .modal-analysis .psvhdr{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .modal-analysis .psvhdr-title{ font-size:14.5px; font-weight:700; }
+  .modal-analysis .psvhdr-agg{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8b93a3; margin-left:12px; }
+  .modal-analysis .psvhdr-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#4b5672; margin-left:12px; }
+  .modal-analysis .psvhdr-show{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880; white-space:nowrap; }
+  .modal-analysis .psvlist-grouped{ margin-top:4px; }
+  .modal-analysis .psvg-head{ display:flex; align-items:baseline; gap:10px; padding:13px 0 5px; border-top:1px solid rgba(255,255,255,0.05); margin-top:8px; }
+  .modal-analysis .psvg:first-child .psvg-head{ border-top:none; margin-top:0; }
+  .modal-analysis .psvg-name{ font-size:13.5px; font-weight:700; color:#e7e9ee; }
+  .modal-analysis .psvg-meta{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#5b6880; }
+  .modal-analysis .psvr{ display:grid; grid-template-columns:52px 14px minmax(90px,1fr) 42px 56px minmax(150px,300px) 52px 52px; align-items:center; gap:12px; padding:6px 0; }
+  .modal-analysis .psvr-date{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880; }
+  .modal-analysis .psvr-sq{ width:13px; height:13px; border-radius:4px; }
+  .modal-analysis .psvsq-win{ background:#3dd68c; }
+  .modal-analysis .psvsq-loss{ background:#e0616f; }
+  .modal-analysis .psvr-opp{ font-size:13.5px; color:#dbe0e8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .modal-analysis .psvr-round{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880; }
+  .modal-analysis .psvr-sets{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; white-space:nowrap; }
+  .modal-analysis .psvset-win{ color:#3dd68c; }
+  .modal-analysis .psvset-loss{ color:#e0616f; }
+  .modal-analysis .psvr-games{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#c4ccd8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .modal-analysis .psvr-odds{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; }
+  .modal-analysis .psvr-oddself{ color:#c4ccd8; }
+  .modal-analysis .psvr-oddopp{ color:#7c8aa5; }
   /* Archetype-labels header — its own block, fed by v5.1 classification (tour results),
      independent of the charted radar. Board ruling 2026-08-26: each block on the Playing
      style tab suppresses on its own data source, so a missing radar never blanks the labels. */
@@ -11619,47 +11648,173 @@ function styleDimensionEdgeHtml(m, r1, r2){
   return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Dimension edge</div>${header}<div class="psd-list">${rows}</div></div>`;
 }
 
-// One "vs this style" career meeting. These rows come from the TML-sourced
-// per-player meeting shard (TEN-88 option B), which carries no api-tennis
-// eventKey, so the row is always static — there is no box-score panel to open.
+// TEN-88 restyle helpers — the career-meetings list is grouped by tournament and
+// each row carries date · marker · opponent · round · sets · game-scores · odds×2.
+// ISO date "2026-08-18" -> "18.08." (day-month, trailing dot, matches the mock).
+function psFmtMeetDate(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? `${m[3]}.${m[2]}.` : '—'; }
+// Round labels arrive in two shapes: TML rows are already abbreviated (R32/QF/SF/F/RR),
+// api-supplement rows use fractions ("1/16-finals") or full words ("Quarter-finals").
+// Normalise both to the abbreviation. Fraction convention: 1/8 = R16 (8 matches, 16 players).
+function psRoundAbbr(round){
+  const r = String(round || '').trim(); if (!r) return '';
+  const lc = r.toLowerCase();
+  if (lc.includes('1/2')) return 'SF';
+  if (lc.includes('1/4')) return 'QF';
+  if (lc.includes('1/8')) return 'R16';
+  if (lc.includes('1/16')) return 'R32';
+  if (lc.includes('1/32')) return 'R64';
+  if (lc.includes('1/64')) return 'R128';
+  if (lc.includes('semi')) return 'SF';
+  if (lc.includes('quarter')) return 'QF';
+  if (lc.includes('round of 16')) return 'R16';
+  if (lc.includes('round of 32')) return 'R32';
+  if (lc.includes('round of 64')) return 'R64';
+  if (lc.includes('round of 128')) return 'R128';
+  if (lc.includes('robin') || lc.includes('group')) return 'RR';
+  if (lc === 'final' || lc.includes('final')) return 'F';   // after semi/quarter/fraction
+  return r;                                                  // R32/QF/F/RR/BR/3rd-4th pass through
+}
+// Sets score in the subject's perspective. `result` is already flipped to subject-first
+// by the build (result = won ? score : flipScore(score)), so a>b means the subject took
+// that set. Leading-integer parse tolerates tiebreak suffixes like "6-7(5)".
+function psSetsScore(result){
+  let s = 0, o = 0;
+  for (const t of String(result || '').trim().split(/\s+/)){
+    const m = /^\[?(\d+)-(\d+)/.exec(t); if (!m) continue;   // tolerate a match-tiebreak token "[11-9]"
+    const a = +m[1], b = +m[2]; if (a > b) s++; else if (b > a) o++;
+  }
+  return { self: s, opp: o };
+}
+// Game scores verbatim, comma-separated. A trailing " RET"/"W/O"/"DEF" stays attached
+// without a leading comma; a bare walkover/retirement (no numeric sets) shows just that token.
+function psGameScores(result){
+  const raw = String(result || '').trim(); if (!raw) return '';
+  const toks = raw.split(/\s+/);
+  let tail = '';
+  if (toks.length && /^(ret|w\/o|def)\.?$/i.test(toks[toks.length - 1])) tail = toks.pop().toUpperCase().replace(/\.$/, '');
+  const body = toks.join(', ');
+  return body && tail ? `${body} ${tail}` : (body || tail);
+}
+// Static tier + indoor map for the group headers (`Cincinnati · Hard · Masters 1000`).
+// Founder ruling 2026-08-28 (interaction e4eb8d4a): Option A — a small client map over
+// the DETERMINISTIC set (Slams, all 9 Masters 1000, ATP Finals, team events, Olympics,
+// the ATP 500s, and the well-known indoor 250s). Minor/ambiguous 250s fall through to a
+// surface-only header. Keyed on a normalised name so aliases ("Miami Masters"/"Miami",
+// "Roland Garros"/"French Open", "Rio de Janeiro"/"Rio De Janeiro") collapse to one entry.
+const PS_TOUR_META = (() => {
+  const M = {}; const add = (tier, indoor, names) => names.forEach(n => { M[n] = { tier, indoor }; });
+  add('Grand Slam', false, ['australian open', 'wimbledon', 'us open', 'roland garros', 'french open']);
+  add('Masters 1000', false, ['indian wells', 'miami', 'monte carlo', 'madrid', 'rome', 'canada', 'montreal', 'toronto', 'cincinnati', 'shanghai']);
+  add('Masters 1000', true,  ['paris']);                    // Rolex Paris Masters — indoor hard
+  add('ATP Finals', true, ['tour finals', 'turin']);        // season-ending finals (data names it "Tour Finals")
+  add('NextGen Finals', true, ['nextgen finals', 'next gen finals']);
+  add('Team event', false, ['united cup', 'atp cup']);      // outdoor hard (AUS summer)
+  add('Team event', true,  ['laver cup']);                  // indoor
+  add('Olympics', false, ['paris olympics', 'tokyo olympics', 'olympics']);
+  // "London" in this data is entirely a June grass event = Queen's Club (ATP 500), NOT the
+  // season-ending finals — so it maps to ATP 500 grass, not ATP Finals.
+  add('ATP 500', false, ['dubai', 'acapulco', 'rio de janeiro', 'barcelona', 'hamburg', "queen's club", 'london', 'halle', 'washington', 'beijing', 'tokyo']);
+  add('ATP 500', true,  ['vienna', 'basel', 'rotterdam']);  // indoor 500s
+  add('ATP 250', true, ['metz', 'marseille', 'antwerp', 'stockholm', 'montpellier', 'sofia', 'st. petersburg', 'moscow', 'astana', 'almaty']); // known indoor 250s
+  return M;
+})();
+function psNormTour(name){ return String(name || '').toLowerCase().replace(/\bmasters\b/g, '').replace(/\batp\b/g, '').replace(/\s+/g, ' ').trim(); }
+function psTourMeta(name){ return PS_TOUR_META[psNormTour(name)] || null; }
+// Group a player's career meetings by tournament EDITION (name + year), most-recent
+// edition first and, within each, most-recent match first. Grouping per edition (not
+// per venue-name) keeps each block a single contiguous run so the year-less "DD.MM."
+// dates stay correctly ordered — pooling multiple years of one venue under one header
+// would make the hidden year read as a mis-sort. A venue that recurs across seasons
+// simply repeats its header, newest edition first. The header still shows only the
+// venue name + surface/tier (the mock carries no year).
+function psGroupMeetings(rows){
+  const sorted = rows.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const order = [], groups = {};
+  for (const r of sorted){
+    const yr = String(r.date || '').slice(0, 4);
+    const k = (r.tournament || '—') + '|' + yr;
+    if (!(k in groups)){ groups[k] = { tournament: r.tournament || '—', year: yr, rows: [] }; order.push(k); }
+    groups[k].rows.push(r);
+  }
+  return order.map(k => groups[k]);
+}
+// One career-meeting row — coloured square marker, separate sets/game columns, both-side
+// closing odds (subject price then opponent, dash on miss). Rows are static: the meeting
+// shard carries no api-tennis eventKey, so there is no box-score panel to open.
 function styleVsArchetypeRowHtml(r){
-  const res = r.won ? 'W' : 'L';
-  const rc = r.won ? '#3dd68c' : '#e0616f';
-  const rbg = r.won ? 'rgba(62,207,142,0.16)' : 'rgba(232,96,122,0.16)';
-  const surf = r.surface ? r.surface.charAt(0).toUpperCase() + r.surface.slice(1) : '—';
-  const score = r.retired ? 'ret.' : (r.walkover ? 'w/o' : String(r.result || '').replace(/\s*-\s*/g, '–'));
+  const won = !!r.won;
+  const sets = psSetsScore(r.result);
+  const setsDisp = (sets.self + sets.opp) === 0 ? '—' : `${sets.self} - ${sets.opp}`;   // walkover/no-score → dash, not "0 - 0"
   const od = v => (v == null ? '—' : Number(v).toFixed(2));
-  const odds = (r.oddsSelf == null && r.oddsOpp == null) ? '—' : `${od(r.oddsSelf)} · ${od(r.oddsOpp)}`;
-  const cells = `
-      <span class="psv-badge" style="color:${rc}; background:${rbg};">${res}</span>
-      <span class="psv-opp">${psEsc(psShortName(r.opponent))}</span>
-      <span class="psv-meta">${psEsc(surf)} · ${psEsc(r.tournament || '—')}</span>
-      <span class="psv-score">${psEsc(score)}</span>
-      <span class="psv-odds" title="closing odds — ${psEsc(psShortName(r.opponent))} priced second">${odds}</span>`;
-  return `<div class="psv-row">${cells}<span></span></div>`;
+  return `<div class="psvr">
+      <span class="psvr-date">${psEsc(psFmtMeetDate(r.date))}</span>
+      <span class="psvr-sq ${won ? 'psvsq-win' : 'psvsq-loss'}" title="${won ? 'win' : 'loss'}"></span>
+      <span class="psvr-opp">${psEsc(psShortName(r.opponent))}</span>
+      <span class="psvr-round">${psEsc(psRoundAbbr(r.round))}</span>
+      <span class="psvr-sets ${won ? 'psvset-win' : 'psvset-loss'}">${setsDisp}</span>
+      <span class="psvr-games">${psEsc(psGameScores(r.result))}</span>
+      <span class="psvr-odds psvr-oddself" title="closing odds — ${psEsc(psShortName(r.opponent))}'s price shown to the right">${od(r.oddsSelf)}</span>
+      <span class="psvr-odds psvr-oddopp">${od(r.oddsOpp)}</span>
+    </div>`;
 }
 
-const PSV_ROW_CAP = 5;
+const PSV_ROW_CAP = 9;   // collapsed default (matches the "Showing 9 of 43" reference)
 // "+N more" is a real control, so the extra rows have to be reachable after the
 // list is already in the DOM. styleVsArchetypeCard publishes the side's full row
-// list + its row renderer here; the toggle re-renders through it, so expanding
-// after a late repaint still yields the complete list.
+// list here; the toggle re-renders through it, so expanding after a late repaint
+// still yields the complete grouped list.
 const _psvSides = { p1:null, p2:null };
 const _psvOpen  = { p1:false, p2:false };
+// Grouped, capped body. Collapsed shows the first PSV_ROW_CAP rows across groups
+// (respecting most-recent order); a group only renders its header once it has a
+// visible row. Expanded shows everything.
 function psvListHtml(side){
   const s = _psvSides[side];
   if (!s || !s.rows) return '';
   const open = _psvOpen[side];
-  const shown = open ? s.rows : s.rows.slice(0, PSV_ROW_CAP);
-  const body = shown.map((r, i) => s.renderRow(r, i)).join('');
-  const hidden = s.rows.length - PSV_ROW_CAP;
-  if (hidden <= 0) return body;
-  const label = open ? 'Show less' : `+${hidden} more`;
-  return body + `<div class="psv-more" role="button" tabindex="0" onclick="event.stopPropagation();psvToggleMore('${side}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();psvToggleMore('${side}')}">${label}</div>`;
+  const total = s.rows.length;
+  const groups = psGroupMeetings(s.rows);
+  let shown = 0; const out = [];
+  for (const g of groups){
+    const rowsHtml = [];
+    for (const r of g.rows){
+      if (!open && shown >= PSV_ROW_CAP) break;
+      rowsHtml.push(styleVsArchetypeRowHtml(r));
+      shown++;
+    }
+    if (rowsHtml.length){
+      const meta = psTourMeta(g.tournament);
+      const surf = g.rows[0].surface;
+      const surfDisp = meta && meta.indoor ? 'Indoors' : (surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '');
+      const parts = []; if (surfDisp) parts.push(surfDisp); if (meta && meta.tier) parts.push(meta.tier);
+      const metaHtml = parts.length ? `<span class="psvg-meta">${psEsc(parts.join(' · '))}</span>` : '';
+      out.push(`<div class="psvg"><div class="psvg-head"><span class="psvg-name">${psEsc(g.tournament)}</span>${metaHtml}</div>${rowsHtml.join('')}</div>`);
+    }
+    if (!open && shown >= PSV_ROW_CAP) break;
+  }
+  let body = out.join('');
+  const hidden = total - Math.min(PSV_ROW_CAP, total);
+  if (open && total > PSV_ROW_CAP){
+    body += psvMoreControl(side, 'Show less');
+  } else if (!open && hidden > 0){
+    body += psvMoreControl(side, `+${hidden} more`);
+  }
+  return body;
+}
+function psvMoreControl(side, label){
+  return `<div class="psv-more" role="button" tabindex="0" onclick="event.stopPropagation();psvToggleMore('${side}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();psvToggleMore('${side}')}">${label}</div>`;
+}
+// Header "Showing X of Y" reflects the collapsed/expanded state.
+function psvShowText(side){
+  const s = _psvSides[side]; if (!s || !s.rows) return '';
+  const total = s.rows.length;
+  return `Showing ${_psvOpen[side] ? total : Math.min(PSV_ROW_CAP, total)} of ${total}`;
 }
 function psvRenderList(side){
   const list = document.getElementById('psvList-' + side);
   if (list) list.innerHTML = psvListHtml(side);
+  const sh = document.getElementById('psvShow-' + side);
+  if (sh) sh.textContent = psvShowText(side);
 }
 function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
 // The CAREER meeting DETAIL list: this player's full tour-career meetings vs the
@@ -11667,20 +11822,22 @@ function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(si
 // record above — same rows the record aggregates — so the W–L·n here reconciles to
 // that block. Rows are static (meeting shards carry no eventKey).
 function styleVsArchetypeCard(playerName, rows, oppArch, accent, rgba, oppLabel, side){
-  const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">${psEsc(oppLabel)}</div></div>`;
-  const card = (recHtml, bodyHtml) => `<div class="psv-card" style="border-color:${rgba(0.2)};">
-    <div class="psv-head">${title}${recHtml}</div>${bodyHtml}</div>`;
-  if (!rows) return card('', styleNoteHtml('Career meetings still loading.'));
+  // Block header carries the archetype pairing + the aggregate record on the left and
+  // "Showing X of Y" on the right (founder's restyle spec / screenshot).
+  const card = (aggHtml, showHtml, bodyHtml) => `<div class="psvcard-full" style="border-color:${rgba(0.2)};">
+    <div class="psvhdr"><div><span class="psvhdr-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</span>${aggHtml}</div><span class="psvhdr-show" id="psvShow-${side}">${showHtml}</span></div>${bodyHtml}</div>`;
+  if (!rows) return card('', '', styleNoteHtml('Career meetings still loading.'));
   if (!rows.length){
-    return card(`<div class="psv-rec"><span class="psv-none">no tour meetings</span></div>`,
+    return card(`<span class="psvhdr-none">no tour meetings</span>`, '',
       styleNoteHtml(`No tour meetings vs a ${oppArch.name.toLowerCase()} on record.`));
   }
-  const w = rows.filter(r => r.won).length, l = rows.length - w;
-  const pct = Math.round((w / rows.length) * 100);
-  // Static rows behind the shared "+N more" control (psvListHtml reads _psvSides).
-  _psvSides[side] = { rows: rows, renderRow: r => styleVsArchetypeRowHtml(r) };
-  return card(`<div class="psv-rec"><span class="psv-wl">${w}–${l}</span> <span class="psv-pct">${pct}% · n=${rows.length}</span></div>`,
-    `<div class="psv-list" id="psvList-${side}">${psvListHtml(side)}</div>`);
+  const w = rows.filter(r => r.won).length, l = rows.length - w, n = rows.length;
+  const pct = Math.round((w / n) * 100);
+  // Publish the side's full rows behind the shared "+N more" control (psvListHtml reads _psvSides).
+  _psvSides[side] = { rows: rows };
+  const agg = `<span class="psvhdr-agg">${w}–${l} · ${pct}% · ${n} ${n === 1 ? 'match' : 'matches'}</span>`;
+  return card(agg, psvShowText(side),
+    `<div class="psv-list psvlist-grouped" id="psvList-${side}">${psvListHtml(side)}</div>`);
 }
 
 // Resolve a side's CAREER meeting rows from its per-player shard (TEN-88 option B).
@@ -11723,7 +11880,7 @@ function styleVsArchetypeHtml(m, s1, s2){
   if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, '#e7e9ee', ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2'));
   if (!cards.length) return '';
   return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">Career meetings vs this style</div>
-    <div class="psv-grid${cards.length < 2 ? ' psv-grid-solo' : ''}">${cards.join('')}</div></div>`;
+    <div class="psvstack">${cards.join('')}</div></div>`;
 }
 
 // "Personally" — each player's CAREER record vs the OPPONENT's archetype, all
