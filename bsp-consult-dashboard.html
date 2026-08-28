@@ -15260,8 +15260,21 @@ function buildPlayerProfileHtml(p){
   // grouped-by-tournament layout the Match Analysis modal Form tab uses via
   // ppGroupMatchesByTournament is intentionally NOT used here; the export drops it.)
   let ppFormSeq = 0;
+  // Most-recent-first by date, with a round tiebreaker WITHIN a tournament so
+  // same-date matches at one event order later-round-on-top (TEN-93: a stable
+  // date-only sort kept ingest/draw order, showing e.g. a QF above the SF played
+  // the same day). recentForm rounds are the composite "{Event} - {round}" form
+  // (e.g. "Ilkley - Semi-finals"), so strip the prefix before ranking — passing
+  // the composite to careerRoundDepth returns 0 and the tiebreak silently no-ops.
+  // Guard to same tournament: two different events sharing a date must NOT be
+  // round-reordered (a player can lose a qualifier at one event the same week he
+  // reaches a final at another — outer order there stays date/ingest).
+  const ppFormRoundDepth = (m) => careerRoundDepth(String(m && m.round || '').split(' - ').pop());
   const flatMatches = formMatches.slice()
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))
+      || (String(a.tournament || '') === String(b.tournament || '')
+          ? ppFormRoundDepth(b) - ppFormRoundDepth(a)
+          : 0));
   const rowsHtml = flatMatches.map(m => ppFormRow(m, ppFormSeq++, m.tournament || '')).join('')
     || `<div style="padding:12px 0;font-size:12.5px;color:#4b5672;border-top:1px solid rgba(255,255,255,0.05);">No ${formEmptyLabel} matches on record.</div>`;
   const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
