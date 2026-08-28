@@ -14257,18 +14257,6 @@ function ppTournamentDropdownHtml(p, query){
     </div>`;
   }).join('');
 }
-// TEN-89 interim guard: these players' pre-2021 Grand Slam editions are absent
-// from the current published data (the pre-2021 TML backfill matcher dropped them
-// — hyphen/truncation/collision surnames; fix lives in career-backfill.js). Until
-// the corrected backfill lands on the next data refresh, caveat their Grand Slam
-// record boxes so subscribers aren't shown understated Slam records (e.g. Carreno
-// Busta's US Open best-result reading R16 when he twice made the semi-final). The
-// caveat is scoped per-tournament and SELF-CLEARS: it only fires when every edition
-// on file is 2021+ (i.e. the pre-2021 rows are still missing), so it disappears
-// automatically once the backfill fills them in. Safe to delete the whole set once
-// every player's corrected record is confirmed live.
-const SLAM_BACKFILL_PENDING = new Set(['434','2734','1090','430','3135','590','567','1317','1056','55858']);
-
 // The selected tournament's career record card, Design 21a:
 // header + 5 KPI tiles + "Fixtures by edition" (round-by-round who he beat/lost to).
 function ppTournamentResultHtml(p, name){
@@ -14296,14 +14284,6 @@ function ppTournamentResultHtml(p, name){
   const editions = Array.isArray(t.editions) ? t.editions : [];
   const edCount = editions.length;
   const bestYears = Array.isArray(t.bestYears) ? t.bestYears : [];
-  // TEN-89 interim guard (see SLAM_BACKFILL_PENDING above): understated-record caveat.
-  const slamBackfillPending = SLAM_BACKFILL_PENDING.has(String(p.key))
-    && /^Grand Slam/.test(cat)
-    && edCount > 0 && editions.every(ed => Number(ed.year) >= 2021);
-  const backfillNoteHtml = slamBackfillPending ? `<div style="display:flex;align-items:flex-start;gap:9px;margin-top:14px;padding:11px 13px;background:rgba(240,180,60,0.08);border:1px solid rgba(240,180,60,0.28);border-radius:11px;">
-    <span style="flex:none;color:#f0b43c;font-size:13px;line-height:1.3;">&#9888;</span>
-    <span style="font-size:11.5px;color:#d9c8a0;line-height:1.45;">Pre-2021 Grand Slam matches for this player are still being restored to our records. The figures below may understate his career total and best result at this event until the next data refresh completes.</span>
-  </div>` : '';
   const tile = (label, value, sub, color) => `<div style="flex:1 1 128px;min-width:0;background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;">
     <div style="font-size:10px;color:#5b6880;text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;">${label}</div>
     <div style="font-size:24px;font-weight:800;color:${color};font-family:'IBM Plex Mono',monospace;line-height:1;margin-top:9px;">${value}</div>
@@ -14403,7 +14383,6 @@ function ppTournamentResultHtml(p, name){
       ${cat ? `<span style="font-size:10.5px;font-weight:600;color:${tint};background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};border-radius:7px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex:none;">${pesc(cat)}</span>` : ''}
       ${dismissBtn}
     </div>
-    ${backfillNoteHtml}
     ${tilesHtml}
     <div style="margin-top:20px;">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
