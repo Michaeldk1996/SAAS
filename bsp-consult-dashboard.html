@@ -5083,6 +5083,9 @@ async function loadMatches(){
   // (awaited so an open Edge Model re-render sees fresh numbers) but never
   // allowed to throw — loadModelOutput swallows its own errors.
   await loadModelOutput();
+  // Photo overrides (TEN-97) must be present before the first card paints, else
+  // a wrong api-tennis face flashes and never corrects. Tiny file, loaded once.
+  await loadPlayerPhotoOverrides();
   buildTournamentFilters();
   renderHeaderStats();
   renderMatches();
@@ -5518,8 +5521,10 @@ function playerAvatarHtml(photoUrl, name, playerKey){
   // The onclick lives on BOTH branches because avatarFallback() swaps the
   // <img> for a <div> on load error and doesn't copy attributes. (T2)
   const attrs = profileLinkAttrs(playerKey, name);
-  if (!photoUrl) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
-  return `<img class="avatar"${attrs} src="${photoUrl}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
+  // Key-based override wins over the api-tennis pXPhotoUrl (TEN-97). (T2)
+  const src = photoOverrideFor(playerKey) || photoUrl;
+  if (!src) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
+  return `<img class="avatar"${attrs} src="${src}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
 }
 
 // Player headshot URL for the profile hero, CONSTRUCTED from key + name so it
@@ -5552,6 +5557,30 @@ function resolveProfilePhotoUrl(playerKey, name){
   return `https://api.api-tennis.com/logo-tennis/${playerKey}_${slug}.jpg`;
 }
 
+// Key-based photo override (player-photos.json). The api-tennis logo assets are
+// occasionally the WRONG player: e.g. key 2002 (Facundo Díaz Acosta) served the
+// byte-identical file for key 391 (Juan Pablo Varillas) — a member-visible wrong
+// face on the card (TEN-97). enrich-player-photos.py resolves a correct,
+// freely-licensed Wikimedia headshot keyed by api-tennis player_key; this map
+// takes PRIORITY over the per-match pXPhotoUrl in every avatar renderer below.
+// Loaded once and awaited on the matches critical path so a card never paints
+// the wrong face first. Absence is harmless — we simply fall back to the
+// api-tennis URL, so coverage is never reduced.
+let playerPhotoOverrides = {};
+let _photoOverridesLoaded = false;
+function photoOverrideFor(playerKey){
+  if (playerKey == null || playerKey === '') return null;
+  const e = playerPhotoOverrides[String(playerKey)];
+  return (e && e.photo) ? e.photo : null;
+}
+async function loadPlayerPhotoOverrides(){
+  if (_photoOverridesLoaded) return;
+  try {
+    const res = await fetch('./player-photos.json', { cache: 'no-cache' });
+    if (res.ok){ const d = await res.json(); playerPhotoOverrides = d || {}; _photoOverridesLoaded = true; }
+  } catch (e) { /* additive; absence just falls back to the api-tennis logo URL */ }
+}
+
 // Implied win probability from a decimal odds price, rounded to a whole
 // percent — a real, directly-computed value (never fabricated).
 function impliedPct(price){
@@ -5565,7 +5594,9 @@ function impliedPct(price){
 function mcAvatarHtml(photoUrl, name, playerKey, side){
   const initials = playerInitials(name);
   const attrs = profileLinkAttrs(playerKey, name);
-  if (photoUrl) return `<img class="mc-av ${side}"${attrs} src="${photoUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="mcAvatarFail(this,'${initials}','${side}')">`;
+  // Key-based override wins over the api-tennis pXPhotoUrl (TEN-97).
+  const src = photoOverrideFor(playerKey) || photoUrl;
+  if (src) return `<img class="mc-av ${side}"${attrs} src="${src}" alt="${name}" referrerpolicy="no-referrer" onerror="mcAvatarFail(this,'${initials}','${side}')">`;
   return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
 }
 // A failed headshot becomes a properly design-styled identity circle (A brand
@@ -12485,8 +12516,10 @@ function renderPlayers(filter){
     const book = odds?.bookmaker ? pesc(odds.bookmaker) : '—';
     // Real headshot layered over the initials fallback (same source as match rows,
     // m.pNPhotoUrl); the photo hides itself on error and the initials show through.
-    const photo = p.photo
-      ? `<img class="pc-avatar-img" src="${pesc(p.photo)}" alt="${pesc(p.name)}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+    // Key-based override (player-photos.json) wins over the api-tennis logo (TEN-97).
+    const pcPhotoUrl = photoOverrideFor(p.key) || p.photo;
+    const photo = pcPhotoUrl
+      ? `<img class="pc-avatar-img" src="${pesc(pcPhotoUrl)}" alt="${pesc(p.name)}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
       : '';
     return `
     <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')"` : ''}>
