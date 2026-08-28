@@ -103,19 +103,6 @@ function insR1(x) { return Math.round(x * 10) / 10; }
 function insR0(x) { return Math.round(x); }
 function insCap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
 
-/* Market cards rest on a mirrored closing-price archive that stops at a fixed
- * date (both upstream sources went quiet in Feb 2026). Every market card says
- * so, so nobody reads "beats the market" as a statement about this week.
- * Date comes from `archiveLatest` in odds-performance-index.json, not a
- * constant — it re-labels itself if the archive ever moves again.
- */
-var INS_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function insAsOfPhrase(iso) {
-  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
-  if (!m) return ' One note: this covers closing prices up to the end of the odds archive, not today.';
-  return ' One note: this covers closing prices up to ' + Number(m[3]) + ' ' +
-         INS_MONTHS[Number(m[2]) - 1] + ' ' + m[1] + ', where the odds archive ends, not today.';
-}
 
 /* ---------------- Tour averages ----------------
  * Pooled (sum of wins / sum of matches), not a mean of percentages, so a
@@ -412,8 +399,7 @@ function insCheckMarket(sp, ctx, relax) {
     text: insCap(best.roleWord) + ', he wins ' + insR0(r.actualWinRate) +
           '% of the time, but the closing price only expected ' + insR0(r.expectedWinRate) + '%. ' +
           (up ? 'That gap is well above the tour norm. The market has been pricing him short.'
-              : 'He falls short of the market more than most players do. The market has been pricing him too high.') +
-          insAsOfPhrase(ctx.marketAsOf),
+              : 'He falls short of the market more than most players do. The market has been pricing him too high.'),
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(best.dev),
