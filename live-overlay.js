@@ -21,8 +21,9 @@
 
   const SB_URL = (window.SUPABASE_URL || '').replace(/\/$/, '');
   const SB_KEY = window.SUPABASE_ANON_KEY || '';
-  if (!SB_URL || !SB_KEY) {
-    console.warn('[live-overlay] SUPABASE_URL / SUPABASE_ANON_KEY not set — skipping');
+  // Placeholder strings from failed CI substitution must not pass the guard.
+  if (!SB_URL || SB_URL.startsWith('__') || !SB_KEY || SB_KEY.startsWith('__')) {
+    console.warn('[live-overlay] SUPABASE_URL / SUPABASE_ANON_KEY not configured — skipping');
     return;
   }
 
@@ -35,10 +36,12 @@
     `${SB_URL}/rest/v1/live_snapshot?select=board,updated_at&limit=1`;
 
   // ─── state ──────────────────────────────────────────────────────────────────
-  let _timer = null;
-  let _backoffMs = 0;          // 0 = use normal interval
-  let _frozen = new Set();     // event_keys of matches we've frozen (match ended)
-  let _paused = false;
+  let _timer    = null;
+  let _ticking  = false;        // in-flight guard — prevents concurrent ticks
+  let _backoffMs = 0;           // 0 = use normal interval
+  let _frozen   = new Set();    // event_keys of matches we've frozen (match ended)
+  let _paused   = false;
+  let _lastUpdatedAt = null;    // last known snapshot timestamp (survives fetch errors)
 
   // ─── pause on hidden, resume on visible ─────────────────────────────────────
   document.addEventListener('visibilitychange', () => {
@@ -48,7 +51,8 @@
     } else {
       _paused = false;
       _backoffMs = 0;
-      schedulePoll(0);
+      // Only schedule a new tick if one is not already in-flight.
+      if (!_ticking) schedulePoll(0);
     }
   });
 
@@ -68,7 +72,8 @@
 
   // ─── tick ───────────────────────────────────────────────────────────────────
   async function tick() {
-    if (_paused) return;
+    if (_paused || _ticking) return;
+    _ticking = true;
     let row;
     try {
       row = await fetchSnapshot();
@@ -78,19 +83,30 @@
       _backoffMs = _backoffMs
         ? Math.min(_backoffMs * 2, BACKOFF_MAX_MS)
         : BACKOFF_BASE_MS;
-      // Leave previous overlays intact (stale badge will appear naturally on
-      // the next staleness check against the unchanged updated_at).
+      // Re-render existing overlays using the cached timestamp so the stale
+      // badge reflects elapsed time even during a sustained error window.
+      if (_lastUpdatedAt !== null) {
+        const ageMs = Date.now() - _lastUpdatedAt;
+        const isStale = ageMs > STALE_THRESHOLD_MS;
+        refreshStaleBadges(isStale, ageMs);
+      }
+      _ticking = false;
       schedulePoll(_backoffMs);
       return;
+    } finally {
+      // _ticking reset in the non-error path below; reset here on throw.
     }
+
+    _ticking = false;
 
     if (!row) {
       schedulePoll(POLL_INTERVAL_MS);
       return;
     }
 
-    const updatedAt = row.updated_at ? new Date(row.updated_at) : null;
-    const ageMs = updatedAt ? Date.now() - updatedAt.getTime() : Infinity;
+    const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : null;
+    if (updatedAt !== null) _lastUpdatedAt = updatedAt;
+    const ageMs = _lastUpdatedAt !== null ? Date.now() - _lastUpdatedAt : Infinity;
     const isStale = ageMs > STALE_THRESHOLD_MS;
 
     const matches = row.board?.matches;
@@ -106,37 +122,51 @@
     _timer = setTimeout(tick, delayMs);
   }
 
+  // ─── stale badge refresh (error path, no new data) ──────────────────────────
+  function refreshStaleBadges(isStale, ageMs) {
+    const overlays = document.querySelectorAll('article.match-card .live-overlay');
+    for (const overlay of overlays) {
+      const badge = overlay.querySelector('.lo-badge:not(.lo-frozen)');
+      if (!badge) continue; // frozen cards are left alone
+      if (isStale) {
+        const secs = Math.round(ageMs / 1000);
+        badge.className = 'lo-badge lo-stale';
+        badge.textContent = `stale · ${secs}s ago`;
+      }
+    }
+  }
+
   // ─── overlay application ─────────────────────────────────────────────────────
   function applyOverlays(matches, isStale, ageMs) {
-    // Build a lookup: event_key → live fixture data
     const byKey = {};
     for (const fix of matches) {
       const key = String(fix.event_key || '');
       if (key) byKey[key] = fix;
     }
 
-    // Walk every match card on the page
     const cards = document.querySelectorAll('article.match-card[data-ek]');
     for (const card of cards) {
       const ek = card.dataset.ek;
       if (!ek) continue;
 
       const fix = byKey[ek];
-      if (!fix) {
-        // Not in the live board — card may not have started yet, leave it alone.
-        continue;
-      }
+      if (!fix) continue; // not on live board — leave card alone
 
-      // Freeze detection: match finished server-side
       const status = (fix.event_status || fix.status || '').toLowerCase();
       const isFinal = status.includes('finished') || status.includes('retired') ||
                       status.includes('walkover') || status.includes('abandoned');
-      if (isFinal && !_frozen.has(ek)) {
+
+      if (isFinal) {
         _frozen.add(ek);
-        renderOverlay(card, fix, false /* not stale */, 0, true /* frozen */);
+        // Always render frozen cards (card DOM may have been rebuilt by renderMatches).
+        renderOverlay(card, fix, false, 0, true);
         continue;
       }
-      if (_frozen.has(ek)) continue;
+
+      if (_frozen.has(ek)) {
+        // Frozen key but status changed (e.g. feed correction) — re-render as live.
+        _frozen.delete(ek);
+      }
 
       renderOverlay(card, fix, isStale, ageMs, false);
     }
@@ -148,21 +178,19 @@
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.className = 'live-overlay';
-      // Insert after .mc-head if present, else prepend
+      // Insert after .mc-head; fall back to prepend if no head.
       const head = card.querySelector('.mc-head');
-      if (head && head.nextSibling) {
-        card.insertBefore(overlay, head.nextSibling);
+      if (head) {
+        head.after(overlay);
       } else {
         card.prepend(overlay);
       }
     }
 
-    // Score lines
-    const score = buildScoreHtml(fix);
+    const score  = buildScoreHtml(fix);
     const server = serverDot(fix);
 
-    // Stale / frozen badge
-    let badge = '';
+    let badge;
     if (frozen) {
       badge = '<span class="lo-badge lo-frozen">Final</span>';
     } else if (isStale) {
@@ -172,43 +200,28 @@
       badge = '<span class="lo-badge lo-live"><span class="lo-dot"></span>Live</span>';
     }
 
-    overlay.innerHTML =
-      `<div class="lo-row">${score}${server}${badge}</div>`;
+    overlay.innerHTML = `<div class="lo-row">${score}${server}${badge}</div>`;
   }
 
   function buildScoreHtml(fix) {
-    // api-tennis livescore: scores array [ {score_first, score_second, ...} ]
-    // or flat score_first / score_second fields.
     const scores = fix.scores;
     if (Array.isArray(scores) && scores.length) {
       const sets = scores.map(s => `${s.score_first ?? '?'}-${s.score_second ?? '?'}`).join(' ');
       return `<span class="lo-score">${sets}</span>`;
     }
-    // Fallback: flat fields
     const sf = fix.score_first ?? fix.home_score ?? '';
     const ss = fix.score_second ?? fix.away_score ?? '';
-    if (sf !== '' || ss !== '') {
-      return `<span class="lo-score">${sf}-${ss}</span>`;
-    }
+    if (sf !== '' || ss !== '') return `<span class="lo-score">${sf}-${ss}</span>`;
     return '';
   }
 
   function serverDot(fix) {
-    // api-tennis includes serve field ('1' or '2' meaning player 1/2 serving)
     const s = fix.serve ?? fix.server ?? '';
     if (!s) return '';
     return `<span class="lo-server" title="Serving">• P${s}</span>`;
   }
 
-  // ─── IntersectionObserver: activate only for visible cards ──────────────────
-  // We start polling immediately (not per-card IO), but IO is used to avoid
-  // rendering overlays on cards that have scrolled entirely out of view.
-  // (Overlay updates for out-of-view cards are still in the DOM; we simply
-  // skip the DOM writes until the card enters the viewport on the next tick.)
-  // For Slice 3 simplicity we poll globally and write to all in-view cards.
-
   // ─── boot ────────────────────────────────────────────────────────────────────
-  // Start on DOMContentLoaded (or immediately if already loaded).
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => schedulePoll(0));
   } else {
