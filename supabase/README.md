@@ -12,7 +12,7 @@ for the rating layer: board doc **`shrink-curve`**.
 | Slice | What | State |
 |---|---|---|
 | 1 | `live_snapshot` + `poller_lock` + RLS (`migrations/…_live_snapshot.sql`) | **staged in this branch** |
-| 2 | Poller Edge Function (`get_livescore` → snapshot write, SKIP-LOCKED) | not started |
+| 2 | Poller: single-flight RPCs (`…_poller_rpc.sql`) + Edge Function (`functions/live-poller`) | **staged (not executed)** |
 | 3 | Member read path (PostgREST/Realtime + stale/backoff/freeze-final, flag-gated) | not started |
 | 4 | Rating overlay (layer-10 live window + shrink-to-baseline + DR) | not started |
 | 5 | Clean-context review → confirm-before-live gate → deploy | not started |
@@ -33,6 +33,36 @@ The migration is plain, idempotent SQL — it can be applied either way:
 Re-running is safe: every statement is idempotent (`create … if not exists`,
 `insert … on conflict do nothing`, `drop policy if exists`, publication guarded
 by a `pg_publication_tables` check).
+
+## Single-flight design note (SKIP-LOCKED → TTL lease)
+
+The spec calls for a `FOR UPDATE SKIP LOCKED` lock row. A row lock releases when
+its transaction ends, but the poller's expensive step — the external
+`get_livescore` fetch — happens **between** PostgREST calls, so no single
+transaction can hold the row across it. `begin_poll()` realises the *same
+intent* (collapse overlapping ticks to one upstream call) with an **atomic TTL
+lease**: a single `UPDATE … WHERE locked_at IS NULL OR locked_at < now()-ttl`.
+Only one concurrent tick wins; a crashed holder self-heals after the TTL
+(25s < 30s cadence). This is the correct realisation for a stateless function —
+flagged for founder review, not a silent reinterpretation of the spec.
+
+## Deploy & schedule (only after the confirm-before-live gate)
+
+```bash
+# Edge Function
+supabase functions deploy live-poller --no-verify-jwt   # guarded by x-poller-secret instead
+supabase secrets set API_TENNIS_KEY=…  POLLER_SECRET=…   # from repo .env / generated
+
+# pg_cron → pg_net invocation (run in SQL editor; keep secrets in Vault, not here)
+select cron.schedule(
+  'live-poller-30s', '*/30 * * * * *',   -- pg_cron seconds syntax
+  $$ select net.http_post(
+       url    := '<project-url>/functions/v1/live-poller',
+       headers:= jsonb_build_object('x-poller-secret', (select decrypted_secret from vault.decrypted_secrets where name='POLLER_SECRET')),
+       timeout_milliseconds := 12000
+     ); $$
+);
+```
 
 ## Security model (why the RLS is shaped this way)
 
