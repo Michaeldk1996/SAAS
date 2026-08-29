@@ -2311,6 +2311,42 @@
   .lo-badge.lo-stale{ background:rgba(226,139,74,0.12); color:#e28b4a; }
   .lo-badge.lo-frozen{ background:rgba(62,207,142,0.06); color:var(--text-faint,#888); border:1px solid rgba(62,207,142,0.15); }
   @keyframes lo-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+
+  /* TEN-107 Slice 4 — standalone Live tab (flag-gated; only page under data-page="live") */
+  [data-page="live"] .lt-wrap{ max-width:1080px; margin:0 auto; padding:24px 24px 60px; }
+  [data-page="live"] .lt-titlerow{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+  [data-page="live"] .lt-h1{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text,#e7e9ee); }
+  [data-page="live"] .lt-subtitle{ margin:0; color:var(--text-dim,#8F98A6); font-size:13.5px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
+  [data-page="live"] .lt-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:#3dd68c; }
+  [data-page="live"] .lt-status.stale{ color:#e28b4a; }
+  [data-page="live"] .lt-status .lt-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
+
+  [data-page="live"] .lt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+  [data-page="live"] .lt-card{ background:var(--panel,#12151C); border:1px solid var(--border,#262B35); border-radius:14px; padding:14px 16px 12px; transition:border-color 120ms; }
+  [data-page="live"] .lt-card:hover{ border-color:rgba(61,214,140,0.35); }
+  [data-page="live"] .lt-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  [data-page="live"] .lt-tourn{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:11.5px; color:var(--text-dim,#8F98A6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:rgba(61,214,140,0.12); color:#3dd68c; border-radius:5px; padding:2px 8px; font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-family:var(--mx-font-mono,monospace); }
+  [data-page="live"] .lt-badge .lt-dot{ width:6px; height:6px; border-radius:50%; background:#3dd68c; animation:lt-pulse 1.6s ease-in-out infinite; }
+
+  [data-page="live"] .lt-players{ display:flex; flex-direction:column; gap:2px; }
+  [data-page="live"] .lt-row{ display:grid; grid-template-columns:26px 1fr 12px auto 30px; align-items:center; gap:9px; padding:5px 0; }
+  [data-page="live"] .lt-row.serving .lt-name{ color:var(--text,#e7e9ee); font-weight:700; }
+  [data-page="live"] .lt-av{ width:26px; height:26px; border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); flex-shrink:0; }
+  [data-page="live"] .lt-av-blank{ display:inline-block; }
+  [data-page="live"] .lt-name{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:14.5px; font-weight:600; color:var(--text-dim,#c7ccd4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="live"] .lt-serve{ color:#3dd68c; font-size:11px; text-align:center; }
+  [data-page="live"] .lt-sets{ display:inline-flex; gap:5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
+  [data-page="live"] .lt-set{ min-width:15px; text-align:center; font-size:14px; font-weight:600; color:var(--text-dim,#8F98A6); }
+  [data-page="live"] .lt-set.cur{ color:var(--text,#e7e9ee); }
+  [data-page="live"] .lt-game{ font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); font-size:14px; font-weight:700; color:#3dd68c; text-align:right; min-width:28px; }
+  [data-page="live"] .lt-pt{ letter-spacing:0.02em; }
+
+  [data-page="live"] .lt-empty{ grid-column:1/-1; text-align:center; padding:64px 20px; color:var(--text-faint,#565F6A); }
+  [data-page="live"] .lt-empty-icon{ font-size:34px; opacity:0.5; margin-bottom:14px; }
+  [data-page="live"] .lt-empty-title{ margin:0 0 6px; font-size:15px; font-weight:600; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
+  [data-page="live"] .lt-empty-sub{ margin:0; font-size:12.5px; }
+  @keyframes lt-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 </style>
 </head>
 <body>
@@ -2331,6 +2367,10 @@
   <nav class="sf-nav" id="mainNav">
     <!-- Sidebar glyphs are the export's exact path set (zip 32 nav array), not icon-library substitutes: viewBox 0 0 20 20. -->
     <button class="active" data-tab="matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</button>
+    <!-- TEN-107 Slice 4: standalone Live tab. Hidden by default (display:none) so a
+         flag-OFF build shows no dead tab; live-tab.js reveals it only after the
+         FEATURE_LIVE_PROXY + Supabase-creds guards pass. New tab, Matches untouched. -->
+    <button data-tab="live" id="liveTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M6 6a5.6 5.6 0 000 8M14 6a5.6 5.6 0 010 8M3.4 3.4a9 9 0 000 13.2M16.6 3.4a9 9 0 010 13.2"/></svg>Live</button>
     <!-- Results (TEN-8): settled matches, promoted from the old Upcoming/Completed
          toggle to a first-class sidebar tab directly under Matches (founder ruling
          2026-08-08). Reuses the matches page in state.view='completed'. -->
@@ -2465,6 +2505,22 @@
       </div>
       <div id="matchlist"></div>
     </div>
+  </div>
+</div>
+
+<!-- LIVE TAB (TEN-107 Slice 4) — standalone live board fed by the Supabase live
+     proxy (live_snapshot ← get_livescore poller). Own page; Matches untouched.
+     Rendering + polling owned entirely by live-tab.js, gated on FEATURE_LIVE_PROXY. -->
+<div class="tabpage" data-page="live">
+  <div class="lt-wrap">
+    <div class="lt-titlerow">
+      <div>
+        <h1 class="lt-h1">Live</h1>
+        <p class="lt-subtitle">Singles matches in play right now, point by point.</p>
+        <p class="lt-status" id="liveStatus"><span class="lt-dot"></span>Loading…</p>
+      </div>
+    </div>
+    <div class="lt-grid" id="liveGrid"></div>
   </div>
 </div>
 
@@ -3583,6 +3639,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'edge') { edgeShowPane('model'); openEdgeModelTab(); }
   if (tab === 'news') loadNews();
   if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(); }
+  // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
+  // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
+  if (window.LiveTab) window.LiveTab.setActive(tab === 'live');
 });
 
 
@@ -20127,9 +20186,11 @@ else setTimeout(loadHeavyDatasets, 200);
 setInterval(loadMatches, 3 * 60 * 1000);
 </script>
 
-<!-- TEN-107 Slice 3: live overlay — only loaded when FEATURE_LIVE_PROXY is set.
+<!-- TEN-107 Slice 4: standalone Live tab — only active when FEATURE_LIVE_PROXY is set.
      Supabase public credentials are injected at Pages build time via env vars;
-     they are safe to expose in the browser (RLS restricts writes). -->
+     they are safe to expose in the browser (RLS restricts writes).
+     Supersedes Slice 3's live-overlay.js (founder ruling TEN-91 2026-08-29: the
+     live feed is its own tab, not an overlay). live-overlay.js is no longer loaded. -->
 <script>
   // Build-time injection: GitHub Pages CI sets these via _headers or inline.
   // Locally you can set them on window before this script runs.
@@ -20138,7 +20199,7 @@ setInterval(loadMatches, 3 * 60 * 1000);
   // Flag is OFF until the confirm-before-live gate. Flip to true to enable.
   window.FEATURE_LIVE_PROXY = false;
 </script>
-<script src="live-overlay.js" defer></script>
+<script src="live-tab.js" defer></script>
 
 </body>
 </html>
