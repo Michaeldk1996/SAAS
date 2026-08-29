@@ -18647,10 +18647,17 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // players' histories (deduped on year|tournament|round) because ~1% of pairs are
     // asymmetric — only one side records a given meeting — so reading a single side
     // would make the panel's result depend on selection order.
-    const collect = (owner, oppKey, ownerIsA) => {
+    const nkOf = nm => { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; };
+    const collect = (owner, opp, ownerIsA) => {
       if (!Array.isArray(owner.tourHist)) return;
+      const oppKey = opp.key, oppNk = nkOf(opp.full);
       owner.tourHist.forEach(t => (t.editions || []).forEach(ed => (ed.matches || []).forEach(mt => {
-        if (String(mt.oppKey) !== String(oppKey)) return;
+        const mk = String(mt.oppKey || '');
+        // Numeric key when present; else a surname+initial fallback on the recorded opponent
+        // name. Pre-2021 editions are backfilled with an empty oppKey, so the numeric join
+        // silently drops them — the name match recovers them. Roster surname+initial keys are
+        // collision-free, so this can't invent a meeting against a namesake.
+        if (!(mk !== '' && mk === String(oppKey)) && !(mk === '' && oppNk && nkOf(mt.opp) === oppNk)) return;
         if (mt.res !== 'W' && mt.res !== 'L') return;
         const yr = String(ed.year || t.lastYear || '—');
         const round = H2H_ROUND[mt.round] || mt.round || '—';
@@ -18666,22 +18673,21 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         let setsStr = '—';
         if (nums && nums.length === 2) {
           const hi = Math.max(+nums[0], +nums[1]), lo = Math.min(+nums[0], +nums[1]);
-          setsStr = aWon ? (hi + '–' + lo) : (lo + '–' + hi);
+          setsStr = aWon ? (hi + ' - ' + lo) : (lo + ' - ' + hi);
         }
         (byYear[yr] = byYear[yr] || []).push([
           '',                                        // no exact date in tournamentHistory
           t.name || '—',                             // tournament
           '',                                        // surface not carried here -> renders as —
           round,                                     // round
-          '',                                        // no game-level score, only the set tally below
+          setsStr || '—',                            // set tally (player A first), shown in the score column
           aWon ? a.short : b.short,                  // winner (short name)
           null,                                      // no eventKey -> no per-meeting stat drill-in
-          setsStr || null,                           // pre-formatted set tally (player A first)
         ]);
       })));
     };
-    collect(a, b.key, true);
-    collect(b, a.key, false);
+    collect(a, b, true);
+    collect(b, a, false);
     if (aWins + bWins === 0) return null;
     const meetings = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
     return { a: aWins, b: bWins, meetings: meetings };
@@ -18730,18 +18736,25 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     view.caveatText = thin.map(p => p.full).join(' and ') + (thin.length > 1 ? ' have' : ' has') +
       ' partial coverage in the archive. Blocks below will show an em dash wherever a metric is genuinely missing rather than filling the gap with an estimate.';
 
-    // H2H
+    // H2H — two sources that partition by year: today's-fixture meetings (api feed, 2021+,
+    // richest: real dates, surfaces and eventKeys for the stat drill-in) own the recent
+    // years; career tournamentHistory (h2hFromHist) is the only source for pre-2021 and
+    // fills the older tail (TEN-103). Fixtures own every year >= their earliest fixture year;
+    // history fills strictly older years, so the union never double-counts a meeting.
     const key = [a.short, b.short].join('|'), rkey = [b.short, a.short].join('|');
-    // Prefer today's-fixture meetings (they carry real dates, surfaces and eventKeys for
-    // the stat drill-in); otherwise rebuild the meetings from career tournamentHistory
-    // by numeric oppKey so non-today pairs stop reading "never met" (TEN-8, item 2).
-    let raw = H2H[key] ? { d: H2H[key], flip: false } : (H2H[rkey] ? { d: H2H[rkey], flip: true } : null);
-    if (!raw) { const hist = h2hFromHist(a, b); if (hist) raw = { d: hist, flip: false }; }
-    if (!raw) {
+    const fixMeet = H2H[key] ? H2H[key].meetings : (H2H[rkey] ? H2H[rkey].meetings : null);
+    const hist = h2hFromHist(a, b);
+    const byYear = {};
+    let cutoff = Infinity;
+    if (fixMeet) fixMeet.forEach(y => { (byYear[y[0]] = byYear[y[0]] || []).push(...y[1]); const yn = parseInt(y[0], 10); if (!isNaN(yn) && yn < cutoff) cutoff = yn; });
+    if (hist) hist.meetings.forEach(y => { const yn = parseInt(y[0], 10); if (isNaN(yn) || yn < cutoff) (byYear[y[0]] = byYear[y[0]] || []).push(...y[1]); });
+    const mYears = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
+    let aw = 0, bw = 0;
+    mYears.forEach(y => y[1].forEach(r => { if (r[5] === a.short) aw++; else if (r[5] === b.short) bw++; }));
+    const tot = aw + bw;
+    if (tot === 0) {
       view.h2h = { none: true, some: false, meetingsLine: 'No meetings on record' };
     } else {
-      const d = raw.d, fl = raw.flip;
-      const aw = fl ? d.b : d.a, bw = fl ? d.a : d.b, tot = aw + bw;
       view.h2h = {
         none: false, some: true,
         meetingsLine: tot + ' meetings on record',
@@ -18753,18 +18766,14 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         aColor: aw > bw ? A_COL : DIM, bColor: bw > aw ? B_COL : DIM,
         aPct: tot ? Math.round(aw / tot * 100) : 50, bPct: tot ? Math.round(bw / tot * 100) : 50,
         leadLine: aw === bw ? 'Level at ' + aw + '–' + bw : (aw > bw ? a.short : b.short) + ' leads ' + Math.max(aw, bw) + '–' + Math.min(aw, bw),
-        years: d.meetings.map((y, yi) => {
+        years: mYears.map((y, yi) => {
           const rows = y[1].map((m, mi) => {
             const mkey = 'm' + yi + '_' + mi;
             const open = S.mOpen === mkey;
-            const ss = m[4].split(' ').map(x => x.split('-').map(Number)).filter(x => x.length === 2 && !isNaN(x[0]));
-            const wa2 = ss.filter(x => x[0] > x[1]).length;
-            const surf = SURF[m[2]] ? m[2] : 'Hard';
             return {
-              // m[7] (set tally) is pre-formatted for tournamentHistory rows that carry no
-              // game-level score; today's-fixture rows derive it from the set scores in m[4].
+              // Score column carries the set tally: fixture rows from m[4] ("2 - 1"),
+              // history rows from the tally h2hFromHist writes into the same slot.
               date: m[0], tour: m[1], surf: m[2] || '—', round: m[3], score: m[4], winner: m[5],
-              sets: m[7] != null ? m[7] : (wa2 + '-' + (ss.length - wa2)),
               surfColor: (SURF[m[2]] || SURF.Hard).c, surfBd: (SURF[m[2]] || SURF.Hard).b,
               winColor: m[5] === a.short ? A_COL : B_COL,
               open, chev: open ? '▾' : '→',
@@ -19215,13 +19224,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
   function meetingRow(m) {
     return `<div>
-      <div class="seg" data-hid="${m.hOpen}" style="display:grid; grid-template-columns:52px minmax(60px,1fr) 52px 34px 32px minmax(90px,1.2fr) minmax(90px,auto) 14px; gap:10px; align-items:center; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.045); cursor:pointer;">
+      <div class="seg" data-hid="${m.hOpen}" style="display:grid; grid-template-columns:52px minmax(60px,1fr) 52px 34px minmax(90px,1.2fr) minmax(90px,auto) 14px; gap:10px; align-items:center; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.045); cursor:pointer;">
         <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">${E(m.date)}</span>
         <span style="font-size:12.5px; color:#c6ccdb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${E(m.tour)}</span>
         <span style="justify-self:start; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:${m.surfColor}; border:1px solid ${m.surfBd}; border-radius:5px; padding:1px 6px;">${E(m.surf)}</span>
         <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">${E(m.round)}</span>
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:#e7e9ee;">${E(m.sets)}</span>
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#5b6880; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${E(m.score)}</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#c6ccdb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${E(m.score)}</span>
         <span style="justify-self:end; display:flex; align-items:center; gap:7px;">
           <span style="width:6px; height:6px; border-radius:50%; background:${m.winColor};"></span>
           <span style="font-size:12.5px; font-weight:700; color:${m.winColor};">${E(m.winner)}</span>
