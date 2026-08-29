@@ -2299,6 +2299,18 @@
     body{ padding-left:0; }
     .sf-sidebar{ position:static; width:auto; flex-direction:column; }
   }
+
+  /* TEN-107 Slice 3 — live overlay (flag-gated, overlay-only, no first-paint cost) */
+  .live-overlay{ padding:6px 18px 4px; border-top:1px solid rgba(255,255,255,0.05); }
+  .lo-row{ display:flex; align-items:center; gap:10px; font-family:var(--mx-font-ui,monospace); font-size:12px; }
+  .lo-score{ font-weight:600; color:var(--text,#fff); letter-spacing:0.04em; }
+  .lo-server{ color:var(--mc-muted-2,#888); font-size:11px; }
+  .lo-badge{ border-radius:4px; padding:1px 7px; font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; }
+  .lo-badge.lo-live{ background:rgba(61,214,140,0.12); color:#3dd68c; display:inline-flex; align-items:center; gap:5px; }
+  .lo-dot{ width:6px; height:6px; border-radius:50%; background:#3dd68c; animation:lo-pulse 1.6s ease-in-out infinite; }
+  .lo-badge.lo-stale{ background:rgba(226,139,74,0.12); color:#e28b4a; }
+  .lo-badge.lo-frozen{ background:rgba(62,207,142,0.06); color:var(--text-faint,#888); border:1px solid rgba(62,207,142,0.15); }
+  @keyframes lo-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 </style>
 </head>
 <body>
@@ -6171,7 +6183,7 @@ function renderMatches(){
         </div>`;
     return `
     ${dividerHtml}
-    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}">
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
@@ -20114,6 +20126,19 @@ else setTimeout(loadHeavyDatasets, 200);
 // the paid APIs (that only happens when bsp-pipeline.js itself runs).
 setInterval(loadMatches, 3 * 60 * 1000);
 </script>
+
+<!-- TEN-107 Slice 3: live overlay — only loaded when FEATURE_LIVE_PROXY is set.
+     Supabase public credentials are injected at Pages build time via env vars;
+     they are safe to expose in the browser (RLS restricts writes). -->
+<script>
+  // Build-time injection: GitHub Pages CI sets these via _headers or inline.
+  // Locally you can set them on window before this script runs.
+  window.SUPABASE_URL      = window.SUPABASE_URL      || '__SUPABASE_URL__';
+  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '__SUPABASE_ANON_KEY__';
+  // Flag is OFF until the confirm-before-live gate. Flip to true to enable.
+  window.FEATURE_LIVE_PROXY = false;
+</script>
+<script src="live-overlay.js" defer></script>
 
 </body>
 </html>

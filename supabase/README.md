@@ -13,7 +13,7 @@ for the rating layer: board doc **`shrink-curve`**.
 |---|---|---|
 | 1 | `live_snapshot` + `poller_lock` + RLS (`migrations/…_live_snapshot.sql`) | **staged in this branch** |
 | 2 | Poller: single-flight RPCs (`…_poller_rpc.sql`) + Edge Function (`functions/live-poller`) | **staged (not executed)** |
-| 3 | Member read path (PostgREST/Realtime + stale/backoff/freeze-final, flag-gated) | not started |
+| 3 | Member read path (PostgREST/Realtime + stale/backoff/freeze-final, flag-gated) | **staged** (`live-overlay.js` + dashboard wiring: `data-ek`, CSS, script tag; flag OFF) |
 | 4 | Rating overlay (layer-10 live window + shrink-to-baseline + DR) | not started |
 | 5 | Clean-context review → confirm-before-live gate → deploy | not started |
 
