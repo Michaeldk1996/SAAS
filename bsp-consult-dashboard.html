@@ -5724,9 +5724,12 @@ function mcSetCluster(finalScore, who){
   const tbs = mcTiebreaks(finalScore);
   // Games are DIRECT grid children of .mc-sets (no wrapper) so each per-set cell
   // lands in its own fixed column and lines up across the two player rows (§6).
-  // Tiebreak sets carry a superscript of this side's own breaker points (§8).
+  // Tiebreak sets carry a superscript of the LOSER's breaker points on the WINNER's
+  // game number only (ATP/Flashscore convention). The loser's cell shows no superscript.
   const games = sets.map((s, i) => {
-    const tb = (tbs[i] && tbs[i][who] != null) ? `<sup>${tbs[i][who]}</sup>` : '';
+    const opp = who === 'p1' ? 'p2' : 'p1';
+    const isSetWinner = s[who] > s[opp];
+    const tb = (isSetWinner && tbs[i]) ? `<sup>${tbs[i][opp]}</sup>` : '';
     return `<span class="mc-sets__g">${s[who]}${tb}</span>`;
   }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
