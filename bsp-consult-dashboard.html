@@ -19822,7 +19822,17 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       el.addEventListener('input', e => { const fn = handlers[+el.dataset.hinput]; if (fn) fn(e); });
     });
     root.querySelectorAll('[data-hchange]').forEach(el => {
-      el.addEventListener('change', e => { const fn = handlers[+el.dataset.hchange]; if (fn) fn(e); });
+      // Fire on BOTH change and input. A native <select> emits 'change' on desktop
+      // Chrome/Firefox/Safari, but touch/mobile native pickers and some in-app
+      // webviews can deliver only 'input' on a pick — without this fallback the
+      // tournament selector would silently no-op on those devices (TEN-120).
+      // Dedupe on the element's value so a browser that fires both events on one
+      // pick still triggers a single re-render.
+      let last = el.value;
+      const fire = e => { if (el.value === last) return; last = el.value;
+        const fn = handlers[+el.dataset.hchange]; if (fn) fn(e); };
+      el.addEventListener('change', fire);
+      el.addEventListener('input', fire);
     });
   }
   function render() {
