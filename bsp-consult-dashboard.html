@@ -12118,6 +12118,197 @@ function styleArchLabelsHtml(m, s1, s2){
   </div>`;
 }
 
+// ── Playing Style DNA radar — ported into Match Analysis (TEN-103) ─────────────
+// The same 5-axis api-tennis-native DNA the founder approved on the H2H page:
+// Serve / Return / Under Pressure / Dominance Ratio come from dna-apitennis-ratings.json
+// (percentile `pct`, p2-p98 banded); Surface Elo is resolved LIVE from the same
+// ppEloForSurface() the header chip reads, so the two can never contradict. Shape =
+// trailing-52-week percentiles on the MATCH's own surface; labels print the raw rating +
+// a Δ vs the since-2024 baseline. Render floor = >=10 matches in scope+surface. This is a
+// self-contained copy of the H2H IIFE's DNA logic (those functions are closure-private),
+// reusing the SAME data file and locked formulas — nothing is re-derived here. Match
+// analysis is keyed by numeric api-tennis player_key (m.p1Key/m.p2Key == DNA playerKey),
+// so no name-matching is needed (cleaner than the H2H resolution path).
+const MDNA_AXES = [
+  { key: 'serve',          label: 'Serve',           dp: 0 },
+  { key: 'return',         label: 'Return',          dp: 1 },
+  { key: 'underPressure',  label: 'Under Pressure',  dp: 1 },
+  { key: 'dominanceRatio', label: 'Dominance Ratio', dp: 2 },
+  { key: 'elo',            label: 'Surface Elo',     dp: 0 },
+];
+const MDNA_LABELS = MDNA_AXES.map(a => a.label);
+const MDNA_STEP = 360 / MDNA_LABELS.length;   // 5 axes → 72°
+const MDNA_FLOOR = 10;                         // >=10 matches in scope+surface to draw a shape
+const MDNA_SCOPE = 'last52';                   // trailing 52 weeks
+const MDNA_R0 = 96;                            // radar radius (matches H2H geometry)
+
+let _mdna = null, _mdnaPromise = null;
+function ensureMatchDna(){
+  if (_mdna) return Promise.resolve(_mdna);
+  if (_mdnaPromise) return _mdnaPromise;
+  _mdnaPromise = fetch('./dna-apitennis-ratings.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      const byKey = {};
+      if (d && Array.isArray(d.players)) for (const p of d.players) byKey[String(p.playerKey)] = p;
+      _mdna = { byKey, meta: (d && d._meta) || {} };
+      return _mdna;
+    })
+    .catch(() => { _mdna = { byKey: {}, meta: {} }; return _mdna; });
+  return _mdnaPromise;
+}
+const _mdnaFmt = (v, dp) => v == null ? '—' : (dp === 0 ? String(Math.round(v)) : (+v).toFixed(dp));
+// Map the match surface to a DNA surface key. The DNA file normalized indoor→Hard and
+// dropped carpet at build time, so its keys are only Hard/Clay/Grass/All; mirror that here.
+function mdnaSurface(m){
+  const s = (m && m.surface || '').toLowerCase();
+  if (s.indexOf('clay') >= 0) return 'Clay';
+  if (s.indexOf('grass') >= 0) return 'Grass';
+  return 'Hard';   // hard / indoor / carpet / unknown → Hard
+}
+// A null/missing axis is NOT a data value — skip its vertex entirely (never a false zero).
+function mdnaRadarPoints(vals, r){
+  const pts = [];
+  MDNA_LABELS.forEach((_, i) => {
+    if (vals && vals[i] == null) return;
+    const ang = (-90 + i * MDNA_STEP) * Math.PI / 180;
+    const v = (vals && vals[i] != null ? vals[i] : 0) / 100;
+    pts.push((150 + Math.cos(ang) * r * v).toFixed(1) + ',' + (150 + Math.sin(ang) * r * v).toFixed(1));
+  });
+  return pts.join(' ');
+}
+function mdnaEloPctFromBand(rating, surface){
+  const bands = _mdna && _mdna.meta && _mdna.meta.eloBands;
+  const bd = bands && bands[surface];
+  if (rating == null || !bd || bd.p2 == null || bd.p98 == null || bd.p98 <= bd.p2) return null;
+  return +Math.max(0, Math.min(100, (rating - bd.p2) / (bd.p98 - bd.p2) * 100)).toFixed(1);
+}
+// Resolve one player's 5-axis DNA for a surface+scope. Returns pcts (0-100 shape), raw
+// ratings, deltas vs the since-2024 baseline (null for Elo), match count and a draw flag.
+function mdnaRadarFor(key, surface, scope, fullName){
+  const rec = (_mdna && _mdna.byKey) ? _mdna.byKey[String(key)] : null;
+  if (!_mdna) return { loading: true, inPool: false, ok: false };
+  if (!rec) return { inPool: false, ok: false };
+  const sf = rec.surfaces && rec.surfaces[surface];
+  if (!sf) return { inPool: true, ok: false, matches: 0 };
+  const sc = sf[scope] || {}, base = sf.sinceBase || {};
+  const matches = (sc.sample && sc.sample.matches) || 0;
+  const pcts = [], ratings = [], deltas = [];
+  for (const ax of MDNA_AXES){
+    if (ax.key === 'elo'){
+      // Surface Elo — resolved live through ppEloForSurface() (same source as the header
+      // chip), falling back to the copy pre-joined into the DNA file only when the live
+      // lookup misses. A degraded (all-surface substitute) result is treated as no rating,
+      // matching the DNA file's null-per-surface policy.
+      let eRating = null;
+      if (typeof ppEloForSurface === 'function' && fullName){
+        const er = ppEloForSurface({ name: fullName }, surface);
+        if (er && !er.illustrative && !er.degraded && er.rating != null) eRating = er.rating;
+      }
+      if (eRating == null){ const e0 = sf.elo; eRating = (e0 && e0.rating != null) ? e0.rating : null; }
+      ratings.push(eRating);
+      const livePct = eRating != null ? mdnaEloPctFromBand(eRating, surface) : null;
+      pcts.push(livePct != null ? livePct : (sf.elo && sf.elo.pct != null ? sf.elo.pct : null));
+      deltas.push(null);                       // Elo carries no scope, so no baseline delta
+    } else {
+      const r = sc[ax.key], b = base[ax.key];
+      ratings.push(r && r.rating != null ? r.rating : null);
+      pcts.push(r && r.pct != null ? r.pct : null);
+      deltas.push((r && r.rating != null && b && b.rating != null) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
+    }
+  }
+  const ok = matches >= MDNA_FLOOR && pcts.some(v => v != null);
+  const est = !!(sc.underPressure && sc.underPressure.estimated);
+  return { inPool: true, ok, matches, pcts, ratings, deltas, est, surface, scope };
+}
+// The DNA card for a match: overlaid 5-axis radar + raw-rating readout with Δ vs baseline.
+// Archetype badges + style-vs-style edges are already shown elsewhere on this tab, so this
+// block is JUST the DNA (radar + readout), never the record-vs-style footer the H2H card
+// carries. Suppressed entirely when neither player is in the api-tennis pool (nothing to
+// show) — but shown, with an honest withheld/loading state, when at least one is.
+function styleDnaRadarHtml(m){
+  const surface = mdnaSurface(m);
+  const aDna = mdnaRadarFor(m.p1Key, surface, MDNA_SCOPE, m.p1);
+  const bDna = mdnaRadarFor(m.p2Key, surface, MDNA_SCOPE, m.p2);
+  const loading = !_mdna;
+  if (!loading && !aDna.inPool && !bDna.inPool) return '';   // genuinely nothing to show
+  const r0 = MDNA_R0;
+  const rings = [0.34, 0.67, 1].map(f => mdnaRadarPoints(MDNA_LABELS.map(() => 100), r0 * f));
+  const spokes = MDNA_LABELS.map((_, i) => { const ang = (-90 + i * MDNA_STEP) * Math.PI / 180; return { x: (150 + Math.cos(ang) * r0).toFixed(1), y: (150 + Math.sin(ang) * r0).toFixed(1) }; });
+  const axisLabels = MDNA_LABELS.map((lbl, i) => {
+    const ang = (-90 + i * MDNA_STEP) * Math.PI / 180;
+    const x = 150 + Math.cos(ang) * (r0 + 24), y = 150 + Math.sin(ang) * (r0 + 24) + 4;
+    return { label: lbl, x: x.toFixed(0), y: y.toFixed(0), anchor: Math.abs(Math.cos(ang)) < 0.2 ? 'middle' : (Math.cos(ang) > 0 ? 'start' : 'end') };
+  });
+  const aPoints = aDna.ok ? mdnaRadarPoints(aDna.pcts, r0) : null;
+  const bPoints = bDna.ok ? mdnaRadarPoints(bDna.pcts, r0) : null;
+  const hasRadar = !!(aPoints || bPoints);
+  const p1Short = psShortName(m.p1), p2Short = psShortName(m.p2);
+  const stateOf = (dna) => dna.loading ? 'loading' : (!dna.inPool ? 'absent' : (dna.ok ? 'ok' : 'below'));
+  const aState = stateOf(aDna), bState = stateOf(bDna);
+  const stateNote = (st, matches) =>
+    st === 'loading' ? 'Loading DNA…'
+    : st === 'absent' ? 'No api-tennis rating on record'
+    : st === 'below' ? ('Fewer than ' + MDNA_FLOOR + ' ' + surface + '-surface matches in the last 52 weeks (' + matches + ') — shape withheld')
+    : '';
+  const delta = (dv, dp) => {
+    if (dv == null || dv === 0) return { txt: '', color: '#4b5672' };
+    const up = dv > 0;
+    return { txt: (up ? '▲' : '▼') + Math.abs(dv).toFixed(dp), color: up ? '#3dd68c' : '#e0616f' };
+  };
+  const cell = (raw, d, color) => `<span style="display:inline-flex; align-items:baseline; gap:5px; justify-content:${color === '#6aaeff' ? 'flex-end' : 'flex-start'};">
+    <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:${raw === '—' ? '#3f4860' : color};">${escapeHtml(raw)}</span>
+    ${d && d.txt ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:${d.color};">${escapeHtml(d.txt)}</span>` : ''}
+  </span>`;
+  const rows = MDNA_AXES.map((ax, i) => {
+    const arw = aDna.ok ? _mdnaFmt(aDna.ratings ? aDna.ratings[i] : null, ax.dp) : '—';
+    const brw = bDna.ok ? _mdnaFmt(bDna.ratings ? bDna.ratings[i] : null, ax.dp) : '—';
+    const ad = aDna.ok ? delta(aDna.deltas ? aDna.deltas[i] : null, ax.dp) : null;
+    const bd = bDna.ok ? delta(bDna.deltas ? bDna.deltas[i] : null, ax.dp) : null;
+    return `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,150px) minmax(0,1fr); gap:12px; align-items:center; padding:4px 2px; border-bottom:1px solid rgba(255,255,255,0.04);">
+      ${cell(arw, ad, '#6aaeff')}
+      <span style="text-align:center; font-size:10.5px; letter-spacing:0.04em; color:#6b7690;">${escapeHtml(ax.label)}</span>
+      ${cell(brw, bd, '#e7e9ee')}
+    </div>`;
+  }).join('');
+  const aNote = stateNote(aState, aDna.matches || 0), bNote = stateNote(bState, bDna.matches || 0);
+  const noteRow = (aNote || bNote) ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; padding-top:6px;">
+    <span style="text-align:right; font-size:11px; color:#e0a34b;">${escapeHtml(aNote)}</span>
+    <span style="text-align:left; font-size:11px; color:#e0a34b;">${escapeHtml(bNote)}</span>
+  </div>` : '';
+  const est = (aDna.est || bDna.est) ? ' · Under Pressure from 3 of 4 components for one player (estimated)' : '';
+  const scopeLabel = 'Last 52 weeks · ' + surface + '-surface · percentile vs the api-tennis field';
+  return `<div class="psx-block"><div class="psx-card" style="display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5;">Playing style DNA</span>
+      <span style="font-size:11px; color:#5b6880;">Five-axis profile · overlaid</span>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center; gap:22px; font-size:12px;">
+      <span style="color:#6aaeff; font-weight:700;">■ ${escapeHtml(p1Short)}</span>
+      <span style="color:#e7e9ee; font-weight:700;">▢ ${escapeHtml(p2Short)}</span>
+    </div>
+    <div style="display:flex; justify-content:center;">
+      <svg viewBox="-42 0 384 300" style="width:min(340px,82%); height:auto;">
+        ${rings.map(pts => `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"></polygon>`).join('')}
+        ${spokes.map(sp => `<line x1="150" y1="150" x2="${sp.x}" y2="${sp.y}" stroke="rgba(255,255,255,0.06)" stroke-width="1"></line>`).join('')}
+        ${aPoints ? `<polygon points="${aPoints}" fill="rgba(106,174,255,0.18)" stroke="#6aaeff" stroke-width="2"></polygon>` : ''}
+        ${bPoints ? `<polygon points="${bPoints}" fill="rgba(231,233,238,0.10)" stroke="#e7e9ee" stroke-width="2" stroke-dasharray="5 4"></polygon>` : ''}
+        ${axisLabels.map(l => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" fill="#8b96b5" font-size="11.5" font-family="IBM Plex Mono, monospace">${escapeHtml(l.label)}</text>`).join('')}
+        ${!hasRadar ? `<text x="150" y="150" text-anchor="middle" fill="#4b5672" font-size="11" font-family="IBM Plex Mono, monospace">${loading ? 'Loading DNA…' : 'No shape at this floor'}</text>` : ''}
+      </svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:4px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6880;">Raw rating · Δ vs 2024–now avg</span>
+        <span style="display:inline-flex; gap:12px; font-size:10px;"><span style="color:#6aaeff;">■ ${escapeHtml(p1Short)}</span><span style="color:#e7e9ee;">▢ ${escapeHtml(p2Short)}</span></span>
+      </div>
+      ${rows}
+      ${noteRow}
+      <span style="font-size:10.5px; color:#4b5672; text-align:center; padding-top:8px;">${escapeHtml(scopeLabel + est)}</span>
+    </div>
+  </div></div>`;
+}
+
 // The tab is a stack of blocks that each stand or fall on their OWN data source, so a
 // missing input suppresses only its block — never the whole tab (board ruling 2026-08-26):
 //   · radar + dimension edge      ← shot charting (10+ charted matches for BOTH)
@@ -12134,11 +12325,17 @@ function buildStyleSection(m){
   const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
   const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
   const radarOK = styleRadarDrawable(r1, r2);
-  // Neither player classified AND no drawable radar → every block is a "not available"
-  // panel. Collapse the two overlapping empty states into ONE honest message about the
-  // binding constraint (classification, from tour results — not charting).
+  // Playing Style DNA (TEN-103): api-tennis-native, keyed by player_key, so it works for
+  // players the charting-based radar/classification can't reach. Built here so it can also
+  // show in the "neither classified" branch below — the whole point of DNA is that it isn't
+  // gated on tour-level charting. Suppresses itself when neither player is in the pool.
+  const dnaHtml = styleDnaRadarHtml(m);
+  // Neither player classified AND no drawable radar → every classification/charting block is
+  // a "not available" panel. Still show the DNA card if we have it (it doesn't depend on
+  // charting), otherwise fall back to the one honest message about the binding constraint.
   if (!lab1 && !lab2 && !radarOK){
-    return `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
+    const coming = `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
+    return dnaHtml ? `<div class="psx-wrap">${dnaHtml}${coming}</div>` : coming;
   }
   // Style-vs-style edge needs BOTH archetypes (it reads the general matrix cell). When it
   // is suppressed the radar takes the full width rather than sitting beside an empty column.
@@ -12159,6 +12356,7 @@ function buildStyleSection(m){
   // Personally (career) → historical by surface → dimension edge → last-40 list.
   return `<div class="psx-wrap">
     ${styleArchLabelsHtml(m, s1, s2)}
+    ${dnaHtml}
     ${topHtml}
     ${stylePersonalHtml(m, s1, s2, a1, a2)}
     ${surfaceHtml}
@@ -12279,7 +12477,7 @@ function openAnalysisModal(matchId){
   // ensureStyleMeetings loads the per-player CAREER meeting shards that feed the
   // "vs this style" detail list (TEN-88 option B); folded in here so the one repaint
   // below has radar + matrix + meetings all resolved.
-  Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m)]).then(() => {
+  Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
     if (_aStyleMatch !== m) return;
     renderStyleSection(m);
     // Key Factors' "Playing style" card reads the matchup matrix too
