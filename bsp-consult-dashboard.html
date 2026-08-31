@@ -20206,8 +20206,8 @@ setInterval(loadMatches, 3 * 60 * 1000);
   // Locally you can set them on window before this script runs.
   window.SUPABASE_URL      = window.SUPABASE_URL      || '__SUPABASE_URL__';
   window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '__SUPABASE_ANON_KEY__';
-  // Flag is OFF until the confirm-before-live gate. Flip to true to enable.
-  window.FEATURE_LIVE_PROXY = false;
+  // Live proxy go-live: founder approved 2026-08-31 (TEN-107, "Ship it").
+  window.FEATURE_LIVE_PROXY = true;
 </script>
 <script src="live-tab.js" defer></script>
 
