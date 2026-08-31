@@ -1,0 +1,159 @@
+name: Supabase live go-live (TEN-107)
+
+# One-click go-live for the TEN-107 live proxy. Founder-approved 2026-08-31
+# (TEN-107 comment): apply migrations, set secrets, deploy the poller, schedule
+# the 30s cron, smoke-test. Uses the Supabase Management API (per founder: NOT
+# `supabase db push`) for all SQL, and the CLI only to upload the Edge Function.
+#
+# Idempotent + fail-closed: any failed step exits non-zero and nothing downstream
+# runs, so a half-applied deploy can never be reported as live. Re-runnable.
+#
+# Required repository secrets (already provisioned):
+#   SUPABASE_ACCESS_TOKEN     - Management API PAT
+#   SUPABASE_URL              - https://<ref>.supabase.co
+#   SUPABASE_SECRET_KEY       - sb_secret_… (service-role-equivalent)
+#   SUPABASE_PUBLISHABLE_KEY  - sb_publishable_… (browser-safe, for the smoke read)
+#   API_TENNIS_KEY            - api-tennis.com feed key
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-golive
+  cancel-in-progress: false
+
+jobs:
+  golive:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+      MGMT: https://api.supabase.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preconditions + derive project ref
+        run: |
+          set -euo pipefail
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_URL SUPABASE_SECRET_KEY SUPABASE_PUBLISHABLE_KEY API_TENNIS_KEY; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          FN_URL="${SUPABASE_URL%/}/functions/v1/live-poller"
+          POLLER_SECRET=$(openssl rand -hex 24)
+          echo "::add-mask::$POLLER_SECRET"
+          echo "PROJECT_REF=$REF"     >> "$GITHUB_ENV"
+          echo "FN_URL=$FN_URL"       >> "$GITHUB_ENV"
+          echo "POLLER_SECRET=$POLLER_SECRET" >> "$GITHUB_ENV"
+          echo "Derived project ref: $REF"
+          echo "Function URL: $FN_URL"
+
+      # --- helper: run a .sql file through the Management API query endpoint ---
+      - name: Apply schema migrations (Management API)
+        run: |
+          set -euo pipefail
+          apply() {
+            local f="$1"
+            echo "── applying $f"
+            local resp code body
+            resp=$(jq -Rs '{query: .}' "$f" | curl -sS -w $'\n%{http_code}' -X POST \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+            code=$(printf '%s' "$resp" | tail -n1)
+            body=$(printf '%s' "$resp" | sed '$d')
+            echo "  http $code"
+            if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+              echo "::error::migration $f failed ($code): $body"; exit 1
+            fi
+          }
+          apply supabase/migrations/20260829021135_live_snapshot.sql
+          apply supabase/migrations/20260829021600_poller_rpc.sql
+
+      - name: Set Edge Function secrets (Management API)
+        run: |
+          set -euo pipefail
+          payload=$(jq -n \
+            --arg k "$API_TENNIS_KEY" \
+            --arg p "$POLLER_SECRET" \
+            --arg s "$SUPABASE_SECRET_KEY" \
+            '[{name:"API_TENNIS_KEY",value:$k},{name:"POLLER_SECRET",value:$p},{name:"SB_SERVICE_KEY",value:$s}]')
+          resp=$(printf '%s' "$payload" | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/secrets")
+          code=$(printf '%s' "$resp" | tail -n1)
+          echo "  http $code"
+          [ "$code" = "200" ] || [ "$code" = "201" ] || { echo "::error::setting function secrets failed ($code)"; exit 1; }
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy live-poller Edge Function
+        run: |
+          set -euo pipefail
+          printf 'project_id = "%s"\n' "$PROJECT_REF" > supabase/config.toml
+          supabase functions deploy live-poller --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Write Vault secrets for the scheduler (Management API)
+        run: |
+          set -euo pipefail
+          VSQL=$(cat <<EOF
+          select vault.create_secret('$POLLER_SECRET','POLLER_SECRET','TEN-107 live-poller shared secret')
+            where not exists (select 1 from vault.secrets where name='POLLER_SECRET');
+          select vault.update_secret((select id from vault.secrets where name='POLLER_SECRET'), '$POLLER_SECRET');
+          select vault.create_secret('$FN_URL','POLLER_FN_URL','TEN-107 live-poller function URL')
+            where not exists (select 1 from vault.secrets where name='POLLER_FN_URL');
+          select vault.update_secret((select id from vault.secrets where name='POLLER_FN_URL'), '$FN_URL');
+          EOF
+          )
+          resp=$(printf '%s' "$VSQL" | jq -Rs '{query: .}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1); body=$(printf '%s' "$resp" | sed '$d')
+          echo "  http $code"
+          [ "$code" = "200" ] || [ "$code" = "201" ] || { echo "::error::vault write failed ($code): $body"; exit 1; }
+
+      - name: Schedule the 30s poller (Management API)
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' supabase/migrations/20260831000000_schedule.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1); body=$(printf '%s' "$resp" | sed '$d')
+          echo "  http $code"
+          [ "$code" = "200" ] || [ "$code" = "201" ] || { echo "::error::scheduling failed ($code): $body"; exit 1; }
+
+      - name: Smoke test — invoke poller + read snapshot
+        run: |
+          set -euo pipefail
+          echo "── direct invoke"
+          resp=$(curl -sS -w $'\n%{http_code}' -X POST "$FN_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-poller-secret: $POLLER_SECRET" --data '{}')
+          code=$(printf '%s' "$resp" | tail -n1); body=$(printf '%s' "$resp" | sed '$d')
+          echo "  http $code — $body"
+          [ "$code" = "200" ] || { echo "::error::poller invoke returned $code"; exit 1; }
+          echo "$body" | jq -e '.ok == true or .skipped != null or (.matches|type=="number")' >/dev/null \
+            || { echo "::error::poller body not a success shape: $body"; exit 1; }
+
+          echo "── read snapshot via PostgREST (publishable key)"
+          sleep 3
+          snap=$(curl -sS "$SUPABASE_URL/rest/v1/live_snapshot?select=match_count,updated_at&limit=1" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY")
+          echo "  snapshot: $snap"
+          echo "$snap" | jq -e 'length==1 and .[0].updated_at != null' >/dev/null \
+            || { echo "::error::snapshot row not readable/updated: $snap"; exit 1; }
+          age=$(echo "$snap" | jq -r '.[0].updated_at' | { read ts; node -e "console.log(Math.round((Date.now()-new Date(process.argv[1]).getTime())/1000))" "$ts"; })
+          echo "  snapshot age: ${age}s"
+          [ "$age" -lt 180 ] || { echo "::error::snapshot is stale (${age}s) — poller not writing"; exit 1; }
+          echo "✅ Live proxy is up: poller wrote a fresh snapshot, readable by the browser anon role."

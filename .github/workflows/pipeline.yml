@@ -175,6 +175,10 @@ jobs:
           # it under that name too, not just as index.html.
           cp bsp-consult-dashboard.html _site/bsp-consult-dashboard.html
           cp auth.html account.html funnel.html verify.html auth.js analytics.js _site/
+          # TEN-107 Live tab: the standalone Live page reads the Supabase live_snapshot
+          # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
+          # dark even with the flag on. Public Supabase creds are injected below.
+          cp live-tab.js _site/
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
@@ -256,6 +260,38 @@ jobs:
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
 
+      # TEN-107: inject the PUBLIC Supabase creds into the served dashboard. The
+      # project URL + publishable (anon) key are browser-safe by design — RLS
+      # allows anon to SELECT only the single live_snapshot row and nothing else.
+      # Placeholders (__SUPABASE_URL__ / __SUPABASE_ANON_KEY__) stay in git; only
+      # the deployed _site copies carry the values. Literal string replace (no
+      # sed metachar hazards on the URL/key). No-op if the secrets are unset —
+      # live-tab.js rejects the leftover "__" placeholders and stays dark.
+      - name: Inject Supabase public config
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "Supabase public creds not set — leaving placeholders (Live tab stays off)."
+            exit 0
+          fi
+          node -e '
+            const fs = require("fs");
+            const url = process.env.SUPABASE_URL.replace(/\/+$/, "");
+            const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+            for (const f of ["_site/index.html", "_site/bsp-consult-dashboard.html"]) {
+              let s = fs.readFileSync(f, "utf8");
+              s = s.split("__SUPABASE_URL__").join(url).split("__SUPABASE_ANON_KEY__").join(key);
+              fs.writeFileSync(f, s);
+            }
+            console.log("Injected Supabase public config into served dashboard.");
+          '
+          # Fail loudly if a placeholder survived (would silently disable Live).
+          if grep -q "__SUPABASE_URL__\|__SUPABASE_ANON_KEY__" _site/index.html; then
+            echo "::error::Supabase placeholder left in _site/index.html"; exit 1
+          fi
+
       # Fail loudly if a file the pages reference is missing from the artifact.
       # A 404 on auth.js only shows up as a dead button in the browser, so catch
       # it here where it is still a build error.
@@ -266,6 +302,7 @@ jobs:
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
+                   live-tab.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \
