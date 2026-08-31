@@ -240,6 +240,12 @@ jobs:
           # Percentile block only — tools/build-style-radar.js strips the raw
           # Match Charting rates, which are internal-only and must not be served.
           cp style-radar.json _site/ 2>/dev/null || true
+          # TEN-103 Playing Style DNA radar (H2H compare page): 5 api-tennis-native
+          # axes (Serve / Return / Under Pressure / Dominance Ratio / Surface Elo),
+          # percentile-banded. Committed static data — NO workflow regenerates it, so
+          # the committed copy IS the source of truth. Not copied = silent 404 and the
+          # H2H DNA radar (a paid feature) goes empty. In the assert list below.
+          cp dna-apitennis-ratings.json _site/ 2>/dev/null || true
           # Market performance: the index gates the profile block (no entry = no block,
           # so a missing index silently hides the feature for every player), the shards
           # carry the detail. odds-archive/ is deliberately NOT copied — it is the raw
@@ -262,6 +268,7 @@ jobs:
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
+                   dna-apitennis-ratings.json \
                    style-meetings-index.json \
                    odds-performance-index.json odds-index.json; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }

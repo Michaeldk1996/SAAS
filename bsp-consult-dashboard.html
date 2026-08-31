@@ -18386,8 +18386,24 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     Grass: { c: '#3dd68c', b: 'rgba(61,214,140,0.32)' },
   };
   const SCOPES = [['career', 'Career'], ['w52', 'Last 52 weeks']];
-  // Real six-spoke DNA radar axes (from player-profiles dna), in ppDnaVals order.
-  const AXES = ['Serve', 'Return', 'Baseline', 'Movement', 'Net play', 'Clutch'];
+  // TEN-103 Playing Style DNA radar — 5 api-tennis-native axes (founder ruling
+  // 2026-08-31), replacing the old 6-axis charting-derived radar. Serve / Return /
+  // Under Pressure / Dominance Ratio come from dna-apitennis-ratings.json (percentile
+  // `pct` fields, p2-p98 banded); Surface Elo is Tennis Abstract (elo-ratings.json),
+  // pre-joined into the same file. Shape = trailing-52-week percentiles for the
+  // selected surface (default All); labels print the raw rating + a Δ vs the
+  // since-2024 baseline. Render floor = >=10 matches in the scope+surface.
+  const DNA_AXES = [
+    { key: 'serve',          label: 'Serve',           dp: 0 },
+    { key: 'return',         label: 'Return',          dp: 1 },
+    { key: 'underPressure',  label: 'Under Pressure',  dp: 1 },
+    { key: 'dominanceRatio', label: 'Dominance Ratio', dp: 2 },
+    { key: 'elo',            label: 'Surface Elo',     dp: 0 },
+  ];
+  const AXES = DNA_AXES.map(a => a.label);   // spoke labels (drives radar geometry)
+  const DNA_FLOOR = 10;                       // >=10 matches in scope+surface to draw a shape
+  const DNA_SURFACE = 'All';                  // default radar surface (founder: All; surface handling minimal)
+  const DNA_SCOPE = 'last52';                 // primary shape = trailing 52 weeks
 
   // Real data, filled by buildH2HData() the first time the page is opened.
   let P = {};   // keyed by short name
@@ -18493,12 +18509,61 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         bg: on ? 'rgba(91,155,255,0.2)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent' };
     });
   }
+  // Even n-spoke layout: step = 360/n so 5 axes lay out at 72deg (was hardcoded 60
+  // for the retired 6-axis radar).
+  const AXIS_STEP = 360 / AXES.length;
   function radarPoints(vals, r) {
     return AXES.map((_, i) => {
-      const ang = (-90 + i * 60) * Math.PI / 180;
+      const ang = (-90 + i * AXIS_STEP) * Math.PI / 180;
       const v = vals && vals[i] != null ? vals[i] / 100 : 0;
       return (150 + Math.cos(ang) * r * v).toFixed(1) + ',' + (150 + Math.sin(ang) * r * v).toFixed(1);
     }).join(' ');
+  }
+  // ---- DNA radar data source (dna-apitennis-ratings.json), lazily fetched. ----
+  let _dna = null, _dnaLoading = false;
+  function ensureDna() {
+    if (_dna || _dnaLoading) return;
+    _dnaLoading = true;
+    fetch('./dna-apitennis-ratings.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const byKey = {};
+        if (d && Array.isArray(d.players)) for (const p of d.players) byKey[String(p.playerKey)] = p;
+        _dna = { byKey, meta: (d && d._meta) || {} };
+        render();
+      })
+      .catch(() => { _dna = { byKey: {} }; });
+  }
+  const _dnaFmt = (v, dp) => v == null ? '—' : (dp === 0 ? String(Math.round(v)) : (+v).toFixed(dp));
+  // Resolve one player's 5-axis DNA radar for a surface+scope. Keyed by the numeric
+  // player-profiles key (== api-tennis player_key == dna-apitennis-ratings playerKey).
+  // Returns pcts (0-100 shape), raw ratings (labels), deltas vs the since-2024 baseline
+  // (null for Elo, which is scope-less), match count, and a draw flag (>=DNA_FLOOR).
+  function dnaRadarFor(key, surface, scope) {
+    const rec = (_dna && _dna.byKey) ? _dna.byKey[String(key)] : null;
+    if (!_dna) return { loading: true, inPool: false, ok: false };
+    if (!rec) return { inPool: false, ok: false };
+    const sf = rec.surfaces && rec.surfaces[surface];
+    if (!sf) return { inPool: true, ok: false, matches: 0 };
+    const sc = sf[scope] || {}, base = sf.sinceBase || {};
+    const matches = (sc.sample && sc.sample.matches) || 0;
+    const pcts = [], ratings = [], deltas = [];
+    for (const ax of DNA_AXES) {
+      if (ax.key === 'elo') {
+        const e = sf.elo || null;
+        ratings.push(e && e.rating != null ? e.rating : null);
+        pcts.push(e && e.pct != null ? e.pct : null);
+        deltas.push(null);                       // Elo carries no scope, so no baseline delta
+      } else {
+        const r = sc[ax.key], b = base[ax.key];
+        ratings.push(r && r.rating != null ? r.rating : null);
+        pcts.push(r && r.pct != null ? r.pct : null);
+        deltas.push((r && r.rating != null && b && b.rating != null) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
+      }
+    }
+    const ok = matches >= DNA_FLOOR && pcts.some(v => v != null);
+    const est = !!(sc.underPressure && sc.underPressure.estimated);
+    return { inPool: true, ok, matches, pcts, ratings, deltas, est, surface, scope };
   }
 
   // ---- match detail: HONEST. Real set-score summary; real per-match stats where we
@@ -18944,20 +19009,46 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const bCol = meetColOf(b, a.archKey, S.styleBAll);
     const aRec = (!aCol.loading && aCol.total > 0) ? [aCol.w, aCol.l] : null;
     const bRec = (!bCol.loading && bCol.total > 0) ? [bCol.w, bCol.l] : null;
+    // TEN-103 DNA radar shape — trailing-52-week percentiles, default All-surface.
+    const aDna = dnaRadarFor(a.key, DNA_SURFACE, DNA_SCOPE);
+    const bDna = dnaRadarFor(b.key, DNA_SURFACE, DNA_SCOPE);
     view.style = {
       aArch: a.arch || '—', bArch: b.arch || '—',
       aDesc: a.arch ? (a.archDesc || '') : 'No archetype classified — not enough tagged matches.',
       bDesc: b.arch ? (b.archDesc || '') : 'No archetype classified — not enough tagged matches.',
       rings: [0.34, 0.67, 1].map(f => ({ points: radarPoints(AXES.map(() => 100), r0 * f) })),
-      spokes: AXES.map((_, i) => { const ang = (-90 + i * 60) * Math.PI / 180; return { x: (150 + Math.cos(ang) * r0).toFixed(1), y: (150 + Math.sin(ang) * r0).toFixed(1) }; }),
+      spokes: AXES.map((_, i) => { const ang = (-90 + i * AXIS_STEP) * Math.PI / 180; return { x: (150 + Math.cos(ang) * r0).toFixed(1), y: (150 + Math.sin(ang) * r0).toFixed(1) }; }),
       axisLabels: AXES.map((lbl, i) => {
-        const ang = (-90 + i * 60) * Math.PI / 180;
+        const ang = (-90 + i * AXIS_STEP) * Math.PI / 180;
         const x = 150 + Math.cos(ang) * (r0 + 24), y = 150 + Math.sin(ang) * (r0 + 24) + 4;
         return { label: lbl, x: x.toFixed(0), y: y.toFixed(0), anchor: Math.abs(Math.cos(ang)) < 0.2 ? 'middle' : (Math.cos(ang) > 0 ? 'start' : 'end') };
       }),
-      aPoints: a.radar ? radarPoints(a.radar, r0) : null,
-      bPoints: b.radar ? radarPoints(b.radar, r0) : null,
-      hasRadar: !!(a.radar || b.radar),
+      aPoints: aDna.ok ? radarPoints(aDna.pcts, r0) : null,
+      bPoints: bDna.ok ? radarPoints(bDna.pcts, r0) : null,
+      hasRadar: !!(aDna.ok || bDna.ok),
+      dnaScopeLabel: 'Last 52 weeks · ' + DNA_SURFACE + '-surface · percentile vs the api-tennis field',
+      dnaFloor: DNA_FLOOR,
+      aDnaState: aDna.loading ? 'loading' : (!aDna.inPool ? 'absent' : (aDna.ok ? 'ok' : 'below')),
+      bDnaState: bDna.loading ? 'loading' : (!bDna.inPool ? 'absent' : (bDna.ok ? 'ok' : 'below')),
+      aDnaMatches: aDna.matches || 0, bDnaMatches: bDna.matches || 0,
+      aDnaEst: !!aDna.est, bDnaEst: !!bDna.est,
+      // Per-axis raw-rating readout with Δ vs the since-2024 baseline (the shape is
+      // percentile-normalised; the numbers are the real ratings the founder locked).
+      // A below-floor / absent player prints '—' per axis, not the noisy small-sample
+      // rating — the same honesty as withholding the polygon (its shape note carries
+      // the reason). Only a drawn (>=DNA_FLOOR) player shows numbers.
+      dnaReadout: DNA_AXES.map((ax, i) => {
+        const arw = aDna.ok ? _dnaFmt(aDna.ratings ? aDna.ratings[i] : null, ax.dp) : '—';
+        const brw = bDna.ok ? _dnaFmt(bDna.ratings ? bDna.ratings[i] : null, ax.dp) : '—';
+        const delta = (dv) => {
+          if (dv == null || dv === 0) return { txt: '', color: '#4b5672' };
+          const up = dv > 0;
+          return { txt: (up ? '▲' : '▼') + Math.abs(dv).toFixed(ax.dp), color: up ? '#3dd68c' : '#e0616f' };
+        };
+        return { label: ax.label, aRaw: arw, bRaw: brw,
+          aDelta: aDna.ok ? delta(aDna.deltas ? aDna.deltas[i] : null) : null,
+          bDelta: bDna.ok ? delta(bDna.deltas ? bDna.deltas[i] : null) : null };
+      }),
       matchup: Object.assign(recRow('Record vs style', aRec, bRec), {
         note: (aRec && bRec) ? 'All-surface · rostered opponents — ' + a.short + ' against ' + (b.arch || '—') + 's, ' + b.short + ' against ' + (a.arch || '—') + 's'
           : (aCol.loading || bCol.loading) ? 'Loading career style-matchup history…'
@@ -19336,10 +19427,49 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ${more}
     </div>`;
   }
+  // Per-axis raw-rating readout beneath the DNA radar. The radar SHAPE is percentile-
+  // normalised (p2-p98 banded) so 5 axes on different scales are comparable; these are
+  // the real locked ratings + a Δ vs the since-2024 baseline. Also carries the render-
+  // floor empty states so a below-floor / absent player reads honestly instead of a
+  // phantom polygon. Archetype + Record-vs-style blocks are untouched by this.
+  function dnaReadoutHtml(v) {
+    const s = v.style;
+    const stateNote = (st, matches) =>
+      st === 'loading' ? 'Loading DNA…'
+      : st === 'absent' ? 'No api-tennis rating on record'
+      : st === 'below' ? ('Fewer than ' + s.dnaFloor + ' matches in the last 52 weeks (' + matches + ') — shape withheld')
+      : '';
+    const aNote = stateNote(s.aDnaState, s.aDnaMatches), bNote = stateNote(s.bDnaState, s.bDnaMatches);
+    const cell = (raw, delta, color) => `<span style="display:inline-flex; align-items:baseline; gap:5px; justify-content:${color === '#6aaeff' ? 'flex-end' : 'flex-start'};">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:${raw === '—' ? '#3f4860' : color};">${E(raw)}</span>
+      ${delta && delta.txt ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:${delta.color};">${E(delta.txt)}</span>` : ''}
+    </span>`;
+    const rows = s.dnaReadout.map(r => `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,150px) minmax(0,1fr); gap:12px; align-items:center; padding:4px 2px; border-bottom:1px solid rgba(255,255,255,0.04);">
+      ${cell(r.aRaw, r.aDelta, '#6aaeff')}
+      <span style="text-align:center; font-size:10.5px; letter-spacing:0.04em; color:#6b7690;">${E(r.label)}</span>
+      ${cell(r.bRaw, r.bDelta, '#e7e9ee')}
+    </div>`).join('');
+    const noteRow = (aNote || bNote) ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; padding-top:6px;">
+      <span style="text-align:right; font-size:11px; color:#e0a34b;">${E(aNote)}</span>
+      <span style="text-align:left; font-size:11px; color:#e0a34b;">${E(bNote)}</span>
+    </div>` : '';
+    const est = (s.aDnaEst || s.bDnaEst) ? ' · Under Pressure from 3 of 4 components for one player (estimated)' : '';
+    return `<div style="display:flex; flex-direction:column; gap:2px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:4px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6880;">Raw rating · Δ vs 2024 baseline</span>
+        <span style="display:inline-flex; gap:12px; font-size:10px;">
+          <span style="color:#6aaeff;">■ ${E(v.a.short)}</span><span style="color:#e7e9ee;">▢ ${E(v.b.short)}</span>
+        </span>
+      </div>
+      ${rows}
+      ${noteRow}
+      <span style="font-size:10.5px; color:#4b5672; text-align:center; padding-top:8px;">${E(s.dnaScopeLabel + est)}</span>
+    </div>`;
+  }
   function stylesCard(v) {
     const s = v.style, mu = s.matchup;
     return `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:16px;">
-      ${sectionHead('Playing styles', 'Six-axis profile, overlaid')}
+      ${sectionHead('Playing style DNA', 'Five-axis profile, overlaid')}
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:20px; align-items:center;">
         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:7px;">
           <span style="font-size:15px; font-weight:800; color:#6aaeff;">${E(v.a.short)}</span>
@@ -19353,6 +19483,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
             ${s.aPoints ? `<polygon points="${s.aPoints}" fill="rgba(106,174,255,0.18)" stroke="#6aaeff" stroke-width="2"></polygon>` : ''}
             ${s.bPoints ? `<polygon points="${s.bPoints}" fill="rgba(231,233,238,0.10)" stroke="#e7e9ee" stroke-width="2" stroke-dasharray="5 4"></polygon>` : ''}
             ${s.axisLabels.map(l => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" fill="#8b96b5" font-size="11.5" font-family="IBM Plex Mono, monospace">${E(l.label)}</text>`).join('')}
+            ${!s.hasRadar ? `<text x="150" y="150" text-anchor="middle" fill="#4b5672" font-size="11" font-family="IBM Plex Mono, monospace">${E(s.aDnaState === 'loading' ? 'Loading DNA…' : 'No shape at this floor')}</text>` : ''}
           </svg>
         </div>
         <div style="display:flex; flex-direction:column; align-items:flex-start; gap:7px;">
@@ -19361,6 +19492,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           <span style="font-size:12.5px; color:#5b6880; max-width:220px;">${E(s.bDesc)}</span>
         </div>
       </div>
+      ${dnaReadoutHtml(v)}
       <div style="display:flex; flex-direction:column; gap:4px; border-top:1px solid rgba(255,255,255,0.06); padding-top:14px;">
         <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(170px,260px) minmax(0,1fr); gap:14px; align-items:center;">
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:1px;">
@@ -19775,13 +19907,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       e.arch = st.archetype_label || null;
       e.thin = st.archetype_data_coverage === 'partial' || (Array.isArray(st.partial_axes) && st.partial_axes.length > 0);
     }
-    // 6-axis DNA radar
-    if (prof && prof.dna) {
-      const dv = fn('ppDnaVals');
-      const vals = dv ? dv(prof.dna) : ['serve', 'return', 'baseline', 'movement', 'netPlay', 'clutch'].map(k => prof.dna[k]);
-      e.radar = vals.map(v => (v == null || v === '' ? null : Number(v)));
-      if (e.radar.every(v => v == null)) e.radar = null;
-    }
+    // Playing Style DNA radar (TEN-103): the 5 api-tennis-native axes are resolved at
+    // render time from dna-apitennis-ratings.json (keyed by e.key, the player-profiles /
+    // api-tennis player_key) via dnaRadarFor() — NOT from the retired charting-derived
+    // prof.dna. Just make sure the DNA file is loading.
+    ensureDna();
     // elo (skip illustrative estimates — honesty)
     const eloFor = fn('ppEloFor');
     if (eloFor && prof) { const er = eloFor(prof); if (er && !er.illustrative && er.elo != null) e.elo = Math.round(er.elo); }
@@ -19905,6 +20035,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
   function ensureInit() {
     triggerLoads();
+    ensureDna();
     if (dataReady()) { build(); render(); return; }
     // data still loading — show empty/loading shell and poll briefly
     render();
