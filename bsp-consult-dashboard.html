@@ -18489,7 +18489,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     scope: 'w52',
     ctxSurface: 'Hard', ctxRound: 'QF', ctxFormat: 3, ctxTier: 'Masters',
     flash: false, loading: false,
-    tourSel: null,
+    tourSel: null, tourOpen: false,
     meetOpen: false, styleOpen: false, resOpen: false,
     styleAAll: false, styleBAll: false,   // per-column "+N more" state for the career style-meeting lists (TEN-117)
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
@@ -19016,9 +19016,16 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const aD = deltaOf(aT, tHistA), bD = deltaOf(bT, tHistB);
       view.tourney = {
         title: selName, empty: false, present: true,
+        // Custom in-DOM dropdown (button + inline list), NOT a native <select>.
+        // The native picker collapsed on tap in the founder's runtime (mobile/webview);
+        // this reuses the proven data-hid click path that every other toggle uses. (TEN-120)
+        selName: selName,
+        selOpen: !!S.tourOpen,
+        selChev: S.tourOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+        hSelToggle: bindH(() => setState(s2 => ({ tourOpen: !s2.tourOpen }))),
         options: tourList.map(t2 => ({ name: t2.name, selected: t2.name === selName,
-          label: t2.name + (t2.a > 0 && t2.b > 0 ? '' : t2.a > 0 ? ' · ' + a.short + ' only' : ' · ' + b.short + ' only') })),
-        hSelect: bindH(e => setState({ tourSel: e && e.target ? e.target.value : selName, resOpen: false, yrOpen: null })),
+          label: t2.name + (t2.a > 0 && t2.b > 0 ? '' : t2.a > 0 ? ' · ' + a.short + ' only' : ' · ' + b.short + ' only'),
+          hPick: bindH(() => setState({ tourSel: t2.name, tourOpen: false, resOpen: false, yrOpen: null })) })),
         aBest: aBestF ? 'Best · ' + aBestF : '—',
         bBest: bBestF ? 'Best · ' + bBestF : '—',
         aWl: aWl ? aWl[0] + '–' + aWl[1] + ' here' : '—',
@@ -19658,9 +19665,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672;">Tournament</span>
         <span style="flex:1; height:1px; background:rgba(255,255,255,0.06);"></span>
-        ${t.empty ? '' : `<select data-hchange="${t.hSelect}" title="Choose a tournament" style="background:#0a0d14; color:#e7e9ee; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:11px; max-width:280px; cursor:pointer;">
-          ${t.options.map(o => `<option value="${E(o.name)}"${o.selected ? ' selected' : ''}>${E(o.label)}</option>`).join('')}
-        </select>`}
+        ${t.empty ? '' : `<div style="position:relative; max-width:300px;">
+          <button data-hid="${t.hSelToggle}" title="Choose a tournament" style="display:flex; align-items:center; gap:8px; width:100%; background:#0a0d14; color:#e7e9ee; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; text-align:left;">
+            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${E(t.selName)}</span>
+            <span style="display:inline-block; transition:transform 0.2s; transform:${t.selChev}; color:#5b6880;">▾</span>
+          </button>
+          ${t.selOpen ? `<div style="position:absolute; z-index:20; top:calc(100% + 4px); right:0; left:0; max-height:260px; overflow-y:auto; background:#0a0d14; border:1px solid rgba(255,255,255,0.16); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,0.55);">
+            ${t.options.map(o => `<div data-hid="${o.hPick}" style="padding:7px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:${o.selected ? '#6aaeff' : '#c6ccdb'}; background:${o.selected ? 'rgba(106,174,255,0.10)' : 'transparent'}; border-bottom:1px solid rgba(255,255,255,0.05);">${o.selected ? '✓ ' : ''}${E(o.label)}</div>`).join('')}
+          </div>` : ''}
+        </div>`}
       </div>
       ${t.empty ? `<div style="padding:22px 0; text-align:center; font-size:13px; color:#4b5672;">${E(t.emptyText)}</div>` : `
       <div style="font-size:10.5px; color:#4b5672; text-align:center; margin-top:-6px;">All-surface career record — the surface toggle above doesn't apply here.</div>
