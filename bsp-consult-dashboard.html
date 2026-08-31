@@ -380,7 +380,12 @@
      surface label (§3) AND pushes the 218px odds column + its 1px divider to the card's
      right content inset so CLOSE lands hard against it and the divider sits 218px in from
      the right, immediately left of the OPEN column (§5). */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px 126px minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
+  /* Col 2 is max-content (was a fixed 126px): best-of-5 Grand Slam matches carry up to
+     5 set tiles, which overflowed the fixed track and wrapped the games onto a second
+     row (TEN-121). max-content lets the cluster size to its set count; the 1fr spacer
+     absorbs the difference so the odds column stays right-anchored, and best-of-3 cards
+     stay as compact as before. */
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px max-content minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
@@ -479,10 +484,14 @@
      per-set games at 15px with a modest gap. Tight margin-left keeps the total next to
      the games rather than adrift; fixed columns keep the two rows' games aligned. */
   /* §7 (PASS 4) — set-score cluster read from the export source. The per-set slots
-     sit 8px from the sets-won total (4px grid gap + 4px total margin-right), three
-     fixed 18px slots. Total is Mono 700 15px; per-set games are 2px smaller (13px),
-     matching the "2px smaller than the total" rule in the export README. */
-  [data-page="matches"] .mc-sets{ display:grid; grid-template-columns:24px repeat(3,18px); gap:0 4px; align-items:center; margin-left:24px; }
+     sit 8px from the sets-won total (4px grid gap + 4px total margin-right), fixed 18px
+     slots. Total is Mono 700 15px; per-set games are 2px smaller (13px), matching the
+     "2px smaller than the total" rule in the export README.
+     TEN-121: games are auto-flow COLUMN (one implicit 18px track per set) rather than a
+     fixed 3-slot template, so a best-of-5 match keeps all its set tiles on a single row
+     instead of wrapping the 4th/5th set. Both player rows share the same auto-columns so
+     the per-set cells still line up across the two rows. */
+  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:18px; grid-template-columns:24px; gap:0 4px; align-items:center; margin-left:24px; }
   [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; margin-right:4px; }
   /* §6 — sets-won tile: winner white-on-light-fill, loser muted-on-fainter-fill (README
      §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
