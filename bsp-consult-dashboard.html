@@ -19592,6 +19592,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         </select>`}
       </div>
       ${t.empty ? `<div style="padding:22px 0; text-align:center; font-size:13px; color:#4b5672;">${E(t.emptyText)}</div>` : `
+      <div style="font-size:10.5px; color:#4b5672; text-align:center; margin-top:-6px;">All-surface career record — the surface toggle above doesn't apply here.</div>
       <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,220px) minmax(0,1fr); gap:14px; align-items:center;">
         <div style="display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap;">
           <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#c6ccdb; background:rgba(106,174,255,0.08); border:1px solid rgba(106,174,255,0.26); border-radius:8px; padding:6px 11px; white-space:nowrap;">${E(t.aBest)}</span>
@@ -19608,7 +19609,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:${t.aDeltaColor};">${E(t.aDelta)}</span>
           <span style="font-size:10.5px; color:#4b5672;">${E(t.aDeltaSub)}</span>
         </div>
-        <span style="justify-self:center; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6880; text-align:center;">Win rate here vs other events</span>
+        <span style="justify-self:center; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#5b6880; text-align:center;">Win rate here vs career average</span>
         <div style="display:flex; flex-direction:column; gap:1px;">
           <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:${t.bDeltaColor};">${E(t.bDelta)}</span>
           <span style="font-size:10.5px; color:#4b5672;">${E(t.bDeltaSub)}</span>
