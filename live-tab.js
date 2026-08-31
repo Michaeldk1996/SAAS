@@ -165,10 +165,17 @@
     return String(fix.event_live) === '1' && !finalWord;
   }
 
-  // Singles only for the MVP Live tab — doubles fixtures have "A/ B" compound
-  // names and no per-player model context; they add noise to the live board.
-  function isSingles(fix) {
-    return /singles/i.test(String(fix.event_type_type || ''));
+  // ATP singles only for launch — founder ruling (TEN-91, 2026-08-31): the Live
+  // tab defaults to ATP-only so the board reads as tour-level, not ITF/Challenger
+  // filler. event_type_type carries the tour ("Atp Singles" / "Wta Singles" /
+  // "Challenger Men Singles" / "Itf Men Singles"); the /atp/ + /single/ pair is
+  // the same ATP-singles idiom already used in build-tournament-entries.js.
+  // Doubles ("A/ B" compound names, no per-player model context) are excluded
+  // either way. To widen later (ATP+Challenger, or all singles), relax this one
+  // predicate — nothing else in the render path is tour-specific.
+  function isAtpSingles(fix) {
+    const t = String(fix.event_type_type || '');
+    return /atp/i.test(t) && /single/i.test(t);
   }
 
   // ─── render the full board ────────────────────────────────────────────────────
@@ -178,7 +185,7 @@
     if (!g) return;
 
     const live = (Array.isArray(matches) ? matches : [])
-      .filter(isSingles)
+      .filter(isAtpSingles)
       .filter(isUnderway);
 
     const { isStale, ageMs } = staleness();
@@ -198,8 +205,8 @@
       g.innerHTML =
         `<div class="lt-empty">
            <div class="lt-empty-icon">◍</div>
-           <p class="lt-empty-title">No singles matches live right now</p>
-           <p class="lt-empty-sub">The board refreshes automatically — live matches appear here as they start.</p>
+           <p class="lt-empty-title">No ATP singles live right now</p>
+           <p class="lt-empty-sub">The board refreshes automatically — live ATP matches appear here as they start.</p>
          </div>`;
       return;
     }
