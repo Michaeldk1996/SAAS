@@ -12337,13 +12337,14 @@ function buildStyleSection(m){
     const coming = `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
     return dnaHtml ? `<div class="psx-wrap">${dnaHtml}${coming}</div>` : coming;
   }
-  // Style-vs-style edge needs BOTH archetypes (it reads the general matrix cell). When it
-  // is suppressed the radar takes the full width rather than sitting beside an empty column.
+  // Old 6-axis charting radar RETIRED here (founder ruling 2026-08-31, TEN-103): the
+  // api-tennis Playing Style DNA radar built above replaces it — exactly as on the H2H
+  // page, where the charting radar only graded ~1/3 of players and was retired for DNA.
+  // The style-vs-style edge (the matrix matchup cell) is a SEPARATE block that still needs
+  // BOTH archetypes; it stays, and now takes the full width since the radar no longer sits
+  // beside it. It self-suppresses to nothing when either player is unclassified.
   const edgeHtml = (a1 && a2) ? styleEdgeHtml(m, s1, s2) : '';
-  const radarCard = `<div class="psr-col psx-card">${styleRadarBlockHtml(m, r1, r2)}</div>`;
-  const topHtml = edgeHtml
-    ? `<div class="psx-top">${radarCard}${edgeHtml}</div>`
-    : `<div class="psx-top psx-top-solo">${radarCard}</div>`;
+  const topHtml = edgeHtml ? `<div class="psx-top psx-top-solo">${edgeHtml}</div>` : '';
   // "Historical by surface" was extracted from inside the edge card so the career
   // "Personally" block can sit between the general edge and the per-surface split
   // (board order, TEN-88 #2). Same gate the edge used for it: both classified, a
