@@ -18489,7 +18489,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     scope: 'w52',
     ctxSurface: 'Hard', ctxRound: 'QF', ctxFormat: 3, ctxTier: 'Masters',
     flash: false, loading: false,
-    tourSel: null, tourOpen: false,
+    tourSel: null, tourQuery: '',
     meetOpen: false, styleOpen: false, resOpen: false,
     styleAAll: false, styleBAll: false,   // per-column "+N more" state for the career style-meeting lists (TEN-117)
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
@@ -19016,16 +19016,23 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const aD = deltaOf(aT, tHistA), bD = deltaOf(bT, tHistB);
       view.tourney = {
         title: selName, empty: false, present: true,
-        // Custom in-DOM dropdown (button + inline list), NOT a native <select>.
-        // The native picker collapsed on tap in the founder's runtime (mobile/webview);
-        // this reuses the proven data-hid click path that every other toggle uses. (TEN-120)
+        // Type-to-filter search box (combobox), NOT a native <select> or a click-only
+        // dropdown. Founder asked for a search bar so a tournament is easy to find in a
+        // long list. Mirrors the proven player-search input: id="h2h-input-*" (focus/caret
+        // preserved across re-render) + data-hinput event path. (TEN-120)
         selName: selName,
-        selOpen: !!S.tourOpen,
-        selChev: S.tourOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-        hSelToggle: bindH(() => setState(s2 => ({ tourOpen: !s2.tourOpen }))),
-        options: tourList.map(t2 => ({ name: t2.name, selected: t2.name === selName,
-          label: t2.name + (t2.a > 0 && t2.b > 0 ? '' : t2.a > 0 ? ' · ' + a.short + ' only' : ' · ' + b.short + ' only'),
-          hPick: bindH(() => setState({ tourSel: t2.name, tourOpen: false, resOpen: false, yrOpen: null })) })),
+        query: S.tourQuery || '',
+        listOpen: (S.tourQuery || '').length > 0,
+        hSearch: bindH(e => setState({ tourQuery: e && e.target ? e.target.value : '' })),
+        options: (() => {
+          const tq = (S.tourQuery || '').trim().toLowerCase();
+          const matches = tq ? tourList.filter(t2 => t2.name.toLowerCase().includes(tq)) : tourList;
+          return matches.map(t2 => ({ name: t2.name, selected: t2.name === selName,
+            label: t2.name + (t2.a > 0 && t2.b > 0 ? '' : t2.a > 0 ? ' · ' + a.short + ' only' : ' · ' + b.short + ' only'),
+            hPick: bindH(() => setState({ tourSel: t2.name, tourQuery: '', resOpen: false, yrOpen: null })) }));
+        })(),
+        noMatch: (S.tourQuery || '').trim().length > 0 &&
+          !tourList.some(t2 => t2.name.toLowerCase().includes((S.tourQuery || '').trim().toLowerCase())),
         aBest: aBestF ? 'Best · ' + aBestF : '—',
         bBest: bBestF ? 'Best · ' + bBestF : '—',
         aWl: aWl ? aWl[0] + '–' + aWl[1] + ' here' : '—',
@@ -19665,13 +19672,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#4b5672;">Tournament</span>
         <span style="flex:1; height:1px; background:rgba(255,255,255,0.06);"></span>
-        ${t.empty ? '' : `<div style="position:relative; max-width:300px;">
-          <button data-hid="${t.hSelToggle}" title="Choose a tournament" style="display:flex; align-items:center; gap:8px; width:100%; background:#0a0d14; color:#e7e9ee; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; text-align:left;">
-            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${E(t.selName)}</span>
-            <span style="display:inline-block; transition:transform 0.2s; transform:${t.selChev}; color:#5b6880;">▾</span>
-          </button>
-          ${t.selOpen ? `<div style="position:absolute; z-index:20; top:calc(100% + 4px); right:0; left:0; max-height:260px; overflow-y:auto; background:#0a0d14; border:1px solid rgba(255,255,255,0.16); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,0.55);">
+        ${t.empty ? '' : `<span title="Currently showing" style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#6aaeff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">${E(t.selName)}</span>
+        <div style="position:relative; max-width:260px; width:100%;">
+          <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#5b6880; pointer-events:none;">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"></circle><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          </span>
+          <input class="h2hin" id="h2h-input-tour" value="${E(t.query)}" data-hinput="${t.hSearch}" autocomplete="off" spellcheck="false" placeholder="Search tournaments…" style="width:100%; box-sizing:border-box; background:#0a0d14; color:#e7e9ee; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:7px 11px 7px 30px; font-family:'IBM Plex Mono',monospace; font-size:11px;">
+          ${t.listOpen ? `<div style="position:absolute; z-index:20; top:calc(100% + 4px); right:0; left:0; max-height:260px; overflow-y:auto; background:#0a0d14; border:1px solid rgba(255,255,255,0.16); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,0.55);">
             ${t.options.map(o => `<div data-hid="${o.hPick}" style="padding:7px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:${o.selected ? '#6aaeff' : '#c6ccdb'}; background:${o.selected ? 'rgba(106,174,255,0.10)' : 'transparent'}; border-bottom:1px solid rgba(255,255,255,0.05);">${o.selected ? '✓ ' : ''}${E(o.label)}</div>`).join('')}
+            ${t.noMatch ? `<div style="padding:9px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#4b5672;">No tournament matches that search.</div>` : ''}
           </div>` : ''}
         </div>`}
       </div>
