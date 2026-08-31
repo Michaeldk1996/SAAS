@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T23:18:30.641Z",
+  "generatedAt": "2026-08-30T23:02:16.420Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1434,9 +1434,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 67.5,
+      "win_pct": 68.3,
       "clay_wr": 74,
-      "hard_wr": 67,
+      "hard_wr": 69,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner"
@@ -1993,9 +1993,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 68.4,
+      "win_pct": 69.2,
       "clay_wr": 65,
-      "hard_wr": 69,
+      "hard_wr": 71,
       "grass_wr": 80,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -2250,6 +2250,24 @@
       "archetype_label": "Solid Baseliner"
     },
     {
+      "name": "K. Jacquet",
+      "rank": 136,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 2,
+      "win_pct": 56.5,
+      "clay_wr": 56,
+      "hard_wr": 44,
+      "grass_wr": 80,
+      "top10_wins": 0,
+      "archetype_label": "Attacking Baseliner"
+    },
+    {
       "name": "F. Fognini",
       "rank": 138,
       "archetype_data_coverage": "full",
@@ -2365,9 +2383,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 51.6,
+      "win_pct": 50,
       "clay_wr": 67,
-      "hard_wr": 50,
+      "hard_wr": 48,
       "grass_wr": 33,
       "top10_wins": 0,
       "archetype_label": "Big Server + First Strike"
@@ -5480,19 +5498,6 @@
       "grass_wr": 40,
       "matches": 143,
       "source": "challenger"
-    },
-    {
-      "name": "Kyrian Jacquet",
-      "archetype_data_coverage": "challenger",
-      "partial_axes": [],
-      "badges": [],
-      "win_pct": 56.6,
-      "clay_wr": 60,
-      "hard_wr": 52,
-      "grass_wr": null,
-      "matches": 143,
-      "source": "challenger",
-      "archetype_label": "Attacking Baseliner"
     },
     {
       "name": "Mario Vilella Martinez",
