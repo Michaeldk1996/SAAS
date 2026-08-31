@@ -18403,6 +18403,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     flash: false, loading: false,
     tourSel: null,
     meetOpen: false, styleOpen: false, resOpen: false,
+    styleAAll: false, styleBAll: false,   // per-column "+N more" state for the career style-meeting lists (TEN-117)
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
   };
 
@@ -18899,23 +18900,50 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         rows: [ratingRow('Under pressure rating', 'up')].concat(pressRows) },
     ];
 
-    // playing styles
-    const lastRowsOf = (me, opp, side) => ((me.lastVs && opp.archKey && me.lastVs[opp.archKey]) || []).map((m, i) => {
-      const skey = 'sv' + side + i;
-      const open = S.mOpen === skey;
-      const oppName = m[2].replace(/^(def\.|lost to)\s*/, '');
-      return {
-        tag: m[4], tagColor: m[4] === 'W' ? '#3dd68c' : '#e0616f',
-        tagBd: m[4] === 'W' ? 'rgba(61,214,140,0.32)' : 'rgba(224,97,111,0.32)',
-        line: m[2] + ' · ' + m[3], meta: m[0] + ' · ' + m[1],
-        open, chev: open ? '▾' : '→',
-        hOpen: bindH(() => setState(s2 => ({ mOpen: s2.mOpen === skey ? null : skey, mView: 'stats', mSScope: 'match', mPScope: 's1' }))),
-        detail: open ? meetingDetail(m[3], skey, me.short, oppName, m[5], me.key, m[6]) : null,
-      };
-    });
+    // playing styles — the "results vs this style" list AND the record above it both
+    // read ONE source: this player's TEN-88 career-meeting shard, keyed by the
+    // OPPONENT's raw archetype_label (Option A, TEN-117; founder ruling 2026-08-30).
+    // Because the header count and the row list are the same array, the row count
+    // always matches the record — no fabrication, no padding. All-surface, rostered
+    // opponents. Career rows carry no eventKey, so there is deliberately NO arrow /
+    // per-row drill-in here (that only exists on the recent-form window, a different
+    // source). Missing / still-loading shard → honest empty or "loading", never a
+    // fallback to the wrong list.
+    const CAREER_CAP = 5;                          // per-column collapsed default (keeps the current visible default)
+    const _cMon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const _cDate = ds => { const m = String(ds || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (+m[3]) + ' ' + _cMon[(+m[2]) - 1] + " '" + m[1].slice(2) : '—'; };
+    const _cScore = r => { const s = String(r || '').trim(); return s ? s.replace(/\s*-\s*/g, '–') : '—'; };
+    const _cOpp = n => { const s = String(n || '').replace(/^[A-Z]\.\s*/, '').trim(); return s || '—'; };
+    // Full career-meeting rows for `me` vs `oppKey`'s style, or null while the shard loads.
+    const meetRowsOf = (me, oppKey) => {
+      if (!me || !me._styleMeetLoaded) return null;               // shard not resolved yet
+      if (!oppKey || !me.styleMeetings) return [];                 // unclassified / no shard
+      const arr = me.styleMeetings[oppKey];
+      return Array.isArray(arr) ? arr : [];
+    };
+    // Build the per-column view: sorted rows (most-recent first), W–L totals, and the
+    // collapsed/expanded slice. `allOpen` is the column's own "+N more" state.
+    const meetColOf = (me, oppKey, allOpen) => {
+      const raw = meetRowsOf(me, oppKey);
+      if (raw === null) return { loading: true, rows: [], total: 0, shown: 0, w: 0, l: 0, allOpen: !!allOpen };
+      const sorted = raw.slice().sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
+      const total = sorted.length;
+      const w = sorted.filter(r => r.won).length, l = total - w;
+      const shown = allOpen ? total : Math.min(CAREER_CAP, total);
+      const rows = sorted.slice(0, shown).map(r => ({
+        tag: r.won ? 'W' : 'L',
+        tagColor: r.won ? '#3dd68c' : '#e0616f',
+        tagBd: r.won ? 'rgba(61,214,140,0.32)' : 'rgba(224,97,111,0.32)',
+        line: (r.won ? 'def. ' : 'lost to ') + _cOpp(r.opponent) + ' · ' + _cScore(r.result),
+        meta: _cDate(r.date) + ' · ' + (r.tournament || '—'),
+      }));
+      return { loading: false, rows, total, shown, w, l, cap: CAREER_CAP, allOpen: !!allOpen };
+    };
     const r0 = 96;
-    const aRec = a.vsStyle && b.archKey ? a.vsStyle[b.archKey] : null;
-    const bRec = b.vsStyle && a.archKey ? b.vsStyle[a.archKey] : null;
+    const aCol = meetColOf(a, b.archKey, S.styleAAll);
+    const bCol = meetColOf(b, a.archKey, S.styleBAll);
+    const aRec = (!aCol.loading && aCol.total > 0) ? [aCol.w, aCol.l] : null;
+    const bRec = (!bCol.loading && bCol.total > 0) ? [bCol.w, bCol.l] : null;
     view.style = {
       aArch: a.arch || '—', bArch: b.arch || '—',
       aDesc: a.arch ? (a.archDesc || '') : 'No archetype classified — not enough tagged matches.',
@@ -18931,18 +18959,19 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       bPoints: b.radar ? radarPoints(b.radar, r0) : null,
       hasRadar: !!(a.radar || b.radar),
       matchup: Object.assign(recRow('Record vs style', aRec, bRec), {
-        note: (aRec && bRec) ? a.short + ' against ' + (b.arch || '—') + 's, ' + b.short + ' against ' + (a.arch || '—') + 's'
+        note: (aRec && bRec) ? 'All-surface · rostered opponents — ' + a.short + ' against ' + (b.arch || '—') + 's, ' + b.short + ' against ' + (a.arch || '—') + 's'
+          : (aCol.loading || bCol.loading) ? 'Loading career style-matchup history…'
           : 'Style-matchup history is missing for at least one player.' }),
       lastOpen: S.styleOpen,
-      lastLabel: S.styleOpen ? 'Hide recent results vs this style' : 'Show recent results vs this style',
+      lastLabel: S.styleOpen ? 'Hide results vs this style' : 'Show results vs this style',
       lastChev: S.styleOpen ? 'rotate(180deg)' : 'rotate(0deg)',
       hToggleLast: bindH(() => setState(s2 => ({ styleOpen: !s2.styleOpen }))),
       aVsLabel: a.short + ' vs ' + (b.arch ? b.arch + 's' : 'this style'),
       bVsLabel: b.short + ' vs ' + (a.arch ? a.arch + 's' : 'this style'),
-      aLastRows: lastRowsOf(a, b, 'a'), bLastRows: lastRowsOf(b, a, 'b'),
+      aCol, bCol,
+      hMoreA: bindH(() => setState(s2 => ({ styleAAll: !s2.styleAAll }))),
+      hMoreB: bindH(() => setState(s2 => ({ styleBAll: !s2.styleBAll }))),
     };
-    view.style.aLastEmpty = view.style.aLastRows.length === 0;
-    view.style.bLastEmpty = view.style.bLastRows.length === 0;
 
     // market
     const am = a.market, bm = b.market;
@@ -19278,19 +19307,33 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       </div>`}
     </div>`;
   }
-  function styleLastCol(label, color, rows, empty) {
+  // Per-column CAREER meeting list (TEN-117, Option A). Rows come from the player's
+  // TEN-88 meeting shard — the SAME array the "W–L·n" record above aggregates — so the
+  // count reconciles by construction. Static rows (no eventKey → no arrow/drill-in).
+  // "Showing X of Y" + a per-column "+N more" / "Show less" control expands this column
+  // alone; the two columns are independent (Fritz's 135 and Cobolli's 71 don't lock step).
+  function styleMeetCol(label, color, col, hMore) {
+    const showTxt = (col.loading || col.total === 0) ? '' : ('Showing ' + col.shown + ' of ' + col.total);
+    const body = col.loading
+      ? `<span style="font-size:12.5px; color:#4b5672; padding:8px 0;">Loading career meetings…</span>`
+      : (col.total === 0
+        ? `<span style="font-size:12.5px; color:#4b5672; padding:8px 0;">— no logged matches against this style</span>`
+        : col.rows.map(l => `<div class="seg" style="display:flex; align-items:baseline; gap:9px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.045);">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:${l.tagColor}; border:1px solid ${l.tagBd}; border-radius:5px; padding:1px 6px;">${E(l.tag)}</span>
+            <span style="flex:1; font-size:12.5px; line-height:1.45; color:#c6ccdb;">${E(l.line)}</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672;">${E(l.meta)}</span>
+          </div>`).join(''));
+    const more = (!col.loading && col.total > col.cap)
+      ? `<div data-hid="${hMore}" role="button" tabindex="0" style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#6aaeff; padding:9px 0 0; cursor:pointer;">${col.allOpen ? 'Show less' : '+' + (col.total - col.shown) + ' more'}</div>`
+      : '';
     return `<div style="display:flex; flex-direction:column;">
-      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:${color}; padding-bottom:6px;">${E(label)}</span>
-      ${rows.map(l => `<div>
-        <div class="seg" data-hid="${l.hOpen}" style="display:flex; align-items:baseline; gap:9px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.045); cursor:pointer;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:${l.tagColor}; border:1px solid ${l.tagBd}; border-radius:5px; padding:1px 6px;">${E(l.tag)}</span>
-          <span style="flex:1; font-size:12.5px; line-height:1.45; color:#c6ccdb;">${E(l.line)}</span>
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672;">${E(l.meta)}</span>
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#4b5672;">${E(l.chev)}</span>
-        </div>
-        ${l.open ? `<div style="border-left:1px solid rgba(255,255,255,0.09); padding:13px 10px; margin:4px 0 10px 8px;">${matchDetailHTML(l.detail)}</div>` : ''}
-      </div>`).join('')}
-      ${empty ? `<span style="font-size:12.5px; color:#4b5672; padding:8px 0;">— no logged matches against this style</span>` : ''}
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:6px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:${color};">${E(label)}</span>
+        ${showTxt ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.04em; color:#4b5672; white-space:nowrap;">${E(showTxt)}</span>` : ''}
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.07em; text-transform:uppercase; color:#3f4860; padding-bottom:8px;">All-surface · rostered opponents</span>
+      ${body}
+      ${more}
     </div>`;
   }
   function stylesCard(v) {
@@ -19337,10 +19380,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         <button data-hid="${s.hToggleLast}" style="display:flex; align-items:center; justify-content:center; gap:8px; background:none; border:none; border-top:1px solid rgba(255,255,255,0.06); margin-top:8px; padding:9px 0 0; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#4b5672; cursor:pointer;">
           <span>${E(s.lastLabel)}</span><span style="display:inline-block; transition:transform 0.2s; transform:${s.lastChev};">▾</span>
         </button>
-        ${s.lastOpen ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:0 20px; padding-top:8px;">
-          ${styleLastCol(s.aVsLabel, '#6aaeff', s.aLastRows, s.aLastEmpty)}
+        ${s.lastOpen ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:0 20px; padding-top:8px; align-items:start;">
+          ${styleMeetCol(s.aVsLabel, '#6aaeff', s.aCol, s.hMoreA)}
           <div style="background:rgba(255,255,255,0.08);"></div>
-          ${styleLastCol(s.bVsLabel, '#c6ccdb', s.bLastRows, s.bLastEmpty)}
+          ${styleMeetCol(s.bVsLabel, '#c6ccdb', s.bCol, s.hMoreB)}
         </div>` : ''}
       </div>
     </div>`;
@@ -19715,34 +19758,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     return out;
   }
 
-  // Career record vs each archetype, from tournamentHistory (opponent names -> primary label).
-  function vsStyleCareer(prof, styleLookupFn) {
-    if (!prof || !Array.isArray(prof.tournamentHistory)) return null;
-    const out = {};
-    prof.tournamentHistory.forEach(t => (t.editions || []).forEach(ed => (ed.matches || []).forEach(m => {
-      const lab = styleLookupFn(m.opp); if (!lab) return;
-      if (!out[lab]) out[lab] = [0, 0];
-      if (m.res === 'W') out[lab][0]++; else if (m.res === 'L') out[lab][1]++;
-    })));
-    return Object.keys(out).length ? out : null;
-  }
-  // Recent meetings vs each archetype, from recentForm (clean date + set scores). Tuple shape
-  // matches lastRowsOf(): [dateStr, tournament, "def./lost to Opp", score, "W"/"L", eventKey].
-  function lastVsRecent(prof, styleLookupFn) {
-    const rows = prof && prof.recentForm && prof.recentForm.matches;
-    if (!Array.isArray(rows)) return null;
-    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const dstr = d => { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (+m[3]) + ' ' + MON[(+m[2]) - 1] + " '" + m[1].slice(2) : (d || '—'); };
-    const scoreLine = r => { if (r.retired) return 'ret.'; if (r.walkover) return 'w/o';
-      if (Array.isArray(r.sets) && r.sets.length) return r.sets.map(s => { let g = s.p + '-' + s.o; if (s.pTb != null || s.oTb != null) g += '(' + Math.min(s.pTb || 0, s.oTb || 0) + ')'; return g; }).join(' ');
-      return String(r.result || '').replace(/\s*-\s*/, '–'); };
-    const opp = n => String(n || '').replace(/^[A-Z]\.\s*/, '').trim();
-    const CAP = 5, out = {};
-    rows.forEach(r => { const lab = styleLookupFn(r.opponent); if (!lab) return;
-      if (!out[lab]) out[lab] = []; if (out[lab].length >= CAP) return;
-      out[lab].push([dstr(r.date), r.tournament || '—', (r.won ? 'def. ' : 'lost to ') + opp(r.opponent), scoreLine(r), r.won ? 'W' : 'L', r.eventKey || null, r.opponentKey != null ? r.opponentKey : null]); });
-    return Object.keys(out).length ? out : null;
-  }
+  // (Removed vsStyleCareer / lastVsRecent — the H2H style block now reads the single
+  //  TEN-88 career-meeting shard for both the record and the list; see enrich() below.)
 
   // Enrich a light P entry with real metrics on first selection.
   function enrich(shortKey) {
@@ -19783,10 +19800,23 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // whole-career tournament history (item 4 — powers the tournament selector).
     e.tourHist = (prof && Array.isArray(prof.tournamentHistory)) ? prof.tournamentHistory : null;
 
-    // record vs opponent's archetype (career) + recent meetings vs that style (Batch-2 item 2).
-    const lookup = styleFor ? (nm => { const s = styleFor(nm); return s ? s.archetype_label : null; }) : (() => null);
-    e.vsStyle = prof ? vsStyleCareer(prof, lookup) : null;
-    e.lastVs = prof ? lastVsRecent(prof, lookup) : null;
+    // Record vs opponent's archetype AND the expandable list of those matches, both
+    // from the ONE TEN-88 per-player career-meeting shard (Option A, TEN-117; founder
+    // ruling 2026-08-30). Keyed on the opponent's raw archetype_label, exactly as the
+    // Match-Analysis modal's "Career meetings vs this style" block already is, so the
+    // header W–L·n and the row list reconcile by construction — they read the same
+    // array. All-surface, rostered opponents only (that is what the matrix tally, and
+    // therefore the shard, covers). Lazily fetched; repaint this pairing on arrival.
+    // Superseded the old split sources (vsStyleCareer over tournamentHistory for the
+    // header, lastVsRecent's CAP=5 window for the list) which did NOT reconcile.
+    if (!e._styleMeetKicked) {
+      e._styleMeetKicked = true;
+      const lsm = fn('loadStyleMeetShard');
+      if (lsm) lsm(e.full)
+        .then(vs => { e.styleMeetings = vs || null; e._styleMeetLoaded = true; render(); })
+        .catch(() => { e._styleMeetLoaded = true; render(); });
+      else { e._styleMeetLoaded = true; }   // loader unavailable → honest empty, no fabrication
+    }
 
     // serve / return / under-pressure splits (Batch-2 item 4).
     const csAll = DV('careerSplits') || {};
@@ -19822,7 +19852,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         key: key, short: short, full: p.name, mono: monoOf(p.name), ctry: p.country || '—', rank: rank, elo: null,
         arch: null, archDesc: null, thin: false, radar: null, ratingsBySurf: null,
         season: null, surf: null, serve: null, ret: null, press: null,
-        market: null, model: null, tour: null, tourHist: null, vsStyle: null, lastVs: null, news: [], __rich: false,
+        market: null, model: null, tour: null, tourHist: null, styleMeetings: null, _styleMeetLoaded: false, _styleMeetKicked: false, news: [], __rich: false,
       };
     });
     Object.keys(P2).forEach(k => ROSTER2.push(k));
