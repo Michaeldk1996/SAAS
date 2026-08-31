@@ -7,6 +7,48 @@ consolidated** (no Cloudflare split; a clean poll/serve seam is reserved).
 Build spec of record: board doc **`proxy-build-spec`** on TEN-107. Shrink curve
 for the rating layer: board doc **`shrink-curve`**.
 
+## Tier 1 — Realtime push + 10s poll (founder-approved 2026-08-31)
+
+Staged on branch `ten107-tier1-realtime`. Closes ~30–40s of the ~50–60s gap vs
+Flashscore that was self-inflicted by two stacked 30s poll stages (see board doc
+`live-latency-vs-flashscore`). Three coupled changes:
+
+1. **Browser read → Supabase Realtime (WebSocket push).** `live-tab.js` gains a
+   raw-WebSocket Phoenix subscription to `postgres_changes` on `live_snapshot`
+   (the table is already in the `supabase_realtime` publication — see
+   `…_live_snapshot.sql` §4). Gated behind a **new** flag `FEATURE_LIVE_REALTIME`,
+   **default OFF** → unchanged 30s-poll behaviour until the flag is flipped. A push
+   is treated as a **trigger, not a payload**: on each change the client does a
+   one-shot PostgREST fetch of the row (which has no ~1MB Realtime record cap and
+   is immune to record-shape drift). A failed `postgres_changes` binding (Realtime
+   `system` error), connect throw, or exhausted reconnects all degrade back to the
+   30s poll, so the feed never goes dark; a 25s backstop fetch runs even during
+   reconnect backoff.
+2. **Poller cadence 30s → 10s.** `…_schedule.sql`: job renamed `live-poller-10s`,
+   interval `'10 seconds'`; the migration now unschedules the legacy 30s job too.
+3. **Lease TTL 25s → 7s, upstream fetch timeout 12s → 6s** (`live-poller/index.ts`).
+   Required by (2): the TTL lease must be **shorter than the cadence** (with ~3s
+   margin for pg_cron's ~1s jitter, or a grazed tick self-skips → a 20s gap) or
+   every tick self-skips and effective cadence stays pinned at the TTL; the fetch
+   timeout must be **shorter than the TTL** so single-flight can't leak a duplicate
+   upstream call.
+
+**api-tennis rate cap:** confirmed empirically (2026-08-31) — 8 rapid
+`get_livescore` calls (well above the 6/min a 10s cadence needs) returned HTTP
+200 with no 429 and no rate-limit headers. 10s cadence (~8,640 calls/day) is
+within the Ultra plan's headroom.
+
+**Go-live (the confirm-before-live gate) = three flips, all reversible:**
+- redeploy the Edge Function (`supabase functions deploy live-poller`) with the
+  new TTL/timeout;
+- apply `…_schedule.sql` (retires the 30s job, schedules the 10s job);
+- set `window.FEATURE_LIVE_REALTIME = true` in the frontend build config.
+
+**Not yet done here:** the Realtime push path needs one live verification — a real
+`live_snapshot` UPDATE observed arriving over the socket during a live match
+(headless can't prove push without triggering a prod write). Suggested as part of
+the go-live co-check.
+
 ## Status of this directory
 
 | Slice | What | State |

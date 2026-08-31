@@ -10,9 +10,15 @@
 //
 // Guard: window.FEATURE_LIVE_PROXY must be truthy. Never runs otherwise.
 //
-// Polls ONLY while the Live tab is the active tab AND the page is visible —
-// leaving the tab or backgrounding the page stops the timer, so an idle user
-// costs zero requests (cheaper than the always-on Slice-3 overlay).
+// Transport (TEN-107 Tier 1, founder-approved 2026-08-31): reads via either a
+// 30s PostgREST poll (default) OR Supabase Realtime WebSocket push, selected by
+// window.FEATURE_LIVE_REALTIME (default OFF → poll, i.e. prior behaviour). With
+// Realtime on, a snapshot reaches the browser <1s after the poller writes it;
+// on any Realtime failure it degrades back to the 30s poll (fallbackToPoll).
+//
+// Active ONLY while the Live tab is the active tab AND the page is visible —
+// leaving the tab or backgrounding the page stops the timer AND drops the
+// WebSocket, so an idle user costs zero requests (cheaper than the Slice-3 overlay).
 //
 // Requires on window before this script runs:
 //   SUPABASE_URL      — project URL, e.g. "https://abcdef.supabase.co"
@@ -39,6 +45,26 @@
   const SNAPSHOT_ENDPOINT  =
     `${SB_URL}/rest/v1/live_snapshot?select=board,match_count,updated_at&limit=1`;
 
+  // ─── TEN-107 Tier 1 (founder-approved 2026-08-31): Realtime push ──────────────
+  // Switch the member read from a 30s PostgREST poll to Supabase Realtime
+  // (WebSocket push) so a snapshot reaches the browser <1s after the poller
+  // writes it, instead of waiting up to a full poll interval. This removes the
+  // browser-side ~15s-avg / 30s-worst poll stage (see doc `live-latency-vs-
+  // flashscore`). Gated behind its OWN flag, default OFF: with the flag unset,
+  // this module behaves EXACTLY as before (30s poll), so shipping the code
+  // changes nothing live until the confirm-before-live gate flips the flag.
+  const USE_REALTIME = !!window.FEATURE_LIVE_REALTIME;
+
+  // Raw WebSocket to Supabase Realtime — no SDK on the member path (same ethos
+  // as the PostgREST read). Any failure degrades to the 30s poll (fallbackToPoll).
+  const RT_URL = `${SB_URL.replace(/^http/, 'ws')}/realtime/v1/websocket?apikey=${encodeURIComponent(SB_KEY)}&vsn=1.0.0`;
+  const RT_HEARTBEAT_MS   = 25_000;    // Phoenix drops an idle socket (~60s server side)
+  const RT_RESYNC_MS      = 25_000;    // backstop re-fetch (≤ the 30s poll it replaces),
+                                       // and the sole data path during reconnect backoff
+  const RT_RECONNECT_BASE = 2_000;
+  const RT_RECONNECT_MAX  = 60_000;
+  const RT_MAX_RETRIES    = 5;         // after this many failed connects → fall back to poll
+
   // ─── state ──────────────────────────────────────────────────────────────────
   let _timer         = null;
   let _ticking       = false;    // in-flight guard — one request at a time
@@ -47,6 +73,20 @@
   let _lastUpdatedAt  = null;    // ms epoch of last known snapshot (survives errors)
   let _lastMatches    = null;    // last rendered board (for stale re-render)
   let _bootstrapped   = false;   // has the page shell been injected yet?
+
+  // Realtime transport state (only used when USE_REALTIME).
+  let _ws            = null;
+  let _rtHeartbeat   = null;
+  let _rtResync      = null;
+  let _rtReconnect   = null;
+  let _rtRetries     = 0;
+  let _rtConnected   = false;    // Phoenix join acknowledged
+  let _rtFellBack    = false;    // realtime gave up → poll loop owns updates
+  let _rtRef         = 0;        // monotonic Phoenix message ref
+
+  // When true, tick() re-arms the recurring 30s poll; under live Realtime it does
+  // not (pushes + the safety re-sync drive updates), so tick() is a one-shot fetch.
+  function pollLoopActive() { return !USE_REALTIME || _rtFellBack; }
 
   // ─── DOM refs (resolved lazily; the tabpage exists in the static HTML) ────────
   function grid()   { return document.getElementById('liveGrid'); }
@@ -57,10 +97,13 @@
     if (isLive && !_active) {
       _active = true;
       _backoffMs = 0;
+      _rtFellBack = false;      // give Realtime a fresh try on each tab entry
       schedulePoll(0);          // immediate first paint on entering the tab
+      if (USE_REALTIME) connectRealtime();   // then stream pushes instead of polling
     } else if (!isLive && _active) {
       _active = false;
       clearTimeout(_timer);     // leaving the tab stops the poll entirely
+      closeRealtime();          // and drops the socket — an idle user costs nothing
     }
   }
 
@@ -69,9 +112,11 @@
     if (!_active) return;
     if (document.hidden) {
       clearTimeout(_timer);
+      if (USE_REALTIME) closeRealtime();
     } else {
       _backoffMs = 0;
-      if (!_ticking) schedulePoll(0);
+      if (!_ticking) schedulePoll(0);        // immediate re-paint on return
+      if (USE_REALTIME && !_rtFellBack) connectRealtime();
     }
   });
 
@@ -104,7 +149,7 @@
       _ticking = false;
       // Re-render with the cached board so the stale banner ages correctly.
       renderStatusOnly();
-      schedulePoll(_backoffMs);
+      if (pollLoopActive()) schedulePoll(_backoffMs);
       return;
     }
     _ticking = false;
@@ -113,20 +158,149 @@
     // request was in flight — don't render into a hidden grid or re-arm a timer.
     if (!_active || document.hidden) return;
 
-    if (row) {
-      const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : null;
-      if (updatedAt !== null) _lastUpdatedAt = updatedAt;
-      const matches = Array.isArray(row.board?.matches) ? row.board.matches : [];
-      _lastMatches = matches;
-      render(matches);
-    }
+    if (row) applyRow(row);
 
-    schedulePoll(POLL_INTERVAL_MS);
+    if (pollLoopActive()) schedulePoll(POLL_INTERVAL_MS);
+  }
+
+  // Apply one snapshot row — from a PostgREST fetch OR a Realtime push — to state
+  // and repaint. Shared so both transports render identically.
+  function applyRow(row) {
+    if (!row) return;
+    const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : null;
+    if (updatedAt !== null) _lastUpdatedAt = updatedAt;
+    const matches = Array.isArray(row.board?.matches) ? row.board.matches : [];
+    _lastMatches = matches;
+    render(matches);
   }
 
   function schedulePoll(delayMs) {
     clearTimeout(_timer);
     _timer = setTimeout(tick, delayMs);
+  }
+
+  // ─── Realtime (Phoenix WebSocket) transport ───────────────────────────────────
+  // Subscribes to postgres_changes on public.live_snapshot (already added to the
+  // supabase_realtime publication in migration …_live_snapshot.sql).
+  //
+  // A push is a TRIGGER, not the payload: on each change we do a one-shot PostgREST
+  // fetch of the row (schedulePoll(0)) rather than rendering the pushed `record`.
+  // Rationale — Realtime caps a change record at ~1MB and drops the row data when a
+  // busy `board` exceeds it (delivering an errors frame with no record); the
+  // PostgREST read has no such cap, so triggering a fetch is robust to board size
+  // and to record-shape drift. We still get the latency win (fetch fires the instant
+  // the row changes, not on a timer).
+  //
+  // A backstop re-sync fetch runs every RT_RESYNC_MS regardless of socket health, so
+  // data keeps flowing even during reconnect backoff. Any terminal failure — connect
+  // throw, a failed postgres_changes binding (`system` error), or exhausted reconnects
+  // — degrades to the 30s poll (fallbackToPoll) so the feed never goes dark.
+  function connectRealtime() {
+    if (!USE_REALTIME || _rtFellBack || !_active || document.hidden) return;
+    ensureResync();   // backstop fetch runs regardless of socket state
+    if (_ws && (_ws.readyState === WebSocket.OPEN || _ws.readyState === WebSocket.CONNECTING)) return;
+
+    let ws;
+    try {
+      ws = new WebSocket(RT_URL);
+    } catch (e) {
+      console.warn('[live-tab] realtime connect threw:', e && e.message);
+      return fallbackToPoll();
+    }
+    _ws = ws;
+
+    ws.onopen = () => {
+      _rtRetries = 0;
+      // Phoenix join: subscribe to changes on the snapshot row.
+      send(ws, 'realtime:live_snapshot', 'phx_join', {
+        config: {
+          broadcast: { ack: false, self: false },
+          presence:  { key: '' },
+          postgres_changes: [{ event: '*', schema: 'public', table: 'live_snapshot' }],
+          private: false,
+        },
+        access_token: SB_KEY,
+      });
+      clearInterval(_rtHeartbeat);
+      _rtHeartbeat = setInterval(() => send(ws, 'phoenix', 'heartbeat', {}), RT_HEARTBEAT_MS);
+    };
+
+    ws.onmessage = (evt) => {
+      let msg;
+      try { msg = JSON.parse(evt.data); } catch { return; }
+
+      // `system` carries the postgres_changes BINDING result — the decisive signal
+      // that pushes will actually arrive (phx_reply only confirms the channel join).
+      if (msg.event === 'system' && msg.payload && msg.payload.extension === 'postgres_changes') {
+        if (msg.payload.status === 'error') return fallbackToPoll();  // binding rejected
+        markConnected();
+        return;
+      }
+      // phx_reply ok also flips the label (belt-and-braces if `system` never comes).
+      if (msg.event === 'phx_reply') {
+        if (msg.payload && msg.payload.status === 'ok') markConnected();
+        return;
+      }
+      if (msg.event === 'postgres_changes') {
+        schedulePoll(0);   // trigger a fetch of the fresh row (see rationale above)
+        return;
+      }
+      // presence / broadcast / heartbeat-reply frames: ignore.
+    };
+
+    ws.onerror = () => { /* onclose runs next and owns reconnect/fallback */ };
+
+    ws.onclose = () => {
+      _rtConnected = false;
+      clearInterval(_rtHeartbeat); _rtHeartbeat = null;
+      if (_ws === ws) _ws = null;
+      if (!_active || document.hidden || _rtFellBack) return;  // deliberately/terminally closed
+      if (++_rtRetries > RT_MAX_RETRIES) return fallbackToPoll();
+      // NB: _rtResync deliberately keeps running through backoff → data still flows
+      // every RT_RESYNC_MS while we reconnect; the stale badge ages honestly meanwhile.
+      const delay = Math.min(RT_RECONNECT_BASE * 2 ** (_rtRetries - 1), RT_RECONNECT_MAX);
+      clearTimeout(_rtReconnect);
+      _rtReconnect = setTimeout(connectRealtime, delay);
+    };
+  }
+
+  function markConnected() {
+    if (_rtConnected) return;
+    _rtConnected = true;
+    if (_lastMatches) render(_lastMatches);   // refresh status → "live now"
+  }
+
+  // Backstop fetch loop; idempotent. Survives reconnect backoff (only closeRealtime
+  // tears it down), so a degraded socket still delivers data every RT_RESYNC_MS.
+  function ensureResync() {
+    if (_rtResync) return;
+    _rtResync = setInterval(() => { if (_active && !document.hidden) schedulePoll(0); }, RT_RESYNC_MS);
+  }
+
+  function send(ws, topic, event, payload) {
+    try { ws.send(JSON.stringify({ topic, event, payload, ref: String(++_rtRef) })); }
+    catch { /* socket closing — heartbeat/join will retry on reconnect */ }
+  }
+
+  function closeRealtime() {
+    clearInterval(_rtHeartbeat); _rtHeartbeat = null;
+    clearInterval(_rtResync);    _rtResync = null;
+    clearTimeout(_rtReconnect);  _rtReconnect = null;
+    _rtConnected = false;
+    _rtRetries = 0;
+    if (_ws) { try { _ws.close(); } catch {} _ws = null; }
+  }
+
+  // Realtime unavailable (connect throw, binding error, or exhausted reconnects) →
+  // resume the reliable 30s poll so the user still gets updates, just slower. One-way
+  // for the rest of this tab session (reset on the next tab entry). pollLoopActive()
+  // flips true so tick() re-arms the loop.
+  function fallbackToPoll() {
+    if (_rtFellBack) return;
+    console.warn('[live-tab] realtime unavailable — falling back to 30s poll');
+    closeRealtime();                    // tears down socket/timers, leaves _rtFellBack alone
+    _rtFellBack = true;                 // now pollLoopActive() is true → tick() re-arms the loop
+    if (_active && !document.hidden) schedulePoll(0);
   }
 
   // ─── staleness helper ─────────────────────────────────────────────────────────
@@ -197,7 +371,8 @@
       } else {
         s.className = 'lt-status live';
         const n = live.length;
-        s.innerHTML = `<span class="lt-dot"></span>${n} match${n === 1 ? '' : 'es'} live · updates every 30s`;
+        const cadence = (USE_REALTIME && _rtConnected && !_rtFellBack) ? 'live now' : 'updates every 30s';
+        s.innerHTML = `<span class="lt-dot"></span>${n} match${n === 1 ? '' : 'es'} live · ${cadence}`;
       }
     }
 
