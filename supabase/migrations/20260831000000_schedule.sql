@@ -50,6 +50,13 @@ revoke execute on function public.tick_live_poller() from public, anon, authenti
 
 -- 3. (Re)schedule the 30s poller. cron.schedule with an existing jobname updates
 --    it in place, but unschedule-first keeps a clean single definition.
+--
+--    Sub-minute cadence MUST use pg_cron's interval form ('30 seconds'), NOT a
+--    6-field seconds cron. pg_cron parses only 5-field cron: passing
+--    '*/30 * * * * *' silently truncates to the 5-field '*/30 * * * *' = every
+--    30 MINUTES, which froze live_snapshot on the first go-live. The interval
+--    form is what verified live (cron.job.schedule = '30 seconds', active=true).
+--    Do not "correct" this back to cron syntax.
 do $$
 begin
   if exists (select 1 from cron.job where jobname = 'live-poller-30s') then
@@ -58,4 +65,4 @@ begin
 end
 $$;
 
-select cron.schedule('live-poller-30s', '*/30 * * * * *', 'select public.tick_live_poller();');
+select cron.schedule('live-poller-30s', '30 seconds', 'select public.tick_live_poller();');
