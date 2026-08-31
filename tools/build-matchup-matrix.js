@@ -300,10 +300,32 @@ function main() {
   // api row is a visible tell. TML is the authoritative full-name source, so we
   // harvest full names from it (below, in the TML loop) and map api opponents
   // through here; a player never seen in TML falls back to their api name.
+  //
+  // A surname|initial key can collapse two DISTINCT TML entities — e.g. active
+  // Casper Ruud and his retired father Christian Ruud both key to `ruud|c`
+  // (TEN-121). Harvesting first-write-wins over the ascending 2000->2026 scan
+  // printed the earliest entity (the father, 2000) as the label for the son's
+  // 2026 opponents. Instead prefer the MOST-RECENTLY-ACTIVE entity, tracked by
+  // TML player_id: the current-tour (rostered) player is by construction the
+  // latest to appear, so their full name wins. Each entry stores {id,name,year};
+  // a later year overwrites, and a later row of the SAME id refreshes that id's
+  // spelling without letting an older-entity row reclaim the key.
   const fullNameByCK = new Map();
+  const ckMultiEntity = new Set();            // keys where >1 distinct player_id collided
+  const harvestName = (k, id, name, year) => {
+    if (!k || !name) return;
+    const sid = String(id || '');
+    const cur = fullNameByCK.get(k);
+    if (!cur) { fullNameByCK.set(k, { id: sid, name, year }); return; }
+    if (sid && cur.id && sid !== cur.id) ckMultiEntity.add(k);
+    if (year > cur.year || (year === cur.year && sid === cur.id)) {
+      fullNameByCK.set(k, { id: sid, name, year });
+    }
+  };
   const canonicalName = (name) => {
     const k = clientKey(name);
-    return (k && fullNameByCK.get(k)) || name;
+    const e = k && fullNameByCK.get(k);
+    return (e && e.name) || name;
   };
   // Dedup index for the api supplement: pairKey (sorted client-key pair) -> [dates].
   // TML tourney_date and api event_date drift by <=1 day, so the api ingest drops a
@@ -366,8 +388,10 @@ function main() {
       const wn = c[ix.winner_name], ln = c[ix.loser_name];
       if (!wn || !ln) continue;
       // Harvest TML full names (the api supplement renders opponents through these).
-      const _kw = clientKey(wn); if (_kw && !fullNameByCK.has(_kw)) fullNameByCK.set(_kw, wn);
-      const _kl = clientKey(ln); if (_kl && !fullNameByCK.has(_kl)) fullNameByCK.set(_kl, ln);
+      // Prefer the most-recently-active entity per surname|initial key (see note
+      // at fullNameByCK): pass the TML player_id and the row's year.
+      const _kw = clientKey(wn); harvestName(_kw, c[ix.winner_id], wn, y);
+      const _kl = clientKey(ln); harvestName(_kl, c[ix.loser_id], ln, y);
       tmlTotal++;
       const wl = lookup(wn), ll = lookup(ln);
       if (!wl || !ll) continue;                 // at least one endpoint outside the deployed pool
@@ -400,6 +424,11 @@ function main() {
   // excluded (not a played match); Retired counts. Fields are normalised on ingest
   // (canonical names, TML-format score, tournament_key -> surface) so a member
   // cannot tell a supplemented row from a TML one.
+  // TEN-121: report the collision resolution so a regression is visible in logs.
+  {
+    const rc = fullNameByCK.get('ruud|c'), ch = fullNameByCK.get('chung|h');
+    console.log(`  name-canonical: ${fullNameByCK.size} keys, ${ckMultiEntity.size} multi-entity keys resolved to most-recent; ruud|c -> "${rc ? rc.name : '-'}" (${rc ? rc.year : '-'}), chung|h -> "${ch ? ch.name : '-'}" (${ch ? ch.year : '-'}).`);
+  }
   const supp = { loaded: false, walkover: 0, unlabelled: 0, deduped: 0, added: 0, noWinner: 0, surfaced: 0, matrix: 0 };
   if (fs.existsSync(API_SUPP)) {
     supp.loaded = true;
