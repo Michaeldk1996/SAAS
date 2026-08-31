@@ -20441,6 +20441,10 @@ setInterval(loadMatches, 3 * 60 * 1000);
   window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '__SUPABASE_ANON_KEY__';
   // Live proxy go-live: founder approved 2026-08-31 (TEN-107, "Ship it").
   window.FEATURE_LIVE_PROXY = true;
+  // Tier 1 (TEN-107, founder approved 2026-08-31): browser read via Supabase
+  // Realtime push instead of the 30s poll. Falls back to the 30s poll on any
+  // socket failure (see live-tab.js), so the feed never goes dark.
+  window.FEATURE_LIVE_REALTIME = true;
 </script>
 <script src="live-tab.js" defer></script>
 

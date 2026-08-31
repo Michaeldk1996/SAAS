@@ -1,6 +1,7 @@
 // TEN-107 · Slice 2 — shared live poller (Supabase Edge Function, Deno)
 //
-// One shared poller, invoked on a ~30s pg_cron timer (see supabase/README.md).
+// One shared poller, invoked on a ~10s pg_cron timer (see supabase/README.md;
+// Tier 1, founder-approved 2026-08-31: cadence 30s → 10s).
 // Per tick:
 //   1. begin_poll() — atomic TTL-lease single-flight; overlapping ticks that
 //      lose the lease exit immediately, so only ONE upstream get_livescore
@@ -25,7 +26,17 @@ const API_TENNIS_KEY = Deno.env.get("API_TENNIS_KEY")!;
 const POLLER_SECRET = Deno.env.get("POLLER_SECRET") ?? "";
 
 const API_BASE = "https://api.api-tennis.com/tennis/";
-const LEASE_TTL_SECONDS = 25; // < cron cadence (30s) so a dead tick self-heals
+// Tier 1: cadence is 10s (schedule.sql). Two invariants, with margin for pg_cron's
+// ~1s sub-minute jitter so neither edge is grazed:
+//   (a) TTL < cadence — else the previous tick's lease is still valid when the next
+//       fires and every tick self-skips, pinning the effective rate to the TTL (was
+//       25s, which at a 10s cadence would have held us at ~25s). TTL 7s leaves ~3s
+//       below the 10s cadence, so a gap that jitters down toward ~9s still clears.
+//   (b) fetch timeout < TTL — so a tick always finishes/aborts inside its own lease
+//       window and a slow fetch can't leak a duplicate upstream call. 6s < 7s, and
+//       6s comfortably exceeds observed get_livescore latency (sub-second–~2s).
+const LEASE_TTL_SECONDS = 7;
+const FETCH_TIMEOUT_MS = 6_000; // < LEASE_TTL_SECONDS so single-flight holds
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
@@ -58,7 +69,7 @@ Deno.serve(async (req) => {
   const url = `${API_BASE}?method=get_livescore&APIkey=${API_TENNIS_KEY}`;
   let payload: { success?: number; result?: unknown };
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!res.ok) return json({ error: "upstream_http", status: res.status }, 502);
     payload = await res.json();
   } catch (e) {

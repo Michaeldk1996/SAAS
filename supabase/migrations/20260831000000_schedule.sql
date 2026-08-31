@@ -1,4 +1,9 @@
--- TEN-107 · Slice 5 (go-live) — schedule the shared poller on a 30s pg_cron timer.
+-- TEN-107 · Slice 5 (go-live) — schedule the shared poller on a 10s pg_cron timer.
+-- Tier 1 (founder-approved 2026-08-31): cadence 30s → 10s. NB the Edge Function's
+-- LEASE_TTL_SECONDS must stay BELOW this cadence (see functions/live-poller/index.ts,
+-- set to 7s with ~3s margin for pg_cron jitter) — otherwise the previous tick's lease
+-- is still valid when the next fires and every tick self-skips, pinning the effective
+-- cadence to the TTL.
 --
 -- Applied by .github/workflows/supabase-live-golive.yml AFTER the go-live step has
 -- written two Vault secrets (via the Management API): POLLER_SECRET (the shared
@@ -48,21 +53,26 @@ $$;
 -- Service-side only: never exposed to browser roles.
 revoke execute on function public.tick_live_poller() from public, anon, authenticated;
 
--- 3. (Re)schedule the 30s poller. cron.schedule with an existing jobname updates
---    it in place, but unschedule-first keeps a clean single definition.
+-- 3. (Re)schedule the 10s poller. cron.schedule with an existing jobname updates
+--    it in place, but unschedule-first keeps a clean single definition. We drop
+--    BOTH the legacy 'live-poller-30s' job AND any prior 'live-poller-10s' so a
+--    previously-applied 30s job cannot linger alongside the new 10s one.
 --
---    Sub-minute cadence MUST use pg_cron's interval form ('30 seconds'), NOT a
+--    Sub-minute cadence MUST use pg_cron's interval form ('10 seconds'), NOT a
 --    6-field seconds cron. pg_cron parses only 5-field cron: passing
---    '*/30 * * * * *' silently truncates to the 5-field '*/30 * * * *' = every
---    30 MINUTES, which froze live_snapshot on the first go-live. The interval
+--    '*/10 * * * * *' silently truncates to the 5-field '*/10 * * * *' = every
+--    10 MINUTES, which froze live_snapshot on the first go-live. The interval
 --    form is what verified live (cron.job.schedule = '30 seconds', active=true).
 --    Do not "correct" this back to cron syntax.
 do $$
+declare _job text;
 begin
-  if exists (select 1 from cron.job where jobname = 'live-poller-30s') then
-    perform cron.unschedule('live-poller-30s');
-  end if;
+  for _job in
+    select jobname from cron.job where jobname in ('live-poller-30s', 'live-poller-10s')
+  loop
+    perform cron.unschedule(_job);
+  end loop;
 end
 $$;
 
-select cron.schedule('live-poller-30s', '30 seconds', 'select public.tick_live_poller();');
+select cron.schedule('live-poller-10s', '10 seconds', 'select public.tick_live_poller();');
