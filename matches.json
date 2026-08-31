@@ -4300,7 +4300,31 @@
       "edgeVsPinnacleP1": 0.1345,
       "edgeVsPinnacleP2": -0.1345,
       "ts": "2026-08-28T22:58:48.429Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-2, 6-3, 7-5",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 7,
+          "p2": 5
+        }
+      ],
+      "p1Sets": 3,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12158132",
@@ -6345,11 +6369,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 4",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "30 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "oddsMovement": {
@@ -7774,7 +7798,10 @@
       "edgeVsPinnacleP1": 0.0068,
       "edgeVsPinnacleP2": -0.0068,
       "ts": "2026-08-28T22:58:48.429Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158138",
@@ -12763,11 +12790,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "15 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1057_r-safiullin.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "oddsMovement": {
@@ -15416,7 +15449,10 @@
       "edgeVsPinnacleP1": -0.0109,
       "edgeVsPinnacleP2": 0.0109,
       "ts": "2026-08-28T22:58:48.429Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158142",
@@ -50727,11 +50763,17 @@
       "category": "Medium"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1192_m-arnaldi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "oddsMovement": {
@@ -52360,7 +52402,10 @@
       "edgeVsPinnacleP1": 0.0769,
       "edgeVsPinnacleP2": -0.0769,
       "ts": "2026-08-28T22:58:48.429Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158429",
@@ -56705,11 +56750,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/416_j-rodionov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9222_g-mpetshi-perricard.jpg",
     "oddsMovement": {
@@ -58310,7 +58361,10 @@
       "edgeVsPinnacleP1": -0.0666,
       "edgeVsPinnacleP2": 0.0666,
       "ts": "2026-08-29T15:41:37.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158433",
@@ -72655,11 +72709,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 4",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "15 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/767_o-virtanen.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2847_a-rublev.jpg",
     "oddsMovement": {
@@ -74112,7 +74166,10 @@
       "edgeVsPinnacleP1": -0.0027,
       "edgeVsPinnacleP2": 0.0027,
       "ts": "2026-08-31T06:49:47.052Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158131",
@@ -159925,7 +159982,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(4), 2-6, 4-6",
+      "display": "7-6, 2-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -171717,7 +171774,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-2, 7-5",
+      "display": "7-6(2), 6-2, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -174607,7 +174664,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 6-2, 6-3",
+      "display": "6-7(6), 6-2, 6-2, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -179413,7 +179470,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 2-6, 6-7, 2-6",
+      "display": "7-6(4), 2-6, 6-7(4), 2-6",
       "sets": [
         {
           "p1": 7,
@@ -187736,7 +187793,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6, 6-1, 7-6, 7-5",
+      "display": "6-7(5), 3-6, 6-1, 7-6(4), 7-5",
       "sets": [
         {
           "p1": 6,
@@ -200785,7 +200842,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 7-6, 4-6, 6-2",
+      "display": "6-1, 7-6(5), 4-6, 6-2",
       "sets": [
         {
           "p1": 6,
@@ -208661,7 +208718,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6, 4-6, 1-6, 6-2",
+      "display": "6-3, 7-6(4), 4-6, 1-6, 6-2",
       "sets": [
         {
           "p1": 6,
@@ -216959,7 +217016,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 1-6, 3-6, 3-6",
+      "display": "7-6(3), 1-6, 3-6, 3-6",
       "sets": [
         {
           "p1": 7,
@@ -252355,7 +252412,7 @@
         }
       ]
     },
-    "live": true,
+    "live": false,
     "liveStatus": "Interrupted",
     "liveScore": [
       {
@@ -260320,8 +260377,23 @@
       "edgeVsPinnacleP2": -0.1004,
       "ts": "2026-08-30T01:45:45.019Z"
     },
-    "interrupted": false,
-    "partialScore": null,
+    "interrupted": true,
+    "partialScore": {
+      "display": "6-4, 1-1",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 1,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 0,
+      "winner": null
+    },
     "finalScore": null
   },
   {
@@ -261976,7 +262048,7 @@
         }
       ]
     },
-    "live": true,
+    "live": false,
     "liveStatus": "Interrupted",
     "liveScore": [
       {
@@ -267768,8 +267840,19 @@
       "edgeVsPinnacleP2": -0.0186,
       "ts": "2026-08-29T15:41:37.118Z"
     },
-    "interrupted": false,
-    "partialScore": null,
+    "interrupted": true,
+    "partialScore": {
+      "display": "4-3",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 0,
+      "winner": null
+    },
     "finalScore": null
   },
   {
