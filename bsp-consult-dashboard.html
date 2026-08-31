@@ -497,7 +497,12 @@
      §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
   [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.10); }
   [data-page="matches"] .mc-sets__total.l{ background:rgba(255,255,255,0.05); }
-  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
+  /* TEN-123 — per-set emphasis is independent of the match winner: each set's higher
+     game count wins its own cell. Base cell = the losing side of the set (muted, 500);
+     .w = that set's winner (bright --mc-text, 700). Compared on games only, so a
+     tiebreak superscript never flips the emphasis and inherits its cell's colour. */
+  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:500; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
+  [data-page="matches"] .mc-sets__g.w{ font-weight:700; color:var(--mc-text); }
   [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; font-weight:600; margin-left:1px; }
 
   /* odds journey (completed) — non-semantic open→close, as ONE right-anchored object.
@@ -547,14 +552,14 @@
   [data-page="matches"] .mc-players.cmpl .mc-name{ font-weight:700; }
   /* §1 (PASS 3) — with the WON pill gone and identity colour suppressed, brightness +
      the edge bar are the only two winner signals, so they must point the same way:
-     the winner's NAME and SCORE are bright (--mc-text = #e7e9ee), the loser's are
-     dimmed (--mc-muted). Both name and set-score digits carry the differential. */
+     the winner's NAME is bright (--mc-text = #e7e9ee), the loser's is dimmed
+     (--mc-muted). The set-count TOTAL stays match-winner-emphasised here too; the
+     per-set game digits (.mc-sets__g) are NOT row-scoped anymore — TEN-123 moved them
+     to per-set emphasis (see the .mc-sets__g.w rule above). */
   [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name,
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__total,
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__g{ color:var(--mc-text); }
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__total{ color:var(--mc-text); }
   [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name,
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total,
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__g{ color:var(--mc-muted); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total{ color:var(--mc-muted); }
 
   /* §GAP (card-proportions) — completed-card box model, scoped via .match-card.cmpl:
      the header carries its own 13px bottom padding (matches the export header's
@@ -5730,7 +5735,9 @@ function mcSetCluster(finalScore, who){
     const opp = who === 'p1' ? 'p2' : 'p1';
     const isSetWinner = s[who] > s[opp];
     const tb = (isSetWinner && tbs[i]) ? `<sup>${tbs[i][opp]}</sup>` : '';
-    return `<span class="mc-sets__g">${s[who]}${tb}</span>`;
+    // TEN-123 — per-set emphasis: the side with more games in THIS set gets .w,
+    // independent of who won the match. Games-only comparison (superscript ignored).
+    return `<span class="mc-sets__g${isSetWinner ? ' w' : ''}">${s[who]}${tb}</span>`;
   }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
 }
