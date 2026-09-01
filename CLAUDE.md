@@ -216,6 +216,8 @@ When the export and a documented rule disagree on anything **measurable — spac
 - Recent form calculations always include Challenger and ITF matches — never ATP-only
 - All tournament records must reflect full career history, not a truncated date range
 - Closing odds must be preserved through pipeline rebuilds — never recomputed at display time
+- Opening AND closing odds for a completed match are ALWAYS the bet365 stream (founder ruling TEN-124, 2026-09-02: bet365 is the most trustable soft book). Both legs pin to bet365 — a single-book journey, never cross-book. If bet365 is absent for a completed match, dash the journey; never substitute another book.
+- A closing odd requires a PROVEN pre-first-ball reference (real startTs, or an in-play onset detected off bet365's own tick burst). No proof → dash. Nothing after a match's original first ball counts (a suspension/restart must not move the open→close journey). Missing close is a dash, never a substitute or in-play price.
 - The Clay surface tag must never render in green (it's orange/terracotta)
 - Confidence percentage: no decimals (show 88%, not 88.5%), white colour not orange
 - Player names in match lists must never be truncated — use flex-grow layout
