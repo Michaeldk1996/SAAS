@@ -13083,6 +13083,23 @@ async function loadAsapSignals(){
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
 }
+// TEN-126 Break/Hold heatmap — nightly holdbreak.json rollup (build-holdbreak.js
+// output). A single global shard: { meta, pooled, players:{ key:{ name, matches,
+// serve, return } } }, serve/return keyed by surface -> set -> bucket -> {pct,n,
+// bpSavedPct,bpFaced}. Pre-computed, ZERO live API. Loaded lazily; the profile /
+// H2H panels render only when the feature flag is on AND the player has an entry.
+let holdbreak = null;
+async function loadHoldbreak(){
+  try {
+    const res = await fetch('./holdbreak.json', { cache: 'no-cache' });
+    if (res.ok){ holdbreak = await res.json(); }
+  } catch (err) { /* additive; absence just hides the panels */ }
+  // Lazy-race fix (same idiom as loadAsapSignals): if a profile is already open
+  // when the shard resolves, repaint so the heatmap fills in place.
+  const _ppView = document.getElementById('playerProfileView');
+  if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
+      && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
+}
 // Player-profile redesign — live Elo ratings (fetch-elo.js output, same file the
 // Playing Styles tab reads). Loaded once; the profile header's Elo pill looks it
 // up synchronously via ppEloFor(). Absence just falls back to a deterministic
@@ -14118,6 +14135,94 @@ function ppCareerSplitsHtml(p){
   // Twin-column: Career (left) and Last 52 weeks (right) side by side.
   return `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;">
     ${career}${last52}</div>`;
+}
+// ---- TEN-126 Break/Hold heatmap (display-only, flag-gated) --------------------
+// Two heatmaps per player from the holdbreak.json rollup: service hold% and return
+// break%, rows = service-game bucket within the set (Early 1st–2nd / Mid 3rd–4th /
+// Late 5th+), cols = set (1/2/3/4+). Bucketed axis + 24M window are founder rulings
+// (TEN-107 2026-09-01). Each cell {pct,n(,bpSavedPct,bpFaced)}; cells below
+// meta.sampleFloor are greyed (standing sample-floor rule). Staged behind a flag:
+// OFF by default in prod; enable with ?holdbreak=1 or localStorage
+// stennisfy.flags.holdbreak=1. Deploy is a separate confirm-before-live gate.
+function hbFlagOn(){
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('holdbreak')) return q.get('holdbreak') !== '0';
+    return localStorage.getItem('stennisfy.flags.holdbreak') === '1';
+  } catch (e) { return false; }
+}
+const HB_BUCKETS = [['early','Early','1st–2nd svc game'],['mid','Mid','3rd–4th'],['late','Late','5th+']];
+const HB_SETS = [['1','Set 1'],['2','Set 2'],['3','Set 3'],['4+','Set 4+']];
+// Green ramp keyed to each panel's own domain so hold% and break% both read
+// "deeper green = stronger for this player." Null / sub-floor cells stay neutral.
+function hbCellStyle(pct, kind){
+  const lo = kind === 'serve' ? 50 : 8, hi = kind === 'serve' ? 90 : 45;
+  const t = Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
+  return `background:rgba(61,214,140,${(0.07 + 0.5 * t).toFixed(3)});`;
+}
+function hbCell(cell, kind, floor){
+  const has = !!(cell && cell.pct != null && cell.n >= floor);
+  const thin = !!(cell && cell.n > 0 && cell.n < floor);
+  const style = has ? hbCellStyle(cell.pct, kind) : 'background:#0a0d14;';
+  const pctTxt = (cell && cell.pct != null) ? `${Math.round(cell.pct)}%` : '—';
+  const nTxt = (cell && cell.n) ? `n=${cell.n}` : 'no data';
+  const bp = (kind === 'serve' && has && cell.bpFaced >= floor && cell.bpSavedPct != null)
+    ? `<div style="font-size:9px;color:#8892a0;font-family:'IBM Plex Mono',monospace;margin-top:2px;">BP ${Math.round(cell.bpSavedPct)}% svd</div>` : '';
+  const title = thin ? ` title="Below sample floor (${cell.n} &lt; ${floor}) — greyed"` : '';
+  return `<div${title} style="border-radius:8px;padding:9px 6px;text-align:center;min-width:0;${style}">
+    <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:${has?'#e7e9ee':'#4b5672'};">${pctTxt}</div>
+    <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:${has?'rgba(231,233,238,0.7)':'#4b5672'};">${nTxt}</div>
+    ${bp}
+  </div>`;
+}
+// node = a serve|return surface node: { set -> { bucket -> cell } }
+function hbGrid(node, kind, floor){
+  node = node || {};
+  const cols = `74px repeat(${HB_SETS.length},1fr)`;
+  const head = `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;">
+    <span></span>${HB_SETS.map(s => `<span style="font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;text-align:center;">${s[1]}</span>`).join('')}
+  </div>`;
+  const rows = HB_BUCKETS.map(b => `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;align-items:stretch;">
+    <div style="display:flex;flex-direction:column;justify-content:center;"><span style="font-size:12px;font-weight:700;color:#c6ccdb;">${b[1]}</span><span style="font-size:9px;color:#4b5672;">${b[2]}</span></div>
+    ${HB_SETS.map(s => hbCell((node[s[0]] || {})[b[0]], kind, floor)).join('')}
+  </div>`).join('');
+  return head + rows;
+}
+function hbPanel(title, sub, node, kind, floor){
+  return `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;background:#0a0d14;padding:16px 18px;min-width:0;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">
+      <span style="font-size:14px;font-weight:800;color:#e7e9ee;">${title}</span>
+      <span style="font-size:10.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${sub}</span>
+    </div>
+    ${hbGrid(node, kind, floor)}
+  </div>`;
+}
+function ppHoldBreakHtml(p){
+  if (!hbFlagOn() || !holdbreak || !holdbreak.players) return '';
+  const pd = holdbreak.players[String(p.key)];
+  if (!pd || !pd.serve || !pd.return) return '';
+  const floor = (holdbreak.meta && holdbreak.meta.sampleFloor) || 20;
+  const surf = ppState.surface || 'All';
+  const surfKey = surf === 'All' ? 'all' : surf.toLowerCase();
+  const serveNode = pd.serve[surfKey], returnNode = pd.return[surfKey];
+  if (!serveNode || !returnNode) return '';
+  const win = (holdbreak.meta && holdbreak.meta.windowMonths) ? `${holdbreak.meta.windowMonths}-month window` : '';
+  const surfLabel = surf === 'All' ? 'all surfaces' : `${surf.toLowerCase()} only`;
+  const cov = (holdbreak.meta && holdbreak.meta.coverage)
+    ? `Coverage ${holdbreak.meta.coverage.from} → ${holdbreak.meta.coverage.to} · ${pd.matches || 0} of this player's matches parsed. Depth is current-season and deepens toward ${holdbreak.meta.windowMonths}M as the point-by-point backfill accumulates.`
+    : '';
+  return `<div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;">Holds &amp; breaks under pressure</div>
+      <span style="font-size:11px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${win} · ${surfLabel} · floor n≥${floor}</span>
+    </div>
+    <div style="font-size:12.5px;color:#5b6880;line-height:1.55;margin-bottom:14px;max-width:760px;">How often he holds serve (and breaks on return) as service games run deep in a set — Early (1st–2nd), Mid (3rd–4th), Late (5th+). Deeper green = stronger; greyed cells are below the sample floor. Follows the profile surface filter above.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+      ${hbPanel('Service holds', 'hold %', serveNode, 'serve', floor)}
+      ${hbPanel('Return breaks', 'break %', returnNode, 'return', floor)}
+    </div>
+    ${cov ? `<div style="font-size:11px;color:#4b5361;line-height:1.5;margin-top:12px;">${cov}</div>` : ''}
+  </div>`;
 }
 // TEN-8 ASAP Sports — "Player's own words". Self-hiding pre-match readiness card:
 // 3-5 bullets extracted from the player's own current-tournament press conference,
@@ -15986,6 +16091,7 @@ function buildPlayerProfileHtml(p){
            sets the height and the other fills to match. -->
       <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">${recentFormCard}${careerRecordCard}</div>
       ${ppCareerSplitsHtml(p)}
+      ${ppHoldBreakHtml(p)}
     </div>
 
     <!-- FOOTER -->
@@ -18741,7 +18847,7 @@ function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
 
 /* ---------- HEAD TO HEAD (full comparison page — TEN-8) ---------- */
 // Expose the `let`-scoped datasets the H2H module reads (not window props otherwise).
-window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards };
+window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards, holdbreak: () => holdbreak };
 
 /* ============================================================================
    HEAD-TO-HEAD PAGE  (ported from design_handoff_head_to_head, high-fidelity)
@@ -19712,6 +19818,35 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ${right ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#4b5672;">${E(right)}</span>` : ''}
     </div>`;
   }
+  // TEN-126 Break/Hold heatmap on the H2H surface — the two picked players side by
+  // side, each with their service-hold% and return-break% grids (shared hbGrid
+  // renderer, sample-floor greying). Flag-gated + self-hiding, same as the profile
+  // panel. Surface follows the context strip when scope=surface, else pooled 'all'.
+  function holdbreakCard(v) {
+    if (typeof hbFlagOn !== 'function' || !hbFlagOn()) return '';
+    const hb = DV('holdbreak');
+    if (!hb || !hb.players) return '';
+    const pa = hb.players[String(v.a.key)], pb = hb.players[String(v.b.key)];
+    if (!pa && !pb) return '';
+    const floor = (hb.meta && hb.meta.sampleFloor) || 20;
+    const surfKey = (state.scope === 'surface') ? String(state.ctxSurface || 'all').toLowerCase() : 'all';
+    const surfLabel = surfKey === 'all' ? 'all surfaces' : surfKey + ' only';
+    const col = (pd, name) => {
+      if (!pd || !pd.serve || !pd.serve[surfKey] || !pd.return || !pd.return[surfKey]) {
+        return `<div style="flex:1; min-width:260px;"><div style="font-size:13px; font-weight:800; color:#e7e9ee; margin-bottom:10px;">${E(name)}</div><div style="font-size:12px; color:#4b5672;">No hold/break data on ${E(surfLabel)}.</div></div>`;
+      }
+      return `<div style="flex:1; min-width:260px; display:flex; flex-direction:column; gap:14px;">
+        <div style="font-size:13px; font-weight:800; color:#e7e9ee;">${E(name)}</div>
+        <div><div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6880; font-family:'IBM Plex Mono',monospace; margin-bottom:8px;">Service holds · hold %</div>${hbGrid(pd.serve[surfKey], 'serve', floor)}</div>
+        <div><div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5b6880; font-family:'IBM Plex Mono',monospace; margin-bottom:8px;">Return breaks · break %</div>${hbGrid(pd.return[surfKey], 'return', floor)}</div>
+      </div>`;
+    };
+    return `<div style="border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0d14; padding:20px 22px;">
+      ${sectionHead('Holds & breaks under pressure', `${hb.meta && hb.meta.windowMonths ? hb.meta.windowMonths + 'M' : ''} · ${surfLabel} · floor n≥${floor}`)}
+      <div style="font-size:12px; color:#5b6880; line-height:1.5; margin:8px 0 16px;">Hold% (serve) and break% (return) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). Deeper green = stronger; greyed cells are below the sample floor.</div>
+      <div style="display:flex; gap:24px; flex-wrap:wrap;">${col(pa, v.a.full)}${col(pb, v.b.full)}</div>
+    </div>`;
+  }
   function bodyHTML(v) {
     return `<div style="display:flex; flex-direction:column; gap:18px; padding:22px 28px 80px;">
       ${v.hasCaveat ? `<div style="display:flex; align-items:flex-start; gap:12px; background:rgba(232,168,78,0.07); border:1px solid rgba(232,168,78,0.28); border-radius:13px; padding:13px 16px;">
@@ -19724,6 +19859,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ${modelCard(v)}
       ${h2hCard(v)}
       ${stylesCard(v)}
+      ${holdbreakCard(v)}
       ${tourneyCard(v)}
       ${v.statBlocks.map(statCard).join('')}
       ${marketCard(v)}
@@ -20509,7 +20645,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadHoldbreak(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap
