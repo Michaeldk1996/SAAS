@@ -2424,6 +2424,30 @@ const TOUR_CITY_TO_CANONICAL = {
 const tourFeedCities = (canonicalTour) =>
   Object.keys(TOUR_CITY_TO_CANONICAL).filter(city => TOUR_CITY_TO_CANONICAL[city] === canonicalTour);
 
+// TEN-130. api-tennis serves a Grand Slam's QUALIFYING draw under the SAME
+// tournament_key as the main draw, labels it with the qualifying bracket's own
+// "Semi-finals"/"Final"/"Quarter-finals" — reads as a main-draw round — and
+// (unlike ATP 250/500 qualifying) leaves event_qualification === 'False', so the
+// primary flag filter misses it entirely. Those best-of-three rows then sort
+// BEFORE the main draw by date and steal the report's leading round slots: the
+// US Open's real Round of 128 ("1/64-finals") gets pushed off R128 onto R32,
+// and eliminated qualifiers (e.g. Blanch) surface as phantom R128 "winners".
+// Reuse the exact Slam set-count discriminator the career path (fetchAllTier* /
+// deriveSlamBoxes, TEN-89) already trusts: a completed Slam MAIN draw is
+// best-of-five, so a decided winner who took <3 sets — and it isn't a
+// retirement/walkover — is a best-of-three qualifying match mislabelled with a
+// main-draw round. '1/N-finals' rounds are the feed's own unambiguous main-draw
+// certifier and are never treated as qualifying here.
+function isSlamQualifyingLeak(f) {
+  const { display: cname } = canonicalTournament(f.tournament_name);
+  if (!cname || !GRAND_SLAM_NAMES.has(cname)) return false;
+  if (/1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || '')) return false; // certified main draw
+  if (f.event_status === 'Retired' || f.event_status === 'Walk Over') return false;
+  const sc = String(f.event_final_result || '').split('-').map(s => parseInt(s.trim(), 10));
+  const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
+  return Number.isFinite(winnerSets) && winnerSets < 3;
+}
+
 async function buildTournamentProgression(tourName) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
   // Names to match the feed's `tournament_name` against: for a sponsor-brand
@@ -2443,6 +2467,8 @@ async function buildTournamentProgression(tourName) {
     // add a phantom leading round and shift every real label by one.
     typeof f.tournament_round === 'string' && f.tournament_round.trim() !== '' &&
     f.event_qualification !== 'True' &&
+    // Slam qualifying the 'True' flag misses (TEN-130) — see isSlamQualifyingLeak.
+    !isSlamQualifyingLeak(f) &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
   );
   if (played.length === 0) return null;

@@ -17232,7 +17232,7 @@ function showTournamentProfile(key){
    Nothing is fabricated: missing rounds/values render honest
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
-const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null };
+const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null };
 // Per-tournament market performance (build-tournament-market.js → tournament-market.json).
 // Real flat-stake yields + favourite reliability from settled closing prices; the
 // Overview panel em-dashes any tournament missing here (thin sample / no join).
@@ -17251,11 +17251,30 @@ function tourxMarketFor(name){
   if (!t) return null;
   return Object.assign({}, t, { baseline: tourxMarketData.baseline });
 }
-// Shared comparison-player selection (chips) used by both Round comparison's
-// "All rounds" (cap 2) and Player progression (cap 4). Colours index the chips
-// and the comparison line charts so a player keeps one colour across the view.
-const TOURX_CMP_COLORS = ['#3E7BFA', '#E8934B', '#3dd68c', '#B98BFF'];
-const TOURX_RV_CAP = 4, TOURX_PP_CAP = 4;
+// Shared comparison-player selection (chips) used by both Round comparison and
+// Player progression. Colours index the chips and the comparison charts so a
+// player keeps one colour across the view. Blue (#3E7BFA, the brand accent) is
+// slot 0 so the first player picked — Vacherot in the founder's screenshots —
+// is always badged blue. TEN-130: palette widened to eight on-brand hues and the
+// Round-comparison cap raised to eight so more players can be compared at once,
+// each with a distinct brand colour. tourxCmpColor() pins a colour to a player
+// when first selected (see below), so the colour stays put as others come and go.
+const TOURX_CMP_COLORS = ['#3E7BFA', '#E8934B', '#3dd68c', '#B98BFF', '#2AB8A0', '#F2C14E', '#F2789F', '#7BA4FF'];
+const TOURX_RV_CAP = 8, TOURX_PP_CAP = 4;
+// Stable per-player colour slot (TEN-130). A player is pinned to the lowest free
+// palette slot the moment they are selected and released only when removed, so
+// removing a middle chip never re-shuffles the survivors' colours (the old
+// selection-order index did). Vacherot, picked first, holds slot 0 = blue.
+function tourxCmpColorIndex(name){
+  const map = tourxState.cmpColorIdx || (tourxState.cmpColorIdx = {});
+  if (map[name] == null){
+    const used = new Set(Object.values(map));
+    let slot = 0; while (used.has(slot)) slot++;
+    map[name] = slot;
+  }
+  return map[name];
+}
+function tourxCmpColor(name){ return TOURX_CMP_COLORS[tourxCmpColorIndex(name) % TOURX_CMP_COLORS.length]; }
 
 // Six metrics, keyed to tournament-progression.json field names, in the
 // same order as the match-analysis Progression tab. All metrics rank
@@ -17997,11 +18016,15 @@ function tourxToggleRvMetric(key){
 function tourxCmpInput(v){ tourxState.cmpQuery = v; tourxState.cmpOpen = true; renderTourxReports(); }
 function tourxCmpAdd(name, cap){
   const sel = tourxState.cmpPlayers;
-  if (!sel.includes(name) && sel.length < cap) sel.push(name);
+  if (!sel.includes(name) && sel.length < cap){ sel.push(name); tourxCmpColorIndex(name); /* pin colour slot on add */ }
   tourxState.cmpQuery = ''; tourxState.cmpOpen = false; renderTourxReports();
 }
-function tourxCmpRemove(name){ tourxState.cmpPlayers = tourxState.cmpPlayers.filter(n => n !== name); renderTourxReports(); }
-function tourxCmpClear(){ tourxState.cmpPlayers = []; tourxState.cmpQuery = ''; renderTourxReports(); }
+function tourxCmpRemove(name){
+  tourxState.cmpPlayers = tourxState.cmpPlayers.filter(n => n !== name);
+  if (tourxState.cmpColorIdx) delete tourxState.cmpColorIdx[name]; // free the colour slot
+  renderTourxReports();
+}
+function tourxCmpClear(){ tourxState.cmpPlayers = []; tourxState.cmpColorIdx = {}; tourxState.cmpQuery = ''; renderTourxReports(); }
 
 // Loose name match (e.g. "J. Sinner" vs "Jannik Sinner") for cross-referencing
 // the champion in tournament-profiles.json against a progression player.
@@ -18022,7 +18045,7 @@ function tourxPlayerChipBarHtml(allNames, cap){
   const q = (tourxState.cmpQuery || '').trim().toLowerCase();
   const full = sel.length >= cap;
   const chips = sel.map((name, i) => {
-    const c = TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length];
+    const c = tourxCmpColor(name);
     return `<span style="display:inline-flex;align-items:center;gap:7px;background:${tourxHexA(c, 0.14)};border:1px solid ${tourxHexA(c, 0.5)};border-radius:8px;padding:5px 9px;">
         <span style="width:8px;height:8px;border-radius:3px;background:${c};flex:none;"></span>
         <span style="font-size:12.5px;font-weight:700;color:#eef2f8;white-space:nowrap;">${name}</span>
@@ -18050,7 +18073,7 @@ function tourxPlayerChipBarHtml(allNames, cap){
 // Small coloured legend of the selected players, shared by the comparison views.
 function tourxCmpLegendHtml(players){
   const dots = players.map((p, i) => {
-    const c = TOURX_CMP_COLORS[i % TOURX_CMP_COLORS.length];
+    const c = tourxCmpColor(p.name);
     return `<div style="display:flex;align-items:center;gap:9px;"><span style="width:11px;height:11px;border-radius:3px;background:${c};"></span><span style="font-size:14px;font-weight:800;letter-spacing:-0.01em;">${p.name}</span></div>`;
   }).join('');
   return `<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:16px 0 14px;">${dots}<span style="margin-left:auto;font-size:11.5px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">dashed line = field average for the draw.</span></div>`;
@@ -18320,10 +18343,13 @@ function tourxRoundFilterBarHtml(T){
 // each metric card ranks highest-value-first (incl. unforced errors) and draws a
 // dashed average line across the shown players.
 function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
-  // Stable per-player identity ramp (export authority): each winner steps down the
-  // neutral grey ramp by their position in the winners list, so a player's dot is
-  // the same colour across all six metric cards regardless of their rank within one.
-  const greyOf = {}; entries.forEach((e, i) => { greyOf[e.name] = TOURX_GREYS[i % TOURX_GREYS.length]; });
+  // Stable per-player identity dot. A player the user has explicitly selected for
+  // comparison carries their pinned brand colour (TEN-130), so their dot matches
+  // their selection chip across all metric cards; the unfiltered full-field view
+  // (no players selected) keeps the neutral grey ramp so 50+ dots stay legible.
+  const greyOf = {}; entries.forEach((e, i) => {
+    greyOf[e.name] = tourxState.cmpPlayers.includes(e.name) ? tourxCmpColor(e.name) : TOURX_GREYS[i % TOURX_GREYS.length];
+  });
   const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
     const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
