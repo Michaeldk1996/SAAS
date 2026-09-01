@@ -2031,11 +2031,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1308_d-sweeny.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2674_c-moutet.jpg",
     "oddsMovement": {
@@ -3652,7 +3658,10 @@
       "edgeVsPinnacleP1": -0.1153,
       "edgeVsPinnacleP2": 0.1153,
       "ts": "2026-09-01T07:42:41.696Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "85b643df273aabf0d10374022d5d44fc",
@@ -5239,11 +5248,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/594_f-misolic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
     "oddsMovement": {
@@ -7376,7 +7391,10 @@
       "edgeVsPinnacleP1": -0.0006,
       "edgeVsPinnacleP2": 0.0006,
       "ts": "2026-09-01T07:42:41.696Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "61b01b6e054522a5b142dfa57e7de850",
@@ -9193,16 +9211,36 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 5",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 3,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 4,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 5,
+        "p1": 2,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "oddsMovement": {
@@ -10815,7 +10853,10 @@
       "edgeVsPinnacleP1": -0.03,
       "edgeVsPinnacleP2": 0.03,
       "ts": "2026-09-01T07:42:41.696Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "b65efc024874b5f0d2b7b6aa74043b05",
@@ -12895,11 +12936,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/367_z-piros.jpg",
     "oddsMovement": {
@@ -13508,7 +13555,10 @@
       "edgeVsPinnacleP1": -0.0673,
       "edgeVsPinnacleP2": 0.0673,
       "ts": "2026-09-01T07:42:41.696Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "c527ad5939626550b0cc93f040b5ff1d",
@@ -15216,11 +15266,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/15270_n-basavareddy.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1183_t-schoolkate.jpg",
     "oddsMovement": {
@@ -16409,7 +16465,10 @@
       "edgeVsPinnacleP1": -0.009,
       "edgeVsPinnacleP2": 0.009,
       "ts": "2026-09-01T07:42:41.696Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "e8d0f37e3f47e39eecd449b8db5aa68a",
@@ -32841,11 +32900,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/17463_d-blanch.jpg",
     "oddsMovement": {
@@ -34145,7 +34215,10 @@
       "p2": 16.88,
       "bookmaker": "Pinnacle",
       "at": "2026-08-28T10:08:27.283Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "aa9bc2a56a023039dcd7df50552350cb",
@@ -683452,7 +683525,7 @@
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1308_d-sweeny.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2674_c-moutet.jpg",
     "oddsMovement": {
@@ -693907,7 +693980,7 @@
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/594_f-misolic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
     "oddsMovement": {
@@ -711399,11 +711472,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/17463_d-blanch.jpg",
     "oddsMovement": {
@@ -712703,7 +712787,10 @@
       "p2": 39,
       "bookmaker": "1xBet",
       "at": "2026-08-27T21:07:50.741Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158157",
@@ -717655,16 +717742,36 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 5",
     "liveScore": [
       {
         "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 3,
         "p1": 3,
-        "p2": 0
+        "p2": 6
+      },
+      {
+        "set": 4,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 5,
+        "p1": 2,
+        "p2": 2
       }
     ],
-    "liveGameScore": "30 - 40",
-    "liveServer": "p2",
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2084_f-comesana.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "oddsMovement": {
@@ -737927,11 +738034,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2112_m-bellucci.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/367_z-piros.jpg",
     "oddsMovement": {
@@ -738540,7 +738653,10 @@
       "edgeVsPinnacleP1": -0.0668,
       "edgeVsPinnacleP2": 0.0668,
       "ts": "2026-08-29T15:41:37.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158443",
@@ -740247,11 +740363,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/15270_n-basavareddy.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1183_t-schoolkate.jpg",
     "oddsMovement": {
@@ -741456,7 +741578,10 @@
       "edgeVsPinnacleP1": 0.0289,
       "edgeVsPinnacleP2": -0.0289,
       "ts": "2026-08-29T15:41:37.118Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12158698",
