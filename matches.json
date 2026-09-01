@@ -122371,13 +122371,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.3,
+      "p2": 1.61,
+      "bookmaker": "Marathon"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.3,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 1.61,
+        "bookmaker": "Marathon"
+      }
     },
     "tournamentRound": "ATP US Open - 1/32-finals",
     "p1Key": 1900,
