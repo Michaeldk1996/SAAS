@@ -4667,29 +4667,17 @@ async function runPipeline() {
     for (const pt of arr) { if (Date.parse(pt[0]) <= cut) chosen = pt; }
     return chosen;
   };
-  // TEN-124 (founder ruling 2026-09-01): when the start cannot be located —
-  // startTs absent AND inPlayOnset finds no in-play burst — the close would
-  // otherwise dash even though a clean pre-match tail exists (a reference book
-  // too sparse for onset: e.g. bet365, 7 quotes over 43h). Recover the last
-  // retained tick as the close, but ONLY when the whole reference stream is
-  // demonstrably pre-play. Pre-match quotes sit minutes apart; in-play quotes
-  // arrive every few seconds. So if the tightest gap between DISTINCT quote
-  // instants is >= PREMATCH_GAP_MIN, no persisted in-play tick exists and the
-  // tail is a genuine pre-match close. If any tighter (in-play-cadence) gap is
-  // present we cannot cleanly separate pre-play from in-play, so we DASH rather
-  // than risk pinning an in-play price (data-honesty rule: never approximate).
-  // Measured on live matches.json: clean streams tick >= 85s apart; the one
-  // contaminated stream ticked 3s apart — 60s sits in that gap with margin.
-  const PREMATCH_GAP_MIN = 60000; // < 60s between distinct quotes == in-play cadence
-  const allPreMatchCadence = (series) => {
-    const t = [...new Set([...(series.p1 || []), ...(series.p2 || [])]
-      .map(p => Date.parse(p[0])))].sort((a, b) => a - b);
-    for (let i = 1; i < t.length; i++) if (t[i] - t[i - 1] < PREMATCH_GAP_MIN) return false;
-    return true;
-  };
+  // TEN-124 (founder ruling 2026-09-02): the earlier "recover the last tick when
+  // onset is unconfirmable" branch was REMOVED. It leaned on a tick-cadence proxy
+  // for "all pre-play", but a slow-polling reference book (bet365: 8 quotes/3 days)
+  // never trips the in-play cadence, so an in-play tick 66 min after the first
+  // ball (Blanch v Fritz: bet365 19.00 @17:46, first ball 16:40) passed the guard
+  // and was pinned as the "close". The founder ruled: require a PROVEN
+  // pre-first-ball reference (a real startTs, or an in-play onset detected off the
+  // tick burst) — dash otherwise. No cadence-proxy recovery. See the close block.
 
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
-      closeHealed = 0, closeDashed = 0, closeRecovered = 0;
+      closeHealed = 0, closeDashed = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -4702,16 +4690,40 @@ async function runPipeline() {
     const books = m.oddsMovement && m.oddsMovement.books;
     if (!books || !Object.keys(books).length) continue;
     const preferred = m.odds && m.odds.bookmaker;
-    const ref = (preferred && books[preferred]) ? preferred
-      : Object.keys(books).reduce((best, n) => {
-          const len = (books[n].p1 || []).length + (books[n].p2 || []).length;
-          const bl = best ? (books[best].p1 || []).length + (books[best].p2 || []).length : -1;
-          return len > bl ? n : best;
-        }, null);
+    const mostPopRef = Object.keys(books).reduce((best, n) => {
+      const len = (books[n].p1 || []).length + (books[n].p2 || []).length;
+      const bl = best ? (books[best].p1 || []).length + (books[best].p2 || []).length : -1;
+      return len > bl ? n : best;
+    }, null);
+    // TEN-124 (founder ruling 2026-09-02, comment): ALWAYS base the open→close
+    // journey on bet365 — the most trustable soft book. Both legs pin to bet365
+    // whenever it is present (it is for 50/50 completed cards with movement data),
+    // which is a single-book journey by construction. bet365 slow-polls pre-match,
+    // so a completed match whose bet365 stream never proves a pre-first-ball
+    // reference (no in-play onset burst off bet365's own cadence) DASHES — we never
+    // substitute another book (founder standing rule: a missing close is a dash).
+    // If bet365 is entirely absent for a completed match, dash the whole journey
+    // rather than show a cross-book artefact. A non-completed match (no journey
+    // shown) still falls back to the headline book so today's card keeps a live
+    // price. mostPopRef is retained only for that non-completed fallback.
+    const BET365 = 'bet365';
+    const hasBet365 = books[BET365] && (books[BET365].p1 || []).length && (books[BET365].p2 || []).length;
+    const ref = hasBet365 ? BET365
+      : (m.finalScore ? null
+         : ((preferred && books[preferred]) ? preferred : mostPopRef));
     const s = ref && books[ref];
     const p1 = (s && s.p1) || [];
     const p2 = (s && s.p2) || [];
-    if (!p1.length || !p2.length) continue;
+    if (!p1.length || !p2.length) {
+      // Completed match with no usable bet365 stream: dash the whole journey rather
+      // than leave a cross-book carried opening standing next to a dashed close.
+      if (m.finalScore && m.openingOdds) { m.openingOdds = null; openPreserved--; }
+      continue;
+    }
+
+    // For a completed match, drop a carried opening pinned in a DIFFERENT book so
+    // the opening is re-derived from the same (bet365) stream as the close.
+    if (m.finalScore && m.openingOdds && m.openingOdds.bookmaker !== ref) { m.openingOdds = null; openPreserved--; }
 
     // openingOdds: first captured point. Pin once (skip if already inherited).
     if (!m.openingOdds) {
@@ -4732,28 +4744,24 @@ async function runPipeline() {
         ? Date.parse(m.startTs)
         : (() => { const o = inPlayOnset(s); return Number.isFinite(o) ? o - 1 : NaN; })();
       const prior = carried && carried.closingOdds;
-      const priorOk = prior && Number.isFinite(startMs)
+      // Preserve a prior close only if it is a genuine pre-start quote AND from
+      // bet365 (the book we now pin both legs to) — otherwise it is re-derived
+      // from `ref`, so a close pinned cross-book by an earlier run is corrected
+      // rather than frozen (TEN-124 bet365 single-book journey).
+      const priorOk = prior && prior.bookmaker === ref && Number.isFinite(startMs)
         && Number.isFinite(Date.parse(prior.at)) && Date.parse(prior.at) <= startMs;
-      const startTsAbsent = !(typeof m.startTs === 'string' && m.startTs);
       if (priorOk) {
         m.closingOdds = prior; closePreserved++;
       } else if (Number.isFinite(startMs)) {
         const c1 = lastAtOrBefore(p1, startMs), c2 = lastAtOrBefore(p2, startMs);
         if (c1 && c2) {
           m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
-          if (prior) closeHealed++; else closeDerived++;   // prior present == corrupt in-play pin replaced
-        } else { closeDashed++; }                           // no pre-start quote -> dash (count every dash, pinned or not)
-      } else if (startTsAbsent && allPreMatchCadence(s)) {
-        // Onset unconfirmed (no startTs, no in-play burst) but every retained
-        // tick is demonstrably pre-play — recover the last tick as the close
-        // (TEN-124). Deterministic from the frozen tick tail, so idempotent.
-        const c1 = p1[p1.length - 1], c2 = p2[p2.length - 1];
-        m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
-        closeRecovered++;
-      } else { closeDashed++; }                             // can't locate start / in-play cadence -> dash (count every dash)
+          if (prior) closeHealed++; else closeDerived++;   // prior present == corrupt/cross-book pin replaced
+        } else { closeDashed++; }                           // no pre-start quote -> dash
+      } else { closeDashed++; }                             // no PROVEN pre-first-ball reference -> dash (TEN-124 tighten)
     }
   }
-  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (in-play pin replaced) / ${closeRecovered} recovered (onset-unconfirmed, all-pre-play tail) / ${closeDashed} dashed (no pre-match quote / in-play cadence).`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability
