@@ -510,6 +510,34 @@
     const RETURN_FLOOR_PTS = 10;   // return  points before a return rating is shown
     const PBP_MAX_AGE_MS   = 12_000;
 
+    // ── 0–10 rating scale (founder ruling TEN-107 2026-08-31) ────────────────────
+    // The raw serve/return ratings are summed-percentage figures (serve ~200–308,
+    // return ~17–129) — unreadable on a live card. Rescale each axis LINEARLY so
+    // 5.0 == the tour average and each 2.5 points == one tour standard deviation,
+    // with 0 and 10 pinned at ±2 SD (≈ the tour's 2.3rd/97.7th percentile) and
+    // clamped. Anchors are the real tour distribution measured off our own
+    // career-splits DB (career Best-of-3 row, complete-component rows, 2026-09-01):
+    //   SERVE  mean 263.3, sd 16.0 (n=232)  → 0↔231.3, 5.0↔263.3, 10↔295.3
+    //   RETURN mean  91.2, sd 16.2 (n=230)  → 0↔ 58.8, 5.0↔ 91.2, 10↔123.6
+    // (2 players with an incomplete return row — missing break-point-conversion —
+    //  give a degenerate low figure and are excluded from the return anchor only.)
+    // Same transform anchors the H2H-board rating when that migrates to 0–10, so
+    // the two surfaces never diverge (doc `rating-0-10-scale`). Live figures swing
+    // wider than the career board because a single match is one noisy sample of
+    // the same underlying rating — an in-match rating of 8.5 means "serving ~1.4
+    // SD above tour-average right now", which is the intended read.
+    const SCALE10 = {
+      serve:  { mean: 263.3, sd: 16.0 },
+      return: { mean:  91.2, sd: 16.2 },
+    };
+    function scale10(raw, axis) {
+      if (raw == null) return null;
+      const a = SCALE10[axis];
+      if (!a) return null;
+      const v = 5 + 2.5 * (raw - a.mean) / a.sd;
+      return Math.max(0, Math.min(10, v));
+    }
+
     let _ek = null;                // open match's event_key (null = closed)
     let _tab = 'stats';            // stats | points | ratings
     let _statPeriod = 'match';     // match | set1 | set2 …
@@ -681,17 +709,21 @@
       const s1 = serveRating(idx, p1, 'match'), s2 = serveRating(idx, p2, 'match');
       const r1 = returnRating(idx, p1, 'match'), r2 = returnRating(idx, p2, 'match');
       const n1 = esc(fix.event_first_player || 'P1'), n2 = esc(fix.event_second_player || 'P2');
-      const val = (o) => o.rating != null
-        ? `<span class="ltm-rate-val">${Math.round(o.rating)}</span>`
-        : `<span class="ltm-rate-val warm">${o.warming ? 'warming up' : '—'}</span>`;
+      // Headline is the 0–10 rescale (5.0 = tour average); see scale10() above.
+      const val = (o, axis) => {
+        const r10 = o.rating != null ? scale10(o.rating, axis) : null;
+        return r10 != null
+          ? `<span class="ltm-rate-val">${r10.toFixed(1)}</span>`
+          : `<span class="ltm-rate-val warm">${o.warming ? 'warming up' : '—'}</span>`;
+      };
 
       const head = `
         <div class="ltm-section">
           <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
-            ${val(s1)}<span class="ltm-sn" style="text-align:center;">⚡ Serve rating</span>${val(s2)}
+            ${val(s1, 'serve')}<span class="ltm-sn" style="text-align:center;">⚡ Serve rating</span>${val(s2, 'serve')}
           </div>
           <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
-            ${val(r1)}<span class="ltm-sn" style="text-align:center;">⛨ Return rating</span>${val(r2)}
+            ${val(r1, 'return')}<span class="ltm-sn" style="text-align:center;">⛨ Return rating</span>${val(r2, 'return')}
           </div>
         </div>`;
 
