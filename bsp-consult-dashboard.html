@@ -2361,6 +2361,86 @@
   [data-page="live"] .lt-empty-title{ margin:0 0 6px; font-size:15px; font-weight:600; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
   [data-page="live"] .lt-empty-sub{ margin:0; font-size:12.5px; }
   @keyframes lt-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+
+  /* ── TEN-107 match-detail panel (Stats / Points / Ratings) ─────────────────
+     Gated on FEATURE_LIVE_DETAIL; clickable cards + a modal built by live-tab.js.
+     Two player colours (P1 blue / P2 coral) matched to the reference layout. */
+  .lt-card.clickable{ cursor:pointer; }
+  :root{ --lt-p1:#5b9dff; --lt-p2:#e2685f; }
+  .ltm-overlay{ position:fixed; inset:0; z-index:9000; display:none; align-items:flex-start; justify-content:center;
+    background:rgba(6,8,12,0.72); backdrop-filter:blur(3px); padding:40px 16px; overflow-y:auto; }
+  .ltm-overlay.open{ display:flex; }
+  .ltm{ width:100%; max-width:720px; background:var(--panel,#12151C); border:1px solid var(--border,#262B35);
+    border-radius:16px; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,0.55);
+    font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
+  .ltm-top{ display:flex; align-items:center; justify-content:center; position:relative; gap:8px;
+    padding:13px 48px; background:linear-gradient(180deg,#1b2740,#151b28); border-bottom:1px solid var(--border,#262B35);
+    font-size:13px; font-weight:700; color:var(--text,#e7e9ee); letter-spacing:0.01em; text-align:center; }
+  .ltm-close{ position:absolute; right:12px; top:50%; transform:translateY(-50%); width:30px; height:30px; border-radius:50%;
+    border:none; background:rgba(0,0,0,0.35); color:#c7ccd4; font-size:17px; line-height:1; cursor:pointer; }
+  .ltm-close:hover{ background:rgba(0,0,0,0.55); color:#fff; }
+  .ltm-head{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; padding:16px 18px 12px; }
+  .ltm-p{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .ltm-p.p2{ flex-direction:row-reverse; text-align:right; }
+  .ltm-av{ width:40px; height:40px; border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); flex-shrink:0; }
+  .ltm-pname{ font-size:15.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ltm-p.p1 .ltm-pname{ color:var(--lt-p1); } .ltm-p.p2 .ltm-pname{ color:var(--lt-p2); }
+  .ltm-score{ display:flex; flex-direction:column; align-items:center; gap:2px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
+  .ltm-scoreline{ display:flex; align-items:center; gap:11px; font-size:15px; font-weight:700; color:var(--text-dim,#8F98A6); }
+  .ltm-scoreline .cur{ color:var(--text,#e7e9ee); }
+  .ltm-serveball{ color:#3dd68c; font-size:10px; }
+  .ltm-tabs{ display:flex; gap:4px; padding:0 14px 12px; }
+  .ltm-tab{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 8px; border-radius:9px;
+    border:1px solid transparent; background:var(--panel-2,#181C25); color:var(--text-dim,#8F98A6); font-size:12.5px;
+    font-weight:600; cursor:pointer; transition:background 120ms,color 120ms; }
+  .ltm-tab.active{ background:var(--lt-p1); color:#fff; }
+  .ltm-body{ padding:4px 18px 22px; }
+  .ltm-toggle{ display:inline-flex; gap:4px; margin:2px 0 16px; background:var(--panel-2,#181C25); padding:3px; border-radius:9px; }
+  .ltm-toggle button{ padding:6px 14px; border:none; border-radius:7px; background:transparent; color:var(--text-dim,#8F98A6);
+    font-size:11.5px; font-weight:700; letter-spacing:0.03em; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
+  .ltm-toggle button.active{ background:var(--lt-p1); color:#fff; }
+  .ltm-section{ background:var(--panel-2,#12151c); border:1px solid var(--border,#262B35); border-radius:12px; padding:6px 16px 14px; margin-bottom:14px; }
+  .ltm-sec-title{ text-align:center; font-size:10.5px; font-weight:800; letter-spacing:0.16em; color:var(--text-faint,#6b7481);
+    text-transform:uppercase; margin:12px 0 12px; }
+  .ltm-stat{ margin:14px 0; }
+  .ltm-stat-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:8px; margin-bottom:7px; }
+  .ltm-sv{ font-family:var(--mx-font-mono,monospace); font-size:15px; font-weight:800; color:var(--text,#e7e9ee); }
+  .ltm-sv.r{ text-align:right; }
+  .ltm-sv small{ font-size:11px; font-weight:500; color:var(--text-faint,#6b7481); margin-left:5px; }
+  .ltm-sv.r small{ margin:0 5px 0 0; }
+  .ltm-sn{ font-size:12px; color:var(--text-dim,#8F98A6); white-space:nowrap; }
+  .ltm-bar{ position:relative; height:5px; border-radius:3px; background:var(--panel,#0e1118); display:flex; overflow:hidden; }
+  .ltm-bar .l{ margin-left:auto; height:100%; background:var(--lt-p1); border-radius:3px 0 0 3px; }
+  .ltm-bar .r{ height:100%; background:var(--lt-p2); border-radius:0 3px 3px 0; }
+  /* Ratings */
+  .ltm-rate-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin:12px 2px; }
+  .ltm-rate-lab{ font-size:12px; color:var(--text-dim,#8F98A6); display:flex; align-items:center; gap:6px; }
+  .ltm-rate-lab.r{ flex-direction:row-reverse; }
+  .ltm-rate-val{ font-family:var(--mx-font-mono,monospace); font-size:22px; font-weight:800; color:var(--text,#e7e9ee); }
+  .ltm-rate-val.warm{ font-size:12px; font-weight:600; color:var(--text-faint,#6b7481); }
+  .ltm-chart{ background:var(--panel-2,#12151c); border:1px solid var(--border,#262B35); border-radius:12px; padding:12px 14px 8px; margin-bottom:14px; }
+  .ltm-chart-hd{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .ltm-chart-title{ font-size:11px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim,#8F98A6); }
+  .ltm-chart-leg{ display:flex; gap:12px; font-size:10.5px; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-mono,monospace); }
+  .ltm-chart-leg span{ display:inline-flex; align-items:center; gap:5px; }
+  .ltm-chart-leg i{ width:10px; height:2px; border-radius:2px; display:inline-block; }
+  /* Points */
+  .ltm-game{ border:1px solid var(--border,#262B35); border-radius:11px; padding:10px 14px 12px; margin-bottom:9px; background:var(--panel-2,#12151c); }
+  .ltm-game.brk{ border-color:rgba(226,104,95,0.5); background:rgba(226,104,95,0.06); }
+  .ltm-game-hd{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; }
+  .ltm-game-srv{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; min-width:0; }
+  .ltm-game-srv .n{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ltm-game-srv.r{ flex-direction:row-reverse; text-align:right; }
+  .ltm-game-srv.p1 .n{ color:var(--lt-p1); } .ltm-game-srv.p2 .n{ color:var(--lt-p2); }
+  .ltm-game-srv.dim .n{ color:var(--text-dim,#8F98A6); font-weight:500; }
+  .ltm-game-sc{ font-family:var(--mx-font-mono,monospace); font-size:14px; font-weight:800; color:var(--text,#e7e9ee); display:flex; align-items:center; gap:8px; }
+  .ltm-brk-badge{ background:var(--lt-p2); color:#fff; font-size:9px; font-weight:800; letter-spacing:0.06em; padding:2px 6px; border-radius:4px; }
+  .ltm-game-lab{ text-align:center; font-size:9.5px; font-weight:700; letter-spacing:0.1em; color:var(--text-faint,#6b7481); margin:7px 0; }
+  .ltm-pts{ display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; font-family:var(--mx-font-mono,monospace); font-size:12px; color:var(--text-dim,#c7ccd4); }
+  .ltm-pt.bp{ color:#e6a54a; font-weight:700; }
+  .ltm-pt .bpb{ font-size:8px; background:rgba(230,165,74,0.18); color:#e6a54a; padding:1px 4px; border-radius:3px; margin-left:3px; vertical-align:1px; }
+  .ltm-note{ text-align:center; color:var(--text-faint,#6b7481); font-size:12.5px; padding:26px 10px; }
+  @media (max-width:560px){ .ltm-head{ grid-template-columns:1fr auto 1fr; } .ltm-pname{ font-size:13.5px; } .ltm-av{ width:32px; height:32px; } }
 </style>
 </head>
 <body>
@@ -20452,6 +20532,12 @@ setInterval(loadMatches, 3 * 60 * 1000);
   // Realtime push instead of the 30s poll. Falls back to the 30s poll on any
   // socket failure (see live-tab.js), so the feed never goes dark.
   window.FEATURE_LIVE_REALTIME = true;
+  // TEN-107 match-detail panel (Stats / Points / Ratings). STAGED OFF: flipping to
+  // true makes live cards clickable and opens the detail modal. Deploying this code
+  // with the flag OFF changes nothing live until the confirm-before-live gate. The
+  // Points/Ratings-chart read path needs the live_pbp migration + poller redeploy,
+  // which land at the same gate (doc `detail-panel-staging`).
+  window.FEATURE_LIVE_DETAIL = false;
 </script>
 <script src="live-tab.js" defer></script>
 

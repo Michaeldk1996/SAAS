@@ -29,6 +29,13 @@
 
   if (!window.FEATURE_LIVE_PROXY) return;
 
+  // TEN-107 detail panel (founder-approved 2026-08-31): clicking a live card opens
+  // a Stats/Points/Ratings modal. Gated behind its OWN flag, default OFF: with the
+  // flag unset this module behaves exactly as before (cards are not clickable, no
+  // modal), so shipping the code changes nothing live until the confirm-before-live
+  // gate flips window.FEATURE_LIVE_DETAIL — the same staging pattern as REALTIME.
+  const USE_DETAIL = !!window.FEATURE_LIVE_DETAIL;
+
   const SB_URL = (window.SUPABASE_URL || '').replace(/\/$/, '');
   const SB_KEY = window.SUPABASE_ANON_KEY || '';
   // Placeholder strings from failed CI substitution must not pass the guard.
@@ -172,6 +179,7 @@
     const matches = Array.isArray(row.board?.matches) ? row.board.matches : [];
     _lastMatches = matches;
     render(matches);
+    if (USE_DETAIL) Detail.onBoard(matches);   // live-refresh an open modal
   }
 
   function schedulePoll(delayMs) {
@@ -402,8 +410,10 @@
     const round = shortRound(fix);
     const status = esc(fix.event_status || 'Live');
 
+    const clickable = USE_DETAIL ? ' clickable' : '';
+    const a11y = USE_DETAIL ? ' role="button" tabindex="0" aria-label="Open match detail"' : '';
     return `
-    <article class="lt-card" data-ek="${ek}">
+    <article class="lt-card${clickable}" data-ek="${ek}"${a11y}>
       <div class="lt-head">
         <span class="lt-tourn">${tourn}${round ? ` · ${round}` : ''}</span>
         <span class="lt-badge"><span class="lt-dot"></span>${status}</span>
@@ -475,6 +485,450 @@
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // TEN-107 · Match-detail panel (Stats / Points / Ratings). Gated on USE_DETAIL.
+  //
+  // Data sources (founder-approved 2026-08-31):
+  //   • Stats + Ratings headline  ← the SAME live_snapshot board the tab polls
+  //     (fixture.statistics carries match/set1/set2 box scores; no extra fetch).
+  //   • Points + Ratings chart    ← live_pbp, fetched ON DEMAND via PostgREST only
+  //     while the modal is open (the point log is kept off the pushed Realtime row
+  //     to halve Slam-day egress — see doc `detail-view-cost`).
+  //
+  // Ratings use the model's own layer-9 / layer-10 rating formulas (h2h-model/
+  //   adjustments.js) on match-to-date stats, RAW (no shrinkage — founder ruling);
+  //   under a sample floor a rating shows "warming up" instead of a noisy figure.
+  //   serve = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df%
+  //   return = returnPtsWon% + returnGamesWon% + bpConversion%
+  //   Dominance Ratio = returnPtsWon% / (100 − servicePtsWon%)   (Bialik)
+  // ══════════════════════════════════════════════════════════════════════════════
+  const Detail = (function () {
+    // Sample floors (display only — flagged for founder confirmation in staging doc).
+    const SERVE_FLOOR_PTS  = 10;   // service points before a serve rating is shown
+    const RETURN_FLOOR_PTS = 10;   // return  points before a return rating is shown
+    const PBP_MAX_AGE_MS   = 12_000;
+
+    let _ek = null;                // open match's event_key (null = closed)
+    let _tab = 'stats';            // stats | points | ratings
+    let _statPeriod = 'match';     // match | set1 | set2 …
+    let _ptsSet = 1;               // Points tab set filter
+    const _pbp = Object.create(null);   // ek → { games, at, loading }
+
+    const num = (s) => { const v = parseFloat(String(s).replace('%', '')); return Number.isFinite(v) ? v : null; };
+    const pk  = (fix, which) => fix[`${which === 1 ? 'first' : 'second'}_player_key`];
+
+    // Build stat lookup: byPlayer[player_key][period][stat_name] = {value,won,total}.
+    function indexStats(fix) {
+      const idx = Object.create(null);
+      const st = Array.isArray(fix.statistics) ? fix.statistics : [];
+      const periods = new Set();
+      for (const s of st) {
+        const key = String(s.player_key);
+        const per = String(s.stat_period || 'match');
+        periods.add(per);
+        (idx[key] = idx[key] || {});
+        (idx[key][per] = idx[key][per] || {});
+        idx[key][per][s.stat_name] = { value: s.stat_value, won: s.stat_won, total: s.stat_total };
+      }
+      return { idx, periods };
+    }
+    const g = (idx, pkey, per, name) => (idx[String(pkey)] && idx[String(pkey)][per] && idx[String(pkey)][per][name]) || null;
+
+    // Exact layer-9 / layer-10 rating rows on the box score for a given period.
+    function serveRating(idx, pkey, per) {
+      const fi = num(g(idx, pkey, per, '1st serve percentage')?.value);
+      const fw = num(g(idx, pkey, per, '1st serve points won')?.value);
+      const sw = num(g(idx, pkey, per, '2nd serve points won')?.value);
+      const hl = num(g(idx, pkey, per, 'Service games won')?.value);
+      const spTotal = g(idx, pkey, per, 'Service Points Won')?.total;
+      const aces = num(g(idx, pkey, per, 'Aces')?.value);
+      const dfs  = num(g(idx, pkey, per, 'Double Faults')?.value);
+      if (fi == null || fw == null || sw == null || hl == null) return { rating: null };
+      if (!(spTotal >= SERVE_FLOOR_PTS)) return { rating: null, warming: true };
+      const aPct  = spTotal > 0 && aces != null ? (aces / spTotal) * 100 : 0;
+      const dfPct = spTotal > 0 && dfs  != null ? (dfs  / spTotal) * 100 : 0;
+      return { rating: fi + fw + sw + hl + aPct - dfPct };
+    }
+    function returnRating(idx, pkey, per) {
+      const rp = num(g(idx, pkey, per, 'Return Points Won')?.value);
+      const br = num(g(idx, pkey, per, 'Return games won')?.value);
+      const bp = num(g(idx, pkey, per, 'Break Points Converted')?.value);
+      const rpTotal = g(idx, pkey, per, 'Return Points Won')?.total;
+      if (rp == null) return { rating: null };
+      if (!(rpTotal >= RETURN_FLOOR_PTS)) return { rating: null, warming: true };
+      return { rating: rp + (br || 0) + (bp || 0) };
+    }
+    function dominance(idx, pkey, per) {
+      const rpw = num(g(idx, pkey, per, 'Return Points Won')?.value);
+      const spw = num(g(idx, pkey, per, 'Service Points Won')?.value);
+      if (rpw == null || spw == null || (100 - spw) <= 0) return null;
+      return rpw / (100 - spw);
+    }
+
+    // ── diverging bar (P1 left / P2 right), each half ∝ its value over max. ──
+    function bar(v1, v2) {
+      const a = Math.max(0, v1 || 0), b = Math.max(0, v2 || 0), mx = Math.max(a, b, 1e-9);
+      const lw = (50 * a / mx).toFixed(1), rw = (50 * b / mx).toFixed(1);
+      return `<div class="ltm-bar"><span class="l" style="width:${lw}%"></span><span class="r" style="width:${rw}%"></span></div>`;
+    }
+    const bracket = (row) => (row && row.won != null && row.total != null) ? `<small>(${row.won}/${row.total})</small>` : '';
+
+    // ── Stats tab ──────────────────────────────────────────────────────────────
+    const SERVICE_ROWS = [
+      { name: 'Aces',                  pct: false, brk: false },
+      { name: 'Double Faults',         pct: false, brk: false },
+      { name: '1st serve percentage',  pct: true,  brk: false },
+      { name: '1st serve points won',  pct: true,  brk: true  },
+      { name: '2nd serve points won',  pct: true,  brk: true  },
+      { name: 'Break Points Saved',    pct: true,  brk: true  },
+    ];
+    function statsHtml(fix, idx, periods) {
+      const p1 = pk(fix, 1), p2 = pk(fix, 2);
+      const per = _statPeriod;
+      // toggle: MATCH + whatever setN periods exist, in order.
+      const setPers = [...periods].filter(x => /^set\d+$/.test(x)).sort();
+      const toggle = ['match', ...setPers].map(x => {
+        const lab = x === 'match' ? 'MATCH' : `SET ${x.slice(3)}`;
+        return `<button data-per="${x}" class="${x === per ? 'active' : ''}">${lab}</button>`;
+      }).join('');
+
+      const dr1 = dominance(idx, p1, per), dr2 = dominance(idx, p2, per);
+      const domHtml = (dr1 != null || dr2 != null) ? `
+        <div class="ltm-section">
+          <div class="ltm-sec-title">Dominance</div>
+          <div class="ltm-stat">
+            <div class="ltm-stat-row">
+              <span class="ltm-sv">${dr1 != null ? dr1.toFixed(2) : '—'}</span>
+              <span class="ltm-sn">Dominance Ratio</span>
+              <span class="ltm-sv r">${dr2 != null ? dr2.toFixed(2) : '—'}</span>
+            </div>
+            ${bar(dr1, dr2)}
+          </div>
+        </div>` : '';
+
+      const rows = SERVICE_ROWS.map(r => {
+        const a = g(idx, p1, per, r.name), b = g(idx, p2, per, r.name);
+        const av = a ? a.value : '—', bv = b ? b.value : '—';
+        const an = r.pct ? num(av) : num(a && a.value), bn = r.pct ? num(bv) : num(b && b.value);
+        return `<div class="ltm-stat">
+          <div class="ltm-stat-row">
+            <span class="ltm-sv">${esc(av ?? '—')}${r.brk ? bracket(a) : ''}</span>
+            <span class="ltm-sn">${esc(r.name)}</span>
+            <span class="ltm-sv r">${r.brk ? bracket(b) : ''}${esc(bv ?? '—')}</span>
+          </div>
+          ${bar(an, bn)}
+        </div>`;
+      }).join('');
+
+      return `<div class="ltm-toggle">${toggle}</div>${domHtml}
+        <div class="ltm-section"><div class="ltm-sec-title">Service</div>${rows}</div>`;
+    }
+
+    // ── Points tab (needs pbp) ───────────────────────────────────────────────────
+    function pointsHtml(fix) {
+      const entry = _pbp[_ek];
+      if (!entry || entry.loading) return `<div class="ltm-note">Loading point log…</div>`;
+      if (entry.error) return `<div class="ltm-note">Point log unavailable right now.</div>`;
+      const games = Array.isArray(entry.games) ? entry.games : [];
+      if (!games.length) return `<div class="ltm-note">No points logged yet.</div>`;
+
+      const setNums = [...new Set(games.map(gm => setNo(gm)))].filter(Boolean).sort((a, b) => a - b);
+      const cur = setNums.includes(_ptsSet) ? _ptsSet : (setNums[setNums.length - 1] || 1);
+      const toggle = setNums.map(n => `<button data-set="${n}" class="${n === cur ? 'active' : ''}">SET ${n}</button>`).join('');
+      const n1 = esc(fix.event_first_player || 'Player 1'), n2 = esc(fix.event_second_player || 'Player 2');
+
+      const blocks = games.filter(gm => setNo(gm) === cur).map(gm => {
+        const p1serves = /first/i.test(String(gm.player_served || '')) ||
+                         (!gm.player_served && /second/i.test(String(gm.serve_lost || '')) === false && /first/i.test(String(gm.serve_winner || '')));
+        const broke = !!gm.serve_lost;                         // server lost = a break
+        const score = esc(gm.score || '');
+        const srvName = p1serves ? n1 : n2, retName = p1serves ? n2 : n1;
+        const srvCls = p1serves ? 'p1' : 'p2';
+        const pts = (Array.isArray(gm.points) ? gm.points : []).map(pt => {
+          const isBp = pt.break_point != null && pt.break_point !== '';
+          return `<span class="ltm-pt${isBp ? ' bp' : ''}">${esc(pt.score || '')}${isBp ? '<span class="bpb">BP</span>' : ''}</span>`;
+        }).join('');
+        return `<div class="ltm-game${broke ? ' brk' : ''}">
+          <div class="ltm-game-hd">
+            <span class="ltm-game-srv ${srvCls}"><span class="ltm-serveball">●</span><span class="n">${srvName}</span></span>
+            <span class="ltm-game-sc">${score}${broke ? '<span class="ltm-brk-badge">BREAK</span>' : ''}</span>
+            <span class="ltm-game-srv r dim"><span class="n">${retName}</span></span>
+          </div>
+          <div class="ltm-game-lab">GAME ${esc(gm.number_game || '')}</div>
+          <div class="ltm-pts">${pts}</div>
+        </div>`;
+      }).join('');
+
+      return `<div class="ltm-toggle">${toggle}</div>${blocks || '<div class="ltm-note">No games in this set yet.</div>'}`;
+    }
+    const setNo = (gm) => { const m = String(gm.set_number || '').match(/(\d+)/); return m ? +m[1] : null; };
+
+    // ── Ratings tab (headline exact; chart = per-game trajectory from pbp) ────────
+    function ratingsHtml(fix, idx) {
+      const p1 = pk(fix, 1), p2 = pk(fix, 2);
+      const s1 = serveRating(idx, p1, 'match'), s2 = serveRating(idx, p2, 'match');
+      const r1 = returnRating(idx, p1, 'match'), r2 = returnRating(idx, p2, 'match');
+      const n1 = esc(fix.event_first_player || 'P1'), n2 = esc(fix.event_second_player || 'P2');
+      const val = (o) => o.rating != null
+        ? `<span class="ltm-rate-val">${Math.round(o.rating)}</span>`
+        : `<span class="ltm-rate-val warm">${o.warming ? 'warming up' : '—'}</span>`;
+
+      const head = `
+        <div class="ltm-section">
+          <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
+            ${val(s1)}<span class="ltm-sn" style="text-align:center;">⚡ Serve rating</span>${val(s2)}
+          </div>
+          <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
+            ${val(r1)}<span class="ltm-sn" style="text-align:center;">⛨ Return rating</span>${val(r2)}
+          </div>
+        </div>`;
+
+      // Charts from pbp trajectory (points-based; see staging doc note).
+      const traj = trajectory(fix);
+      const chart = (title, key) => {
+        if (!traj || traj.length < 2) {
+          return `<div class="ltm-chart"><div class="ltm-chart-hd"><span class="ltm-chart-title">${title}</span></div>
+            <div class="ltm-note" style="padding:14px;">Chart appears once a few games are complete.</div></div>`;
+        }
+        return `<div class="ltm-chart">
+          <div class="ltm-chart-hd"><span class="ltm-chart-title">${title}</span>
+            <span class="ltm-chart-leg"><span><i style="background:var(--lt-p1)"></i>${n1}</span><span><i style="background:var(--lt-p2)"></i>${n2}</span></span></div>
+          ${lineChart(traj.map(t => t.g), traj.map(t => t[key + '1']), traj.map(t => t[key + '2']))}
+        </div>`;
+      };
+      return `${head}
+        <div class="ltm-rate-row" style="display:block;">
+          ${chart('Serve rating · trajectory', 'sv')}
+          ${chart('Return rating · trajectory', 'rt')}
+        </div>`;
+    }
+
+    // Per-game cumulative points-based trajectory reconstructed from pbp. The feed's
+    // point log carries no per-point serve-type/ace/DF, so this plots the points-based
+    // core (serve = svc-pts-won% + hold%; return = ret-pts-won% + ret-games-won%),
+    // NOT the full split rating used for the headline — flagged for founder ruling.
+    function trajectory(fix) {
+      const entry = _pbp[_ek];
+      if (!entry || !Array.isArray(entry.games) || !entry.games.length) return null;
+      const rank = { '0': 0, '15': 1, '30': 2, '40': 3, 'A': 4 };
+      let sp1 = 0, spw1 = 0, sg1 = 0, sgw1 = 0, rp1 = 0, rpw1 = 0, rg1 = 0, rgw1 = 0;
+      let sp2 = 0, spw2 = 0, sg2 = 0, sgw2 = 0, rp2 = 0, rpw2 = 0, rg2 = 0, rgw2 = 0;
+      const out = [];
+      let gi = 0;
+      for (const gm of entry.games) {
+        const pts = Array.isArray(gm.points) ? gm.points : [];
+        if (!pts.length) continue;
+        const p1serves = /first/i.test(String(gm.player_served || '')) || /first/i.test(String(gm.serve_lost || ''));
+        // winner of each point (first=+1 / second=+1)
+        let prevA = 0, prevB = 0, w1 = 0, w2 = 0;
+        pts.forEach((pt, i) => {
+          const parts = String(pt.score || '').split('-').map(s => s.trim());
+          const na = rank[parts[0]] ?? prevA, nb = rank[parts[1]] ?? prevB;
+          let winner = 0;
+          if (i === pts.length - 1) winner = gameWinner(gm);      // final point → game winner
+          else if (na > prevA) winner = 1; else if (nb > prevB) winner = 2;
+          else if (na < prevA) winner = 2; else if (nb < prevB) winner = 1;
+          if (winner === 1) w1++; else if (winner === 2) w2++;
+          prevA = na; prevB = nb;
+        });
+        const total = w1 + w2;
+        const gw = gameWinner(gm);   // 1 or 2
+        if (p1serves) {
+          sp1 += total; spw1 += w1; sg1 += 1; if (gw === 1) sgw1 += 1;
+          rp2 += total; rpw2 += w2; rg2 += 1; if (gw === 2) rgw2 += 1;
+        } else {
+          sp2 += total; spw2 += w2; sg2 += 1; if (gw === 2) sgw2 += 1;
+          rp1 += total; rpw1 += w1; rg1 += 1; if (gw === 1) rgw1 += 1;
+        }
+        gi++;
+        const pctv = (w, t) => t > 0 ? (w / t) * 100 : 0;
+        out.push({
+          g: gi,
+          sv1: pctv(spw1, sp1) + pctv(sgw1, sg1), sv2: pctv(spw2, sp2) + pctv(sgw2, sg2),
+          rt1: pctv(rpw1, rp1) + pctv(rgw1, rg1), rt2: pctv(rpw2, rp2) + pctv(rgw2, rg2),
+        });
+      }
+      return out;
+    }
+    function gameWinner(gm) {
+      // Prefer the running game score delta; fall back to serve_lost/serve_winner.
+      const parts = String(gm.score || '').split('-').map(s => s.trim());
+      // `score` is the games tally AFTER this game — can't diff without prior; use flags.
+      if (gm.serve_lost) return /first/i.test(String(gm.player_served || '')) || /first/i.test(String(gm.serve_lost)) ? 2 : 1;
+      if (gm.serve_winner) return /first/i.test(String(gm.serve_winner)) ? 1 : 2;
+      // in-progress final game: attribute to server as a neutral default
+      return /first/i.test(String(gm.player_served || '')) ? 1 : 2;
+    }
+
+    // Minimal inline SVG line chart (two series). No library — same ethos as the read path.
+    function lineChart(xs, y1, y2) {
+      const W = 640, H = 150, PL = 30, PR = 10, PT = 10, PB = 20;
+      const all = y1.concat(y2).filter(v => Number.isFinite(v));
+      let lo = Math.min(...all), hi = Math.max(...all);
+      if (!Number.isFinite(lo)) { lo = 0; hi = 1; }
+      if (hi - lo < 1) { hi = lo + 1; }
+      const pad = (hi - lo) * 0.15; lo -= pad; hi += pad;
+      const n = xs.length;
+      const X = (i) => PL + (n <= 1 ? 0 : (i / (n - 1)) * (W - PL - PR));
+      const Y = (v) => PT + (1 - (v - lo) / (hi - lo)) * (H - PT - PB);
+      const path = (ys) => ys.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+      const dots = (ys, c) => ys.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="${c}"/>`).join('');
+      const gy = [lo + (hi - lo) * 0.25, lo + (hi - lo) * 0.5, lo + (hi - lo) * 0.75];
+      const grid = gy.map(v => `<line x1="${PL}" y1="${Y(v).toFixed(1)}" x2="${W - PR}" y2="${Y(v).toFixed(1)}" stroke="#262B35" stroke-width="1"/>
+        <text x="${PL - 5}" y="${(Y(v) + 3).toFixed(1)}" fill="#565F6A" font-size="9" text-anchor="end">${Math.round(v)}</text>`).join('');
+      const xlab = xs.map((x, i) => (i % Math.ceil(n / 7 || 1) === 0)
+        ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" fill="#565F6A" font-size="9" text-anchor="middle">G${x}</text>` : '').join('');
+      return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block;">
+        ${grid}${xlab}
+        <path d="${path(y1)}" fill="none" stroke="var(--lt-p1)" stroke-width="2"/>
+        <path d="${path(y2)}" fill="none" stroke="var(--lt-p2)" stroke-width="2"/>
+        ${dots(y1, '#5b9dff')}${dots(y2, '#e2685f')}
+      </svg>`;
+    }
+
+    // ── modal shell + header ─────────────────────────────────────────────────────
+    let _overlay = null;
+    function ensureOverlay() {
+      if (_overlay) return _overlay;
+      _overlay = document.createElement('div');
+      _overlay.className = 'ltm-overlay';
+      _overlay.innerHTML = `<div class="ltm" role="dialog" aria-modal="true"></div>`;
+      _overlay.addEventListener('click', (e) => { if (e.target === _overlay) close(); });
+      document.body.appendChild(_overlay);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _ek) close(); });
+      return _overlay;
+    }
+
+    function findFix(matches, ek) {
+      return (Array.isArray(matches) ? matches : []).find(f => String(f.event_key) === String(ek)) || null;
+    }
+
+    function headerHtml(fix) {
+      const tour = /wta/i.test(String(fix.event_type_type)) ? 'WTA' : 'ATP';
+      const tn = esc(fix.tournament_name || '');
+      const rnd = shortRound(fix);
+      const av = (which) => {
+        const logo = fix[`event_${which === 1 ? 'first' : 'second'}_player_logo`] || '';
+        return logo ? `<img class="ltm-av" src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="ltm-av"></span>`;
+      };
+      const scores = Array.isArray(fix.scores) ? fix.scores : [];
+      const gr = String(fix.event_game_result || '').split('-').map(s => s.trim());
+      const serveIsFirst = /first/i.test(String(fix.event_serve || ''));
+      const line = (which) => {
+        const cells = scores.map((sc, i) => {
+          const v = which === 1 ? sc.score_first : sc.score_second;
+          const curCls = i === scores.length - 1 ? ' class="cur"' : '';
+          return `<span${curCls}>${esc(v ?? '')}</span>`;
+        }).join('');
+        const pt = (which === 1 ? gr[0] : gr[1]);
+        const ptCell = (pt && pt !== '-') ? `<span class="cur">${esc(pt)}</span>` : '';
+        const ball = ((which === 1) === serveIsFirst) ? '<span class="ltm-serveball">●</span>' : '';
+        return `${cells}${ptCell}${ball}`;
+      };
+      return `
+        <div class="ltm-top">${tour} · ${tn}${rnd ? ` · ${rnd}` : ''}<button class="ltm-close" aria-label="Close">×</button></div>
+        <div class="ltm-head">
+          <div class="ltm-p p1">${av(1)}<span class="ltm-pname">${esc(fix.event_first_player || '—')}</span></div>
+          <div class="ltm-score"><div class="ltm-scoreline">${line(1)}</div><div class="ltm-scoreline">${line(2)}</div></div>
+          <div class="ltm-p p2">${av(2)}<span class="ltm-pname">${esc(fix.event_second_player || '—')}</span></div>
+        </div>
+        <div class="ltm-tabs">
+          <button class="ltm-tab ${_tab === 'stats' ? 'active' : ''}" data-tab="stats">Stats</button>
+          <button class="ltm-tab ${_tab === 'points' ? 'active' : ''}" data-tab="points">Points</button>
+          <button class="ltm-tab ${_tab === 'ratings' ? 'active' : ''}" data-tab="ratings">Ratings</button>
+        </div>`;
+    }
+
+    function renderBody(fix) {
+      const { idx, periods } = indexStats(fix);
+      if (_tab === 'stats')   return statsHtml(fix, idx, periods);
+      if (_tab === 'points')  return pointsHtml(fix);
+      return ratingsHtml(fix, idx);
+    }
+
+    function paint() {
+      if (_ek == null) return;
+      const fix = findFix(_lastMatches, _ek);
+      const modal = _overlay && _overlay.querySelector('.ltm');
+      if (!modal) return;
+      const useFix = fix || _lastFix;   // match may have ended mid-view; keep the last fixture
+      if (!useFix) return;
+      _lastFix = useFix;
+      modal.innerHTML = headerHtml(useFix) + `<div class="ltm-body">${renderBody(useFix)}</div>`;
+      wire(modal, useFix);
+    }
+    let _lastFix = null;
+
+    function wire(modal, fix) {
+      modal.querySelector('.ltm-close')?.addEventListener('click', close);
+      modal.querySelectorAll('.ltm-tab').forEach(b => b.addEventListener('click', () => {
+        _tab = b.getAttribute('data-tab');
+        if (_tab === 'points' || _tab === 'ratings') ensurePbp();
+        paint();
+      }));
+      modal.querySelectorAll('.ltm-toggle button[data-per]').forEach(b =>
+        b.addEventListener('click', () => { _statPeriod = b.getAttribute('data-per'); paint(); }));
+      modal.querySelectorAll('.ltm-toggle button[data-set]').forEach(b =>
+        b.addEventListener('click', () => { _ptsSet = +b.getAttribute('data-set'); paint(); }));
+    }
+
+    async function ensurePbp() {
+      const ek = _ek; if (ek == null) return;
+      const e = _pbp[ek];
+      if (e && !e.error && (Date.now() - e.at) < PBP_MAX_AGE_MS) return;
+      if (e && e.loading) return;
+      _pbp[ek] = { ...(e || {}), loading: true, at: (e && e.at) || 0, games: e && e.games };
+      if (!e) paint();   // show "Loading…" on first open
+      try {
+        const res = await fetch(`${SB_URL}/rest/v1/live_pbp?select=pbp&event_key=eq.${encodeURIComponent(ek)}&limit=1`, {
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error(`pbp ${res.status}`);
+        const rows = await res.json();
+        const games = (Array.isArray(rows) && rows[0] && Array.isArray(rows[0].pbp)) ? rows[0].pbp : [];
+        _pbp[ek] = { games, at: Date.now(), loading: false };
+      } catch (err) {
+        console.warn('[live-tab] pbp fetch failed:', err.message);
+        _pbp[ek] = { ...(e || {}), loading: false, error: true, at: Date.now() };
+      }
+      if (_ek === ek) paint();
+    }
+
+    function open(ek) {
+      _ek = String(ek); _tab = 'stats'; _statPeriod = 'match'; _ptsSet = 1; _lastFix = null;
+      ensureOverlay().classList.add('open');
+      document.body.style.overflow = 'hidden';
+      paint();
+    }
+    function close() {
+      _ek = null; _lastFix = null;
+      if (_overlay) _overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    // Called on every snapshot apply — live-refresh the open modal (Stats/header),
+    // and refresh pbp in the background if the Points/Ratings tab is showing.
+    function onBoard(matches) {
+      if (_ek == null) return;
+      if (_tab === 'points' || _tab === 'ratings') ensurePbp();
+      paint();
+    }
+
+    return { open, close, onBoard };
+  })();
+
+  // Card click → open the detail modal (delegated; keyboard-accessible).
+  if (USE_DETAIL) {
+    const onGridActivate = (e) => {
+      const card = e.target.closest && e.target.closest('.lt-card[data-ek]');
+      if (!card) return;
+      if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.type === 'keydown') e.preventDefault();
+      Detail.open(card.getAttribute('data-ek'));
+    };
+    document.addEventListener('click', onGridActivate);
+    document.addEventListener('keydown', onGridActivate);
   }
 
   // ─── reveal the nav tab — only reached once flag + creds guards have passed, so
