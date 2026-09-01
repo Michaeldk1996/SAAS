@@ -79,8 +79,24 @@ Deno.serve(async (req) => {
 
   // api-tennis returns { success: 1, result: [ ...fixtures ] }. On a quiet
   // board result may be [] or absent — write an empty board, not an error.
-  const board = Array.isArray(payload?.result) ? payload!.result : [];
-  const matchCount = (board as unknown[]).length;
+  const rawBoard = Array.isArray(payload?.result) ? payload!.result : [];
+  const matchCount = (rawBoard as unknown[]).length;
+
+  // TEN-107 detail panel (founder-approved 2026-08-31): split the heavy point log
+  // off the pushed snapshot row. `pointbypoint` (~43% of a fixture) is dropped from
+  // the board that Realtime ships to every viewer and instead written to live_pbp,
+  // keyed by event_key, which the detail panel reads on demand. The board keeps
+  // `statistics` + `scores` (the box score / Stats+Ratings tabs read the pushed row).
+  const pbpByEk: Record<string, unknown> = {};
+  const board = (rawBoard as Array<Record<string, unknown>>).map((fix) => {
+    const ek = fix?.event_key;
+    if (ek != null && Array.isArray(fix?.pointbypoint) && (fix.pointbypoint as unknown[]).length) {
+      pbpByEk[String(ek)] = fix.pointbypoint;
+    }
+    // Shallow clone minus pointbypoint — leaves the original untouched.
+    const { pointbypoint: _drop, ...rest } = fix;
+    return rest;
+  });
 
   // 3. Persist the snapshot. Browsers read this row via PostgREST/Realtime.
   const { error: writeErr } = await db.rpc("write_snapshot", {
@@ -90,5 +106,11 @@ Deno.serve(async (req) => {
   });
   if (writeErr) return json({ error: "write_failed", detail: writeErr.message }, 500);
 
-  return json({ ok: true, matches: matchCount });
+  // 4. Persist the point logs to the non-Realtime store (on-demand read path).
+  //    A failure here must NOT fail the tick — the board (Stats/Ratings) is already
+  //    written; only the Points tab degrades. Log and continue.
+  const { error: pbpErr } = await db.rpc("write_live_pbp", { _pbp: pbpByEk });
+  if (pbpErr) console.warn("write_live_pbp failed:", pbpErr.message);
+
+  return json({ ok: true, matches: matchCount, pbp: Object.keys(pbpByEk).length });
 });
