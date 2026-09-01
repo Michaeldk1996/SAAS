@@ -73,6 +73,11 @@ jobs:
           }
           apply supabase/migrations/20260829021135_live_snapshot.sql
           apply supabase/migrations/20260829021600_poller_rpc.sql
+          # TEN-107 detail panel (2026-09-01): on-demand point-log store + writer.
+          # Idempotent (create table if not exists / create or replace); must run
+          # BEFORE the poller deploy below, since the poller calls write_live_pbp().
+          apply supabase/migrations/20260901000000_live_pbp.sql
+          apply supabase/migrations/20260901000100_live_pbp_rpc.sql
 
       - name: Set Edge Function secrets (Management API)
         run: |
