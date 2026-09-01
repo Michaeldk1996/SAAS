@@ -4667,9 +4667,29 @@ async function runPipeline() {
     for (const pt of arr) { if (Date.parse(pt[0]) <= cut) chosen = pt; }
     return chosen;
   };
+  // TEN-124 (founder ruling 2026-09-01): when the start cannot be located —
+  // startTs absent AND inPlayOnset finds no in-play burst — the close would
+  // otherwise dash even though a clean pre-match tail exists (a reference book
+  // too sparse for onset: e.g. bet365, 7 quotes over 43h). Recover the last
+  // retained tick as the close, but ONLY when the whole reference stream is
+  // demonstrably pre-play. Pre-match quotes sit minutes apart; in-play quotes
+  // arrive every few seconds. So if the tightest gap between DISTINCT quote
+  // instants is >= PREMATCH_GAP_MIN, no persisted in-play tick exists and the
+  // tail is a genuine pre-match close. If any tighter (in-play-cadence) gap is
+  // present we cannot cleanly separate pre-play from in-play, so we DASH rather
+  // than risk pinning an in-play price (data-honesty rule: never approximate).
+  // Measured on live matches.json: clean streams tick >= 85s apart; the one
+  // contaminated stream ticked 3s apart — 60s sits in that gap with margin.
+  const PREMATCH_GAP_MIN = 60000; // < 60s between distinct quotes == in-play cadence
+  const allPreMatchCadence = (series) => {
+    const t = [...new Set([...(series.p1 || []), ...(series.p2 || [])]
+      .map(p => Date.parse(p[0])))].sort((a, b) => a - b);
+    for (let i = 1; i < t.length; i++) if (t[i] - t[i - 1] < PREMATCH_GAP_MIN) return false;
+    return true;
+  };
 
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
-      closeHealed = 0, closeDashed = 0;
+      closeHealed = 0, closeDashed = 0, closeRecovered = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -4714,6 +4734,7 @@ async function runPipeline() {
       const prior = carried && carried.closingOdds;
       const priorOk = prior && Number.isFinite(startMs)
         && Number.isFinite(Date.parse(prior.at)) && Date.parse(prior.at) <= startMs;
+      const startTsAbsent = !(typeof m.startTs === 'string' && m.startTs);
       if (priorOk) {
         m.closingOdds = prior; closePreserved++;
       } else if (Number.isFinite(startMs)) {
@@ -4721,11 +4742,18 @@ async function runPipeline() {
         if (c1 && c2) {
           m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
           if (prior) closeHealed++; else closeDerived++;   // prior present == corrupt in-play pin replaced
-        } else if (prior) { closeDashed++; }                // had a bad pin, no pre-start quote -> dash
-      } else if (prior) { closeDashed++; }                  // can't locate start -> dash rather than keep in-play
+        } else { closeDashed++; }                           // no pre-start quote -> dash (count every dash, pinned or not)
+      } else if (startTsAbsent && allPreMatchCadence(s)) {
+        // Onset unconfirmed (no startTs, no in-play burst) but every retained
+        // tick is demonstrably pre-play — recover the last tick as the close
+        // (TEN-124). Deterministic from the frozen tick tail, so idempotent.
+        const c1 = p1[p1.length - 1], c2 = p2[p2.length - 1];
+        m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
+        closeRecovered++;
+      } else { closeDashed++; }                             // can't locate start / in-play cadence -> dash (count every dash)
     }
   }
-  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (in-play pin replaced) / ${closeDashed} dashed (no pre-match quote).`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (in-play pin replaced) / ${closeRecovered} recovered (onset-unconfirmed, all-pre-play tail) / ${closeDashed} dashed (no pre-match quote / in-play cadence).`);
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability

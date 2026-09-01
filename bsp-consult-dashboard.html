@@ -5342,7 +5342,7 @@ function oddsGap(m){
 
 // §12 — Completed-view sort scorers. All null-safe so they degrade to a stable
 // order when a match lacks odds; only reachable when state.sort is a completed key.
-function _mcCloseOf(m, who){ return m.closingOdds?.[who] ?? m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null; }
+function _mcCloseOf(m, who){ return m.closingOdds?.[who] ?? null; } // TEN-124: pinned pre-play close only — never a live m.bestOdds/m.odds fallback (dash when absent).
 function upsetScore(m){ // winner's closing odds — bigger underdog win = bigger upset
   const fscore = m.finalScore; if (!fscore) return -1;
   const c = _mcCloseOf(m, fscore.winner); return c == null ? -1 : c;
@@ -6253,14 +6253,16 @@ function renderMatches(){
     const p2SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p2?.price) : (isPastDay ? 'Sets' : ''));
     // Opening/closing odds on a finished card. Both are derived by the pipeline
     // from the real stored odds timeline (m.openingOdds = first snapshot,
-    // m.closingOdds = last snapshot before start). Closing falls back to the
-    // last plain odds (bestOdds/odds) when no timeline was captured, so a match
-    // that only ever had a single price still shows a closing line. Any value
-    // that was never recorded is simply omitted — never a placeholder.
+    // m.closingOdds = last snapshot before start). Closing is the PINNED
+    // pre-play line only. TEN-124 (founder ruling 2026-09-01): never fall back
+    // to a live price (m.bestOdds/m.odds) — that leaked an in-play headline as
+    // the "close" (the phantom Fearnley 1.80->3.41 move). The pipeline now
+    // recovers a genuine pre-play close where onset was unconfirmable; where no
+    // pre-play close exists at all the value dashes — never a placeholder.
     const p1Open  = finalScore ? (m.openingOdds?.p1 ?? null) : null;
     const p2Open  = finalScore ? (m.openingOdds?.p2 ?? null) : null;
-    const p1Close = finalScore ? (m.closingOdds?.p1 ?? m.bestOdds?.p1?.price ?? m.odds?.p1 ?? null) : null;
-    const p2Close = finalScore ? (m.closingOdds?.p2 ?? m.bestOdds?.p2?.price ?? m.odds?.p2 ?? null) : null;
+    const p1Close = finalScore ? (m.closingOdds?.p1 ?? null) : null;
+    const p2Close = finalScore ? (m.closingOdds?.p2 ?? null) : null;
     const finOddsCell = (open, close) => {
       const rows = [];
       if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${open.toFixed(2)}</span></span>`);
@@ -6365,7 +6367,7 @@ function renderMatches(){
   //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
     const openOf  = (m, who) => (m.finalScore ? (m.openingOdds?.[who] ?? null) : null);
-    const closeOf = (m, who) => (m.finalScore ? (m.closingOdds?.[who] ?? m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null) : null);
+    const closeOf = (m, who) => (m.finalScore ? (m.closingOdds?.[who] ?? null) : null); // TEN-124: pinned pre-play close only — never a live fallback.
 
     // 1. Biggest market move — per (match, player) with both legs recorded.
     let bmv = null;
