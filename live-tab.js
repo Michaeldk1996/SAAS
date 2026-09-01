@@ -542,13 +542,21 @@
       const fw = num(g(idx, pkey, per, '1st serve points won')?.value);
       const sw = num(g(idx, pkey, per, '2nd serve points won')?.value);
       const hl = num(g(idx, pkey, per, 'Service games won')?.value);
-      const spTotal = g(idx, pkey, per, 'Service Points Won')?.total;
       const aces = num(g(idx, pkey, per, 'Aces')?.value);
       const dfs  = num(g(idx, pkey, per, 'Double Faults')?.value);
       if (fi == null || fw == null || sw == null || hl == null) return { rating: null };
-      if (!(spTotal >= SERVE_FLOOR_PTS)) return { rating: null, warming: true };
-      const aPct  = spTotal > 0 && aces != null ? (aces / spTotal) * 100 : 0;
-      const dfPct = spTotal > 0 && dfs  != null ? (dfs  / spTotal) * 100 : 0;
+      // Service-points total for the sample floor + ace/df denominator. Prefer the
+      // "Service Points Won" row; fall back to (1st-serve-pts total + 2nd-serve-pts
+      // total) since some feed tiers omit the aggregate row while carrying the splits.
+      const fwTot = g(idx, pkey, per, '1st serve points won')?.total;
+      const swTot = g(idx, pkey, per, '2nd serve points won')?.total;
+      let spTotal = g(idx, pkey, per, 'Service Points Won')?.total;
+      if (spTotal == null && fwTot != null && swTot != null) spTotal = fwTot + swTot;
+      // Only gate on the floor when the sample size is actually known — with all four
+      // percentages present but no counts, hide-as-"warming up" would be wrong.
+      if (spTotal != null && !(spTotal >= SERVE_FLOOR_PTS)) return { rating: null, warming: true };
+      const aPct  = (spTotal > 0 && aces != null) ? (aces / spTotal) * 100 : 0;
+      const dfPct = (spTotal > 0 && dfs  != null) ? (dfs  / spTotal) * 100 : 0;
       return { rating: fi + fw + sw + hl + aPct - dfPct };
     }
     function returnRating(idx, pkey, per) {
@@ -557,7 +565,7 @@
       const bp = num(g(idx, pkey, per, 'Break Points Converted')?.value);
       const rpTotal = g(idx, pkey, per, 'Return Points Won')?.total;
       if (rp == null) return { rating: null };
-      if (!(rpTotal >= RETURN_FLOOR_PTS)) return { rating: null, warming: true };
+      if (rpTotal != null && !(rpTotal >= RETURN_FLOOR_PTS)) return { rating: null, warming: true };
       return { rating: rp + (br || 0) + (bp || 0) };
     }
     function dominance(idx, pkey, per) {
@@ -573,7 +581,7 @@
       const lw = (50 * a / mx).toFixed(1), rw = (50 * b / mx).toFixed(1);
       return `<div class="ltm-bar"><span class="l" style="width:${lw}%"></span><span class="r" style="width:${rw}%"></span></div>`;
     }
-    const bracket = (row) => (row && row.won != null && row.total != null) ? `<small>(${row.won}/${row.total})</small>` : '';
+    const bracket = (row) => (row && row.won != null && row.total != null) ? `<small>(${esc(row.won)}/${esc(row.total)})</small>` : '';
 
     // ── Stats tab ──────────────────────────────────────────────────────────────
     const SERVICE_ROWS = [
@@ -640,21 +648,23 @@
       const n1 = esc(fix.event_first_player || 'Player 1'), n2 = esc(fix.event_second_player || 'Player 2');
 
       const blocks = games.filter(gm => setNo(gm) === cur).map(gm => {
+        // Player 1 is ALWAYS the left column, player 2 the right (matches gm.score's
+        // fixed P1–P2 orientation and the reference layout); the serve dot + colour
+        // mark whichever side is serving — the non-server's name is dimmed.
         const p1serves = /first/i.test(String(gm.player_served || '')) ||
-                         (!gm.player_served && /second/i.test(String(gm.serve_lost || '')) === false && /first/i.test(String(gm.serve_winner || '')));
+                         (!gm.player_served && /first/i.test(String(gm.serve_winner || gm.serve_lost || '')));
         const broke = !!gm.serve_lost;                         // server lost = a break
         const score = esc(gm.score || '');
-        const srvName = p1serves ? n1 : n2, retName = p1serves ? n2 : n1;
-        const srvCls = p1serves ? 'p1' : 'p2';
+        const ball = '<span class="ltm-serveball">●</span>';
         const pts = (Array.isArray(gm.points) ? gm.points : []).map(pt => {
           const isBp = pt.break_point != null && pt.break_point !== '';
           return `<span class="ltm-pt${isBp ? ' bp' : ''}">${esc(pt.score || '')}${isBp ? '<span class="bpb">BP</span>' : ''}</span>`;
         }).join('');
         return `<div class="ltm-game${broke ? ' brk' : ''}">
           <div class="ltm-game-hd">
-            <span class="ltm-game-srv ${srvCls}"><span class="ltm-serveball">●</span><span class="n">${srvName}</span></span>
+            <span class="ltm-game-srv p1${p1serves ? '' : ' dim'}">${p1serves ? ball : ''}<span class="n">${n1}</span></span>
             <span class="ltm-game-sc">${score}${broke ? '<span class="ltm-brk-badge">BREAK</span>' : ''}</span>
-            <span class="ltm-game-srv r dim"><span class="n">${retName}</span></span>
+            <span class="ltm-game-srv r p2${p1serves ? ' dim' : ''}">${p1serves ? '' : ball}<span class="n">${n2}</span></span>
           </div>
           <div class="ltm-game-lab">GAME ${esc(gm.number_game || '')}</div>
           <div class="ltm-pts">${pts}</div>
@@ -723,9 +733,12 @@
         const p1serves = /first/i.test(String(gm.player_served || '')) || /first/i.test(String(gm.serve_lost || ''));
         // winner of each point (first=+1 / second=+1)
         let prevA = 0, prevB = 0, w1 = 0, w2 = 0;
+        // Point score → comparable rank: 0/15/30/40/A for games, or the raw integer
+        // for tiebreak points (e.g. "7 - 5"). Within a game the scale is consistent.
+        const rk = (s) => (s in rank) ? rank[s] : (Number.isFinite(+s) ? +s : null);
         pts.forEach((pt, i) => {
           const parts = String(pt.score || '').split('-').map(s => s.trim());
-          const na = rank[parts[0]] ?? prevA, nb = rank[parts[1]] ?? prevB;
+          const na = rk(parts[0]) ?? prevA, nb = rk(parts[1]) ?? prevB;
           let winner = 0;
           if (i === pts.length - 1) winner = gameWinner(gm);      // final point → game winner
           else if (na > prevA) winner = 1; else if (nb > prevB) winner = 2;
