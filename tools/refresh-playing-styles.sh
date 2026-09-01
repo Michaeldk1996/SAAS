@@ -93,6 +93,13 @@ node tools/fetch-apitennis-fixtures.js || echo "WARN: api fixture fetch failed; 
 
 node tools/build-matchup-matrix.js
 
+# Break/Hold heatmap shard (TEN-107, founder ruling 2026-09-01: 24M window,
+# bucketed axis). Pure rollup over the harvested pbp cache — zero API calls.
+# NON-FATAL, exactly like the fixture fetch above: a bad/absent cache must never
+# abort the styles publish, so `|| echo` returns 0 and set -e can't kill the run.
+# Staged alongside the styles files below so it rides the same race-safe push.
+node build-holdbreak.js || echo "WARN: build-holdbreak failed; keeping last-good holdbreak.json"
+
 # NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if
 # it never sees the line delimiter, and `set -e` would then kill the whole run
 # right before the publish step (the daily job silently never committed). Use
@@ -119,24 +126,26 @@ if ! node -e "
   if (withPrimary.length > 0) { console.error('REGRESSION: retired primary field still set on '+withPrimary.length+' players'); process.exit(1); }
 "; then STATUS="regression"; exit 1; fi
 
-if git diff --quiet -- playing-styles.json matchup-matrix.json; then
+if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json; then
   echo "no change; nothing to publish"; STATUS="no-op"; exit 0
 fi
 
-# race-safe publish: rebase our two-file change onto latest main
+# race-safe publish: rebase our change onto latest main
 cp playing-styles.json /tmp/bsp-styles.json
 cp matchup-matrix.json /tmp/bsp-matrix.json
+cp holdbreak.json /tmp/bsp-holdbreak.json 2>/dev/null || true
 pushed=0
 for attempt in 1 2 3; do
   git fetch --quiet origin main
   git reset --quiet origin/main          # mixed reset: move pointer, keep working tree
   cp /tmp/bsp-styles.json playing-styles.json
   cp /tmp/bsp-matrix.json matchup-matrix.json
-  if git diff --quiet -- playing-styles.json matchup-matrix.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
+  cp /tmp/bsp-holdbreak.json holdbreak.json 2>/dev/null || true
+  if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
   # build-matchup-matrix.js also (re)wrote the per-player CAREER meeting shards
   # (TEN-88 option B); they survive the mixed reset above as working-tree changes,
   # so stage them alongside. -A picks up shards deleted when a player drops out.
-  git add playing-styles.json matchup-matrix.json
+  git add playing-styles.json matchup-matrix.json holdbreak.json
   git add -A style-meetings-index.json style-meetings
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
   HUMAN_NOW=$(printf '%dm%02ds' $(( ELAPSED_NOW / 60 )) $(( ELAPSED_NOW % 60 )))
