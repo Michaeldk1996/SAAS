@@ -539,7 +539,7 @@
     }
 
     let _ek = null;                // open match's event_key (null = closed)
-    let _tab = 'stats';            // stats | points | ratings
+    let _tab = 'stats';            // stats | points | ratings | holdbreak
     let _statPeriod = 'match';     // match | set1 | set2 …
     let _ptsSet = 1;               // Points tab set filter
     const _pbp = Object.create(null);   // ek → { games, at, loading }
@@ -702,6 +702,74 @@
       return `<div class="ltm-toggle">${toggle}</div>${blocks || '<div class="ltm-note">No games in this set yet.</div>'}`;
     }
     const setNo = (gm) => { const m = String(gm.set_number || '').match(/(\d+)/); return m ? +m[1] : null; };
+
+    // ── Break/Hold tab (founder ruling TEN-107 2026-09-02) ───────────────────────
+    // The Break/Hold heatmap joins Stats/Points/Ratings as the 4th match metric.
+    // Data is the pre-computed holdbreak.json rollup (ZERO live API) — read via the
+    // dashboard's window.__h2hEnv.holdbreak() getter; players are keyed by the same
+    // numeric api-tennis id the live fixture carries. Renderer is ported here (not
+    // borrowed off window) so the Live tab stays self-contained. Both players side
+    // by side, each with service-hold% and return-break% by set × service-game depth
+    // (Early 1st–2nd / Mid 3rd–4th / Late 5th+). Pooled 'all' surface — a live modal
+    // has no clean surface field, so we show the player's whole-tour history.
+    const HB_BUCKETS = [['early', 'Early', '1st–2nd svc game'], ['mid', 'Mid', '3rd–4th'], ['late', 'Late', '5th+']];
+    const HB_SETS    = [['1', 'Set 1'], ['2', 'Set 2'], ['3', 'Set 3'], ['4+', 'Set 4+']];
+    function hbCellStyle(pct, kind) {
+      const lo = kind === 'serve' ? 50 : 8, hi = kind === 'serve' ? 90 : 45;
+      const t = Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
+      return `background:rgba(61,214,140,${(0.07 + 0.5 * t).toFixed(3)});`;
+    }
+    function hbCell(cell, kind, floor) {
+      const has  = !!(cell && cell.pct != null && cell.n >= floor);
+      const thin = !!(cell && cell.n > 0 && cell.n < floor);
+      const style   = has ? hbCellStyle(cell.pct, kind) : 'background:#0a0d14;';
+      const pctTxt  = (cell && cell.pct != null) ? `${Math.round(cell.pct)}%` : '—';
+      const nTxt    = (cell && cell.n) ? `n=${cell.n}` : 'no data';
+      const bp = (kind === 'serve' && has && cell.bpFaced >= floor && cell.bpSavedPct != null)
+        ? `<div style="font-size:9px;color:#8892a0;font-family:'IBM Plex Mono',monospace;margin-top:2px;">BP ${Math.round(cell.bpSavedPct)}% svd</div>` : '';
+      const title = thin ? ` title="Below sample floor (${cell.n} &lt; ${floor}) — greyed"` : '';
+      return `<div${title} style="border-radius:8px;padding:9px 6px;text-align:center;min-width:0;${style}">
+        <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:${has ? '#e7e9ee' : '#4b5672'};">${pctTxt}</div>
+        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:${has ? 'rgba(231,233,238,0.7)' : '#4b5672'};">${nTxt}</div>
+        ${bp}
+      </div>`;
+    }
+    function hbGrid(node, kind, floor) {
+      node = node || {};
+      const cols = `74px repeat(${HB_SETS.length},1fr)`;
+      const head = `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;">
+        <span></span>${HB_SETS.map(s => `<span style="font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;text-align:center;">${s[1]}</span>`).join('')}
+      </div>`;
+      const rows = HB_BUCKETS.map(b => `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;align-items:stretch;">
+        <div style="display:flex;flex-direction:column;justify-content:center;"><span style="font-size:12px;font-weight:700;color:#c6ccdb;">${b[1]}</span><span style="font-size:9px;color:#4b5672;">${b[2]}</span></div>
+        ${HB_SETS.map(s => hbCell((node[s[0]] || {})[b[0]], kind, floor)).join('')}
+      </div>`).join('');
+      return head + rows;
+    }
+    function holdbreakHtml(fix) {
+      const HB = (window.__h2hEnv && typeof window.__h2hEnv.holdbreak === 'function')
+        ? window.__h2hEnv.holdbreak() : (window.holdbreak || null);
+      if (!HB || !HB.players) return `<div class="ltm-note">Loading hold/break history…</div>`;
+      const pa = HB.players[String(pk(fix, 1))], pb = HB.players[String(pk(fix, 2))];
+      if (!pa && !pb) return `<div class="ltm-note">No hold/break history for either player yet.</div>`;
+      const floor = (HB.meta && HB.meta.sampleFloor) || 20;
+      const win   = (HB.meta && HB.meta.windowMonths) ? `${HB.meta.windowMonths}-month window` : '';
+      const lab = (t) => `<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;">${t}</div>`;
+      const col = (pd, name) => {
+        const nm = `<div style="font-size:13px;font-weight:800;color:#e7e9ee;margin-bottom:10px;">${esc(name || '—')}</div>`;
+        if (!pd || !pd.serve || !pd.serve.all || !pd.return || !pd.return.all) {
+          return `<div style="flex:1;min-width:250px;">${nm}<div style="font-size:12px;color:#4b5672;">No hold/break data yet.</div></div>`;
+        }
+        return `<div style="flex:1;min-width:250px;display:flex;flex-direction:column;gap:14px;">${nm}
+          <div>${lab('Service holds · hold %')}${hbGrid(pd.serve.all, 'serve', floor)}</div>
+          <div>${lab('Return breaks · break %')}${hbGrid(pd.return.all, 'return', floor)}</div>
+        </div>`;
+      };
+      return `<div class="ltm-section" style="padding:14px 16px;">
+        <div style="font-size:12px;color:#5b6880;line-height:1.5;margin-bottom:14px;">Hold% (serve) and break% (return) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). All surfaces · ${win} · floor n≥${floor}. Deeper green = stronger; greyed cells are below the sample floor.</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">${col(pa, fix.event_first_player)}${col(pb, fix.event_second_player)}</div>
+      </div>`;
+    }
 
     // ── Ratings tab (headline exact; chart = per-game trajectory from pbp) ────────
     function ratingsHtml(fix, idx) {
@@ -883,13 +951,15 @@
           <button class="ltm-tab ${_tab === 'stats' ? 'active' : ''}" data-tab="stats">Stats</button>
           <button class="ltm-tab ${_tab === 'points' ? 'active' : ''}" data-tab="points">Points</button>
           <button class="ltm-tab ${_tab === 'ratings' ? 'active' : ''}" data-tab="ratings">Ratings</button>
+          <button class="ltm-tab ${_tab === 'holdbreak' ? 'active' : ''}" data-tab="holdbreak">Break/Hold</button>
         </div>`;
     }
 
     function renderBody(fix) {
       const { idx, periods } = indexStats(fix);
-      if (_tab === 'stats')   return statsHtml(fix, idx, periods);
-      if (_tab === 'points')  return pointsHtml(fix);
+      if (_tab === 'stats')     return statsHtml(fix, idx, periods);
+      if (_tab === 'points')    return pointsHtml(fix);
+      if (_tab === 'holdbreak') return holdbreakHtml(fix);
       return ratingsHtml(fix, idx);
     }
 
