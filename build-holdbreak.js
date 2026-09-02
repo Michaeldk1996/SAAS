@@ -38,7 +38,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const CACHE_DIR = path.join(__dirname, 'apitennis-styles-cache');
+// TEN-107: hold/break reads its OWN cache dir, populated by harvest-holdbreak.js
+// (own roster, rank<=400, NO TML exclusion, rolling 24M). Decoupled from the
+// archetype style cache (apitennis-styles-cache) so widening this window can
+// never perturb classify-styles.js. build-holdbreak still applies the 24M clip.
+const CACHE_DIR = path.join(__dirname, 'apitennis-holdbreak-cache');
 const OUT_PATH = path.join(__dirname, 'holdbreak.json');
 const WINDOW_MONTHS = 24;
 const SAMPLE_FLOOR = 20;              // recommended display floor; data keeps n
