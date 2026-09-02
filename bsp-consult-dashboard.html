@@ -18045,7 +18045,13 @@ function tourxPlayerChipBarHtml(allNames, cap){
   const q = (tourxState.cmpQuery || '').trim().toLowerCase();
   const full = sel.length >= cap;
   const chips = sel.map((name, i) => {
-    const c = tourxCmpColor(name);
+    // TEN-130 (founder review): every selection BADGE carries the same Stennisfy
+    // brand blue (Vacherot's colour, TOURX_ACC = #3E7BFA) — not the per-player
+    // palette hue — so the badges read as one consistent branded pill and adding/
+    // removing a chip never changes anyone's badge colour. The chart series,
+    // legend and round-dots keep their distinct, now-pinned colours (so overlaid
+    // lines stay readable and no longer reshuffle when a middle chip is removed).
+    const c = TOURX_ACC;
     return `<span style="display:inline-flex;align-items:center;gap:7px;background:${tourxHexA(c, 0.14)};border:1px solid ${tourxHexA(c, 0.5)};border-radius:8px;padding:5px 9px;">
         <span style="width:8px;height:8px;border-radius:3px;background:${c};flex:none;"></span>
         <span style="font-size:12.5px;font-weight:700;color:#eef2f8;white-space:nowrap;">${name}</span>
