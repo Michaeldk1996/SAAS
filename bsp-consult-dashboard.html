@@ -14206,7 +14206,7 @@ function ppHoldBreakHtml(p){
   const surfKey = surf === 'All' ? 'all' : surf.toLowerCase();
   const serveNode = pd.serve[surfKey], returnNode = pd.return[surfKey];
   if (!serveNode || !returnNode) return '';
-  const win = (holdbreak.meta && holdbreak.meta.windowMonths) ? `${holdbreak.meta.windowMonths}-month window` : '';
+  const win = (holdbreak.meta && holdbreak.meta.coverage && holdbreak.meta.coverage.from && holdbreak.meta.coverage.to) ? `${Math.max(0, Math.round((new Date(holdbreak.meta.coverage.to) - new Date(holdbreak.meta.coverage.from)) / 2629746e3))}-month window` : '';
   const surfLabel = surf === 'All' ? 'all surfaces' : `${surf.toLowerCase()} only`;
   const cov = (holdbreak.meta && holdbreak.meta.coverage)
     ? `Coverage ${holdbreak.meta.coverage.from} → ${holdbreak.meta.coverage.to} · ${pd.matches || 0} of this player's matches parsed. Depth is current-season and deepens toward ${holdbreak.meta.windowMonths}M as the point-by-point backfill accumulates.`
@@ -19874,7 +19874,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       </div>`;
     };
     return `<div style="border:1px solid rgba(255,255,255,0.08); border-radius:16px; background:#0a0d14; padding:20px 22px;">
-      ${sectionHead('Holds & breaks under pressure', `${hb.meta && hb.meta.windowMonths ? hb.meta.windowMonths + 'M' : ''} · ${surfLabel} · floor n≥${floor}`)}
+      ${sectionHead('Holds & breaks under pressure', `${hb.meta && hb.meta.coverage && hb.meta.coverage.from && hb.meta.coverage.to ? Math.max(0, Math.round((new Date(hb.meta.coverage.to) - new Date(hb.meta.coverage.from)) / 2629746e3)) + 'M' : ''} · ${surfLabel} · floor n≥${floor}`)}
       <div style="font-size:12px; color:#5b6880; line-height:1.5; margin:8px 0 16px;">Hold% (serve) and break% (return) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). Deeper green = stronger; greyed cells are below the sample floor.</div>
       <div style="display:flex; gap:24px; flex-wrap:wrap;">${col(pa, v.a.full)}${col(pb, v.b.full)}</div>
     </div>`;
