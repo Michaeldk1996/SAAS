@@ -190,6 +190,12 @@ jobs:
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
+          # TEN-136: ATP headshot alias map ({player_key: ATP_ALIAS}), hand-committed,
+          # written by no job. The dashboard avatar chain fetches it as the ATP step
+          # above the api-tennis logo. Committed but not copied = silent 404, which
+          # makes the entire ATP headshot layer disappear (every player falls back to
+          # the api-tennis logo). Required — in the assert list below.
+          cp player-atp-aliases.json _site/
           # ASAP Sports "Player's own words" readiness signal (TEN-8), keyed by
           # profile key; asapsports.yml rebuilds it twice daily. Tolerant cp (may
           # not exist before that workflow's first run) — NOT in the assert list.
@@ -317,6 +323,7 @@ jobs:
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
+                   player-atp-aliases.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \
                    style-meetings-index.json \
