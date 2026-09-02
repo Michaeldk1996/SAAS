@@ -18349,13 +18349,9 @@ function tourxRoundFilterBarHtml(T){
 // each metric card ranks highest-value-first (incl. unforced errors) and draws a
 // dashed average line across the shown players.
 function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
-  // Stable per-player identity dot. A player the user has explicitly selected for
-  // comparison carries their pinned brand colour (TEN-130), so their dot matches
-  // their selection chip across all metric cards; the unfiltered full-field view
-  // (no players selected) keeps the neutral grey ramp so 50+ dots stay legible.
-  const greyOf = {}; entries.forEach((e, i) => {
-    greyOf[e.name] = tourxState.cmpPlayers.includes(e.name) ? tourxCmpColor(e.name) : TOURX_GREYS[i % TOURX_GREYS.length];
-  });
+  // Per-row identity dots were removed (TEN-130): the selection chips at the top of
+  // the round view already carry each player's pinned brand colour, so the dot beside
+  // every name was redundant noise. Ranking + the leader-highlight carry identity here.
   const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
     const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
@@ -18376,7 +18372,6 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
       const best = i === 0;
       return `<div style="display:grid;grid-template-columns:118px 1fr 46px;align-items:center;gap:10px;">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;white-space:nowrap;overflow:hidden;">
-          <span style="width:6px;height:6px;border-radius:50%;background:${greyOf[e.name]};flex:none;"></span>
           <span style="font-weight:${best ? 700 : 600};color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;">${e.last}</span>
           ${tourxRatingSpan(e.name, 11)}
         </div>
