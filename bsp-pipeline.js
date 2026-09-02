@@ -459,11 +459,47 @@ function surfaceWinRate(playerStats, surface) {
   return total > 0 ? Math.round((won / total) * 1000) / 10 : null;
 }
 
+// TEN-131/133 note: currentSinglesRank returns the latest season-stat `rank`
+// from get_players, which lagged the live ATP list (474/480 wrong). It is no
+// longer used to emit a player's current rank — that now comes from live
+// get_standings via loadAtpStandings()/atpRankByKey below. Kept only for
+// reference; do NOT reintroduce it as a rank source.
 function currentSinglesRank(playerStats) {
   const singlesSeasons = (playerStats?.stats || [])
     .filter(s => s.type === 'singles' && s.season && s.rank)
     .sort((a, b) => parseInt(b.season, 10) - parseInt(a.season, 10));
   return singlesSeasons[0]?.rank || null;
+}
+
+// TEN-133 (founder ruling 2026-09-02): the app's current ATP singles rank is the
+// live get_standings `place`, joined to our profiles/matches by api-tennis
+// player_key. This replaces the buggy season-stat rank (currentSinglesRank) at
+// every emission site. Fail-CLOSED: the live standings list is ~2,296 rows; a
+// partial return in the 500-1,500 range would pass a naive check while silently
+// dashing hundreds of ranks, so if the fetch yields fewer than MIN_STANDINGS_ROWS
+// ranked players we throw and the whole run writes nothing — leaving yesterday's
+// data live, which is the safe failure. Unmatched players -> null (dash).
+const MIN_STANDINGS_ROWS = 1800;
+let atpRankByKey = new Map();
+async function loadAtpStandings() {
+  const url = `${API_TENNIS_BASE}?method=get_standings&APIkey=${API_TENNIS_KEY}&event_type=ATP`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`get_standings HTTP ${res.status} — failing closed, run writes nothing.`);
+  const data = await res.json();
+  const rows = Array.isArray(data.result) ? data.result : [];
+  const map = new Map();
+  for (const r of rows) {
+    if (r && r.player_key != null) {
+      // Dash (null), never 0: a blank/non-numeric place must not coerce to rank 0
+      // (Number("") === 0). Only a genuine positive integer place is a rank.
+      const place = Number(r.place);
+      map.set(String(r.player_key), (Number.isFinite(place) && place >= 1) ? place : null);
+    }
+  }
+  if (map.size < MIN_STANDINGS_ROWS) {
+    throw new Error(`get_standings returned ${map.size} ranked players (< ${MIN_STANDINGS_ROWS}) — failing closed: run writes nothing, yesterday's data stays live.`);
+  }
+  return map;
 }
 
 // Year-by-year singles record, most recent season first. Same singles-only
@@ -1948,8 +1984,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   ]);
   match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
   match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
-  match.p1Rank = currentSinglesRank(p1Stats);
-  match.p2Rank = currentSinglesRank(p2Stats);
+  match.p1Rank = atpRankByKey.get(String(p1Key)) ?? null; // TEN-133: live get_standings place
+  match.p2Rank = atpRankByKey.get(String(p2Key)) ?? null; // TEN-133: live get_standings place
 
   const currentYear = new Date().getFullYear();
   const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
@@ -2740,8 +2776,8 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   ]);
   match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
   match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
-  match.p1Rank = currentSinglesRank(p1Stats);
-  match.p2Rank = currentSinglesRank(p2Stats);
+  match.p1Rank = atpRankByKey.get(String(p1Key)) ?? null; // TEN-133: live get_standings place
+  match.p2Rank = atpRankByKey.get(String(p2Key)) ?? null; // TEN-133: live get_standings place
 
   const currentYear = new Date().getFullYear();
   const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
@@ -2901,8 +2937,8 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   ]);
   match.p1SurfaceWinRate = surfaceWinRate(p1Stats, surface);
   match.p2SurfaceWinRate = surfaceWinRate(p2Stats, surface);
-  match.p1Rank = currentSinglesRank(p1Stats);
-  match.p2Rank = currentSinglesRank(p2Stats);
+  match.p1Rank = atpRankByKey.get(String(p1Key)) ?? null; // TEN-133: live get_standings place
+  match.p2Rank = atpRankByKey.get(String(p2Key)) ?? null; // TEN-133: live get_standings place
 
   const currentYear = new Date().getFullYear();
   const [p1CurrentFixtures, p2CurrentFixtures] = await Promise.all([
@@ -3707,7 +3743,7 @@ async function buildOneProfile(key, name, surfaceMap) {
     name,
     country: playerStats.player_country || null,
     age: computeAgeFromBday(playerStats.player_bday),
-    rank: currentSinglesRank(playerStats),
+    rank: atpRankByKey.get(String(key)) ?? null, // TEN-133: live get_standings place, joined by player_key
     titlesThisYear: titlesForYear(playerStats, currentYear),
     titlesCareer: titlesCareer(playerStats),
     kpis: {
@@ -4310,6 +4346,14 @@ async function runPipeline() {
   console.log(`Fetching API-Tennis fixtures (${today} to ${rangeEnd}) for player keys / H2H / stats...`);
   const apiTennisFixtures = await fetchApiTennisFixtures(today, rangeEnd);
   console.log(`Found ${apiTennisFixtures.length} API-Tennis ATP singles fixtures.`);
+
+  // TEN-133: load live ATP standings up front (fail-closed < 1,800). Done BEFORE
+  // any match/profile is built or any file is written, so a short/failed
+  // standings return aborts the run with nothing written and yesterday's data
+  // intact. Populates the module-level atpRankByKey consumed at every rank site.
+  console.log('Fetching live ATP standings (get_standings) for current rank...');
+  atpRankByKey = await loadAtpStandings();
+  console.log(`ATP standings loaded: ${atpRankByKey.size} ranked players (fail-closed threshold ${MIN_STANDINGS_ROWS}).`);
 
   const surfaceMap = await loadTournamentSurfaceMap();
   const venueMap = await loadTournamentVenueMap();
