@@ -79,7 +79,17 @@ function surfaceOf(tournamentKey, tournamentName) {
 }
 
 function setKey(setNumberRaw) {
-  const n = parseInt(String(setNumberRaw).replace(/[^0-9]/g, ''), 10);
+  const raw = String(setNumberRaw);
+  // TEN-107 (founder authorised 2026-09-02): a tiebreak is ONE game in which BOTH
+  // players serve, alternating a point or two at a time. api-tennis emits it as
+  // "Set N TieBreak" with a SEPARATE row per mini-serve. Stripping non-digits
+  // folded those rows into numeric Set N, so each tiebreak was mis-counted as ~6-8
+  // service games — ~18.6% of the shard, concentrated in the late bucket (6-6),
+  // which read servers as leaky exactly where a bettor checks hold-under-pressure.
+  // Skip any tiebreak-labelled row outright; returning null makes the caller's
+  // `if (!sKey) continue;` drop it.
+  if (/tie/i.test(raw)) return null;
+  const n = parseInt(raw.replace(/[^0-9]/g, ''), 10);
   if (!n) return null;
   return n >= 5 ? '5' : String(n);
 }
