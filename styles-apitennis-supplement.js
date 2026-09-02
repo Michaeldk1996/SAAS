@@ -33,8 +33,13 @@ const API_BASE = 'https://api.api-tennis.com/tennis/';
 
 // One player, one season, statistics inline — mirrors bsp-pipeline.js
 // fetchPlayerFixturesForYear. Returns [] on success-with-no-result, null on error.
-async function fetchPlayerFixturesForYear(apiKey, playerKey, year, dateStop) {
-  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${year}-01-01&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=265`;
+// dateStart (optional, TEN-107): style callers omit it and get `${year}-01-01`
+//   — byte-identical behaviour. The hold/break harvester passes a rolling
+//   24-month date_start so the api-tennis get_fixtures quirks (event_type_key,
+//   inline stats/pbp) stay defined in exactly ONE place.
+async function fetchPlayerFixturesForYear(apiKey, playerKey, year, dateStop, dateStart) {
+  const start = dateStart || `${year}-01-01`;
+  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${start}&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=265`;
   let res;
   try { res = await fetch(url); } catch (e) { return null; }
   if (!res || !res.ok) return null;

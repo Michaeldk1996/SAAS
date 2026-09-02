@@ -22,6 +22,14 @@ on:
   # reasonably quick, and `concurrency` below queues it behind any in-flight cron run.
   push:
     branches: [main]
+    # ── DEPLOY TRAP (TEN-107, 2026-09-02) ─────────────────────────────────────
+    # This is an ALLOWLIST: only a push touching one of the files below triggers
+    # a deploy. A push that changes any OTHER served file — e.g. live-tab.js,
+    # analytics.js — does NOT auto-deploy; it silently waits for the every-15-min
+    # `schedule:` tick above (which republishes the whole _site), OR you dispatch
+    # the workflow manually (Actions tab / workflow_dispatch). If you edit a
+    # served file that is not listed here and need it live promptly, DISPATCH the
+    # run — do not assume the push shipped it.
     paths:
       - 'bsp-consult-dashboard.html'
       - 'index.html'
