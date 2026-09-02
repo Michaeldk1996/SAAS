@@ -93,10 +93,17 @@ node tools/fetch-apitennis-fixtures.js || echo "WARN: api fixture fetch failed; 
 
 node tools/build-matchup-matrix.js
 
-# Break/Hold heatmap shard (TEN-107, founder ruling 2026-09-01: 24M window,
-# bucketed axis). Pure rollup over the harvested pbp cache — zero API calls.
-# NON-FATAL, exactly like the fixture fetch above: a bad/absent cache must never
-# abort the styles publish, so `|| echo` returns 0 and set -e can't kill the run.
+# Break/Hold heatmap shard (TEN-107, founder GO 2026-09-02: roster split).
+# harvest-holdbreak.js populates the DEDICATED apitennis-holdbreak-cache/ (own
+# roster rank<=400, NO TML exclusion, rolling 24M) that build-holdbreak.js then
+# rolls up. This cache is separate from apitennis-styles-cache/ so widening the
+# hold/break window can never perturb classify-styles.js / board-archetypes.json.
+# One ranged get_fixtures call per roster player; intra-day TTL avoids refetch.
+# NON-FATAL, exactly like the fixture fetch above: an api hiccup or absent cache
+# must never abort the styles publish, so `|| echo` returns 0 and set -e can't
+# kill the run — build-holdbreak keeps the last-good shard on an empty cache.
+node harvest-holdbreak.js || echo "WARN: harvest-holdbreak failed; build rolls up last-good cache"
+# bucketed axis, zero API calls — pure rollup over the harvested pbp cache above.
 # Staged alongside the styles files below so it rides the same race-safe push.
 node build-holdbreak.js || echo "WARN: build-holdbreak failed; keeping last-good holdbreak.json"
 
