@@ -753,7 +753,7 @@
       const pa = HB.players[String(pk(fix, 1))], pb = HB.players[String(pk(fix, 2))];
       if (!pa && !pb) return `<div class="ltm-note">No hold/break history for either player yet.</div>`;
       const floor = (HB.meta && HB.meta.sampleFloor) || 20;
-      const win   = (HB.meta && HB.meta.windowMonths) ? `${HB.meta.windowMonths}-month window` : '';
+      const win   = (HB.meta && HB.meta.coverage && HB.meta.coverage.from && HB.meta.coverage.to) ? `${Math.max(0, Math.round((new Date(HB.meta.coverage.to) - new Date(HB.meta.coverage.from)) / 2629746e3))}-month window` : '';
       const lab = (t) => `<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;">${t}</div>`;
       const col = (pd, name) => {
         const nm = `<div style="font-size:13px;font-weight:800;color:#e7e9ee;margin-bottom:10px;">${esc(name || '—')}</div>`;
