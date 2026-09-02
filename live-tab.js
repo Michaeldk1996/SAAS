@@ -542,6 +542,7 @@
     let _tab = 'stats';            // stats | points | ratings | holdbreak
     let _statPeriod = 'match';     // match | set1 | set2 …
     let _ptsSet = 1;               // Points tab set filter
+    let _hbMetric = 'hold';        // Hold/Break tab metric: 'hold' | 'break' (default HOLD)
     const _pbp = Object.create(null);   // ek → { games, at, loading }
 
     const num = (s) => { const v = parseFloat(String(s).replace('%', '')); return Number.isFinite(v) ? v : null; };
@@ -703,48 +704,120 @@
     }
     const setNo = (gm) => { const m = String(gm.set_number || '').match(/(\d+)/); return m ? +m[1] : null; };
 
-    // ── Break/Hold tab (founder ruling TEN-107 2026-09-02) ───────────────────────
-    // The Break/Hold heatmap joins Stats/Points/Ratings as the 4th match metric.
-    // Data is the pre-computed holdbreak.json rollup (ZERO live API) — read via the
-    // dashboard's window.__h2hEnv.holdbreak() getter; players are keyed by the same
-    // numeric api-tennis id the live fixture carries. Renderer is ported here (not
-    // borrowed off window) so the Live tab stays self-contained. Both players side
-    // by side, each with service-hold% and return-break% by set × service-game depth
-    // (Early 1st–2nd / Mid 3rd–4th / Late 5th+). Pooled 'all' surface — a live modal
-    // has no clean surface field, so we show the player's whole-tour history.
-    const HB_BUCKETS = [['early', 'Early', '1st–2nd svc game'], ['mid', 'Mid', '3rd–4th'], ['late', 'Late', '5th+']];
-    const HB_SETS    = [['1', 'Set 1'], ['2', 'Set 2'], ['3', 'Set 3'], ['4+', 'Set 4+']];
-    function hbCellStyle(pct, kind) {
-      const lo = kind === 'serve' ? 50 : 8, hi = kind === 'serve' ? 90 : 45;
-      const t = Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
-      return `background:rgba(61,214,140,${(0.07 + 0.5 * t).toFixed(3)});`;
+    // ── Hold/Break HeatMap tab (founder ruling TEN-107 Phase 2, 2026-09-02) ──────
+    // Rebuilt to the DataEdge reference. One metric at a time via a HOLD | BREAK
+    // segmented toggle (default HOLD). Columns = GLOBAL anchor (across-sets total,
+    // visually distinct) then one per set S1..S5 (ATP best-of-five). Rows = the 3
+    // service-game-ordinal buckets: Early (1st–2nd svc game) / Mid (3rd–4th) /
+    // Late (5th+) — labelled for what they ARE, not re-mapped to Game 1-2/3-4.
+    // Every cell shows its percentage over the raw fraction (won/n); NO sample
+    // floor, NO greying — the fraction is the honesty mechanism. A cell with no
+    // matches at all renders as an em-dash “—” (a genuine 0/3 still shows 0%).
+    // Colour = diverging red / neutral / green by each cell's deviation from that
+    // bucket-row's own GLOBAL value (intra-player, not absolute magnitude). Data =
+    // the pre-computed holdbreak.json rollup (ZERO live API); pooled 'all' surface
+    // (a live modal has no clean surface field). Renderer self-contained here.
+    const HB_BUCKETS  = [['early', 'Early', '1st–2nd svc game'], ['mid', 'Mid', '3rd–4th svc game'], ['late', 'Late', '5th+ svc game']];
+    const HB_SETCOLS  = ['1', '2', '3', '4', '5'];   // GLOBAL is derived (sum of these)
+    const HB_NEUTRAL_BAND = 2;   // ±pp around row-GLOBAL that reads neutral
+    const HB_FULL_DEV     = 12;  // ±pp deviation that saturates the colour
+
+    // Sum {won,n} cells into one {won,n,pct}. Exact — numerators summed, never a
+    // pct-of-pcts average. Used for the GLOBAL column and the aggregate pill.
+    function hbSum(cells) {
+      let won = 0, n = 0;
+      // Require `won` so GLOBAL/pill fall back to “—” (not 0/n) if a pre-numerator
+      // shard is transiently served during a deploy; identical in steady state.
+      for (const c of cells) { if (c && c.n && c.won != null) { won += c.won; n += c.n; } }
+      return { won, n, pct: n ? (won / n) * 100 : null };
     }
-    function hbCell(cell, kind, floor) {
-      const has  = !!(cell && cell.pct != null && cell.n >= floor);
-      const thin = !!(cell && cell.n > 0 && cell.n < floor);
-      const style   = has ? hbCellStyle(cell.pct, kind) : 'background:#0a0d14;';
-      const pctTxt  = (cell && cell.pct != null) ? `${Math.round(cell.pct)}%` : '—';
-      const nTxt    = (cell && cell.n) ? `n=${cell.n}` : 'no data';
-      const bp = (kind === 'serve' && has && cell.bpFaced >= floor && cell.bpSavedPct != null)
-        ? `<div style="font-size:9px;color:#8892a0;font-family:'IBM Plex Mono',monospace;margin-top:2px;">BP ${Math.round(cell.bpSavedPct)}% svd</div>` : '';
-      const title = thin ? ` title="Below sample floor (${cell.n} &lt; ${floor}) — greyed"` : '';
-      return `<div${title} style="border-radius:8px;padding:9px 6px;text-align:center;min-width:0;${style}">
-        <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:${has ? '#e7e9ee' : '#4b5672'};">${pctTxt}</div>
-        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:${has ? 'rgba(231,233,238,0.7)' : '#4b5672'};">${nTxt}</div>
-        ${bp}
+    // Diverging colour by deviation of this cell's pct from its row-GLOBAL pct.
+    // Above the player's own baseline for that depth = green, below = red — for
+    // BOTH metrics (higher break% is good for the returner, higher hold% for the
+    // server). GLOBAL cell has deviation 0 → neutral, so it never colours itself.
+    function hbCellStyle(pct, rowGlobalPct) {
+      if (pct == null || rowGlobalPct == null) return 'background:#0a0d14;';
+      const d = pct - rowGlobalPct;
+      if (Math.abs(d) <= HB_NEUTRAL_BAND) return 'background:rgba(120,132,156,0.10);';
+      const t = Math.min(1, (Math.abs(d) - HB_NEUTRAL_BAND) / (HB_FULL_DEV - HB_NEUTRAL_BAND));
+      const a = (0.12 + 0.45 * t).toFixed(3);
+      return d > 0 ? `background:rgba(61,214,140,${a});` : `background:rgba(232,104,95,${a});`;
+    }
+    // One set heat cell: big % over raw fraction, coloured vs its row GLOBAL. No
+    // data at all → em-dash; a genuine 0/n still shows 0% over 0/n.
+    function hbCell(cell, rowGlobalPct) {
+      // `won` gate also degrades gracefully if an old-schema shard (no numerator)
+      // is briefly served from CDN cache alongside this newer code: cells show “—”
+      // and self-heal once the rebuilt shard propagates, rather than “undefined/n”.
+      const has = !!(cell && cell.n > 0 && cell.pct != null && cell.won != null);
+      if (!has) {
+        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:#0a0d14;">
+          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#455066;">—</div>
+        </div>`;
+      }
+      return `<div style="border-radius:7px;padding:8px 3px;text-align:center;min-width:0;${hbCellStyle(cell.pct, rowGlobalPct)}">
+        <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#e7e9ee;">${Math.round(cell.pct)}%</div>
+        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:rgba(231,233,238,0.62);white-space:nowrap;">${cell.won}/${cell.n}</div>
       </div>`;
     }
-    function hbGrid(node, kind, floor) {
+    // The GLOBAL anchor cell for a bucket row — distinct fill + border, no diverge.
+    function hbGlobalCell(g) {
+      if (!g.n) {
+        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:#0a0d14;border:1px solid rgba(143,160,192,0.18);">
+          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#455066;">—</div>
+        </div>`;
+      }
+      return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:rgba(143,160,192,0.15);border:1px solid rgba(143,160,192,0.30);">
+        <div style="font-size:15px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:#eef1f7;">${Math.round(g.pct)}%</div>
+        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:rgba(231,233,238,0.72);white-space:nowrap;">${g.won}/${g.n}</div>
+      </div>`;
+    }
+    // One player's grid for the active metric. node[set][bucket] = {pct,n,won}.
+    function hbGrid(node) {
       node = node || {};
-      const cols = `74px repeat(${HB_SETS.length},1fr)`;
-      const head = `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;">
-        <span></span>${HB_SETS.map(s => `<span style="font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;text-align:center;">${s[1]}</span>`).join('')}
+      const cols = `54px 60px repeat(${HB_SETCOLS.length},1fr)`;   // label | GLOBAL | S1..S5
+      const head = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;">
+        <span></span>
+        <span style="font-size:9px;letter-spacing:0.06em;color:#95a6c6;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
+        ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:#5b6880;font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
       </div>`;
-      const rows = HB_BUCKETS.map(b => `<div style="display:grid;grid-template-columns:${cols};gap:6px;margin-bottom:6px;align-items:stretch;">
-        <div style="display:flex;flex-direction:column;justify-content:center;"><span style="font-size:12px;font-weight:700;color:#c6ccdb;">${b[1]}</span><span style="font-size:9px;color:#4b5672;">${b[2]}</span></div>
-        ${HB_SETS.map(s => hbCell((node[s[0]] || {})[b[0]], kind, floor)).join('')}
-      </div>`).join('');
+      const rows = HB_BUCKETS.map(b => {
+        const rowCells = HB_SETCOLS.map(s => (node[s] || {})[b[0]]);
+        const g = hbSum(rowCells);
+        return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;justify-content:center;">
+            <span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">${b[1]}</span>
+            <span style="font-size:8px;color:#4b5672;line-height:1.15;">${b[2]}</span>
+          </div>
+          ${hbGlobalCell(g)}
+          ${rowCells.map(c => hbCell(c, g.pct)).join('')}
+        </div>`;
+      }).join('');
       return head + rows;
+    }
+    // One side-by-side player block: avatar + name + recomputed aggregate pill.
+    function hbPlayerBlock(pd, name, logo, metric) {
+      const node = pd && (metric === 'hold' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all));
+      const av = logo
+        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#181C25;flex-shrink:0;">`
+        : `<span style="width:30px;height:30px;border-radius:50%;background:#181C25;flex-shrink:0;display:inline-block;"></span>`;
+      const pillLbl = metric === 'hold' ? 'HOLD' : 'BREAK';
+      let pill = '—';
+      if (node) {
+        const all = [];
+        for (const s of HB_SETCOLS) for (const b of HB_BUCKETS) all.push((node[s] || {})[b[0]]);
+        const agg = hbSum(all);
+        if (agg.n) pill = `${agg.pct.toFixed(1)}%`;
+      }
+      const nm = `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;min-width:0;">
+        ${av}
+        <span style="font-size:13px;font-weight:800;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${esc(name || '—')}</span>
+        <span style="font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#e7e9ee;background:#181C25;border:1px solid #262B35;border-radius:999px;padding:4px 10px;white-space:nowrap;">${pillLbl} ${pill}</span>
+      </div>`;
+      if (!node) {
+        return `<div style="flex:1;min-width:330px;">${nm}<div style="font-size:12px;color:#4b5672;">No ${metric} history yet.</div></div>`;
+      }
+      return `<div style="flex:1;min-width:330px;">${nm}${hbGrid(node)}</div>`;
     }
     function holdbreakHtml(fix) {
       const HB = (window.__h2hEnv && typeof window.__h2hEnv.holdbreak === 'function')
@@ -752,22 +825,27 @@
       if (!HB || !HB.players) return `<div class="ltm-note">Loading hold/break history…</div>`;
       const pa = HB.players[String(pk(fix, 1))], pb = HB.players[String(pk(fix, 2))];
       if (!pa && !pb) return `<div class="ltm-note">No hold/break history for either player yet.</div>`;
-      const floor = (HB.meta && HB.meta.sampleFloor) || 20;
-      const win   = (HB.meta && HB.meta.coverage && HB.meta.coverage.from && HB.meta.coverage.to) ? `${Math.max(0, Math.round((new Date(HB.meta.coverage.to) - new Date(HB.meta.coverage.from)) / 2629746e3))}-month window` : '';
-      const lab = (t) => `<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;">${t}</div>`;
-      const col = (pd, name) => {
-        const nm = `<div style="font-size:13px;font-weight:800;color:#e7e9ee;margin-bottom:10px;">${esc(name || '—')}</div>`;
-        if (!pd || !pd.serve || !pd.serve.all || !pd.return || !pd.return.all) {
-          return `<div style="flex:1;min-width:250px;">${nm}<div style="font-size:12px;color:#4b5672;">No hold/break data yet.</div></div>`;
-        }
-        return `<div style="flex:1;min-width:250px;display:flex;flex-direction:column;gap:14px;">${nm}
-          <div>${lab('Service holds · hold %')}${hbGrid(pd.serve.all, 'serve', floor)}</div>
-          <div>${lab('Return breaks · break %')}${hbGrid(pd.return.all, 'return', floor)}</div>
-        </div>`;
-      };
-      return `<div class="ltm-section" style="padding:14px 16px;">
-        <div style="font-size:12px;color:#5b6880;line-height:1.5;margin-bottom:14px;">Hold% (serve) and break% (return) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). All surfaces · ${win} · floor n≥${floor}. Deeper green = stronger; greyed cells are below the sample floor.</div>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;">${col(pa, fix.event_first_player)}${col(pb, fix.event_second_player)}</div>
+      const metric = _hbMetric;                       // 'hold' | 'break'
+      const winM = (HB.meta && HB.meta.windowMonths) || 24;
+      const chip = `ALL SURFACES · LAST ${winM}M`;
+      const tip = `Service hold % (HOLD) and return break % (BREAK) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). GLOBAL is the across-sets total; S1–S5 are per set. Each cell shows its raw fraction (won/n). Colour = the cell's deviation from that row's GLOBAL: green = stronger than the player's own baseline for that depth, red = weaker. No sample floor — “—” means no matches yet. Pooled across all surfaces, last ${winM} months.`;
+      const tog = (m, lbl) => `<button data-hbmetric="${m}" class="${m === metric ? 'active' : ''}">${lbl}</button>`;
+      const head = `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <span style="font-size:14px;font-weight:800;color:#e7e9ee;">Hold/Break HeatMap</span>
+            <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #40506b;color:#8fa0c0;font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
+          </div>
+          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:#95a6c6;background:#181C25;border:1px solid #262B35;border-radius:999px;padding:3px 10px;">${chip}</span></div>
+        </div>
+        <div class="ltm-toggle" style="margin:0;">${tog('hold', 'HOLD')}${tog('break', 'BREAK')}</div>
+      </div>`;
+      return `<div class="ltm-section" style="padding:16px;">
+        ${head}
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          ${hbPlayerBlock(pa, fix.event_first_player, fix['event_first_player_logo'], metric)}
+          ${hbPlayerBlock(pb, fix.event_second_player, fix['event_second_player_logo'], metric)}
+        </div>
       </div>`;
     }
 
@@ -971,6 +1049,13 @@
       const useFix = fix || _lastFix;   // match may have ended mid-view; keep the last fixture
       if (!useFix) return;
       _lastFix = useFix;
+      // The Hold/Break HeatMap needs GLOBAL + S1..S5 side-by-side for two players
+      // (ATP best-of-five). At the default 720px the six data columns per player
+      // crush the raw fractions below readable width, so widen the modal only while
+      // that tab is active; every other tab renders at its designed 720px. Scoped
+      // here in JS so the shared .ltm CSS and the Stats/Points/Ratings tabs are
+      // untouched (founder do-not-touch list).
+      modal.style.maxWidth = (_tab === 'holdbreak') ? '940px' : '';
       modal.innerHTML = headerHtml(useFix) + `<div class="ltm-body">${renderBody(useFix)}</div>`;
       wire(modal, useFix);
     }
@@ -987,6 +1072,8 @@
         b.addEventListener('click', () => { _statPeriod = b.getAttribute('data-per'); paint(); }));
       modal.querySelectorAll('.ltm-toggle button[data-set]').forEach(b =>
         b.addEventListener('click', () => { _ptsSet = +b.getAttribute('data-set'); paint(); }));
+      modal.querySelectorAll('.ltm-toggle button[data-hbmetric]').forEach(b =>
+        b.addEventListener('click', () => { _hbMetric = b.getAttribute('data-hbmetric'); paint(); }));
     }
 
     async function ensurePbp() {

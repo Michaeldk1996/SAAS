@@ -48,7 +48,11 @@ const WINDOW_MONTHS = 24;
 const SAMPLE_FLOOR = 20;              // recommended display floor; data keeps n
 const FINAL_STATUSES = new Set(['Finished', 'Retired', 'Walk Over']);
 const BUCKETS = ['early', 'mid', 'late'];
-const SETS = ['1', '2', '3', '4+'];
+// TEN-107 PHASE 2 (founder ruling 2026-09-02): split sets to S1..S5 (was '4+')
+// so the DataEdge panel can show one column per set of a best-of-five match. A
+// set number >=5 folds into '5' (ATP is best-of-five; a 6th set can't occur in
+// singles). GLOBAL (across-sets) is derived in the frontend by summing S1..S5.
+const SETS = ['1', '2', '3', '4', '5'];
 const SURFACES = ['all', 'hard', 'clay', 'grass'];
 
 // Anchor "now" from the newest event_date in the cache rather than the wall
@@ -77,7 +81,7 @@ function surfaceOf(tournamentKey, tournamentName) {
 function setKey(setNumberRaw) {
   const n = parseInt(String(setNumberRaw).replace(/[^0-9]/g, ''), 10);
   if (!n) return null;
-  return n >= 4 ? '4+' : String(n);
+  return n >= 5 ? '5' : String(n);
 }
 
 function bucketFor(serviceOrdinal) {
@@ -124,7 +128,11 @@ function finalize(grid, mode) {
       out[su][s] = {};
       for (const b of BUCKETS) {
         const c = grid[su][s][b];
-        const cell = { pct: c.n ? Math.round((c.won / c.n) * 1000) / 10 : null, n: c.n };
+        // won = holds (serve grid) or breaks (return grid). Emitting the raw
+        // numerator lets the panel render the honest fraction `won/n` (e.g.
+        // 24/33) with no approximation, and lets the frontend build the GLOBAL
+        // column by summing won & n across sets — both exact, not pct-averaged.
+        const cell = { pct: c.n ? Math.round((c.won / c.n) * 1000) / 10 : null, n: c.n, won: c.won };
         if (mode === 'serve' && c.bpFaced) {
           cell.bpSavedPct = Math.round((c.bpSaved / c.bpFaced) * 1000) / 10;
           cell.bpFaced = c.bpFaced;
