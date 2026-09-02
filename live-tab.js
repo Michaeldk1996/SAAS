@@ -704,23 +704,34 @@
     }
     const setNo = (gm) => { const m = String(gm.set_number || '').match(/(\d+)/); return m ? +m[1] : null; };
 
-    // ── Hold/Break HeatMap tab (founder ruling TEN-107 Phase 2, 2026-09-02) ──────
+    // ── Hold/Break HeatMap tab (founder GRID RULING TEN-107, 2026-09-02) ─────────
     // Rebuilt to the DataEdge reference. One metric at a time via a HOLD | BREAK
     // segmented toggle (default HOLD). Columns = GLOBAL anchor (across-sets total,
-    // visually distinct) then one per set S1..S5 (ATP best-of-five). Rows = the 3
-    // service-game-ordinal buckets: Early (1st–2nd svc game) / Mid (3rd–4th) /
-    // Late (5th+) — labelled for what they ARE, not re-mapped to Game 1-2/3-4.
-    // Every cell shows its percentage over the raw fraction (won/n); NO sample
-    // floor, NO greying — the fraction is the honesty mechanism. A cell with no
-    // matches at all renders as an em-dash “—” (a genuine 0/3 still shows 0%).
-    // Colour = diverging red / neutral / green by each cell's deviation from that
-    // bucket-row's own GLOBAL value (intra-player, not absolute magnitude). Data =
-    // the pre-computed holdbreak.json rollup (ZERO live API); pooled 'all' surface
-    // (a live modal has no clean surface field). Renderer self-contained here.
-    const HB_BUCKETS  = [['early', 'Early', '1st–2nd svc game'], ['mid', 'Mid', '3rd–4th svc game'], ['late', 'Late', '5th+ svc game']];
+    // visually DOMINANT — wider, heavier, divided off) then one per set S1..S5.
+    // Rows = SIX single-ordinal rows, the server's service-game ordinal within the
+    // set, labelled by their game-number range: Game 1-2 / 3-4 / 5-6 / 7-8 / 9-10 /
+    // 11-12+ (row 6 folds ordinal 7+, which is 2.03% of games). Every cell shows
+    // its percentage over the raw fraction (won/n); NO sample floor — the fraction
+    // is the honesty mechanism, and a no-data cell is an em-dash “—” (a genuine 0/3
+    // still shows 0%). Colour = diverging red/neutral/green by each cell's deviation
+    // from that row's own GLOBAL value — but a cell whose DENOMINATOR is below
+    // HB_DESAT_N is DESATURATED (neutral fill, text unaltered) so a 3/3 in loud
+    // green can't shout over a real sample. GLOBAL (summed across sets) is almost
+    // always above the threshold, so the eye lands on the number that's real for
+    // everyone. Data = the pre-computed holdbreak.json rollup (ZERO live API);
+    // pooled 'all' surface (a live modal has no clean surface field).
+    const HB_BUCKETS  = [
+      ['1', 'Game 1-2',   '1st svc game'],
+      ['2', 'Game 3-4',   '2nd svc game'],
+      ['3', 'Game 5-6',   '3rd svc game'],
+      ['4', 'Game 7-8',   '4th svc game'],
+      ['5', 'Game 9-10',  '5th svc game'],
+      ['6', 'Game 11-12+', '6th+ svc game'],
+    ];
     const HB_SETCOLS  = ['1', '2', '3', '4', '5'];   // GLOBAL is derived (sum of these)
     const HB_NEUTRAL_BAND = 2;   // ±pp around row-GLOBAL that reads neutral
     const HB_FULL_DEV     = 12;  // ±pp deviation that saturates the colour
+    const HB_DESAT_N      = 20;  // set-cell denominator below this → desaturated (colour muted, % + fraction unchanged). A display parameter, not a floor; move it without a rebuild.
 
     // Sum {won,n} cells into one {won,n,pct}. Exact — numerators summed, never a
     // pct-of-pcts average. Used for the GLOBAL column and the aggregate pill.
@@ -744,7 +755,9 @@
       return d > 0 ? `background:rgba(61,214,140,${a});` : `background:rgba(232,104,95,${a});`;
     }
     // One set heat cell: big % over raw fraction, coloured vs its row GLOBAL. No
-    // data at all → em-dash; a genuine 0/n still shows 0% over 0/n.
+    // data at all → em-dash; a genuine 0/n still shows 0% over 0/n. A cell whose
+    // denominator is below HB_DESAT_N keeps its % and fraction verbatim but its
+    // colour is neutralised (desaturated) so a tiny sample can't shout in green/red.
     function hbCell(cell, rowGlobalPct) {
       // `won` gate also degrades gracefully if an old-schema shard (no numerator)
       // is briefly served from CDN cache alongside this newer code: cells show “—”
@@ -755,30 +768,41 @@
           <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#455066;">—</div>
         </div>`;
       }
-      return `<div style="border-radius:7px;padding:8px 3px;text-align:center;min-width:0;${hbCellStyle(cell.pct, rowGlobalPct)}">
-        <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#e7e9ee;">${Math.round(cell.pct)}%</div>
+      const thin = cell.n < HB_DESAT_N;
+      const bg = thin ? 'background:rgba(120,132,156,0.07);' : hbCellStyle(cell.pct, rowGlobalPct);
+      // Thin cells dim the % slightly (still fully legible) as a second, quieter cue.
+      const pctColor = thin ? 'rgba(231,233,238,0.80)' : '#e7e9ee';
+      return `<div style="border-radius:7px;padding:8px 3px;text-align:center;min-width:0;${bg}">
+        <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:${pctColor};">${Math.round(cell.pct)}%</div>
         <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:rgba(231,233,238,0.62);white-space:nowrap;">${cell.won}/${cell.n}</div>
       </div>`;
     }
-    // The GLOBAL anchor cell for a bucket row — distinct fill + border, no diverge.
+    // The GLOBAL anchor cell for a bucket row — the DOMINANT column: wider, heavier
+    // fill + border, larger type, no diverge colour (it IS the baseline). GLOBAL is
+    // the number that survives at every rank tier; the visual weight says so.
     function hbGlobalCell(g) {
       if (!g.n) {
-        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:#0a0d14;border:1px solid rgba(143,160,192,0.18);">
-          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#455066;">—</div>
+        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:#0a0d14;border:1px solid rgba(143,160,192,0.18);">
+          <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#455066;">—</div>
         </div>`;
       }
-      return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:rgba(143,160,192,0.15);border:1px solid rgba(143,160,192,0.30);">
-        <div style="font-size:15px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:#eef1f7;">${Math.round(g.pct)}%</div>
-        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:rgba(231,233,238,0.72);white-space:nowrap;">${g.won}/${g.n}</div>
+      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:rgba(143,160,192,0.22);border:1px solid rgba(143,160,192,0.42);box-shadow:inset 0 0 0 1px rgba(143,160,192,0.10);">
+        <div style="font-size:19px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:#f2f4f9;">${Math.round(g.pct)}%</div>
+        <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;color:rgba(231,233,238,0.82);white-space:nowrap;">${g.won}/${g.n}</div>
       </div>`;
     }
+    // A full-height vertical rule separating the GLOBAL anchor from the per-set columns.
+    const HB_DIVIDER = `<div style="width:1px;height:100%;margin:0 auto;background:rgba(143,160,192,0.28);border-radius:1px;"></div>`;
     // One player's grid for the active metric. node[set][bucket] = {pct,n,won}.
+    // Layout: row-label | GLOBAL (wide) | divider | S1..S5. GLOBAL is visually
+    // dominant; the per-set columns share the remaining width and thin out for the tail.
     function hbGrid(node) {
       node = node || {};
-      const cols = `54px 60px repeat(${HB_SETCOLS.length},1fr)`;   // label | GLOBAL | S1..S5
-      const head = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;">
+      const cols = `58px 92px 13px repeat(${HB_SETCOLS.length},1fr)`;   // label | GLOBAL | rule | S1..S5
+      const head = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:6px;align-items:end;">
         <span></span>
-        <span style="font-size:9px;letter-spacing:0.06em;color:#95a6c6;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
+        <span style="font-size:10px;letter-spacing:0.10em;color:#aebbd6;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
+        <span></span>
         ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:#5b6880;font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
       </div>`;
       const rows = HB_BUCKETS.map(b => {
@@ -786,10 +810,11 @@
         const g = hbSum(rowCells);
         return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:stretch;">
           <div style="display:flex;flex-direction:column;justify-content:center;">
-            <span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">${b[1]}</span>
+            <span style="font-size:11.5px;font-weight:700;color:#c6ccdb;white-space:nowrap;">${b[1]}</span>
             <span style="font-size:8px;color:#4b5672;line-height:1.15;">${b[2]}</span>
           </div>
           ${hbGlobalCell(g)}
+          ${HB_DIVIDER}
           ${rowCells.map(c => hbCell(c, g.pct)).join('')}
         </div>`;
       }).join('');
@@ -828,7 +853,7 @@
       const metric = _hbMetric;                       // 'hold' | 'break'
       const winM = (HB.meta && HB.meta.windowMonths) || 24;
       const chip = `ALL SURFACES · LAST ${winM}M`;
-      const tip = `Service hold % (HOLD) and return break % (BREAK) by service-game depth in a set — Early (1st–2nd) / Mid (3rd–4th) / Late (5th+). GLOBAL is the across-sets total; S1–S5 are per set. Each cell shows its raw fraction (won/n). Colour = the cell's deviation from that row's GLOBAL: green = stronger than the player's own baseline for that depth, red = weaker. No sample floor — “—” means no matches yet. Pooled across all surfaces, last ${winM} months.`;
+      const tip = `Service hold % (HOLD) and return break % (BREAK) by the server's service-game within the set — one row per service game (Game 1-2 = 1st, … Game 11-12+ = 6th, folding the rare 7th+). GLOBAL is the across-sets total and the anchor — it stays real for everyone; the per-set columns S1–S5 thin out down the roster. Each cell shows its raw fraction (won/n). Colour = the cell's deviation from that row's GLOBAL: green = stronger than the player's own baseline at that depth, red = weaker. Cells on a thin sample (< ${HB_DESAT_N} games) keep their number but drop their colour, so a small sample can't shout. No sample floor — “—” means no matches yet. Pooled across all surfaces, last ${winM} months.`;
       const tog = (m, lbl) => `<button data-hbmetric="${m}" class="${m === metric ? 'active' : ''}">${lbl}</button>`;
       const head = `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
         <div style="min-width:0;">
@@ -1049,13 +1074,13 @@
       const useFix = fix || _lastFix;   // match may have ended mid-view; keep the last fixture
       if (!useFix) return;
       _lastFix = useFix;
-      // The Hold/Break HeatMap needs GLOBAL + S1..S5 side-by-side for two players
-      // (ATP best-of-five). At the default 720px the six data columns per player
-      // crush the raw fractions below readable width, so widen the modal only while
-      // that tab is active; every other tab renders at its designed 720px. Scoped
-      // here in JS so the shared .ltm CSS and the Stats/Points/Ratings tabs are
-      // untouched (founder do-not-touch list).
-      modal.style.maxWidth = (_tab === 'holdbreak') ? '940px' : '';
+      // The Hold/Break HeatMap needs the DOMINANT GLOBAL column + a divider + S1..S5
+      // side-by-side for two players (ATP best-of-five). The wider GLOBAL anchor eats
+      // horizontal room, so widen to 1040px while that tab is active to keep the raw
+      // fractions readable; every other tab renders at its designed 720px. Scoped here
+      // in JS so the shared .ltm CSS and the Stats/Points/Ratings tabs are untouched
+      // (founder do-not-touch list).
+      modal.style.maxWidth = (_tab === 'holdbreak') ? '1040px' : '';
       modal.innerHTML = headerHtml(useFix) + `<div class="ltm-body">${renderBody(useFix)}</div>`;
       wire(modal, useFix);
     }

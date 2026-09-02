@@ -45,9 +45,25 @@ const path = require('path');
 const CACHE_DIR = path.join(__dirname, 'apitennis-holdbreak-cache');
 const OUT_PATH = path.join(__dirname, 'holdbreak.json');
 const WINDOW_MONTHS = 24;
-const SAMPLE_FLOOR = 20;              // recommended display floor; data keeps n
+const SAMPLE_FLOOR = 20;              // recommended display DESATURATION threshold; data keeps n
 const FINAL_STATUSES = new Set(['Finished', 'Retired', 'Walk Over']);
-const BUCKETS = ['early', 'mid', 'late'];
+// TEN-107 GRID RULING (founder 2026-09-02): axis = SIX single-ordinal rows, the
+// server's service-game ORDINAL within the set, one row each for ordinals 1..6,
+// with ordinal 7+ FOLDED into row 6 (7+ is 2.03% of games, essentially all
+// ordinal 7 — a dedicated row would be near-empty). This replaces the old 3-way
+// early/mid/late bucketing. Storage is single-ordinal so the frontend can label
+// each row by its game-number range (ord1=Game 1-2, ord2=Game 3-4, ... ord6=Game
+// 11-12+) and sum sets for the GLOBAL column, both exact.
+const BUCKETS = ['1', '2', '3', '4', '5', '6'];
+const ORDINAL_CAP = 6;               // ordinal >= 6 folds into row '6'
+// Roster rule (founder 2026-09-02, Option B): a player appears in the shard iff
+// numeric key ∧ (rank <= RANK_MAX  OR  >= MIN_SERVICE_GAMES service games in the
+// 24M window). Rank is read from the frozen player-profiles.json (July data — the
+// rank clause can't yet drop fallen players like Schwartzman; that's TEN-135, not
+// a reason to mis-encode the rule). Service games are the tiebreak-FIXED count.
+const RANK_MAX = 400;
+const MIN_SERVICE_GAMES = 150;
+const PROFILES_PATH = path.join(__dirname, 'player-profiles.json');
 // TEN-107 PHASE 2 (founder ruling 2026-09-02): split sets to S1..S5 (was '4+')
 // so the DataEdge panel can show one column per set of a best-of-five match. A
 // set number >=5 folds into '5' (ATP is best-of-five; a 6th set can't occur in
@@ -62,6 +78,29 @@ function windowStartFrom(maxDateISO) {
   const d = new Date(maxDateISO + 'T00:00:00Z');
   d.setUTCMonth(d.getUTCMonth() - WINDOW_MONTHS);
   return d.toISOString().slice(0, 10);
+}
+
+// Roster rank source: player-profiles.json (frozen July data — see roster ruling).
+// key -> numeric rank. Missing/non-numeric rank => not rank-qualified (the player
+// can still qualify on the >=150 service-game clause).
+let RANK_MAP = new Map();
+try {
+  const pp = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8'));
+  const players = pp.players || pp;
+  for (const k in players) {
+    const r = players[k] && players[k].rank;
+    const n = r == null ? NaN : Number(r);
+    if (Number.isFinite(n) && n > 0) RANK_MAP.set(String(k), n);
+  }
+} catch (_) { /* no profiles -> rank clause simply never fires; >=150 clause still applies */ }
+
+// Total tiebreak-fixed service games a player served in-window = sum of n over the
+// SERVE 'all' surface across every set and ordinal row. Used by the roster rule.
+function serviceGamesOf(serveGrid) {
+  let n = 0;
+  const all = serveGrid.all || {};
+  for (const s of SETS) for (const b of BUCKETS) n += (all[s] && all[s][b] && all[s][b].n) || 0;
+  return n;
 }
 
 let SURFACE_MAP = new Map();
@@ -95,9 +134,10 @@ function setKey(setNumberRaw) {
 }
 
 function bucketFor(serviceOrdinal) {
-  if (serviceOrdinal <= 2) return 'early';
-  if (serviceOrdinal <= 4) return 'mid';
-  return 'late';
+  // Single-ordinal row keyed on the server's service-game ordinal within the set;
+  // ordinal 7+ folds into the last row ('6'). See ORDINAL_CAP / roster ruling above.
+  if (!(serviceOrdinal >= 1)) return null;
+  return String(Math.min(serviceOrdinal, ORDINAL_CAP));
 }
 
 // Empty {surface:{set:{bucket:{won,n,bpSaved,bpFaced}}}} grid.
@@ -262,16 +302,33 @@ function main() {
     }
   }
 
+  // Roster rule (Option B): numeric key ∧ (rank <= RANK_MAX OR service games >= 150).
+  // Track in/out for the founder report. `svcGames` counts tiebreak-FIXED games.
   const playersOut = {};
+  const rosterIn = [];
+  const rosterOut = [];
   for (const [key, p] of players) {
     if (!key) continue;
+    const svcGames = serviceGamesOf(p.serve);
+    const rank = RANK_MAP.has(key) ? RANK_MAP.get(key) : null;
+    const numeric = /^\d+$/.test(key);
+    const rankQual = rank != null && rank <= RANK_MAX;
+    const sampleQual = svcGames >= MIN_SERVICE_GAMES;
+    const qualifies = numeric && (rankQual || sampleQual);
+    const rec = { key, name: p.name || null, rank, svcGames, matches: p.eks.size, rankQual, sampleQual };
+    if (!qualifies) { rosterOut.push(rec); continue; }
+    rosterIn.push(rec);
     playersOut[key] = {
       name: p.name || null,
       matches: p.eks.size,
+      rank,
+      svcGames,
       serve: finalize(p.serve, 'serve'),
       return: finalize(p.return, 'return'),
     };
   }
+  rosterIn.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999) || b.svcGames - a.svcGames);
+  rosterOut.sort((a, b) => b.svcGames - a.svcGames);
 
   const shard = {
     meta: {
@@ -282,9 +339,18 @@ function main() {
       anchorDate: maxDate,
       sampleFloor: SAMPLE_FLOOR,
       buckets: BUCKETS,
-      bucketDef: { early: '1st-2nd service game in set', mid: '3rd-4th', late: '5th+' },
+      axis: 'service-game ordinal within set (single-ordinal; ordinal 7+ folds into row 6)',
+      bucketDef: {
+        '1': "server's 1st service game (Game 1-2)",
+        '2': '2nd service game (Game 3-4)',
+        '3': '3rd service game (Game 5-6)',
+        '4': '4th service game (Game 7-8)',
+        '5': '5th service game (Game 9-10)',
+        '6': '6th+ service game (Game 11-12+, ordinal 7+ folded in)',
+      },
       sets: SETS,
       surfaces: SURFACES,
+      rosterRule: `numeric key AND (rank<=${RANK_MAX} OR serviceGames>=${MIN_SERVICE_GAMES}) in ${WINDOW_MONTHS}M window`,
       coverage: { matches: stats.matches, serviceGames: stats.serviceGames, from: stats.minDate, to: stats.maxDate },
       players: Object.keys(playersOut).length,
     },
@@ -293,9 +359,19 @@ function main() {
   };
 
   fs.writeFileSync(OUT_PATH, JSON.stringify(shard));
+  // Roster in/out report (founder evidence; not served — dev artifact next to shard).
+  try {
+    fs.writeFileSync(path.join(__dirname, 'holdbreak-roster-report.json'), JSON.stringify({
+      rule: shard.meta.rosterRule,
+      rankMax: RANK_MAX, minServiceGames: MIN_SERVICE_GAMES,
+      inCount: rosterIn.length, outCount: rosterOut.length,
+      in: rosterIn, out: rosterOut,
+    }, null, 1));
+  } catch (_) {}
   console.log(`build-holdbreak: wrote ${OUT_PATH}`);
   console.log(`  window=${WINDOW_MONTHS}M start=${windowStart} anchor=${maxDate}`);
-  console.log(`  matches=${stats.matches} serviceGames=${stats.serviceGames} coverage=${stats.minDate}..${stats.maxDate} players=${shard.meta.players}`);
+  console.log(`  matches=${stats.matches} serviceGames=${stats.serviceGames} coverage=${stats.minDate}..${stats.maxDate}`);
+  console.log(`  roster: ${rosterIn.length} in / ${rosterOut.length} out (rule: ${shard.meta.rosterRule})`);
 }
 
 if (require.main === module) main();
