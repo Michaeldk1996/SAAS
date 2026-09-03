@@ -109,7 +109,8 @@ jobs:
               f"https://api.supabase.com/v1/projects/{ref}/database/query",
               data=json.dumps({"query": query}).encode(),
               headers={"Authorization": f"Bearer {mgmt_token}",
-                       "Content-Type": "application/json"},
+                       "Content-Type": "application/json",
+                       "User-Agent": "ten141-freshness-setup/1.0"},
               method="POST",
           )
           try:
