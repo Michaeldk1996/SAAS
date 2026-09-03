@@ -1944,7 +1944,12 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   // Live state — real fields from the API-Tennis fixture, confirmed live this session
   // against an actual in-progress match (event_live: "1", event_status: "Set 1").
-  match.live = fixture.event_live === '1';
+  // Guard A (TEN-107, founder ruling 2026-09-03): a terminal status beats a lagging
+  // event_live flag. api-tennis can return a decided match ('Finished'/'Retired'/
+  // 'Walk Over') while event_live still reads '1' for a poll or two; never render
+  // that as live, or the card strands on the board as a phantom LIVE match.
+  match.live = fixture.event_live === '1'
+    && !['Finished', 'Retired', 'Walk Over'].includes(fixture.event_status);
   match.liveStatus = match.live ? fixture.event_status : null;
   match.liveScore = match.live && Array.isArray(fixture.scores)
     ? fixture.scores.map(s => ({

@@ -354,7 +354,12 @@ def main():
                 m['bestOdds'] = best
                 odds_added += 1
 
-        if f.get('event_live') == '1':
+        # Guard A (TEN-107, founder ruling 2026-09-03): a terminal status wins
+        # over a lagging event_live flag. api-tennis sometimes returns a finished
+        # match with event_status='Finished'/'Retired'/'Walk Over' while still
+        # carrying event_live='1' for a poll or two. Treating that as live strands
+        # a decided match on the board. Fall through to the FINISHED branch below.
+        if f.get('event_live') == '1' and f.get('event_status') not in FINISHED:
             m['live'] = True
             m['interrupted'] = False
             m['partialScore'] = None
