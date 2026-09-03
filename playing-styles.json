@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T23:24:42.297Z",
+  "generatedAt": "2026-09-03T22:49:04.792Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -582,9 +582,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 4,
-      "win_pct": 64.7,
+      "win_pct": 65.7,
       "clay_wr": 73,
-      "hard_wr": 50,
+      "hard_wr": 55,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Big Server + Complete Baseliner"
@@ -1934,6 +1934,25 @@
       "archetype_label": "Counterpuncher"
     },
     {
+      "name": "D. Svrcina",
+      "rank": 116,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 2,
+      "win_pct": 51.9,
+      "clay_wr": 57,
+      "hard_wr": 50,
+      "grass_wr": 0,
+      "top10_wins": 0,
+      "archetype_label": "Solid Baseliner",
+      "variety": true
+    },
+    {
       "name": "N. Basilashvili",
       "rank": 117,
       "archetype_data_coverage": "full",
@@ -1992,9 +2011,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 69.2,
+      "win_pct": 67.5,
       "clay_wr": 65,
-      "hard_wr": 71,
+      "hard_wr": 67,
       "grass_wr": 80,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -2934,9 +2953,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 60,
+      "win_pct": 57.1,
       "clay_wr": 40,
-      "hard_wr": 67,
+      "hard_wr": 62,
       "grass_wr": 67,
       "top10_wins": 0,
       "archetype_label": "Big Server + First Strike"
@@ -5057,20 +5076,6 @@
       "grass_wr": null,
       "matches": 166,
       "source": "challenger"
-    },
-    {
-      "name": "Dalibor Svrcina",
-      "archetype_data_coverage": "challenger",
-      "partial_axes": [],
-      "badges": [],
-      "win_pct": 53,
-      "clay_wr": 52,
-      "hard_wr": 54,
-      "grass_wr": null,
-      "matches": 166,
-      "source": "challenger",
-      "archetype_label": "Solid Baseliner",
-      "variety": true
     },
     {
       "name": "Strong Kirchheimer",
