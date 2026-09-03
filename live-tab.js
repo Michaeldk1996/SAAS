@@ -446,6 +446,22 @@
     </div>`;
   }
 
+  // A completed tiebreak set arrives from api-tennis encoded as
+  // "<games>.<tiebreakPoints>" per side — e.g. score_first "7.7" / score_second
+  // "6.1" for a 7-6(1) set — NOT a decimal game count. Render Flashscore-style:
+  // games in full with that side's own tiebreak points as a superscript (7⁷ / 6¹).
+  // A non-tiebreak set (or an in-progress set) carries no ".", so it renders plain.
+  function setScoreHtml(raw) {
+    if (raw == null) return '';
+    const s = String(raw).trim();
+    if (s === '') return '';
+    const dot = s.indexOf('.');
+    if (dot < 0) return esc(s);
+    const games = s.slice(0, dot);
+    const tb = s.slice(dot + 1);
+    return tb === '' ? esc(games) : `${esc(games)}<sup>${esc(tb)}</sup>`;
+  }
+
   // Per-set boxes from the `scores` array; the current set is highlighted.
   function setCells(fix, which) {
     const scores = Array.isArray(fix.scores) ? fix.scores : [];
@@ -454,13 +470,13 @@
       return scores.map((sc, i) => {
         const v = which === 1 ? sc.score_first : sc.score_second;
         const cur = i === lastIdx ? ' cur' : '';
-        return `<span class="lt-set${cur}">${esc(v ?? '')}</span>`;
+        return `<span class="lt-set${cur}">${setScoreHtml(v)}</span>`;
       }).join('');
     }
     // Fallback: aggregate sets-won from event_final_result ("1 - 0").
     const parts = String(fix.event_final_result || '').split('-').map(s => s.trim());
     const v = which === 1 ? parts[0] : parts[1];
-    return v ? `<span class="lt-set">${esc(v)}</span>` : '';
+    return v ? `<span class="lt-set">${setScoreHtml(v)}</span>` : '';
   }
 
   // Current-game points from event_game_result ("40 - 30" / "A - 40" / "-").
@@ -1036,7 +1052,7 @@
         const cells = scores.map((sc, i) => {
           const v = which === 1 ? sc.score_first : sc.score_second;
           const curCls = i === scores.length - 1 ? ' class="cur"' : '';
-          return `<span${curCls}>${esc(v ?? '')}</span>`;
+          return `<span${curCls}>${setScoreHtml(v)}</span>`;
         }).join('');
         const pt = (which === 1 ? gr[0] : gr[1]);
         const ptCell = (pt && pt !== '-') ? `<span class="cur">${esc(pt)}</span>` : '';
