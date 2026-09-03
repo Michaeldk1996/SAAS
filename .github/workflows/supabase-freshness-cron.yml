@@ -1,0 +1,124 @@
+name: Supabase freshness cron (TEN-141)
+
+# TEN-141 Tier 1: an ALWAYS-ON external heartbeat that keeps tournament reports
+# (and everything the pipeline builds) fresh, independent of the laptop.
+#
+# Root cause of the lag: GitHub throttles `schedule:` crons to every 2-5 h under
+# load, so a finished match can sit un-published for hours. This installs a
+# Supabase pg_cron job that pings pipeline.yml's workflow_dispatch every 10 min
+# from Supabase's always-on infra. Build (~6-12 min) + CDN (~4-5 min) then bounds
+# worst-case freshness to ~12-17 min instead of 2-5 h.
+#
+# Fully reversible: run this workflow with action=uninstall to remove the cron
+# job and the stored PAT. Nothing here changes the live site payload.
+#
+# Secrets used (already present in the repo per the founder — "everything is in
+# github"): SUPABASE_URL, SUPABASE_ACCESS_TOKEN (management API), WORKFLOW_PAT
+# (a PAT with `actions: write` on this repo, used by the DB to dispatch).
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'install | status | uninstall'
+        required: true
+        default: 'status'
+        type: choice
+        options: [install, status, uninstall]
+
+concurrency:
+  group: ten141-supabase-cron
+  cancel-in-progress: false
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Manage pg_cron freshness job via Supabase Management API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+          ACTION: ${{ github.event.inputs.action }}
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, urllib.request, urllib.error, re
+
+          url = os.environ["SUPABASE_URL"].strip().rstrip("/")
+          mgmt_token = os.environ["SUPABASE_ACCESS_TOKEN"].strip()
+          pat = os.environ.get("WORKFLOW_PAT", "").strip()
+          action = os.environ.get("ACTION", "status").strip()
+
+          m = re.search(r"https?://([a-z0-9]+)\.supabase\.co", url)
+          if not m:
+              print(f"ERROR: could not parse project ref from SUPABASE_URL={url!r}")
+              sys.exit(1)
+          ref = m.group(1)
+          print(f"Project ref: {ref}  action: {action}")
+
+          JOB = "ten141-pipeline-ping"
+          REPO = "Michaeldk1996/SAAS"
+          WF = "pipeline.yml"
+
+          def sql_lit(s):  # single-quote SQL literal
+              return "'" + s.replace("'", "''") + "'"
+
+          if action == "install":
+              if not pat:
+                  print("ERROR: WORKFLOW_PAT secret is empty — cannot install.")
+                  sys.exit(1)
+              query = f"""
+              create extension if not exists pg_cron;
+              create extension if not exists pg_net;
+              delete from vault.secrets where name = 'gh_workflow_pat';
+              select vault.create_secret({sql_lit(pat)}, 'gh_workflow_pat', 'TEN-141 pipeline dispatch PAT');
+              do $$ begin perform cron.unschedule('{JOB}'); exception when others then null; end $$;
+              select cron.schedule(
+                '{JOB}',
+                '*/10 * * * *',
+                $job$
+                  select net.http_post(
+                    url := 'https://api.github.com/repos/{REPO}/actions/workflows/{WF}/dispatches',
+                    headers := jsonb_build_object(
+                      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'gh_workflow_pat'),
+                      'Accept', 'application/vnd.github+json',
+                      'User-Agent', 'supabase-pg-cron-ten141',
+                      'Content-Type', 'application/json'
+                    ),
+                    body := jsonb_build_object('ref', 'main')
+                  );
+                $job$
+              );
+              select jobid, jobname, schedule, active from cron.job where jobname = '{JOB}';
+              """
+          elif action == "uninstall":
+              query = f"""
+              do $$ begin perform cron.unschedule('{JOB}'); exception when others then null; end $$;
+              delete from vault.secrets where name = 'gh_workflow_pat';
+              select 'uninstalled' as result;
+              """
+          else:  # status
+              query = f"""
+              select jobid, jobname, schedule, active from cron.job where jobname = '{JOB}';
+              select status_code, left(coalesce(content,''), 120) as body, error_msg, created
+                from net._http_response order by created desc limit 5;
+              """
+
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{ref}/database/query",
+              data=json.dumps({"query": query}).encode(),
+              headers={"Authorization": f"Bearer {mgmt_token}",
+                       "Content-Type": "application/json"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  body = r.read().decode()
+                  print(f"HTTP {r.status}")
+                  print(body)
+          except urllib.error.HTTPError as e:
+              print(f"HTTP ERROR {e.code}")
+              print(e.read().decode())
+              sys.exit(1)
+          PY
