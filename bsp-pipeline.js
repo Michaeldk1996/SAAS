@@ -1944,7 +1944,12 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   // Live state — real fields from the API-Tennis fixture, confirmed live this session
   // against an actual in-progress match (event_live: "1", event_status: "Set 1").
-  match.live = fixture.event_live === '1';
+  // Guard A (TEN-107, founder ruling 2026-09-03): a terminal status beats a lagging
+  // event_live flag. api-tennis can return a decided match ('Finished'/'Retired'/
+  // 'Walk Over') while event_live still reads '1' for a poll or two; never render
+  // that as live, or the card strands on the board as a phantom LIVE match.
+  match.live = fixture.event_live === '1'
+    && !['Finished', 'Retired', 'Walk Over'].includes(fixture.event_status);
   match.liveStatus = match.live ? fixture.event_status : null;
   match.liveScore = match.live && Array.isArray(fixture.scores)
     ? fixture.scores.map(s => ({
@@ -4537,6 +4542,32 @@ async function runPipeline() {
   }
 
   // -----------------------------------------------------------------
+  // FINAL DUPLICATE GUARD — numeric player-key pair (TEN-107, founder
+  // ruling 2026-09-03).
+  //
+  // The two dedup passes above key on the tournament label + a SURNAME
+  // pair. That pairing is defeated whenever the two providers render the
+  // same match differently — a tournament string canonicalTour can't
+  // collapse ("US Open" vs an un-aliased twin), or names that surnameOf
+  // can't reconcile (initials-only, unusual multi-part surnames). That is
+  // exactly how a match survived on the board as TWO cards: one The-Odds-API
+  // priced card stranded live under its UTC commence-day, and one api-tennis
+  // completed twin under the account-tz event-day. The player KEYS, by
+  // contrast, are the same numeric api-tennis ids on BOTH feeds, so this
+  // final pass keyed on the unordered {p1Key,p2Key} pair catches the twins
+  // the surname passes miss. Guarded to cards whose dates are within 2 days
+  // of each other so a genuine later-round rematch is never collapsed — two
+  // distinct ATP singles matches cannot share a player pair within 2 days
+  // (a player faces one opponent per day and can't meet the same opponent
+  // again inside a week), so this only ever removes true duplicates.
+  // Implemented as the exported pure `dedupeByPlayerKeyPair` so the regression
+  // test (test_dedup_guard.js) can drive it directly on real board data.
+  {
+    const removed = dedupeByPlayerKeyPair(matches);
+    console.log(`Player-key duplicate guard removed ${removed} same-pair duplicate card(s).`);
+  }
+
+  // -----------------------------------------------------------------
   // HISTORICAL MATCH STATS for Form-tab recent-form matches — real
   // per-match box scores fetched via get_fixtures?match_key=<eventKey>,
   // reusing the same parser (buildMatchStatsFromFixture) already used
@@ -5175,6 +5206,61 @@ async function buildModelOutput(matches) {
   return out;
 }
 
+// FINAL DUPLICATE GUARD (TEN-107, founder ruling 2026-09-03) — collapse cards
+// that share the same unordered numeric api-tennis player-key pair within a
+// 2-day window, keeping the richest (finalScore > interrupted > live > has-odds
+// > fixture-only). Player keys are identical across The-Odds-API and api-tennis,
+// so this catches the twins the tour+surname passes miss (the stranded-live
+// odds card vs. its completed api-tennis twin). Mutates `matches` in place and
+// returns the number of cards removed. Two distinct ATP singles matches cannot
+// share a player pair within 2 days, so only true duplicates are ever removed.
+function dedupeByPlayerKeyPair(matches) {
+  const dayMs = 86400000;
+  const dateMs = (m) => {
+    const d = m && m.date;
+    if (!d) return null;
+    const t = Date.parse(`${d}T00:00:00Z`);
+    return Number.isNaN(t) ? null : t;
+  };
+  const richness = (m) => (m.finalScore ? 1000 : 0)
+    + (m.interrupted ? 300 : 0)
+    + (m.live ? 100 : 0)
+    + (/^(upcoming|past)-/.test(String(m.id)) ? 0 : 10)
+    + (m.odds && m.odds.p1 ? 1 : 0);
+  const byPair = new Map(); // "<k1>~<k2>" -> [indices]
+  matches.forEach((m, i) => {
+    if (m.p1Key == null || m.p2Key == null) return;
+    const k = [String(m.p1Key), String(m.p2Key)].sort().join('~');
+    (byPair.get(k) || byPair.set(k, []).get(k)).push(i);
+  });
+  const dropIdx = new Set();
+  for (const idxs of byPair.values()) {
+    if (idxs.length < 2) continue;
+    // Cluster by date proximity (<=2 days apart); collapse within a cluster only,
+    // so a genuine rematch weeks later is left intact.
+    const sorted = idxs.slice().sort((a, b) => (dateMs(matches[a]) ?? 0) - (dateMs(matches[b]) ?? 0));
+    let cluster = [sorted[0]];
+    const flush = () => {
+      if (cluster.length < 2) return;
+      let keep = cluster[0];
+      for (const i of cluster) { if (richness(matches[i]) > richness(matches[keep])) keep = i; }
+      for (const i of cluster) { if (i !== keep) dropIdx.add(i); }
+    };
+    for (let n = 1; n < sorted.length; n++) {
+      const prev = dateMs(matches[sorted[n - 1]]);
+      const cur = dateMs(matches[sorted[n]]);
+      const near = prev != null && cur != null && Math.abs(cur - prev) <= 2 * dayMs;
+      if (near) { cluster.push(sorted[n]); }
+      else { flush(); cluster = [sorted[n]]; }
+    }
+    flush();
+  }
+  if (dropIdx.size) {
+    [...dropIdx].sort((a, b) => b - a).forEach(i => matches.splice(i, 1));
+  }
+  return dropIdx.size;
+}
+
 if (require.main === module) {
   runPipeline().catch(err => {
     console.error('Pipeline failed:', err);
@@ -5187,4 +5273,4 @@ module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTour
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
-  fetchPlayerCareerHistory, deriveSlamBoxes };
+  fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair };

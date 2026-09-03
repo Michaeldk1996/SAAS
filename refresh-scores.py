@@ -22,7 +22,7 @@ Uses only the standard library. Reads API_TENNIS_KEY from .env (same as the
 pipeline). Idempotent and safe to run repeatedly.
 """
 import json, os, sys, urllib.request, urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MATCHES = os.path.join(HERE, 'matches.json')
@@ -312,8 +312,19 @@ def main():
         print('No dated matches in matches.json — nothing to refresh.')
         return
 
-    start = min(m['date'] for m in dated)
-    stop = max(m['date'] for m in dated)
+    # Widen the fetch by ±1 day (TEN-107, founder ruling 2026-09-03). Board cards
+    # get their `date` from the odds feed's commence_time in UTC, while api-tennis
+    # fixtures carry event_date in ACCOUNT-LOCAL time — so a late-evening match's
+    # card can sit one calendar day off its fixture. Without the pad, a fixture at
+    # the window boundary is never fetched and its terminal status (a retirement)
+    # is never stamped, stranding the card as "Underway" for hours.
+    def _shift(d, days):
+        try:
+            return (datetime.strptime(d, '%Y-%m-%d') + timedelta(days=days)).strftime('%Y-%m-%d')
+        except (ValueError, TypeError):
+            return d
+    start = _shift(min(m['date'] for m in dated), -1)
+    stop = _shift(max(m['date'] for m in dated), 1)
 
     url = (f'{API_BASE}?method=get_fixtures&APIkey={key}'
            f'&date_start={start}&date_stop={stop}&event_type_key=265')
@@ -331,12 +342,43 @@ def main():
             continue
         index[(f.get('event_date'), frozenset({str(fk), str(sk)}))] = f
 
+    def _fixture_ms(f):
+        d, t = f.get('event_date'), f.get('event_time')
+        if not d:
+            return None
+        try:
+            return datetime.fromisoformat(f'{d}T{(t or "00:00")[:5]}:00+00:00').timestamp() * 1000
+        except ValueError:
+            return None
+
     finals = lives = unchanged = odds_added = interrupted_n = 0
+    skew_joins = 0
     for m in matches:
         p1k, p2k = m.get('p1Key'), m.get('p2Key')
         if p1k is None or p2k is None:
             continue
-        f = index.get((m.get('date'), frozenset({str(p1k), str(p2k)})))
+        pair = frozenset({str(p1k), str(p2k)})
+        d = m.get('date')
+        f = index.get((d, pair))
+        if not f:
+            # ±1-day fallback (TEN-107, founder ruling 2026-09-03): a card's `date`
+            # (odds-feed commence_time, UTC) can sit one calendar day off the
+            # fixture's account-tz event_date, so the exact-key join misses and a
+            # retirement never gets stamped. Try the adjacent days for the SAME
+            # unordered player pair. Prefer a fixture in a state we need to act on
+            # (finished/interrupted/live) and, among ties, the one whose start is
+            # closest to the card's — guards the rare same-pair-consecutive-days case.
+            cands = [c for c in (index.get((_shift(d, off), pair)) for off in (-1, 1)) if c]
+            if cands:
+                start_ms = _start_ms(m)
+                def _rank(c):
+                    st = c.get('event_status')
+                    actionable = st in FINISHED or st in INTERRUPTED or c.get('event_live') == '1'
+                    cms = _fixture_ms(c)
+                    gap = abs(cms - start_ms) if (cms is not None and start_ms is not None) else float('inf')
+                    return (0 if actionable else 1, gap)
+                f = sorted(cands, key=_rank)[0]
+                skew_joins += 1
         if not f:
             continue
         p1_is_first = str(f.get('first_player_key')) == str(p1k)
@@ -354,7 +396,12 @@ def main():
                 m['bestOdds'] = best
                 odds_added += 1
 
-        if f.get('event_live') == '1':
+        # Guard A (TEN-107, founder ruling 2026-09-03): a terminal status wins over
+        # a lagging event_live flag. api-tennis sometimes returns a finished match
+        # with event_status='Finished'/'Retired'/'Walk Over' while still carrying
+        # event_live='1' for a poll or two. Treating that as live strands a decided
+        # match on the board. Fall through to the FINISHED branch below.
+        if f.get('event_live') == '1' and f.get('event_status') not in FINISHED:
             m['live'] = True
             m['interrupted'] = False
             m['partialScore'] = None
@@ -425,7 +472,8 @@ def main():
 
     print(f'Refreshed matches.json: {finals} final scores, {lives} live, '
           f'{interrupted_n} interrupted/suspended, {odds_added} odds added, '
-          f'{unchanged} without a returned result (left as-is).')
+          f'{unchanged} without a returned result (left as-is), '
+          f'{skew_joins} joined via ±1-day fallback.')
 
 
 if __name__ == '__main__':
