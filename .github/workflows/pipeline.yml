@@ -190,6 +190,10 @@ jobs:
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
+          # TEN-146 Database tab: yield-by-odds-band artefacts (base + lazy names shard),
+          # built by build-database-yield.js from odds-archive/*.csv. Committed but not
+          # copied = silent 404 → the Database tab renders empty. Required when the flag is on.
+          cp database-yield.json database-yield-players.json _site/
           # TEN-136: ATP headshot alias map ({player_key: ATP_ALIAS}), hand-committed,
           # written by no job. The dashboard avatar chain fetches it as the ATP step
           # above the api-tennis logo. Committed but not copied = silent 404, which

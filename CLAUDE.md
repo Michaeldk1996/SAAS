@@ -171,6 +171,14 @@ The three carve-outs where you still stop and ask are unchanged: **fabricated or
 - **State it as a test someone can apply, not a prohibition.** Prohibitions generate edge-case questions; tests resolve them. Model: *"blue answers whose number this is, never whether the number is good"* beats *"never use blue on a performance value"* — the second one made us litigate whether an ace counts as performance.
 - **List exceptions inline with the rule**, not in a separate section, so nobody applies a rule without seeing its carve-outs.
 
+### Database tab — yield-by-odds-band window & method (TEN-146, founder ruling 2026-09-04)
+
+The Database tab (`build-database-yield.js` → `database-yield.json` + lazy `database-yield-players.json`, rendered in `bsp-consult-dashboard.html`) is built from the Tennis-Data ATP closing-line archive (`odds-archive/*.csv`) under these LOCKED rulings — apply as tests, do not re-litigate:
+
+- **Window: season ≥ 2010, fail-closed, NO pre-window fallback (Option A).** 2004–2008 is a materially different sport; a blended yield across it prices a market that no longer exists. This is a *regime* cut, not a coverage cut. Pre-2010 rows that would otherwise be usable land in the `preWindow` reconciliation bucket. **Test:** `meta.windowStart === 2010`; `meta.dateRange[0] >= '2010-01-01'`; `meta.used === 41667` on the current archive; `meta.exclusions.preWindow === 13659`; and used + all six exclusion buckets (walkover 344 + edge 8 + noResolvingBookPrice 3502 + exactTie 248 + overroundGt115 5 + preWindow 13659) === `meta.archiveRows` 59433 exactly. A build whose date range starts before 2010, or that fills pre-window years with a fallback book, is wrong.
+- **Book: Pinnacle closing for every season except 2026; Bet365 for 2026 only (seam-marked, never blended into an unlabelled figure).** Split yields are reported per book. **Test:** page label reads "Pinnacle closing prices, 2010–2026", never "all years"/"2004"; a curve spanning 2026 carries a seam marker + caption; fav/dog yields shown Pinnacle (n=40002) and 2026-Bet365 (n=1665) separately.
+- **Fav/dog by price** (shorter price = favourite); **exact ties excluded** (no ranking/positional tiebreak); **overround > 1.15 excluded**; **retirements included, walkovers + edge non-results excluded**; **bands = dynamic equal terciles recomputed inside the active filter** (at the default filter, 41667/3 = 13889 per band, counts identical). **Scope: ATP only, permanently — no WTA toggle.**
+
 ### Default resolution rule (founder ruling, 2026-08-01)
 
 When the export and a documented rule disagree on anything **measurable — spacing, colour, weight, radius, anatomy, layout, ordering — the export wins and you proceed.** Note the divergence in your report so it stays visible, but do **not** hold work waiting on a ruling. (This replaces the old "flag both and never pick." Flagging still happens; waiting does not.)
