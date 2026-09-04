@@ -348,7 +348,13 @@
     // event_winner is the reliable tell: it is empty for a live match and stamped
     // ("First Player"/"Second Player") the instant the result is decided — so a
     // decided match drops off the Live tab immediately, before its status flips.
-    const decided = String(fix.event_winner || '').trim() !== '';
+    // Harden the "decided" tell against string sentinels: today the feed uses
+    // null/empty for in-play, but if api-tennis ever stamps a placeholder
+    // ("None"/"null"/"-"/whitespace) we must NOT read it as decided — that would
+    // drop a genuinely live match off the board (the costly failure direction).
+    const winnerTell = String(fix.event_winner ?? '').trim().toLowerCase();
+    const decided = winnerTell !== '' && winnerTell !== 'none' &&
+                    winnerTell !== 'null' && winnerTell !== '-';
     // event_live is the vendor's own live flag ("1"); trust it, but a match that
     // has gone Final while still on the live board should drop off the Live tab.
     return String(fix.event_live) === '1' && !finalWord && !decided;
