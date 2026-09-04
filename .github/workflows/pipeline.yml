@@ -257,6 +257,11 @@ jobs:
           # cron from the harvested pbp cache. Committed but not copied = silent
           # 404. Best-effort copy so an absent shard never blocks the deploy.
           cp holdbreak.json _site/ 2>/dev/null || true
+          # Entry Lists shard (TEN-150): per-tournament acceptance lists scraped daily by
+          # tools/entry-lists/build-entry-lists.py via launchd cron. Committed but not
+          # copied = silent 404 (Entry Lists tab shows "unavailable"). Best-effort so an
+          # absent shard (first-boot, before the cron runs) never blocks the deploy.
+          cp entry_lists.json _site/ 2>/dev/null || true
           # TEN-88 option B: per-player CAREER meeting shards + their index gate the
           # "vs this style" detail list on the Playing-style tab. The index gates the
           # fetch, so committed-but-not-copied = silent 404 and the list falls back to

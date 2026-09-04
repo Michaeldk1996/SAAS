@@ -2480,6 +2480,9 @@
          live until the founder's confirm-before-live gate. New tab + new precomputed
          artefact only — no existing nav/page/panel or pipeline job is touched. -->
     <button data-tab="database" id="databaseTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="6" ry="2.4"/><path d="M4 5v10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V5"/><path d="M4 10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4"/></svg>Database</button>
+    <!-- TEN-150 Entry Lists tab: acceptance lists by tournament, per week.
+         Hidden by default; FEATURE_ENTRY_LISTS guard near the end of <body> reveals it. -->
+    <button data-tab="entry-lists" id="entryListsTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>Entry Lists</button>
     <!-- Review item 2: Stennisfy Model = a line-chart glyph (axis + rising trend line), not the star/arrow. Matches the Playing-Styles bar-chart glyph weight. -->
     <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5"/></svg>Stennisfy Model</button>
     <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
@@ -2983,6 +2986,249 @@
     <div id="dbBody"><div class="db-loading">Loading archive…</div></div>
   </div>
 </div>
+<!-- ENTRY LISTS TAB (TEN-150) — static shard, protennislive PDF source, FEATURE_ENTRY_LISTS gated -->
+<style>
+  [data-page="entry-lists"] .el-wrap{ max-width:1160px; margin:0 auto; padding:30px 40px 70px; }
+  [data-page="entry-lists"] .el-head{ margin-bottom:24px; }
+  [data-page="entry-lists"] .el-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:#e7e9ee; }
+  [data-page="entry-lists"] .el-head p{ margin:0; color:#5b6880; font-size:13.5px; }
+  [data-page="entry-lists"] .el-controls{ display:flex; align-items:center; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+  [data-page="entry-lists"] .el-toggle{ display:inline-flex; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; }
+  [data-page="entry-lists"] .el-toggle button{ font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:none; padding:8px 16px; cursor:pointer; transition:color .12s, background .12s; }
+  [data-page="entry-lists"] .el-toggle button.active{ color:#e7e9ee; background:rgba(91,155,255,0.14); }
+  [data-page="entry-lists"] .el-meta{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-left:auto; }
+  [data-page="entry-lists"] .el-tourns{ display:flex; flex-direction:column; gap:16px; }
+  [data-page="entry-lists"] .el-card{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; overflow:hidden; }
+  [data-page="entry-lists"] .el-cardhead{ display:flex; align-items:center; gap:14px; padding:16px 20px; cursor:pointer; user-select:none; transition:background .12s; }
+  [data-page="entry-lists"] .el-cardhead:hover{ background:rgba(255,255,255,0.02); }
+  [data-page="entry-lists"] .el-tier{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; padding:3px 8px; border-radius:5px; flex-shrink:0; }
+  [data-page="entry-lists"] .el-tier-gs{ background:rgba(255,215,0,0.13); color:#d4af37; }
+  [data-page="entry-lists"] .el-tier-1000{ background:rgba(91,155,255,0.13); color:#5b9bff; }
+  [data-page="entry-lists"] .el-tier-500{ background:rgba(61,214,140,0.12); color:#3dd68c; }
+  [data-page="entry-lists"] .el-tier-250{ background:rgba(255,255,255,0.07); color:#a8b0c0; }
+  [data-page="entry-lists"] .el-tier-chall{ background:rgba(255,255,255,0.05); color:#5b6880; }
+  [data-page="entry-lists"] .el-surface{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:5px; flex-shrink:0; }
+  [data-page="entry-lists"] .el-surface-hard{ background:rgba(91,155,255,0.10); color:#5b9bff; }
+  [data-page="entry-lists"] .el-surface-clay{ background:rgba(205,102,41,0.15); color:#d97040; }
+  [data-page="entry-lists"] .el-surface-grass{ background:rgba(61,214,140,0.10); color:#3dd68c; }
+  [data-page="entry-lists"] .el-surface-carpet{ background:rgba(255,255,255,0.06); color:#8892a4; }
+  [data-page="entry-lists"] .el-cardname{ font-size:16px; font-weight:700; color:#e7e9ee; margin:0; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  [data-page="entry-lists"] .el-cardmeta{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#5b6880; flex-shrink:0; }
+  [data-page="entry-lists"] .el-counts{ display:flex; gap:10px; flex-shrink:0; }
+  [data-page="entry-lists"] .el-count{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#5b6880; display:flex; align-items:center; gap:4px; }
+  [data-page="entry-lists"] .el-count-label{ text-transform:uppercase; letter-spacing:0.06em; font-size:9.5px; }
+  [data-page="entry-lists"] .el-count-n{ color:#e7e9ee; font-weight:700; }
+  [data-page="entry-lists"] .el-chev{ color:#5b6880; transition:transform .15s; flex-shrink:0; }
+  [data-page="entry-lists"] .el-card.open .el-chev{ transform:rotate(180deg); }
+  [data-page="entry-lists"] .el-body{ display:none; border-top:1px solid rgba(255,255,255,0.07); }
+  [data-page="entry-lists"] .el-card.open .el-body{ display:block; }
+  [data-page="entry-lists"] .el-sections{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  [data-page="entry-lists"] .el-section{ padding:16px 20px 20px; }
+  [data-page="entry-lists"] .el-section:first-child:last-child{ grid-column:1/-1; }
+  [data-page="entry-lists"] .el-section + .el-section{ border-left:1px solid rgba(255,255,255,0.07); }
+  [data-page="entry-lists"] .el-sectitle{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880; margin-bottom:12px; }
+  [data-page="entry-lists"] .el-plist{ display:flex; flex-direction:column; gap:3px; }
+  [data-page="entry-lists"] .el-prow{ display:grid; grid-template-columns:24px 1fr 44px 52px; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; }
+  [data-page="entry-lists"] .el-prow:hover{ background:rgba(255,255,255,0.03); }
+  [data-page="entry-lists"] .el-ppos{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; color:#4b5672; text-align:right; }
+  [data-page="entry-lists"] .el-pname{ font-size:12.5px; color:#e7e9ee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  [data-page="entry-lists"] .el-pname a{ color:inherit; text-decoration:none; }
+  [data-page="entry-lists"] .el-pname a:hover{ text-decoration:underline; }
+  [data-page="entry-lists"] .el-prank{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; color:#5b6880; text-align:right; }
+  [data-page="entry-lists"] .el-pstatus{ font-size:10px; font-weight:700; letter-spacing:0.04em; text-align:center; padding:2px 5px; border-radius:4px; }
+  [data-page="entry-lists"] .el-s-seed{ background:rgba(255,215,0,0.10); color:#c9a227; }
+  [data-page="entry-lists"] .el-s-wc{ background:rgba(91,155,255,0.12); color:#5b9bff; }
+  [data-page="entry-lists"] .el-s-alt{ background:rgba(255,255,255,0.06); color:#8892a4; }
+  [data-page="entry-lists"] .el-s-pr{ background:rgba(205,102,41,0.10); color:#d97040; }
+  [data-page="entry-lists"] .el-s-ll{ background:rgba(61,214,140,0.10); color:#3dd68c; }
+  [data-page="entry-lists"] .el-s-da{ color:#5b6880; }
+  [data-page="entry-lists"] .el-s-bye{ color:#3a4150; font-style:italic; }
+  [data-page="entry-lists"] .el-s-q{ background:rgba(255,255,255,0.05); color:#8892a4; }
+  [data-page="entry-lists"] .el-empty{ border:1px dashed rgba(255,255,255,0.09); border-radius:12px; padding:40px 24px; text-align:center; color:#5b6880; font-size:13.5px; }
+  [data-page="entry-lists"] .el-loading{ padding:60px 0; text-align:center; color:#5b6880; font-size:13px; }
+  [data-page="entry-lists"] .el-gentime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-top:20px; }
+  @media (max-width:680px) {
+    [data-page="entry-lists"] .el-wrap{ padding:16px 14px 60px; }
+    [data-page="entry-lists"] .el-sections{ grid-template-columns:1fr; }
+    [data-page="entry-lists"] .el-section + .el-section{ border-left:none; border-top:1px solid rgba(255,255,255,0.07); }
+    [data-page="entry-lists"] .el-counts{ display:none; }
+  }
+</style>
+<div class="tabpage" data-page="entry-lists">
+  <div class="el-wrap">
+    <div class="el-head">
+      <h1>Entry Lists</h1>
+      <p>Official ATP acceptance lists — main draw, qualifying, wildcards &amp; alternates — from protennislive.com.</p>
+    </div>
+    <div class="el-controls">
+      <div class="el-toggle">
+        <button class="active" data-eltour="ATP">ATP</button>
+        <button data-eltour="WTA">WTA</button>
+      </div>
+      <span class="el-meta" id="elGentime"></span>
+    </div>
+    <div id="elBody"><div class="el-loading">Loading entry lists…</div></div>
+  </div>
+</div>
+
+<script>
+window.EntryListsTab = (function(){
+  var loaded = false;
+  var data = null;
+  var activeTour = 'ATP';
+
+  var TIER_ORDER = ['Grand Slam','Masters','500','250','Challenger','ITF'];
+  function tierRank(tier){
+    if(!tier) return 99;
+    var t = tier.toLowerCase();
+    if(t.includes('grand slam') || t.includes('slam')) return 0;
+    if(t.includes('masters')) return 1;
+    if(t.includes('500')) return 2;
+    if(t.includes('250')) return 3;
+    if(t.includes('challenger')) return 4;
+    if(t.includes('itf')) return 5;
+    return 6;
+  }
+  function tierClass(tier){
+    if(!tier) return 'el-tier-chall';
+    var t = tier.toLowerCase();
+    if(t.includes('grand slam') || t.includes('slam')) return 'el-tier-gs';
+    if(t.includes('masters') || t.includes('1000')) return 'el-tier-1000';
+    if(t.includes('500')) return 'el-tier-500';
+    if(t.includes('250')) return 'el-tier-250';
+    return 'el-tier-chall';
+  }
+  function surfaceClass(surf){
+    if(!surf) return '';
+    var s = surf.toLowerCase();
+    if(s==='hard') return 'el-surface-hard';
+    if(s==='clay') return 'el-surface-clay';
+    if(s==='grass') return 'el-surface-grass';
+    if(s==='carpet') return 'el-surface-carpet';
+    return '';
+  }
+  function statusClass(st){
+    var m = { SEED:'el-s-seed', WC:'el-s-wc', ALT:'el-s-alt', PR:'el-s-pr',
+               LL:'el-s-ll', DA:'el-s-da', BYE:'el-s-bye', Q:'el-s-q' };
+    return m[st] || 'el-s-da';
+  }
+  function fmtStatus(st, seed){
+    if(st==='DA' || !st) return '';
+    if(st==='SEED' && seed) return '#'+seed;
+    if(st==='BYE') return 'Bye';
+    if(st==='WC') return 'WC';
+    if(st==='ALT') return 'Alt';
+    if(st==='LL') return 'LL';
+    if(st==='PR') return 'PR';
+    if(st==='Q') return 'Q';
+    return st;
+  }
+  function fmtName(p){
+    if(!p.name || p.name==='Bye') return 'Bye';
+    var parts = p.name.split(',');
+    if(parts.length < 2) return p.name;
+    var sur = parts[0].trim();
+    var giv = parts[1].trim();
+    // Title-case surname, keep first name as-is
+    var surTc = sur.charAt(0) + sur.slice(1).toLowerCase().replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    var givTc = giv.charAt(0) + giv.slice(1).toLowerCase();
+    return givTc + ' ' + surTc;
+  }
+
+  function renderPlayers(players){
+    if(!players || !players.length) return '<div class="el-empty" style="padding:16px;font-size:12px;">No players listed.</div>';
+    return '<div class="el-plist">' + players.map(function(p, i){
+      var name = fmtName(p);
+      var isBye = p.status === 'BYE';
+      var nameHtml = isBye
+        ? '<span class="el-pname" style="color:#3a4150;font-style:italic;">Bye</span>'
+        : (p.playerKey
+            ? '<span class="el-pname"><a href="#" onclick="event.preventDefault();document.querySelector(\'#mainNav button[data-tab=players]\').click();showPlayerProfile(\''+p.playerKey+'\')">'+name+'</a></span>'
+            : '<span class="el-pname">'+name+'</span>');
+      var rank = (p.rank && !isBye) ? '#'+p.rank : '';
+      var st = fmtStatus(p.status, p.seed);
+      var sc = statusClass(p.status);
+      return '<div class="el-prow">'
+        + '<span class="el-ppos">'+(isBye?'':i+1)+'</span>'
+        + nameHtml
+        + '<span class="el-prank">'+rank+'</span>'
+        + (st ? '<span class="el-pstatus '+sc+'">'+st+'</span>' : '<span></span>')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function renderTournament(t, idx){
+    var tierLbl = t.tier || '—';
+    var surfLbl = t.surface || '';
+    var name = t.name || (t.city || 'Tournament '+t.tournamentId);
+    var city = t.city ? (t.city + (t.country ? ', '+t.country : '')) : '';
+    var wk = t.week_label || '';
+    var md = t.counts.MD || 0;
+    var q = t.counts.Q || 0;
+    var alt = t.counts.ALT || 0;
+    var id = 'el-card-'+idx;
+    var sections = (t.sections||[]).map(function(s){
+      return '<div class="el-section"><div class="el-sectitle">'+s.title+' ('+s.players.length+')</div>'+renderPlayers(s.players)+'</div>';
+    }).join('');
+    return '<div class="el-card" id="'+id+'">'
+      + '<div class="el-cardhead" onclick="(function(el){el.closest(\'.el-card\').classList.toggle(\'open\')})(this)">'
+        + '<span class="el-tier '+tierClass(t.tier)+'">'+tierLbl+'</span>'
+        + (surfLbl ? '<span class="el-surface '+surfaceClass(t.surface)+'">'+surfLbl+'</span>' : '')
+        + '<div style="flex:1;min-width:0"><p class="el-cardname">'+name+'</p>'
+          + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
+        + '</div>'
+        + '<div class="el-counts">'
+          + '<span class="el-count"><span class="el-count-label">MD</span><span class="el-count-n">'+md+'</span></span>'
+          + (q ? '<span class="el-count"><span class="el-count-label">Q</span><span class="el-count-n">'+q+'</span></span>' : '')
+          + (alt ? '<span class="el-count"><span class="el-count-label">Alt</span><span class="el-count-n">'+alt+'</span></span>' : '')
+        + '</div>'
+        + '<svg class="el-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
+      + '</div>'
+      + '<div class="el-body"><div class="el-sections">'+sections+'</div></div>'
+      + '</div>';
+  }
+
+  function render(){
+    var body = document.getElementById('elBody');
+    if(!body || !data) return;
+    var tourns = (data.tournaments||[]).filter(function(t){
+      return (t.tour||'ATP').toUpperCase() === activeTour;
+    });
+    tourns.sort(function(a,b){ return tierRank(a.tier) - tierRank(b.tier); });
+    if(!tourns.length){
+      body.innerHTML = '<div class="el-empty">No '+activeTour+' entry lists available.</div>';
+      return;
+    }
+    body.innerHTML = '<div class="el-tourns">'+tourns.map(renderTournament).join('')+'</div>'
+      + '<p class="el-gentime">Updated: '+data.generatedAt.replace('T',' ').replace('Z',' UTC').slice(0,20)+'</p>';
+  }
+
+  function init(){
+    if(loaded){ render(); return; }
+    var body = document.getElementById('elBody');
+    if(body) body.innerHTML = '<div class="el-loading">Loading entry lists…</div>';
+    fetch('entry_lists.json?_='+Date.now())
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){ data = d; loaded = true; render(); })
+      .catch(function(e){
+        console.warn('EntryListsTab load failed', e);
+        if(body) body.innerHTML = '<div class="el-empty">Entry lists unavailable.</div>';
+      });
+  }
+
+  // Tour toggle
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-eltour]');
+    if(!btn) return;
+    activeTour = btn.dataset.eltour;
+    document.querySelectorAll('[data-eltour]').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    if(loaded) render();
+  });
+
+  return { init: init };
+})();
+</script>
+
 <!-- HEAD TO HEAD TAB (full comparison page — rendered by window.H2HPage) -->
 <div class="tabpage" data-page="h2h">
   <div id="h2hRoot"></div>
@@ -3879,6 +4125,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'edge') { edgeShowPane('model'); openEdgeModelTab(); }
   if (tab === 'news') loadNews();
   if (tab === 'database') { if (window.DatabaseTab) window.DatabaseTab.init(); }
+  if (tab === 'entry-lists') { if (window.EntryListsTab) window.EntryListsTab.init(); }
   if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(); }
   // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
   // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
@@ -21491,6 +21738,17 @@ window.DatabaseTab = (function(){
   window.FEATURE_LIVE_DETAIL = true;
 </script>
 <script src="live-tab.js" defer></script>
+
+<!-- TEN-150: Entry Lists feature flag. OFF by default — set to true once founder confirms go-live.
+     Flag ON reveals the nav button; EntryListsTab.init() fires on first tab click.
+     Deploying this code with the flag OFF changes nothing live. -->
+<script>
+  window.FEATURE_ENTRY_LISTS = false;
+  (function(){
+    var btn = document.getElementById('entryListsTabBtn');
+    if(btn && window.FEATURE_ENTRY_LISTS) btn.style.display = '';
+  })();
+</script>
 
 </body>
 </html>
