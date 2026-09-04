@@ -342,9 +342,16 @@
     const finalWord = st.includes('finished') || st.includes('retired') ||
                       st.includes('walkover') || st.includes('abandoned') ||
                       st.includes('cancel');
+    // api-tennis strands event_live="1" with a stale "Set N" status for a window
+    // after a match is decided (observed 2026-09-04: 4 finished R2 matches carried
+    // event_live=1 + status "Set 1/2/4" while only Zverev–Halys was truly live).
+    // event_winner is the reliable tell: it is empty for a live match and stamped
+    // ("First Player"/"Second Player") the instant the result is decided — so a
+    // decided match drops off the Live tab immediately, before its status flips.
+    const decided = String(fix.event_winner || '').trim() !== '';
     // event_live is the vendor's own live flag ("1"); trust it, but a match that
     // has gone Final while still on the live board should drop off the Live tab.
-    return String(fix.event_live) === '1' && !finalWord;
+    return String(fix.event_live) === '1' && !finalWord && !decided;
   }
 
   // ATP singles only for launch — founder ruling (TEN-91, 2026-08-31): the Live
