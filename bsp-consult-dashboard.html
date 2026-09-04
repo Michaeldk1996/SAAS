@@ -2850,10 +2850,16 @@
   [data-page="database"] .pagewrap{ max-width:1360px; }
   .db-head h1{ font-family:var(--mx-font-ui); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text); }
   .db-head p{ font-family:var(--mx-font-ui); color:var(--text-dim); font-size:13.5px; line-height:1.55; margin:0; max-width:760px; }
-  .db-viewtabs{ display:flex; gap:2px; margin:22px 0 18px; border-bottom:1px solid var(--border); }
+  .db-viewtabs{ display:flex; gap:2px; margin:22px 0 0; border-bottom:1px solid var(--border); }
   .db-viewtabs button{ font-family:var(--mx-font-ui); font-size:13.5px; font-weight:600; color:var(--text-dim); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; padding:9px 15px; cursor:pointer; }
   .db-viewtabs button.active{ color:#fff; border-color:var(--accent); }
   .db-viewtabs button:hover{ color:var(--text); }
+
+  /* header line beneath the tab row: active filter state + coverage + freshness */
+  .db-headerline{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:12px 0 18px; padding-bottom:2px; }
+  .db-headerline .db-hl-filter{ font-family:var(--mx-font-mono); font-size:11.5px; letter-spacing:0.02em; color:var(--text-dim); }
+  .db-headerline .db-hl-filter b{ color:var(--text); font-weight:600; }
+  .db-headerline .db-hl-fresh{ font-family:var(--mx-font-mono); font-size:10.5px; letter-spacing:0.04em; color:var(--text-faint); text-transform:uppercase; white-space:nowrap; }
 
   .db-layout{ display:grid; grid-template-columns:216px minmax(0,1.05fr) minmax(0,1fr); gap:20px; align-items:start; }
   @media (max-width:1080px){ .db-layout{ grid-template-columns:1fr; } }
@@ -2870,8 +2876,32 @@
   .db-yearrow{ display:flex; align-items:center; gap:8px; }
   .db-yearrow select{ flex:1; font-family:var(--mx-font-mono); font-size:12px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 7px; }
   .db-yearrow span{ color:var(--text-faint); font-size:11px; }
-  .db-picker select{ width:100%; font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:7px 8px; }
   .db-reset{ font-family:var(--mx-font-ui); font-size:11.5px; font-weight:600; color:var(--accent); background:none; border:none; cursor:pointer; padding:2px 0; margin-top:2px; }
+
+  /* type-ahead search (tournament / player) */
+  .db-searchbox{ position:relative; }
+  .db-searchinput{ width:100%; box-sizing:border-box; font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px 9px; }
+  .db-searchinput:focus{ outline:none; border-color:var(--accent); }
+  .db-results{ margin-top:6px; border:1px solid var(--border); border-radius:6px; background:var(--panel-2); max-height:280px; overflow-y:auto; }
+  .db-results:empty{ display:none; }
+  .db-resultrow{ font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text-dim); padding:7px 10px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .db-resultrow:last-child{ border-bottom:none; }
+  .db-resultrow:hover{ background:var(--accent-dim); color:#fff; }
+  .db-nomatch{ font-family:var(--mx-font-ui); font-size:12px; color:var(--text-faint); padding:8px 10px; }
+  .db-selname{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .db-selname h2{ font-family:var(--mx-font-ui); font-size:20px; font-weight:800; letter-spacing:-0.02em; color:var(--text); margin:0; }
+  .db-selclear{ font-family:var(--mx-font-ui); font-size:12px; color:var(--text-faint); background:none; border:1px solid var(--border); border-radius:999px; width:22px; height:22px; line-height:1; cursor:pointer; padding:0; }
+  .db-selclear:hover{ color:var(--text); border-color:var(--accent); }
+
+  /* prompt + most-played shortcuts (tournaments landing) */
+  .db-prompt{ border:1px dashed var(--border); border-radius:var(--radius); background:var(--panel); padding:30px 24px; text-align:center; }
+  .db-prompt .db-promptmark{ font-size:22px; margin-bottom:10px; color:var(--text-faint); }
+  .db-prompt .db-prompttitle{ font-family:var(--mx-font-ui); font-weight:700; font-size:14px; color:var(--text); margin-bottom:4px; }
+  .db-prompt .db-promptsub{ font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text-dim); margin-bottom:16px; }
+  .db-mpl{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; }
+  .db-mplchips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .db-mplchip{ font-family:var(--mx-font-ui); font-size:12px; font-weight:600; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--border); border-radius:999px; padding:6px 13px; cursor:pointer; }
+  .db-mplchip:hover{ color:#fff; border-color:var(--accent); background:var(--accent-dim); }
 
   /* centre — band tables */
   .db-center{ display:flex; flex-direction:column; gap:16px; min-width:0; }
@@ -2885,19 +2915,21 @@
   table.db-table{ width:100%; border-collapse:collapse; }
   table.db-table th{ font-family:var(--mx-font-mono); font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-faint); font-weight:500; text-align:right; padding:9px 16px 7px; }
   table.db-table th:first-child{ text-align:left; }
-  table.db-table td{ font-family:var(--mx-font-mono); font-size:13px; color:var(--text); text-align:right; padding:9px 16px; border-top:1px solid var(--border); }
+  table.db-table td{ font-family:var(--mx-font-mono); font-size:13px; color:var(--text); text-align:right; padding:9px 16px; border-top:1px solid var(--border); vertical-align:top; }
   table.db-table td:first-child{ text-align:left; font-family:var(--mx-font-ui); font-weight:600; }
   table.db-table tr.db-allrow td{ border-top:1px solid var(--border); background:rgba(255,255,255,0.02); font-weight:700; }
   table.db-table tr.db-allrow td:first-child{ color:var(--text); }
+  .db-bandname{ font-family:var(--mx-font-ui); font-size:12.5px; font-weight:700; color:var(--text); }
+  .db-bandrange{ font-family:var(--mx-font-mono); font-size:10.5px; font-weight:400; color:var(--text-faint); margin-top:1px; }
   .db-yield.pos{ color:var(--value-pos); }
   .db-yield.neg{ color:var(--value-neg); }
   .db-thin{ color:var(--text-faint); font-family:var(--mx-font-ui); font-size:10px; margin-left:5px; }
-  .db-perbook{ padding:8px 16px 12px; border-top:1px solid var(--border); font-family:var(--mx-font-mono); font-size:11px; color:var(--text-dim); line-height:1.6; }
-  .db-perbook b{ color:var(--text); font-weight:600; }
+  .db-prose{ padding:9px 16px 12px; border-top:1px solid var(--border); font-family:var(--mx-font-ui); font-size:11.5px; color:var(--text-dim); line-height:1.6; }
+  .db-prose b{ color:var(--text); font-weight:600; }
 
   /* right — curve */
   .db-curvecard{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:14px 16px 16px; position:sticky; top:12px; }
-  .db-curvehead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+  .db-curvehead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; gap:10px; }
   .db-curvehead h3{ font-family:var(--mx-font-ui); font-size:14px; font-weight:700; color:var(--text); margin:0; }
   .db-legend{ display:flex; gap:14px; font-family:var(--mx-font-mono); font-size:10.5px; color:var(--text-dim); }
   .db-legend i{ display:inline-block; width:14px; height:2px; vertical-align:middle; margin-right:5px; }
@@ -2906,13 +2938,36 @@
   .db-axislabel{ font-family:var(--mx-font-mono); font-size:10px; fill:var(--text-faint); }
   .db-seamcap{ font-family:var(--mx-font-ui); font-size:10.5px; color:var(--text-dim); margin-top:8px; line-height:1.5; padding-left:11px; border-left:2px solid var(--court-clay); }
 
+  /* player view — tiles + tri-charts */
+  .db-playerwrap{ display:flex; flex-direction:column; gap:20px; min-width:0; }
+  .db-chiprows{ display:flex; flex-direction:column; gap:10px; }
+  .db-chiprow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .db-chiprow > .db-flabel{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-faint); width:58px; flex-shrink:0; }
+  .db-tiles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  @media (max-width:820px){ .db-tiles{ grid-template-columns:1fr; } }
+  .db-tile{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:16px 18px; }
+  .db-tile .db-tilelabel{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; }
+  .db-tile .db-tilefig{ font-family:var(--mx-font-mono); font-size:30px; font-weight:600; letter-spacing:-0.01em; line-height:1; }
+  .db-tile .db-tilefig.pos{ color:var(--value-pos); }
+  .db-tile .db-tilefig.neg{ color:var(--value-neg); }
+  .db-tile .db-tilefig.muted{ color:var(--text-faint); }
+  .db-tile .db-tilesub{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--text-dim); margin-top:10px; line-height:1.7; }
+  .db-tile .db-tilesub b{ color:var(--text); font-weight:600; }
+  .db-chartgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  @media (max-width:820px){ .db-chartgrid{ grid-template-columns:1fr; } }
+  .db-chartpanel{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:12px 14px 14px; }
+  .db-chartpanel h4{ font-family:var(--mx-font-ui); font-size:12.5px; font-weight:700; color:var(--text); margin:0 0 8px; }
+
   /* footnote / states */
-  .db-footnote{ margin-top:18px; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); font-family:var(--mx-font-ui); font-size:11.5px; color:var(--text-dim); line-height:1.65; }
+  .db-footnote{ margin-top:18px; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); font-family:var(--mx-font-ui); font-size:11.5px; color:var(--text-dim); line-height:1.7; overflow-wrap:anywhere; word-break:break-word; }
   .db-footnote b{ color:var(--text); font-weight:600; }
-  .db-footnote code{ font-family:var(--mx-font-mono); font-size:11px; color:var(--text); }
+  .db-footnote p{ margin:0 0 8px; }
+  .db-footnote p:last-child{ margin-bottom:0; }
+  .db-disclaimer{ margin-top:12px; font-family:var(--mx-font-ui); font-size:10.5px; color:var(--text-faint); line-height:1.6; }
   .db-empty{ border:1px dashed var(--border); border-radius:var(--radius); background:var(--panel); padding:34px 24px; text-align:center; color:var(--text-dim); font-family:var(--mx-font-ui); font-size:13px; }
   .db-empty .db-emptymark{ font-size:20px; margin-bottom:10px; color:var(--text-faint); }
   .db-loading{ padding:40px; text-align:center; color:var(--text-faint); font-family:var(--mx-font-mono); font-size:12px; }
+  .db-loadbox{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:40px; text-align:center; color:var(--text-faint); font-family:var(--mx-font-mono); font-size:12px; }
 </style>
 <div class="tabpage" data-page="database">
   <div class="pagewrap">
@@ -2928,7 +2983,6 @@
     <div id="dbBody"><div class="db-loading">Loading archive…</div></div>
   </div>
 </div>
-
 <!-- HEAD TO HEAD TAB (full comparison page — rendered by window.H2HPage) -->
 <div class="tabpage" data-page="h2h">
   <div id="h2hRoot"></div>
@@ -20827,11 +20881,23 @@ window.DatabaseTab = (function(){
   var playerIndex = null;   // name -> [{p,w,b,d,fav}]
   var built = false;
 
+  // TEN-146/147: presentation series colours. Both sit in the blue-cyan accent
+  // family — deliberately NOT red (red is reserved for negative yield in the
+  // tables) and NOT DET's white/orange. Favourite = accent blue, underdog = cyan.
+  var COL_FAV = 'var(--accent)';   // #3E7BFA
+  var COL_DOG = '#22C7D6';         // cyan, distinct hue from the blue accent
+  var COL_ALL = '#7FA6E8';         // soft slate-blue for the combined player curve
+
+  var FAV_NAMES = ['Super Fav','Mid Fav','Slight Fav'];
+  var DOG_NAMES = ['Slight Dog','Mid Dog','Super Dog'];
+
   var state = {
     view: 'tour',
     levels: null, surfaces: null, rounds: null,   // Sets (null until built = "all")
     yearMin: null, yearMax: null,
-    tournament: null, player: null
+    tournament: null, player: null,
+    tq: '', pq: '',                                // live search query strings
+    period: 'all', psurf: null                     // player-view period + surface
   };
 
   // ---- small helpers ----
@@ -20841,6 +20907,10 @@ window.DatabaseTab = (function(){
   function fmtPct(x){ if(x==null) return '—'; var v=x*100; return (v>=0?'+':'')+v.toFixed(2)+'%'; }
   function yieldClass(x){ return x==null?'':(x>=0?'pos':'neg'); }
   function median(arr){ if(!arr.length) return null; var a=arr.slice().sort(function(p,q){return p-q;}); var m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
+  function fmtInt(n){ return n==null?'—':(''+n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(iso){ if(!iso) return '—'; var p=(''+iso).split('-'); if(p.length<3) return iso; return (+p[2])+' '+MON[(+p[1])-1]+' '+p[0]; }
+  function esc(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   // ---- data load ----
   function loadBase(){
@@ -20872,7 +20942,7 @@ window.DatabaseTab = (function(){
   }
   function pushPlayer(name, rec){ if(!name) return; (playerIndex[name]||(playerIndex[name]=[])).push(rec); }
 
-  // ---- filtering (tour / tournament) → array of {p_fav,p_dog,favWon,book,date} ----
+  // ---- filtering (tour / tournament) → array of rows ----
   function filteredRows(){
     var rows=DATA.rows, out=[];
     var useLvl = state.levels, useSurf=state.surfaces, useRnd=state.rounds;
@@ -20925,107 +20995,151 @@ window.DatabaseTab = (function(){
   function render(){
     var body=document.getElementById('dbBody'); if(!body) return;
     body.innerHTML='';
+    body.appendChild(renderHeaderLine());
+    if(state.view==='players'){ renderPlayerView(body); return; }
+    renderBandView(body);
+  }
+
+  // ---- header line: active filter + coverage + freshness ----
+  function renderHeaderLine(){
+    var line=el('div','db-headerline');
+    line.appendChild(el('div','db-hl-filter', filterSummary()));
+    line.appendChild(el('div','db-hl-fresh','Archive through '+fmtDate(M.dateRange[1])));
+    return line;
+  }
+  function namesOf(activeSet, all){ if(!activeSet) return null; var o=[]; all.forEach(function(nm,i){ if(activeSet.has(i)) o.push(nm); }); return o; }
+  function yearsLabel(){
+    if(state.yearMin==null && state.yearMax==null) return 'All years';
+    var lo=state.yearMin!=null?state.yearMin:yr(+(''+M.dateRange[0]).replace(/-/g,''));
+    var hi=state.yearMax!=null?state.yearMax:yr(+(''+M.dateRange[1]).replace(/-/g,''));
+    return lo===hi?(''+lo):(lo+'–'+hi);
+  }
+  function filterSummary(){
+    var parts=['<b>ATP</b>'];
+    if(state.view==='tournaments'){ parts.push(state.tournament?('<b>'+esc(state.tournament)+'</b>'):'All tournaments'); }
+    if(state.view==='players'){
+      parts.push(state.player?('<b>'+esc(state.player)+'</b>'):'No player selected');
+      parts.push({all:'All time',season:'Latest season',y2:'Last 2 years',y5:'Last 5 years'}[state.period]||'All time');
+      parts.push(state.psurf==null?'All surfaces':M.surfaces[state.psurf]);
+      return parts.join(' · ');
+    }
+    if(state.view!=='tournaments'){ var lv=namesOf(state.levels,M.levels); parts.push(lv?lv.join(', '):'All levels'); }
+    var sf=namesOf(state.surfaces,M.surfaces); parts.push(sf?sf.join(', '):'All surfaces');
+    var rd=namesOf(state.rounds,M.rounds); parts.push(rd?(rd.length>2?rd.length+' rounds':rd.join(', ')):'All rounds');
+    parts.push(yearsLabel());
+    return parts.join(' · ');
+  }
+
+  // ==================== TOUR / TOURNAMENTS (band view) ====================
+  function renderBandView(body){
     var layout=el('div','db-layout');
     layout.appendChild(renderRail());
     var center=el('div','db-center'), curve=el('div');
     layout.appendChild(center); layout.appendChild(curve);
     body.appendChild(layout);
 
-    if(state.view==='players'){ renderPlayers(center, curve, body); return; }
+    // Tournaments landing: no tournament chosen yet → prompt + most-played, not an empty result.
+    if(state.view==='tournaments' && state.tournament==null){
+      center.appendChild(tournamentPrompt());
+      renderFootnote(body, null);
+      return;
+    }
 
     var rows=filteredRows();
     var bl=bookLabel(rows);
+
+    if(state.view==='tournaments'){
+      var hd=el('div','db-selname'); hd.innerHTML='<h2>'+esc(state.tournament)+'</h2>';
+      var x=el('button','db-selclear','×'); x.title='Clear tournament'; x.onclick=function(){ state.tournament=null; state.tq=''; render(); };
+      hd.appendChild(x); center.appendChild(hd);
+    }
+
     var label=el('div','db-booklabel');
     label.innerHTML='<span class="db-dot"></span>'+bl.text+(bl.seam?' <span class="db-seamnote">— spans the book seam; per-book split below each table</span>':'');
-    center.insertBefore(label, center.firstChild);
+    center.appendChild(label);
 
     if(!rows.length){ center.appendChild(emptyState('No matches for this filter','Widen the level, surface, round or year range.')); renderFootnote(body,0); return; }
 
     var favVals=rows.map(function(r){return {p:r[5], w:r[7], b:r[8]};});
     var dogVals=rows.map(function(r){return {p:r[6], w:r[7]?0:1, b:r[8]};});
-    center.appendChild(tableCard('Favourites','Back the shorter price', bands(favVals), bl.seam));
-    center.appendChild(tableCard('Underdogs','Back the longer price', bands(dogVals), bl.seam));
+    center.appendChild(tableCard('Favourites','Back the shorter price', bands(favVals), bl.seam, FAV_NAMES));
+    center.appendChild(tableCard('Underdogs','Back the longer price', bands(dogVals), bl.seam, DOG_NAMES));
 
-    curve.appendChild(renderCurve(rows, 'index'));
+    curve.appendChild(renderCurve(rows));
     renderFootnote(body, rows.length);
   }
 
-  function renderPlayers(center, curve, body){
-    if(!NAMES){ center.appendChild(el('div','db-loading','Loading player names…')); loadNames().then(function(){ if(state.view==='players') render(); }); return; }
-    if(!state.player){ center.appendChild(emptyState('Pick a player','Choose a player from the list to see his record by odds band.')); renderFootnote(body,0); return; }
-    var recs=playerIndex[state.player]||[];
-    // apply the full filter set (level / surface / round / year) — same as the other views
-    recs=recs.filter(function(v){
-      if(state.levels && !state.levels.has(v.lvl)) return false;
-      if(state.surfaces && !state.surfaces.has(v.surf)) return false;
-      if(state.rounds && !state.rounds.has(v.rnd)) return false;
-      var y=yr(v.d); return (state.yearMin==null||y>=state.yearMin)&&(state.yearMax==null||y<=state.yearMax);
+  function tournamentPrompt(){
+    var box=el('div','db-prompt');
+    box.innerHTML='<div class="db-promptmark">⌕</div><div class="db-prompttitle">Search for a tournament</div>'+
+                  '<div class="db-promptsub">Type a name in the filter on the left, or pick one of the most-played below.</div>'+
+                  '<div class="db-mpl">Most played</div>';
+    var wrap=el('div','db-mplchips');
+    mostPlayed(8).forEach(function(t){
+      var c=el('div','db-mplchip', esc(t.name)+' <span style="color:var(--text-faint);font-family:var(--mx-font-mono);font-size:10px;">'+fmtInt(t.n)+'</span>');
+      c.onclick=function(){ state.tournament=t.name; state.tq=''; render(); };
+      wrap.appendChild(c);
     });
-    var rowsForBook=recs.map(function(v){return [0,0,0,0,0,0,0,0,v.b];});
-    var bl=bookLabel(rowsForBook);
-    var label=el('div','db-booklabel');
-    label.innerHTML='<span class="db-dot"></span>'+state.player+' — '+bl.text+(bl.seam?' <span class="db-seamnote">— spans the book seam</span>':'');
-    center.insertBefore(label, center.firstChild);
-    if(!recs.length){ center.appendChild(emptyState('No archive matches','This player has no tour-level closing-line rows in the selected years.')); renderFootnote(body,0); return; }
-    var favVals=recs.filter(function(v){return v.fav;}).map(function(v){return {p:v.p,w:v.w,b:v.b};});
-    var dogVals=recs.filter(function(v){return !v.fav;}).map(function(v){return {p:v.p,w:v.w,b:v.b};});
-    center.appendChild(tableCard('As favourite','Back '+shortName(state.player)+' when he is the shorter price', bands(favVals), bl.seam));
-    center.appendChild(tableCard('As underdog','Back '+shortName(state.player)+' when he is the longer price', bands(dogVals), bl.seam));
-    curve.appendChild(renderPlayerCurve(recs));
-    renderFootnote(body, recs.length);
+    box.appendChild(wrap);
+    return box;
   }
-  function shortName(n){ return n; }
+  function mostPlayed(k){
+    var counts={};
+    for(var i=0;i<DATA.rows.length;i++){ var ti=DATA.rows[i][4]; counts[ti]=(counts[ti]||0)+1; }
+    return Object.keys(counts).map(function(ti){ return {name:M.tournaments[+ti], n:counts[ti]}; })
+      .sort(function(a,b){return b.n-a.n;}).slice(0,k);
+  }
 
-  function tableCard(title, side, res, seam){
+  function tableCard(title, side, res, seam, bandNames){
     var card=el('div','db-tablecard');
     var head=el('div','db-tablehead'); head.innerHTML='<h3>'+title+'</h3><span class="db-side">'+side+'</span>'; card.appendChild(head);
     if(!res.all){ card.appendChild(el('div','db-empty','No matches on this side.')); return card; }
     var t=el('table','db-table');
-    t.innerHTML='<thead><tr><th>Odds band</th><th>Median</th><th>Matches</th><th>Yield</th></tr></thead>';
+    t.innerHTML='<thead><tr><th>Band</th><th>Median</th><th>Matches</th><th>Yield</th></tr></thead>';
     var tb=el('tbody');
-    res.bands.forEach(function(b){
+    res.bands.forEach(function(b,i){
       if(!b) return;
       var tr=el('tr');
       var thin=b.n<30?'<span class="db-thin">thin</span>':'';
-      tr.innerHTML='<td>'+fmtP(b.lo)+' – '+fmtP(b.hi)+'</td><td>'+fmtP(b.median)+'</td><td>'+b.n+thin+'</td>'+
+      var nm = (!res.single && bandNames && bandNames[i]) ? bandNames[i] : null;
+      var first = nm
+        ? '<div class="db-bandname">'+nm+'</div><div class="db-bandrange">'+fmtP(b.lo)+' – '+fmtP(b.hi)+'</div>'
+        : '<div class="db-bandrange" style="font-size:12.5px;color:var(--text);">'+fmtP(b.lo)+' – '+fmtP(b.hi)+'</div>';
+      tr.innerHTML='<td>'+first+'</td><td>'+fmtP(b.median)+'</td><td>'+b.n+thin+'</td>'+
                    '<td class="db-yield '+yieldClass(b.yield)+'">'+fmtPct(b.yield)+'</td>';
       tb.appendChild(tr);
     });
     var a=res.all, arow=el('tr','db-allrow');
     arow.innerHTML='<td>All</td><td>'+fmtP(a.median)+'</td><td>'+a.n+'</td><td class="db-yield '+yieldClass(a.yield)+'">'+fmtPct(a.yield)+'</td>';
     tb.appendChild(arow); t.appendChild(tb); card.appendChild(t);
-    if(res.single){ card.appendChild(el('div','db-perbook','Fewer than three matches — shown as one band rather than split into terciles.')); }
+    if(res.single){ card.appendChild(el('div','db-prose','Fewer than three matches — shown as one band rather than split into terciles.')); }
     if(seam && a.book.ps && a.book.b365){
-      card.appendChild(el('div','db-perbook','Reproduced per book — <b>Pinnacle</b> '+fmtPct(a.book.ps.yield)+' (n='+a.book.ps.n+') · <b>Bet365</b> '+fmtPct(a.book.b365.yield)+' (n='+a.book.b365.n+'). The blended All figure mixes the two; Bet365 carries a wider margin.'));
+      card.appendChild(el('div','db-prose','Split by book: on Pinnacle closing prices this side returned <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' matches, and on the Bet365-settled 2026 matches <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+'. The combined figure blends both — Bet365 carries the wider margin.'));
     }
     return card;
   }
 
   function emptyState(title, sub){ return el('div','db-empty','<div class="db-emptymark">—</div><div style="font-weight:700;color:var(--text);margin-bottom:4px;">'+title+'</div><div style="font-size:12px;">'+sub+'</div>'); }
 
-  // ---- filter rail ----
+  // ---- filter rail (tour / tournaments) ----
   function renderRail(){
     var rail=el('div','db-rail');
     rail.appendChild(el('div','db-railtitle','Filters'));
     if(state.view==='tournaments'){
-      var tg=el('div','db-fgroup db-picker'); tg.appendChild(el('span','db-flabel','Tournament'));
-      var sel=el('select'); sel.innerHTML='<option value="">— select tournament —</option>'+M.tournaments.slice().sort().map(function(t){return '<option'+(t===state.tournament?' selected':'')+'>'+t+'</option>';}).join('');
-      sel.onchange=function(){ state.tournament=sel.value||null; render(); };
-      tg.appendChild(sel); rail.appendChild(tg);
-    }
-    if(state.view==='players'){
-      var pg=el('div','db-fgroup db-picker'); pg.appendChild(el('span','db-flabel','Player'));
-      var inp=el('input'); inp.setAttribute('list','dbPlayerList'); inp.placeholder='Type a name…'; inp.value=state.player||'';
-      inp.style.cssText='width:100%;font-family:var(--mx-font-ui);font-size:12.5px;color:var(--text);background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;';
-      inp.onchange=function(){ var v=inp.value.trim(); state.player=(playerIndex&&playerIndex[v])?v:null; render(); };
-      pg.appendChild(inp);
-      var dl=el('datalist'); dl.id='dbPlayerList';
-      if(playerIndex){ dl.innerHTML=Object.keys(playerIndex).sort().map(function(n){return '<option value="'+n.replace(/"/g,'&quot;')+'">';}).join(''); }
-      pg.appendChild(dl); rail.appendChild(pg);
+      var tg=el('div','db-fgroup'); tg.appendChild(el('span','db-flabel','Tournament'));
+      tg.appendChild(searchBox({
+        placeholder:'Search tournaments…',
+        query:state.tq,
+        onInput:function(q){ state.tq=q; },
+        match:function(q){ var ql=q.toLowerCase(); return M.tournaments.filter(function(t){return t.toLowerCase().indexOf(ql)>=0;}).sort().slice(0,12); },
+        onPick:function(t){ state.tournament=t; state.tq=''; render(); },
+        noun:'tournament'
+      }));
+      rail.appendChild(tg);
     }
     // level / surface / round chip groups. Level is hidden on the tournaments view
     // (a single tournament is one level — the filter would be a no-op); surface,
-    // round and year apply on all three views.
+    // round and year apply on both remaining views.
     if(state.view!=='tournaments') rail.appendChild(chipGroup('Level', M.levels, state.levels, function(s){state.levels=s;}));
     rail.appendChild(chipGroup('Surface', M.surfaces, state.surfaces, function(s){state.surfaces=s;}));
     rail.appendChild(chipGroup('Round', M.rounds, state.rounds, function(s){state.rounds=s;}));
@@ -21034,6 +21148,30 @@ window.DatabaseTab = (function(){
     rail.appendChild(reset);
     return rail;
   }
+
+  // generic type-ahead search box. opts: {placeholder, query, onInput, match(q)->[items], onPick(item), noun}
+  function searchBox(opts){
+    var box=el('div','db-searchbox');
+    var inp=el('input','db-searchinput'); inp.type='text'; inp.placeholder=opts.placeholder; inp.value=opts.query||'';
+    var results=el('div','db-results');
+    function paint(){
+      var q=inp.value.trim(); results.innerHTML='';
+      if(!q){ return; }
+      var items=opts.match(q);
+      if(!items.length){ results.appendChild(el('div','db-nomatch','No '+opts.noun+' matches “'+esc(q)+'”.')); return; }
+      items.forEach(function(it){
+        var row=el('div','db-resultrow', esc(it));
+        row.onmousedown=function(ev){ ev.preventDefault(); opts.onPick(it); };
+        results.appendChild(row);
+      });
+    }
+    inp.oninput=function(){ if(opts.onInput) opts.onInput(inp.value); paint(); };
+    box.appendChild(inp); box.appendChild(results);
+    // restore any in-progress query results
+    if(opts.query){ paint(); }
+    return box;
+  }
+
   function chipGroup(label, items, activeSet, setter){
     var g=el('div','db-fgroup'); g.appendChild(el('span','db-flabel',label));
     var wrap=el('div','db-chips');
@@ -21072,8 +21210,143 @@ window.DatabaseTab = (function(){
   }
   function resetFilters(){ state.levels=null; state.surfaces=null; state.rounds=null; state.yearMin=null; state.yearMax=null; }
 
+  // ==================== PLAYERS ====================
+  function renderPlayerView(body){
+    if(!NAMES){
+      body.appendChild(el('div','db-loadbox','Loading player archive…'));
+      loadNames().then(function(){ if(state.view==='players') render(); })
+        .catch(function(){ var b=document.getElementById('dbBody'); if(b){ b.innerHTML=''; b.appendChild(renderHeaderLine()); b.appendChild(el('div','db-empty','<div class="db-emptymark">—</div>The player archive could not be loaded from this environment.')); } });
+      return;
+    }
+    var wrap=el('div','db-playerwrap');
+    body.appendChild(wrap);
+
+    // player search
+    var sg=el('div','db-fgroup'); sg.style.maxWidth='420px'; sg.appendChild(el('span','db-flabel','Player'));
+    sg.appendChild(searchBox({
+      placeholder:'Search players…',
+      query:state.pq,
+      onInput:function(q){ state.pq=q; },
+      match:function(q){ var ql=q.toLowerCase(); return Object.keys(playerIndex).filter(function(n){return n.toLowerCase().indexOf(ql)>=0;}).sort().slice(0,12); },
+      onPick:function(n){ state.player=n; state.pq=''; render(); },
+      noun:'player'
+    }));
+    wrap.appendChild(sg);
+
+    if(!state.player){ wrap.appendChild(emptyState('Search for a player','Type a name above to see his record by odds band — as favourite, as underdog, over time.')); renderFootnote(body,null); return; }
+
+    // selected name header + clear
+    var hd=el('div','db-selname'); hd.innerHTML='<h2>'+esc(state.player)+'</h2>';
+    var x=el('button','db-selclear','×'); x.title='Clear player'; x.onclick=function(){ state.player=null; state.pq=''; render(); };
+    hd.appendChild(x); wrap.appendChild(hd);
+
+    // period + surface chip rows
+    wrap.appendChild(playerChips());
+
+    var recs=(playerIndex[state.player]||[]).filter(function(v){
+      if(state.psurf!=null && v.surf!==state.psurf) return false;
+      return inPeriod(v.d);
+    });
+
+    var bl=bookLabel(recs.map(function(v){return [0,0,0,0,0,0,0,0,v.b];}));
+
+    if(!recs.length){ wrap.appendChild(emptyState('No archive matches','No tour-level closing-line rows for '+esc(state.player)+' in the selected period and surface.')); renderFootnote(body,0); return; }
+
+    var favRecs=recs.filter(function(v){return v.fav;});
+    var dogRecs=recs.filter(function(v){return !v.fav;});
+
+    // three summary tiles
+    var tiles=el('div','db-tiles');
+    tiles.appendChild(tile('All matches', recs));
+    tiles.appendChild(tile('When favourite', favRecs));
+    tiles.appendChild(tile('When underdog', dogRecs));
+    wrap.appendChild(tiles);
+
+    // per-book split as prose (ruling: per-book stays)
+    if(bl.seam){
+      var a=aggRecs(recs);
+      if(a.book.ps && a.book.b365){
+        wrap.appendChild(el('div','db-prose','Split by book: <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' Pinnacle-priced matches, <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+' Bet365-settled 2026 matches. The tile figures blend both books; Bet365 carries the wider margin.'));
+      }
+    } else {
+      wrap.appendChild(el('div','db-prose', bl.text+' — a single book across this selection, no seam.'));
+    }
+
+    // three cumulative-profit charts vs date
+    var cg=el('div','db-chartgrid');
+    cg.appendChild(chartPanel('All matches', recs, COL_ALL));
+    cg.appendChild(chartPanel('When favourite', favRecs, COL_FAV));
+    cg.appendChild(chartPanel('When underdog', dogRecs, COL_DOG));
+    wrap.appendChild(cg);
+
+    renderFootnote(body, recs.length);
+  }
+
+  function inPeriod(dateInt){
+    if(state.period==='all') return true;
+    var maxY=yr(+(''+M.dateRange[1]).replace(/-/g,''));   // anchor to the archive's last match, not wall-clock
+    var y=yr(dateInt);
+    if(state.period==='season') return y===maxY;
+    if(state.period==='y2') return y>=maxY-1;   // latest season + the one before ≈ last 2 years
+    if(state.period==='y5') return y>=maxY-4;
+    return true;
+  }
+  function playerChips(){
+    var rows=el('div','db-chiprows');
+    var periods=[['all','All time'],['season','Latest season'],['y2','Last 2Y'],['y5','Last 5Y']];
+    var pr=el('div','db-chiprow'); pr.appendChild(el('span','db-flabel','Period'));
+    periods.forEach(function(p){
+      var c=el('div','db-chip'+(state.period===p[0]?' active':''), p[1]);
+      c.onclick=function(){ state.period=p[0]; render(); };
+      pr.appendChild(c);
+    });
+    rows.appendChild(pr);
+    // surface — only what the archive actually carries (Hard / Clay / Grass). No
+    // indoor/outdoor split exists in the shipped data, so no "Hard indoor" chip.
+    var sr=el('div','db-chiprow'); sr.appendChild(el('span','db-flabel','Surface'));
+    var allc=el('div','db-chip'+(state.psurf==null?' active':''),'All');
+    allc.onclick=function(){ state.psurf=null; render(); }; sr.appendChild(allc);
+    M.surfaces.forEach(function(nm,idx){
+      var c=el('div','db-chip'+(state.psurf===idx?' active':''), nm);
+      c.onclick=function(){ state.psurf=idx; render(); };
+      sr.appendChild(c);
+    });
+    rows.appendChild(sr);
+    return rows;
+  }
+  function aggRecs(recs){
+    var profit=0, prices=[], wins=0, byb={0:{n:0,pr:0},1:{n:0,pr:0}};
+    for(var i=0;i<recs.length;i++){ var v=recs[i]; var pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); if(v.w)wins++; byb[v.b].n++; byb[v.b].pr+=pr; }
+    var n=recs.length;
+    return { n:n, wins:wins, losses:n-wins, winpct:n?wins/n:null, yield:n?profit/n:null, median:median(prices),
+             book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null } }; }
+  function tile(label, recs){
+    var t=el('div','db-tile');
+    t.appendChild(el('div','db-tilelabel',label));
+    var a=aggRecs(recs);
+    if(!a.n){ t.appendChild(el('div','db-tilefig muted','—')); t.appendChild(el('div','db-tilesub','No matches in this state.')); return t; }
+    t.appendChild(el('div','db-tilefig '+yieldClass(a.yield), fmtPct(a.yield)));
+    var thin = a.n<30 ? ' <span class="db-thin">thin · n='+a.n+'</span>' : '';
+    t.appendChild(el('div','db-tilesub','<b>'+a.wins+'–'+a.losses+'</b> · '+(a.winpct==null?'—':(a.winpct*100).toFixed(0)+'% win')+thin+'<br>Median odds <b>'+fmtP(a.median)+'</b>'));
+    return t;
+  }
+  function chartPanel(title, recs, color){
+    var p=el('div','db-chartpanel');
+    p.appendChild(el('h4',null,title));
+    if(!recs.length){ p.appendChild(el('div','db-empty','No matches.')); return p; }
+    var ordered=recs.slice().sort(function(a,b){return a.d-b.d;});
+    var pts=[], c=0, xmin=ordered[0].d, xmax=ordered[ordered.length-1].d, seamX=null;
+    for(var i=0;i<ordered.length;i++){ var v=ordered[i]; c+=v.w?(v.p-1):-1; var xt=dnorm(v.d,xmin,xmax); pts.push([xt,c]); if(seamX===null && yr(v.d)>=2026) seamX=xt; }
+    var wrap=el('div','db-curvewrap');
+    var hasSeam = seamX!==null && seamX>2 && seamX<98;
+    wrap.innerHTML=svgChart([{color:color,pts:pts}], hasSeam?seamX:null, fmtDate(dateISO(xmin))+' → '+fmtDate(dateISO(xmax)), true);
+    p.appendChild(wrap);
+    return p;
+  }
+  function dateISO(di){ var s=''+di; return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8); }
+
   // ---- curve (tour/tournament: cumulative P/L vs match index) ----
-  function renderCurve(rows, mode){
+  function renderCurve(rows){
     var card=el('div','db-curvecard');
     var ordered=rows.slice().sort(function(a,b){return a[0]-b[0];});
     var favPts=[], dogPts=[], cf=0, cd=0, seamIdx=-1;
@@ -21084,52 +21357,45 @@ window.DatabaseTab = (function(){
       if(seamIdx<0 && r[8]===1) seamIdx=i+1;
     }
     var head=el('div','db-curvehead');
-    head.innerHTML='<h3>Cumulative profit</h3><div class="db-legend"><span><i style="background:var(--accent)"></i>Favourites</span><span><i style="background:#e2685f"></i>Underdogs</span></div>';
+    head.innerHTML='<h3>Cumulative profit</h3><div class="db-legend"><span><i style="background:'+COL_FAV+'"></i>Favourites</span><span><i style="background:'+COL_DOG+'"></i>Underdogs</span></div>';
     card.appendChild(head);
     var wrap=el('div','db-curvewrap');
     var hasSeam = seamIdx>1 && seamIdx<ordered.length;
-    wrap.innerHTML=svgChart([{color:'var(--accent)',pts:favPts},{color:'#e2685f',pts:dogPts}], hasSeam?seamIdx:null, 'Match index (chronological) · flat 1u');
+    wrap.innerHTML=svgChart([{color:COL_FAV,pts:favPts},{color:COL_DOG,pts:dogPts}], hasSeam?seamIdx:null, 'Match index (chronological) · flat 1u');
     card.appendChild(wrap);
-    if(hasSeam) card.appendChild(el('div','db-seamcap','Book change at 2026, not a market change. Earlier matches settle on Pinnacle closing; 2026 on Bet365, which carries a wider margin — the step is a book artefact.'));
-    return card;
-  }
-  function renderPlayerCurve(recs){
-    var card=el('div','db-curvecard');
-    var ordered=recs.slice().sort(function(a,b){return a.d-b.d;});
-    var favPts=[], dogPts=[], cf=0, cd=0, xmin=ordered[0].d, xmax=ordered[ordered.length-1].d, seamX=null;
-    for(var i=0;i<ordered.length;i++){ var v=ordered[i]; var pr=v.w?(v.p-1):-1; var xt=dnorm(v.d,xmin,xmax);
-      if(v.fav){ cf+=pr; favPts.push([xt,cf]); } else { cd+=pr; dogPts.push([xt,cd]); }
-      if(seamX===null && yr(v.d)>=2026) seamX=xt;
-    }
-    var head=el('div','db-curvehead');
-    head.innerHTML='<h3>Cumulative profit</h3><div class="db-legend"><span><i style="background:var(--accent)"></i>As fav</span><span><i style="background:#e2685f"></i>As dog</span></div>';
-    card.appendChild(head);
-    var wrap=el('div','db-curvewrap');
-    var hasSeam = seamX!==null && seamX>2 && seamX<98;
-    wrap.innerHTML=svgChart([{color:'var(--accent)',pts:favPts},{color:'#e2685f',pts:dogPts}], hasSeam?seamX:null, (''+yr(xmin))+' – '+(''+yr(xmax))+' · flat 1u', true);
-    card.appendChild(wrap);
-    if(hasSeam) card.appendChild(el('div','db-seamcap','Book change at 2026, not a market change. Pre-2026 settles on Pinnacle closing; 2026 on Bet365 (wider margin) — the step is a book artefact.'));
+    if(hasSeam) card.appendChild(el('div','db-seamcap','Book change at 2026 (Pinnacle → Bet365, wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
   function dnorm(d,mn,mx){ return mx===mn?50:(d-mn)/(mx-mn)*100; }
 
-  // generic 2-series line chart → svg string. xIsPct: pts x already 0..100; else x is 1..n index
+  // nice rounded axis bounds around a min/max that already bracket 0
+  function roundBounds(ymin, ymax){
+    var span=(ymax-ymin)||1;
+    var raw=span/4;
+    var mag=Math.pow(10, Math.floor(Math.log10(raw)));
+    var norm=raw/mag;
+    var step = mag * (norm<1.5?1: norm<3?2: norm<7?5:10);
+    return { lo:Math.floor(ymin/step)*step, hi:Math.ceil(ymax/step)*step, step:step };
+  }
+
+  // generic line chart → svg string. xIsPct: pts x already 0..100; else x is 1..n index
   function svgChart(series, seamX, xcap, xIsPct){
-    var W=480,H=280,PL=44,PR=12,PT=14,PB=34;
+    var W=480,H=280,PL=48,PR=12,PT=14,PB=34;
     var allPts=series.reduce(function(a,s){return a.concat(s.pts);},[]);
     if(!allPts.length) return '<div class="db-empty">No points.</div>';
     var maxN=1; series.forEach(function(s){ if(s.pts.length) maxN=Math.max(maxN, s.pts[s.pts.length-1][0]); });
     var xmax = xIsPct?100:maxN;
     var ys=allPts.map(function(p){return p[1];});
-    var ymin=Math.min(0,Math.min.apply(null,ys)), ymax=Math.max(0,Math.max.apply(null,ys));
+    var rawmin=Math.min(0,Math.min.apply(null,ys)), rawmax=Math.max(0,Math.max.apply(null,ys));
+    var rb=roundBounds(rawmin, rawmax);
+    var ymin=rb.lo, ymax=rb.hi;
     if(ymin===ymax){ymin-=1;ymax+=1;}
-    var pad=(ymax-ymin)*0.08; ymin-=pad; ymax+=pad;
     function X(x){ return PL + (x/(xmax||1))*(W-PL-PR); }
     function Y(y){ return PT + (1-(y-ymin)/(ymax-ymin))*(H-PT-PB); }
     var s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img">';
     // zero line
     s+='<line x1="'+PL+'" y1="'+Y(0).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(0).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';
-    // y labels (top / zero / bottom)
+    // y labels (rounded top / zero / bottom)
     s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(ymax)+9).toFixed(1)+'" text-anchor="end">'+ymax.toFixed(0)+'u</text>';
     s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(0)+3).toFixed(1)+'" text-anchor="end">0</text>';
     s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(ymin)+2).toFixed(1)+'" text-anchor="end">'+ymin.toFixed(0)+'u</text>';
@@ -21141,23 +21407,25 @@ window.DatabaseTab = (function(){
       var d=ser.pts.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1);}).join(' ');
       s+='<path d="'+d+'" fill="none" stroke="'+ser.color+'" stroke-width="1.6" stroke-linejoin="round"/>';
     });
-    s+='<text class="db-axislabel" x="'+((PL+W-PR)/2)+'" y="'+(H-8)+'" text-anchor="middle">'+xcap+'</text>';
+    s+='<text class="db-axislabel" x="'+((PL+W-PR)/2)+'" y="'+(H-8)+'" text-anchor="middle">'+esc(xcap)+'</text>';
     s+='</svg>';
     return s;
   }
 
-  // ---- footnote (exclusion reconciliation) ----
+  // ---- footnote (plain-prose reconciliation) ----
   function renderFootnote(body, shown){
-    var ex=M.exclusions;
+    var ex=M.exclusions, bc=M.bookCounts;
     var f=el('div','db-footnote');
-    f.innerHTML='<b>How this is built.</b> Closing prices from our ATP archive, <code>'+M.dateRange[0]+'</code> → <code>'+M.dateRange[1]+'</code>. '+
-      'Book: <b>Pinnacle</b> for every season through the last with Pinnacle coverage, <b>Bet365</b> for 2026 — never blended in one unlabelled figure, never de-vigged. '+
-      'Favourite = shorter price; flat 1-unit stake; yield = (returns − stakes) / stakes. Bands are equal terciles recomputed inside the active filter and labelled by their cut-points. '+
-      '<br><b>Reconciliation.</b> Archive rows <code>'+M.archiveRows+'</code> = used <code>'+M.used+'</code> + walkovers <code>'+ex.walkover+'</code> + edge non-results <code>'+ex.edge+'</code> + no resolving-book price <code>'+ex.noResolvingBookPrice+'</code> (fail-closed: includes all of 2009 and non-Bet365 2026) + exact price ties <code>'+ex.exactTie+'</code> + overround &gt; 1.15 <code>'+ex.overroundGt115+'</code>. '+
-      'Used split: Pinnacle <code>'+M.bookCounts.Pinnacle+'</code> · Bet365 <code>'+M.bookCounts.Bet365+'</code>. '+
-      (shown!=null?'<b>Showing '+shown+'</b> match'+(shown===1?'':'es')+' for the current filter. ':'')+
-      'Missing data is shown as a dash, never a zero.';
+    var showing = shown!=null ? '<p><b>Showing '+fmtInt(shown)+'</b> match'+(shown===1?'':'es')+' for the current filter. Missing data is shown as a dash, never a zero.</p>' : '';
+    f.innerHTML=
+      '<p><b>How this is built.</b> Closing prices from our own ATP archive, '+fmtDate(M.dateRange[0])+' to '+fmtDate(M.dateRange[1])+'. '+
+      'Every season through the last with Pinnacle coverage uses Pinnacle closing; 2026 uses Bet365 — the two are never blended into one unlabelled figure and never de-vigged. '+
+      'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
+      '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+fmtInt(bc.Pinnacle)+' settled on Pinnacle prices and '+fmtInt(bc.Bet365)+' on Bet365 (2026). '+
+      '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the 2010 window, '+fmtInt(ex.noResolvingBookPrice)+' with no resolving-book closing price (all of 2009, and any 2026 match not settled on Bet365), '+fmtInt(ex.walkover)+' walkovers, '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+' non-results, and '+fmtInt(ex.overroundGt115)+' with an overround above 1.15.</p>'+
+      showing;
     body.appendChild(f);
+    body.appendChild(el('div','db-disclaimer','Historical analysis for informational purposes only. Past results do not guarantee future results.'));
   }
 
   // ==================== view tabs + init ====================
