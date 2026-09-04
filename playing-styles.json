@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T22:49:04.792Z",
+  "generatedAt": "2026-09-04T23:11:48.168Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -878,24 +878,6 @@
       "archetype_label": "Counterpuncher"
     },
     {
-      "name": "R. A. Burruchaga",
-      "rank": 56,
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 1,
-      "win_pct": 43.3,
-      "clay_wr": 55,
-      "hard_wr": 25,
-      "grass_wr": 0,
-      "top10_wins": 0,
-      "archetype_label": "Attacking Baseliner"
-    },
-    {
       "name": "M. Fucsovics",
       "rank": 57,
       "archetype_data_coverage": "full",
@@ -1033,9 +1015,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 60.9,
+      "win_pct": 59.6,
       "clay_wr": 59,
-      "hard_wr": 69,
+      "hard_wr": 64,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -1846,24 +1828,6 @@
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Big Server + Complete Baseliner"
-    },
-    {
-      "name": "F. Maestrelli",
-      "rank": 112,
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 1,
-      "win_pct": 35,
-      "clay_wr": 14,
-      "hard_wr": 50,
-      "grass_wr": 0,
-      "top10_wins": 0,
-      "archetype_label": "Solid Baseliner"
     },
     {
       "name": "J. Thompson",
@@ -2831,9 +2795,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 4,
-      "win_pct": 73.1,
+      "win_pct": 74.1,
       "clay_wr": 75,
-      "hard_wr": 69,
+      "hard_wr": 71,
       "grass_wr": 83,
       "top10_wins": 0
     },
@@ -3104,9 +3068,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 65.2,
+      "win_pct": 66.7,
       "clay_wr": 33,
-      "hard_wr": 80,
+      "hard_wr": 81,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -4909,6 +4873,19 @@
       "archetype_label": "Solid Defender"
     },
     {
+      "name": "Roman Andres Burruchaga",
+      "archetype_data_coverage": "challenger",
+      "partial_axes": [],
+      "badges": [],
+      "win_pct": 57,
+      "clay_wr": 56,
+      "hard_wr": 64,
+      "grass_wr": null,
+      "matches": 179,
+      "source": "challenger",
+      "archetype_label": "Attacking Baseliner"
+    },
+    {
       "name": "Luke Saville",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
@@ -5125,6 +5102,19 @@
       "grass_wr": 0,
       "matches": 163,
       "source": "challenger"
+    },
+    {
+      "name": "Francesco Maestrelli",
+      "archetype_data_coverage": "challenger",
+      "partial_axes": [],
+      "badges": [],
+      "win_pct": 50.3,
+      "clay_wr": 51,
+      "hard_wr": 49,
+      "grass_wr": null,
+      "matches": 163,
+      "source": "challenger",
+      "archetype_label": "Solid Baseliner"
     },
     {
       "name": "Yusuke Takahashi",
