@@ -1,0 +1,9 @@
+{
+  "year": 2026,
+  "note": "Seed map of tournaments to scrape from protennislive.com. This is the pluggable ID source for TEN-150 v1. Full weekly auto-enumeration of tournament IDs is a SEPARATE task (see README TODOs).",
+  "tournaments": [
+    { "tour": "ATP", "id": "600",  "tier": "Challenger", "note": "Prague Challenger 75" },
+    { "tour": "ATP", "id": "3009", "tier": "Challenger", "note": "Cancun" },
+    { "tour": "ATP", "id": "421",  "tier": "Masters",     "note": "Canada Masters" }
+  ]
+}
