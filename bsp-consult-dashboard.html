@@ -21743,7 +21743,7 @@ window.DatabaseTab = (function(){
      Flag ON reveals the nav button; EntryListsTab.init() fires on first tab click.
      Deploying this code with the flag OFF changes nothing live. -->
 <script>
-  window.FEATURE_ENTRY_LISTS = false;
+  window.FEATURE_ENTRY_LISTS = true;
   (function(){
     var btn = document.getElementById('entryListsTabBtn');
     if(btn && window.FEATURE_ENTRY_LISTS) btn.style.display = '';
