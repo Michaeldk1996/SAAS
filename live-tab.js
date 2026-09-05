@@ -1202,5 +1202,5 @@
   })();
 
   // ─── expose control surface for the tab handler ───────────────────────────────
-  window.LiveTab = { setActive };
+  window.LiveTab = { setActive, isUnderway, isAtpSingles };
 })();
