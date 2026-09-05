@@ -107,6 +107,16 @@ function gamesFromPbp(fx) {
   const pbp = Array.isArray(fx.pointbypoint) ? fx.pointbypoint : [];
   const bySet = {};
   const norm = (v) => v === 'First Player' ? 'first' : v === 'Second Player' ? 'second' : null;
+  // Which set numbers actually went to a tiebreak (carry a "Set N TieBreak" block).
+  // Only those sets get the phantom-decider drop below, so a genuine advantage
+  // final-set game legitimately scored 7-6/8-7 is never dropped.
+  const tbSets = new Set();
+  for (const g of pbp) {
+    if (/tie\s*break/i.test(String(g.set_number || ''))) {
+      const n = Number(String(g.set_number).replace(/[^0-9]/g, ''));
+      if (Number.isFinite(n)) tbSets.add(n);
+    }
+  }
   let order = 0;
   for (const g of pbp) {
     const rawSet = String(g.set_number || '');
@@ -114,14 +124,17 @@ function gamesFromPbp(fx) {
     // (with serve_lost set on mini-holds) AND a phantom deciding game "Set N g13"
     // scored "7 - 6" to mark the tiebreak result. Neither is a real service game;
     // counting their serve_lost as a break corrupts every break-sequence metric.
-    // Drop both: tiebreak blocks by name, the phantom decider by its 7-6 signature.
+    // Drop both: tiebreak blocks by name, the phantom decider by its 7-6 signature
+    // BUT only in sets that actually had a tiebreak (never a real advantage game).
     if (/tie\s*break/i.test(rawSet)) continue;
     const setN = Number(rawSet.replace(/[^0-9]/g, ''));
     if (!Number.isFinite(setN) || setN < 1) continue;
-    const sc = String(g.score || '').split('-').map(x => Number(x.trim()));
-    if (sc.length === 2) {
-      const hi = Math.max(sc[0], sc[1]), lo = Math.min(sc[0], sc[1]);
-      if (hi === 7 && lo === 6) continue;          // phantom tiebreak-set decider
+    if (tbSets.has(setN)) {
+      const sc = String(g.score || '').split('-').map(x => Number(x.trim()));
+      if (sc.length === 2) {
+        const hi = Math.max(sc[0], sc[1]), lo = Math.min(sc[0], sc[1]);
+        if (hi === 7 && lo === 6) continue;        // phantom tiebreak-set decider
+      }
     }
     const server = norm(g.player_served);
     const winner = norm(g.serve_winner);
