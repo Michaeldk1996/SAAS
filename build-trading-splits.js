@@ -48,6 +48,10 @@ const PROFILES_FILE = process.env.TS_PROFILES || path.join(ROOT, 'player-profile
 const SURFACES_FILE = process.env.TS_SURFACES || path.join(ROOT, 'tournament-surfaces.json');
 const OUT_DIR = process.env.TS_OUT || path.join(ROOT, 'trading-splits');
 const INDEX_FILE = process.env.TS_INDEX || path.join(ROOT, 'trading-splits-index.json');
+// Build-side divergence report (not shipped to the client — a build artifact the
+// founder reviews). MATCHES ruling 2026-09-05: log any player whose broad match
+// count diverges from the behind-the-splits count.
+const DIVERGENCE_FILE = process.env.TS_DIVERGENCE || path.join(ROOT, 'trading-splits-divergence.json');
 const PACE_MS = Number(process.env.TS_PACE_MS || 150);
 // Test/cap knob only. Unset in CI => whole roster.
 const MAX_PLAYERS = process.env.TS_MAX_PLAYERS ? Number(process.env.TS_MAX_PLAYERS) : Infinity;
@@ -244,6 +248,14 @@ async function buildPlayer(key, surfaceMap) {
   const tiers = { tour: newTierBucket(), chal: newTierBucket() };
   const seenEvents = new Set();
   let sampleMatches = 0, usOpen = 0;
+  // Divergence tripwire (founder ruling 2026-09-05, MATCHES). The MATCHES column
+  // ships the behind-the-splits count (tiers[tier].all.m — matches carrying >=1
+  // tracked stat), pinned so the displayed n equals the data behind the numbers.
+  // windowByTier is the BROAD count: every in-window ATP-singles completed match
+  // for the player in that tier, whether or not it carried a box score. When the
+  // two diverge (a match exists but has no usable stat row), that is REPORTED
+  // with both counts — never silently reconciled at read time.
+  const windowByTier = { tour: 0, chal: 0 };
   const tally = { parsefail: 0, recovered: 0, matchesWithParsefail: 0, matchesWithRecovery: 0 };
 
   for (const fx of fixtures) {
@@ -258,6 +270,9 @@ async function buildPlayer(key, surfaceMap) {
     const ek = String(fx.event_key || '');
     if (ek && seenEvents.has(ek)) continue;
     if (ek) seenEvents.add(ek);
+    // Broad count: this match is a valid in-window ATP-singles completed match
+    // for the player, counted BEFORE the box-score test below.
+    windowByTier[tier] += 1;
 
     const before = { pf: tally.parsefail, rc: tally.recovered };
     const metricStats = metricsForPlayer(fx, key, tally);
@@ -276,7 +291,7 @@ async function buildPlayer(key, surfaceMap) {
     if (/US Open/i.test(fx.tournament_name || '')) usOpen++;
   }
 
-  return { key, tiers, sampleMatches, usOpen, tally };
+  return { key, tiers, sampleMatches, usOpen, tally, windowByTier };
 }
 
 function pruneTier(tb) {
@@ -300,6 +315,10 @@ async function main() {
   let totalBytes = 0, totalGz = 0, calls = 0, failed = 0, empty = 0;
   const fb = { parsefailRows: 0, matchesWithParsefail: 0, recoveredRows: 0, matchesWithRecovery: 0 };
   const shardSizes = [];
+  // MATCHES divergence log (founder ruling 2026-09-05): one record per (player,
+  // tier) where the broad in-window match count != the behind-the-splits count.
+  // Reported with BOTH counts and the player key — never silently reconciled.
+  const divergences = [];
 
   for (const key of roster) {
     calls++;
@@ -313,6 +332,18 @@ async function main() {
     }
     if (r.error) { failed++; console.error(`trading-splits: fixture window failed for ${key}: ${r.error}`); continue; }
     if (r.empty) { empty++; continue; }
+
+    // Divergence tripwire: for each ATP-singles tier, compare the broad in-window
+    // match count against the behind-the-splits count (matches carrying >=1
+    // tracked stat). A gap means the feed held matches with no usable box score;
+    // report the player key and BOTH counts rather than picking one silently.
+    for (const tier of ['tour', 'chal']) {
+      const broad = (r.windowByTier && r.windowByTier[tier]) || 0;
+      const withStats = r.tiers[tier].all.m;
+      if (broad !== withStats) {
+        divergences.push({ key, tier, broad, behindSplits: withStats, missing: broad - withStats });
+      }
+    }
 
     const tour = pruneTier(r.tiers.tour);
     const chal = pruneTier(r.tiers.chal);
@@ -338,6 +369,16 @@ async function main() {
   };
   atomicWrite(INDEX_FILE, JSON.stringify(indexDoc));
 
+  // Persist the MATCHES divergence report (both counts + player key per record).
+  divergences.sort((a, b) => (b.missing - a.missing) || (Number(a.key) - Number(b.key)));
+  const divergenceDoc = {
+    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR } },
+    definition: 'broad = in-window ATP-singles completed matches for the player in the tier; behindSplits = matches carrying >=1 tracked stat (the shipped MATCHES column). A record exists only where the two differ.',
+    playersWithDivergence: new Set(divergences.map(d => d.key)).size,
+    records: divergences,
+  };
+  atomicWrite(DIVERGENCE_FILE, JSON.stringify(divergenceDoc, null, 2));
+
   shardSizes.sort((a, b) => a - b);
   const pct = p => shardSizes.length ? shardSizes[Math.min(shardSizes.length - 1, Math.floor(p * shardSizes.length))] : 0;
   const indexGz = zlib.gzipSync(JSON.stringify(indexDoc)).length;
@@ -351,6 +392,8 @@ async function main() {
     // (excluded from metric + its count, never zero-filled). If parsefailRows /
     // matchesWithParsefail is anything but near-zero, STOP and report.
     fallback: fb,
+    // MATCHES divergence summary: players/records where broad != behindSplits.
+    divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, file: path.basename(DIVERGENCE_FILE) },
     players: index.length,
     corpus: { rawBytes: totalBytes, gzBytes: totalGz, gzKB: +(totalGz / 1024).toFixed(1) },
     index: { rawBytes: Buffer.byteLength(JSON.stringify(indexDoc)), gzBytes: indexGz, gzKB: +(indexGz / 1024).toFixed(2) },

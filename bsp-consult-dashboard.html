@@ -4445,6 +4445,20 @@ document.getElementById('mainNav').addEventListener('click', e => {
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const tab = btn.dataset.tab;
+  // TEN-151: Trading Report is bookmarkable via its own deep-link (#trading).
+  // Founder ruling 2026-09-05: its own deep-link URL. The app has no router, so
+  // this is scoped to this one tab — no other tab reads or writes the hash, and
+  // replaceState adds no history entry and fires no hashchange, so navigation
+  // elsewhere is byte-for-byte unchanged. Run FIRST so a later per-tab hook that
+  // throws can't leave the URL out of sync. Clearing #trading on leave keeps a
+  // bookmarked URL honest about what it shows.
+  try {
+    if (tab === 'trading') {
+      if (location.hash !== '#trading') history.replaceState(null, '', location.pathname + location.search + '#trading');
+    } else if (location.hash === '#trading') {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  } catch (_) { /* replaceState unavailable (e.g. file://) — deep-link is best-effort */ }
   // Results (TEN-8) has no page of its own — it IS the matches page rendered in
   // the settled/completed view. Map it to data-page="matches" and drive the view
   // from the active sidebar tab now that the Upcoming/Completed toggle is gone.
@@ -4468,6 +4482,22 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // TEN-151: Trading Report owns its own poll loop — start on entry, stop on
   // leaving. No-op unless FEATURE_TRADING_REPORT loaded trading-report.js.
   if (window.TradingReport) window.TradingReport.setActive(tab === 'trading');
+});
+
+// TEN-151: resolve a #trading deep-link on load. Runs on DOMContentLoaded, which
+// fires AFTER the deferred trading-report.js has (when FEATURE_TRADING_REPORT is
+// on and its guards pass) un-hidden #tradingTabBtn — so button visibility is the
+// single source of truth for "is this tab available". Available -> open it.
+// Not available (flag OFF, or Supabase/LiveTab guards unmet) -> redirect to the
+// default view (Matches, already active) and strip the hash. No error either way.
+document.addEventListener('DOMContentLoaded', function () {
+  if (location.hash !== '#trading') return;
+  var btn = document.querySelector('#mainNav button[data-tab="trading"]');
+  if (btn && btn.style.display !== 'none') {
+    btn.click();
+  } else {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
+  }
 });
 
 

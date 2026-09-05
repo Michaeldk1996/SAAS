@@ -65,3 +65,5 @@ styles-debug-all.json
 # TEN-151 Trading Report shard (lazy, rebuilt each run — publish wiring pending size gate)
 trading-splits/
 trading-splits-index.json
+# TEN-151 MATCHES divergence report — build artifact, reviewed off-line, never client-shipped
+trading-splits-divergence.json
