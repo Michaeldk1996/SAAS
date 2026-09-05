@@ -42,6 +42,10 @@ const path = require('path');
 const zlib = require('zlib');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 const { fetchRecentSinglesFixtures } = require('./bsp-pipeline.js');
+// The 11 situational splits beyond Key Stats (set-outcome + game-sequence),
+// computed from the SAME fixture's scores[]/pointbypoint (inline, zero extra
+// API cost). Pure module so the generator and validation share one code path.
+const { sequenceMetrics, SEQ_KEYS } = require('./trading-sequence-metrics.js');
 
 const ROOT = process.env.TS_ROOT || __dirname;
 const PROFILES_FILE = process.env.TS_PROFILES || path.join(ROOT, 'player-profiles.json');
@@ -98,7 +102,11 @@ const METRICS = {
 // [num, den] bucket keyed off the opponent, never zero-filled.
 const SELF_KEYS = Object.keys(METRICS);
 const OPP_HOLD = { type: 'Games', name: 'service games won' };
-const METRIC_KEYS = [...SELF_KEYS, 'oph'];
+// Stat metrics (from statistics[]) + the 11 situational metrics (from
+// scores[]/pointbypoint). All stored identically as summed [num, den] buckets;
+// the UI divides. A situation that never arises in a match contributes [0,0]
+// (absent) — never zero-filled.
+const METRIC_KEYS = [...SELF_KEYS, 'oph', ...SEQ_KEYS];
 const SURFACES = ['hard', 'clay', 'grass'];
 // Strict numerator/denominator shape for the stat_value fallback (B-ruling
 // 2026-09-05). ONLY "int/int" is accepted; a percentage ("40%"), a bare int, an
@@ -281,6 +289,14 @@ async function buildPlayer(key, surfaceMap) {
     if (tally.parsefail > before.pf) tally.matchesWithParsefail++;
     if (metricStats && tally.recovered > before.rc) tally.matchesWithRecovery++;
     if (!metricStats) continue;                             // no box score for this player
+
+    // Situational splits from the SAME fixture (scores[] + pointbypoint). Merged
+    // into the sample match's bucket so the Trading Report keeps ONE match
+    // population and ONE coverage count (bucket.m); each situational cell still
+    // carries its own fraction. A match lacking pbp contributes no sequence
+    // metrics — never a zero-filled rate.
+    const seq = sequenceMetrics(fx, key);
+    for (const k of SEQ_KEYS) if (seq[k]) metricStats[k] = seq[k];
 
     const surf = surfaceMap[String(fx.tournament_key)] || null;
     const surfKey = SURFACES.includes(surf) ? surf : null;

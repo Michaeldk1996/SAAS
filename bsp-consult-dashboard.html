@@ -2334,6 +2334,11 @@
   [data-page="trading"] .tr-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:#3dd68c; }
   [data-page="trading"] .tr-status.stale{ color:#e28b4a; }
   [data-page="trading"] .tr-status .tr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
+  /* column-set tabs */
+  [data-page="trading"] .tr-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; border-bottom:1px solid var(--border,#262B35); padding-bottom:2px; }
+  [data-page="trading"] .tr-tab{ background:transparent; border:0; border-bottom:2px solid transparent; color:var(--text-dim,#8F98A6); font-size:12.5px; font-weight:600; padding:8px 12px; margin-bottom:-1px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); white-space:nowrap; }
+  [data-page="trading"] .tr-tab:hover{ color:var(--text,#E6EAF0); }
+  [data-page="trading"] .tr-tab.active{ color:var(--accent,#3E7BFA); border-bottom-color:var(--accent,#3E7BFA); }
   /* filter bar */
   [data-page="trading"] .tr-filters{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
   [data-page="trading"] .tr-surfrow{ display:inline-flex; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; overflow:hidden; }

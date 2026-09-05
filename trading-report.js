@@ -65,7 +65,19 @@
   // SH · SPW · RPW · BPS · BPW · OPH. OPH = opponent hold — how often this
   // player's OPPONENTS held serve, read off the opponent's service-games-won row
   // on the same fixtures (a return-strength context stat).
-  var METRIC_LABELS = { sh: 'SH', spw: 'SPW', rpw: 'RPW', bps: 'BPS', bpw: 'BPW', oph: 'OPH' };
+  // Verbatim column abbreviations (metric-dictionary doc). Some tokens are multi-
+  // word on the competitor board ("LOST SET 1 WS2") — reproduced verbatim.
+  var METRIC_LABELS = {
+    sh: 'SH', spw: 'SPW', rpw: 'RPW', bps: 'BPS', bpw: 'BPW', oph: 'OPH',
+    htws: 'HTWS', htss: 'HTSS', bofs: 'BOFS', bfsg: 'BFSG',
+    babb: 'BABB', bbk: 'BBK', bbkb: 'BBKB', gfb: 'GFB',
+    ls1fb: 'LOST SET 1 FB', ls1bf: 'LOST SET 1 BF', bfs2aws1: 'BFS2AWS1',
+    wfs: 'WFS', ws2: 'WS2', ws1w2: 'WS1W2', ls1ws2: 'LOST SET 1 WS2', ws1wm: 'WS1WM',
+  };
+  // METRIC_TIPS is the founder's required column-info affordance: every column
+  // carries its definition. For the 11 worked-out codes (2026-09-05 instruction)
+  // the tooltip states EXACTLY what the number computes — verbatim from
+  // trading-sequence-metrics.js — so the definition is transparent and falsifiable.
   var METRIC_TIPS = {
     sh:  'Service games held — won / service games played',
     spw: 'Service points won',
@@ -73,13 +85,37 @@
     bps: 'Break points saved',
     bpw: 'Break points converted',
     oph: 'Opponent hold — service games held by this player’s opponents (return-strength context)',
+    // ── worked-out game-sequence codes (from pointbypoint) ──
+    htws: 'Held To Win Set — serving for the set, held to take it (per service game where a hold clinches the set)',
+    htss: 'Held To Stay in Set — serving to avoid losing the set, held (per service game where a loss would lose the set)',
+    bofs: 'Broke Opponent’s First Service game of the match',
+    bfsg: 'Broken in own First Service Game of the match',
+    babb: 'Broke then Broken Back in the same set — how often a break lead was surrendered within that set',
+    bbk:  'Broken Back immediately — opponent breaks straight back in the very next service game',
+    bbkb: 'Broke, Broken Back, then Broke again — re-broke in the same set after being broken back',
+    gfb:  'Got First Break of the match',
+    ls1fb: 'Lost Set 1, then fought back to WIN THE MATCH',
+    ls1bf: 'Lost Set 1, then Broke First in Set 2',
+    bfs2aws1: 'Broke First in Set 2 After Winning Set 1',
+    // ── named set-outcome codes (from set scores) ──
+    wfs:  'Won First Set',
+    ws2:  'Won Set 2',
+    ws1w2: 'Won Set 1 then Won Set 2 (two sets to love up)',
+    ls1ws2: 'Lost Set 1 then Won Set 2',
+    ws1wm: 'Won Set 1 then Won the Match',
   };
 
-  // Config-driven tabs: each entry is a column set over the same shard. Only Key
-  // Stats is defined now; the other six slot in here as configs later — the
-  // render path reads this, nothing is hardcoded per tab.
+  // Config-driven tabs: each entry is a column set over the same shard. Column
+  // ORDER within each tab is verbatim (left→right) from the metric-dictionary doc.
+  // The render path reads this — nothing is hardcoded per tab.
   var COLUMN_SETS = {
-    key: { label: 'Key Stats', metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'] },
+    key:          { label: 'Key Stats',           metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'] },
+    laysetwinner: { label: 'Lay Set Winner',      metrics: ['ls1ws2', 'ws1w2', 'ls1fb', 'ls1bf', 'bpw', 'ws1wm', 'bfs2aws1'] },
+    scalping:     { label: 'Scalping',            metrics: ['sh', 'spw', 'bps', 'htws', 'htss'] },
+    laybreakup:   { label: 'Lay Break Up',        metrics: ['babb', 'bbk', 'bbkb', 'gfb', 'bfsg'] },
+    settrading20: { label: 'Set Trading 2-0',     metrics: ['ws1w2', 'wfs', 'ws2', 'ls1ws2', 'gfb'] },
+    layserve:     { label: 'Lay Serve Set/Match', metrics: ['htws', 'bofs', 'htss', 'bps', 'bpw'] },
+    laysetbreak:  { label: 'Lay Set&Break',       metrics: ['ls1bf', 'ls1ws2', 'babb', 'ws1w2', 'bbk', 'bbkb'] },
   };
   var ACTIVE_SET = 'key';
 
@@ -334,6 +370,18 @@
            '</div>';
   }
 
+  // Tab nav — one button per COLUMN_SETS entry, in definition order. The active
+  // set drives headerHtml/rowHtml (cfg). Switching a tab never refetches shards
+  // (all metrics live in the one shard already loaded); it only re-renders.
+  function tabsHtml() {
+    var btns = '';
+    Object.keys(COLUMN_SETS).forEach(function (id) {
+      btns += '<button type="button" class="tr-tab' + (id === ACTIVE_SET ? ' active' : '') +
+              '" data-set="' + id + '">' + esc(COLUMN_SETS[id].label) + '</button>';
+    });
+    return '<div class="tr-tabs" role="tablist">' + btns + '</div>';
+  }
+
   function filterBarHtml(rows) {
     // tournaments present in the current slate
     var tset = {};
@@ -446,7 +494,7 @@
     view = applySort(view);
 
     var cfg = COLUMN_SETS[ACTIVE_SET];
-    var html = filterBarHtml(rows) + noticeHtml(view);
+    var html = tabsHtml() + filterBarHtml(rows) + noticeHtml(view);
     if (!view.length) {
       html += '<div class="tr-empty tr-empty-sm"><p class="tr-empty-title">No players match this filter</p>' +
               '<p class="tr-empty-sub">Clear the tournament filter or search to see the full live slate.</p></div>';
@@ -524,6 +572,16 @@
     _bootstrapped = true;
     // delegated handlers on the grid (rebuilt each render)
     g.addEventListener('click', function (e) {
+      var tabBtn = e.target.closest && e.target.closest('.tr-tab');
+      if (tabBtn) {
+        var setId = tabBtn.getAttribute('data-set');
+        if (COLUMN_SETS[setId] && setId !== ACTIVE_SET) {
+          ACTIVE_SET = setId;
+          _sortCol = null;              // a metric sort from another tab may not exist here
+          render();
+        }
+        return;
+      }
       var surfBtn = e.target.closest && e.target.closest('.tr-surf');
       if (surfBtn) { _surface = surfBtn.getAttribute('data-surf'); render(); return; }
       var load = e.target.closest && e.target.closest('#trLoadBtn');
