@@ -169,6 +169,19 @@ jobs:
       - name: Build market-size shards (best-effort)
         run: node fetch-market-size.js --slate matches.json --out market || true
 
+      # TEN-151 Trading Report data layer (Route B, FUSED): per-player 24-month
+      # situational splits (SH/SPW/RPW/BPS/BPW as numerator/denominator) built from
+      # the same api-tennis get_fixtures the pipeline already fetches — one shard
+      # per player + a gating index (with the name/rank/country meta map). ~428
+      # get_fixtures/run; call volume is not a constraint on the top plan (founder
+      # ruling 2026-09-05). Best-effort: a failure keeps the previous run's shards,
+      # and the page ships behind FEATURE_TRADING_REPORT (default OFF) so an absent
+      # shard never affects anything live. STAGED — cadence confirmed at go-live.
+      - name: Build Trading Report splits (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node build-trading-splits.js || true
+
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
       #
@@ -293,6 +306,18 @@ jobs:
           # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
+          # TEN-151 Trading Report (flag-gated OFF): the module, the splits index +
+          # per-player shards, and the tournament→surface map the board joins on.
+          # The index gates the shard fetches; committed/built-but-not-copied =
+          # silent 404 and the board dashes. Best-effort so an absent shard (before
+          # the build step's first run) never blocks the deploy.
+          cp trading-report.js _site/ 2>/dev/null || true
+          cp trading-splits-index.json _site/ 2>/dev/null || true
+          cp -r trading-splits _site/ 2>/dev/null || true
+          # tournament_key → surface map: the Trading Report reads it client-side to
+          # label each live row's surface and pick the surface split. Same map the
+          # generator used, so the board can't diverge. Not previously published.
+          cp tournament-surfaces.json _site/ 2>/dev/null || true
 
       # TEN-107: inject the PUBLIC Supabase creds into the served dashboard. The
       # project URL + publishable (anon) key are browser-safe by design — RLS

@@ -120,6 +120,28 @@ function loadRoster() {
   return [...new Set(keys)].sort((a, b) => Number(a) - Number(b));
 }
 
+// Lightweight identity map for the UI (name / rank / country) keyed by the same
+// player_key as the shards. Built from the committed player-profiles.json — no
+// extra API call. The live board carries no rank/country, so the Trading Report
+// row joins here; a player absent from this map renders with the as-fed live
+// name and dashed rank/country (never a guessed join). Only the fields the row
+// needs are copied — the 44 MB profiles never reach the client.
+function loadMeta() {
+  const j = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
+  const players = j.players || {};
+  const list = Array.isArray(players) ? players : Object.values(players);
+  const meta = {};
+  for (const p of list) {
+    if (!p || p.key == null) continue;
+    meta[String(p.key)] = {
+      name: p.name != null ? String(p.name) : null,
+      rank: (typeof p.rank === 'number') ? p.rank : (p.rank != null && Number.isFinite(Number(p.rank)) ? Number(p.rank) : null),
+      country: p.country != null ? String(p.country) : null,
+    };
+  }
+  return meta;
+}
+
 function newSurfBucket() {
   const b = { m: 0 };
   for (const k of METRIC_KEYS) b[k] = [0, 0];
@@ -249,6 +271,7 @@ async function main() {
   const indexDoc = {
     generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
     lowSample: { matchMin: LOW_SAMPLE_MATCH_MIN, slateMutePct: SLATE_MUTE_PCT, notice: LOW_SAMPLE_NOTICE },
+    meta: loadMeta(),
     players: index,
   };
   atomicWrite(INDEX_FILE, JSON.stringify(indexDoc));

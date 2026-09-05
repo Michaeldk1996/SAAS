@@ -2326,6 +2326,60 @@
   .lo-badge.lo-frozen{ background:rgba(62,207,142,0.06); color:var(--text-faint,#888); border:1px solid rgba(62,207,142,0.15); }
   @keyframes lo-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 
+  /* TEN-151 — Trading Report (flag-gated; only page under data-page="trading") */
+  [data-page="trading"] .tr-wrap{ max-width:1280px; margin:0 auto; padding:24px 24px 60px; }
+  [data-page="trading"] .tr-titlerow{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+  [data-page="trading"] .tr-h1{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text,#e7e9ee); }
+  [data-page="trading"] .tr-subtitle{ margin:0; color:var(--text-dim,#8F98A6); font-size:13.5px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
+  [data-page="trading"] .tr-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:#3dd68c; }
+  [data-page="trading"] .tr-status.stale{ color:#e28b4a; }
+  [data-page="trading"] .tr-status .tr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
+  /* filter bar */
+  [data-page="trading"] .tr-filters{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  [data-page="trading"] .tr-surfrow{ display:inline-flex; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; overflow:hidden; }
+  [data-page="trading"] .tr-surf{ background:transparent; border:0; color:var(--text-dim,#8F98A6); font-size:12px; font-weight:600; padding:6px 12px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-surf.active{ background:var(--accent,#3E7BFA); color:#fff; }
+  [data-page="trading"] .tr-tsel,[data-page="trading"] .tr-search{ background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; color:var(--text,#e7e9ee); font-size:12.5px; padding:7px 10px; font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-period{ font-size:11.5px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); border:1px dashed var(--border,#262B35); border-radius:8px; padding:6px 10px; cursor:help; }
+  [data-page="trading"] .tr-load{ margin-left:auto; background:var(--accent,#3E7BFA); border:0; color:#fff; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:8px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-load:disabled{ opacity:0.6; cursor:default; }
+  [data-page="trading"] .tr-notice{ background:rgba(226,139,74,0.1); border:1px solid rgba(226,139,74,0.3); color:#e8a86a; font-size:12.5px; border-radius:8px; padding:9px 13px; margin-bottom:12px; font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-loadhint{ color:var(--text-faint,#565F6A); font-size:12px; margin:12px 2px 0; font-family:var(--mx-font-ui,sans-serif); }
+  /* table */
+  [data-page="trading"] .tr-tablewrap{ overflow-x:auto; border:1px solid var(--border,#262B35); border-radius:12px; }
+  [data-page="trading"] .tr-table{ width:100%; border-collapse:collapse; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
+  [data-page="trading"] .tr-th{ text-align:right; font-size:10.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-faint,#565F6A); padding:11px 14px; border-bottom:1px solid var(--border,#262B35); white-space:nowrap; cursor:pointer; user-select:none; background:var(--panel,#12151C); position:sticky; top:0; }
+  [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-th[data-sort="player"]{ text-align:left; }
+  [data-page="trading"] .tr-th:hover{ color:var(--text-dim,#8F98A6); }
+  [data-page="trading"] .tr-row{ border-bottom:1px solid rgba(38,43,53,0.55); }
+  [data-page="trading"] .tr-row:hover{ background:rgba(62,123,250,0.05); }
+  [data-page="trading"] .tr-row[data-unjoined="1"] .tr-pname{ color:var(--text-dim,#8F98A6); font-style:italic; }
+  [data-page="trading"] .tr-cell{ padding:9px 14px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; }
+  [data-page="trading"] .tr-time{ text-align:left; font-family:var(--mx-font-mono,monospace); font-size:11.5px; color:var(--text-dim,#8F98A6); white-space:nowrap; }
+  [data-page="trading"] .tr-player{ text-align:left; min-width:220px; }
+  [data-page="trading"] .tr-pline{ display:flex; align-items:center; gap:7px; }
+  [data-page="trading"] .tr-flag{ font-family:var(--mx-font-mono,monospace); font-size:9.5px; font-weight:700; color:var(--text-faint,#565F6A); background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:4px; padding:1px 4px; }
+  [data-page="trading"] .tr-pname{ font-weight:700; font-size:13.5px; }
+  [data-page="trading"] .tr-prank{ font-size:11px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); }
+  [data-page="trading"] .tr-tier{ font-size:9px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; border-radius:4px; padding:1px 5px; background:var(--accent-dim,#152A4D); color:#89b4ff; }
+  [data-page="trading"] .tr-tier2{ background:transparent; color:var(--text-faint,#565F6A); border:1px dashed var(--border,#262B35); }
+  [data-page="trading"] .tr-pmeta{ font-size:11px; color:var(--text-faint,#565F6A); margin-top:2px; }
+  [data-page="trading"] .tr-stat{ line-height:1.15; }
+  [data-page="trading"] .tr-pct{ display:block; font-weight:700; font-size:13px; }
+  [data-page="trading"] .tr-frac{ display:block; font-size:10px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); margin-top:1px; }
+  [data-page="trading"] .tr-stat.thin{ opacity:0.5; }
+  [data-page="trading"] .tr-dash,[data-page="trading"] .tr-pending{ color:var(--text-faint,#565F6A); }
+  [data-page="trading"] .tr-dash-inline{ color:var(--text-faint,#565F6A); }
+  [data-page="trading"] .tr-odds .tr-price{ display:block; font-weight:700; }
+  [data-page="trading"] .tr-odds .tr-book{ display:block; font-size:9.5px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); }
+  [data-page="trading"] .tr-matches{ font-family:var(--mx-font-mono,monospace); color:var(--text-dim,#8F98A6); }
+  /* empty / small-empty */
+  [data-page="trading"] .tr-empty{ text-align:center; padding:64px 20px; }
+  [data-page="trading"] .tr-empty-sm{ padding:40px 20px; }
+  [data-page="trading"] .tr-empty-icon{ font-size:34px; color:var(--text-faint,#565F6A); margin-bottom:10px; }
+  [data-page="trading"] .tr-empty-title{ font-size:15px; font-weight:700; color:var(--text,#e7e9ee); margin:0 0 6px; }
+  [data-page="trading"] .tr-empty-sub{ font-size:12.5px; color:var(--text-dim,#8F98A6); margin:0; }
+
   /* TEN-107 Slice 4 — standalone Live tab (flag-gated; only page under data-page="live") */
   [data-page="live"] .lt-wrap{ max-width:1080px; margin:0 auto; padding:24px 24px 60px; }
   [data-page="live"] .lt-titlerow{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
@@ -2467,6 +2521,12 @@
          flag-OFF build shows no dead tab; live-tab.js reveals it only after the
          FEATURE_LIVE_PROXY + Supabase-creds guards pass. New tab, Matches untouched. -->
     <button data-tab="live" id="liveTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M6 6a5.6 5.6 0 000 8M14 6a5.6 5.6 0 010 8M3.4 3.4a9 9 0 000 13.2M16.6 3.4a9 9 0 010 13.2"/></svg>Live</button>
+    <!-- TEN-151 Trading Report tab: live in-play board, one row per player, with
+         24-month situational splits. Hidden by default (display:none); the
+         FEATURE_TRADING_REPORT + Supabase-creds + LiveTab-gate guards in
+         trading-report.js reveal it. Deploying with the flag OFF changes nothing
+         live. Reuses the Live tab's gate — the Live tab + Matches board are untouched. -->
+    <button data-tab="trading" id="tradingTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16V4M3 16h14M7 13l3-4 3 2 3.5-5"/></svg>Trading Report</button>
     <!-- Results (TEN-8): settled matches, promoted from the old Upcoming/Completed
          toggle to a first-class sidebar tab directly under Matches (founder ruling
          2026-08-08). Reuses the matches page in state.view='completed'. -->
@@ -2626,6 +2686,23 @@
       </div>
     </div>
     <div class="lt-grid" id="liveGrid"></div>
+  </div>
+</div>
+
+<!-- TRADING REPORT TAB (TEN-151) — live in-play board, one row per player, with
+     24-month situational splits. Rendering + polling owned entirely by
+     trading-report.js, gated on FEATURE_TRADING_REPORT. Reuses the Live tab's
+     gate (window.LiveTab.isAtpSingles + isUnderway); changes nothing in it. -->
+<div class="tabpage" data-page="trading">
+  <div class="tr-wrap">
+    <div class="tr-titlerow">
+      <div>
+        <h1 class="tr-h1">Trading Report</h1>
+        <p class="tr-subtitle">In-play ATP singles — one row per player, with 24-month situational splits for the live read.</p>
+        <p class="tr-status" id="tradingStatus"><span class="tr-dot"></span>Loading…</p>
+      </div>
+    </div>
+    <div class="tr-grid" id="tradingGrid"></div>
   </div>
 </div>
 
@@ -4388,6 +4465,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
   // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
   if (window.LiveTab) window.LiveTab.setActive(tab === 'live');
+  // TEN-151: Trading Report owns its own poll loop — start on entry, stop on
+  // leaving. No-op unless FEATURE_TRADING_REPORT loaded trading-report.js.
+  if (window.TradingReport) window.TradingReport.setActive(tab === 'trading');
 });
 
 
@@ -21996,6 +22076,17 @@ window.DatabaseTab = (function(){
   window.FEATURE_LIVE_DETAIL = true;
 </script>
 <script src="live-tab.js" defer></script>
+
+<!-- TEN-151: Trading Report feature flag. STAGED OFF — the page, its data layer
+     and the live wiring ship dark; flipping to true reveals the nav tab and
+     activates the board (after the Supabase-creds + LiveTab-gate guards pass).
+     Deploying this code with the flag OFF changes nothing live until the
+     founder's confirm-before-live gate. Loaded AFTER live-tab.js so the reused
+     window.LiveTab gate exists. -->
+<script>
+  window.FEATURE_TRADING_REPORT = false;
+</script>
+<script src="trading-report.js" defer></script>
 
 <!-- TEN-150: Entry Lists feature flag. OFF by default — set to true once founder confirms go-live.
      Flag ON reveals the nav button; EntryListsTab.init() fires on first tab click.
