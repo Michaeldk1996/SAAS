@@ -126,7 +126,13 @@
     }).then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : rows;
       if (!row) return null;
-      return { board: Array.isArray(row.board) ? row.board : [], updated_at: row.updated_at };
+      // The live_snapshot.board column is an OBJECT {matches:[…]} — the exact
+      // shape live-tab.js reads (`row.board?.matches`, live-tab.js:179). Mirror
+      // it verbatim so the Trading Report cannot diverge from the Live tab on the
+      // same feed. (Tolerate a bare-array board too, if the shape ever changes.)
+      var b = (row.board && Array.isArray(row.board.matches)) ? row.board.matches
+              : (Array.isArray(row.board) ? row.board : []);
+      return { board: b, updated_at: row.updated_at };
     });
   }
 
