@@ -178,6 +178,28 @@ def pdf_lines(data):
     return lines
 
 
+# protennislive serves a byte-identical 2616-byte placeholder PDF for a
+# tournament whose acceptance list is not posted yet -- HTTP 200,
+# Content-Type application/pdf, single line "-Tournament Information Not Yet
+# Available-". It is NOT a real (empty) list; it must render as PENDING, never
+# as MD 0. Detect it by its sentinel text (robust to minor byte changes).
+PLACEHOLDER_SENTINEL = "information not yet available"
+
+
+def is_placeholder_pdf(data):
+    """True if the PDF is protennislive's 'not yet posted' placeholder."""
+    if data is None:
+        return False
+    try:
+        lines = pdf_lines(data)
+    except Exception:
+        return False
+    if not lines:
+        return True  # a contentless PDF is not a real acceptance list
+    joined = " ".join(lines).lower()
+    return PLACEHOLDER_SENTINEL in joined
+
+
 # ---------------------------------------------------------------------------
 # Header parsing
 # ---------------------------------------------------------------------------
@@ -547,9 +569,16 @@ def _week_fields(week_label, curated_week_start):
     return None, None, None
 
 
-def _pending_record(t):
+def _pending_record(t, reason):
     """A tournament we expect (from the curated map) but whose acceptance list
-    protennislive has not posted yet: shown as PENDING, never as MD 0."""
+    protennislive has not posted yet: shown as PENDING, never as MD 0.
+
+    reason records WHY it is pending, so the QA gate can distinguish a genuine
+    not-yet-posted list (safe to publish as pending) from a parser regression:
+      'placeholder' - HTTP 200 'not yet available' placeholder PDF (verified)
+      'not_posted'  - both PDFs 404 (verified absent)
+      'parse_empty' - a real PDF parsed to 0 players (SUSPICIOUS -> fail closed)
+    """
     ws = t.get("weekStart")
     return {
         "tour": t.get("tour", "ATP"),
@@ -564,6 +593,7 @@ def _pending_record(t):
         "tier": t.get("tier"),
         "surface": t.get("surface"),
         "status": "pending",
+        "pendingReason": reason,
         "sourcePublished": None,
         "counts": {"MD": 0, "Q": 0, "ALT": 0},
         "sections": [],
@@ -580,16 +610,30 @@ def scrape_tournament(t, year, profile_idx):
     qs_bytes, qs_code = fetch_pdf(year, tid, "qs")
     log(f"    mds={md_code} qs={qs_code}")
 
+    # HTTP 200 but not-yet-posted placeholder -> treat as absent so the
+    # pending path below fires (never a misleading active/MD 0 record).
+    was_placeholder = False
+    if is_placeholder_pdf(md_bytes):
+        md_bytes = None
+        was_placeholder = True
+        log("    mds is not-yet-posted placeholder -> pending")
+    if is_placeholder_pdf(qs_bytes):
+        qs_bytes = None
+        was_placeholder = True
+        log("    qs is not-yet-posted placeholder -> pending")
+
     # 429 / transient fetch error: do NOT invent a pending row and do NOT drop
     # silently in a way the gate reads as a real absence -- surface as skipped
     # so a rate-limited run never publishes a misleading state.
     if md_bytes is None and qs_bytes is None:
         if 429 in (md_code, qs_code) or -1 in (md_code, qs_code):
             return None, {"id": tid, "reason": f"transient fetch fail (mds={md_code}, qs={qs_code}) -- SKIPPED, not pending"}
-        # genuine 404: the tournament is on our curated map but protennislive
-        # has not posted its list yet -> render as pending (dash, not zero).
+        # genuine 404 (or verified placeholder): the tournament is on our
+        # curated map but protennislive has not posted its list yet -> render as
+        # pending (dash, not zero).
         if t.get("name"):
-            return _pending_record(t), None
+            reason = "placeholder" if was_placeholder else "not_posted"
+            return _pending_record(t, reason), None
         return None, {"id": tid, "reason": f"both PDFs 404 and no curated name (mds={md_code}, qs={qs_code})"}
 
     header = None
@@ -635,6 +679,21 @@ def scrape_tournament(t, year, profile_idx):
     tier = header["tier"] or t.get("tier")
     surface = header["surface"] or t.get("surface")
     start_date, end_date, week_start = _week_fields(week_label, t.get("weekStart"))
+
+    # Backstop: an "active" record with no players in either draw is exactly the
+    # forbidden MD 0 state. If both PDFs parsed to zero players, the list is not
+    # really posted -> emit PENDING, not active/0.
+    if counts["MD"] == 0 and counts["Q"] == 0:
+        log("    parsed 0 MD + 0 Q -> pending (no real list)")
+        rec = _pending_record(t, "parse_empty")
+        rec["name"] = name or rec["name"]
+        rec["city"] = city or rec["city"]
+        rec["country"] = country or rec["country"]
+        rec["tier"] = tier or rec["tier"]
+        rec["surface"] = surface or rec["surface"]
+        rec["weekStart"] = week_start or rec["weekStart"]
+        rec["startDate"] = start_date or rec["startDate"]
+        return rec, None
 
     return {
         "tour": tour,

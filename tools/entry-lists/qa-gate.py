@@ -65,7 +65,11 @@ def validate(path):
         errors.append("tournaments must be a non-empty list")
         tours = []
 
-    n_active = n_pending = 0
+    VALID_PENDING_REASONS = {"placeholder", "not_posted", "parse_empty"}
+    # 'placeholder'/'not_posted' = we verified protennislive has no list yet
+    # (safe to publish as pending). 'parse_empty' = a real PDF parsed to zero
+    # players, which means the parser regressed -> fail closed.
+    n_active = n_pending = n_parse_empty = 0
     for ti, t in enumerate(tours):
         tag = f"tournament[{ti}] id={t.get('tournamentId')!r}"
         for k in ("tour", "tournamentId", "counts", "sections"):
@@ -108,6 +112,16 @@ def validate(path):
                 errors.append(f"{tag}: pending tournament must have empty sections")
             if counts.get("MD") or counts.get("Q") or counts.get("ALT"):
                 errors.append(f"{tag}: pending tournament must have zero counts")
+            reason = t.get("pendingReason")
+            if reason not in VALID_PENDING_REASONS:
+                errors.append(f"{tag}: pendingReason {reason!r} not in "
+                              f"{sorted(VALID_PENDING_REASONS)}")
+            if reason == "parse_empty":
+                # a real PDF that parsed to zero players is a parser regression,
+                # not a genuine not-yet-posted list -> fail closed.
+                n_parse_empty += 1
+                errors.append(f"{tag}: pendingReason 'parse_empty' -- a real PDF "
+                              "parsed to 0 players (suspected parser regression)")
             continue
         if not isinstance(sections, list) or len(sections) == 0:
             errors.append(f"{tag}: sections must be a non-empty list")
@@ -149,10 +163,17 @@ def validate(path):
             errors.append(f"{tag}: has no players in any section")
         total_players += t_players
 
-    # a shard that scraped nothing real (all-pending / empty) must not publish.
-    if n_active == 0:
-        errors.append("no active tournaments with players (all pending/empty) "
-                      "-- refusing to publish a contentless shard")
+    # An all-pending shard is allowed ONLY when every tournament is a VERIFIED
+    # not-yet-posted list (placeholder/not_posted) -- that is the honest state
+    # during a tour-empty / pre-posting window and is strictly better than
+    # serving stale past tournaments. It must still fail closed if:
+    #   - the shard has no tournaments at all (contentless), or
+    #   - any pending is 'parse_empty' (parser regression, flagged above).
+    if n_active == 0 and n_pending == 0:
+        errors.append("no tournaments at all -- refusing to publish an empty shard")
+    elif n_active == 0 and n_parse_empty:
+        errors.append("all-pending shard contains parse_empty records "
+                      "-- refusing to publish (suspected parser regression)")
 
     ok = len(errors) == 0
     if ok:
