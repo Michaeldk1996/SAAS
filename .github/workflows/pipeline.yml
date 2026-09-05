@@ -174,13 +174,16 @@ jobs:
       # the same api-tennis get_fixtures the pipeline already fetches — one shard
       # per player + a gating index (with the name/rank/country meta map). ~428
       # get_fixtures/run; call volume is not a constraint on the top plan (founder
-      # ruling 2026-09-05). Best-effort: a failure keeps the previous run's shards,
-      # and the page ships behind FEATURE_TRADING_REPORT (default OFF) so an absent
-      # shard never affects anything live. STAGED — cadence confirmed at go-live.
-      - name: Build Trading Report splits (best-effort)
+      # ruling 2026-09-05). FAIL-LOUD (founder ruling 2026-09-05): the Trading
+      # Report board is now default-ON, so a silent generator crash would publish
+      # an EMPTY board to users. The `|| true` is removed on purpose — a non-zero
+      # exit fails the job, which blocks this deploy and leaves Pages serving the
+      # last good full site (a complete, if stale, board) rather than shipping an
+      # empty one. A crash here is a real alarm, not a swallowed best-effort.
+      - name: Build Trading Report splits (fail-loud)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-trading-splits.js || true
+        run: node build-trading-splits.js
 
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
