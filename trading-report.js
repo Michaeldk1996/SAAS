@@ -105,6 +105,17 @@
     ws1wm: 'Won Set 1 then Won the Match',
   };
 
+  // Set-outcome denominator caveat (founder ruling 2026-09-05): these metrics
+  // count only matches where the relevant set was DECIDED, so their denominator
+  // can be lower than the MATCHES column. Undecided sets — from short-format
+  // events (e.g. Next Gen first-to-4) and retirements — are excluded, never
+  // zero-filled. The tooltip states this so the smaller denominator reads as
+  // correct behaviour, not a defect.
+  var SET_OUTCOME_KEYS = ['wfs', 'ws2', 'ws1w2', 'ls1ws2', 'ws1wm'];
+  SET_OUTCOME_KEYS.forEach(function (k) {
+    METRIC_TIPS[k] += ' — denominator counts only matches with the relevant set decided, so it can be lower than MATCHES (undecided sets from short-format events and retirements are excluded, never zero-filled).';
+  });
+
   // Config-driven tabs: each entry is a column set over the same shard. Column
   // ORDER within each tab is verbatim (left→right) from the metric-dictionary doc.
   // The render path reads this — nothing is hardcoded per tab.

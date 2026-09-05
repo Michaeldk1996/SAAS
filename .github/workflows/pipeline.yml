@@ -174,13 +174,22 @@ jobs:
       # the same api-tennis get_fixtures the pipeline already fetches — one shard
       # per player + a gating index (with the name/rank/country meta map). ~428
       # get_fixtures/run; call volume is not a constraint on the top plan (founder
-      # ruling 2026-09-05). FAIL-LOUD (founder ruling 2026-09-05): the Trading
-      # Report board is now default-ON, so a silent generator crash would publish
-      # an EMPTY board to users. The `|| true` is removed on purpose — a non-zero
-      # exit fails the job, which blocks this deploy and leaves Pages serving the
-      # last good full site (a complete, if stale, board) rather than shipping an
-      # empty one. A crash here is a real alarm, not a swallowed best-effort.
-      - name: Build Trading Report splits (fail-loud)
+      # ruling 2026-09-05).
+      #
+      # ISOLATED FAIL-LOUD (founder ruling 2026-09-05, second comment): the Trading
+      # Report is the newest and least-tested surface, and it must NOT hold the
+      # core board's deploy hostage. So `continue-on-error` lets the core board
+      # deploy even when this generator fails — but the failure is NOT swallowed:
+      # the "Re-raise Trading Report generator failure" step at the end of the job
+      # turns the whole RUN red (and writes the run summary) AFTER the deploy has
+      # published. Loud failure, isolated failure. The generator itself refuses to
+      # publish an empty roster (zero-shard guard) so a clean-exit-empty can no
+      # longer green the pipeline. NOTE: on a failure the trading shards are simply
+      # not refreshed this run — "keep last good rather than ship empty" persistence
+      # is a separate open decision (there is no in-repo shard snapshot yet).
+      - name: Build Trading Report splits (isolated fail-loud)
+        id: trading_splits
+        continue-on-error: true
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node build-trading-splits.js
@@ -429,3 +438,30 @@ jobs:
             git pull --rebase origin main || true
           done
           echo "::error::Could not push after 3 attempts."; exit 1
+
+      # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
+      # generator runs ISOLATED (continue-on-error above) so its failure never
+      # blocks the core board's deploy. But an isolated failure must still be
+      # LOUD — never a green run. This runs last, AFTER the core deploy has
+      # already published, and turns the whole RUN red if the generator failed,
+      # writing the reason into the run summary. Loud failure, isolated failure:
+      # the core board is fresh; the run is red so the alarm is seen.
+      - name: Re-raise Trading Report generator failure (loud, non-blocking)
+        if: always() && steps.trading_splits.outcome == 'failure'
+        run: |
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
+          echo "::error title=Trading Report generator failed::build-trading-splits.js exited non-zero this run (core deploy outcome: ${DEPLOY_OUTCOME}). Trading shards were NOT refreshed."
+          {
+            echo "### ❌ Trading Report generator failed"
+            echo ""
+            echo "\`build-trading-splits.js\` exited non-zero this run."
+            echo ""
+            if [ "$DEPLOY_OUTCOME" = "success" ]; then
+              echo "- The **core board deployed normally** — this failure is isolated and did not block the deploy."
+            else
+              echo "- ⚠️ The core deploy did **not** succeed this run (deploy outcome: \`${DEPLOY_OUTCOME}\`) — this run has more than one failure; check the deploy step too."
+            fi
+            echo "- The **trading shards were not refreshed** this run."
+            echo "- See the *Build Trading Report splits* step log above; re-run once fixed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1

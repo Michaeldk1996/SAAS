@@ -376,6 +376,18 @@ async function main() {
     shardSizes.push(gz);
   }
 
+  // Zero-shard guard (founder ruling 2026-09-05): we only reach here with
+  // API_TENNIS_KEY present (the early abort above handles the absent-key case),
+  // so an EMPTY produced roster is a real failure — a clean exit with empty
+  // output that would otherwise green the pipeline and ship an empty board.
+  // Simple empty-vs-not-empty, no threshold. Fail loudly; never publish an
+  // empty index. (Isolated at the workflow layer so this never blocks the core
+  // board's deploy.)
+  if (!index.length) {
+    console.error('trading-splits: API_TENNIS_KEY present but the produced roster is empty — failing (no zero-shard publish).');
+    process.exit(1);
+  }
+
   index.sort((a, b) => Number(a) - Number(b));
   const indexDoc = {
     generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
