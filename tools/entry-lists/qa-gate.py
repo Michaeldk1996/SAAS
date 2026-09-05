@@ -13,6 +13,7 @@ prior good entry_lists.json, so a bad scrape can never publish.
 """
 
 import os
+import re
 import sys
 import json
 import math
@@ -64,11 +65,27 @@ def validate(path):
         errors.append("tournaments must be a non-empty list")
         tours = []
 
+    n_active = n_pending = 0
     for ti, t in enumerate(tours):
         tag = f"tournament[{ti}] id={t.get('tournamentId')!r}"
         for k in ("tour", "tournamentId", "counts", "sections"):
             if k not in t:
                 errors.append(f"{tag}: missing key {k}")
+
+        # weekStart, when present, must be an ISO date (drives the week rail).
+        ws = t.get("weekStart")
+        if ws is not None and not (isinstance(ws, str)
+                                   and re.match(r"^\d{4}-\d{2}-\d{2}$", ws)):
+            errors.append(f"{tag}: weekStart must be YYYY-MM-DD or null (got {ws!r})")
+
+        status = t.get("status", "active")
+        if status not in ("active", "pending"):
+            errors.append(f"{tag}: status {status!r} not in ('active','pending')")
+        is_pending = status == "pending"
+        if is_pending:
+            n_pending += 1
+        else:
+            n_active += 1
 
         surface = t.get("surface")
         if surface is not None and surface not in KNOWN_SURFACES:
@@ -84,6 +101,14 @@ def validate(path):
                 errors.append(f"{tag}: counts.{ck} must be a non-negative int (got {v!r})")
 
         sections = t.get("sections")
+        if is_pending:
+            # a pending tournament legitimately has no acceptance list yet;
+            # it must carry NO players (never a fabricated MD 0 with rows).
+            if sections:
+                errors.append(f"{tag}: pending tournament must have empty sections")
+            if counts.get("MD") or counts.get("Q") or counts.get("ALT"):
+                errors.append(f"{tag}: pending tournament must have zero counts")
+            continue
         if not isinstance(sections, list) or len(sections) == 0:
             errors.append(f"{tag}: sections must be a non-empty list")
             sections = []
@@ -124,11 +149,16 @@ def validate(path):
             errors.append(f"{tag}: has no players in any section")
         total_players += t_players
 
+    # a shard that scraped nothing real (all-pending / empty) must not publish.
+    if n_active == 0:
+        errors.append("no active tournaments with players (all pending/empty) "
+                      "-- refusing to publish a contentless shard")
+
     ok = len(errors) == 0
     if ok:
         summary = (
             "QA GATE: PASS\n"
-            f"  tournaments validated : {len(tours)}\n"
+            f"  tournaments validated : {len(tours)} ({n_active} active, {n_pending} pending)\n"
             f"  main-draw players     : {total_md}\n"
             f"  qualifying players    : {total_q}\n"
             f"  total player rows     : {total_players}\n"

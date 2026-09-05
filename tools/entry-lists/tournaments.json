@@ -1,9 +1,11 @@
 {
   "year": 2026,
-  "note": "Seed map of tournaments to scrape from protennislive.com. This is the pluggable ID source for TEN-150 v1. Full weekly auto-enumeration of tournament IDs is a SEPARATE task (see README TODOs).",
+  "note": "TEN-150 v2 curated forward-ID map (Path A). Each entry is a tournament we EXPECT in an upcoming week; the build fetches its protennislive PDF and, if not yet posted, emits it as PENDING (never MD 0). Tour-level protennislive <id> == ATP tournament id (anchor: Canada=421 on both protennislive and atptour.com). Challenger ids do NOT follow that scheme (Cancun protennislive=3009 vs atptour=4193) and must be discovered/curated separately. 'verified' = confirmed to resolve on protennislive. Keep this file OFF origin/main until verified + founder go-live (the shared-tree cron publishes whatever ids are here).",
+  "idSource": "atptour.com tournament-page numeric id (tour level only)",
   "tournaments": [
-    { "tour": "ATP", "id": "600",  "tier": "Challenger", "note": "Prague Challenger 75" },
-    { "tour": "ATP", "id": "3009", "tier": "Challenger", "note": "Cancun" },
-    { "tour": "ATP", "id": "421",  "tier": "Masters",     "note": "Canada Masters" }
-  ]
+    { "tour": "ATP", "id": "7581", "name": "Chengdu Open",  "tier": "ATP 250", "surface": "Hard", "city": "Chengdu",  "country": "China", "weekStart": "2026-09-21", "verified": false, "note": "atptour id 7581; Asian swing 250" },
+    { "tour": "ATP", "id": "4713", "name": "Hangzhou Open", "tier": "ATP 250", "surface": "Hard", "city": "Hangzhou", "country": "China", "weekStart": "2026-09-21", "verified": false, "note": "atptour id 4713; Lynk & Co Hangzhou Open 250" },
+    { "tour": "ATP", "id": "747",  "name": "China Open (Beijing)", "tier": "ATP 500", "surface": "Hard", "city": "Beijing", "country": "China", "weekStart": "2026-09-28", "verified": false, "note": "atptour id 747; Beijing 500" }
+  ],
+  "_challenger_gap": "Weeks 2026-08-31 / 09-07 / 09-14 are tour-empty (post-US-Open lull, Davis Cup, Laver Cup carry no acceptance lists); near-term entry-list volume is Challenger tier. Challenger protennislive ids have no clean non-crawl source and blind enumeration 429-blocks. See go-forward plan on the issue before populating."
 }

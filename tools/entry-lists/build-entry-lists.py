@@ -80,6 +80,70 @@ STOP_PREFIXES = (
     "Final", "Winner", "Qualifier", "Last Direct Acceptance",
 )
 
+# --- week-date parsing (week_label -> start/end/weekStart) -------------------
+MONTHS = {m: i + 1 for i, m in enumerate([
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"])}
+_MONTH_RE = re.compile(
+    r"(\d{1,2})\s+(January|February|March|April|May|June|July|August|"
+    r"September|October|November|December)\s*(\d{4})?")
+
+
+def parse_week_range(label):
+    """'17 August — 22 August 2026 | ...' -> (start_date, end_date) or None."""
+    if not label:
+        return None
+    part = label.split("|")[0].strip()
+    parts = re.split(r"[—–-]", part)
+    if len(parts) < 2:
+        return None
+    try:
+        end_m = _MONTH_RE.search(parts[-1].strip())
+        if not end_m:
+            return None
+        year = int(end_m.group(3)) if end_m.group(3) else datetime.date.today().year
+        end = datetime.date(year, MONTHS[end_m.group(2)], int(end_m.group(1)))
+        start_m = _MONTH_RE.search(parts[0].strip())
+        if start_m:
+            s_year = int(start_m.group(3)) if start_m.group(3) else year
+            start = datetime.date(s_year, MONTHS[start_m.group(2)], int(start_m.group(1)))
+        else:
+            dm = re.search(r"(\d{1,2})", parts[0])
+            start = datetime.date(year, end.month, int(dm.group(1))) if dm else end
+        return start, end
+    except Exception:
+        return None
+
+
+def week_monday(d):
+    """Monday of the ISO week containing date d, as YYYY-MM-DD."""
+    return (d - datetime.timedelta(days=d.weekday())).isoformat()
+
+
+def pdf_published_at(data):
+    """Best-effort source-publication timestamp from the PDF's own metadata.
+
+    protennislive stamps each acceptance-list PDF with a modification date when
+    it is (re)posted, so this is 'when the source last published', distinct from
+    when our job ran. Returns an ISO-8601 string (UTC) or None.
+    """
+    try:
+        import fitz
+        doc = fitz.open(stream=data, filetype="pdf")
+        meta = doc.metadata or {}
+        doc.close()
+        raw = meta.get("modDate") or meta.get("creationDate") or ""
+        m = re.match(r"D:(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?", raw)
+        if not m:
+            return None
+        y, mo, da = m.group(1), m.group(2), m.group(3)
+        hh = m.group(4) or "00"
+        mm = m.group(5) or "00"
+        ss = m.group(6) or "00"
+        return f"{y}-{mo}-{da}T{hh}:{mm}:{ss}Z"
+    except Exception:
+        return None
+
 
 def log(*a):
     print(*a, file=sys.stderr)
@@ -471,28 +535,74 @@ def build_players(raw, seeded_by_num, seeded_by_surname, profile_idx):
     return out
 
 
+def _week_fields(week_label, curated_week_start):
+    """Return (startDate, endDate, weekStart) from a parsed label, falling back
+    to the curated weekStart when the PDF carries no parseable date range."""
+    rng = parse_week_range(week_label)
+    if rng:
+        start, end = rng
+        return start.isoformat(), end.isoformat(), week_monday(start)
+    if curated_week_start:
+        return curated_week_start, None, curated_week_start
+    return None, None, None
+
+
+def _pending_record(t):
+    """A tournament we expect (from the curated map) but whose acceptance list
+    protennislive has not posted yet: shown as PENDING, never as MD 0."""
+    ws = t.get("weekStart")
+    return {
+        "tour": t.get("tour", "ATP"),
+        "tournamentId": t["id"],
+        "name": t.get("name"),
+        "city": t.get("city"),
+        "country": t.get("country"),
+        "week_label": t.get("weekLabel"),
+        "startDate": ws,
+        "endDate": None,
+        "weekStart": ws,
+        "tier": t.get("tier"),
+        "surface": t.get("surface"),
+        "status": "pending",
+        "sourcePublished": None,
+        "counts": {"MD": 0, "Q": 0, "ALT": 0},
+        "sections": [],
+    }
+
+
 def scrape_tournament(t, year, profile_idx):
     tid = t["id"]
     tour = t.get("tour", "ATP")
     seed_tier = t.get("tier")
-    log(f"[{tour} {tid}] {t.get('note','')}")
+    log(f"[{tour} {tid}] {t.get('note', t.get('name', ''))}")
 
     md_bytes, md_code = fetch_pdf(year, tid, "mds")
     qs_bytes, qs_code = fetch_pdf(year, tid, "qs")
     log(f"    mds={md_code} qs={qs_code}")
 
+    # 429 / transient fetch error: do NOT invent a pending row and do NOT drop
+    # silently in a way the gate reads as a real absence -- surface as skipped
+    # so a rate-limited run never publishes a misleading state.
     if md_bytes is None and qs_bytes is None:
-        return None, {"id": tid, "reason": f"both PDFs 404/err (mds={md_code}, qs={qs_code})"}
+        if 429 in (md_code, qs_code) or -1 in (md_code, qs_code):
+            return None, {"id": tid, "reason": f"transient fetch fail (mds={md_code}, qs={qs_code}) -- SKIPPED, not pending"}
+        # genuine 404: the tournament is on our curated map but protennislive
+        # has not posted its list yet -> render as pending (dash, not zero).
+        if t.get("name"):
+            return _pending_record(t), None
+        return None, {"id": tid, "reason": f"both PDFs 404 and no curated name (mds={md_code}, qs={qs_code})"}
 
     header = None
     sections = []
     md_lines = qs_lines = None
     counts = {"MD": 0, "Q": 0, "ALT": 0}
     alt_count = 0
+    published = None
 
     if md_bytes is not None:
         md_lines = pdf_lines(md_bytes)
         header = parse_header(md_lines, seed_tier)
+        published = pdf_published_at(md_bytes)
         sn, ss = parse_seeded_section(md_lines)
         raw = parse_players(md_lines, "Main Draw Singles")
         players = build_players(raw, sn, ss, profile_idx)
@@ -504,6 +614,8 @@ def scrape_tournament(t, year, profile_idx):
         qs_lines = pdf_lines(qs_bytes)
         if header is None:
             header = parse_header(qs_lines, seed_tier)
+        if published is None:
+            published = pdf_published_at(qs_bytes)
         sn, ss = parse_seeded_section(qs_lines)
         raw = parse_players(qs_lines, "Qualifying Singles")
         players = build_players(raw, sn, ss, profile_idx)
@@ -515,15 +627,29 @@ def scrape_tournament(t, year, profile_idx):
     header = header or {"name": None, "city": None, "country": None,
                         "week_label": None, "surface": None, "tier": seed_tier}
 
+    # curated map is the fallback for anything the PDF header didn't yield
+    name = header["name"] or t.get("name")
+    city = header["city"] or t.get("city")
+    country = header["country"] or t.get("country")
+    week_label = header["week_label"] or t.get("weekLabel")
+    tier = header["tier"] or t.get("tier")
+    surface = header["surface"] or t.get("surface")
+    start_date, end_date, week_start = _week_fields(week_label, t.get("weekStart"))
+
     return {
         "tour": tour,
         "tournamentId": tid,
-        "name": header["name"],
-        "city": header["city"],
-        "country": header["country"],
-        "week_label": header["week_label"],
-        "tier": header["tier"],
-        "surface": header["surface"],
+        "name": name,
+        "city": city,
+        "country": country,
+        "week_label": week_label,
+        "startDate": start_date,
+        "endDate": end_date,
+        "weekStart": week_start,
+        "tier": tier,
+        "surface": surface,
+        "status": "active",
+        "sourcePublished": published,
         "counts": counts,
         "sections": sections,
     }, None
@@ -548,10 +674,13 @@ def main():
         if skip is not None:
             skipped.append(skip)
 
+    published = [t.get("sourcePublished") for t in tournaments
+                 if t.get("sourcePublished")]
     out = {
         "generatedAt": datetime.datetime.now(datetime.timezone.utc)
         .isoformat().replace("+00:00", "Z"),
         "source": "protennislive",
+        "sourcePublished": max(published) if published else None,
         "tournaments": tournaments,
     }
 

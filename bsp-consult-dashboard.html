@@ -2993,10 +2993,17 @@
   [data-page="entry-lists"] .el-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:#e7e9ee; }
   [data-page="entry-lists"] .el-head p{ margin:0; color:#5b6880; font-size:13.5px; }
   [data-page="entry-lists"] .el-controls{ display:flex; align-items:center; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
-  [data-page="entry-lists"] .el-toggle{ display:inline-flex; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; }
-  [data-page="entry-lists"] .el-toggle button{ font-size:12.5px; font-weight:600; color:#5b6880; background:transparent; border:none; padding:8px 16px; cursor:pointer; transition:color .12s, background .12s; }
-  [data-page="entry-lists"] .el-toggle button.active{ color:#e7e9ee; background:rgba(91,155,255,0.14); }
-  [data-page="entry-lists"] .el-meta{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-left:auto; }
+  [data-page="entry-lists"] .el-weektabs{ display:flex; gap:8px; flex-wrap:wrap; }
+  [data-page="entry-lists"] .el-weektab{ display:flex; flex-direction:column; align-items:flex-start; gap:1px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:8px 14px; cursor:pointer; transition:color .12s, background .12s, border-color .12s; }
+  [data-page="entry-lists"] .el-weektab:hover{ background:rgba(255,255,255,0.06); }
+  [data-page="entry-lists"] .el-weektab.active{ background:rgba(91,155,255,0.14); border-color:rgba(91,155,255,0.35); }
+  [data-page="entry-lists"] .el-weektab-range{ font-size:12.5px; font-weight:700; color:#a8b0c0; }
+  [data-page="entry-lists"] .el-weektab.active .el-weektab-range{ color:#e7e9ee; }
+  [data-page="entry-lists"] .el-weektab-sub{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:#5b6880; }
+  [data-page="entry-lists"] .el-freshness{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-top:22px; }
+  [data-page="entry-lists"] .el-levelhdr{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#8892a4; margin:22px 0 12px; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  [data-page="entry-lists"] .el-levelgroup:first-child .el-levelhdr{ margin-top:4px; }
+  [data-page="entry-lists"] .el-pending{ font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#c9a227; background:rgba(255,215,0,0.10); padding:4px 10px; border-radius:6px; flex-shrink:0; }
   [data-page="entry-lists"] .el-tourns{ display:flex; flex-direction:column; gap:16px; }
   [data-page="entry-lists"] .el-card{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; overflow:hidden; }
   [data-page="entry-lists"] .el-cardhead{ display:flex; align-items:center; gap:14px; padding:16px 20px; cursor:pointer; user-select:none; transition:background .12s; }
@@ -3061,13 +3068,10 @@
       <p>Official ATP acceptance lists — main draw, qualifying, wildcards &amp; alternates — from protennislive.com.</p>
     </div>
     <div class="el-controls">
-      <div class="el-toggle">
-        <button class="active" data-eltour="ATP">ATP</button>
-        <button data-eltour="WTA">WTA</button>
-      </div>
-      <span class="el-meta" id="elGentime"></span>
+      <div class="el-weektabs" id="elWeekTabs"></div>
     </div>
     <div id="elBody"><div class="el-loading">Loading entry lists…</div></div>
+    <div class="el-freshness" id="elFreshness"></div>
   </div>
 </div>
 
@@ -3075,19 +3079,45 @@
 window.EntryListsTab = (function(){
   var loaded = false;
   var data = null;
-  var activeTour = 'ATP';
+  var activeWeek = null;   // YYYY-MM-DD (Monday) of the selected week
+  var weeks = [];          // the four upcoming Monday keys, ascending
 
-  var TIER_ORDER = ['Grand Slam','Masters','500','250','Challenger','ITF'];
-  function tierRank(tier){
-    if(!tier) return 99;
-    var t = tier.toLowerCase();
-    if(t.includes('grand slam') || t.includes('slam')) return 0;
-    if(t.includes('masters')) return 1;
-    if(t.includes('500')) return 2;
-    if(t.includes('250')) return 3;
-    if(t.includes('challenger')) return 4;
-    if(t.includes('itf')) return 5;
-    return 6;
+  // Founder-specified section order within a week (TEN-150 task, 23:15).
+  var GROUP_ORDER = ['Grand Slam','ATP 250','ATP 500','Masters','Challenger','ITF'];
+  function levelGroup(tier){
+    if(!tier) return 'Challenger';
+    var t = (''+tier).toLowerCase();
+    if(t.includes('grand slam') || t.includes('slam')) return 'Grand Slam';
+    if(t.includes('masters') || t.includes('1000')) return 'Masters';
+    if(t.includes('500')) return 'ATP 500';
+    if(t.includes('250')) return 'ATP 250';
+    if(t.includes('challenger') || t.includes('chall')) return 'Challenger';
+    if(t.includes('itf') || t.includes('futures')) return 'ITF';
+    return 'Challenger';
+  }
+
+  // ---- week math (client clock; weekStart in the shard is an ISO Monday) ----
+  function isoMonday(d){
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var back = (x.getDay() + 6) % 7;   // 0=Mon .. 6=Sun
+    x.setDate(x.getDate() - back);
+    return x;
+  }
+  function fmtKey(d){
+    return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+  }
+  function keyToDate(k){ var p = k.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function weekRangeLabel(k){
+    var mon = keyToDate(k), sun = new Date(mon); sun.setDate(sun.getDate()+6);
+    if(mon.getMonth() === sun.getMonth())
+      return mon.getDate() + '–' + sun.getDate() + ' ' + MON[mon.getMonth()];
+    return mon.getDate() + ' ' + MON[mon.getMonth()] + ' – ' + sun.getDate() + ' ' + MON[sun.getMonth()];
+  }
+  function computeWeeks(){
+    var m0 = isoMonday(new Date()), out = [];
+    for(var i=0;i<4;i++){ var d = new Date(m0); d.setDate(d.getDate()+i*7); out.push(fmtKey(d)); }
+    return out;
   }
   function tierClass(tier){
     if(!tier) return 'el-tier-chall';
@@ -3163,10 +3193,26 @@ window.EntryListsTab = (function(){
     var name = t.name || (t.city || 'Tournament '+t.tournamentId);
     var city = t.city ? (t.city + (t.country ? ', '+t.country : '')) : '';
     var wk = t.week_label || '';
-    var md = t.counts.MD || 0;
-    var q = t.counts.Q || 0;
-    var alt = t.counts.ALT || 0;
     var id = 'el-card-'+idx;
+
+    // Pending: on our curated map but the source has not posted the list yet.
+    // Show a pending badge, never a fabricated MD 0; card does not expand.
+    if(t.status === 'pending'){
+      return '<div class="el-card">'
+        + '<div class="el-cardhead" style="cursor:default;">'
+          + '<span class="el-tier '+tierClass(t.tier)+'">'+tierLbl+'</span>'
+          + (surfLbl ? '<span class="el-surface '+surfaceClass(t.surface)+'">'+surfLbl+'</span>' : '')
+          + '<div style="flex:1;min-width:0"><p class="el-cardname">'+name+'</p>'
+            + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
+          + '</div>'
+          + '<span class="el-pending">Entry list pending</span>'
+        + '</div>'
+      + '</div>';
+    }
+
+    var md = (t.counts && t.counts.MD) || 0;
+    var q = (t.counts && t.counts.Q) || 0;
+    var alt = (t.counts && t.counts.ALT) || 0;
     var sections = (t.sections||[]).map(function(s){
       return '<div class="el-section"><div class="el-sectitle">'+s.title+' ('+s.players.length+')</div>'+renderPlayers(s.players)+'</div>';
     }).join('');
@@ -3188,19 +3234,85 @@ window.EntryListsTab = (function(){
       + '</div>';
   }
 
+  function renderWeekTabs(){
+    var rail = document.getElementById('elWeekTabs');
+    if(!rail) return;
+    // count real (non-pending) tournaments per week for the sub-label
+    var byWeek = {};
+    (data.tournaments||[]).forEach(function(t){
+      if(!t.weekStart) return;
+      byWeek[t.weekStart] = byWeek[t.weekStart] || {n:0};
+      if(t.status !== 'pending') byWeek[t.weekStart].n++;
+    });
+    rail.innerHTML = weeks.map(function(k){
+      var info = byWeek[k];
+      var sub = info ? (info.n + ' event' + (info.n===1?'':'s')) : 'none yet';
+      return '<div class="el-weektab'+(k===activeWeek?' active':'')+'" data-elweek="'+k+'">'
+        + '<span class="el-weektab-range">'+weekRangeLabel(k)+'</span>'
+        + '<span class="el-weektab-sub">'+sub+'</span>'
+      + '</div>';
+    }).join('');
+  }
+
   function render(){
     var body = document.getElementById('elBody');
     if(!body || !data) return;
+    renderWeekTabs();
+
     var tourns = (data.tournaments||[]).filter(function(t){
-      return (t.tour||'ATP').toUpperCase() === activeTour;
+      return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === activeWeek;
     });
-    tourns.sort(function(a,b){ return tierRank(a.tier) - tierRank(b.tier); });
     if(!tourns.length){
-      body.innerHTML = '<div class="el-empty">No '+activeTour+' entry lists available.</div>';
+      body.innerHTML = '<div class="el-empty">No tournaments published for this week yet.</div>';
+      renderFreshness();
       return;
     }
-    body.innerHTML = '<div class="el-tourns">'+tourns.map(renderTournament).join('')+'</div>'
-      + '<p class="el-gentime">Updated: '+data.generatedAt.replace('T',' ').replace('Z',' UTC').slice(0,20)+'</p>';
+
+    // group by level, emit in the founder-specified order
+    var groups = {};
+    tourns.forEach(function(t){
+      var g = levelGroup(t.tier);
+      (groups[g] = groups[g] || []).push(t);
+    });
+    var idx = 0, html = '';
+    GROUP_ORDER.forEach(function(g){
+      var list = groups[g];
+      if(!list || !list.length) return;
+      // active tournaments before pending ones within a level
+      list.sort(function(a,b){
+        var ap = a.status==='pending'?1:0, bp = b.status==='pending'?1:0;
+        if(ap!==bp) return ap-bp;
+        return (a.name||'').localeCompare(b.name||'');
+      });
+      html += '<div class="el-levelgroup"><div class="el-levelhdr">'+g+'</div>'
+        + '<div class="el-tourns">'
+        + list.map(function(t){ return renderTournament(t, idx++); }).join('')
+        + '</div></div>';
+    });
+    body.innerHTML = html;
+    renderFreshness();
+  }
+
+  function renderFreshness(){
+    var el = document.getElementById('elFreshness');
+    if(!el) return;
+    var src = data.sourcePublished
+      ? data.sourcePublished.replace('T',' ').replace('Z',' UTC').slice(0,16)
+      : null;
+    var gen = data.generatedAt
+      ? data.generatedAt.replace('T',' ').replace('Z',' UTC').slice(0,16)
+      : null;
+    el.innerHTML = (src ? 'Source last published: '+src : 'Source publish date unavailable')
+      + (gen ? '  ·  list refreshed by us: '+gen : '');
+  }
+
+  function pickDefaultWeek(){
+    // default to the earliest upcoming week that actually has a tournament,
+    // else the current week.
+    var have = {};
+    (data.tournaments||[]).forEach(function(t){ if(t.weekStart) have[t.weekStart]=1; });
+    for(var i=0;i<weeks.length;i++){ if(have[weeks[i]]) return weeks[i]; }
+    return weeks[0];
   }
 
   function init(){
@@ -3209,19 +3321,23 @@ window.EntryListsTab = (function(){
     if(body) body.innerHTML = '<div class="el-loading">Loading entry lists…</div>';
     fetch('entry_lists.json?_='+Date.now())
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){ data = d; loaded = true; render(); })
+      .then(function(d){
+        data = d; loaded = true;
+        weeks = computeWeeks();
+        activeWeek = pickDefaultWeek();
+        render();
+      })
       .catch(function(e){
         console.warn('EntryListsTab load failed', e);
         if(body) body.innerHTML = '<div class="el-empty">Entry lists unavailable.</div>';
       });
   }
 
-  // Tour toggle
+  // Week-tab selection
   document.addEventListener('click', function(e){
-    var btn = e.target.closest('[data-eltour]');
+    var btn = e.target.closest('[data-elweek]');
     if(!btn) return;
-    activeTour = btn.dataset.eltour;
-    document.querySelectorAll('[data-eltour]').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    activeWeek = btn.dataset.elweek;
     if(loaded) render();
   });
 
