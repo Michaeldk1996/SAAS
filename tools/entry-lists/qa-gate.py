@@ -99,10 +99,16 @@ def validate(path):
         if not isinstance(counts, dict):
             errors.append(f"{tag}: counts must be an object")
             counts = {}
-        for ck in ("MD", "Q", "ALT"):
+        # MD / Q are draw sizes: either null (unknown -> dash) or a POSITIVE int
+        # (posted, has players) -- never 0, so an active tournament can never
+        # render a misleading "MD 0". ALT is a real count, non-negative int.
+        for ck in ("MD", "Q"):
             v = counts.get(ck)
-            if not isinstance(v, int) or isinstance(v, bool) or v < 0:
-                errors.append(f"{tag}: counts.{ck} must be a non-negative int (got {v!r})")
+            if v is not None and (not isinstance(v, int) or isinstance(v, bool) or v <= 0):
+                errors.append(f"{tag}: counts.{ck} must be null or a positive int (got {v!r})")
+        alt = counts.get("ALT")
+        if not isinstance(alt, int) or isinstance(alt, bool) or alt < 0:
+            errors.append(f"{tag}: counts.ALT must be a non-negative int (got {alt!r})")
 
         sections = t.get("sections")
         if is_pending:

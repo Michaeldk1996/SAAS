@@ -595,7 +595,8 @@ def _pending_record(t, reason):
         "status": "pending",
         "pendingReason": reason,
         "sourcePublished": None,
-        "counts": {"MD": 0, "Q": 0, "ALT": 0},
+        # unknown draw sizes -> null (a dash), never 0.
+        "counts": {"MD": None, "Q": None, "ALT": 0},
         "sections": [],
     }
 
@@ -636,12 +637,18 @@ def scrape_tournament(t, year, profile_idx):
             return _pending_record(t, reason), None
         return None, {"id": tid, "reason": f"both PDFs 404 and no curated name (mds={md_code}, qs={qs_code})"}
 
+    # A draw we could not fetch (placeholder / 404 / transient) is UNKNOWN, not
+    # zero: its count stays None so the frontend renders a dash, never MD 0.
+    # A draw count is therefore either a positive int (posted, has players) or
+    # None -- never 0. If a REAL PDF parses to 0 players that is a parser
+    # regression, handled by the parse_empty backstop below.
     header = None
     sections = []
     md_lines = qs_lines = None
-    counts = {"MD": 0, "Q": 0, "ALT": 0}
+    counts = {"MD": None, "Q": None, "ALT": 0}
     alt_count = 0
     published = None
+    md_empty = qs_empty = False  # a real PDF that parsed to 0 players
 
     if md_bytes is not None:
         md_lines = pdf_lines(md_bytes)
@@ -652,7 +659,10 @@ def scrape_tournament(t, year, profile_idx):
         players = build_players(raw, sn, ss, profile_idx)
         counts["MD"] = len(players)
         alt_count = max(alt_count, count_alternates(md_lines))
-        sections.append({"title": "Main Draw", "players": players})
+        if players:
+            sections.append({"title": "Main Draw", "players": players})
+        else:
+            md_empty = True
 
     if qs_bytes is not None:
         qs_lines = pdf_lines(qs_bytes)
@@ -665,7 +675,10 @@ def scrape_tournament(t, year, profile_idx):
         players = build_players(raw, sn, ss, profile_idx)
         counts["Q"] = len(players)
         alt_count = max(alt_count, count_alternates(qs_lines))
-        sections.append({"title": "Qualifying", "players": players})
+        if players:
+            sections.append({"title": "Qualifying", "players": players})
+        else:
+            qs_empty = True
 
     counts["ALT"] = alt_count
     header = header or {"name": None, "city": None, "country": None,
@@ -680,11 +693,14 @@ def scrape_tournament(t, year, profile_idx):
     surface = header["surface"] or t.get("surface")
     start_date, end_date, week_start = _week_fields(week_label, t.get("weekStart"))
 
-    # Backstop: an "active" record with no players in either draw is exactly the
-    # forbidden MD 0 state. If both PDFs parsed to zero players, the list is not
-    # really posted -> emit PENDING, not active/0.
-    if counts["MD"] == 0 and counts["Q"] == 0:
-        log("    parsed 0 MD + 0 Q -> pending (no real list)")
+    # Backstop: a REAL PDF that parsed to zero players (md_empty/qs_empty), or a
+    # tournament with no populated section at all, is a parser regression -- not
+    # a genuine not-yet-posted list. Emit PENDING/parse_empty so it (a) never
+    # shows as active MD 0 and (b) fails the QA gate closed for investigation.
+    # (A draw that was simply absent leaves its count None -> a dash, and does
+    #  NOT trip this: the active record below can carry MD=null + a real Q list.)
+    if md_empty or qs_empty or not sections:
+        log("    real PDF parsed to 0 players / no populated section -> pending (parse_empty)")
         rec = _pending_record(t, "parse_empty")
         rec["name"] = name or rec["name"]
         rec["city"] = city or rec["city"]
@@ -724,12 +740,32 @@ def main():
     log(f"loaded {len(profiles.get('players', {}))} player profiles "
         f"-> {len(profile_idx)} (surname,initial) keys")
 
+    # Prior shard, for carry-forward on transient (429) failure: a rate-limited
+    # run must never silently DROP a previously-good tournament and publish a
+    # shard that is missing it (that would overwrite good data with an absence).
+    prior_by_id = {}
+    if os.path.exists(OUT_JSON):
+        try:
+            with open(OUT_JSON) as f:
+                prior = json.load(f)
+            for pt in prior.get("tournaments", []):
+                prior_by_id[str(pt.get("tournamentId"))] = pt
+        except Exception as e:
+            log("  could not read prior shard for carry-forward:", repr(e))
+
     tournaments = []
     skipped = []
+    carried = []
     for t in seed.get("tournaments", []):
         rec, skip = scrape_tournament(t, year, profile_idx)
         if rec is not None:
             tournaments.append(rec)
+        elif skip is not None and "transient" in skip.get("reason", ""):
+            prev = prior_by_id.get(str(skip["id"]))
+            if prev is not None:
+                tournaments.append(prev)
+                carried.append(skip["id"])
+                skip["reason"] += " -- CARRIED FORWARD prior record"
         if skip is not None:
             skipped.append(skip)
 

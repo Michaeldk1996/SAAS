@@ -3210,8 +3210,9 @@ window.EntryListsTab = (function(){
       + '</div>';
     }
 
-    var md = (t.counts && t.counts.MD) || 0;
-    var q = (t.counts && t.counts.Q) || 0;
+    // MD/Q are null when that draw is not posted yet -> render a dash, never 0.
+    var md = (t.counts && t.counts.MD != null) ? t.counts.MD : null;
+    var q = (t.counts && t.counts.Q != null) ? t.counts.Q : null;
     var alt = (t.counts && t.counts.ALT) || 0;
     var sections = (t.sections||[]).map(function(s){
       return '<div class="el-section"><div class="el-sectitle">'+s.title+' ('+s.players.length+')</div>'+renderPlayers(s.players)+'</div>';
@@ -3224,7 +3225,7 @@ window.EntryListsTab = (function(){
           + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
         + '</div>'
         + '<div class="el-counts">'
-          + '<span class="el-count"><span class="el-count-label">MD</span><span class="el-count-n">'+md+'</span></span>'
+          + '<span class="el-count"><span class="el-count-label">MD</span><span class="el-count-n">'+(md != null ? md : '—')+'</span></span>'
           + (q ? '<span class="el-count"><span class="el-count-label">Q</span><span class="el-count-n">'+q+'</span></span>' : '')
           + (alt ? '<span class="el-count"><span class="el-count-label">Alt</span><span class="el-count-n">'+alt+'</span></span>' : '')
         + '</div>'
