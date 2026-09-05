@@ -22107,26 +22107,26 @@ window.DatabaseTab = (function(){
 </script>
 <script src="live-tab.js" defer></script>
 
-<!-- TEN-151: Trading Report feature flag. STAGED OFF — the page, its data layer
-     and the live wiring ship dark; flipping to true reveals the nav tab and
-     activates the board (after the Supabase-creds + LiveTab-gate guards pass).
-     Deploying this code with the flag OFF changes nothing live until the
-     founder's confirm-before-live gate. Loaded AFTER live-tab.js so the reused
-     window.LiveTab gate exists. -->
+<!-- TEN-151: Trading Report feature flag. DEFAULT ON (founder 2026-09-05 "Turn it
+     on properly — default ON, no query param": platform is pre-revenue R&D, so
+     dark-launch friction buys nothing). The nav tab reveals and the board
+     activates for everyone once the Supabase-creds + LiveTab-gate guards pass.
+     The flag MECHANISM is deliberately KEPT (founder point 2) as the fastest
+     hide switch if something's badly wrong: ?trading=0 or
+     localStorage stennisfy.flags.trading=0 turns it OFF without a deploy.
+     Loaded AFTER live-tab.js so the reused window.LiveTab gate exists. -->
 <script>
-  // Ship route (founder 2026-09-05 "Ship it", point 1): reuse the EXISTING
-  // holdbreak flag idiom (hbFlagOn, TEN-126) — enable with ?trading=1 or
-  // localStorage stennisfy.flags.trading=1. Defaults OFF for everyone, so the
-  // page ships reviewable with ZERO member exposure. This is NOT a new gating
-  // mechanism — it is the same 5-line query-param/localStorage reader already
-  // shipped for the Break/Hold heatmap. To later expose to all members, set the
-  // default return to true (a one-line change).
+  // Same 5-line query-param/localStorage reader as the Break/Hold heatmap
+  // (hbFlagOn, TEN-126), now defaulting ON. Explicit-off wins over the default:
+  //   ?trading=0                             -> OFF for this load
+  //   localStorage stennisfy.flags.trading=0 -> OFF until cleared
+  // Any other state (including no param, no localStorage key) -> ON.
   window.FEATURE_TRADING_REPORT = (function () {
     try {
       var q = new URLSearchParams(location.search);
       if (q.has('trading')) return q.get('trading') !== '0';
-      return localStorage.getItem('stennisfy.flags.trading') === '1';
-    } catch (e) { return false; }
+      return localStorage.getItem('stennisfy.flags.trading') !== '0';
+    } catch (e) { return true; }
   })();
 </script>
 <script src="trading-report.js" defer></script>
