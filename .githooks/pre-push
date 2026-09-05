@@ -1,0 +1,31 @@
+#!/bin/bash
+# =============================================================================
+# TEN-150 push hardening — ad-hoc-push guard.
+#
+# Blocks a push to origin/main unless this is the scheduled bot job
+# (BSP_CRON_PUSH=1). "An agent hand-pushing to origin/main outside the scheduled
+# job is a problem" — it can deploy unreviewed code or data. The cron refresh
+# scripts export BSP_CRON_PUSH=1 to opt through; interactive/agent pushes do not
+# and are stopped with an explicit override instruction.
+#
+# Activate per-clone (reversible):   git config core.hooksPath .githooks
+# Deactivate:                        git config --unset core.hooksPath
+# One-off deliberate deploy:         BSP_CRON_PUSH=1 git push origin HEAD:main
+# =============================================================================
+remote="$1"
+while read -r localref localsha remoteref remotesha; do
+  case "$remoteref" in
+    refs/heads/main)
+      if [ "${BSP_CRON_PUSH:-0}" != "1" ]; then
+        echo "" >&2
+        echo "pre-push BLOCKED: push to origin/main is guarded (TEN-150)." >&2
+        echo "  Only the scheduled bot job should write main directly." >&2
+        echo "  Deliberate one-off deploy:" >&2
+        echo "    BSP_CRON_PUSH=1 git push $remote ${localref}:${remoteref}" >&2
+        echo "" >&2
+        exit 1
+      fi
+      ;;
+  esac
+done
+exit 0

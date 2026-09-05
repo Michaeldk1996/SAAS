@@ -3035,7 +3035,8 @@
   [data-page="entry-lists"] .el-section + .el-section{ border-left:1px solid rgba(255,255,255,0.07); }
   [data-page="entry-lists"] .el-sectitle{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880; margin-bottom:12px; }
   [data-page="entry-lists"] .el-plist{ display:flex; flex-direction:column; gap:3px; }
-  [data-page="entry-lists"] .el-prow{ display:grid; grid-template-columns:24px 1fr 44px 52px; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; }
+  [data-page="entry-lists"] .el-prow{ display:grid; grid-template-columns:24px 1fr 34px 44px 52px; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; }
+  [data-page="entry-lists"] .el-pcountry{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; letter-spacing:0.04em; color:#5b6880; text-align:center; }
   [data-page="entry-lists"] .el-prow:hover{ background:rgba(255,255,255,0.03); }
   [data-page="entry-lists"] .el-ppos{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; color:#4b5672; text-align:right; }
   [data-page="entry-lists"] .el-pname{ font-size:12.5px; color:#e7e9ee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3054,6 +3055,18 @@
   [data-page="entry-lists"] .el-empty{ border:1px dashed rgba(255,255,255,0.09); border-radius:12px; padding:40px 24px; text-align:center; color:#5b6880; font-size:13.5px; }
   [data-page="entry-lists"] .el-loading{ padding:60px 0; text-align:center; color:#5b6880; font-size:13px; }
   [data-page="entry-lists"] .el-gentime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-top:20px; }
+  /* two-regime label: advance acceptance list vs official posted draw */
+  [data-page="entry-lists"] .el-regime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3px 8px; border-radius:5px; flex-shrink:0; }
+  [data-page="entry-lists"] .el-regime-advance{ background:rgba(201,162,39,0.13); color:#c9a227; }
+  [data-page="entry-lists"] .el-regime-draw{ background:rgba(61,214,140,0.14); color:#3dd68c; }
+  [data-page="entry-lists"] .el-publine{ font-size:10.5px; color:#4b5672; margin-top:3px; }
+  /* loud staleness banner: shown when the source could not be refreshed */
+  [data-page="entry-lists"] .el-stale{ display:flex; align-items:flex-start; gap:10px; background:rgba(214,69,69,0.10); border:1px solid rgba(214,69,69,0.32); border-radius:10px; padding:12px 16px; margin-bottom:20px; color:#f0a0a0; font-size:12.5px; line-height:1.5; }
+  [data-page="entry-lists"] .el-stale strong{ color:#ff8080; }
+  [data-page="entry-lists"] .el-s-ng{ background:rgba(91,155,255,0.12); color:#5b9bff; }
+  [data-page="entry-lists"] .el-s-jr{ background:rgba(61,214,140,0.10); color:#3dd68c; }
+  [data-page="entry-lists"] .el-s-co{ background:rgba(255,255,255,0.06); color:#8892a4; }
+  [data-page="entry-lists"] .el-s-se{ background:rgba(255,215,0,0.10); color:#c9a227; }
   @media (max-width:680px) {
     [data-page="entry-lists"] .el-wrap{ padding:16px 14px 60px; }
     [data-page="entry-lists"] .el-sections{ grid-template-columns:1fr; }
@@ -3065,7 +3078,7 @@
   <div class="el-wrap">
     <div class="el-head">
       <h1>Entry Lists</h1>
-      <p>Official ATP acceptance lists — main draw, qualifying, wildcards &amp; alternates — from protennislive.com.</p>
+      <p>ATP acceptance lists — main draw, qualifying, wildcards &amp; alternates. Advance lists switch to the official draw once it is posted; each tournament is labelled with which it is showing.</p>
     </div>
     <div class="el-controls">
       <div class="el-weektabs" id="elWeekTabs"></div>
@@ -3139,7 +3152,8 @@ window.EntryListsTab = (function(){
   }
   function statusClass(st){
     var m = { SEED:'el-s-seed', WC:'el-s-wc', ALT:'el-s-alt', PR:'el-s-pr',
-               LL:'el-s-ll', DA:'el-s-da', BYE:'el-s-bye', Q:'el-s-q' };
+               LL:'el-s-ll', DA:'el-s-da', BYE:'el-s-bye', Q:'el-s-q',
+               NG:'el-s-ng', JR:'el-s-jr', CO:'el-s-co', SE:'el-s-se' };
     return m[st] || 'el-s-da';
   }
   function fmtStatus(st, seed){
@@ -3151,6 +3165,10 @@ window.EntryListsTab = (function(){
     if(st==='LL') return 'LL';
     if(st==='PR') return 'PR';
     if(st==='Q') return 'Q';
+    if(st==='NG') return 'NextGen';
+    if(st==='JR') return 'Jr';
+    if(st==='SE') return 'SE';
+    if(st==='CO') return 'CO';
     return st;
   }
   function fmtName(p){
@@ -3178,13 +3196,36 @@ window.EntryListsTab = (function(){
       var rank = (p.rank && !isBye) ? '#'+p.rank : '';
       var st = fmtStatus(p.status, p.seed);
       var sc = statusClass(p.status);
+      var cty = (!isBye && p.country) ? p.country : '';
       return '<div class="el-prow">'
         + '<span class="el-ppos">'+(isBye?'':i+1)+'</span>'
         + nameHtml
+        + '<span class="el-pcountry">'+cty+'</span>'
         + '<span class="el-prank">'+rank+'</span>'
         + (st ? '<span class="el-pstatus '+sc+'">'+st+'</span>' : '<span></span>')
         + '</div>';
     }).join('') + '</div>';
+  }
+
+  function fmtDate(iso){
+    if(!iso) return null;
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return (''+iso).slice(0,10);
+    return d.getUTCDate()+' '+MON[d.getUTCMonth()]+' '+d.getUTCFullYear();
+  }
+  // Two-regime label: an advance acceptance list vs the official posted draw.
+  function regimeChip(t){
+    if(t.status === 'pending') return '';
+    var draw = t.regime === 'draw';
+    return '<span class="el-regime el-regime-'+(draw?'draw':'advance')+'" title="'
+      + (draw ? 'Official posted draw' : 'Advance acceptance list — switches to the official draw once it is posted')
+      + '">'+(draw ? 'Draw' : 'Entry List')+'</span>';
+  }
+  // Per-tournament provenance: which list, and the date the SOURCE published it.
+  function pubLine(t){
+    var d = t.sourcePublished ? fmtDate(t.sourcePublished) : null;
+    var what = t.regime === 'draw' ? 'Official draw' : 'Advance list';
+    return what + (d ? ' · list published ' + d : ' · publish date —');
   }
 
   function renderTournament(t, idx){
@@ -3195,8 +3236,8 @@ window.EntryListsTab = (function(){
     var wk = t.week_label || '';
     var id = 'el-card-'+idx;
 
-    // Pending: on our curated map but the source has not posted the list yet.
-    // Show a pending badge, never a fabricated MD 0; card does not expand.
+    // Pending: the source has not posted a list yet. Show a pending badge, never
+    // a fabricated MD 0; card does not expand.
     if(t.status === 'pending'){
       return '<div class="el-card">'
         + '<div class="el-cardhead" style="cursor:default;">'
@@ -3221,13 +3262,15 @@ window.EntryListsTab = (function(){
       + '<div class="el-cardhead" onclick="(function(el){el.closest(\'.el-card\').classList.toggle(\'open\')})(this)">'
         + '<span class="el-tier '+tierClass(t.tier)+'">'+tierLbl+'</span>'
         + (surfLbl ? '<span class="el-surface '+surfaceClass(t.surface)+'">'+surfLbl+'</span>' : '')
+        + regimeChip(t)
         + '<div style="flex:1;min-width:0"><p class="el-cardname">'+name+'</p>'
           + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
+          + '<div class="el-publine">'+pubLine(t)+'</div>'
         + '</div>'
         + '<div class="el-counts">'
           + '<span class="el-count"><span class="el-count-label">MD</span><span class="el-count-n">'+(md != null ? md : '—')+'</span></span>'
-          + (q ? '<span class="el-count"><span class="el-count-label">Q</span><span class="el-count-n">'+q+'</span></span>' : '')
-          + (alt ? '<span class="el-count"><span class="el-count-label">Alt</span><span class="el-count-n">'+alt+'</span></span>' : '')
+          + '<span class="el-count"><span class="el-count-label">Q</span><span class="el-count-n">'+(q != null ? q : '—')+'</span></span>'
+          + '<span class="el-count"><span class="el-count-label">Alt</span><span class="el-count-n">'+(alt || '—')+'</span></span>'
         + '</div>'
         + '<svg class="el-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
       + '</div>'
@@ -3255,16 +3298,99 @@ window.EntryListsTab = (function(){
     }).join('');
   }
 
+  // ---- two-shard state: advance (ticktock) + draw (protennislive) ----
+  var advMeta = null;
+  var drawMeta = null;
+
+  function norm(s){ return (''+(s||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,''); }
+  function fmtDateTime(iso){
+    if(!iso) return 'unknown';
+    var d = new Date(iso); if(isNaN(d.getTime())) return (''+iso).slice(0,16);
+    return d.getUTCDate()+' '+MON[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+' UTC';
+  }
+  function ageStr(iso){
+    if(!iso) return '';
+    var ms = Date.now() - new Date(iso).getTime();
+    if(isNaN(ms) || ms < 0) return '';
+    var h = Math.floor(ms/3600000);
+    return h < 24 ? h+'h' : Math.floor(h/24)+'d';
+  }
+
+  // Merge the advance discovery source with the near-event draws. A real posted
+  // draw (protennislive, active + populated) overrides the advance list for the
+  // same tournament — that is the two-regime switch. Everything else stays as the
+  // advance acceptance list. A protennislive *pending* never beats an advance list.
+  //
+  // The two shards are produced independently (ticktock vs protennislive) so the
+  // city spelling can differ; we match on weekStart with an exact city key first,
+  // then a tolerant containment fallback. `used` tracks matched draw objects by
+  // reference so a tournament is never emitted twice (no duplicate cards).
+  function cityKey(t){ return norm(t.city || t.name); }
+  function mergeShards(adv, draw){
+    var draws = ((draw && draw.tournaments) || []).slice();
+    var used = [];
+    function findDraw(a){
+      var ak = cityKey(a), i, d, dk;
+      for(i=0;i<draws.length;i++){ d = draws[i];
+        if(used.indexOf(d)>=0 || d.weekStart!==a.weekStart) continue;
+        if(cityKey(d)===ak) return d;
+      }
+      for(i=0;i<draws.length;i++){ d = draws[i];
+        if(used.indexOf(d)>=0 || d.weekStart!==a.weekStart) continue;
+        dk = cityKey(d);
+        if(ak.length>=4 && dk.length>=4 && (ak.indexOf(dk)>=0 || dk.indexOf(ak)>=0)) return d;
+      }
+      return null;
+    }
+    var out = [];
+    ((adv && adv.tournaments) || []).forEach(function(a){
+      var d = findDraw(a);
+      if(d){ used.push(d); }                     // matched — never re-emit this draw
+      if(d && d.status === 'active' && d.sections && d.sections.length){
+        d.regime = 'draw'; out.push(d);          // real posted draw wins (the switch)
+      } else {
+        a.regime = 'advance'; out.push(a);       // advance list (pending draw suppressed)
+      }
+    });
+    // a posted draw we never discovered from the advance source -> include once
+    draws.forEach(function(d){
+      if(used.indexOf(d)>=0) return;
+      if(d.status === 'active' && d.sections && d.sections.length){ d.regime = 'draw'; out.push(d); }
+    });
+    return out;
+  }
+
+  // Week tabs are discovered from the data itself (current week and forward),
+  // not a fixed client window — the source decides how far coverage reaches.
+  function deriveWeeks(tourns){
+    var cur = fmtKey(isoMonday(new Date())), set = {};
+    tourns.forEach(function(t){ if(t.weekStart && t.weekStart >= cur) set[t.weekStart] = 1; });
+    var ks = Object.keys(set).sort();
+    return ks.length ? ks : [cur];
+  }
+
+  function staleBannerHtml(){
+    if(!advMeta || advMeta.fetchStatus !== 'stale') return '';
+    var asof = fmtDateTime(advMeta.generatedAt), age = ageStr(advMeta.generatedAt);
+    return '<div class="el-stale"><span>⚠</span><div>'
+      + '<strong>Advance entry lists could not be updated.</strong> '
+      + 'Showing the last successfully fetched list from '+asof+(age?' ('+age+' old)':'')+'. '
+      + 'Last update attempt: '+fmtDateTime(advMeta.fetchedAt)
+      + (advMeta.fetchError? ' — '+advMeta.fetchError : '')+'.'
+      + '</div></div>';
+  }
+
   function render(){
     var body = document.getElementById('elBody');
     if(!body || !data) return;
     renderWeekTabs();
+    var banner = staleBannerHtml();
 
     var tourns = (data.tournaments||[]).filter(function(t){
       return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === activeWeek;
     });
     if(!tourns.length){
-      body.innerHTML = '<div class="el-empty">No tournaments published for this week yet.</div>';
+      body.innerHTML = banner + '<div class="el-empty">No tournaments published for this week yet.</div>';
       renderFreshness();
       return;
     }
@@ -3275,7 +3401,7 @@ window.EntryListsTab = (function(){
       var g = levelGroup(t.tier);
       (groups[g] = groups[g] || []).push(t);
     });
-    var idx = 0, html = '';
+    var idx = 0, html = banner;
     GROUP_ORDER.forEach(function(g){
       var list = groups[g];
       if(!list || !list.length) return;
@@ -3297,19 +3423,22 @@ window.EntryListsTab = (function(){
   function renderFreshness(){
     var el = document.getElementById('elFreshness');
     if(!el) return;
-    var src = data.sourcePublished
-      ? data.sourcePublished.replace('T',' ').replace('Z',' UTC').slice(0,16)
-      : null;
-    var gen = data.generatedAt
-      ? data.generatedAt.replace('T',' ').replace('Z',' UTC').slice(0,16)
-      : null;
-    el.innerHTML = (src ? 'Source last published: '+src : 'Source publish date unavailable')
-      + (gen ? '  ·  list refreshed by us: '+gen : '');
+    var parts = [];
+    if(advMeta){
+      parts.push('Advance source (ticktocktennis) — list published: '
+        + (advMeta.sourcePublishedRaw || (advMeta.sourcePublished ? fmtDateTime(advMeta.sourcePublished) : '—'))
+        + '  ·  last fetched by us: ' + fmtDateTime(advMeta.fetchedAt)
+        + (advMeta.fetchStatus === 'stale' ? '  ·  COULD NOT UPDATE' : ''));
+    }
+    if(drawMeta){
+      parts.push('Draw source (protennislive) — last fetched by us: ' + fmtDateTime(drawMeta.generatedAt));
+    }
+    el.innerHTML = parts.join('<br>') || 'Freshness unavailable';
   }
 
   function pickDefaultWeek(){
     // default to the earliest upcoming week that actually has a tournament,
-    // else the current week.
+    // else the first week.
     var have = {};
     (data.tournaments||[]).forEach(function(t){ if(t.weekStart) have[t.weekStart]=1; });
     for(var i=0;i<weeks.length;i++){ if(have[weeks[i]]) return weeks[i]; }
@@ -3320,17 +3449,29 @@ window.EntryListsTab = (function(){
     if(loaded){ render(); return; }
     var body = document.getElementById('elBody');
     if(body) body.innerHTML = '<div class="el-loading">Loading entry lists…</div>';
-    fetch('entry_lists.json?_='+Date.now())
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){
-        data = d; loaded = true;
-        weeks = computeWeeks();
+    var getJson = function(u){
+      return fetch(u+'?_='+Date.now())
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; });
+    };
+    Promise.all([ getJson('entry_lists_advance.json'), getJson('entry_lists.json') ])
+      .then(function(res){
+        var adv = res[0], draw = res[1];
+        if(!adv && !draw){
+          if(body) body.innerHTML = '<div class="el-stale"><span>⚠</span><div>'
+            + '<strong>Entry lists unavailable.</strong> The entry-list data could not be loaded — '
+            + 'this is an error state, not an empty schedule.</div></div>';
+          return;
+        }
+        advMeta = adv ? { generatedAt:adv.generatedAt, fetchedAt:adv.fetchedAt,
+          fetchStatus:adv.fetchStatus, fetchError:adv.fetchError,
+          sourcePublished:adv.sourcePublished, sourcePublishedRaw:adv.sourcePublishedRaw } : null;
+        drawMeta = draw ? { generatedAt:draw.generatedAt, sourcePublished:draw.sourcePublished } : null;
+        data = { tournaments: mergeShards(adv, draw) };
+        loaded = true;
+        weeks = deriveWeeks(data.tournaments);
         activeWeek = pickDefaultWeek();
         render();
-      })
-      .catch(function(e){
-        console.warn('EntryListsTab load failed', e);
-        if(body) body.innerHTML = '<div class="el-empty">Entry lists unavailable.</div>';
       });
   }
 
