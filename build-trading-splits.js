@@ -86,8 +86,21 @@ const METRICS = {
   bpw: { type: 'Return',  name: 'break points converted' },
   sh:  { type: 'Games',   name: 'service games won' },
 };
-const METRIC_KEYS = Object.keys(METRICS);
+// SELF metrics are read off THIS player's rows. OPH (opponent hold) is the SAME
+// (Games / service games won) row read off the OPPONENT on the same fixture —
+// opponent identified by first_player_key / second_player_key (verified live in
+// bsp-pipeline.js). Founder A-ruling 2026-09-05 (Wu/Alcaraz proof: the opponent's
+// service-games-held row IS the OPH figure). oph rides along as a sixth summed
+// [num, den] bucket keyed off the opponent, never zero-filled.
+const SELF_KEYS = Object.keys(METRICS);
+const OPP_HOLD = { type: 'Games', name: 'service games won' };
+const METRIC_KEYS = [...SELF_KEYS, 'oph'];
 const SURFACES = ['hard', 'clay', 'grass'];
+// Strict numerator/denominator shape for the stat_value fallback (B-ruling
+// 2026-09-05). ONLY "int/int" is accepted; a percentage ("40%"), a bare int, an
+// empty string or any other shape is a parse failure — the match is excluded
+// from that metric AND from that metric's count. A null must never become a 0.
+const STRICT_FRAC = /^\s*(\d+)\s*\/\s*(\d+)\s*$/;
 const FINAL_STATUSES = ['Finished', 'Retired', 'Walk Over'];
 
 // Tier is derived from event_type_type (get_fixtures carries no event_type_key).
@@ -160,25 +173,61 @@ function addMatch(bucket, statByMetric) {
   }
 }
 
-// Pull this player's five metrics out of one fixture, applying the canonical
-// match-row semantics. Returns null if the fixture yields no usable metric row
-// for the player (=> not a sample match).
-function metricsForPlayer(fx, playerKey) {
+// Resolve one stat row to a [won, total] pair. Numeric path first: when both
+// stat_won and stat_total are present, use them. When either is null/absent the
+// numeric coercion would silently mint a 0 (Number(null)===0) — the bug — so we
+// DO NOT coerce; we fall back to a STRICT "int/int" parse of stat_value, and if
+// that shape is absent the row is dropped (excluded from the metric and its
+// count), never zero-filled. Returns { v } on success or { drop } with a reason.
+function resolveRow(s) {
+  const wRaw = s.stat_won, tRaw = s.stat_total;
+  if (wRaw != null && tRaw != null) {
+    const w = Number(wRaw), t = Number(tRaw);
+    if (!Number.isFinite(w) || !Number.isFinite(t)) return { drop: 'nonfinite' };
+    if (w < 0 || t < 0 || w > t) return { drop: 'impossible' };
+    return { v: [w, t] };
+  }
+  // Fallback (B-ruling): won/total null -> strict X/Y parse of stat_value only.
+  const m = STRICT_FRAC.exec(s.stat_value == null ? '' : String(s.stat_value));
+  if (!m) return { drop: 'parsefail' };                   // e.g. "40%", "", a bare int
+  const w = Number(m[1]), t = Number(m[2]);
+  if (w < 0 || t < 0 || w > t) return { drop: 'impossible' };
+  return { v: [w, t], recovered: true };
+}
+
+// Pull this player's five SELF metrics plus OPH (opponent hold) out of one
+// fixture, applying the canonical match-row semantics. `tally` (optional)
+// accumulates fallback outcomes for reporting. Returns null if the fixture
+// yields no usable metric row (=> not a sample match).
+function metricsForPlayer(fx, playerKey, tally) {
   const stats = Array.isArray(fx.statistics) ? fx.statistics : [];
   if (!stats.length) return null;
+  const pk = String(playerKey);
+  const oppKey = String(fx.first_player_key) === pk ? String(fx.second_player_key)
+               : String(fx.second_player_key) === pk ? String(fx.first_player_key)
+               : null;
   const out = {};
   for (const s of stats) {
     if (s.stat_period !== 'match') continue;              // match-level rows only
-    if (String(s.player_key) !== String(playerKey)) continue;
+    const rowKey = String(s.player_key);
     const nm = String(s.stat_name || '').toLowerCase();
     const ty = String(s.stat_type || '');
-    const mk = METRIC_KEYS.find(k => METRICS[k].name === nm && METRICS[k].type === ty);
-    if (!mk) continue;
-    if (mk in out) continue;                              // first block wins (fragment trails)
-    const w = Number(s.stat_won), t = Number(s.stat_total);
-    if (!Number.isFinite(w) || !Number.isFinite(t)) continue;
-    if (w < 0 || t < 0 || w > t) continue;                // drop impossible rows
-    out[mk] = [w, t];
+    let slot = null;
+    if (rowKey === pk) {
+      const mk = SELF_KEYS.find(k => METRICS[k].name === nm && METRICS[k].type === ty);
+      if (mk && !(mk in out)) slot = mk;                  // first block wins (fragment trails)
+    } else if (oppKey && rowKey === oppKey) {
+      if (ty === OPP_HOLD.type && nm === OPP_HOLD.name && !('oph' in out)) slot = 'oph';
+    }
+    if (!slot) continue;
+    const r = resolveRow(s);
+    if (r.v) {
+      out[slot] = r.v;
+      if (tally && r.recovered) tally.recovered++;
+    } else if (tally && r.drop === 'parsefail') {
+      tally.parsefail++;                                  // null won/total, no X/Y in stat_value
+    }
+    // 'impossible'/'nonfinite' rows are dropped as before (not counted, not summed).
   }
   return Object.keys(out).length ? out : null;
 }
@@ -195,6 +244,7 @@ async function buildPlayer(key, surfaceMap) {
   const tiers = { tour: newTierBucket(), chal: newTierBucket() };
   const seenEvents = new Set();
   let sampleMatches = 0, usOpen = 0;
+  const tally = { parsefail: 0, recovered: 0, matchesWithParsefail: 0, matchesWithRecovery: 0 };
 
   for (const fx of fixtures) {
     const tier = tierOf(fx);
@@ -209,7 +259,12 @@ async function buildPlayer(key, surfaceMap) {
     if (ek && seenEvents.has(ek)) continue;
     if (ek) seenEvents.add(ek);
 
-    const metricStats = metricsForPlayer(fx, key);
+    const before = { pf: tally.parsefail, rc: tally.recovered };
+    const metricStats = metricsForPlayer(fx, key, tally);
+    // Count a match as failing the strict parse even if it yields no usable row
+    // at all (all its metric rows parsefailed) — that is still a match excluded.
+    if (tally.parsefail > before.pf) tally.matchesWithParsefail++;
+    if (metricStats && tally.recovered > before.rc) tally.matchesWithRecovery++;
     if (!metricStats) continue;                             // no box score for this player
 
     const surf = surfaceMap[String(fx.tournament_key)] || null;
@@ -221,7 +276,7 @@ async function buildPlayer(key, surfaceMap) {
     if (/US Open/i.test(fx.tournament_name || '')) usOpen++;
   }
 
-  return { key, tiers, sampleMatches, usOpen };
+  return { key, tiers, sampleMatches, usOpen, tally };
 }
 
 function pruneTier(tb) {
@@ -243,12 +298,19 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const index = [];
   let totalBytes = 0, totalGz = 0, calls = 0, failed = 0, empty = 0;
+  const fb = { parsefailRows: 0, matchesWithParsefail: 0, recoveredRows: 0, matchesWithRecovery: 0 };
   const shardSizes = [];
 
   for (const key of roster) {
     calls++;
     const r = await buildPlayer(key, surfaceMap);
     await new Promise(res => setTimeout(res, PACE_MS));
+    if (r.tally) {
+      fb.parsefailRows += r.tally.parsefail;
+      fb.matchesWithParsefail += r.tally.matchesWithParsefail;
+      fb.recoveredRows += r.tally.recovered;
+      fb.matchesWithRecovery += r.tally.matchesWithRecovery;
+    }
     if (r.error) { failed++; console.error(`trading-splits: fixture window failed for ${key}: ${r.error}`); continue; }
     if (r.empty) { empty++; continue; }
 
@@ -284,6 +346,11 @@ async function main() {
     window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR },
     roster: roster.length,
     apiCalls: calls, failed, emptyOrNoSample: empty,
+    // B-ruling instrumentation: strict stat_value fallback outcomes over the build.
+    // parsefail = a null won/total row whose stat_value was NOT strict "int/int"
+    // (excluded from metric + its count, never zero-filled). If parsefailRows /
+    // matchesWithParsefail is anything but near-zero, STOP and report.
+    fallback: fb,
     players: index.length,
     corpus: { rawBytes: totalBytes, gzBytes: totalGz, gzKB: +(totalGz / 1024).toFixed(1) },
     index: { rawBytes: Buffer.byteLength(JSON.stringify(indexDoc)), gzBytes: indexGz, gzKB: +(indexGz / 1024).toFixed(2) },

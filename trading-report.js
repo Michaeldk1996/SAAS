@@ -60,23 +60,26 @@
   var ODDS_URL           = './trading-odds.json';
   var MATCHES_URL        = './matches.json';   // best-effort, empty-state hint only
 
-  // The five EXACT metrics (numerator/denominator stored in the shard; the UI
-  // divides + rounds). Key Stats column order is founder-fixed; OPH is omitted
-  // entirely (undefined by the founder — no column, no stub).
-  var METRIC_LABELS = { sh: 'SH', spw: 'SPW', rpw: 'RPW', bps: 'BPS', bpw: 'BPW' };
+  // The EXACT metrics (numerator/denominator stored in the shard; the UI divides
+  // + rounds). Key Stats column order is founder-fixed (A-ruling 2026-09-05):
+  // SH · SPW · RPW · BPS · BPW · OPH. OPH = opponent hold — how often this
+  // player's OPPONENTS held serve, read off the opponent's service-games-won row
+  // on the same fixtures (a return-strength context stat).
+  var METRIC_LABELS = { sh: 'SH', spw: 'SPW', rpw: 'RPW', bps: 'BPS', bpw: 'BPW', oph: 'OPH' };
   var METRIC_TIPS = {
     sh:  'Service games held — won / service games played',
     spw: 'Service points won',
     rpw: 'Return points won',
     bps: 'Break points saved',
     bpw: 'Break points converted',
+    oph: 'Opponent hold — service games held by this player’s opponents (return-strength context)',
   };
 
   // Config-driven tabs: each entry is a column set over the same shard. Only Key
   // Stats is defined now; the other six slot in here as configs later — the
   // render path reads this, nothing is hardcoded per tab.
   var COLUMN_SETS = {
-    key: { label: 'Key Stats', metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw'] },
+    key: { label: 'Key Stats', metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'] },
   };
   var ACTIVE_SET = 'key';
 
@@ -362,7 +365,7 @@
       th('time', 'Time'),
       th('player', 'Player'),
       th('odds', 'Odds (pre-match)', oddsTip),
-      th('matches', 'Matches', 'Coverage count — matches carrying ≥1 of the five stats in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.'),
+      th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.'),
     ];
     cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk])); });
     return '<thead><tr>' + cells.join('') + '</tr></thead>';
