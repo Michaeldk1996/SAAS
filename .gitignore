@@ -61,3 +61,7 @@ _render-reports.html
 apitennis-styles-cache/
 apitennis-holdbreak-cache/
 styles-debug-all.json
+
+# TEN-151 Trading Report shard (lazy, rebuilt each run — publish wiring pending size gate)
+trading-splits/
+trading-splits-index.json
