@@ -66,6 +66,13 @@ const ONLY_KEYS = process.env.TS_ONLY_KEYS ? process.env.TS_ONLY_KEYS.split(',')
 const NOW = process.env.TS_NOW ? new Date(process.env.TS_NOW + 'T00:00:00Z') : new Date();
 const cutoff = new Date(Date.UTC(NOW.getUTCFullYear() - 2, NOW.getUTCMonth(), NOW.getUTCDate()));
 const CUTOFF_STR = cutoff.toISOString().slice(0, 10);
+// Inner 12-month window (founder ruling 2026-09-06). Computed as its OWN window
+// — a match lands in the 12mo buckets only if its date is >= CUTOFF12_STR, with
+// its own numerator/denominator. NEVER derived from the 24mo figure (a 12mo
+// number scaled/halved out of a 24mo one is fabricated). 24mo shard shape is
+// unchanged; the 12mo view rides alongside as tiers12/window12.
+const cutoff12 = new Date(Date.UTC(NOW.getUTCFullYear() - 1, NOW.getUTCMonth(), NOW.getUTCDate()));
+const CUTOFF12_STR = cutoff12.toISOString().slice(0, 10);
 const NOW_STR = NOW.toISOString().slice(0, 10);
 // api-tennis carries no box scores before this; a pre-floor match has no
 // `statistics` and is excluded anyway. Belt-and-suspenders (24mo cutoff already
@@ -254,6 +261,10 @@ async function buildPlayer(key, surfaceMap) {
   if (!Array.isArray(fixtures) || !fixtures.length) return { key, empty: true };
 
   const tiers = { tour: newTierBucket(), chal: newTierBucket() };
+  // Parallel 12mo buckets — same match rows, accumulated ONLY when the match
+  // falls inside the inner window, each with its own num/den (not a slice of the
+  // 24mo sums).
+  const tiers12 = { tour: newTierBucket(), chal: newTierBucket() };
   const seenEvents = new Set();
   let sampleMatches = 0, usOpen = 0;
   // Divergence tripwire (founder ruling 2026-09-05, MATCHES). The MATCHES column
@@ -264,6 +275,7 @@ async function buildPlayer(key, surfaceMap) {
   // two diverge (a match exists but has no usable stat row), that is REPORTED
   // with both counts — never silently reconciled at read time.
   const windowByTier = { tour: 0, chal: 0 };
+  const windowByTier12 = { tour: 0, chal: 0 };
   const tally = { parsefail: 0, recovered: 0, matchesWithParsefail: 0, matchesWithRecovery: 0 };
 
   for (const fx of fixtures) {
@@ -278,9 +290,14 @@ async function buildPlayer(key, surfaceMap) {
     const ek = String(fx.event_key || '');
     if (ek && seenEvents.has(ek)) continue;
     if (ek) seenEvents.add(ek);
+    // Inner-window membership: this 24mo match also belongs to the 12mo window
+    // when its own date is at/after the 12mo cutoff. Its num/den go into tiers12
+    // independently — no derivation from the 24mo sums.
+    const in12 = d >= CUTOFF12_STR;
     // Broad count: this match is a valid in-window ATP-singles completed match
     // for the player, counted BEFORE the box-score test below.
     windowByTier[tier] += 1;
+    if (in12) windowByTier12[tier] += 1;
 
     const before = { pf: tally.parsefail, rc: tally.recovered };
     const metricStats = metricsForPlayer(fx, key, tally);
@@ -303,11 +320,16 @@ async function buildPlayer(key, surfaceMap) {
     const tb = tiers[tier];
     addMatch(tb.all, metricStats);
     if (surfKey) addMatch(tb[surfKey], metricStats);
+    if (in12) {
+      const tb12 = tiers12[tier];
+      addMatch(tb12.all, metricStats);
+      if (surfKey) addMatch(tb12[surfKey], metricStats);
+    }
     sampleMatches++;
     if (/US Open/i.test(fx.tournament_name || '')) usOpen++;
   }
 
-  return { key, tiers, sampleMatches, usOpen, tally, windowByTier };
+  return { key, tiers, tiers12, sampleMatches, usOpen, tally, windowByTier, windowByTier12 };
 }
 
 function pruneTier(tb) {
@@ -365,9 +387,23 @@ async function main() {
     const chal = pruneTier(r.tiers.chal);
     if (!tour && !chal) { empty++; continue; }
 
-    const shard = { key, window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, tiers: {} };
+    // 12mo sub-tree (independent num/den; a tier with zero 12mo matches is simply
+    // omitted, never zero-filled). 12mo ⊂ 24mo, so we only reach here when 24mo
+    // has data; the inner window may still be empty for a given tier.
+    const tour12 = pruneTier(r.tiers12.tour);
+    const chal12 = pruneTier(r.tiers12.chal);
+
+    const shard = {
+      key,
+      window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR },
+      window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR },
+      tiers: {},
+      tiers12: {},
+    };
     if (tour) shard.tiers.tour = tour;
     if (chal) shard.tiers.chal = chal;
+    if (tour12) shard.tiers12.tour = tour12;
+    if (chal12) shard.tiers12.chal = chal12;
     const str = JSON.stringify(shard);
     atomicWrite(path.join(OUT_DIR, key + '.json'), str);
     index.push(key);
@@ -390,7 +426,7 @@ async function main() {
 
   index.sort((a, b) => Number(a) - Number(b));
   const indexDoc = {
-    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
+    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
     lowSample: { matchMin: LOW_SAMPLE_MATCH_MIN, slateMutePct: SLATE_MUTE_PCT, notice: LOW_SAMPLE_NOTICE },
     meta: loadMeta(),
     players: index,
