@@ -1,30 +1,37 @@
-// TEN-151 · Trading Report — live in-play board with historical situational splits
+// TEN-151 · Trading Report — daily ATP-singles board with historical situational splits
 //
-// Founder scope (2026-09-04/05): a live board where each ROW is a PLAYER in a
-// currently-underway ATP-singles match (two rows per match), with 24-month
-// situational splits attached so a trader can scalp the match live. This build
-// ships the page shell + the Key Stats tab only; the other six tabs are column
-// configs over the same shard and slot in without restructuring (COLUMN_SETS).
+// Founder scope (2026-09-06, reverses the earlier live-only ruling): the board now
+// shows TODAY's ATP singles — every scheduled match, in play or not — with a
+// LIVE / TODAY toggle, Today / Tomorrow date tabs, a "Today's surface" per-row
+// filter, book-named odds (pre-match price for scheduled rows, the closing price
+// for rows now in play), Commons-verified player photos with a monogram fallback,
+// flag icons, sort indicators, and a per-player load progress bar.
 //
-// SOURCES (all read-only; nothing here mutates the Live tab, Matches board, or
-// any of the four core JSON files):
-//   • live slate   ← the SAME Supabase live_snapshot.board the Live tab reads,
-//                     gated by the SAME predicate — window.LiveTab.isAtpSingles
-//                     + window.LiveTab.isUnderway (widened export, TEN-151). We
-//                     do NOT write a second live/not-live gate (founder ruling).
+// SOURCES (all read-only; nothing here mutates the Live tab, the Matches board, the
+// four core JSON files, the ten141 cron, or the entry-lists workstream):
+//   • slate        ← matches.json (the daily ATP-singles slate the Matches board
+//                     already loads). Row unit is a PLAYER — two rows per match.
+//                     Carries p1/p2, p1Key/p2Key, ranks, surface, tour, start time,
+//                     pre-match `odds` and (for started matches) `closingOdds`.
+//                     Fetched ONCE per visit (reused from the dashboard's parsed
+//                     `matches` global when present — never re-fetched on the poll).
+//   • live state   ← the SAME Supabase live_snapshot.board the Live tab reads,
+//                     filtered by the SAME predicate (window.LiveTab.isAtpSingles +
+//                     window.LiveTab.isUnderway). We do NOT write a second live gate
+//                     (founder ruling): the snapshot only yields the SET of match
+//                     player-key pairs currently in play; a slate row flips to LIVE
+//                     when its pair enters that set. Same row, same data, new state.
 //   • splits       ← trading-splits-index.json + per-player trading-splits/{key}.json
-//                     (Route B: built from the api-tennis fixtures the pipeline
-//                     already fetches). Lazy — fetched only when Load is pressed.
-//   • surface      ← tournament-surfaces.json  (tournament_key → surface), the
-//                     same map the generator used, so the board can't diverge.
-//   • rank/country ← the index `meta` map (name/rank/country), built from the
-//                     committed player-profiles.json. A live player absent from
-//                     the map renders with the as-fed name and dashed rank —
-//                     never a guessed join.
-//   • odds         ← trading-odds.json IF present (keyed by event_key), labelled
-//                     pre-match with its capture timestamp and sourcing book.
-//                     ABSENT → every odds cell dashes. Never a carried-forward or
-//                     silently-substituted price (founder standing rule).
+//                     (keyed by api-tennis player_key). Loaded progressively.
+//   • rank/country ← the index `meta` map (name/rank/country) built from the
+//                     committed player-profiles.json — used for the country flag.
+//   • photos       ← player-photos.json (Wikimedia Commons override route only;
+//                     monogram-initials fallback for any player without a verified
+//                     photo). No photo is ever sourced from anywhere else.
+//
+// Odds standing rule (founder): a live row shows the CLOSING price (labelled), a
+// scheduled row the PRE-MATCH price; the book is named on every cell; a missing
+// price DASHES — never carried forward, never silently substituted from another book.
 //
 // Guard: window.FEATURE_TRADING_REPORT must be truthy. Never runs otherwise, so
 // deploying this code with the flag OFF changes nothing live.
@@ -36,37 +43,28 @@
 
   // The live gate is owned by live-tab.js (loaded before this via <script defer>
   // order). Reuse it verbatim — do not reimplement. If it isn't present the page
-  // cannot honestly decide "in play", so it disables itself rather than guess.
+  // cannot honestly decide "in play", so it degrades to matches.json's own live
+  // flag rather than guess with a home-grown predicate.
   var LT = window.LiveTab;
-  if (!LT || typeof LT.isUnderway !== 'function' || typeof LT.isAtpSingles !== 'function') {
-    console.warn('[trading-report] window.LiveTab gate unavailable — Trading Report disabled');
-    return;
-  }
+  var HAS_GATE = LT && typeof LT.isUnderway === 'function' && typeof LT.isAtpSingles === 'function';
+  if (!HAS_GATE) console.warn('[trading-report] window.LiveTab gate unavailable — Live view falls back to the feed live flag');
 
   var SB_URL = (window.SUPABASE_URL || '').replace(/\/$/, '');
   var SB_KEY = window.SUPABASE_ANON_KEY || '';
-  if (!SB_URL || SB_URL.indexOf('__') === 0 || !SB_KEY || SB_KEY.indexOf('__') === 0) {
-    console.warn('[trading-report] SUPABASE creds not configured — Trading Report disabled');
-    return;
-  }
+  var HAS_SB = SB_URL && SB_URL.indexOf('__') !== 0 && SB_KEY && SB_KEY.indexOf('__') !== 0;
+  if (!HAS_SB) console.warn('[trading-report] SUPABASE creds not configured — Live view falls back to the feed live flag');
 
   // ─── config ─────────────────────────────────────────────────────────────────
-  var POLL_INTERVAL_MS   = 30000;   // match the live poller cadence
+  var POLL_INTERVAL_MS   = 30000;   // match the live poller cadence (snapshot only)
   var STALE_THRESHOLD_MS = 60000;
-  var SNAPSHOT_ENDPOINT  = SB_URL + '/rest/v1/live_snapshot?select=board,match_count,updated_at&limit=1';
+  var SNAPSHOT_ENDPOINT  = SB_URL + '/rest/v1/live_snapshot?select=board,updated_at&limit=1';
   var INDEX_URL          = './trading-splits-index.json';
   var SHARD_BASE         = './trading-splits/';
-  var SURFACES_URL       = './tournament-surfaces.json';
-  var ODDS_URL           = './trading-odds.json';
-  var MATCHES_URL        = './matches.json';   // best-effort, empty-state hint only
+  var MATCHES_URL        = './matches.json';
+  var PHOTOS_URL         = './player-photos.json';
+  var SHARD_CONCURRENCY  = 6;       // polite parallelism while streaming shards in
 
-  // The EXACT metrics (numerator/denominator stored in the shard; the UI divides
-  // + rounds). Key Stats column order is founder-fixed (A-ruling 2026-09-05):
-  // SH · SPW · RPW · BPS · BPW · OPH. OPH = opponent hold — how often this
-  // player's OPPONENTS held serve, read off the opponent's service-games-won row
-  // on the same fixtures (a return-strength context stat).
-  // Verbatim column abbreviations (metric-dictionary doc). Some tokens are multi-
-  // word on the competitor board ("LOST SET 1 WS2") — reproduced verbatim.
+  // Metric dictionary — unchanged from the shipped Key Stats build (founder-fixed).
   var METRIC_LABELS = {
     sh: 'SH', spw: 'SPW', rpw: 'RPW', bps: 'BPS', bpw: 'BPW', oph: 'OPH',
     htws: 'HTWS', htss: 'HTSS', bofs: 'BOFS', bfsg: 'BFSG',
@@ -74,10 +72,6 @@
     ls1fb: 'LOST SET 1 FB', ls1bf: 'LOST SET 1 BF', bfs2aws1: 'BFS2AWS1',
     wfs: 'WFS', ws2: 'WS2', ws1w2: 'WS1W2', ls1ws2: 'LOST SET 1 WS2', ws1wm: 'WS1WM',
   };
-  // METRIC_TIPS is the founder's required column-info affordance: every column
-  // carries its definition. For the 11 worked-out codes (2026-09-05 instruction)
-  // the tooltip states EXACTLY what the number computes — verbatim from
-  // trading-sequence-metrics.js — so the definition is transparent and falsifiable.
   var METRIC_TIPS = {
     sh:  'Service games held — won / service games played',
     spw: 'Service points won',
@@ -85,7 +79,6 @@
     bps: 'Break points saved',
     bpw: 'Break points converted',
     oph: 'Opponent hold — service games held by this player’s opponents (return-strength context)',
-    // ── worked-out game-sequence codes (from pointbypoint) ──
     htws: 'Held To Win Set — serving for the set, held to take it (per service game where a hold clinches the set)',
     htss: 'Held To Stay in Set — serving to avoid losing the set, held (per service game where a loss would lose the set)',
     bofs: 'Broke Opponent’s First Service game of the match',
@@ -97,28 +90,17 @@
     ls1fb: 'Lost Set 1, then fought back to WIN THE MATCH',
     ls1bf: 'Lost Set 1, then Broke First in Set 2',
     bfs2aws1: 'Broke First in Set 2 After Winning Set 1',
-    // ── named set-outcome codes (from set scores) ──
     wfs:  'Won First Set',
     ws2:  'Won Set 2',
     ws1w2: 'Won Set 1 then Won Set 2 (two sets to love up)',
     ls1ws2: 'Lost Set 1 then Won Set 2',
     ws1wm: 'Won Set 1 then Won the Match',
   };
-
-  // Set-outcome denominator caveat (founder ruling 2026-09-05): these metrics
-  // count only matches where the relevant set was DECIDED, so their denominator
-  // can be lower than the MATCHES column. Undecided sets — from short-format
-  // events (e.g. Next Gen first-to-4) and retirements — are excluded, never
-  // zero-filled. The tooltip states this so the smaller denominator reads as
-  // correct behaviour, not a defect.
   var SET_OUTCOME_KEYS = ['wfs', 'ws2', 'ws1w2', 'ls1ws2', 'ws1wm'];
   SET_OUTCOME_KEYS.forEach(function (k) {
     METRIC_TIPS[k] += ' — denominator counts only matches with the relevant set decided, so it can be lower than MATCHES (undecided sets from short-format events and retirements are excluded, never zero-filled).';
   });
 
-  // Config-driven tabs: each entry is a column set over the same shard. Column
-  // ORDER within each tab is verbatim (left→right) from the metric-dictionary doc.
-  // The render path reads this — nothing is hardcoded per tab.
   var COLUMN_SETS = {
     key:          { label: 'Key Stats',           metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'] },
     laysetwinner: { label: 'Lay Set Winner',      metrics: ['ls1ws2', 'ws1w2', 'ls1fb', 'ls1bf', 'bpw', 'ws1wm', 'bfs2aws1'] },
@@ -130,29 +112,70 @@
   };
   var ACTIVE_SET = 'key';
 
-  var SURFACES = ['all', 'hard', 'clay', 'grass'];
+  // Country name → ISO-3166-1 alpha-2, for a regional-indicator emoji flag. Covers
+  // the tennis nations that appear in the index `meta` (full country names). An
+  // unmapped country renders no flag rather than a wrong one (never guess).
+  var NAME2ISO = {
+    'Argentina':'AR','Australia':'AU','Austria':'AT','Belarus':'BY','Belgium':'BE',
+    'Bolivia':'BO','Bosnia and Herzegovina':'BA','Brazil':'BR','Bulgaria':'BG',
+    'Canada':'CA','Chile':'CL','China':'CN','Chinese Taipei':'TW','Colombia':'CO',
+    'Croatia':'HR','Cyprus':'CY','Czechia':'CZ','Czech Republic':'CZ','Denmark':'DK',
+    'Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','Estonia':'EE','Finland':'FI',
+    'France':'FR','Georgia':'GE','Germany':'DE','Great Britain':'GB','United Kingdom':'GB',
+    'Greece':'GR','Hong Kong':'HK','Hungary':'HU','Iceland':'IS','India':'IN','Indonesia':'ID',
+    'Iran':'IR','Ireland':'IE','Israel':'IL','Italy':'IT','Japan':'JP','Jordan':'JO',
+    'Kazakhstan':'KZ','Korea':'KR','South Korea':'KR','Kosovo':'XK','Kuwait':'KW',
+    'Latvia':'LV','Lebanon':'LB','Lithuania':'LT','Luxembourg':'LU','Mexico':'MX',
+    'Moldova':'MD','Monaco':'MC','Montenegro':'ME','Morocco':'MA','Netherlands':'NL',
+    'New Zealand':'NZ','North Macedonia':'MK','Norway':'NO','Paraguay':'PY','Peru':'PE',
+    'Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO',
+    'Russia':'RU','Saudi Arabia':'SA','Serbia':'RS','Slovakia':'SK','Slovenia':'SI',
+    'South Africa':'ZA','Spain':'ES','Sweden':'SE','Switzerland':'CH','Taiwan':'TW',
+    'Thailand':'TH','Tunisia':'TN','Turkey':'TR','Türkiye':'TR','Ukraine':'UA',
+    'United States':'US','USA':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE',
+    'Zimbabwe':'ZW',
+  };
+  function emojiFlag(country) {
+    var iso = country && NAME2ISO[country];
+    if (!iso || iso.length !== 2) return '';
+    return iso.toUpperCase().replace(/./g, function (c) {
+      return String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0));
+    });
+  }
 
   // ─── state ──────────────────────────────────────────────────────────────────
   var _active = false;
   var _timer = null;
   var _ticking = false;
-  var _board = null;          // last live_snapshot.board array
+  var _underway = null;       // Set of pairKeys currently in play, or null (no snapshot)
   var _updatedAt = null;      // ms epoch of last snapshot
+  var _matches = null;        // matches.json array (fetched/reused once)
   var _index = null;          // trading-splits-index.json
-  var _surfaceMap = null;     // tournament-surfaces.json .surfaces
-  var _odds = null;           // trading-odds.json (or {} once we know it's absent)
+  var _photos = null;         // player-photos.json map
   var _shards = {};           // key -> shard | null (null = fetched, none)
-  var _loaded = false;        // has Load been pressed for the current slate?
+  var _loaded = false;        // every key in the current slate has been fetched
   var _loading = false;
-  var _surface = 'all';
-  var _tourFilter = '';       // tournament_key, '' = all
+  var _loadDone = 0;
+  var _loadTotal = 0;
+  var _view = 'today';        // 'today' (all scheduled) | 'live' (in-play only)
+  var _dateTab = 'today';     // 'today' | 'tomorrow'
+  var _surfaceToday = false;  // "Today's surface" per-row filter (false = all surfaces)
+  var _tourFilter = '';       // tournament label, '' = all
   var _search = '';
-  var _sortCol = null;        // null = feed order
+  var _sortCol = null;        // null = matches.json feed order
   var _sortDir = -1;          // -1 desc, 1 asc
-  var _matchesCache = null;   // matches.json (empty-state hint)
   var _bootstrapped = false;
+  var _loadSig = null;        // slate signature captured when the current load began
+  var _matchesAt = 0;         // ms epoch of the last matches.json (re)load
+  var _matchesDirty = false;  // matches slate changed since the last render
+  var _lastUnderwaySig = null;// last rendered underway-set signature (skip idle repaints)
 
-  // ─── DOM ──────────────────────────────────────────────────────────────────
+  function slateSig() { return _view + '|' + _dateTab; }
+  var MATCHES_REFRESH_MS = 150000;   // refresh the slate at most this often, so a
+                                     // match that starts mid-session gains its
+                                     // closingOdds (the pre→close transition)
+
+  // ─── DOM / util ─────────────────────────────────────────────────────────────
   function grid()   { return document.getElementById('tradingGrid'); }
   function status() { return document.getElementById('tradingStatus'); }
 
@@ -161,26 +184,27 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
-
-  // ─── fetch: live snapshot (same shape live-tab reads) ─────────────────────────
-  function fetchSnapshot() {
-    return fetch(SNAPSHOT_ENDPOINT, {
-      headers: { apikey: SB_KEY, authorization: 'Bearer ' + SB_KEY, accept: 'application/json' },
-      cache: 'no-store',
-    }).then(function (res) {
-      if (!res.ok) throw new Error('snapshot ' + res.status);
-      return res.json();
-    }).then(function (rows) {
-      var row = Array.isArray(rows) ? rows[0] : rows;
-      if (!row) return null;
-      // The live_snapshot.board column is an OBJECT {matches:[…]} — the exact
-      // shape live-tab.js reads (`row.board?.matches`, live-tab.js:179). Mirror
-      // it verbatim so the Trading Report cannot diverge from the Live tab on the
-      // same feed. (Tolerate a bare-array board too, if the shape ever changes.)
-      var b = (row.board && Array.isArray(row.board.matches)) ? row.board.matches
-              : (Array.isArray(row.board) ? row.board : []);
-      return { board: b, updated_at: row.updated_at };
-    });
+  function cap(s) { s = String(s || ''); return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+  function pairKey(a, b) {
+    var x = Number(a), y = Number(b);
+    return (x <= y ? x + ':' + y : y + ':' + x);
+  }
+  function fmtOdds(v) {
+    var n = Number(v);
+    return isFinite(n) ? n.toFixed(2) : String(v);
+  }
+  function fmtClock(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  function playerInitials(name) {
+    var w = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!w.length) return '?';
+    if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
+    return (w[0][0] + w[w.length - 1][0]).toUpperCase();
   }
 
   function getJSON(url, opts) {
@@ -190,46 +214,86 @@
     });
   }
 
-  // ─── live rows: 2 player-rows per underway ATP-singles match ──────────────────
-  function liveRows(board) {
-    var fixtures = (Array.isArray(board) ? board : [])
-      .filter(LT.isAtpSingles)
-      .filter(LT.isUnderway);
-    var rows = [];
-    for (var i = 0; i < fixtures.length; i++) {
-      var f = fixtures[i];
-      rows.push(makeRow(f, 1));
-      rows.push(makeRow(f, 2));
-    }
-    return rows;
+  // ─── live snapshot → underway pair-key set (the ONE gate, reused) ─────────────
+  function fetchUnderway() {
+    if (!HAS_SB || !HAS_GATE) return Promise.resolve(null);
+    return fetch(SNAPSHOT_ENDPOINT, {
+      headers: { apikey: SB_KEY, authorization: 'Bearer ' + SB_KEY, accept: 'application/json' },
+      cache: 'no-store',
+    }).then(function (res) {
+      if (!res.ok) throw new Error('snapshot ' + res.status);
+      return res.json();
+    }).then(function (rows) {
+      var row = Array.isArray(rows) ? rows[0] : rows;
+      if (!row) return { set: null, updated_at: null };
+      var b = (row.board && Array.isArray(row.board.matches)) ? row.board.matches
+              : (Array.isArray(row.board) ? row.board : []);
+      var set = {};
+      b.filter(LT.isAtpSingles).filter(LT.isUnderway).forEach(function (f) {
+        set[pairKey(f.first_player_key, f.second_player_key)] = 1;
+      });
+      return { set: set, updated_at: row.updated_at };
+    });
   }
 
-  function makeRow(f, which) {
+  // ─── slate rows from matches.json ─────────────────────────────────────────────
+  function isMatchLive(m) {
+    // The ONE liveness signal is the isUnderway gate applied to the live snapshot
+    // (via _underway). Only when the snapshot is entirely unavailable (no creds /
+    // no gate) do we fall back to the feed's own `live` flag so the Live view is
+    // not silently empty — never a home-grown predicate.
+    if (_underway) return !!_underway[pairKey(m.p1Key, m.p2Key)];
+    return !!m.live;
+  }
+
+  function oddsFor(m, which, live) {
+    var src = live ? m.closingOdds : m.odds;   // closing for in-play, pre-match otherwise
+    if (!src) return null;
+    var price = which === 1 ? src.p1 : src.p2;
+    if (price == null || !(Number(price) > 0)) return null;
+    return { price: price, book: src.bookmaker || '', at: src.at || null, kind: live ? 'close' : 'pre' };
+  }
+
+  function playerRow(m, which, live) {
     var isFirst = which === 1;
-    var key = String((isFirst ? f.first_player_key : f.second_player_key) || '');
-    var fedName = (isFirst ? f.event_first_player : f.event_second_player) || '—';
-    var m = (_index && _index.meta && _index.meta[key]) || null;
-    var tk = String(f.tournament_key || '');
-    var surface = (_surfaceMap && _surfaceMap[tk]) || null;   // null => unmapped
+    var key = String((isFirst ? m.p1Key : m.p2Key) || '');
+    var meta = (_index && _index.meta && _index.meta[key]) || null;
+    var rank = isFirst ? m.p1Rank : m.p2Rank;
+    if (rank == null && meta && meta.rank != null) rank = meta.rank;
+    var surf = String(m.surface || '').toLowerCase();
     return {
-      eventKey: String(f.event_key || ''),
+      id: String(m.id || ''),
       which: which,
       key: key,
-      name: (m && m.name) ? m.name : fedName,        // meta name if joined, else as-fed
-      joined: !!m,
-      rank: (m && m.rank != null) ? m.rank : null,
-      country: (m && m.country) ? m.country : null,
-      tournament: f.tournament_name || '',
-      tournamentKey: tk,
-      surface: surface,
-      start: ((f.event_date || '') + ' ' + (f.event_time || '')).trim(),
-      status: f.event_status || 'Live',
+      name: (isFirst ? m.p1 : m.p2) || (meta && meta.name) || '—',
+      rank: (rank == null ? null : rank),
+      country: (meta && meta.country) || null,
+      tour: m.tour || '',
+      tournamentKey: m.tour || '',        // tournament filter groups by tour label
+      surface: surf,
+      startClock: m.time || fmtClock(m.startTs) || '',
+      startSort: m.startTs || (m.date + ' ' + (m.time || '')),
+      live: live,
+      odds: oddsFor(m, which, live),
     };
   }
 
+  function slateRows() {
+    var arr = Array.isArray(_matches) ? _matches : [];
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i];
+      if (!m || m.day !== _dateTab) continue;               // date tab (Today / Tomorrow)
+      if (!m.p1Key || !m.p2Key) continue;                   // need both player keys to build rows
+      var live = isMatchLive(m);
+      if (_view === 'live' && !live) continue;              // Live view = in-play only
+      out.push(playerRow(m, 1, live));
+      out.push(playerRow(m, 2, live));
+    }
+    return out;
+  }
+
   // ─── shard reads ──────────────────────────────────────────────────────────
-  // Primary tier = the tier with the larger in-window match count (founder ruling
-  // 2026-09-05). Returns { primary, secondary } tier keys or nulls.
   function tiersOf(shard) {
     if (!shard || !shard.tiers) return { primary: null, secondary: null };
     var t = shard.tiers;
@@ -239,20 +303,13 @@
     if (tourM >= chalM) return { primary: 'tour', secondary: chalM ? 'chal' : null };
     return { primary: 'chal', secondary: tourM ? 'tour' : null };
   }
-
-  // Surface bucket for the selected surface within the primary tier. Absent
-  // surface => null (metrics + matches dash for that surface).
   function bucketFor(shard, tierKey, surface) {
     if (!shard || !tierKey || !shard.tiers || !shard.tiers[tierKey]) return null;
     return shard.tiers[tierKey][surface] || null;
   }
-
-  function matchMin() {
-    return (_index && _index.lowSample && _index.lowSample.matchMin) || 10;
-  }
-  function slateMutePct() {
-    return (_index && _index.lowSample && _index.lowSample.slateMutePct) || 40;
-  }
+  function surfaceKeyFor(row) { return _surfaceToday ? (row.surface || 'all') : 'all'; }
+  function matchMin()    { return (_index && _index.lowSample && _index.lowSample.matchMin) || 10; }
+  function slateMutePct() { return (_index && _index.lowSample && _index.lowSample.slateMutePct) || 40; }
 
   // ─── cell renderers ─────────────────────────────────────────────────────────
   function dash(cls) { return '<td class="tr-cell tr-dash' + (cls ? ' ' + cls : '') + '">—</td>'; }
@@ -262,8 +319,6 @@
     var v = bucket[mk];
     if (!v || !(v[1] > 0)) return dash('tr-stat');
     var pct = Math.round((100 * v[0]) / v[1]);
-    // Thin = the surface bucket's coverage count is under the floor. Value +
-    // fraction stay VISIBLE and muted, never dashed, never coloured (founder R1).
     var thin = (bucket.m || 0) < matchMin();
     return '<td class="tr-cell tr-stat' + (thin ? ' thin' : '') + '">' +
              '<span class="tr-pct">' + pct + '%</span>' +
@@ -271,18 +326,34 @@
            '</td>';
   }
 
-  // odds: pre-match static, book-named, dash where absent. Never carried forward.
+  // odds: pre-match for scheduled rows, closing for in-play rows; book named; dash
+  // where absent; never carried forward or silently substituted (founder rule).
   function oddsCell(row) {
-    var rec = _odds && (_odds[row.eventKey] || null);
-    var price = rec && rec[row.which === 1 ? 'p1' : 'p2'];
-    if (!price || !price.price) return dash('tr-odds');
-    return '<td class="tr-cell tr-odds"><span class="tr-price">' + esc(price.price) + '</span>' +
-           (price.book ? '<span class="tr-book">' + esc(price.book) + '</span>' : '') + '</td>';
+    var o = row.odds;
+    if (!o) return dash('tr-odds');
+    var when = o.at ? fmtClock(o.at) : '';
+    var tip = (o.kind === 'close'
+      ? 'Closing price — the last quote before the match started'
+      : 'Pre-match price') + (o.book ? ', ' + o.book : '') + (o.at ? ', captured ' + o.at : '') +
+      '. Never an in-running or carried-forward price.';
+    return '<td class="tr-cell tr-odds" title="' + esc(tip) + '">' +
+             '<span class="tr-price">' + esc(fmtOdds(o.price)) + '</span>' +
+             '<span class="tr-obook">' + (o.book ? esc(o.book) + (when ? ' · ' + esc(when) : '') : '') + '</span>' +
+             '<span class="tr-otag tr-otag-' + o.kind + '">' + (o.kind === 'close' ? 'close' : 'pre') + '</span>' +
+           '</td>';
   }
 
-  function flagBadge(country) {
-    if (!country) return '';
-    return '<span class="tr-flag" title="' + esc(country) + '">' + esc(country) + '</span>';
+  function avatarHtml(row) {
+    var ov = _photos && _photos[row.key] && _photos[row.key].photo;
+    var mono = '<span class="tr-mono">' + esc(playerInitials(row.name)) + '</span>';
+    if (ov) {
+      // Photo sits over the monogram; onerror hides it → the monogram shows through.
+      // Commons Special:FilePath route only (founder ruling); no other photo source.
+      return '<span class="tr-av-wrap">' + mono +
+             '<img class="tr-av" src="' + esc(ov) + '" alt="" loading="lazy" ' +
+             'onerror="this.style.display=\'none\'"></span>';
+    }
+    return '<span class="tr-av-wrap">' + mono + '</span>';
   }
 
   function playerCell(row, shard) {
@@ -290,41 +361,36 @@
     var tierBadge = '';
     if (tk.primary) {
       tierBadge = '<span class="tr-tier">' + (tk.primary === 'tour' ? 'Tour' : 'Chal') + '</span>';
-      if (tk.secondary) {
-        tierBadge += '<span class="tr-tier tr-tier2">' + (tk.secondary === 'tour' ? 'Tour' : 'Chal') + '</span>';
-      }
+      if (tk.secondary) tierBadge += '<span class="tr-tier tr-tier2">' + (tk.secondary === 'tour' ? 'Tour' : 'Chal') + '</span>';
     }
+    var flag = emojiFlag(row.country);
+    var flagHtml = flag ? '<span class="tr-flag" title="' + esc(row.country) + '">' + flag + '</span>' : '';
     var rankTxt = (row.rank != null) ? ('#' + row.rank) : '<span class="tr-dash-inline">—</span>';
-    var surfTxt = row.surface ? esc(row.surface) : '<span class="tr-dash-inline">—</span>';
+    var surfTxt = row.surface ? esc(cap(row.surface)) : '<span class="tr-dash-inline">—</span>';
     return '<td class="tr-cell tr-player">' +
-             '<div class="tr-pline">' + flagBadge(row.country) +
-               '<span class="tr-pname">' + esc(row.name) + '</span>' +
-               '<span class="tr-prank">' + rankTxt + '</span>' + tierBadge +
+             '<div class="tr-pcell">' + avatarHtml(row) +
+               '<div class="tr-pbody">' +
+                 '<div class="tr-pline">' + flagHtml +
+                   '<span class="tr-pname">' + esc(row.name) + '</span>' +
+                   '<span class="tr-prank">' + rankTxt + '</span>' + tierBadge +
+                 '</div>' +
+                 '<div class="tr-pmeta">' + esc(row.tour) + ' · ' + surfTxt + '</div>' +
+               '</div>' +
              '</div>' +
-             '<div class="tr-pmeta">' + esc(row.tournament) + ' · ' + surfTxt + '</div>' +
            '</td>';
   }
 
   // ─── sorting ────────────────────────────────────────────────────────────────
   function sortValue(row, col) {
     var shard = _shards[row.key];
-    var tk = tiersOf(shard);
-    var b = bucketFor(shard, tk.primary, _surface);
-    if (col === 'time') return row.start;
+    var b = bucketFor(shard, tiersOf(shard).primary, surfaceKeyFor(row));
+    if (col === 'time') { var t = Date.parse(row.startSort); return isFinite(t) ? t : 0; }
     if (col === 'player') return (row.name || '').toLowerCase();
     if (col === 'matches') return b ? (b.m || 0) : -1;
-    if (col === 'odds') {
-      var rec = _odds && _odds[row.eventKey];
-      var p = rec && rec[row.which === 1 ? 'p1' : 'p2'];
-      // A missing price sorts to the same end as a dashed stat cell (return -1),
-      // not to the top — keep one convention across every dashable column.
-      return (p && p.price) ? Number(p.price) : -1;
-    }
-    // stat metric
-    if (!b || !b[col] || !(b[col][1] > 0)) return -1;   // dashed cells sort last
+    if (col === 'odds') return (row.odds && Number(row.odds.price) > 0) ? Number(row.odds.price) : -1;
+    if (!b || !b[col] || !(b[col][1] > 0)) return -1;
     return (100 * b[col][0]) / b[col][1];
   }
-
   function applySort(rows) {
     if (!_sortCol) return rows;
     var col = _sortCol, dir = _sortDir;
@@ -336,54 +402,70 @@
     });
   }
 
-  // ─── render ─────────────────────────────────────────────────────────────────
+  // ─── status / progress ────────────────────────────────────────────────────────
   function staleness() {
     if (_updatedAt == null) return { isStale: false, ageMs: 0 };
     var age = Date.now() - _updatedAt;
     return { isStale: age > STALE_THRESHOLD_MS, ageMs: age };
   }
-
-  function renderStatus(nRows) {
+  function renderStatus(nMatches, nLive) {
     var s = status();
     if (!s) return;
     var st = staleness();
-    if (st.isStale) {
+    if (_view === 'live' && st.isStale) {
       s.className = 'tr-status stale';
-      s.innerHTML = '<span class="tr-dot"></span>Stale · last update ' + Math.round(st.ageMs / 1000) + 's ago';
-    } else {
-      s.className = 'tr-status live';
-      var nMatches = nRows / 2;
-      s.innerHTML = '<span class="tr-dot"></span>' + nMatches + ' match' + (nMatches === 1 ? '' : 'es') +
-                    ' live · ' + nRows + ' rows · updates every 30s';
+      s.innerHTML = '<span class="tr-dot"></span>Live feed stale · last update ' + Math.round(st.ageMs / 1000) + 's ago';
+      return;
     }
+    s.className = 'tr-status live';
+    var label = (_view === 'live')
+      ? (nMatches + ' match' + (nMatches === 1 ? '' : 'es') + ' in play · live feed every 30s')
+      : (nMatches + ' ' + (_dateTab === 'tomorrow' ? 'scheduled tomorrow' : 'scheduled today') +
+         (nLive ? ' · ' + nLive + ' in play now' : ''));
+    s.innerHTML = '<span class="tr-dot"></span>' + label;
   }
 
-  function emptyStateHtml() {
-    var hint = '';
-    if (_matchesCache && Array.isArray(_matchesCache)) {
-      var now = Date.now();
-      var next = null;
-      for (var i = 0; i < _matchesCache.length; i++) {
-        var m = _matchesCache[i];
-        var ts = m && m.startTs ? Number(m.startTs) * (String(m.startTs).length <= 10 ? 1000 : 1) : null;
-        if (ts && ts > now && (next == null || ts < next)) next = ts;
-      }
-      if (next) {
-        var d = new Date(next);
-        hint = '<p class="tr-empty-sub">Next scheduled play around ' +
-               esc(d.toUTCString().replace(':00 GMT', ' GMT')) + '.</p>';
-      }
+  // ─── filter bar ──────────────────────────────────────────────────────────────
+  function segBtn(cls, active, attr, label) {
+    return '<button type="button" class="' + cls + (active ? ' active' : '') + '" ' + attr + '>' + label + '</button>';
+  }
+  function filterBarHtml(rows) {
+    var tset = {};
+    for (var i = 0; i < rows.length; i++) if (rows[i].tournamentKey) tset[rows[i].tournamentKey] = rows[i].tour;
+    var tOpts = '<option value="">All tournaments</option>';
+    Object.keys(tset).forEach(function (k) {
+      tOpts += '<option value="' + esc(k) + '"' + (k === _tourFilter ? ' selected' : '') + '>' + esc(tset[k]) + '</option>';
+    });
+    var win = _index && _index.generated && _index.generated.window;
+    var periodTxt = win ? ('Last 24 months · to ' + esc(win.to)) : 'Last 24 months';
+
+    var viewSeg = '<div class="tr-seg" role="tablist" aria-label="View">' +
+      segBtn('tr-segbtn', _view === 'live', 'data-view="live"', 'Live') +
+      segBtn('tr-segbtn', _view === 'today', 'data-view="today"', 'Today') + '</div>';
+    var dateSeg = '<div class="tr-seg" role="tablist" aria-label="Day">' +
+      segBtn('tr-segbtn', _dateTab === 'today', 'data-date="today"', 'Today') +
+      segBtn('tr-segbtn', _dateTab === 'tomorrow', 'data-date="tomorrow"', 'Tomorrow') + '</div>';
+    var surfBtn = segBtn('tr-toggle', _surfaceToday, 'data-surftoggle="1" title="Filter each row\'s splits to the surface being played in that match. Off = all surfaces."',
+      'Today’s surface');
+
+    var loadBlock;
+    if (_loading) {
+      var pct = _loadTotal ? Math.round((100 * _loadDone) / _loadTotal) : 0;
+      loadBlock = '<div class="tr-progress"><div class="tr-progbar"><span style="width:' + pct + '%"></span></div>' +
+                  '<span class="tr-progtxt">Loading stats: ' + _loadDone + '/' + _loadTotal + ' players</span></div>';
+    } else {
+      loadBlock = '<button type="button" class="tr-load" id="trLoadBtn">' + (_loaded ? 'Reload stats' : 'Load stats') + '</button>';
     }
-    if (!hint) hint = '<p class="tr-empty-sub">The board fills automatically as ATP singles matches go in play.</p>';
-    return '<div class="tr-empty">' +
-             '<div class="tr-empty-icon">◍</div>' +
-             '<p class="tr-empty-title">No ATP singles in play right now</p>' + hint +
+
+    return '<div class="tr-filters">' +
+             viewSeg + dateSeg + surfBtn +
+             '<select class="tr-tsel" id="trTournSel">' + tOpts + '</select>' +
+             '<span class="tr-period" title="The splits are a fixed 24-month window — the range the data covers.">' + periodTxt + '</span>' +
+             '<input class="tr-search" id="trSearch" type="text" placeholder="Search player" value="' + esc(_search) + '">' +
+             '<span class="tr-loadslot">' + loadBlock + '</span>' +
            '</div>';
   }
 
-  // Tab nav — one button per COLUMN_SETS entry, in definition order. The active
-  // set drives headerHtml/rowHtml (cfg). Switching a tab never refetches shards
-  // (all metrics live in the one shard already loaded); it only re-renders.
   function tabsHtml() {
     var btns = '';
     Object.keys(COLUMN_SETS).forEach(function (id) {
@@ -393,43 +475,21 @@
     return '<div class="tr-tabs" role="tablist">' + btns + '</div>';
   }
 
-  function filterBarHtml(rows) {
-    // tournaments present in the current slate
-    var tset = {};
-    for (var i = 0; i < rows.length; i++) if (rows[i].tournamentKey) tset[rows[i].tournamentKey] = rows[i].tournament;
-    var tOpts = '<option value="">All tournaments</option>';
-    Object.keys(tset).forEach(function (k) {
-      tOpts += '<option value="' + esc(k) + '"' + (k === _tourFilter ? ' selected' : '') + '>' + esc(tset[k]) + '</option>';
-    });
-    var surfBtns = SURFACES.map(function (s) {
-      return '<button type="button" class="tr-surf' + (s === _surface ? ' active' : '') + '" data-surf="' + s + '">' +
-             (s === 'all' ? 'All surfaces' : s.charAt(0).toUpperCase() + s.slice(1)) + '</button>';
-    }).join('');
-    var win = _index && _index.generated && _index.generated.window;
-    var periodTxt = win ? ('Last 24 months · to ' + esc(win.to)) : 'Last 24 months';
-    var loadTxt = _loaded ? 'Reload stats' : 'Load stats';
-    return '<div class="tr-filters">' +
-             '<div class="tr-surfrow">' + surfBtns + '</div>' +
-             '<select class="tr-tsel" id="trTournSel">' + tOpts + '</select>' +
-             '<span class="tr-period" title="The splits are a fixed 24-month window — the range the data covers. It is not a selectable shorter range.">' + periodTxt + '</span>' +
-             '<input class="tr-search" id="trSearch" type="text" placeholder="Search player" value="' + esc(_search) + '">' +
-             '<button type="button" class="tr-load" id="trLoadBtn"' + (_loading ? ' disabled' : '') + '>' +
-               (_loading ? 'Loading…' : loadTxt) + '</button>' +
-           '</div>';
-  }
-
   function headerHtml(cfg) {
-    function th(col, label, tip) {
-      var arrow = (_sortCol === col) ? (_sortDir === -1 ? ' ▾' : ' ▴') : '';
-      return '<th class="tr-th" data-sort="' + col + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
-             esc(label) + arrow + '</th>';
+    function th(col, label, tip, sortable) {
+      var ind;
+      if (_sortCol === col) ind = '<span class="tr-sort tr-sort-on">' + (_sortDir === -1 ? '▾' : '▴') + '</span>';
+      else ind = sortable === false ? '' : '<span class="tr-sort">⇅</span>';
+      return '<th class="tr-th' + (sortable === false ? ' tr-th-nosort' : '') + '"' +
+             (sortable === false ? '' : ' data-sort="' + col + '"') +
+             (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
+             '<span class="tr-thlabel">' + esc(label) + '</span>' + ind + '</th>';
     }
-    var oddsTip = 'Pre-match price' + (_odds && _odds.__meta && _odds.__meta.captured ? ', captured ' + esc(_odds.__meta.captured) : '') +
-                  '. Never an in-running or carried-forward price; the book is named on each row.';
+    var oddsTip = 'Pre-match price for scheduled rows; the closing price (last quote before start) for rows in play. The book is named on each row; a missing price dashes — never carried forward.';
     var cells = [
       th('time', 'Time'),
       th('player', 'Player'),
-      th('odds', 'Odds (pre-match)', oddsTip),
+      th('odds', 'Odds'),
       th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.'),
     ];
     cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk])); });
@@ -437,50 +497,51 @@
   }
 
   function noticeHtml(rows) {
-    if (_surface === 'all' || !_loaded) return '';
+    if (!_surfaceToday || !_loaded) return '';
     var thin = 0, counted = 0;
     for (var i = 0; i < rows.length; i++) {
       var key = rows[i].key;
-      // Only assess rows we actually hold splits for. An unjoined player or an
-      // unloaded/absent shard is "unknown", not "thin" — it must not swing the
-      // slate notice (founder R1: a dashed cell is not a thin cell).
-      if (!rows[i].joined || !(key in _shards) || !_shards[key]) continue;
+      if (!(key in _shards) || !_shards[key]) continue;
       var shard = _shards[key];
-      var b = bucketFor(shard, tiersOf(shard).primary, _surface);
+      var b = bucketFor(shard, tiersOf(shard).primary, surfaceKeyFor(rows[i]));
       counted++;
-      // An absent surface bucket = 0 matches on that surface (the generator
-      // prunes empty surfaces) = genuinely under the floor, so it still counts
-      // toward "most players under 10 matches".
       if (!b || (b.m || 0) < matchMin()) thin++;
     }
     if (!counted) return '';
     if ((thin / counted) * 100 <= slateMutePct()) return '';
-    var tmpl = (_index && _index.lowSample && _index.lowSample.notice) ||
-               'Low sample across this slate — the {surface} filter leaves most players under 10 matches. Percentages stay visible and muted, with their fractions.';
-    return '<div class="tr-notice">' + esc(tmpl.replace('{surface}', _surface)) + '</div>';
+    return '<div class="tr-notice">Low sample on the today’s-surface filter — most players fall under ' + matchMin() +
+           ' matches. Percentages stay visible and muted, with their fractions.</div>';
   }
 
   function rowHtml(row, cfg) {
     var shard = _shards[row.key];
-    var tk = tiersOf(shard);
-    var bucket = bucketFor(shard, tk.primary, _surface);
+    var bucket = bucketFor(shard, tiersOf(shard).primary, surfaceKeyFor(row));
+    var loaded = (row.key in _shards);
     var cells = '';
-    // TIME
-    cells += '<td class="tr-cell tr-time">' + esc(row.start || '—') + '</td>';
-    // PLAYER
+    cells += '<td class="tr-cell tr-time">' +
+               (row.live ? '<span class="tr-livepip" title="In play">LIVE</span>' : '') +
+               '<span class="tr-clock">' + esc(row.startClock || '—') + '</span></td>';
     cells += playerCell(row, shard);
-    // ODDS
     cells += oddsCell(row);
-    // MATCHES (coverage)
-    if (!_loaded) cells += '<td class="tr-cell tr-matches tr-pending">·</td>';
+    if (!loaded) cells += '<td class="tr-cell tr-matches tr-pending">·</td>';
     else if (!bucket) cells += dash('tr-matches');
     else cells += '<td class="tr-cell tr-matches">' + (bucket.m || 0) + '</td>';
-    // metrics
     cfg.metrics.forEach(function (mk) {
-      if (!_loaded) cells += '<td class="tr-cell tr-stat tr-pending">·</td>';
+      if (!loaded) cells += '<td class="tr-cell tr-stat tr-pending">·</td>';
       else cells += statCell(bucket, mk);
     });
-    return '<tr class="tr-row"' + (row.joined ? '' : ' data-unjoined="1"') + '>' + cells + '</tr>';
+    return '<tr class="tr-row' + (row.live ? ' tr-row-live' : '') + '">' + cells + '</tr>';
+  }
+
+  function emptyStateHtml() {
+    var msg = _view === 'live'
+      ? 'No ATP singles in play right now'
+      : (_dateTab === 'tomorrow' ? 'No ATP singles scheduled tomorrow yet' : 'No ATP singles scheduled today');
+    var sub = _view === 'live'
+      ? 'Switch to <strong>Today</strong> to see every scheduled match; rows flip to LIVE automatically as play starts.'
+      : 'The slate fills from the daily schedule feed.';
+    return '<div class="tr-empty"><div class="tr-empty-icon">◍</div>' +
+           '<p class="tr-empty-title">' + msg + '</p><p class="tr-empty-sub">' + sub + '</p></div>';
   }
 
   function render() {
@@ -488,15 +549,28 @@
     var g = grid();
     if (!g) return;
 
-    var rows = liveRows(_board);
-    renderStatus(rows.length);
+    // Preserve the search caret across a full innerHTML rebuild — the 30s poll
+    // re-renders the grid, and a trader typing a filter must not lose focus.
+    var focusSearch = false, selStart = 0, selEnd = 0;
+    var ae = document.activeElement;
+    if (ae && ae.id === 'trSearch') { focusSearch = true; selStart = ae.selectionStart; selEnd = ae.selectionEnd; }
 
-    if (!rows.length) {
-      g.innerHTML = emptyStateHtml();
-      return;
+    var rows = slateRows();
+    var nLive = 0;
+    for (var i = 0; i < rows.length; i += 2) if (rows[i].live) nLive++;
+    renderStatus(rows.length / 2, nLive);
+
+    function paint(markup) {
+      g.innerHTML = markup;
+      if (focusSearch) {
+        var el = document.getElementById('trSearch');
+        if (el) { el.focus(); try { el.setSelectionRange(selStart, selEnd); } catch (e) {} }
+      }
     }
 
-    // apply tournament filter + search (these narrow the visible slate)
+    var head = tabsHtml() + filterBarHtml(rows);
+    if (!rows.length) { paint(head + emptyStateHtml()); return; }
+
     var view = rows.filter(function (r) {
       if (_tourFilter && r.tournamentKey !== _tourFilter) return false;
       if (_search && (r.name || '').toLowerCase().indexOf(_search.toLowerCase()) === -1) return false;
@@ -505,104 +579,185 @@
     view = applySort(view);
 
     var cfg = COLUMN_SETS[ACTIVE_SET];
-    var html = tabsHtml() + filterBarHtml(rows) + noticeHtml(view);
+    var html = head + noticeHtml(view);
     if (!view.length) {
       html += '<div class="tr-empty tr-empty-sm"><p class="tr-empty-title">No players match this filter</p>' +
-              '<p class="tr-empty-sub">Clear the tournament filter or search to see the full live slate.</p></div>';
+              '<p class="tr-empty-sub">Clear the tournament filter or search to see the full slate.</p></div>';
     } else {
       html += '<div class="tr-tablewrap"><table class="tr-table">' + headerHtml(cfg) +
               '<tbody>' + view.map(function (r) { return rowHtml(r, cfg); }).join('') + '</tbody></table></div>';
     }
-    if (!_loaded && view.length) {
-      html += '<p class="tr-loadhint">Press <strong>Load stats</strong> to fetch the 24-month splits for this slate. ' +
-              'Stats are not fetched until you ask — it keeps the board light.</p>';
-    }
-    g.innerHTML = html;
+    paint(html);
   }
 
-  // ─── data loading (explicit Load) ─────────────────────────────────────────────
+  // ─── progressive stat load ─────────────────────────────────────────────────────
   function ensureStatics() {
     var jobs = [];
     if (!_index) jobs.push(getJSON(INDEX_URL).then(function (j) { _index = j; }).catch(function (e) {
-      console.warn('[trading-report] index load failed:', e.message); _index = _index || { players: [], meta: {} };
+      console.warn('[trading-report] index load failed:', e.message); _index = _index || { meta: {} };
     }));
-    if (!_surfaceMap) jobs.push(getJSON(SURFACES_URL).then(function (j) { _surfaceMap = (j && j.surfaces) || {}; }).catch(function () { _surfaceMap = {}; }));
-    if (_odds == null) jobs.push(getJSON(ODDS_URL).then(function (j) { _odds = j || {}; }).catch(function () { _odds = {}; }));
+    if (!_photos) jobs.push(getJSON(PHOTOS_URL).then(function (j) { _photos = j || {}; }).catch(function () { _photos = {}; }));
     return Promise.all(jobs);
   }
 
   function loadStats() {
     if (_loading) return;
     _loading = true;
+    _loadSig = slateSig();      // remember which slate this load is for
     render();
     ensureStatics().then(function () {
-      var rows = liveRows(_board);
+      var rows = slateRows();
       var keys = {};
-      rows.forEach(function (r) { if (r.key && r.joined) keys[r.key] = 1; });
+      rows.forEach(function (r) { if (r.key) keys[r.key] = 1; });
       var toFetch = Object.keys(keys).filter(function (k) { return !(k in _shards); });
-      return Promise.all(toFetch.map(function (k) {
-        return getJSON(SHARD_BASE + k + '.json').then(function (j) { _shards[k] = j; })
-          .catch(function () { _shards[k] = null; });   // 404/absent → dashed row, never guessed
-      }));
+      _loadTotal = toFetch.length;
+      _loadDone = 0;
+      render();                                  // player/odds/flag cells already render; bar shows
+      if (!toFetch.length) { _loading = false; _loaded = true; render(); return; }
+
+      // bounded-concurrency streaming — populate the table as each shard lands
+      var idx = 0, active = 0, done = 0, lastPaint = 0;
+      return new Promise(function (resolve) {
+        function pump() {
+          while (active < SHARD_CONCURRENCY && idx < toFetch.length) {
+            var k = toFetch[idx++];
+            active++;
+            (function (k) {
+              getJSON(SHARD_BASE + k + '.json')
+                .then(function (j) { _shards[k] = j; })
+                .catch(function () { _shards[k] = null; })   // absent → dashed row, never guessed
+                .then(function () {
+                  active--; done++; _loadDone = done;
+                  // repaint periodically (and on the final one) so the table fills
+                  // live without thrashing on every single shard
+                  if (done - lastPaint >= SHARD_CONCURRENCY || done === toFetch.length) { lastPaint = done; render(); }
+                  if (done === toFetch.length) resolve(); else pump();
+                });
+            })(k);
+          }
+        }
+        pump();
+      });
     }).then(function () {
-      _loaded = true; _loading = false; render();
+      _loaded = true; _loading = false;
+      // The slate may have changed (date/view toggled) while this load ran — its
+      // rows would otherwise sit on pending dots forever. Re-load for the current
+      // slate; only its not-yet-fetched shards are requested (cached ones are free).
+      if (slateSig() !== _loadSig) loadStats(); else render();
     }).catch(function (e) {
       console.warn('[trading-report] load failed:', e.message);
-      _loading = false; render();
+      _loading = false;
+      if (slateSig() !== _loadSig) loadStats(); else render();
     });
   }
 
-  // ─── snapshot polling (only while active + visible) ───────────────────────────
+  // ─── slate acquisition (matches.json) ──────────────────────────────────────────
+  // Reuse the dashboard's already-parsed slate when present (avoids a second fetch
+  // of the multi-MB matches.json). Falls back to a direct fetch if absent.
+  function globalMatches() {
+    try {
+      if (typeof matches !== 'undefined' && Array.isArray(matches) && matches.length) return matches;  // eslint-disable-line no-undef
+    } catch (e) { /* `matches` not in scope */ }
+    return null;
+  }
+  function ensureMatches() {
+    if (Array.isArray(_matches)) return Promise.resolve();
+    var g = globalMatches();
+    if (g) { _matches = g; _matchesAt = Date.now(); return Promise.resolve(); }
+    return getJSON(MATCHES_URL).then(function (j) {
+      _matches = Array.isArray(j) ? j : (j && Array.isArray(j.matches) ? j.matches : []);
+      _matchesAt = Date.now();
+    }).catch(function (e) {
+      console.warn('[trading-report] matches load failed:', e.message); _matches = [];
+    });
+  }
+  // Keep the slate fresh so a match that starts mid-session gains its closingOdds
+  // (the pre→close transition). Re-point to the dashboard global every tick (free);
+  // otherwise re-fetch matches.json at most every MATCHES_REFRESH_MS.
+  function refreshMatches() {
+    var g = globalMatches();
+    if (g) { if (g !== _matches) { _matches = g; _matchesDirty = true; } return Promise.resolve(); }
+    if (Date.now() - _matchesAt < MATCHES_REFRESH_MS) return Promise.resolve();
+    return getJSON(MATCHES_URL).then(function (j) {
+      _matches = Array.isArray(j) ? j : (j && Array.isArray(j.matches) ? j.matches : _matches);
+      _matchesAt = Date.now(); _matchesDirty = true;
+    }).catch(function () { /* keep the prior slate; a fetch blip must not blank the board */ });
+  }
+
+  // ─── snapshot polling (underway set + slate refresh) ────────────────────────────
   function tick() {
     if (_ticking) return;
     _ticking = true;
-    fetchSnapshot().then(function (snap) {
-      if (snap) {
-        _board = snap.board;
-        _updatedAt = snap.updated_at ? Date.parse(snap.updated_at) : Date.now();
-      }
-    }).catch(function (err) {
-      console.warn('[trading-report] snapshot fetch failed:', err.message);
-    }).then(function () {
+    Promise.all([
+      fetchUnderway().then(function (snap) {
+        if (snap) {
+          _underway = snap.set;
+          _updatedAt = snap.updated_at ? Date.parse(snap.updated_at) : Date.now();
+        }
+      }).catch(function (err) { console.warn('[trading-report] snapshot fetch failed:', err.message); }),
+      refreshMatches(),
+    ]).then(function () {
       _ticking = false;
-      render();
+      // Repaint only when something actually changed (a match went in/out of play,
+      // or the slate refreshed) or while stale — so an idle board doesn't rebuild
+      // every 30s and steal the search caret.
+      var sig = _underway ? Object.keys(_underway).sort().join(',') : '∅';
+      if (sig !== _lastUnderwaySig || _matchesDirty || staleness().isStale) {
+        _lastUnderwaySig = sig; _matchesDirty = false; render();
+      }
+      // A slate refresh can surface new keys (a just-added match); stream their shards.
+      if (!_loading && _loaded) {
+        var need = false;
+        slateRows().forEach(function (r) { if (r.key && !(r.key in _shards)) need = true; });
+        if (need) loadStats();
+      }
       if (_active && !document.hidden) _timer = setTimeout(tick, POLL_INTERVAL_MS);
     });
   }
+  function startPolling() { clearTimeout(_timer); tick(); }
 
-  function startPolling() {
-    clearTimeout(_timer);
-    tick();
+  // ─── bootstrap + control surface ───────────────────────────────────────────────
+  function onSlateChange() {
+    // a view/date change swaps the visible slate; auto-stream any not-yet-loaded
+    // shards so the table populates without a manual press (founder loading spec).
+    render();
+    if (!_loading) loadStats();
   }
 
-  // ─── bootstrap + public control surface ───────────────────────────────────────
   function bootstrap() {
     if (_bootstrapped) return;
     var g = grid();
     if (!g) return;
     _bootstrapped = true;
-    // delegated handlers on the grid (rebuilt each render)
+
     g.addEventListener('click', function (e) {
-      var tabBtn = e.target.closest && e.target.closest('.tr-tab');
-      if (tabBtn) {
-        var setId = tabBtn.getAttribute('data-set');
-        if (COLUMN_SETS[setId] && setId !== ACTIVE_SET) {
-          ACTIVE_SET = setId;
-          _sortCol = null;              // a metric sort from another tab may not exist here
-          render();
+      var t = e.target;
+      var seg = t.closest && t.closest('.tr-segbtn');
+      if (seg) {
+        if (seg.hasAttribute('data-view')) {
+          var v = seg.getAttribute('data-view');
+          if (v !== _view) { _view = v; onSlateChange(); }
+        } else if (seg.hasAttribute('data-date')) {
+          var d = seg.getAttribute('data-date');
+          if (d !== _dateTab) { _dateTab = d; onSlateChange(); }
         }
         return;
       }
-      var surfBtn = e.target.closest && e.target.closest('.tr-surf');
-      if (surfBtn) { _surface = surfBtn.getAttribute('data-surf'); render(); return; }
-      var load = e.target.closest && e.target.closest('#trLoadBtn');
+      var toggle = t.closest && t.closest('.tr-toggle');
+      if (toggle && toggle.hasAttribute('data-surftoggle')) { _surfaceToday = !_surfaceToday; render(); return; }
+      var tabBtn = t.closest && t.closest('.tr-tab');
+      if (tabBtn) {
+        var setId = tabBtn.getAttribute('data-set');
+        if (COLUMN_SETS[setId] && setId !== ACTIVE_SET) { ACTIVE_SET = setId; _sortCol = null; render(); }
+        return;
+      }
+      var load = t.closest && t.closest('#trLoadBtn');
       if (load) { loadStats(); return; }
-      var th = e.target.closest && e.target.closest('.tr-th');
-      if (th) {
+      var th = t.closest && t.closest('.tr-th');
+      if (th && th.getAttribute('data-sort')) {
         var col = th.getAttribute('data-sort');
         if (_sortCol === col) _sortDir = -_sortDir; else { _sortCol = col; _sortDir = -1; }
         render();
-        return;
       }
     });
     g.addEventListener('change', function (e) {
@@ -611,21 +766,20 @@
     g.addEventListener('input', function (e) {
       if (e.target && e.target.id === 'trSearch') { _search = e.target.value; render(); }
     });
-    // empty-state hint source (best-effort, once)
-    getJSON(MATCHES_URL).then(function (j) { _matchesCache = (j && j.matches) || j; }).catch(function () {});
+  }
+
+  function activate() {
+    bootstrap();
+    ensureMatches().then(function () {
+      render();
+      startPolling();     // primes the underway set, then re-arms every 30s
+      loadStats();        // stream splits in with a progress bar
+    });
   }
 
   function setActive(isActive) {
-    if (isActive && !_active) {
-      _active = true;
-      bootstrap();
-      // A new slate visit re-arms the explicit-Load contract: don't silently
-      // carry stale stats from a previous visit onto a changed live board.
-      startPolling();
-    } else if (!isActive && _active) {
-      _active = false;
-      clearTimeout(_timer);
-    }
+    if (isActive && !_active) { _active = true; activate(); }
+    else if (!isActive && _active) { _active = false; clearTimeout(_timer); }
   }
 
   document.addEventListener('visibilitychange', function () {
@@ -634,8 +788,6 @@
     else startPolling();
   });
 
-  // reveal the nav tab (only reached past the flag + creds guards, so a flag-OFF
-  // or mis-provisioned build never surfaces a dead tab)
   (function revealNavTab() {
     var show = function () {
       var btn = document.getElementById('tradingTabBtn');
