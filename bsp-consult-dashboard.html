@@ -2361,7 +2361,7 @@
   [data-page="trading"] .tr-status.stale{ color:#e28b4a; }
   [data-page="trading"] .tr-status .tr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
   /* column-set tabs */
-  [data-page="trading"]{ --tr-time-w:66px; --tr-player-w:236px; }
+  [data-page="trading"]{ --tr-time-w:66px; --tr-player-w:262px; }
   [data-page="trading"] .tr-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; border-bottom:1px solid var(--border,#262B35); padding-bottom:2px; }
   [data-page="trading"] .tr-tab{ background:transparent; border:0; border-bottom:2px solid transparent; color:var(--text-dim,#8F98A6); font-size:12.5px; font-weight:600; padding:8px 12px; margin-bottom:-1px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); white-space:nowrap; }
   [data-page="trading"] .tr-tab:hover{ color:var(--text,#E6EAF0); }
@@ -2394,7 +2394,7 @@
   [data-page="trading"] .tr-th .tr-sort-on{ color:var(--accent,#3E7BFA); }
   [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-th[data-sort="player"]{ text-align:left; }
   [data-page="trading"] .tr-th:hover{ color:var(--text-dim,#8F98A6); }
-  [data-page="trading"] .tr-cell{ padding:8px 12px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(38,43,53,0.55); }
+  [data-page="trading"] .tr-cell{ padding:5px 12px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(38,43,53,0.55); }
   [data-page="trading"] .tr-row:hover .tr-cell{ background:rgba(62,123,250,0.05); }
   /* pinned TIME + PLAYER columns — everything to their right scrolls under them */
   [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-time{ position:sticky; left:0; width:var(--tr-time-w); min-width:var(--tr-time-w); background:var(--panel,#12151C); z-index:1; }
@@ -2405,9 +2405,9 @@
   [data-page="trading"] .tr-livepip{ display:inline-block; font-size:8.5px; font-weight:800; letter-spacing:0.06em; color:#3dd68c; background:rgba(61,214,140,0.14); border-radius:4px; padding:1px 4px; margin-right:5px; vertical-align:1px; }
   [data-page="trading"] .tr-player{ text-align:left; }
   [data-page="trading"] .tr-pcell{ display:flex; align-items:center; gap:9px; min-width:0; }
-  [data-page="trading"] .tr-av-wrap{ position:relative; width:30px; height:30px; flex-shrink:0; }
-  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); font-size:10.5px; font-weight:700; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:30px; height:30px; border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); }
+  [data-page="trading"] .tr-av-wrap{ position:relative; width:27px; height:27px; flex-shrink:0; }
+  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); font-size:10px; font-weight:700; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:27px; height:27px; border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); }
   [data-page="trading"] .tr-pbody{ min-width:0; flex:1; }
   [data-page="trading"] .tr-pline{ display:flex; align-items:center; gap:6px; min-width:0; }
   [data-page="trading"] .tr-flag{ font-size:14px; line-height:1; flex-shrink:0; }
@@ -2424,6 +2424,9 @@
   [data-page="trading"] .tr-dash-inline{ color:var(--text-faint,#565F6A); }
   [data-page="trading"] .tr-odds{ white-space:nowrap; }
   [data-page="trading"] .tr-odds .tr-price{ display:block; font-weight:700; }
+  /* greedy trailing spacer — soaks up the width:100% slack so data columns pack
+     tight against the pinned player cell instead of leaving a gap before ODDS */
+  [data-page="trading"] .tr-spacer{ width:100%; padding:0; }
   [data-page="trading"] .tr-obook{ display:block; font-size:9px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); }
   [data-page="trading"] .tr-otag{ display:inline-block; font-size:8px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; border-radius:3px; padding:0 3px; margin-top:2px; }
   [data-page="trading"] .tr-otag-pre{ background:var(--panel-2,#181C25); color:var(--text-faint,#565F6A); border:1px solid var(--border,#262B35); }

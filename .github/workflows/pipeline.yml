@@ -333,6 +333,11 @@ jobs:
           cp trading-report.js _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
+          # Wikidata-P18 headshot override map (enrich-player-photos.py). Committed
+          # but never copied → 404 at runtime → _photos={} → EVERY avatar (Trading
+          # Report AND the main dashboard) fell back to a monogram. Publishing it is
+          # what actually makes the photos appear; the render/URL logic was fine.
+          cp player-photos.json _site/ 2>/dev/null || true
           # tournament_key → surface map: the Trading Report reads it client-side to
           # label each live row's surface and pick the surface split. Same map the
           # generator used, so the board can't diverge. Not previously published.

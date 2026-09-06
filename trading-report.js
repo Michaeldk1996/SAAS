@@ -148,6 +148,7 @@
   var _timer = null;
   var _ticking = false;
   var _underway = null;       // Set of pairKeys currently in play, or null (no snapshot)
+  var _liveFixtures = null;   // underway ATP-singles fixtures from the snapshot, or null
   var _updatedAt = null;      // ms epoch of last snapshot
   var _matches = null;        // matches.json array (fetched/reused once)
   var _index = null;          // trading-splits-index.json
@@ -225,14 +226,19 @@
       return res.json();
     }).then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : rows;
-      if (!row) return { set: null, updated_at: null };
+      if (!row) return { set: null, fixtures: null, updated_at: null };
       var b = (row.board && Array.isArray(row.board.matches)) ? row.board.matches
               : (Array.isArray(row.board) ? row.board : []);
+      // The SAME exported gate the Live tab uses — no second predicate. We keep
+      // the surviving fixtures (not just their pair-keys) so the Live view can
+      // render straight from the snapshot, exactly like the Live tab, instead of
+      // depending on the match also being present in the matches.json slate.
+      var fixtures = b.filter(LT.isAtpSingles).filter(LT.isUnderway);
       var set = {};
-      b.filter(LT.isAtpSingles).filter(LT.isUnderway).forEach(function (f) {
+      fixtures.forEach(function (f) {
         set[pairKey(f.first_player_key, f.second_player_key)] = 1;
       });
-      return { set: set, updated_at: row.updated_at };
+      return { set: set, fixtures: fixtures, updated_at: row.updated_at };
     });
   }
 
@@ -289,6 +295,69 @@
       if (_view === 'live' && !live) continue;              // Live view = in-play only
       out.push(playerRow(m, 1, live));
       out.push(playerRow(m, 2, live));
+    }
+    return out;
+  }
+
+  // Find the slate match (if any) for a fixture's two players, regardless of the
+  // p1/p2 orientation — used only to enrich live rows with the slate's odds.
+  function slateMatchByKeys(a, b) {
+    var arr = Array.isArray(_matches) ? _matches : [];
+    var want = pairKey(a, b);
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i];
+      if (m && m.p1Key && m.p2Key && pairKey(m.p1Key, m.p2Key) === want) return m;
+    }
+    return null;
+  }
+
+  // Build one player row from a live snapshot fixture. Identity (name/rank/
+  // country/surface) comes from the trading index; odds come from the slate
+  // match when the pairing exists there, else DASH — never fabricated. This is
+  // what lets the Live view show an in-play match that the daily slate has not
+  // (yet) captured, e.g. a late-round Slam match missing from matches.json.
+  function liveFixtureRow(f, which) {
+    var isFirst = which === 1;
+    var key = String((isFirst ? f.first_player_key : f.second_player_key) || '');
+    var meta = (_index && _index.meta && _index.meta[key]) || null;
+    var abbr = isFirst ? f.event_first_player : f.event_second_player;
+    var slate = slateMatchByKeys(f.first_player_key, f.second_player_key);
+    var odds = null;
+    if (slate) {
+      var which2 = (String(slate.p1Key) === key) ? 1 : 2;   // re-align to slate orientation
+      odds = oddsFor(slate, which2, true);                  // live → closing price, or null
+    }
+    var surf = slate ? String(slate.surface || '').toLowerCase()
+                     : String((meta && meta.surface) || '').toLowerCase();
+    return {
+      id: String(f.event_key || ''),
+      which: which,
+      key: key,
+      name: (meta && meta.name) || abbr || '—',
+      rank: (meta && meta.rank != null) ? meta.rank : null,
+      country: (meta && meta.country) || null,
+      tour: f.tournament_name || '',
+      tournamentKey: f.tournament_name || '',
+      surface: surf,
+      startClock: f.event_time || '',
+      startSort: (f.event_date || '') + ' ' + (f.event_time || ''),
+      live: true,
+      odds: odds,
+    };
+  }
+
+  // Live-view rows, sourced straight from the underway snapshot fixtures (same
+  // source + same gate as the Live tab). Falls back to the slate's own live rows
+  // only when no snapshot is available (no creds / gate), preserving the prior
+  // never-silently-empty degradation.
+  function liveRows() {
+    if (!Array.isArray(_liveFixtures)) return slateRows();   // no snapshot → slate live-flag fallback
+    var out = [];
+    for (var i = 0; i < _liveFixtures.length; i++) {
+      var f = _liveFixtures[i];
+      if (!f || !f.first_player_key || !f.second_player_key) continue;
+      out.push(liveFixtureRow(f, 1));
+      out.push(liveFixtureRow(f, 2));
     }
     return out;
   }
@@ -356,6 +425,21 @@
     return '<span class="tr-av-wrap">' + mono + '</span>';
   }
 
+  // Full name unless it exceeds the player column's character budget; then the
+  // first name shortens to an initial ("Alejandro Davidovich Fokina" → "A.
+  // Davidovich Fokina"). Never clips mid-word. The budget matches --tr-player-w
+  // (262px, name on its own line) so the name never overflows the pinned cell.
+  var NAME_BUDGET = 24;
+  function fitName(name) {
+    var s = String(name || '').trim();
+    if (s.length <= NAME_BUDGET) return s;
+    var sp = s.indexOf(' ');
+    if (sp > 0 && sp < s.length - 1) {
+      return s.charAt(0).toUpperCase() + '. ' + s.slice(sp + 1);
+    }
+    return s;
+  }
+
   function playerCell(row, shard) {
     var tk = tiersOf(shard);
     var tierBadge = '';
@@ -367,14 +451,19 @@
     var flagHtml = flag ? '<span class="tr-flag" title="' + esc(row.country) + '">' + flag + '</span>' : '';
     var rankTxt = (row.rank != null) ? ('#' + row.rank) : '<span class="tr-dash-inline">—</span>';
     var surfTxt = row.surface ? esc(cap(row.surface)) : '<span class="tr-dash-inline">—</span>';
+    var disp = fitName(row.name);
+    // Name gets its own line at full width; rank + tier ride the meta line so
+    // they never steal room from the name (the old cause of "Alexander Zve…").
     return '<td class="tr-cell tr-player">' +
              '<div class="tr-pcell">' + avatarHtml(row) +
                '<div class="tr-pbody">' +
                  '<div class="tr-pline">' + flagHtml +
-                   '<span class="tr-pname">' + esc(row.name) + '</span>' +
-                   '<span class="tr-prank">' + rankTxt + '</span>' + tierBadge +
+                   '<span class="tr-pname" title="' + esc(row.name) + '">' + esc(disp) + '</span>' +
                  '</div>' +
-                 '<div class="tr-pmeta">' + esc(row.tour) + ' · ' + surfTxt + '</div>' +
+                 '<div class="tr-pmeta">' +
+                   '<span class="tr-prank">' + rankTxt + '</span> · ' +
+                   esc(row.tour) + ' · ' + surfTxt + tierBadge +
+                 '</div>' +
                '</div>' +
              '</div>' +
            '</td>';
@@ -493,6 +582,12 @@
       th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.'),
     ];
     cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk])); });
+    // Trailing flex spacer: with a width:100% table the slack used to distribute
+    // into the odds/metric columns, pushing the right-aligned ODDS value far from
+    // the pinned player cell (the "large empty gap"). A greedy last column parks
+    // all slack on the far right instead, so the data columns pack tight against
+    // the player block. No data, not sortable, hidden from a11y tree.
+    cells.push('<th class="tr-th tr-th-nosort tr-spacer" aria-hidden="true"></th>');
     return '<thead><tr>' + cells.join('') + '</tr></thead>';
   }
 
@@ -530,6 +625,7 @@
       if (!loaded) cells += '<td class="tr-cell tr-stat tr-pending">·</td>';
       else cells += statCell(bucket, mk);
     });
+    cells += '<td class="tr-cell tr-spacer" aria-hidden="true"></td>';   // absorbs the width:100% slack (see headerHtml)
     return '<tr class="tr-row' + (row.live ? ' tr-row-live' : '') + '">' + cells + '</tr>';
   }
 
@@ -555,7 +651,7 @@
     var ae = document.activeElement;
     if (ae && ae.id === 'trSearch') { focusSearch = true; selStart = ae.selectionStart; selEnd = ae.selectionEnd; }
 
-    var rows = slateRows();
+    var rows = (_view === 'live') ? liveRows() : slateRows();
     var nLive = 0;
     for (var i = 0; i < rows.length; i += 2) if (rows[i].live) nLive++;
     renderStatus(rows.length / 2, nLive);
@@ -606,9 +702,9 @@
     _loadSig = slateSig();      // remember which slate this load is for
     render();
     ensureStatics().then(function () {
-      var rows = slateRows();
       var keys = {};
-      rows.forEach(function (r) { if (r.key) keys[r.key] = 1; });
+      slateRows().forEach(function (r) { if (r.key) keys[r.key] = 1; });
+      liveRows().forEach(function (r) { if (r.key) keys[r.key] = 1; });   // live matches may be slate-absent
       var toFetch = Object.keys(keys).filter(function (k) { return !(k in _shards); });
       _loadTotal = toFetch.length;
       _loadDone = 0;
@@ -692,6 +788,7 @@
       fetchUnderway().then(function (snap) {
         if (snap) {
           _underway = snap.set;
+          _liveFixtures = snap.fixtures;
           _updatedAt = snap.updated_at ? Date.parse(snap.updated_at) : Date.now();
         }
       }).catch(function (err) { console.warn('[trading-report] snapshot fetch failed:', err.message); }),
@@ -705,10 +802,13 @@
       if (sig !== _lastUnderwaySig || _matchesDirty || staleness().isStale) {
         _lastUnderwaySig = sig; _matchesDirty = false; render();
       }
-      // A slate refresh can surface new keys (a just-added match); stream their shards.
+      // A slate refresh — or a live match not in the slate — can surface new keys;
+      // stream their shards. Check both the slate and the live snapshot rows so a
+      // just-started, slate-absent match still gets its situational splits.
       if (!_loading && _loaded) {
         var need = false;
         slateRows().forEach(function (r) { if (r.key && !(r.key in _shards)) need = true; });
+        liveRows().forEach(function (r) { if (r.key && !(r.key in _shards)) need = true; });
         if (need) loadStats();
       }
       if (_active && !document.hidden) _timer = setTimeout(tick, POLL_INTERVAL_MS);
