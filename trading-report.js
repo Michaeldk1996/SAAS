@@ -4,8 +4,8 @@
 // shows TODAY's ATP singles — every scheduled match, in play or not — with a
 // LIVE / TODAY toggle, Today / Tomorrow date tabs, a "Today's surface" per-row
 // filter, book-named odds (pre-match price for scheduled rows, the closing price
-// for rows now in play), Commons-verified player photos with a monogram fallback,
-// flag icons, sort indicators, and a per-player load progress bar.
+// for rows now in play), player photos via the SAME resolver the profile pages use
+// (with a monogram fallback), flag icons, sort indicators, and a per-player load bar.
 //
 // SOURCES (all read-only; nothing here mutates the Live tab, the Matches board, the
 // four core JSON files, the ten141 cron, or the entry-lists workstream):
@@ -25,9 +25,13 @@
 //                     (keyed by api-tennis player_key). Loaded progressively.
 //   • rank/country ← the index `meta` map (name/rank/country) built from the
 //                     committed player-profiles.json — used for the country flag.
-//   • photos       ← player-photos.json (Wikimedia Commons override route only;
-//                     monogram-initials fallback for any player without a verified
-//                     photo). No photo is ever sourced from anywhere else.
+//   • photos       ← the profile pages' resolver in bsp-consult-dashboard.html
+//                     (photoOverrideFor -> atpPhotoFor -> resolveProfilePhotoUrl),
+//                     driven off the api-tennis player_key + the profile-format name
+//                     (meta.name). Chain order: Wikimedia override (player-photos.json)
+//                     -> ATP official alias (player-atp-aliases.json) -> api-tennis
+//                     constructed logo -> monogram-initials. ONE resolver, reused via
+//                     the page globals — not a parallel Trading-Report photo map.
 //
 // Odds standing rule (founder): a live row shows the CLOSING price (labelled), a
 // scheduled row the PRE-MATCH price; the book is named on every cell; a missing
@@ -61,7 +65,6 @@
   var INDEX_URL          = './trading-splits-index.json';
   var SHARD_BASE         = './trading-splits/';
   var MATCHES_URL        = './matches.json';
-  var PHOTOS_URL         = './player-photos.json';
   var SHARD_CONCURRENCY  = 6;       // polite parallelism while streaming shards in
 
   // Metric dictionary — unchanged from the shipped Key Stats build (founder-fixed).
@@ -152,7 +155,6 @@
   var _updatedAt = null;      // ms epoch of last snapshot
   var _matches = null;        // matches.json array (fetched/reused once)
   var _index = null;          // trading-splits-index.json
-  var _photos = null;         // player-photos.json map
   var _shards = {};           // key -> shard | null (null = fetched, none)
   var _loaded = false;        // every key in the current slate has been fetched
   var _loading = false;
@@ -272,6 +274,10 @@
       which: which,
       key: key,
       name: (isFirst ? m.p1 : m.p2) || (meta && meta.name) || '—',
+      // Profile-format name ("A. Surname") for the shared photo resolver's api-tennis
+      // slug — the live display name (m.p1/p2) is full-format and won't parse. Same
+      // player-profiles.json source the profile pages pass to resolveProfilePhotoUrl.
+      photoName: (meta && meta.name) || null,
       rank: (rank == null ? null : rank),
       country: (meta && meta.country) || null,
       tour: m.tour || '',
@@ -334,6 +340,7 @@
       which: which,
       key: key,
       name: (meta && meta.name) || abbr || '—',
+      photoName: (meta && meta.name) || null,   // profile-format name for the shared photo resolver
       rank: (meta && meta.rank != null) ? meta.rank : null,
       country: (meta && meta.country) || null,
       tour: f.tournament_name || '',
@@ -413,16 +420,29 @@
   }
 
   function avatarHtml(row) {
-    var ov = _photos && _photos[row.key] && _photos[row.key].photo;
     var mono = '<span class="tr-mono">' + esc(playerInitials(row.name)) + '</span>';
-    if (ov) {
-      // Photo sits over the monogram; onerror hides it → the monogram shows through.
-      // Commons Special:FilePath route only (founder ruling); no other photo source.
-      return '<span class="tr-av-wrap">' + mono +
-             '<img class="tr-av" src="' + esc(ov) + '" alt="" loading="lazy" ' +
-             'onerror="this.style.display=\'none\'"></span>';
-    }
-    return '<span class="tr-av-wrap">' + mono + '</span>';
+    // ONE resolver, reused from the profile pages (bsp-consult-dashboard.html):
+    // Wikimedia override -> ATP official alias -> api-tennis constructed logo -> monogram.
+    // Keyed on the api-tennis player_key + the profile-format name, exactly as the
+    // profile hero does. Guarded so a missing page global degrades to the monogram
+    // rather than throwing (trading-report.js only ever loads inside that page).
+    var cands = [];
+    try {
+      if (typeof photoOverrideFor === 'function')       cands.push(photoOverrideFor(row.key));
+      if (typeof atpPhotoFor === 'function')            cands.push(atpPhotoFor(row.key));
+      if (typeof resolveProfilePhotoUrl === 'function') cands.push(resolveProfilePhotoUrl(row.key, row.photoName || row.name));
+    } catch (e) { /* fall through to monogram */ }
+    cands = cands.filter(Boolean);
+    if (!cands.length) return '<span class="tr-av-wrap">' + mono + '</span>';
+    var src = cands[0];
+    var fb  = cands.slice(1).join('|');
+    // Monogram sits underneath; the shared avatarChainNext steps the <img> through the
+    // remaining candidates on error, then the img hides so the monogram shows through —
+    // the identical fallthrough the dashboard renderers use.
+    return '<span class="tr-av-wrap">' + mono +
+           '<img class="tr-av" src="' + esc(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
+           'data-fb="' + esc(fb) + '" ' +
+           'onerror="if(!(typeof avatarChainNext===\'function\'&&avatarChainNext(this)))this.style.display=\'none\'"></span>';
   }
 
   // Full name unless it exceeds the player column's character budget; then the
@@ -692,7 +712,9 @@
     if (!_index) jobs.push(getJSON(INDEX_URL).then(function (j) { _index = j; }).catch(function (e) {
       console.warn('[trading-report] index load failed:', e.message); _index = _index || { meta: {} };
     }));
-    if (!_photos) jobs.push(getJSON(PHOTOS_URL).then(function (j) { _photos = j || {}; }).catch(function () { _photos = {}; }));
+    // Photos are resolved via the profile pages' shared resolver (page globals), whose
+    // player-photos.json + player-atp-aliases.json maps the dashboard already loads on
+    // the matches critical path — no separate photo fetch here (one source, not two).
     return Promise.all(jobs);
   }
 
