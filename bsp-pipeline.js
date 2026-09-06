@@ -3891,7 +3891,14 @@ const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
 // (Blockx def. Trungelliti, US Open '26 R64). Bumping to 5 busts every cached
 // history so the corrected labels rebuild against the now-settled feed instead
 // of serving the stale 'Q' until it ages out.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 5;
+// v6 (TEN-157/TEN-158, 2026-09-06): fetchPlayerCareerHistory now (a) skips
+// NON-FINAL fixtures so a live in-play snapshot can never freeze a transient
+// label into the career history (the root cause the v5 point patch left open —
+// v5 only stopped the Q, not the frozen "2 - 1" score / missing later rounds),
+// and (b) guards the structural first-loss net with the '1/N-finals' main-draw
+// certifier, parity with the set-count net (v5) and the record-by-season twin.
+// Bumping to 6 busts every cached history so the corrected rows rebuild.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 6;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -3972,6 +3979,16 @@ async function fetchPlayerCareerHistory(playerKey) {
   const byTournament = {};
   for (const f of data.result) {
     if (!f.tournament_name || !f.tournament_round) continue;
+    // TEN-157/TEN-158 ROOT FIX: never derive a durable career-history row from a
+    // NON-FINAL match. A live/in-play snapshot can carry a declared winner while
+    // event_final_result still lags (e.g. "2 - 1" mid-3rd-set), which froze a real
+    // main-draw R64 as 'Q' in the 7-day history cache (Blockx def. Trungelliti,
+    // US Open '26). Only terminal statuses are real results. Mirrors the exact
+    // filter its row-level twin playerMatchHistory already applies. Measured
+    // 2026-09-06 across the feed's whole reach (2019+): every completed match
+    // carries a terminal status, so this drops zero legitimate rows — the only
+    // non-terminal rows are Cancelled and live in-play, neither a real result.
+    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
     // Count qualifying-round matches too, so the per-tournament record matches
     // Flashscore and stays in lockstep with the Record-by-season table
     // (founder ruling 2026-08-04: same rules as Flashscore everywhere we show a
@@ -4057,6 +4074,10 @@ async function fetchPlayerCareerHistory(playerKey) {
       res: didWin ? 'W' : (walkoverGiven ? 'WD' : 'L'), round: code, opp,
       oppKey: oppKey != null ? String(oppKey) : '', score,
       _rank: ROUND_RANK[code] != null ? ROUND_RANK[code] : -1, _won: didWin,
+      // TEN-157: main-draw certifier carried onto the row so the structural
+      // first-loss net below can never retag a genuine '1/N-finals' round to 'Q'
+      // (scratch field; stripped by the output projection, mirrors the twin).
+      _frac: _isFracRound,
       // TEN-89 Part 2: carry event_status so the "over 3.5 sets" box can exclude
       // retirements and walkovers, which distort the rate. Both are dropped from
       // the pipeline elsewhere; kept here for the profile editions only.
@@ -4100,7 +4121,11 @@ async function fetchPlayerCareerHistory(playerKey) {
         for (const m of ms) { if (m.res === 'L' && m.round !== 'Q') { firstLossRank = m._rank; break; } }
         if (firstLossRank !== Infinity) {
           for (const m of ms) {
-            if (m._won && m.round !== 'Q' && m._rank > firstLossRank) { m.round = 'Q'; m._rank = -1; }
+            // TEN-157: never retag a certified main-draw round ('1/N-finals',
+            // _frac) to 'Q' — parity with the set-count net above and the
+            // record-by-season twin (founder ruling: no heuristic overrides an
+            // authoritative main-draw signal).
+            if (m._won && m.round !== 'Q' && !m._frac && m._rank > firstLossRank) { m.round = 'Q'; m._rank = -1; }
           }
         }
       }
