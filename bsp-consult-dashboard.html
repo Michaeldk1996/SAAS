@@ -17374,7 +17374,18 @@ async function loadTournamentProfiles(){
 let tournamentProgression = { tournaments: {} };
 async function loadTournamentProgression(){
   try {
-    const res = await fetch('./tournament-progression.json', { cache: 'no-cache' });
+    // Cache-bust so this always pulls the CURRENT deploy from origin. The
+    // Tournament Report DERIVES its ratings (Dominance Ratio, Serve/Return,
+    // Pressure) per-round from this file and fail-closes any missing component
+    // to an em-dash; Match Stats instead reads the pre-computed value from
+    // matches.json. `cache: 'no-cache'` only forces the BROWSER to revalidate —
+    // the GitHub-Pages CDN (Fastly) can still answer that revalidation from a
+    // within-TTL (max-age=600) edge copy, so a stale progression could sit
+    // behind a fresh matches.json and the same match would show DR in Match
+    // Stats but an em-dash in the Report. A unique ?_=Date.now() URL is an edge
+    // cache MISS, forcing a fresh origin fetch and keeping the two surfaces
+    // consistent (existing codebase idiom, used by ~20 other fetches).
+    const res = await fetch('./tournament-progression.json?_=' + Date.now(), { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     tournamentProgression = await res.json();
   } catch (err) {
