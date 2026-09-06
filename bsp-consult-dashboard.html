@@ -865,6 +865,32 @@
   .pp-split-head:hover{ background:rgba(255,255,255,0.04); }
   .pp-split-head:focus-visible{ outline:2px solid #3E7BFA; outline-offset:2px; }
 
+  /* TEN-162 — a split row is a button that opens the drawer of matches behind it.
+     The founder dropped the old decorative row hover (Profile #6) because a
+     non-interactive row shouldn't highlight; now the row IS interactive, so it
+     takes a subtle hover at the SAME token as the section-head hover. Only rows
+     with underlying matches get .pp-clickable; zero/dashed rows stay inert. */
+  .pp-split-row.pp-clickable{ cursor:pointer; }
+  .pp-split-row.pp-clickable:hover{ background:rgba(255,255,255,0.04) !important; }
+  .pp-split-row.pp-clickable:focus-visible{ outline:2px solid #3E7BFA; outline-offset:-2px; border-radius:8px; }
+  /* Right-side splits drawer: overlays content, never pushes it. Mounted at body
+     level so a profile repaint (which rewrites playerProfileView) can't tear it
+     down mid-open. Closed = fully off-canvas to the right + scrim faded out. */
+  #ppSplitDrawer{ position:fixed; inset:0; z-index:1200; visibility:hidden; }
+  #ppSplitDrawer .ppsd-scrim{ position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity .22s ease; }
+  #ppSplitDrawer .ppsd-panel{ position:absolute; top:0; right:0; height:100%; width:min(440px,92vw);
+    background:#0a0d14; border-left:1px solid rgba(255,255,255,0.10); box-shadow:-24px 0 60px -30px rgba(0,0,0,0.9);
+    transform:translateX(100%); transition:transform .26s cubic-bezier(.22,.61,.36,1); display:flex; flex-direction:column;
+    font-family:'Hanken Grotesk',sans-serif; }
+  #ppSplitDrawer.open{ visibility:visible; }
+  #ppSplitDrawer.open .ppsd-scrim{ opacity:1; }
+  #ppSplitDrawer.open .ppsd-panel{ transform:translateX(0); }
+  #ppSplitDrawer .ppsd-head{ flex:none; padding:20px 22px 16px; border-bottom:1px solid rgba(255,255,255,0.08); position:relative; }
+  #ppSplitDrawer .ppsd-close{ position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:#8b93a1; font-size:17px; line-height:1; background:transparent; border:1px solid transparent; }
+  #ppSplitDrawer .ppsd-close:hover{ color:#e7e9ee; background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.12); }
+  #ppSplitDrawer .ppsd-body{ flex:1; overflow-y:auto; padding:8px 14px 22px; }
+
   /* Founder pass-3 §5: the modal shell must read as the same surface as the page
      behind it, not a lighter panel. Match the page's card token (--mc-card /
      --sf-card = #0a0d14); the generic .modal's --panel (#12151C) was noticeably
@@ -14926,7 +14952,17 @@ function ppSplitTabTableHtml(rows, which, tier){
       // the muted denominator tone so it stays legible but does not read as a finding.
       const thinSample = tab.id === 'service' ? r.MS : r.M;
       const thin = typeof thinSample === 'number' && thinSample < PP_SPLIT_THIN;
-      return `<div class="pp-split-row" style="${grid}align-items:center;padding:11px 0;border-radius:8px;background:${bg};transition:background .12s ease;">
+      // TEN-162: the whole row opens the drawer of matches behind this split.
+      // Clickable only when the split rests on real matches (M>0) and the client
+      // knows how to reproduce the category (a predicate exists); a zero/dashed
+      // row stays inert with no pointer or hover, per the founder's spec.
+      const clickable = r && r.M > 0 && PP_SPLIT_MATCH_PRED[k];
+      const rowAttrs = clickable
+        ? ` class="pp-split-row pp-clickable" role="button" tabindex="0" data-cat="${escapeHtml(k)}"
+            onclick="openPpSplitDrawer('${which}', this.dataset.cat)"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPpSplitDrawer('${which}', this.dataset.cat)}"`
+        : ` class="pp-split-row"`;
+      return `<div${rowAttrs} style="${grid}align-items:center;padding:11px 0;border-radius:8px;background:${bg};transition:background .12s ease;">
         <span style="text-align:left;padding:0 12px;position:sticky;left:0;background:#0a0d14;font-family:'Hanken Grotesk',sans-serif;font-size:14px;font-weight:700;color:#e7e9ee;">${k}</span>
         ${tab.cols.map(c => { const v = c.get(r); const muted = thin && !c.win && c.c === PP_SPLIT_C.num && v !== '—'; return `<span${c.win && tier ? ` title="${escapeHtml(ppSplitGradeTip(g, tier))}"` : ''} style="text-align:right;padding-left:12px;${PP_SPLIT_MONO}font-size:${c.win ? '14px' : '13px'};font-weight:${c.win ? '700' : (c.b ? '600' : '500')};color:${c.win ? g.color : (muted ? PP_SPLIT_C.dim : c.c)};white-space:nowrap;">${v}</span>`; }).join('')}
       </div>`;
@@ -14969,6 +15005,168 @@ function ppCareerSplitsHtml(p){
   // Twin-column: Career (left) and Last 52 weeks (right) side by side.
   return `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;">
     ${career}${last52}</div>`;
+}
+
+// ============================================================================
+// TEN-162 — Splits drawer. Clicking a split row opens a right-side drawer that
+// lists the individual matches behind that number. The per-match rows live in a
+// lazy per-player shard (splits-matches/{key}.json + splits-matches-index.json),
+// built by tools/build-career-splits.js from the SAME tour-level match set as
+// the aggregates, so a drawer's match count reconciles cell-for-cell with the
+// split's M. career-splits.json (the eager bundle) is untouched.
+// ----------------------------------------------------------------------------
+// Shard loaders — same index-gated, promise-cached convention as career-history.
+let splitsMatchesIndex = null, _splitsMatchesIndexPromise = null;
+const _splitsMatchesShards = {}, _splitsMatchesShardPromises = {};
+function loadSplitsMatchesIndex(){
+  if (_splitsMatchesIndexPromise) return _splitsMatchesIndexPromise;
+  _splitsMatchesIndexPromise = fetch('./splits-matches-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : {})
+    .then(idx => (splitsMatchesIndex = idx || {}))
+    .catch(err => { console.warn('splits-matches index load failed:', err.message); splitsMatchesIndex = {}; return splitsMatchesIndex; });
+  return _splitsMatchesIndexPromise;
+}
+function loadSplitsMatches(key){
+  const pk = String(key);
+  if (_splitsMatchesShardPromises[pk]) return _splitsMatchesShardPromises[pk];
+  _splitsMatchesShardPromises[pk] = loadSplitsMatchesIndex()
+    .then(idx => (idx && idx[pk] ? fetch(`./splits-matches/${pk}.json`, { cache: 'no-cache' }) : null))
+    .then(r => r && r.ok ? r.json() : null)
+    .then(d => (_splitsMatchesShards[pk] = d))
+    .catch(err => { console.warn(`splits-matches shard ${pk} load failed:`, err.message); _splitsMatchesShards[pk] = null; return null; });
+  return _splitsMatchesShardPromises[pk];
+}
+// Category → predicate over a shard match. MIRRORS build-career-splits.js
+// CATEGORIES exactly for every key shown in PP_SPLIT_SECTIONS, so re-filtering
+// these rows reproduces the aggregate's M. Any drift here desyncs the count from
+// the table — keep the two in lockstep.
+const PP_SPLIT_MATCH_PRED = {
+  'Hard':           m => m.sf === 'Hard',
+  'Clay':           m => m.sf === 'Clay',
+  'Grass':          m => m.sf === 'Grass',
+  'Carpet':         m => m.sf === 'Carpet',
+  'Grand Slams':    m => m.lv === 'G',
+  'Masters':        m => m.lv === 'M',
+  'Other Tours':    m => m.lv === 'A',
+  'Best of 5':      m => m.bo === 5,
+  'Best of 3':      m => m.bo === 3,
+  'Finals':         m => m.rd === 'F',
+  'Semi-finals':    m => m.rd === 'SF',
+  'Quarter-finals': m => m.rd === 'QF',
+  'vs. Righties':   m => m.oh === 'R',
+  'vs. Lefties':    m => m.oh === 'L',
+  'vs. Top 10':     m => m.orank != null && m.orank <= 10,
+};
+// Drawer state survives ppRepaint (the drawer is mounted on <body>, not inside
+// playerProfileView). `token` guards against an out-of-order shard resolve
+// swapping in stale content after a newer click.
+const ppSplitDrawerState = { open: false, key: null, which: null, cat: null, token: 0 };
+function ensurePpSplitDrawer(){
+  let el = document.getElementById('ppSplitDrawer');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'ppSplitDrawer';
+  el.innerHTML = `<div class="ppsd-scrim" onclick="closePpSplitDrawer()"></div>
+    <aside class="ppsd-panel" role="dialog" aria-modal="true" aria-label="Matches behind this split">
+      <div class="ppsd-head">
+        <div class="ppsd-close" role="button" tabindex="0" aria-label="Close"
+             onclick="closePpSplitDrawer()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closePpSplitDrawer()}">&#10005;</div>
+        <div id="ppsdHead"></div>
+      </div>
+      <div class="ppsd-body" id="ppsdBody"></div>
+    </aside>`;
+  document.body.appendChild(el);
+  // One document-level Esc listener; it no-ops unless the drawer is open.
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ppSplitDrawerState.open) closePpSplitDrawer(); });
+  return el;
+}
+function closePpSplitDrawer(){
+  ppSplitDrawerState.open = false;
+  const el = document.getElementById('ppSplitDrawer');
+  if (el) el.classList.remove('open');
+}
+// Human date from a YYYYMMDD stamp — string-sliced, never Date-parsed (which
+// would shift the day across timezones), same rule as ppFmtDateRange.
+function ppSplitFmtDate(stamp){
+  const s = String(stamp || '');
+  if (!/^\d{8}$/.test(s)) return '';
+  return `${String(Number(s.slice(6, 8)))} ${PP_MONTHS[Number(s.slice(4, 6)) - 1] || ''} ${s.slice(0, 4)}`;
+}
+// Round label, matching the recent-form/edition convention (F → FINAL).
+const PP_SPLIT_ROUND_LABEL = { F: 'FINAL', SF: 'SF', QF: 'QF', R16: 'R16', R32: 'R32', R64: 'R64', R128: 'R128', RR: 'RR', BR: 'BR' };
+function ppSplitRoundLabel(rd){ const k = String(rd || '').toUpperCase(); return PP_SPLIT_ROUND_LABEL[k] || k; }
+// Open (or swap) the drawer for one split row. `which` = 'career' | 'last52',
+// `cat` = the section key (e.g. 'Hard', 'vs. Top 10').
+function openPpSplitDrawer(which, cat){
+  const key = ppState.key;
+  if (!key || !PP_SPLIT_MATCH_PRED[cat]) return;
+  ensurePpSplitDrawer();
+  ppSplitDrawerState.open = true;
+  ppSplitDrawerState.key = String(key);
+  ppSplitDrawerState.which = which;
+  ppSplitDrawerState.cat = cat;
+  const token = ++ppSplitDrawerState.token;
+  const el = document.getElementById('ppSplitDrawer');
+  el.classList.add('open');
+  const p = playerProfiles[String(key)] || {};
+  const whichLabel = which === 'last52' ? 'Last 52 weeks' : 'Career';
+  document.getElementById('ppsdHead').innerHTML =
+    `<div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${escapeHtml(whichLabel)}</div>
+     <div style="font-size:19px;font-weight:800;color:#e7e9ee;margin-top:4px;">${escapeHtml(cat)}</div>
+     <div id="ppsdSub" style="font-size:12.5px;color:#5b6880;margin-top:4px;">${escapeHtml(ppAbbrevName(p.name || ''))}</div>`;
+  document.getElementById('ppsdBody').innerHTML =
+    `<div style="padding:26px 8px;font-size:13px;color:#5b6880;">Loading matches…</div>`;
+  loadSplitsMatches(key).then(shard => {
+    if (ppSplitDrawerState.token !== token) return;   // superseded by a newer click
+    renderPpSplitDrawerBody(shard, which, cat);
+  });
+}
+function renderPpSplitDrawerBody(shard, which, cat){
+  const body = document.getElementById('ppsdBody');
+  const sub = document.getElementById('ppsdSub');
+  if (!body) return;
+  const pred = PP_SPLIT_MATCH_PRED[cat];
+  const all = (shard && Array.isArray(shard.matches)) ? shard.matches : null;
+  if (!all){
+    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:#5b6880;">Match list isn't available for this player yet.</div>`;
+    return;
+  }
+  const cut = shard.cutoff52;
+  // last52 window mirrors the builder's `d >= cutoff52`; career = all matches.
+  const inWindow = which === 'last52' ? (m => cut ? m.d >= cut : true) : (() => true);
+  let list = all.filter(m => inWindow(m) && pred(m));
+  // Newest first; within a date, deeper round last-played first (matches the
+  // ordering used across the profile's match lists).
+  list = list.sort((a, b) => String(b.d).localeCompare(String(a.d))
+    || (careerRoundDepth(String(b.rd || '')) - careerRoundDepth(String(a.rd || ''))));
+  const won = list.filter(m => m.wl === 'W').length;
+  const lost = list.length - won;
+  if (sub){
+    const p = playerProfiles[ppSplitDrawerState.key] || {};
+    sub.textContent = `${ppAbbrevName(p.name || '')} · ${list.length} match${list.length === 1 ? '' : 'es'} · ${won}–${lost}`;
+  }
+  if (!list.length){
+    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:#5b6880;">No matches in this split.</div>`;
+    return;
+  }
+  const rows = list.map(m => {
+    const win = m.wl === 'W';
+    const bC = win ? '#3dd68c' : '#e0616f';
+    const verb = win ? 'def.' : 'lost to';
+    const opp = escapeHtml(ppAbbrevName(m.o || '—')) + (m.oc ? ` <span style="color:#4b5672;">${escapeHtml(m.oc)}</span>` : '');
+    const meta = [ppSplitRoundLabel(m.rd), m.t ? escapeHtml(m.t) : '', ppSplitFmtDate(m.d)].filter(Boolean).join(' &middot; ');
+    return `<div style="display:grid;grid-template-columns:26px 1fr auto;align-items:start;gap:11px;padding:12px 8px;border-top:1px solid rgba(255,255,255,0.05);">
+      <span style="width:26px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${bC};background:${ppHexA(bC, 0.14)};border:1px solid ${ppHexA(bC, 0.3)};">${win ? 'W' : 'L'}</span>
+      <span style="min-width:0;">
+        <span style="display:block;font-size:13.5px;color:#dfe3ea;line-height:1.35;overflow:hidden;text-overflow:ellipsis;"><span style="color:#5b6880;">${verb}</span> ${opp}</span>
+        <span style="display:block;font-size:11px;color:#5b6880;margin-top:3px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.03em;">${meta}</span>
+      </span>
+      <span style="font-size:12.5px;color:#9aa3b2;font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;padding-top:1px;">${escapeHtml(m.sc || '')}</span>
+    </div>`;
+  }).join('');
+  body.innerHTML = rows;
+  body.scrollTop = 0;
 }
 // ---- TEN-126 Break/Hold heatmap (display-only, flag-gated) --------------------
 // Two heatmaps per player from the holdbreak.json rollup: service hold% and return
@@ -15358,6 +15556,9 @@ function showPlayerProfile(key){
   ppState.mktSurface = 'All';
   ppState.mktSide = 'back';
   ppState.mktRole = 'all';
+  // A splits drawer left open for the previous player would show his matches
+  // under the new name — close it on every profile switch (TEN-162).
+  if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
   document.getElementById('playerListView').style.display = 'none';
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
@@ -15367,6 +15568,7 @@ function showPlayerProfile(key){
   window.scrollTo(0, 0);
 }
 function showPlayerList(){
+  if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
   const view = document.getElementById('playerProfileView');
   if (view){ view.style.display = 'none'; view.innerHTML = ''; }
   const lv = document.getElementById('playerListView');

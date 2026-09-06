@@ -104,20 +104,29 @@ if git diff --quiet -- career-splits.json; then
   STATUS="no-op"; exit 0
 fi
 
-# --- publish (race-safe: rebase our single-file change onto latest main) -----
+# --- publish (race-safe: rebase our splits change onto latest main) ----------
+# career-splits.json (aggregates) travels with its TEN-162 drawer shards
+# (splits-matches/ + splits-matches-index.json). They are produced by the SAME
+# builder run, so a row count in the drawer reconciles with the split's M; they
+# must publish together or the two drift apart. Back all three up before the
+# reset so the mixed reset below can't strand them.
 cp career-splits.json /tmp/bsp-new-splits.json
+rm -rf /tmp/bsp-new-splits-matches && cp -r splits-matches /tmp/bsp-new-splits-matches
+cp splits-matches-index.json /tmp/bsp-new-splits-index.json
 pushed=0
 for attempt in 1 2 3; do
   git fetch --quiet origin main
   # Path-scoped reset: mixed (not --hard) moves the branch pointer to origin/main
-  # so our single-file commit fast-forwards, but leaves the working tree intact.
-  # A --hard here wiped ANY uncommitted work in the shared tree (e.g. the in-tree
-  # account.html restyle the tooling session measures). Mixed reset + a scoped
-  # `git add career-splits.json` publishes only the data file and never clobbers.
+  # so our commit fast-forwards, but leaves the working tree intact. A --hard here
+  # wiped ANY uncommitted work in the shared tree (e.g. the in-tree account.html
+  # restyle the tooling session measures). Mixed reset + a scoped `git add` of only
+  # the splits artefacts publishes just those and never clobbers.
   git reset --quiet origin/main
   cp /tmp/bsp-new-splits.json career-splits.json
-  if git diff --quiet -- career-splits.json; then echo "matched remote after fetch; no-op"; STATUS="no-op"; exit 0; fi
-  git add career-splits.json
+  rm -rf splits-matches && cp -r /tmp/bsp-new-splits-matches splits-matches
+  cp /tmp/bsp-new-splits-index.json splits-matches-index.json
+  if git diff --quiet -- career-splits.json splits-matches-index.json splits-matches; then echo "matched remote after fetch; no-op"; STATUS="no-op"; exit 0; fi
+  git add career-splits.json splits-matches-index.json splits-matches
   # embed run timing in the message so the public GitHub history records
   # BOTH when (commit timestamp) and how long (this string) -- durable.
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
