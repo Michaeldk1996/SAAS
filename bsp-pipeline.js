@@ -700,7 +700,15 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     const _short = careerRoundShort(f.tournament_round);
     const _frac = /1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || ''); // main-draw certifier
     let _qual = f.event_qualification === 'True';
-    if (!_qual && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover) {
+    // TEN-157: never let the best-of-three set-count net override an unambiguous
+    // main-draw round. A genuine Slam main-draw round carries a "1/N-finals"
+    // label (_frac); a leaked qualifying row carries the qualifying bracket's own
+    // word label (QF/SF/Final), so gating on !_frac cannot regress the TEN-89
+    // net. Without this, a transient/non-final feed snapshot — winner already
+    // declared while event_final_result still lags at e.g. "2 - 1" — mis-stamps
+    // a real R64/R32 as 'Q' and freezes it in the 7-day history cache (Blockx
+    // def. Trungelliti, US Open '26 R64, cached mid-match as 'Q').
+    if (!_qual && !_frac && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover) {
       const sc = String(result).split('-').map(s => parseInt(s.trim(), 10));
       const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
       if (Number.isFinite(winnerSets) && winnerSets < 3) _qual = true;
@@ -3876,7 +3884,14 @@ const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
 // version), and deriveSlamBoxes reads that cached history — so without this bump
 // the v3-cached histories keep the leaked QF/SF-coded losses and the boxes stay
 // wrong for up to 7 days. Bumping to 4 forces every player to re-tag.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 4;
+// v5 (TEN-157): the Slam set-count net no longer overrides a "1/N-finals"
+// main-draw round to 'Q'. A profile cached DURING a Slam match — when the feed
+// had already declared a winner but event_final_result still lagged at a <3-set
+// score (e.g. "2 - 1") — froze a real main-draw round as 'Q' for up to 7 days
+// (Blockx def. Trungelliti, US Open '26 R64). Bumping to 5 busts every cached
+// history so the corrected labels rebuild against the now-settled feed instead
+// of serving the stale 'Q' until it ages out.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 5;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -4005,7 +4020,16 @@ async function fetchPlayerCareerHistory(playerKey) {
     // legitimately show <3 winner sets and must stay main draw.
     const _isRet = f.event_status === 'Retired';
     const _isWo = f.event_status === 'Walk Over';
-    if (code !== 'Q' && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
+    // TEN-157: a genuine main-draw round carries a "1/N-finals" label; a leaked
+    // qualifying row carries the qualifying bracket's word label (QF/SF/Final).
+    // Never let the best-of-three set-count heuristic override an unambiguous
+    // main-draw round — a transient/non-final feed snapshot (winner declared,
+    // event_final_result still lagging at e.g. "2 - 1") would otherwise mis-stamp
+    // a real R64/R32 as 'Q' and freeze it in the 7-day history cache (Blockx def.
+    // Trungelliti, US Open '26 R64, cached mid-match as 'Q'). Word-labeled
+    // qualifying finals have no "1/N-finals" label, so this cannot regress TEN-89.
+    const _isFracRound = /1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || '');
+    if (code !== 'Q' && !_isFracRound && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
       // Winner sets = max of the two, so this holds whichever way the score
       // string is ordered (defence-in-depth against any orientation regression).
       const sc = String(score).split('-').map((s) => parseInt(s.trim(), 10));
