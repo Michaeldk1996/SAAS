@@ -1,0 +1,24 @@
+name: tests
+
+# Unit test harness (TEN-160). Seeds the "authoritative fields beat heuristics"
+# round-classification ruling (TEN-157 / TEN-161) as executable regression tests
+# so it can never silently regress. Self-contained: the tests use only Node's
+# built-in test runner and the local ./round-classify module — no npm install,
+# no secrets, no network — so this job is fast and cannot flake on a feed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run tests
+        run: npm test

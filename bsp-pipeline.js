@@ -32,6 +32,11 @@ require('dotenv').config();
 const fs = require('fs');
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
 const { canonicalTournament } = require('./tournament-identity');
+// Round / qualifying classification ruling (TEN-157 / TEN-161), extracted into a
+// single testable module and guarded by the TEN-160 regression harness. The
+// pipeline is the only consumer; `roundShort`/GRAND_SLAM_NAMES/the Slam set-count
+// net all live there now so the three sites below share one source of truth.
+const { GRAND_SLAM_NAMES, roundShort, isSlamSetCountQualifier } = require('./round-classify');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
 // never mixed within a match (see atp-entry-fallback.js).
 const { attachWue, lookupWue } = require('./atp-entry-fallback');
@@ -708,11 +713,10 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // declared while event_final_result still lags at e.g. "2 - 1" — mis-stamps
     // a real R64/R32 as 'Q' and freezes it in the 7-day history cache (Blockx
     // def. Trungelliti, US Open '26 R64, cached mid-match as 'Q').
-    if (!_qual && !_frac && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover) {
-      const sc = String(result).split('-').map(s => parseInt(s.trim(), 10));
-      const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
-      if (Number.isFinite(winnerSets) && winnerSets < 3) _qual = true;
-    }
+    if (!_qual && isSlamSetCountQualifier({
+      isGrandSlam: !!_cname && GRAND_SLAM_NAMES.has(_cname),
+      tournamentRound: f.tournament_round, finalScore: result, status: f.event_status,
+    })) _qual = true;
     // Edition key uses tournament_season (NOT the display `year`, which is the
     // event_date calendar year): a late-December edition carries the NEXT season's
     // number (e.g. Brisbane played 2024-12-30 is season 2025), so keying on the
@@ -2489,12 +2493,15 @@ const tourFeedCities = (canonicalTour) =>
 // certifier and are never treated as qualifying here.
 function isSlamQualifyingLeak(f) {
   const { display: cname } = canonicalTournament(f.tournament_name);
-  if (!cname || !GRAND_SLAM_NAMES.has(cname)) return false;
-  if (/1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || '')) return false; // certified main draw
-  if (f.event_status === 'Retired' || f.event_status === 'Walk Over') return false;
-  const sc = String(f.event_final_result || '').split('-').map(s => parseInt(s.trim(), 10));
-  const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
-  return Number.isFinite(winnerSets) && winnerSets < 3;
+  // Delegates to the shared, tested Slam set-count net (TEN-160). Behaviour is
+  // identical: Grand-Slam only, never overrides a 1/N-finals main-draw label,
+  // never fires on a retirement/walkover, fires only when the winner took <3 sets.
+  return isSlamSetCountQualifier({
+    isGrandSlam: !!cname && GRAND_SLAM_NAMES.has(cname),
+    tournamentRound: f.tournament_round,
+    finalScore: f.event_final_result,
+    status: f.event_status,
+  });
 }
 
 async function buildTournamentProgression(tourName) {
@@ -3906,7 +3913,7 @@ const ROUND_RANK = {
 // event_qualification=null, so the qualifying "Final" win would otherwise stamp
 // a false main-draw title. canonicalTournament folds Roland Garros into
 // "French Open"; the extra alias is defensive.
-const GRAND_SLAM_NAMES = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
+// GRAND_SLAM_NAMES is imported from ./round-classify (single source of truth).
 // TEN-89 tour-wide (interaction 358dd5c0): round-robin / team events legitimately
 // contain a WIN after a (group-stage or bronze-match) LOSS, so the qualifying-merge
 // structural net below must NOT fire on them. Hand-checked against live data (56
@@ -3927,26 +3934,10 @@ const ROUND_FULL = {
   R16: 'Round of 16', R32: 'Round of 32', R64: 'Round of 64',
   R128: 'Round of 128', R256: 'Round of 256',
 };
-function careerRoundShort(round) {
-  if (!round) return '';
-  let r = String(round);
-  if (r.includes(' - ')) r = r.split(' - ').pop();
-  r = r.trim();
-  const frac = r.match(/1\/(\d+)/);
-  if (frac) {
-    const map = { '2': 'SF', '4': 'QF', '8': 'R16', '16': 'R32', '32': 'R64', '64': 'R128', '128': 'R256' };
-    return map[frac[1]] || r;
-  }
-  if (/semi[-\s]?final/i.test(r)) return 'SF';
-  if (/quarter[-\s]?final/i.test(r)) return 'QF';
-  const ro = r.match(/round of (\d+)/i);
-  if (ro) {
-    const m = { '16': 'R16', '32': 'R32', '64': 'R64', '128': 'R128', '256': 'R256' };
-    return m[ro[1]] || ('R' + ro[1]);
-  }
-  if (/final/i.test(r)) return 'F';
-  return r;
-}
+// careerRoundShort is the round-string → short-code mapper, now sourced from
+// ./round-classify (roundShort) so the pipeline and the TEN-160 harness share
+// one implementation. Alias kept so every existing call site is unchanged.
+const careerRoundShort = roundShort;
 function normalizeTournamentName(name) {
   return String(name || '').replace(/^(ATP|WTA|ITF|Challenger)\s+/i, '').trim();
 }
@@ -4028,14 +4019,10 @@ async function fetchPlayerCareerHistory(playerKey) {
     // a real R64/R32 as 'Q' and freeze it in the 7-day history cache (Blockx def.
     // Trungelliti, US Open '26 R64, cached mid-match as 'Q'). Word-labeled
     // qualifying finals have no "1/N-finals" label, so this cannot regress TEN-89.
-    const _isFracRound = /1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || '');
-    if (code !== 'Q' && !_isFracRound && GRAND_SLAM_NAMES.has(name) && !_isRet && !_isWo) {
-      // Winner sets = max of the two, so this holds whichever way the score
-      // string is ordered (defence-in-depth against any orientation regression).
-      const sc = String(score).split('-').map((s) => parseInt(s.trim(), 10));
-      const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
-      if (Number.isFinite(winnerSets) && winnerSets < 3) code = 'Q';
-    }
+    if (code !== 'Q' && isSlamSetCountQualifier({
+      isGrandSlam: GRAND_SLAM_NAMES.has(name),
+      tournamentRound: f.tournament_round, finalScore: score, status: f.event_status,
+    })) code = 'Q';
 
     // A pre-match walkover the player GAVE is not a loss (founder ruling
     // 2026-08-04). Keep the row so the edition still shows he REACHED that round
