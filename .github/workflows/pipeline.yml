@@ -215,6 +215,13 @@ jobs:
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
+          # TEN-162: per-player match lists behind each split row (the profile
+          # splits drawer). Committed by the local career-splits refresh alongside
+          # career-splits.json (TA-sourced, CI can't fetch it). Index-gated on the
+          # client, so a missing shard degrades to an empty drawer, never a broken
+          # table — tolerant copy, NOT in the assert list.
+          cp splits-matches-index.json _site/ 2>/dev/null || true
+          cp -r splits-matches _site/ 2>/dev/null || true
           # TEN-146 Database tab: yield-by-odds-band artefacts (base + lazy names shard),
           # built by build-database-yield.js from odds-archive/*.csv. Committed but not
           # copied = silent 404 → the Database tab renders empty. Required when the flag is on.

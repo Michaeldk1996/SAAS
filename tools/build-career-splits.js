@@ -34,6 +34,25 @@ const https = require('https');
 const ROOT = path.join(__dirname, '..');
 const PROFILES = path.join(ROOT, 'player-profiles.json');
 const OUT = path.join(ROOT, 'career-splits.json');
+// TEN-162 — per-player match lists behind each split row (drawer drill-down).
+// One lazy shard per player, index-gated on the client, exactly mirroring the
+// career-history/{key}.json + career-history-index.json convention. Built from
+// the SAME tour-level match set as the aggregates in OUT, so a drawer's row
+// count reconciles cell-for-cell with the split's M. Emitted only alongside a
+// successful career-splits.json build; the pipeline copies both to the site.
+const SHARD_DIR = path.join(ROOT, 'splits-matches');
+const SHARD_INDEX = path.join(ROOT, 'splits-matches-index.json');
+// Compact per-match record for a shard: display fields (date, tournament,
+// opponent, score, result) plus the exact predicate inputs the frontend needs
+// to reproduce every shown split category (surface, level, best-of, round,
+// opponent hand/rank). Short keys keep the payload near the measured ~138 B/row.
+function shardMatch(m) {
+  return {
+    d: m.date, t: m.tournament || null, o: m.oppName || null, oc: m.oppCountry || null,
+    rd: m.round, sc: m.score || '', wl: m.wl,
+    sf: m.surface, lv: m.level, bo: m.bestof, orank: m.oppRank, oh: m.oppHand,
+  };
+}
 const CACHE = process.env.SPLITS_CACHE_DIR || '/tmp/ta-cache';
 const RANK_MAX = parseInt(process.argv[2], 10) || 250;
 // No cap by default: RANK_MAX is the intended scope, and a second numeric cap
@@ -196,12 +215,17 @@ function parseMatches(html) {
   const out = [];
   for (const cells of rows) {
     if (!Array.isArray(cells) || cells.length < 16) continue;
-    const date = cells[0], surface = cells[2], level = cells[3], wl = cells[4],
-      round = cells[8], score = cells[9], bestofRaw = cells[10],
-      oppRank = cells[12], oppHand = cells[15];
+    const date = cells[0], tournament = cells[1], surface = cells[2], level = cells[3], wl = cells[4],
+      round = cells[8], score = cells[9], bestofRaw = cells[10], oppName = cells[11],
+      oppRank = cells[12], oppHand = cells[15], oppCountry = cells[18];
     if (wl !== 'W' && wl !== 'L') continue;
     out.push({
-      date, surface, level, wl, round, score,
+      date, tournament, surface, level, wl, round, score,
+      // Display-only fields for the TEN-162 splits drawer (the per-match list
+      // behind each split row). matchmx cell 1 = tournament name, 11 = opponent
+      // name, 18 = opponent country (IOC code). Not used by any aggregate.
+      oppName: (typeof oppName === 'string' && oppName.trim()) ? oppName.trim() : null,
+      oppCountry: (typeof oppCountry === 'string' && /^[A-Za-z]{2,3}$/.test(oppCountry.trim())) ? oppCountry.trim().toUpperCase() : null,
       // Cells 21-38 are the per-match serve counters for both players, in
       // Sackmann's atp_matches order. Older matches carry none — serve() returns
       // null for those and they are excluded from MS and every serve column,
@@ -466,6 +490,10 @@ async function main() {
   console.log(`Resolved ${work.length} profiles to current ATP; ingesting ${targets.length} (rank<=${RANK_MAX}).`);
 
   const players = {};
+  // Per-player flat match list for the TEN-162 drawer shards, keyed by profile
+  // key. Newest-first, matching how the drawer renders. Written after the
+  // ingest succeeds so a failed build never publishes empty shards.
+  const shardMatches = {};
   let ok = 0, miss = 0, empty = 0, cached = 0, fetched = 0, staleFallback = 0;
   // Why fetches failed, tallied by reason. Without this a total failure just
   // reports "ingested 0" and gives no way to tell a TA block (403) from a
@@ -513,6 +541,12 @@ async function main() {
         last52: splits(last52),
         q7: q7splits(matches),
       };
+      // Drawer shard source: the same tour-level matches, newest-first. The
+      // client filters to the last-52 window with `d >= cutoff52`, mirroring
+      // daysAgoStamp above, so both windows reconcile with the aggregates.
+      shardMatches[t.pkey] = matches.slice()
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .map(shardMatch);
       ok++;
     }
   }
@@ -548,6 +582,27 @@ async function main() {
   if (why.size) console.log(`Fetch failures: ${whyStr}`);
   fs.writeFileSync(OUT, JSON.stringify(out));
   console.log(`career-splits.json: ${ok} ingested / ${miss} no-page / ${empty} empty (${fetched} fetched, ${cached} cached, ${staleFallback} served stale after failed refetch). 52wk window is per-player.`);
+
+  // ---- TEN-162 drawer shards -------------------------------------------------
+  // One lazy per-player shard + an index, written only after a successful build
+  // (ok>0, guaranteed by the exit above). The client fetches a shard when a
+  // profile's split row is clicked, then reproduces each category from these
+  // rows. cutoff52 travels with the shard so the Last-52 window matches exactly.
+  if (!fs.existsSync(SHARD_DIR)) fs.mkdirSync(SHARD_DIR, { recursive: true });
+  const shardIndex = {};
+  let shardRows = 0;
+  for (const [pkey, p] of Object.entries(players)) {
+    const ms = shardMatches[pkey] || [];
+    fs.writeFileSync(path.join(SHARD_DIR, `${pkey}.json`), JSON.stringify({
+      key: pkey, taId: p.taId, fullName: p.fullName, rank: p.rank,
+      matchesParsed: p.matchesParsed, last52Count: p.last52Count, cutoff52: p.cutoff52,
+      matches: ms,
+    }));
+    shardIndex[pkey] = p.matchesParsed;
+    shardRows += ms.length;
+  }
+  fs.writeFileSync(SHARD_INDEX, JSON.stringify(shardIndex));
+  console.log(`splits-matches: ${Object.keys(shardIndex).length} shard(s), ${shardRows} match rows total; index -> ${path.basename(SHARD_INDEX)}.`);
   // A build that fetched nothing is a replay of the cache, not a refresh.
   if (ok && !fetched) console.warn('WARNING: every page came from cache — no fresh data. Check SPLITS_CACHE_TTL_HOURS.');
 }
