@@ -3972,6 +3972,20 @@ async function fetchPlayerCareerHistory(playerKey) {
   const byTournament = {};
   for (const f of data.result) {
     if (!f.tournament_name || !f.tournament_round) continue;
+    // TEN-158: only ever classify (and cache) a durable round/qualifying label
+    // from a SETTLED, FINAL fixture. The feed can declare event_winner on a
+    // match whose event_status is still in-play, with event_final_result lagging
+    // (e.g. a real R64 momentarily reading "2 - 1"); the set-count and structural
+    // qualifying nets below would then mis-stamp it 'Q' and FREEZE that wrong
+    // label in the 7-day tournament-history cache (TEN-157 Blockx def.
+    // Trungelliti, US Open '26 R64). The event_winner check alone does not close
+    // this window. Gate on the same final-status triple every other record
+    // builder in this file uses (playerMatchHistory L634, buildH2HMatchList,
+    // per-surface aggregates), so career history stops being the one surface
+    // that classifies non-final snapshots. A Finished status guarantees a
+    // settled score; Retired/Walk Over carry their own terminal semantics.
+    // This removes the whole trigger class — no per-net _frac point patch needed.
+    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
     // Count qualifying-round matches too, so the per-tournament record matches
     // Flashscore and stays in lockstep with the Record-by-season table
     // (founder ruling 2026-08-04: same rules as Flashscore everywhere we show a
