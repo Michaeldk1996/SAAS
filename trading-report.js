@@ -105,6 +105,15 @@
   SET_OUTCOME_KEYS.forEach(function (k) {
     METRIC_TIPS[k] += ' — denominator counts only matches with the relevant set decided, so it can be lower than MATCHES (undecided sets from short-format events and retirements are excluded, never zero-filled).';
   });
+  // Point-by-point-derived columns: these read game-sequence order from the fixture
+  // pointbypoint feed (who broke first, held to close a set, broken back in-set …),
+  // not just totals or the score string. api-tennis carries pbp only from the floor
+  // date onward; that floor sits entirely BELOW the 12-month window, so in the 12mo
+  // view every counted match has full pbp and these columns are fully covered — the
+  // 12mo window is the better read for them (founder note 2026-09-06). Score-only
+  // set-outcome columns (WFS/WS2/…/LOST SET 1 FB) are NOT in this set — they parse
+  // from the score string and don't need pbp.
+  var PBP_METRIC_KEYS = ['htws', 'htss', 'bofs', 'bfsg', 'gfb', 'babb', 'bbk', 'bbkb', 'ls1bf', 'bfs2aws1'];
 
   var COLUMN_SETS = {
     key:          { label: 'Key Stats',           metrics: ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'] },
@@ -165,6 +174,9 @@
   var _view = 'today';        // 'today' (all scheduled) | 'live' (in-play only)
   var _dateTab = 'today';     // 'today' | 'tomorrow'
   var _surfaceSel = 'all';    // surface dropdown: 'all' | 'hard' | 'clay' | 'grass' (reads that shard bucket directly)
+  var _windowSel = '24';      // window toggle: '24' | '12' — picks which sub-tree the UI reads (tiers vs tiers12).
+                              // Each sub-tree is computed from its own window's matches with its own num/den
+                              // (founder ruling 2026-09-06); the 12mo figure is NEVER derived from the 24mo one.
   var _tourFilter = '';       // tournament label, '' = all
   var _search = '';
   var _sortCol = null;        // null = matches.json feed order
@@ -372,9 +384,17 @@
   }
 
   // ─── shard reads ──────────────────────────────────────────────────────────
+  // The active window sub-tree. tiers = 24mo, tiers12 = the independent 12mo bucket.
+  // When 12mo is selected but a shard carries no tiers12 (a player with zero matches
+  // in the inner window), this returns null → the row dashes; it is NEVER back-filled
+  // from the 24mo tree (that would fabricate a 12mo figure).
+  function activeTree(shard) {
+    if (!shard) return null;
+    return _windowSel === '12' ? (shard.tiers12 || null) : (shard.tiers || null);
+  }
   function tiersOf(shard) {
-    if (!shard || !shard.tiers) return { primary: null, secondary: null };
-    var t = shard.tiers;
+    var t = activeTree(shard);
+    if (!t) return { primary: null, secondary: null };
     var tourM = (t.tour && t.tour.all && t.tour.all.m) || 0;
     var chalM = (t.chal && t.chal.all && t.chal.all.m) || 0;
     if (!tourM && !chalM) return { primary: null, secondary: null };
@@ -382,19 +402,26 @@
     return { primary: 'chal', secondary: tourM ? 'tour' : null };
   }
   function bucketFor(shard, tierKey, surface) {
-    if (!shard || !tierKey || !shard.tiers || !shard.tiers[tierKey]) return null;
-    return shard.tiers[tierKey][surface] || null;
+    var t = activeTree(shard);
+    if (!t || !tierKey || !t[tierKey]) return null;
+    return t[tierKey][surface] || null;
   }
   function surfaceKeyFor(row) { return _surfaceSel; }   // dropdown picks the shard bucket: all|hard|clay|grass
   function matchMin()    { return (_index && _index.lowSample && _index.lowSample.matchMin) || 10; }
   function slateMutePct() { return (_index && _index.lowSample && _index.lowSample.slateMutePct) || 40; }
   // Window covered by every figure, read from the index that generated the shards
-  // (never asserted from memory). Currently one 24-month window for all metrics; the
-  // 12-month option (and its pbp-floor easing note) lands with the generator work.
+  // (never asserted from memory). The toggle picks 24mo (generated.window) or the
+  // independent 12mo window (generated.window12); each carries its own from/to dates.
+  function windowMeta() {
+    var g = _index && _index.generated;
+    if (!g) return null;
+    return _windowSel === '12' ? (g.window12 || null) : (g.window || null);
+  }
   function windowLabel() {
-    var w = _index && _index.generated && _index.generated.window;
-    if (w && w.from && w.to) return 'Last 24 months (' + w.from + ' → ' + w.to + ')';
-    return 'Last 24 months';
+    var mo = _windowSel === '12' ? '12' : '24';
+    var w = windowMeta();
+    if (w && w.from && w.to) return 'Last ' + mo + ' months (' + w.from + ' → ' + w.to + ')';
+    return 'Last ' + mo + ' months';
   }
 
   // ─── cell renderers ─────────────────────────────────────────────────────────
@@ -565,8 +592,9 @@
     Object.keys(tset).forEach(function (k) {
       tOpts += '<option value="' + esc(k) + '"' + (k === _tourFilter ? ' selected' : '') + '>' + esc(tset[k]) + '</option>';
     });
-    var win = _index && _index.generated && _index.generated.window;
-    var periodTxt = win ? ('Last 24 months · to ' + esc(win.to)) : 'Last 24 months';
+    var win = windowMeta();
+    var moTxt = _windowSel === '12' ? '12' : '24';
+    var periodTxt = win ? ('Last ' + moTxt + ' months · to ' + esc(win.to)) : ('Last ' + moTxt + ' months');
 
     var viewSeg = '<div class="tr-seg" role="tablist" aria-label="View">' +
       segBtn('tr-segbtn', _view === 'live', 'data-view="live"', 'Live') +
@@ -574,6 +602,12 @@
     var dateSeg = '<div class="tr-seg" role="tablist" aria-label="Day">' +
       segBtn('tr-segbtn', _dateTab === 'today', 'data-date="today"', 'Today') +
       segBtn('tr-segbtn', _dateTab === 'tomorrow', 'data-date="tomorrow"', 'Tomorrow') + '</div>';
+    // Window toggle — switches which sub-tree the whole board reads. Each window is
+    // computed from its own matches with its own num/den; nothing is derived from the
+    // other. 12mo also fully covers the pbp-derived columns (floor sits below it).
+    var winSeg = '<div class="tr-seg tr-winseg" role="tablist" aria-label="Window">' +
+      segBtn('tr-segbtn', _windowSel === '24', 'data-win="24"', '24 mo') +
+      segBtn('tr-segbtn', _windowSel === '12', 'data-win="12"', '12 mo') + '</div>';
     var SURFS = [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass']];
     var surfOpts = SURFS.map(function (s) {
       return '<option value="' + s[0] + '"' + (s[0] === _surfaceSel ? ' selected' : '') + '>' + s[1] + '</option>';
@@ -591,10 +625,12 @@
       loadBlock = '<button type="button" class="tr-load" id="trLoadBtn">' + (_loaded ? 'Reload stats' : 'Load stats') + '</button>';
     }
 
+    var periodTip = 'The splits cover the selected ' + moTxt + '-month window — the range the data covers. '
+      + 'Switch the 24 mo / 12 mo toggle to change it; each window is computed from its own matches, never derived from the other.';
     return '<div class="tr-filters">' +
-             viewSeg + dateSeg + surfSel +
+             viewSeg + dateSeg + winSeg + surfSel +
              '<select class="tr-tsel" id="trTournSel">' + tOpts + '</select>' +
-             '<span class="tr-period" title="The splits are a fixed 24-month window — the range the data covers.">' + periodTxt + '</span>' +
+             '<span class="tr-period" title="' + esc(periodTip) + '">' + periodTxt + '</span>' +
              '<input class="tr-search" id="trSearch" type="text" placeholder="Search player" value="' + esc(_search) + '">' +
              '<span class="tr-loadslot">' + loadBlock + '</span>' +
            '</div>';
@@ -634,7 +670,19 @@
       th('odds', 'Odds', oddsTip),
       th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.', win),
     ];
-    cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk], win)); });
+    // pbp coverage floor, quoted from the index the shards were generated with
+    // (never from memory). The floor sits entirely below the 12-month window, so
+    // the pbp-derived columns are fully covered in the 12mo view.
+    var gen = _index && _index.generated;
+    var floor = (gen && ((gen.window12 && gen.window12.floor) || (gen.window && gen.window.floor))) || null;
+    var pbpNote = ' — point-by-point-derived: needs game-sequence order, which api-tennis carries only from '
+      + (floor || 'the pbp floor') + ' onward. That floor sits entirely below the 12-month window, so the '
+      + '12 mo view covers this column in full — it is the better read for it.';
+    cfg.metrics.forEach(function (mk) {
+      var tip = METRIC_TIPS[mk];
+      if (PBP_METRIC_KEYS.indexOf(mk) !== -1) tip += pbpNote;
+      cells.push(th(mk, METRIC_LABELS[mk], tip, win));
+    });
     // Trailing flex spacer: with a width:100% table the slack used to distribute
     // into the odds/metric columns, pushing the right-aligned ODDS value far from
     // the pinned player cell (the "large empty gap"). A greedy last column parks
@@ -940,6 +988,11 @@
         } else if (seg.hasAttribute('data-date')) {
           var d = seg.getAttribute('data-date');
           if (d !== _dateTab) { _dateTab = d; onSlateChange(); }
+        } else if (seg.hasAttribute('data-win')) {
+          // Window toggle only changes which sub-tree is read + the labels — the
+          // slate (which players/matches) is identical, so a plain re-render suffices.
+          var w = seg.getAttribute('data-win');
+          if (w !== _windowSel) { _windowSel = w; _sortCol = null; render(); }
         }
         return;
       }
