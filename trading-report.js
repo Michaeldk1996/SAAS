@@ -2,8 +2,9 @@
 //
 // Founder scope (2026-09-06, reverses the earlier live-only ruling): the board now
 // shows TODAY's ATP singles — every scheduled match, in play or not — with a
-// LIVE / TODAY toggle, Today / Tomorrow date tabs, a "Today's surface" per-row
-// filter, book-named odds (pre-match price for scheduled rows, the closing price
+// LIVE / TODAY toggle, Today / Tomorrow date tabs, a surface dropdown (All /
+// Hard / Clay / Grass, reads the matching shard bucket), book-named odds
+// (pre-match price for scheduled rows, the closing price
 // for rows now in play), player photos via the SAME resolver the profile pages use
 // (with a monogram fallback), flag icons, sort indicators, and a per-player load bar.
 //
@@ -163,7 +164,7 @@
   var _loadTotal = 0;
   var _view = 'today';        // 'today' (all scheduled) | 'live' (in-play only)
   var _dateTab = 'today';     // 'today' | 'tomorrow'
-  var _surfaceToday = false;  // "Today's surface" per-row filter (false = all surfaces)
+  var _surfaceSel = 'all';    // surface dropdown: 'all' | 'hard' | 'clay' | 'grass' (reads that shard bucket directly)
   var _tourFilter = '';       // tournament label, '' = all
   var _search = '';
   var _sortCol = null;        // null = matches.json feed order
@@ -384,9 +385,17 @@
     if (!shard || !tierKey || !shard.tiers || !shard.tiers[tierKey]) return null;
     return shard.tiers[tierKey][surface] || null;
   }
-  function surfaceKeyFor(row) { return _surfaceToday ? (row.surface || 'all') : 'all'; }
+  function surfaceKeyFor(row) { return _surfaceSel; }   // dropdown picks the shard bucket: all|hard|clay|grass
   function matchMin()    { return (_index && _index.lowSample && _index.lowSample.matchMin) || 10; }
   function slateMutePct() { return (_index && _index.lowSample && _index.lowSample.slateMutePct) || 40; }
+  // Window covered by every figure, read from the index that generated the shards
+  // (never asserted from memory). Currently one 24-month window for all metrics; the
+  // 12-month option (and its pbp-floor easing note) lands with the generator work.
+  function windowLabel() {
+    var w = _index && _index.generated && _index.generated.window;
+    if (w && w.from && w.to) return 'Last 24 months (' + w.from + ' → ' + w.to + ')';
+    return 'Last 24 months';
+  }
 
   // ─── cell renderers ─────────────────────────────────────────────────────────
   function dash(cls) { return '<td class="tr-cell tr-dash' + (cls ? ' ' + cls : '') + '">—</td>'; }
@@ -565,8 +574,13 @@
     var dateSeg = '<div class="tr-seg" role="tablist" aria-label="Day">' +
       segBtn('tr-segbtn', _dateTab === 'today', 'data-date="today"', 'Today') +
       segBtn('tr-segbtn', _dateTab === 'tomorrow', 'data-date="tomorrow"', 'Tomorrow') + '</div>';
-    var surfBtn = segBtn('tr-toggle', _surfaceToday, 'data-surftoggle="1" title="Filter each row\'s splits to the surface being played in that match. Off = all surfaces."',
-      'Today’s surface');
+    var SURFS = [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass']];
+    var surfOpts = SURFS.map(function (s) {
+      return '<option value="' + s[0] + '"' + (s[0] === _surfaceSel ? ' selected' : '') + '>' + s[1] + '</option>';
+    }).join('');
+    var surfSel = '<select class="tr-tsel tr-surfsel" id="trSurfSel" aria-label="Surface" ' +
+      'title="Recompute every split on the selected surface. Thin-sample muting and the slate notice still apply when a surface produces thin data.">' +
+      surfOpts + '</select>';
 
     var loadBlock;
     if (_loading) {
@@ -578,7 +592,7 @@
     }
 
     return '<div class="tr-filters">' +
-             viewSeg + dateSeg + surfBtn +
+             viewSeg + dateSeg + surfSel +
              '<select class="tr-tsel" id="trTournSel">' + tOpts + '</select>' +
              '<span class="tr-period" title="The splits are a fixed 24-month window — the range the data covers.">' + periodTxt + '</span>' +
              '<input class="tr-search" id="trSearch" type="text" placeholder="Search player" value="' + esc(_search) + '">' +
@@ -596,23 +610,31 @@
   }
 
   function headerHtml(cfg) {
-    function th(col, label, tip, sortable) {
+    // tip → the plain-English definition; win → the window the metric covers. Both
+    // ride on data-* attributes so a body-level popover (setupTips) shows them on
+    // hover/focus — native `title` was unreliable and clipped, so it never fired.
+    function th(col, label, tip, win, sortable) {
       var ind;
       if (_sortCol === col) ind = '<span class="tr-sort tr-sort-on">' + (_sortDir === -1 ? '▾' : '▴') + '</span>';
       else ind = sortable === false ? '' : '<span class="tr-sort">⇅</span>';
-      return '<th class="tr-th' + (sortable === false ? ' tr-th-nosort' : '') + '"' +
-             (sortable === false ? '' : ' data-sort="' + col + '"') +
-             (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
+      var tipAttrs = '';
+      if (tip) {
+        tipAttrs = ' data-tip="' + esc(tip) + '"' + (win ? ' data-win="' + esc(win) + '"' : '') +
+                   ' tabindex="0" aria-label="' + esc(label + ': ' + tip + (win ? ' — Window: ' + win : '')) + '"';
+      }
+      return '<th class="tr-th' + (sortable === false ? ' tr-th-nosort' : '') + (tip ? ' tr-th-tip' : '') + '"' +
+             (sortable === false ? '' : ' data-sort="' + col + '"') + tipAttrs + '>' +
              '<span class="tr-thlabel">' + esc(label) + '</span>' + ind + '</th>';
     }
     var oddsTip = 'Pre-match price for scheduled rows; the closing price (last quote before start) for rows in play. The book is named on each row; a missing price dashes — never carried forward.';
+    var win = windowLabel();
     var cells = [
       th('time', 'Time'),
       th('player', 'Player'),
-      th('odds', 'Odds'),
-      th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.'),
+      th('odds', 'Odds', oddsTip),
+      th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.', win),
     ];
-    cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk])); });
+    cfg.metrics.forEach(function (mk) { cells.push(th(mk, METRIC_LABELS[mk], METRIC_TIPS[mk], win)); });
     // Trailing flex spacer: with a width:100% table the slack used to distribute
     // into the odds/metric columns, pushing the right-aligned ODDS value far from
     // the pinned player cell (the "large empty gap"). A greedy last column parks
@@ -623,7 +645,7 @@
   }
 
   function noticeHtml(rows) {
-    if (!_surfaceToday || !_loaded) return '';
+    if (_surfaceSel === 'all' || !_loaded) return '';
     var thin = 0, counted = 0;
     for (var i = 0; i < rows.length; i++) {
       var key = rows[i].key;
@@ -635,7 +657,7 @@
     }
     if (!counted) return '';
     if ((thin / counted) * 100 <= slateMutePct()) return '';
-    return '<div class="tr-notice">Low sample on the today’s-surface filter — most players fall under ' + matchMin() +
+    return '<div class="tr-notice">Low sample on the ' + esc(cap(_surfaceSel)) + ' filter — most players fall under ' + matchMin() +
            ' matches. Percentages stay visible and muted, with their fractions.</div>';
   }
 
@@ -688,6 +710,7 @@
     renderStatus(rows.length / 2, nLive);
 
     function paint(markup) {
+      hideTip();                 // the hovered <th> is about to be replaced
       g.innerHTML = markup;
       if (focusSearch) {
         var el = document.getElementById('trSearch');
@@ -857,6 +880,50 @@
     if (!_loading) loadStats();
   }
 
+  // ─── column tooltips ────────────────────────────────────────────────────────
+  // A single popover parented to <body> (position:fixed) so the table's
+  // overflow-x:auto never clips it — the reason native `title`/CSS tips failed.
+  var _tipEl = null;
+  function tipNode() {
+    if (_tipEl) return _tipEl;
+    _tipEl = document.createElement('div');
+    _tipEl.className = 'tr-tip';
+    _tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(_tipEl);
+    return _tipEl;
+  }
+  function hideTip() { if (_tipEl) _tipEl.classList.remove('show'); }
+  function showTip(target) {
+    var def = target.getAttribute('data-tip');
+    if (!def) return;
+    var win = target.getAttribute('data-win');
+    var el = tipNode();
+    el.innerHTML = esc(def) + (win ? '<span class="tr-tip-win">Window: ' + esc(win) + '</span>' : '');
+    el.classList.add('show');
+    var r = target.getBoundingClientRect();
+    var tw = el.offsetWidth, th2 = el.offsetHeight;
+    var left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - tw - 8));
+    var top = r.bottom + 8;
+    if (top + th2 > window.innerHeight - 8) top = r.top - th2 - 8;   // flip above near the bottom edge
+    el.style.left = left + 'px';
+    el.style.top = Math.max(8, top) + 'px';
+  }
+  function setupTips(g) {
+    g.addEventListener('mouseover', function (e) {
+      var t = e.target.closest && e.target.closest('.tr-th-tip'); if (t) showTip(t);
+    });
+    g.addEventListener('mouseout', function (e) {
+      var t = e.target.closest && e.target.closest('.tr-th-tip'); if (!t) return;
+      if (e.relatedTarget && t.contains(e.relatedTarget)) return;   // moving within the same header (label ↔ sort arrow) — keep the tip, no flicker
+      hideTip();
+    });
+    g.addEventListener('focusin', function (e) {
+      var t = e.target.closest && e.target.closest('.tr-th-tip'); if (t) showTip(t);
+    });
+    g.addEventListener('focusout', hideTip);
+    window.addEventListener('scroll', hideTip, true);
+  }
+
   function bootstrap() {
     if (_bootstrapped) return;
     var g = grid();
@@ -876,8 +943,6 @@
         }
         return;
       }
-      var toggle = t.closest && t.closest('.tr-toggle');
-      if (toggle && toggle.hasAttribute('data-surftoggle')) { _surfaceToday = !_surfaceToday; render(); return; }
       var tabBtn = t.closest && t.closest('.tr-tab');
       if (tabBtn) {
         var setId = tabBtn.getAttribute('data-set');
@@ -894,8 +959,21 @@
       }
     });
     g.addEventListener('change', function (e) {
-      if (e.target && e.target.id === 'trTournSel') { _tourFilter = e.target.value; render(); }
+      if (e.target && e.target.id === 'trTournSel') { _tourFilter = e.target.value; render(); return; }
+      if (e.target && e.target.id === 'trSurfSel')  { _surfaceSel = e.target.value; render(); return; }
     });
+    // Sort headers are now keyboard-focusable (tabindex, for the tooltip); make them
+    // operable too — Enter/Space sorts, matching the click path.
+    g.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      var th = e.target.closest && e.target.closest('.tr-th[data-sort]');
+      if (!th) return;
+      e.preventDefault();
+      var col = th.getAttribute('data-sort');
+      if (_sortCol === col) _sortDir = -_sortDir; else { _sortCol = col; _sortDir = -1; }
+      render();
+    });
+    setupTips(g);
     g.addEventListener('input', function (e) {
       if (e.target && e.target.id === 'trSearch') { _search = e.target.value; render(); }
     });

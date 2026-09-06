@@ -2361,7 +2361,7 @@
   [data-page="trading"] .tr-status.stale{ color:#e28b4a; }
   [data-page="trading"] .tr-status .tr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
   /* column-set tabs */
-  [data-page="trading"]{ --tr-time-w:66px; --tr-player-w:262px; }
+  [data-page="trading"]{ --tr-time-w:66px; --tr-player-w:280px; --tr-odds-w:104px; --tr-matches-w:64px; --tr-stat-w:92px; --tr-av:44px; }
   [data-page="trading"] .tr-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; border-bottom:1px solid var(--border,#262B35); padding-bottom:2px; }
   [data-page="trading"] .tr-tab{ background:transparent; border:0; border-bottom:2px solid transparent; color:var(--text-dim,#8F98A6); font-size:12.5px; font-weight:600; padding:8px 12px; margin-bottom:-1px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); white-space:nowrap; }
   [data-page="trading"] .tr-tab:hover{ color:var(--text,#E6EAF0); }
@@ -2372,8 +2372,6 @@
   [data-page="trading"] .tr-segbtn{ background:transparent; border:0; color:var(--text-dim,#8F98A6); font-size:12px; font-weight:600; padding:6px 13px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
   [data-page="trading"] .tr-segbtn:hover{ color:var(--text,#e7e9ee); }
   [data-page="trading"] .tr-segbtn.active{ background:var(--accent,#3E7BFA); color:#fff; }
-  [data-page="trading"] .tr-toggle{ background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; color:var(--text-dim,#8F98A6); font-size:12px; font-weight:600; padding:6px 12px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-toggle.active{ background:var(--accent,#3E7BFA); border-color:var(--accent,#3E7BFA); color:#fff; }
   [data-page="trading"] .tr-tsel,[data-page="trading"] .tr-search{ background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; color:var(--text,#e7e9ee); font-size:12.5px; padding:7px 10px; font-family:var(--mx-font-ui,sans-serif); }
   [data-page="trading"] .tr-search{ width:150px; }
   [data-page="trading"] .tr-period{ font-size:11.5px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); border:1px dashed var(--border,#262B35); border-radius:8px; padding:6px 10px; cursor:help; }
@@ -2394,7 +2392,7 @@
   [data-page="trading"] .tr-th .tr-sort-on{ color:var(--accent,#3E7BFA); }
   [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-th[data-sort="player"]{ text-align:left; }
   [data-page="trading"] .tr-th:hover{ color:var(--text-dim,#8F98A6); }
-  [data-page="trading"] .tr-cell{ padding:5px 12px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(38,43,53,0.55); }
+  [data-page="trading"] .tr-cell{ padding:8px 12px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(38,43,53,0.55); }
   [data-page="trading"] .tr-row:hover .tr-cell{ background:rgba(62,123,250,0.05); }
   /* pinned TIME + PLAYER columns — everything to their right scrolls under them */
   [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-time{ position:sticky; left:0; width:var(--tr-time-w); min-width:var(--tr-time-w); background:var(--panel,#12151C); z-index:1; }
@@ -2404,10 +2402,14 @@
   [data-page="trading"] .tr-time{ text-align:left; font-family:var(--mx-font-mono,monospace); font-size:11.5px; color:var(--text-dim,#8F98A6); white-space:nowrap; }
   [data-page="trading"] .tr-livepip{ display:inline-block; font-size:8.5px; font-weight:800; letter-spacing:0.06em; color:#3dd68c; background:rgba(61,214,140,0.14); border-radius:4px; padding:1px 4px; margin-right:5px; vertical-align:1px; }
   [data-page="trading"] .tr-player{ text-align:left; }
+  /* one spacing rule, every tab: TIME/PLAYER (above) + ODDS/MATCHES fixed, stat columns a single fixed width regardless of how many a tab shows; the width:100% .tr-spacer eats the remainder so the left side never shifts and stat columns start at the same x on every tab. */
+  [data-page="trading"] .tr-th[data-sort="odds"],[data-page="trading"] .tr-odds{ width:var(--tr-odds-w); min-width:var(--tr-odds-w); max-width:var(--tr-odds-w); }
+  [data-page="trading"] .tr-th[data-sort="matches"],[data-page="trading"] .tr-matches{ width:var(--tr-matches-w); min-width:var(--tr-matches-w); max-width:var(--tr-matches-w); }
+  [data-page="trading"] .tr-th[data-sort]:not([data-sort="time"]):not([data-sort="player"]):not([data-sort="odds"]):not([data-sort="matches"]),[data-page="trading"] .tr-stat{ width:var(--tr-stat-w); min-width:var(--tr-stat-w); max-width:var(--tr-stat-w); }
   [data-page="trading"] .tr-pcell{ display:flex; align-items:center; gap:9px; min-width:0; }
-  [data-page="trading"] .tr-av-wrap{ position:relative; width:27px; height:27px; flex-shrink:0; }
-  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); font-size:10px; font-weight:700; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:27px; height:27px; border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); }
+  [data-page="trading"] .tr-av-wrap{ position:relative; width:var(--tr-av); height:var(--tr-av); flex-shrink:0; }
+  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); font-size:15px; font-weight:700; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,sans-serif); }
+  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:var(--tr-av); height:var(--tr-av); border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); }
   [data-page="trading"] .tr-pbody{ min-width:0; flex:1; }
   [data-page="trading"] .tr-pline{ display:flex; align-items:center; gap:6px; min-width:0; }
   [data-page="trading"] .tr-flag{ font-size:14px; line-height:1; flex-shrink:0; }
@@ -2432,6 +2434,15 @@
   [data-page="trading"] .tr-otag-pre{ background:var(--panel-2,#181C25); color:var(--text-faint,#565F6A); border:1px solid var(--border,#262B35); }
   [data-page="trading"] .tr-otag-close{ background:rgba(61,214,140,0.12); color:#3dd68c; }
   [data-page="trading"] .tr-matches{ font-family:var(--mx-font-mono,monospace); color:var(--text-dim,#8F98A6); }
+  /* column tooltips: a hoverable header carries a dotted underline as an affordance */
+  [data-page="trading"] .tr-th-tip{ cursor:help; }
+  [data-page="trading"] .tr-th-tip .tr-thlabel{ border-bottom:1px dotted var(--text-faint,#565F6A); padding-bottom:1px; }
+  [data-page="trading"] .tr-th-tip:hover .tr-thlabel,[data-page="trading"] .tr-th-tip:focus .tr-thlabel{ border-bottom-color:var(--accent,#3E7BFA); }
+  [data-page="trading"] .tr-th-tip:focus{ outline:none; }
+  /* the popover itself is parented to <body> (position:fixed) so the table's overflow-x never clips it — this is why the old title/CSS tips never appeared */
+  .tr-tip{ position:fixed; z-index:99999; max-width:290px; background:#0c0f15; border:1px solid var(--border,#262B35); color:var(--text,#e7e9ee); font-size:12px; line-height:1.45; padding:9px 11px; border-radius:8px; box-shadow:0 8px 28px rgba(0,0,0,0.55); pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity 120ms ease, transform 120ms ease; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-weight:400; text-transform:none; letter-spacing:normal; white-space:normal; }
+  .tr-tip.show{ opacity:1; transform:translateY(0); }
+  .tr-tip .tr-tip-win{ display:block; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.07); color:var(--text-faint,#8F98A6); font-size:11px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
   /* empty / small-empty */
   [data-page="trading"] .tr-empty{ text-align:center; padding:64px 20px; }
   [data-page="trading"] .tr-empty-sm{ padding:40px 20px; }
