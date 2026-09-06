@@ -6509,9 +6509,9 @@ function playerAvatarHtml(photoUrl, name, playerKey){
   // The onclick lives on BOTH branches because avatarFallback() swaps the
   // <img> for a <div> on load error and doesn't copy attributes. (T2)
   const attrs = profileLinkAttrs(playerKey, name);
-  // Photo-source chain (TEN-136): Wikimedia override -> ATP alias -> api-tennis -> initials.
-  // Wikimedia override still wins (TEN-97 wrong-face fix); ATP sits above the api-tennis logo.
-  const cands = [photoOverrideFor(playerKey), atpPhotoFor(playerKey), photoUrl].filter(Boolean);
+  // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
+  // Order defined once in photoCandidatesFor() so every surface reads the same chain.
+  const cands = photoCandidatesFor(playerKey, photoUrl);
   if (!cands.length) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
   const src = cands[0];
   const fb = cands.slice(1).join('|');
@@ -6552,11 +6552,12 @@ function resolveProfilePhotoUrl(playerKey, name){
 // occasionally the WRONG player: e.g. key 2002 (Facundo Díaz Acosta) served the
 // byte-identical file for key 391 (Juan Pablo Varillas) — a member-visible wrong
 // face on the card (TEN-97). enrich-player-photos.py resolves a correct,
-// freely-licensed Wikimedia headshot keyed by api-tennis player_key; this map
-// takes PRIORITY over the per-match pXPhotoUrl in every avatar renderer below.
-// Loaded once and awaited on the matches critical path so a card never paints
-// the wrong face first. Absence is harmless — we simply fall back to the
-// api-tennis URL, so coverage is never reduced.
+// freely-licensed Wikimedia headshot keyed by api-tennis player_key. As of TEN-151
+// (founder ruling 2026-09-06) this is the FILLER layer: it wins over the api-tennis
+// logo but sits BELOW the ATP official alias (player-atp-aliases.json is the
+// site-wide source of truth for photos). Loaded once and awaited on the matches
+// critical path. Absence is harmless — we simply fall back to the api-tennis URL,
+// so coverage is never reduced.
 let playerPhotoOverrides = {};
 let _photoOverridesLoaded = false;
 function photoOverrideFor(playerKey){
@@ -6572,10 +6573,11 @@ async function loadPlayerPhotoOverrides(){
   } catch (e) { /* additive; absence just falls back to the api-tennis logo URL */ }
 }
 
-// TEN-136: ATP official headshot by api-tennis player_key, via the committed
-// alias map (player-atp-aliases.json: {player_key: ATP_ALIAS}). Positioned in the
-// avatar chain BELOW the Wikimedia override and ABOVE the api-tennis logo — an ATP
-// alias, when present, is tried first and falls through to api-tennis on error.
+// TEN-136 / TEN-151: ATP official headshot by api-tennis player_key, via the
+// committed alias map (player-atp-aliases.json: {player_key: ATP_ALIAS}). This is
+// the PRIMARY photo layer site-wide (founder ruling 2026-09-06) — tried FIRST, above
+// the Wikimedia override and the api-tennis logo — because ATP headshots are uniform
+// current portraits and consistency beats coverage. Falls through on error.
 // Denylisted aliases are known grey-silhouette placeholders: skipped so the player
 // falls through to api-tennis rather than showing a blank silhouette. Absence is
 // harmless — any player without an alias renders exactly as before. Map written by
@@ -6595,6 +6597,19 @@ async function loadPlayerAtpAliases(){
     const res = await fetch('./player-atp-aliases.json', { cache: 'no-cache' });
     if (res.ok){ const d = await res.json(); playerAtpAliases = d || {}; _atpAliasesLoaded = true; }
   } catch (e) { /* additive; absence just falls back to the api-tennis logo URL */ }
+}
+
+// TEN-151 (founder ruling 2026-09-06): the SINGLE ordered photo-source chain used
+// by EVERY avatar renderer on every surface — match cards, Players page, profile
+// hero, Trading Report. player-atp-aliases.json is the site-wide source of truth
+// for photos, so the ATP official headshot is tried FIRST (uniform, current
+// portraits — consistency beats coverage in a dense avatar). Then the Wikimedia
+// override (player-photos.json) as FILLER where no alias exists, then the caller's
+// constructed api-tennis logo URL, then the caller's own monogram/initials fallback.
+// The order lives here and ONLY here: every avatar site builds its candidate list
+// through this function so there is one chain, in one order, across the whole site.
+function photoCandidatesFor(playerKey, fallbackUrl){
+  return [atpPhotoFor(playerKey), photoOverrideFor(playerKey), fallbackUrl].filter(Boolean);
 }
 
 // TEN-136: ordered photo-source fallback. data-fb carries the remaining candidate
@@ -6621,8 +6636,8 @@ function impliedPct(price){
 function mcAvatarHtml(photoUrl, name, playerKey, side){
   const initials = playerInitials(name);
   const attrs = profileLinkAttrs(playerKey, name);
-  // Photo-source chain (TEN-136): Wikimedia override -> ATP alias -> api-tennis -> initials.
-  const cands = [photoOverrideFor(playerKey), atpPhotoFor(playerKey), photoUrl].filter(Boolean);
+  // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
+  const cands = photoCandidatesFor(playerKey, photoUrl);
   if (cands.length){ const src = cands[0]; const fb = cands.slice(1).join('|');
     return `<img class="mc-av ${side}"${attrs} src="${src}" alt="${name}" referrerpolicy="no-referrer" data-fb="${fb}" onerror="if(!avatarChainNext(this))mcAvatarFail(this,'${initials}','${side}')">`; }
   return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
@@ -13783,8 +13798,8 @@ function renderPlayers(filter){
     const book = odds?.bookmaker ? pesc(odds.bookmaker) : '—';
     // Real headshot layered over the initials fallback (same source as match rows,
     // m.pNPhotoUrl); the photo hides itself on error and the initials show through.
-    // Photo-source chain (TEN-136): Wikimedia override -> ATP alias -> api-tennis -> initials.
-    const pcCands = [photoOverrideFor(p.key), atpPhotoFor(p.key), p.photo].filter(Boolean);
+    // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
+    const pcCands = photoCandidatesFor(p.key, p.photo);
     const photo = pcCands.length
       ? `<img class="pc-avatar-img" src="${pesc(pcCands[0])}" alt="${pesc(p.name)}" referrerpolicy="no-referrer" data-fb="${pesc(pcCands.slice(1).join('|'))}" onerror="if(!avatarChainNext(this))this.style.display='none'">`
       : '';

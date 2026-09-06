@@ -25,13 +25,14 @@
 //                     (keyed by api-tennis player_key). Loaded progressively.
 //   • rank/country ← the index `meta` map (name/rank/country) built from the
 //                     committed player-profiles.json — used for the country flag.
-//   • photos       ← the profile pages' resolver in bsp-consult-dashboard.html
-//                     (photoOverrideFor -> atpPhotoFor -> resolveProfilePhotoUrl),
-//                     driven off the api-tennis player_key + the profile-format name
-//                     (meta.name). Chain order: Wikimedia override (player-photos.json)
-//                     -> ATP official alias (player-atp-aliases.json) -> api-tennis
-//                     constructed logo -> monogram-initials. ONE resolver, reused via
-//                     the page globals — not a parallel Trading-Report photo map.
+//   • photos       ← the dashboard's shared photoCandidatesFor(), driven off the
+//                     api-tennis player_key + the profile-format name (meta.name).
+//                     Chain order (TEN-151, founder ruling 2026-09-06):
+//                     ATP official alias (player-atp-aliases.json, PRIMARY / source
+//                     of truth) -> Wikimedia override (player-photos.json, filler)
+//                     -> api-tennis constructed logo -> monogram-initials. ONE
+//                     ordering, reused via the page global — not a parallel
+//                     Trading-Report photo map, not a second chain order.
 //
 // Odds standing rule (founder): a live row shows the CLOSING price (labelled), a
 // scheduled row the PRE-MATCH price; the book is named on every cell; a missing
@@ -428,9 +429,19 @@
     // rather than throwing (trading-report.js only ever loads inside that page).
     var cands = [];
     try {
-      if (typeof photoOverrideFor === 'function')       cands.push(photoOverrideFor(row.key));
-      if (typeof atpPhotoFor === 'function')            cands.push(atpPhotoFor(row.key));
-      if (typeof resolveProfilePhotoUrl === 'function') cands.push(resolveProfilePhotoUrl(row.key, row.photoName || row.name));
+      // TEN-151: the chain ORDER is defined once in the dashboard's
+      // photoCandidatesFor (ATP alias -> Wikimedia override -> api-tennis). Reuse it
+      // verbatim so the Trading Report reads the identical chain in the identical
+      // order as every other surface. The manual fallback below preserves that same
+      // order if the page global is somehow absent (defensive; it always loads here).
+      var fb = (typeof resolveProfilePhotoUrl === 'function') ? resolveProfilePhotoUrl(row.key, row.photoName || row.name) : null;
+      if (typeof photoCandidatesFor === 'function') {
+        cands = photoCandidatesFor(row.key, fb);
+      } else {
+        if (typeof atpPhotoFor === 'function')      cands.push(atpPhotoFor(row.key));
+        if (typeof photoOverrideFor === 'function') cands.push(photoOverrideFor(row.key));
+        if (fb)                                     cands.push(fb);
+      }
     } catch (e) { /* fall through to monogram */ }
     cands = cands.filter(Boolean);
     if (!cands.length) return '<span class="tr-av-wrap">' + mono + '</span>';
