@@ -87,6 +87,73 @@ const LOW_SAMPLE_MATCH_MIN = 10;
 const SLATE_MUTE_PCT = 40;
 const LOW_SAMPLE_NOTICE = 'Low sample across this slate — the {surface} filter leaves most players under 10 matches. Percentages stay visible and muted, with their fractions.';
 
+// TEN-151 colour engine (founder ruling 2026-09-07, gate confirmation:TEN-151:
+// direction-list:v1 accepted). The per-cell strong/neutral/weak band is a
+// PERCENTILE rank of the player's rate WITHIN its tier × surface population,
+// with the cut points computed HERE at build time (never per-render) and
+// published in the index so the UI reads one source of truth. A player is
+// ranked only if its bucket clears the same low-sample floor a coloured cell
+// must clear (>= LOW_SAMPLE_MATCH_MIN matches) AND the metric has a real
+// denominator — a thin or empty cell never enters, and never gets coloured.
+// Cuts are p25 / p75: rate <= p25 = bottom quartile, rate >= p75 = top
+// quartile, between = neutral. The UI maps quartile → good/bad by the metric's
+// direction (player-strength: high good for most, high BAD for oph/babb/bbk/
+// bfsg). A population under RANK_MIN_POP, or one whose p25 == p75 (too flat to
+// separate), publishes NO cut for that metric → the UI leaves it neutral rather
+// than inventing a band. Both windows (24mo + 12mo) get their own cuts from
+// their own populations — a 12mo band is never sliced from a 24mo distribution.
+const RANK_MIN_POP = 8;
+const round4 = x => Math.round(x * 10000) / 10000;
+// Linear-interpolated quantile on an ascending-sorted array (numpy default).
+function quantile(sorted, p) {
+  const n = sorted.length;
+  if (n === 0) return null;
+  if (n === 1) return sorted[0];
+  const idx = p * (n - 1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+// Build cuts[tier][surface][metric] = [p25, p75] over a list of pruned tier
+// trees (one per player: { tour?, chal? }, each { all, hard?, clay?, grass? }).
+function buildCuts(trees) {
+  const pop = {};   // pop[tier][surf][mk] = [rate, ...]
+  for (const tree of trees) {
+    for (const tierKey of ['tour', 'chal']) {
+      const tb = tree[tierKey];
+      if (!tb) continue;
+      for (const surf of Object.keys(tb)) {          // all + surfaces present
+        const b = tb[surf];
+        if (!b || (b.m || 0) < LOW_SAMPLE_MATCH_MIN) continue;
+        for (const mk of METRIC_KEYS) {
+          const v = b[mk];
+          if (!v || !(v[1] > 0)) continue;           // no denominator → not ranked
+          if (!pop[tierKey]) pop[tierKey] = {};
+          if (!pop[tierKey][surf]) pop[tierKey][surf] = {};
+          if (!pop[tierKey][surf][mk]) pop[tierKey][surf][mk] = [];
+          pop[tierKey][surf][mk].push(v[0] / v[1]);
+        }
+      }
+    }
+  }
+  const cuts = {};
+  for (const tierKey of Object.keys(pop)) {
+    for (const surf of Object.keys(pop[tierKey])) {
+      for (const mk of Object.keys(pop[tierKey][surf])) {
+        const arr = pop[tierKey][surf][mk];
+        if (arr.length < RANK_MIN_POP) continue;      // too few to rank → neutral
+        arr.sort((a, b) => a - b);
+        const lo = quantile(arr, 0.25), hi = quantile(arr, 0.75);
+        if (!(hi > lo)) continue;                     // flat distribution → neutral
+        if (!cuts[tierKey]) cuts[tierKey] = {};
+        if (!cuts[tierKey][surf]) cuts[tierKey][surf] = {};
+        cuts[tierKey][surf][mk] = [round4(lo), round4(hi)];
+      }
+    }
+  }
+  return cuts;
+}
+
 // The five exact metrics -> the verbatim api-tennis (stat_type, stat_name),
 // matched case-insensitively on the name (the feed changed its casing at the
 // 2025/2026 boundary and a 24-month window spans both). Quoted from live
@@ -357,6 +424,11 @@ async function main() {
   // tier) where the broad in-window match count != the behind-the-splits count.
   // Reported with BOTH counts and the player key — never silently reconciled.
   const divergences = [];
+  // Colour-engine populations (TEN-151): the pruned tier trees, gathered per
+  // window, fed to buildCuts AFTER the whole roster is in so each metric's
+  // percentile cuts rank against the full slate, not a partial one.
+  const cutTrees24 = [];
+  const cutTrees12 = [];
 
   for (const key of roster) {
     calls++;
@@ -412,6 +484,10 @@ async function main() {
     if (chal) shard.tiers.chal = chal;
     if (tour12) shard.tiers12.tour = tour12;
     if (chal12) shard.tiers12.chal = chal12;
+    // Feed the colour-engine populations from the SAME pruned trees the shard
+    // ships — the cuts rank exactly the numbers the UI renders.
+    cutTrees24.push({ tour: tour || null, chal: chal || null });
+    cutTrees12.push({ tour: tour12 || null, chal: chal12 || null });
     const str = JSON.stringify(shard);
     atomicWrite(path.join(OUT_DIR, key + '.json'), str);
     index.push(key);
@@ -432,10 +508,22 @@ async function main() {
     process.exit(1);
   }
 
+  // Colour-engine cut points (TEN-151), one distribution per window. Computed
+  // once over the whole slate, published in the index; the UI never recomputes.
+  const cuts24 = buildCuts(cutTrees24);
+  const cuts12 = buildCuts(cutTrees12);
+  const countCuts = c => Object.keys(c).reduce((n, t) => n + Object.keys(c[t]).reduce((m, s) => m + Object.keys(c[t][s]).length, 0), 0);
+
   index.sort((a, b) => Number(a) - Number(b));
   const indexDoc = {
     generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
     lowSample: { matchMin: LOW_SAMPLE_MATCH_MIN, slateMutePct: SLATE_MUTE_PCT, notice: LOW_SAMPLE_NOTICE },
+    // Percentile bands: rate <= [0] weak-quartile, >= [1] strong-quartile,
+    // between = neutral. Direction (which quartile reads good vs bad) lives in
+    // the UI, not here. minPop / flat-distribution omit a metric → neutral.
+    rank: { minPop: RANK_MIN_POP, floorMatches: LOW_SAMPLE_MATCH_MIN, method: 'p25/p75 within tier×surface over players with >= floorMatches matches and a non-zero denominator; population < minPop or p25==p75 → no cut (neutral)' },
+    cuts: cuts24,
+    cuts12: cuts12,
     meta: loadMeta(),
     players: index,
   };
@@ -472,10 +560,20 @@ async function main() {
     // per window (24mo outer + 12mo inner — parity tripwire, founder 2026-09-06).
     divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '12': { players: divPlayers('12'), records: divCount('12') } }, file: path.basename(DIVERGENCE_FILE) },
     players: index.length,
+    // Colour-engine cut coverage: how many (tier×surface×metric) cells got a
+    // publishable band per window. A low number after a healthy build means the
+    // slate is too thin/flat to rank at that granularity — surfaced, not hidden.
+    cuts: { minPop: RANK_MIN_POP, cells24: countCuts(cuts24), cells12: countCuts(cuts12) },
     corpus: { rawBytes: totalBytes, gzBytes: totalGz, gzKB: +(totalGz / 1024).toFixed(1) },
     index: { rawBytes: Buffer.byteLength(JSON.stringify(indexDoc)), gzBytes: indexGz, gzKB: +(indexGz / 1024).toFixed(2) },
     perShardGz: { min: pct(0), p50: pct(0.5), p90: pct(0.9), p99: pct(0.99), max: shardSizes[shardSizes.length - 1] || 0 },
   }, null, 2));
 }
 
-main().catch(e => { console.error('trading-splits: unexpected error —', e.message); process.exit(1); });
+// Run only when invoked directly, so the colour-engine helpers can be required
+// and unit-tested without triggering a full API-driven build.
+if (require.main === module) {
+  main().catch(e => { console.error('trading-splits: unexpected error —', e.message); process.exit(1); });
+}
+
+module.exports = { buildCuts, quantile, round4, RANK_MIN_POP, LOW_SAMPLE_MATCH_MIN, METRIC_KEYS };

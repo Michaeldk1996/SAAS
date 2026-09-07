@@ -2422,6 +2422,18 @@
   [data-page="trading"] .tr-pct{ display:block; font-weight:700; font-size:13px; }
   [data-page="trading"] .tr-frac{ display:block; font-size:10px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); margin-top:1px; }
   [data-page="trading"] .tr-stat.thin{ opacity:0.5; }
+  /* TEN-151 Part 1 — primary-column band: the current tab's decision columns.
+     Background on the cell + a top accent bar on the header. Kept on a DIFFERENT
+     channel (background) from the strength colour (text) so the two co-render
+     without washing each other out (founder requirement). */
+  [data-page="trading"] .tr-th.tr-primary{ box-shadow:inset 0 2px 0 var(--accent,#3E7BFA); color:#9fc0ff; }
+  [data-page="trading"] .tr-cell.tr-primary{ background:rgba(62,123,250,0.06); }
+  /* TEN-151 Part 2 — player-strength colour (gate direction-list:v1). Strong
+     quartile green, weak quartile red, applied to the percentage only so the
+     fraction underneath always stays legible. Thin/neutral cells carry no band
+     (handled in statCell); direction inverts oph/babb/bbk/bfsg in JS. */
+  [data-page="trading"] .tr-stat.tr-strong .tr-pct{ color:#3dd68c; }
+  [data-page="trading"] .tr-stat.tr-weak .tr-pct{ color:#e8695f; }
   [data-page="trading"] .tr-dash,[data-page="trading"] .tr-pending{ color:var(--text-faint,#565F6A); }
   [data-page="trading"] .tr-dash-inline{ color:var(--text-faint,#565F6A); }
   [data-page="trading"] .tr-odds{ white-space:nowrap; }

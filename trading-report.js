@@ -127,6 +127,38 @@
   };
   var ACTIVE_SET = 'key';
 
+  // ─── colour engine (TEN-151, founder gate confirmation:TEN-151:direction-list
+  // :v1 accepted 2026-09-07) ────────────────────────────────────────────────
+  // COLOUR = PLAYER STRENGTH, uniform on every tab (founder framing): a strong
+  // quartile reads green, a weak quartile red — NOT "good for the lay bet". On
+  // the lay tabs a player weakness therefore reads red, which IS the lay signal.
+  //   +1  → HIGH is a strength (top quartile green, bottom red)
+  //   -1  → HIGH is a weakness (top quartile red,  bottom green) — the inversions
+  // The four founder-CONFIRMED inversions are oph, babb, bbk, bfsg. Everything
+  // else is a strength. spw/rpw/bps/bpw and the won-set/won-match outcomes
+  // (wfs/ws2/ws1w2/ws1wm) were not in the confirmed 12 but carry only one
+  // possible direction (more won = stronger); flagged to the founder on ship.
+  var DIRECTION = {
+    sh: 1, spw: 1, rpw: 1, bps: 1, bpw: 1, oph: -1,
+    htws: 1, htss: 1, bofs: 1, bfsg: -1,
+    babb: -1, bbk: -1, bbkb: 1, gfb: 1,
+    ls1fb: 1, ls1bf: 1, bfs2aws1: 1,
+    wfs: 1, ws2: 1, ws1w2: 1, ls1ws2: 1, ws1wm: 1,
+  };
+  // Part 1 — per-tab primary columns (founder read, confirmed in comment
+  // cab0a36e; every set verified present + contiguous in COLUMN_SETS order).
+  // These get a subtle band so the eye lands on the tab's decision columns.
+  var PRIMARY_COLS = {
+    key:          [],
+    laysetwinner: ['ls1ws2', 'ws1w2'],
+    scalping:     ['bps', 'htws', 'htss'],
+    laybreakup:   ['babb', 'bbk'],
+    settrading20: ['ws1w2'],
+    layserve:     ['htws', 'bofs'],
+    laysetbreak:  ['ls1bf', 'ls1ws2', 'babb', 'ws1w2'],
+  };
+  function isPrimary(mk) { return (PRIMARY_COLS[ACTIVE_SET] || []).indexOf(mk) !== -1; }
+
   // Country name → ISO-3166-1 alpha-2, for a regional-indicator emoji flag. Covers
   // the tennis nations that appear in the index `meta` (full country names). An
   // unmapped country renders no flag rather than a wrong one (never guess).
@@ -408,6 +440,16 @@
     return t[tierKey][surface] || null;
   }
   function surfaceKeyFor(row) { return _surfaceSel; }   // dropdown picks the shard bucket: all|hard|clay|grass
+  // Colour-engine cut for the ACTIVE window × tier × surface × metric, read from
+  // the index the shards were generated with (never recomputed per render). The
+  // 12mo view reads its own cuts12 tree; a missing cut (thin/flat population, or
+  // an older index published before the colour engine) → null → neutral cell.
+  function cutFor(tierKey, mk) {
+    if (!_index || !tierKey) return null;
+    var C = _windowSel === '12' ? _index.cuts12 : _index.cuts;
+    if (!C || !C[tierKey] || !C[tierKey][_surfaceSel]) return null;
+    return C[tierKey][_surfaceSel][mk] || null;   // [p25, p75] or null
+  }
   function matchMin()    { return (_index && _index.lowSample && _index.lowSample.matchMin) || 10; }
   function slateMutePct() { return (_index && _index.lowSample && _index.lowSample.slateMutePct) || 40; }
   // Window covered by every figure, read from the index that generated the shards
@@ -428,13 +470,32 @@
   // ─── cell renderers ─────────────────────────────────────────────────────────
   function dash(cls) { return '<td class="tr-cell tr-dash' + (cls ? ' ' + cls : '') + '">—</td>'; }
 
-  function statCell(bucket, mk) {
-    if (!bucket) return dash('tr-stat');
+  function statCell(bucket, mk, tierKey) {
+    var primaryCls = isPrimary(mk) ? ' tr-primary' : '';
+    if (!bucket) return dash('tr-stat' + primaryCls);
     var v = bucket[mk];
-    if (!v || !(v[1] > 0)) return dash('tr-stat');
+    if (!v || !(v[1] > 0)) return dash('tr-stat' + primaryCls);
     var pct = Math.round((100 * v[0]) / v[1]);
     var thin = (bucket.m || 0) < matchMin();
-    return '<td class="tr-cell tr-stat' + (thin ? ' thin' : '') + '">' +
+    // Part 2 colour: rank the rate against the published tier×surface cut. Thin
+    // cells (< floor) never colour — they stay muted with their fraction, so a
+    // 0/6 is never green or red. Neutral (mid 50%, or no publishable cut) gets
+    // no band. Direction maps the quartile to strength: for a HIGH=BAD metric
+    // (oph/babb/bbk/bfsg) the top quartile reads red, the bottom green.
+    var band = '';
+    if (!thin) {
+      var cut = cutFor(tierKey, mk);
+      var dir = DIRECTION[mk];
+      if (cut && dir && cut[1] > cut[0]) {
+        var rate = v[0] / v[1];
+        var strong = rate >= cut[1], weak = rate <= cut[0];
+        if (strong || weak) {
+          var good = (strong && dir > 0) || (weak && dir < 0);
+          band = good ? ' tr-strong' : ' tr-weak';
+        }
+      }
+    }
+    return '<td class="tr-cell tr-stat' + (thin ? ' thin' : '') + primaryCls + band + '">' +
              '<span class="tr-pct">' + pct + '%</span>' +
              '<span class="tr-frac">' + v[0] + '/' + v[1] + '</span>' +
            '</td>';
@@ -650,7 +711,7 @@
     // tip → the plain-English definition; win → the window the metric covers. Both
     // ride on data-* attributes so a body-level popover (setupTips) shows them on
     // hover/focus — native `title` was unreliable and clipped, so it never fired.
-    function th(col, label, tip, win, sortable) {
+    function th(col, label, tip, win, sortable, primary) {
       var ind;
       if (_sortCol === col) ind = '<span class="tr-sort tr-sort-on">' + (_sortDir === -1 ? '▾' : '▴') + '</span>';
       else ind = sortable === false ? '' : '<span class="tr-sort">⇅</span>';
@@ -659,7 +720,8 @@
         tipAttrs = ' data-tip="' + esc(tip) + '"' + (win ? ' data-win="' + esc(win) + '"' : '') +
                    ' tabindex="0" aria-label="' + esc(label + ': ' + tip + (win ? ' — Window: ' + win : '')) + '"';
       }
-      return '<th class="tr-th' + (sortable === false ? ' tr-th-nosort' : '') + (tip ? ' tr-th-tip' : '') + '"' +
+      return '<th class="tr-th' + (sortable === false ? ' tr-th-nosort' : '') + (tip ? ' tr-th-tip' : '') +
+             (primary ? ' tr-primary' : '') + '"' +
              (sortable === false ? '' : ' data-sort="' + col + '"') + tipAttrs + '>' +
              '<span class="tr-thlabel">' + esc(label) + '</span>' + ind + '</th>';
     }
@@ -682,7 +744,7 @@
     cfg.metrics.forEach(function (mk) {
       var tip = METRIC_TIPS[mk];
       if (PBP_METRIC_KEYS.indexOf(mk) !== -1) tip += pbpNote;
-      cells.push(th(mk, METRIC_LABELS[mk], tip, win));
+      cells.push(th(mk, METRIC_LABELS[mk], tip, win, true, isPrimary(mk)));
     });
     // Trailing flex spacer: with a width:100% table the slack used to distribute
     // into the odds/metric columns, pushing the right-aligned ODDS value far from
@@ -712,7 +774,8 @@
 
   function rowHtml(row, cfg) {
     var shard = _shards[row.key];
-    var bucket = bucketFor(shard, tiersOf(shard).primary, surfaceKeyFor(row));
+    var tierKey = tiersOf(shard).primary;
+    var bucket = bucketFor(shard, tierKey, surfaceKeyFor(row));
     var loaded = (row.key in _shards);
     var cells = '';
     cells += '<td class="tr-cell tr-time">' +
@@ -724,8 +787,8 @@
     else if (!bucket) cells += dash('tr-matches');
     else cells += '<td class="tr-cell tr-matches">' + (bucket.m || 0) + '</td>';
     cfg.metrics.forEach(function (mk) {
-      if (!loaded) cells += '<td class="tr-cell tr-stat tr-pending">·</td>';
-      else cells += statCell(bucket, mk);
+      if (!loaded) cells += '<td class="tr-cell tr-stat tr-pending' + (isPrimary(mk) ? ' tr-primary' : '') + '">·</td>';
+      else cells += statCell(bucket, mk, tierKey);
     });
     cells += '<td class="tr-cell tr-spacer" aria-hidden="true"></td>';   // absorbs the width:100% slack (see headerHtml)
     return '<tr class="tr-row' + (row.live ? ' tr-row-live' : '') + '">' + cells + '</tr>';
