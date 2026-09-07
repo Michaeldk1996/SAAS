@@ -3865,13 +3865,37 @@ const PROFILE_SCHEMA_VERSION = 14; // v14: recent-form rows carry `tier` (atp/ch
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
-// per-tournament career record. Cached in its own file with a 7-day TTL shared
-// across all players so seed players (rebuilt every 30-min run) don't refetch;
-// only up to MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN new/stale players are pulled
-// per run so the pool backfills over a few runs instead of one huge burst.
+// per-tournament career record. Cached in its own file with a 7-day TTL so the
+// large opponent pool backfills over a few runs (up to
+// MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN new/stale players per run) instead of
+// one huge burst.
+// TEN-169: the 7-day TTL must NOT apply to SEED players (anyone in today's
+// fixtures). An active player's career record changes match-to-match, and the
+// five Grand-Slam boxes are derived from this same history — so a seed player
+// served from a mid-tournament cache freezes both. This dropped Tien's US Open
+// '26 R32 win over Mensik (2026-09-06) and froze his slam boxes at the R64
+// state for up to 7 days. See historyCacheFresh(): seed players are always
+// refetched; opponents keep the TTL + per-run cap.
 const TOURNAMENT_HISTORY_CACHE_PATH = 'player-tournament-history.json';
-const TOURNAMENT_HISTORY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const TOURNAMENT_HISTORY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (opponent pool)
 const MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN = 250;
+// TEN-169: SEED players (in today's fixtures) are actively playing — their career
+// record, and the five Grand-Slam boxes derived from it, change match-to-match. A
+// 7-day TTL froze them mid-tournament (Tien's US Open '26 R32 win over Mensik
+// never appeared). They get a short TTL instead so a completed match surfaces on
+// the record card within the hour, while the pipeline (every 15 min) still reuses
+// the cache most runs rather than refetching every player's full career each time.
+const SEED_TOURNAMENT_HISTORY_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour (active players)
+// TEN-169: is a player's cached career history safe to serve as-is this run?
+// Seed players use the short 1-hour TTL; the opponent pool keeps the 7-day TTL.
+// Either way a wrong/absent schema version or missing timestamp forces a refetch.
+// Pure + exported so the seed-freshness invariant is regression-locked
+// (tools/test-history-freshness.js) and can't silently revert.
+function historyCacheFresh(cached, now, isSeed) {
+  if (!(cached && cached.builtAt && cached.v === TOURNAMENT_HISTORY_SCHEMA_VERSION)) return false;
+  const ttl = isSeed ? SEED_TOURNAMENT_HISTORY_MAX_AGE_MS : TOURNAMENT_HISTORY_MAX_AGE_MS;
+  return (now - new Date(cached.builtAt).getTime()) < ttl;
+}
 // Bump when the record-by-tournament derivation changes so cached history is
 // invalidated instead of waiting out the 7-day TTL. v2: pre-match walkover a
 // player GAVE no longer counts as a loss (founder ruling 2026-08-04, TEN-8).
@@ -4310,30 +4334,48 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     historyCache = hc.players || {};
   } catch (e) { /* first run — no history cache yet */ }
 
-  let histFetched = 0, histReused = 0, histEmpty = 0;
+  let histFetched = 0, histReused = 0, histEmpty = 0, histSeedRefreshed = 0;
   for (const key of Object.keys(profiles)) {
     const cached = historyCache[key];
-    const fresh = cached && cached.builtAt
-      && cached.v === TOURNAMENT_HISTORY_SCHEMA_VERSION
-      && (now - new Date(cached.builtAt).getTime() < TOURNAMENT_HISTORY_MAX_AGE_MS);
-    if (fresh) {
+    // TEN-169: seed players (today's field) use a short 1-hour TTL (not 7 days) so
+    // an active player's newest result — and the Grand-Slam boxes derived from it —
+    // surface within the hour instead of being frozen mid-tournament.
+    const isSeed = seedPlayers.has(key);
+    if (historyCacheFresh(cached, now, isSeed)) {
       if (cached.history) { profiles[key].tournamentHistory = cached.history; histReused++; }
       else histEmpty++;
       continue;
     }
-    if (histFetched >= MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN) {
+    // The per-run fetch cap throttles the large opponent backfill only; the seed
+    // set is small (today's field) and must never be deferred to a later run.
+    if (!isSeed && histFetched >= MAX_TOURNAMENT_HISTORY_FETCHES_PER_RUN) {
       if (cached && cached.history) { profiles[key].tournamentHistory = cached.history; histReused++; }
       continue;
     }
     const history = await fetchPlayerCareerHistory(key);
-    historyCache[key] = { builtAt: new Date().toISOString(), v: TOURNAMENT_HISTORY_SCHEMA_VERSION, history: history || null };
-    histFetched++;
-    if (history) profiles[key].tournamentHistory = history; else histEmpty++;
+    if (isSeed) histSeedRefreshed++; else histFetched++;
+    if (history) {
+      historyCache[key] = { builtAt: new Date().toISOString(), v: TOURNAMENT_HISTORY_SCHEMA_VERSION, history };
+      profiles[key].tournamentHistory = history;
+    } else if (cached && cached.history) {
+      // TEN-169: a transient get_fixtures failure returns null. Do NOT overwrite a
+      // good prior history with null — that would blank the record card to the
+      // empty "not on record yet" state. Keep the last good cache (and its older
+      // builtAt, so the short seed TTL retries it next run). This matters more now
+      // that seeds refetch hourly: a single API hiccup must not erase a record.
+      profiles[key].tournamentHistory = cached.history;
+      histReused++;
+    } else {
+      // Genuinely nothing, now or before — negative-cache so we don't refetch a
+      // player the feed has no history for on every run.
+      historyCache[key] = { builtAt: new Date().toISOString(), v: TOURNAMENT_HISTORY_SCHEMA_VERSION, history: null };
+      histEmpty++;
+    }
   }
 
   fs.writeFileSync(TOURNAMENT_HISTORY_CACHE_PATH,
     JSON.stringify({ fetchedAt: new Date().toISOString(), players: historyCache }, null, 2));
-  console.log(`Tournament history: fetched ${histFetched}, reused ${histReused}, `
+  console.log(`Tournament history: seed-refreshed ${histSeedRefreshed}, fetched ${histFetched}, reused ${histReused}, `
     + `no-data ${histEmpty} → ${Object.keys(profiles).filter(k => profiles[k].tournamentHistory).length} players with career history.`);
 
   // Backfill pre-2021 editions the API-Tennis feed can't reach (its fixture
@@ -5322,4 +5364,5 @@ module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTour
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
-  fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair };
+  fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
+  TOURNAMENT_HISTORY_SCHEMA_VERSION };
