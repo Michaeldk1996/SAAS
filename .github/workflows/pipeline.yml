@@ -48,6 +48,10 @@ on:
       # + data-page block ride bsp-consult-dashboard.html above.
       - 'series.js'
       - 'series.css'
+      # The Series data generator: a build-series.js-only change (e.g. a scoring or
+      # relevance fix) must redeploy so the regenerated series.json ships, not wait
+      # for a cron tick — the same allowlist gap, one layer deeper.
+      - 'build-series.js'
 
 # Never let two runs overlap; cancel an in-progress run if a newer one starts.
 concurrency:

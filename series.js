@@ -15,6 +15,10 @@
 //
 // Guard: window.FEATURE_SERIES must be truthy. Deploying with the flag OFF (or
 // ?series=0 / localStorage stennisfy.flags.series=0) changes nothing live.
+//
+// Detail panel score line: series.json carries the per-set games line (e.g.
+// "6-4 7-5 6-4"), player POV — the actual games behind a total/handicap cover,
+// not the set tally. Rendered verbatim; a dash when scores[] carried no games.
 
 (function () {
   'use strict';
