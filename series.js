@@ -235,6 +235,9 @@
     // upcoming match line
     var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
     var oppName = u.opponentName || '';
+    // Opponent archetype makes the vs-style relevance self-evident and auditable:
+    // a "vs Counterpuncher" run is only shown when tonight's opponent IS one.
+    var oppArch = u.opponentArch ? ' <span class="sr-opparch">· ' + esc(ARCH_LABEL[u.opponentArch] || u.opponentArch) + '</span>' : '';
     var playedTag = u.played ? '<span class="sr-played">played · ' + esc(u.result || 'result') + '</span>' : '';
     var upcoming =
       '<div class="sr-next">' +
@@ -242,7 +245,7 @@
         '<span class="sr-next-v">' +
           (when ? '<b>' + esc(when) + '</b> · ' : '') +
           (u.tournament ? esc(u.tournament) + ' · ' : '') +
-          (oppName ? 'vs ' + esc(oppName) : '<span class="sr-dash">—</span>') +
+          (oppName ? 'vs ' + esc(oppName) + oppArch : '<span class="sr-dash">—</span>') +
         '</span>' + playedTag +
       '</div>';
 
@@ -297,17 +300,34 @@
     var stamp = '<p class="sr-stamp">' +
       esc(String(view.length)) + ' streak' + (view.length === 1 ? '' : 's') +
       ' · min length ' + esc(String(meta.minLen != null ? meta.minLen : _filters.minLen)) +
+      ' (surface ' + esc(String(meta.surfaceMinLen != null ? meta.surfaceMinLen : 5)) + '+)' +
       ' · recency cap ' + esc(String(meta.maxAgeDays != null ? meta.maxAgeDays : '45')) + 'd (Grand Slams exempt)' +
       ' · pool floor ' + esc(String(meta.minPoolConditional != null ? meta.minPoolConditional : '8')) + ' for conditional types' +
+      ' · only streaks that bear on the scheduled match' +
       (gen ? ' · data ' + esc(gen.toISOString().slice(0, 10)) : '') +
     '</p>';
 
     var body = view.length
       ? '<div class="sr-cards">' + view.map(cardHtml).join('') + '</div>'
-      : '<p class="sr-empty">No streaks match these filters. A streak only shows if it clears the min length, the pool floor, and the recency cap — that is the honesty guard, not a data gap.</p>';
+      : emptyHtml();
 
     root.innerHTML = filterBarHtml() + stamp + body + footerHtml();
     wireFilters(root);
+  }
+
+  // Two honest empty states. When the engine emitted nothing for the slate, the
+  // page is quiet by design — every streak now has to bear on a scheduled match,
+  // so an empty board means nothing lined up, not a data gap. When cards exist but
+  // the current filters exclude them all, say so and point back at the filters.
+  function emptyHtml() {
+    var quiet = !_cards || _cards.length === 0;
+    if (quiet) {
+      return '<p class="sr-empty">No live streaks bear on today or tomorrow’s matches. ' +
+        'A run only appears here when it actually applies to what a player plays next — a vs-style run only if tonight’s opponent plays that style, a surface run only if the match is on that surface. ' +
+        'Most days that is a short list, and an empty one means nothing is lined up right now — not missing data.</p>';
+    }
+    return '<p class="sr-empty">No streaks match these filters. ' +
+      'Everything shown here already bears on a scheduled match; widen the level, day, direction, type or min length above to see more.</p>';
   }
 
   function footerHtml() {

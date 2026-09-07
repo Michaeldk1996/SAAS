@@ -58,6 +58,10 @@ const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 // ── founder-ruled thresholds (do not read these from memory — they are the
 //    2026-09-07 gate answers, encoded here as the single source of truth) ──────
 const MIN_LEN = 3;
+// Surface runs carry a higher bar (founder 2026-09-07 relevance ruling): "raise
+// the minimum length for this type to 5. A 3-match hard-court run isn't a streak;
+// surface matters far less than a repeated betting pattern."
+const MIN_LEN_SURFACE = 5;
 const MAX_AGE_DAYS = 45;
 const MIN_POOL_CONDITIONAL = 8;   // style / surface / pattern
 // all-competitions: no extra pool floor.
@@ -271,9 +275,9 @@ function recencyOk(last) {
   return { ok: age <= MAX_AGE_DAYS || last.isSlam, age, slamExempt: last.isSlam && age > MAX_AGE_DAYS };
 }
 
-function mkStreak(base, run, pool, poolFloor) {
+function mkStreak(base, run, pool, poolFloor, minLen) {
   const last = run.last;
-  if (run.count < MIN_LEN) return null;
+  if (run.count < (minLen != null ? minLen : MIN_LEN)) return null;
   if (poolFloor != null && pool < poolFloor) return null;
   const rec = recencyOk(last);
   if (!rec.ok) return null;
@@ -295,8 +299,12 @@ const STREAK_TYPES = [
     build(recs) {
       const run = tailRun(recs);
       if (!run) return [];
-      // all-competitions: no extra pool floor; the run is its own pool.
-      const s = mkStreak({ type: 'all', subtype: null, direction: run.direction }, run, run.count, null);
+      // all-competitions: no extra pool floor. The pool is the FULL in-tier
+      // countable history (recs.length), NOT the run length — a run's own length as
+      // its pool is 100% by construction and tells a member nothing (founder
+      // 2026-09-07). Reporting the true denominator ("5 of 210") is the honest fix;
+      // suppressing the line would read as missing data.
+      const s = mkStreak({ type: 'all', subtype: null, direction: run.direction }, run, recs.length, null);
       return s ? [s] : [];
     },
   },
@@ -308,7 +316,7 @@ const STREAK_TYPES = [
         const seq = recs.filter(r => r.surface === surf);
         const run = tailRun(seq);
         if (!run) continue;
-        const s = mkStreak({ type: 'surface', subtype: surf, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL);
+        const s = mkStreak({ type: 'surface', subtype: surf, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL, MIN_LEN_SURFACE);
         if (s) out.push(s);
       }
       return out;
@@ -357,6 +365,31 @@ function streaksFor(recs, tier) {
   return out;
 }
 
+// ── RELEVANCE (founder ruling 2026-09-07) ────────────────────────────────────
+// A streak renders ONLY if its condition bears on the upcoming match. A backward-
+// looking run that doesn't apply to what the player plays next is noise either way
+// — it is dropped here, never shown with a caveat.
+//   all / pattern(first-set) : match-agnostic → always relevant.
+//   surface                  : only if the upcoming match is on that surface.
+//   style                    : only if the upcoming opponent is classified as that
+//                              EXACT archetype. Opponent unclassified (oppArch null)
+//                              → the vs-style streak does not render at all.
+function isRelevant(st, ctx) {
+  switch (st.type) {
+    case 'all':
+    case 'pattern':
+      return true;
+    case 'surface': {
+      const up = (ctx && SURFACES.includes(ctx.surface)) ? ctx.surface : null;
+      return up != null && st.subtype === up;
+    }
+    case 'style':
+      return !!(ctx && ctx.opponentArch != null && st.subtype === ctx.opponentArch);
+    default:
+      return false;
+  }
+}
+
 async function main() {
   if (!API_TENNIS_KEY) {
     console.error('build-series: API_TENNIS_KEY not set — cannot fetch the slate. Aborting (no partial write).');
@@ -392,6 +425,10 @@ async function main() {
         surface: surfaceMap[String(fx.tournament_key)] || null,
         opponentName: String(oppName || ''),
         opponentKey: oppKey,
+        // Upcoming opponent's archetype (Tour taxonomy, name-joined). Drives the
+        // vs-style relevance gate and lets the card show WHY a vs-style run applies
+        // ("vs Darderi · Attacking Baseliner"). null when unclassified.
+        opponentArch: styleMap.get(normName(oppName)) || null,
         eventKey: String(fx.event_key || ''),
         played,
         result: played ? String(fx.event_final_result || '') : '',
@@ -436,9 +473,11 @@ async function main() {
       const includeStyle = tier === 'tour';
       const recs = orderedRecords(fixtures, pk, tier, surfaceMap, styleMap, includeStyle);
       if (!recs.length) continue;
-      const streaks = streaksFor(recs, tier);
-      if (!streaks.length) continue;
       const ctx = scheduled.get(keyFor(pk, tier)).upcoming;
+      // Relevance gate: keep only streaks whose condition bears on the upcoming
+      // match (see isRelevant). A player with no relevant streak is not emitted.
+      const streaks = streaksFor(recs, tier).filter(st => isRelevant(st, ctx));
+      if (!streaks.length) continue;
       const m = meta[pk] || {};
       players.push({
         key: pk,
@@ -465,12 +504,15 @@ async function main() {
     scope: { tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' }, styleTier: 'tour-only' },
     rules: {
       minLen: MIN_LEN,
+      surfaceMinLen: MIN_LEN_SURFACE,
       maxAgeDays: MAX_AGE_DAYS,
       slamAgeExempt: true,
       minPoolConditional: MIN_POOL_CONDITIONAL,
       allCompetitionsPoolFloor: null,
+      allCompetitionsPool: 'full-in-tier-history',   // not the run length
       retirements: 'skip',
       styleScope: 'tour-only',
+      relevance: 'match-scoped: surface/style render only when they bear on the upcoming match; all/first-set always',
     },
     slate: { window: { from: SLATE_START, to: SLATE_STOP }, today: TODAY_STR, tomorrow: TOMORROW_STR },
     meta,
