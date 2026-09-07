@@ -284,6 +284,13 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   const wentDistance = setShapeOk ? (decidedCount === bestOf) : null;
   const wonASet = setShapeOk ? (setsWonMe >= 1) : null;
 
+  // Games score line for the detail panel (founder: "the actual score line where
+  // the games total or handicap was covered"). Per-set games from the player's POV,
+  // e.g. "6-4 3-6 7-5" — NOT event_final_result, which is only the set tally
+  // ("3 - 2"). Played sets in order; dash (null) when scores[] carries no games.
+  const scoreLine = setNums.filter(n => sets[n].played)
+    .map(n => `${sets[n].mine}-${sets[n].theirs}`).join(' ') || null;
+
   // Opponent name (always — the clickable detail panel needs it) and archetype
   // (Tour only; unmatched => null / unclassified).
   const oppName = me === 'first' ? fx.event_second_player : fx.event_first_player;
@@ -298,7 +305,7 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
     won,
     surface,
     opponent: String(oppName || ''),
-    score: String(fx.event_final_result || ''),   // the actual score line of this match
+    score: scoreLine,   // per-set games line (player POV), dash when unavailable
     lostSet1,
     set1Total,
     wonSet2,
