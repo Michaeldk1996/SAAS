@@ -487,6 +487,29 @@ jobs:
           done
           echo "::error::Could not push after 3 attempts."; exit 1
 
+      # TEN-168 Series outcomes ledger (fix #3, founder 2026-09-07). build-series.js (run
+      # earlier this deploy) appends CONTINUED/BROKEN evaluations for streaks whose
+      # upcoming match has already been played, keyed idempotently by (eventKey|player|
+      # family). Committing it back is what makes the record ACCUMULATE across days into a
+      # measured per-streak hit-rate — same mechanism as admin-log.json above. Only-if-
+      # changed + [skip ci] so an idle slate never commits and the commit never re-triggers.
+      - name: Commit series outcomes ledger (only if changed)
+        run: |
+          if [ -z "$(git status --porcelain -- series-outcomes.json)" ]; then
+            echo "No new series-outcome evaluations — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-series-outcomes-bot"
+          git config user.email "bsp-series-outcomes-bot@users.noreply.github.com"
+          git add series-outcomes.json
+          git commit -m "chore(series): append streak outcome evaluations [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push series-outcomes after 3 attempts."; exit 1
+
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
       # blocks the core board's deploy. But an isolated failure must still be

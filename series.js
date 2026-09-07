@@ -141,10 +141,29 @@
         return streakVerb(st.direction) + ' ' + run;
     }
   }
-  var TYPE_BADGE = {
-    all: 'All comps', surface: 'Surface', style: 'Vs style', pattern: 'First set',
-    total: 'Total games', handicap: 'Handicap', setpat: 'Set pattern',
+  // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
+  // correct regardless of the engine version that wrote series.json (fix #5). The former
+  // 'firstset'/'setpat' families map here to the split 'setout' / 'setgames'.
+  function famOf(st) {
+    if (st.type === 'pattern') return 'setout';                 // first-set outcome
+    if (st.type === 'setpat')  return st.firstSet ? 'setgames' : 'setout';
+    return st.family || st.type;                                 // total/handicap/all/surface/style
+  }
+  var FAM_BADGE = {
+    all: 'All comps', surface: 'Surface', style: 'Vs style',
+    total: 'Total games', handicap: 'Handicap',
+    setout: 'Set outcome', setgames: 'Set games',
   };
+  // Card colour VALENCE (fix #2). Result runs have a genuine good/bad direction for the
+  // player (win = green, loss = orange). Betting-LINE runs (total games, handicap) and
+  // volatility set-shapes (went the distance, first-set games line) have NO good/bad —
+  // over 21.5 isn't "better" than under 22.5, it's a different direction — so they are
+  // coloured NEUTRAL, never green/orange, so the border can't misread as a verdict.
+  function valence(st) {
+    if (st.type === 'total' || st.type === 'handicap') return 'neutral';
+    if (st.type === 'setpat' && (st.firstSet || st.subtype === 'went-the-distance')) return 'neutral';
+    return st.direction === 'win' ? 'win' : 'loss';
+  }
   // The count block reads "wins"/"losses" only for true result streaks; the line
   // and set-pattern types count matches meeting a condition, not wins.
   function countUnit(st) {
@@ -185,7 +204,7 @@
     level: 'all',         // all | tour | chal
     day: 'all',           // all | today | tomorrow
     dir: 'all',           // all | win | loss
-    type: 'all',          // all | all-comp | surface | style | pattern | total | handicap | setpat
+    type: 'all',          // all | all-comp | surface | style | total | handicap | setout | setgames
     // Default min-length = the founder's view FLOOR (5). Overwritten from the data's
     // rules.viewFloorDefault on load. Buttons can drop BELOW it (the engine emits
     // from 3). vs-style is exempt and floored at 3 (see passesFilters / styleFloor).
@@ -215,8 +234,8 @@
     // UI 'all' = every type; UI 'all-comp' = the engine's all-competitions type
     // ('all'). Translate so the two 'all' meanings don't collide.
     if (f.type !== 'all') {
-      var wantType = (f.type === 'all-comp') ? 'all' : f.type;
-      if (st.type !== wantType) return false;
+      var wantFam = (f.type === 'all-comp') ? 'all' : f.type;
+      if (famOf(st) !== wantFam) return false;
     }
     // View floor: the min-length button governs every type EXCEPT vs-style, which
     // the founder floored at 3 ("relevance already filters it"). Style therefore
@@ -256,29 +275,32 @@
   // bettor can judge (18 running vs Challenger fields ≠ 18 vs the top 20). Rendered
   // as an in-card expansion, never a separate page. Guarded: no matches → no panel
   // (older series.json without the field simply shows no toggle, never a broken UI).
-  // The match table shown INSIDE the overlay (founder 2026-09-07): three columns
-  // only — Date, Event, Score — nothing truncated. Surface and the win/loss letter
-  // are dropped (surface is on the card; the score already tells you the result).
-  // The score is the set scores as played, tiebreaks included (e.g. "7-6(5) 6-4"),
-  // read straight from the engine's `score` field; a missing line is a dash, never
-  // a guess. Newest match first.
+  // The match table shown INSIDE the overlay (founder 2026-09-07 fix #1): FOUR columns
+  // — Date, Event, Opponent, Score — nothing truncated. The opponent is what tells a
+  // member whether a 12-match run came against qualifiers or seeds. The score is the
+  // set scores as played, tiebreaks included (e.g. "7-6(5) 6-4"), read straight from
+  // the engine's `score` field; a missing field is a dash, never a guess. Newest first.
   function detailTableHtml(st) {
     var ms = Array.isArray(st.matches) ? st.matches.slice().reverse() : []; // newest first
     if (!ms.length) return '';
+    var dash = '<span class="sr-dash">—</span>';
     var rows = ms.map(function (m) {
-      var d = fmtDate(m.date) || m.date || '<span class="sr-dash">—</span>';
-      var tour = m.tournament ? esc(m.tournament) : '<span class="sr-dash">—</span>';
-      var score = m.score ? esc(m.score) : '<span class="sr-dash">—</span>';
+      var d = fmtDate(m.date) || m.date || dash;
+      var tour = m.tournament ? esc(m.tournament) : dash;
+      var opp = m.opponent ? esc(m.opponent) : dash;
+      var score = m.score ? esc(m.score) : dash;
       return '<div class="sr-mrow">' +
         '<span class="sr-mdate">' + esc(d) + '</span>' +
         '<span class="sr-mtour">' + tour + '</span>' +
+        '<span class="sr-mopp">' + opp + '</span>' +
         '<span class="sr-mscore">' + score + '</span>' +
       '</div>';
     }).join('');
-    return '<div class="sr-mtable">' +
+    return '<div class="sr-mtable sr-mtable-4">' +
       '<div class="sr-mrow sr-mhead">' +
         '<span class="sr-mdate">Date</span>' +
         '<span class="sr-mtour">Event</span>' +
+        '<span class="sr-mopp">Opponent</span>' +
         '<span class="sr-mscore">Score</span>' +
       '</div>' + rows +
     '</div>';
@@ -290,13 +312,14 @@
   // handler can open the matches overlay for exactly this streak.
   function cardHtml(c, idx) {
     var p = c.player, st = c.streak, u = p.upcoming || {};
-    var dirClass = st.direction === 'win' ? 'sr-win' : 'sr-loss';
+    var v = valence(st);
+    var dirClass = v === 'win' ? 'sr-win' : (v === 'loss' ? 'sr-loss' : 'sr-neutral');
     var tierTxt = p.tier === 'tour' ? 'Tour' : 'Chal';
     var flag = emojiFlag(p.country);
     var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : '<span class="sr-dash">—</span>';
 
     // badges: type, tier, plus the subtype (surface/archetype) where meaningful
-    var badges = '<span class="sr-badge sr-badge-type">' + esc(TYPE_BADGE[st.type] || st.type) + '</span>' +
+    var badges = '<span class="sr-badge sr-badge-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span>' +
                  '<span class="sr-badge sr-badge-tier">' + tierTxt + '</span>';
     if (st.type === 'surface' && st.subtype) badges += '<span class="sr-badge">' + esc(cap(st.subtype)) + '</span>';
     if (st.type === 'style' && st.subtype)   badges += '<span class="sr-badge">' + esc(ARCH_LABEL[st.subtype] || st.subtype) + '</span>';
@@ -320,7 +343,19 @@
     // Opponent archetype makes the vs-style relevance self-evident and auditable:
     // a "vs Counterpuncher" run is only shown when tonight's opponent IS one.
     var oppArch = u.opponentArch ? ' <span class="sr-opparch">· ' + esc(ARCH_LABEL[u.opponentArch] || u.opponentArch) + '</span>' : '';
-    var playedTag = u.played ? '<span class="sr-played">played · ' + esc(u.result || 'result') + '</span>' : '';
+    // Played-match tag (fix #3): show whether the streak's OWN condition held —
+    // CONTINUED / BROKEN — not the match result. Excluded (couldn't evaluate) reads
+    // "not evaluable" and is left out of the summary counts. The set-tally result is
+    // kept as a quiet secondary. Legacy data with no outcome falls back to the tally.
+    var playedTag = '';
+    if (u.played) {
+      var oc = st.outcome;
+      var resSmall = u.result ? ' <span class="sr-played-res">' + esc(u.result) + '</span>' : '';
+      if (oc && oc.held === true)        playedTag = '<span class="sr-oc sr-oc-cont">Continued</span>' + resSmall;
+      else if (oc && oc.held === false)  playedTag = '<span class="sr-oc sr-oc-broke">Broken</span>' + resSmall;
+      else if (oc && oc.evaluable === false) playedTag = '<span class="sr-oc sr-oc-na" title="The played match could not be evaluated for this streak’s condition — excluded from the continued/broken count">Not evaluable</span>' + resSmall;
+      else playedTag = '<span class="sr-played">played · ' + esc(u.result || 'result') + '</span>';
+    }
     var upcoming =
       '<div class="sr-next">' +
         '<span class="sr-next-k">Next</span>' +
@@ -375,7 +410,7 @@
       '<label class="sr-flabel">Level</label>' + seg('level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
       '<label class="sr-flabel">Day</label>' + seg('day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
       '<label class="sr-flabel">Direction</label>' + seg('dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
-      '<label class="sr-flabel">Type</label>' + seg('type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['pattern','First set'],['total','Total games'],['handicap','Handicap'],['setpat','Set patterns']], f.type) +
+      '<label class="sr-flabel">Type</label>' + seg('type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['total','Total games'],['handicap','Handicap'],['setout','Set outcome'],['setgames','Set games']], f.type) +
       '<label class="sr-flabel">Min length</label>' + seg('minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
       '<label class="sr-flabel">Sort</label>' + seg('sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
       '<label class="sr-toggle"><input type="checkbox" id="srShowPlayed"' + (f.showPlayed ? ' checked' : '') + '> Show already-played</label>' +
@@ -409,8 +444,46 @@
       ? '<div class="sr-cards">' + view.map(cardHtml).join('') + '</div>'
       : emptyHtml();
 
-    root.innerHTML = filterBarHtml() + stamp + body + footerHtml();
+    root.innerHTML = filterBarHtml() + legendHtml() + outcomesSummaryHtml(view) + stamp + body + footerHtml();
     wireFilters(root);
+  }
+
+  // Border-colour legend (fix #2). The card's left border encodes what KIND of run it
+  // is, and — for result runs only — its direction. Betting-line runs are neutral
+  // because over/under and handicap have no good/bad side.
+  function legendHtml() {
+    return '<div class="sr-legend" aria-hidden="false">' +
+      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-win"></span>Winning run</span>' +
+      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-loss"></span>Losing run</span>' +
+      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-neutral"></span>Neutral run — betting lines (over/under, handicap) &amp; set-shape volatility: a direction, not good or bad</span>' +
+    '</div>';
+  }
+
+  // CONTINUED/BROKEN summary (fix #3), shown only in the already-played view. Counts
+  // over the played cards CURRENTLY in view whose condition could be evaluated; the
+  // "not evaluable" cards are reported separately and excluded from the percentage —
+  // never guessed (founder standing rule).
+  function outcomesSummaryHtml(view) {
+    if (!_filters.showPlayed) return '';
+    var played = view.filter(function (c) {
+      return c.player.upcoming && c.player.upcoming.played && c.streak.outcome;
+    });
+    if (!played.length) return '';
+    var cont = 0, broke = 0, excl = 0;
+    played.forEach(function (c) {
+      var oc = c.streak.outcome;
+      if (oc.held === true) cont++;
+      else if (oc.held === false) broke++;
+      else excl++;
+    });
+    var evald = cont + broke;
+    var pct = evald ? Math.round(100 * cont / evald) : null;
+    return '<div class="sr-outsum">' +
+      '<span class="sr-outsum-k">Already-played conditions</span> ' +
+      '<b>' + cont + '</b> continued · <b>' + broke + '</b> broken' +
+      (evald ? ' · <b>' + pct + '%</b> held (' + evald + ' evaluated)' : '') +
+      (excl ? ' · ' + excl + ' excluded (not evaluable)' : '') +
+    '</div>';
   }
 
   // Two honest empty states. When the engine emitted nothing for the slate, the

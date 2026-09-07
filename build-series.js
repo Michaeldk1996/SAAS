@@ -33,9 +33,22 @@
  * and (2) the DATE + age of its most-recent match. A streak missing either is
  * not emitted. Missing data is an omission, never a zero.
  *
- * SCOPE: ATP + Challenger men's singles only. Read-only — writes ONLY series.json.
+ * SCOPE: ATP + Challenger men's singles only. Writes series.json AND the outcomes
+ * ledger series-outcomes.json (TEN-168 fix batch, founder 2026-09-07 item #3): when a
+ * streak's UPCOMING match has already been played, the engine evaluates whether the
+ * streak's OWN condition held in that match (CONTINUED / BROKEN — not the result) and
+ * appends it to the ledger, keyed idempotently by (eventKey|player|family). The ledger
+ * accumulates across days (the pipeline commits it back, exactly like admin-log.json)
+ * so a measured hit-rate per streak type builds up over weeks. A match whose condition
+ * can't be evaluated (retired/walkover/no clean score) is recorded held=null and
+ * EXCLUDED from the continued/broken counts — never guessed.
  * Touches none of the four core JSON files, the Trading Report, the ten141 cron,
  * the Live gate, or the entry-lists workstream.
+ *
+ * FAMILIES (founder 2026-09-07 item #5 — the Set-pattern family was two things and is
+ * split): total · handicap · setout (SET OUTCOME: won/lost 1st set, won/lost 2nd set,
+ * straight sets, went the distance, no set won) · setgames (SET GAMES LINE: first-set
+ * over/under a games total) · all · surface · style. One card per family per player.
  */
 'use strict';
 
@@ -51,6 +64,10 @@ const SURFACES_FILE = path.join(ROOT, 'tournament-surfaces.json');
 const PROFILES_FILE = path.join(ROOT, 'player-profiles.json');
 const STYLES_FILE = path.join(ROOT, 'playing-styles.json');
 const OUT_FILE = process.env.SERIES_OUT || path.join(ROOT, 'series.json');
+// Outcomes ledger (fix #3): persists CONTINUED/BROKEN evaluations across days so the
+// record accumulates (the pipeline commits it back, like admin-log.json). Idempotent
+// by (eventKey|player|family) — re-running the same slate overwrites, never doubles.
+const OUTCOMES_FILE = process.env.SERIES_OUTCOMES || path.join(ROOT, 'series-outcomes.json');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -528,15 +545,15 @@ const STREAK_TYPES = [
     id: 'pattern',
     build(recs) {
       // First-set OUTCOME (won/lost the opening set). EXACT, score-only. Pool =
-      // matches with a decided set 1. This is the "existing always-on" set-outcome
-      // line — kept its own family so it isn't collapsed into the new set-patterns.
+      // matches with a decided set 1. Belongs to the SET OUTCOME family (fix #5): who
+      // won a set, as opposed to how long a set was (SET GAMES LINE).
       const run = tailStateRun(
         recs, r => r.lostSet1 == null ? null : (r.lostSet1 ? 'lost1' : 'won1'), FIRSTSET_STATES);
       if (!run) return [];
       const lost = run.state === 'lost1';
       const subtype = lost ? 'lost-first-set' : 'won-first-set';
       const direction = lost ? 'loss' : 'win';   // slow starter vs fast starter
-      const s = mkStreak({ type: 'pattern', family: 'firstset', subtype, direction }, run, run.pool, MIN_POOL_CONDITIONAL);
+      const s = mkStreak({ type: 'pattern', family: 'setout', subtype, direction }, run, run.pool, MIN_POOL_CONDITIONAL);
       return s ? [s] : [];
     },
   },
@@ -596,19 +613,22 @@ const STREAK_TYPES = [
     id: 'setpat',
     build(recs) {
       const out = [];
+      // Each member declares its OWN family (fix #5): the set-OUTCOME events (who won a
+      // set) go to 'setout'; the set-GAMES-LINE events (how long a set was) go to
+      // 'setgames'. They no longer share one card slot.
       const push = (run, baseFn) => {
         if (!run) return;
-        const s = mkStreak(Object.assign({ family: 'setpat' }, baseFn(run)), run, run.pool, MIN_POOL_CONDITIONAL);
+        const s = mkStreak(Object.assign({}, baseFn(run)), run, run.pool, MIN_POOL_CONDITIONAL);
         if (s) out.push(s);
       };
-      // won / lost the 2nd set
+      // won / lost the 2nd set — SET OUTCOME
       push(
         tailStateRun(recs, r => (r.wonSet2 == null ? null : (r.wonSet2 ? 'won2' : 'lost2')), WON2_STATES),
         run => run.state === 'won2'
-          ? { type: 'setpat', subtype: 'won-2nd-set', direction: 'win' }
-          : { type: 'setpat', subtype: 'lost-2nd-set', direction: 'loss' });
+          ? { type: 'setpat', family: 'setout', subtype: 'won-2nd-set', direction: 'win' }
+          : { type: 'setpat', family: 'setout', subtype: 'lost-2nd-set', direction: 'loss' });
       // straight-sets win (0-drop) vs straight-sets loss (blown out). A competitive
-      // (non-straight) decisive result breaks either run.
+      // (non-straight) decisive result breaks either run. SET OUTCOME.
       push(
         tailStateRun(recs, r => {
           if (r.straightResult == null) return null;
@@ -616,32 +636,32 @@ const STREAK_TYPES = [
           return r.won ? 'straightWin' : 'straightLoss';
         }, STRAIGHT_STATES),
         run => run.state === 'straightWin'
-          ? { type: 'setpat', subtype: 'straight-sets-win', direction: 'win' }
-          : { type: 'setpat', subtype: 'straight-sets-loss', direction: 'loss' });
+          ? { type: 'setpat', family: 'setout', subtype: 'straight-sets-win', direction: 'win' }
+          : { type: 'setpat', family: 'setout', subtype: 'straight-sets-loss', direction: 'loss' });
       // went the distance (reached the deciding set). Only the affirmative side is a
       // signal — this is literally "went the distance". The negative ("decided
       // early") conflates a dominant win with a dominant loss into one run, so it is
       // not emitted (a 'short' match still breaks a distance run). Direction is
-      // 'win' only as a display polarity — the card reads as a volatility/totals
-      // angle, not a result.
+      // 'win' only as a display polarity — the card reads as a volatility angle, not a
+      // result, so the front-end colours it NEUTRAL (fix #2). SET OUTCOME (set-shape).
       push(
         tailStateRun(recs, r => (r.wentDistance == null ? null : (r.wentDistance ? 'dist' : 'short')), DIST_STATES),
-        () => ({ type: 'setpat', subtype: 'went-the-distance', direction: 'win' }));
+        () => ({ type: 'setpat', family: 'setout', subtype: 'went-the-distance', direction: 'win' }));
       // "won a set" — ONLY the negative side is a signal: consecutive matches
       // winning ZERO sets (a losing spiral). The affirmative side ("won ≥1 set") is
-      // trivially satisfied by any match win and would dominate the collapsed
-      // set-patterns card without informing — reported to the founder as his to
-      // re-enable, not shipped as a dead/dominating type.
+      // trivially satisfied by any match win and would dominate the card without
+      // informing — reported to the founder as his to re-enable. SET OUTCOME.
       push(
         tailStateRun(recs, r => (r.wonASet == null ? null : (r.wonASet ? 'wonSet' : 'noSet')), NOSET_STATES),
-        () => ({ type: 'setpat', subtype: 'no-set-won', direction: 'loss' }));
-      // first-set total over / under (format-invariant single line)
+        () => ({ type: 'setpat', family: 'setout', subtype: 'no-set-won', direction: 'loss' }));
+      // first-set total over / under (format-invariant single line) — SET GAMES LINE.
+      // Direction is a POLARITY only (over vs under); coloured NEUTRAL (fix #2).
       push(
         tailStateRun(recs.filter(r => r.set1Total != null),
           r => (r.set1Total > FIRST_SET_LINE ? 'over' : 'under'), OVER_UNDER),
         run => run.state === 'over'
-          ? { type: 'setpat', subtype: 'first-set-over-' + FIRST_SET_LINE, direction: 'win', line: FIRST_SET_LINE, firstSet: true, over: true }
-          : { type: 'setpat', subtype: 'first-set-under-' + FIRST_SET_LINE, direction: 'loss', line: FIRST_SET_LINE, firstSet: true, over: false });
+          ? { type: 'setpat', family: 'setgames', subtype: 'first-set-over-' + FIRST_SET_LINE, direction: 'win', line: FIRST_SET_LINE, firstSet: true, over: true }
+          : { type: 'setpat', family: 'setgames', subtype: 'first-set-under-' + FIRST_SET_LINE, direction: 'loss', line: FIRST_SET_LINE, firstSet: true, over: false });
       return out;
     },
   },
@@ -657,21 +677,98 @@ const NOSET_STATES = new Set(['noSet']);
 const FIRSTSET_STATES = new Set(['won1', 'lost1']);
 
 // One card per player per FAMILY (founder 2026-09-07): a player shows at most one
-// streak per family, their LONGEST current run in it (ties → the sturdier, bigger
-// pool). Families: total games, handicap, set patterns, and the existing types
-// (all-competitions, first-set outcome, surface, vs-style) each keep their own card.
+// streak per family. Default selector is the LONGEST current run (ties → the sturdier,
+// bigger pool).
+//
+// HANDICAP EXCEPTION (fix #4, founder 2026-09-07): "±3.5 is the primary handicap line.
+// Longest isn't the right selector here." ±1.5 is the easiest line to cover, so it
+// produced the longest runs and won the family every time (36/36 handicap cards live
+// were ±1.5, zero at 3.5). So for the handicap family the representative is the TRADED
+// line by priority 3.5 > 5.5 > 1.5 — NOT the longest run — and only within the chosen
+// line is length the tie-break. ±1.5 / ±5.5 remain generated (available as the fallback
+// when the player has no qualifying ±3.5 run), but never outrank ±3.5.
+const HANDICAP_LINE_PRIORITY = { '3.5': 3, '5.5': 2, '1.5': 1 };
+function handicapRank(st) { return HANDICAP_LINE_PRIORITY[String(st.line)] || 0; }
 function collapseByFamily(streaks) {
   const best = new Map();
   for (const st of streaks) {
     const fam = st.family || st.type;
     const cur = best.get(fam);
-    if (!cur
-      || st.count > cur.count
-      || (st.count === cur.count && (st.pool || 0) > (cur.pool || 0))) {
-      best.set(fam, st);
+    if (!cur) { best.set(fam, st); continue; }
+    let take;
+    if (fam === 'handicap') {
+      const rc = handicapRank(st), rr = handicapRank(cur);
+      take = rc > rr
+        || (rc === rr && (st.count > cur.count
+          || (st.count === cur.count && (st.pool || 0) > (cur.pool || 0))));
+    } else {
+      take = st.count > cur.count
+        || (st.count === cur.count && (st.pool || 0) > (cur.pool || 0));
     }
+    if (take) best.set(fam, st);
   }
   return [...best.values()];
+}
+
+// ── CONDITION EVALUATION (fix #3) ────────────────────────────────────────────
+// Did the streak's OWN condition hold in the given played match? Returns
+//   true  = CONTINUED (the condition was satisfied),
+//   false = BROKEN    (the condition was not satisfied),
+//   null  = EXCLUDED  (the match can't be evaluated for this condition — a
+//           retirement/walkover with no clean score, a super-tiebreak decider, a
+//           surface/format mismatch). NEVER guessed. `pr` is recordFor() of the
+//           played fixture (null when the match itself isn't countable).
+function setpatHeld(st, pr) {
+  switch (st.subtype) {
+    case 'won-2nd-set':        return pr.wonSet2 == null ? null : (pr.wonSet2 === true);
+    case 'lost-2nd-set':       return pr.wonSet2 == null ? null : (pr.wonSet2 === false);
+    case 'straight-sets-win':  return pr.straightResult == null ? null : (pr.straightResult === true && pr.won === true);
+    case 'straight-sets-loss': return pr.straightResult == null ? null : (pr.straightResult === true && pr.won === false);
+    case 'went-the-distance':  return pr.wentDistance == null ? null : (pr.wentDistance === true);
+    case 'no-set-won':         return pr.wonASet == null ? null : (pr.wonASet === false);
+    default:
+      if (st.firstSet) {  // first-set games line
+        if (pr.set1Total == null) return null;
+        return st.over ? (pr.set1Total > st.line) : (pr.set1Total <= st.line);
+      }
+      return null;
+  }
+}
+function conditionHeld(st, pr) {
+  if (!pr) return null;   // played match not countable => excluded
+  switch (st.type) {
+    case 'all':
+      return pr.won === (st.direction === 'win');
+    case 'surface':
+      if (pr.surface !== st.subtype) return null;
+      return pr.won === (st.direction === 'win');
+    case 'style':
+      if (pr.oppArch == null || pr.oppArch !== st.subtype) return null;
+      return pr.won === (st.direction === 'win');
+    case 'pattern':  // first-set outcome
+      if (pr.lostSet1 == null) return null;
+      return st.subtype === 'lost-first-set' ? (pr.lostSet1 === true) : (pr.lostSet1 === false);
+    case 'total':
+      if (pr.bestOf !== st.bestOf || pr.totalGames == null) return null;
+      return st.over ? (pr.totalGames > st.line) : (pr.totalGames <= st.line);
+    case 'handicap':
+      if (pr.bestOf !== st.bestOf || pr.gameMargin == null) return null;
+      return st.cover ? (pr.gameMargin > st.line) : (pr.gameMargin < -st.line);
+    case 'setpat':
+      return setpatHeld(st, pr);
+    default:
+      return null;
+  }
+}
+
+// Load the outcomes ledger (fix #3). Returns { updatedAt, records:{} }. A missing or
+// unreadable file starts an empty ledger — never a hard fail.
+function loadLedger() {
+  try {
+    const j = JSON.parse(fs.readFileSync(OUTCOMES_FILE, 'utf8'));
+    if (j && typeof j === 'object' && j.records && typeof j.records === 'object') return j;
+  } catch (_) { /* seed a fresh ledger */ }
+  return { updatedAt: null, records: {} };
 }
 
 function streaksFor(recs, tier) {
@@ -727,6 +824,7 @@ async function main() {
   const surfaceMap = loadSurfaceMap();
   const styleMap = loadStyleMap();
   const meta = loadMeta();
+  const ledger = loadLedger();   // fix #3: accumulates CONTINUED/BROKEN across days
 
   const slate = await fetchSlate();
   if (!slate.length) {
@@ -766,13 +864,20 @@ async function main() {
         result: played ? String(fx.event_final_result || '') : '',
       };
       const k = keyFor(pk, tier);
-      const prev = scheduled.get(k);
+      const prevEntry = scheduled.get(k);
+      const prev = prevEntry && prevEntry.upcoming;
       // preference: not-played over played, then soonest date, then soonest time
       const rank = c => (c.played ? 1 : 0);
       const better = !prev
         || (rank(ctx) < rank(prev))
         || (rank(ctx) === rank(prev) && (ctx.date < prev.date || (ctx.date === prev.date && ctx.time < prev.time)));
-      if (better) scheduled.set(k, { pk, tier, upcoming: ctx });
+      if (better) {
+        // fix #3: when the upcoming match is already played, keep the SAME fixture's
+        // countable record so the streak's condition can be evaluated against it.
+        // recordFor returns null for a retired/walkover/uncountable match => excluded.
+        const playedRec = played ? recordFor(fx, pk, tier, surfaceMap, styleMap, tier === 'tour') : null;
+        scheduled.set(k, { pk, tier, upcoming: ctx, playedRec });
+      }
     }
   }
 
@@ -825,7 +930,8 @@ async function main() {
           if (r.set1Total != null) dist.firstSet.push(r.set1Total);
         }
       }
-      const ctx = scheduled.get(keyFor(pk, tier)).upcoming;
+      const sched = scheduled.get(keyFor(pk, tier));
+      const ctx = sched.upcoming;
       // Relevance gate, then one-card-per-family collapse (founder 2026-09-07):
       // keep only streaks whose condition bears on the upcoming match, then reduce
       // to the single longest current run per family so a player can't fill the
@@ -834,6 +940,34 @@ async function main() {
       if (dumpLines) for (const st of relevant) { rawSub[st.subtype || st.type] = (rawSub[st.subtype || st.type] || 0) + 1; }
       const streaks = collapseByFamily(relevant);
       if (!streaks.length) continue;
+      // fix #3: if the upcoming match has already been played, evaluate whether each
+      // surfaced streak's OWN condition held in it (CONTINUED / BROKEN / excluded) and
+      // append to the accumulating ledger, keyed idempotently by (eventKey|pk|family).
+      if (ctx.played) {
+        const pr = sched.playedRec;
+        for (const st of streaks) {
+          const held = conditionHeld(st, pr);   // true | false | null(excluded)
+          st.outcome = {
+            eventKey: ctx.eventKey || null,
+            date: ctx.date || null,
+            playedResult: ctx.result || null,
+            playedScore: pr ? (pr.score || null) : null,
+            opponent: pr ? (pr.opponent || null) : (ctx.opponentName || null),
+            evaluable: held !== null,
+            held: held,
+          };
+          const fam = st.family || st.type;
+          const lkey = `${ctx.eventKey || 'nokey'}|${pk}|${fam}`;
+          ledger.records[lkey] = {
+            date: ctx.date || null, tier, type: st.type, family: fam,
+            subtype: st.subtype || null, direction: st.direction,
+            line: (st.line != null ? st.line : null), bestOf: (st.bestOf != null ? st.bestOf : null),
+            held: held, streakCount: st.count, pool: st.pool,
+            playedResult: ctx.result || null,
+            player: (meta[pk] && meta[pk].name) || ctx.playerName || null,
+          };
+        }
+      }
       const m = meta[pk] || {};
       players.push({
         key: pk,
@@ -861,8 +995,27 @@ async function main() {
 
   players.sort((a, b) => b.streaks[0].count - a.streaks[0].count);
 
+  // fix #3: accumulated hit-rate per family from the whole ledger (all days). Excluded
+  // (held=null) rows are counted separately and kept OUT of the continued/broken rate.
+  const ledgerRows = Object.values(ledger.records || {});
+  const accum = {};
+  for (const r of ledgerRows) {
+    const fam = r.family || r.type || 'other';
+    const a = accum[fam] || (accum[fam] = { continued: 0, broken: 0, excluded: 0 });
+    if (r.held === true) a.continued++;
+    else if (r.held === false) a.broken++;
+    else a.excluded++;
+  }
+  for (const fam of Object.keys(accum)) {
+    const a = accum[fam];
+    const ev = a.continued + a.broken;
+    a.evaluated = ev;
+    a.heldPct = ev ? +(100 * a.continued / ev).toFixed(1) : null;
+  }
+
+  const generatedAt = new Date().toISOString();
   const doc = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     now: TODAY_STR,
     source: 'api-tennis get_fixtures (slate) + fetchRecentSinglesFixtures (history)',
     scope: { tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' }, styleTier: 'tour-only' },
@@ -886,7 +1039,9 @@ async function main() {
         handicap: HANDICAP_LINES,
         firstSet: FIRST_SET_LINE,
       },
-      families: ['total', 'handicap', 'setpat', 'all', 'firstset', 'surface', 'style'],
+      families: ['total', 'handicap', 'setout', 'setgames', 'all', 'surface', 'style'],
+      familySplit: 'fix#5: the former "setpat" family is split into SET OUTCOME (setout: won/lost 1st/2nd set, straight sets, went the distance, no set won — plus the first-set outcome formerly its own "firstset") and SET GAMES LINE (setgames: first-set over/under a games total).',
+      handicapSelector: 'fix#4: the handicap family representative is the traded line by priority 3.5 > 5.5 > 1.5 (NOT the longest run). 1.5/5.5 remain generated as fallback when the player has no qualifying 3.5 run.',
       onePerFamily: true,
       relevance: 'match-scoped: surface renders only on the same surface; vs-style only when the upcoming opponent is that archetype; total/handicap are FORMAT-LOCKED to the upcoming match best-of; all / first-set / set-patterns always',
       formatLocked: ['total', 'handicap'],
@@ -896,6 +1051,10 @@ async function main() {
       carriesMatches: true,   // each streak lists its run matches for the detail panel
     },
     slate: { window: { from: SLATE_START, to: SLATE_STOP }, today: TODAY_STR, tomorrow: TOMORROW_STR },
+    // fix #3: accumulated CONTINUED/BROKEN hit-rate per family across the whole ledger.
+    // The front-end renders TODAY's slice from the played cards in view; this carries the
+    // running record for our own read of which patterns hold up over weeks.
+    outcomes: { accumulated: accum, ledgerSize: ledgerRows.length, ledgerUpdatedAt: generatedAt },
     meta,
     players,
   };
@@ -903,6 +1062,16 @@ async function main() {
   const tmp = OUT_FILE + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(doc));
   fs.renameSync(tmp, OUT_FILE);
+
+  // Persist the outcomes ledger (fix #3). Atomic tmp+rename, same as series.json. The
+  // pipeline commits it back so it accumulates across days (see .github/workflows).
+  // NB: the persisted file carries ONLY `records` — no run timestamp — so identical
+  // accumulated records serialize to identical bytes. That keeps the pipeline's
+  // only-if-changed guard honest: an idle slate (no newly-resolved match) produces no
+  // diff and therefore no commit. The generated-at time lives in series.json instead.
+  const ltmp = OUTCOMES_FILE + '.tmp';
+  fs.writeFileSync(ltmp, JSON.stringify({ records: ledger.records || {} }, null, 0));
+  fs.renameSync(ltmp, OUTCOMES_FILE);
 
   console.error(JSON.stringify({
     slateRows: slate.length,
@@ -916,6 +1085,8 @@ async function main() {
     bySubtype: subCount,
     outBytes: fs.statSync(OUT_FILE).size,
     out: path.basename(OUT_FILE),
+    outcomesLedgerSize: ledgerRows.length,
+    outcomesAccum: accum,
   }, null, 2));
 
   if (dumpLines) {
@@ -930,4 +1101,10 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error('build-series: unexpected error —', e.stack || e.message); process.exit(1); });
+// Run only when invoked directly (node build-series.js). When required by a test
+// harness, export the pure functions instead of firing the network build.
+if (require.main === module) {
+  main().catch(e => { console.error('build-series: unexpected error —', e.stack || e.message); process.exit(1); });
+} else {
+  module.exports = { conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES, upcomingBestOf, tierOf };
+}

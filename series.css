@@ -23,6 +23,19 @@
 [data-page="series"] .sr-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); cursor: pointer; margin-left: 4px; }
 [data-page="series"] .sr-toggle input { accent-color: var(--accent,#3E7BFA); }
 
+/* ── border-colour legend (fix #2) ── */
+[data-page="series"] .sr-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 0 0 12px; font-size: 11.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); }
+[data-page="series"] .sr-lgi { display: inline-flex; align-items: center; gap: 7px; }
+[data-page="series"] .sr-lgsw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+[data-page="series"] .sr-lgsw-win { background: #3dd68c; }
+[data-page="series"] .sr-lgsw-loss { background: #e28b4a; }
+[data-page="series"] .sr-lgsw-neutral { background: #6f86c9; }
+
+/* ── already-played continued/broken summary (fix #3) ── */
+[data-page="series"] .sr-outsum { font-size: 12.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); background: var(--panel-2,#181C25); border: 1px solid var(--border,#262B35); border-radius: 8px; padding: 9px 12px; margin: 0 0 14px; }
+[data-page="series"] .sr-outsum-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint,#565F6A); margin-right: 6px; }
+[data-page="series"] .sr-outsum b { color: var(--text,#e7e9ee); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); }
+
 [data-page="series"] .sr-stamp { font-size: 11.5px; color: var(--text-faint,#565F6A); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); margin: 0 0 16px; }
 
 /* ── card grid ── */
@@ -31,12 +44,17 @@
 [data-page="series"] .sr-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
 [data-page="series"] .sr-card.sr-win::before { background: #3dd68c; }
 [data-page="series"] .sr-card.sr-loss::before { background: #e28b4a; }
+/* NEUTRAL (fix #2): betting-line / volatility runs have no good/bad direction, so the
+   border is an informational slate-blue — never green/orange (which would misread as a
+   verdict on a metric that has none). */
+[data-page="series"] .sr-card.sr-neutral::before { background: #6f86c9; }
 
 /* count column */
 [data-page="series"] .sr-count { flex: none; width: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 [data-page="series"] .sr-num { font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); font-size: 34px; font-weight: 700; line-height: 1; color: var(--text,#e7e9ee); }
 [data-page="series"] .sr-win .sr-num { color: #3dd68c; }
 [data-page="series"] .sr-loss .sr-num { color: #e28b4a; }
+[data-page="series"] .sr-neutral .sr-num { color: #9fb2e8; }
 [data-page="series"] .sr-dir { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint,#565F6A); margin-top: 4px; }
 
 /* body */
@@ -69,6 +87,14 @@
 [data-page="series"] .sr-next-v b { color: var(--text,#e7e9ee); }
 [data-page="series"] .sr-opparch { color: var(--text-faint,#565F6A); font-style: italic; }
 [data-page="series"] .sr-played { font-size: 10.5px; font-weight: 700; color: #e28b4a; background: rgba(226,139,74,0.1); border-radius: 99px; padding: 2px 8px; }
+/* CONTINUED / BROKEN / not-evaluable chip (fix #3). Here green=continued / orange=broken
+   is a genuine held/failed reading of the streak's OWN condition — a real binary — so
+   the colour is meaningful (unlike the neutral betting-line borders in fix #2). */
+[data-page="series"] .sr-oc { font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; border-radius: 99px; padding: 2px 9px; }
+[data-page="series"] .sr-oc-cont { color: #3dd68c; background: rgba(61,214,140,0.12); }
+[data-page="series"] .sr-oc-broke { color: #e28b4a; background: rgba(226,139,74,0.12); }
+[data-page="series"] .sr-oc-na { color: var(--text-faint,#565F6A); background: var(--panel-2,#181C25); }
+[data-page="series"] .sr-played-res { font-size: 10.5px; color: var(--text-faint,#565F6A); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); margin-left: 6px; }
 [data-page="series"] .sr-dash { color: var(--text-faint,#565F6A); }
 
 [data-page="series"] .sr-empty { color: var(--text-dim,#8F98A6); font-size: 13.5px; font-family: var(--mx-font-ui,sans-serif); padding: 40px 0; max-width: 640px; line-height: 1.5; }
@@ -98,18 +124,19 @@ body.sr-ov-open { overflow: hidden; }
 .sr-ov-pool { color: var(--text-faint,#565F6A); }
 .sr-ov-body { margin-top: 4px; }
 
-/* three-column match table: Date · Event · Score — nothing truncated */
+/* four-column match table: Date · Event · Opponent · Score — nothing truncated (fix #1) */
 .sr-mtable { display: flex; flex-direction: column; gap: 1px; }
-.sr-mrow { display: grid; grid-template-columns: 84px 1fr auto; align-items: baseline; gap: 12px; font-size: 12.5px; font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); color: var(--text-dim,#8F98A6); padding: 6px 0; border-bottom: 1px solid rgba(38,43,53,0.4); }
+.sr-mrow { display: grid; grid-template-columns: 84px 1.3fr 1fr auto; align-items: baseline; gap: 12px; font-size: 12.5px; font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); color: var(--text-dim,#8F98A6); padding: 6px 0; border-bottom: 1px solid rgba(38,43,53,0.4); }
 .sr-mrow:last-child { border-bottom: 0; }
 .sr-mrow.sr-mhead { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint,#565F6A); font-family: var(--mx-font-ui,sans-serif); border-bottom: 1px solid rgba(38,43,53,0.6); padding-bottom: 6px; }
 .sr-mtour { color: var(--text,#e7e9ee); white-space: normal; word-break: break-word; }
+.sr-mopp { color: var(--text,#e7e9ee); white-space: normal; word-break: break-word; }
 .sr-mscore { color: var(--text,#e7e9ee); text-align: right; white-space: nowrap; letter-spacing: 0.01em; }
 .sr-ov .sr-dash { color: var(--text-faint,#565F6A); }
 
 @media (max-width: 560px) {
   .sr-ov { padding: 18px 16px 14px; max-height: 86vh; }
-  .sr-mrow { grid-template-columns: 66px 1fr auto; gap: 8px; font-size: 12px; }
+  .sr-mrow { grid-template-columns: 58px 1.1fr 1fr auto; gap: 8px; font-size: 11.5px; }
 }
 
 /* footer honesty note */
