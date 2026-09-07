@@ -68,6 +68,14 @@ const MIN_LEN = 3;                 // engine emit floor (lowest a page button re
 const VIEW_FLOOR_DEFAULT = 5;      // default front-end floor for every type ...
 const VIEW_FLOOR_STYLE = 3;        // ... except vs-style, which the founder set at 3
 const MAX_AGE_DAYS = 45;
+// Intra-streak max gap (TEN-168 fix #2, founder ruling 2026-09-07: option g75 =
+// 75 days). MAX_AGE_DAYS only checks the streak's MOST-RECENT match; it cannot see
+// a layoff buried inside the run. A gap longer than this between two consecutive
+// matches of a run splits it into separate periods (an injury/off-season break is
+// not momentum), so the run is CUT at that gap and only the recent portion counts.
+// 75d (over the founder's 60d instinct) so the ~7-9 week ATP off-season does not by
+// itself split otherwise-continuous runs.
+const MAX_GAP_DAYS = 75;
 const MIN_POOL_CONDITIONAL = 8;    // style / surface / pattern / all new line+pattern types
 // all-competitions: no extra pool floor (the run is its own pool).
 
@@ -379,17 +387,38 @@ function recencyOk(last) {
   return { ok: age <= MAX_AGE_DAYS || last.isSlam, age, slamExempt: last.isSlam && age > MAX_AGE_DAYS };
 }
 
+// Intra-streak gap cut (TEN-168 fix #2). members are oldest -> newest. Walk back
+// from the most-recent match and cut at the first gap that exceeds MAX_GAP_DAYS:
+// everything before that layoff belongs to a separate period and is dropped, so
+// only the run since the last such gap survives. Returns the recent slice plus,
+// when a cut happened, the offending gap and the pre-cut length (for transparency).
+function cutOnGap(members) {
+  if (!members || members.length < 2) return { members: members || [], cut: false, gapDays: null, fullLen: (members || []).length };
+  let cutIdx = 0, gapDays = null;
+  for (let i = members.length - 1; i >= 1; i--) {
+    const g = Math.floor((new Date(members[i].date + 'T00:00:00Z') - new Date(members[i - 1].date + 'T00:00:00Z')) / DAY_MS);
+    if (g > MAX_GAP_DAYS) { cutIdx = i; gapDays = g; break; }
+  }
+  return { members: members.slice(cutIdx), cut: cutIdx > 0, gapDays, fullLen: members.length };
+}
+
 function mkStreak(base, run, pool, poolFloor, minLen) {
-  const last = run.last;
-  if (run.count < (minLen != null ? minLen : MIN_LEN)) return null;
+  // Cut the run at any internal layoff > MAX_GAP_DAYS BEFORE the length gate, so a
+  // run that only survives in a short recent tail is judged on that tail, not on the
+  // full pre-layoff length. The pool (the denominator) is the eligible universe and
+  // is NOT re-cut — "5 of 210" stays honest.
+  const gc = cutOnGap(run.members || []);
+  const members = gc.members;
+  const count = members.length;
+  const last = count ? members[count - 1] : run.last;
+  if (count < (minLen != null ? minLen : MIN_LEN)) return null;
   if (poolFloor != null && pool < poolFloor) return null;
   const rec = recencyOk(last);
   if (!rec.ok) return null;
   // The run's own matches (oldest -> newest), for the clickable detail panel: the
   // actual games the streak is made of — date, opponent, tournament, surface, and
-  // the score line that satisfied the condition. Also the substrate for the
-  // intra-streak gap analysis (TEN-168 fix #2, reported not yet applied).
-  const matches = (run.members || []).map(r => ({
+  // the score line that satisfied the condition.
+  const matches = members.map(r => ({
     date: r.date,
     opponent: r.opponent || null,
     tournament: r.tournament || null,
@@ -398,12 +427,15 @@ function mkStreak(base, run, pool, poolFloor, minLen) {
     won: r.won,
   }));
   return Object.assign({
-    count: run.count,
+    count,
     pool,
     lastDate: last.date,
     ageDays: rec.age,
     slamExempt: rec.slamExempt,
     lastTournament: last.tournament,
+    // present only when a layoff split the run; carries the offending gap and the
+    // pre-cut length so the front-end can show the run was trimmed, not fabricated.
+    gapCut: gc.cut ? { atGapDays: gc.gapDays, fullRunLength: gc.fullLen } : null,
     matches,
   }, base);
 }
@@ -806,6 +838,7 @@ async function main() {
       surfaceMinLen: VIEW_FLOOR_DEFAULT,      // surface uses the default view floor now
       maxAgeDays: MAX_AGE_DAYS,
       slamAgeExempt: true,
+      maxGapDays: MAX_GAP_DAYS,               // intra-streak layoff cut (fix #2)
       minPoolConditional: MIN_POOL_CONDITIONAL,
       allCompetitionsPoolFloor: null,
       allCompetitionsPool: 'full-in-tier-history',   // not the run length
