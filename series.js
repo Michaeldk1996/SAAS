@@ -102,6 +102,8 @@
   // ─── plain-English streak description ────────────────────────────────────────
   var ARCH_LABEL = {}; // archetype labels ship already human-readable in the taxonomy
   function streakVerb(dir) { return dir === 'win' ? 'Won' : 'Lost'; }
+  function running(n) { return n + ' matches running'; }
+  function boTxt(st) { return st.bestOf ? ('best-of-' + st.bestOf) : ''; }
   function describe(st) {
     var n = st.count;
     var run = n + (n === 1 ? ' match' : ' in a row');
@@ -113,14 +115,40 @@
       case 'style':
         return streakVerb(st.direction) + ' ' + n + ' straight vs ' + esc(ARCH_LABEL[st.subtype] || st.subtype);
       case 'pattern':
-        if (st.subtype === 'lost-first-set') return 'Lost the opening set — ' + n + ' matches running';
-        if (st.subtype === 'won-first-set')  return 'Won the opening set — ' + n + ' matches running';
+        if (st.subtype === 'lost-first-set') return 'Lost the opening set — ' + running(n);
+        if (st.subtype === 'won-first-set')  return 'Won the opening set — ' + running(n);
+        return streakVerb(st.direction) + ' ' + run;
+      case 'total':
+        return (st.over ? 'Over ' : 'Under ') + esc(String(st.line)) + ' total games (' + boTxt(st) + ') — ' + running(n);
+      case 'handicap':
+        return st.cover
+          ? 'Won by more than ' + esc(String(st.line)) + ' games — covered −' + esc(String(st.line)) + ' (' + boTxt(st) + '), ' + running(n)
+          : 'Beaten by more than ' + esc(String(st.line)) + ' games (' + boTxt(st) + ') — ' + running(n);
+      case 'setpat':
+        if (st.subtype === 'won-2nd-set')        return 'Won the 2nd set — ' + running(n);
+        if (st.subtype === 'lost-2nd-set')       return 'Lost the 2nd set — ' + running(n);
+        if (st.subtype === 'straight-sets-win')  return 'Won in straight sets — ' + running(n);
+        if (st.subtype === 'straight-sets-loss') return 'Lost in straight sets — ' + running(n);
+        if (st.subtype === 'went-the-distance')  return 'Went the distance (reached the deciding set) — ' + running(n);
+        if (st.subtype === 'no-set-won')         return 'Failed to win a set — ' + running(n);
+        if (st.firstSet) return 'First set ' + (st.over ? 'over ' : 'under ') + esc(String(st.line)) + ' games — ' + running(n);
         return streakVerb(st.direction) + ' ' + run;
       default:
         return streakVerb(st.direction) + ' ' + run;
     }
   }
-  var TYPE_BADGE = { all: 'All comps', surface: 'Surface', style: 'Vs style', pattern: 'First set' };
+  var TYPE_BADGE = {
+    all: 'All comps', surface: 'Surface', style: 'Vs style', pattern: 'First set',
+    total: 'Total games', handicap: 'Handicap', setpat: 'Set pattern',
+  };
+  // The count block reads "wins"/"losses" only for true result streaks; the line
+  // and set-pattern types count matches meeting a condition, not wins.
+  function countUnit(st) {
+    if (st.type === 'all' || st.type === 'surface' || st.type === 'style') {
+      return st.direction === 'win' ? 'wins' : 'losses';
+    }
+    return st.count === 1 ? 'match' : 'matches';
+  }
 
   // ─── date / age formatting ───────────────────────────────────────────────────
   function fmtDate(ymd) {
@@ -152,11 +180,15 @@
     level: 'all',         // all | tour | chal
     day: 'all',           // all | today | tomorrow
     dir: 'all',           // all | win | loss
-    type: 'all',          // all | all(comp) | surface | style | pattern  -> stored as engine type or 'all'
-    minLen: 3,            // >= this
+    type: 'all',          // all | all-comp | surface | style | pattern | total | handicap | setpat
+    // Default min-length = the founder's view FLOOR (5). Overwritten from the data's
+    // rules.viewFloorDefault on load. Buttons can drop BELOW it (the engine emits
+    // from 3). vs-style is exempt and floored at 3 (see passesFilters / styleFloor).
+    minLen: 5,
     sort: 'longest',      // longest | soonest
     showPlayed: false,    // hide matches already played by default
   };
+  function styleFloor() { return (_data && _data.rules && _data.rules.viewFloorStyle) || 3; }
 
   function flatten(data) {
     var out = [];
@@ -181,7 +213,11 @@
       var wantType = (f.type === 'all-comp') ? 'all' : f.type;
       if (st.type !== wantType) return false;
     }
-    if (st.count < f.minLen) return false;
+    // View floor: the min-length button governs every type EXCEPT vs-style, which
+    // the founder floored at 3 ("relevance already filters it"). Style therefore
+    // ignores a raised button and always shows from its own floor.
+    var floor = (st.type === 'style') ? styleFloor() : f.minLen;
+    if (st.count < floor) return false;
     if (!f.showPlayed && p.upcoming && p.upcoming.played) return false;
     return true;
   }
@@ -221,6 +257,9 @@
                  '<span class="sr-badge sr-badge-tier">' + tierTxt + '</span>';
     if (st.type === 'surface' && st.subtype) badges += '<span class="sr-badge">' + esc(cap(st.subtype)) + '</span>';
     if (st.type === 'style' && st.subtype)   badges += '<span class="sr-badge">' + esc(ARCH_LABEL[st.subtype] || st.subtype) + '</span>';
+    // Best-of is shown on total/handicap rows so the never-blend rule is visible: a
+    // "22.5 games" run means something different across formats, so the row says which.
+    if ((st.type === 'total' || st.type === 'handicap') && st.bestOf) badges += '<span class="sr-badge">Best of ' + esc(String(st.bestOf)) + '</span>';
 
     // pool + recency — both mandatory, both always shown
     var lastD = fmtDate(st.lastDate) || st.lastDate;
@@ -251,7 +290,7 @@
 
     return '<article class="sr-card ' + dirClass + '">' +
       '<div class="sr-count"><span class="sr-num">' + esc(String(st.count)) + '</span>' +
-        '<span class="sr-dir">' + (st.direction === 'win' ? 'wins' : 'losses') + '</span></div>' +
+        '<span class="sr-dir">' + esc(countUnit(st)) + '</span></div>' +
       '<div class="sr-body">' +
         '<div class="sr-phead">' + avatarHtml(p) +
           '<div class="sr-pinfo">' +
@@ -279,8 +318,8 @@
       '<label class="sr-flabel">Level</label>' + seg('level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
       '<label class="sr-flabel">Day</label>' + seg('day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
       '<label class="sr-flabel">Direction</label>' + seg('dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
-      '<label class="sr-flabel">Type</label>' + seg('type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['pattern','First set']], f.type) +
-      '<label class="sr-flabel">Min length</label>' + seg('minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+']], String(f.minLen)) +
+      '<label class="sr-flabel">Type</label>' + seg('type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['pattern','First set'],['total','Total games'],['handicap','Handicap'],['setpat','Set patterns']], f.type) +
+      '<label class="sr-flabel">Min length</label>' + seg('minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
       '<label class="sr-flabel">Sort</label>' + seg('sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
       '<label class="sr-toggle"><input type="checkbox" id="srShowPlayed"' + (f.showPlayed ? ' checked' : '') + '> Show already-played</label>' +
     '</div>';
@@ -299,10 +338,11 @@
 
     var stamp = '<p class="sr-stamp">' +
       esc(String(view.length)) + ' streak' + (view.length === 1 ? '' : 's') +
-      ' · min length ' + esc(String(meta.minLen != null ? meta.minLen : _filters.minLen)) +
-      ' (surface ' + esc(String(meta.surfaceMinLen != null ? meta.surfaceMinLen : 5)) + '+)' +
+      ' · min length ' + esc(String(_filters.minLen)) + '+ (vs-style ' + esc(String(styleFloor())) + '+)' +
+      ' · one card per player per family' +
       ' · recency cap ' + esc(String(meta.maxAgeDays != null ? meta.maxAgeDays : '45')) + 'd (Grand Slams exempt)' +
-      ' · pool floor ' + esc(String(meta.minPoolConditional != null ? meta.minPoolConditional : '8')) + ' for conditional types' +
+      ' · pool floor ' + esc(String(meta.minPoolConditional != null ? meta.minPoolConditional : '8')) + ' for conditional & line types' +
+      ' · best-of never blended' +
       ' · only streaks that bear on the scheduled match' +
       (gen ? ' · data ' + esc(gen.toISOString().slice(0, 10)) : '') +
     '</p>';
@@ -362,7 +402,12 @@
     render();  // shows "Loading…"
     fetch(DATA_URL, { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { _data = j; _cards = null; render(); })
+      .then(function (j) {
+        _data = j; _cards = null;
+        // Adopt the engine's view floor as the default button (never from memory).
+        if (j && j.rules && j.rules.viewFloorDefault != null) _filters.minLen = j.rules.viewFloorDefault;
+        render();
+      })
       .catch(function (e) {
         console.warn('[series] load failed:', e.message);
         var root = document.getElementById('seriesGrid');

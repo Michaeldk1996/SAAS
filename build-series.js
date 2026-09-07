@@ -57,14 +57,37 @@ const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 
 // ── founder-ruled thresholds (do not read these from memory — they are the
 //    2026-09-07 gate answers, encoded here as the single source of truth) ──────
-const MIN_LEN = 3;
-// Surface runs carry a higher bar (founder 2026-09-07 relevance ruling): "raise
-// the minimum length for this type to 5. A 3-match hard-court run isn't a streak;
-// surface matters far less than a repeated betting pattern."
-const MIN_LEN_SURFACE = 5;
+//
+// ENGINE EMIT FLOOR vs VIEW FLOOR (founder 2026-09-07, v2 ruling):
+//   "ALWAYS-ON LENGTH FLOOR: 5 ... Keep the min-length buttons on the page and
+//    let them go below the floor. The floor sets the default view, not a ceiling."
+// So the engine EMITS everything from length 3 up (MIN_LEN), and the front-end's
+// min-length button defaults to the VIEW FLOOR of 5 (vs-style exempt at 3) but can
+// be dropped below it. Emitting at 3 is what lets the buttons reveal shorter runs.
+const MIN_LEN = 3;                 // engine emit floor (lowest a page button reaches)
+const VIEW_FLOOR_DEFAULT = 5;      // default front-end floor for every type ...
+const VIEW_FLOOR_STYLE = 3;        // ... except vs-style, which the founder set at 3
 const MAX_AGE_DAYS = 45;
-const MIN_POOL_CONDITIONAL = 8;   // style / surface / pattern
-// all-competitions: no extra pool floor.
+const MIN_POOL_CONDITIONAL = 8;    // style / surface / pattern / all new line+pattern types
+// all-competitions: no extra pool floor (the run is its own pool).
+
+// ── LINE SETS (founder 2026-09-07 "approved as proposed"; never blend best-of) ──
+// bo3 total-games lines were approved verbatim. The bo5 total set and the
+// first-set-total line were "finalise the exact numbers on a best-of-split
+// distribution once you approve" — so they are computed FRESH from this run's own
+// history (see picklines dump) and pinned here, never quoted from memory.
+const TOTAL_LINES_BO3 = [21.5, 22.5, 23.5];
+// bo5 total set — pinned from the 2026-09-07 best-of-split distribution (n=400,
+// US-Open-era slate history): median 37, coin flip ≈ 36.5. This triple mirrors the
+// bo3 spacing (over-rates 50.8% / 42.8% / 35.5%, vs bo3's 50% / 43% / 38%).
+const TOTAL_LINES_BO5 = [36.5, 38.5, 40.5];
+// Game-handicap lines (founder: "±1.5 / 3.5 / 5.5"), computed per best-of so a bo3
+// margin and a bo5 margin are never blended into one run.
+const HANDICAP_LINES = [1.5, 3.5, 5.5];
+// First-set total line — the first set is structurally identical across best-of
+// (6 games, tiebreak at 6-6), so this ONE line is format-invariant and is NOT
+// best-of split. Pinned from the first-set distribution near the coin flip.
+const FIRST_SET_LINE = 9.5;
 
 const PACE_MS = Number(process.env.SERIES_PACE_MS || 150);
 const MAX_PLAYERS = process.env.SERIES_MAX_PLAYERS ? Number(process.env.SERIES_MAX_PLAYERS) : Infinity;
@@ -199,12 +222,56 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   const surf = surfaceMap[String(fx.tournament_key)] || null;
   const surface = SURFACES.includes(surf) ? surf : null;
 
-  // First-set outcome from scores[] (score-only, tiebreak-aware). null when set 1
-  // is undecided/blank (short formats, walkovers) — then the pattern line is
-  // undefined for this match and it is excluded from that line's pool.
+  // ── score-derived match facts (all from scores[], tiebreak-aware) ────────────
+  // First-set outcome. null when set 1 is undecided/blank (short formats,
+  // walkovers) — then any set-1 line is undefined for this match and it is
+  // excluded from that line's pool (a dash, never a guess).
   const sets = setsFromScores(fx, me);
   const s1 = sets[1];
   const lostSet1 = (s1 && s1.decided) ? !s1.won : null;
+  const set1Total = (s1 && s1.decided) ? (s1.mine + s1.theirs) : null;
+  const s2 = sets[2];
+  const wonSet2 = (s2 && s2.decided) ? s2.won : null;
+
+  // Walk the decided sets to recover best-of, straight/distance, and clean games.
+  const setNums = Object.keys(sets).map(Number).sort((a, b) => a - b);
+  let setsWonMe = 0, setsWonOpp = 0, gamesMe = 0, gamesOpp = 0;
+  let decidedCount = 0, anyPlayedUndecided = false, superTb = false;
+  for (const n of setNums) {
+    const s = sets[n];
+    if (s.played && !s.decided) anyPlayedUndecided = true;
+    if (!s.decided) continue;
+    decidedCount++;
+    // A set where a side reached >=10 games is a match/super-tiebreak, not real
+    // games — its "games" are not countable. Founder: super-tiebreak deciders dash
+    // rather than being guessed.
+    if (s.mine >= 10 || s.theirs >= 10) superTb = true;
+    if (s.won) setsWonMe++; else setsWonOpp++;
+    gamesMe += s.mine; gamesOpp += s.theirs;
+  }
+  // best-of from the winner's set count (only completed matches reach here, so the
+  // winner has hit the format target): 2 sets => bo3, 3 sets => bo5.
+  const winnerSets = won ? setsWonMe : setsWonOpp;
+  const totalDecided = setsWonMe + setsWonOpp;
+  let bestOf = null;
+  if (winnerSets === 2 && totalDecided <= 3) bestOf = 3;
+  else if (winnerSets === 3 && totalDecided <= 5) bestOf = 5;
+
+  // Clean games (for total-games & handicap): need a known best-of, no super-tb,
+  // no played-but-undecided set, and a decided-set count valid for the format.
+  const validCount = bestOf === 3 ? (decidedCount === 2 || decidedCount === 3)
+    : bestOf === 5 ? (decidedCount >= 3 && decidedCount <= 5)
+    : false;
+  const cleanGames = bestOf != null && !superTb && !anyPlayedUndecided && validCount;
+  const totalGames = cleanGames ? (gamesMe + gamesOpp) : null;
+  const gameMargin = cleanGames ? (gamesMe - gamesOpp) : null;   // + = won by, − = lost by
+
+  // Set-pattern facts (need a known best-of and no mid-match undecided set).
+  const setShapeOk = bestOf != null && !anyPlayedUndecided;
+  const loserSets = won ? setsWonOpp : setsWonMe;
+  const straightResult = setShapeOk ? (loserSets === 0) : null;    // decisive (0-drop)
+  const wentDistance = setShapeOk ? (decidedCount === bestOf) : null;
+  const wonASet = setShapeOk ? (setsWonMe >= 1) : null;
 
   // Opponent archetype (Tour only). Unmatched => null (unclassified).
   let oppArch = null;
@@ -219,6 +286,14 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
     won,
     surface,
     lostSet1,
+    set1Total,
+    wonSet2,
+    bestOf,
+    totalGames,
+    gameMargin,
+    straightResult,
+    wentDistance,
+    wonASet,
     oppArch,
     isSlam: isSlam(fx),
     tournament: String(fx.tournament_name || ''),
@@ -253,15 +328,22 @@ function tailRun(seq) {
   return { direction: last.won ? 'win' : 'loss', count, last };
 }
 
-// Tail run of a boolean attribute (for the first-set pattern line).
-function tailAttrRun(seq, attrFn) {
-  if (!seq.length) return null;
-  const lastVal = attrFn(seq[seq.length - 1]);
+// General state-run helper for the pattern/line types. stateFn(rec) returns a
+// state string, or null to EXCLUDE the match from this pattern entirely (skipped
+// like a retirement: it neither counts nor breaks the run, and is not in the pool).
+// Returns the tail run of the most-recent state — but ONLY when that state is one
+// the type wants to emit (emitStates). A run whose last match sits in a
+// non-tradeable state (e.g. a competitive result under 'straight sets', or a games
+// total inside a handicap band) is simply not a current streak.
+function tailStateRun(seq, stateFn, emitStates) {
+  const dom = [];
+  for (const r of seq) { const s = stateFn(r); if (s != null) dom.push({ r, s }); }
+  if (!dom.length) return null;
+  const target = dom[dom.length - 1].s;
+  if (emitStates && !emitStates.has(target)) return null;
   let count = 0;
-  for (let i = seq.length - 1; i >= 0; i--) {
-    if (attrFn(seq[i]) === lastVal) count++; else break;
-  }
-  return { value: lastVal, count, last: seq[seq.length - 1] };
+  for (let i = dom.length - 1; i >= 0; i--) { if (dom[i].s === target) count++; else break; }
+  return { state: target, count, pool: dom.length, last: dom[dom.length - 1].r };
 }
 
 function ageDaysOf(dateStr) {
@@ -304,19 +386,21 @@ const STREAK_TYPES = [
       // its pool is 100% by construction and tells a member nothing (founder
       // 2026-09-07). Reporting the true denominator ("5 of 210") is the honest fix;
       // suppressing the line would read as missing data.
-      const s = mkStreak({ type: 'all', subtype: null, direction: run.direction }, run, recs.length, null);
+      const s = mkStreak({ type: 'all', family: 'all', subtype: null, direction: run.direction }, run, recs.length, null);
       return s ? [s] : [];
     },
   },
   {
     id: 'surface',
     build(recs) {
+      // Emits from MIN_LEN (3) up; the surface VIEW FLOOR of 5 is applied by the
+      // front-end so the min-length buttons can reveal shorter surface runs.
       const out = [];
       for (const surf of SURFACES) {
         const seq = recs.filter(r => r.surface === surf);
         const run = tailRun(seq);
         if (!run) continue;
-        const s = mkStreak({ type: 'surface', subtype: surf, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL, MIN_LEN_SURFACE);
+        const s = mkStreak({ type: 'surface', family: 'surface', subtype: surf, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL);
         if (s) out.push(s);
       }
       return out;
@@ -332,7 +416,7 @@ const STREAK_TYPES = [
         const seq = recs.filter(r => r.oppArch === arch);
         const run = tailRun(seq);
         if (!run) continue;
-        const s = mkStreak({ type: 'style', subtype: arch, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL);
+        const s = mkStreak({ type: 'style', family: 'style', subtype: arch, direction: run.direction }, run, seq.length, MIN_POOL_CONDITIONAL);
         if (s) out.push(s);
       }
       return out;
@@ -341,20 +425,152 @@ const STREAK_TYPES = [
   {
     id: 'pattern',
     build(recs) {
-      // First-set line (EXACT, score-only). Pool = matches with a decided set 1.
-      // The games-total line is intentionally NOT built here: it needs a line
-      // value, which is a threshold the founder has not set. It slots in as a new
-      // config entry once he names the number.
-      const seq = recs.filter(r => r.lostSet1 !== null);
-      const run = tailAttrRun(seq, r => r.lostSet1);
+      // First-set OUTCOME (won/lost the opening set). EXACT, score-only. Pool =
+      // matches with a decided set 1. This is the "existing always-on" set-outcome
+      // line — kept its own family so it isn't collapsed into the new set-patterns.
+      const run = tailStateRun(
+        recs, r => r.lostSet1 == null ? null : (r.lostSet1 ? 'lost1' : 'won1'), FIRSTSET_STATES);
       if (!run) return [];
-      const subtype = run.value ? 'lost-first-set' : 'won-first-set';
-      const direction = run.value ? 'loss' : 'win';   // slow starter vs fast starter
-      const s = mkStreak({ type: 'pattern', subtype, direction }, run, seq.length, MIN_POOL_CONDITIONAL);
+      const lost = run.state === 'lost1';
+      const subtype = lost ? 'lost-first-set' : 'won-first-set';
+      const direction = lost ? 'loss' : 'win';   // slow starter vs fast starter
+      const s = mkStreak({ type: 'pattern', family: 'firstset', subtype, direction }, run, run.pool, MIN_POOL_CONDITIONAL);
       return s ? [s] : [];
     },
   },
+
+  // ── v2 betting-line & score-pattern types (founder 2026-09-07: "build the lot").
+  //    All match-agnostic (always relevant). Best-of is NEVER blended: total-games
+  //    and handicap runs are computed per best-of; the set-shape patterns encode
+  //    best-of in their own boolean, so a bo3 and a bo5 never share a run. ─────────
+  {
+    id: 'total',
+    build(recs) {
+      const out = [];
+      for (const bo of [3, 5]) {
+        const lines = bo === 3 ? TOTAL_LINES_BO3 : TOTAL_LINES_BO5;
+        const boRecs = recs.filter(r => r.bestOf === bo && r.totalGames != null);
+        for (const L of lines) {
+          const run = tailStateRun(boRecs, r => (r.totalGames > L ? 'over' : 'under'), OVER_UNDER);
+          if (!run) continue;
+          const over = run.state === 'over';
+          const s = mkStreak({
+            type: 'total', family: 'total',
+            subtype: (over ? 'over-' : 'under-') + L + '-bo' + bo,
+            direction: over ? 'win' : 'loss', line: L, bestOf: bo, over,
+          }, run, run.pool, MIN_POOL_CONDITIONAL);
+          if (s) out.push(s);
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: 'handicap',
+    build(recs) {
+      const out = [];
+      for (const bo of [3, 5]) {
+        const boRecs = recs.filter(r => r.bestOf === bo && r.gameMargin != null);
+        for (const h of HANDICAP_LINES) {
+          // covered −h: won by more than h games. lost +h: beaten by more than h.
+          // The band in between is 'mid' (breaks a run, not tradeable at this line).
+          const run = tailStateRun(boRecs,
+            r => (r.gameMargin > h ? 'coverMinus' : (r.gameMargin < -h ? 'failPlus' : 'mid')),
+            HANDICAP_STATES);
+          if (!run) continue;
+          const cover = run.state === 'coverMinus';
+          const s = mkStreak({
+            type: 'handicap', family: 'handicap',
+            subtype: (cover ? 'cover-minus-' : 'lost-plus-') + h + '-bo' + bo,
+            direction: cover ? 'win' : 'loss', line: h, bestOf: bo, cover,
+          }, run, run.pool, MIN_POOL_CONDITIONAL);
+          if (s) out.push(s);
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: 'setpat',
+    build(recs) {
+      const out = [];
+      const push = (run, baseFn) => {
+        if (!run) return;
+        const s = mkStreak(Object.assign({ family: 'setpat' }, baseFn(run)), run, run.pool, MIN_POOL_CONDITIONAL);
+        if (s) out.push(s);
+      };
+      // won / lost the 2nd set
+      push(
+        tailStateRun(recs, r => (r.wonSet2 == null ? null : (r.wonSet2 ? 'won2' : 'lost2')), WON2_STATES),
+        run => run.state === 'won2'
+          ? { type: 'setpat', subtype: 'won-2nd-set', direction: 'win' }
+          : { type: 'setpat', subtype: 'lost-2nd-set', direction: 'loss' });
+      // straight-sets win (0-drop) vs straight-sets loss (blown out). A competitive
+      // (non-straight) decisive result breaks either run.
+      push(
+        tailStateRun(recs, r => {
+          if (r.straightResult == null) return null;
+          if (!r.straightResult) return 'competitive';
+          return r.won ? 'straightWin' : 'straightLoss';
+        }, STRAIGHT_STATES),
+        run => run.state === 'straightWin'
+          ? { type: 'setpat', subtype: 'straight-sets-win', direction: 'win' }
+          : { type: 'setpat', subtype: 'straight-sets-loss', direction: 'loss' });
+      // went the distance (reached the deciding set). Only the affirmative side is a
+      // signal — this is literally "went the distance". The negative ("decided
+      // early") conflates a dominant win with a dominant loss into one run, so it is
+      // not emitted (a 'short' match still breaks a distance run). Direction is
+      // 'win' only as a display polarity — the card reads as a volatility/totals
+      // angle, not a result.
+      push(
+        tailStateRun(recs, r => (r.wentDistance == null ? null : (r.wentDistance ? 'dist' : 'short')), DIST_STATES),
+        () => ({ type: 'setpat', subtype: 'went-the-distance', direction: 'win' }));
+      // "won a set" — ONLY the negative side is a signal: consecutive matches
+      // winning ZERO sets (a losing spiral). The affirmative side ("won ≥1 set") is
+      // trivially satisfied by any match win and would dominate the collapsed
+      // set-patterns card without informing — reported to the founder as his to
+      // re-enable, not shipped as a dead/dominating type.
+      push(
+        tailStateRun(recs, r => (r.wonASet == null ? null : (r.wonASet ? 'wonSet' : 'noSet')), NOSET_STATES),
+        () => ({ type: 'setpat', subtype: 'no-set-won', direction: 'loss' }));
+      // first-set total over / under (format-invariant single line)
+      push(
+        tailStateRun(recs.filter(r => r.set1Total != null),
+          r => (r.set1Total > FIRST_SET_LINE ? 'over' : 'under'), OVER_UNDER),
+        run => run.state === 'over'
+          ? { type: 'setpat', subtype: 'first-set-over-' + FIRST_SET_LINE, direction: 'win', line: FIRST_SET_LINE, firstSet: true, over: true }
+          : { type: 'setpat', subtype: 'first-set-under-' + FIRST_SET_LINE, direction: 'loss', line: FIRST_SET_LINE, firstSet: true, over: false });
+      return out;
+    },
+  },
 ];
+
+// emit-state sets for the pattern/line types (module-level, shared by the builders)
+const OVER_UNDER = new Set(['over', 'under']);
+const HANDICAP_STATES = new Set(['coverMinus', 'failPlus']);
+const WON2_STATES = new Set(['won2', 'lost2']);
+const STRAIGHT_STATES = new Set(['straightWin', 'straightLoss']);
+const DIST_STATES = new Set(['dist']);   // only the affirmative "went the distance" side
+const NOSET_STATES = new Set(['noSet']);
+const FIRSTSET_STATES = new Set(['won1', 'lost1']);
+
+// One card per player per FAMILY (founder 2026-09-07): a player shows at most one
+// streak per family, their LONGEST current run in it (ties → the sturdier, bigger
+// pool). Families: total games, handicap, set patterns, and the existing types
+// (all-competitions, first-set outcome, surface, vs-style) each keep their own card.
+function collapseByFamily(streaks) {
+  const best = new Map();
+  for (const st of streaks) {
+    const fam = st.family || st.type;
+    const cur = best.get(fam);
+    if (!cur
+      || st.count > cur.count
+      || (st.count === cur.count && (st.pool || 0) > (cur.pool || 0))) {
+      best.set(fam, st);
+    }
+  }
+  return [...best.values()];
+}
 
 function streaksFor(recs, tier) {
   const out = [];
@@ -378,6 +594,9 @@ function isRelevant(st, ctx) {
   switch (st.type) {
     case 'all':
     case 'pattern':
+    case 'total':        // match-agnostic betting lines — always relevant
+    case 'handicap':
+    case 'setpat':
       return true;
     case 'surface': {
       const up = (ctx && SURFACES.includes(ctx.surface)) ? ctx.surface : null;
@@ -452,6 +671,18 @@ async function main() {
   }
   let players = [];
   let done = 0, failed = 0, playersWithStreak = 0, totalStreaks = 0;
+  // reporting accumulators (founder 2026-09-07 "report after building"): per-type
+  // and per-subtype card counts, plus the default-view count (view floor applied,
+  // already-played hidden). The view floor is per-type: vs-style 3, everything
+  // else 5 (VIEW_FLOOR_*), quoted here — never from memory.
+  const famCount = {}, subCount = {}, dirCount = { win: 0, loss: 0 };
+  let defaultViewCards = 0;
+  const viewFloorFor = (st) => (st.type === 'style' ? VIEW_FLOOR_STYLE : VIEW_FLOOR_DEFAULT);
+  // line-distribution dump (SERIES_DUMP_LINES=1): so the bo5 total set and the
+  // first-set line are finalised on THIS run's own history, not from memory.
+  const dumpLines = process.env.SERIES_DUMP_LINES === '1';
+  const rawSub = {};   // pre-collapse per-subtype production (what each pattern finds)
+  const dist = { bo3: [], bo5: [], firstSet: [] };
   const distinct = [...byPlayer.keys()];
   const limit = Number.isFinite(MAX_PLAYERS) ? distinct.slice(0, MAX_PLAYERS) : distinct;
 
@@ -473,10 +704,22 @@ async function main() {
       const includeStyle = tier === 'tour';
       const recs = orderedRecords(fixtures, pk, tier, surfaceMap, styleMap, includeStyle);
       if (!recs.length) continue;
+      // distribution accumulation for line-finalisation (tour bo5 comes from Slams)
+      if (dumpLines) {
+        for (const r of recs) {
+          if (r.totalGames != null && r.bestOf === 3) dist.bo3.push(r.totalGames);
+          if (r.totalGames != null && r.bestOf === 5) dist.bo5.push(r.totalGames);
+          if (r.set1Total != null) dist.firstSet.push(r.set1Total);
+        }
+      }
       const ctx = scheduled.get(keyFor(pk, tier)).upcoming;
-      // Relevance gate: keep only streaks whose condition bears on the upcoming
-      // match (see isRelevant). A player with no relevant streak is not emitted.
-      const streaks = streaksFor(recs, tier).filter(st => isRelevant(st, ctx));
+      // Relevance gate, then one-card-per-family collapse (founder 2026-09-07):
+      // keep only streaks whose condition bears on the upcoming match, then reduce
+      // to the single longest current run per family so a player can't fill the
+      // board with variations of the same idea.
+      const relevant = streaksFor(recs, tier).filter(st => isRelevant(st, ctx));
+      if (dumpLines) for (const st of relevant) { rawSub[st.subtype || st.type] = (rawSub[st.subtype || st.type] || 0) + 1; }
+      const streaks = collapseByFamily(relevant);
       if (!streaks.length) continue;
       const m = meta[pk] || {};
       players.push({
@@ -491,6 +734,14 @@ async function main() {
       });
       playersWithStreak++;
       totalStreaks += streaks.length;
+      // per-family / per-subtype counts + default-view count (view floor + not-played)
+      for (const st of streaks) {
+        const fam = st.family || st.type;
+        famCount[fam] = (famCount[fam] || 0) + 1;
+        subCount[st.subtype || st.type] = (subCount[st.subtype || st.type] || 0) + 1;
+        dirCount[st.direction] = (dirCount[st.direction] || 0) + 1;
+        if (!ctx.played && st.count >= viewFloorFor(st)) defaultViewCards++;
+      }
     }
     if (done % 25 === 0) console.error(`build-series: ${done}/${limit.length} players scanned, ${totalStreaks} streaks so far`);
   }
@@ -503,8 +754,10 @@ async function main() {
     source: 'api-tennis get_fixtures (slate) + fetchRecentSinglesFixtures (history)',
     scope: { tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' }, styleTier: 'tour-only' },
     rules: {
-      minLen: MIN_LEN,
-      surfaceMinLen: MIN_LEN_SURFACE,
+      minLen: MIN_LEN,                        // engine emit floor
+      viewFloorDefault: VIEW_FLOOR_DEFAULT,   // front-end default min-length (all types…)
+      viewFloorStyle: VIEW_FLOOR_STYLE,       // …except vs-style
+      surfaceMinLen: VIEW_FLOOR_DEFAULT,      // surface uses the default view floor now
       maxAgeDays: MAX_AGE_DAYS,
       slamAgeExempt: true,
       minPoolConditional: MIN_POOL_CONDITIONAL,
@@ -512,7 +765,16 @@ async function main() {
       allCompetitionsPool: 'full-in-tier-history',   // not the run length
       retirements: 'skip',
       styleScope: 'tour-only',
-      relevance: 'match-scoped: surface/style render only when they bear on the upcoming match; all/first-set always',
+      neverBlendBestOf: true,
+      lines: {
+        totalBo3: TOTAL_LINES_BO3,
+        totalBo5: TOTAL_LINES_BO5,
+        handicap: HANDICAP_LINES,
+        firstSet: FIRST_SET_LINE,
+      },
+      families: ['total', 'handicap', 'setpat', 'all', 'firstset', 'surface', 'style'],
+      onePerFamily: true,
+      relevance: 'match-scoped: surface/style render only when they bear on the upcoming match; all / first-set / total / handicap / set-patterns always',
     },
     slate: { window: { from: SLATE_START, to: SLATE_STOP }, today: TODAY_STR, tomorrow: TOMORROW_STR },
     meta,
@@ -527,10 +789,26 @@ async function main() {
     slateRows: slate.length,
     distinctPlayers: distinct.length,
     scanned: done, failed,
-    playersWithStreak, totalStreaks,
+    playersWithStreak,
+    totalStreaks,                    // all emitted (collapsed) cards, any length
+    defaultViewCards,                // cards visible on the default board (floor + not-played)
+    byFamily: famCount,
+    byDirection: dirCount,
+    bySubtype: subCount,
     outBytes: fs.statSync(OUT_FILE).size,
     out: path.basename(OUT_FILE),
   }, null, 2));
+
+  if (dumpLines) {
+    const pct = (arr, p) => { if (!arr.length) return null; const a = arr.slice().sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(p / 100 * a.length))]; };
+    const overRate = (arr, L) => arr.length ? +(100 * arr.filter(v => v > L).length / arr.length).toFixed(1) : null;
+    const summ = (arr, cands) => ({ n: arr.length, p10: pct(arr, 10), p25: pct(arr, 25), median: pct(arr, 50), p75: pct(arr, 75), p90: pct(arr, 90), overRates: cands.map(L => [L, overRate(arr, L)]) });
+    console.error('RAW pre-collapse per-subtype production:', JSON.stringify(rawSub));
+    console.error('LINE DISTRIBUTIONS (fresh, this run):');
+    console.error('  bo3 total:', JSON.stringify(summ(dist.bo3, [20.5, 21.5, 22.5, 23.5, 24.5])));
+    console.error('  bo5 total:', JSON.stringify(summ(dist.bo5, [32.5, 33.5, 34.5, 35.5, 36.5, 37.5, 38.5, 39.5, 40.5])));
+    console.error('  first set:', JSON.stringify(summ(dist.firstSet, [8.5, 9.5, 10.5])));
+  }
 }
 
 main().catch(e => { console.error('build-series: unexpected error —', e.stack || e.message); process.exit(1); });
