@@ -244,6 +244,44 @@
     return arr;
   }
 
+  // ─── clickable detail: the matches behind the streak ─────────────────────────
+  // Founder (2026-09-07): a member should be able to click a card and see the
+  // matches that make the run — date, opponent, tournament, surface, and the score
+  // line that satisfied the condition. That is what turns a number into something a
+  // bettor can judge (18 running vs Challenger fields ≠ 18 vs the top 20). Rendered
+  // as an in-card expansion, never a separate page. Guarded: no matches → no panel
+  // (older series.json without the field simply shows no toggle, never a broken UI).
+  function detailHtml(st) {
+    var ms = Array.isArray(st.matches) ? st.matches.slice().reverse() : []; // newest first
+    if (!ms.length) return '';
+    var rows = ms.map(function (m) {
+      var d = fmtDate(m.date) || m.date || '—';
+      var won = m.won === true;
+      var res = (m.won == null) ? '·' : (won ? 'W' : 'L');
+      var opp = m.opponent ? esc(m.opponent) : '<span class="sr-dash">—</span>';
+      var tour = m.tournament ? esc(m.tournament) : '<span class="sr-dash">—</span>';
+      var surf = m.surface ? esc(cap(m.surface)) : '<span class="sr-dash">—</span>';
+      var score = m.score ? esc(m.score) : '<span class="sr-dash">—</span>';
+      return '<div class="sr-mrow">' +
+        '<span class="sr-mres ' + (m.won == null ? '' : (won ? 'w' : 'l')) + '">' + res + '</span>' +
+        '<span class="sr-mdate">' + esc(d) + '</span>' +
+        '<span class="sr-mopp">vs ' + opp + '</span>' +
+        '<span class="sr-mtour">' + tour + '</span>' +
+        '<span class="sr-msurf">' + surf + '</span>' +
+        '<span class="sr-mscore">' + score + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="sr-detail">' +
+      '<div class="sr-detail-head">The ' + esc(String(st.count)) + ' matches in this run — most recent first</div>' +
+      '<div class="sr-mtable">' +
+        '<div class="sr-mrow sr-mhead">' +
+          '<span class="sr-mres"></span><span class="sr-mdate">Date</span>' +
+          '<span class="sr-mopp">Opponent</span><span class="sr-mtour">Tournament</span>' +
+          '<span class="sr-msurf">Surface</span><span class="sr-mscore">Score</span>' +
+        '</div>' + rows +
+      '</div></div>';
+  }
+
   // ─── card render ──────────────────────────────────────────────────────────────
   function cardHtml(c) {
     var p = c.player, st = c.streak, u = p.upcoming || {};
@@ -288,7 +326,14 @@
         '</span>' + playedTag +
       '</div>';
 
-    return '<article class="sr-card ' + dirClass + '">' +
+    var hasDetail = Array.isArray(st.matches) && st.matches.length > 0;
+    var detailToggle = hasDetail
+      ? '<button class="sr-toggle-detail" type="button" aria-expanded="false">' +
+          'Show the ' + esc(String(st.count)) + ' matches <span class="sr-chev">▾</span></button>'
+      : '';
+    var detail = hasDetail ? detailHtml(st) : '';
+
+    return '<article class="sr-card ' + dirClass + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '">' +
       '<div class="sr-count"><span class="sr-num">' + esc(String(st.count)) + '</span>' +
         '<span class="sr-dir">' + esc(countUnit(st)) + '</span></div>' +
       '<div class="sr-body">' +
@@ -302,6 +347,8 @@
         '<div class="sr-badges">' + badges + '</div>' +
         poolRecency +
         upcoming +
+        detailToggle +
+        detail +
       '</div>' +
     '</article>';
   }
@@ -342,7 +389,7 @@
       ' · one card per player per family' +
       ' · recency cap ' + esc(String(meta.maxAgeDays != null ? meta.maxAgeDays : '45')) + 'd (Grand Slams exempt)' +
       ' · pool floor ' + esc(String(meta.minPoolConditional != null ? meta.minPoolConditional : '8')) + ' for conditional & line types' +
-      ' · best-of never blended' +
+      ' · best-of never blended (games lines locked to the match format)' +
       ' · only streaks that bear on the scheduled match' +
       (gen ? ' · data ' + esc(gen.toISOString().slice(0, 10)) : '') +
     '</p>';
@@ -393,6 +440,19 @@
     });
     var cb = root.querySelector('#srShowPlayed');
     if (cb) cb.addEventListener('change', function () { _filters.showPlayed = cb.checked; render(); });
+    // Clickable streak detail: toggle the in-card match panel (founder 2026-09-07).
+    root.querySelectorAll('.sr-toggle-detail').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var card = btn.closest('.sr-card');
+        if (!card) return;
+        var open = card.classList.toggle('sr-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        var n = card.getAttribute('data-count') || '';
+        btn.innerHTML = open
+          ? 'Hide matches <span class="sr-chev">▴</span>'
+          : 'Show the ' + esc(n) + ' matches <span class="sr-chev">▾</span>';
+      });
+    });
   }
 
   // ─── load / mount ────────────────────────────────────────────────────────────

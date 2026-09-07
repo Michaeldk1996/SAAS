@@ -112,6 +112,17 @@ const SURFACES = ['hard', 'clay', 'grass'];
 const SLAM_RE = /\b(australian open|french open|roland[\s-]?garros|wimbledon|us open)\b/i;
 function isSlam(fx) { return SLAM_RE.test(String(fx.tournament_name || '')); }
 
+// Best-of of an UPCOMING fixture (no scores yet, so it can't be read from sets —
+// it is a property of the event). In the current men's game best-of-five is the
+// Grand Slam MAIN DRAW only; every other tour event, all Challengers, and Slam
+// QUALIFYING (event_qualification === "True", which is bo3) are best-of-three.
+// This is what the FORMAT-RELEVANCE gate (founder 2026-09-07) compares a games-line
+// streak's own best-of against: a bo3 total never renders on a bo5 match.
+function upcomingBestOf(fx) {
+  if (tierOf(fx) === 'tour' && isSlam(fx) && String(fx.event_qualification) !== 'True') return 5;
+  return 3;
+}
+
 // Tier from event_type_type (get_fixtures carries no event_type_key).
 function tierOf(fx) {
   const t = String(fx.event_type_type || '');
@@ -273,10 +284,11 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   const wentDistance = setShapeOk ? (decidedCount === bestOf) : null;
   const wonASet = setShapeOk ? (setsWonMe >= 1) : null;
 
-  // Opponent archetype (Tour only). Unmatched => null (unclassified).
+  // Opponent name (always — the clickable detail panel needs it) and archetype
+  // (Tour only; unmatched => null / unclassified).
+  const oppName = me === 'first' ? fx.event_second_player : fx.event_first_player;
   let oppArch = null;
   if (includeStyle) {
-    const oppName = me === 'first' ? fx.event_second_player : fx.event_first_player;
     oppArch = styleMap.get(normName(oppName)) || null;
   }
 
@@ -285,6 +297,8 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
     eventKey: String(fx.event_key || ''),
     won,
     surface,
+    opponent: String(oppName || ''),
+    score: String(fx.event_final_result || ''),   // the actual score line of this match
     lostSet1,
     set1Total,
     wonSet2,
@@ -325,7 +339,8 @@ function tailRun(seq) {
   for (let i = seq.length - 1; i >= 0; i--) {
     if (seq[i].won === last.won) count++; else break;
   }
-  return { direction: last.won ? 'win' : 'loss', count, last };
+  // members = the run's own matches, oldest -> newest (drives the clickable detail).
+  return { direction: last.won ? 'win' : 'loss', count, last, members: seq.slice(seq.length - count) };
 }
 
 // General state-run helper for the pattern/line types. stateFn(rec) returns a
@@ -343,7 +358,7 @@ function tailStateRun(seq, stateFn, emitStates) {
   if (emitStates && !emitStates.has(target)) return null;
   let count = 0;
   for (let i = dom.length - 1; i >= 0; i--) { if (dom[i].s === target) count++; else break; }
-  return { state: target, count, pool: dom.length, last: dom[dom.length - 1].r };
+  return { state: target, count, pool: dom.length, last: dom[dom.length - 1].r, members: dom.slice(dom.length - count).map(x => x.r) };
 }
 
 function ageDaysOf(dateStr) {
@@ -363,6 +378,18 @@ function mkStreak(base, run, pool, poolFloor, minLen) {
   if (poolFloor != null && pool < poolFloor) return null;
   const rec = recencyOk(last);
   if (!rec.ok) return null;
+  // The run's own matches (oldest -> newest), for the clickable detail panel: the
+  // actual games the streak is made of — date, opponent, tournament, surface, and
+  // the score line that satisfied the condition. Also the substrate for the
+  // intra-streak gap analysis (TEN-168 fix #2, reported not yet applied).
+  const matches = (run.members || []).map(r => ({
+    date: r.date,
+    opponent: r.opponent || null,
+    tournament: r.tournament || null,
+    surface: r.surface || null,
+    score: r.score || null,
+    won: r.won,
+  }));
   return Object.assign({
     count: run.count,
     pool,
@@ -370,6 +397,7 @@ function mkStreak(base, run, pool, poolFloor, minLen) {
     ageDays: rec.age,
     slamExempt: rec.slamExempt,
     lastTournament: last.tournament,
+    matches,
   }, base);
 }
 
@@ -585,19 +613,27 @@ function streaksFor(recs, tier) {
 // A streak renders ONLY if its condition bears on the upcoming match. A backward-
 // looking run that doesn't apply to what the player plays next is noise either way
 // — it is dropped here, never shown with a caveat.
-//   all / pattern(first-set) : match-agnostic → always relevant.
-//   surface                  : only if the upcoming match is on that surface.
-//   style                    : only if the upcoming opponent is classified as that
-//                              EXACT archetype. Opponent unclassified (oppArch null)
-//                              → the vs-style streak does not render at all.
+//   all / pattern(first-set outcome) : match-agnostic → always relevant.
+//   setpat (won 1st/2nd set, straight sets, went the distance, no set won,
+//           first-set games total) : FORMAT-AGNOSTIC set-shape events — the same
+//           event either way, so they carry across best-of (founder 2026-09-07).
+//   total / handicap : FORMAT-LOCKED. A games-line run is built on one best-of and
+//           only bears on the upcoming match when that match is the SAME format.
+//           A bo3 total never renders on a bo5 match (the Zverev US-Open case),
+//           and vice-versa. Upcoming best-of comes from upcomingBestOf(fx).
+//   surface : only if the upcoming match is on that surface.
+//   style   : only if the upcoming opponent is classified as that EXACT archetype.
+//             Opponent unclassified (oppArch null) → the streak does not render.
 function isRelevant(st, ctx) {
   switch (st.type) {
     case 'all':
     case 'pattern':
-    case 'total':        // match-agnostic betting lines — always relevant
-    case 'handicap':
     case 'setpat':
-      return true;
+      return true;         // match-agnostic
+    case 'total':
+    case 'handicap':
+      // FORMAT-LOCKED: only when the upcoming match's best-of matches the streak's.
+      return !!(ctx && ctx.bestOf != null && st.bestOf != null && ctx.bestOf === st.bestOf);
     case 'surface': {
       const up = (ctx && SURFACES.includes(ctx.surface)) ? ctx.surface : null;
       return up != null && st.subtype === up;
@@ -642,6 +678,9 @@ async function main() {
         time: String(fx.event_time || ''),
         tournament: String(fx.tournament_name || ''),
         surface: surfaceMap[String(fx.tournament_key)] || null,
+        // Best-of of the upcoming match — drives the FORMAT-RELEVANCE gate for the
+        // games-line streaks (total / handicap). Slam main draw = 5, else 3.
+        bestOf: upcomingBestOf(fx),
         opponentName: String(oppName || ''),
         opponentKey: oppKey,
         // Upcoming opponent's archetype (Tour taxonomy, name-joined). Drives the
@@ -774,7 +813,12 @@ async function main() {
       },
       families: ['total', 'handicap', 'setpat', 'all', 'firstset', 'surface', 'style'],
       onePerFamily: true,
-      relevance: 'match-scoped: surface/style render only when they bear on the upcoming match; all / first-set / total / handicap / set-patterns always',
+      relevance: 'match-scoped: surface renders only on the same surface; vs-style only when the upcoming opponent is that archetype; total/handicap are FORMAT-LOCKED to the upcoming match best-of; all / first-set / set-patterns always',
+      formatLocked: ['total', 'handicap'],
+      formatAgnostic: ['all', 'pattern', 'setpat'],
+      matchScoped: ['surface', 'style'],
+      upcomingBestOf: 'grand-slam main draw = 5, else 3 (challenger & slam-qualifying = 3)',
+      carriesMatches: true,   // each streak lists its run matches for the detail panel
     },
     slate: { window: { from: SLATE_START, to: SLATE_STOP }, today: TODAY_STR, tomorrow: TOMORROW_STR },
     meta,
