@@ -177,6 +177,7 @@
   // ─── state ───────────────────────────────────────────────────────────────────
   var _data = null;       // parsed series.json
   var _cards = null;      // flattened [{player, streak}] once
+  var _view = null;       // current filtered+sorted view (index space for card clicks)
   var _active = false;
   var _mounted = false;
 
@@ -255,39 +256,39 @@
   // bettor can judge (18 running vs Challenger fields ≠ 18 vs the top 20). Rendered
   // as an in-card expansion, never a separate page. Guarded: no matches → no panel
   // (older series.json without the field simply shows no toggle, never a broken UI).
-  function detailHtml(st) {
+  // The match table shown INSIDE the overlay (founder 2026-09-07): three columns
+  // only — Date, Event, Score — nothing truncated. Surface and the win/loss letter
+  // are dropped (surface is on the card; the score already tells you the result).
+  // The score is the set scores as played, tiebreaks included (e.g. "7-6(5) 6-4"),
+  // read straight from the engine's `score` field; a missing line is a dash, never
+  // a guess. Newest match first.
+  function detailTableHtml(st) {
     var ms = Array.isArray(st.matches) ? st.matches.slice().reverse() : []; // newest first
     if (!ms.length) return '';
     var rows = ms.map(function (m) {
-      var d = fmtDate(m.date) || m.date || '—';
-      var won = m.won === true;
-      var res = (m.won == null) ? '·' : (won ? 'W' : 'L');
-      var opp = m.opponent ? esc(m.opponent) : '<span class="sr-dash">—</span>';
+      var d = fmtDate(m.date) || m.date || '<span class="sr-dash">—</span>';
       var tour = m.tournament ? esc(m.tournament) : '<span class="sr-dash">—</span>';
-      var surf = m.surface ? esc(cap(m.surface)) : '<span class="sr-dash">—</span>';
       var score = m.score ? esc(m.score) : '<span class="sr-dash">—</span>';
       return '<div class="sr-mrow">' +
-        '<span class="sr-mres ' + (m.won == null ? '' : (won ? 'w' : 'l')) + '">' + res + '</span>' +
         '<span class="sr-mdate">' + esc(d) + '</span>' +
-        '<span class="sr-mopp">vs ' + opp + '</span>' +
         '<span class="sr-mtour">' + tour + '</span>' +
-        '<span class="sr-msurf">' + surf + '</span>' +
         '<span class="sr-mscore">' + score + '</span>' +
       '</div>';
     }).join('');
-    return '<div class="sr-detail">' +
-      '<div class="sr-detail-head">The ' + esc(String(st.count)) + ' matches in this run — most recent first</div>' +
-      '<div class="sr-mtable">' +
-        '<div class="sr-mrow sr-mhead">' +
-          '<span class="sr-mres"></span><span class="sr-mdate">Date</span>' +
-          '<span class="sr-mopp">Opponent</span><span class="sr-mtour">Tournament</span>' +
-          '<span class="sr-msurf">Surface</span><span class="sr-mscore">Score</span>' +
-        '</div>' + rows +
-      '</div></div>';
+    return '<div class="sr-mtable">' +
+      '<div class="sr-mrow sr-mhead">' +
+        '<span class="sr-mdate">Date</span>' +
+        '<span class="sr-mtour">Event</span>' +
+        '<span class="sr-mscore">Score</span>' +
+      '</div>' + rows +
+    '</div>';
   }
 
   // ─── card render ──────────────────────────────────────────────────────────────
-  function cardHtml(c) {
+  // idx is the card's position in the current view — the whole card is the click
+  // target (founder 2026-09-07) and carries it as data-card-idx so the click
+  // handler can open the matches overlay for exactly this streak.
+  function cardHtml(c, idx) {
     var p = c.player, st = c.streak, u = p.upcoming || {};
     var dirClass = st.direction === 'win' ? 'sr-win' : 'sr-loss';
     var tierTxt = p.tier === 'tour' ? 'Tour' : 'Chal';
@@ -330,14 +331,20 @@
         '</span>' + playedTag +
       '</div>';
 
+    // Whole card is clickable when it has a match list to show. It opens the matches
+    // in an overlay (never an inline expand — that reflowed the board). Keyboard-
+    // reachable as a button; a quiet hint sits at the foot so the affordance reads.
     var hasDetail = Array.isArray(st.matches) && st.matches.length > 0;
-    var detailToggle = hasDetail
-      ? '<button class="sr-toggle-detail" type="button" aria-expanded="false">' +
-          'Show the ' + esc(String(st.count)) + ' matches <span class="sr-chev">▾</span></button>'
+    var clickAttrs = hasDetail
+      ? ' role="button" tabindex="0" aria-haspopup="dialog"' +
+        ' aria-label="Show the ' + esc(String(st.count)) + ' matches in this run"' +
+        ' data-card-idx="' + esc(String(idx)) + '"'
       : '';
-    var detail = hasDetail ? detailHtml(st) : '';
+    var hint = hasDetail
+      ? '<div class="sr-cardhint">Show the ' + esc(String(st.count)) + ' matches <span class="sr-chev">→</span></div>'
+      : '';
 
-    return '<article class="sr-card ' + dirClass + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '">' +
+    return '<article class="sr-card ' + dirClass + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
       '<div class="sr-count"><span class="sr-num">' + esc(String(st.count)) + '</span>' +
         '<span class="sr-dir">' + esc(countUnit(st)) + '</span></div>' +
       '<div class="sr-body">' +
@@ -351,8 +358,7 @@
         '<div class="sr-badges">' + badges + '</div>' +
         poolRecency +
         upcoming +
-        detailToggle +
-        detail +
+        hint +
       '</div>' +
     '</article>';
   }
@@ -384,6 +390,7 @@
     if (!_cards) _cards = flatten(_data);
 
     var view = sortCards(_cards.filter(passesFilters));
+    _view = view;  // card clicks index into this exact list
     var meta = _data.rules || {};
     var gen = _data.generatedAt ? new Date(_data.generatedAt) : null;
 
@@ -444,19 +451,85 @@
     });
     var cb = root.querySelector('#srShowPlayed');
     if (cb) cb.addEventListener('change', function () { _filters.showPlayed = cb.checked; render(); });
-    // Clickable streak detail: toggle the in-card match panel (founder 2026-09-07).
-    root.querySelectorAll('.sr-toggle-detail').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var card = btn.closest('.sr-card');
-        if (!card) return;
-        var open = card.classList.toggle('sr-open');
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        var n = card.getAttribute('data-count') || '';
-        btn.innerHTML = open
-          ? 'Hide matches <span class="sr-chev">▴</span>'
-          : 'Show the ' + esc(n) + ' matches <span class="sr-chev">▾</span>';
+    // Clickable streak detail (founder 2026-09-07): the WHOLE card opens the matches
+    // in an overlay on top of the board — never an inline expand, which reflowed the
+    // grid. Delegated on the persistent grid, wired ONCE (render() replaces the grid's
+    // innerHTML each pass, but the grid element itself lives — re-adding would leak).
+    if (!root._srCardWired) {
+      root._srCardWired = true;
+      root.addEventListener('click', function (e) {
+        var card = e.target.closest('.sr-card.sr-has-detail');
+        if (!card || !root.contains(card)) return;
+        openOverlay(card.getAttribute('data-card-idx'));
       });
-    });
+      root.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        var card = e.target.closest('.sr-card.sr-has-detail');
+        if (!card || !root.contains(card)) return;
+        e.preventDefault();
+        openOverlay(card.getAttribute('data-card-idx'));
+      });
+    }
+  }
+
+  // ─── matches overlay ────────────────────────────────────────────────────────────
+  // A single reusable dialog appended to <body>. Because it is position:fixed on top
+  // of a full-screen backdrop, the board underneath never reflows — closing it leaves
+  // the reader exactly where they were. Closes on click-outside, on the ✕, and on
+  // Escape. Focus is moved in on open and restored to the card on close.
+  var _ov = null, _ovReturnFocus = null;
+  function ensureOverlay() {
+    if (_ov) return _ov;
+    var back = document.createElement('div');
+    back.className = 'sr-ov-back';
+    back.setAttribute('hidden', '');
+    back.innerHTML =
+      '<div class="sr-ov" role="dialog" aria-modal="true" aria-labelledby="srOvTitle" tabindex="-1">' +
+        '<button class="sr-ov-close" type="button" aria-label="Close">✕</button>' +
+        '<div class="sr-ov-head">' +
+          '<div class="sr-ov-title" id="srOvTitle"></div>' +
+          '<div class="sr-ov-sub"></div>' +
+        '</div>' +
+        '<div class="sr-ov-body"></div>' +
+      '</div>';
+    document.body.appendChild(back);
+    // Click-outside: a click landing on the backdrop (not the panel) closes.
+    back.addEventListener('click', function (e) { if (e.target === back) closeOverlay(); });
+    back.querySelector('.sr-ov-close').addEventListener('click', closeOverlay);
+    _ov = back;
+    return back;
+  }
+  function onOvKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeOverlay(); } }
+  function openOverlay(idxStr) {
+    var idx = Number(idxStr);
+    if (!_view || !Number.isFinite(idx) || !_view[idx]) return;
+    var c = _view[idx], p = c.player, st = c.streak, u = p.upcoming || {};
+    if (!(Array.isArray(st.matches) && st.matches.length)) return;
+    var back = ensureOverlay();
+    var panel = back.querySelector('.sr-ov');
+    var flag = emojiFlag(p.country);
+    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : '';
+    back.querySelector('.sr-ov-title').innerHTML =
+      (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
+      esc(p.name || u.playerName || '—') +
+      (rankTxt ? ' <span class="sr-ov-rank">' + esc(rankTxt) + '</span>' : '');
+    back.querySelector('.sr-ov-sub').innerHTML = describe(st) +
+      ' <span class="sr-ov-pool">· ' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) +
+      ' ' + (st.pool === 1 ? 'match' : 'matches') + '</span>';
+    back.querySelector('.sr-ov-body').innerHTML = detailTableHtml(st);
+    _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
+    back.removeAttribute('hidden');
+    document.body.classList.add('sr-ov-open');
+    document.addEventListener('keydown', onOvKey, true);
+    if (panel && panel.focus) panel.focus();
+  }
+  function closeOverlay() {
+    if (!_ov || _ov.hasAttribute('hidden')) return;
+    _ov.setAttribute('hidden', '');
+    document.body.classList.remove('sr-ov-open');
+    document.removeEventListener('keydown', onOvKey, true);
+    if (_ovReturnFocus && _ovReturnFocus.focus) _ovReturnFocus.focus();
+    _ovReturnFocus = null;
   }
 
   // ─── load / mount ────────────────────────────────────────────────────────────

@@ -224,6 +224,39 @@ async function fetchSlate() {
   return out;
 }
 
+// Human-readable per-set score line, player POV, tiebreak-aware. Reads fx.scores
+// directly (NOT setsFromScores, which truncates the tiebreak decimal that trading
+// metrics don't need — we do). api-tennis encodes a tiebreak set as "7.7"/"6.5":
+// the integer part is games (7 and 6), the STRING fractional part is the tiebreak
+// points (7 and 5). Parse the fractional part from the string, not via Number, so a
+// two-digit tiebreak like "6.10" reads 10 (a Number-based .10*10 would give 1). We
+// render the set "7-6(5)" — the parenthetical is the loser's tiebreak points, the
+// standard scoreboard convention. A plain set is "6-4". Blank/unplayed sets are
+// skipped; when no set carries games the line is null (a dash, never a guess).
+function scoreLineFor(fx, me) {
+  const arr = Array.isArray(fx.scores) ? fx.scores : [];
+  const cells = arr
+    .filter(s => Number.isFinite(Number(s.score_set)) && Number(s.score_set) >= 1)
+    .sort((a, b) => Number(a.score_set) - Number(b.score_set))
+    .map(s => {
+      const fs = String(s.score_first).trim(), ss = String(s.score_second).trim();
+      const ai = Math.trunc(Number(fs)), bi = Math.trunc(Number(ss));
+      if (!Number.isFinite(ai) || !Number.isFinite(bi)) return null;
+      if (ai + bi === 0) return null;                       // blank/unplayed set
+      const mineG = me === 'first' ? ai : bi;
+      const theirsG = me === 'first' ? bi : ai;
+      // tiebreak points live in the string fractional part; present on both sides
+      // for a tiebreak set, absent for a plain set.
+      const tb = str => { const d = str.split('.')[1]; return d != null && d !== '' ? parseInt(d, 10) : null; };
+      const tbF = tb(fs), tbS = tb(ss);
+      let cell = mineG + '-' + theirsG;
+      if (Number.isFinite(tbF) && Number.isFinite(tbS)) cell += '(' + Math.min(tbF, tbS) + ')';
+      return cell;
+    })
+    .filter(Boolean);
+  return cells.length ? cells.join(' ') : null;
+}
+
 // One completed, countable, in-tier match reduced to a streak record. Returns
 // null when the match is not countable (wrong tier, not Finished, no winner, or
 // a Retired/Walk Over that must be SKIPPED per the ruling).
@@ -292,12 +325,14 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   const wentDistance = setShapeOk ? (decidedCount === bestOf) : null;
   const wonASet = setShapeOk ? (setsWonMe >= 1) : null;
 
-  // Games score line for the detail panel (founder: "the actual score line where
-  // the games total or handicap was covered"). Per-set games from the player's POV,
-  // e.g. "6-4 3-6 7-5" — NOT event_final_result, which is only the set tally
-  // ("3 - 2"). Played sets in order; dash (null) when scores[] carries no games.
-  const scoreLine = setNums.filter(n => sets[n].played)
-    .map(n => `${sets[n].mine}-${sets[n].theirs}`).join(' ') || null;
+  // Games score line for the detail panel (founder 2026-09-07: "the set scores as
+  // played, e.g. 6-4 3-6 7-5, with tiebreak scores where they occurred"). Per-set
+  // games from the player's POV — NOT event_final_result, which is only the set
+  // tally ("3 - 2"). See scoreLineFor(): api-tennis encodes a tiebreak set as
+  // "7.7"/"6.5" (integer = games, string decimal = tiebreak points) and we render
+  // it "7-6(5)". Played sets in order; the whole line dashes (null) when scores[]
+  // carries no games — never a guess.
+  const scoreLine = scoreLineFor(fx, me);
 
   // Opponent name (always — the clickable detail panel needs it) and archetype
   // (Tour only; unmatched => null / unclassified).
