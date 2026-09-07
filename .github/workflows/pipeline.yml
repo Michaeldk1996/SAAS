@@ -38,6 +38,10 @@ on:
       - 'funnel.html'
       - 'verify.html'
       - 'auth.js'
+      # Trading Report (TEN-151 follow-on): the page logic. Its CSS is the inline
+      # [data-page="trading"] .tr-* block inside bsp-consult-dashboard.html above,
+      # so styling changes already trigger via that entry — no separate CSS file exists.
+      - 'trading-report.js'
 
 # Never let two runs overlap; cancel an in-progress run if a newer one starts.
 concurrency:
