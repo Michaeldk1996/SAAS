@@ -375,11 +375,19 @@ async function main() {
     // match count against the behind-the-splits count (matches carrying >=1
     // tracked stat). A gap means the feed held matches with no usable box score;
     // report the player key and BOTH counts rather than picking one silently.
+    // Run it on BOTH windows (24mo and 12mo) so the inner window has the same
+    // audit parity as the outer (founder ruling 2026-09-06). Each window is
+    // compared against its OWN broad and behind-splits counts — never derived.
     for (const tier of ['tour', 'chal']) {
-      const broad = (r.windowByTier && r.windowByTier[tier]) || 0;
-      const withStats = r.tiers[tier].all.m;
-      if (broad !== withStats) {
-        divergences.push({ key, tier, broad, behindSplits: withStats, missing: broad - withStats });
+      const broad24 = (r.windowByTier && r.windowByTier[tier]) || 0;
+      const withStats24 = r.tiers[tier].all.m;
+      if (broad24 !== withStats24) {
+        divergences.push({ key, tier, window: '24', broad: broad24, behindSplits: withStats24, missing: broad24 - withStats24 });
+      }
+      const broad12 = (r.windowByTier12 && r.windowByTier12[tier]) || 0;
+      const withStats12 = (r.tiers12 && r.tiers12[tier]) ? r.tiers12[tier].all.m : 0;
+      if (broad12 !== withStats12) {
+        divergences.push({ key, tier, window: '12', broad: broad12, behindSplits: withStats12, missing: broad12 - withStats12 });
       }
     }
 
@@ -433,12 +441,16 @@ async function main() {
   };
   atomicWrite(INDEX_FILE, JSON.stringify(indexDoc));
 
-  // Persist the MATCHES divergence report (both counts + player key per record).
-  divergences.sort((a, b) => (b.missing - a.missing) || (Number(a.key) - Number(b.key)));
+  // Persist the MATCHES divergence report (both counts + player key + window per
+  // record). Sorted by window (24 before 12), then by gap size, then player key.
+  divergences.sort((a, b) => (a.window || '24').localeCompare(b.window || '24') || (b.missing - a.missing) || (Number(a.key) - Number(b.key)));
+  const divCount = w => divergences.filter(d => (d.window || '24') === w).length;
+  const divPlayers = w => new Set(divergences.filter(d => (d.window || '24') === w).map(d => d.key)).size;
   const divergenceDoc = {
-    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR } },
-    definition: 'broad = in-window ATP-singles completed matches for the player in the tier; behindSplits = matches carrying >=1 tracked stat (the shipped MATCHES column). A record exists only where the two differ.',
+    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR } },
+    definition: 'broad = in-window ATP-singles completed matches for the player in the tier; behindSplits = matches carrying >=1 tracked stat (the shipped MATCHES column). window tags which sub-tree the record belongs to (24 = outer, 12 = inner); each window is compared against its own counts. A record exists only where the two differ.',
     playersWithDivergence: new Set(divergences.map(d => d.key)).size,
+    byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '12': { players: divPlayers('12'), records: divCount('12') } },
     records: divergences,
   };
   atomicWrite(DIVERGENCE_FILE, JSON.stringify(divergenceDoc, null, 2));
@@ -456,8 +468,9 @@ async function main() {
     // (excluded from metric + its count, never zero-filled). If parsefailRows /
     // matchesWithParsefail is anything but near-zero, STOP and report.
     fallback: fb,
-    // MATCHES divergence summary: players/records where broad != behindSplits.
-    divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, file: path.basename(DIVERGENCE_FILE) },
+    // MATCHES divergence summary: players/records where broad != behindSplits,
+    // per window (24mo outer + 12mo inner — parity tripwire, founder 2026-09-06).
+    divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '12': { players: divPlayers('12'), records: divCount('12') } }, file: path.basename(DIVERGENCE_FILE) },
     players: index.length,
     corpus: { rawBytes: totalBytes, gzBytes: totalGz, gzKB: +(totalGz / 1024).toFixed(1) },
     index: { rawBytes: Buffer.byteLength(JSON.stringify(indexDoc)), gzBytes: indexGz, gzKB: +(indexGz / 1024).toFixed(2) },

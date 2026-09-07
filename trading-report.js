@@ -108,11 +108,12 @@
   // Point-by-point-derived columns: these read game-sequence order from the fixture
   // pointbypoint feed (who broke first, held to close a set, broken back in-set …),
   // not just totals or the score string. api-tennis carries pbp only from the floor
-  // date onward; that floor sits entirely BELOW the 12-month window, so in the 12mo
-  // view every counted match has full pbp and these columns are fully covered — the
-  // 12mo window is the better read for them (founder note 2026-09-06). Score-only
-  // set-outcome columns (WFS/WS2/…/LOST SET 1 FB) are NOT in this set — they parse
-  // from the score string and don't need pbp.
+  // date onward; that floor sits entirely BELOW both the 12- and 24-month windows,
+  // so every counted match has full pbp in EITHER view and these columns are fully
+  // covered in both (founder ruling 2026-09-06, option B — the earlier "12mo is the
+  // better read" differential expired once the 24mo start cleared the floor). Score-
+  // only set-outcome columns (WFS/WS2/…/LOST SET 1 FB) are NOT in this set — they
+  // parse from the score string and don't need pbp.
   var PBP_METRIC_KEYS = ['htws', 'htss', 'bofs', 'bfsg', 'gfb', 'babb', 'bbk', 'bbkb', 'ls1bf', 'bfs2aws1'];
 
   var COLUMN_SETS = {
@@ -604,7 +605,7 @@
       segBtn('tr-segbtn', _dateTab === 'tomorrow', 'data-date="tomorrow"', 'Tomorrow') + '</div>';
     // Window toggle — switches which sub-tree the whole board reads. Each window is
     // computed from its own matches with its own num/den; nothing is derived from the
-    // other. 12mo also fully covers the pbp-derived columns (floor sits below it).
+    // other. Both windows fully cover the pbp-derived columns (floor sits below both).
     var winSeg = '<div class="tr-seg tr-winseg" role="tablist" aria-label="Window">' +
       segBtn('tr-segbtn', _windowSel === '24', 'data-win="24"', '24 mo') +
       segBtn('tr-segbtn', _windowSel === '12', 'data-win="12"', '12 mo') + '</div>';
@@ -671,13 +672,13 @@
       th('matches', 'Matches', 'Coverage count — matches carrying ≥1 tracked stat in the selected tier/surface. NOT the denominator behind any one percentage; each cell shows its own fraction.', win),
     ];
     // pbp coverage floor, quoted from the index the shards were generated with
-    // (never from memory). The floor sits entirely below the 12-month window, so
-    // the pbp-derived columns are fully covered in the 12mo view.
+    // (never from memory). The floor sits below BOTH windows, so the pbp-derived
+    // columns are fully covered in either view (founder ruling 2026-09-06, opt B).
     var gen = _index && _index.generated;
     var floor = (gen && ((gen.window12 && gen.window12.floor) || (gen.window && gen.window.floor))) || null;
     var pbpNote = ' — point-by-point-derived: needs game-sequence order, which api-tennis carries only from '
-      + (floor || 'the pbp floor') + ' onward. That floor sits entirely below the 12-month window, so the '
-      + '12 mo view covers this column in full — it is the better read for it.';
+      + (floor || 'the pbp floor') + ' onward. That floor sits below both the 12- and 24-month windows, so this '
+      + 'column is fully covered in either view.';
     cfg.metrics.forEach(function (mk) {
       var tip = METRIC_TIPS[mk];
       if (PBP_METRIC_KEYS.indexOf(mk) !== -1) tip += pbpNote;
