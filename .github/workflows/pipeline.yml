@@ -42,6 +42,12 @@ on:
       # [data-page="trading"] .tr-* block inside bsp-consult-dashboard.html above,
       # so styling changes already trigger via that entry — no separate CSS file exists.
       - 'trading-report.js'
+      # TEN-168 Series page: JS + CSS live in their own files (not inline), so a
+      # JS/CSS-only edit must be on this allowlist or it silently waits for the
+      # cron tick — the trading-report.js gap the founder flagged. The page's HTML
+      # + data-page block ride bsp-consult-dashboard.html above.
+      - 'series.js'
+      - 'series.css'
 
 # Never let two runs overlap; cancel an in-progress run if a newer one starts.
 concurrency:
@@ -198,6 +204,20 @@ jobs:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node build-trading-splits.js
 
+      # TEN-168 Series page data layer. Current streaks for today/tomorrow's slate,
+      # built from fetchRecentSinglesFixtures (same source as the Trading Report) +
+      # the committed playing-styles / tournament-surfaces maps + player-profiles.json
+      # (built earlier this run). Writes series.json only — read-only otherwise.
+      # ISOLATED + best-effort (|| true): like the Trading Report, this newest surface
+      # must never hold the core board's deploy hostage. The engine writes atomically
+      # (tmp + rename) and refuses a partial write, and a committed series.json seed
+      # is served if this run doesn't refresh it, so the page is never empty.
+      - name: Build Series streaks (best-effort)
+        continue-on-error: true
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node build-series.js || true
+
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
       #
@@ -335,6 +355,13 @@ jobs:
           # silent 404 and the board dashes. Best-effort so an absent shard (before
           # the build step's first run) never blocks the deploy.
           cp trading-report.js _site/ 2>/dev/null || true
+          # TEN-168 Series page: the module + its stylesheet + the streak data. The
+          # HTML references series.js/series.css, so both are asserted below. series.json
+          # is the committed seed refreshed by the build step above; tolerant copy so an
+          # absent/failed build never blocks the deploy (the page dashes to its honest
+          # empty state instead of a broken tab).
+          cp series.js series.css _site/ 2>/dev/null || true
+          cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
           # Wikidata-P18 headshot override map (enrich-player-photos.py). Committed
@@ -395,7 +422,8 @@ jobs:
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \
                    style-meetings-index.json \
-                   odds-performance-index.json odds-index.json; do
+                   odds-performance-index.json odds-index.json \
+                   series.js series.css; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           # style-meetings-index.json gates the "vs this style" detail list exactly

@@ -7,6 +7,10 @@
 <script src="./analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- TEN-168 Series page: separate stylesheet (not inline) so JS/CSS-only edits
+     deploy on push via the pipeline allowlist. Scoped under [data-page="series"];
+     inert unless FEATURE_SERIES reveals the tab. -->
+<link rel="stylesheet" href="./series.css">
 <style>
   :root{
     --bg: #08090C;
@@ -2609,6 +2613,11 @@
          trading-report.js reveal it. Deploying with the flag OFF changes nothing
          live. Reuses the Live tab's gate — the Live tab + Matches board are untouched. -->
     <button data-tab="trading" id="tradingTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16V4M3 16h14M7 13l3-4 3 2 3.5-5"/></svg>Trading Report</button>
+    <!-- TEN-168 Series tab: current-streak cards for today/tomorrow's slate.
+         Hidden by default (display:none); series.js reveals it when FEATURE_SERIES
+         is on. Sits alongside the Trading Report (shared foundations) so a later
+         merge is wiring, not a rewrite. Deploying with the flag OFF changes nothing. -->
+    <button data-tab="series" id="seriesTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-5 3 3 4-6 3 4"/><path d="M3 17h14"/></svg>Series</button>
     <!-- Results (TEN-8): settled matches, promoted from the old Upcoming/Completed
          toggle to a first-class sidebar tab directly under Matches (founder ruling
          2026-08-08). Reuses the matches page in state.view='completed'. -->
@@ -2785,6 +2794,18 @@
       </div>
     </div>
     <div class="tr-grid" id="tradingGrid"></div>
+  </div>
+</div>
+
+<!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
+     gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
+<div class="tabpage" data-page="series">
+  <div class="sr-wrap">
+    <div class="sr-titlerow">
+      <h1 class="sr-h1">Series</h1>
+      <p class="sr-subtitle">Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions, or on the opening set. Every streak carries the pool it was drawn from and the date of its most recent match. A streak that can’t show both isn’t here.</p>
+    </div>
+    <div id="seriesGrid"></div>
   </div>
 </div>
 
@@ -4564,6 +4585,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // TEN-151: Trading Report owns its own poll loop — start on entry, stop on
   // leaving. No-op unless FEATURE_TRADING_REPORT loaded trading-report.js.
   if (window.TradingReport) window.TradingReport.setActive(tab === 'trading');
+  // TEN-168: Series page loads its cards on entry. No poll loop (static daily
+  // artifact). No-op unless FEATURE_SERIES loaded series.js.
+  if (window.SeriesPage) window.SeriesPage.setActive(tab === 'series');
 });
 
 // TEN-151: resolve a #trading deep-link on load. Runs on DOMContentLoaded, which
@@ -22414,6 +22438,22 @@ window.DatabaseTab = (function(){
   })();
 </script>
 <script src="trading-report.js" defer></script>
+
+<!-- TEN-168 Series page feature flag. Founder approved go-live 2026-09-07 (copy
+     signed off + all rulings answered), so this defaults ON. Explicit-off wins:
+       ?series=0                             -> OFF for this load
+       localStorage stennisfy.flags.series=0 -> OFF until cleared
+     Any other state -> ON. Same reader as the Trading Report flag. -->
+<script>
+  window.FEATURE_SERIES = (function () {
+    try {
+      var q = new URLSearchParams(location.search);
+      if (q.has('series')) return q.get('series') !== '0';
+      return localStorage.getItem('stennisfy.flags.series') !== '0';
+    } catch (e) { return true; }
+  })();
+</script>
+<script src="series.js" defer></script>
 
 <!-- TEN-150: Entry Lists feature flag. OFF by default — set to true once founder confirms go-live.
      Flag ON reveals the nav button; EntryListsTab.init() fires on first tab click.
