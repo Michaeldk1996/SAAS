@@ -18377,7 +18377,7 @@ function showTournamentProfile(key){
    Nothing is fabricated: missing rounds/values render honest
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
-const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null };
+const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null, ppInclElimByTour: {} };
 // Per-tournament market performance (build-tournament-market.js → tournament-market.json).
 // Real flat-stake yields + favourite reliability from settled closing prices; the
 // Overview panel em-dashes any tournament missing here (thin sample / no join).
@@ -19022,7 +19022,12 @@ function tourxBuildTournament(name){
     // "reached" — human label for the deepest round the player has data for
     // (used by the Head-to-head pickers); advance one round if they won it.
     const reached = (tourxGroupFor(finishRound) || {}).reached || TOURX_REACHED_PHRASE[finishRound] || '—';
-    return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, data, opponents, byes, drawDepth, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
+    // `eliminated` is coerced to a strict boolean for existing consumers (win-detection
+    // etc.). `eliminatedKnown` preserves the tri-state the auto-fill pool needs: a
+    // missing/null source flag (unknown) must NOT be read as alive (founder dash-for-
+    // missing guard 2026-09-08) — such a player is only auto-filled via the toggle's
+    // "Include eliminated" state or a manual add, never silently as active.
+    return { name: p.name, playerKey: p.playerKey, eliminated: !!p.eliminated, eliminatedKnown: (p.eliminated === true || p.eliminated === false), data, opponents, byes, drawDepth, nRounds: (p.rounds || []).length, maxWonIdx, finishRound, reached };
   });
   // Field-average reference line per metric. The feed JSON only ships averages for
   // the raw metrics, so the four derived ratings get a client-side per-round mean
@@ -19149,6 +19154,26 @@ function tourxMetricFilterRowHtml(){
   return `<div style="margin-top:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Metric</span>
       <div class="tx-segwrap">${metricChips}</div>
+    </div>`;
+}
+// [TEN-170 postscript] Player-progression auto-fill pool toggle. Two states,
+// governing ONLY which players seed the four-card grid when nothing is hand-picked:
+//   Active only (default) — players still alive in the draw (plus, on a completed
+//     event, the beaten finalist, so both finalists show rather than the champion
+//     alone — founder ruling 2026-09-08).
+//   Include eliminated     — the depth-ranked all-players pool (prior behaviour).
+// State persists PER TOURNAMENT (keyed by tourxState.tour) so a finished event's
+// "include eliminated" choice never leaks into a live one. The cap (TOURX_PP_CAP=4)
+// and the manual Add-player dropdown are unaffected.
+function tourxPPInclElim(){ const m = tourxState.ppInclElimByTour || (tourxState.ppInclElimByTour = {}); return !!m[tourxState.tour]; }
+function tourxSetPPInclElim(on){ const m = tourxState.ppInclElimByTour || (tourxState.ppInclElimByTour = {}); m[tourxState.tour] = !!on; renderTourxReports(); }
+function tourxPPPoolToggleHtml(){
+  const on = tourxPPInclElim();
+  const seg = tourxSegItem(!on, 'Active only', 'tourxSetPPInclElim(false)', true)
+            + tourxSegItem(on, 'Include eliminated', 'tourxSetPPInclElim(true)', true);
+  return `<div style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <span style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Auto-fill</span>
+      <div class="tx-segwrap">${seg}</div>
     </div>`;
 }
 function tourxSelectTour(name){ tourxState.tour = name; tourxState.roundIdx = null; renderTourxReports(); }
@@ -19831,7 +19856,8 @@ function tourxPlayerViewHtml(T){
   // render). Both reuse the shared Round-comparison state (roundIdx / rvMetrics).
   const controls = tourxPPControlsHtml(allNames, TOURX_PP_CAP)
     + tourxRoundChipRowHtml('Round')
-    + tourxMetricFilterRowHtml();
+    + tourxMetricFilterRowHtml()
+    + tourxPPPoolToggleHtml();
 
   // Comparison mode — one or more players selected: the design-export progression
   // tables (serve/rally metric grid, per-round best-value highlight, field-avg row).
@@ -19858,7 +19884,20 @@ function tourxPlayerViewHtml(T){
   // event's quarter/semi/final field can be reviewed round by round. "All rounds"
   // (roundIdx null) keeps the deepest players overall (champion + runs surface first).
   const rIdx = tourxState.roundIdx;
-  const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && (rIdx == null || (p.drawDepth - 1) >= rIdx))
+  // [TEN-170 postscript] Auto-fill eligibility (founder ruling 2026-09-08). Default
+  // "Active only" seeds from players still alive in the draw; on a COMPLETED event
+  // that would collapse to the champion alone, so the beaten finalist (eliminated AT
+  // the Final) is admitted too — both finalists show. A missing/null `eliminated`
+  // flag is NOT read as alive (dash-for-missing guard): that player is only auto-
+  // filled via "Include eliminated" or a manual add. "Include eliminated" reverts to
+  // the depth-ranked all-players pool. Depth ranking, the cap, and the manual
+  // Add-player dropdown are unchanged in both states.
+  const inclElim = tourxPPInclElim();
+  const finalIdx = tourxActiveLabels.length - 1;
+  const poolEligible = p => inclElim
+    || (p.eliminatedKnown && !p.eliminated)                                       // still alive
+    || (p.eliminatedKnown && p.eliminated && (p.drawDepth - 1) === finalIdx);     // beaten finalist (runner-up)
+  const progressable = T.players.filter(p => p.data && p.drawDepth >= 2 && (rIdx == null || (p.drawDepth - 1) >= rIdx) && poolEligible(p))
     .sort((a, b) => (b.maxWonIdx - a.maxWonIdx) || (b.drawDepth - a.drawDepth));
   if (!progressable.length){
     // Distinguish the two empty cases: a round filter that no player has reached
