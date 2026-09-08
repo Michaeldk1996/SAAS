@@ -15253,6 +15253,112 @@ function renderPpSplitDrawerBody(shard, which, cat){
   body.innerHTML = rows;
   body.scrollTop = 0;
 }
+// ---- TEN-172 Points at Risk breakdown drawer --------------------------------
+// Clickable Points at Risk tile -> per-event breakdown, reusing the TEN-162
+// #ppSplitDrawer panel + `.ppsd-*` styles (no new visual language). Loads from
+// the already-fetched points-at-risk.json (_parData) — no new network call.
+// One row per event, ordered by drop date ascending (soonest first); dateless
+// rows (real data gaps + dash-by-rule / team events) append after (founder
+// ruling: Option A + append). Foot total reconciles exactly to the tile figure.
+const PAR_TIER_LABEL = {
+  GrandSlam: 'Grand Slam', Masters1000: 'Masters 1000', ATP500: 'ATP 500', ATP250: 'ATP 250',
+  NittoATPFinals: 'ATP Finals', NextGenFinals: 'Next Gen Finals', UnitedCup: 'United Cup',
+  WTL: 'World Tennis League', DavisCup: 'Davis Cup', Olympics: 'Olympics', LaverCup: 'Laver Cup',
+};
+function parTierLabel(t){ return PAR_TIER_LABEL[t] || (t ? String(t) : '—'); }
+// Round chip label. Champion => 'W'; qualifying loss codes => 'Q'; else reuse
+// the split-drawer round convention (F -> FINAL etc.).
+function parRoundLabel(rd){
+  const k = String(rd || '').toUpperCase();
+  if (k === 'W') return 'W';
+  if (k.startsWith('Q_')) return 'Q';
+  return (typeof ppSplitRoundLabel === 'function') ? ppSplitRoundLabel(k) : k;
+}
+// ISO YYYY-MM-DD -> "Jul 2026" (string-sliced, never Date-parsed: no TZ shift).
+function parMonthYear(iso){
+  const s = String(iso || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+  return `${PP_MONTHS[Number(s.slice(5, 7)) - 1] || ''} ${s.slice(0, 4)}`;
+}
+// ISO YYYY-MM-DD -> "12 Jul 2027".
+function parFullDate(iso){
+  const s = String(iso || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+  return `${String(Number(s.slice(8, 10)))} ${PP_MONTHS[Number(s.slice(5, 7)) - 1] || ''} ${s.slice(0, 4)}`;
+}
+function openParDrawer(playerKey){
+  const key = String(playerKey || '');
+  const row = (_parData && _parData.players) ? _parData.players[key] : null;
+  ensurePpSplitDrawer();
+  ppSplitDrawerState.open = true;
+  ppSplitDrawerState.key = key;
+  const el = document.getElementById('ppSplitDrawer');
+  el.classList.add('open');
+  const p = (typeof playerProfiles !== 'undefined' && playerProfiles[key]) || {};
+  const name = ppAbbrevName(p.name || (row && row.player) || '');
+  document.getElementById('ppsdHead').innerHTML =
+    `<div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Points at Risk</div>
+     <div style="font-size:19px;font-weight:800;color:#e7e9ee;margin-top:4px;">${escapeHtml(name)}</div>
+     <div id="ppsdSub" style="font-size:12.5px;color:#5b6880;margin-top:4px;"></div>`;
+  renderParDrawerBody(row);
+}
+function renderParDrawerBody(row){
+  const body = document.getElementById('ppsdBody');
+  const sub = document.getElementById('ppsdSub');
+  if (!body) return;
+  if (!row){
+    if (sub) sub.textContent = 'No main-tour events in window';
+    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:#5b6880;">No main-tour events in the trailing 52 weeks.</div>`;
+    return;
+  }
+  const resolved = Array.isArray(row.perEvent) ? row.perEvent.slice() : [];
+  // Dated rows ascending by drop date (soonest first); dateless rows append.
+  resolved.sort((a, b) => String(a.dropDate || '').localeCompare(String(b.dropDate || '')));
+  const gaps = Array.isArray(row.dashed) ? row.dashed : [];
+  const rule = Array.isArray(row.benignDashed) ? row.benignDashed : [];
+  const dateless = [...gaps, ...rule];
+  const total = resolved.reduce((a, e) => a + (Number(e.points) || 0), 0);
+  const reconciles = total === Number(row.points);
+  if (sub){
+    const parts = [`${resolved.length} event${resolved.length === 1 ? '' : 's'}`];
+    if (gaps.length) parts.push(`${gaps.length} gap`);
+    if (rule.length) parts.push(`${rule.length} by rule`);
+    sub.textContent = `${parts.join(' · ')} · trailing 52 weeks`;
+  }
+  const resolvedRows = resolved.map(e => {
+    const meta = [parMonthYear(e.date), parTierLabel(e.tier), e.dropDate ? `drops ${parFullDate(e.dropDate)}` : '']
+      .filter(Boolean).join(' &middot; ');
+    return `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:11px;padding:12px 8px;border-top:1px solid rgba(255,255,255,0.05);">
+      <span style="min-width:40px;height:24px;padding:0 7px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#5b9bff;background:${ppHexA('#5b9bff',0.14)};border:1px solid ${ppHexA('#5b9bff',0.3)};">${escapeHtml(parRoundLabel(e.round))}</span>
+      <span style="min-width:0;">
+        <span style="display:block;font-size:13.5px;color:#dfe3ea;line-height:1.35;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.event || '—')} <span style="color:#4b5672;">'${String(e.season || '').slice(2)}</span></span>
+        <span style="display:block;font-size:11px;color:#5b6880;margin-top:3px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.03em;">${meta}</span>
+      </span>
+      <span style="font-size:14px;font-weight:700;color:#e7e9ee;font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">${Number(e.points).toLocaleString()}</span>
+    </div>`;
+  }).join('');
+  const dashRows = dateless.map(e => {
+    const meta = [parMonthYear(e.date), parTierLabel(e.tier), escapeHtml(e.reason || '')].filter(Boolean).join(' &middot; ');
+    return `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:11px;padding:12px 8px;border-top:1px solid rgba(255,255,255,0.05);opacity:.72;">
+      <span style="min-width:40px;height:24px;padding:0 7px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#7a8496;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);">—</span>
+      <span style="min-width:0;">
+        <span style="display:block;font-size:13.5px;color:#c3c9d4;line-height:1.35;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.event || '—')} <span style="color:#4b5672;">'${String(e.season || '').slice(2)}</span></span>
+        <span style="display:block;font-size:11px;color:#5b6880;margin-top:3px;line-height:1.35;">${meta}</span>
+      </span>
+      <span style="font-size:14px;font-weight:700;color:#5b6880;font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">—</span>
+    </div>`;
+  }).join('');
+  const foot = `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:11px;padding:14px 8px;border-top:2px solid rgba(91,155,255,0.35);margin-top:2px;">
+      <span></span>
+      <span style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8a94a6;font-family:'IBM Plex Mono',monospace;">Points at Risk</span>
+      <span style="font-size:18px;font-weight:800;color:#5b9bff;font-family:'IBM Plex Mono',monospace;text-align:right;">${total.toLocaleString()}</span>
+    </div>
+    ${reconciles ? '' : `<div style="padding:8px;color:#e0616f;font-size:11.5px;">⚠ Breakdown total ${total.toLocaleString()} does not match tile ${Number(row.points).toLocaleString()} — reporting rather than reconciling.</div>`}`;
+  if (!resolved.length && !dateless.length){
+    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:#5b6880;">No main-tour events in the trailing 52 weeks.</div>`;
+    return;
+  }
+  body.innerHTML = resolvedRows + dashRows + foot;
+  body.scrollTop = 0;
+}
 // ---- TEN-126 Break/Hold heatmap (display-only, flag-gated) --------------------
 // Two heatmaps per player from the holdbreak.json rollup: service hold% and return
 // break%, rows = service-game bucket within the set (Early 1st–2nd / Mid 3rd–4th /
@@ -16466,17 +16572,30 @@ function buildPlayerProfileHtml(p){
     { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#5b9bff', icon: AKC_ICONS.form },
     { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: '#5b9bff', icon: AKC_ICONS.form },
     { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#5b9bff', icon: BSP_ICONS.trophy },
-    { label: 'Points at Risk', value: parValue, sub: parSub, accent: '#5b9bff', icon: BSP_ICONS.chart },
+    // TEN-172 drawer: the Points at Risk tile is clickable when the player has a
+    // resolved row (parRow present) — opens the per-event breakdown drawer. When
+    // the player is absent (tile dashes) the tile is inert.
+    { label: 'Points at Risk', value: parValue, sub: parSub, accent: '#5b9bff', icon: BSP_ICONS.chart,
+      onclick: parRow ? `openParDrawer('${String(p.key)}')` : null },
   ];
-  const tilesHtml = tileDefs.map(k => `
-    <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">
+  const tilesHtml = tileDefs.map(k => {
+    const inter = k.onclick
+      ? ` role="button" tabindex="0" aria-label="${escapeHtml(k.label)} — open breakdown" onclick="${k.onclick}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${k.onclick}}"`
+      : '';
+    const cur = k.onclick ? 'cursor:pointer;' : '';
+    const subHtml = k.onclick
+      ? `<div style="font-size:10px;color:#5b9bff;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub} &middot; view breakdown &rsaquo;</div>`
+      : `<div style="font-size:10px;color:#5b6880;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>`;
+    return `
+    <div${inter} style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;${cur}">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
         <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
         <span style="font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;line-height:1.2;">${k.label}</span>
       </div>
       <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
-      <div style="font-size:10px;color:#5b6880;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>
-    </div>`).join('');
+      ${subHtml}
+    </div>`;
+  }).join('');
 
   // ---- Left-rail surface performance (compact cards, best career win rate first) ----
   const surfData = ['Grass','Hard','Clay'].map(s => {

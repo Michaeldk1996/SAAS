@@ -17,8 +17,9 @@
  *         points: <int>,            // resolvable points-at-risk (a FLOOR: dashes excluded)
  *         coverage: "complete"|"partial"|"gap",
  *         resolvedCount, gapCount, benignDashCount,
- *         perEvent: [ { event, season, round, points, flags } ],   // resolved, desc by points
- *         dashed:   [ { event, season, reason, gap } ]             // for provenance
+ *         perEvent:     [ { event, season, round, points, flags, tier, date, dropDate } ], // resolved, desc by points
+ *         dashed:       [ { event, season, reason, flags, tier, date, dropDate, gap } ],   // real data-gap dashes
+ *         benignDashed: [ { event, season, reason, flags, tier, date, dropDate, gap } ]    // named dash-by-rule / in-progress
  *       }, ...
  *     }
  *   }
@@ -128,14 +129,34 @@ for (const [pk, eks] of playerEditions) {
     if (r.reason === 'player has no fixtures at this edition') continue;
     if (r.dash) {
       const benign = r.flags.includes('non-round-event') || ed.inProgress;
-      dashed.push({ event: ed.name, season: ed.season, reason: r.reason, flags: r.flags, gap: !benign });
+      // TEN-172 drawer (founder Option A): every excluded event is named. `date`
+      // is the award Monday when the resolver reached one (round-integrity /
+      // draw dashes) — null for rule/team dashes that fail before an award date
+      // is assigned, so they sort last (append). `dropDate` = award + 52wk.
+      dashed.push({
+        event: ed.name, season: ed.season, reason: r.reason, flags: r.flags,
+        tier: (tierInfo && tierInfo.tier) || null,
+        date: r.awardMs != null ? new Date(r.awardMs).toISOString().slice(0, 10) : null,
+        dropDate: r.awardMs != null ? new Date(r.awardMs + 52 * MS_PER_WEEK).toISOString().slice(0, 10) : null,
+        gap: !benign,
+      });
     } else {
       sum += r.points;
-      resolved.push({ event: ed.name, season: ed.season, round: r.key, points: r.points, flags: r.flags });
+      // TEN-172 drawer (founder Option A): additive, total-preserving. `tier`
+      // (discarded before, recovered from tierInfo), `date` (award Monday =
+      // event-end proxy for the month column), `dropDate` (award + 52wk = the
+      // Monday the points roll off, the drawer's primary sort key).
+      resolved.push({
+        event: ed.name, season: ed.season, round: r.key, points: r.points, flags: r.flags,
+        tier: (tierInfo && tierInfo.tier) || null,
+        date: r.awardMs != null ? new Date(r.awardMs).toISOString().slice(0, 10) : null,
+        dropDate: r.awardMs != null ? new Date(r.awardMs + 52 * MS_PER_WEEK).toISOString().slice(0, 10) : null,
+      });
     }
   }
   if (!resolved.length && !dashed.some((d) => d.gap)) continue; // no in-window main-tour footprint -> omit (tile dashes)
   const gaps = dashed.filter((d) => d.gap);
+  const ruleDashed = dashed.filter((d) => !d.gap); // named dash-by-rule / in-progress rows (drawer)
   const coverage = gaps.length === 0 ? (resolved.length ? 'complete' : 'gap') : (resolved.length ? 'partial' : 'gap');
   cov[coverage]++;
   resolved.sort((a, b) => b.points - a.points);
@@ -147,9 +168,13 @@ for (const [pk, eks] of playerEditions) {
     gapCount: gaps.length,
     benignDashCount: dashed.length - gaps.length,
     perEvent: resolved,
-    // keep only real data-gap dashes for provenance; benign (rule/in-progress)
-    // dashes are summarised by benignDashCount and would bloat the artifact.
+    // real data-gap dashes (unchanged shape; coverage-degrading).
     dashed: gaps,
+    // TEN-172 drawer: named dash-by-rule / in-progress events (ATP Finals, Laver,
+    // Davis, United Cup, Olympics, and in-progress editions). Summarised by
+    // benignDashCount; now also enumerated so the drawer accounts for every
+    // excluded event by name. Does not degrade coverage.
+    benignDashed: ruleDashed,
   };
 }
 
