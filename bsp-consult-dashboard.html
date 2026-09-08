@@ -16558,12 +16558,29 @@ function buildPlayerProfileHtml(p){
   // (= points that will drop off over the next 52 weeks). Resolvable FLOOR from
   // the fail-closed engine (excludes Challengers, team/finals, unconfirmed tiers);
   // a player with no in-window main-tour footprint is absent -> dash, never 0.
+  // A row with resolvedCount 0 carries points 0 — but that 0 is "nothing could be
+  // resolved", not "nothing is at risk". Rendering it bare reads as a real figure,
+  // so it dashes too (standing rule: missing data is a dash, never a zero). The two
+  // dash cases stay distinguishable in the sub-line: absent row = no footprint at
+  // all; present row with 0 resolved = footprint present, none of it resolvable yet.
   const parRow = (typeof _parData !== 'undefined' && _parData && _parData.players) ? _parData.players[String(p.key)] : null;
-  const parValue = parRow ? String(parRow.points) : '—';
+  const parResolved = parRow ? (Number(parRow.resolvedCount) || 0) : 0;
+  // points is only a figure when something was actually resolved AND the value is
+  // a real number — a null/absent points must dash, not print "null" at 26px.
+  // The null check is explicit: Number(null) is 0, which would pass isFinite and
+  // print "null" through String() — the same Number(null)===0 trap that has
+  // silently swallowed values elsewhere in this codebase.
+  const parPoints = (parRow && parRow.points != null) ? Number(parRow.points) : NaN;
+  const parValue = (parRow && parResolved > 0 && Number.isFinite(parPoints)) ? String(parRow.points) : '—';
+  const parAccounted = parRow ? ((Number(parRow.gapCount) || 0) + (Number(parRow.benignDashCount) || 0)) : 0;
   const parSub = parRow
-    ? (parRow.coverage === 'complete'
-        ? `${parRow.resolvedCount} events · next 52wk`
-        : `${parRow.resolvedCount} events · ${parRow.gapCount} gap`)
+    ? (parResolved <= 0
+        ? (parAccounted > 0
+            ? `0 of ${parAccounted} event${parAccounted === 1 ? '' : 's'} resolved`
+            : 'No events resolved')
+        : (parRow.coverage === 'complete'
+            ? `${parResolved} event${parResolved === 1 ? '' : 's'} · next 52wk`
+            : `${parResolved} event${parResolved === 1 ? '' : 's'} · ${parRow.gapCount} gap`))
     : ((typeof _parData === 'undefined' || !_parData) ? 'Loading…' : 'No main-tour events in window');
   const tileDefs = [
     { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: '#5b9bff', icon: BSP_ICONS.trophy },
