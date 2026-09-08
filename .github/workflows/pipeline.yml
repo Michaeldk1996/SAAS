@@ -83,6 +83,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # TEN-174 fail-closed pre-deploy gate. The progression source-guard
+      # (tools/test-progression-seed.js, wired as `npm test`) fails the job if the
+      # Player-progression win-detection reintroduces scoreline/resultDisplay parsing,
+      # which credited eliminated losers a phantom win. Runs before the pipeline and
+      # deploy so a regressed HTML never reaches Pages; fails fast (no API calls wasted).
+      - name: Progression source-guard (fail-closed pre-deploy gate)
+        run: npm test
+
       # Persist the heavy derived caches + TML archive between runs so each run
       # is fast and makes minimal API calls (matches how the local run reuses
       # them). Keyed per-day so it refreshes but still restores older caches.
@@ -483,7 +491,7 @@ jobs:
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
             echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase origin main || true
+            git pull --rebase --autostash origin main || true
           done
           echo "::error::Could not push after 3 attempts."; exit 1
 
@@ -506,7 +514,7 @@ jobs:
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
             echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase origin main || true
+            git pull --rebase --autostash origin main || true
           done
           echo "::error::Could not push series-outcomes after 3 attempts."; exit 1
 
