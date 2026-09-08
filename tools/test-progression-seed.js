@@ -67,6 +67,19 @@ ok('win-detection uses the player-oriented `eliminated` flag', /p\.eliminated/.t
 ok('win-detection does NOT parse resultDisplay (winner-oriented scoreline)', !/resultDisplay/.test(block));
 ok('win-detection does NOT re-introduce "a > b" scoreline compare', !/parts\[0\]\s*>\s*parts\[1\]/.test(block));
 
+// ---- Source guard: "Include eliminated" must actually surface eliminated players. ----
+// Founder ruling 2026-09-08 (interaction a5a9819d): "on all rounds + include eliminated,
+// you should see their data until the round they were, simple." Without a larger cap
+// the toggle is a no-op on a live event (survivors sort deepest and fill all 4 slots),
+// which was the reopened complaint. Guard: the expanded cap exists AND the pool logic
+// partitions alive/knocked-out so the deepest eliminated are guaranteed a slot.
+console.log('=== source guard: Include-eliminated reveal (TEN-170 postscript) ===');
+ok('TOURX_PP_CAP_INCL constant defined', /TOURX_PP_CAP_INCL\s*=\s*\d+/.test(html));
+ok('Include-eliminated grows the grid (uses TOURX_PP_CAP_INCL for the combined cap)',
+   /alive\.concat\(knockedOut\)\.slice\(0,\s*TOURX_PP_CAP_INCL\)/.test(html));
+ok('Include-eliminated guarantees knocked-out players a slot (alive/knockedOut partition)',
+   /const\s+knockedOut\s*=\s*progressable\.filter\(p\s*=>\s*!isAlive\(p\)\)/.test(html));
+
 // ---- Invariant on a fixture mirroring the reported US Open 2026 scenario. ----
 console.log('=== ranking invariant (fixture) ===');
 const ORDER = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'];

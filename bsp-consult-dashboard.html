@@ -18525,6 +18525,12 @@ function tourxMarketFor(name){
 // when first selected (see below), so the colour stays put as others come and go.
 const TOURX_CMP_COLORS = ['#3E7BFA', '#E8934B', '#3dd68c', '#B98BFF', '#2AB8A0', '#F2C14E', '#F2789F', '#7BA4FF'];
 const TOURX_RV_CAP = 8, TOURX_PP_CAP = 4;
+// [TEN-170 postscript, founder ruling 2026-09-08] In "Include eliminated" mode the
+// grid grows to this cap so knocked-out players actually surface (their data shows
+// through their elimination round, em-dash after) — the default "Active only" keeps
+// TOURX_PP_CAP. Without a larger cap the toggle is a visible no-op on a live event,
+// because survivors sort deepest and fill all four slots before any eliminated player.
+const TOURX_PP_CAP_INCL = 8;
 // Stable per-player colour slot (TEN-130). A player is pinned to the lowest free
 // palette slot the moment they are selected and released only when removed, so
 // removing a middle chip never re-shuffles the survivors' colours (the old
@@ -20027,7 +20033,24 @@ function tourxPlayerViewHtml(T){
       : `<div style="margin-top:28px;border:1px dashed rgba(255,255,255,0.12);border-radius:14px;background:#0b1017;padding:22px;color:#5b6880;font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:#c3ccdb;">2 rounds</b> into the draw. No player at <b style="color:#c3ccdb;">${T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
     return controls + msg;
   }
-  const autoPlayers = progressable.slice(0, TOURX_PP_CAP);
+  // [TEN-170 postscript, founder ruling 2026-09-08: "on all rounds + include
+  // eliminated, you should see their data until the round they were, simple"].
+  // Active only → the deepest survivors, capped at 4. Include eliminated → still
+  // surface the deepest survivors FIRST, but GUARANTEE the deepest eliminated
+  // players appear alongside them (they'd otherwise never make the cut on a live
+  // event, since every survivor outranks them on depth). Partition, take the top
+  // of each, and cap the combined grid at TOURX_PP_CAP_INCL. Each eliminated
+  // player's rows already stop at their elimination round (null → em dash after),
+  // which is exactly "their data until the round they were [out]".
+  let autoPlayers;
+  if (inclElim){
+    const isAlive = p => p.eliminatedKnown && !p.eliminated;
+    const alive = progressable.filter(isAlive).slice(0, TOURX_PP_CAP);
+    const knockedOut = progressable.filter(p => !isAlive(p)).slice(0, TOURX_PP_CAP);
+    autoPlayers = alive.concat(knockedOut).slice(0, TOURX_PP_CAP_INCL);
+  } else {
+    autoPlayers = progressable.slice(0, TOURX_PP_CAP);
+  }
   return controls + tourxProgressionTablesHtml(autoPlayers, T);
 }
 
