@@ -18938,14 +18938,28 @@ function tourxBuildTournament(name){
       data.pressurePct[idx]    = der.pressurePct;
       opponents[idx] = r.opponent || null;   // opponent faced in that round, index-aligned to metrics
     });
+    // [TEN-174] Deepest round the player WON — derived from the player-oriented
+    // `eliminated` flag + draw structure, NOT from the scoreline. resultDisplay is
+    // winner-oriented and cannot tell us who won a given match (see the roundsWon note
+    // above and the H2H note below); the prior code parsed "a - b" as a win when a>b,
+    // which credited every eliminated player a PHANTOM win at their elimination round
+    // and ranked losers above the player who beat them. A player wins every round they
+    // advance past; their deepest PLAYED round is a win only if they were NOT
+    // eliminated there (still alive / champion). An eliminated player lost their
+    // deepest played round, so their deepest WIN is the round before it.
+    // DO NOT reintroduce resultDisplay parsing here — tools/test-progression-seed.js
+    // source-guards this block and will fail if you do.
+    const playedIdxsAsc = (p.rounds || [])
+      .map(r => rounds.indexOf(r.round))
+      .filter(i => i >= 0)
+      .sort((a, b) => a - b);
     let maxWonIdx = -1;
-    (p.rounds || []).forEach(r => {
-      const parts = String(r.resultDisplay || '').split('-').map(s => parseInt(s.trim(), 10));
-      if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1]) && parts[0] > parts[1]) {
-        const idx = rounds.indexOf(r.round);
-        if (idx > maxWonIdx) maxWonIdx = idx;
-      }
-    });
+    if (playedIdxsAsc.length) {
+      const deepestPlayedIdx = playedIdxsAsc[playedIdxsAsc.length - 1];
+      maxWonIdx = p.eliminated
+        ? (playedIdxsAsc.length >= 2 ? playedIdxsAsc[playedIdxsAsc.length - 2] : -1)
+        : deepestPlayedIdx;
+    }
     // Deepest round the player actually has a match at (label-based, so a bye
     // recipient's finishRound reflects R16, not R32). Equals length-1 for the
     // no-bye contiguous case.
