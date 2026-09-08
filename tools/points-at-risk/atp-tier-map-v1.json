@@ -1,0 +1,998 @@
+{
+  "_meta": {
+    "version": 1,
+    "artifact": "atp-tier-map-v1.json",
+    "scope": "main tour only (TEN-173; Challengers are a scoped fast-follow)",
+    "tier_source": "official ATP site atptour.com ONLY (overview category stamps + ATP resource articles); per-event source_url cited",
+    "tier_values": [
+      "GrandSlam",
+      "Masters1000",
+      "ATP500",
+      "ATP250",
+      "NittoATPFinals",
+      "NextGenFinals",
+      "null=unconfirmed"
+    ],
+    "draw_size_note": "per-season draw is derived by the resolver at run time as (classified main-draw match count + 1); single-elimination invariant N-1 matches. draw_size_most_recent is the tournament-profiles value (reliable) for the founder's eyeball.",
+    "unconfirmed_count": 1,
+    "event_count": 72,
+    "status": "STAGED \u2014 founder must eyeball before any wiring (TEN-173 gate).",
+    "confirmed_seasons_source": "atptour.com 2025 & 2026 calendar articles + per-event overview stamps + 2025/2026 calendar press releases (see TEN-172 board doc); per-season, never inherited",
+    "condition1_atp250_diff": "PASS 2026-09-08: 30/30 in-window ATP-250 editions match official ATP 250 for their season, no compensating errors; api-tennis aliases Antwerp=Brussels, Athens=Belgrade"
+  },
+  "events": {
+    "Australian Open": {
+      "tier": "GrandSlam",
+      "confirmed": true,
+      "draw_size_most_recent": 128,
+      "tournament_keys": [
+        1236
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/australian-open/580/overview",
+      "note": "Grand Slam category stamp",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "French Open": {
+      "tier": "GrandSlam",
+      "confirmed": true,
+      "draw_size_most_recent": 128,
+      "tournament_keys": [
+        2155
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/roland-garros/520/overview",
+      "note": "Roland Garros; Grand Slam stamp",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Wimbledon": {
+      "tier": "GrandSlam",
+      "confirmed": true,
+      "draw_size_most_recent": 128,
+      "tournament_keys": [
+        2053
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/london/540/overview",
+      "note": "atp id 540=Wimbledon; Grand Slam stamp",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "US Open": {
+      "tier": "GrandSlam",
+      "confirmed": true,
+      "draw_size_most_recent": 128,
+      "tournament_keys": [
+        1217
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/us-open/560/overview",
+      "note": "Grand Slam stamp",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Indian Wells": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        1903
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/indian-wells/404/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Miami": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        1928
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/miami/403/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Madrid": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        2004
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/madrid/1536/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Rome": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        2011
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/rome/416/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Cincinnati": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        1210
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/atp-masters-1000-cincinnati/422/overview",
+      "note": "slug also carries tier",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Shanghai": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [
+        1667
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/shanghai/5014/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Toronto": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 96,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/tournaments/toronto/421/overview",
+      "note": "Canada; Toronto/Montreal share id 421, alternate years",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Monte Carlo": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 56,
+      "tournament_keys": [
+        1970
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/monte-carlo/410/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Montreal": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 56,
+      "tournament_keys": [
+        2078
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/canada/421/overview",
+      "note": "Canada; Montreal/Toronto share id 421, alternate years",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Paris": {
+      "tier": "Masters1000",
+      "confirmed": true,
+      "draw_size_most_recent": 56,
+      "tournament_keys": [
+        1725
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/paris/352/overview",
+      "note": "Rolex Paris Masters",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Turin": {
+      "tier": "NittoATPFinals",
+      "confirmed": true,
+      "draw_size_most_recent": 4,
+      "tournament_keys": [
+        2794
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/nitto-atp-finals/605/overview",
+      "note": "Year-end final, round-robin -> dash unless formula authorised",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Jeddah": {
+      "tier": "NextGenFinals",
+      "confirmed": true,
+      "draw_size_most_recent": 4,
+      "tournament_keys": [
+        2793
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/next-gen-atp-finals/7696/overview",
+      "note": "Next Gen Finals, 0 ATP ranking points -> dash",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Washington": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 48,
+      "tournament_keys": [
+        1532
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/washington/418/overview",
+      "note": "Mubadala Citi DC Open; 48-draw",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Acapulco": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        2131
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/acapulco/807/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Barcelona": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1979
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/barcelona/425/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Basel": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1706
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/basel/328/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Beijing": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1652
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/beijing/747/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Dallas": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        5232
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/dallas/424/overview",
+      "note": "upgraded to ATP 500",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Doha": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1805
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/doha/451/overview",
+      "note": "upgraded to ATP 500 for 2025",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Dubai": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1249
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/dubai/495/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Halle": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        2041
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/halle/500/overview",
+      "note": "Terra Wortmann Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Hamburg": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1442
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/hamburg/414/overview",
+      "note": "Bitpanda Hamburg Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "London": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        2042
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/london/311/overview",
+      "note": "Queen's Club / Cinch Championships (atp id 311)",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Munich": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1264
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/munich/308/overview",
+      "note": "BMW Open; upgraded 250->500 for 2025",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Rio de Janeiro": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        2125
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/rio-de-janeiro/6932/overview",
+      "note": "Rio Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Rotterdam": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1855
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/rotterdam/407/overview",
+      "note": "ABN AMRO Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Tokyo": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1223
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/tokyo/329/overview",
+      "note": "Kinoshita Group Japan Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Vienna": {
+      "tier": "ATP500",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1684
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/vienna-2/337/overview",
+      "note": "Erste Bank Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Winston-Salem": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 48,
+      "tournament_keys": [
+        1214
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/winston-salem/6242/overview",
+      "note": "48-draw ATP 250",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Brisbane": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 32,
+      "tournament_keys": [
+        1804
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/brisbane/339/overview",
+      "note": "32-draw ATP 250",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Adelaide": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        3223
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/adelaide/8998/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Almaty": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        11851
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/almaty/9410/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Athens": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": null,
+      "tournament_keys": [
+        13423
+      ],
+      "source_url": "https://www.atptour.com/en/news/belgrade-athens-announcement-august-2025",
+      "note": "Vanda Pharmaceuticals Hellenic Championship, indoor hard; Belgrade ATP 250 license relocated to Athens for 2025 (overview https://www.atptour.com/en/tournaments/athens/5100/overview)",
+      "confirmed_seasons": [
+        "2025"
+      ]
+    },
+    "Antwerp": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        3669
+      ],
+      "source_url": "https://www.atptour.com/en/news/antwerp-2024-atp-250-history-draw-schedule",
+      "note": "off current calendar; relocated to Brussels 2025; historical tier",
+      "confirmed_seasons": [
+        "2024",
+        "2025"
+      ]
+    },
+    "Astana": {
+      "tier": null,
+      "confirmed": false,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/djokovic-garin-astana-2022-wednesday",
+      "note": "UNCONFIRMED: off calendar (relocated to Almaty); 2020-21 were ATP 250 but 2022 'bumped to ATP 500'; conflicting historical tiers -> founder ruling",
+      "confirmed_seasons": []
+    },
+    "Auckland": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1231
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/auckland/301/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Bastad": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2067
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/bastad/316/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Belgrade": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/tournaments/belgrade/4787/overview",
+      "note": "overview shows 2024 dates; may be off 2025/26 calendar",
+      "confirmed_seasons": [
+        "2025"
+      ]
+    },
+    "Bucharest": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1978
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/bucharest/4462/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Buenos Aires": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1246
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/buenos-aires/506/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Chengdu": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2319
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/chengdu/7581/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Cordoba": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/tournaments/cordoba/9158/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2024"
+      ]
+    },
+    "Delray Beach": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1251
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/delray-beach/499/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Eastbourne": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2052
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/eastbourne/741/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Estoril": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2204
+      ],
+      "source_url": "https://www.atptour.com/en/news/estoril-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2024",
+        "2026"
+      ]
+    },
+    "Geneva": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2207
+      ],
+      "source_url": "https://www.atptour.com/en/news/geneva-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Gstaad": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1527
+      ],
+      "source_url": "https://www.atptour.com/en/news/gstaad-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Hangzhou": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        11724
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/hangzhou/4713/overview",
+      "note": "relocated from Zhuhai 2024",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Hertogenbosch": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2051
+      ],
+      "source_url": "https://www.atptour.com/en/news/s-hertogenbosch-2026-atp-250-history-draw-schedule",
+      "note": "Libema Open",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Hong Kong": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2820
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/hong-kong/336/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Houston": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1960
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/houston/717/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Kitzbuhel": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1205
+      ],
+      "source_url": "https://www.atptour.com/en/news/kitzbuhel-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Los Cabos": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2305
+      ],
+      "source_url": "https://www.atptour.com/en/news/los-cabos-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Lyon": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/lyon-tennis-atp-250-history-draw-schedule-tickets",
+      "note": "Marseille relocated to Lyon from 2026",
+      "confirmed_seasons": [
+        "2026"
+      ]
+    },
+    "Mallorca": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        3681
+      ],
+      "source_url": "https://www.atptour.com/en/news/mallorca-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Marrakech": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2270
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/marrakech/360/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Marseille": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/marseille-lyon-relocation",
+      "note": "relocating to Lyon from 2026",
+      "confirmed_seasons": [
+        "2025"
+      ]
+    },
+    "Metz": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1616
+      ],
+      "source_url": "https://www.atptour.com/en/news/metz-2024-atp-250-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025"
+      ]
+    },
+    "Montpellier": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1844
+      ],
+      "source_url": "https://www.atptour.com/en/tournaments/open%20sud%20de%20france/375/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Newport": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/newport-final-year-as-atp-tour-event",
+      "note": "off calendar; downgraded to Challenger after 2024; historical tier",
+      "confirmed_seasons": [
+        "2024"
+      ]
+    },
+    "Pune": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/tournaments/tata%20open%20maharashtra/891/overview",
+      "note": "",
+      "confirmed_seasons": [
+        "2024"
+      ]
+    },
+    "Santiago": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2824
+      ],
+      "source_url": "https://www.atptour.com/en/news/darderi-hanfmann-santiago-2026-final",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Stockholm": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1681
+      ],
+      "source_url": "https://www.atptour.com/en/news/stockholm-2024-atp-250-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Stuttgart": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        2068
+      ],
+      "source_url": "https://www.atptour.com/en/news/stuttgart-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Sydney": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/tournaments/sydney/338/overview",
+      "note": "off calendar; last tour-level 2019; historical tier",
+      "confirmed_seasons": [
+        "2019"
+      ]
+    },
+    "Tel Aviv": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/tel-aviv-awarded-atp-250-single-year-license-march-2023",
+      "note": "off calendar; single-year license, 2023 cancelled; historical tier",
+      "confirmed_seasons": [
+        "2022"
+      ]
+    },
+    "Umag": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [
+        1201
+      ],
+      "source_url": "https://www.atptour.com/en/news/umag-atp-250-2026-history-draw-schedule",
+      "note": "",
+      "confirmed_seasons": [
+        "2025",
+        "2026"
+      ]
+    },
+    "Zhuhai": {
+      "tier": "ATP250",
+      "confirmed": true,
+      "draw_size_most_recent": 28,
+      "tournament_keys": [],
+      "source_url": "https://www.atptour.com/en/news/zhuhai-relocation-to-hangzhou",
+      "note": "off calendar; relocated to Hangzhou from 2024; historical tier",
+      "confirmed_seasons": [
+        "2023"
+      ]
+    }
+  },
+  "in_window_unmapped": []
+}

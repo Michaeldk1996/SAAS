@@ -14025,6 +14025,26 @@ async function loadHoldbreak(){
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
 }
+// TEN-173 Points at Risk — points-at-risk.json (build-points-at-risk.js output):
+// { _meta, players:{ key:{ points, coverage, resolvedCount, gapCount, perEvent[],
+// dashed[] } } }. One small global artifact (like elo-ratings.json), keyed by
+// api-tennis player_key. Pre-computed, ZERO live API at render; loaded lazily on
+// first profile open. Absent player => the tile dashes, never a 0.
+let _parData = null, _parLoading = false;
+async function loadPointsAtRisk(){
+  if (_parData || _parLoading) return;
+  _parLoading = true;
+  try {
+    const res = await fetch('./points-at-risk.json', { cache: 'no-cache' });
+    _parData = res.ok ? await res.json() : { players: {} };
+  } catch (err) { _parData = { players: {} }; }
+  _parLoading = false;
+  // Lazy-race fix (same idiom as loadHoldbreak): repaint an open profile so the
+  // Points at Risk tile fills in place instead of holding on the loading dash.
+  const _ppView = document.getElementById('playerProfileView');
+  if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
+      && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
+}
 // Player-profile redesign — live Elo ratings (fetch-elo.js output, same file the
 // Playing Styles tab reads). Loaded once; the profile header's Elo pill looks it
 // up synchronously via ppEloFor(). Absence just falls back to a deterministic
@@ -15604,6 +15624,7 @@ function showPlayerProfile(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return;
   ppState.key = String(key);
+  if (typeof loadPointsAtRisk === 'function') loadPointsAtRisk();  // lazy; repaints tile on completion
   ppState.surface = 'All';
   ppState.tournamentQuery = '';
   ppState.tournamentPicked = null;
@@ -16427,6 +16448,17 @@ function buildPlayerProfileHtml(p){
   const eloTileSub = eloTile.illustrative
     ? `Illustrative · ATP #${p.rank||'—'}`
     : (isAll ? `Elo rank #${eloTile.rank} · ATP #${p.rank||'—'}` : (eloTile.degraded ? `No ${surf.toLowerCase()} Elo · general #${eloTile.rank}` : `${surf} Elo rank #${eloTile.rank}`));
+  // TEN-173 Points at Risk: ATP ranking points earned in the trailing 52 weeks
+  // (= points that will drop off over the next 52 weeks). Resolvable FLOOR from
+  // the fail-closed engine (excludes Challengers, team/finals, unconfirmed tiers);
+  // a player with no in-window main-tour footprint is absent -> dash, never 0.
+  const parRow = (typeof _parData !== 'undefined' && _parData && _parData.players) ? _parData.players[String(p.key)] : null;
+  const parValue = parRow ? String(parRow.points) : '—';
+  const parSub = parRow
+    ? (parRow.coverage === 'complete'
+        ? `${parRow.resolvedCount} events · next 52wk`
+        : `${parRow.resolvedCount} events · ${parRow.gapCount} gap`)
+    : ((typeof _parData === 'undefined' || !_parData) ? 'Loading…' : 'No main-tour events in window');
   const tileDefs = [
     { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: '#5b9bff', icon: BSP_ICONS.trophy },
     { label: careerLabel, value: careerValue, sub: careerSub, accent: '#5b9bff', icon: BSP_ICONS.chart },
@@ -16434,6 +16466,7 @@ function buildPlayerProfileHtml(p){
     { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: '#5b9bff', icon: AKC_ICONS.form },
     { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: '#5b9bff', icon: AKC_ICONS.form },
     { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: '#5b9bff', icon: BSP_ICONS.trophy },
+    { label: 'Points at Risk', value: parValue, sub: parSub, accent: '#5b9bff', icon: BSP_ICONS.chart },
   ];
   const tilesHtml = tileDefs.map(k => `
     <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:13px;min-width:0;">

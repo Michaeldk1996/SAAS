@@ -1,0 +1,183 @@
+{
+  "_meta": {
+    "version": 1,
+    "unit": "ATP singles ranking points",
+    "source": "2026 ATP Official Rulebook \u00a79.03 G.5 (Singles Point table), p.272-273",
+    "source_url": "https://www.atptour.com/-/media/files/rulebook/2026/2026-rulebook_19dec25.pdf",
+    "verified": "transcribed by research pass + independently re-extracted (PyMuPDF coordinate-aligned); passes agree",
+    "regime": "2024+ (see report \u00a72); valid for a 52-week window ending 2026-09-08",
+    "round_keys": "R128..R16 = round-of loser points; QF/SF/F/W as printed; Q_into_MD=qualifier bonus into main draw (added on top); Q_final_round_loss=last-qualifying-round loss; Q_earlier_round_loss=earlier qualifying loss",
+    "zero_vs_null": "0 = rulebook awards no points for that first-round loss (rule G.2); null = round not applicable to that draw size"
+  },
+  "GrandSlam": {
+    "128": {
+      "W": 2000,
+      "F": 1300,
+      "SF": 800,
+      "QF": 400,
+      "R16": 200,
+      "R32": 100,
+      "R64": 50,
+      "R128": 10,
+      "Q_into_MD": 30,
+      "Q_final_round_loss": 16,
+      "Q_earlier_round_loss": 8
+    }
+  },
+  "Masters1000": {
+    "96": {
+      "W": 1000,
+      "F": 650,
+      "SF": 400,
+      "QF": 200,
+      "R16": 100,
+      "R32": 50,
+      "R64": 30,
+      "R128": 10,
+      "Q_into_MD": 20,
+      "Q_final_round_loss": 10,
+      "Q_earlier_round_loss": null
+    },
+    "56": {
+      "W": 1000,
+      "F": 650,
+      "SF": 400,
+      "QF": 200,
+      "R16": 100,
+      "R32": 50,
+      "R64": 10,
+      "R128": null,
+      "Q_into_MD": 30,
+      "Q_final_round_loss": 16,
+      "Q_earlier_round_loss": null,
+      "_note": "rulebook prints '48/56 Draw' as one combined row; a 48-draw Masters shares these values"
+    }
+  },
+  "ATP500": {
+    "48": {
+      "W": 500,
+      "F": 330,
+      "SF": 200,
+      "QF": 100,
+      "R16": 50,
+      "R32": 25,
+      "R64": 0,
+      "R128": null,
+      "Q_into_MD": 16,
+      "Q_final_round_loss": 8,
+      "Q_earlier_round_loss": null
+    },
+    "32": {
+      "W": 500,
+      "F": 330,
+      "SF": 200,
+      "QF": 100,
+      "R16": 50,
+      "R32": 0,
+      "R64": null,
+      "R128": null,
+      "Q_into_MD": 25,
+      "Q_final_round_loss": 13,
+      "Q_earlier_round_loss": null
+    }
+  },
+  "ATP250": {
+    "48": {
+      "W": 250,
+      "F": 165,
+      "SF": 100,
+      "QF": 50,
+      "R16": 25,
+      "R32": 13,
+      "R64": 0,
+      "R128": null,
+      "Q_into_MD": 8,
+      "Q_final_round_loss": 4,
+      "Q_earlier_round_loss": null
+    },
+    "32": {
+      "W": 250,
+      "F": 165,
+      "SF": 100,
+      "QF": 50,
+      "R16": 25,
+      "R32": 0,
+      "R64": null,
+      "R128": null,
+      "Q_into_MD": 13,
+      "Q_final_round_loss": 7,
+      "Q_earlier_round_loss": null
+    }
+  },
+  "Challenger": {
+    "CH175": {
+      "W": 175,
+      "F": 90,
+      "SF": 50,
+      "QF": 25,
+      "R16": 13,
+      "R32": 0,
+      "Q_into_MD": 6,
+      "Q_final_round_loss": 3
+    },
+    "CH125": {
+      "W": 125,
+      "F": 64,
+      "SF": 35,
+      "QF": 16,
+      "R16": 8,
+      "R32": 0,
+      "Q_into_MD": 5,
+      "Q_final_round_loss": 3
+    },
+    "CH100": {
+      "W": 100,
+      "F": 50,
+      "SF": 25,
+      "QF": 14,
+      "R16": 7,
+      "R32": 0,
+      "Q_into_MD": 4,
+      "Q_final_round_loss": 2
+    },
+    "CH75": {
+      "W": 75,
+      "F": 44,
+      "SF": 22,
+      "QF": 12,
+      "R16": 6,
+      "R32": 0,
+      "Q_into_MD": 4,
+      "Q_final_round_loss": 2
+    },
+    "CH50": {
+      "W": 50,
+      "F": 25,
+      "SF": 14,
+      "QF": 8,
+      "R16": 4,
+      "R32": 0,
+      "Q_into_MD": 3,
+      "Q_final_round_loss": 1
+    }
+  },
+  "_special_non_round": {
+    "_note": "NOT a function of round reached \u2014 do NOT map with the [tier][draw][round] key. Points are per-rulebook special formulas.",
+    "NittoATPFinals": {
+      "undefeated_champion": 1500,
+      "per_round_robin_win": 200,
+      "semifinal_win": 400,
+      "final_win": 500,
+      "source": "\u00a79.03 G.5 footnote *"
+    },
+    "UnitedCup": {
+      "flat": 500,
+      "source": "\u00a79.03 G.5 footnote ** / \u00a74.03 G"
+    }
+  },
+  "_out_of_scope_but_present_in_source": {
+    "ITF_M25": "25/16/8/3/1 (W/F/SF/QF/R16) \u2014 not transcribed in full; present in same PDF if needed",
+    "ITF_M15": "15/8/4/2/1 \u2014 same",
+    "Doubles": "separate table \u00a79.03 G.6 (unchanged since 2023); not in scope"
+  }
+}

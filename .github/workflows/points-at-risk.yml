@@ -1,0 +1,113 @@
+name: BSP points-at-risk refresh
+
+# Rebuilds points-at-risk.json (the "Points at Risk" profile tile: ATP ranking
+# points earned in the trailing 52 weeks, i.e. what a player has to defend) and
+# commits it back to main. pipeline.yml copies the committed file into _site and
+# asserts its presence, so a refresh reaches the live site on the next pipeline
+# cycle; this workflow keeps the committed file current and dispatches a publish.
+#
+# Engine: tools/points-at-risk/build-points-at-risk.js runs the verified resolver
+# behind the FAIL-CLOSED round-integrity + per-season tier gates (TEN-172/173).
+# A tier is confirmed per-season in atp-tier-map-v1.json; an unconfirmed edition
+# dashes that row rather than inheriting a prior season's tier.
+#
+# Why daily and not every 15 minutes: a player's points-at-risk changes at most
+# once per day (as results land / editions cross their 52-week anniversary), and
+# the harvest is ~14 api-tennis calls per run. 05:30 UTC is after the previous
+# day's play everywhere.
+
+on:
+  schedule:
+    - cron: '30 5 * * *'      # daily, 05:30 UTC
+  workflow_dispatch:          # manual "Run workflow"
+
+# Never let two builds overlap — they both write/push points-at-risk.json.
+concurrency:
+  group: bsp-points-at-risk
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # commit the rebuilt points-at-risk.json
+  actions: write              # dispatch pipeline.yml so the refresh deploys now
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record the committed file's player count
+        # Captured before the rebuild overwrites it, so the sanity gate can tell a
+        # real refresh from a harvest that quietly lost everyone to an API outage.
+        run: |
+          echo "PREV_PLAYERS=$(node -e 'try{console.log((require("./points-at-risk.json")._meta||{}).playerCount||0)}catch(e){console.log(0)}')" >> "$GITHUB_ENV"
+
+      - name: Rebuild points-at-risk.json
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          if [ -z "$API_TENNIS_KEY" ]; then
+            echo "::error::API_TENNIS_KEY secret is not set."; exit 1
+          fi
+          node tools/points-at-risk/build-points-at-risk.js --harvest --out points-at-risk.json
+
+      - name: Fail-closed QA gate
+        # Data-integrity gate, wired fail-closed into the refresh job (per the CEO
+        # operating discipline). Refuses to commit a broken artifact over a good one:
+        #   - schema present (players + coverageCounts + asOf)
+        #   - the harvest didn't collapse (playerCount >= 95% of previous)
+        #   - at least some editions resolved (complete > 0) — a total-gap file is a break
+        # Per-row fail-closed (an unconfirmed-tier edition dashing to a gap) is handled
+        # inside the engine; this asserts the file as a whole is trustworthy to publish.
+        run: |
+          node -e '
+            const d = require("./points-at-risk.json");
+            const m = d._meta || {};
+            const cov = m.coverageCounts || {};
+            const n = m.playerCount || 0;
+            const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
+            if (!m.asOf || !d.players || !m.coverageCounts) { console.error("::error::points-at-risk.json missing _meta.asOf / players / coverageCounts — schema break"); process.exit(1); }
+            if (!n) { console.error("::error::points-at-risk.json has no players — refusing to commit"); process.exit(1); }
+            if ((cov.complete || 0) === 0) { console.error("::error::0 players with complete coverage — total data gap, refusing to publish"); process.exit(1); }
+            if (n < Math.floor(prev * 0.95)) { console.error(`::error::player count regressed ${prev} -> ${n} (harvest likely failed) — refusing to commit`); process.exit(1); }
+            console.log(`OK: ${n} players (was ${prev}), coverage ${JSON.stringify(cov)}, asOf ${m.asOf}, gaps=${cov.gap||0}`);
+          '
+
+      - name: Commit refreshed points-at-risk.json
+        id: commit
+        run: |
+          if git diff --quiet -- points-at-risk.json; then
+            echo "File is byte-identical — nothing to commit."
+            echo "changed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "bsp-par-bot"
+          git config user.email "bsp-par-bot@users.noreply.github.com"
+          git add points-at-risk.json
+          git commit -m "chore(points-at-risk): refresh trailing-52 points-at-risk [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed points-at-risk.json on attempt $attempt."
+              echo "changed=1" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push points-at-risk.json after 3 attempts."
+          exit 1
+
+      - name: Publish now — dispatch pipeline.yml
+        if: steps.commit.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fresh points-at-risk.json pushed — dispatching pipeline.yml to publish to Pages."
+          gh workflow run pipeline.yml --ref main
