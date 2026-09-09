@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T22:31:12.437Z",
+  "generatedAt": "2026-09-09T22:31:13.987Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,9 +18,9 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16029,
+  "matchesCounted": 16031,
   "tmlMatchesCounted": 13561,
-  "supplementMatchesInMatrix": 2468,
+  "supplementMatchesInMatrix": 2470,
   "matchesInWindow": 78091,
   "retentionPct": 17.4,
   "archetypes": {
@@ -136,7 +136,7 @@
       },
       "Attacking Baseliner": {
         "pct": 61,
-        "n": 1258
+        "n": 1259
       },
       "Solid Baseliner": {
         "pct": 66,
@@ -152,7 +152,7 @@
       },
       "All Court Elite": {
         "pct": 24,
-        "n": 186
+        "n": 187
       }
     },
     "Attacking Baseliner": {
@@ -166,7 +166,7 @@
       },
       "Big Server + Complete Baseliner": {
         "pct": 39,
-        "n": 1258
+        "n": 1259
       },
       "Attacking Baseliner": {
         "pct": 50,
@@ -306,7 +306,7 @@
       },
       "Big Server + Complete Baseliner": {
         "pct": 76,
-        "n": 186
+        "n": 187
       },
       "Attacking Baseliner": {
         "pct": 84,
@@ -333,7 +333,7 @@
   },
   "surfaceNote": "matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 9539,
+    "hard": 9541,
     "clay": 4822,
     "grass": 1635
   },
@@ -425,7 +425,7 @@
         },
         "Attacking Baseliner": {
           "pct": 61,
-          "n": 818
+          "n": 819
         },
         "Solid Baseliner": {
           "pct": 66,
@@ -440,8 +440,8 @@
           "n": 142
         },
         "All Court Elite": {
-          "pct": 25,
-          "n": 123
+          "pct": 26,
+          "n": 124
         }
       },
       "Attacking Baseliner": {
@@ -455,7 +455,7 @@
         },
         "Big Server + Complete Baseliner": {
           "pct": 39,
-          "n": 818
+          "n": 819
         },
         "Attacking Baseliner": {
           "pct": 50,
@@ -594,8 +594,8 @@
           "n": 99
         },
         "Big Server + Complete Baseliner": {
-          "pct": 75,
-          "n": 123
+          "pct": 74,
+          "n": 124
         },
         "Attacking Baseliner": {
           "pct": 85,
@@ -1189,8 +1189,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 2468,
-    "foldedIntoMatrix": 2468,
+    "matchesAdded": 2470,
+    "foldedIntoMatrix": 2470,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 20,
     "dedupTolDays": 1
@@ -1199,15 +1199,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 58940,
-    "rows": 32058,
-    "priced": 29182,
+    "rows": 32062,
+    "priced": 29186,
     "pricedPct": 91,
-    "rows2026": 5208,
-    "priced2026": 3602,
+    "rows2026": 5212,
+    "priced2026": 3606,
     "priced2026Pct": 69.2
   },
   "byPlayerPlayers": 249,
-  "byPlayerEndpointsCounted": 32058,
+  "byPlayerEndpointsCounted": 32062,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -2747,7 +2747,7 @@
           "l": 21
         },
         "Big Server + Complete Baseliner": {
-          "w": 32,
+          "w": 33,
           "l": 37
         },
         "Counterpuncher": {
@@ -5419,7 +5419,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 40,
-          "l": 12
+          "l": 13
         },
         "Attacking Baseliner": {
           "w": 83,
@@ -7125,7 +7125,7 @@
           "l": 4
         },
         "All Court Elite": {
-          "w": 1,
+          "w": 2,
           "l": 13
         },
         "Big Server": {
@@ -7964,7 +7964,7 @@
         },
         "Attacking Baseliner": {
           "w": 27,
-          "l": 24
+          "l": 25
         },
         "Big Server + Complete Baseliner": {
           "w": 9,
