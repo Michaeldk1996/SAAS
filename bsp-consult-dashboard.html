@@ -15346,10 +15346,17 @@ function renderParDrawerBody(row){
       <span style="font-size:14px;font-weight:700;color:#5b6880;font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">—</span>
     </div>`;
   }).join('');
+  // With nothing resolved, `total` is 0 only because there was nothing to add —
+  // printing it asserts "zero points at risk" when the truth is "we could not
+  // resolve any of it", and it would contradict the tile, which dashes this case.
+  // Missing data is a dash, never a zero (founder ruling, confirmation
+  // confirmation:TEN-172:drawer-foot-dash:v1, accepted 2026-09-08). A genuine
+  // resolved 0 — a lone first-round loss — still prints, because it has rows.
+  const footTotal = resolved.length ? total.toLocaleString() : '—';
   const foot = `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:11px;padding:14px 8px;border-top:2px solid rgba(91,155,255,0.35);margin-top:2px;">
       <span></span>
       <span style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8a94a6;font-family:'IBM Plex Mono',monospace;">Points at Risk</span>
-      <span style="font-size:18px;font-weight:800;color:#5b9bff;font-family:'IBM Plex Mono',monospace;text-align:right;">${total.toLocaleString()}</span>
+      <span style="font-size:18px;font-weight:800;color:${resolved.length ? '#5b9bff' : '#5b6880'};font-family:'IBM Plex Mono',monospace;text-align:right;">${footTotal}</span>
     </div>
     ${reconciles ? '' : `<div style="padding:8px;color:#e0616f;font-size:11.5px;">⚠ Breakdown total ${total.toLocaleString()} does not match tile ${Number(row.points).toLocaleString()} — reporting rather than reconciling.</div>`}`;
   if (!resolved.length && !dateless.length){
