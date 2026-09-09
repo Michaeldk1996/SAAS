@@ -237,7 +237,14 @@
   [data-page="matches"] .mx-daytabs button.is-today .dtop::before{ content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--mc-brand); margin-right:5px; vertical-align:middle; position:relative; top:-1px; }
   /* Cross-date results search (TEN-8 Option A): rail is dimmed and de-highlighted while a
      name is typed in Results — the list spans multiple days, so no single tab is "current". */
-  [data-page="matches"] .mx-daytabs.is-searching button{ opacity:.42; color:var(--mx-text-secondary); border-bottom-color:transparent; }
+  /* TEN-179 item 2 — the export states the rail greys to 45% and goes NON-INTERACTIVE
+     while search is non-empty (search spans all dates, so the rail no longer describes
+     what's on screen). Was 42% and still clickable; the opacity is now the export's .45
+     and pointer-events are off on the rail AND both chevrons. Clearing the box restores
+     both — is-searching is toggled from crossDateSearch() every render. */
+  [data-page="matches"] .mx-daytabsrow.is-searching .mx-daytabschevron{ opacity:.45; pointer-events:none; }
+  [data-page="matches"] .mx-daytabs.is-searching{ pointer-events:none; }
+  [data-page="matches"] .mx-daytabs.is-searching button{ opacity:.45; color:var(--mx-text-secondary); border-bottom-color:transparent; }
   [data-page="matches"] .mx-daytabs.is-searching button.active{ color:var(--mx-text-secondary); border-bottom-color:transparent; }
   [data-page="matches"] .mx-daytabs.is-searching button.active .dbottom{ color:var(--mx-text-faint); }
   [data-page="matches"] .mx-daytabs.is-searching button.is-today .dtop::before{ background:var(--mx-text-faint); }
@@ -420,7 +427,7 @@
   /* §3 — Completed summary strip: settled · favourites held · upsets. Full card
      width + card chrome; three cells split by 1px vertical dividers (first cell
      has no left divider). Held% and Upsets both derive from ONE heldCount pass. */
-  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 24px 0; }
+  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 0 0; }   /* TEN-179: now inside .mx-controls, which owns the horizontal padding */
   /* §4 (PASS 4) — stat box read from the export source. Value is Mono 500 at 20px
      (a screenshot-derived ~30px/700 was wrong on both count); label letter-spacing
      0.11em; cell gap 4px; the box is a data block so its radius is 12px, not the 14px
@@ -439,6 +446,16 @@
   [data-page="matches"] .mc-story__move{ display:flex; align-items:baseline; gap:8px; }
   [data-page="matches"] .mc-story__od{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); letter-spacing:-0.01em; }
   [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); font-size:12px; color:var(--mc-muted); line-height:1.45; }
+  /* TEN-179 item 1/3 — Upcoming summary boxes. BIGGEST MARKET MOVE is clickable and sets
+     the sort to Drift; it takes the card's own hover border so it reads as actionable. */
+  [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease; }
+  [data-page="matches"] .mc-story--click:hover{ border-color:rgba(91,155,255,0.22); }
+  [data-page="matches"] .mc-story--click:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:2px; }
+  [data-page="matches"] .mc-story__name{ font-family:var(--mx-font-ui); font-size:13px; font-weight:700; color:var(--mc-text); }
+  [data-page="matches"] .mc-story__tight{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  [data-page="matches"] .mc-story__tname{ font-family:var(--mx-font-ui); font-size:13px; color:var(--mc-muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  [data-page="matches"] .mc-story__tname.lead{ color:var(--mc-text); font-weight:700; }
+  [data-page="matches"] .mc-story__tod{ font-family:var(--mx-font-mono); font-size:13px; font-weight:700; color:var(--mc-text); flex:none; }
   [data-page="matches"] .mc-story__ctx strong{ color:var(--mc-text); font-weight:700; }
   [data-page="matches"] .mc-story__ups{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-story__upname{ font-family:var(--mx-font-ui); font-size:13px; color:var(--mc-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -477,6 +494,35 @@
 
   /* odds + implied (upcoming) */
   [data-page="matches"] .mc-oddswrap{ display:flex; align-items:baseline; gap:8px; justify-content:flex-end; }
+
+  /* TEN-179 item 3 — Upcoming DRIFT view. The card's right-hand block reads directly off
+     state.sort, so it can never fall out of sync with the sort control. Track widths and
+     type are TOKENS.md literals: 44/56/44/48 at gap 4, padding-left 8; open 16px/400,
+     now 19px/800, delta 15px/700, arrow glyph 9px, bar 2px high at 50% opacity with
+     length max(10, min(30, |pct|*0.9)). The block spans the two existing right-hand
+     columns rather than re-gridding the row — the Time view's grid is untouched. */
+  [data-page="matches"] .mc-drifted{ grid-column:2 / 4; justify-self:end; box-sizing:border-box; padding-left:8px;
+    display:grid; grid-template-columns:44px 56px 44px 48px; gap:0 4px; align-items:center; }
+  [data-page="matches"] .mc-drifted__open{ font-family:var(--mx-font-mono); font-size:16px; font-weight:400; color:var(--mc-text); text-align:center; }
+  /* No opening price on file — em dash in the dimmest token, exactly as the completed
+     card's missing-open path already does. Never derived from the current price. */
+  [data-page="matches"] .mc-drifted__open.nodata{ color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-drifted__lane{ display:flex; align-items:center; justify-content:center; }
+  [data-page="matches"] .mc-drifted__bar{ height:2px; border-radius:2px; opacity:.5; }
+  [data-page="matches"] .mc-drifted__arrow{ font-size:9px; line-height:1; margin-left:1px; }
+  /* Nothing to draw (no open) — a short neutral rule holds the lane so NOW stays under
+     its header instead of sliding left into an empty track. */
+  [data-page="matches"] .mc-drifted__flat{ width:24px; height:1px; background:var(--mx-hairline); }
+  [data-page="matches"] .mc-drifted__now{ font-family:var(--mx-font-mono); font-size:19px; font-weight:800; text-align:center; }
+  [data-page="matches"] .mc-drifted__pct{ font-family:var(--mx-font-mono); font-size:15px; font-weight:700; color:var(--mc-muted-2); text-align:right; }
+  [data-page="matches"] .mc-drifted__pct.pos{ color:#3dd68c; }
+  [data-page="matches"] .mc-drifted__pct.neg{ color:#e0645b; }
+  /* Drift-view header eyebrow: OPEN and NOW centred over their own tracks. Mirrors the
+     row's trailing tracks exactly so the labels sit over the figures. */
+  [data-page="matches"] .mc-colhead-drift{ margin-left:auto; margin-right:10px; box-sizing:border-box; padding-left:8px;
+    display:grid; grid-template-columns:44px 56px 44px 48px; gap:0 4px;
+    font-family:var(--mx-font-mono); font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-colhead-drift span{ text-align:center; }
   [data-page="matches"] .mc-odds{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); }
   [data-page="matches"] .mc-implied{ font-family:var(--mx-font-mono); font-size:12px; font-weight:600; color:var(--mc-muted-2); }
 
@@ -2276,7 +2322,7 @@
      breakpoint the title row and controls move to a 40px inset; the strip's base rule
      (24px) was never overridden, so it sat 16px left of the H1/date-strip/filter row.
      Match them. */
-  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 40px 0; }
+  [data-page="matches"] .mc-summary-slot:not(:empty){ padding:14px 0 0; }   /* TEN-179: see above — horizontal padding comes from .mx-controls */
   [data-page="matches"] .mc-contextbar{ margin:12px 40px 0; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control */
@@ -2300,12 +2346,16 @@
      0.45 border, #fff weight 700. Inactive: transparent, borderless (a transparent
      1px border reserves the space so the active state doesn't nudge its neighbour),
      #5b6880 weight 600. Leaf padding 8x18, radius 9, 13px per the export. */
+  /* TEN-179 — re-measured against the merged-Matches TOKENS.md, which supersedes the
+     earlier pass on the dimensions only: outer radius 10 (was 9), inner segment radius 8
+     (was 9), leaf 12.5px / 7x14 pad (was 13px / 8x18), gap 3 (was 2). The colour pair is
+     unchanged and already matched: 0.22 fill on a 0.45 border. Card background #0a0d14
+     per "Card / panel background"; border rgba(255,255,255,0.09) per "Card border". */
   [data-page="matches"] .mx-viewseg{ display:inline-flex; background:var(--mx-bg-input); border:1px solid var(--sf-border-subtle);
-    border-radius:9px; padding:3px; gap:2px; }
-  /* Completed-Matches parity item 3 — toggle pills to export leaf: 13px, 8x18 pad, radius 9,
-     active #fff (were 12.5px / 6x13 / 7 / #e7e9ee). Font-family already Hanken; untouched. */
-  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:8px 18px; border-radius:9px;
-    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-muted); cursor:pointer; }
+    border-radius:10px; padding:3px; gap:3px; flex:none; }
+  [data-page="matches"] .mx-viewseg button{ background:none; border:1px solid transparent; padding:7px 14px; border-radius:8px;
+    font-family:var(--sf-font-ui); font-size:12.5px; font-weight:600; color:var(--sf-muted); cursor:pointer; white-space:nowrap;
+    transition:background .14s ease, color .14s ease, border-color .14s ease; }
   [data-page="matches"] .mx-viewseg button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:#fff; font-weight:700; }
 
   /* item 6 — date-rail arrows as bordered square chevron buttons */
@@ -2618,10 +2668,11 @@
          is on. Sits alongside the Trading Report (shared foundations) so a later
          merge is wiring, not a rewrite. Deploying with the flag OFF changes nothing. -->
     <button data-tab="series" id="seriesTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-5 3 3 4-6 3 4"/><path d="M3 17h14"/></svg>Series</button>
-    <!-- Results (TEN-8): settled matches, promoted from the old Upcoming/Completed
-         toggle to a first-class sidebar tab directly under Matches (founder ruling
-         2026-08-08). Reuses the matches page in state.view='completed'. -->
-    <button data-tab="results"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7M4 9h7M4 13h4"/><path d="M12 12.6l1.7 1.7 3.3-3.7"/></svg>Results</button>
+    <!-- TEN-179 (design handoff, item 5): the Results sidebar item is REMOVED. Every
+         settled match is reached through the Upcoming|Completed mode toggle on the merged
+         Matches page, and Matches stays highlighted in both modes. `#Results` is retained
+         as a deep link into Completed (mxApplyHash) so existing links keep working. This
+         is the ONLY sidebar change in scope — no item is added, reordered or renamed. -->
     <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
     <button data-tab="h2h"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg>Head-to-Head</button>
     <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
@@ -2711,14 +2762,17 @@
          the #mainNav handler. -->
   </div>
 
-  <!-- §3 (PASS 3): completed-view day summary sits directly under the status line and
-       ABOVE the date strip + filter row — a day-level summary, not a header for the
-       first card. Filled by renderMatches; empty (and collapsed) in Upcoming. -->
-  <div class="mc-summary-slot" id="mcSummaryStrip"></div>
-
   <div class="mx-controls">
     <div class="mx-daytabsrow">
-      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Scroll left" style="display:none">‹</button>
+      <!-- TEN-179 item 1 — Upcoming|Completed segmented control, positioned immediately
+           LEFT of the date rail's back chevron per the export. Upcoming is the default.
+           Switching modes changes four things and nothing else (header copy, rail scope,
+           summary boxes, card contents) — see setMatchesView(). -->
+      <div class="mx-viewseg" id="mxModeToggle" role="tablist" aria-label="Match mode">
+        <button class="active" data-view="upcoming" role="tab" aria-selected="true">Upcoming</button>
+        <button data-view="completed" role="tab" aria-selected="false">Completed</button>
+      </div>
+      <button class="mx-daytabschevron" id="dayTabsLeft" aria-label="Previous day" style="display:none">‹</button>
       <div class="mx-daytabs-scroll" id="dayTabsScroll">
         <div class="mx-daytabs" id="dayTabs">
           <button data-day="daymin3" id="daymin3Tab" style="display:none"><span class="dtop" id="daymin3Top"></span><span class="dbottom" id="daymin3Bottom"></span></button>
@@ -2727,10 +2781,20 @@
           <button class="active is-today" data-day="today"><span class="dtop" id="todayTop"></span><span class="dbottom" id="todayBottom"></span></button>
           <button data-day="tomorrow"><span class="dtop" id="tomorrowTop"></span><span class="dbottom" id="tomorrowBottom"></span></button>
           <button data-day="day2" id="day2Tab"><span class="dtop" id="day2Top"></span><span class="dbottom" id="day2Bottom"></span></button>
+          <!-- TEN-179 item 2 — Upcoming runs TODAY FORWARD, so the forward rail needs a
+               fourth slot (today · +1 · +2 · +3). Hidden in Completed, which runs today
+               backward and fills its four from daymin3…today. -->
+          <button data-day="day3" id="day3Tab" style="display:none"><span class="dtop" id="day3Top"></span><span class="dbottom" id="day3Bottom"></span></button>
         </div>
       </div>
-      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Scroll right" style="display:none">›</button>
+      <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Next day" style="display:none">›</button>
     </div>
+    <!-- TEN-179 item 1 — the three summary boxes sit BELOW the date rail and ABOVE the
+         filter row, in both modes. This moves them down from the PASS-3 position (under
+         the status line, above the rail): the merged export places them here, and they
+         are day-scoped, so they belong under the control that picks the day. Filled by
+         renderMatches — Upcoming and Completed each build their own three. -->
+    <div class="mc-summary-slot" id="mcSummaryStrip"></div>
     <div class="mx-filterbar">
       <div class="mx-surfacedd" id="surfaceDropdown">
         <button class="mx-surfacesbtn" id="surfaceAllBtn"><span id="surfaceAllLabel">All surfaces</span> <span class="chev">▾</span></button>
@@ -4558,17 +4622,23 @@ document.getElementById('mainNav').addEventListener('click', e => {
   try {
     if (tab === 'trading') {
       if (location.hash !== '#trading') history.replaceState(null, '', location.pathname + location.search + '#trading');
-    } else if (location.hash === '#trading') {
+    } else if (tab === 'matches') {
+      // TEN-179 item 5 — clicking Matches in the sidebar ALWAYS opens Upcoming on today,
+      // and the hash follows the mode (mxWriteHash is called by setMatchesView below).
+      // Leaving Matches for any other tab clears the Matches hash so a bookmarked URL
+      // never claims to show a board the user has navigated away from.
+    } else if (location.hash === '#trading' || location.hash === '#Matches' || location.hash === '#Results') {
       history.replaceState(null, '', location.pathname + location.search);
     }
   } catch (_) { /* replaceState unavailable (e.g. file://) — deep-link is best-effort */ }
-  // Results (TEN-8) has no page of its own — it IS the matches page rendered in
-  // the settled/completed view. Map it to data-page="matches" and drive the view
-  // from the active sidebar tab now that the Upcoming/Completed toggle is gone.
+  // TEN-179 item 5 — the Results sidebar item is gone; Results is reached through the
+  // Upcoming|Completed toggle on this same page and `#Results` stays live as a deep link
+  // (mxApplyHash). The `results` mapping is retained defensively so any residual caller
+  // that still dispatches data-tab="results" lands on Completed rather than a blank page.
   const pageId = (tab === 'results') ? 'matches' : tab;
   document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === pageId));
-  if (tab === 'results') { state.view = 'completed'; buildTournamentFilters(); renderMatches(); }
-  else if (tab === 'matches') { state.view = 'upcoming'; buildTournamentFilters(); renderMatches(); }
+  if (tab === 'results') setMatchesView('completed');
+  else if (tab === 'matches') setMatchesView('upcoming');
   // Re-entering the Players tab always lands on the player list, never a
   // stale open profile from a previous visit.
   if (tab === 'players') showPlayerList();
@@ -6064,6 +6134,11 @@ async function fetchMatchesOnce(){
 }
 
 async function loadMatches(){
+  // TEN-179 item 5 — resolve a #Matches / #Results deep-link BEFORE the data awaits, so
+  // the very first paint is already in the right mode. `defer` sets state only; the
+  // render at the end of this function does the painting. Returns false for any other
+  // hash (#trading included), leaving that routing completely untouched.
+  mxApplyHash({ defer: true });
   let loaded = null;
   // One quick retry: the only realistic failure on a healthy server is reading
   // matches.json mid-write, which clears within a few hundred ms.
@@ -6217,6 +6292,11 @@ function upsetScore(m){ // winner's closing odds — bigger underdog win = bigge
   const fscore = m.finalScore; if (!fscore) return -1;
   const c = _mcCloseOf(m, fscore.winner); return c == null ? -1 : c;
 }
+// TEN-179 item 3 — the single source of truth for "is the card in the drift view?".
+// It reads state.sort DIRECTLY, with no second flag, so the sort control and the card
+// cannot fall out of sync (the export's stated reason for this design). Upcoming only:
+// a completed card has its own open→close journey block and is unaffected by the sort.
+function mxDriftView(){ return state.view !== 'completed' && state.sort === 'drift'; }
 function driftScore(m){ // largest absolute open→close move on either side
   const o1 = m.openingOdds?.p1, o2 = m.openingOdds?.p2;
   const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
@@ -6267,7 +6347,15 @@ function syncSortDropdown(completed){
   const oddsLanded = _mcOddsLanded();
   const opts = completed
     ? [['time','Finish time',false],['move','Biggest move',!oddsLanded],['upset','Biggest upset',false],['marketwrong','Market got it wrong',!oddsLanded]]
-    : [['time','Time',false],['oddsgap','Biggest odds gap',false],['surface','Surface',false]];
+    // TEN-179 item 3 (design handoff) — Upcoming offers exactly Time | Drift. This
+    // replaces 'Biggest odds gap' and 'Surface' (the surface control itself was already
+    // hidden on this page). Drift is deliberately NOT disabled by _mcOddsLanded(): its
+    // primary job in the export is to switch the card's right-hand block to OPEN · NOW,
+    // and that view renders correctly on the em-dash path with no opening prices at all.
+    // The ORDERING half of Drift is inert until opens land — driftScore() reads
+    // m.openingOdds, which is absent boardwide (see the TEN-179 findings comment) — so
+    // picking Drift today changes the card, not the order. Reported, not papered over.
+    : [['time','Time',false],['drift','Drift',false]];
   // If the active sort isn't valid for this view — or is disabled — fall back to Time.
   if (!opts.some(o => o[0] === state.sort && !o[2])) state.sort = 'time';
   const cur = opts.find(o => o[0] === state.sort) || ['time','Time'];
@@ -6317,7 +6405,7 @@ function getFiltered(){
     // §2 (PASS 5) — a future day (tomorrow / +2) can hold nothing settled, so it always
     // shows that day's upcoming matches even when the Completed toggle is active; the rail
     // is continuous. Those cards render as upcoming cards (isFinishedMatch drives layout).
-    const effView = (state.view === 'completed' && (state.day === 'tomorrow' || state.day === 'day2'))
+    const effView = (state.view === 'completed' && (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'))
       ? 'upcoming' : state.view;
     if (effView === 'completed' && !isFinishedMatch(m)) return false;
     if (effView === 'upcoming' && isFinishedMatch(m)) return false;
@@ -6354,9 +6442,14 @@ function formatShortDate(d){
 const daymin3Date = new Date(Date.now() - 3 * 86400000);
 const daymin2Date = new Date(Date.now() - 2 * 86400000);
 const day2Date = new Date(Date.now() + 2 * 86400000);
+// TEN-179 item 2 — the Upcoming rail runs TODAY FORWARD over a four-item window
+// (today · +1 · +2 · +3), so it needs a fourth forward day. Completed is unchanged
+// (it already had its four backward days: daymin3 · daymin2 · yesterday · today).
+const day3Date = new Date(Date.now() + 3 * 86400000);
 const daymin3Label = formatShortDate(daymin3Date);
 const daymin2Label = formatShortDate(daymin2Date);
 const day2Label = formatShortDate(day2Date);
+const day3Label = formatShortDate(day3Date);
 function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' }); }
 // TEN-8: the date rail shows real tournament-day dates as the PRIMARY label
 // ("Thu 6") across all five tabs; the relative word is demoted to a small
@@ -6371,12 +6464,14 @@ document.getElementById('yesterdayTop').textContent = railDate(new Date(Date.now
 document.getElementById('todayTop').textContent     = railDate(new Date());
 document.getElementById('tomorrowTop').textContent  = railDate(new Date(Date.now() + 86400000));
 document.getElementById('day2Top').textContent      = railDate(day2Date);
+document.getElementById('day3Top').textContent      = railDate(day3Date);
 document.getElementById('daymin3Bottom').textContent   = '';
 document.getElementById('daymin2Bottom').textContent   = '';
 document.getElementById('yesterdayBottom').textContent = 'Yesterday';
 document.getElementById('todayBottom').textContent     = 'Today';
 document.getElementById('tomorrowBottom').textContent  = 'Tomorrow';
 document.getElementById('day2Bottom').textContent      = '';
+document.getElementById('day3Bottom').textContent      = '';
 
 // The pipeline bakes a day-bucket label (m.day) into matches.json at the
 // moment it runs — that label goes stale as soon as real time moves past
@@ -6404,6 +6499,7 @@ function matchDayBucket(m){
   const today = dateStr(now);
   const tomorrow = dateStr(new Date(now.getTime() + dayMs));
   const dayAfterTomorrow = dateStr(new Date(now.getTime() + 2 * dayMs));
+  const threeDaysOut = dateStr(new Date(now.getTime() + 3 * dayMs));
 
   if (matchDay === threeDaysAgo) return 'daymin3';
   if (matchDay === twoDaysAgo) return 'daymin2';
@@ -6429,6 +6525,7 @@ function matchDayBucket(m){
   }
   if (matchDay === tomorrow) return 'tomorrow';
   if (matchDay === dayAfterTomorrow) return 'day2';
+  if (matchDay === threeDaysOut) return 'day3';   // TEN-179 — 4th forward rail slot
   if (new Date(`${m.date}T00:00:00Z`) < now) return 'past';
   return 'later';
 }
@@ -6448,6 +6545,7 @@ function statusLabel(m){
   if (day === 'today') return 'Today';
   if (day === 'tomorrow') return 'Tomorrow';
   if (day === 'day2') return day2Label;
+  if (day === 'day3') return day3Label;
   return 'Upcoming';
 }
 
@@ -6460,7 +6558,7 @@ function isFinishedMatch(m){
 function isUpcomingOrLive(m){
   if (m.live) return true;
   const b = matchDayBucket(m);
-  return b === 'today' || b === 'tomorrow' || b === 'day2' || b === 'later';
+  return b === 'today' || b === 'tomorrow' || b === 'day2' || b === 'day3' || b === 'later';
 }
 
 // Real live score only — built from m.liveScore (per-set games, from the API-Tennis
@@ -6768,6 +6866,32 @@ function oddsPctDelta(open, close){
   const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
   return { pct, dir, sign, text: `${sign}${Math.abs(pct)}%` };
 }
+// TEN-179 item 3 — the Upcoming DRIFT cell: OPEN · bar · NOW · signed delta.
+// `open` is the real captured opening price or null. It is NEVER derived from `now`:
+// with no opening price on file the OPEN cell renders an em dash in the dimmest token
+// (#4b5672 via --mc-muted-2), the lane renders a neutral rule, and the delta is blank.
+// That is the path every upcoming match takes today — see the TEN-179 findings comment.
+// When real opens land this function needs no layout change; the values simply fill in.
+function mcDriftCell(open, now){
+  const nowTxt = (now != null) ? now.toFixed(2) : '—';
+  if (open == null){
+    return `<span class="mc-drifted">`
+      + `<span class="mc-drifted__open nodata">—</span>`
+      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
+      + `<span class="mc-drifted__now">${nowTxt}</span>`
+      + `<span class="mc-drifted__pct"></span></span>`;
+  }
+  const d = oddsPctDelta(open, now);
+  // TOKENS.md: bar length = max(10, min(30, |pct| * 0.9))px.
+  const barW = Math.max(10, Math.min(30, Math.round(Math.abs(d.pct) * 0.9)));
+  const col = d.dir === 'pos' ? '#3dd68c' : d.dir === 'neg' ? '#e0645b' : 'var(--mc-muted)';
+  return `<span class="mc-drifted">`
+    + `<span class="mc-drifted__open">${open.toFixed(2)}</span>`
+    + `<span class="mc-drifted__lane"><span class="mc-drifted__bar" style="width:${barW}px;background:${col}"></span>`
+    + `<span class="mc-drifted__arrow" style="color:${col}">▸</span></span>`
+    + `<span class="mc-drifted__now">${nowTxt}</span>`
+    + `<span class="mc-drifted__pct ${d.dir}">${d.text}</span></span>`;
+}
 // Completed odds journey for one player: open → gradient track → close, plus the
 // signed-percentage delta (direction-coloured). Any value never recorded is omitted.
 function mcJourney(open, close){
@@ -6844,7 +6968,7 @@ function mcSigPanel(m){
 // forward-date truncation. Called at the top of every renderMatches so it always tracks
 // the current view + selected day. No data-layer change.
 function settledDateLabel(){
-  const off = { today:0, yesterday:-1, daymin2:-2, daymin3:-3, tomorrow:1, day2:2 }[state.day];
+  const off = { today:0, yesterday:-1, daymin2:-2, daymin3:-3, tomorrow:1, day2:2, day3:3 }[state.day];
   if (off === undefined) return '';
   const d = new Date(Date.now() + off * 86400000);
   return `${d.getDate()} ${d.toLocaleDateString('en-US',{ month:'short' })} ${d.getFullYear()}`;
@@ -6866,9 +6990,17 @@ function updateMatchesHeaderChrome(){
   // (Time · Biggest upset · Largest drift · Closing value); Upcoming keeps its
   // existing keys. If the active sort isn't valid for the view, fall back to 'time'.
   syncSortDropdown(completed);
+  // TEN-179 item 1 — keep the Upcoming|Completed segmented control in sync with
+  // state.view on EVERY chrome update, not just on click, so a hash deep-link
+  // (#Results) or a programmatic view change lights the right segment.
+  document.querySelectorAll('#mxModeToggle button[data-view]').forEach(b => {
+    const on = b.dataset.view === state.view;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
   if (h1)  h1.textContent  = completed ? 'Results' : "Today's Matches";
   if (sub) sub.textContent = completed
-    ? 'Settled ATP results with the full opening-to-closing odds journey.'
+    ? 'Every settled ATP match with its opening-to-closing odds journey.'   // TEN-179 — export copy verbatim
     : 'Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.';
   // §2 (Batch B, founder review 2026-08-08) — Results is a BACKWARD-looking rail:
   // no future days, Today is the rightmost tab, and the forward chevron is dead.
@@ -6889,12 +7021,20 @@ function updateMatchesHeaderChrome(){
   const surfDD = document.getElementById('surfaceDropdown');
   const dm3 = document.getElementById('daymin3Tab');
   const dm2 = document.getElementById('daymin2Tab');
+  // TEN-179 item 2 — Upcoming now runs TODAY FORWARD, so 'yesterday' leaves the
+  // Upcoming rail and the new +3 slot joins it. Both are element handles only; the
+  // show/hide decision is made per-branch below.
+  const yday = document.querySelector('#dayTabs button[data-day="yesterday"]');
+  const d3   = document.getElementById('day3Tab');
   if (completed){
     // Results keeps its 4-day backward retention rail (daymin3 · daymin2 · yesterday ·
     // today) with the back chevron carrying the "kept for 4 days" notice — restore any
     // display the Matches branch hid.
     if (dm3)  dm3.style.display  = '';
     if (dm2)  dm2.style.display  = '';
+    if (yday) yday.style.display = '';
+    // TEN-179 — the +3 slot belongs to the forward (Upcoming) rail only.
+    if (d3)   d3.style.display   = 'none';
     if (back) back.style.display = '';
     // Date-rail arrows (founder task 2026-08-08, supersedes the earlier §5 "forward
     // chevron removed" rule): BOTH arrows render on Results. The forward arrow is
@@ -6904,7 +7044,7 @@ function updateMatchesHeaderChrome(){
     if (fwd)  fwd.style.display  = '';
     // A future day could be the active tab when the user lands on Results — snap
     // back to Today before it filters an empty (upcoming) day into a settled view.
-    if (state.day === 'tomorrow' || state.day === 'day2'){
+    if (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'){
       state.day = 'today';
       const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
       if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
@@ -6925,23 +7065,27 @@ function updateMatchesHeaderChrome(){
     // surface predicate in completed view, so a surface pick left over from the Matches
     // page can't silently filter Results — and the Matches selection is preserved.
   } else {
-    // Task 2 (founder review 2026-08-08) — the Matches rail is a tight 4-tab window:
-    // yesterday · today · +2 days forward, no paging arrows, everything visible at once.
-    // The deep-history tabs (daymin2/daymin3) belong to Results' retention rail only, so
-    // they're hidden here; if one was the active day (carried over from Results), snap to
-    // Today so filtering can't target an invisible tab.
-    if (dm3) dm3.style.display = 'none';
-    if (dm2) dm2.style.display = 'none';
-    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'past'){
+    // TEN-179 item 2 (design handoff) — the Upcoming rail runs TODAY FORWARD:
+    // today · +1 · +2 · +3, a four-item window with today reachable. This SUPERSEDES the
+    // 2026-08-08 "yesterday · today · +1 · +2" rail, which put a settled day on the
+    // upcoming board; a past date must never carry into Upcoming (nor a future date into
+    // Completed — the branch above snaps that way). The backward tabs (yesterday /
+    // daymin2 / daymin3) belong to the Completed rail only and are hidden here; if one
+    // was the active day (carried over from Completed), snap to Today so the filter
+    // can't target an invisible tab.
+    if (dm3)  dm3.style.display  = 'none';
+    if (dm2)  dm2.style.display  = 'none';
+    if (yday) yday.style.display = 'none';
+    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'yesterday' || state.day === 'past'){
       state.day = 'today';
       const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
       if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
     }
     if (tomo) tomo.style.display = '';
     if (d2)   d2.style.display   = '';
-    // Date-rail arrows (founder task 2026-08-08): BOTH arrows render on Matches too,
-    // bounded by this rail's range (yesterday · today · +1 · +2). syncDayArrows()
-    // disables left when yesterday is the active/leftmost tab and right at the +2 day.
+    if (d3)   d3.style.display   = '';
+    // Date-rail arrows: BOTH render on Matches too, bounded by this rail's range
+    // (today · +1 · +2 · +3). syncDayArrows() disables left at Today and right at +3.
     if (fwd)  fwd.style.display = '';
     if (back) back.style.display = '';
     // The back-chevron tooltip is the Results retention note; it must not leak into
@@ -6958,16 +7102,18 @@ function updateMatchesHeaderChrome(){
     // 'all' (the only control that set it is now gone), so getFiltered is unaffected.
     if (surfDD){ surfDD.style.display = 'none'; surfDD.classList.remove('open'); }
   }
-  // §2 — status line: live clock in Upcoming; NONE in Results.
-  // §9 (founder review 2026-08-08) — the 'Settled · <date>' line duplicated the
-  // date-rail selection and isn't in the export, so Results shows no status line at
-  // all (the separate #tzLine "Times in …" stays). Hidden, not just cleared, so it
-  // reserves no vertical space above the rail.
+  // Status line: a live indicator with a ticking clock in Upcoming, a SETTLED indicator
+  // in Completed.
+  // TEN-179 — the merged-Matches export puts a settled indicator back in the Completed
+  // header ("Settled · <date>", muted dot, no green). That REVERSES the §9 ruling of
+  // 2026-08-08, which removed the line on the grounds that it duplicated the date rail
+  // and "isn't in the export" — it is in this one. Restored to the newer signed-off
+  // design and flagged in the TEN-179 report rather than silently kept either way.
   if (ds && !ds.classList.contains('error')){
     if (completed){
-      ds.classList.remove('settled');
-      ds.innerHTML = '';
-      ds.style.display = 'none';
+      ds.style.display = '';
+      ds.classList.add('settled');
+      ds.innerHTML = `<span class="dot"></span><span class="mx-settled-txt">Settled ·</span> <span class="mx-clock">${settledDateLabel()}</span>`;
     } else {
       ds.style.display = '';
       ds.classList.remove('settled');
@@ -6983,6 +7129,10 @@ function updateMatchesHeaderChrome(){
   // removes the class and the previously selected day (still held in state.day) re-lights.
   const dayTabsEl = document.getElementById('dayTabs');
   if (dayTabsEl) dayTabsEl.classList.toggle('is-searching', crossDateSearch());
+  // TEN-179 item 2 — the chevrons sit OUTSIDE #dayTabs, so the dim/non-interactive
+  // state has to be carried on the row as well or they stay live while the rail is off.
+  const dayRowEl = document.querySelector('[data-page="matches"] .mx-daytabsrow');
+  if (dayRowEl) dayRowEl.classList.toggle('is-searching', crossDateSearch());
   // Re-sync the paging arrows to the active day's position within the now-visible
   // window (which day tabs are shown was decided by the branches above).
   syncDayArrows();
@@ -7073,7 +7223,7 @@ function renderMatches(){
   // Cross-date search mixes days in most-recent-first order (not a single-day chronological
   // strip), so the mid-session rollover dividers don't apply — every card carries its own
   // date inline (showAltDate below) instead.
-  const dividersOn = !crossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
+  const dividersOn = !crossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2','day3'].includes(state.day);
   let prevLocalDay = null;
   const cards = filtered.map(m => {
     // TEN-8: insert a divider before the first card whose member-local calendar day
@@ -7205,7 +7355,7 @@ function renderMatches(){
     // Per the export spec no relative "Today" tag appears — the date strip above already
     // states the selected day; a card whose day differs shows its actual date, muted.
     const liveOrInt = m.live || m.interrupted;
-    const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2'].includes(state.day);
+    const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2','day3'].includes(state.day);
     // Cross-date search shows every row's date (the list spans multiple days), so the
     // selected-day strip no longer names the card's day.
     const showAltDate = (state.day === 'all' || state.day === 'past' || crossDateSearch() || (daySpecific && dayBucket !== state.day));
@@ -7230,7 +7380,9 @@ function renderMatches(){
     // itself (over the odds column); upcoming keeps its two inline column headers.
     const colHead = isCompleted
       ? `<span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span>`
-      : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
+      : mxDriftView()
+        ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span></span></span>`
+        : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
     const headHtml = `
       <div class="mc-head">
         <span class="mc-surface ${m.surface}">${surfCap}</span>
@@ -7257,13 +7409,17 @@ function renderMatches(){
       : `<div class="mc-players up">
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            <span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>
-            ${mcFormBar(m.p1RecentForm)}
+            ${mxDriftView()
+              ? mcDriftCell(m.openingOdds?.p1 ?? null, m.bestOdds?.p1?.price ?? m.odds?.p1 ?? null)
+              : `<span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>`
+                + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            <span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>
-            ${mcFormBar(m.p2RecentForm)}
+            ${mxDriftView()
+              ? mcDriftCell(m.openingOdds?.p2 ?? null, m.bestOdds?.p2?.price ?? m.odds?.p2 ?? null)
+              : `<span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>`
+                + mcFormBar(m.p2RecentForm)}
           </div>
         </div>`;
     return `
@@ -7361,6 +7517,80 @@ function renderMatches(){
     const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
     if (summarySlot) summarySlot.innerHTML = stripHtml;
     else if (stripHtml) cards.unshift(stripHtml); // fallback if the slot markup is ever absent
+  } else {
+    // TEN-179 item 1 — the UPCOMING summary boxes: BIGGEST MARKET MOVE · SHORTEST PRICE ·
+    // TIGHTEST MATCH. Day-scoped and deliberately NOT filter-scoped (export): the tournament
+    // toggle and the search box do not recompute them, so they describe the day rather than
+    // the current view. They are therefore computed over the day's slate, not `filtered`.
+    // SPEC open question 3 flags these three as provisional pending model prices and
+    // timestamped odds ticks — built to the reviewed design, not respecified here.
+    const daySlate = matches.filter(m => !isFinishedMatch(m) && matchDayBucket(m) === state.day);
+    const priceOf = (m, who) => (m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null);
+    const panels = [];
+
+    // 1. BIGGEST MARKET MOVE — needs an opening price per side. `openingOdds` is absent on
+    //    every upcoming match (the oddspapi capture has been down since 2026-07-25), so this
+    //    box has nothing real to say and says exactly that. An opening price is NEVER
+    //    derived from the current price to fill it. The box stays CLICKABLE regardless
+    //    because its job in the export is also to set the sort to Drift (item 3).
+    let bmv = null;
+    daySlate.forEach(m => {
+      ['p1','p2'].forEach(who => {
+        const o = m.openingOdds?.[who] ?? null, c = priceOf(m, who);
+        if (o == null || c == null || o <= 0) return;
+        const d = oddsPctDelta(o, c);
+        if (d.pct === 0) return;
+        if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
+          bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
+                  tour: m.tour, round: roundBadgeText(m.tournamentRound) };
+        }
+      });
+    });
+    panels.push(`<div class="mc-story mc-story--click" data-mxsummary="drift" role="button" tabindex="0" title="Sort by drift">`
+      + `<div class="mc-story__lbl">Biggest market move</div>`
+      + (bmv
+          ? `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+          : `<div class="mc-story__vpempty">No opening prices on file</div>`
+            + `<div class="mc-story__faint">Drift shows once opening odds are captured</div>`)
+      + `</div>`);
+
+    // 2. SHORTEST PRICE — the day's shortest quoted side. Purely market data, always real.
+    let sp = null;
+    daySlate.forEach(m => {
+      ['p1','p2'].forEach(who => {
+        const c = priceOf(m, who);
+        if (c == null) return;
+        if (!sp || c < sp.price) sp = { price: c, name: who === 'p1' ? m.p1 : m.p2,
+                                        opp: who === 'p1' ? m.p2 : m.p1, tour: m.tour,
+                                        round: roundBadgeText(m.tournamentRound) };
+      });
+    });
+    if (sp) {
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
+        + `<div class="mc-story__move"><span class="mc-story__od">${sp.price.toFixed(2)}</span><span class="mc-story__name">${sp.name}</span></div>`
+        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
+    }
+
+    // 3. TIGHTEST MATCH — smallest gap in implied win probability across the day. oddsGap()
+    //    is the existing, model-free measure already used by the old 'Biggest odds gap' sort.
+    let tm = null;
+    daySlate.forEach(m => {
+      if (priceOf(m,'p1') == null || priceOf(m,'p2') == null) return;
+      const g = oddsGap(m);
+      if (!tm || g < tm.gap) tm = { gap: g, m };
+    });
+    if (tm) {
+      const m = tm.m, a1 = priceOf(m,'p1'), b1 = priceOf(m,'p2');
+      const favIsP1 = a1 <= b1;
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
+        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${a1.toFixed(2)}</span></div>`
+        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${b1.toFixed(2)}</span></div>`
+        + `<div class="mc-story__ctx">${m.tour || ''}${roundBadgeText(m.tournamentRound) ? ' ' + roundBadgeText(m.tournamentRound) : ''}</div></div>`);
+    }
+
+    const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
+    if (summarySlot) summarySlot.innerHTML = stripHtml;
   }
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
@@ -13631,6 +13861,81 @@ document.getElementById('dayTabs').addEventListener('click', e => {
   const btn = e.target.closest('button[data-day]'); if (!btn) return;
   setActiveButton(document.getElementById('dayTabs'), btn); state.day = btn.dataset.day; renderMatches();
 });
+
+/* ---------- TEN-179: merged Matches page — mode toggle + routing ----------
+   The page is ONE page in two modes. Switching modes changes four things and nothing
+   else: header copy, date-rail scope, summary boxes, card contents. Everything else
+   (sidebar highlight, filter row, card component, modal) is shared and untouched. */
+
+// Selecting a mode always resets the date selection to today: a past date must never
+// carry into Upcoming and a future date must never carry into Completed. The rail
+// branches in updateMatchesHeaderChrome() enforce the same rule defensively.
+function setMatchesView(view, opts){
+  const next = (view === 'completed') ? 'completed' : 'upcoming';
+  state.view = next;
+  state.day  = 'today';
+  const tabs = document.getElementById('dayTabs');
+  const todayBtn = tabs && tabs.querySelector('button[data-day="today"]');
+  if (tabs && todayBtn) setActiveButton(tabs, todayBtn);
+  // Matches stays highlighted in the sidebar in BOTH modes (item 5) — the mode is not
+  // a page, so it never moves the nav highlight.
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === 'matches'));
+  document.querySelectorAll('.tabpage').forEach(pg => pg.classList.toggle('active', pg.dataset.page === 'matches'));
+  mxWriteHash();
+  // `defer` = set the mode now, let the caller paint. Used by the boot path, which runs
+  // before matches[] is bound: rendering there would paint an empty board, and painting
+  // it as UPCOMING first (the old behaviour) meant a #Results visitor watched the wrong
+  // mode for the whole data load before it flipped. Setting state early makes the FIRST
+  // paint the right mode.
+  if (opts && opts.defer) return;
+  buildTournamentFilters();
+  renderMatches();
+}
+
+// Toggling the mode rewrites the hash (item 5). replaceState adds no history entry and
+// fires no hashchange, so this cannot re-enter mxApplyHash and loop.
+function mxWriteHash(){
+  const want = (state.view === 'completed') ? '#Results' : '#Matches';
+  try {
+    if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
+  } catch (_) { /* file:// — deep-link is best-effort, never fatal */ }
+}
+
+// `#Results` is retained as a deep link into Completed even though the sidebar item is
+// gone, so existing links keep working. `#Matches` lands on Upcoming, today. Any other
+// hash is left entirely alone — #trading and the rest keep their own handling.
+function mxApplyHash(opts){
+  const h = location.hash;
+  if (h !== '#Matches' && h !== '#Results') return false;
+  setMatchesView(h === '#Results' ? 'completed' : 'upcoming', opts);
+  return true;
+}
+
+// TEN-179 item 3 — clicking BIGGEST MARKET MOVE sets the sort to Drift. This is the
+// IDENTICAL state to picking Drift from the dropdown: it writes the same state.sort, and
+// syncSortDropdown() (called from updateMatchesHeaderChrome on every render) updates the
+// control's label to read "Drift" so the reader can see what changed and undo it. There is
+// no separate filter state, chip or control behind it.
+document.getElementById('mcSummaryStrip').addEventListener('click', e => {
+  const box = e.target.closest('[data-mxsummary="drift"]'); if (!box) return;
+  state.sort = 'drift';
+  renderMatches();
+});
+document.getElementById('mcSummaryStrip').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const box = e.target.closest('[data-mxsummary="drift"]'); if (!box) return;
+  e.preventDefault();
+  state.sort = 'drift';
+  renderMatches();
+});
+
+document.getElementById('mxModeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-view]'); if (!btn) return;
+  if (btn.dataset.view === state.view) return;   // already there — no re-render churn
+  setMatchesView(btn.dataset.view);
+});
+
+window.addEventListener('hashchange', mxApplyHash);
 // Surface is now a dropdown menu (All surfaces / Grass / Hard / Clay).
 const surfaceLabels = { all:'All surfaces', grass:'Grass', hard:'Hard', clay:'Clay' };
 function setSurfaceActive(value){
