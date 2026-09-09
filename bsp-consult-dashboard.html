@@ -6442,9 +6442,12 @@ function formatShortDate(d){
 const daymin3Date = new Date(Date.now() - 3 * 86400000);
 const daymin2Date = new Date(Date.now() - 2 * 86400000);
 const day2Date = new Date(Date.now() + 2 * 86400000);
-// TEN-179 item 2 — the Upcoming rail runs TODAY FORWARD over a four-item window
-// (today · +1 · +2 · +3), so it needs a fourth forward day. Completed is unchanged
-// (it already had its four backward days: daymin3 · daymin2 · yesterday · today).
+// TEN-179 — the +3 rail slot. Built for the export's today-forward Upcoming rail, then
+// RETIRED by the founder's 2026-09-09 ruling: the Upcoming rail went back to
+// `yesterday · today · +1 · +2`, so #day3Tab is hidden in BOTH views. The bucket and
+// label are kept (a +3 fixture buckets to 'day3' instead of 'later' — neither is
+// rendered by any tab, so this is behaviourally identical) so the slot can be turned
+// back on by unhiding the tab if he ever wants the forward rail again.
 const day3Date = new Date(Date.now() + 3 * 86400000);
 const daymin3Label = formatShortDate(daymin3Date);
 const daymin2Label = formatShortDate(daymin2Date);
@@ -7021,9 +7024,10 @@ function updateMatchesHeaderChrome(){
   const surfDD = document.getElementById('surfaceDropdown');
   const dm3 = document.getElementById('daymin3Tab');
   const dm2 = document.getElementById('daymin2Tab');
-  // TEN-179 item 2 — Upcoming now runs TODAY FORWARD, so 'yesterday' leaves the
-  // Upcoming rail and the new +3 slot joins it. Both are element handles only; the
-  // show/hide decision is made per-branch below.
+  // TEN-179 (founder ruling 2026-09-09) — the Upcoming rail keeps YESTERDAY and the
+  // +3 slot is retired: the rail is `yesterday · today · +1 · +2` in Upcoming, the
+  // 2026-08-08 window. The export's "today forward" is overridden. `d3` is now hidden
+  // in BOTH branches; the handle stays only so the branches can assert that.
   const yday = document.querySelector('#dayTabs button[data-day="yesterday"]');
   const d3   = document.getElementById('day3Tab');
   if (completed){
@@ -7033,7 +7037,7 @@ function updateMatchesHeaderChrome(){
     if (dm3)  dm3.style.display  = '';
     if (dm2)  dm2.style.display  = '';
     if (yday) yday.style.display = '';
-    // TEN-179 — the +3 slot belongs to the forward (Upcoming) rail only.
+    // TEN-179 — the +3 slot is retired (founder ruling 2026-09-09); hidden in both views.
     if (d3)   d3.style.display   = 'none';
     if (back) back.style.display = '';
     // Date-rail arrows (founder task 2026-08-08, supersedes the earlier §5 "forward
@@ -7065,27 +7069,30 @@ function updateMatchesHeaderChrome(){
     // surface predicate in completed view, so a surface pick left over from the Matches
     // page can't silently filter Results — and the Matches selection is preserved.
   } else {
-    // TEN-179 item 2 (design handoff) — the Upcoming rail runs TODAY FORWARD:
-    // today · +1 · +2 · +3, a four-item window with today reachable. This SUPERSEDES the
-    // 2026-08-08 "yesterday · today · +1 · +2" rail, which put a settled day on the
-    // upcoming board; a past date must never carry into Upcoming (nor a future date into
-    // Completed — the branch above snaps that way). The backward tabs (yesterday /
-    // daymin2 / daymin3) belong to the Completed rail only and are hidden here; if one
-    // was the active day (carried over from Completed), snap to Today so the filter
-    // can't target an invisible tab.
+    // TEN-179 item 2, as RULED BY THE FOUNDER 2026-09-09 — the Upcoming rail is the
+    // 2026-08-08 window: yesterday · today · +1 · +2, a four-item rail with yesterday
+    // as its left edge. The export specced "today forward" (today · +1 · +2 · +3) and
+    // that shipped in 00ec284; he reversed it because api-tennis only publishes ~1 day
+    // ahead, so the forward rail's last two tabs were permanently empty while a real
+    // day of play sat one step off the rail. THIS RULING WINS over the export. The
+    // deep-history tabs (daymin2 / daymin3) belong to the Completed retention rail only
+    // and stay hidden here; if one was the active day (carried over from Completed),
+    // snap to Today so the filter can't target an invisible tab. 'day3' gets the same
+    // snap — its tab no longer renders in either view, so it can only be a stale value.
     if (dm3)  dm3.style.display  = 'none';
     if (dm2)  dm2.style.display  = 'none';
-    if (yday) yday.style.display = 'none';
-    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'yesterday' || state.day === 'past'){
+    if (yday) yday.style.display = '';
+    if (d3)   d3.style.display   = 'none';
+    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'day3' || state.day === 'past'){
       state.day = 'today';
       const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
       if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
     }
     if (tomo) tomo.style.display = '';
     if (d2)   d2.style.display   = '';
-    if (d3)   d3.style.display   = '';
     // Date-rail arrows: BOTH render on Matches too, bounded by this rail's range
-    // (today · +1 · +2 · +3). syncDayArrows() disables left at Today and right at +3.
+    // (yesterday · today · +1 · +2). syncDayArrows() disables left at yesterday and
+    // right at the +2 day.
     if (fwd)  fwd.style.display = '';
     if (back) back.style.display = '';
     // The back-chevron tooltip is the Results retention note; it must not leak into
