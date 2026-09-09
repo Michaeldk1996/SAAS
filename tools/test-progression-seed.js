@@ -88,6 +88,27 @@ ok('Include-eliminated no longer truncates the alive group to TOURX_PP_CAP',
 ok('Include-eliminated guarantees knocked-out players a slot (alive/knockedOut partition)',
    /const\s+knockedOut\s*=\s*progressable\.filter\(p\s*=>\s*!isAlive\(p\)\)/.test(html));
 
+// ---- Source guard: the 2-rounds-deep ENTRY RULE (a separate, older ruling). ----
+// Founder ruling 2026-08-24, REAFFIRMED 2026-09-09 (interaction 0ac7a8ed, answer
+// "keep"): Player progression is only available once a player is 2 rounds into the
+// tournament — "a single round is one data point, so there's no trend to compare."
+// This is why uncapping "Include eliminated" tops out at the players with depth >= 2
+// (64 of 128 at US Open 2026) and every R128 loser stays out: they have one populated
+// cell and no progression. Loosening this to >= 1 is a one-line change that would
+// silently contradict the ruling AND the empty-state copy, so both are locked here:
+// the rule at BOTH filter sites (hand-picked players and the auto-filled pool), and
+// the user-facing "2 rounds" wording that explains it. Depth is drawDepth (byes
+// counted), not matches played — a bye recipient is 2 rounds in after one win.
+console.log('=== source guard: 2-rounds-deep entry rule (founder 2026-08-24, reaffirmed 2026-09-09) ===');
+const depthGates = html.match(/p\.drawDepth\s*>=\s*\d+/g) || [];
+ok('entry rule present at both filter sites (selected players + auto pool)',
+   depthGates.length === 2, depthGates);
+ok('entry rule threshold is 2 rounds everywhere (not loosened to 1)',
+   depthGates.length > 0 && depthGates.every(g => />=\s*2$/.test(g)), depthGates);
+ok('empty-state copy still explains the 2-round rule (rule and wording cannot drift apart)',
+   (html.match(/>2 rounds</g) || []).length === 2,
+   (html.match(/>2 rounds</g) || []).length);
+
 // ---- Invariant on a fixture mirroring the reported US Open 2026 scenario. ----
 console.log('=== ranking invariant (fixture) ===');
 const ORDER = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'];

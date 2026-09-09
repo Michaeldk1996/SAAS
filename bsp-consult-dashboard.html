@@ -18557,6 +18557,11 @@ const TOURX_RV_CAP = 8, TOURX_PP_CAP = 4;
 // TOURX_PP_CAP. Note the pool is still bounded by the view's own 2-rounds-deep
 // entry rule (drawDepth >= 2), which is a separate, older ruling — first-round
 // losers have a single data point and no progression, so they remain out.
+// [2026-09-09, interaction 0ac7a8ed] Founder re-ruled on both after the uncap:
+// KEEP the 2-round entry rule (R128 losers stay out), and KEEP this one-grid shape
+// as shipped — no virtualisation, no compact-table alternate layout; ~16,600px with
+// the toggle on is accepted. Both are locked by source guards in
+// tools/test-progression-seed.js, which runs fail-closed before publish.
 const TOURX_PP_CAP_INCL = null;   // null = no cap
 // Stable per-player colour slot (TEN-130). A player is pinned to the lowest free
 // palette slot the moment they are selected and released only when removed, so
