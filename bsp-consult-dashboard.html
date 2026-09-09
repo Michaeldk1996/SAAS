@@ -6405,8 +6405,18 @@ function getFiltered(){
     // §2 (PASS 5) — a future day (tomorrow / +2) can hold nothing settled, so it always
     // shows that day's upcoming matches even when the Completed toggle is active; the rail
     // is continuous. Those cards render as upcoming cards (isFinishedMatch drives layout).
+    // TEN-179 gate e08a0bce (2026-09-10) — the MIRROR of the rule above, and the reason the
+    // restored Upcoming `yesterday` tab is no longer empty. A past day can hold nothing
+    // unsettled, so it shows that day's completed cards even when the Upcoming toggle is
+    // active. Standing rule of this filter: a LIVE match is never dropped for being past
+    // (same carve-out as the `state.day === 'all'` branch above), so an in-play match
+    // carried over from a past day keeps rendering as an upcoming card rather than
+    // vanishing from both modes.
+    const isPastDay = state.day === 'yesterday' || state.day === 'daymin2' || state.day === 'daymin3';
     const effView = (state.view === 'completed' && (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'))
-      ? 'upcoming' : state.view;
+      ? 'upcoming'
+      : (state.view === 'upcoming' && isPastDay && !m.live)
+      ? 'completed' : state.view;
     if (effView === 'completed' && !isFinishedMatch(m)) return false;
     if (effView === 'upcoming' && isFinishedMatch(m)) return false;
     // §3 (Batch B) — surface is not a Results filter (its control is hidden there), so
