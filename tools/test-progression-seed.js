@@ -74,9 +74,17 @@ ok('win-detection does NOT re-introduce "a > b" scoreline compare', !/parts\[0\]
 // which was the reopened complaint. Guard: the expanded cap exists AND the pool logic
 // partitions alive/knocked-out so the deepest eliminated are guaranteed a slot.
 console.log('=== source guard: Include-eliminated reveal (TEN-170 postscript) ===');
-ok('TOURX_PP_CAP_INCL constant defined', /TOURX_PP_CAP_INCL\s*=\s*\d+/.test(html));
-ok('Include-eliminated grows the grid (uses TOURX_PP_CAP_INCL for the combined cap)',
-   /alive\.concat\(knockedOut\)\.slice\(0,\s*TOURX_PP_CAP_INCL\)/.test(html));
+// [2026-09-09] The cap became UNCAPPED (TOURX_PP_CAP_INCL = null): a fixed 8 truncated
+// the field at a position, not a boundary. These guards now lock the uncapped contract —
+// the combined list must reach the grid whole — in place of the old numeric-slice guard.
+ok('TOURX_PP_CAP_INCL constant defined', /TOURX_PP_CAP_INCL\s*=\s*(null|\d+)/.test(html));
+ok('Include-eliminated is uncapped (TOURX_PP_CAP_INCL = null)',
+   /const\s+TOURX_PP_CAP_INCL\s*=\s*null\b/.test(html));
+ok('Include-eliminated renders the whole combined list (no unconditional slice)',
+   /const\s+combined\s*=\s*alive\.concat\(knockedOut\);/.test(html)
+   && /TOURX_PP_CAP_INCL\s*==\s*null\s*\?\s*combined\s*:/.test(html));
+ok('Include-eliminated no longer truncates the alive group to TOURX_PP_CAP',
+   /const\s+alive\s*=\s*progressable\.filter\(isAlive\);/.test(html));
 ok('Include-eliminated guarantees knocked-out players a slot (alive/knockedOut partition)',
    /const\s+knockedOut\s*=\s*progressable\.filter\(p\s*=>\s*!isAlive\(p\)\)/.test(html));
 
