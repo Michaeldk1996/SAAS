@@ -7587,13 +7587,20 @@ function renderMatches(){
     }
     // "Favori" is honestly derived from real market odds (lower odds = favorite) —
     // not a fabricated stat. Only shown when odds actually exist for this match.
-    const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
-    const p1IsFavorite = hasOdds && m.odds.p1 < m.odds.p2;
-    // TEN-179 item 1 — bet365 only (see _mcBet365Now). `hasOdds`/`p1IsFavorite` above still
-    // read m.odds: the FAV chip asserts "the market makes this player favourite" off a real
-    // quoted two-way line and is NOT a bet365-labelled figure, and its presence drives the
-    // name-track geometry TEN-182 is actively measuring. Left alone deliberately, reported.
     const nowPair = _mcBet365Now(m);
+    // TEN-179 item 5 (founder ruling 2026-09-10, gate f98f90cc) — the FAV chip and the
+    // fav/dog colouring are PINNED TO THE SAME BET365 LINE the card quotes. They used to read
+    // m.odds, whatever book that happened to be, so a card could show `— / —` and still
+    // assert a favourite off a book it was not showing. If bet365 has no price for this
+    // fixture there is no chip and no colouring: a dash means we do not know, and we do not
+    // assert a favourite from a price we are not quoting.
+    // `hasOdds` stays on m.odds ON PURPOSE and is now used for ONE thing only — `oddsSlot`
+    // below, i.e. "some book quotes this fixture, so keep the odds slot and dash it" rather
+    // than collapsing the slot entirely. That is a layout decision, not a claim about a
+    // favourite, so it is not part of this pin.
+    const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
+    const hasFavLine = !!(nowPair && nowPair.p1 != null && nowPair.p2 != null);
+    const p1IsFavorite = hasFavLine && nowPair.p1 < nowPair.p2;
     const p1OddsDisplay = nowPair?.p1 != null ? nowPair.p1.toFixed(2) : '—';
     const p2OddsDisplay = nowPair?.p2 != null ? nowPair.p2.toFixed(2) : '—';
     // Yesterday / 2-days-ago matches have no betting market (the match is
@@ -7678,8 +7685,8 @@ function renderMatches(){
     // in the neutral colour on BOTH sides — tinting one side accent would read as
     // "this player won", which is exactly what must not be shown until there's a
     // confirmed result.
-    const p1Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p1IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
-    const p2Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p2IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (!p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
+    const p1Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p1IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasFavLine ? (p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
+    const p2Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p2IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasFavLine ? (!p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
     // TEN-179 item 1 — a fixture that HAS a market but no bet365 leg keeps its odds slot and
     // dashes in it (`hasOdds` true, p1OddsDisplay '—'); the implied % goes blank with it,
     // because an implied percentage off a price we are not showing is a claim about a book
@@ -7783,7 +7790,7 @@ function renderMatches(){
             ${mcJourney(p1Open, p1Close)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close)}
@@ -7798,7 +7805,7 @@ function renderMatches(){
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
               ? mcDriftCell(m.openingOdds?.p2 ?? null, _mcNowOf(m, 'p2'))
               : `<span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
