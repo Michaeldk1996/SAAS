@@ -294,6 +294,14 @@
   [data-page="matches"] .mx-sortbtn{ display:flex; align-items:center; gap:8px; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mx-radius-input); padding:10px 13px; color:#cfd4de; font-size:12.5px; cursor:pointer; font-family:var(--mx-font-ui); outline:none; }
   [data-page="matches"] .mx-sortbtn:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:2px; }
   [data-page="matches"] .mx-sortbtn .chev{ color:var(--mx-text-secondary); font-size:12px; margin-left:2px; }
+  /* TEN-179 item 9 — the sort control reads "Sort: Time" / "Sort: Finish time"; the
+     label is dimmed so the VALUE stays the emphasised word, as in the mockup. */
+  [data-page="matches"] .mx-sortbtn__pre{ color:var(--mx-text-faint); }
+  /* TEN-179 item 9 — magnifier inside the search field. The wrapper takes the flex:1 the
+     bare input used to have, and the input's left padding clears the icon. */
+  [data-page="matches"] .mx-searchwrap{ position:relative; flex:1; min-width:160px; display:flex; align-items:center; }
+  [data-page="matches"] .mx-searchwrap .mx-search{ flex:1; padding-left:36px; }
+  [data-page="matches"] .mx-searchicon{ position:absolute; left:13px; width:15px; height:15px; color:var(--mx-text-faint); pointer-events:none; }
   [data-page="matches"] .mx-sortmenu{ position:absolute; top:calc(100% + 6px); right:0; z-index:30; min-width:190px; display:none; flex-direction:column; padding:6px; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:12px; box-shadow:0 14px 34px rgba(0,0,0,0.5); }
   [data-page="matches"] .mx-sortdd.open .mx-sortmenu{ display:flex; }
   [data-page="matches"] .mx-sortopt{ display:flex; align-items:center; justify-content:space-between; gap:14px; background:transparent; border:none; text-align:left; color:var(--mx-text-secondary); font-size:12.5px; font-family:var(--mx-font-ui); padding:9px 10px; border-radius:8px; cursor:pointer; width:100%; }
@@ -309,14 +317,50 @@
   [data-page="matches"] .mx-tablewrap{ padding:16px 24px 40px; }
   [data-page="matches"] .mx-table{ border:none; background:transparent; border-radius:0; overflow:visible; }
   [data-page="matches"] .mx-thead{ display:none; }
-  [data-page="matches"] #matchlist{ display:flex; flex-direction:column; gap:14px; }
+  /* TEN-179 item 1 — two-up card grid. TOKENS.md "Card grid" is the authority:
+     repeat(auto-fill, minmax(430px,1fr)), gap 12px, align-items:start. auto-fill IS the
+     responsive rule — it drops to one column the moment a second 430px track stops
+     fitting. MEASURED on this shell, not derived: two columns hold down to a 1190px
+     viewport and the grid is single-column at 1185px, i.e. it breaks at ~1188px — the
+     "roughly 1100px" collapse the brief asks for. No media
+     query: a hand-written breakpoint would fight the track sizing and drift from the
+     token. Full-bleed children (day dividers, the promo row, the empty state) opt out
+     with grid-column:1/-1 so they still span the whole list rather than becoming cells. */
+  [data-page="matches"] #matchlist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:12px; align-items:start; }
+  /* TEN-179 item 1, HELD HALF — the Completed card does NOT fit a 430px track and is
+     deliberately left single-column until the founder rules.
+     The completed row is a rigid grid (200px name | max-content sets | 18px | 1px hairline
+     | 218px journey) whose tracks cannot shrink. MEASURED on live bytes with a populated
+     .mc-journey injected: at a 1400px viewport the card is 536px and the journey spills
+     +32px past the card's right edge; at 1300px the card is 486px and it spills +82px.
+     .match-card's overflow:hidden then CLIPS it — no scrollbar, no cue, the closing price
+     and the signed delta simply vanish. Negative control on unmodified origin/main at the
+     same widths: -21px, i.e. comfortably inside. It is invisible today only because
+     mcJourney() returns '' while both odds legs are null (TEN-124 / the dead oddspapi
+     capture) — so this is a trap that springs the day opens land, not a visible bug.
+     TOKENS.md contradicts itself here: "Card grid ... minmax(430px,1fr)" cannot hold
+     "Completed - 200px 144px minmax(4px,1fr) 1px 232px" (613px with padding). Resolving
+     that is a design decision, not a build one. :has() keys off the cards themselves, so
+     the Upcoming->past-day mirror (which renders settled cards inside Upcoming) is
+     covered automatically. */
+  [data-page="matches"] #matchlist:has(.match-card.cmpl){ grid-template-columns:minmax(0, 1fr); }
+  [data-page="matches"] #matchlist > .mx-daydivider,
+  [data-page="matches"] #matchlist > .mc-promo,
+  [data-page="matches"] #matchlist > .mx-empty{ grid-column:1 / -1; }
   [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mc-muted); font-size:13.5px; font-family:var(--mx-font-ui); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); background:var(--mc-card); }
 
-  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:16px 18px; transition:border-color 120ms; }
+  /* TEN-179 item 2 — the Upcoming card takes the Completed card's box model, which is
+     what "one component in two states" means: the card itself carries NO padding, and
+     header / player rows / footer each own theirs, divided by the export's
+     rgba(255,255,255,0.05) rule. Values are TOKENS.md "Spacing and gap", not measured
+     off a screenshot: header 11px 16px, player row 11px 16px, footer 10px 16px
+     (Upcoming) / 11px 16px (Completed). This is what pulls the odds, implied % and form
+     bar in off the screen edge and inside the card. */
+  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:0; overflow:hidden; transition:border-color 120ms; }
   [data-page="matches"] .match-card:hover{ border-color:var(--mc-border-hover); }
 
   /* header */
-  [data-page="matches"] .mc-head{ display:flex; align-items:center; gap:10px; font-size:12px; flex-wrap:wrap; font-family:var(--mx-font-ui); }
+  [data-page="matches"] .mc-head{ display:flex; align-items:center; gap:9px; font-size:12px; flex-wrap:wrap; font-family:var(--mx-font-ui); padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.05); }
   [data-page="matches"] .mc-surface{ font-weight:700; }
   [data-page="matches"] .mc-surface.hard{ color:var(--mc-hard); }
   [data-page="matches"] .mc-surface.clay{ color:var(--mc-clay); }
@@ -334,7 +378,7 @@
   [data-page="matches"] .mc-fav:hover{ color:var(--mc-brand); }
 
   /* score line (live / suspended / pending only) */
-  [data-page="matches"] .mc-scoreline{ margin-top:10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
+  [data-page="matches"] .mc-scoreline{ margin:0; padding:9px 16px 0; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
   [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
   /* TEN-8 "Underway" — display-only state marker for a match whose start instant
@@ -357,8 +401,8 @@
   [data-page="matches"] .mc-colhead-inline .lbl{ font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--mc-muted-2); text-align:right; font-family:var(--mx-font-ui); white-space:nowrap; }
 
   /* player rows */
-  [data-page="matches"] .mc-players{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
-  [data-page="matches"] .mc-row{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:12px; position:relative; }
+  [data-page="matches"] .mc-players{ margin-top:0; display:flex; flex-direction:column; gap:0; }
+  [data-page="matches"] .mc-row{ display:flex; align-items:center; gap:12px; padding:11px 16px; border-radius:0; position:relative; }
   [data-page="matches"] .mc-players.up .mc-row{ display:grid; grid-template-columns:1fr 130px 120px; gap:12px; align-items:center; min-height:46px; }
   [data-page="matches"] .mc-row.winner::before{ content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--mc-pos); }
   /* §5-§9 — Completed row is a CSS grid: name | set-cluster | flex spacer | 1px
@@ -396,7 +440,7 @@
      row (TEN-121). max-content lets the cluster size to its set count; the 1fr spacer
      absorbs the difference so the odds column stays right-anchored, and best-of-3 cards
      stay as compact as before. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px max-content minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:13px 20px; border-radius:0; opacity:1; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px max-content minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
@@ -412,7 +456,7 @@
      margin that cancels the row's vertical padding; it now tracks the 13px padding.
      Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
      and already matches the export. */
-  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-13px 0; }
+  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-11px 0; }
   [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
   /* §4 (PASS 3) — OPEN / CLOSE caps live on the card's single header row, right-
      aligned over the odds column (width matches grid-column 5 = 218px, same 18px
@@ -477,6 +521,15 @@
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
   [data-page="matches"] .mc-av.b{ color:var(--mc-player-b); background:rgba(255,255,255,0.06); }
+  /* TEN-179 item 6 — initials underlay. The wrapper carries the identity circle and the
+     initials; the <img> is absolutely positioned on top and covers them once it decodes.
+     An empty circle is therefore impossible in any state (pending, errored, or missing). */
+  [data-page="matches"] .mc-avwrap{ position:relative; width:32px; height:32px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; overflow:hidden; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); }
+  [data-page="matches"] .mc-avwrap.a{ color:var(--mc-player-a); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
+  [data-page="matches"] .mc-avwrap.b{ color:var(--mc-player-b); background:rgba(255,255,255,0.06); }
+  [data-page="matches"] .mc-avwrap::before{ content:attr(data-init); grid-area:1/1; }
+  [data-page="matches"] .mc-avwrap .mc-av{ grid-area:1/1; width:100%; height:100%; border:none; background:none; position:relative; z-index:1; }
+  [data-page="matches"] .mc-players.cmpl .mc-avwrap{ border-color:var(--mc-border-data); }
   [data-page="matches"] .mc-name{ font-family:var(--mx-font-ui); font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
@@ -617,14 +670,14 @@
      the block border-to-border gap stays 0. The footer divider sits flush at the
      second row's bottom (margin-top:0, was 14px), with its 12px padding-top pushing
      the "Market Signal" label 13px below the divider — the export's exact footer. */
-  [data-page="matches"] .match-card.cmpl .mc-head{ padding:13px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
-  [data-page="matches"] .match-card.cmpl .mc-foot{ margin:0; padding:12px 20px; border-top-color:rgba(255,255,255,0.05); }
+  [data-page="matches"] .match-card.cmpl .mc-head{ padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.05); }
+  [data-page="matches"] .match-card.cmpl .mc-foot{ margin:0; padding:11px 16px; border-top-color:rgba(255,255,255,0.05); }
   /* §2 — with the completed card carrying no padding, the Market Signal expander spans the
      full card width on its own (no negative-margin bleed); upcoming keeps its -18px bleed. */
   [data-page="matches"] .match-card.cmpl .mc-sigpanel{ margin:0; }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
-  [data-page="matches"] .mc-foot{ margin-top:14px; padding-top:12px; border-top:1px solid var(--mc-border-subtle); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-foot{ margin-top:0; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
   [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); display:inline-block; transition:transform 120ms ease; }
   [data-page="matches"] .mc-msig.has-signal, [data-page="matches"] .mc-msig.has-signal .chev{ color:var(--mc-brand); }
@@ -635,7 +688,7 @@
   [data-page="matches"] .match-card.sig-open{ border-color:rgba(91,155,255,0.35); }
   [data-page="matches"] .match-card.sig-open .mc-msig, [data-page="matches"] .match-card.sig-open .mc-msig .chev{ color:var(--mc-brand); }
   [data-page="matches"] .match-card.sig-open .mc-msig .chev{ transform:rotate(180deg); }
-  [data-page="matches"] .mc-sigpanel{ display:none; margin:14px -18px -16px; padding:13px 20px 15px; background:#080b11; border-top:1px solid rgba(255,255,255,0.05); }
+  [data-page="matches"] .mc-sigpanel{ display:none; margin:0; padding:13px 16px 15px; background:#080b11; border-top:1px solid rgba(255,255,255,0.05); }
   [data-page="matches"] .match-card.sig-open .mc-sigpanel{ display:block; }
   [data-page="matches"] .mc-sig-head{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:11px; }
   [data-page="matches"] .mc-sig-pa{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-player-a); white-space:nowrap; }
@@ -2806,9 +2859,9 @@
         </div>
       </div>
       <div class="mx-chips" id="tournamentGroup"></div>
-      <input class="mx-search" id="searchInput" placeholder="Search for a player...">
+      <span class="mx-searchwrap"><svg class="mx-searchicon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.5"/><path d="M10.4 10.4 L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input class="mx-search" id="searchInput" placeholder="Search for a player..."></span>
       <div class="mx-sortdd" id="sortDropdown">
-        <button class="mx-sortbtn" id="sortBtn" aria-haspopup="listbox"><span id="sortBtnLabel">Time</span> <span class="chev">⇅</span></button>
+        <button class="mx-sortbtn" id="sortBtn" aria-haspopup="listbox"><span class="mx-sortbtn__pre">Sort:</span> <span id="sortBtnLabel">Time</span> <span class="chev">⇅</span></button>
         <div class="mx-sortmenu" id="sortMenu" role="listbox"></div>
       </div>
     </div>
@@ -6797,13 +6850,20 @@ function mcAvatarHtml(photoUrl, name, playerKey, side){
   // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
   const cands = photoCandidatesFor(playerKey, photoUrl);
   if (cands.length){ const src = cands[0]; const fb = cands.slice(1).join('|');
-    return `<img class="mc-av ${side}"${attrs} src="${src}" alt="${name}" referrerpolicy="no-referrer" data-fb="${fb}" onerror="if(!avatarChainNext(this))mcAvatarFail(this,'${initials}','${side}')">`; }
+    // TEN-179 item 6 — initials sit in the wrapper UNDER the photo, so the circle is
+    // never blank: not while the dead ATP hop times out, not while api-tennis loads,
+    // not if every candidate fails. Same initials treatment as the Series page (mono,
+    // centred, neutral/brand-tinted circle) — mcAvatarFail keeps working unchanged.
+    return `<span class="mc-avwrap ${side}" data-init="${initials}"><img class="mc-av ${side}"${attrs} src="${src}" alt="${name}" referrerpolicy="no-referrer" data-fb="${fb}" onerror="if(!avatarChainNext(this))mcAvatarFail(this,'${initials}','${side}')"></span>`; }
   return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
 }
 // A failed headshot becomes a properly design-styled identity circle (A brand
 // tint / B neutral) with initials — never the empty circle the legacy fallback
 // left behind. Keeps real photos where they load; degrades to the design look.
 function mcAvatarFail(img, initials, side){
+  // TEN-179 item 6 — inside .mc-avwrap the initials already sit underneath, so the
+  // honest degrade is simply to remove the broken <img> and reveal them.
+  if (img && img.parentNode && img.parentNode.classList && img.parentNode.classList.contains('mc-avwrap')){ img.remove(); return; }
   const d = document.createElement('div');
   d.className = 'mc-av ' + side;
   d.textContent = initials;
@@ -7400,10 +7460,20 @@ function renderMatches(){
       : mxDriftView()
         ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span></span></span>`
         : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
+    // TEN-179 item 5 — tournament tier. The field EXISTS: m.venue.category, a curated
+    // static fact from bsp-pipeline.js TOURNAMENT_VENUE_HINTS ('Grand Slam' | 'ATP 1000' |
+    // 'ATP 500' | 'ATP 250' | 'ATP Finals' | 'Next Gen Finals'). The stored string is
+    // rendered verbatim — the mockup reads "Masters 1000" where our record says
+    // "ATP 1000", and renaming a stored value to match a mockup is the founder's call,
+    // not a build decision. Completed only, matching the export (the Upcoming mockup
+    // carries no tier). An unmapped tournament has no category: the suffix is omitted
+    // rather than dashed, because " · —" reads as a tier literally named "—".
+    const tierSuffix = (isCompleted && m.venue && m.venue.category)
+      ? ` · ${m.venue.category}` : '';
     const headHtml = `
       <div class="mc-head">
         <span class="mc-surface ${m.surface}">${surfCap}</span>
-        <span class="mc-tourn">${m.tour}</span>
+        <span class="mc-tourn">${m.tour}${tierSuffix}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
         ${rightMeta}
         ${colHead}
@@ -7411,13 +7481,13 @@ function renderMatches(){
     const playersHtml = isCompleted
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1') : mcSetCluster(finalScore, 'p1')}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2') : mcSetCluster(finalScore, 'p2')}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close)}
