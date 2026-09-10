@@ -57,6 +57,16 @@ BOOK_LABELS = {'bet365': 'bet365'}
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
+# --- Quota accounting (TEN-179 item 2) ---------------------------------------
+# Discovery-only spend: exactly ONE metered call per run, the /v4/fixtures lookup.
+# Everything else this script touches (/v4/historical-odds, /v4/account) is free.
+# MEASURED 2026-09-10 on a 4-fixture board: meter 59 -> 60 across 1 fixtures call,
+# 3 historical-odds calls and 2 account reads. These two constants only drive the
+# log line in report_consumption(); they never gate a call, so a cadence change in
+# odds-history.yml that forgets them makes the projection wrong, not the capture.
+CAPTURE_INTERVAL_H = 3          # must track the cron in .github/workflows/odds-history.yml
+EXPECTED_UNITS_PER_RUN = 1      # the single /v4/fixtures discovery call
+
 # --- Join tolerance (TEN-179 item 3) -----------------------------------------
 # Our board dates a match in the api-tennis ACCOUNT timezone; oddspapi startTime
 # is UTC. Joining on an exact date string drops every match that falls on the
@@ -145,6 +155,34 @@ def log_quota(key, when):
     return used
 
 
+def report_consumption(before, after, hist_calls):
+    """TEN-179 item 2 (founder 2026-09-10): report the REAL per-run spend and the
+    projection it implies, rather than restating the code's own call arithmetic.
+
+    `before`/`after` are live /v4/account readings, so the delta is measured, not
+    asserted. The design target is ONE unit per run — the single /v4/fixtures
+    discovery call. /v4/historical-odds and /v4/account are both unmetered, which
+    is why `hist_calls` can run into the dozens without moving the meter; printing
+    it next to a delta of 1 is what makes that visible instead of assumed.
+    """
+    if before is None or after is None:
+        print('::warning::Could not measure this run\'s quota delta (a meter read '
+              'failed). Per-run consumption is unverified for this run.')
+        return
+    delta = after - before
+    runs_per_month = 24 * 30 // CAPTURE_INTERVAL_H
+    print(f'oddspapi consumption THIS RUN: {delta} billable unit(s) '
+          f'({hist_calls} historical-odds call(s) and 2 account reads billed 0). '
+          f'At the workflow\'s every-{CAPTURE_INTERVAL_H}h cadence that projects to '
+          f'~{delta * runs_per_month}/month against {after}/5000 used to date.')
+    if delta > EXPECTED_UNITS_PER_RUN:
+        print(f'::warning::This run spent {delta} units, above the '
+              f'{EXPECTED_UNITS_PER_RUN}-unit discovery-only design '
+              f'(~{delta * runs_per_month}/month vs the intended '
+              f'~{EXPECTED_UNITS_PER_RUN * runs_per_month}/month). Something is '
+              f'calling a metered endpoint beyond the single /v4/fixtures lookup.')
+
+
 def hist_get(fixture_id, books, key):
     """One /v4/historical-odds call for the given book(s), with 429 backoff.
     Callers pass exactly one book — see BOOKS. Returns (json, None) or
@@ -169,16 +207,50 @@ def surname_od(name):
     return norm(base)
 
 
+def surname_board(name):
+    """Our board names are '<initial>. <Surname>' — take the trailing token(s).
+
+    Used only for the SHORT-surname path in orient(). Compound surnames keep their
+    spaces on our board ('B. Van De Zandschulp'), so everything after the leading
+    'X.' initial is the surname; that is what has to match a 2-letter oddspapi
+    surname exactly rather than as a substring.
+    """
+    parts = (name or '').split()
+    if parts and parts[0].endswith('.'):
+        parts = parts[1:]
+    return norm(' '.join(parts))
+
+
 def orient(match, od_p1_name, od_p2_name):
     """'same' if match.p1 lines up with participant1, 'swap' if with participant2,
-    else None. Requires BOTH players to match so a wrong fixture can't slip in."""
+    else None. Requires BOTH players to match so a wrong fixture can't slip in.
+
+    TEN-179 item 3 (2026-09-10): a surname shorter than 3 letters used to abort the
+    whole orientation, so a fixture with a 2-letter surname could NEVER be joined and
+    its open/close were lost with no diagnosis beyond "no fixture matched both
+    surnames". Caught on a live capture test: 'Wu, Tung-Lin' v 'Castelnuovo, Luca'
+    went unjoined purely because 'wu' is two letters. On the ATP board that costs
+    Wu Yibing and Li Tu; on Challenger/ITF, where the Series page also draws, it is
+    routine.
+
+    The 3-letter floor exists for a real reason and is NOT simply lowered: `in` is a
+    substring test against the whole normalised board name, so a 2-letter token
+    matches promiscuously ('li' sits inside 'Molinari', 'Elias', 'Lisnard'). The fix
+    keeps the permissive substring test for ordinary surnames and requires a SHORT
+    surname to equal our board's surname token exactly, which cannot false-positive.
+    """
     o1, o2 = surname_od(od_p1_name), surname_od(od_p2_name)
-    if len(o1) < 3 or len(o2) < 3:
+    if not o1 or not o2:
         return None
-    m1, m2 = norm(match.get('p1')), norm(match.get('p2'))
-    if o1 and o1 in m1 and o2 and o2 in m2:
+
+    def hit(od_surname, board_name):
+        if len(od_surname) >= 3:
+            return od_surname in norm(board_name)
+        return od_surname == surname_board(board_name)
+
+    if hit(o1, match.get('p1')) and hit(o2, match.get('p2')):
         return 'same'
-    if o1 and o1 in m2 and o2 and o2 in m1:
+    if hit(o1, match.get('p2')) and hit(o2, match.get('p1')):
         return 'swap'
     return None
 
@@ -436,7 +508,7 @@ def main():
         print('ERROR: ODDSPAPI_KEY not found (.env or environment).', file=sys.stderr)
         sys.exit(1)
 
-    log_quota(key, 'before run')
+    quota_before = log_quota(key, 'before run')
 
     matches = seed_from_live(json.load(open(MATCHES)))
     # Targets = every dated match we still need movement for. Upcoming matches are
@@ -502,6 +574,7 @@ def main():
     # 3) per-fixture historical odds — one call, one book, no batching.
     captured = 0
     total_points = 0
+    hist_calls = 0            # free calls, counted only for the consumption log
     book_hits = {b: 0 for b in BOOKS}
     gap_no_history = []     # fixture resolved but the book returned no series
     now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -516,6 +589,7 @@ def main():
 
         for b in BOOKS:
             time.sleep(HIST_SLEEP)
+            hist_calls += 1
             data, herr = hist_get(fx, (b,), key)
             if data is None:
                 print(f'::warning::historical-odds {b} failed for {m.get("id")} '
@@ -568,7 +642,8 @@ def main():
         for m in gap_upcoming:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
 
-    log_quota(key, 'after run')
+    quota_after = log_quota(key, 'after run')
+    report_consumption(quota_before, quota_after, hist_calls)
 
     # --- Fail loudly (TEN-179 item 2) ----------------------------------------
     # The old code wrote nothing and still exited 0, so the Actions run went

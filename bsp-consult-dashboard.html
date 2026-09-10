@@ -492,7 +492,19 @@
      (avatar|name and name|FAV), so it reclaims 8px for the name itself. */
   [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:9px; }
   [data-page="matches"] .mc-players.cmpl .mc-av{ border-color:var(--mc-border-data); }
-  [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; }
+  /* TEN-179 item 4 — the name|score gutter. In the export the gutter is not a gap at all:
+     col 1 is a FIXED 200px, so every name shorter than the track leaves whitespace before
+     the score group. Measured across all 18 completed rows of the rendered design file the
+     resulting gutter runs 15.5px (tightest, "C. Alcaraz FAV") to 108.3px, so the design
+     GUARANTEES 15.5px and no more. We cannot copy the 200px track itself — it ellipsised
+     "B. Van De Zandschulp" (230.6px of content) on the shipped single-column build, which
+     is why col 1 became max-content in the first place (see the row grid above); and
+     minmax(max-content,200px) would floor the track at max-content and overflow the row
+     instead of wrapping. So the design's guaranteed minimum is reproduced directly, as a
+     16px inset on the cluster, which keeps col 1 shrinkable and leaves the long-name
+     wrap behaviour exactly as gate 439b9cbe ruled it. Cost comes out of the row's 1fr
+     spacer, not out of the name. */
+  [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; margin-left:16px; }
   /* §6 (PASS 4) — the 1px vertical divider bleeds to the card edges via a negative
      margin that cancels the row's vertical padding; it now tracks the 13px padding.
      Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
@@ -655,11 +667,24 @@
      per-set cell 18px -> 16px is TOKENS "Completed score group - 24px repeat(5,16px)";
      margin-left 24px -> 0 removes a build-local inset that TOKENS does not carry at all
      (the row's own 1fr spacer already separates the cluster from the odds column).
-     Together they take a best-of-3 cluster from 114px to 84px and a best-of-5 from
-     158px to 124px. The 4px gap is the build's and is kept — TOKENS' 8px is WIDER, and
-     widening the cluster is the one thing this row cannot afford. */
-  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:16px; grid-template-columns:24px; gap:0 4px; align-items:center; margin-left:0; }
-  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; margin-right:4px; }
+
+     TEN-179 item 4 (founder 2026-09-10, "read the spacing off the design"): the 4px gap
+     is REVERTED to the export's 8px. Measured off the rendered design file, not TOKENS
+     prose and not a screenshot: the score group computes to
+     `grid-template-columns:24px 16px 16px 16px 16px 16px; column-gap:8px`, total 144px
+     (24 + 5x16 + 5x8) — which is exactly the 144px column TOKENS gives the group, so the
+     8px is load-bearing arithmetic, not a rounding. The gap is UNIFORM there: the tile's
+     track ends at 531px and the first game cell starts at 539px, the same 8px that
+     separates each pair of game cells. What makes the count read as a distinct group in
+     the design is its 24px background chip, not a wider gap — so the fix is the uniform
+     8px plus the full-width chip below, and nothing bespoke between tile and games.
+     Cost is +4px per set: best-of-3 84px -> 96px, best-of-5 120px -> 144px, both taken
+     out of the row's 1fr spacer (measured 100.9px of slack at a 536px card). */
+  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:16px; grid-template-columns:24px; gap:0 8px; align-items:center; margin-left:0; }
+  /* margin-right REMOVED (TEN-179 item 4): it was shrinking the chip inside its own 24px
+     track to 20px. TOKENS "set-count tile 24px wide" and the design render agree at 24px,
+     and with the 8px column-gap above the separation it was faking is now real. */
+  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; }
   /* §6 — sets-won tile: winner white-on-light-fill, loser muted-on-fainter-fill (README
      §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
   [data-page="matches"] .mc-sets__total.w{ background:rgba(255,255,255,0.10); }
@@ -6431,6 +6456,26 @@ function driftScore(m){ // largest absolute open→close move on either side
   const d2 = (o2 != null && c2 != null) ? Math.abs(c2 - o2) : 0;
   return Math.max(d1, d2);
 }
+// TEN-179 item 3 (founder standing rule 2026-09-10): "Thin coverage flagged with the
+// count, not filled." Opening prices arrive per fixture — bet365 posts a market a median
+// ~36h before start, so on any given board some matches genuinely have an open on file and
+// some do not yet. Both the Drift ordering and the Biggest-move box are computed over only
+// the matches that DO, which silently makes a partial board look like a whole one. This
+// returns the denominator so every drift figure can state what it was computed over.
+// A match counts as covered when it carries an opening price for EITHER side, matching the
+// condition driftScore()/the box actually require to say anything at all.
+function mcOpenCoverage(list){
+  const total = list.length;
+  const withOpen = list.filter(m => m.openingOdds
+    && (m.openingOdds.p1 != null || m.openingOdds.p2 != null)).length;
+  return {
+    total, withOpen,
+    // Never "0 of 0" — an empty slate has no coverage story, only an absent one.
+    text: total === 0 ? 'no matches on this day'
+        : withOpen === total ? `all ${total} match${total === 1 ? '' : 'es'} priced`
+        : `${withOpen} of ${total} match${total === 1 ? '' : 'es'} with an opening price`
+  };
+}
 function closingScore(m){ // strongest closing favourite first (lowest favourite close)
   const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
   if (c1 == null && c2 == null) return Infinity;
@@ -7703,9 +7748,13 @@ function renderMatches(){
 
     const panels = [];
     if (bmv) {
+      // Same TEN-179 labelling/coverage rule as the Upcoming box below — here the second
+      // leg is the pinned pre-start close, so the figure reads "open → close".
+      const cov = mcOpenCoverage(filtered.filter(m => m.finalScore));
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
         + `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-        + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div></div>`);
+        + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+        + `<div class="mc-story__faint">Bet365 open → close · ${cov.text}</div></div>`);
     }
     if (upsetRows.length) {
       const rows = upsetRows.slice(0, 3).map(u =>
@@ -7756,13 +7805,21 @@ function renderMatches(){
         }
       });
     });
+    // TEN-179 item 3 standing rules (founder 2026-09-10): "every drift figure labelled for
+    // what it is: Bet365 open → close (or open → now), not 'market move'", and "thin
+    // coverage flagged with the count, not filled". The BOX HEADING is left as the export
+    // signed it off — renaming a reviewed design label is the founder's call, not a build
+    // decision, and it is flagged for his ruling. The FIGURE is what the rule binds, so it
+    // now carries its provenance and its denominator on every render, populated or empty.
+    const driftCov = mcOpenCoverage(daySlate);
     panels.push(`<div class="mc-story mc-story--click" data-mxsummary="drift" role="button" tabindex="0" title="Sort by drift">`
       + `<div class="mc-story__lbl">Biggest market move</div>`
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
             + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+            + `<div class="mc-story__faint">Bet365 open → now · ${driftCov.text}</div>`
           : `<div class="mc-story__vpempty">No opening prices on file</div>`
-            + `<div class="mc-story__faint">Drift shows once opening odds are captured</div>`)
+            + `<div class="mc-story__faint">Bet365 open → now · ${driftCov.text}</div>`)
       + `</div>`);
 
     // 2. SHORTEST PRICE — the day's shortest quoted side. Purely market data, always real.
