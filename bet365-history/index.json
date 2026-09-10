@@ -1,0 +1,27 @@
+{
+ "schema": "bet365-history/1",
+ "book": "bet365",
+ "market": "121",
+ "note": "Reduced bet365 match-winner series: open + close + 22 interior points, all real observed points, never interpolated. Timestamps are epoch SECONDS (UTC). Close is pinned to the last point at or before the fixture start — never an in-play price. n1/n2 are the true pre-start point counts before reduction.",
+ "generatedAt": "2026-09-10T05:57:47Z",
+ "fixtures": 51,
+ "misses": 31,
+ "points": 428,
+ "coverage": 0.622,
+ "months": [
+  {
+   "month": "2026-03",
+   "fixtures": 0,
+   "misses": 31,
+   "points": 0,
+   "bytes": 1483
+  },
+  {
+   "month": "2026-08",
+   "fixtures": 51,
+   "misses": 0,
+   "points": 428,
+   "bytes": 18178
+  }
+ ]
+}

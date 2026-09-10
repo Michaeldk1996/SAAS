@@ -1,0 +1,135 @@
+name: BSP bet365 history archive
+
+# TEN-179 item 1. Builds bet365-history/YYYY-MM.json — per-month shards of the
+# reduced bet365 match-winner series (open + close + 22 real interior points).
+# Founder ruling, gate 2334e509 (2026-09-10): structure B reduced, full backfill.
+#
+# THIS IS A DIFFERENT JOB FROM odds-history.yml. That one owns matches.json and
+# the live board's open/close. This one only ever writes bet365-history/ and the
+# root discovery cache. They share nothing but the API key, and the concurrency
+# groups are separate so they can run at the same time without fighting.
+#
+# HOW THE BACKFILL DRAINS
+# -----------------------
+# The full window is ~20+ hours of PACING (not quota): /v4/historical-odds is
+# free but rate-limited to ~1 call/5s, ships the full ~1-4.5 MB payload every
+# time with no market filter, and does NOT go faster with concurrency — 4
+# parallel calls returned one 200 and three 429s when measured.
+#
+# So there is no single run that finishes it, and rather than build a
+# self-re-dispatching chain (which can loop on a bug), each nightly run simply
+# spends its remaining budget on the backlog. The backfill drains over
+# successive nights and then costs nothing once empty. A one-off dispatch with a
+# bigger budget can hurry it along.
+#
+# THE SHARDS ARE THE CHECKPOINT. A fixture already archived — or already
+# recorded as a miss — is never pulled again. That is not just an optimisation:
+# oddspapi prunes the dense series after ~4 weeks, so a re-pull can only return
+# a WORSE copy than the one we already hold.
+#
+# COST: historical-odds is free (verified: meter 100 -> 100 across ~20 calls,
+# including several 429s). The only metered call is /v4/fixtures discovery —
+# ~1-2 units nightly, ~30 for a full sweep.
+
+on:
+  schedule:
+    - cron: '40 4 * * *'      # nightly, after the day's matches have settled
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'nightly (forward only) or backfill (drain the backlog)'
+        type: choice
+        options: [nightly, backfill]
+        default: nightly
+      max_seconds:
+        description: 'Time budget for the backfill phase, seconds'
+        default: '18000'
+      rediscover:
+        description: 'Force a fresh full /v4/fixtures sweep (~30 metered units)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: bsp-bet365-archive
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    # Under GitHub's 6h ceiling with room for checkout, commit and push. The
+    # script's own --max-seconds stops the pulling well before this, so the job
+    # ends by finishing rather than by being killed mid-write.
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Guard — API key present
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+        run: |
+          if [ -z "$ODDSPAPI_KEY" ]; then
+            echo "::error::ODDSPAPI_KEY secret is not set."
+            exit 1
+          fi
+
+      # Offline unit tests before we touch the network. These lock the two
+      # properties worth protecting: reduction never invents a point, and the
+      # close is never an in-play price (TEN-124). If they fail, the archive
+      # would be written wrong, so stop before writing anything.
+      - name: Unit tests (offline)
+        run: python3 test-archive-bet365-history.py
+
+      - name: Forward archive (nightly)
+        if: github.event_name == 'schedule' || inputs.mode == 'nightly'
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+        run: python3 archive-bet365-history.py nightly
+
+      # Drain the backlog with whatever budget is left. On the nightly schedule
+      # this is a fixed slice; on a manual backfill dispatch it is the input.
+      # Skipped automatically once the backlog is empty (the script exits as
+      # soon as there is nothing unresolved to pull).
+      - name: Backfill the backlog
+        if: github.event_name == 'schedule' || inputs.mode == 'backfill'
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+        run: |
+          ARGS="backfill --max-seconds ${{ github.event_name == 'schedule' && '14400' || inputs.max_seconds }}"
+          if [ "${{ inputs.rediscover }}" = "true" ]; then ARGS="$ARGS --rediscover"; fi
+          python3 archive-bet365-history.py $ARGS
+
+      # Offline integrity gate, fail-closed. Re-reads every shard from disk and
+      # re-checks the invariants against the bytes we are about to commit rather
+      # than trusting the writer that just produced them.
+      - name: Verify shards
+        run: python3 archive-bet365-history.py verify
+
+      # Runs even if a step above failed: a PARTIAL archive is real data and is
+      # worth keeping, and the shards are the checkpoint, so committing them is
+      # what makes the next run resume instead of repeat.
+      - name: Commit shards (only if changed)
+        if: always()
+        run: |
+          if git diff --quiet -- bet365-history .bet365-history-targets.json.gz; then
+            echo "No archive changes to commit."
+            exit 0
+          fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          git add bet365-history .bet365-history-targets.json.gz
+          # [skip ci] — this data is not on any startup path and nothing on the
+          # board reads it yet, so there is no reason to burn a Pages deploy on
+          # it. The next scheduled pipeline run publishes it with everything else.
+          git commit -m "chore(odds): bet365 history archive shards [skip ci]"
+          git pull --rebase --autostash origin main || true
+          git push origin HEAD:main

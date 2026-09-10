@@ -299,6 +299,13 @@ jobs:
           # which is exactly how the movement chart went missing for three days.
           cp odds-index.json _site/ 2>/dev/null || true
           cp -r odds _site/ 2>/dev/null || true
+          # BET365 HISTORY ARCHIVE (TEN-179 item 1): per-month shards of the
+          # reduced open->close series, written by bet365-archive.yml. Published
+          # so a later change can read it, but deliberately NOT on any startup
+          # path — nothing fetches its index.json at boot, so this cannot regress
+          # the payload budget that matches.json already dominates. Separate from
+          # odds-archive/ (the Pinnacle 2010-2025 set) and from the odds/ shards.
+          cp -r bet365-history _site/ 2>/dev/null || true
           # MARKET SIZE (TEN-8): the index gates every shard fetch, exactly like
           # odds-index.json — without it the dashboard never asks for a shard and
           # the block silently hides. The health file feeds the admin all-time vs
