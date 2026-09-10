@@ -1,0 +1,93 @@
+name: BSP bet365 NOW refresh
+
+# The Upcoming card's NOW price. TEN-179 item 1, founder ruling 2026-09-10:
+# cadence option (a), FLAT HOURLY.
+#
+# Why flat, and why hourly:
+#   86% of bet365's pre-match price changes happen more than 6h before start and
+#   only 7% inside the last hour, so a cadence that sprints near kickoff buys
+#   resolution in the window where almost nothing moves. Measured on 65 real
+#   bet365 pre-match series. Flat hourly costs ~38% of the monthly cap nominal /
+#   ~49% on the busiest day actually observed; the 30-minute alternative peaks at
+#   93%, which is the ceiling the founder ruled out.
+#
+# Cost per run: 1 /v4/odds-by-tournaments unit per FIVE tournaments (a hard API
+# cap — six ids is a 400, and the 400 bills), plus a /v4/fixtures unit only when
+# the cached fixture map cannot resolve something. refresh-odds.py prints the
+# MEASURED meter delta every run, so the projection above is checked against
+# reality rather than restated from the code's own arithmetic.
+#
+# SETUP: repo secrets ODDSPAPI_KEY (required), and TELEGRAM_BOT_TOKEN +
+# TELEGRAM_OPS_CHAT_ID for the quota-runway alert. Without the Telegram pair the
+# run still succeeds and says loudly that the alert had nowhere to go.
+
+on:
+  schedule:
+    - cron: '0 * * * *'     # flat hourly (UTC). Actions cron is best-effort.
+  workflow_dispatch:
+
+# Never let two refresh runs overlap — they both write and push matches.json.
+concurrency:
+  group: bsp-odds-now
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh the bet365 NOW leg
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+        run: |
+          if [ -z "$ODDSPAPI_KEY" ]; then
+            echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          python3 refresh-odds.py
+
+      # The fixture map and the quota history are committed on purpose: the
+      # runner is ephemeral, so without persisting them every run would re-spend
+      # a /v4/fixtures unit and restart the burn-rate measurement from nothing —
+      # the runway alert would then never have a sample old enough to fire on.
+      # alert-state.json carries the alert cooldowns for the same reason.
+      - name: Commit refreshed odds (only if changed)
+        if: always()
+        run: |
+          FILES="matches.json odds-fixture-map.json odds-quota-history.json alert-state.json"
+          EXISTING=""
+          for f in $FILES; do [ -f "$f" ] && EXISTING="$EXISTING $f"; done
+          if [ -z "$EXISTING" ] || git diff --quiet -- $EXISTING; then
+            echo "No odds/state changes to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-odds-bot"
+          git config user.email "bsp-odds-bot@users.noreply.github.com"
+          git add $EXISTING
+          git commit -m "chore(odds): hourly bet365 NOW refresh [skip ci]"
+          # Another workflow may have advanced main since checkout; rebase and
+          # retry so a benign race never loses a capture. This is a git retry,
+          # not an API retry — it costs no quota.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push the refreshed odds after 3 attempts."
+          exit 1

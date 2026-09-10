@@ -30,6 +30,13 @@ the API. No interpolation, no synthesised opening.
 import json, os, sys, time, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timedelta, timezone
 
+try:
+    import bsp_alerts            # the single outbound alert path (TEN-179 item 4)
+except Exception as _e:          # never let the notifier break the capture
+    bsp_alerts = None
+    print(f'WARNING: bsp_alerts unavailable ({_e}); alerts will only reach this log.',
+          file=sys.stderr)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 MATCHES = os.path.join(HERE, 'matches.json')
 BASE = 'https://api.oddspapi.io'
@@ -164,9 +171,13 @@ def log_quota(key, when):
     print(f'oddspapi quota {when}: {used}/{limit} request(s) used '
           f'({s.get("plan")} plan, valid until {str(s.get("valid_until"))[:10]}; '
           f'entitled books: {books}).')
-    if isinstance(used, int) and isinstance(limit, int) and limit and used >= limit * 0.8:
-        print(f'::warning::oddspapi quota is at {used}/{limit} '
-              f'({used * 100 // limit}%) — capture will start failing when it runs out.')
+    # The old 80%-of-cap ::warning:: lived here. It fired every run through the
+    # Sep 2-10 outage into a log nobody opens, which is why the founder replaced
+    # it (TEN-179 item 2) with a RUNWAY threshold routed to Telegram. Percentage
+    # is the wrong unit: the same 80% is 15 days of notice at one cadence and
+    # under 6 at another. bsp_alerts.alert_quota() now owns this decision — see
+    # the end of main(). Nothing is duplicated here on purpose: two alarms for
+    # one condition is how a channel gets muted.
     return used
 
 
@@ -668,6 +679,12 @@ def main():
 
     quota_after = log_quota(key, 'after run')
     report_consumption(quota_before, quota_after, hist_calls)
+    # TEN-179 item 2 — the runway verdict and, when it bites, the outbound alert.
+    # This replaces the 80%-of-cap ::warning:: that used to live in log_quota().
+    if bsp_alerts:
+        bsp_alerts.alert_quota(
+            key, cadence_note=f'This capture runs every {CAPTURE_INTERVAL_H}h; the '
+                              f'card refresh (odds-now.yml) runs hourly.')
 
     # --- Fail loudly (TEN-179 item 2) ----------------------------------------
     # The old code wrote nothing and still exited 0, so the Actions run went
@@ -810,6 +827,29 @@ def open_monitor(targets, joined, now_iso):
                   f'Their open (and therefore their drift figure) will be lost if the '
                   f'market has already posted. Listed above; details in '
                   f'{os.path.basename(OPEN_MONITOR_FILE)}.', file=sys.stderr)
+            # TEN-179 item 4 — this monitor used to MEASURE and not NOTIFY, which
+            # the founder identified as the actual defect: "a warning that lands
+            # somewhere unread is not a warning". One outbound send, operational
+            # channel, deduped per fixture so a standing gap does not re-fire every
+            # 3 hours for the whole day before the match.
+            if bsp_alerts:
+                lines = '\n'.join(
+                    f'• {m.get("p1")} v {m.get("p2")} ({m.get("tour")}, '
+                    f'{m.get("date")}) — {h:.1f}h to start'
+                    for m, h in alerts[:12])
+                more = f'\n…and {len(alerts) - 12} more' if len(alerts) > 12 else ''
+                bsp_alerts.send(
+                    f'⚠️ Missing bet365 OPEN — {len(alerts)} fixture(s) inside '
+                    f'T-{OPEN_MONITOR_HOURS:.0f}h\n\n{lines}{more}\n\n'
+                    f'Every bet365 market we have measured posted 27.7–46.2h before '
+                    f'start, so these are outside the whole observed distribution. '
+                    f'If the market has already opened, their OPEN — and the drift '
+                    f'figure on the card — is lost for good.',
+                    channel='ops',
+                    dedupe_key='open-monitor:' + ','.join(
+                        sorted(str(joined.get(id(m), {}).get('fixtureId'))
+                               for m, _ in alerts)),
+                    cooldown_h=12.0)
         return alerts
     except Exception as e:                      # never let the monitor break the capture
         print(f'::warning::Open-monitor failed ({e}) — capture itself was unaffected.')

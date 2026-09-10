@@ -61,6 +61,10 @@ jobs:
       - name: Capture odds-movement timelines
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          # TEN-179 item 4 — the single outbound alert path. Without these the run
+          # still succeeds and says loudly that the alert had nowhere to go.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
         run: |
           if [ -z "$ODDSPAPI_KEY" ]; then
             echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
@@ -81,13 +85,21 @@ jobs:
       - name: Commit refreshed matches.json (only if changed)
         if: always()
         run: |
-          if git diff --quiet -- matches.json odds-open-monitor.json; then
+          STATE="matches.json odds-open-monitor.json"
+          # odds-quota-history.json feeds the runway burn rate and alert-state.json
+          # carries the alert cooldowns. Both must survive the ephemeral runner or
+          # the burn rate restarts from nothing every run and every standing alert
+          # re-fires. Listed conditionally so a first run without them still works.
+          for f in odds-quota-history.json alert-state.json; do
+            [ -f "$f" ] && STATE="$STATE $f"
+          done
+          if git diff --quiet -- $STATE; then
             echo "No odds-movement changes to commit."
             exit 0
           fi
           git config user.name  "bsp-odds-bot"
           git config user.email "bsp-odds-bot@users.noreply.github.com"
-          git add matches.json odds-open-monitor.json
+          git add $STATE
           git commit -m "chore(odds): capture opening->now odds movement [skip ci]"
           # Another run (or a manual commit) may have advanced main since checkout;
           # rebase and retry so the capture is never lost to a benign race.

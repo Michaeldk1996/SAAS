@@ -4905,7 +4905,7 @@ async function runPipeline() {
 
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
       closeHealed = 0, closeDashed = 0, crossBookDropped = 0, openFromArchive = 0,
-      nowPinned = 0, nowCarried = 0;
+      nowPinned = 0, nowCarried = 0, nowFromLive = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -4996,7 +4996,28 @@ async function runPipeline() {
     if (!m.finalScore) {
       const nowMs = Date.now();
       const n1 = lastAtOrBefore(p1, nowMs), n2 = lastAtOrBefore(p2, nowMs);
-      if (n1 && n2) {
+      // TEN-179 cadence (a), founder ruling 2026-09-10: the metered hourly refresher
+      // (refresh-odds.py via odds-now.yml) writes m.bet365Now with src 'live' and an
+      // observedAt. This series is captured 3-hourly, so re-deriving unconditionally
+      // would overwrite an hourly read with a staler one and the approved cadence
+      // would never reach the card.
+      //
+      // The test is observedAt vs oddsMovement.capturedAt — "when did we last LOOK
+      // at bet365" on both sides. It deliberately does NOT compare the two `at`
+      // values: `at` is when bet365 last MOVED the price, so a price that has sat
+      // unchanged for 20h carries a 20h-old `at` while being perfectly current, and
+      // ranking on that would pick the stale read every time. Both sources are
+      // bet365 and both carry bet365's own change instant (measured identical on
+      // three live fixtures, 2026-09-10), so this only ever chooses the more
+      // recently observed of two reads of the same book — never a cross-book swap.
+      const liveObs = (m.bet365Now && m.bet365Now.src === 'live')
+        ? Date.parse(m.bet365Now.observedAt || '') : NaN;
+      const seriesObs = Date.parse((m.oddsMovement && m.oddsMovement.capturedAt) || '');
+      const keepLive = Number.isFinite(liveObs)
+        && (!Number.isFinite(seriesObs) || liveObs > seriesObs);
+      if (keepLive) {
+        nowFromLive++;
+      } else if (n1 && n2) {
         m.bet365Now = { p1: n1[1], p2: n2[1], bookmaker: BET365,
                         at: (Date.parse(n1[0]) >= Date.parse(n2[0])) ? n1[0] : n2[0] };
         nowPinned++;
@@ -5053,7 +5074,7 @@ async function runPipeline() {
     }
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
-  console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowPinned} derived / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
+  console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability
