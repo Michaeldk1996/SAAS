@@ -520,7 +520,41 @@
      upcoming card is untouched. The 20px avatar inset comes from the row's 20px padding. */
   /* TEN-179 q1 — 13px -> 9px, TOKENS "Card header gap". Two gaps in this cell
      (avatar|name and name|FAV), so it reclaims 8px for the name itself. */
-  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:9px; }
+  /* TEN-182 — the FAV chip leaves the name's LINE. It stays inside .mc-id (same markup,
+     same gating, same wording), but .mc-id becomes a two-row grid: the avatar spans both
+     rows, the name owns row 1 and the chip sits on row 2 UNDERNEATH it. Because the chip
+     is no longer a sibling on the name's line, it costs the name ZERO width — the name
+     box goes 70.8px -> 113px at a 536px two-up card, the full 42.2px (9px gap + 33.2px
+     chip) the chip used to take.
+     WHY NOT ITS OWN ROW TRACK, which is the obvious reading of "move it out": MEASURED,
+     that is strictly WORSE than shipping nothing. A grid track is reserved on BOTH rows
+     of a card (it has to be, or the two rows resolve col 1 differently and the score
+     cluster stops sharing one x — the whole point of c78b0e8). So a 42.2px track pays the
+     chip's width twice and hands it back once: name track 154px -> 111.8px, and
+     S. Tsitsipas / F. Cerundolo / K. Khachanov / B. Van De Zandschulp all start clipping
+     on boards where they render clean today. An overlay pinned to the right of the cell
+     only half-works for the same family of reasons: it frees the track but paints the
+     chip ON the name's tail (measured: K. Khachanov obscured by 13.5px,
+     B. Van De Zandschulp by 33.2px — the whole chip sits over the ellipsis).
+     Stacking is the only placement that costs neither width nor legibility.
+     Rows are 18px + 14px = 32px, which is exactly the row's existing content band (the
+     32px avatar), so the CARD HEIGHT DOES NOT CHANGE — measured 54px before and after at
+     1377/1378/1400/1600px. The chip keeps its 10px type; only its vertical padding is
+     trimmed (1px 6px -> 0 5px) to fit the 14px band, taking it 33.2px -> 31.2px wide.
+     Both rows share this template whether or not they carry a chip, so the two names of a
+     card still sit at one y, and the cluster x is untouched (183px at 1400px, before and
+     after). justify-self:start keeps the name box shrink-wrapped to its text — as a grid
+     item it would otherwise stretch to the full track and widen the profile-link click
+     target into empty space.
+     THIS FREES CLEARANCE BUT DOES NOT SPEND IT: col 3 stays at the 16px ed970b9 shipped.
+     See the row grid above for what the 42.2px now makes affordable. */
+  [data-page="matches"] .mc-players.cmpl .mc-id{
+    grid-column:1; display:grid; grid-template-columns:32px minmax(0,1fr);
+    grid-template-rows:18px 14px; column-gap:9px; row-gap:0; align-content:center; }
+  [data-page="matches"] .mc-players.cmpl .mc-id > .mc-avwrap,
+  [data-page="matches"] .mc-players.cmpl .mc-id > .mc-av{ grid-column:1; grid-row:1 / span 2; align-self:center; }
+  [data-page="matches"] .mc-players.cmpl .mc-id > .mc-fav-tag{
+    grid-column:2; grid-row:2; justify-self:start; align-self:center; padding:0 5px; line-height:12px; }
   [data-page="matches"] .mc-players.cmpl .mc-av{ border-color:var(--mc-border-data); }
   /* TEN-179 item 4 — the name|score gutter. In the export the gutter is not a gap at all:
      col 1 is a FIXED 200px, so every name shorter than the track leaves whitespace before
@@ -639,8 +673,13 @@
      sized to content; with col 1 now name-independent, a wrap would only make a two-line row
      and still could not move the score column, so the ellipsis is the correct fallback.
      min-width:0 is load-bearing: .mc-id is a flex row and without it the name refuses to
-     shrink below its content width and pushes the FAV chip out of the track instead. */
-  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; line-height:1.15; }
+     shrink below its content width and pushes the FAV chip out of the track instead.
+     TEN-182 — .mc-id is now a GRID, so min-width:0 is carried by the minmax(0,1fr) column
+     instead; it is kept here because .mc-players.up .mc-id is still a flex row and shares
+     the base .mc-name rule. justify-self:start + max-width:100% reproduce the flex box's
+     shrink-to-fit width, so the profile click target is still the text, not the track. */
+  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; line-height:1.15;
+    grid-column:2; grid-row:1; align-self:center; justify-self:start; max-width:100%; }
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
   [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
