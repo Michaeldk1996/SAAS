@@ -4932,9 +4932,27 @@ async function runPipeline() {
     // dashes at display rather than showing an in-play price (data-honesty rule:
     // never approximate — dash where the pre-match close is missing).
     if (m.finalScore) {
+      // Preference order for the pre-first-ball cutoff, most proven first:
+      //   1. m.startTs           — real epoch, present only on Odds-API merges.
+      //   2. oddsMovement.startTime — the joined oddspapi fixture's own UTC start
+      //      (TEN-179). Also a real scheduled instant, and present on exactly the
+      //      `past-<eventKey>` matches where startTs is absent — i.e. every match
+      //      that carries a closing.
+      //   3. inPlayOnset(s)      — cadence proxy, last resort.
+      //
+      // Why 2 was added: the cadence proxy is not reliably pre-first-ball.
+      // Measured over the 8 settled matches on 2026-09-10, onset fired 8/8 but
+      // landed AFTER the true start on 2 of them (+4.4 and +3.4 min), and on both
+      // the "close" it selected was an in-play price — Zverev-Darderi pinned
+      // 1.062/10.00 against a true pre-match 1.10/7.00. That is the exact TEN-124
+      // failure the founder ruled out, reached by a different route. A real
+      // scheduled start removes the inference entirely.
+      const fixtureStart = m.oddsMovement && m.oddsMovement.startTime;
       const startMs = (typeof m.startTs === 'string' && m.startTs)
         ? Date.parse(m.startTs)
-        : (() => { const o = inPlayOnset(s); return Number.isFinite(o) ? o - 1 : NaN; })();
+        : (typeof fixtureStart === 'string' && fixtureStart && Number.isFinite(Date.parse(fixtureStart)))
+          ? Date.parse(fixtureStart)
+          : (() => { const o = inPlayOnset(s); return Number.isFinite(o) ? o - 1 : NaN; })();
       const prior = carried && carried.closingOdds;
       // Preserve a prior close only if it is a genuine pre-start quote AND from
       // bet365 (the book we now pin both legs to) — otherwise it is re-derived

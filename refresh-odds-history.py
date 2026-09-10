@@ -7,9 +7,14 @@ bookmaker's full opening -> now price timeline for the match-winner market and
 stores it on the match as `m.oddsMovement`. That timeline is what powers the
 Odds tab's per-book sparklines and the dual-scale movement chart.
 
-It uses oddspapi.io's /v4/historical-odds endpoint, which is free (does not draw
-on the 250 req/month quota) but rate-limited to ~1 call / 5s. The only quota
-call is the single /v4/fixtures lookup used to resolve fixtureIds + names.
+It uses oddspapi.io's /v4/historical-odds endpoint, which is free (it never
+increments the request counter — verified against the live /v4/account meter)
+but rate-limited to ~1 call / 5s. The only quota call is the single /v4/fixtures
+lookup used to resolve fixtureIds + names, i.e. exactly ONE unit per run.
+
+bet365 is the ONLY book the subscription entitles us to, and a mixed request
+403s in full — see the BOOKS note below. The meter is printed before and after
+every run so real consumption is visible in the Actions log rather than inferred.
 
     python3 refresh-odds-history.py
 
@@ -32,18 +37,53 @@ SPORT_TENNIS = 12
 MARKET_WINNER = '121'                    # match-winner (moneyline) market id
 OUTCOME_P1, OUTCOME_P2 = '121', '122'    # 121 = fixture participant1, 122 = participant2
 
-# Books to capture, in headline-preference order. All six were verified to
-# return real opening->now history for live ATP 250 fixtures on this API tier.
-# marathonbet and other sharp books return RESTRICTED_ACCESS here and are left
-# out on purpose rather than faked.
-BOOKS = ('pinnacle', 'williamhill', '1xbet', 'betsson', 'betano', 'bet365')
-BOOK_LABELS = {
-    'pinnacle': 'Pinnacle', 'williamhill': 'William Hill', '1xbet': '1xBet',
-    'betsson': 'Betsson', 'betano': 'Betano', 'bet365': 'bet365',
-}
+# Books to capture. THE SUBSCRIPTION ENTITLES US TO bet365 AND NOTHING ELSE.
+#
+# This used to request six books in batches of three, which silently threw away
+# the one book we are entitled to. Measured against the live API on 2026-09-10
+# (fixture id1200259173992426):
+#
+#   bookmakers=pinnacle,williamhill,1xbet  -> HTTP 403 RESTRICTED_ACCESS
+#   bookmakers=betsson,betano,bet365       -> HTTP 403 RESTRICTED_ACCESS
+#                                             "Restricted bookmakers: betsson, betano"
+#   bookmakers=bet365                      -> HTTP 200, 2,482,491 B of real series
+#
+# A batch containing ANY non-entitled book 403s in FULL — bet365's data is
+# discarded along with it. Batching is not merely useless here, it IS the
+# failure. One book, one call, no batching. Do not add a book back until the
+# subscription carries it (/v4/account -> subscriptions[].bookmakers).
+BOOKS = ('bet365',)
+BOOK_LABELS = {'bet365': 'bet365'}
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
-BOOK_BATCH = 3         # endpoint accepts at most 3 bookmaker slugs per call
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
+
+# --- Join tolerance (TEN-179 item 3) -----------------------------------------
+# Our board dates a match in the api-tennis ACCOUNT timezone; oddspapi startTime
+# is UTC. Joining on an exact date string drops every match that falls on the
+# other side of midnight for one of the two — measured 7/8 joined, the casualty
+# being Shelton-Tsitsipas: board 2026-09-07 01:15, oddspapi 2026-09-06T23:15Z.
+#
+# The fix is NOT a wider date net; that would eventually mis-join two fixtures
+# with the same two players on adjacent days. Instead: build the candidate set
+# from a +/-1 day window AND a both-surnames orientation match, then pick the
+# candidate NEAREST IN TIME to our start converted to UTC.
+#
+# JOIN_TOLERANCE_H is a sanity gate on that nearest pick, not the disambiguator.
+# Measured over the 8 settled matches on 2026-09-10, the residual between our
+# UTC-converted start and the fixture's startTime was 0-5 minutes (the board
+# carries a rounded scheduled time). Two same-pair fixtures on adjacent days sit
+# ~24h apart, so any bound well under 12h cannot reach the wrong day. 6h is ~72x
+# the observed residual — loose enough to absorb a rescheduled or rain-delayed
+# nominal start, tight enough that the wrong day stays unreachable.
+JOIN_WINDOW_DAYS = 1
+JOIN_TOLERANCE_H = 6.0
+# A median needs a population. Calibrating on one or two samples is circular —
+# the measured offset is that sample's own delta, so its residual is 0 by
+# construction and the tolerance gate can never reject it. Below this many
+# samples we assume no offset and let the gate do the work: a correctly joined
+# match is ~2h out (well inside the gate), a wrong-day one is ~24h out (well
+# outside it), so the gate separates them without any calibration at all.
+MIN_CALIB_SAMPLES = 3
 
 # The committed matches.json is written back only by the refreshers, so its
 # match SET never advances on its own — the main pipeline rebuilds today's board
@@ -79,9 +119,36 @@ def api_get(path, params, key):
         return None, str(e)
 
 
+def log_quota(key, when):
+    """Print the live oddspapi meter. /v4/account is itself unmetered, so this
+    costs nothing and is the only honest read on consumption — the founder asked
+    for actual usage logged every run rather than inferred from the code's own
+    call arithmetic."""
+    data, err = api_get('/v4/account', {}, key)
+    if data is None:
+        print(f'WARNING: could not read the oddspapi quota meter {when} ({err}).',
+              file=sys.stderr)
+        return None
+    subs = [s for s in (data.get('subscriptions') or []) if s.get('is_active')]
+    if not subs:
+        print(f'::warning::oddspapi reports NO active subscription {when}.')
+        return None
+    s = subs[0]
+    used, limit = s.get('request_count'), s.get('request_limit')
+    books = ', '.join(sorted((s.get('bookmakers') or {}).keys())) or 'none'
+    print(f'oddspapi quota {when}: {used}/{limit} request(s) used '
+          f'({s.get("plan")} plan, valid until {str(s.get("valid_until"))[:10]}; '
+          f'entitled books: {books}).')
+    if isinstance(used, int) and isinstance(limit, int) and limit and used >= limit * 0.8:
+        print(f'::warning::oddspapi quota is at {used}/{limit} '
+              f'({used * 100 // limit}%) — capture will start failing when it runs out.')
+    return used
+
+
 def hist_get(fixture_id, books, key):
-    """One /v4/historical-odds call for up to BOOK_BATCH books, with 429 backoff.
-    Returns (json, None) or (None, status)."""
+    """One /v4/historical-odds call for the given book(s), with 429 backoff.
+    Callers pass exactly one book — see BOOKS. Returns (json, None) or
+    (None, status)."""
     params = {'fixtureId': fixture_id, 'bookmakers': ','.join(books)}
     for attempt in range(MAX_RETRY):
         data, err = api_get('/v4/historical-odds', params, key)
@@ -179,6 +246,129 @@ def match_keys(m):
     return keys
 
 
+def board_start_naive(m):
+    """Our board's nominal start as a tz-naive-but-UTC-stamped datetime.
+
+    m['date'] + m['time'] are api-tennis ACCOUNT-timezone wall clock, NOT UTC.
+    This returns them stamped as UTC so the caller can subtract the measured
+    account offset; on its own it is deliberately NOT a real instant.
+    """
+    t = m.get('time') or ''
+    if not (m.get('date') and isinstance(t, str) and len(t) >= 5 and t[2] == ':'):
+        return None
+    try:
+        return datetime.strptime(f"{m['date']} {t[:5]}", '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def fixture_start(f):
+    try:
+        return datetime.fromisoformat((f.get('startTime') or '').replace('Z', '+00:00'))
+    except ValueError:
+        return None
+
+
+def join_fixtures(targets, fixtures, calibrate_from=None):
+    """Join our matches to oddspapi fixtures. Returns (joined, unjoined).
+
+    Two-stage, so a widened date net can never by itself pick a wrong fixture:
+
+      1. CANDIDATES — both surnames must orient against the fixture's two
+         participants (unchanged, and the strong constraint), and the fixture's
+         UTC date must sit within JOIN_WINDOW_DAYS of our board date.
+      2. DISAMBIGUATE — convert our start to UTC using the account offset
+         MEASURED THIS RUN (below) and take the nearest candidate in time,
+         rejecting anything beyond JOIN_TOLERANCE_H.
+
+    The account offset is calibrated from the unambiguous joins in this very run
+    rather than hardcoded, so it follows DST and any account-timezone change on
+    its own. With no unambiguous join to learn from it falls back to 0 and the
+    tolerance gate does the work.
+
+    `calibrate_from` is the population the offset is MEASURED on, and it must be
+    wider than `targets`. Calibrating on the targets alone is circular: with a
+    single target the median is that target's own delta, the residual is 0 by
+    construction, and the tolerance gate can never fire — so a lone match sitting
+    10h from its only candidate would be joined anyway. That is not hypothetical;
+    it is the ordinary late-night steady state, when every settled match is
+    already captured and the only target is tomorrow's unopened final. Measuring
+    across the whole seeded board keeps the median honest no matter how few
+    matches actually need capturing this run.
+    """
+    def candidates_for(m):
+        out = []
+        if not m.get('date'):
+            return out
+        for f in fixtures:
+            fs = fixture_start(f)
+            if fs is None:
+                continue
+            if abs((fs.date() - datetime.strptime(m['date'], '%Y-%m-%d').date()).days) > JOIN_WINDOW_DAYS:
+                continue
+            ori = orient(m, f.get('participant1Name'), f.get('participant2Name'))
+            if ori:
+                out.append((f, fs, ori))
+        return out
+
+    by_match = [(m, candidates_for(m)) for m in targets if m.get('date')]
+
+    # --- calibrate the account offset off the single-candidate joins ---
+    calib = by_match if calibrate_from is None else \
+        [(m, candidates_for(m)) for m in calibrate_from if m.get('date')]
+    deltas = []
+    for m, cands in calib:
+        if len(cands) != 1:
+            continue
+        bs = board_start_naive(m)
+        if bs is None:
+            continue
+        deltas.append((bs - cands[0][1]).total_seconds() / 3600.0)
+    if len(deltas) >= MIN_CALIB_SAMPLES:
+        deltas.sort()
+        offset_h = deltas[len(deltas) // 2]          # median
+        print(f'Account-timezone offset measured this run: {offset_h:+.2f}h '
+              f'(median of {len(deltas)} unambiguous join(s) across the board, '
+              f'range {min(deltas):+.2f}..{max(deltas):+.2f}).')
+    else:
+        offset_h = 0.0
+        print(f'Account-timezone offset NOT calibrated: only {len(deltas)} '
+              f'unambiguous join(s) available, below the {MIN_CALIB_SAMPLES} needed '
+              f'for an honest median. Assuming +0.00h and letting the '
+              f'+/-{JOIN_TOLERANCE_H}h tolerance gate do the work.')
+
+    joined, unjoined = {}, []
+    for m, cands in by_match:
+        if not cands:
+            unjoined.append((m, 'no fixture matched both surnames within '
+                                f'+/-{JOIN_WINDOW_DAYS}d', None))
+            continue
+        bs = board_start_naive(m)
+        if bs is None:
+            # No usable clock on our side. A single candidate is still safe —
+            # both surnames matched inside the window — so take it; more than
+            # one is genuinely ambiguous and must not be guessed.
+            if len(cands) == 1:
+                f, fs, ori = cands[0]
+                joined[id(m)] = {'fixtureId': f.get('fixtureId'), 'orient': ori,
+                                 'startTime': f.get('startTime'), 'deltaH': None}
+            else:
+                unjoined.append((m, f'{len(cands)} candidates and no usable '
+                                    'board time to disambiguate', None))
+            continue
+        ours = bs - timedelta(hours=offset_h)
+        f, fs, ori = min(cands, key=lambda c: abs((ours - c[1]).total_seconds()))
+        delta_h = (ours - fs).total_seconds() / 3600.0
+        if abs(delta_h) > JOIN_TOLERANCE_H:
+            unjoined.append((m, f'nearest candidate is {delta_h:+.2f}h away, '
+                                f'beyond the +/-{JOIN_TOLERANCE_H}h tolerance',
+                             f.get('startTime')))
+            continue
+        joined[id(m)] = {'fixtureId': f.get('fixtureId'), 'orient': ori,
+                         'startTime': f.get('startTime'), 'deltaH': delta_h}
+    return joined, unjoined
+
+
 def event_key(m):
     """The api-tennis event key inside our id: '{upcoming|past}-<eventKey>'."""
     parts = str(m.get('id') or '').split('-')
@@ -246,6 +436,8 @@ def main():
         print('ERROR: ODDSPAPI_KEY not found (.env or environment).', file=sys.stderr)
         sys.exit(1)
 
+    log_quota(key, 'before run')
+
     matches = seed_from_live(json.load(open(MATCHES)))
     # Targets = every dated match we still need movement for. Upcoming matches are
     # (re)captured every run so their lines stay live. A completed match's opening
@@ -273,68 +465,63 @@ def main():
 
     start = min(m['date'] for m in targets)
     stop = max(m['date'] for m in targets)
-    frm = f'{start}T00:00:00Z'
-    to = (datetime.strptime(stop, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%dT00:00:00Z')
+    # Widen the fixture window by a day on each side: our board dates in the
+    # account timezone, so a match on our first/last day can legitimately carry a
+    # UTC startTime on the day outside it. Without this the +/-1d join window has
+    # nothing to reach for at the edges. Still exactly ONE quota unit.
+    frm = (datetime.strptime(start, '%Y-%m-%d') - timedelta(days=JOIN_WINDOW_DAYS)).strftime('%Y-%m-%dT00:00:00Z')
+    to = (datetime.strptime(stop, '%Y-%m-%d') + timedelta(days=JOIN_WINDOW_DAYS + 1)).strftime('%Y-%m-%dT00:00:00Z')
 
-    # 1) fixtures (1 quota unit): names + fixtureId for the whole window.
+    # 1) fixtures (1 quota unit): names + fixtureId + startTime for the window.
     fixtures, err = api_get('/v4/fixtures', {'sportId': SPORT_TENNIS, 'from': frm, 'to': to}, key)
     if fixtures is None:
-        print(f'ERROR: fixtures fetch failed ({err}).', file=sys.stderr)
+        print(f'::error::oddspapi fixtures fetch failed ({err}) — no odds captured this run.',
+              file=sys.stderr)
         sys.exit(1)
     fixtures = fixtures if isinstance(fixtures, list) else (fixtures.get('data') or [])
 
-    # join oddspapi fixtures to our target matches by date + both surnames
-    joined = {}   # id(m) -> {fixtureId, orient}
-    for m in targets:
-        for f in fixtures:
-            if (f.get('startTime') or '')[:10] != m['date']:
-                continue
-            ori = orient(m, f.get('participant1Name'), f.get('participant2Name'))
-            if not ori:
-                continue
-            joined[id(m)] = {'fixtureId': f.get('fixtureId'), 'orient': ori}
-            break
+    # 2) join, timezone-aware (see join_fixtures).
+    joined, unjoined = join_fixtures(targets, fixtures, calibrate_from=matches)
+
+    # Every match the join could not resolve is REPORTED with both timestamps —
+    # never silently dropped. This is the class of failure that hid the
+    # timezone bug: a match simply vanished from the capture with no trace.
+    for m, why, fx_start in unjoined:
+        bs = board_start_naive(m)
+        print(f'::warning::UNJOINED {m.get("id")} {m.get("p1")} vs {m.get("p2")} — {why}. '
+              f'board={m.get("date")} {m.get("time")} (naive {bs.isoformat() if bs else "n/a"}), '
+              f'oddspapi={fx_start or "no candidate"}.')
 
     if not joined:
-        print('No oddspapi fixtures matched our target matches by name/date — '
-              'no movement captured this run.')
+        print('::error::No oddspapi fixture joined any of the '
+              f'{len(targets)} target match(es) — zero odds captured this run.',
+              file=sys.stderr)
         write_matches(matches)
-        return
+        sys.exit(1)
 
-    # 2) per-fixture historical odds, books in batches of BOOK_BATCH.
+    # 3) per-fixture historical odds — one call, one book, no batching.
     captured = 0
     total_points = 0
     book_hits = {b: 0 for b in BOOKS}
-    gap_no_history = []     # fixture resolved but no book returned a series
+    gap_no_history = []     # fixture resolved but the book returned no series
     now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
     for m in targets:
         j = joined.get(id(m))
         if not j:
-            gap_no_history.append(m)
-            continue
+            continue            # already reported as unjoined above
         fx = j['fixtureId']
         swap = j['orient'] == 'swap'
         books_out = {}
 
-        for i in range(0, len(BOOKS), BOOK_BATCH):
-            batch = BOOKS[i:i + BOOK_BATCH]
+        for b in BOOKS:
             time.sleep(HIST_SLEEP)
-            data, herr = hist_get(fx, batch, key)
+            data, herr = hist_get(fx, (b,), key)
             if data is None:
-                # a whole batch failed (e.g. 400 from one bad slug): retry the
-                # books one at a time so good books still land and restricted
-                # ones are skipped cleanly.
-                for b in batch:
-                    time.sleep(HIST_SLEEP)
-                    d1, e1 = hist_get(fx, (b,), key)
-                    if d1 is not None:
-                        _absorb(d1, b, swap, books_out, book_hits)
+                print(f'::warning::historical-odds {b} failed for {m.get("id")} '
+                      f'({m.get("p1")} vs {m.get("p2")}, fixture {fx}): HTTP {herr}.')
                 continue
-            blocks = (data.get('bookmakers') or {}) if isinstance(data, dict) else {}
-            for b in batch:
-                if b in blocks:
-                    _absorb(data, b, swap, books_out, book_hits)
+            _absorb(data, b, swap, books_out, book_hits)
 
         if books_out:
             pts = sum(len(s) for bk in books_out.values() for s in bk.values() if s)
@@ -342,6 +529,12 @@ def main():
             m['oddsMovement'] = {
                 'market': 'Match Winner',
                 'capturedAt': now_iso,
+                # The fixture's real UTC start instant, carried so the pipeline's
+                # closing cutoff has a PROVEN pre-first-ball reference instead of
+                # inferring one from bet365's own tick cadence. See the TEN-179
+                # note in bsp-pipeline.js. Stripped into the odds shard along with
+                # the rest of oddsMovement, so it never reaches the client.
+                'startTime': j.get('startTime'),
                 'books': books_out,
             }
             captured += 1
@@ -354,16 +547,65 @@ def main():
     print(f'oddspapi history capture: {captured} match(es) with movement, '
           f'{total_points} price points total.')
     print(f'Book coverage (matches with a series) [{cov}].')
-    if gap_no_history:
-        print(f'GAP (no per-book history returned): {len(gap_no_history)} match(es):')
-        for m in gap_no_history:
+    print(f'Join: {len(joined)}/{len(targets)} target match(es) resolved to an '
+          f'oddspapi fixture; {len(unjoined)} unjoined (listed above).')
+    # A joined fixture with no bet365 series splits into two very different
+    # cases, and conflating them would make this workflow permanently red:
+    #   - COMPLETED: the timeline is frozen and we just lost its open/close for
+    #     good. A real, unrecoverable shortfall.
+    #   - UPCOMING: bet365 simply has not posted a price yet (a next-day final
+    #     404s until the market opens). Entirely normal; the next run picks it up.
+    gap_settled = [m for m in gap_no_history if m.get('finalScore')]
+    gap_upcoming = [m for m in gap_no_history if not m.get('finalScore')]
+    if gap_settled:
+        print(f'GAP (COMPLETED, joined but no bet365 history — open/close lost): '
+              f'{len(gap_settled)} match(es):')
+        for m in gap_settled:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
-    # A run that resolves nothing is the failure mode that hid this bug for
-    # three days: green workflow, zero capture. Say it in a way the Actions UI
-    # surfaces instead of letting it read as a healthy run.
-    if targets and not captured:
-        print(f'::warning::Captured movement on 0 of {len(targets)} target match(es) '
-              f'— the odds history on the live site will not advance this run.')
+    if gap_upcoming:
+        print(f'Pending (upcoming, no bet365 price posted yet — normal, will retry): '
+              f'{len(gap_upcoming)} match(es):')
+        for m in gap_upcoming:
+            print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
+
+    log_quota(key, 'after run')
+
+    # --- Fail loudly (TEN-179 item 2) ----------------------------------------
+    # The old code wrote nothing and still exited 0, so the Actions run went
+    # green while the board starved. Anything captured is written and committed
+    # first (the workflow's commit step runs on failure too), then the RUN is
+    # failed so a shortfall can never be reported as success.
+    #
+    # "Zero captured" is deliberately NOT the failure condition on its own. In
+    # steady state — every settled match already captured, tomorrow's market not
+    # yet open — a run legitimately captures nothing, and failing on that would
+    # make this workflow red most nights. A permanently-red workflow hides the
+    # real signal, which is the exact defect being fixed here. So the trigger is
+    # a shortfall we actually care about:
+    #
+    #   unjoined     — a match we could not resolve to a fixture at all.
+    #   gap_settled  — a COMPLETED match with no bet365 history: its open/close
+    #                  are frozen and now permanently lost.
+    #
+    # Both are unrecoverable. An upcoming match with no price yet is neither.
+    if unjoined or gap_settled:
+        print(f'::error::Capture shortfall: {captured}/{len(targets)} match(es) got '
+              f'movement — {len(unjoined)} unjoined, {len(gap_settled)} completed '
+              f'match(es) joined but with no bet365 history (their open/close are '
+              f'lost for good). Anything captured WAS written and committed; this '
+              f'run is failed so the shortfall is not reported as success.',
+              file=sys.stderr)
+        sys.exit(1 if not captured else 2)
+    if not captured:
+        if gap_upcoming:
+            print(f'::notice::Captured 0 of {len(targets)} target match(es): every '
+                  f'remaining target is an upcoming match with no bet365 price '
+                  f'posted yet. Nothing was capturable — not a failure.')
+        else:
+            print(f'::error::Captured movement on 0 of {len(targets)} target '
+                  f'match(es) and nothing explains it. The odds on the live site '
+                  f'will not advance.', file=sys.stderr)
+            sys.exit(1)
 
 
 def _absorb(data, book, swap, books_out, book_hits):

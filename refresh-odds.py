@@ -16,11 +16,10 @@ match left without odds is reported explicitly at the end.
 
 Stdlib only. Reads ODDSPAPI_KEY from .env. Idempotent, safe to re-run.
 
-Request budget (free tier = 250 requests / MONTH):
+Request budget (paid plan since 2026-09-10 = 5,000 requests / MONTH):
   1 fixtures call + one bulk odds call per bookmaker in BOOKS = 1 + len(BOOKS)
-  per run. With BOOKS = 3 that's 4 requests/run; scheduled twice a day that is
-  ~240/month, which fits inside the free quota with a little headroom. Lower the
-  schedule frequency or trim BOOKS if the quota gets tight.
+  per run. With BOOKS = ('bet365',) that is 2 requests/run. Both endpoints are
+  billable. Check the live meter with GET /v4/account (itself free).
 """
 import json, os, sys, time, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timedelta
@@ -32,12 +31,17 @@ SPORT_TENNIS = 12
 MARKET_WINNER = '121'          # oddspapi match-winner (moneyline) market id
 OUTCOME_P1, OUTCOME_P2 = '121', '122'   # 121 = fixture participant1, 122 = participant2
 
-# Bookmakers to merge, in headline-preference order. Pinnacle is the sharp
-# reference (covers Bastad/Gstaad); bet365 and 1xbet fill Umag, which Pinnacle
-# does not carry. bestOdds is the highest price across whichever of these quote
-# a given match.
-BOOKS = ('pinnacle', 'bet365', '1xbet')
-BOOK_LABELS = {'pinnacle': 'Pinnacle', 'bet365': 'bet365', '1xbet': '1xBet'}
+# Bookmakers to merge. bet365 ONLY — it is the single book the subscription
+# entitles us to (/v4/account -> subscriptions[].bookmakers). pinnacle and 1xbet
+# were removed on 2026-09-10 (TEN-179 item 1): both returned 403
+# RESTRICTED_ACCESS on every call while still costing a BILLABLE
+# /v4/odds-by-tournaments unit each, so two thirds of this script's quota spend
+# bought nothing. Per-run cost drops from 4 units to 2.
+#
+# bestOdds is therefore a single-book figure right now, not a cross-book best.
+# Do not re-add a book until the subscription actually carries it.
+BOOKS = ('bet365',)
+BOOK_LABELS = {'bet365': 'bet365'}
 RATE_SLEEP = 1.8               # oddspapi rate-limits ~1.6s between calls
 
 

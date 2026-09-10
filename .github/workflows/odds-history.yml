@@ -20,8 +20,10 @@ name: BSP odds-movement capture
 #
 # Cost: refresh-odds-history.py draws exactly ONE oddspapi quota unit per run
 # (the single /v4/fixtures lookup); the /v4/historical-odds calls are free. At
-# every 3 hours that is ~240 units/month, just under the free 250/month tier.
-# To go tighter (e.g. hourly, ~720/month) the paid tier must be active first.
+# every 3 hours that is ~240 units/month against the 5,000/month paid plan
+# active since 2026-09-10 — under 5%. Hourly would be ~720/month (~14%).
+# The script prints the live meter (/v4/account, itself free) before and after
+# every run, so actual consumption is in the log rather than inferred.
 #
 # SETUP REQUIRED: add repo secret ODDSPAPI_KEY
 # (Settings -> Secrets and variables -> Actions -> New repository secret).
@@ -43,8 +45,9 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    # A full board (~45 fixtures x 2 book batches x 5.5s) is ~9 min of pacing
-    # before retries; 20 was sized for the frozen ~1-target runs.
+    # A full board is now ~45 fixtures x ONE bet365 call x 5.5s = ~4 min of
+    # pacing before retries (it was 2 batches + a 6-book single-retry fallback,
+    # i.e. up to 8 calls/fixture = ~33 min, which could hit this ceiling).
     timeout-minutes: 35
     steps:
       - name: Checkout
@@ -65,7 +68,12 @@ jobs:
           fi
           python3 refresh-odds-history.py
 
+      # Runs even when the capture step failed. A PARTIAL capture (exit 2) has
+      # already written real prices into matches.json and those are worth
+      # keeping; the run is still failed below so a shortfall can never read as
+      # success. A total failure (exit 1) writes nothing, so this is a no-op.
       - name: Commit refreshed matches.json (only if changed)
+        if: always()
         run: |
           if git diff --quiet -- matches.json; then
             echo "No odds-movement changes to commit."
