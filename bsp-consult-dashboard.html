@@ -491,7 +491,25 @@
      the cluster + 169px journey, and at a one-up width it opens up to the full 260px.
      The name TRUNCATES with an ellipsis inside it rather than pushing the scores right —
      this REVERSES gate 439b9cbe's "keep the wrap"; see the .mc-name rule below. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,260px) max-content minmax(4px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
+  /* TEN-179 score-cluster clearance (founder 2026-09-10) — col 3 min 4px -> 16px.
+     At a 536px two-up card with a 5-set board the 1fr is FULLY SQUEEZED, so col 3
+     resolves to exactly its minimum and that minimum IS the gap between the last set
+     cell and the hairline. At 4px `7⁷` sat 4px off the divider (MEASURED on the live
+     Wed 9 Shelton-Alcaraz card, the founder's own example).
+     THE TRADE IS 1:1 AND UNAVOIDABLE. col 1 is minmax(0,260px) — a cap that absorbs
+     all row slack — so every px freed anywhere else flows into the NAME, not into this
+     gap, and the cluster does not move. Widening col 3 is therefore the only lever that
+     moves the cluster left, and it comes straight out of the name track:
+       gutter   4 -> clusterX 195, nameTrack 166   (shipped state)
+       gutter  16 -> clusterX 183, nameTrack 154   (this)
+     MEASURED by runtime A/B on the live deployed bytes, 1400px, every completed board.
+     16px is chosen, not estimated: it is the largest value on the token grid that adds
+     NO new truncated name to the current board (BISECTED — 17px is the true boundary,
+     C. Alcaraz starts clipping at 18px and B. Shelton at 19px), and it reproduces the
+     design export's guaranteed 15.5px minimum name->score gutter.
+     NOTE this DEVIATES from TOKENS.md, which specifies minmax(4px,1fr) (see the q1 note
+     above); the founder's instruction overrides the token here. */
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,260px) max-content minmax(16px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
