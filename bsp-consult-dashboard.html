@@ -479,7 +479,19 @@
        col 3 min 18px -> 4px, per TOKENS "Completed - 200px 144px minmax(4px,1fr) 1px 232px".
        col 5 was 218px while its own content measured 234px, so the journey clipped ITSELF.
              Now a fixed 169px that its content genuinely fits (see .mc-journey below). */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,max-content) max-content minmax(4px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
+  /* TEN-179 score-column alignment (founder 2026-09-10) — col 1 was minmax(0,max-content),
+     which sizes to EACH ROW'S OWN NAME. The two rows of one card are two separate grids, so
+     the set cluster started at a different x on each row: MEASURED on the live Mon 7 board,
+     Shelton/Tsitsipas 460.6 vs 424.5 (36.1px apart) and Gea/Van De Zandschulp 943 vs 1025
+     (82px apart). Set 1 did not sit above set 1.
+     col 1 is now minmax(0,260px): a track whose size is INDEPENDENT of the name, so both
+     rows of a card — and every card on the board — resolve it identically and the score
+     block starts at one x everywhere. It still shrinks when the row is short (the 260px is
+     a cap, not a floor), so at a 536px two-up card it resolves to the width left over after
+     the cluster + 169px journey, and at a one-up width it opens up to the full 260px.
+     The name TRUNCATES with an ellipsis inside it rather than pushing the scores right —
+     this REVERSES gate 439b9cbe's "keep the wrap"; see the .mc-name rule below. */
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,260px) max-content minmax(4px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
@@ -504,7 +516,11 @@
      16px inset on the cluster, which keeps col 1 shrinkable and leaves the long-name
      wrap behaviour exactly as gate 439b9cbe ruled it. Cost comes out of the row's 1fr
      spacer, not out of the name. */
-  [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; margin-left:16px; }
+  /* TEN-179 score-column alignment — 16px -> 12px. This is the name|score gutter and it is
+     now the ONLY separation between a truncated name and the first score, so it is spent
+     deliberately: every px here comes straight out of the name track (col 1 is what absorbs
+     the cluster's width at a 536px card). 12px still reads as a gutter and buys 4px of name. */
+  [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; margin-left:12px; }
   /* §6 (PASS 4) — the 1px vertical divider bleeds to the card edges via a negative
      margin that cancels the row's vertical padding; it now tracks the 13px padding.
      Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
@@ -599,7 +615,14 @@
      — MEASURED — so the name WRAPS to a second line rather than being cut. Wrapping is
      neither truncation nor an ellipsis; the whole name stays readable. It is a fallback,
      not the normal state, and it triggers only when the one line genuinely will not fit. */
-  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; line-height:1.15; }
+  /* TEN-179 score-column alignment (founder 2026-09-10) — REVERSES the wrap above, on his
+     explicit instruction: "Names truncate with an ellipsis if they exceed it rather than
+     pushing the scores right." The wrap existed to keep the whole name readable while col 1
+     sized to content; with col 1 now name-independent, a wrap would only make a two-line row
+     and still could not move the score column, so the ellipsis is the correct fallback.
+     min-width:0 is load-bearing: .mc-id is a flex row and without it the name refuses to
+     shrink below its content width and pushes the FAV chip out of the track instead. */
+  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; line-height:1.15; }
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
   [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
@@ -680,7 +703,19 @@
      8px plus the full-width chip below, and nothing bespoke between tile and games.
      Cost is +4px per set: best-of-3 84px -> 96px, best-of-5 120px -> 144px, both taken
      out of the row's 1fr spacer (measured 100.9px of slack at a 536px card). */
-  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:16px; grid-template-columns:24px; gap:0 8px; align-items:center; margin-left:0; }
+  /* TEN-179 score-column alignment (founder 2026-09-10) item 3 — "the set-count digit keeps
+     its own cell, separated from the set scores by a clear gutter." The 8px uniform gap
+     ruled on item 4 (read off the design export) is kept BETWEEN sets and widened only
+     between the count tile and set 1, by making track 1 wider than the 24px chip that sits
+     in it (chip is width-pinned and start-aligned, so the extra width lands to its right).
+     tile-gutter 14px vs set-gap 8px = 1.75x, which reads as a group break the way Flashscore's
+     does. Per-set cell stays 16px: a two-digit game ("13") measures 15.61px in Mono 13px, so
+     16px is the floor at which single- and double-digit values both centre without drifting. */
+  [data-page="matches"] .mc-sets{ --mc-tile:24px; --mc-set-cell:16px; --mc-set-gap:8px; --mc-set-gutter:14px;
+    display:grid; grid-auto-flow:column; grid-auto-columns:var(--mc-set-cell);
+    grid-template-columns:calc(var(--mc-tile) + var(--mc-set-gutter) - var(--mc-set-gap));
+    gap:0 var(--mc-set-gap); align-items:center; margin-left:0; }
+  [data-page="matches"] .mc-sets__total{ width:var(--mc-tile); justify-self:start; }
   /* margin-right REMOVED (TEN-179 item 4): it was shrinking the chip inside its own 24px
      track to 20px. TOKENS "set-count tile 24px wide" and the design render agree at 24px,
      and with the 8px column-gap above the separation it was faking is now real. */
@@ -695,7 +730,16 @@
      tiebreak superscript never flips the emphasis and inherits its cell's colour. */
   [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:500; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
   [data-page="matches"] .mc-sets__g.w{ font-weight:700; color:var(--mc-text); }
-  [data-page="matches"] .mc-sets__g sup{ font-size:9px; top:-0.6em; font-weight:600; margin-left:1px; }
+  /* TEN-179 score-column alignment item 6 — "tiebreak superscripts sit inside the same cell
+     and must not widen it or push the following set out of alignment." The cell is a fixed
+     16px grid track so it cannot widen; the risk is the OTHER half — an in-flow superscript
+     is part of the centred inline box, so "7⁷" centres the pair and shifts the 7 left of a
+     plain 7 in the row below. width:0 takes the superscript out of the width calculation
+     entirely: text-align:center then centres the game digit alone and the superscript paints
+     over the cell's right slack (4.08px) plus the 8px set gap. margin-left is dropped for the
+     same reason — on a zero-width box it would still have shifted the digit by 1px.
+     (The old top:-0.6em was dead: the sup is statically positioned. Raise is vertical-align.) */
+  [data-page="matches"] .mc-sets__g sup{ display:inline-block; width:0; overflow:visible; white-space:nowrap; font-size:9px; font-weight:600; margin:0; }
 
   /* odds journey (completed) — non-semantic open→close, as ONE right-anchored object.
      §2/§6 (founder review 2026-08-08): fixed columns open(40) · lane(64) · close(44) ·
@@ -7033,7 +7077,14 @@ function mcSetIsWon(a, b){
 // `recount` is passed ONLY for a retirement. A completed match keeps the feed's own
 // p1Sets/p2Sets: they are correct there, they are what ships today, and re-deriving them
 // for every card would put a display bug one edge case away from a wrong scoreline.
-function mcSetCluster(finalScore, who, recount){
+// `cols` (TEN-179 score-column alignment, founder item 5) is the number of set cells to
+// ALLOCATE, taken from the highest set count on the board being rendered — so a best-of-3
+// match on a Slam day carries the same five cells as the best-of-5 next to it and its
+// cluster is the same width. Unplayed sets render as BLANK cells, never a dash: a dash on
+// this board means missing data, and sets 4-5 of a straight-sets win were simply not played.
+// Omitted/short `cols` falls back to the match's own set count, so the function is safe to
+// call without it.
+function mcSetCluster(finalScore, who, recount, cols){
   const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
   const opp = who === 'p1' ? 'p2' : 'p1';
   const feedTotal = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
@@ -7054,7 +7105,9 @@ function mcSetCluster(finalScore, who, recount){
     // independent of who won the match. Games-only comparison (superscript ignored).
     return `<span class="mc-sets__g${isSetWinner ? ' w' : ''}">${s[who]}${tb}</span>`;
   }).join('');
-  return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
+  const padN = Math.max(0, (Number(cols) || 0) - sets.length);
+  const pad = '<span class="mc-sets__g mc-sets__g--pad"></span>'.repeat(padN);
+  return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}${pad}</span>`;
 }
 // Terminal-state cell for the set-cluster slot.
 //
@@ -7069,12 +7122,12 @@ function mcSetCluster(finalScore, who, recount){
 //
 // A WALKOVER is unchanged and still chip-only: it has no sets array at all, because no
 // ball was struck. That half of the TEN-8 ruling was never in question.
-function mcTermCell(m, who){
+function mcTermCell(m, who, cols){
   const fs = m.finalScore;
   const hasSets = !!(fs && Array.isArray(fs.sets) && fs.sets.length);
   // A retirement HAS games, so it renders the ordinary cluster on both rows and the set
   // count is recomputed (the feed credits the abandoned set — see mcSetIsWon).
-  if (hasSets) return mcSetCluster(fs, who, true);
+  if (hasSets) return mcSetCluster(fs, who, true, cols);
   // A walkover has no sets array because no ball was struck: the cluster slot stays empty
   // on BOTH rows. The RETIRED / WALKOVER chip is carried by the card header in every case
   // (see termChip in the card builder), so it must NOT also be emitted here — doing both
@@ -7459,6 +7512,16 @@ function renderMatches(){
   // strip), so the mid-session rollover dividers don't apply — every card carries its own
   // date inline (showAltDate below) instead.
   const dividersOn = !crossDateSearch() && state.sort === 'time' && ['today','yesterday','tomorrow','daymin2','daymin3','day2','day3'].includes(state.day);
+  // TEN-179 score-column alignment item 5 — the number of set cells EVERY completed cluster
+  // on this board gets. Board-wide, not per-card: the founder's test is "a 3-set match
+  // doesn't shift its columns relative to a 5-set one on the same board", so the allocation
+  // has to be a property of the board. On an all-best-of-3 day this is 3 and no width is
+  // wasted; on a Slam day it is 5 and the straight-sets cards carry two blank cells.
+  const boardSetCols = filtered.reduce((n, mm) => {
+    const fs = mm && mm.finalScore;
+    const len = (fs && Array.isArray(fs.sets)) ? fs.sets.length : 0;
+    return len > n ? len : n;
+  }, 0);
   let prevLocalDay = null;
   const cards = filtered.map(m => {
     // TEN-8: insert a divider before the first card whose member-local calendar day
@@ -7650,13 +7713,13 @@ function renderMatches(){
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            ${(m.retired || m.walkover) ? mcTermCell(m, 'p1') : mcSetCluster(finalScore, 'p1')}
+            ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
-            ${(m.retired || m.walkover) ? mcTermCell(m, 'p2') : mcSetCluster(finalScore, 'p2')}
+            ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close)}
           </div>
