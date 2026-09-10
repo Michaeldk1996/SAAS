@@ -93,13 +93,16 @@ jobs:
           for f in odds-quota-history.json alert-state.json; do
             [ -f "$f" ] && STATE="$STATE $f"
           done
-          if git diff --quiet -- $STATE; then
+          git config user.name  "bsp-odds-bot"
+          git config user.email "bsp-odds-bot@users.noreply.github.com"
+          # Stage FIRST, then diff the index against HEAD. `git diff` only sees TRACKED
+          # files, so a state file that does not exist in git yet reads as "no changes"
+          # and is silently never committed. See the note in odds-now.yml.
+          git add -- $STATE
+          if git diff --cached --quiet; then
             echo "No odds-movement changes to commit."
             exit 0
           fi
-          git config user.name  "bsp-odds-bot"
-          git config user.email "bsp-odds-bot@users.noreply.github.com"
-          git add $STATE
           git commit -m "chore(odds): capture opening->now odds movement [skip ci]"
           # Another run (or a manual commit) may have advanced main since checkout;
           # rebase and retry so the capture is never lost to a benign race.
