@@ -6502,6 +6502,35 @@ function oddsGap(m){
 // §12 — Completed-view sort scorers. All null-safe so they degrade to a stable
 // order when a match lacks odds; only reachable when state.sort is a completed key.
 function _mcCloseOf(m, who){ return m.closingOdds?.[who] ?? null; } // TEN-124: pinned pre-play close only — never a live m.bestOdds/m.odds fallback (dash when absent).
+// TEN-179 item 1 (founder ruling 2026-09-10) — the Upcoming card's NOW leg is PINNED TO
+// BET365. Both legs from bet365, no cross-book fallback; a leg without one is a dash, the
+// same rule TEN-124 set for the completed CLOSE. m.bestOdds is a best-price-ACROSS-books
+// merge, so pairing it with a bet365 OPEN produced a cross-book drift figure: measured
+// 2026-09-10 on the live board, 1 of 2 upcoming cards carried a 1xBet line (Zverev 1.19 /
+// Khachanov 4.94) under a heading that reads "Bet365 open → now". A cross-book leg is
+// one-sided by construction (best-of-N is never worse than one book) and can flip the sign
+// of the drift, so it is not a rounding-level problem. More dashes is accepted.
+//
+// Sources, most authoritative first. EVERY one is a real bet365 quote — nothing is derived:
+//   1. m.bet365Now — last pre-start quote off the SAME bet365 timeline the OPEN is pinned
+//                    from, so open → now is single-book and single-stream by construction.
+//   2. m.bestOdds  — api-tennis get_odds, but only the legs it labels bet365.
+//   3. m.odds      — ditto, only when its headline bookmaker IS bet365.
+// A source is accepted only when it carries BOTH legs, so the two sides of one card can
+// never come from different feeds and the implied percentages stay a coherent pair.
+function _isBet365(name){ return String(name || '').toLowerCase() === 'bet365'; }
+function _mcBet365Now(m){
+  const b = m.bet365Now;
+  if (b && b.p1 != null && b.p2 != null) return { p1: b.p1, p2: b.p2, at: b.at || null, src: 'timeline' };
+  const bo = m.bestOdds;
+  if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
+    return { p1: bo.p1.price, p2: bo.p2.price, at: null, src: 'feed' };
+  }
+  const o = m.odds;
+  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, at: null, src: 'feed' };
+  return null;
+}
+function _mcNowOf(m, who){ const n = _mcBet365Now(m); return n ? (n[who] ?? null) : null; }
 function upsetScore(m){ // winner's closing odds — bigger underdog win = bigger upset
   const fscore = m.finalScore; if (!fscore) return -1;
   const c = _mcCloseOf(m, fscore.winner); return c == null ? -1 : c;
@@ -7560,8 +7589,13 @@ function renderMatches(){
     // not a fabricated stat. Only shown when odds actually exist for this match.
     const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
     const p1IsFavorite = hasOdds && m.odds.p1 < m.odds.p2;
-    const p1OddsDisplay = m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '—';
-    const p2OddsDisplay = m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '—';
+    // TEN-179 item 1 — bet365 only (see _mcBet365Now). `hasOdds`/`p1IsFavorite` above still
+    // read m.odds: the FAV chip asserts "the market makes this player favourite" off a real
+    // quoted two-way line and is NOT a bet365-labelled figure, and its presence drives the
+    // name-track geometry TEN-182 is actively measuring. Left alone deliberately, reported.
+    const nowPair = _mcBet365Now(m);
+    const p1OddsDisplay = nowPair?.p1 != null ? nowPair.p1.toFixed(2) : '—';
+    const p2OddsDisplay = nowPair?.p2 != null ? nowPair.p2.toFixed(2) : '—';
     // Yesterday / 2-days-ago matches have no betting market (the match is
     // already over) — show the real final score instead of odds. "pending"
     // (never blank/guessed) if this is a past-day match whose score wasn't
@@ -7580,9 +7614,17 @@ function renderMatches(){
       ? 'Match completed'
       : isPastDay
         ? 'Result pending'
-        : (m.bestOdds?.p1?.bookmaker && m.bestOdds?.p2?.bookmaker)
-          ? `best odds via ${m.bestOdds.p1.bookmaker} / ${m.bestOdds.p2.bookmaker}`
-          : 'odds not yet pulled for this match';
+        // TEN-179 item 1 — the card quotes bet365 and nothing else, so the provenance line
+        // says so. When bet365 has not posted this fixture the prices dash and the line says
+        // that plainly rather than naming whichever other book happened to have a price.
+        // NOTE (measured 2026-09-10): `bookmakerLine` is computed here but rendered NOWHERE
+        // in the current card — the export's card carries no book label at all. Corrected
+        // rather than deleted so it is right if the line is ever restored; the fact that the
+        // Upcoming card names no book on screen is reported to the founder, not fixed here,
+        // because adding a label changes a signed-off design.
+        : nowPair
+          ? 'bet365'
+          : 'no bet365 price for this match yet';
     const roundBadge = roundBadgeText(m.tournamentRound);
     // Overall + surface-specific H2H — same summarized h2h object and the
     // same surface-filter approach already used in buildH2HSection's tiles,
@@ -7638,10 +7680,15 @@ function renderMatches(){
     // confirmed result.
     const p1Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p1IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
     const p2Color = partialScore ? 'var(--mx-dog-odds)' : finalScore ? (p2IsWinner ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : (hasOdds ? (!p1IsFavorite ? 'var(--mx-fav-odds)' : 'var(--mx-dog-odds)') : 'var(--mx-dog-odds)');
-    const p1MainDisplay = partialScore ? String(partialScore.p1Sets) : finalScore ? String(finalScore.p1Sets) : (hasOdds ? p1OddsDisplay : (isPastDay ? '—' : ''));
-    const p1SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p1?.price) : (isPastDay ? 'Sets' : ''));
-    const p2MainDisplay = partialScore ? String(partialScore.p2Sets) : finalScore ? String(finalScore.p2Sets) : (hasOdds ? p2OddsDisplay : (isPastDay ? '—' : ''));
-    const p2SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (hasOdds ? impliedPct(m.bestOdds?.p2?.price) : (isPastDay ? 'Sets' : ''));
+    // TEN-179 item 1 — a fixture that HAS a market but no bet365 leg keeps its odds slot and
+    // dashes in it (`hasOdds` true, p1OddsDisplay '—'); the implied % goes blank with it,
+    // because an implied percentage off a price we are not showing is a claim about a book
+    // we are not quoting. impliedPct(null) already renders empty, so this needs no guard.
+    const oddsSlot = !!(nowPair || hasOdds);
+    const p1MainDisplay = partialScore ? String(partialScore.p1Sets) : finalScore ? String(finalScore.p1Sets) : (oddsSlot ? p1OddsDisplay : (isPastDay ? '—' : ''));
+    const p1SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (oddsSlot ? impliedPct(nowPair?.p1 ?? null) : (isPastDay ? 'Sets' : ''));
+    const p2MainDisplay = partialScore ? String(partialScore.p2Sets) : finalScore ? String(finalScore.p2Sets) : (oddsSlot ? p2OddsDisplay : (isPastDay ? '—' : ''));
+    const p2SubDisplay = partialScore ? 'Sets' : finalScore ? 'Sets' : (oddsSlot ? impliedPct(nowPair?.p2 ?? null) : (isPastDay ? 'Sets' : ''));
     // Opening/closing odds on a finished card. Both are derived by the pipeline
     // from the real stored odds timeline (m.openingOdds = first snapshot,
     // m.closingOdds = last snapshot before start). Closing is the PINNED
@@ -7746,15 +7793,15 @@ function renderMatches(){
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(m.openingOdds?.p1 ?? null, m.bestOdds?.p1?.price ?? m.odds?.p1 ?? null)
-              : `<span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p1?.price) : ''}</span></span>`
+              ? mcDriftCell(m.openingOdds?.p1 ?? null, _mcNowOf(m, 'p1'))
+              : `<span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasOdds && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(m.openingOdds?.p2 ?? null, m.bestOdds?.p2?.price ?? m.odds?.p2 ?? null)
-              : `<span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${hasOdds ? impliedPct(m.bestOdds?.p2?.price) : ''}</span></span>`
+              ? mcDriftCell(m.openingOdds?.p2 ?? null, _mcNowOf(m, 'p2'))
+              : `<span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p2RecentForm)}
           </div>
         </div>`;
@@ -7865,7 +7912,11 @@ function renderMatches(){
     // SPEC open question 3 flags these three as provisional pending model prices and
     // timestamped odds ticks — built to the reviewed design, not respecified here.
     const daySlate = matches.filter(m => !isFinishedMatch(m) && matchDayBucket(m) === state.day);
-    const priceOf = (m, who) => (m.bestOdds?.[who]?.price ?? m.odds?.[who] ?? null);
+    // TEN-179 item 1 — bet365 only, same rule as the cards below the strip. The drift box is
+    // labelled "Bet365 open → now", so its NOW leg has to BE bet365 or the label is false;
+    // and once the cards dash a non-bet365 fixture, a summary box still quoting that book's
+    // price would contradict every card on the page. One book, one surface.
+    const priceOf = (m, who) => _mcNowOf(m, who);
     const panels = [];
 
     // 1. BIGGEST MARKET MOVE — needs an opening price per side. `openingOdds` is absent on

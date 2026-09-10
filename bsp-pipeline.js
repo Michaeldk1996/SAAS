@@ -4823,8 +4823,14 @@ async function runPipeline() {
   try {
     const priorO = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
     for (const pm of priorO) {
-      if (!pm.openingOdds && !pm.closingOdds) continue;
-      const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null };
+      if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now) continue;
+      const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null,
+                    // TEN-179 item 1 — the last bet365 NOW we hold. Unlike open/close this
+                    // is NOT frozen: it is re-derived whenever this run has a bet365 stream.
+                    // It is carried forward only so a run where the 3-hourly capture has not
+                    // landed yet keeps showing the last REAL bet365 quote (with its own `at`)
+                    // instead of flickering to a dash every 15 minutes.
+                    bet365Now: pm.bet365Now || null };
       priorOdds.set(`id:${pm.id}`, rec);
       priorOdds.set(`np:${pm.date}|${normalizeName(pm.p1)}|${normalizeName(pm.p2)}`, rec);
     }
@@ -4868,8 +4874,38 @@ async function runPipeline() {
   // pre-first-ball reference (a real startTs, or an in-play onset detected off the
   // tick burst) — dash otherwise. No cadence-proxy recovery. See the close block.
 
+  // TEN-179 item 1 — "OPEN = the first Bet365 price we captured, or the archive's opening
+  // price, whichever is GENUINELY earliest" (founder ruling 2026-09-10).
+  //
+  // The archive (bet365-history/YYYY-MM.json, built by archive-bet365-history.py) stores the
+  // same /v4/historical-odds series this pipeline's oddsMovement comes from, reduced to
+  // open + close + 22 interior points, keyed by the oddspapi fixtureId and timestamped in
+  // EPOCH SECONDS. Because both come off the same endpoint, the two first points are usually
+  // the same instant — the archive can only be earlier when the live capture first reached a
+  // fixture AFTER its market opened (e.g. across the Sep 2-10 quota outage), which is exactly
+  // the case worth recovering. Loaded once, fail-soft: an unreadable or absent archive leaves
+  // the live capture as the only source, i.e. the pre-TEN-179 behaviour.
+  const archiveOpens = new Map();   // fixtureId -> { p1, p2, atMs }
+  try {
+    const adir = 'bet365-history';
+    if (fs.existsSync(adir)) {
+      for (const fn of fs.readdirSync(adir)) {
+        if (!/^\d{4}-\d{2}\.json$/.test(fn)) continue;
+        const shard = JSON.parse(fs.readFileSync(`${adir}/${fn}`, 'utf8'));
+        for (const [fid, e] of Object.entries(shard.fixtures || {})) {
+          const a = (e.s1 || [])[0], b = (e.s2 || [])[0];
+          if (!a || !b) continue;                        // both legs or nothing
+          archiveOpens.set(fid, { p1: a[1], p2: b[1], atMs: Math.min(a[0], b[0]) * 1000 });
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`  bet365 archive unreadable (${e.message}) — opens fall back to the live capture only.`);
+  }
+
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
-      closeHealed = 0, closeDashed = 0;
+      closeHealed = 0, closeDashed = 0, crossBookDropped = 0, openFromArchive = 0,
+      nowPinned = 0, nowCarried = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -4878,6 +4914,12 @@ async function runPipeline() {
     // validity check, so an in-play close pinned by an earlier pipeline version
     // is not blindly resurrected here.
     if (carried && carried.openingOdds) { m.openingOdds = carried.openingOdds; openPreserved++; }
+    // Guarded on !finalScore: a match with no oddsMovement at all `continue`s below before
+    // reaching the delete, so an unguarded carry-forward would leave a stale live price
+    // pinned to a settled card forever.
+    if (!m.finalScore && carried && carried.bet365Now && !m.bet365Now) {
+      m.bet365Now = carried.bet365Now; nowCarried++;
+    }
 
     const books = m.oddsMovement && m.oddsMovement.books;
     if (!books || !Object.keys(books).length) continue;
@@ -4895,33 +4937,72 @@ async function runPipeline() {
     // reference (no in-play onset burst off bet365's own cadence) DASHES — we never
     // substitute another book (founder standing rule: a missing close is a dash).
     // If bet365 is entirely absent for a completed match, dash the whole journey
-    // rather than show a cross-book artefact. A non-completed match (no journey
-    // shown) still falls back to the headline book so today's card keeps a live
-    // price. mostPopRef is retained only for that non-completed fallback.
+    // rather than show a cross-book artefact.
+    //
+    // TEN-179 item 1 (founder ruling 2026-09-10) EXTENDS that to upcoming matches: "NOW
+    // pinned to Bet365. Both legs from Bet365, no cross-book fallback." The old
+    // non-completed fallback to the headline / most-populated book is therefore REMOVED —
+    // an upcoming match with no bet365 stream now has no OPEN and dashes, exactly as a
+    // completed one does. In practice this is already unreachable for fresh data
+    // (refresh-odds-history.py has captured bet365 ONLY since ecd6ed9), but a matches.json
+    // entry pinned by an older multi-book run could still take it, and that is precisely
+    // the cross-book artefact the ruling removes. `preferred`/`mostPopRef` survive only in
+    // the diagnostic log below.
     const BET365 = 'bet365';
     const hasBet365 = books[BET365] && (books[BET365].p1 || []).length && (books[BET365].p2 || []).length;
-    const ref = hasBet365 ? BET365
-      : (m.finalScore ? null
-         : ((preferred && books[preferred]) ? preferred : mostPopRef));
+    const ref = hasBet365 ? BET365 : null;
+    if (!ref && !m.finalScore && (preferred || mostPopRef)) crossBookDropped++;
     const s = ref && books[ref];
     const p1 = (s && s.p1) || [];
     const p2 = (s && s.p2) || [];
     if (!p1.length || !p2.length) {
-      // Completed match with no usable bet365 stream: dash the whole journey rather
-      // than leave a cross-book carried opening standing next to a dashed close.
-      if (m.finalScore && m.openingOdds) { m.openingOdds = null; openPreserved--; }
+      // No usable bet365 stream: dash the whole journey rather than leave a cross-book
+      // carried opening standing next to a dashed close (completed) or a dashed NOW
+      // (upcoming — TEN-179 item 1 extends the rule to both views).
+      if (m.openingOdds) { m.openingOdds = null; openPreserved--; }
       continue;
     }
 
-    // For a completed match, drop a carried opening pinned in a DIFFERENT book so
-    // the opening is re-derived from the same (bet365) stream as the close.
-    if (m.finalScore && m.openingOdds && m.openingOdds.bookmaker !== ref) { m.openingOdds = null; openPreserved--; }
+    // Drop a carried opening pinned in a DIFFERENT book so the opening is re-derived from
+    // the same (bet365) stream as the close/NOW. TEN-179 item 1: no longer completed-only.
+    if (m.openingOdds && m.openingOdds.bookmaker !== ref) { m.openingOdds = null; openPreserved--; }
 
     // openingOdds: first captured point. Pin once (skip if already inherited).
     if (!m.openingOdds) {
       const o1 = p1[0], o2 = p2[0];
       m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
       openDerived++;
+    }
+
+    // TEN-179 item 1 — archive vs live capture, whichever open is GENUINELY earliest.
+    // Same book (bet365), same endpoint, so this is a strictly-earlier-timestamp swap and
+    // never a cross-book or derived value. Only replaces when the archive's first point
+    // predates the pinned one; ties and later points leave the pin untouched.
+    const afid = m.oddsMovement && m.oddsMovement.fixtureId;
+    const arc = afid ? archiveOpens.get(afid) : null;
+    if (arc && m.openingOdds && Number.isFinite(Date.parse(m.openingOdds.at))
+        && arc.atMs < Date.parse(m.openingOdds.at)) {
+      m.openingOdds = { p1: arc.p1, p2: arc.p2, bookmaker: BET365,
+                        at: new Date(arc.atMs).toISOString(), src: 'archive' };
+      openFromArchive++;
+    }
+
+    // TEN-179 item 1 — m.bet365Now: the NOW leg of the Upcoming card, pinned to bet365 off
+    // the SAME stream as the open so open → now is one book and one series. Upcoming only:
+    // a completed card shows open → CLOSE and must never pick up a post-start price. The
+    // point is taken at-or-before `now`, so an in-play tick from a match already underway
+    // can never be selected either. Re-derived every run (it is a live price, not a pin);
+    // the carry-forward above only covers runs where no fresh stream arrived.
+    if (!m.finalScore) {
+      const nowMs = Date.now();
+      const n1 = lastAtOrBefore(p1, nowMs), n2 = lastAtOrBefore(p2, nowMs);
+      if (n1 && n2) {
+        m.bet365Now = { p1: n1[1], p2: n2[1], bookmaker: BET365,
+                        at: (Date.parse(n1[0]) >= Date.parse(n2[0])) ? n1[0] : n2[0] };
+        nowPinned++;
+      }
+    } else if (m.bet365Now) {
+      delete m.bet365Now;   // completed cards render open → close; drop the stale live leg
     }
 
     // closingOdds: last real quote at/before the match start — completed matches
@@ -4971,7 +5052,8 @@ async function runPipeline() {
       } else { closeDashed++; }                             // no PROVEN pre-first-ball reference -> dash (TEN-124 tighten)
     }
   }
-  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
+  console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowPinned} derived / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability

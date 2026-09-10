@@ -72,16 +72,22 @@ jobs:
       # already written real prices into matches.json and those are worth
       # keeping; the run is still failed below so a shortfall can never read as
       # success. A total failure (exit 1) writes nothing, so this is a no-op.
+      #
+      # odds-open-monitor.json is committed alongside it ON PURPOSE (TEN-179 item 3).
+      # The runner is ephemeral, so without persisting it every run would re-stamp
+      # `firstSeenAt` at its own start instant and the posting-to-capture lag would read
+      # ~0 forever — the prospective measurement the founder asked for would silently
+      # never happen. It is not in the Pages copy list, so it never reaches the client.
       - name: Commit refreshed matches.json (only if changed)
         if: always()
         run: |
-          if git diff --quiet -- matches.json; then
+          if git diff --quiet -- matches.json odds-open-monitor.json; then
             echo "No odds-movement changes to commit."
             exit 0
           fi
           git config user.name  "bsp-odds-bot"
           git config user.email "bsp-odds-bot@users.noreply.github.com"
-          git add matches.json
+          git add matches.json odds-open-monitor.json
           git commit -m "chore(odds): capture opening->now odds movement [skip ci]"
           # Another run (or a manual commit) may have advanced main since checkout;
           # rebase and retry so the capture is never lost to a benign race.

@@ -54,6 +54,21 @@ OUTCOME_P1, OUTCOME_P2 = '121', '122'    # 121 = fixture participant1, 122 = par
 # subscription carries it (/v4/account -> subscriptions[].bookmakers).
 BOOKS = ('bet365',)
 BOOK_LABELS = {'bet365': 'bet365'}
+
+# --- TEN-179 item 3: the open-monitor (founder authorised 2026-09-10) --------
+# A fixture whose bet365 market has genuinely opened but which we never captured
+# loses its OPEN for good — the card dashes forever and the drift figure is not
+# recoverable. The whole point of this capturer is to prevent exactly that, and
+# until now nothing watched for it.
+#
+# The threshold: every one of the 9 settled fixtures we hold a full series for had
+# its bet365 market posted 27.7-46.2h before start, so at T-24h a fixture with no
+# series is outside the entire observed posting distribution — 0/9 false positives
+# on the evidence we have. That sample is small and retrospective, which is why
+# every run also APPENDS a prospective posting-lead measurement to the monitor file
+# below; the threshold is refined off that, not off the 9.
+OPEN_MONITOR_HOURS = 24.0
+OPEN_MONITOR_FILE = os.path.join(HERE, 'odds-open-monitor.json')
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
@@ -609,6 +624,13 @@ def main():
                 # note in bsp-pipeline.js. Stripped into the odds shard along with
                 # the rest of oddsMovement, so it never reaches the client.
                 'startTime': j.get('startTime'),
+                # TEN-179 item 1: the oddspapi fixtureId, so the pipeline can join this
+                # match to bet365-history/YYYY-MM.json and pin the EARLIER of the archived
+                # open and this capture's first point. Same book, same endpoint — the two
+                # only differ when the live capture first reached the fixture after its
+                # market opened. Stripped with the rest of oddsMovement; never sent to the
+                # client.
+                'fixtureId': fx,
                 'books': books_out,
             }
             captured += 1
@@ -641,6 +663,8 @@ def main():
               f'{len(gap_upcoming)} match(es):')
         for m in gap_upcoming:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
+
+    alerts = open_monitor(targets, joined, now_iso)
 
     quota_after = log_quota(key, 'after run')
     report_consumption(quota_before, quota_after, hist_calls)
@@ -681,6 +705,115 @@ def main():
                   f'match(es) and nothing explains it. The odds on the live site '
                   f'will not advance.', file=sys.stderr)
             sys.exit(1)
+
+
+def _parse(ts):
+    """ISO-8601 (with or without Z) -> aware UTC datetime, or None."""
+    if not isinstance(ts, str) or not ts:
+        return None
+    try:
+        d = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+def open_monitor(targets, joined, now_iso):
+    """TEN-179 item 3 — watch for upcoming fixtures inside T-OPEN_MONITOR_HOURS that
+    still carry no bet365 opening price, and record the real posting-to-capture lag
+    prospectively so the threshold can be refined off live data instead of the 9
+    retrospective fixtures it was set from.
+
+    Returns the list of alerting fixtures. Never raises: a monitor that can break the
+    capture it is monitoring is worse than no monitor, so every step is guarded and a
+    failure degrades to a warning.
+    """
+    try:
+        now = _parse(now_iso) or datetime.now(timezone.utc)
+        try:
+            store = json.load(open(OPEN_MONITOR_FILE))
+            if not isinstance(store, dict) or not isinstance(store.get('fixtures'), dict):
+                raise ValueError('unexpected shape')
+        except Exception:
+            store = {'schema': 'odds-open-monitor/1', 'thresholdHours': OPEN_MONITOR_HOURS,
+                     'fixtures': {}}
+        store['thresholdHours'] = OPEN_MONITOR_HOURS
+        store['updatedAt'] = now_iso
+        fixtures = store['fixtures']
+
+        alerts, measured = [], 0
+        for m in targets:
+            if m.get('finalScore'):
+                continue                      # a settled fixture's open is already decided
+            j = joined.get(id(m))
+            if not j:
+                continue                      # already reported through the unjoined path
+            start = _parse(j.get('startTime'))
+            if not start:
+                continue                      # no proven start instant -> no honest T-24h
+            hours_out = (start - now).total_seconds() / 3600.0
+            if hours_out <= 0:
+                continue                      # underway or past; not an opening question
+
+            books = (m.get('oddsMovement') or {}).get('books') or {}
+            ser = books.get('bet365') or {}
+            pts = [p[0] for side in ('p1', 'p2') for p in (ser.get(side) or []) if p]
+            fid = str(j.get('fixtureId'))
+            rec = fixtures.get(fid) or {}
+
+            if pts:
+                open_at = _parse(min(pts))
+                if open_at:
+                    # postingLeadH is a property of the MARKET (start - first quote).
+                    # captureLagH is a property of OUR pipeline (first run that saw it
+                    # - first quote) and is frozen on first sight, which is what makes
+                    # it a prospective measurement rather than a re-derived one.
+                    rec.setdefault('firstSeenAt', now_iso)
+                    first_seen = _parse(rec['firstSeenAt']) or now
+                    rec.update({
+                        'p1': m.get('p1'), 'p2': m.get('p2'), 'tour': m.get('tour'),
+                        'date': m.get('date'), 'startTime': j.get('startTime'),
+                        'openAt': min(pts),
+                        'postingLeadH': round((start - open_at).total_seconds() / 3600.0, 2),
+                        'captureLagH': round((first_seen - open_at).total_seconds() / 3600.0, 2),
+                        'alerted': rec.get('alerted', False),
+                    })
+                    fixtures[fid] = rec
+                    measured += 1
+            elif hours_out <= OPEN_MONITOR_HOURS:
+                rec.update({'p1': m.get('p1'), 'p2': m.get('p2'), 'tour': m.get('tour'),
+                            'date': m.get('date'), 'startTime': j.get('startTime'),
+                            'openAt': None, 'postingLeadH': None, 'captureLagH': None,
+                            'alerted': True, 'alertedAt': rec.get('alertedAt', now_iso),
+                            'hoursOutAtAlert': rec.get('hoursOutAtAlert', round(hours_out, 2))})
+                fixtures[fid] = rec
+                alerts.append((m, hours_out))
+
+        with open(OPEN_MONITOR_FILE, 'w') as fh:
+            json.dump(store, fh, indent=2, ensure_ascii=False, sort_keys=True)
+
+        leads = sorted(r['postingLeadH'] for r in fixtures.values()
+                       if isinstance(r.get('postingLeadH'), (int, float)))
+        lead_txt = (f'{leads[0]:.1f}-{leads[-1]:.1f}h over {len(leads)} fixture(s), '
+                    f'median {leads[len(leads) // 2]:.1f}h') if leads else 'no measurements yet'
+        print(f'Open-monitor (T-{OPEN_MONITOR_HOURS:.0f}h): {measured} fixture(s) measured '
+              f'this run, {len(alerts)} alerting. Posting lead so far: {lead_txt}.')
+
+        for m, hours_out in alerts:
+            print(f'::warning::No bet365 opening price for {m.get("p1")} v {m.get("p2")} '
+                  f'({m.get("tour")}, {m.get("date")}) with {hours_out:.1f}h to start — '
+                  f'inside the T-{OPEN_MONITOR_HOURS:.0f}h threshold. Every measured '
+                  f'bet365 market posted earlier than this, so its OPEN is at risk.')
+        if alerts:
+            print(f'::error::Open-monitor: {len(alerts)} upcoming fixture(s) are inside '
+                  f'T-{OPEN_MONITOR_HOURS:.0f}h with no bet365 opening price captured. '
+                  f'Their open (and therefore their drift figure) will be lost if the '
+                  f'market has already posted. Listed above; details in '
+                  f'{os.path.basename(OPEN_MONITOR_FILE)}.', file=sys.stderr)
+        return alerts
+    except Exception as e:                      # never let the monitor break the capture
+        print(f'::warning::Open-monitor failed ({e}) — capture itself was unaffected.')
+        return []
 
 
 def _absorb(data, book, swap, books_out, book_hits):
