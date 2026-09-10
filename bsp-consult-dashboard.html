@@ -343,7 +343,16 @@
      that is a design decision, not a build one. :has() keys off the cards themselves, so
      the Upcoming->past-day mirror (which renders settled cards inside Upcoming) is
      covered automatically. */
-  [data-page="matches"] #matchlist:has(.match-card.cmpl){ grid-template-columns:minmax(0, 1fr); }
+  /* TEN-179 gate 9970a72a q1 — Completed goes TWO-UP, per the founder's ruling that
+     "the 430px card minimum in TOKENS is the thing to change, not the layout". It keeps
+     its OWN minimum because a Completed row is wider than an Upcoming one. MEASURED at a
+     1400px viewport (card 538px, row content 502px), worst realistic case:
+       name 230.6 | sets 84 (best-of-3) | spacer 4 | hairline 1 | journey 169 = 488.6px
+     i.e. 13.4px spare with the LONGEST name on tour ("B. Van De Zandschulp", 147.4px at
+     15px/700 Hanken) AND a FAV chip AND a fully populated journey. 525px is the smallest
+     track that holds that, so two columns engage at a ~1358px viewport and it is one
+     column below — the founder's "collapse to a single column" fallback. */
+  [data-page="matches"] #matchlist:has(.match-card.cmpl){ grid-template-columns:repeat(auto-fill, minmax(525px, 1fr)); }
   [data-page="matches"] #matchlist > .mx-daydivider,
   [data-page="matches"] #matchlist > .mc-promo,
   [data-page="matches"] #matchlist > .mx-empty{ grid-column:1 / -1; }
@@ -356,7 +365,15 @@
      off a screenshot: header 11px 16px, player row 11px 16px, footer 10px 16px
      (Upcoming) / 11px 16px (Completed). This is what pulls the odds, implied % and form
      bar in off the screen edge and inside the card. */
-  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:0; overflow:hidden; transition:border-color 120ms; }
+  /* TEN-179 gate 9970a72a q1 — overflow:hidden REMOVED, on the founder's explicit
+     instruction: "Silent clipping that swallows a closing price is exactly the failure
+     mode we can't have — if content ever spills again I need to see it, not have it
+     disappear." It was doing one useful job (clipping the header/footer dividers to the
+     14px corner radius), which the two rules below now do directly, on the two elements
+     that actually reach a corner. Everything else is free to spill VISIBLY. */
+  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:0; overflow:visible; transition:border-color 120ms; }
+  [data-page="matches"] .match-card > :first-child{ border-top-left-radius:inherit; border-top-right-radius:inherit; }
+  [data-page="matches"] .match-card > :last-child{ border-bottom-left-radius:inherit; border-bottom-right-radius:inherit; }
   [data-page="matches"] .match-card:hover{ border-color:var(--mc-border-hover); }
 
   /* header */
@@ -395,6 +412,16 @@
      .mc-scoreline slot in place of the wrong "Underway" marker. */
   [data-page="matches"] .mc-termchip{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; white-space:nowrap; }
   [data-page="matches"] .mc-players.cmpl .mc-sets--term{ display:flex; align-items:center; }
+  /* TEN-179 q3 — on a Completed card the RETIRED / WALKOVER chip rides the header, so a
+     retirement's partial sets get the full cluster slot and the two rows stay aligned.
+     MEASURED: with the chip at its original 63.2px the header needed 510.4px inside a
+     502px content box and wrapped the OPEN/CLOSE caps onto a second line, which read as a
+     broken card. Trimmed to 9.5px / 5px side padding / 0.04em the header needs 498.9px
+     and holds one line. That is 3.1px of slack: a tournament label longer than
+     "ATP US Open . Grand Slam" on a RETIRED card will wrap the caps to a second row
+     again. It degrades visibly rather than clipping, which is the behaviour asked for.
+     The Upcoming and live .mc-termchip / .mc-underway markers are untouched. */
+  [data-page="matches"] .mc-head .mc-termchip{ flex:0 0 auto; font-size:9.5px; letter-spacing:0.04em; padding:2px 5px; }
 
   /* column headers — inline on the card header row, right-aligned above the two data columns */
   [data-page="matches"] .mc-colhead-inline{ margin-left:auto; margin-right:10px; display:grid; grid-template-columns:130px 120px; gap:12px; }
@@ -426,7 +453,9 @@
      replaces the old "card padding 16/18 + row 13/0" approximation so header→rows, row→row and
      the footer divider all match the export's exact separation. Radius/border are the shared
      tokens (14px, rgba 0.09). overflow:hidden clips the full-width dividers to the round corners. */
-  [data-page="matches"] .match-card.cmpl{ padding:0; overflow:hidden; }
+  /* TEN-179 q1 — overflow:hidden removed here too; see the note on .match-card. This is
+     the rule that was actually clipping the Completed journey, silently. */
+  [data-page="matches"] .match-card.cmpl{ padding:0; overflow:visible; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -440,7 +469,17 @@
      row (TEN-121). max-content lets the cluster size to its set count; the 1fr spacer
      absorbs the difference so the odds column stays right-anchored, and best-of-3 cards
      stay as compact as before. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:200px max-content minmax(18px,1fr) 1px 218px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
+  /* TEN-179 gate 9970a72a q1 — the tracks that make two-up fit. Every value is a MEASURED
+     floor read off the rendered DOM in headless Chrome with the longest names on tour
+     injected and the journey populated — none is estimated or read off a screenshot:
+       col 1 was a FIXED 200px, which cannot hold "B. Van De Zandschulp" (32 avatar + 9 +
+             147.4 name + 9 + 33.2 FAV = 230.6px needed). It now sizes to its content.
+             NOTE: that 200px was ALREADY ellipsising that name on the shipped
+             single-column build, at every viewport width — a pre-existing bug.
+       col 3 min 18px -> 4px, per TOKENS "Completed - 200px 144px minmax(4px,1fr) 1px 232px".
+       col 5 was 218px while its own content measured 234px, so the journey clipped ITSELF.
+             Now a fixed 169px that its content genuinely fits (see .mc-journey below). */
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,max-content) max-content minmax(4px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
   /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
      spanning the full height of the winner's row (not inset, not floating). The row
      is inset from the card edge by the card's 18px padding + 1px border, so the bar
@@ -449,7 +488,9 @@
   /* §1 (PASS 4) — avatar→name gap is 13px and the avatar ring is --border-data,
      both read from the export completed row (col-1 flex span). Scoped to .cmpl so the
      upcoming card is untouched. The 20px avatar inset comes from the row's 20px padding. */
-  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:13px; }
+  /* TEN-179 q1 — 13px -> 9px, TOKENS "Card header gap". Two gaps in this cell
+     (avatar|name and name|FAV), so it reclaims 8px for the name itself. */
+  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:9px; }
   [data-page="matches"] .mc-players.cmpl .mc-av{ border-color:var(--mc-border-data); }
   [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; }
   /* §6 (PASS 4) — the 1px vertical divider bleeds to the card edges via a negative
@@ -457,17 +498,25 @@
      Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
      and already matches the export. */
   [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:rgba(255,255,255,0.07); margin:-11px 0; }
-  [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:18px; }
+  [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:10px; }
   /* §4 (PASS 3) — OPEN / CLOSE caps live on the card's single header row, right-
      aligned over the odds column (width matches grid-column 5 = 218px, same 18px
      lead padding as the journey, so OPEN sits over the open figure and CLOSE over
      the close figure). No longer a second row below the header. */
-  [data-page="matches"] .mc-head .mc-cmpl-head__odds{ width:218px; margin-left:auto; display:flex; align-items:center; gap:10px; padding-left:18px; }
+  /* TEN-179 q1 — the caps now MIRROR the journey's tracks exactly, which is what TOKENS
+     asks for ("Header eyebrow group mirrors the row's trailing tracks exactly, so labels
+     centre over their figures"). Same 169px block, same 10px lead, same 32/28/40/44
+     tracks and 5px gaps. Previously the block was a flex row with a growing spacer, so
+     CLOSE right-anchored over the DELTA cell, not over the closing price. */
+  [data-page="matches"] .mc-head .mc-cmpl-head__odds{ width:169px; margin-left:auto; display:grid; grid-template-columns:32px 28px 40px 44px; gap:0 5px; align-items:center; padding-left:10px; }
   /* §4 (PASS 5) — the mid spacer GROWS (was a fixed 46px), so CLOSE is right-anchored
      hard against the odds block's right edge (= card content inset) and OPEN stays at the
      block's 18px lead. Matches the journey row below, whose flexible track does the same. */
-  [data-page="matches"] .mc-cmpl-head__odds .sp{ flex:1 1 auto; }
-  [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); }
+  [data-page="matches"] .mc-cmpl-head__odds .sp{ /* TEN-179 q1 — now grid track 2 (the lane), not a flex spacer. */ }
+  [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mc-muted-2); white-space:nowrap; }
+  /* TEN-179 q1 — each cap takes the text-align of the figure it sits over: the opening
+     price is right-aligned in its 32px cell, the closing price left-aligned in its 40px. */
+  [data-page="matches"] .mc-cmpl-head__odds span:not(.sp):first-child{ text-align:right; }
   /* §3 — Completed summary strip: settled · favourites held · upsets. Full card
      width + card chrome; three cells split by 1px vertical dividers (first cell
      has no left divider). Held% and Upsets both derive from ONE heldCount pass. */
@@ -531,6 +580,14 @@
   [data-page="matches"] .mc-avwrap .mc-av{ grid-area:1/1; width:100%; height:100%; border:none; background:none; position:relative; z-index:1; }
   [data-page="matches"] .mc-players.cmpl .mc-avwrap{ border-color:var(--mc-border-data); }
   [data-page="matches"] .mc-name{ font-family:var(--mx-font-ui); font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* TEN-179 gate 9970a72a q1 — "No truncation and no ellipsis at 1400px." On a Completed
+     card the name never ellipsises: col 1 sizes to content, so it sits on one line in
+     every best-of-3 case (all ATP 250/500/1000, all Challengers). A best-of-5 card gives
+     the set cluster 40px more and the longest names are then 26.6px over budget at 1400px
+     — MEASURED — so the name WRAPS to a second line rather than being cut. Wrapping is
+     neither truncation nor an ellipsis; the whole name stays readable. It is a fallback,
+     not the normal state, and it triggers only when the one line genuinely will not fit. */
+  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; line-height:1.15; }
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--mc-player-a); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
   [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
@@ -594,7 +651,14 @@
      fixed 3-slot template, so a best-of-5 match keeps all its set tiles on a single row
      instead of wrapping the 4th/5th set. Both player rows share the same auto-columns so
      the per-set cells still line up across the two rows. */
-  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:18px; grid-template-columns:24px; gap:0 4px; align-items:center; margin-left:24px; }
+  /* TEN-179 q1 — two changes, both toward TOKENS and both to buy width for the name:
+     per-set cell 18px -> 16px is TOKENS "Completed score group - 24px repeat(5,16px)";
+     margin-left 24px -> 0 removes a build-local inset that TOKENS does not carry at all
+     (the row's own 1fr spacer already separates the cluster from the odds column).
+     Together they take a best-of-3 cluster from 114px to 84px and a best-of-5 from
+     158px to 124px. The 4px gap is the build's and is kept — TOKENS' 8px is WIDER, and
+     widening the cluster is the one thing this row cannot afford. */
+  [data-page="matches"] .mc-sets{ display:grid; grid-auto-flow:column; grid-auto-columns:16px; grid-template-columns:24px; gap:0 4px; align-items:center; margin-left:0; }
   [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; margin-right:4px; }
   /* §6 — sets-won tile: winner white-on-light-fill, loser muted-on-fainter-fill (README
      §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
@@ -612,8 +676,18 @@
      §2/§6 (founder review 2026-08-08): fixed columns open(40) · lane(64) · close(44) ·
      delta(44), so the direction bar's LENGTH — not a stretched track — carries the move
      size. The whole object right-anchors under the OPEN/CLOSE header of the odds column. */
-  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
-  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; width:40px; text-align:right; flex:none; }
+  /* TEN-179 q1 — the journey used to need 234px (40+8+64+8+44+8+44 + 18 lead) inside a
+     218px track: it clipped ITSELF, silently, and that only stayed invisible because
+     mcJourney() renders nothing while both odds legs are null. Re-cut to 169px:
+       open 32 · gap 5 · lane 28 · gap 5 · close 40 · gap 5 · delta 44 · lead 10.
+     Each figure width is the MEASURED width of a four-character price at its own token
+     size (open 13px/400 = 31.2px, close 16px/700 = 38.4px, delta 11px/600 "-10.7%" =
+     39.6px), plus a pixel or two. Widths stay FIXED, not auto, so the two player rows of
+     a card column-align with each other and with the OPEN/CLOSE caps above them. A
+     five-character price (10.50 — none on the board today, max seen 8.00) overflows its
+     cell VISIBLY rather than being clipped: that is the founder's explicit instruction. */
+  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:5px; justify-content:flex-end; }
+  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; width:32px; text-align:right; flex:none; }
   /* Direction bar: 64px lane; the inner bar width is set inline (∝ |delta%| × 2.2,
      clamped 10–56px). Gradient tints into the direction colour; a ▸ arrowhead marks
      the close end. An empty lane (missing open) shows a thin neutral rule, no arrow. */
@@ -621,7 +695,7 @@
      line (align-items:center on .mc-journey), and the bar sits centred in its 64px lane
      (justify-content:center), so the whole object reads through the MIDDLE of the numbers,
      not near their baseline. Export tokens: bar height 3px, radius 2px. */
-  [data-page="matches"] .mc-journey__lane{ width:64px; flex:none; height:16px; position:relative; display:flex; align-items:center; justify-content:center; }
+  [data-page="matches"] .mc-journey__lane{ width:28px; flex:none; height:16px; position:relative; display:flex; align-items:center; justify-content:center; }
   [data-page="matches"] .mc-journey__bar{ height:3px; border-radius:2px; background:linear-gradient(90deg, var(--mc-muted), var(--mc-brand)); position:relative; }
   [data-page="matches"] .mc-journey__bar::after{ content:'\25B8'; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:9px; line-height:1; color:var(--mc-brand); }
   /* §3 (founder review 2026-08-08) — a missing open means no movement to depict: NO bar
@@ -629,7 +703,7 @@
      the header; nothing renders between the em-dash and the close. */
   [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:0; }
   [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:44px; flex:none; }
+  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:40px; flex:none; }
   [data-page="matches"] .mc-journey__delta{ font-family:var(--mx-font-mono); font-weight:600; font-size:11px; color:var(--mc-muted-2); width:44px; text-align:right; flex:none; }
   [data-page="matches"] .mc-journey__delta.pos{ color:#3dd68c; }
   [data-page="matches"] .mc-journey__delta.neg{ color:#e0645b; }
@@ -6898,9 +6972,29 @@ function mcTiebreaks(finalScore){
     return a > b ? { p1: winnerPts, p2: loserPts } : { p1: loserPts, p2: winnerPts };
   });
 }
-function mcSetCluster(finalScore, who){
+// TEN-179 gate 9970a72a q3 — is this set actually FINISHED and won by `a` games to `b`?
+// Needed because the feed credits an unfinished set to whoever was ahead: on Khachanov v
+// Blockx ("6-2, 7-5, 3-2 ret.") it reports p1Sets:3, counting the abandoned 3-2. The true
+// figure is 2. "More games" is NOT the test — 3-2 has more games and is not a set.
+// Covers 6-x with a two-game margin, 7-5, 7-6, an un-tiebroken long set (8-6, 10-8), and a
+// match-tiebreak third set recorded as games (10-8). An abandoned set satisfies none of
+// them and is credited to neither player, which is the whole point.
+function mcSetIsWon(a, b){
+  a = Number(a); b = Number(b);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  if (a < 6) return false;
+  return (a - b >= 2) || (a === 7 && b >= 5);
+}
+// `recount` is passed ONLY for a retirement. A completed match keeps the feed's own
+// p1Sets/p2Sets: they are correct there, they are what ships today, and re-deriving them
+// for every card would put a display bug one edge case away from a wrong scoreline.
+function mcSetCluster(finalScore, who, recount){
   const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
-  const total = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
+  const opp = who === 'p1' ? 'p2' : 'p1';
+  const feedTotal = who === 'p1' ? finalScore.p1Sets : finalScore.p2Sets;
+  const total = (recount && sets.length)
+    ? sets.reduce((n, st) => n + (mcSetIsWon(st[who], st[opp]) ? 1 : 0), 0)
+    : feedTotal;
   const isW = finalScore.winner === who;
   const tbs = mcTiebreaks(finalScore);
   // Games are DIRECT grid children of .mc-sets (no wrapper) so each per-set cell
@@ -6917,16 +7011,30 @@ function mcSetCluster(finalScore, who){
   }).join('');
   return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}</span>`;
 }
-// TEN-8 — a retired match is decided (winner known) but its partial set score has
-// no added value, so the founder's call is to drop the games and show a status
-// chip in the cluster slot instead. The winner row carries the chip; the loser row
-// gets an empty cell so the two-row grid stays aligned. Winner emphasis (the accent
-// bar + brighter name) still comes from the existing `.winner` row class.
+// Terminal-state cell for the set-cluster slot.
+//
+// TEN-179 gate 9970a72a q3 REVERSES the earlier TEN-8 ruling ("a retired match is
+// decided but its partial set score has no added value"). The founder's answer is
+// "Reverse it — render the partial sets with the RETIRED chip (and fix the set count)."
+// The partial sets DO exist in the feed (Khachanov v Blockx carries a full sets array
+// for "6-2, 7-5, 3-2"), so a retirement now renders exactly like any other completed
+// match — same cluster, same per-set winner emphasis — with the chip appended after the
+// games. The set-count tile comes from mcSetCluster's recount, so the unfinished set is
+// not credited to anyone (see the note there).
+//
+// A WALKOVER is unchanged and still chip-only: it has no sets array at all, because no
+// ball was struck. That half of the TEN-8 ruling was never in question.
 function mcTermCell(m, who){
-  const isW = m.finalScore && m.finalScore.winner === who;
-  if (!isW) return `<span class="mc-sets mc-sets--term"></span>`;
-  const lbl = m.retired ? 'Retired' : m.walkover ? 'Walkover' : 'Final';
-  return `<span class="mc-sets mc-sets--term"><span class="mc-termchip">${lbl}</span></span>`;
+  const fs = m.finalScore;
+  const hasSets = !!(fs && Array.isArray(fs.sets) && fs.sets.length);
+  // A retirement HAS games, so it renders the ordinary cluster on both rows and the set
+  // count is recomputed (the feed credits the abandoned set — see mcSetIsWon).
+  if (hasSets) return mcSetCluster(fs, who, true);
+  // A walkover has no sets array because no ball was struck: the cluster slot stays empty
+  // on BOTH rows. The RETIRED / WALKOVER chip is carried by the card header in every case
+  // (see termChip in the card builder), so it must NOT also be emitted here — doing both
+  // is what would print the chip twice on a walkover.
+  return `<span class="mc-sets mc-sets--term"></span>`;
 }
 // Signed percentage move of a price from open→close, as the odds journey and the
 // day-summary "Biggest move" panel both display it: pct = round((close/open − 1)×100),
@@ -6987,7 +7095,12 @@ function mcJourney(open, close){
   // to the right of the close — NOT stacked on a second line. Direction drives colour
   // on both the bar and the delta (.pos=drifted green / .neg=shortened red).
   const d = oddsPctDelta(open, close);
-  const barW = Math.max(10, Math.min(56, Math.round(Math.abs(d.pct) * 2.2)));
+  // TEN-179 q1 — the lane narrowed from 64px to 28px to make the Completed card fit
+  // two-up, so the bar's scale is rescaled by the SAME factor (28/64 = 0.4375) rather
+  // than re-invented: the export's "|delta%| x 2.2, clamped 10-56px in a 64px lane"
+  // becomes "|delta%| x 0.96, clamped 4-24px in a 28px lane". The encoding (bar length
+  // proportional to move size, a floor so a 0% move still reads) is unchanged.
+  const barW = Math.max(4, Math.min(24, Math.round(Math.abs(d.pct) * 0.96)));
   const delta = d.pct !== 0
     ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
     : `<span class="mc-journey__delta"></span>`;
@@ -7455,6 +7568,15 @@ function renderMatches(){
     // columns (set-score cluster + odds journey instead), so they omit the labels.
     // §4 (PASS 3): completed cards carry OPEN/CLOSE right-aligned on the header row
     // itself (over the odds column); upcoming keeps its two inline column headers.
+    // TEN-179 gate 9970a72a q3 — the RETIRED marker moved from the score-cluster slot to
+    // the card HEADER. MEASURED reason: the chip is 62px wide, and once the cluster is
+    // rendering real games the Completed row at a 536px card has 2px of slack — the chip
+    // pushed even a short name ("K. Khachanov") onto a second line. The header carries the
+    // other state markers already (Underway, the round badge) and has the room. The chip
+    // itself, its wording and its neutral state-not-event styling are unchanged.
+    const termChip = isCompleted && (m.retired || m.walkover)
+      ? `<span class="mc-termchip">${m.retired ? 'Retired' : 'Walkover'}</span>`
+      : '';
     const colHead = isCompleted
       ? `<span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span>`
       : mxDriftView()
@@ -7475,6 +7597,7 @@ function renderMatches(){
         <span class="mc-surface ${m.surface}">${surfCap}</span>
         <span class="mc-tourn">${m.tour}${tierSuffix}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
+        ${termChip}
         ${rightMeta}
         ${colHead}
       </div>`;
