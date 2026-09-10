@@ -1,6 +1,31 @@
 {
-  "fixtures": {},
+  "fixtures": {
+    "id1200259173992438": {
+      "alerted": false,
+      "captureLagH": 4.38,
+      "date": "2026-09-11",
+      "firstSeenAt": "2026-09-10T18:03:32Z",
+      "openAt": "2026-09-10T13:41:00.351Z",
+      "p1": "A. Zverev",
+      "p2": "K. Khachanov",
+      "postingLeadH": 29.32,
+      "startTime": "2026-09-11T19:00:00.000Z",
+      "tour": "ATP US Open"
+    },
+    "id1200259173992440": {
+      "alerted": false,
+      "captureLagH": 4.38,
+      "date": "2026-09-11",
+      "firstSeenAt": "2026-09-10T18:03:32Z",
+      "openAt": "2026-09-10T13:41:00.855Z",
+      "p1": "F. Tiafoe",
+      "p2": "B. Shelton",
+      "postingLeadH": 33.32,
+      "startTime": "2026-09-11T23:00:00.000Z",
+      "tour": "ATP US Open"
+    }
+  },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-10T13:18:08Z"
+  "updatedAt": "2026-09-10T18:03:32Z"
 }
