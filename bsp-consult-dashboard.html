@@ -456,6 +456,9 @@
   /* TEN-179 q1 — overflow:hidden removed here too; see the note on .match-card. This is
      the rule that was actually clipping the Completed journey, silently. */
   [data-page="matches"] .match-card.cmpl{ padding:0; overflow:visible; }
+  /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Match Stats,
+     so it needs the affordance. Scoped to .cmpl: upcoming cards are not click targets. */
+  [data-page="matches"] .match-card.cmpl{ cursor:pointer; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -587,9 +590,14 @@
   [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); font-size:12px; color:var(--mc-muted); line-height:1.45; }
   /* TEN-179 item 1/3 — Upcoming summary boxes. BIGGEST MARKET MOVE is clickable and sets
      the sort to Drift; it takes the card's own hover border so it reads as actionable. */
-  [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease; }
+  [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease, background 120ms ease; }
   [data-page="matches"] .mc-story--click:hover{ border-color:rgba(91,155,255,0.22); }
   [data-page="matches"] .mc-story--click:focus-visible{ outline:2px solid rgba(91,155,255,0.35); outline-offset:2px; }
+  /* TEN-179 item 3 (founder task 2026-09-11) — the tile is a toggle, so it needs a selected
+     state. Same brand blue as the card's own hover/active cues, at the weight the other
+     selected controls on this page use; the border alone is too quiet to read as "on". */
+  [data-page="matches"] .mc-story--click.is-on{ border-color:rgba(91,155,255,0.45); background:rgba(91,155,255,0.07); }
+  [data-page="matches"] .mc-story--click.is-on .mc-story__lbl{ color:var(--mc-brand); }
   [data-page="matches"] .mc-story__name{ font-family:var(--mx-font-ui); font-size:13px; font-weight:700; color:var(--mc-text); }
   [data-page="matches"] .mc-story__tight{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   [data-page="matches"] .mc-story__tname{ font-family:var(--mx-font-ui); font-size:13px; color:var(--mc-muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -6412,6 +6420,17 @@ async function loadMatches(){
   await loadPlayerAtpAliases();
   buildTournamentFilters();
   renderHeaderStats();
+  // TEN-179 item 2 — FIRST paint only. matches[] is bound by now, so this is the earliest
+  // point the landing day can be decided from real data. One-shot: this same function is the
+  // background refresh path (every 3 min), and re-landing there would move the reader off a
+  // day they had deliberately stepped to the moment new data arrived.
+  //
+  // Gated on matches.length, NOT on the flag alone. The failure branch above sets matches=[]
+  // and falls through to here, so a first load that 404s or times out would otherwise burn
+  // the one shot on an empty array — every mxDayCount() is 0, the landing is a no-op, and
+  // the 3-minute retry that finally binds real data can never land. The board would then sit
+  // on an empty Today for the rest of the session, which is the exact bug this item fixes.
+  if (!_mxLandedOnce && matches.length){ _mxLandedOnce = true; updateMatchesHeaderChrome(); mxLandOnNearestDay(); }
   renderMatches();
   renderPlayers();
   try { const _h2hP = document.querySelector('.tabpage[data-page="h2h"]'); if (window.H2HPage && _h2hP && _h2hP.classList.contains("active")) window.H2HPage.ensureInit(); } catch (e) {}
@@ -7509,6 +7528,77 @@ function stepDay(dir){ // dir: -1 = older (left), +1 = newer (right)
   renderMatches(); // re-runs updateMatchesHeaderChrome → syncDayArrows
 }
 
+/* ---------- TEN-179 item 2 (founder task 2026-09-11): never land on an empty day ----------
+   "Nobody wants an empty page." Entering a mode — by the segmented control, by a #Results
+   deep link, or on the first paint — lands on the nearest day of the rail that actually has
+   matches: Completed searches BACKWARD first (the most recent settled day), Upcoming
+   FORWARD first (the next day with fixtures). If the preferred direction is dry the other
+   is tried, so a rail with matches anywhere lands on them. A rail that is empty in BOTH
+   directions keeps the empty state, exactly as instructed.
+
+   This is a LANDING rule, not a render rule. Stepping the chevron or clicking a tab is an
+   explicit choice and MUST be able to select an empty day; auto-jumping away from one would
+   make the rail unusable and hide the fact that a day has nothing. So it runs on mode entry
+   and once at boot, never on an ordinary re-render — in particular not on the 15-minute
+   background refresh, which would otherwise yank the reader off a day they chose. */
+var _mxLandedOnce = false;
+
+// The per-day count runs the REAL getFiltered() with state.day swapped in, rather than a
+// second copy of its predicate. The day/view interplay already lives in there — a past day
+// shows completed cards even in Upcoming, a future day shows upcoming cards even in
+// Completed — and a duplicated rule would drift out of step with it silently. state.day is
+// restored in a `finally` so a throw inside getFiltered can never leave it on a probe day.
+function mxDayCount(dayKey){
+  const prev = state.day;
+  state.day = dayKey;
+  try { return getFiltered().length; } finally { state.day = prev; }
+}
+
+// Returns true when it moved the selection; the caller renders afterwards.
+function mxLandOnNearestDay(){
+  // A cross-date search already spans every retained day and greys the rail out, so there
+  // is no meaningful "selected day" to correct while one is active.
+  if (crossDateSearch()) return false;
+  const btns = visibleDayButtons();
+  const idx  = btns.findIndex(b => b.dataset.day === state.day);
+  if (idx < 0 || !btns.length) return false;
+  if (mxDayCount(state.day) > 0) return false;      // already on a day with matches
+  const backFirst = state.view === 'completed';
+  // Nearest-first, preferred direction winning each tie: Completed walks −1, +1, −2, +2 …;
+  // Upcoming walks +1, −1, +2, −2 …
+  const order = [];
+  for (let step = 1; step < btns.length; step++){
+    const near = backFirst ? btns[idx - step] : btns[idx + step];
+    const far  = backFirst ? btns[idx + step] : btns[idx - step];
+    if (near) order.push(near);
+    if (far)  order.push(far);
+  }
+  const hit = order.find(b => mxDayCount(b.dataset.day) > 0);
+  if (!hit) return false;                            // dry both ways — keep the empty state
+  setActiveButton(document.getElementById('dayTabs'), hit);
+  state.day = hit.dataset.day;
+  return true;
+}
+
+// TEN-179 item 3 (founder task 2026-09-11) — BIGGEST MARKET MOVE is a TOGGLE, not a one-way
+// trip. A second click returns the board to its default sort, and that IS the way back to
+// the form bars: the card's right-hand block reads directly off state.sort (item 3 of the
+// original spec), so Time restores ODDS · IMPLIED + RECENT FORM. The tile is only rendered
+// in the Upcoming branch of the summary strip, so 'drift' is never set from Completed.
+//
+// `keepFocus` restores focus after the render. renderMatches() rebuilds #mcSummaryStrip
+// wholesale, destroying the tile node — so a keyboard user who pressed Enter lost focus to
+// <body> and could not press Enter again to toggle back, which is the half of the founder's
+// ask that keyboard users would otherwise not get.
+function mxToggleDriftSort(keepFocus){
+  state.sort = (state.sort === 'drift') ? 'time' : 'drift';
+  renderMatches();
+  if (keepFocus){
+    const tile = document.querySelector('[data-mxsummary="drift"]');
+    if (tile) tile.focus();
+  }
+}
+
 // §4 (Batch B) — the one-tournament context bar. Shows only in Results when exactly
 // one tournament chip is active: "Showing X · N of M settled · full breakdown →".
 // N/M are counted within the active day bucket so they track the visible day tab.
@@ -7814,7 +7904,7 @@ function renderMatches(){
         </div>`;
     return `
     ${dividerHtml}
-    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}">
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}"${isCompleted ? ' role="button" tabindex="0" aria-label="Match stats — ' + psEsc(m.p1) + ' v ' + psEsc(m.p2) + '"' : ''}>
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
@@ -7951,7 +8041,11 @@ function renderMatches(){
     // decision, and it is flagged for his ruling. The FIGURE is what the rule binds, so it
     // now carries its provenance and its denominator on every render, populated or empty.
     const driftCov = mcOpenCoverage(daySlate);
-    panels.push(`<div class="mc-story mc-story--click" data-mxsummary="drift" role="button" tabindex="0" title="Sort by drift">`
+    // Founder task 2026-09-11 (item 3): show the tile as SELECTED while its view is active,
+    // so it reads as a toggle rather than a link that did something invisible. The state is
+    // read straight off state.sort — there is no second flag to fall out of step with it.
+    const driftOn = state.sort === 'drift';
+    panels.push(`<div class="mc-story mc-story--click${driftOn ? ' is-on' : ''}" data-mxsummary="drift" role="button" tabindex="0" aria-pressed="${driftOn ? 'true' : 'false'}" title="${driftOn ? 'Back to the default view' : 'Sort by drift'}">`
       + `<div class="mc-story__lbl">Biggest market move</div>`
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
@@ -14295,6 +14389,12 @@ function setMatchesView(view, opts){
   // paint the right mode.
   if (opts && opts.defer) return;
   buildTournamentFilters();
+  // TEN-179 item 2 — pick the landing day BEFORE painting, so switching modes never flashes
+  // an empty board. updateMatchesHeaderChrome() is what decides which tabs the rail shows
+  // and mxLandOnNearestDay() only walks visible tabs, so the chrome has to be settled first;
+  // renderMatches() runs it again, which is idempotent.
+  updateMatchesHeaderChrome();
+  mxLandOnNearestDay();
   renderMatches();
 }
 
@@ -14322,23 +14422,77 @@ function mxApplyHash(opts){
 // syncSortDropdown() (called from updateMatchesHeaderChrome on every render) updates the
 // control's label to read "Drift" so the reader can see what changed and undo it. There is
 // no separate filter state, chip or control behind it.
+// Founder task 2026-09-11: a SECOND click now returns to the default sort — see
+// mxToggleDriftSort(). The tile carries .is-on + aria-pressed while Drift is active.
 document.getElementById('mcSummaryStrip').addEventListener('click', e => {
   const box = e.target.closest('[data-mxsummary="drift"]'); if (!box) return;
-  state.sort = 'drift';
-  renderMatches();
+  mxToggleDriftSort();
 });
 document.getElementById('mcSummaryStrip').addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const box = e.target.closest('[data-mxsummary="drift"]'); if (!box) return;
   e.preventDefault();
-  state.sort = 'drift';
-  renderMatches();
+  mxToggleDriftSort(true);   // keyboard path — put focus back on the rebuilt tile
 });
 
 document.getElementById('mxModeToggle').addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]'); if (!btn) return;
   if (btn.dataset.view === state.view) return;   // already there — no re-render churn
   setMatchesView(btn.dataset.view);
+});
+
+// TEN-179 item 4 (founder task 2026-09-11) — a COMPLETED card is itself the hit target and
+// opens on Match Stats, which is where a settled match's detail actually lives. Upcoming
+// cards are deliberately unchanged: nothing was asked for them, and "what happened" has no
+// counterpart before a match is played.
+//
+// The Match analysis modal is NOT modified (TEN-179 DO-NOT-CHANGE list): this opens it
+// exactly as the "See full analysis" link does, then drives its own tab switcher aGoTab(),
+// the same call the Key Factors cards already use to route between tabs.
+function mxOpenCardStats(card){
+  const id = card && card.dataset.id;
+  if (!id) return;
+  openAnalysisModal(id);
+  aGoTab('matchstats');
+}
+// True when this click should be left to something else on the card.
+function mxCardClickInert(e, card){
+  // Real controls keep their own behaviour: the Market Signal chip (a <button>, which
+  // expands in place) and the "See full analysis" link. `!== card` matters — the card
+  // itself now carries role="button" for the keyboard path, so without it this selector
+  // matches the card on EVERY click and the feature silently never fires.
+  const ctl = e.target.closest('a, button, [role="button"], input, select, label');
+  if (ctl && ctl !== card) return true;
+  // The EXPANDED market-signal panel is built entirely from <div>/<span> (mcSigPanel), so
+  // none of it matches the selector above. Without this the reader expands the panel and
+  // their next click inside it drops the modal on top of what they just opened.
+  if (e.target.closest('.mc-sigpanel')) return true;
+  // A player name/avatar routes to that player's profile — but profileLinkAttrs() only
+  // attaches its stopPropagation onclick once player-profiles.json has landed (it is a
+  // deferred idle load). In the seconds before that, the same pixel would fall through to
+  // the card and open Match Stats instead, so the same click has two destinations depending
+  // on load timing. Excluding the name/avatar outright makes it one: profile, or nothing yet.
+  if (e.target.closest('.mc-name, .mc-av, .mc-avwrap')) return true;
+  // Let the reader copy a price or a set score off the card without the modal snatching it.
+  const sel = window.getSelection && window.getSelection();
+  if (sel && !sel.isCollapsed && String(sel).trim()) return true;
+  return false;
+}
+document.getElementById('matchlist').addEventListener('click', e => {
+  const card = e.target.closest('.match-card.cmpl');
+  if (!card || mxCardClickInert(e, card)) return;
+  mxOpenCardStats(card);
+});
+// Keyboard parity. The card is the primary action on Completed now, and its only other
+// route into the modal ("See full analysis") is an <a> with no href, so it is not focusable
+// either — without this the tab there is unreachable from the keyboard. Scoped to .cmpl, so
+// Upcoming cards add no tab stop and their tab order is unchanged.
+document.getElementById('matchlist').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.match-card.cmpl');
+  if (!card || e.target !== card) return;    // a control inside the card keeps its own keys
+  e.preventDefault();
+  mxOpenCardStats(card);
 });
 
 window.addEventListener('hashchange', mxApplyHash);
