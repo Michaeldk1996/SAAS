@@ -12,48 +12,50 @@ name: BSP data pipeline
 on:
   schedule:
     - cron: '*/15 * * * *'   # every 15 minutes (UTC). GitHub may delay under load.
-  workflow_dispatch:          # allow manual "Run workflow" from the Actions tab
-  # Frontend pushes to main auto-deploy so a dashboard change doesn't have to wait
-  # for the next cron tick. This runs the SAME full job on purpose: GitHub Pages
-  # replaces the whole site on every deploy, and several served files (model-output.json,
-  # odds/, form/, career-history/, setstats/, pbp/ shards) are built at runtime and are
-  # not in git — a checkout-only "fast deploy" would publish a site missing them and
-  # break the Edge Model, Odds, Form, and Career-record features. Warm caches keep this
-  # reasonably quick, and `concurrency` below queues it behind any in-flight cron run.
-  push:
-    branches: [main]
-    # ── DEPLOY TRAP (TEN-107, 2026-09-02) ─────────────────────────────────────
-    # This is an ALLOWLIST: only a push touching one of the files below triggers
-    # a deploy. A push that changes any OTHER served file — e.g. live-tab.js,
-    # analytics.js — does NOT auto-deploy; it silently waits for the every-15-min
-    # `schedule:` tick above (which republishes the whole _site), OR you dispatch
-    # the workflow manually (Actions tab / workflow_dispatch). If you edit a
-    # served file that is not listed here and need it live promptly, DISPATCH the
-    # run — do not assume the push shipped it.
-    paths:
-      - 'bsp-consult-dashboard.html'
-      - 'index.html'
-      - 'auth.html'
-      - 'account.html'
-      - 'funnel.html'
-      - 'verify.html'
-      - 'auth.js'
-      # Trading Report (TEN-151 follow-on): the page logic. Its CSS is the inline
-      # [data-page="trading"] .tr-* block inside bsp-consult-dashboard.html above,
-      # so styling changes already trigger via that entry — no separate CSS file exists.
-      - 'trading-report.js'
-      # TEN-168 Series page: JS + CSS live in their own files (not inline), so a
-      # JS/CSS-only edit must be on this allowlist or it silently waits for the
-      # cron tick — the trading-report.js gap the founder flagged. The page's HTML
-      # + data-page block ride bsp-consult-dashboard.html above.
-      - 'series.js'
-      - 'series.css'
-      # The Series data generator: a build-series.js-only change (e.g. a scoring or
-      # relevance fix) must redeploy so the regenerated series.json ships, not wait
-      # for a cron tick — the same allowlist gap, one layer deeper.
-      - 'build-series.js'
+  workflow_dispatch:          # manual "Run workflow", and the external */10 ping
+  #
+  # ── TEN-178: the `push:` trigger was REMOVED, 2026-09-11 ───────────────────
+  #
+  # It used to auto-deploy an allowlist of frontend files so a dashboard change
+  # didn't wait for a cron tick. Measured over the 100 runs to 2026-09-11T00:40Z,
+  # that shortcut was the thing losing deploys:
+  #
+  #   GitHub's concurrency queue holds at most ONE running + ONE pending run per
+  #   group, and a third arrival CANCELS the pending one. `cancel-in-progress: false`
+  #   does not prevent that — it only protects the run already executing. This job's
+  #   median runtime is 15.6 min (p90 21.9, max 25.6) and the external ping dispatches
+  #   it every 10 minutes, so the queue is permanently at capacity. 21 of those 100
+  #   runs ended `cancelled`, every one of them while pending — including run 2495,
+  #   event `push`, head 8d116ee, "TEN-179 item 5: pin the FAV chip". That is how a
+  #   merged commit sat on main looking shipped while Pages served the old bytes.
+  #
+  # A push run is just another arrival in that queue, so it was cancellable like any
+  # other. With no push trigger there is no push run to cancel: every run is a tick,
+  # every tick re-points itself at the tip of main (see the step below), and the ticks
+  # are ten minutes apart. A merge therefore reaches Pages on the next tick —
+  # ~26 min median, worst case ~35 — deterministically, instead of ~16 min most of the
+  # time and never the rest of the time.
+  #
+  # Two alternatives were rejected, both measured:
+  #   - Splitting the concurrency lane by event. This workflow is the ONLY caller of
+  #     upload-pages-artifact/deploy-pages in the repo, so the single group is also the
+  #     only serializer for Pages deployments. Splitting it allows two deploys to
+  #     interleave: a slow tick that started before the merge can land AFTER the push
+  #     deploy and roll the site back to pre-merge bytes for up to ~35 min, and the
+  #     superseded deployment makes deploy-pages error — turning the push run red on
+  #     exactly the path we are trying to protect.
+  #   - Slowing the external ping below the job's p90. That works, but it is configured
+  #     outside this repo and it costs board freshness (≤10 min becomes ≤30 min).
+  #
+  # If you need something live sooner than the next tick, DISPATCH the run.
+  #
+  # The job is deliberately the full pipeline, not a checkout-and-copy: Pages replaces
+  # the whole site on every deploy and several served files (model-output.json, odds/,
+  # form/, career-history/, setstats/, pbp/ shards) are built at runtime and are not in
+  # git. A "fast deploy" would publish a site missing them.
 
-# Never let two runs overlap; cancel an in-progress run if a newer one starts.
+# ONE group, on purpose — see above. It is also the only serializer for Pages
+# deployments in this repo. cancel-in-progress stays OFF (founder ruling 2026-09-09).
 concurrency:
   group: bsp-pipeline
   cancel-in-progress: false
@@ -73,6 +75,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Bounded history for the merge-base guard below. NOT `0`: a full clone of
+          # this repo is ~315 MB against ~25 MB shallow (3,443 commits on main, growing
+          # ~124/day, matches.json rewritten 13x/day), and this job already runs to
+          # 25.6 min against a 30-min timeout. 100 commits is ~19h of main — orders of
+          # magnitude more than the few minutes a run can drift — so merge-base always
+          # resolves well inside the graft boundary.
+          fetch-depth: 100
+
+      # TEN-178. With the push trigger gone, every run is a tick, and a tick's checkout
+      # is pinned to the SHA that existed when it was QUEUED. In a saturated lane that
+      # can be 15+ minutes stale, so a tick could publish a merge-old site even though
+      # a newer main existed before it started building. Re-pointing at the tip first
+      # makes every deploy carry the newest committed bytes, which is what lets the
+      # "merge lands on the next tick" guarantee above actually hold.
+      #
+      # Safe here and only here: nothing has been generated, restored or installed yet,
+      # and `reset --hard` does not touch untracked files in any case.
+      - name: Re-point this run at the current tip of main
+        run: |
+          set -euo pipefail
+          BEFORE=$(git rev-parse HEAD)
+          if git fetch --quiet --depth=100 origin main; then
+            git reset --hard FETCH_HEAD
+            AFTER=$(git rev-parse HEAD)
+            if [ "$BEFORE" = "$AFTER" ]; then
+              echo "Already at the tip of main ($AFTER)."
+            else
+              echo "Advanced $BEFORE -> $AFTER before building."
+            fi
+          else
+            # A transient fetch failure must not throw away a run. Build the SHA we
+            # have; the guard before upload still asserts it is on main, and the next
+            # tick is ten minutes away.
+            echo "::warning::Could not fetch origin/main; building the checked-out SHA $BEFORE instead."
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -457,6 +495,76 @@ jobs:
           [ -d _site/style-meetings ] && [ -n "$(ls -A _site/style-meetings 2>/dev/null)" ] \
             || { echo "MISSING from _site: style-meetings/ shard dir is absent or empty"; exit 1; }
           echo "All referenced files present in _site."
+
+      # TEN-178 scope item 2 — the merge-ancestor guard.
+      #
+      # Two separate jobs, both of which have to be true before anything ships:
+      #
+      #   1. The commit we are about to publish must be ON main. A deploy from a
+      #      SHA that is not an ancestor of origin/main is a deploy of something the
+      #      founder never merged, and it fails the run rather than reaching Pages.
+      #   2. The artifact must CARRY that commit. Without a stamp inside _site there
+      #      is no way to tell from the live URL whether a green run's bytes actually
+      #      arrived — which is the exact failure class this issue exists to close.
+      #      build-info.json makes it a one-line check against the deployed site:
+      #        curl -s https://michaeldk1996.github.io/SAAS/build-info.json
+      #
+      # A tip that has moved on since checkout is reported loudly but does NOT fail the
+      # run: data commits land on main every few minutes, so failing on that would fail
+      # almost every run. The next tick republishes from the newer tip regardless.
+      - name: Deploy ancestor guard + build stamp
+        run: |
+          set -uo pipefail       # NOT -e: every failure below is handled explicitly
+          SHA=$(git rev-parse HEAD)
+          TIP=""; BEHIND=-1; VERIFIED=false
+
+          # A transient fetch failure must not bin a completed pipeline at the last
+          # gate — that would throw away ~20 min of work and the API spend with it.
+          # It degrades to an unverified deploy, recorded as such in the stamp.
+          if git fetch --quiet --depth=100 origin main; then
+            TIP=$(git rev-parse FETCH_HEAD)
+            # --is-ancestor exits 1 for "not an ancestor" and 128 for "git failed"
+            # (bad object, shallow graft, corrupt pack). Conflating them turns an
+            # infrastructure blip into a confident, wrong accusation that a merged
+            # commit is not on main — in the one step whose job is trustworthy
+            # diagnosis. Branch on the status.
+            set +e
+            git merge-base --is-ancestor "$SHA" "$TIP"
+            RC=$?
+            set -e
+            if [ "$RC" -eq 0 ]; then
+              VERIFIED=true
+              BEHIND=$(git rev-list --count "$SHA..$TIP" 2>/dev/null || echo -1)
+              if [ "$BEHIND" -gt 0 ]; then
+                echo "::warning::Publishing $SHA while origin/main is $BEHIND commit(s) ahead ($TIP). The next tick republishes from the newer tip."
+                git log --oneline "$SHA..$TIP" | sed 's/^/  ahead: /'
+              fi
+            elif [ "$RC" -eq 1 ]; then
+              echo "::error::Refusing to publish $SHA — it is not an ancestor of origin/main ($TIP). Nothing was deployed."
+              exit 1
+            else
+              echo "::warning::merge-base failed with status $RC (not a merge problem — git could not answer). Publishing $SHA unverified."
+            fi
+          else
+            echo "::warning::Could not fetch origin/main. Publishing $SHA unverified."
+          fi
+
+          export SHA TIP BEHIND VERIFIED
+          node -e '
+            const fs = require("fs");
+            fs.writeFileSync("_site/build-info.json", JSON.stringify({
+              commit:     process.env.SHA,
+              tip:        process.env.TIP || null,
+              behindTip:  Number(process.env.BEHIND),   // -1 = could not be determined
+              onMain:     process.env.VERIFIED === "true",
+              event:      process.env.GITHUB_EVENT_NAME,
+              runId:      process.env.GITHUB_RUN_ID,
+              runNumber:  Number(process.env.GITHUB_RUN_NUMBER),
+              builtAt:    new Date().toISOString(),
+            }, null, 2) + "\n");
+          '
+          echo "Stamped _site/build-info.json:"
+          cat _site/build-info.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
