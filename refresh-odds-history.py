@@ -84,6 +84,23 @@ FIXTURE_MAP_FILE = os.path.join(HERE, 'odds-fixture-map.json')
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
+# TEN-179 item 5, founder ruling 2026-09-11: "Widen the free sweep to all upcoming
+# fixtures. It's unmetered and its last tick is identical to the metered price, so this
+# is free freshness."
+#
+# The constraint is PACING, not money. /v4/historical-odds costs nothing but cools down
+# at ~1 call / 5s, and the sweep has to finish well inside a 15-minute tick or it collides
+# with the next one. 480s of calling against a 900s tick leaves the commit, push and the
+# stale-NOW monitor comfortable headroom.
+#
+# When the board is bigger than the budget the sweep CUTS, and it says what it cut — a
+# silent truncation reads as "we covered everything" when we did not. The cut is taken
+# from the far end: already-opened fixtures are ordered by start-time proximity and the
+# most distant are dropped, while every UNOPENED fixture is swept regardless of budget.
+# Unopened is the original mission (an unpinned OPEN is unrecoverable once the market
+# has moved); a distant fixture's NOW going one tick stale is recoverable by definition.
+SWEEP_BUDGET_S = float(os.environ.get('SWEEP_BUDGET_S', '480'))
+
 # --first-appearance exit code for "this leg is guaranteed free and it billed"
 # (founder ruling 2026-09-11, item 4). A DISTINCT code, not a generic 1: the loop
 # has to tell "the sweep failed" (retry next tick, job stays green — it runs 96
@@ -552,24 +569,56 @@ def seed_from_live(committed):
     def has_movement(m):
         return bool((m.get('oddsMovement') or {}).get('books'))
 
-    prior = {}
-    for cm in committed:
-        if not has_movement(cm):
-            continue
-        for k in match_keys(cm):
-            prior.setdefault(k, cm)
+    def observed_at(m):
+        return _parse(((m.get('bet365Now') or {}).get('observedAt')))
 
-    carried = 0
+    prior, prior_now = {}, {}
+    for cm in committed:
+        if has_movement(cm):
+            for k in match_keys(cm):
+                prior.setdefault(k, cm)
+        # TEN-179 — the free-sweep NOW ROLLBACK, founder ruling 2026-09-11 ("fold in the
+        # free-sweep NOW rollback at the same time").
+        #
+        # THE DEFECT: this function returns the LIVE (published) board and write_matches()
+        # then writes it over the committed file. The published board is one pipeline
+        # cycle behind — ~55 min at the delivered `*/15` rate, plus ~5 min of CDN — so the
+        # bet365Now that refresh-odds.py wrote locally on the hourly metered leg was being
+        # REPLACED by the older published copy. oddsMovement was carried forward here;
+        # bet365Now never was. The metered read therefore had a lifetime of one sweep.
+        #
+        # Pre-existing (main() runs 3-hourly and has always done this) but item 5 widens
+        # the sweep to every upcoming fixture, which removes the "0 targets" early return
+        # that was masking it and makes it fire 4x/hour on a full board.
+        #
+        # The fix is MONOTONIC BY CONSTRUCTION: carry forward only when the committed
+        # observation is strictly NEWER. It can never replace a fresher value with a
+        # staler one in either direction, and it invents nothing — the price and both
+        # timestamps travel together, untouched.
+        if cm.get('bet365Now') and observed_at(cm):
+            for k in match_keys(cm):
+                prior_now.setdefault(k, cm)
+
+    carried = now_kept = 0
     seen = set()
     for m in live:
         for k in match_keys(m):
             seen.add(k)
-        if has_movement(m):
-            continue
-        pm = next((prior[k] for k in match_keys(m) if k in prior), None)
-        if pm:
-            m['oddsMovement'] = pm['oddsMovement']
-            carried += 1
+        if not has_movement(m):
+            pm = next((prior[k] for k in match_keys(m) if k in prior), None)
+            if pm:
+                m['oddsMovement'] = pm['oddsMovement']
+                carried += 1
+        # Completed cards are excluded: bsp-pipeline.js deletes bet365Now on a finished
+        # match (it renders open -> close), so carrying one forward here would resurrect
+        # a leg the board has deliberately dropped.
+        if not m.get('finalScore'):
+            pn = next((prior_now[k] for k in match_keys(m) if k in prior_now), None)
+            if pn:
+                live_obs, committed_obs = observed_at(m), observed_at(pn)
+                if live_obs is None or committed_obs > live_obs:
+                    m['bet365Now'] = pn['bet365Now']
+                    now_kept += 1
 
     cutoff = (datetime.now(timezone.utc) - timedelta(days=RETAIN_DAYS)).strftime('%Y-%m-%d')
     retained = [cm for cm in committed
@@ -579,8 +628,9 @@ def seed_from_live(committed):
 
     print(f'Seeded from the live board: {len(live)} match(es) '
           f'(committed file held {len(committed)}); carried movement forward on '
-          f'{carried}; retained {len(retained)} committed-only match(es) '
-          f'newer than {cutoff}.')
+          f'{carried}; kept the fresher committed bet365Now on {now_kept} (the '
+          f'published board is a pipeline cycle behind); retained {len(retained)} '
+          f'committed-only match(es) newer than {cutoff}.')
     return live + retained
 
 
@@ -656,6 +706,7 @@ def main():
     # 3) per-fixture historical odds — one call, one book, no batching.
     captured = 0
     total_points = 0
+    newly_opened = set()    # ids of matches whose bet365 series THIS run created
     hist_calls = 0            # free calls, counted only for the consumption log
     book_hits = {b: 0 for b in BOOKS}
     gap_no_history = []     # fixture resolved but the book returned no series
@@ -667,6 +718,7 @@ def main():
             continue            # already reported as unjoined above
         fx = j['fixtureId']
         swap = j['orient'] == 'swap'
+        had_series = bool((m.get('oddsMovement') or {}).get('books'))
         books_out = {}
 
         for b in BOOKS:
@@ -701,6 +753,13 @@ def main():
                 'books': books_out,
             }
             captured += 1
+            # Only a series this run CREATED is a first sighting. Re-capturing a fixture
+            # we have held for days and stamping firstSeenAt = now would make
+            # bsp-pipeline.js resolve its OPEN to the last quote at or before NOW — i.e.
+            # the current price. Same gate as first_appearance(); without it here, this
+            # 3-hourly run silently undid the sweep's gate within one cycle.
+            if not had_series:
+                newly_opened.add(id(m))
         else:
             gap_no_history.append(m)
 
@@ -731,7 +790,7 @@ def main():
         for m in gap_upcoming:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
 
-    alerts = open_monitor(targets, joined, now_iso)
+    alerts = open_monitor(targets, joined, now_iso, newly_opened=newly_opened)
 
     quota_after = log_quota(key, 'after run')
     report_consumption(quota_before, quota_after, hist_calls)
@@ -740,7 +799,8 @@ def main():
     if bsp_alerts:
         bsp_alerts.alert_quota(
             key, cadence_note=f'This capture runs every {CAPTURE_INTERVAL_H}h; the '
-                              f'card refresh (odds-now.yml) runs hourly.')
+                              f'card refresh (odds-now.yml) runs hourly.',
+            by='odds-history')
 
     # --- Fail loudly (TEN-179 item 2) ----------------------------------------
     # The old code wrote nothing and still exited 0, so the Actions run went
@@ -791,7 +851,7 @@ def _parse(ts):
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
-def open_monitor(targets, joined, now_iso):
+def open_monitor(targets, joined, now_iso, newly_opened=None):
     """TEN-179 item 3 — watch for upcoming fixtures inside T-OPEN_MONITOR_HOURS that
     still carry no bet365 opening price, and record the real posting-to-capture lag
     prospectively so the threshold can be refined off live data instead of the 9
@@ -814,7 +874,7 @@ def open_monitor(targets, joined, now_iso):
         store['updatedAt'] = now_iso
         fixtures = store['fixtures']
 
-        alerts, measured = [], 0
+        alerts, measured, unknown_sighting = [], 0, 0
         for m in targets:
             if m.get('finalScore'):
                 continue                      # a settled fixture's open is already decided
@@ -841,7 +901,34 @@ def open_monitor(targets, joined, now_iso):
                     # captureLagH is a property of OUR pipeline (first run that saw it
                     # - first quote) and is frozen on first sight, which is what makes
                     # it a prospective measurement rather than a re-derived one.
-                    rec.setdefault('firstSeenAt', now_iso)
+                    #
+                    # `newly_opened` gates the stamp (TEN-179 item 5). When the caller
+                    # passes it, only a fixture whose series THIS call created may claim
+                    # "first seen now". Without that gate, re-sweeping a fixture we have
+                    # held for days but which has no monitor record would stamp
+                    # firstSeenAt = now, and bsp-pipeline.js would then resolve its OPEN
+                    # to the last quote at or before NOW — i.e. the current price. A
+                    # fixture with no record and no fresh sighting keeps no firstSeenAt
+                    # at all, which is the pipeline's explicit, counted series[0]
+                    # fallback: honest about what we do not know.
+                    may_stamp = newly_opened is None or id(m) in newly_opened
+                    if 'firstSeenAt' not in rec:
+                        if not may_stamp:
+                            fixtures[fid] = {**rec, 'p1': m.get('p1'), 'p2': m.get('p2'),
+                                             'tour': m.get('tour'), 'date': m.get('date'),
+                                             'startTime': j.get('startTime'),
+                                             'openAt': min(pts),
+                                             'postingLeadH': round(
+                                                 (start - open_at).total_seconds() / 3600.0, 2),
+                                             'captureLagH': None,
+                                             'firstSightingUnknown': True,
+                                             'alerted': rec.get('alerted', False)}
+                            # NOT `measured` — this is the fixture we explicitly declined
+                            # to measure. Counting it would report a captureLag sample we
+                            # deliberately refused to invent.
+                            unknown_sighting += 1
+                            continue
+                        rec['firstSeenAt'] = now_iso
                     first_seen = _parse(rec['firstSeenAt']) or now
                     rec.update({
                         'p1': m.get('p1'), 'p2': m.get('p2'), 'tour': m.get('tour'),
@@ -870,7 +957,9 @@ def open_monitor(targets, joined, now_iso):
         lead_txt = (f'{leads[0]:.1f}-{leads[-1]:.1f}h over {len(leads)} fixture(s), '
                     f'median {leads[len(leads) // 2]:.1f}h') if leads else 'no measurements yet'
         print(f'Open-monitor (T-{OPEN_MONITOR_HOURS:.0f}h): {measured} fixture(s) measured '
-              f'this run, {len(alerts)} alerting. Posting lead so far: {lead_txt}.')
+              f'this run, {unknown_sighting} with a series but no recorded first sighting '
+              f'(OPEN falls back to series[0] — never stamped as a sighting), '
+              f'{len(alerts)} alerting. Posting lead so far: {lead_txt}.')
 
         for m, hours_out in alerts:
             print(f'::warning::No bet365 opening price for {m.get("p1")} v {m.get("p2")} '
@@ -1030,29 +1119,93 @@ def first_appearance():
         # predates odds-fixture-map.json, so it is not rare.
         return settle(0)
 
-    targets, unmapped = [], []
+    # --- target selection (item 5: unopened FIRST, then refresh within budget) ---
+    unopened, already_open, unmapped = [], [], []
     for m in matches:
         if m.get('finalScore') or not m.get('date'):
             continue
-        if (m.get('oddsMovement') or {}).get('books'):
-            continue                       # OPEN already pinned — nothing to catch
         rec = fmap.get(event_key(m)) or {}
-        if rec.get('fixtureId'):
-            targets.append((m, rec))
-        else:
+        if not rec.get('fixtureId'):
             unmapped.append(m)
+            continue
+        if (m.get('oddsMovement') or {}).get('books'):
+            already_open.append((m, rec))   # OPEN pinned; swept now for NOW freshness
+        else:
+            unopened.append((m, rec))       # OPEN unpinned — the time-critical set
+
+    def starts_at(pair):
+        return _parse((pair[1] or {}).get('startTime')) or datetime.max.replace(
+            tzinfo=timezone.utc)
+
+    # Drop fixtures whose start instant has passed. They are underway, not upcoming:
+    # open_monitor ignores them (`hours_out <= 0`), their OPEN is long pinned, and the
+    # pipeline's NOW pick on a started-but-unsettled match takes the last quote at or
+    # before *now*, which on a started match can be an IN-PLAY tick. Sorting "soonest
+    # first" put them at the head of the queue, so they were the one group the budget
+    # cut could never reach.
+    underway = [pr for pr in already_open if starts_at(pr) <= now]
+    already_open = [pr for pr in already_open if starts_at(pr) > now]
+    already_open.sort(key=starts_at)        # soonest first; the cut falls at the far end
+    per_fixture_s = max(HIST_SLEEP * len(BOOKS), 0.001)   # never divide by zero
+    room = max(0, int(SWEEP_BUDGET_S / per_fixture_s) - len(unopened))
+    refresh, dropped = already_open[:room], already_open[room:]
+    targets = unopened + refresh
 
     if not targets:
-        print(f'First-appearance sweep: 0 unopened fixture(s) resolvable from cache '
+        print(f'First-appearance sweep: 0 fixture(s) resolvable from cache '
               f'({len(unmapped)} awaiting the hourly mapping run). 0 quota units.')
         return settle(0)
 
-    joined, captured, opened = {}, 0, []
+    est_s = len(targets) * per_fixture_s
+    print(f'First-appearance sweep: {len(unopened)} unopened + {len(refresh)} already-open '
+          f'(NOW refresh) = {len(targets)} fixture(s), ~{est_s:.0f}s of pacing against a '
+          f'{SWEEP_BUDGET_S:.0f}s budget; {len(underway)} underway fixture(s) excluded '
+          f'(started — their NOW would be an in-play tick).')
+    if dropped and SWEEP_BUDGET_S > 0:
+        # Never a silent cap. A truncated sweep that reports a clean total is how a
+        # coverage gap gets mistaken for coverage.
+        print(f'::warning::Sweep budget cut {len(dropped)} already-open fixture(s) from '
+              f'this tick — the most distant by start time. Their OPEN is already pinned '
+              f'and unaffected; their NOW waits for the hourly metered leg. Furthest '
+              f'kept: {(starts_at(refresh[-1]).strftime("%Y-%m-%dT%H:%MZ") if refresh else "none")}. '
+              f'Raise SWEEP_BUDGET_S or shorten the tick if this persists.')
+    # SWEEP_BUDGET_S == 0 is the REDO replay's deliberate "unopened only" signal, not an
+    # overrun — don't warn about it every push race.
+    if SWEEP_BUDGET_S > 0 and len(unopened) * per_fixture_s > SWEEP_BUDGET_S:
+        print(f'::warning::The unopened set alone needs ~{len(unopened) * per_fixture_s:.0f}s, '
+              f'over the {SWEEP_BUDGET_S:.0f}s budget. It is swept anyway — an unpinned OPEN '
+              f'is unrecoverable once the market moves — but this tick will overrun.')
+
+    joined, captured, refreshed, opened = {}, 0, 0, []
+    newly_opened = set()
     book_hits = {b: 0 for b in BOOKS}
-    for m, rec in targets:
+    # The budget above is a NOMINAL estimate — it assumes one call per book at
+    # HIST_SLEEP. It is not a bound: hist_get() backs off on a 429 with
+    # `HIST_SLEEP * (attempt + 2)` up to MAX_RETRY, so a single fixture can cost
+    # 5.5 + 5.5*(2+3+4+5) = 82.5s, and a rate-limited run could take 15x the estimate
+    # and overrun the 15-minute tick entirely. So the budget is also enforced as a real
+    # wall clock: stop STARTING new fixtures once it is spent. The loop recomputes its
+    # sleep to the next wall-clock boundary, so an overrun costs a tick rather than
+    # drifting the whole schedule — but an unbounded sweep would still stall the commit,
+    # the push and the stale-NOW monitor behind it.
+    started = time.monotonic()
+    budget_cut = 0
+    for idx, (m, rec) in enumerate(targets):
+        if time.monotonic() - started > SWEEP_BUDGET_S and not (
+                idx < len(unopened)):
+            # Unopened fixtures (the first slice of `targets`) are never abandoned —
+            # an unpinned OPEN is unrecoverable once the market moves. Only the
+            # NOW-refresh tail is cut, and it is counted, not dropped silently.
+            budget_cut = len(targets) - idx
+            print(f'::warning::Sweep wall clock exceeded {SWEEP_BUDGET_S:.0f}s after '
+                  f'{idx} fixture(s) — almost certainly /v4/historical-odds 429 backoff. '
+                  f'{budget_cut} already-open fixture(s) abandoned this tick; their OPEN '
+                  f'is pinned and unaffected, their NOW waits one tick.')
+            break
         swap = rec.get('orient') == 'swap'
         joined[id(m)] = {'fixtureId': rec['fixtureId'], 'orient': rec.get('orient'),
                          'startTime': rec.get('startTime')}
+        had_series = bool((m.get('oddsMovement') or {}).get('books'))
         books_out = {}
         for b in BOOKS:
             time.sleep(HIST_SLEEP)
@@ -1066,11 +1219,26 @@ def first_appearance():
                 continue
             _absorb(data, b, swap, books_out, book_hits)
 
-        if books_out:
+        if not books_out:
+            # Nothing observed. Leave whatever we already hold EXACTLY as it is — in
+            # particular do not advance capturedAt, which would claim an observation
+            # that did not happen, and do not blank an existing series on a 404.
+            continue
+
+        if had_series:
+            # MERGE, never replace. oddspapi prunes historical density with age, so a
+            # refetched series can be SHORTER at the old end than the one we hold — and
+            # the OPEN pin is "the last bet365 quote at or before firstSeenAt", which
+            # lives at exactly that end. Replacing wholesale would silently move the
+            # open to a later, worse price. Union on timestamp, keep both ends.
+            m['oddsMovement'] = _merge_movement(m['oddsMovement'], books_out, now_iso)
+            refreshed += 1
+        else:
             m['oddsMovement'] = {'market': 'Match Winner', 'capturedAt': now_iso,
                                  'startTime': rec.get('startTime'),
                                  'fixtureId': rec['fixtureId'], 'books': books_out}
             captured += 1
+            newly_opened.add(id(m))
             opened.append(m)
 
     write_matches(matches)
@@ -1080,7 +1248,16 @@ def first_appearance():
     # is the only record of how close our first sighting got to the market's
     # posting instant, and it is frozen on first write so it stays a prospective
     # measurement. Feeding this sweep into it is what shrinks captureLagH.
-    open_monitor([m for m, _ in targets], joined, now_iso)
+    #
+    # `newly_opened` is NOT optional now that item 5 re-sweeps already-open fixtures.
+    # firstSeenAt is set with `rec.setdefault(...)`, so a fixture that has carried a
+    # series for days but has NO monitor record — every fixture captured before the
+    # monitor existed — would be stamped firstSeenAt = NOW. bsp-pipeline.js resolves
+    # OPEN as "the last bet365 quote at or before firstSeenAt", so that stamp would
+    # resolve the open to the CURRENT price. Deriving an open from the current price is
+    # precisely what the founder's standing rule forbids. Only fixtures whose series
+    # this call actually created may claim a first sighting.
+    open_monitor([m for m, _ in targets], joined, now_iso, newly_opened=newly_opened)
 
     for m in opened:
         ser = ((m.get('oddsMovement') or {}).get('books') or {}).get('bet365') or {}
@@ -1092,12 +1269,84 @@ def first_appearance():
         print(f'  OPENED {m.get("date")} {m.get("tour")}: {m.get("p1")} v {m.get("p2")} '
               f'— first sighted {lag_txt}.')
 
-    print(f'First-appearance sweep: {captured} newly-opened fixture(s) captured of '
-          f'{len(targets)} swept; {len(unmapped)} not yet in the fixture cache.')
+    print(f'First-appearance sweep: {captured} newly-opened fixture(s) captured and '
+          f'{refreshed} already-open fixture(s) refreshed, of {len(targets)} targeted in '
+          f'{time.monotonic() - started:.0f}s; {len(unmapped)} not yet in the fixture '
+          f'cache; {len(dropped)} pre-cut by budget, {budget_cut} cut by the wall clock.')
 
     # log_quota returns the raw request_count int (not the subscription dict) —
     # it is the same reading report_consumption() takes either side of main().
-    return settle(len(targets))
+    # The COUNT ACTUALLY MADE, not the count targeted — the wall-clock cut can abandon
+    # the tail, and a settle() line claiming calls we never made is the kind of log that
+    # gets quoted back later as a measurement.
+    return settle(len(targets) - budget_cut)
+
+
+def _collapse_runs(points):
+    """Keep the FIRST and LAST point of every run of identical prices; drop the interior.
+
+    Without this the merge grows without bound. extract_series() already collapses runs
+    on the way out of the API, but it REWRITES the run's end timestamp to the latest
+    sighting of that price — so re-fetching the same unchanged market yields a slightly
+    different timestamp each time, a union-on-timestamp never dedupes it, and the series
+    accretes one extra point per side per sweep. At 96 sweeps a day on a fixture several
+    days out that is hundreds of points in a file committed 96 times a day.
+
+    Every surviving point is a REAL bet365 (instant, price) pair; nothing is interpolated,
+    averaged or synthesised, and the run's first point — the instant bet365 actually moved
+    to that price — is always kept, so the old end of the series (where OPEN lives) cannot
+    move to a later quote. The interior points carry no information the two ends do not:
+    they are repeat sightings of a price that did not change.
+
+    NOTE for the founder: for a not-yet-pinned fixture whose first-sighting cut falls
+    INSIDE such a run, the pinned open's `at` becomes the instant bet365 moved to that
+    price rather than the last time we happened to see it. The PRICE is identical either
+    way. Say the word and this becomes first-and-last-plus-the-cut instead.
+    """
+    out = []
+    for i, pt in enumerate(points):
+        prev_same = i > 0 and points[i - 1][1] == pt[1]
+        next_same = i + 1 < len(points) and points[i + 1][1] == pt[1]
+        if prev_same and next_same:
+            continue                    # interior of a flat run
+        out.append(pt)
+    return out
+
+
+def _merge_movement(existing, books_new, now_iso):
+    """Union a freshly-fetched bet365 series into the one we already hold.
+
+    TEN-179 item 5. Re-sweeping an already-open fixture is what makes NOW move for free,
+    but it must not be allowed to SHORTEN the series. Two reasons:
+
+      - oddspapi prunes historical density with age. The old end of the series is where
+        the OPEN lives, and the pin is "the last bet365 quote at or before firstSeenAt".
+        A wholesale replace would move the open to a later, worse price — deriving an
+        open from a newer price, which the founder's standing rule forbids outright.
+      - A partial response (one book 200, another 404) must not blank the other book.
+
+    Union on timestamp, keep the earliest ends, never interpolate, never synthesise a
+    point. Every value that survives is a real bet365 quote from a real instant.
+    """
+    out = dict(existing or {})
+    books = dict(out.get('books') or {})
+    for label, series_new in (books_new or {}).items():
+        old = books.get(label) or {}
+        merged = {}
+        for side in ('p1', 'p2'):
+            by_ts = {}
+            for pt in (old.get(side) or []):
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    by_ts[pt[0]] = list(pt)
+            for pt in (series_new.get(side) or []):
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    by_ts[pt[0]] = list(pt)     # same instant, same quote — a no-op
+            merged[side] = _collapse_runs([by_ts[k] for k in sorted(by_ts)])
+        books[label] = merged
+    out['books'] = books
+    out['market'] = out.get('market') or 'Match Winner'
+    out['capturedAt'] = now_iso                 # we really did observe, just now
+    return out
 
 
 def _absorb(data, book, swap, books_out, book_hits):

@@ -53,6 +53,19 @@ METERED_DUE=1                            # the first iteration always refreshes 
 STOPPING=0
 FREE_BILLED=0                            # set by a BILLED_RC(9) from the free sweep; see below
 
+# --- item 4: this checkout's own version ------------------------------------
+# actions/checkout@v4 runs ONCE and the loop then runs for up to 350 minutes, so a fix
+# merged to main is NOT in force until the loop restarts. Worse, the versions skew:
+# bash holds an open fd on THIS file and `git reset --hard` replaces it by rename (new
+# inode), so the driver runs its original bytes for the whole window — while the Python
+# helpers are invoked as `python3 <file>` and are re-read every tick. A push race
+# therefore yields OLD DRIVER + NEW PYTHON, which is the one combination where the new
+# sweep returns rc 9 (BILLED) and the old driver's `|| echo ::warning::` swallows it.
+# Detection without consequence, in a green run. See driver_moved() below.
+BOOT_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+DRIVER_FILES="odds-capture-loop.sh ci-commit-push.sh refresh-odds.py \
+refresh-odds-history.py metered-spend-guard.py check-now-staleness.py bsp_alerts.py"
+
 # --- the interrupt contract ---------------------------------------------------
 # GitHub sends SIGTERM and then hard-kills. We do not start new API work on the
 # way out; we just make sure what is already on disk reaches main.
@@ -67,6 +80,46 @@ on_signal() {
   exit 0
 }
 trap on_signal TERM INT
+
+driver_moved() {
+  # Has any file this loop EXECUTES changed on origin/main since we checked out?
+  # Deliberately the whole executable set, not just this script: running a new Python
+  # helper under an old bash driver is the dangerous state, so the answer has to be
+  # "one consistent version or restart", never "whichever files happened to update".
+  [ "$BOOT_SHA" = "unknown" ] && return 1
+  git fetch -q origin main 2>/dev/null || return 1
+  # shellcheck disable=SC2086
+  git diff --quiet "$BOOT_SHA" FETCH_HEAD -- $DRIVER_FILES 2>/dev/null
+  local drc=$?
+  # EXACTLY 1 means "they differ". 0 means identical; 128 (or anything else) means git
+  # itself failed — a bad ref, a corrupt object, a half-fetched shallow repo. Reading a
+  # git ERROR as "the driver moved" would dispatch a successor and stand down every
+  # tick forever, and each restart clears the untracked billed-strike marker, so the
+  # two-sweep billing detector could never reach its second strike.
+  if [ "$drc" -eq 1 ]; then return 0; fi
+  if [ "$drc" -ne 0 ]; then
+    echo "::warning::driver_moved: git diff failed (rc $drc) — assuming the checkout is" \
+         "current rather than restarting on an unreadable answer."
+  fi
+  return 1
+}
+
+request_successor() {
+  # Queue a fresh run BEFORE standing down, so exiting early can never open a capture
+  # gap. The concurrency group holds it pending until this job ends, then starts it on
+  # a clean checkout. Without this the loop would exit and wait for a delivered cron
+  # slot — and Actions delivers ~27% of an hourly schedule, so "restarts shortly" could
+  # mean 2h40m of no captures. Requires `actions: write` on the job.
+  [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] || return 1
+  local code
+  code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/odds-now.yml/dispatches" \
+    -d "{\"ref\":\"${GITHUB_REF_NAME:-main}\"}" 2>/dev/null) || return 1
+  [ "$code" = "204" ]
+}
 
 record_cadence() {
   # The whole reason for this loop is that the CONFIGURED cadence was not the
@@ -166,16 +219,48 @@ while [ "$STOPPING" -eq 0 ]; do
     fi
   fi
 
+  # FOUNDER RULING 2026-09-11 item 3 — "Fix the metered re-spend, all three causes.
+  # Spend guard, not a lock." METERED_DUE is set in four places here and cleared in
+  # one, so the arming logic alone cannot hold a flat-hourly cadence: a REDO re-arm
+  # re-buys an already-billed call, every loop restart spends at once, and a failing
+  # run retries every 15 minutes even though a 400 bills. The guard is the single
+  # place that answers "have we already paid for this hour?", reading an untracked
+  # in-job marker (survives `git reset --hard`) and the committed quota history
+  # (survives a new runner). It never cancels the leg — it defers it, so METERED_DUE
+  # stays armed and the refresh lands as soon as the hour is genuinely up.
   if [ "$METERED_DUE" -eq 1 ]; then
-    MODE="free+metered"
-    if python3 refresh-odds.py; then
-      METERED_DUE=0
+    python3 metered-spend-guard.py
+    GRC=$?
+    # ONLY rc 10 means SKIP. Every other non-zero — 127 (no python3), 2 (the script is
+    # missing, which is what a `git reset --hard` onto a base that predates it leaves
+    # behind), 126 — means the guard could not run, and the guard's own contract is to
+    # FAIL OPEN. Treating "cannot run" as "already paid" would freeze the NOW price for
+    # the rest of the window over a bookkeeping error, which is the exact failure the
+    # guard exists to prevent.
+    if [ "$GRC" -ne 0 ] && [ "$GRC" -ne 10 ]; then
+      echo "::warning::Spend guard could not run (rc $GRC) — allowing the metered leg." \
+           "A guard that fails closed freezes the board."
+      GRC=0
+    fi
+    if [ "$GRC" -eq 0 ]; then
+      MODE="free+metered"
+      if python3 refresh-odds.py; then
+        METERED_DUE=0
+      else
+        # Leave METERED_DUE set so the NOW leg retries at the next 15-minute tick
+        # instead of waiting a full hour — but the retry is now BILL-AWARE. The guard
+        # lets it through immediately only if refresh-odds.py measured a meter delta
+        # of zero (a transport failure that cost nothing); if the failed attempt did
+        # bill, or died before it could measure, that attempt WAS the hour's spend and
+        # the guard holds the retry. This is the path that would otherwise burn
+        # 96 units/day on a persistent 4xx.
+        echo "::warning::NOW refresh failed at iteration $ITER — the spend guard decides" \
+             "whether the next tick retries or waits out the hour."
+      fi
     else
-      # Leave METERED_DUE set so the NOW leg retries at the next 15-minute tick
-      # instead of waiting a full hour. refresh-odds.py never blind-retries a
-      # 4xx itself (a 400 and a 429 both bill), so this is the only retry, and
-      # it is paced an interval apart.
-      echo "::warning::NOW refresh failed at iteration $ITER — retrying next tick."
+      MODE="free+metered-deferred"
+      echo "::notice::Metered NOW leg deferred to a later tick by the spend guard;" \
+           "METERED_DUE stays armed."
     fi
   fi
 
@@ -213,7 +298,12 @@ while [ "$STOPPING" -eq 0 ]; do
     # Same stand-down as above: once the free leg has been proven to bill, it does
     # not get re-run on a git race either.
     if [ "$FREE_BILLED" -eq 0 ]; then
-      python3 refresh-odds-history.py --first-appearance
+      # SWEEP_BUDGET_S=0 on the replay. The REDO exists to recover the free CAPTURE that
+      # the reset discarded — an unpinned OPEN is unrecoverable — not to redo the NOW
+      # refresh, which the next tick does 15 minutes later anyway. A zero budget leaves
+      # every UNOPENED fixture swept (they are never cut) and drops the already-open
+      # refresh tail, so the replay costs seconds instead of a second full sweep.
+      SWEEP_BUDGET_S=0 python3 refresh-odds-history.py --first-appearance
       [ $? -eq 9 ] && FREE_BILLED=1
     fi
     # 'captured', not 'redo': the reset above discarded the tick recorded before the
@@ -226,6 +316,25 @@ while [ "$STOPPING" -eq 0 ]; do
   fi
 
   [ $(( ITER % METERED_EVERY )) -eq 0 ] && METERED_DUE=1
+
+  # FOUNDER RULING 2026-09-11 item 4 — stand down when this checkout goes stale.
+  # Everything this iteration captured is already committed and pushed above, so
+  # exiting here costs nothing and turns "a shipped fix waits up to 5h30m and may land
+  # half-applied as old-driver + new-Python" into "in force within one tick, whole".
+  # The successor is REQUESTED FIRST: if it cannot be queued we stay on the old code
+  # rather than risk a gap, because a stale-but-running loop beats no loop.
+  if driver_moved; then
+    if request_successor; then
+      echo "::notice::A driver file changed on origin/main since this checkout" \
+           "($BOOT_SHA). Everything captured is committed. Standing down at iteration" \
+           "$ITER so the queued successor picks up one consistent version."
+      break
+    else
+      echo "::warning::A driver file changed on origin/main since this checkout, but a" \
+           "successor run could not be queued (needs GITHUB_TOKEN and actions:write)." \
+           "Continuing on the old checkout — a stale loop beats a capture gap."
+    fi
+  fi
 
   # Sleep to the next wall-clock INTERVAL_MIN boundary, so ticks land on :00
   # :15 :30 :45 no matter how long the work took. A fixed `sleep 900` would let

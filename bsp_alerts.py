@@ -197,7 +197,7 @@ def _parse(ts):
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
-def _record_sample(used, now):
+def _record_sample(used, now, by=None):
     """Append this run's meter reading and return the retained history.
 
     A meter reading that went DOWN means the subscription window rolled over, so
@@ -218,7 +218,16 @@ def _record_sample(used, now):
               f'the burn rate is not averaged across the seam.')
         samples = []
 
-    samples.append({'at': _iso(now), 'used': used})
+    # `by` names WHICH job took this reading. The spend guard (TEN-179 item 3) uses the
+    # last 'metered-now' sample as its repo-side floor for a fresh runner with no
+    # untracked marker; refresh-odds-history.py's 3-hourly main() also bills and also
+    # records here, so an untagged read would suppress an hourly NOW leg that never ran.
+    # Older, untagged samples carry no `by` and are ignored by the guard — which fails
+    # OPEN (allows the spend), never toward a silently-skipped refresh.
+    sample = {'at': _iso(now), 'used': used}
+    if by:
+        sample['by'] = by
+    samples.append(sample)
     samples = samples[-QUOTA_HISTORY_KEEP:]
     try:
         with open(QUOTA_HISTORY_FILE, 'w') as fh:
@@ -230,7 +239,7 @@ def _record_sample(used, now):
     return samples
 
 
-def quota_status(key, cadence_note=''):
+def quota_status(key, cadence_note='', by=None):
     """Read the meter, measure the burn rate, and return the runway verdict.
 
     Returns a dict, or None when the meter could not be read. Keys:
@@ -259,7 +268,7 @@ def quota_status(key, cadence_note=''):
     valid_from = _parse(sub.get('valid_from'))
     days_left = ((valid_until - now).total_seconds() / 86400.0) if valid_until else None
 
-    samples = _record_sample(used, now)
+    samples = _record_sample(used, now, by=by)
 
     # Burn rate, measured. Prefer the oldest retained sample that is far enough
     # back to be signal rather than noise; fall back to the window average.
@@ -319,10 +328,10 @@ def quota_status(key, cadence_note=''):
             'bookmakers': sorted((sub.get('bookmakers') or {}).keys())}
 
 
-def alert_quota(key, cadence_note=''):
+def alert_quota(key, cadence_note='', by=None):
     """quota_status() + the outbound send, with a cooldown so a standing WARN does
     not fire every run. CRITICAL repeats more often than WARN on purpose."""
-    st = quota_status(key, cadence_note)
+    st = quota_status(key, cadence_note, by=by)
     if not st or not st.get('text'):
         return st
     cooldown = 6.0 if st['tier'] == 'CRITICAL' else 24.0

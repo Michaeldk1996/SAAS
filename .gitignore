@@ -68,3 +68,8 @@ trading-splits-index.json
 # TEN-151 MATCHES divergence report — build artifact, reviewed off-line, never client-shipped
 trading-splits-divergence.json
 .first-appearance-billed-strike
+# TEN-179 item 3 — the metered spend guard's in-job marker. UNTRACKED ON PURPOSE:
+# ci-commit-push.sh's REDO path does `git reset --hard`, which leaves untracked files
+# alone, so "this hour is already paid for" survives a push race. That is the whole
+# mechanism; committing it would defeat it.
+.metered-spend-marker

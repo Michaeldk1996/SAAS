@@ -45,6 +45,11 @@ concurrency:
 
 permissions:
   contents: write
+  # actions: write is what lets the loop queue its OWN successor before standing down
+  # on a stale checkout (TEN-179 item 4). Without it the loop would exit and wait for a
+  # delivered cron slot, and Actions delivers ~27% of an hourly schedule — so the fix
+  # for "a shipped change waits 5h30m" would have created a capture gap of its own.
+  actions: write
 
 jobs:
   capture-loop:
@@ -68,6 +73,8 @@ jobs:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+          # Used only to dispatch this same workflow as the loop's successor.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$ODDSPAPI_KEY" ]; then
             echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
