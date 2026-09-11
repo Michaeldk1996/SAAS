@@ -528,16 +528,21 @@ jobs:
             # infrastructure blip into a confident, wrong accusation that a merged
             # commit is not on main — in the one step whose job is trustworthy
             # diagnosis. Branch on the status.
-            set +e
+            # No `set +e`/`set -e` pair here: errexit is never on in this step (see the
+            # `set -uo pipefail` above), so `set -e` would not RESTORE anything — it
+            # would switch errexit ON for the rest of the step and contradict this
+            # step's whole contract, letting an incidental non-zero exit bin a
+            # completed pipeline at the last gate. `RC=$?` captures the status either
+            # way; every failure below stays explicitly handled.
             git merge-base --is-ancestor "$SHA" "$TIP"
             RC=$?
-            set -e
             if [ "$RC" -eq 0 ]; then
               VERIFIED=true
               BEHIND=$(git rev-list --count "$SHA..$TIP" 2>/dev/null || echo -1)
               if [ "$BEHIND" -gt 0 ]; then
                 echo "::warning::Publishing $SHA while origin/main is $BEHIND commit(s) ahead ($TIP). The next tick republishes from the newer tip."
-                git log --oneline "$SHA..$TIP" | sed 's/^/  ahead: /'
+                # Informational only — never let the listing itself fail the deploy.
+                git log --oneline "$SHA..$TIP" 2>/dev/null | sed 's/^/  ahead: /' || true
               fi
             elif [ "$RC" -eq 1 ]; then
               echo "::error::Refusing to publish $SHA — it is not an ancestor of origin/main ($TIP). Nothing was deployed."
