@@ -1447,6 +1447,7 @@
     </div>
     <div class="navlinks" id="mainNav">
       <button class="active" data-tab="matches">Matches</button>
+      <button data-tab="live">Live</button>
       <button data-tab="players">Players</button>
       <button data-tab="tournaments">Tournaments</button>
       <button data-tab="edge">Tennis Edge Model</button>
@@ -8989,6 +8990,10 @@ function insOverall(block) {
 
 function insPct(r) { return r.M ? (r.W / r.M) * 100 : null; }
 function insR1(x) { return Math.round(x * 10) / 10; }
+// Member-facing copy rounds to whole percents: 39% reads as an insight, 39.1%
+// reads as a machine (TEN-98). insR1 is kept for the internal ratio/gap maths.
+function insR0(x) { return Math.round(x); }
+function insCap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
 
 /* Market cards rest on a mirrored closing-price archive that stops at a fixed
  * date (both upstream sources went quiet in Feb 2026). Every market card says
@@ -8999,9 +9004,9 @@ function insR1(x) { return Math.round(x * 10) / 10; }
 var INS_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function insAsOfPhrase(iso) {
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
-  if (!m) return ' Priced to the end of the odds archive, not to today.';
-  return ' Priced to ' + Number(m[3]) + ' ' + INS_MONTHS[Number(m[2]) - 1] + ' ' + m[1] +
-         ', where the odds archive ends \u2014 not to today.';
+  if (!m) return ' One note: this covers closing prices up to the end of the odds archive, not today.';
+  return ' One note: this covers closing prices up to ' + Number(m[3]) + ' ' +
+         INS_MONTHS[Number(m[2]) - 1] + ' ' + m[1] + ', where the odds archive ends, not today.';
 }
 
 /* ---------------- Tour averages ----------------
@@ -9107,11 +9112,12 @@ function insCheckFormat(sp, ctx, relax) {
   return {
     check: 'format',
     title: strongerLong ? 'Thrives in best-of-five' : 'Fades over five sets',
-    text: insR1(p3) + '% in best-of-three (' + b3.W + '-' + b3.L + ') against ' + insR1(p5) +
-          '% in best-of-five (' + b5.W + '-' + b5.L + ') — a ' + (gap >= 0 ? '+' : '') + insR1(gap) +
-          'pp gap where the tour averages +' + insR1(tourDiff) + 'pp. He holds up ' +
-          insR1(Math.abs(dev)) + 'pp ' + (strongerLong ? 'better' : 'worse') +
-          ' over the longer format than the typical player.',
+    text: strongerLong
+      ? 'He wins ' + insR0(p5) + '% of his best-of-five matches and ' + insR0(p3) +
+        '% in best-of-three. Most players fade over five sets, but he holds up better than that. It has held across ' +
+        b5.M + ' five-setters.'
+      : 'He wins ' + insR0(p3) + '% in best-of-three but only ' + insR0(p5) +
+        '% over five sets. That is a steeper drop than most players show. Long matches work against him.',
     accent: strongerLong ? 'green' : 'red',
     sign: strongerLong ? 1 : -1,
     gap: Math.abs(dev),
@@ -9142,11 +9148,8 @@ function insCheckSurface(sp, ctx, relax) {
     title: dev >= 13 ? 'Extreme surface dependency'
          : dev >= 6 ? 'Strongly surface-dependent'
          : 'Modest surface preference',
-    text: insR1(hi.pct) + '% on ' + hi.s.toLowerCase() + ' (' + hi.r.W + '-' + hi.r.L + ') against ' +
-          insR1(lo.pct) + '% on ' + lo.s.toLowerCase() + ' (' + lo.r.W + '-' + lo.r.L + ') — a ' +
-          insR1(gap) + 'pp swing between his best and worst surface, where the typical player swings ' +
-          insR1(tourSpread) + 'pp. Nearly ' + (gap / tourSpread >= 1.9 ? 'double' : insR1(gap / tourSpread) + 'x') +
-          ' the tour’s normal surface dependency.',
+    text: 'He wins ' + insR0(hi.pct) + '% on ' + hi.s.toLowerCase() + ' but only ' + insR0(lo.pct) +
+          '% on ' + lo.s.toLowerCase() + '. That is a much wider gap than most players have. The surface he plays on matters a lot for him.',
     accent: 'gold',
     sign: 0,
     gap: dev,
@@ -9171,9 +9174,9 @@ function insCheckLevel(sp, ctx, relax) {
   return {
     check: 'level',
     title: up ? 'Punches above his level at ' + best.lv : 'Underperforms at ' + best.lv,
-    text: 'Wins ' + insR1(best.pct) + '% at ' + lvl + ' (' + best.r.W + '-' + best.r.L + ') against a ' +
-          insR1(base) + '% career rate — ' + insR1(Math.abs(best.dev)) + 'pp ' + (up ? 'above' : 'below') +
-          ' his own baseline.',
+    text: 'He wins ' + insR0(best.pct) + '% at ' + lvl + ' against ' + insR0(base) +
+          '% across his career. That is a real ' + (up ? 'step up' : 'drop') +
+          ', and it has held across ' + best.r.M + ' matches.',
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(best.dev),
@@ -9201,9 +9204,9 @@ function insCheckTop10(sp, ctx, relax) {
   return {
     check: 'top10',
     title: up ? 'Holds up against the Top 10' : 'Falls away against the Top 10',
-    text: insR1(pct) + '% vs Top 10 opponents (' + r.W + '-' + r.L + '). Players at his level average ' +
-          insR1(expected) + '% in that split, so he is ' + insR1(Math.abs(dev)) + 'pp ' +
-          (up ? 'better than expected against elite opposition.' : 'worse than expected against elite opposition.'),
+    text: 'He wins ' + insR0(pct) + '% against Top 10 opponents. Players at his level usually manage about ' +
+          insR0(expected) + '%. He ' + (up ? 'holds up better than most against the best' : 'struggles more than most against the best') +
+          ', across ' + r.M + ' matches.',
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(dev),
@@ -9238,9 +9241,8 @@ function insCheckRadar(sp, ctx, relax) {
   return {
     check: 'radar',
     title: 'Standout ' + lab.toLowerCase() + ' profile',
-    text: lab + ' score of ' + rows[0].v + ' against a tour average of ' + tourAvg + ', and ' + gap +
-          ' points clear of his own next dimension (' + (INS_AXIS_LABEL[rows[1].k] || rows[1].k) + ', ' +
-          rows[1].v + '). A clearly one-dimensional style signature.',
+    text: 'His ' + lab.toLowerCase() + ' score is ' + rows[0].v + ', against a tour average of ' + tourAvg +
+          '. It is his standout dimension by a clear margin. His game leans heavily one way.',
     accent: 'green',
     sign: 1,
     gap: gap,
@@ -9299,12 +9301,10 @@ function insCheckMarket(sp, ctx, relax) {
     check: 'market',
     title: up ? 'Undervalued by the market ' + best.phrase
               : 'Overvalued by the market ' + best.phrase,
-    text: 'Wins ' + insR1(r.actualWinRate) + '% ' + best.roleWord + ' (' + r.wins + '-' + r.losses +
-          ') where the closing price implied ' + insR1(r.expectedWinRate) + '% — ' +
-          (r.vsMarket >= 0 ? 'beating the market by +' + insR1(r.vsMarket) + 'pp'
-                           : 'falling ' + insR1(Math.abs(r.vsMarket)) + 'pp short of the market') +
-          ', against a tour median of ' + (best.tourBase >= 0 ? '+' : '') + insR1(best.tourBase) + 'pp. ' +
-          (up ? 'The market has been pricing him short.' : 'The market has been pricing him too high.') +
+    text: insCap(best.roleWord) + ', he wins ' + insR0(r.actualWinRate) +
+          '% of the time, but the closing price only expected ' + insR0(r.expectedWinRate) + '%. ' +
+          (up ? 'That gap is well above the tour norm. The market has been pricing him short.'
+              : 'He falls short of the market more than most players do. The market has been pricing him too high.') +
           insAsOfPhrase(ctx.marketAsOf),
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
@@ -9324,9 +9324,9 @@ function insCheckTrend(sp, ctx, relax) {
   return {
     check: 'last52',
     title: up ? 'Trending up on career form' : 'Trending down on career form',
-    text: insR1(l52.winPct) + '% over the last 52 weeks (' + l52.W + '-' + l52.L + ') against ' +
-          insR1(ctx.overall.winPct) + '% career — running ' + insR1(Math.abs(dev)) + 'pp ' +
-          (up ? 'above' : 'below') + ' his own long-run level.',
+    text: 'He has won ' + insR0(l52.winPct) + '% over the last year, ' + (up ? 'up' : 'down') + ' from ' +
+          insR0(ctx.overall.winPct) + '% across his career. He is playing ' +
+          (up ? 'better than' : 'below') + ' his long-run level right now.',
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(dev),
@@ -9362,10 +9362,9 @@ function insCheckHand(sp, ctx, relax) {
       ? (dev >= 12 ? 'Handles left-handers well' : 'Slight edge against left-handers')
       : (dev <= -12 && pl < 50 ? 'Vulnerable to left-handers'
                                : 'Slightly weaker against left-handers'),
-    text: insR1(pl) + '% vs lefties (' + lf.W + '-' + lf.L + ') against ' + insR1(pr) + '% vs righties (' +
-          rt.W + '-' + rt.L + ') — a ' + (playerDiff >= 0 ? '+' : '') + insR1(playerDiff) +
-          'pp swing where the tour averages ' + (tourDiff >= 0 ? '+' : '') + insR1(tourDiff) + 'pp. He is ' +
-          insR1(Math.abs(dev)) + 'pp ' + (up ? 'better' : 'worse') + ' against left-handers than his own level implies.',
+    text: 'He wins ' + insR0(pl) + '% against left-handers and ' + insR0(pr) +
+          '% against right-handers. That ' + (up ? 'edge' : 'gap') + ' is wider than most players have. Left-handers ' +
+          (up ? 'suit him more than they do the average player.' : 'give him more trouble than they do the average player.'),
     accent: up ? 'green' : 'red',
     sign: up ? 1 : -1,
     gap: Math.abs(dev),
@@ -14148,6 +14147,698 @@ else setTimeout(loadHeavyDatasets, 200);
 // since it's just re-reading the local matches.json, not re-calling
 // the paid APIs (that only happens when bsp-pipeline.js itself runs).
 setInterval(loadMatches, 3 * 60 * 1000);
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     LIVE TAB
+     ═══════════════════════════════════════════════════ -->
+<div class="tabpage" data-page="live" id="lvTab" style="padding:24px 0;">
+  <!-- populated by lvInit() -->
+</div>
+
+<style>
+  .lvseg { cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  .lv-card { cursor:pointer; transition:border-color 120ms ease; }
+  .lv-card:hover { border-color:rgba(91,155,255,0.22) !important; }
+  .lvtip { position:relative; }
+  .lvtip .lvtipbox { display:none; }
+  .lvtip:hover .lvtipbox { display:block; }
+  .hbcell { transition:filter .14s ease, transform .14s ease, box-shadow .14s ease; cursor:default; }
+  .hbcell:hover { filter:brightness(1.35) saturate(1.15); transform:translateY(-1px); box-shadow:0 0 0 1px rgba(255,255,255,0.2); z-index:20; }
+  .hbcell .hbtip { display:none; }
+  .hbcell:hover .hbtip { display:block; }
+</style>
+
+<script>
+(function(){
+'use strict';
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+const AV = nm => { let sd=0; for(let k=0;k<nm.length;k++) sd=(sd*31+nm.charCodeAt(k))%9973; return 'https://randomuser.me/api/portraits/men/'+(sd%99)+'.jpg'; };
+const SEED = s => { let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return ((h>>>0)%10000)/10000; };
+
+// ── placeholder data ──────────────────────────────────────────────────────────
+const LIVE_DATA = [
+  { id:'l0', event:'US Open · 1/64-finals', status:'SET 4',       bo:5, serving:0, sets:[[6,3],[4,6],[7,5],[2,1]], point:['30','15'] },
+  { id:'l1', event:'US Open · 1/64-finals', status:'SET 1',       bo:5, serving:1, sets:[[0,0]],                  point:['0','0']   },
+  { id:'l2', event:'US Open · 1/64-finals', status:'SET 3',       bo:5, serving:0, sets:[[7,6],[6,4],[3,0]],      point:['0','0']   },
+  { id:'l3', event:'US Open · 1/64-finals', status:'INTERRUPTED', bo:5, serving:0, sets:[[2,6],[6,2],[0,2]],      point:['15','15'] },
+  { id:'l4', event:'US Open · 1/64-finals', status:'INTERRUPTED', bo:5, serving:0, sets:[[3,6],[6,2],[6,3],[2,5]],point:['0','0']   },
+];
+const NAMES_DATA = [
+  ['D. Vallejo','G. Monfils'],['Z. Svajda','D. Altmaier'],['D. Sweeny','C. Moutet'],
+  ['J. De Jong','F. Passaro'],['J. M. Cerundolo','A. Gea'],
+];
+const BUCKETS = [['Game 1-2','1st svc game'],['Game 3-4','2nd svc game'],['Game 5-6','3rd svc game'],
+                 ['Game 7-8','4th svc game'],['Game 9-10','5th svc game'],['Game 11-12+','6th+ svc game']];
+
+// ── state ─────────────────────────────────────────────────────────────────────
+let ST = { sel:null, tab:'Stats', scope:'MATCH', pset:1, hb:'HOLD' };
+let lvInited = false;
+
+function setState(patch){ ST = Object.assign({}, ST, patch); render(); }
+
+// ── style helpers ─────────────────────────────────────────────────────────────
+function seg(on){ return { color: on?'#e7e9ee':'#5b6880', bg: on?'rgba(91,155,255,0.22)':'transparent', bd: on?'rgba(91,155,255,0.45)':'transparent' }; }
+
+function band(rate, metric){
+  const T = metric==='HOLD'?[85,70]:[30,18];
+  const pct = Math.round(rate*100);
+  if(pct>=T[0]) return { bg:'rgba(45,226,145,0.20)', bd:'rgba(45,226,145,0.48)', color:'#4ff0a4', tag:'strong' };
+  if(pct>=T[1]) return { bg:'rgba(255,164,43,0.18)',  bd:'rgba(255,164,43,0.46)',  color:'#ffb454', tag:'mid'    };
+  return              { bg:'rgba(255,90,106,0.18)',   bd:'rgba(255,90,106,0.46)',   color:'#ff7d89', tag:'weak'   };
+}
+
+// ── heatmap data ──────────────────────────────────────────────────────────────
+function heatFor(name, metric, bo){
+  const globalRate = metric==='HOLD'?0.88:0.24;
+  const DEAD = { pct:'—', frac:'', bg:'rgba(255,255,255,0.02)', bd:'rgba(255,255,255,0.05)', color:'#4b5672', size:'13px', opacity:1, tipHead:'', tipRate:'—', tipNote:'no matches on record' };
+  const rows = BUCKETS.map((b,bi)=>{
+    const gDen = 343-bi*22;
+    const gRate = Math.max(0.05, Math.min(0.97, globalRate+(SEED(name+metric+bi)-0.5)*0.2));
+    const gBand = band(gRate, metric);
+    const cells = [1,2,3,4,5].map(si=>{
+      if(si>(bo===3?3:5)) return Object.assign({},DEAD,{tipHead:b[0]+' · Set '+si, tipNote:'set not played in this format'});
+      const t = SEED(name+metric+bi+'s'+si);
+      const den = si<=2?100+Math.round(t*40):si===3?40+Math.round(t*25):si===4?Math.round(t*12):Math.round(t*5);
+      const spread = metric==='HOLD'?0.52:0.30;
+      const rate = Math.max(0.02, Math.min(1, gRate+(SEED(name+'r'+bi+si)-0.5)*spread));
+      const num = Math.round(den*rate);
+      const head = b[0]+' · Set '+si;
+      if(den===0) return Object.assign({},DEAD,{tipHead:head});
+      if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'rgba(255,255,255,0.03)', bd:'rgba(255,255,255,0.07)', color:'#8b96b5', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
+      const bd2 = band(rate, metric);
+      const small = den<10;
+      const dPts = Math.round((rate-gRate)*100);
+      return {
+        pct:Math.round(rate*100)+'%', frac:num+'/'+den,
+        bg:bd2.bg, bd:bd2.bd,
+        color:small?'#8b96b5':bd2.color,
+        size:small?'12px':'15px', opacity:small?0.72:1,
+        tipHead:head,
+        tipRate:Math.round(rate*100)+'%  ·  '+num+'/'+den,
+        tipNote:bd2.tag+' band · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+Math.round(gRate*100)+'%'+(small?' · small sample':''),
+      };
+    });
+    return { bucket:b[0], sub:b[1], gPct:Math.round(gRate*100)+'%', gFrac:Math.round(gDen*gRate)+'/'+gDen, gColor:gBand.color, cells };
+  });
+  return { rows, globalLabel:metric+' '+(globalRate*100).toFixed(1)+'%' };
+}
+
+// ── momentum chart (SVG string) ───────────────────────────────────────────────
+function momentumChart(sets, aName, bName, seed){
+  const W=700,H=196,pad=30,right=78;
+  const zY=100,topRail=30,botRail=172;
+  const rnd = k => {
+    const t=seed+'|'+k; let h=2166136261;
+    for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=(h*16777619)>>>0;}
+    h^=h>>>13;h=(h*2246822507)>>>0;h^=h>>>16;return(h>>>0)/4294967296;
+  };
+  const smooth = pts => {
+    if(pts.length<2) return '';
+    let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+    for(let i=0;i<pts.length-1;i++){
+      const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+      const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6];
+      const c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+      d+=' C'+c1[0].toFixed(1)+' '+c1[1].toFixed(1)+' '+c2[0].toFixed(1)+' '+c2[1].toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
+    }
+    return d;
+  };
+  const SCORES=[['40-0',4],['40-15',3],['40-30',2],['AD',1]];
+  const bands2 = sets.map((st,si)=>{
+    const n=Math.max(1,st[0]+st[1]);
+    const lean=st[0]>st[1]?1:-1;
+    const games=Array.from({length:n},(_,gi)=>{
+      const r=rnd('s'+si+'-'+gi),w=rnd('w'+si+'-'+gi);
+      const pick=SCORES[Math.min(3,Math.floor(r*4))];
+      return {m:pick[1]*(w>(lean>0?0.42:0.58)?1:-1),brk:rnd('k'+si+'-'+gi)>0.86};
+    });
+    const ord=['1st set','2nd set','3rd set'];
+    const nth = si<3?ord[si]:(si+1)+'th set';
+    return {score:st[0]+'-'+st[1],label:nth,games};
+  });
+  const all=bands2.reduce((a,b)=>a.concat(b.games),[]);
+  const plotW=W-pad-right;
+  const x=i=>all.length<2?pad+plotW/2:pad+(i*plotW)/(all.length-1);
+  const amp=54,mx=4;
+  const thick=g=>(Math.abs(g.m)/mx)*amp;
+  const upPts=all.map((g,i)=>[x(i),zY-(g.m>0?thick(g):0)-1.5]);
+  const dnPts=all.map((g,i)=>[x(i),zY+(g.m<0?thick(g):0)+1.5]);
+  const close=d=>d+' L'+x(all.length-1).toFixed(1)+' '+zY+' L'+pad+' '+zY+' Z';
+  const mo = v=>`font: ${v} 'IBM Plex Mono',monospace`;
+
+  let kids='';
+  kids+=`<line x1="${pad}" x2="${W-right+4}" y1="${zY}" y2="${zY}" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>`;
+  let gi=0;
+  bands2.forEach((b,bi)=>{
+    const x0=pad+(gi*plotW)/Math.max(1,all.length-1);
+    if(bi>0) kids+=`<line x1="${x0}" x2="${x0}" y1="${topRail-12}" y2="${botRail+6}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
+    kids+=`<text x="${x0+4}" y="${topRail-14}" fill="#e7e9ee" style="${mo('700 11px')}">${b.score}</text>`;
+    kids+=`<text x="${x0+4}" y="${topRail-3}" fill="#4b5672" style="${mo('9px')}">${b.label}</text>`;
+    gi+=b.games.length;
+  });
+  kids+=`<path d="${close(smooth(upPts))}" fill="rgba(91,155,255,0.30)"/>`;
+  kids+=`<path d="${close(smooth(dnPts))}" fill="rgba(231,233,238,0.16)"/>`;
+  kids+=`<path d="${smooth(upPts)}" fill="none" stroke="#5b9bff" stroke-width="1.4"/>`;
+  kids+=`<path d="${smooth(dnPts)}" fill="none" stroke="#e7e9ee" stroke-width="1.4" opacity="0.7"/>`;
+  all.forEach((g,i)=>{
+    if(!g.brk) return;
+    const up=g.m>0,cx=x(i),rail=up?topRail:botRail,col=up?'#5b9bff':'#e7e9ee';
+    const tip=up?zY-thick(g):zY+thick(g);
+    kids+=`<line x1="${cx}" x2="${cx}" y1="${rail+(up?5:-5)}" y2="${tip}" stroke="${col}" stroke-width="1" stroke-dasharray="1 4" opacity="0.4"/>`;
+    kids+=`<text x="${cx}" y="${rail+(up?0:4)}" fill="${col}" text-anchor="middle" style="${mo('700 8.5px')}">BRK</text>`;
+  });
+  kids+=`<text x="${W-right+12}" y="${topRail+4}" fill="#5b9bff" style="${mo('10px')}">${aName}</text>`;
+  kids+=`<text x="${W-right+12}" y="${zY+4}" fill="#4b5672" style="${mo('10px')}">EVEN</text>`;
+  kids+=`<text x="${W-right+12}" y="${botRail+4}" fill="#e7e9ee" style="${mo('10px')}">${bName}</text>`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">${kids}</svg>`;
+}
+
+// ── renderVals ────────────────────────────────────────────────────────────────
+function renderVals(){
+  const S=ST;
+  const mkSets=(m,side)=>m.sets.map((st,i)=>{
+    const mine=st[side],theirs=st[1-side];
+    const done=i<m.sets.length-1;
+    const won=mine>theirs;
+    return {games:String(mine),weight:done?(won?700:500):700,color:done?(won?'#e7e9ee':'#5b6880'):'#e7e9ee'};
+  });
+  const ip=LIVE_DATA.filter(m=>m.status!=='INTERRUPTED').length;
+  const itr=LIVE_DATA.length-ip;
+  const evs=LIVE_DATA.map(m=>m.event).filter((e,i,a)=>a.indexOf(e)===i).length;
+  const hdr={inPlayCount:String(ip),interruptedCount:String(itr),interruptedColor:itr?'#e8a84e':'#4b5672',eventCount:String(evs)};
+
+  const si=S.sel;
+  const open=si!==null&&si!==undefined;
+  if(!open) return Object.assign({},hdr,{isEmpty:LIVE_DATA.length===0});
+
+  const m=LIVE_DATA[si],A=NAMES_DATA[si][0],B=NAMES_DATA[si][1];
+  const nSets=m.sets.length;
+  const scoreCells=side=>m.sets.map((st,i)=>{
+    const done=i<nSets-1,won=st[side]>st[1-side];
+    return {v:String(st[side]),weight:done?(won?700:500):700,color:done?(won?'#e7e9ee':'#5b6880'):'#e7e9ee'};
+  }).concat([{v:m.point[side],weight:700,color:'#3dd68c'}]);
+
+  const rnd=(k,lo,hi)=>lo+SEED(A+B+k)*(hi-lo);
+  const pct=(n,d)=>Math.round(n/d*1000)/10;
+  const sc=S.scope==='MATCH'?1:0.55;
+  const aces=[Math.max(1,Math.round(rnd('ac',2,14)*sc)),Math.max(1,Math.round(rnd('bc',1,9)*sc))];
+  const dfs=[Math.max(1,Math.round(rnd('ad',1,5)*sc)),Math.max(1,Math.round(rnd('bd',1,5)*sc))];
+  const f1=[[Math.round(rnd('a1n',14,34)*sc),Math.round(rnd('a1d',22,44)*sc)],[Math.round(rnd('b1n',14,34)*sc),Math.round(rnd('b1d',22,44)*sc)]];
+  const f2=[[Math.round(rnd('a2n',5,14)*sc),Math.round(rnd('a2d',8,20)*sc)],[Math.round(rnd('b2n',5,14)*sc),Math.round(rnd('b2d',8,20)*sc)]];
+  const bpsDen=[Math.max(1,Math.round(rnd('abd',1,7)*sc)),Math.max(1,Math.round(rnd('bbd',1,7)*sc))];
+  const bps=[[Math.round(bpsDen[0]*rnd('abn',0.2,1)),bpsDen[0]],[Math.round(bpsDen[1]*rnd('bbn',0.2,1)),bpsDen[1]]];
+  const dr=[rnd('adr',0.8,1.4).toFixed(2),rnd('bdr',0.8,1.4).toFixed(2)];
+  const DASH='—',MISS='#4b5672',INK='#e7e9ee';
+  const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen)=>{
+    const aNull=aV===null||aV===undefined,bNull=bV===null||bV===undefined;
+    const tot=(aNull?0:aV)+(bNull?0:bV);
+    const share=(v,isNull)=>(isNull||tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
+    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,aColor:aNull?MISS:INK,bColor:bNull?MISS:INK,aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW:share(aV,aNull),bW:share(bV,bNull)};
+  };
+  const ratio=(n,d)=>d>0?pct(n,d):null;
+  const den=(n,d)=>d>0?'('+n+'/'+d+')':'';
+  const pctRow=(label,an,ad,bn,bd)=>{const a=ratio(an,ad),b=ratio(bn,bd);return twoSided(label,a,b,a+'%',b+'%',den(an,ad),den(bn,bd));};
+
+  const svA=Array.from({length:5},(_,i)=>Math.round(rnd('sva'+i,150,350)));
+  const svB=Array.from({length:5},(_,i)=>Math.round(rnd('svb'+i,150,350)));
+  const rtA=Array.from({length:5},(_,i)=>Math.round(rnd('rta'+i,30,200)));
+  const rtB=Array.from({length:5},(_,i)=>Math.round(rnd('rtb'+i,30,200)));
+  const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
+  const svPts=[[f1[0][0]+f2[0][0],f1[0][1]+f2[0][1]],[f1[1][0]+f2[1][0],f1[1][1]+f2[1][1]]];
+  const r1=[[f1[1][1]-f1[1][0],f1[1][1]],[f1[0][1]-f1[0][0],f1[0][1]]];
+  const r2=[[f2[1][1]-f2[1][0],f2[1][1]],[f2[0][1]-f2[0][0],f2[0][1]]];
+  const rtPts=[[r1[0][0]+r2[0][0],r1[0][1]+r2[0][1]],[r1[1][0]+r2[1][0],r1[1][1]+r2[1][1]]];
+  const bpc=[[bps[1][1]-bps[1][0],bps[1][1]],[bps[0][1]-bps[0][0],bps[0][1]]];
+  const totPts=[[svPts[0][0]+rtPts[0][0],svPts[0][1]+rtPts[0][1]],[svPts[1][0]+rtPts[1][0],svPts[1][1]+rtPts[1][1]]];
+  const wnr=[Math.round(rnd('awn',8,34)*sc),Math.round(rnd('bwn',8,34)*sc)];
+  const ue=[Math.round(rnd('aue',6,28)*sc),Math.round(rnd('bue',6,28)*sc)];
+  const netDen=[Math.max(1,Math.round(rnd('and',4,18)*sc)),Math.max(1,Math.round(rnd('bnd',4,18)*sc))];
+  const net=[[Math.round(netDen[0]*rnd('ann',0.35,0.85)),netDen[0]],[Math.round(netDen[1]*rnd('bnn',0.35,0.85)),netDen[1]]];
+  const prsDen=[Math.max(0,Math.round(rnd('apd',2,14)*sc)),Math.max(0,Math.round(rnd('bpd',2,14)*sc))];
+  const prs=[[Math.round(prsDen[0]*rnd('apn',0.3,0.8)),prsDen[0]],[Math.round(prsDen[1]*rnd('bpn',0.3,0.8)),prsDen[1]]];
+
+  const statSections=[
+    {title:'Dominance',rows:[twoSided('Dominance ratio',+dr[0],+dr[1],dr[0],dr[1])]},
+    {title:'Service',rows:[
+      twoSided('Serve rating',avg(svA),avg(svB),String(avg(svA)),String(avg(svB))),
+      twoSided('Aces',aces[0],aces[1],String(aces[0]),String(aces[1])),
+      twoSided('Double faults',dfs[0],dfs[1],String(dfs[0]),String(dfs[1])),
+      pctRow('1st serve percentage',f1[0][1],svPts[0][1],f1[1][1],svPts[1][1]),
+      pctRow('1st serve points won',f1[0][0],f1[0][1],f1[1][0],f1[1][1]),
+      pctRow('2nd serve points won',f2[0][0],f2[0][1],f2[1][0],f2[1][1]),
+      pctRow('Break points saved',bps[0][0],bps[0][1],bps[1][0],bps[1][1]),
+    ]},
+    {title:'Return',rows:[
+      twoSided('Return rating',avg(rtA),avg(rtB),String(avg(rtA)),String(avg(rtB))),
+      pctRow('1st return points won',r1[0][0],r1[0][1],r1[1][0],r1[1][1]),
+      pctRow('2nd return points won',r2[0][0],r2[0][1],r2[1][0],r2[1][1]),
+      pctRow('Break points converted',bpc[0][0],bpc[0][1],bpc[1][0],bpc[1][1]),
+    ]},
+    {title:'Points won',rows:[
+      twoSided('Winners',wnr[0],wnr[1],String(wnr[0]),String(wnr[1])),
+      twoSided('Unforced errors',ue[0],ue[1],String(ue[0]),String(ue[1])),
+      pctRow('Net points won',net[0][0],net[0][1],net[1][0],net[1][1]),
+      pctRow('Service points won',svPts[0][0],svPts[0][1],svPts[1][0],svPts[1][1]),
+      pctRow('Return points won',rtPts[0][0],rtPts[0][1],rtPts[1][0],rtPts[1][1]),
+      pctRow('Pressure points',prs[0][0],prs[0][1],prs[1][0],prs[1][1]),
+      pctRow('Total points won',totPts[0][0],totPts[0][1],totPts[1][0],totPts[1][1]),
+    ]},
+  ];
+
+  const PSEQ=['0:0','15:0','15:15','30:15','40:15','40:30','40:40','40:A','GAME'];
+  const setIdx=Math.min(S.pset,nSets)-1;
+  const setScoreLabel='SET '+(setIdx+1)+'  '+m.sets[setIdx][0]+'-'+m.sets[setIdx][1];
+  const played=m.sets[setIdx][0]+m.sets[setIdx][1];
+  const gamesInSet=Math.max(12,played);
+  let ag=0,bg_=0;
+  const games=Array.from({length:gamesInSet},(_,gi)=>{
+    const aServ=gi%2===0;
+    const serverWon=gi<12?true:SEED(A+B+'g'+gi+setIdx)>0.34;
+    if(aServ?serverWon:!serverWon) ag++; else bg_++;
+    const nPts=4+Math.round(SEED(B+'p'+gi+setIdx)*5);
+    return {
+      isGame:true,hasPoints:true,divider:false,dividerLabel:'',
+      servesA:aServ,servesB:!aServ,
+      aGames:String(ag),bGames:String(bg_),
+      aColor:aServ?'#5b9bff':'#8b96b5',bColor:aServ?'#8b96b5':'#e7e9ee',
+      lost:!serverWon,
+      points:Array.from({length:nPts},(_,pi)=>({
+        v:PSEQ[Math.min(PSEQ.length-1,pi)],
+        bp:pi>=3&&SEED(A+'bp'+gi+pi+setIdx)>0.68,
+        sep:pi===nPts-1?'':',',
+        color:pi===nPts-1?'#e7e9ee':'#8b96b5',
+      })),
+    };
+  });
+  const TB=[[0,1],[1,1],[2,1],[3,1],[3,2],[4,2],[4,3],[5,3],[5,4],[5,5],[5,6],[5,7]];
+  games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+(setIdx+1),aGames:'',bGames:'',aColor:'#8b96b5',bColor:'#8b96b5',lost:false,points:[]});
+  TB.forEach((p,pi)=>{
+    const aServes=pi===0?true:Math.floor((pi+1)/2)%2===1;
+    const prev=pi===0?[0,0]:TB[pi-1];
+    const aWon=p[0]>prev[0];
+    games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:!aServes,aGames:String(p[0]),bGames:String(p[1]),aColor:aWon?'#e7e9ee':'#8b96b5',bColor:aWon?'#8b96b5':'#e7e9ee',lost:aServes?!aWon:aWon,points:[]});
+  });
+
+  const ratingRows=[
+    Object.assign(twoSided('Dominance ratio',+dr[0],+dr[1],dr[0],dr[1]),{scaleNote:'return points won ÷ opponent return points won'}),
+    Object.assign(twoSided('Serve rating',avg(svA),avg(svB),String(avg(svA)),String(avg(svB))),{scaleNote:'ATP composite · match to date'}),
+    Object.assign(twoSided('Return rating',avg(rtA),avg(rtB),String(avg(rtA)),String(avg(rtB))),{scaleNote:'ATP composite · match to date'}),
+  ];
+  const perPt=(n,d)=>d>0?(n/d).toFixed(2):null;
+  const totalPlayed=totPts[0][1];
+  const wue=[ue[0]>0?+(wnr[0]/ue[0]).toFixed(2):null,ue[1]>0?+(wnr[1]/ue[1]).toFixed(2):null];
+  const wueDen=i=>{const wp=perPt(wnr[i],totalPlayed),up=perPt(ue[i],totalPlayed);return(wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
+  ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(0),wueDen(1)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
+
+  const momentumSvg=momentumChart(m.sets,A,B,A+B);
+  const heatA=heatFor(A,S.hb,m.bo),heatB=heatFor(B,S.hb,m.bo);
+  const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,color:n>(m.bo===3?3:5)?'#2b3348':'#5b6880'}));
+
+  return Object.assign({},hdr,{
+    isEmpty:false,
+    modalOpen:true,
+    modal:{
+      title:'ATP · US Open · 1/64-finals',aName:A,bName:B,aAv:AV(A),bAv:AV(B),
+      aScore:scoreCells(0),bScore:scoreCells(1),
+      aDot:m.serving===0?'#3dd68c':'transparent',bDot:m.serving===1?'#3dd68c':'transparent',
+    },
+    tabs:['Stats','Points','Ratings','Break/Hold'],tab:S.tab,
+    scope:S.scope,nSets,
+    statSections,
+    setTabs:m.sets.map((_,i)=>i+1),pset:S.pset,
+    setScoreLabel,games,
+    ratingRows,momentumSvg,
+    hb:S.hb,
+    heatBaseline:S.hb==='HOLD'
+      ?'Cell colour is the hold rate itself: green at 85% and above, amber 70–84%, red below 70%. Hover a cell for the count and the gap to that bucket’s global.'
+      :'Cell colour is the break rate itself: green at 30% and above, amber 18–29%, red below 18%. Hover a cell for the count and the gap to that bucket’s global.',
+    heatGates:'n≥10 full size · n 5–9 smaller and greyed · n<5 raw count only, no percentage · n=0 a dash.',
+    heatPlayers:[
+      {name:A,avUrl:AV(A),nameColor:'#5b9bff',globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
+      {name:B,avUrl:AV(B),nameColor:'#e7e9ee',globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
+    ],
+  });
+}
+
+// ── HTML builders ─────────────────────────────────────────────────────────────
+function h(tag,attrs,inner){
+  const a=Object.entries(attrs||{}).map(([k,v])=>` ${k}="${v}"`).join('');
+  return `<${tag}${a}>${inner||''}</${tag}>`;
+}
+function e(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function statRowHtml(r){
+  return `
+<div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:12px;">
+    <span style="display:flex;align-items:baseline;gap:7px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:${r.aColor};">${e(r.aVal)}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4b5672;">${e(r.aDen)}</span>
+    </span>
+    <span style="font-size:13px;color:#aab3c5;white-space:nowrap;">${e(r.label)}</span>
+    <span style="display:flex;align-items:baseline;justify-content:flex-end;gap:7px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4b5672;">${e(r.bDen)}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:${r.bColor};">${e(r.bVal)}</span>
+    </span>
+  </div>
+  <span style="display:grid;grid-template-columns:1fr 1fr;gap:0;height:3px;margin-top:8px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+    <span style="display:flex;justify-content:flex-end;"><span style="width:${r.aW};background:#5b9bff;border-radius:2px 0 0 2px;"></span></span>
+    <span style="display:flex;justify-content:flex-start;"><span style="width:${r.bW};background:#e7e9ee;border-radius:0 2px 2px 0;"></span></span>
+  </span>
+</div>`;
+}
+
+function ratingRowHtml(r){
+  return `
+<div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:12px;">
+    <span>
+      <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${r.aColor};">${e(r.aVal)}</span>
+      <span style="display:block;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4b5672;">${e(r.aDen)}</span>
+    </span>
+    <span style="font-size:13px;color:#aab3c5;white-space:nowrap;">${e(r.label)}</span>
+    <span style="text-align:right;">
+      <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${r.bColor};">${e(r.bVal)}</span>
+      <span style="display:block;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4b5672;">${e(r.bDen)}</span>
+    </span>
+  </div>
+  <span style="display:grid;grid-template-columns:1fr 1fr;gap:0;height:3px;margin-top:8px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+    <span style="display:flex;justify-content:flex-end;"><span style="width:${r.aW};background:#5b9bff;border-radius:2px 0 0 2px;"></span></span>
+    <span style="display:flex;justify-content:flex-start;"><span style="width:${r.bW};background:#e7e9ee;border-radius:0 2px 2px 0;"></span></span>
+  </span>
+  <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4b5672;margin-top:6px;">${e(r.scaleNote)}</div>
+</div>`;
+}
+
+function heatPlayerHtml(hp, hb){
+  const colsHtml=hp.setCols.map(sc=>`<span style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${sc.color};">${sc.label}</span>`).join('');
+  const rowsHtml=hp.rows.map(hr=>{
+    const cellsHtml=hr.cells.map((c,ci)=>`
+<span class="hbcell" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:${c.bg};border:1px solid ${c.bd};opacity:${c.opacity};">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:${c.size};font-weight:700;color:${c.color};line-height:1.2;">${e(c.pct)}</span>
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4b5672;line-height:1.2;">${e(c.frac)}</span>
+  <span class="hbtip" style="position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);z-index:50;width:186px;padding:9px 11px;background:#0a0d13;border:1px solid rgba(255,255,255,0.15);border-radius:9px;box-shadow:0 16px 36px -18px rgba(0,0,0,0.85);text-align:left;pointer-events:none;">
+    <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;">${e(c.tipHead)}</span>
+    <span style="display:block;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:${c.color};">${e(c.tipRate)}</span>
+    <span style="display:block;margin-top:3px;font-family:'Hanken Grotesk',sans-serif;font-size:11.5px;color:#8b96b5;line-height:1.5;">${e(c.tipNote)}</span>
+  </span>
+</span>`).join('');
+    return `
+<div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:stretch;margin-top:4px;">
+  <span style="display:flex;flex-direction:column;justify-content:center;gap:1px;">
+    <span style="font-size:11.5px;font-weight:600;color:#aab3c5;white-space:nowrap;">${e(hr.bucket)}</span>
+    <span style="font-size:9.5px;color:#4b5672;white-space:nowrap;">${e(hr.sub)}</span>
+  </span>
+  <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:#e7e9ee;line-height:1.2;">${e(hr.gPct)}</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4b5672;line-height:1.2;">${e(hr.gFrac)}</span>
+  </span>
+  <span style="align-self:stretch;display:flex;justify-content:center;"><span style="width:1px;background:rgba(255,255,255,0.07);"></span></span>
+  ${cellsHtml}
+</div>`;
+  }).join('');
+  return `
+<div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <img src="${hp.avUrl}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
+    <span style="font-size:14px;font-weight:700;color:${hp.nameColor};">${e(hp.name)}</span>
+    <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.1em;color:#aab3c5;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:6px;padding:4px 9px;">${e(hp.globalLabel)}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:end;">
+    <span></span>
+    <span style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;">Global</span>
+    <span></span>
+    ${colsHtml}
+  </div>
+  ${rowsHtml}
+</div>`;
+}
+
+// ── main render ───────────────────────────────────────────────────────────────
+function render(){
+  const d=renderVals();
+  const S=ST;
+  const tab=document.getElementById('lvTab');
+  if(!tab) return;
+
+  // ── CARDS ──
+  const cardsHtml=LIVE_DATA.map((m,mi)=>{
+    const live=m.status!=='INTERRUPTED';
+    const stColor=live?'#3dd68c':'#e8a84e';
+    const stBg=live?'rgba(61,214,140,0.12)':'rgba(232,168,78,0.12)';
+    const stBd=live?'rgba(61,214,140,0.35)':'rgba(232,168,78,0.35)';
+    const mkSets=(side)=>m.sets.map((st,i)=>{
+      const mine=st[side],theirs=st[1-side];
+      const done=i<m.sets.length-1;const won=mine>theirs;
+      return `<span style="width:24px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:${done?(won?700:500):700};color:${done?(won?'#e7e9ee':'#5b6880'):'#e7e9ee'};">${mine}</span>`;
+    }).join('');
+    const playersHtml=[0,1].map(side=>`
+<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:11px 16px;border-top:1px solid ${side===0?'transparent':'rgba(255,255,255,0.05)'};">
+  <span style="display:flex;align-items:center;gap:11px;min-width:0;">
+    <img src="${AV(NAMES_DATA[mi][side])}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
+    <span style="font-size:14px;font-weight:700;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(NAMES_DATA[mi][side])}</span>
+  </span>
+  <span style="display:flex;align-items:center;gap:12px;flex:none;">
+    <span style="width:7px;height:7px;border-radius:50%;background:${m.serving===side?'#3dd68c':'transparent'};flex:none;"></span>
+    <span style="display:flex;align-items:center;gap:0;">${mkSets(side)}</span>
+    <span style="width:34px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:${m.serving===side?'#3dd68c':'#e7e9ee'};">${m.point[side]}</span>
+  </span>
+</div>`).join('');
+    return `
+<div class="lv-card" data-open="${mi}" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;">
+  <div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.05);">
+    <span style="font-size:11.5px;color:#4b5672;white-space:nowrap;">${e(m.event)}</span>
+    <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;color:${stColor};background:${stBg};border:1px solid ${stBd};border-radius:5px;padding:3px 7px;"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};"></span>${e(m.status)}</span>
+  </div>
+  ${playersHtml}
+</div>`;
+  }).join('');
+
+  const emptyHtml=d.isEmpty?`
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:88px 20px;background:#0a0d14;border:1px solid rgba(255,255,255,0.07);border-radius:14px;">
+  <span style="width:9px;height:9px;border-radius:50%;background:#2b3348;"></span>
+  <div style="font-size:15px;font-weight:700;">Nothing in play</div>
+  <div style="font-size:13px;color:#5b6880;max-width:380px;text-align:center;line-height:1.55;">Matches appear here the moment the first point is played.</div>
+</div>`:'';
+
+  // ── MODAL ──
+  let modalHtml='';
+  if(d.modalOpen){
+    const mm=d.modal;
+    // score cells
+    const scoreLine=cells=>cells.map(s=>`<span style="width:20px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:${s.weight};color:${s.color};">${e(s.v)}</span>`).join('');
+
+    // tabs
+    const tabsHtml=['Stats','Points','Ratings','Break/Hold'].map(t=>{
+      const on=S.tab===t;const sg=seg(on);
+      return `<span class="lvseg" data-tab="${t}" style="text-align:center;padding:11px 0;border-radius:10px;font-size:13.5px;font-weight:${on?700:600};color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${t}</span>`;
+    }).join('');
+
+    // ── Stats body ──
+    let bodyHtml='';
+    if(S.tab==='Stats'){
+      const nSets=d.nSets;
+      const scopeTabsHtml=['MATCH','SET '+nSets].map((l,i)=>{
+        const on=(i===0?S.scope==='MATCH':S.scope==='SET');const sg=seg(on);
+        return `<span class="lvseg" data-scope="${i===0?'MATCH':'SET'}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${l}</span>`;
+      }).join('');
+      const sectionsHtml=d.statSections.map(sec=>`
+<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;">
+  <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5b6880;margin-bottom:16px;">${e(sec.title)}</div>
+  <div style="display:flex;flex-direction:column;gap:16px;">${sec.rows.map(statRowHtml).join('')}</div>
+</div>`).join('');
+      bodyHtml=`
+<div style="display:inline-flex;gap:3px;background:#080a10;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:3px;align-self:flex-start;">${scopeTabsHtml}</div>
+${sectionsHtml}`;
+    }
+
+    // ── Points body ──
+    if(S.tab==='Points'){
+      const m=LIVE_DATA[S.sel],nSets=d.nSets;
+      const setTabsHtml=m.sets.map((_,i)=>{
+        const on=S.pset===i+1;const sg=seg(on);
+        return `<span class="lvseg" data-pset="${i+1}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">SET ${i+1}</span>`;
+      }).join('');
+      const gamesHtml=d.games.map(g=>{
+        if(g.divider) return `
+<div style="padding:14px 4px;border-top:1px solid rgba(255,255,255,0.06);">
+  <div style="background:#080a10;border:1px solid rgba(255,255,255,0.07);border-radius:9px;padding:9px 12px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#8b96b5;">${e(g.dividerLabel)}</div>
+</div>`;
+        const lostChip=`<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;color:#e0616f;background:rgba(224,97,111,0.12);border:1px solid rgba(224,97,111,0.32);border-radius:5px;padding:3px 7px;white-space:nowrap;">LOST SERVE</span>`;
+        const ball=`<span style="width:15px;height:15px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.06);position:relative;overflow:hidden;"><span style="position:absolute;left:-3px;top:2px;width:19px;height:11px;border-radius:50%;border:1px solid rgba(255,255,255,0.22);border-top:none;border-bottom:none;"></span></span>`;
+        const aMarker=g.servesA?`<span style="display:inline-flex;align-items:center;gap:6px;">${g.lost?lostChip:''}${ball}</span>`:'';
+        const bMarker=g.servesB?`<span style="display:inline-flex;align-items:center;gap:6px;">${ball}${g.lost?lostChip:''}</span>`:'';
+        const ptsHtml=g.hasPoints?`
+<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 6px;margin-top:9px;">
+  ${g.points.map(pt=>`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:${pt.color};white-space:nowrap;">${e(pt.v)}</span>${pt.bp?`<span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;letter-spacing:0.1em;color:#e0616f;background:rgba(224,97,111,0.12);border:1px solid rgba(224,97,111,0.3);border-radius:4px;padding:1px 4px;">BP</span>`:''}${pt.sep?`<span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#3a4356;">${pt.sep}</span>`:''}</span>`).join('')}
+</div>`:'';
+        return `
+<div style="padding:14px 4px;border-top:1px solid rgba(255,255,255,0.06);">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);align-items:center;gap:10px;">
+    <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">${aMarker}</span>
+    <span style="display:flex;align-items:center;justify-content:center;gap:10px;">
+      <span style="width:34px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:${g.aColor};">${e(g.aGames)}</span>
+      <span style="width:8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4b5672;">·</span>
+      <span style="width:34px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:${g.bColor};">${e(g.bGames)}</span>
+    </span>
+    <span style="display:flex;align-items:center;justify-content:flex-start;gap:6px;">${bMarker}</span>
+  </div>
+  ${ptsHtml}
+</div>`;
+      }).join('');
+      bodyHtml=`
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <div style="display:inline-flex;gap:3px;background:#080a10;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:3px;">${setTabsHtml}</div>
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:#aab3c5;">${e(d.setScoreLabel)}</span>
+</div>
+<div>${gamesHtml}</div>`;
+    }
+
+    // ── Ratings body ──
+    if(S.tab==='Ratings'){
+      bodyHtml=`
+<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:16px;">
+  ${d.ratingRows.map(ratingRowHtml).join('')}
+</div>
+<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 20px 12px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;">Momentum · point swing by game</span>
+    <span style="display:inline-flex;align-items:center;gap:14px;">
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#aab3c5;"><span style="width:14px;height:2px;background:#5b9bff;"></span>${e(d.modal.aName)}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#aab3c5;"><span style="width:14px;height:2px;background:#e7e9ee;"></span>${e(d.modal.bName)}</span>
+    </span>
+  </div>
+  <div style="margin-top:12px;">${d.momentumSvg}</div>
+</div>`;
+    }
+
+    // ── Break/Hold body ──
+    if(S.tab==='Break/Hold'){
+      const hbTabsHtml=['HOLD','BREAK'].map(l=>{
+        const on=S.hb===l;const sg=seg(on);
+        return `<span class="lvseg" data-hb="${l}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${l}</span>`;
+      }).join('');
+      const playersHtml=d.heatPlayers.map(hp=>heatPlayerHtml(hp,S.hb)).join('');
+      bodyHtml=`
+<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <span style="display:inline-flex;align-items:center;gap:8px;">
+      <span style="font-size:15px;font-weight:700;">Hold/Break heatmap</span>
+      <span class="lvtip" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:10px;font-weight:700;color:#8b96b5;cursor:default;">i<span class="lvtipbox" style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;width:300px;padding:11px 13px;background:#0a0d13;border:1px solid rgba(255,255,255,0.15);border-radius:10px;box-shadow:0 16px 36px -18px rgba(0,0,0,0.85);font-family:'Hanken Grotesk',sans-serif;font-size:12px;font-weight:400;color:#aab3c5;line-height:1.55;text-align:left;">${e(d.heatBaseline)}<span style="display:block;margin-top:7px;color:#5b6880;">${e(d.heatGates)}</span></span></span>
+    </span>
+    <span style="display:inline-flex;gap:3px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:3px;">${hbTabsHtml}</span>
+  </div>
+  <span style="display:inline-flex;white-space:nowrap;align-items:center;gap:8px;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;background:#0a0d14;border:1px dashed rgba(255,255,255,0.12);border-radius:9px;padding:7px 12px;">All surfaces · last 24m</span>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:20px;margin-top:16px;">${playersHtml}</div>
+</div>`;
+    }
+
+    modalHtml=`
+<div id="lvOverlay" style="position:fixed;inset:0;z-index:90;background:rgba(4,5,8,0.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;">
+  <div style="width:100%;max-width:1180px;max-height:88vh;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:20px;box-shadow:0 40px 120px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.07);background:#080b11;flex:none;position:relative;">
+      <span style="font-size:15px;font-weight:700;">${e(mm.title)}</span>
+      <span class="lvseg" id="lvClose" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center;font-size:14px;color:#8b96b5;cursor:pointer;">✕</span>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px;padding:18px 24px;flex:none;">
+      <span style="display:flex;align-items:center;gap:12px;min-width:0;">
+        <img src="${mm.aAv}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
+        <span style="font-size:17px;font-weight:700;color:#5b9bff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.aName)}</span>
+      </span>
+      <span style="display:flex;flex-direction:column;gap:4px;flex:none;">
+        <span style="display:flex;align-items:center;gap:10px;">${scoreLine(mm.aScore)}<span style="width:8px;height:8px;border-radius:50%;background:${mm.aDot};"></span></span>
+        <span style="display:flex;align-items:center;gap:10px;">${scoreLine(mm.bScore)}<span style="width:8px;height:8px;border-radius:50%;background:${mm.bDot};"></span></span>
+      </span>
+      <span style="display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0;">
+        <span style="font-size:17px;font-weight:700;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.bName)}</span>
+        <img src="${mm.bAv}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 24px 16px;flex:none;">${tabsHtml}</div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:0 24px 24px;display:flex;flex-direction:column;gap:14px;">${bodyHtml}</div>
+  </div>
+</div>`;
+  }
+
+  // ── page ──
+  tab.innerHTML=`
+<div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;padding:0 16px;">
+  <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:22px 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:29px;font-weight:800;letter-spacing:-0.015em;line-height:1.1;">Live</div>
+      <div style="font-size:13.5px;color:#5b6880;margin-top:8px;max-width:520px;line-height:1.55;">Singles matches in play right now, point by point.</div>
+    </div>
+    <div style="display:flex;gap:34px;">
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#3dd68c;"><span style="width:5px;height:5px;border-radius:50%;background:#3dd68c;box-shadow:0 0 0 3px rgba(61,214,140,0.18);"></span>In play</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#3dd68c;">${d.inPlayCount}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;">Interrupted</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:${d.interruptedColor};">${d.interruptedCount}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;">Events</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#e7e9ee;">${d.eventCount}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;">Updated</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#8b96b5;">now</span>
+      </div>
+    </div>
+  </div>
+  ${emptyHtml}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));align-items:start;gap:12px;">${cardsHtml}</div>
+  <div style="font-size:11px;color:#4b5672;line-height:1.6;">Live scores, point sequences, ratings and heatmap figures on this page are placeholder data for design review — not a live feed.</div>
+</div>
+${modalHtml}`;
+
+  // wire events
+  const overlay=document.getElementById('lvOverlay');
+  if(overlay){
+    overlay.addEventListener('click',ev=>{
+      const t=ev.target;
+      if(t.id==='lvClose'||t.closest('#lvClose')) { setState({sel:null}); return; }
+      const tabEl=t.closest('[data-tab]');
+      if(tabEl&&tabEl.dataset.tab&&['Stats','Points','Ratings','Break/Hold'].includes(tabEl.dataset.tab)){setState({tab:tabEl.dataset.tab});return;}
+      const scopeEl=t.closest('[data-scope]');
+      if(scopeEl){setState({scope:scopeEl.dataset.scope});return;}
+      const psetEl=t.closest('[data-pset]');
+      if(psetEl){setState({pset:parseInt(psetEl.dataset.pset,10)});return;}
+      const hbEl=t.closest('[data-hb]');
+      if(hbEl){setState({hb:hbEl.dataset.hb});return;}
+    });
+  }
+  tab.querySelectorAll('.lv-card[data-open]').forEach(card=>{
+    card.addEventListener('click',()=>{
+      const mi=parseInt(card.dataset.open,10);
+      setState({sel:mi,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});
+    });
+  });
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+function lvInit(){
+  if(lvInited) return;
+  lvInited=true;
+  render();
+}
+
+// init when tab first shown — capture phase so it fires before the generic handler switches pages
+document.querySelector('[data-tab="live"]').addEventListener('click', function onFirst(){
+  lvInit();
+  this.removeEventListener('click', onFirst, true);
+}, true);
+
+// also init if the tab is already active on load
+if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector('.tabpage[data-page="live"]').classList.contains('active')){
+  lvInit();
+}
+
+})();
 </script>
 
 </body>
