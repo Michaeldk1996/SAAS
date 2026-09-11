@@ -24110,7 +24110,7 @@ function render(){
       const nSets=d.nSets;
       const scopeTabsHtml=['MATCH','SET '+nSets].map((l,i)=>{
         const on=(i===0?S.scope==='MATCH':S.scope==='SET');const sg=seg(on);
-        return `<span class="lvseg" data-scope="${i===0?'MATCH':'SET'}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${l}</span>`;
+        return `<span class="lvseg" data-scope="${i===0?'MATCH':'SET'}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${l}</span>`;
       }).join('');
       const sectionsHtml=d.statSections.map(sec=>`
 <div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;">
@@ -24127,7 +24127,7 @@ ${sectionsHtml}`;
       const m=LIVE_DATA[S.sel],nSets=d.nSets;
       const setTabsHtml=m.sets.map((_,i)=>{
         const on=S.pset===i+1;const sg=seg(on);
-        return `<span class="lvseg" data-pset="${i+1}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">SET ${i+1}</span>`;
+        return `<span class="lvseg" data-pset="${i+1}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">SET ${i+1}</span>`;
       }).join('');
       const gamesHtml=d.games.map(g=>{
         if(g.divider) return `
@@ -24186,7 +24186,7 @@ ${sectionsHtml}`;
     if(S.tab==='Break/Hold'){
       const hbTabsHtml=['HOLD','BREAK'].map(l=>{
         const on=S.hb===l;const sg=seg(on);
-        return `<span class="lvseg" data-hb="${l}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${l}</span>`;
+        return `<span class="lvseg" data-hb="${l}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${l}</span>`;
       }).join('');
       const playersHtml=d.heatPlayers.map(hp=>heatPlayerHtml(hp,S.hb)).join('');
       bodyHtml=`
@@ -24204,7 +24204,7 @@ ${sectionsHtml}`;
     }
 
     modalHtml=`
-<div id="lvOverlay" style="position:fixed;inset:0;z-index:90;background:rgba(4,5,8,0.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;">
+<div id="lvOverlay" style="position:fixed;inset:0;z-index:90;background:rgba(4,5,8,0.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;line-height:normal;">
   <div style="width:100%;max-width:1180px;max-height:88vh;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:20px;box-shadow:0 40px 120px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.07);background:#080b11;flex:none;position:relative;">
       <span style="font-size:15px;font-weight:700;">${e(mm.title)}</span>
@@ -24232,7 +24232,7 @@ ${sectionsHtml}`;
 
   // ── page ──
   tab.innerHTML=`
-<div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;padding:0 16px;">
+<div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:#e7e9ee;line-height:normal;padding:0 16px;">
   <div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:22px 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;">
     <div>
       <div style="font-size:29px;font-weight:800;letter-spacing:-0.015em;line-height:1.1;">Live</div>
