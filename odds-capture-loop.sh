@@ -80,10 +80,21 @@ except Exception:
 store['ticks'].append({'at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
                        'run': run, 'iter': int(it), 'mode': mode, 'outcome': outcome})
 store['ticks'] = store['ticks'][-400:]          # ~4 days at 96/day
-# Gaps are measured over CAPTURE ticks only. A 'redo' tick is the same iteration
-# replayed seconds later after a push race, so counting it would insert a ~0-min
-# gap and flatter the median — and the median IS the number this whole exercise
-# exists to report honestly. Every tick is still retained for the audit trail.
+# Gaps are measured over CAPTURE ticks only.
+#
+# CORRECTED 2026-09-11 (clean-context review). The original reasoning here was that a
+# 'redo' tick is the same iteration replayed seconds later, so counting it would insert
+# a ~0-min gap and flatter the median. That is backwards, because of what happens in
+# between: on a push race ci-commit-push.sh does `git reset --hard FETCH_HEAD`, which
+# reverts THIS FILE to origin/main's copy — and the 'captured' tick written moments
+# earlier existed only in the local commit that was just discarded. So the raced
+# iteration contributes NO tick at all, and excluding the replay as well made a slot in
+# which a capture genuinely happened read as a 30-minute gap instead of 15. The one
+# number this whole exercise exists to produce was being pessimised, not flattered.
+#
+# The replay is therefore recorded as 'captured' (it is the only surviving tick for that
+# iteration, so there is nothing to double-count) with '+redo' in `mode` for the audit
+# trail. This filter stays as the backstop for any tick still labelled 'redo'.
 ts = [t['at'] for t in store['ticks'] if t.get('outcome') != 'redo']
 gaps = []
 for a, b in zip(ts, ts[1:]):
@@ -165,7 +176,11 @@ while [ "$STOPPING" -eq 0 ]; do
     echo "::warning::Recomputing iteration $ITER on the new base after a push race."
     [ "$MODE" = "free+metered" ] && METERED_DUE=1
     python3 refresh-odds-history.py --first-appearance || true
-    record_cadence "$MODE" "redo"
+    # 'captured', not 'redo': the reset above discarded the tick recorded before the
+    # push, so this replay is the ONLY tick this iteration will ever have. Labelling it
+    # 'redo' excluded it from the gap population and made a real capture read as a
+    # missed slot. '+redo' keeps the race visible in the audit trail.
+    record_cadence "${MODE}+redo" "captured"
     ./ci-commit-push.sh "chore(odds): capture tick ${ITER} (recomputed) [skip ci]" $STATE_FILES || \
       echo "::warning::Recomputed iteration $ITER still could not be pushed; next tick will carry it."
   fi

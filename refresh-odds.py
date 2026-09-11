@@ -349,8 +349,16 @@ def main():
             now_written += 1
         updated += 1
 
-    with open(MATCHES, 'w') as fh:
+    # Atomic write — full reasoning on write_matches() in refresh-odds-history.py. Short
+    # version: open(...,'w') truncates immediately, the capture loop is built to be
+    # interrupted, and its SIGTERM trap commits whatever is on disk — so a non-atomic
+    # write here can push a truncated matches.json to main.
+    _tmp = f'{MATCHES}.tmp'
+    with open(_tmp, 'w') as fh:
         json.dump(matches, fh, indent=2, ensure_ascii=False)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(_tmp, MATCHES)
 
     cov = ', '.join(f'{b}:{book_cov.get(b, 0)}' for b in BOOKS)
     print(f'oddspapi odds refresh: {updated} match(es) updated ({now_written} with a '

@@ -322,8 +322,26 @@ def extract_series(book_block):
 
 
 def write_matches(matches):
-    with open(MATCHES, 'w') as fh:
+    """Write matches.json ATOMICALLY — temp file alongside, fsync, then rename.
+
+    `open(path, 'w')` truncates immediately, so a process killed mid-`json.dump` leaves a
+    TRUNCATED matches.json on disk. That was survivable when this ran a couple of times a
+    day. It is not now: the capture loop writes this file ~22 times per 5h30m window, is
+    designed to be interrupted (SIGTERM on cancel / redeploy / job timeout), and its
+    signal trap deliberately commits and pushes whatever is on disk on the way out — so a
+    half-written file would reach main and then break every consumer that json.loads it
+    (refresh-odds.py, bsp-pipeline.js, the published board).
+
+    os.replace() is atomic on POSIX: a reader sees either the whole old file or the whole
+    new one, never a partial. Same discipline bsp-pipeline.js already applies via
+    writeJsonAtomic() — this is the Python side of the repo catching up.
+    """
+    tmp = f'{MATCHES}.tmp'
+    with open(tmp, 'w') as fh:
         json.dump(matches, fh, indent=2, ensure_ascii=False)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, MATCHES)
 
 
 def match_keys(m):

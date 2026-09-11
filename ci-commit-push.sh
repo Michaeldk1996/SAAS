@@ -63,13 +63,31 @@ for attempt in 1 2 3; do
     # Content conflict with a concurrent writer. Leave NO half-applied rebase
     # behind — a conflicted tree would poison every later iteration of the loop.
     git rebase --abort 2>/dev/null || true
-    git reset -q --hard FETCH_HEAD
+    # The reset IS the REDO contract: the caller is told the tree is clean origin/main
+    # and recomputes on that assumption. `set -e` is off here, so an unchecked failure
+    # would print "tree reset" and exit 3 with the local commit still in place — the
+    # caller would then stack a recomputation on top of the very commit that could not
+    # be pushed. A failed reset is a hard failure, not a REDO.
+    if ! git reset -q --hard FETCH_HEAD; then
+      echo "::error::ci-commit-push: rebase conflicted AND the reset to origin/main" \
+           "failed. Tree is in an unknown state; not claiming REDO."
+      exit 1
+    fi
     echo "::warning::ci-commit-push: concurrent writer conflicts with this capture. " \
          "Tree reset to origin/main; caller should recompute. Nothing was lost — " \
          "the capture is free to repeat."
     exit 3
   fi
 done
+
+# The loop above is push -> (on failure) fetch+rebase. On the LAST attempt the rebase
+# can succeed and then never be pushed, because the loop ends there — three pushes
+# against four push-able states. This is that missing fourth push. Without it one extra
+# concurrent writer costs the whole iteration's capture for no reason.
+if git push -q origin HEAD:main; then
+  echo "ci-commit-push: pushed on the final replay — $MSG"
+  exit 0
+fi
 
 echo "::error::ci-commit-push: could not push after 3 attempts — $MSG"
 exit 1
