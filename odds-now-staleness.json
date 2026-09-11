@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 45.5,
+    "maxAgeMin": 59.7,
     "measured": 2,
     "stale": []
   },
@@ -176,9 +176,18 @@
       "noClock": 0,
       "stale": 0,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-11T12:00:45Z",
+      "maxAgeMin": 59.7,
+      "measured": 2,
+      "noBet365Line": 0,
+      "noClock": 0,
+      "stale": 0,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-11T11:46:30Z"
+  "updatedAt": "2026-09-11T12:00:45Z"
 }
