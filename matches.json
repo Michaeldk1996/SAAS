@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.2,
-      "p2": 4.5,
+      "p1": 1.16,
+      "p2": 5,
       "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.2,
-        "bookmaker": "bet365"
+        "price": 1.21,
+        "bookmaker": "Unibet"
       },
       "p2": {
-        "price": 4.5,
-        "bookmaker": "bet365"
+        "price": 5.1,
+        "bookmaker": "Betano"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -2717,8 +2717,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.6,
-      "windSpeed": 14.8,
+      "temperature": 27.9,
+      "windSpeed": 13.9,
       "humidity": 31,
       "source": "Open-Meteo",
       "historical": false,
@@ -2783,9 +2783,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": true,
           "available": true
         },
@@ -2796,7 +2796,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -2809,7 +2809,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -2826,7 +2826,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T02:52:44Z",
+      "capturedAt": "2026-09-11T05:15:00Z",
       "startTime": "2026-09-11T19:00:00.000Z",
       "fixtureId": "id1200259173992438",
       "books": {
@@ -2857,7 +2857,7 @@
               1.2
             ],
             [
-              "2026-09-11T02:34:48.523Z",
+              "2026-09-11T05:10:44.421Z",
               1.2
             ]
           ],
@@ -2887,7 +2887,7 @@
               4.5
             ],
             [
-              "2026-09-11T02:34:48.523Z",
+              "2026-09-11T05:10:44.421Z",
               4.5
             ]
           ]
@@ -2898,7 +2898,8 @@
       "p1": 1.167,
       "p2": 5,
       "bookmaker": "bet365",
-      "at": "2026-09-10T13:41:00.351Z"
+      "at": "2026-09-10T13:41:00.351Z",
+      "src": "ingestion"
     },
     "bet365Now": {
       "p1": 1.2,
@@ -2935,18 +2936,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.4,
-      "p2": 1.333,
-      "bookmaker": "bet365"
+      "p1": 3.49,
+      "p2": 1.36,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.4,
-        "bookmaker": "bet365"
+        "price": 3.65,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.333,
-        "bookmaker": "bet365"
+        "price": 1.36,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -5450,9 +5451,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -5463,7 +5464,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": true,
@@ -5476,7 +5477,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -5493,7 +5494,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T02:52:44Z",
+      "capturedAt": "2026-09-11T05:15:00Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -5512,7 +5513,7 @@
               3.4
             ],
             [
-              "2026-09-11T02:34:45.376Z",
+              "2026-09-11T05:10:41.578Z",
               3.4
             ]
           ],
@@ -5530,7 +5531,7 @@
               1.333
             ],
             [
-              "2026-09-11T02:34:45.376Z",
+              "2026-09-11T05:10:41.578Z",
               1.333
             ]
           ]
@@ -5541,7 +5542,8 @@
       "p1": 3.5,
       "p2": 1.3,
       "bookmaker": "bet365",
-      "at": "2026-09-10T13:41:00.855Z"
+      "at": "2026-09-10T13:41:00.855Z",
+      "src": "ingestion"
     },
     "bet365Now": {
       "p1": 3.4,
@@ -8114,9 +8116,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -8127,7 +8129,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -8140,7 +8142,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -9914,7 +9916,8 @@
       "p1": 1.1,
       "p2": 7,
       "bookmaker": "bet365",
-      "at": "2026-09-06T17:01:52.654Z"
+      "at": "2026-09-06T17:01:52.654Z",
+      "src": "ingestion"
     },
     "closingOdds": {
       "p1": 1.1,
@@ -12376,9 +12379,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -12389,7 +12392,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -12402,7 +12405,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -16760,7 +16763,8 @@
       "p1": 1.615,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "at": "2026-09-07T04:50:40.858Z"
+      "at": "2026-09-07T04:50:40.858Z",
+      "src": "ingestion"
     },
     "closingOdds": {
       "p1": 1.615,
@@ -18872,9 +18876,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -18885,7 +18889,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -18898,7 +18902,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -23144,7 +23148,8 @@
       "p1": 3.5,
       "p2": 1.3,
       "bookmaker": "bet365",
-      "at": "2026-09-07T04:50:47.565Z"
+      "at": "2026-09-07T04:50:47.565Z",
+      "src": "ingestion"
     },
     "closingOdds": {
       "p1": 4,
@@ -25228,9 +25233,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -25241,7 +25246,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -25254,7 +25259,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -26308,7 +26313,8 @@
       "p1": 1.571,
       "p2": 2.375,
       "bookmaker": "bet365",
-      "at": "2026-09-08T08:23:51.893Z"
+      "at": "2026-09-08T08:23:51.893Z",
+      "src": "ingestion"
     },
     "closingOdds": {
       "p1": 1.533,
@@ -29016,9 +29022,9 @@
           "code": 3,
           "hi": 28,
           "lo": 20,
-          "rain": 6,
-          "wind": 15,
-          "humidity": 58,
+          "rain": 5,
+          "wind": 16,
+          "humidity": 55,
           "isMatch": false,
           "available": true
         },
@@ -29029,7 +29035,7 @@
           "code": 3,
           "hi": 26,
           "lo": 15,
-          "rain": 4,
+          "rain": 5,
           "wind": 18,
           "humidity": 64,
           "isMatch": false,
@@ -29042,7 +29048,7 @@
           "code": 81,
           "hi": 30,
           "lo": 22,
-          "rain": 69,
+          "rain": 83,
           "wind": 21,
           "humidity": 77,
           "isMatch": false,
@@ -29888,7 +29894,8 @@
       "p1": 1.111,
       "p2": 6.5,
       "bookmaker": "bet365",
-      "at": "2026-09-08T08:23:51.504Z"
+      "at": "2026-09-08T08:23:51.504Z",
+      "src": "ingestion"
     },
     "closingOdds": {
       "p1": 1.111,
