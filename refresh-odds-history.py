@@ -76,6 +76,11 @@ BOOK_LABELS = {'bet365': 'bet365'}
 # below; the threshold is refined off that, not off the 9.
 OPEN_MONITOR_HOURS = 24.0
 OPEN_MONITOR_FILE = os.path.join(HERE, 'odds-open-monitor.json')
+
+# Written and owned by refresh-odds.py's fixture_map(); READ-ONLY here. It is the
+# only zero-quota route from one of our matches to an oddspapi fixtureId, which
+# is what lets --first-appearance sweep every 15 minutes without billing.
+FIXTURE_MAP_FILE = os.path.join(HERE, 'odds-fixture-map.json')
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
@@ -856,6 +861,139 @@ def open_monitor(targets, joined, now_iso):
         return []
 
 
+def first_appearance():
+    """TEN-179 item 3 (founder authorised 2026-09-11) — the 15-minute,
+    ZERO-QUOTA sweep for fixtures whose bet365 market has not opened yet.
+
+        python3 refresh-odds-history.py --first-appearance
+
+    Why a separate mode rather than just running main() every 15 minutes:
+    main() opens with an unconditional billable /v4/fixtures call. At 15-minute
+    resolution that is 96 units/day = ~2,900/month against a 5,000 cap — 58% of
+    the whole subscription spent on discovery. The founder's ruling was
+    explicitly "zero quota", so this mode NEVER calls /v4/fixtures. It resolves
+    fixtureId from odds-fixture-map.json, the cache that refresh-odds.py's
+    hourly metered run already maintains, and simply skips anything that cache
+    cannot answer — the next hourly run maps it.
+
+    Everything this mode calls is free: /v4/historical-odds (unmetered, see
+    report_consumption) and /v4/account (unmetered). It PROVES that rather than
+    asserting it, by reading the meter either side and failing loudly on any
+    delta.
+
+    Target population = upcoming, dated fixtures that carry NO bet365 series
+    yet. That is precisely the set whose OPEN is still unpinned. Re-sweeping a
+    fixture that already has a series buys nothing for OPEN (it is pinned) and
+    costs 5.5s of pacing each, so the sweep stays small and fast even on a full
+    board.
+
+    This mode NEVER exits non-zero on "no price posted yet" — it runs 4x an
+    hour, and a red workflow four times an hour is how a real signal gets
+    ignored (37 unread red runs, Sep 2-10).
+    """
+    key = read_key()
+    if not key:
+        print('ERROR: ODDSPAPI_KEY not found (.env or environment).', file=sys.stderr)
+        return 1
+
+    quota_before = log_quota(key, 'before first-appearance sweep')
+    now = datetime.now(timezone.utc)
+    now_iso = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    matches = seed_from_live(json.load(open(MATCHES)))
+
+    try:
+        fmap = (json.load(open(FIXTURE_MAP_FILE)) or {}).get('byKey') or {}
+    except Exception as e:
+        print(f'::warning::No usable {os.path.basename(FIXTURE_MAP_FILE)} ({e}) — this '
+              f'sweep has no zero-quota way to resolve a fixtureId. Nothing captured; '
+              f'the hourly metered run will rebuild the cache.')
+        return 0
+
+    targets, unmapped = [], []
+    for m in matches:
+        if m.get('finalScore') or not m.get('date'):
+            continue
+        if (m.get('oddsMovement') or {}).get('books'):
+            continue                       # OPEN already pinned — nothing to catch
+        rec = fmap.get(event_key(m)) or {}
+        if rec.get('fixtureId'):
+            targets.append((m, rec))
+        else:
+            unmapped.append(m)
+
+    if not targets:
+        print(f'First-appearance sweep: 0 unopened fixture(s) resolvable from cache '
+              f'({len(unmapped)} awaiting the hourly mapping run). 0 quota units.')
+        return 0
+
+    joined, captured, opened = {}, 0, []
+    book_hits = {b: 0 for b in BOOKS}
+    for m, rec in targets:
+        swap = rec.get('orient') == 'swap'
+        joined[id(m)] = {'fixtureId': rec['fixtureId'], 'orient': rec.get('orient'),
+                         'startTime': rec.get('startTime')}
+        books_out = {}
+        for b in BOOKS:
+            time.sleep(HIST_SLEEP)
+            data, herr = hist_get(rec['fixtureId'], (b,), key)
+            if data is None:
+                # 404 here is the normal answer for a market that has not opened.
+                # It is a miss, not a transport failure — do not shout about it.
+                if herr != 404:
+                    print(f'::warning::historical-odds {b} failed for {m.get("id")} '
+                          f'(fixture {rec["fixtureId"]}): HTTP {herr}.')
+                continue
+            _absorb(data, b, swap, books_out, book_hits)
+
+        if books_out:
+            m['oddsMovement'] = {'market': 'Match Winner', 'capturedAt': now_iso,
+                                 'startTime': rec.get('startTime'),
+                                 'fixtureId': rec['fixtureId'], 'books': books_out}
+            captured += 1
+            opened.append(m)
+
+    write_matches(matches)
+
+    # open_monitor() stamps firstSeenAt — the instant WE first held a price for
+    # this fixture. That field is the whole point of sweeping at 15 minutes: it
+    # is the only record of how close our first sighting got to the market's
+    # posting instant, and it is frozen on first write so it stays a prospective
+    # measurement. Feeding this sweep into it is what shrinks captureLagH.
+    open_monitor([m for m, _ in targets], joined, now_iso)
+
+    for m in opened:
+        ser = ((m.get('oddsMovement') or {}).get('books') or {}).get('bet365') or {}
+        pts = [p[0] for side in ('p1', 'p2') for p in (ser.get(side) or []) if p]
+        first = min(pts) if pts else None
+        lag = _parse(first)
+        lag_txt = (f'{(now - lag).total_seconds() / 60.0:.1f} min after bet365\'s first '
+                   f'quote') if lag else 'lag unknown'
+        print(f'  OPENED {m.get("date")} {m.get("tour")}: {m.get("p1")} v {m.get("p2")} '
+              f'— first sighted {lag_txt}.')
+
+    print(f'First-appearance sweep: {captured} newly-opened fixture(s) captured of '
+          f'{len(targets)} swept; {len(unmapped)} not yet in the fixture cache.')
+
+    # log_quota returns the raw request_count int (not the subscription dict) —
+    # it is the same reading report_consumption() takes either side of main().
+    b = quota_before
+    a = log_quota(key, 'after first-appearance sweep')
+    if isinstance(a, int) and isinstance(b, int):
+        if a != b:
+            # The zero-quota guarantee is the founder's condition for running
+            # this at 15 minutes. If it ever stops holding, say so immediately
+            # rather than discovering it as a blown monthly cap.
+            print(f'::error::First-appearance sweep was supposed to be free but the '
+                  f'meter moved {b} -> {a} ({a - b} unit(s)). At 15-minute cadence that '
+                  f'is {(a - b) * 96} units/day. Something in this path now bills.',
+                  file=sys.stderr)
+        else:
+            print(f'Quota: meter unchanged at {a} across {len(targets)} historical-odds '
+                  f'call(s) — the sweep is free, as measured.')
+    return 0
+
+
 def _absorb(data, book, swap, books_out, book_hits):
     """Pull one book's oriented p1/p2 series from a historical-odds payload into
     books_out keyed by the display label."""
@@ -871,4 +1009,6 @@ def _absorb(data, book, swap, books_out, book_hits):
 
 
 if __name__ == '__main__':
+    if '--first-appearance' in sys.argv:
+        sys.exit(first_appearance())
     main()

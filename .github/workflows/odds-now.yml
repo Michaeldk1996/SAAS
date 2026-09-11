@@ -1,32 +1,44 @@
-name: BSP bet365 NOW refresh
+name: BSP odds capture loop
 
-# The Upcoming card's NOW price. TEN-179 item 1, founder ruling 2026-09-10:
-# cadence option (a), FLAT HOURLY.
+# TEN-179 item 1, founder authorised 2026-09-11: ONE job that loops internally
+# instead of one cron delivery per capture.
 #
-# Why flat, and why hourly:
-#   86% of bet365's pre-match price changes happen more than 6h before start and
-#   only 7% inside the last hour, so a cadence that sprints near kickoff buys
-#   resolution in the window where almost nothing moves. Measured on 65 real
-#   bet365 pre-match series. Flat hourly costs ~38% of the monthly cap nominal /
-#   ~49% on the busiest day actually observed; the 30-minute alternative peaks at
-#   93%, which is the ceiling the founder ruled out.
+# THE MEASUREMENT THAT CAUSED THIS
+#   Configured: `0 * * * *`. Delivered: 3 of 11 slots = 27%, gaps of 2.6-2.7h.
+#   odds-history.yml at `0 */3 * * *` delivered ~5/day against 8. That shortfall
+#   is what left a NOW price 76 minutes behind a bet365 move — the write path and
+#   the pipeline's observedAt/capturedAt guard were both healthy throughout.
+#   A tighter cron does not help: GitHub sheds short-interval schedules first.
 #
-# Cost per run: 1 /v4/odds-by-tournaments unit per FIVE tournaments (a hard API
-# cap — six ids is a 400, and the 400 bills), plus a /v4/fixtures unit only when
-# the cached fixture map cannot resolve something. refresh-odds.py prints the
-# MEASURED meter delta every run, so the projection above is checked against
-# reality rather than restated from the code's own arithmetic.
+# WHAT CHANGED, AND WHAT DELIBERATELY DID NOT
+#   Changed: one delivery now buys ~5h30m of 15-minute captures instead of one.
+#   NOT changed: the METERED cadence. refresh-odds.py still runs once an hour —
+#   flat hourly is the approved option (a) and this loop exists to make hourly
+#   real, not to spend more. The 15-minute tick runs only the FREE
+#   /v4/historical-odds sweep (item 3), which bills nothing and is asserted
+#   against the live meter every run.
 #
-# SETUP: repo secrets ODDSPAPI_KEY (required), and TELEGRAM_BOT_TOKEN +
-# TELEGRAM_OPS_CHAT_ID for the quota-runway alert. Without the Telegram pair the
-# run still succeeds and says loudly that the alert had nowhere to go.
+# THE SCHEDULE IS NOW A SUPERVISOR, NOT A CAPTURE TRIGGER
+#   The hourly cron no longer times a capture; it restarts the loop. Combined
+#   with the concurrency queue below, a tick that arrives while a loop is
+#   running simply waits and becomes its successor — so a loop that dies (or is
+#   cancelled, or hits its timeout) is replaced by the pending run immediately
+#   rather than after the next delivered cron slot. Coverage survives a 27%
+#   delivery rate because it only takes ONE delivery to restart.
+#
+# SETUP: repo secrets ODDSPAPI_KEY (required), TELEGRAM_BOT_TOKEN +
+# TELEGRAM_OPS_CHAT_ID for the quota-runway alert.
 
 on:
   schedule:
-    - cron: '0 * * * *'     # flat hourly (UTC). Actions cron is best-effort.
+    - cron: '0 * * * *'     # supervisor tick; one delivered slot restarts the loop
   workflow_dispatch:
 
-# Never let two refresh runs overlap — they both write and push matches.json.
+# Queue, never cancel. GitHub holds at most one running + one pending run per
+# group, so the hourly ticks collapse into a single standing successor that
+# takes over the moment the current loop ends. cancel-in-progress MUST stay
+# false — cancelling the running loop mid-window is precisely the interrupt this
+# design is built to avoid.
 concurrency:
   group: bsp-odds-now
   cancel-in-progress: false
@@ -35,9 +47,13 @@ permissions:
   contents: write
 
 jobs:
-  refresh:
+  capture-loop:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # LOOP_MINUTES (330) + headroom for the final iteration's API pacing and
+    # push. GitHub hard-caps a job at 360 minutes; staying under it means we
+    # exit on our own terms, having committed everything, rather than being
+    # killed at the cap.
+    timeout-minutes: 350
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +63,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Refresh the bet365 NOW leg
+      - name: Run the capture loop
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -57,44 +73,17 @@ jobs:
             echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
             exit 1
           fi
-          python3 refresh-odds.py
+          chmod +x odds-capture-loop.sh ci-commit-push.sh
+          ./odds-capture-loop.sh
 
-      # The fixture map and the quota history are committed on purpose: the
-      # runner is ephemeral, so without persisting them every run would re-spend
-      # a /v4/fixtures unit and restart the burn-rate measurement from nothing —
-      # the runway alert would then never have a sample old enough to fire on.
-      # alert-state.json carries the alert cooldowns for the same reason.
-      - name: Commit refreshed odds (only if changed)
+      # A safety net only. The loop commits after EVERY iteration (see
+      # ci-commit-push.sh), so in the normal case — and on a trapped SIGTERM —
+      # this finds nothing to do. It exists for the kill modes bash cannot trap,
+      # such as the runner being evicted outright.
+      - name: Flush any uncommitted capture
         if: always()
         run: |
-          FILES="matches.json odds-fixture-map.json odds-quota-history.json alert-state.json"
-          EXISTING=""
-          for f in $FILES; do [ -f "$f" ] && EXISTING="$EXISTING $f"; done
-          git config user.name  "bsp-odds-bot"
-          git config user.email "bsp-odds-bot@users.noreply.github.com"
-          # Stage FIRST, then compare the index to HEAD. `git diff` alone only sees
-          # TRACKED files, so on the first run — when odds-fixture-map.json and
-          # odds-quota-history.json do not exist in git yet — it reports "no changes"
-          # and the new files are silently never committed. The cache would then never
-          # persist, the fixtures unit would be re-spent every hour, and the burn-rate
-          # history would never accumulate a sample old enough for the runway alert to
-          # fire on. Caught on the first real CI run, 2026-09-10.
-          [ -n "$EXISTING" ] && git add -- $EXISTING
-          if git diff --cached --quiet; then
-            echo "No odds/state changes to commit."
-            exit 0
-          fi
-          git commit -m "chore(odds): hourly bet365 NOW refresh [skip ci]"
-          # Another workflow may have advanced main since checkout; rebase and
-          # retry so a benign race never loses a capture. This is a git retry,
-          # not an API retry — it costs no quota.
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "Pushed on attempt $attempt."
-              exit 0
-            fi
-            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
-            git pull --rebase origin main || true
-          done
-          echo "::error::Could not push the refreshed odds after 3 attempts."
-          exit 1
+          chmod +x ci-commit-push.sh
+          ./ci-commit-push.sh "chore(odds): flush capture at job end [skip ci]" \
+            matches.json odds-fixture-map.json odds-quota-history.json \
+            alert-state.json odds-open-monitor.json odds-capture-cadence.json || true
