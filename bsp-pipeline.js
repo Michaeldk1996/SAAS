@@ -4927,7 +4927,8 @@ async function runPipeline() {
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
       closeHealed = 0, closeDashed = 0, crossBookDropped = 0, openFromArchive = 0,
       nowPinned = 0, nowCarried = 0, nowFromLive = 0,
-      openFromSighting = 0, openSightingNoQuote = 0, openNoSighting = 0;
+      openFromSighting = 0, openSightingNoQuote = 0, openNoSighting = 0,
+      openLabelledLegacy = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -5021,7 +5022,18 @@ async function runPipeline() {
     if (!m.openingOdds) {
       const fsMs = afid && firstSeenByFixture.has(afid)
         ? Date.parse(firstSeenByFixture.get(afid)) : NaN;
-      let o1 = p1[0], o2 = p2[0], src = null;
+      // FOUNDER RULING 2026-09-11, REVERSING the 2026-09-10 gate, deliberately:
+      // "If the only open we have is oddspapi's ingestion point, publish it rather
+      // than showing nothing... Where both are available, prefer the honest pin."
+      // So the fallback is no longer an unlabelled series[0] — it is an explicitly
+      // named 'ingestion' pin. The VALUE is unchanged either way; what changes is
+      // that the card can now say which of the two it is, which is the other half
+      // of the ruling ("report which of the two each published open came from").
+      //
+      // src === null previously meant BOTH "ingestion point" and "field simply not
+      // set", which is exactly the ambiguity that makes a split unreportable off
+      // the published board. Every open pinned from here on names its source.
+      let o1 = p1[0], o2 = p2[0], src = 'ingestion';
       if (Number.isFinite(fsMs)) {
         const h1 = lastAtOrBefore(p1, fsMs), h2 = lastAtOrBefore(p2, fsMs);
         if (h1 && h2) { o1 = h1; o2 = h2; src = 'first-sighting'; openFromSighting++; }
@@ -5029,9 +5041,8 @@ async function runPipeline() {
       } else {
         openNoSighting++;                 // pre-monitor fixture: series[0], as before
       }
-      m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
-      if (src) {
-        m.openingOdds.src = src;
+      m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0], src };
+      if (src === 'first-sighting') {
         // Keep the evidence on the record next to the number it justifies, so the
         // lag between bet365 posting and our first look stays auditable off the
         // published board alone.
@@ -5165,6 +5176,41 @@ async function runPipeline() {
   // openFromSighting is a fixture whose OPEN is now a price bet365 was provably showing
   // when we looked, rather than an oddspapi ingestion instant.
   console.log(`OPEN anchor (founder ruling 2026-09-11, forward-only) — ${openFromSighting} pinned to the last bet365 quote at/before our first sighting / ${openNoSighting} fell back to series[0] (no firstSeenAt: fixture predates the open-monitor) / ${openSightingNoQuote} had a first sighting but no quote at/before it. Preserved opens are untouched by this rule.`);
+  // THE SPLIT the founder asked for, counted over what is actually about to be
+  // published rather than over this run's decisions — a preserved open is published
+  // too, and counting only the freshly-derived ones would understate the ingestion
+  // share to near zero on a quiet board. Read off m.openingOdds.src, which every
+  // published open now carries.
+  {
+    const mix = { 'first-sighting': 0, ingestion: 0, archive: 0 };
+    let tot = 0;
+    for (const m of matches) {
+      if (!m.openingOdds || (m.openingOdds.p1 == null && m.openingOdds.p2 == null)) continue;
+      tot++;
+      let s = m.openingOdds.src;
+      if (s !== 'first-sighting' && s !== 'ingestion' && s !== 'archive') {
+        // LABEL ONLY, never a value change (founder: "the already-published opens stay
+        // as they are"). An open pinned before the 2026-09-11 ruling carries no `src`,
+        // because every pre-ruling pin was series[0] — the oddspapi ingestion point —
+        // and the archive path has stamped 'archive' since it shipped. An absent `src`
+        // is therefore PROVABLY the ingestion point, and naming it states a fact about
+        // a number that does not move. Done here rather than on the carry-forward path
+        // because THIS loop is where "published" is defined: it catches an open that
+        // reached the board without a priorOdds hit as well as one that was carried.
+        // Spread, not mutate: one priorOdds record is shared by two map keys.
+        m.openingOdds = { ...m.openingOdds, src: 'ingestion' };
+        s = 'ingestion';
+        openLabelledLegacy++;
+      }
+      mix[s]++;
+    }
+    const pct = n => tot ? `${(100 * n / tot).toFixed(1)}%` : 'n/a';
+    console.log(`OPEN provenance split (founder ruling 2026-09-11 item 1) over ${tot} published open(s) — `
+      + `${mix['first-sighting']} (${pct(mix['first-sighting'])}) honest pin: a bet365 price we can evidence we saw / `
+      + `${mix.ingestion} (${pct(mix.ingestion)}) oddspapi ingestion point / `
+      + `${mix.archive} (${pct(mix.archive)}) archive ingestion point (earlier than ours). `
+      + `${openLabelledLegacy} pre-ruling open(s) were labelled 'ingestion' this run (label only — no value changed).`);
+  }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
 

@@ -84,6 +84,15 @@ FIXTURE_MAP_FILE = os.path.join(HERE, 'odds-fixture-map.json')
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
+# --first-appearance exit code for "this leg is guaranteed free and it billed"
+# (founder ruling 2026-09-11, item 4). A DISTINCT code, not a generic 1: the loop
+# has to tell "the sweep failed" (retry next tick, job stays green — it runs 96
+# times a day and a red run four times an hour is how a real signal gets ignored)
+# apart from "the sweep spent money it cannot spend" (stand the leg down, fail the
+# job). 9 is outside the range bash gives to signals and outside ci-commit-push.sh's
+# 0/1/3 contract, so it can never be produced by accident.
+BILLED_RC = 9
+
 # --- Quota accounting (TEN-179 item 2) ---------------------------------------
 # Discovery-only spend: exactly ONE metered call per run, the /v4/fixtures lookup.
 # Everything else this script touches (/v4/historical-odds, /v4/account) is free.
@@ -940,10 +949,46 @@ def first_appearance():
         else:
             unmapped.append(m)
 
+    def settle(n_calls):
+        """Close out the run by CHECKING the zero-quota guarantee, on every exit path.
+
+        Founder ruling 2026-09-11 item 4. This used to live only at the bottom of the
+        function, so the early "nothing to sweep" return below skipped it entirely —
+        and that is the one path on which the ONLY calls made are the two /v4/account
+        meter reads. If those ever started billing, the leg most likely to be taken
+        (a quiet board sweeps nothing) was also the one path that could never notice.
+        The guarantee is now unconditional.
+        """
+        b, a = quota_before, log_quota(key, 'after first-appearance sweep')
+        if not (isinstance(a, int) and isinstance(b, int)):
+            return 0                     # meter unreadable; report_consumption already warned
+        if a == b:
+            print(f'Quota: meter unchanged at {a} across {n_calls} historical-odds '
+                  f'call(s) — the sweep is free, as measured.')
+            return 0
+        # The zero-quota guarantee is the founder's condition for running this at
+        # 15 minutes. It no longer only annotates: BILLED_RC makes odds-capture-loop.sh
+        # stand the leg down and fail the job. The captures already written are kept —
+        # they are real, and they have been paid for.
+        print(f'::error::First-appearance sweep was supposed to be free but the '
+              f'meter moved {b} -> {a} ({a - b} unit(s)). At 15-minute cadence that '
+              f'is {(a - b) * 96} units/day. Something in this path now bills.',
+              file=sys.stderr)
+        if bsp_alerts:
+            bsp_alerts.send(
+                f'🛑 Zero-quota guarantee BROKEN — the 15-minute first-appearance '
+                f'sweep billed {a - b} unit(s) (meter {b} → {a}).\n\n'
+                f'At 96 sweeps/day that is {(a - b) * 96} units/day against a 5,000 '
+                f'monthly cap. The sweep has been stood down for the rest of this '
+                f'loop window and the run is failing. Nothing is capturing opens at '
+                f'15 minutes until this is diagnosed.',
+                channel='ops', dedupe_key='first-appearance-billed', cooldown_h=1.0)
+        return BILLED_RC
+
     if not targets:
         print(f'First-appearance sweep: 0 unopened fixture(s) resolvable from cache '
               f'({len(unmapped)} awaiting the hourly mapping run). 0 quota units.')
-        return 0
+        return settle(0)
 
     joined, captured, opened = {}, 0, []
     book_hits = {b: 0 for b in BOOKS}
@@ -995,21 +1040,7 @@ def first_appearance():
 
     # log_quota returns the raw request_count int (not the subscription dict) —
     # it is the same reading report_consumption() takes either side of main().
-    b = quota_before
-    a = log_quota(key, 'after first-appearance sweep')
-    if isinstance(a, int) and isinstance(b, int):
-        if a != b:
-            # The zero-quota guarantee is the founder's condition for running
-            # this at 15 minutes. If it ever stops holding, say so immediately
-            # rather than discovering it as a blown monthly cap.
-            print(f'::error::First-appearance sweep was supposed to be free but the '
-                  f'meter moved {b} -> {a} ({a - b} unit(s)). At 15-minute cadence that '
-                  f'is {(a - b) * 96} units/day. Something in this path now bills.',
-                  file=sys.stderr)
-        else:
-            print(f'Quota: meter unchanged at {a} across {len(targets)} historical-odds '
-                  f'call(s) — the sweep is free, as measured.')
-    return 0
+    return settle(len(targets))
 
 
 def _absorb(data, book, swap, books_out, book_hits):

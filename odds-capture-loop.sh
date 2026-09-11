@@ -51,6 +51,7 @@ RUN_TAG="${GITHUB_RUN_ID:-local}/${GITHUB_RUN_ATTEMPT:-1}"
 ITER=0
 METERED_DUE=1                            # the first iteration always refreshes NOW
 STOPPING=0
+FREE_BILLED=0                            # set by a BILLED_RC(9) from the free sweep; see below
 
 # --- the interrupt contract ---------------------------------------------------
 # GitHub sends SIGTERM and then hard-kills. We do not start new API work on the
@@ -59,6 +60,10 @@ on_signal() {
   STOPPING=1
   echo "::notice::Signal received at iteration $ITER — flushing captured state before exit."
   ./ci-commit-push.sh "chore(odds): flush capture on interrupt [skip ci]" $STATE_FILES || true
+  # A billed free leg has to redden the run on THIS path too. Otherwise the one
+  # exit route that is guaranteed to be taken on every cancelled or timed-out job
+  # is also the one route that swallows the alarm (founder ruling item 4).
+  [ "$FREE_BILLED" -eq 1 ] && exit 1
   exit 0
 }
 trap on_signal TERM INT
@@ -134,8 +139,25 @@ while [ "$STOPPING" -eq 0 ]; do
   MODE="free"
   echo "--- iteration $ITER at $(date -u +%H:%M:%SZ) ---"
 
-  python3 refresh-odds-history.py --first-appearance || \
-    echo "::warning::first-appearance sweep exited non-zero at iteration $ITER."
+  # FOUNDER RULING 2026-09-11 item 4 — "any spend on a leg guaranteed to cost
+  # nothing fails the run loudly". BILLED_RC (9) means the sweep measured a meter
+  # delta on a leg that is supposed to be free. That is not a retryable failure:
+  # at 96 sweeps/day, retrying is how a monthly cap gets blown while the job stays
+  # green. Stand the leg down for the rest of the window and remember to exit
+  # non-zero, so the RUN is red rather than carrying an annotation nobody reads.
+  # Any OTHER non-zero stays a warning — this leg runs four times an hour and
+  # "bet365 has not posted a price yet" must never redden a run.
+  if [ "$FREE_BILLED" -eq 0 ]; then
+    python3 refresh-odds-history.py --first-appearance
+    FRC=$?
+    if [ "$FRC" -eq 9 ]; then
+      FREE_BILLED=1
+      echo "::error::first-appearance sweep BILLED at iteration $ITER. The zero-quota" \
+           "leg is stood down for the rest of this window and this run will fail."
+    elif [ "$FRC" -ne 0 ]; then
+      echo "::warning::first-appearance sweep exited non-zero ($FRC) at iteration $ITER."
+    fi
+  fi
 
   if [ "$METERED_DUE" -eq 1 ]; then
     MODE="free+metered"
@@ -175,7 +197,12 @@ while [ "$STOPPING" -eq 0 ]; do
     # race. METERED_DUE is re-armed instead, so the NOW leg lands one tick later.
     echo "::warning::Recomputing iteration $ITER on the new base after a push race."
     [ "$MODE" = "free+metered" ] && METERED_DUE=1
-    python3 refresh-odds-history.py --first-appearance || true
+    # Same stand-down as above: once the free leg has been proven to bill, it does
+    # not get re-run on a git race either.
+    if [ "$FREE_BILLED" -eq 0 ]; then
+      python3 refresh-odds-history.py --first-appearance
+      [ $? -eq 9 ] && FREE_BILLED=1
+    fi
     # 'captured', not 'redo': the reset above discarded the tick recorded before the
     # push, so this replay is the ONLY tick this iteration will ever have. Labelling it
     # 'redo' excluded it from the gap population and made a real capture read as a
@@ -206,3 +233,15 @@ done
 
 echo "Odds capture loop finished after $ITER iteration(s). Everything captured was " \
      "committed as it happened; the queued next tick takes over from here."
+
+# Founder ruling 2026-09-11 item 4. The exit code is the ONLY thing that turns the
+# run red, and red is the whole point: a zero-quota leg that started billing is a
+# cap-burning defect, and it spent nine days as an unread annotation last time.
+# Deliberately LAST — everything captured has already been committed and pushed by
+# the loop above, so failing here costs no data, only a green tick we have not earned.
+if [ "$FREE_BILLED" -eq 1 ]; then
+  echo "::error::The first-appearance sweep billed oddspapi quota on a leg that is" \
+       "guaranteed free. It was stood down for the rest of this window. Failing the" \
+       "run: see the meter delta logged above."
+  exit 1
+fi
