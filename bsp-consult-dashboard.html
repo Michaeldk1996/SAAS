@@ -23624,9 +23624,27 @@ window.DatabaseTab = (function(){
 
 
 <style>
+  /* TEN-190 D4 (founder ruling 2026-09-11: "Override box-sizing inside Live —
+     match the export"). The dashboard sets a global `*{box-sizing:border-box}`
+     (L44). Live.dc.html declares box-sizing NOWHERE — not one rule, not one
+     inline, and it never uses support.js's .bbox helper — so every box in the
+     export is the CSS-initial `content-box`. Inheriting border-box was pulling
+     the modal to 1180px where the export renders 1182px, and shaving 1-2px off
+     every interior grid, the close glyph (32->30) and the info circle (20->18).
+     Scoped to #lvTab descendants ONLY: the handoff's values are Live-scoped and
+     must not reach the shell or any other page. */
+  #lvTab * { box-sizing: content-box; }
+
   .lvseg { cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  .lv-card { cursor:pointer; transition:border-color 120ms ease; }
-  .lv-card:hover { border-color:rgba(91,155,255,0.22) !important; }
+  /* TEN-190 D1 (founder ruling 2026-09-11: "Revert to the export exactly — dead
+     hover, fidelity first"). These two lines are Live.dc.html L14-15 verbatim.
+     The :hover rule is INERT and that is the point: the card carries an inline
+     `border:1px solid rgba(255,255,255,0.09)`, which outranks any selector, so
+     hovering changes nothing. The build had renamed the class to .lv-card and
+     added !important to make the hover fire — a correction the brief forbids.
+     Do not re-add !important and do not rename: the dead hover IS the export. */
+  .lvcard { cursor:pointer; transition:border-color 120ms ease; }
+  .lvcard:hover { border-color:rgba(91,155,255,0.22); }
   .lvtip { position:relative; }
   .lvtip .lvtipbox { display:none; }
   .lvtip:hover .lvtipbox { display:block; }
@@ -24075,7 +24093,7 @@ function render(){
   </span>
 </div>`).join('');
     return `
-<div class="lv-card" data-open="${mi}" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;">
+<div class="lvcard" data-open="${mi}" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;">
   <div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.05);">
     <span style="font-size:11.5px;color:#4b5672;white-space:nowrap;">${e(m.event)}</span>
     <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;color:${stColor};background:${stBg};border:1px solid ${stBd};border-radius:5px;padding:3px 7px;"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};"></span>${e(m.status)}</span>
@@ -24279,7 +24297,7 @@ ${modalHtml}`;
       if(hbEl){setState({hb:hbEl.dataset.hb});return;}
     });
   }
-  tab.querySelectorAll('.lv-card[data-open]').forEach(card=>{
+  tab.querySelectorAll('.lvcard[data-open]').forEach(card=>{
     card.addEventListener('click',()=>{
       const mi=parseInt(card.dataset.open,10);
       setState({sel:mi,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});
