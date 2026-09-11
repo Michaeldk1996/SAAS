@@ -100,7 +100,14 @@ store['ticks'] = store['ticks'][-400:]          # ~4 days at 96/day
 # The replay is therefore recorded as 'captured' (it is the only surviving tick for that
 # iteration, so there is nothing to double-count) with '+redo' in `mode` for the audit
 # trail. This filter stays as the backstop for any tick still labelled 'redo'.
-ts = [t['at'] for t in store['ticks'] if t.get('outcome') != 'redo']
+# TIGHTENED 2026-09-11 (clean-context review): this was `!= 'redo'`, an ALLOW-BY-DEFAULT
+# filter, so any new outcome value counted as a capture. It now counts only 'captured',
+# which is what the note below claims to measure. The concrete case: once the free leg is
+# stood down for billing, the loop keeps ticking every 15 min with nothing being swept —
+# under the old filter those ticks reported a healthy 15.0-min median while zero
+# first-appearance captures were happening. A metric that flatters itself in exactly the
+# failure mode it exists to surface is worse than no metric.
+ts = [t['at'] for t in store['ticks'] if t.get('outcome') == 'captured']
 gaps = []
 for a, b in zip(ts, ts[1:]):
     try:
@@ -186,7 +193,13 @@ while [ "$STOPPING" -eq 0 ]; do
   python3 check-now-staleness.py || \
     echo "::warning::Stale-NOW monitor exited non-zero at iteration $ITER."
 
-  record_cadence "$MODE" "captured"
+  # The outcome must describe what actually happened, not what the iteration intended.
+  # With the free leg stood down nothing is being swept, and a tick that still claimed
+  # 'captured' would hold the delivered-cadence median at a healthy 15.0 min while the
+  # capture it measures had stopped entirely.
+  OUTCOME="captured"
+  [ "$FREE_BILLED" -eq 1 ] && { MODE="stood-down"; OUTCOME="skipped"; }
+  record_cadence "$MODE" "$OUTCOME"
   ./ci-commit-push.sh "chore(odds): capture tick ${ITER} (${MODE}) [skip ci]" $STATE_FILES
   RC=$?
   if [ "$RC" -eq 3 ]; then

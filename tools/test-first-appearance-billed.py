@@ -71,6 +71,7 @@ def run_case(name, meter_before, meter_after, expect_rc):
 
 
 print('TEN-179 item 4 — zero-quota guarantee fails the run')
+hist._billed_strike(clear=True)
 
 # The guarantee holds: free stays free, rc 0, nothing alerted.
 _, sent_ok = run_case('meter unchanged -> rc 0', 218, 218, 0)
@@ -78,10 +79,20 @@ if sent_ok:
     print('  FAIL a healthy sweep must not alert')
     FAILED.append('healthy-no-alert')
 
-# The guarantee breaks: the leg billed. Must be BILLED_RC, and must alert.
-rc, sent_bad = run_case('meter moved -> rc 9 (BILLED_RC)', 218, 219, hist.BILLED_RC)
+# ONE delta is not proof. The meter is global and odds-history.yml / bet365-archive.yml
+# run in different concurrency groups, so either can bill inside our meter window. A
+# single-strike red would cry wolf roughly once a day — the exact failure being fixed.
+_, sent_one = run_case('first delta -> rc 0, warn only (concurrent job may have billed)',
+                       218, 219, 0)
+if sent_one:
+    print('  FAIL a single unconfirmed delta must not raise an ops alert')
+    FAILED.append('strike1-silent')
+
+# Repeated on the next sweep: a concurrent job does not bill twice 15 min apart; a
+# genuinely-billing endpoint does. NOW it is real.
+rc, sent_bad = run_case('second consecutive delta -> rc 9 (BILLED_RC)', 219, 220, hist.BILLED_RC)
 if not sent_bad:
-    print('  FAIL a billed sweep must raise an ops alert')
+    print('  FAIL a confirmed billed sweep must raise an ops alert')
     FAILED.append('billed-alerts')
 else:
     print(f'  ok   alert raised: {sent_bad[0][0].splitlines()[0]}')
@@ -89,10 +100,17 @@ else:
         print('  FAIL alert must go to the ops channel')
         FAILED.append('billed-channel')
 
+# A clean sweep between two deltas resets the count — otherwise two unrelated
+# coincidences days apart would eventually add up to a false red.
+hist._billed_strike(clear=True)
+run_case('delta, then clean, then delta -> rc 0 (strike was reset)', 218, 219, 0)
+run_case('  ...clean sweep resets', 219, 219, 0)
+run_case('  ...next delta is strike 1 again, not 2', 219, 220, 0)
+
 if hist.BILLED_RC == 0:
     print('  FAIL BILLED_RC must be non-zero or the run cannot go red')
     FAILED.append('billed-rc-nonzero')
+hist._billed_strike(clear=True)
 
-print(f'\n{2 - len(set(FAILED) & {"meter unchanged -> rc 0", "meter moved -> rc 9 (BILLED_RC)"})}/2 '
-      f'cases passed; {len(FAILED)} assertion(s) failed.')
+print(f'\n{len(FAILED)} assertion(s) failed.')
 sys.exit(1 if FAILED else 0)

@@ -93,6 +93,30 @@ MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 # 0/1/3 contract, so it can never be produced by accident.
 BILLED_RC = 9
 
+# Strike marker for the two-sweep confirmation below. UNTRACKED on purpose: the REDO
+# path in ci-commit-push.sh does `git reset --hard`, which leaves untracked files alone,
+# so a strike survives a push race. A fresh runner starts with no strike, which fails
+# SAFE (one extra tick of delay) rather than toward a spurious red.
+BILLED_STRIKE_FILE = os.path.join(HERE, '.first-appearance-billed-strike')
+
+
+def _billed_strike(record=None, clear=False):
+    """Read/set/clear the 'the free leg billed' strike. Returns True if a PRIOR strike
+    existed. Never raises — a marker problem must not break a capture."""
+    try:
+        had = os.path.exists(BILLED_STRIKE_FILE)
+        if clear:
+            if had:
+                os.remove(BILLED_STRIKE_FILE)
+            return had
+        if record is not None:
+            with open(BILLED_STRIKE_FILE, 'w') as fh:
+                fh.write(f'{datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")} {record}\n')
+        return had
+    except Exception as e:
+        print(f'::warning::Could not maintain the billed-strike marker ({e}).')
+        return False
+
 # --- Quota accounting (TEN-179 item 2) ---------------------------------------
 # Discovery-only spend: exactly ONE metered call per run, the /v4/fixtures lookup.
 # Everything else this script touches (/v4/historical-odds, /v4/account) is free.
@@ -927,28 +951,6 @@ def first_appearance():
     now = datetime.now(timezone.utc)
     now_iso = now.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    matches = seed_from_live(json.load(open(MATCHES)))
-
-    try:
-        fmap = (json.load(open(FIXTURE_MAP_FILE)) or {}).get('byKey') or {}
-    except Exception as e:
-        print(f'::warning::No usable {os.path.basename(FIXTURE_MAP_FILE)} ({e}) — this '
-              f'sweep has no zero-quota way to resolve a fixtureId. Nothing captured; '
-              f'the hourly metered run will rebuild the cache.')
-        return 0
-
-    targets, unmapped = [], []
-    for m in matches:
-        if m.get('finalScore') or not m.get('date'):
-            continue
-        if (m.get('oddsMovement') or {}).get('books'):
-            continue                       # OPEN already pinned — nothing to catch
-        rec = fmap.get(event_key(m)) or {}
-        if rec.get('fixtureId'):
-            targets.append((m, rec))
-        else:
-            unmapped.append(m)
-
     def settle(n_calls):
         """Close out the run by CHECKING the zero-quota guarantee, on every exit path.
 
@@ -965,11 +967,38 @@ def first_appearance():
         if a == b:
             print(f'Quota: meter unchanged at {a} across {n_calls} historical-odds '
                   f'call(s) — the sweep is free, as measured.')
+            _billed_strike(clear=True)
             return 0
-        # The zero-quota guarantee is the founder's condition for running this at
-        # 15 minutes. It no longer only annotates: BILLED_RC makes odds-capture-loop.sh
-        # stand the leg down and fail the job. The captures already written are kept —
-        # they are real, and they have been paid for.
+
+        # TWO STRIKES, and not out of timidity — the meter is a GLOBAL counter and our
+        # window is not exclusive. odds-history.yml (cron `0 */3`, concurrency group
+        # `bsp-odds-history`) and bet365-archive.yml each spend a /v4/fixtures unit and
+        # run in DIFFERENT concurrency groups from this loop, so either can bill inside
+        # the seconds-to-minutes between our two meter reads. On a 20-target board the
+        # sweep windows cover ~12% of the day against 8 odds-history runs — on the order
+        # of one false red PER DAY, which is exactly the cry-wolf failure this ruling
+        # exists to end (37 unread red runs, Sep 2-10).
+        #
+        # A concurrent job's spend is a one-off; an endpoint that has genuinely started
+        # billing repeats on EVERY sweep. So confirm across two consecutive sweeps. The
+        # false-alarm rate then needs two independent coincidences 15 minutes apart, and
+        # detection is delayed by one tick — 15 minutes, against a monthly cap.
+        #
+        # The strike marker is deliberately UNTRACKED: ci-commit-push.sh's REDO path does
+        # `git reset --hard`, which does not touch untracked files, so a strike survives a
+        # push race. A new runner starts with no strike, which fails SAFE (one extra tick
+        # of delay), never toward a spurious red.
+        if not _billed_strike(record=a - b):
+            print(f'::warning::First-appearance sweep saw the meter move {b} -> {a} '
+                  f'({a - b} unit(s)) on a leg that must be free. A concurrent job '
+                  f'(odds-history.yml, bet365-archive.yml) can bill inside our meter '
+                  f'window, so this is NOT failing the run yet — it fails on the next '
+                  f'sweep if the delta repeats.', file=sys.stderr)
+            return 0
+
+        # Confirmed on two consecutive sweeps. BILLED_RC makes odds-capture-loop.sh stand
+        # the leg down and fail the job. The captures already written are kept — they are
+        # real, and they have been paid for.
         print(f'::error::First-appearance sweep was supposed to be free but the '
               f'meter moved {b} -> {a} ({a - b} unit(s)). At 15-minute cadence that '
               f'is {(a - b) * 96} units/day. Something in this path now bills.',
@@ -983,7 +1012,35 @@ def first_appearance():
                 f'loop window and the run is failing. Nothing is capturing opens at '
                 f'15 minutes until this is diagnosed.',
                 channel='ops', dedupe_key='first-appearance-billed', cooldown_h=1.0)
+        _billed_strike(clear=True)       # the alarm has fired; don't re-fire on the stale strike
         return BILLED_RC
+
+
+    matches = seed_from_live(json.load(open(MATCHES)))
+
+    try:
+        fmap = (json.load(open(FIXTURE_MAP_FILE)) or {}).get('byKey') or {}
+    except Exception as e:
+        print(f'::warning::No usable {os.path.basename(FIXTURE_MAP_FILE)} ({e}) — this '
+              f'sweep has no zero-quota way to resolve a fixtureId. Nothing captured; '
+              f'the hourly metered run will rebuild the cache.')
+        # settle(), not a bare return: quota_before has ALREADY made its /v4/account
+        # call by this point, so this path must assert the guarantee like every other.
+        # It is also the path taken right after a `git reset --hard` onto a base that
+        # predates odds-fixture-map.json, so it is not rare.
+        return settle(0)
+
+    targets, unmapped = [], []
+    for m in matches:
+        if m.get('finalScore') or not m.get('date'):
+            continue
+        if (m.get('oddsMovement') or {}).get('books'):
+            continue                       # OPEN already pinned — nothing to catch
+        rec = fmap.get(event_key(m)) or {}
+        if rec.get('fixtureId'):
+            targets.append((m, rec))
+        else:
+            unmapped.append(m)
 
     if not targets:
         print(f'First-appearance sweep: 0 unopened fixture(s) resolvable from cache '
