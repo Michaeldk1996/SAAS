@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.49,
-      "p2": 1.36,
-      "bookmaker": "Pncl"
+      "p1": 3.4,
+      "p2": 1.333,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.65,
-        "bookmaker": "Betano"
+        "price": 3.4,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.36,
-        "bookmaker": "Pncl"
+        "price": 1.333,
+        "bookmaker": "bet365"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -2570,7 +2570,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T21:15:01Z",
+      "capturedAt": "2026-09-11T21:30:01Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -2589,7 +2589,7 @@
               3.4
             ],
             [
-              "2026-09-11T21:04:23.917Z",
+              "2026-09-11T21:19:15.116Z",
               3.4
             ]
           ],
@@ -2607,7 +2607,7 @@
               1.333
             ],
             [
-              "2026-09-11T21:04:23.917Z",
+              "2026-09-11T21:19:15.116Z",
               1.333
             ]
           ]
@@ -2625,9 +2625,9 @@
       "p1": 3.4,
       "p2": 1.333,
       "bookmaker": "bet365",
-      "at": "2026-09-11T20:47:09.664Z",
-      "observedAt": "2026-09-11T21:00:00Z",
-      "src": "series"
+      "at": "2026-09-11T00:48:11.537Z",
+      "observedAt": "2026-09-11T21:30:08Z",
+      "src": "live"
     }
   },
   {
@@ -4973,28 +4973,28 @@
         "p1": {
           "matchCount": 85,
           "stats": {
-            "Service:Aces": 9.1,
+            "Service:Aces": 9.2,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.9,
             "Service:2nd Serve Points Won": 56.2,
             "Service:Break Points Saved": 59.6,
             "Return:Break Points Converted": 39.3,
-            "Points:Service Points Won": 70.4,
+            "Points:Service Points Won": 70.3,
             "Points:Return Points Won": 36.8,
             "Points:Total Points Won": 52.8,
-            "Points:Winners": 26,
-            "Points:Unforced Errors": 21
+            "Points:Winners": 26.1,
+            "Points:Unforced Errors": 21.1
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4860,
-            "Service:2nd Serve Points Won": 1883,
+            "Service:1st Serve Points Won": 4871,
+            "Service:2nd Serve Points Won": 1886,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6749,
-            "Points:Return Points Won": 7425,
-            "Points:Total Points Won": 14174,
+            "Points:Service Points Won": 6762,
+            "Points:Return Points Won": 7432,
+            "Points:Total Points Won": 14194,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -5041,20 +5041,20 @@
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.3,
-            "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.3,
+            "Points:Total Points Won": 52.3,
+            "Points:Winners": 24.4,
             "Points:Unforced Errors": 20
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4134,
-            "Service:2nd Serve Points Won": 1650,
+            "Service:1st Serve Points Won": 4145,
+            "Service:2nd Serve Points Won": 1653,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5805,
-            "Points:Return Points Won": 6259,
-            "Points:Total Points Won": 12064,
+            "Points:Service Points Won": 5818,
+            "Points:Return Points Won": 6266,
+            "Points:Total Points Won": 12084,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
@@ -22096,8 +22096,8 @@
             "Service:2nd Serve Points Won": 53.3,
             "Service:Break Points Saved": 69,
             "Return:Break Points Converted": 40.6,
-            "Points:Winners": 26.2,
-            "Points:Unforced Errors": 26.8,
+            "Points:Winners": 26.3,
+            "Points:Unforced Errors": 27,
             "Points:Service Points Won": 67.1,
             "Points:Return Points Won": 36,
             "Points:Total Points Won": 51.5
@@ -22105,15 +22105,15 @@
           "samples": {
             "Service:Aces": 47,
             "Service:Double Faults": 47,
-            "Service:1st Serve Points Won": 2672,
-            "Service:2nd Serve Points Won": 1494,
+            "Service:1st Serve Points Won": 2677,
+            "Service:2nd Serve Points Won": 1496,
             "Service:Break Points Saved": 274,
             "Return:Break Points Converted": 313,
             "Points:Winners": 46,
             "Points:Unforced Errors": 46,
-            "Points:Service Points Won": 4146,
-            "Points:Return Points Won": 4178,
-            "Points:Total Points Won": 8324
+            "Points:Service Points Won": 4153,
+            "Points:Return Points Won": 4191,
+            "Points:Total Points Won": 8344
           }
         },
         "p2": {
@@ -22153,27 +22153,27 @@
             "Service:Aces": 8.2,
             "Service:Double Faults": 2.6,
             "Service:1st Serve Points Won": 76.6,
-            "Service:2nd Serve Points Won": 52.2,
+            "Service:2nd Serve Points Won": 52.1,
             "Service:Break Points Saved": 67.2,
             "Return:Break Points Converted": 38.9,
-            "Points:Winners": 26.7,
-            "Points:Unforced Errors": 27.1,
-            "Points:Service Points Won": 67.4,
+            "Points:Winners": 26.8,
+            "Points:Unforced Errors": 27.3,
+            "Points:Service Points Won": 67.3,
             "Points:Return Points Won": 36.1,
-            "Points:Total Points Won": 51.5
+            "Points:Total Points Won": 51.4
           },
           "samples": {
             "Service:Aces": 53,
             "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2821,
-            "Service:2nd Serve Points Won": 1730,
+            "Service:1st Serve Points Won": 2826,
+            "Service:2nd Serve Points Won": 1732,
             "Service:Break Points Saved": 299,
             "Return:Break Points Converted": 373,
             "Points:Winners": 48,
             "Points:Unforced Errors": 48,
-            "Points:Service Points Won": 4527,
-            "Points:Return Points Won": 4681,
-            "Points:Total Points Won": 9208
+            "Points:Service Points Won": 4534,
+            "Points:Return Points Won": 4694,
+            "Points:Total Points Won": 9228
           }
         },
         "p2": {
@@ -25879,28 +25879,28 @@
         "p1": {
           "matchCount": 85,
           "stats": {
-            "Service:Aces": 9.1,
+            "Service:Aces": 9.2,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.9,
             "Service:2nd Serve Points Won": 56.2,
             "Service:Break Points Saved": 59.6,
             "Return:Break Points Converted": 39.3,
-            "Points:Service Points Won": 70.4,
+            "Points:Service Points Won": 70.3,
             "Points:Return Points Won": 36.8,
             "Points:Total Points Won": 52.8,
-            "Points:Winners": 26,
-            "Points:Unforced Errors": 21
+            "Points:Winners": 26.1,
+            "Points:Unforced Errors": 21.1
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4860,
-            "Service:2nd Serve Points Won": 1883,
+            "Service:1st Serve Points Won": 4871,
+            "Service:2nd Serve Points Won": 1886,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6749,
-            "Points:Return Points Won": 7425,
-            "Points:Total Points Won": 14174,
+            "Points:Service Points Won": 6762,
+            "Points:Return Points Won": 7432,
+            "Points:Total Points Won": 14194,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -25947,20 +25947,20 @@
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.3,
-            "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.3,
+            "Points:Total Points Won": 52.3,
+            "Points:Winners": 24.4,
             "Points:Unforced Errors": 20
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4134,
-            "Service:2nd Serve Points Won": 1650,
+            "Service:1st Serve Points Won": 4145,
+            "Service:2nd Serve Points Won": 1653,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5805,
-            "Points:Return Points Won": 6259,
-            "Points:Total Points Won": 12064,
+            "Points:Service Points Won": 5818,
+            "Points:Return Points Won": 6266,
+            "Points:Total Points Won": 12084,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
