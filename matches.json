@@ -29798,11 +29798,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "oddsMovement": {
@@ -29942,6 +29948,9 @@
       "edgeVsPinnacleP1": 0.0399,
       "edgeVsPinnacleP2": -0.0399,
       "ts": "2026-09-10T13:11:10.446Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   }
 ]
