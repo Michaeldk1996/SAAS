@@ -2570,7 +2570,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T22:15:01Z",
+      "capturedAt": "2026-09-11T22:45:01Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -2589,7 +2589,7 @@
               3.4
             ],
             [
-              "2026-09-11T22:09:38.176Z",
+              "2026-09-11T22:23:24.251Z",
               3.4
             ]
           ],
@@ -2607,7 +2607,7 @@
               1.333
             ],
             [
-              "2026-09-11T22:09:38.176Z",
+              "2026-09-11T22:23:24.251Z",
               1.333
             ]
           ]
@@ -2625,8 +2625,8 @@
       "p1": 3.4,
       "p2": 1.333,
       "bookmaker": "bet365",
-      "at": "2026-09-11T21:54:23.362Z",
-      "observedAt": "2026-09-11T22:00:01Z",
+      "at": "2026-09-11T22:09:38.176Z",
+      "observedAt": "2026-09-11T22:15:01Z",
       "src": "series"
     }
   },
@@ -2703,7 +2703,7 @@
     "p2SurfaceWinRate": 45.9,
     "p1Rank": 2,
     "p2Rank": 22,
-    "p1RecentForm": 70,
+    "p1RecentForm": 80,
     "p2RecentForm": 60,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -2884,9 +2884,16 @@
           ]
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7,
           "matches": [
+            {
+              "opponent": "K. Khachanov",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": true
+            },
             {
               "opponent": "B. Van De Zandschulp",
               "result": "3 - 0",
@@ -3637,7 +3644,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 51,
+          "won": 52,
           "lost": 13
         },
         "clay": {
@@ -3645,7 +3652,7 @@
           "lost": 4
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7
         },
         "grass": {
@@ -3654,7 +3661,7 @@
         },
         "atp": {
           "total": {
-            "won": 51,
+            "won": 52,
             "lost": 13
           },
           "clay": {
@@ -3662,7 +3669,7 @@
             "lost": 4
           },
           "hard": {
-            "won": 22,
+            "won": 23,
             "lost": 7
           },
           "grass": {
@@ -4426,19 +4433,27 @@
     ],
     "p1TournamentHistory": {
       "editionsPlayed": 11,
-      "totalWon": 33,
+      "totalWon": 34,
       "totalLost": 10,
       "longMatches": 26,
-      "longMatchesPlayed": 43,
-      "longMatchPct": 60,
+      "longMatchesPlayed": 44,
+      "longMatchPct": 59,
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
-          "won": 5,
+          "matchCount": 6,
+          "won": 6,
           "lost": 0,
-          "roundReached": "Quarter-finals",
+          "roundReached": "Semi-finals",
           "matches": [
+            {
+              "date": "2026-09-11",
+              "opponent": "K. Khachanov",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12162244
+            },
             {
               "date": "2026-09-10",
               "opponent": "B. Van De Zandschulp",
@@ -4982,19 +4997,19 @@
             "Points:Service Points Won": 70.3,
             "Points:Return Points Won": 36.7,
             "Points:Total Points Won": 52.7,
-            "Points:Winners": 26.2,
+            "Points:Winners": 26.3,
             "Points:Unforced Errors": 21.2
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4887,
-            "Service:2nd Serve Points Won": 1902,
+            "Service:1st Serve Points Won": 4890,
+            "Service:2nd Serve Points Won": 1903,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6795,
-            "Points:Return Points Won": 7461,
-            "Points:Total Points Won": 14256,
+            "Points:Service Points Won": 6799,
+            "Points:Return Points Won": 7465,
+            "Points:Total Points Won": 14264,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -5035,26 +5050,26 @@
           "stats": {
             "Service:Aces": 9.5,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54,
+            "Service:1st Serve Points Won": 75.6,
+            "Service:2nd Serve Points Won": 54.1,
             "Service:Break Points Saved": 63.5,
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.5,
+            "Points:Winners": 24.6,
             "Points:Unforced Errors": 20.2
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4161,
-            "Service:2nd Serve Points Won": 1669,
+            "Service:1st Serve Points Won": 4164,
+            "Service:2nd Serve Points Won": 1670,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5851,
-            "Points:Return Points Won": 6295,
-            "Points:Total Points Won": 12146,
+            "Points:Service Points Won": 5855,
+            "Points:Return Points Won": 6299,
+            "Points:Total Points Won": 12154,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
@@ -5092,10 +5107,10 @@
       "surfaceLabel": "hard",
       "courtSpeedRecord": {
         "p1": {
-          "wins": 16,
+          "wins": 17,
           "losses": 5,
-          "sampleSize": 21,
-          "pct": 76.2
+          "sampleSize": 22,
+          "pct": 77.3
         },
         "p2": {
           "wins": 16,
@@ -20287,7 +20302,7 @@
     "p2SurfaceWinRate": 66.9,
     "p1Rank": 50,
     "p2Rank": 34,
-    "p1RecentForm": 60,
+    "p1RecentForm": 50,
     "p2RecentForm": 60,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -20392,8 +20407,15 @@
         },
         "hard": {
           "won": 12,
-          "lost": 10,
+          "lost": 11,
           "matches": [
+            {
+              "opponent": "A. Zverev",
+              "result": "0 - 3",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": false
+            },
             {
               "opponent": "A. Blockx",
               "result": "2 - 0",
@@ -21027,7 +21049,7 @@
         "allTier": true,
         "total": {
           "won": 21,
-          "lost": 18
+          "lost": 19
         },
         "clay": {
           "won": 7,
@@ -21035,7 +21057,7 @@
         },
         "hard": {
           "won": 12,
-          "lost": 10
+          "lost": 11
         },
         "grass": {
           "won": 2,
@@ -21044,7 +21066,7 @@
         "atp": {
           "total": {
             "won": 21,
-            "lost": 18
+            "lost": 19
           },
           "clay": {
             "won": 7,
@@ -21052,7 +21074,7 @@
           },
           "hard": {
             "won": 12,
-            "lost": 10
+            "lost": 11
           },
           "grass": {
             "won": 2,
@@ -21722,18 +21744,26 @@
     "p1TournamentHistory": {
       "editionsPlayed": 11,
       "totalWon": 16,
-      "totalLost": 10,
+      "totalLost": 11,
       "longMatches": 18,
-      "longMatchesPlayed": 26,
-      "longMatchPct": 69,
+      "longMatchesPlayed": 27,
+      "longMatchPct": 67,
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
+          "matchCount": 6,
           "won": 5,
-          "lost": 0,
-          "roundReached": "Quarter-finals",
+          "lost": 1,
+          "roundReached": "Semi-finals",
           "matches": [
+            {
+              "date": "2026-09-11",
+              "opponent": "A. Zverev",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 3",
+              "eventKey": 12162244
+            },
             {
               "date": "2026-09-09",
               "opponent": "A. Blockx",
@@ -22092,11 +22122,11 @@
           "stats": {
             "Service:Aces": 8.1,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 74.8,
-            "Service:2nd Serve Points Won": 53.5,
+            "Service:1st Serve Points Won": 74.7,
+            "Service:2nd Serve Points Won": 53.4,
             "Service:Break Points Saved": 69,
             "Return:Break Points Converted": 40.6,
-            "Points:Winners": 26.4,
+            "Points:Winners": 26.5,
             "Points:Unforced Errors": 27.1,
             "Points:Service Points Won": 67.2,
             "Points:Return Points Won": 36,
@@ -22105,15 +22135,15 @@
           "samples": {
             "Service:Aces": 47,
             "Service:Double Faults": 47,
-            "Service:1st Serve Points Won": 2697,
-            "Service:2nd Serve Points Won": 1505,
+            "Service:1st Serve Points Won": 2700,
+            "Service:2nd Serve Points Won": 1508,
             "Service:Break Points Saved": 274,
             "Return:Break Points Converted": 313,
             "Points:Winners": 46,
             "Points:Unforced Errors": 46,
-            "Points:Service Points Won": 4182,
-            "Points:Return Points Won": 4224,
-            "Points:Total Points Won": 8406
+            "Points:Service Points Won": 4186,
+            "Points:Return Points Won": 4228,
+            "Points:Total Points Won": 8414
           }
         },
         "p2": {
@@ -22165,15 +22195,15 @@
           "samples": {
             "Service:Aces": 53,
             "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2846,
-            "Service:2nd Serve Points Won": 1741,
+            "Service:1st Serve Points Won": 2849,
+            "Service:2nd Serve Points Won": 1744,
             "Service:Break Points Saved": 299,
             "Return:Break Points Converted": 373,
             "Points:Winners": 48,
             "Points:Unforced Errors": 48,
-            "Points:Service Points Won": 4563,
-            "Points:Return Points Won": 4727,
-            "Points:Total Points Won": 9290
+            "Points:Service Points Won": 4567,
+            "Points:Return Points Won": 4731,
+            "Points:Total Points Won": 9298
           }
         },
         "p2": {
@@ -22210,9 +22240,9 @@
       "courtSpeedRecord": {
         "p1": {
           "wins": 12,
-          "losses": 9,
-          "sampleSize": 21,
-          "pct": 57.1
+          "losses": 10,
+          "sampleSize": 22,
+          "pct": 54.5
         },
         "p2": {
           "wins": 7,
@@ -23452,7 +23482,7 @@
     "p2SurfaceWinRate": 59.7,
     "p1Rank": 2,
     "p2Rank": 70,
-    "p1RecentForm": 70,
+    "p1RecentForm": 80,
     "p2RecentForm": 70,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -23633,9 +23663,16 @@
           ]
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7,
           "matches": [
+            {
+              "opponent": "K. Khachanov",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": true
+            },
             {
               "opponent": "B. Van De Zandschulp",
               "result": "3 - 0",
@@ -24310,7 +24347,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 51,
+          "won": 52,
           "lost": 13
         },
         "clay": {
@@ -24318,7 +24355,7 @@
           "lost": 4
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7
         },
         "grass": {
@@ -24327,7 +24364,7 @@
         },
         "atp": {
           "total": {
-            "won": 51,
+            "won": 52,
             "lost": 13
           },
           "clay": {
@@ -24335,7 +24372,7 @@
             "lost": 4
           },
           "hard": {
-            "won": 22,
+            "won": 23,
             "lost": 7
           },
           "grass": {
@@ -25201,19 +25238,27 @@
     ],
     "p1TournamentHistory": {
       "editionsPlayed": 11,
-      "totalWon": 33,
+      "totalWon": 34,
       "totalLost": 10,
       "longMatches": 26,
-      "longMatchesPlayed": 43,
-      "longMatchPct": 60,
+      "longMatchesPlayed": 44,
+      "longMatchPct": 59,
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
-          "won": 5,
+          "matchCount": 6,
+          "won": 6,
           "lost": 0,
-          "roundReached": "Quarter-finals",
+          "roundReached": "Semi-finals",
           "matches": [
+            {
+              "date": "2026-09-11",
+              "opponent": "K. Khachanov",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12162244
+            },
             {
               "date": "2026-09-10",
               "opponent": "B. Van De Zandschulp",
@@ -25888,19 +25933,19 @@
             "Points:Service Points Won": 70.3,
             "Points:Return Points Won": 36.7,
             "Points:Total Points Won": 52.7,
-            "Points:Winners": 26.2,
+            "Points:Winners": 26.3,
             "Points:Unforced Errors": 21.2
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4887,
-            "Service:2nd Serve Points Won": 1902,
+            "Service:1st Serve Points Won": 4890,
+            "Service:2nd Serve Points Won": 1903,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6795,
-            "Points:Return Points Won": 7461,
-            "Points:Total Points Won": 14256,
+            "Points:Service Points Won": 6799,
+            "Points:Return Points Won": 7465,
+            "Points:Total Points Won": 14264,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -25941,26 +25986,26 @@
           "stats": {
             "Service:Aces": 9.5,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54,
+            "Service:1st Serve Points Won": 75.6,
+            "Service:2nd Serve Points Won": 54.1,
             "Service:Break Points Saved": 63.5,
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.5,
+            "Points:Winners": 24.6,
             "Points:Unforced Errors": 20.2
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4161,
-            "Service:2nd Serve Points Won": 1669,
+            "Service:1st Serve Points Won": 4164,
+            "Service:2nd Serve Points Won": 1670,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5851,
-            "Points:Return Points Won": 6295,
-            "Points:Total Points Won": 12146,
+            "Points:Service Points Won": 5855,
+            "Points:Return Points Won": 6299,
+            "Points:Total Points Won": 12154,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
@@ -25998,10 +26043,10 @@
       "surfaceLabel": "hard",
       "courtSpeedRecord": {
         "p1": {
-          "wins": 16,
+          "wins": 17,
           "losses": 5,
-          "sampleSize": 21,
-          "pct": 76.2
+          "sampleSize": 22,
+          "pct": 77.3
         },
         "p2": {
           "wins": 14,
@@ -26981,12 +27026,14 @@
     }
   },
   {
-    "id": "upcoming-12162244",
-    "day": "today",
+    "id": "past-12162244",
+    "day": "past",
     "date": "2026-09-11",
-    "time": "21:00",
+    "time": "21:15",
     "p1": "A. Zverev",
     "p2": "K. Khachanov",
+    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
+    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "tour": "ATP US Open",
     "tourBadge": "ATP",
     "surface": "hard",
@@ -27011,10 +27058,20 @@
     "p1Key": 1980,
     "p2Key": 435,
     "h2h": {
-      "p1Wins": 4,
+      "p1Wins": 5,
       "p2Wins": 2,
-      "record": "4-2",
+      "record": "5-2",
       "matches": [
+        {
+          "date": "2026-09-11",
+          "tournament": "US Open",
+          "round": "ATP US Open - Semi-finals",
+          "surface": "hard",
+          "p1Won": true,
+          "result": "3 - 0",
+          "qualifying": false,
+          "eventKey": 12162244
+        },
         {
           "date": "2025-08-14",
           "tournament": "Cincinnati",
@@ -27081,8 +27138,8 @@
     "p2SurfaceWinRate": 57,
     "p1Rank": 2,
     "p2Rank": 50,
-    "p1RecentForm": 70,
-    "p2RecentForm": 60,
+    "p1RecentForm": 80,
+    "p2RecentForm": 50,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
     "p1SeasonSurface": {
@@ -27262,9 +27319,16 @@
           ]
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7,
           "matches": [
+            {
+              "opponent": "K. Khachanov",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": true
+            },
             {
               "opponent": "B. Van De Zandschulp",
               "result": "3 - 0",
@@ -27673,8 +27737,15 @@
         },
         "hard": {
           "won": 12,
-          "lost": 10,
+          "lost": 11,
           "matches": [
+            {
+              "opponent": "A. Zverev",
+              "result": "0 - 3",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": false
+            },
             {
               "opponent": "A. Blockx",
               "result": "2 - 0",
@@ -27889,7 +27960,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 51,
+          "won": 52,
           "lost": 13
         },
         "clay": {
@@ -27897,7 +27968,7 @@
           "lost": 4
         },
         "hard": {
-          "won": 22,
+          "won": 23,
           "lost": 7
         },
         "grass": {
@@ -27906,7 +27977,7 @@
         },
         "atp": {
           "total": {
-            "won": 51,
+            "won": 52,
             "lost": 13
           },
           "clay": {
@@ -27914,7 +27985,7 @@
             "lost": 4
           },
           "hard": {
-            "won": 22,
+            "won": 23,
             "lost": 7
           },
           "grass": {
@@ -28342,7 +28413,7 @@
         "allTier": true,
         "total": {
           "won": 21,
-          "lost": 18
+          "lost": 19
         },
         "clay": {
           "won": 7,
@@ -28350,7 +28421,7 @@
         },
         "hard": {
           "won": 12,
-          "lost": 10
+          "lost": 11
         },
         "grass": {
           "won": 2,
@@ -28359,7 +28430,7 @@
         "atp": {
           "total": {
             "won": 21,
-            "lost": 18
+            "lost": 19
           },
           "clay": {
             "won": 7,
@@ -28367,7 +28438,7 @@
           },
           "hard": {
             "won": 12,
-            "lost": 10
+            "lost": 11
           },
           "grass": {
             "won": 2,
@@ -28790,19 +28861,27 @@
     ],
     "p1TournamentHistory": {
       "editionsPlayed": 11,
-      "totalWon": 33,
+      "totalWon": 34,
       "totalLost": 10,
       "longMatches": 26,
-      "longMatchesPlayed": 43,
-      "longMatchPct": 60,
+      "longMatchesPlayed": 44,
+      "longMatchPct": 59,
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
-          "won": 5,
+          "matchCount": 6,
+          "won": 6,
           "lost": 0,
-          "roundReached": "Quarter-finals",
+          "roundReached": "Semi-finals",
           "matches": [
+            {
+              "date": "2026-09-11",
+              "opponent": "K. Khachanov",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12162244
+            },
             {
               "date": "2026-09-10",
               "opponent": "B. Van De Zandschulp",
@@ -29234,18 +29313,26 @@
     "p2TournamentHistory": {
       "editionsPlayed": 11,
       "totalWon": 16,
-      "totalLost": 10,
+      "totalLost": 11,
       "longMatches": 18,
-      "longMatchesPlayed": 26,
-      "longMatchPct": 69,
+      "longMatchesPlayed": 27,
+      "longMatchPct": 67,
       "years": [
         {
           "year": "2026",
-          "matchCount": 5,
+          "matchCount": 6,
           "won": 5,
-          "lost": 0,
-          "roundReached": "Quarter-finals",
+          "lost": 1,
+          "roundReached": "Semi-finals",
           "matches": [
+            {
+              "date": "2026-09-11",
+              "opponent": "A. Zverev",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 3",
+              "eventKey": 12162244
+            },
             {
               "date": "2026-09-09",
               "opponent": "A. Blockx",
@@ -29541,142 +29628,140 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 84,
+          "matchCount": 85,
           "stats": {
-            "Service:Aces": 9.1,
-            "Service:Double Faults": 2,
+            "Service:Aces": 9.2,
+            "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.9,
             "Service:2nd Serve Points Won": 56.2,
-            "Service:Break Points Saved": 59.7,
-            "Return:Break Points Converted": 39.2,
+            "Service:Break Points Saved": 59.6,
+            "Return:Break Points Converted": 39.3,
             "Points:Service Points Won": 70.3,
-            "Points:Return Points Won": 36.8,
-            "Points:Total Points Won": 52.8,
-            "Points:Winners": 26.1,
-            "Points:Unforced Errors": 21.1
+            "Points:Return Points Won": 36.7,
+            "Points:Total Points Won": 52.7,
+            "Points:Winners": 26.3,
+            "Points:Unforced Errors": 21.2
           },
           "samples": {
-            "Service:Aces": 84,
-            "Service:Double Faults": 84,
-            "Service:1st Serve Points Won": 4820,
-            "Service:2nd Serve Points Won": 1862,
-            "Service:Break Points Saved": 263,
-            "Return:Break Points Converted": 485,
-            "Points:Service Points Won": 6688,
-            "Points:Return Points Won": 7365,
-            "Points:Total Points Won": 14053,
-            "Points:Winners": 81,
-            "Points:Unforced Errors": 81
+            "Service:Aces": 85,
+            "Service:Double Faults": 85,
+            "Service:1st Serve Points Won": 4890,
+            "Service:2nd Serve Points Won": 1903,
+            "Service:Break Points Saved": 265,
+            "Return:Break Points Converted": 488,
+            "Points:Service Points Won": 6799,
+            "Points:Return Points Won": 7465,
+            "Points:Total Points Won": 14264,
+            "Points:Winners": 82,
+            "Points:Unforced Errors": 82
           }
         },
         "p2": {
-          "matchCount": 46,
+          "matchCount": 47,
           "stats": {
-            "Service:Aces": 8.2,
+            "Service:Aces": 8.1,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 74.6,
-            "Service:2nd Serve Points Won": 53.5,
-            "Service:Break Points Saved": 69.4,
-            "Return:Break Points Converted": 40.5,
-            "Points:Winners": 26.4,
-            "Points:Unforced Errors": 26.9,
-            "Points:Service Points Won": 67.1,
-            "Points:Return Points Won": 36.1,
-            "Points:Total Points Won": 51.6
+            "Service:1st Serve Points Won": 74.7,
+            "Service:2nd Serve Points Won": 53.4,
+            "Service:Break Points Saved": 69,
+            "Return:Break Points Converted": 40.6,
+            "Points:Winners": 26.5,
+            "Points:Unforced Errors": 27.1,
+            "Points:Service Points Won": 67.2,
+            "Points:Return Points Won": 36,
+            "Points:Total Points Won": 51.5
           },
           "samples": {
-            "Service:Aces": 46,
-            "Service:Double Faults": 46,
-            "Service:1st Serve Points Won": 2636,
-            "Service:2nd Serve Points Won": 1470,
-            "Service:Break Points Saved": 271,
-            "Return:Break Points Converted": 311,
-            "Points:Winners": 45,
-            "Points:Unforced Errors": 45,
-            "Points:Service Points Won": 4086,
-            "Points:Return Points Won": 4117,
-            "Points:Total Points Won": 8203
+            "Service:Aces": 47,
+            "Service:Double Faults": 47,
+            "Service:1st Serve Points Won": 2700,
+            "Service:2nd Serve Points Won": 1508,
+            "Service:Break Points Saved": 274,
+            "Return:Break Points Converted": 313,
+            "Points:Winners": 46,
+            "Points:Unforced Errors": 46,
+            "Points:Service Points Won": 4186,
+            "Points:Return Points Won": 4228,
+            "Points:Total Points Won": 8414
           }
         }
       },
       "surface": {
         "p1": {
-          "matchCount": 73,
+          "matchCount": 74,
           "stats": {
-            "Service:Aces": 9.4,
+            "Service:Aces": 9.5,
             "Service:Double Faults": 2.1,
-            "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54,
-            "Service:Break Points Saved": 63.6,
-            "Return:Break Points Converted": 37.7,
+            "Service:1st Serve Points Won": 75.6,
+            "Service:2nd Serve Points Won": 54.1,
+            "Service:Break Points Saved": 63.5,
+            "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
-            "Points:Return Points Won": 36.3,
+            "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.4,
-            "Points:Unforced Errors": 20
+            "Points:Winners": 24.6,
+            "Points:Unforced Errors": 20.2
           },
           "samples": {
-            "Service:Aces": 73,
-            "Service:Double Faults": 73,
-            "Service:1st Serve Points Won": 4094,
-            "Service:2nd Serve Points Won": 1629,
-            "Service:Break Points Saved": 286,
-            "Return:Break Points Converted": 477,
-            "Points:Service Points Won": 5744,
-            "Points:Return Points Won": 6199,
-            "Points:Total Points Won": 11943,
-            "Points:Winners": 68,
-            "Points:Unforced Errors": 68
+            "Service:Aces": 74,
+            "Service:Double Faults": 74,
+            "Service:1st Serve Points Won": 4164,
+            "Service:2nd Serve Points Won": 1670,
+            "Service:Break Points Saved": 288,
+            "Return:Break Points Converted": 480,
+            "Points:Service Points Won": 5855,
+            "Points:Return Points Won": 6299,
+            "Points:Total Points Won": 12154,
+            "Points:Winners": 69,
+            "Points:Unforced Errors": 69
           }
         },
         "p2": {
-          "matchCount": 52,
+          "matchCount": 53,
           "stats": {
             "Service:Aces": 8.3,
             "Service:Double Faults": 2.6,
-            "Service:1st Serve Points Won": 76.6,
+            "Service:1st Serve Points Won": 76.7,
             "Service:2nd Serve Points Won": 52.3,
-            "Service:Break Points Saved": 67.6,
-            "Return:Break Points Converted": 38.8,
+            "Service:Break Points Saved": 67.2,
+            "Return:Break Points Converted": 38.9,
             "Points:Winners": 26.9,
-            "Points:Unforced Errors": 27.2,
-            "Points:Service Points Won": 67.4,
-            "Points:Return Points Won": 36.2,
+            "Points:Unforced Errors": 27.4,
+            "Points:Service Points Won": 67.5,
+            "Points:Return Points Won": 36,
             "Points:Total Points Won": 51.5
           },
           "samples": {
-            "Service:Aces": 52,
-            "Service:Double Faults": 52,
-            "Service:1st Serve Points Won": 2785,
-            "Service:2nd Serve Points Won": 1706,
-            "Service:Break Points Saved": 296,
-            "Return:Break Points Converted": 371,
-            "Points:Winners": 47,
-            "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4467,
-            "Points:Return Points Won": 4620,
-            "Points:Total Points Won": 9087
+            "Service:Aces": 53,
+            "Service:Double Faults": 53,
+            "Service:1st Serve Points Won": 2849,
+            "Service:2nd Serve Points Won": 1744,
+            "Service:Break Points Saved": 299,
+            "Return:Break Points Converted": 373,
+            "Points:Winners": 48,
+            "Points:Unforced Errors": 48,
+            "Points:Service Points Won": 4567,
+            "Points:Return Points Won": 4731,
+            "Points:Total Points Won": 9298
           }
         }
       },
       "surfaceLabel": "hard",
       "courtSpeedRecord": {
         "p1": {
-          "wins": 16,
+          "wins": 17,
           "losses": 5,
-          "sampleSize": 21,
-          "pct": 76.2
+          "sampleSize": 22,
+          "pct": 77.3
         },
         "p2": {
           "wins": 12,
-          "losses": 9,
-          "sampleSize": 21,
-          "pct": 57.1
+          "losses": 10,
+          "sampleSize": 22,
+          "pct": 54.5
         }
       }
     },
-    "matchStats": null,
-    "setStats": null,
     "venue": {
       "city": "New York",
       "country": "US",
@@ -29698,11 +29783,11 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.3,
-      "windSpeed": 15.8,
-      "humidity": 32,
+      "temperature": 26.8,
+      "windSpeed": 13.3,
+      "humidity": 30,
       "source": "Open-Meteo",
-      "historical": false,
+      "historical": true,
       "weekRange": "Sep 7 – 13, 2026",
       "week": [
         {
@@ -29765,8 +29850,8 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 16,
-          "humidity": 53,
+          "wind": 14,
+          "humidity": 54,
           "isMatch": true,
           "available": true
         },
@@ -29776,10 +29861,10 @@
           "label": "Sep 12",
           "code": 3,
           "hi": 26,
-          "lo": 15,
-          "rain": 4,
-          "wind": 16,
-          "humidity": 64,
+          "lo": 16,
+          "rain": 3,
+          "wind": 18,
+          "humidity": 69,
           "isMatch": false,
           "available": true
         },
@@ -29787,11 +29872,11 @@
           "date": "2026-09-13",
           "dow": "Sun",
           "label": "Sep 13",
-          "code": 82,
+          "code": 65,
           "hi": 26,
           "lo": 20,
-          "rain": 80,
-          "wind": 21,
+          "rain": 87,
+          "wind": 20,
           "humidity": 85,
           "isMatch": false,
           "available": true
@@ -29803,8 +29888,581 @@
     "liveScore": null,
     "liveGameScore": null,
     "liveServer": null,
-    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
-    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "6-3, 7-6(7), 7-6(6)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 3,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false,
+    "matchStats": {
+      "p1": {
+        "Service:Aces": 15,
+        "Service:Double Faults": 6,
+        "Service:1st serve percentage": 63,
+        "Service:1st serve points won": 78.6,
+        "Service:2nd serve points won": 56.1,
+        "Service:Break Points Saved": 50,
+        "Return:1st return points won": 20.3,
+        "Return:2nd return points won": 47.4,
+        "Return:Break Points Converted": 66.7,
+        "Points:Winners": 38,
+        "Points:Unforced errors": 34,
+        "Points:Total Points Won": 50.7,
+        "Points:Service Points Won": 70.3,
+        "Points:Return Points Won": 29,
+        "Games:Service games won": 94.1,
+        "Games:Return games won": 12.5,
+        "Points:Net points won": 80.8,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 55,
+            "total": 70
+          },
+          "Service:2nd serve points won": {
+            "won": 23,
+            "total": 41
+          },
+          "Service:Break Points Saved": {
+            "won": 1,
+            "total": 2
+          },
+          "Return:1st return points won": {
+            "won": 13,
+            "total": 64
+          },
+          "Return:2nd return points won": {
+            "won": 18,
+            "total": 38
+          },
+          "Return:Break Points Converted": {
+            "won": 2,
+            "total": 3
+          },
+          "Points:Total Points Won": {
+            "won": 107,
+            "total": 211
+          },
+          "Points:Service Points Won": {
+            "won": 78,
+            "total": 111
+          },
+          "Points:Return Points Won": {
+            "won": 29,
+            "total": 100
+          },
+          "Games:Service games won": {
+            "won": 16,
+            "total": 17
+          },
+          "Games:Return games won": {
+            "won": 2,
+            "total": 16
+          },
+          "Points:Net points won": {
+            "won": 21,
+            "total": 26
+          }
+        },
+        "wue": {
+          "winners": 38,
+          "unforcedErrors": 34,
+          "ratio": 1.12,
+          "source": "api-tennis"
+        }
+      },
+      "p2": {
+        "Service:Aces": 6,
+        "Service:Double Faults": 3,
+        "Service:1st serve percentage": 63,
+        "Service:1st serve points won": 79.7,
+        "Service:2nd serve points won": 52.6,
+        "Service:Break Points Saved": 33.3,
+        "Return:1st return points won": 21.4,
+        "Return:2nd return points won": 43.9,
+        "Return:Break Points Converted": 50,
+        "Points:Winners": 28,
+        "Points:Unforced errors": 36,
+        "Points:Total Points Won": 49.3,
+        "Points:Service Points Won": 71,
+        "Points:Return Points Won": 29.7,
+        "Games:Service games won": 87.5,
+        "Games:Return games won": 5.9,
+        "Points:Net points won": 92.9,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 51,
+            "total": 64
+          },
+          "Service:2nd serve points won": {
+            "won": 20,
+            "total": 38
+          },
+          "Service:Break Points Saved": {
+            "won": 1,
+            "total": 3
+          },
+          "Return:1st return points won": {
+            "won": 15,
+            "total": 70
+          },
+          "Return:2nd return points won": {
+            "won": 18,
+            "total": 41
+          },
+          "Return:Break Points Converted": {
+            "won": 1,
+            "total": 2
+          },
+          "Points:Total Points Won": {
+            "won": 104,
+            "total": 211
+          },
+          "Points:Service Points Won": {
+            "won": 71,
+            "total": 100
+          },
+          "Points:Return Points Won": {
+            "won": 33,
+            "total": 111
+          },
+          "Games:Service games won": {
+            "won": 14,
+            "total": 16
+          },
+          "Games:Return games won": {
+            "won": 1,
+            "total": 17
+          },
+          "Points:Net points won": {
+            "won": 13,
+            "total": 14
+          }
+        },
+        "wue": {
+          "winners": 28,
+          "unforcedErrors": 36,
+          "ratio": 0.78,
+          "source": "api-tennis"
+        }
+      },
+      "wueSource": "api-tennis"
+    },
+    "setStats": {
+      "1": {
+        "p1": {
+          "Service:Aces": 3,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 60,
+          "Service:1st serve points won": 86.7,
+          "Service:2nd serve points won": 70,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 29.4,
+          "Return:2nd return points won": 57.1,
+          "Return:Break Points Converted": 100,
+          "Points:Winners": 9,
+          "Points:Unforced errors": 6,
+          "Points:Total Points Won": 59.2,
+          "Points:Service Points Won": 80,
+          "Points:Return Points Won": 37.5,
+          "Games:Service games won": 100,
+          "Games:Return games won": 25,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 13,
+              "total": 15
+            },
+            "Service:2nd serve points won": {
+              "won": 7,
+              "total": 10
+            },
+            "Return:1st return points won": {
+              "won": 5,
+              "total": 17
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 7
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 1
+            },
+            "Points:Total Points Won": {
+              "won": 29,
+              "total": 49
+            },
+            "Points:Service Points Won": {
+              "won": 20,
+              "total": 25
+            },
+            "Points:Return Points Won": {
+              "won": 9,
+              "total": 24
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 5
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 9,
+              "total": 9
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 2,
+          "Service:Double Faults": 2,
+          "Service:1st serve percentage": 71,
+          "Service:1st serve points won": 70.6,
+          "Service:2nd serve points won": 42.9,
+          "Service:Break Points Saved": 0,
+          "Return:1st return points won": 13.3,
+          "Return:2nd return points won": 30,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 6,
+          "Points:Unforced errors": 13,
+          "Points:Total Points Won": 40.8,
+          "Points:Service Points Won": 62.5,
+          "Points:Return Points Won": 20,
+          "Games:Service games won": 75,
+          "Games:Return games won": 0,
+          "Points:Net points won": 66.7,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 12,
+              "total": 17
+            },
+            "Service:2nd serve points won": {
+              "won": 3,
+              "total": 7
+            },
+            "Service:Break Points Saved": {
+              "won": 0,
+              "total": 1
+            },
+            "Return:1st return points won": {
+              "won": 2,
+              "total": 15
+            },
+            "Return:2nd return points won": {
+              "won": 3,
+              "total": 10
+            },
+            "Points:Total Points Won": {
+              "won": 20,
+              "total": 49
+            },
+            "Points:Service Points Won": {
+              "won": 15,
+              "total": 24
+            },
+            "Points:Return Points Won": {
+              "won": 5,
+              "total": 25
+            },
+            "Games:Service games won": {
+              "won": 3,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 5
+            },
+            "Points:Net points won": {
+              "won": 2,
+              "total": 3
+            }
+          }
+        }
+      },
+      "2": {
+        "p1": {
+          "Service:Aces": 7,
+          "Service:Double Faults": 3,
+          "Service:1st serve percentage": 70,
+          "Service:1st serve points won": 71,
+          "Service:2nd serve points won": 46.2,
+          "Service:Break Points Saved": 50,
+          "Return:1st return points won": 16.7,
+          "Return:2nd return points won": 57.9,
+          "Return:Break Points Converted": 50,
+          "Points:Winners": 16,
+          "Points:Unforced errors": 15,
+          "Points:Total Points Won": 49.4,
+          "Points:Service Points Won": 63.6,
+          "Points:Return Points Won": 34.9,
+          "Games:Service games won": 83.3,
+          "Games:Return games won": 16.7,
+          "Points:Net points won": 66.7,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 22,
+              "total": 31
+            },
+            "Service:2nd serve points won": {
+              "won": 6,
+              "total": 13
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 2
+            },
+            "Return:1st return points won": {
+              "won": 4,
+              "total": 24
+            },
+            "Return:2nd return points won": {
+              "won": 11,
+              "total": 19
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 2
+            },
+            "Points:Total Points Won": {
+              "won": 43,
+              "total": 87
+            },
+            "Points:Service Points Won": {
+              "won": 28,
+              "total": 44
+            },
+            "Points:Return Points Won": {
+              "won": 15,
+              "total": 43
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 8,
+              "total": 12
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 1,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 56,
+          "Service:1st serve points won": 83.3,
+          "Service:2nd serve points won": 42.1,
+          "Service:Break Points Saved": 50,
+          "Return:1st return points won": 29,
+          "Return:2nd return points won": 53.8,
+          "Return:Break Points Converted": 50,
+          "Points:Winners": 13,
+          "Points:Unforced errors": 14,
+          "Points:Total Points Won": 50.6,
+          "Points:Service Points Won": 65.1,
+          "Points:Return Points Won": 36.4,
+          "Games:Service games won": 83.3,
+          "Games:Return games won": 16.7,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 20,
+              "total": 24
+            },
+            "Service:2nd serve points won": {
+              "won": 8,
+              "total": 19
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 2
+            },
+            "Return:1st return points won": {
+              "won": 9,
+              "total": 31
+            },
+            "Return:2nd return points won": {
+              "won": 7,
+              "total": 13
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 2
+            },
+            "Points:Total Points Won": {
+              "won": 44,
+              "total": 87
+            },
+            "Points:Service Points Won": {
+              "won": 28,
+              "total": 43
+            },
+            "Points:Return Points Won": {
+              "won": 16,
+              "total": 44
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 8,
+              "total": 8
+            }
+          }
+        }
+      },
+      "3": {
+        "p1": {
+          "Service:Aces": 5,
+          "Service:Double Faults": 2,
+          "Service:1st serve percentage": 57,
+          "Service:1st serve points won": 83.3,
+          "Service:2nd serve points won": 55.6,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 17.4,
+          "Return:2nd return points won": 25,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 13,
+          "Points:Unforced errors": 13,
+          "Points:Total Points Won": 46.7,
+          "Points:Service Points Won": 71.4,
+          "Points:Return Points Won": 15.2,
+          "Games:Service games won": 100,
+          "Games:Return games won": 0,
+          "Points:Net points won": 80,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 20,
+              "total": 24
+            },
+            "Service:2nd serve points won": {
+              "won": 10,
+              "total": 18
+            },
+            "Return:1st return points won": {
+              "won": 4,
+              "total": 23
+            },
+            "Return:2nd return points won": {
+              "won": 3,
+              "total": 12
+            },
+            "Points:Total Points Won": {
+              "won": 35,
+              "total": 75
+            },
+            "Points:Service Points Won": {
+              "won": 30,
+              "total": 42
+            },
+            "Points:Return Points Won": {
+              "won": 5,
+              "total": 33
+            },
+            "Games:Service games won": {
+              "won": 6,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 4,
+              "total": 5
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 3,
+          "Service:Double Faults": 0,
+          "Service:1st serve percentage": 66,
+          "Service:1st serve points won": 82.6,
+          "Service:2nd serve points won": 75,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 16.7,
+          "Return:2nd return points won": 44.4,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 9,
+          "Points:Unforced errors": 9,
+          "Points:Total Points Won": 53.3,
+          "Points:Service Points Won": 84.8,
+          "Points:Return Points Won": 28.6,
+          "Games:Service games won": 100,
+          "Games:Return games won": 0,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 19,
+              "total": 23
+            },
+            "Service:2nd serve points won": {
+              "won": 9,
+              "total": 12
+            },
+            "Return:1st return points won": {
+              "won": 4,
+              "total": 24
+            },
+            "Return:2nd return points won": {
+              "won": 8,
+              "total": 18
+            },
+            "Points:Total Points Won": {
+              "won": 40,
+              "total": 75
+            },
+            "Points:Service Points Won": {
+              "won": 28,
+              "total": 33
+            },
+            "Points:Return Points Won": {
+              "won": 12,
+              "total": 42
+            },
+            "Games:Service games won": {
+              "won": 6,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 3,
+              "total": 3
+            }
+          }
+        }
+      }
+    },
     "oddsMovement": {
       "market": "Match Winner",
       "capturedAt": "2026-09-11T18:45:02Z",
@@ -29915,6 +30573,7 @@
         }
       }
     },
+    "finishedAt": "2026-09-11T22:38:24.737Z",
     "openingOdds": {
       "p1": 1.167,
       "p2": 5,
@@ -29922,13 +30581,11 @@
       "at": "2026-09-10T13:41:00.351Z",
       "src": "ingestion"
     },
-    "bet365Now": {
+    "closingOdds": {
       "p1": 1.222,
       "p2": 4.333,
       "bookmaker": "bet365",
-      "at": "2026-09-11T18:30:02.369Z",
-      "observedAt": "2026-09-11T18:30:14Z",
-      "src": "live"
+      "at": "2026-09-11T18:42:49.091Z"
     },
     "pinnacleOpen": {
       "p1": 1.2,
@@ -29942,30 +30599,6 @@
       "edgeVsPinnacleP1": 0.0399,
       "edgeVsPinnacleP2": -0.0399,
       "ts": "2026-09-10T13:11:10.446Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": {
-      "display": "6-3, 7-6(7), 7-6(6)",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 3
-        },
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 7,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 3,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "retired": false,
-    "walkover": false
+    }
   }
 ]
