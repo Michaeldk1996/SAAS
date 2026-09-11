@@ -2717,9 +2717,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 27.8,
-      "windSpeed": 14.8,
-      "humidity": 29,
+      "temperature": 27.4,
+      "windSpeed": 15.3,
+      "humidity": 30,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Sep 7 – 13, 2026",
@@ -2784,7 +2784,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": true,
           "available": true
@@ -2798,7 +2798,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -5385,9 +5385,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 21.3,
-      "windSpeed": 6.5,
-      "humidity": 47,
+      "temperature": 21.1,
+      "windSpeed": 7.6,
+      "humidity": 48,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Sep 7 – 13, 2026",
@@ -5452,7 +5452,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": false,
           "available": true
@@ -5466,7 +5466,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": true,
           "available": true
         },
@@ -5494,7 +5494,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T12:00:01Z",
+      "capturedAt": "2026-09-11T13:00:01Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -5513,7 +5513,7 @@
               3.4
             ],
             [
-              "2026-09-11T11:43:44.623Z",
+              "2026-09-11T12:51:51.304Z",
               3.4
             ]
           ],
@@ -5531,7 +5531,7 @@
               1.333
             ],
             [
-              "2026-09-11T11:43:44.623Z",
+              "2026-09-11T12:51:51.304Z",
               1.333
             ]
           ]
@@ -8050,9 +8050,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 19.1,
-      "windSpeed": 7.7,
-      "humidity": 63,
+      "temperature": 20.7,
+      "windSpeed": 6,
+      "humidity": 66,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Sep 7 – 13, 2026",
@@ -8062,11 +8062,11 @@
           "dow": "Mon",
           "label": "Sep 7",
           "code": 1,
-          "hi": 27,
-          "lo": 15,
-          "rain": 2,
-          "wind": 12,
-          "humidity": 63,
+          "hi": 26,
+          "lo": 16,
+          "rain": null,
+          "wind": 9,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -8074,12 +8074,12 @@
           "date": "2026-09-08",
           "dow": "Tue",
           "label": "Sep 8",
-          "code": 2,
-          "hi": 28,
+          "code": 3,
+          "hi": 27,
           "lo": 16,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 57,
+          "rain": null,
+          "wind": 10,
+          "humidity": 62,
           "isMatch": true,
           "available": true
         },
@@ -8088,11 +8088,11 @@
           "dow": "Wed",
           "label": "Sep 9",
           "code": 3,
-          "hi": 29,
-          "lo": 19,
-          "rain": 3,
-          "wind": 21,
-          "humidity": 72,
+          "hi": 31,
+          "lo": 18,
+          "rain": null,
+          "wind": 17,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -8100,12 +8100,12 @@
           "date": "2026-09-10",
           "dow": "Thu",
           "label": "Sep 10",
-          "code": 3,
+          "code": 53,
           "hi": 31,
           "lo": 22,
-          "rain": 20,
-          "wind": 19,
-          "humidity": 67,
+          "rain": null,
+          "wind": 17,
+          "humidity": 63,
           "isMatch": false,
           "available": true
         },
@@ -8115,38 +8115,20 @@
           "label": "Sep 11",
           "code": 3,
           "hi": 28,
-          "lo": 20,
-          "rain": 5,
-          "wind": 15,
-          "humidity": 52,
+          "lo": 21,
+          "rain": null,
+          "wind": 13,
+          "humidity": 51,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-09-12",
-          "dow": "Sat",
-          "label": "Sep 12",
-          "code": 3,
-          "hi": 27,
-          "lo": 15,
-          "rain": 3,
-          "wind": 19,
-          "humidity": 65,
-          "isMatch": false,
-          "available": true
+          "available": false
         },
         {
           "date": "2026-09-13",
-          "dow": "Sun",
-          "label": "Sep 13",
-          "code": 81,
-          "hi": 28,
-          "lo": 21,
-          "rain": 78,
-          "wind": 20,
-          "humidity": 81,
-          "isMatch": false,
-          "available": true
+          "available": false
         }
       ]
     },
@@ -12380,7 +12362,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": false,
           "available": true
@@ -12394,7 +12376,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -18877,7 +18859,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": false,
           "available": true
@@ -18891,7 +18873,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -25234,7 +25216,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": false,
           "available": true
@@ -25248,7 +25230,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
@@ -29023,7 +29005,7 @@
           "hi": 28,
           "lo": 20,
           "rain": 5,
-          "wind": 15,
+          "wind": 16,
           "humidity": 52,
           "isMatch": false,
           "available": true
@@ -29037,7 +29019,7 @@
           "lo": 15,
           "rain": 3,
           "wind": 19,
-          "humidity": 65,
+          "humidity": 64,
           "isMatch": false,
           "available": true
         },
