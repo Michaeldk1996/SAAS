@@ -1,10 +1,15 @@
 // TEN-107 · Slice 4 — standalone Live tab (member read path)
 //
 // Founder ruling (TEN-91, 2026-08-29): the live feed is its OWN nav tab, not an
-// overlay on the Matches board. This module owns the Live page end-to-end:
-// it reads the shared live_snapshot row from Supabase via PostgREST (no SDK, no
-// Edge-Function cold start on the member path) and renders every underway match
-// as a standalone live card into #liveGrid. The Matches tab is untouched.
+// overlay on the Matches board. It reads the shared live_snapshot row from
+// Supabase via PostgREST (no SDK, no Edge-Function cold start on the member
+// path). The Matches tab is untouched.
+//
+// TEN-190 (2026-09-12): this module no longer RENDERS. The Live page is drawn by
+// the Claude Design handoff build that owns #lvTab in the dashboard. This module
+// is the DATA layer — transport, the ATP-singles + underway gate, the box-score
+// index and the rating formulas — and publishes every board to the renderer via
+// window.LiveFeed.subscribe().
 //
 // Supersedes live-overlay.js (Slice 3), which is no longer loaded.
 //
@@ -95,9 +100,6 @@
   // not (pushes + the safety re-sync drive updates), so tick() is a one-shot fetch.
   function pollLoopActive() { return !USE_REALTIME || _rtFellBack; }
 
-  // ─── DOM refs (resolved lazily; the tabpage exists in the static HTML) ────────
-  function grid()   { return document.getElementById('liveGrid'); }
-  function status() { return document.getElementById('liveStatus'); }
 
   // ─── public: called by the #mainNav tab handler ──────────────────────────────
   function setActive(isLive) {
@@ -318,22 +320,17 @@
     return { isStale: ageMs > STALE_THRESHOLD_MS, ageMs };
   }
 
-  // ─── render: status line only (error path, no fresh board) ────────────────────
+  // ─── republish on the error path (no fresh board) ─────────────────────────────
+  // A fetch failed. Re-emit the CACHED board with a freshly-computed staleness so
+  // the page ages its "Updated" figure honestly instead of freezing on the last
+  // good value. With no snapshot ever received, emit ready:false so the renderer
+  // shows dashes rather than claiming zero matches are in play.
   function renderStatusOnly() {
-    const s = status();
-    if (!s) return;
     if (_lastUpdatedAt === null) {
-      // First fetch(es) failed — never had a snapshot. Show an honest connecting
-      // state rather than leaving the static "Loading…" placeholder stuck forever.
-      s.className = 'lt-status stale';
-      s.innerHTML = `<span class="lt-dot"></span>Connecting to the live feed…`;
+      publish({ ready: false, matches: [], live: [], isStale: false, ageMs: 0, updatedAt: null, connected: false });
       return;
     }
-    const { isStale, ageMs } = staleness();
-    if (isStale) {
-      s.className = 'lt-status stale';
-      s.innerHTML = `<span class="lt-dot"></span>Reconnecting… last update ${Math.round(ageMs / 1000)}s ago`;
-    }
+    render(_lastMatches || []);
   }
 
   // ─── a "live" match is one the vendor still flags underway ────────────────────
@@ -373,91 +370,48 @@
     return /atp/i.test(t) && /single/i.test(t);
   }
 
-  // ─── render the full board ────────────────────────────────────────────────────
+  // ─── publish the board to the #lvTab renderer ─────────────────────────────────
+  // TEN-190: this module no longer paints the Live page. The renderer is the
+  // Claude Design handoff build that owns #lvTab in bsp-consult-dashboard.html;
+  // this module is the DATA layer — it owns the transport (Realtime / poll), the
+  // ATP-singles + underway gate, the box-score index and the rating formulas, and
+  // hands each board to whoever subscribed via window.LiveFeed.subscribe().
+  //
+  // The function keeps the name `render` because tick()/applyRow() call it on
+  // every snapshot; what it renders is now a payload, not DOM.
   function render(matches) {
-    const g = grid();
-    const s = status();
-    if (!g) return;
-
-    const live = (Array.isArray(matches) ? matches : [])
-      .filter(isAtpSingles)
-      .filter(isUnderway);
-
+    const all = Array.isArray(matches) ? matches : [];
+    const live = all.filter(isAtpSingles).filter(isUnderway);
     const { isStale, ageMs } = staleness();
+    publish({
+      ready: true,
+      matches: all,
+      live,
+      isStale,
+      ageMs,
+      updatedAt: _lastUpdatedAt,
+      connected: !!(USE_REALTIME && _rtConnected && !_rtFellBack),
+    });
+  }
 
-    if (s) {
-      if (isStale) {
-        s.className = 'lt-status stale';
-        s.innerHTML = `<span class="lt-dot"></span>Stale · last update ${Math.round(ageMs / 1000)}s ago`;
-      } else {
-        s.className = 'lt-status live';
-        const n = live.length;
-        const cadence = (USE_REALTIME && _rtConnected && !_rtFellBack) ? 'live now' : 'updates every 30s';
-        s.innerHTML = `<span class="lt-dot"></span>${n} match${n === 1 ? '' : 'es'} live · ${cadence}`;
-      }
+  // Fan a payload out to every subscriber. Subscribers register into a plain
+  // array on window because the #lvTab block is an INLINE script and therefore
+  // runs during parse, i.e. BEFORE this deferred module executes — it cannot call
+  // an API that does not exist yet, so it queues and we drain.
+  function publish(payload) {
+    const subs = window.__LV_SUBS;
+    if (!Array.isArray(subs)) return;
+    for (const fn of subs) {
+      try { fn(payload); } catch (err) { console.warn('[live-tab] subscriber failed:', err && err.message); }
     }
-
-    if (!live.length) {
-      g.innerHTML =
-        `<div class="lt-empty">
-           <div class="lt-empty-icon">◍</div>
-           <p class="lt-empty-title">No ATP singles live right now</p>
-           <p class="lt-empty-sub">The board refreshes automatically — live ATP matches appear here as they start.</p>
-         </div>`;
-      return;
-    }
-
-    g.innerHTML = live.map(cardHtml).join('');
   }
 
-  // ─── one live card ──────────────────────────────────────────────────────────────
-  function cardHtml(fix) {
-    const ek = esc(String(fix.event_key || ''));
-    const serveIsFirst  = /first/i.test(String(fix.event_serve || ''));
-    const serveIsSecond = /second/i.test(String(fix.event_serve || ''));
-
-    const p1 = playerRow(fix, 1, serveIsFirst);
-    const p2 = playerRow(fix, 2, serveIsSecond);
-
-    const tourn = esc(fix.tournament_name || '');
-    const round = shortRound(fix);
-    const status = esc(fix.event_status || 'Live');
-
-    const clickable = USE_DETAIL ? ' clickable' : '';
-    const a11y = USE_DETAIL ? ' role="button" tabindex="0" aria-label="Open match detail"' : '';
-    return `
-    <article class="lt-card${clickable}" data-ek="${ek}"${a11y}>
-      <div class="lt-head">
-        <span class="lt-tourn">${tourn}${round ? ` · ${round}` : ''}</span>
-        <span class="lt-badge"><span class="lt-dot"></span>${status}</span>
-      </div>
-      <div class="lt-players">
-        ${p1}
-        ${p2}
-      </div>
-    </article>`;
-  }
-
-  // A player row: avatar, name, server dot, per-set scores, current-game points.
-  function playerRow(fix, which, serving) {
-    const name = esc(fix[`event_${which === 1 ? 'first' : 'second'}_player`] || '—');
-    const logo = fix[`event_${which === 1 ? 'first' : 'second'}_player_logo`] || '';
-    const av = logo
-      ? `<img class="lt-av" src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-      : `<span class="lt-av lt-av-blank"></span>`;
-
-    const sets = setCells(fix, which);
-    const game = gamePoints(fix, which);
-
-    return `
-    <div class="lt-row${serving ? ' serving' : ''}">
-      ${av}
-      <span class="lt-name">${name}</span>
-      <span class="lt-serve" title="Serving">${serving ? '●' : ''}</span>
-      <span class="lt-sets">${sets}</span>
-      <span class="lt-game">${game}</span>
-    </div>`;
-  }
+  // TEN-190: cardHtml / playerRow / setCells / gamePoints and the #liveGrid,
+  // #liveStatus refs are REMOVED. They painted the pre-handoff board into a
+  // container that no longer exists, which is how this module silently became
+  // a no-op: the render call succeeded and wrote nothing. The Live page is now
+  // rendered by the #lvTab block; this module is the data layer. setScoreHtml
+  // and shortRound stay — the detail modal still uses them.
 
   // A completed tiebreak set arrives from api-tennis encoded as
   // "<games>.<tiebreakPoints>" per side — e.g. score_first "7.7" / score_second
@@ -473,32 +427,6 @@
     const games = s.slice(0, dot);
     const tb = s.slice(dot + 1);
     return tb === '' ? esc(games) : `${esc(games)}<sup>${esc(tb)}</sup>`;
-  }
-
-  // Per-set boxes from the `scores` array; the current set is highlighted.
-  function setCells(fix, which) {
-    const scores = Array.isArray(fix.scores) ? fix.scores : [];
-    if (scores.length) {
-      const lastIdx = scores.length - 1;
-      return scores.map((sc, i) => {
-        const v = which === 1 ? sc.score_first : sc.score_second;
-        const cur = i === lastIdx ? ' cur' : '';
-        return `<span class="lt-set${cur}">${setScoreHtml(v)}</span>`;
-      }).join('');
-    }
-    // Fallback: aggregate sets-won from event_final_result ("1 - 0").
-    const parts = String(fix.event_final_result || '').split('-').map(s => s.trim());
-    const v = which === 1 ? parts[0] : parts[1];
-    return v ? `<span class="lt-set">${setScoreHtml(v)}</span>` : '';
-  }
-
-  // Current-game points from event_game_result ("40 - 30" / "A - 40" / "-").
-  function gamePoints(fix, which) {
-    const raw = String(fix.event_game_result || '').trim();
-    if (!raw || raw === '-') return '<span class="lt-pt">·</span>';
-    const parts = raw.split('-').map(s => s.trim());
-    const v = which === 1 ? parts[0] : parts[1];
-    return `<span class="lt-pt">${esc(v ?? '·')}</span>`;
   }
 
   // "M15 Maanshan 8 - Semi-finals" → "Semi-finals". The round is prefixed with
@@ -1171,21 +1099,47 @@
       paint();
     }
 
-    return { open, close, onBoard };
+    // TEN-190: the #lvTab renderer needs the box-score index and the model's own
+    // rating formulas. Export them rather than reimplementing — one definition of
+    // Serve / Return / Dominance keeps the Live tab and the model from diverging.
+    return { open, close, onBoard, indexStats, stat: g, serveRating, returnRating, dominance, num };
   })();
 
-  // Card click → open the detail modal (delegated; keyboard-accessible).
-  if (USE_DETAIL) {
-    const onGridActivate = (e) => {
-      const card = e.target.closest && e.target.closest('.lt-card[data-ek]');
-      if (!card) return;
-      if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-      if (e.type === 'keydown') e.preventDefault();
-      Detail.open(card.getAttribute('data-ek'));
-    };
-    document.addEventListener('click', onGridActivate);
-    document.addEventListener('keydown', onGridActivate);
+  // ─── TEN-190: on-demand point log for the #lvTab renderer ─────────────────────
+  // Same source and TTL as the modal's own fetch, but keyed by event_key so the
+  // renderer can ask for any match. The point log is deliberately NOT on the
+  // Realtime-pushed snapshot row (it is ~43% of the payload) — it is fetched only
+  // while a modal is open, which is what keeps Slam-day egress bounded.
+  const _pbpCache = Object.create(null);   // ek → { games, at, loading, error }
+  const PBP_TTL = 12_000;
+  function pbpGet(ek) { return _pbpCache[String(ek)] || null; }
+  async function pbpLoad(ek, onDone) {
+    const key = String(ek);
+    const e = _pbpCache[key];
+    if (e && e.loading) return;
+    if (e && !e.error && (Date.now() - e.at) < PBP_TTL) return;
+    _pbpCache[key] = { games: e && e.games, at: (e && e.at) || 0, loading: true, error: false };
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/live_pbp?select=pbp&event_key=eq.${encodeURIComponent(key)}&limit=1`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error(`pbp ${res.status}`);
+      const rows = await res.json();
+      const games = (Array.isArray(rows) && rows[0] && Array.isArray(rows[0].pbp)) ? rows[0].pbp : [];
+      _pbpCache[key] = { games, at: Date.now(), loading: false, error: false };
+    } catch (err) {
+      console.warn('[live-tab] pbp fetch failed:', err.message);
+      _pbpCache[key] = { games: e && e.games, at: Date.now(), loading: false, error: true };
+    }
+    if (typeof onDone === 'function') { try { onDone(); } catch (_) { /* renderer's problem */ } }
   }
+
+  // TEN-190: the card-click → modal binding is GONE from this module. The Live
+  // page and its modal are rendered by the #lvTab handoff build, which owns its
+  // own click handling on .lvcard. Binding this module's `.lt-card[data-ek]`
+  // listener as well would be inert today (no .lt-card is rendered any more) but
+  // would resurrect a second, competing modal the moment anyone reintroduced that
+  // class name. Detail's formulas are still used — exported above, not its DOM.
 
   // ─── reveal the nav tab — only reached once flag + creds guards have passed, so
   //     a flag-OFF (or mis-provisioned) build never surfaces a dead Live tab. ──────
@@ -1203,4 +1157,38 @@
 
   // ─── expose control surface for the tab handler ───────────────────────────────
   window.LiveTab = { setActive, isUnderway, isAtpSingles };
+
+  // ─── TEN-190: data API for the #lvTab renderer ────────────────────────────────
+  // Everything the handoff build needs to paint real figures, and nothing that
+  // paints. subscribe() replays the last board immediately so a subscriber that
+  // registers after the first snapshot does not wait a full tick for its first
+  // paint (the module is deferred, the renderer is inline — either order works).
+  window.LiveFeed = {
+    subscribe(fn) {
+      if (typeof fn !== 'function') return;
+      (window.__LV_SUBS = window.__LV_SUBS || []).push(fn);
+      if (_lastMatches) render(_lastMatches);
+    },
+    isUnderway,
+    isAtpSingles,
+    indexStats: Detail.indexStats,
+    stat: Detail.stat,
+    serveRating: Detail.serveRating,
+    returnRating: Detail.returnRating,
+    dominance: Detail.dominance,
+    num: Detail.num,
+    pbpGet,
+    pbpLoad,
+    holdbreak() {
+      return (window.__h2hEnv && typeof window.__h2hEnv.holdbreak === 'function')
+        ? window.__h2hEnv.holdbreak() : (window.holdbreak || null);
+    },
+  };
+
+  // The inline #lvTab renderer parses before this deferred module runs, so it
+  // cannot have called subscribe() through the API above. Drain anything it
+  // queued directly onto the array, and tell it the feed is now available.
+  if (Array.isArray(window.__LV_SUBS) && window.__LV_SUBS.length) {
+    publish({ ready: false, matches: [], live: [], isStale: false, ageMs: 0, updatedAt: null, connected: false });
+  }
 })();

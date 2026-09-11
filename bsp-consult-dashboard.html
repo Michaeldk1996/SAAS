@@ -23658,26 +23658,98 @@ window.DatabaseTab = (function(){
 (function(){
 'use strict';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-const AV = nm => { let sd=0; for(let k=0;k<nm.length;k++) sd=(sd*31+nm.charCodeAt(k))%9973; return 'https://randomuser.me/api/portraits/men/'+(sd%99)+'.jpg'; };
-const SEED = s => { let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return ((h>>>0)%10000)/10000; };
+// ── feed adapter (TEN-190) ───────────────────────────────────────────────────
+// Every figure on this page comes from the live feed. live-tab.js owns the
+// transport (Supabase Realtime push, 30s PostgREST fallback) and the ATP-singles
+// + underway gate; this block is the renderer and does not generate a single
+// value. A figure the feed has not reported renders as an em dash — never a
+// zero, never a plausible default. A zero in a tennis score means zero points.
+const LF = () => window.LiveFeed || null;
 
-// ── placeholder data ──────────────────────────────────────────────────────────
-const LIVE_DATA = [
-  { id:'l0', event:'US Open · 1/64-finals', status:'SET 4',       bo:5, serving:0, sets:[[6,3],[4,6],[7,5],[2,1]], point:['30','15'] },
-  { id:'l1', event:'US Open · 1/64-finals', status:'SET 1',       bo:5, serving:1, sets:[[0,0]],                  point:['0','0']   },
-  { id:'l2', event:'US Open · 1/64-finals', status:'SET 3',       bo:5, serving:0, sets:[[7,6],[6,4],[3,0]],      point:['0','0']   },
-  { id:'l3', event:'US Open · 1/64-finals', status:'INTERRUPTED', bo:5, serving:0, sets:[[2,6],[6,2],[0,2]],      point:['15','15'] },
-  { id:'l4', event:'US Open · 1/64-finals', status:'INTERRUPTED', bo:5, serving:0, sets:[[3,6],[6,2],[6,3],[2,5]],point:['0','0']   },
-];
-const NAMES_DATA = [
-  ['D. Vallejo','G. Monfils'],['Z. Svajda','D. Altmaier'],['D. Sweeny','C. Moutet'],
-  ['J. De Jong','F. Passaro'],['J. M. Cerundolo','A. Gea'],
-];
+// Last payload from live-tab.js. ready=false means "no snapshot yet", which is
+// NOT the same as "nothing in play" and must not render as the empty state.
+let FEED = { ready:false, live:[], isStale:false, ageMs:0, updatedAt:null, connected:false };
+let LIVE = [];   // one view model per live match, rebuilt on every snapshot
+
 const BUCKETS = [['Game 1-2','1st svc game'],['Game 3-4','2nd svc game'],['Game 5-6','3rd svc game'],
                  ['Game 7-8','4th svc game'],['Game 9-10','5th svc game'],['Game 11-12+','6th+ svc game']];
+// holdbreak.json keys its six buckets '1'–'6' on the same axis and the same
+// boundaries as the design's six rows (the server's service-game ordinal within
+// the set, 7th+ folded into row 6). Same order, so index i ↔ id String(i+1).
+const HB_SETS = ['1','2','3','4','5'];
+
+const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
+const INTERRUPTED_RE = /interrupt|suspend/i;
+
+// "US Open - Semi-finals" → "Semi-finals". The round is prefixed with a
+// tournament label that is not always an exact match of tournament_name, so
+// strip to the last " - " rather than to the name.
+function shortRound(fix){
+  const r = String(fix.tournament_round || '');
+  const i = r.lastIndexOf(' - ');
+  return i >= 0 ? r.slice(i + 3) : r;
+}
+
+// A completed tiebreak set arrives encoded "<games>.<tiebreakPoints>" per side —
+// 7-6(1) is score_first "7.7" / score_second "6.1" — NOT a decimal game count.
+// The handoff's set cell is a bare integer with no superscript slot, so the card
+// and the matchup strip print the GAMES won, which is what the cell means. The
+// tiebreak points are not dropped: the Points tab renders the tiebreak in full.
+function gamesOf(raw){
+  if(raw == null) return null;
+  const s = String(raw).trim();
+  if(s === '') return null;
+  const dot = s.indexOf('.');
+  const n = parseInt(dot < 0 ? s : s.slice(0, dot), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+// The feed carries no best-of field. ATP main-draw Slams are best-of-5, every
+// other ATP singles event best-of-3. Used ONLY to dim sets that cannot exist in
+// the format (§7) — it never affects a printed figure.
+function bestOf(fix){ return SLAM_RE.test(String(fix.tournament_name || '')) ? 5 : 3; }
+
+function viewModel(fix){
+  const scores = Array.isArray(fix.scores) ? fix.scores : [];
+  const sets = scores
+    .map(sc => [gamesOf(sc.score_first), gamesOf(sc.score_second)])
+    .filter(p => p[0] !== null && p[1] !== null);
+  const statusRaw = String(fix.event_status || '');
+  const interrupted = INTERRUPTED_RE.test(statusRaw);
+  const rawPt = String(fix.event_game_result || '').trim();
+  const parts = (rawPt === '' || rawPt === '-') ? [] : rawPt.split('-').map(x => x.trim());
+  const serveStr = String(fix.event_serve || '');
+  const serving = /first/i.test(serveStr) ? 0 : (/second/i.test(serveStr) ? 1 : null);
+  const tour = String(fix.tournament_name || '');
+  const round = shortRound(fix);
+  const label = round ? tour + ' · ' + round : tour;
+  return {
+    ek: String(fix.event_key || ''),
+    fix,
+    event: label,
+    title: 'ATP · ' + label,
+    status: interrupted ? 'INTERRUPTED' : statusRaw.toUpperCase(),
+    interrupted,
+    bo: bestOf(fix),
+    serving,
+    sets,
+    point: [parts[0] || '—', parts[1] || '—'],
+    names: [String(fix.event_first_player || ''), String(fix.event_second_player || '')],
+    avatars: [fix.event_first_player_logo || '', fix.event_second_player_logo || ''],
+    keys: [fix.first_player_key, fix.second_player_key],
+  };
+}
+
+// No photo from the feed → a transparent pixel, so the avatar circle renders as
+// its own background rather than a broken-image glyph. We do not substitute a
+// generated face: the export's randomuser.me generator is gone.
+const BLANK_AV = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const avOf = u => u || BLANK_AV;
 
 // ── state ─────────────────────────────────────────────────────────────────────
+// sel is an event_key, NOT a board index: the live board reorders and resizes
+// between ticks, so an index would silently repoint the open modal at a
+// different match the moment one started or finished.
 let ST = { sel:null, tab:'Stats', scope:'MATCH', pset:1, hb:'HOLD' };
 let lvInited = false;
 
@@ -23695,50 +23767,83 @@ function band(rate, metric){
 }
 
 // ── heatmap data ──────────────────────────────────────────────────────────────
-function heatFor(name, metric, bo){
-  const globalRate = metric==='HOLD'?0.88:0.24;
+// Real source: holdbreak.json, the nightly 24-month rollup (build-holdbreak.js).
+// players[key].serve.all[set][bucket] = {pct,n,won} for HOLD, .return.all for
+// BREAK. The export's 0.88/0.24 constant and its name-hash are gone — the global
+// pill is now the player's OWN weighted rate.
+//
+// Sums are exact: numerators and denominators summed, never an average of
+// percentages. Every band decision is taken on the PRINTED integer, so the
+// colour and the figure can never disagree (§7, build item 18).
+function hbSum(cells){
+  let won=0,n=0,any=false;
+  for(const c of cells){ if(c && c.n && c.won!=null){ won+=c.won; n+=c.n; any=true; } }
+  return { won, n, pct: (any && n) ? (won/n)*100 : null };
+}
+
+function heatFor(pkey, metric, bo){
+  const HB = LF() ? LF().holdbreak() : null;
+  const pd = (HB && HB.players) ? HB.players[String(pkey)] : null;
+  const node = pd ? (metric==='HOLD' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all)) : null;
   const DEAD = { pct:'—', frac:'', bg:'rgba(255,255,255,0.02)', bd:'rgba(255,255,255,0.05)', color:'#4b5672', size:'13px', opacity:1, tipHead:'', tipRate:'—', tipNote:'no matches on record' };
+  const maxSet = bo===3?3:5;
+
   const rows = BUCKETS.map((b,bi)=>{
-    const gDen = 343-bi*22;
-    const gRate = Math.max(0.05, Math.min(0.97, globalRate+(SEED(name+metric+bi)-0.5)*0.2));
-    const gBand = band(gRate, metric);
+    const id = String(bi+1);
+    const rowCells = HB_SETS.map(s => (node && node[s]) ? node[s][id] : null);
+    const g = hbSum(rowCells);
+    const gPctInt = g.pct===null ? null : Math.round(g.pct);
+    const gBand = g.pct===null ? null : band(g.pct/100, metric);
     const cells = [1,2,3,4,5].map(si=>{
-      if(si>(bo===3?3:5)) return Object.assign({},DEAD,{tipHead:b[0]+' · Set '+si, tipNote:'set not played in this format'});
-      const t = SEED(name+metric+bi+'s'+si);
-      const den = si<=2?100+Math.round(t*40):si===3?40+Math.round(t*25):si===4?Math.round(t*12):Math.round(t*5);
-      const spread = metric==='HOLD'?0.52:0.30;
-      const rate = Math.max(0.02, Math.min(1, gRate+(SEED(name+'r'+bi+si)-0.5)*spread));
-      const num = Math.round(den*rate);
       const head = b[0]+' · Set '+si;
-      if(den===0) return Object.assign({},DEAD,{tipHead:head});
+      // A set the format cannot reach is not missing data — it is impossible.
+      if(si>maxSet) return Object.assign({},DEAD,{tipHead:head, tipNote:'set not played in this format'});
+      const c = rowCells[si-1];
+      const den = (c && c.n!=null) ? c.n : 0;
+      const num = (c && c.won!=null) ? c.won : null;
+      // n=0 (or no numerator at all) → em dash. Never a 0%.
+      if(!den || num===null) return Object.assign({},DEAD,{tipHead:head});
+      // n<5 → the raw count only, neutral background, NO percentage: too few
+      // service games for a rate to mean anything (§7 sample gates).
       if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'rgba(255,255,255,0.03)', bd:'rgba(255,255,255,0.07)', color:'#8b96b5', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
+      const rate = num/den;
+      const pctInt = Math.round(rate*100);
       const bd2 = band(rate, metric);
-      const small = den<10;
-      const dPts = Math.round((rate-gRate)*100);
+      const small = den<10;                         // n 5–9 → smaller, greyed, band bg kept
+      const dPts = gPctInt===null ? null : (pctInt - gPctInt);
       return {
-        pct:Math.round(rate*100)+'%', frac:num+'/'+den,
+        pct:pctInt+'%', frac:num+'/'+den,
         bg:bd2.bg, bd:bd2.bd,
         color:small?'#8b96b5':bd2.color,
         size:small?'12px':'15px', opacity:small?0.72:1,
         tipHead:head,
-        tipRate:Math.round(rate*100)+'%  ·  '+num+'/'+den,
-        tipNote:bd2.tag+' band · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+Math.round(gRate*100)+'%'+(small?' · small sample':''),
+        tipRate:pctInt+'%  ·  '+num+'/'+den,
+        tipNote:bd2.tag+' band'+(dPts===null?'':' · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+gPctInt+'%')+(small?' · small sample':''),
       };
     });
-    return { bucket:b[0], sub:b[1], gPct:Math.round(gRate*100)+'%', gFrac:Math.round(gDen*gRate)+'/'+gDen, gColor:gBand.color, cells };
+    return {
+      bucket:b[0], sub:b[1],
+      gPct: gPctInt===null ? '—' : gPctInt+'%',
+      gFrac: g.pct===null ? '' : g.won+'/'+g.n,
+      gColor: gBand ? gBand.color : '#4b5672',
+      cells,
+    };
   });
-  return { rows, globalLabel:metric+' '+(globalRate*100).toFixed(1)+'%' };
+
+  // The pill is the player's weighted global across every bucket and set — the
+  // same numerator/denominator sum, not an average of the row percentages.
+  const all=[];
+  for(const s of HB_SETS) for(let bi=0;bi<BUCKETS.length;bi++) all.push((node && node[s]) ? node[s][String(bi+1)] : null);
+  const agg = hbSum(all);
+  return { rows, globalLabel: metric+' '+(agg.pct===null ? '—' : agg.pct.toFixed(1)+'%') };
 }
 
 // ── momentum chart (SVG string) ───────────────────────────────────────────────
-function momentumChart(sets, aName, bName, seed){
+// bands2 is now built from the real point log by momentumBands() below; the
+// drawing code beneath is the export's, unchanged.
+function momentumChart(bands2, aName, bName){
   const W=700,H=196,pad=30,right=78;
   const zY=100,topRail=30,botRail=172;
-  const rnd = k => {
-    const t=seed+'|'+k; let h=2166136261;
-    for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=(h*16777619)>>>0;}
-    h^=h>>>13;h=(h*2246822507)>>>0;h^=h>>>16;return(h>>>0)/4294967296;
-  };
   const smooth = pts => {
     if(pts.length<2) return '';
     let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
@@ -23750,20 +23855,8 @@ function momentumChart(sets, aName, bName, seed){
     }
     return d;
   };
-  const SCORES=[['40-0',4],['40-15',3],['40-30',2],['AD',1]];
-  const bands2 = sets.map((st,si)=>{
-    const n=Math.max(1,st[0]+st[1]);
-    const lean=st[0]>st[1]?1:-1;
-    const games=Array.from({length:n},(_,gi)=>{
-      const r=rnd('s'+si+'-'+gi),w=rnd('w'+si+'-'+gi);
-      const pick=SCORES[Math.min(3,Math.floor(r*4))];
-      return {m:pick[1]*(w>(lean>0?0.42:0.58)?1:-1),brk:rnd('k'+si+'-'+gi)>0.86};
-    });
-    const ord=['1st set','2nd set','3rd set'];
-    const nth = si<3?ord[si]:(si+1)+'th set';
-    return {score:st[0]+'-'+st[1],label:nth,games};
-  });
   const all=bands2.reduce((a,b)=>a.concat(b.games),[]);
+  if(!all.length) return '';
   const plotW=W-pad-right;
   const x=i=>all.length<2?pad+plotW/2:pad+(i*plotW)/(all.length-1);
   const amp=54,mx=4;
@@ -23801,160 +23894,287 @@ function momentumChart(sets, aName, bName, seed){
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">${kids}</svg>`;
 }
 
+// ── momentum from the point log ───────────────────────────────────────────────
+// One plotted game per game ACTUALLY PLAYED. Magnitude is the §6 ladder read off
+// the game's own last point — 40-0 → 4, 40-15 → 3, 40-30 → 2, deuce/AD → 1 —
+// signed by who really won the game (player_served + serve_lost). Break ticks
+// are the feed's serve_lost flag, not a hash.
+//
+// Tiebreak pseudo-sets carry one row per POINT rather than a game, and the
+// ladder has no defined rung for a tiebreak margin, so they are not plotted —
+// inventing one would put a fabricated swing next to real ones. The set divider
+// still prints the true set score, so a 7-6 set reads correctly.
+const MOM_RUNG = { '0':4, '15':3, '30':2, '40':1, 'A':1, 'AD':1 };
+// A game in progress arrives with EVERY field null — score, player_served,
+// serve_winner and serve_lost. It is a row, not a result. Only a DECIDED game
+// can be plotted: one of serve_winner / serve_lost is stamped the moment the
+// game ends. Without this gate an undecided game reads as a completed game won
+// by player B (server null ⇒ "not A", broken false ⇒ "held"), which puts an
+// invented swing on the chart.
+const momDecided = gm => gm.serve_winner != null || gm.serve_lost != null;
+function momentumBands(pbpGames, m){
+  const ord=['1st set','2nd set','3rd set'];
+  return m.sets.map((st,si)=>{
+    const n=si+1;
+    const rows=pbpGames.filter(gm=>setNoOf(gm)===n && !isTiebreakRow(gm) && momDecided(gm))
+                       .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
+    const games=rows.map(gm=>{
+      // serve_winner / serve_lost both name the SERVER, so fall back to them
+      // when player_served has not been stamped on the row.
+      const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
+      const lost=gm.serve_lost!=null;
+      const aWon=aServ?!lost:lost;            // server lost ⇒ the returner won it
+      const pts=Array.isArray(gm.points)?gm.points:[];
+      const last=pts.length?String(pts[pts.length-1].score||''):'';
+      const p=last.split('-').map(x=>x.trim());
+      const loser=aWon?p[1]:p[0];
+      // Unreadable last point → plot at the smallest rung. The SIGN (who won) is
+      // still real; only the magnitude falls back.
+      const mag=MOM_RUNG[String(loser).toUpperCase()]||1;
+      return {m:mag*(aWon?1:-1),brk:lost};
+    });
+    return {score:st[0]+'-'+st[1],label:si<3?ord[si]:(si+1)+'th set',games};
+  }).filter(b=>b.games.length);
+}
+
+const setNoOf = gm => { const x=String(gm.set_number||'').match(/(\d+)/); return x?+x[1]:null; };
+const isTiebreakRow = gm => /tiebreak/i.test(String(gm.set_number||''));
+
+// How old the board is, in the header's "Updated" slot. Real age off the
+// snapshot's updated_at — never a hardcoded "now".
+function updatedLabel(){
+  if(FEED.updatedAt==null) return '—';
+  const s=Math.max(0,Math.round((Date.now()-FEED.updatedAt)/1000));
+  if(s<10) return 'now';
+  if(s<90) return s+'s';
+  return Math.round(s/60)+'m';
+}
+
 // ── renderVals ────────────────────────────────────────────────────────────────
 function renderVals(){
   const S=ST;
-  const mkSets=(m,side)=>m.sets.map((st,i)=>{
-    const mine=st[side],theirs=st[1-side];
-    const done=i<m.sets.length-1;
-    const won=mine>theirs;
-    return {games:String(mine),weight:done?(won?700:500):700,color:done?(won?'#e7e9ee':'#5b6880'):'#e7e9ee'};
-  });
-  const ip=LIVE_DATA.filter(m=>m.status!=='INTERRUPTED').length;
-  const itr=LIVE_DATA.length-ip;
-  const evs=LIVE_DATA.map(m=>m.event).filter((e,i,a)=>a.indexOf(e)===i).length;
-  const hdr={inPlayCount:String(ip),interruptedCount:String(itr),interruptedColor:itr?'#e8a84e':'#4b5672',eventCount:String(evs)};
+  const DASH='—',MISS='#4b5672',INK='#e7e9ee';
 
-  const si=S.sel;
-  const open=si!==null&&si!==undefined;
-  if(!open) return Object.assign({},hdr,{isEmpty:LIVE_DATA.length===0});
+  // ── header strip (§2.1) ──
+  const inPlay=LIVE.filter(m=>!m.interrupted).length;
+  const itr=LIVE.filter(m=>m.interrupted).length;
+  const evs=LIVE.map(m=>String(m.fix.tournament_name||'')).filter((e,i,a)=>a.indexOf(e)===i).length;
+  // Before the first snapshot every figure is unknown, so every figure dashes.
+  // "0 in play" is a claim about the world and we have not measured it yet.
+  const hdr = FEED.ready
+    ? {inPlayCount:String(inPlay),interruptedCount:String(itr),interruptedColor:itr?'#e8a84e':'#4b5672',eventCount:String(evs),updatedLabel:updatedLabel(),isStale:!!FEED.isStale}
+    : {inPlayCount:DASH,interruptedCount:DASH,interruptedColor:'#4b5672',eventCount:DASH,updatedLabel:DASH,isStale:false};
 
-  const m=LIVE_DATA[si],A=NAMES_DATA[si][0],B=NAMES_DATA[si][1];
-  const nSets=m.sets.length;
+  const m = S.sel==null ? null : (LIVE.find(x=>x.ek===S.sel)||null);
+  if(!m) return Object.assign({},hdr,{isEmpty:FEED.ready&&LIVE.length===0});
+
+  const A=m.names[0],B=m.names[1];
+  const nSets=Math.max(1,m.sets.length);
   const scoreCells=side=>m.sets.map((st,i)=>{
-    const done=i<nSets-1,won=st[side]>st[1-side];
+    const done=i<m.sets.length-1,won=st[side]>st[1-side];
     return {v:String(st[side]),weight:done?(won?700:500):700,color:done?(won?'#e7e9ee':'#5b6880'):'#e7e9ee'};
   }).concat([{v:m.point[side],weight:700,color:'#3dd68c'}]);
 
-  const rnd=(k,lo,hi)=>lo+SEED(A+B+k)*(hi-lo);
-  const pct=(n,d)=>Math.round(n/d*1000)/10;
-  const sc=S.scope==='MATCH'?1:0.55;
-  const aces=[Math.max(1,Math.round(rnd('ac',2,14)*sc)),Math.max(1,Math.round(rnd('bc',1,9)*sc))];
-  const dfs=[Math.max(1,Math.round(rnd('ad',1,5)*sc)),Math.max(1,Math.round(rnd('bd',1,5)*sc))];
-  const f1=[[Math.round(rnd('a1n',14,34)*sc),Math.round(rnd('a1d',22,44)*sc)],[Math.round(rnd('b1n',14,34)*sc),Math.round(rnd('b1d',22,44)*sc)]];
-  const f2=[[Math.round(rnd('a2n',5,14)*sc),Math.round(rnd('a2d',8,20)*sc)],[Math.round(rnd('b2n',5,14)*sc),Math.round(rnd('b2d',8,20)*sc)]];
-  const bpsDen=[Math.max(1,Math.round(rnd('abd',1,7)*sc)),Math.max(1,Math.round(rnd('bbd',1,7)*sc))];
-  const bps=[[Math.round(bpsDen[0]*rnd('abn',0.2,1)),bpsDen[0]],[Math.round(bpsDen[1]*rnd('bbn',0.2,1)),bpsDen[1]]];
-  const dr=[rnd('adr',0.8,1.4).toFixed(2),rnd('bdr',0.8,1.4).toFixed(2)];
-  const DASH='—',MISS='#4b5672',INK='#e7e9ee';
+  // ── box score ──
+  const lf=LF();
+  const idx=(lf ? lf.indexStats(m.fix).idx : null) || Object.create(null);
+  const pA=m.keys[0],pB=m.keys[1];
+  // MATCH / SET n scope (§4) reads the feed's own stat_period — the export's
+  // "scale countable figures to ~55%" device is gone; set figures are real.
+  const curSetPer='set'+nSets;
+  const per=S.scope==='MATCH'?'match':curSetPer;
+
+  // api-tennis nulls stat_won/stat_total on some rows (break points at premier
+  // events) and carries the pair only in stat_value as "X/Y". Number(null) is 0,
+  // so reading the counts blindly turns a MISSING row into a zero — parse the
+  // fraction out of stat_value instead, and keep null as null.
+  function cell(pkey,name){
+    const r=lf?lf.stat(idx,pkey,per,name):null;
+    if(!r) return null;
+    let w=r.won,t=r.total;
+    if(w==null||t==null){
+      const mm=String(r.value==null?'':r.value).match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+      if(mm){ w=+mm[1]; t=+mm[2]; }
+    }
+    const v=(r.value==null||r.value==='')?NaN:parseFloat(String(r.value));
+    return {won:w==null?null:+w,total:t==null?null:+t,value:Number.isFinite(v)?v:null};
+  }
+
   const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen)=>{
     const aNull=aV===null||aV===undefined,bNull=bV===null||bV===undefined;
     const tot=(aNull?0:aV)+(bNull?0:bV);
     const share=(v,isNull)=>(isNull||tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
     return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,aColor:aNull?MISS:INK,bColor:bNull?MISS:INK,aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW:share(aV,aNull),bW:share(bV,bNull)};
   };
-  const ratio=(n,d)=>d>0?pct(n,d):null;
-  const den=(n,d)=>d>0?'('+n+'/'+d+')':'';
-  const pctRow=(label,an,ad,bn,bd)=>{const a=ratio(an,ad),b=ratio(bn,bd);return twoSided(label,a,b,a+'%',b+'%',den(an,ad),den(bn,bd));};
 
-  const svA=Array.from({length:5},(_,i)=>Math.round(rnd('sva'+i,150,350)));
-  const svB=Array.from({length:5},(_,i)=>Math.round(rnd('svb'+i,150,350)));
-  const rtA=Array.from({length:5},(_,i)=>Math.round(rnd('rta'+i,30,200)));
-  const rtB=Array.from({length:5},(_,i)=>Math.round(rnd('rtb'+i,30,200)));
-  const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
-  const svPts=[[f1[0][0]+f2[0][0],f1[0][1]+f2[0][1]],[f1[1][0]+f2[1][0],f1[1][1]+f2[1][1]]];
-  const r1=[[f1[1][1]-f1[1][0],f1[1][1]],[f1[0][1]-f1[0][0],f1[0][1]]];
-  const r2=[[f2[1][1]-f2[1][0],f2[1][1]],[f2[0][1]-f2[0][0],f2[0][1]]];
-  const rtPts=[[r1[0][0]+r2[0][0],r1[0][1]+r2[0][1]],[r1[1][0]+r2[1][0],r1[1][1]+r2[1][1]]];
-  const bpc=[[bps[1][1]-bps[1][0],bps[1][1]],[bps[0][1]-bps[0][0],bps[0][1]]];
-  const totPts=[[svPts[0][0]+rtPts[0][0],svPts[0][1]+rtPts[0][1]],[svPts[1][0]+rtPts[1][0],svPts[1][1]+rtPts[1][1]]];
-  const wnr=[Math.round(rnd('awn',8,34)*sc),Math.round(rnd('bwn',8,34)*sc)];
-  const ue=[Math.round(rnd('aue',6,28)*sc),Math.round(rnd('bue',6,28)*sc)];
-  const netDen=[Math.max(1,Math.round(rnd('and',4,18)*sc)),Math.max(1,Math.round(rnd('bnd',4,18)*sc))];
-  const net=[[Math.round(netDen[0]*rnd('ann',0.35,0.85)),netDen[0]],[Math.round(netDen[1]*rnd('bnn',0.35,0.85)),netDen[1]]];
-  const prsDen=[Math.max(0,Math.round(rnd('apd',2,14)*sc)),Math.max(0,Math.round(rnd('bpd',2,14)*sc))];
-  const prs=[[Math.round(prsDen[0]*rnd('apn',0.3,0.8)),prsDen[0]],[Math.round(prsDen[1]*rnd('bpn',0.3,0.8)),prsDen[1]]];
+  // A rate over zero attempts does not exist (0 break points faced is not a 0%
+  // save rate) — it dashes. A genuine 0-of-n stays 0%.
+  const rateOf=c=>{
+    if(!c) return null;
+    if(c.total!=null){ if(c.total<=0) return null; if(c.won!=null) return Math.round(c.won/c.total*1000)/10; }
+    return c.value;
+  };
+  const denOf=c=>(c&&c.won!=null&&c.total!=null&&c.total>0)?'('+c.won+'/'+c.total+')':'';
+  // R5: precision is not fixed — Number→String strips the trailing zero, so
+  // 71.7% and 40% sit in the same column exactly as the export has them.
+  const pctRow=(label,name)=>{
+    const a=cell(pA,name),b=cell(pB,name),av=rateOf(a),bv=rateOf(b);
+    return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b));
+  };
+  const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
+  const cntRow=(label,name)=>{
+    const a=cntOf(cell(pA,name)),b=cntOf(cell(pB,name));
+    return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b));
+  };
 
+  // Ratings use the model's own layer-9 / layer-10 formulas on this match's box
+  // score (live-tab.js), so the Live tab and the model cannot diverge. Under the
+  // sample floor a rating dashes rather than printing a noisy figure.
+  const r0=v=>v==null?null:Math.round(v);
+  const svR=[r0(lf?lf.serveRating(idx,pA,per).rating:null),r0(lf?lf.serveRating(idx,pB,per).rating:null)];
+  const rtR=[r0(lf?lf.returnRating(idx,pA,per).rating:null),r0(lf?lf.returnRating(idx,pB,per).rating:null)];
+  const drRaw=[lf?lf.dominance(idx,pA,per):null,lf?lf.dominance(idx,pB,per):null];
+  const drV=[drRaw[0]==null?null:+drRaw[0].toFixed(2),drRaw[1]==null?null:+drRaw[1].toFixed(2)];
+
+  const drRow=lbl=>twoSided(lbl,drV[0],drV[1],drV[0]===null?'':drV[0].toFixed(2),drV[1]===null?'':drV[1].toFixed(2));
+  const svRow=lbl=>twoSided(lbl,svR[0],svR[1],svR[0]===null?'':String(svR[0]),svR[1]===null?'':String(svR[1]));
+  const rtRow=lbl=>twoSided(lbl,rtR[0],rtR[1],rtR[0]===null?'':String(rtR[0]),rtR[1]===null?'':String(rtR[1]));
+
+  // §4 panel order and row lists, with "Pressure points" dropped — the feed has
+  // no such stat and synthesising one would print an invented metric beside real
+  // ones (founder ruling, 2026-09-11).
   const statSections=[
-    {title:'Dominance',rows:[twoSided('Dominance ratio',+dr[0],+dr[1],dr[0],dr[1])]},
+    {title:'Dominance',rows:[drRow('Dominance ratio')]},
     {title:'Service',rows:[
-      twoSided('Serve rating',avg(svA),avg(svB),String(avg(svA)),String(avg(svB))),
-      twoSided('Aces',aces[0],aces[1],String(aces[0]),String(aces[1])),
-      twoSided('Double faults',dfs[0],dfs[1],String(dfs[0]),String(dfs[1])),
-      pctRow('1st serve percentage',f1[0][1],svPts[0][1],f1[1][1],svPts[1][1]),
-      pctRow('1st serve points won',f1[0][0],f1[0][1],f1[1][0],f1[1][1]),
-      pctRow('2nd serve points won',f2[0][0],f2[0][1],f2[1][0],f2[1][1]),
-      pctRow('Break points saved',bps[0][0],bps[0][1],bps[1][0],bps[1][1]),
+      svRow('Serve rating'),
+      cntRow('Aces','Aces'),
+      cntRow('Double faults','Double Faults'),
+      pctRow('1st serve percentage','1st serve percentage'),
+      pctRow('1st serve points won','1st serve points won'),
+      pctRow('2nd serve points won','2nd serve points won'),
+      pctRow('Break points saved','Break Points Saved'),
     ]},
     {title:'Return',rows:[
-      twoSided('Return rating',avg(rtA),avg(rtB),String(avg(rtA)),String(avg(rtB))),
-      pctRow('1st return points won',r1[0][0],r1[0][1],r1[1][0],r1[1][1]),
-      pctRow('2nd return points won',r2[0][0],r2[0][1],r2[1][0],r2[1][1]),
-      pctRow('Break points converted',bpc[0][0],bpc[0][1],bpc[1][0],bpc[1][1]),
+      rtRow('Return rating'),
+      pctRow('1st return points won','1st return points won'),
+      pctRow('2nd return points won','2nd return points won'),
+      pctRow('Break points converted','Break Points Converted'),
     ]},
     {title:'Points won',rows:[
-      twoSided('Winners',wnr[0],wnr[1],String(wnr[0]),String(wnr[1])),
-      twoSided('Unforced errors',ue[0],ue[1],String(ue[0]),String(ue[1])),
-      pctRow('Net points won',net[0][0],net[0][1],net[1][0],net[1][1]),
-      pctRow('Service points won',svPts[0][0],svPts[0][1],svPts[1][0],svPts[1][1]),
-      pctRow('Return points won',rtPts[0][0],rtPts[0][1],rtPts[1][0],rtPts[1][1]),
-      pctRow('Pressure points',prs[0][0],prs[0][1],prs[1][0],prs[1][1]),
-      pctRow('Total points won',totPts[0][0],totPts[0][1],totPts[1][0],totPts[1][1]),
+      cntRow('Winners','Winners'),
+      cntRow('Unforced errors','Unforced errors'),
+      pctRow('Net points won','Net points won'),
+      pctRow('Service points won','Service Points Won'),
+      pctRow('Return points won','Return Points Won'),
+      pctRow('Total points won','Total Points Won'),
     ]},
   ];
 
-  const PSEQ=['0:0','15:0','15:15','30:15','40:15','40:30','40:40','40:A','GAME'];
-  const setIdx=Math.min(S.pset,nSets)-1;
-  const setScoreLabel='SET '+(setIdx+1)+'  '+m.sets[setIdx][0]+'-'+m.sets[setIdx][1];
-  const played=m.sets[setIdx][0]+m.sets[setIdx][1];
-  const gamesInSet=Math.max(12,played);
-  let ag=0,bg_=0;
-  const games=Array.from({length:gamesInSet},(_,gi)=>{
-    const aServ=gi%2===0;
-    const serverWon=gi<12?true:SEED(A+B+'g'+gi+setIdx)>0.34;
-    if(aServ?serverWon:!serverWon) ag++; else bg_++;
-    const nPts=4+Math.round(SEED(B+'p'+gi+setIdx)*5);
-    return {
-      isGame:true,hasPoints:true,divider:false,dividerLabel:'',
-      servesA:aServ,servesB:!aServ,
-      aGames:String(ag),bGames:String(bg_),
-      aColor:aServ?'#5b9bff':'#8b96b5',bColor:aServ?'#8b96b5':'#e7e9ee',
-      lost:!serverWon,
-      points:Array.from({length:nPts},(_,pi)=>({
-        v:PSEQ[Math.min(PSEQ.length-1,pi)],
-        bp:pi>=3&&SEED(A+'bp'+gi+pi+setIdx)>0.68,
-        sep:pi===nPts-1?'':',',
-        color:pi===nPts-1?'#e7e9ee':'#8b96b5',
-      })),
-    };
-  });
-  const TB=[[0,1],[1,1],[2,1],[3,1],[3,2],[4,2],[4,3],[5,3],[5,4],[5,5],[5,6],[5,7]];
-  games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+(setIdx+1),aGames:'',bGames:'',aColor:'#8b96b5',bColor:'#8b96b5',lost:false,points:[]});
-  TB.forEach((p,pi)=>{
-    const aServes=pi===0?true:Math.floor((pi+1)/2)%2===1;
-    const prev=pi===0?[0,0]:TB[pi-1];
-    const aWon=p[0]>prev[0];
-    games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:!aServes,aGames:String(p[0]),bGames:String(p[1]),aColor:aWon?'#e7e9ee':'#8b96b5',bColor:aWon?'#8b96b5':'#e7e9ee',lost:aServes?!aWon:aWon,points:[]});
-  });
+  // ── Points tab (§5) — the real point log ──
+  const entry=lf?lf.pbpGet(m.ek):null;
+  const pbpGames=(entry&&Array.isArray(entry.games))?entry.games:[];
+  const pbpLoading=!!(entry&&entry.loading&&!entry.games);
+  const pbpError=!!(entry&&entry.error&&!entry.games);
 
+  const setIdx=Math.min(Math.max(1,S.pset),nSets)-1;
+  const setNum=setIdx+1;
+  const scSet=m.sets[setIdx];
+  const setScoreLabel=scSet?('SET '+setNum+'  '+scSet[0]+'-'+scSet[1]):('SET '+setNum);
+
+  // The export's `Math.max(12, played)` floor is DELETED (founder ruling): it
+  // padded a 2-1 set out to twelve rows of tennis nobody played. A set renders
+  // exactly the games the feed has logged — a short set looks short.
+  // The feed opens a game row the moment a game starts, before anything has
+  // happened in it: score, player_served, serve_winner and serve_lost all null
+  // and no points array. That is a placeholder, not a game — rendering it gives
+  // a blank row with a lone separator. A row shows once it carries a score or at
+  // least one point; the game in progress appears as soon as a point is played.
+  const hasSubstance = gm => String(gm.score||'').trim()!=='' ||
+                             (Array.isArray(gm.points) && gm.points.length>0);
+  const games=pbpGames
+    .filter(gm=>setNoOf(gm)===setNum&&!isTiebreakRow(gm)&&hasSubstance(gm))
+    .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0))
+    .map(gm=>{
+      const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
+      const bServ=/second/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
+      const parts=String(gm.score||'').split('-').map(x=>x.trim());
+      const pts=Array.isArray(gm.points)?gm.points:[];
+      return {
+        isGame:true,hasPoints:pts.length>0,divider:false,dividerLabel:'',
+        servesA:aServ,servesB:bServ,
+        aGames:parts[0]||'',bGames:parts[1]||'',
+        aColor:aServ?'#5b9bff':'#8b96b5',bColor:aServ?'#8b96b5':'#e7e9ee',
+        lost:!!gm.serve_lost,
+        points:pts.map((pt,pi)=>({
+          // "15 - 0" → "15:0": the export's typography, the feed's value.
+          v:String(pt.score==null?'':pt.score).replace(/\s*-\s*/,':'),
+          // R3 answered by the feed: the BP chip is the vendor's own break_point
+          // flag on that point, not a point-index hash.
+          bp:pt.break_point!=null&&String(pt.break_point).trim()!=='',
+          sep:pi===pts.length-1?'':',',
+          color:pi===pts.length-1?'#e7e9ee':'#8b96b5',
+        })),
+      };
+    });
+
+  // Tiebreak (§5): arrives as its own pseudo-set, "Set N TieBreak", one row per
+  // POINT carrying the running score and the server. Rows arrive out of order.
+  // A tiebreak row IS the point, so it is meaningless without its running score
+  // — an unscored row would otherwise repeat the previous score as if a point
+  // had been played and nobody had won it.
+  const tbRows=pbpGames
+    .filter(gm=>setNoOf(gm)===setNum&&isTiebreakRow(gm)&&String(gm.score||'').trim()!=='')
+    .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
+  if(tbRows.length){
+    games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+setNum,aGames:'',bGames:'',aColor:'#8b96b5',bColor:'#8b96b5',lost:false,points:[]});
+    let prev=[0,0];
+    tbRows.forEach(gm=>{
+      const p=String(gm.score||'').split('-').map(x=>parseInt(x.trim(),10));
+      const a=Number.isFinite(p[0])?p[0]:prev[0],b=Number.isFinite(p[1])?p[1]:prev[1];
+      const aServes=/first/i.test(String(gm.player_served||''));
+      const bServes=/second/i.test(String(gm.player_served||''));
+      const aWon=a>prev[0];
+      games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:bServes,aGames:String(a),bGames:String(b),aColor:aWon?'#e7e9ee':'#8b96b5',bColor:aWon?'#8b96b5':'#e7e9ee',lost:aServes?!aWon:aWon,points:[]});
+      prev=[a,b];
+    });
+  }
+
+  // ── Ratings tab (§6) ──
+  // R1 dissolves on real data: Dominance Ratio is computed as returnPtsWon% /
+  // (100 − servicePtsWon%), and the opponent's return-points-won% IS
+  // 100 − my service-points-won%. The printed note is therefore the formula.
   const ratingRows=[
-    Object.assign(twoSided('Dominance ratio',+dr[0],+dr[1],dr[0],dr[1]),{scaleNote:'return points won ÷ opponent return points won'}),
-    Object.assign(twoSided('Serve rating',avg(svA),avg(svB),String(avg(svA)),String(avg(svB))),{scaleNote:'ATP composite · match to date'}),
-    Object.assign(twoSided('Return rating',avg(rtA),avg(rtB),String(avg(rtA)),String(avg(rtB))),{scaleNote:'ATP composite · match to date'}),
+    Object.assign(drRow('Dominance ratio'),{scaleNote:'return points won ÷ opponent return points won'}),
+    Object.assign(svRow('Serve rating'),{scaleNote:'ATP composite · match to date'}),
+    Object.assign(rtRow('Return rating'),{scaleNote:'ATP composite · match to date'}),
   ];
-  const perPt=(n,d)=>d>0?(n/d).toFixed(2):null;
-  const totalPlayed=totPts[0][1];
-  const wue=[ue[0]>0?+(wnr[0]/ue[0]).toFixed(2):null,ue[1]>0?+(wnr[1]/ue[1]).toFixed(2):null];
-  const wueDen=i=>{const wp=perPt(wnr[i],totalPlayed),up=perPt(ue[i],totalPlayed);return(wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
-  ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(0),wueDen(1)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
+  const wnA=cntOf(cell(pA,'Winners')),wnB=cntOf(cell(pB,'Winners'));
+  const ueA=cntOf(cell(pA,'Unforced errors')),ueB=cntOf(cell(pB,'Unforced errors'));
+  const tpA=cell(pA,'Total Points Won'),tpB=cell(pB,'Total Points Won');
+  const totalPlayed=(tpA&&tpA.total!=null&&tpA.total>0)?tpA.total:((tpB&&tpB.total!=null&&tpB.total>0)?tpB.total:null);
+  const ratioOf=(w,u)=>(w!=null&&u!=null&&u>0)?+(w/u).toFixed(2):null;
+  const wue=[ratioOf(wnA,ueA),ratioOf(wnB,ueB)];
+  const perPt=(n,d)=>(n!=null&&d!=null&&d>0)?(n/d).toFixed(2):null;
+  const wueDen=(w,u)=>{const wp=perPt(w,totalPlayed),up=perPt(u,totalPlayed);return(wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
+  ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(wnA,ueA),wueDen(wnB,ueB)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
 
-  const momentumSvg=momentumChart(m.sets,A,B,A+B);
-  const heatA=heatFor(A,S.hb,m.bo),heatB=heatFor(B,S.hb,m.bo);
+  const momentumSvg=momentumChart(momentumBands(pbpGames,m),A,B);
+  const heatA=heatFor(m.keys[0],S.hb,m.bo),heatB=heatFor(m.keys[1],S.hb,m.bo);
   const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,color:n>(m.bo===3?3:5)?'#2b3348':'#5b6880'}));
 
   return Object.assign({},hdr,{
     isEmpty:false,
     modalOpen:true,
     modal:{
-      title:'ATP · US Open · 1/64-finals',aName:A,bName:B,aAv:AV(A),bAv:AV(B),
+      title:m.title,aName:A,bName:B,aAv:avOf(m.avatars[0]),bAv:avOf(m.avatars[1]),
       aScore:scoreCells(0),bScore:scoreCells(1),
       aDot:m.serving===0?'#3dd68c':'transparent',bDot:m.serving===1?'#3dd68c':'transparent',
     },
     tabs:['Stats','Points','Ratings','Break/Hold'],tab:S.tab,
     scope:S.scope,nSets,
     statSections,
-    setTabs:m.sets.map((_,i)=>i+1),pset:S.pset,
-    setScoreLabel,games,
+    setTabs:m.sets.map((_,i)=>i+1),pset:setNum,
+    setScoreLabel,games,pbpLoading,pbpError,
     ratingRows,momentumSvg,
     hb:S.hb,
     heatBaseline:S.hb==='HOLD'
@@ -23962,11 +24182,12 @@ function renderVals(){
       :'Cell colour is the break rate itself: green at 30% and above, amber 18–29%, red below 18%. Hover a cell for the count and the gap to that bucket’s global.',
     heatGates:'n≥10 full size · n 5–9 smaller and greyed · n<5 raw count only, no percentage · n=0 a dash.',
     heatPlayers:[
-      {name:A,avUrl:AV(A),nameColor:'#5b9bff',globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
-      {name:B,avUrl:AV(B),nameColor:'#e7e9ee',globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
+      {name:A,avUrl:avOf(m.avatars[0]),nameColor:'#5b9bff',globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
+      {name:B,avUrl:avOf(m.avatars[1]),nameColor:'#e7e9ee',globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
     ],
   });
 }
+
 
 // ── HTML builders ─────────────────────────────────────────────────────────────
 function h(tag,attrs,inner){
@@ -24070,8 +24291,8 @@ function render(){
   if(!tab) return;
 
   // ── CARDS ──
-  const cardsHtml=LIVE_DATA.map((m,mi)=>{
-    const live=m.status!=='INTERRUPTED';
+  const cardsHtml=LIVE.map((m,mi)=>{
+    const live=!m.interrupted;
     const stColor=live?'#3dd68c':'#e8a84e';
     const stBg=live?'rgba(61,214,140,0.12)':'rgba(232,168,78,0.12)';
     const stBd=live?'rgba(61,214,140,0.35)':'rgba(232,168,78,0.35)';
@@ -24083,8 +24304,8 @@ function render(){
     const playersHtml=[0,1].map(side=>`
 <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:11px 16px;border-top:1px solid ${side===0?'transparent':'rgba(255,255,255,0.05)'};">
   <span style="display:flex;align-items:center;gap:11px;min-width:0;">
-    <img src="${AV(NAMES_DATA[mi][side])}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
-    <span style="font-size:14px;font-weight:700;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(NAMES_DATA[mi][side])}</span>
+    <img src="${avOf(m.avatars[side])}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
+    <span style="font-size:14px;font-weight:700;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.names[side])}</span>
   </span>
   <span style="display:flex;align-items:center;gap:12px;flex:none;">
     <span style="width:7px;height:7px;border-radius:50%;background:${m.serving===side?'#3dd68c':'transparent'};flex:none;"></span>
@@ -24093,7 +24314,7 @@ function render(){
   </span>
 </div>`).join('');
     return `
-<div class="lvcard" data-open="${mi}" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;">
+<div class="lvcard" data-open="${e(m.ek)}" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;">
   <div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.05);">
     <span style="font-size:11.5px;color:#4b5672;white-space:nowrap;">${e(m.event)}</span>
     <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;color:${stColor};background:${stBg};border:1px solid ${stBd};border-radius:5px;padding:3px 7px;"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};"></span>${e(m.status)}</span>
@@ -24142,10 +24363,9 @@ ${sectionsHtml}`;
 
     // ── Points body ──
     if(S.tab==='Points'){
-      const m=LIVE_DATA[S.sel],nSets=d.nSets;
-      const setTabsHtml=m.sets.map((_,i)=>{
-        const on=S.pset===i+1;const sg=seg(on);
-        return `<span class="lvseg" data-pset="${i+1}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">SET ${i+1}</span>`;
+      const setTabsHtml=d.setTabs.map(n=>{
+        const on=d.pset===n;const sg=seg(on);
+        return `<span class="lvseg" data-pset="${n}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">SET ${n}</span>`;
       }).join('');
       const gamesHtml=d.games.map(g=>{
         if(g.divider) return `
@@ -24174,12 +24394,19 @@ ${sectionsHtml}`;
   ${ptsHtml}
 </div>`;
       }).join('');
+      // No games yet is a real state, not an error: the point log is fetched on
+      // demand and a set that has not started has nothing to show. Say which.
+      const note=t=>`<div style="padding:40px 20px;text-align:center;font-size:13px;color:#5b6880;">${e(t)}</div>`;
+      const gamesBody=gamesHtml ? gamesHtml
+        : d.pbpLoading ? note('Loading the point log…')
+        : d.pbpError   ? note('Point log unavailable right now.')
+        : note('No points logged in this set yet.');
       bodyHtml=`
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
   <div style="display:inline-flex;gap:3px;background:#080a10;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:3px;">${setTabsHtml}</div>
   <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:#aab3c5;">${e(d.setScoreLabel)}</span>
 </div>
-<div>${gamesHtml}</div>`;
+<div>${gamesBody}</div>`;
     }
 
     // ── Ratings body ──
@@ -24196,7 +24423,7 @@ ${sectionsHtml}`;
       <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#aab3c5;"><span style="width:14px;height:2px;background:#e7e9ee;"></span>${e(d.modal.bName)}</span>
     </span>
   </div>
-  <div style="margin-top:12px;">${d.momentumSvg}</div>
+  <div style="margin-top:12px;">${d.momentumSvg||`<div style="padding:40px 20px;text-align:center;font-size:13px;color:#5b6880;">No completed games to plot yet.</div>`}</div>
 </div>`;
     }
 
@@ -24271,13 +24498,13 @@ ${sectionsHtml}`;
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#4b5672;">Updated</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#8b96b5;">now</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:${d.isStale?'#e8a84e':'#8b96b5'};">${e(d.updatedLabel)}</span>
       </div>
     </div>
   </div>
   ${emptyHtml}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));align-items:start;gap:12px;">${cardsHtml}</div>
-  <div style="font-size:11px;color:#4b5672;line-height:1.6;">Live scores, point sequences, ratings and heatmap figures on this page are placeholder data for design review — not a live feed.</div>
+  <div style="font-size:11px;color:#4b5672;line-height:1.6;">Live scores, point sequences and match stats come from the match feed and update on their own. Hold/break figures are a 24-month rollup, all surfaces. A dash means the feed has not reported that figure yet — never a zero.</div>
 </div>
 ${modalHtml}`;
 
@@ -24299,16 +24526,56 @@ ${modalHtml}`;
   }
   tab.querySelectorAll('.lvcard[data-open]').forEach(card=>{
     card.addEventListener('click',()=>{
-      const mi=parseInt(card.dataset.open,10);
-      setState({sel:mi,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});
+      const ek=card.dataset.open;
+      // §8: modal state resets on every open — Stats, MATCH, set 1, HOLD.
+      setState({sel:ek,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});
+      // The point log is deliberately NOT on the pushed snapshot (it is ~43% of
+      // the row); fetch it only now that a modal is actually open.
+      if(LF()) LF().pbpLoad(ek,()=>{ if(ST.sel===ek) render(); });
     });
   });
 }
 
 // ── init ──────────────────────────────────────────────────────────────────────
+// This is an INLINE script, so it runs during parse — before the deferred
+// live-tab.js has defined window.LiveFeed. Queue the subscriber on the array
+// live-tab.js drains, rather than calling an API that does not exist yet.
+function onFeed(payload){
+  FEED = payload || FEED;
+  LIVE = (Array.isArray(FEED.live) ? FEED.live : []).map(viewModel);
+  // The open match may have finished or been suspended between ticks. Drop the
+  // selection rather than leaving a modal pinned to a match that is off the board.
+  if(ST.sel!=null && !LIVE.some(m=>m.ek===ST.sel)) ST.sel=null;
+  // A modal that is open wants a fresh point log; the fetch self-throttles.
+  if(ST.sel!=null && LF()) LF().pbpLoad(ST.sel,()=>{ if(ST.sel!=null) render(); });
+  render();
+}
+(window.__LV_SUBS = window.__LV_SUBS || []).push(onFeed);
+
+// The "Updated" figure is an age, so it has to keep moving between snapshots.
+// One timer for the whole tab, and only while Live is actually the visible page.
+let lvClock=null;
+function lvClockOn(on){
+  if(on && !lvClock){ lvClock=setInterval(()=>{ if(!document.hidden) render(); },10000); }
+  else if(!on && lvClock){ clearInterval(lvClock); lvClock=null; }
+}
+
+// holdbreak.json is fetched lazily by loadHeavyDatasets(). If the Break/Hold tab
+// is opened before it lands, every cell is a dash — so repaint once it arrives
+// rather than leaving a correct-but-empty grid on screen (same lazy-race idiom
+// as the profile panels).
+function lvAwaitHoldbreak(){
+  let tries=0;
+  const t=setInterval(()=>{
+    const hb=LF()?LF().holdbreak():null;
+    if((hb&&hb.players)||++tries>40){ clearInterval(t); if(hb&&hb.players) render(); }
+  },500);
+}
+
 function lvInit(){
   if(lvInited) return;
   lvInited=true;
+  lvAwaitHoldbreak();
   render();
 }
 
@@ -24318,9 +24585,19 @@ document.querySelector('[data-tab="live"]').addEventListener('click', function o
   this.removeEventListener('click', onFirst, true);
 }, true);
 
+// The age clock follows the tab, not the page: it starts when Live is shown and
+// stops when any other tab is. live-tab.js drops the socket on the same signal,
+// so an idle user costs nothing on either side.
+document.addEventListener('click', ev=>{
+  const b=ev.target.closest && ev.target.closest('#mainNav button[data-tab]');
+  if(!b) return;
+  lvClockOn(b.getAttribute('data-tab')==='live');
+});
+
 // also init if the tab is already active on load
 if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector('.tabpage[data-page="live"]').classList.contains('active')){
   lvInit();
+  lvClockOn(true);
 }
 
 })();
