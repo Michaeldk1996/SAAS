@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.16,
-      "p2": 5,
+      "p1": 1.2,
+      "p2": 4.5,
       "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.21,
-        "bookmaker": "Unibet"
+        "price": 1.2,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 5.1,
-        "bookmaker": "Betano"
+        "price": 4.5,
+        "bookmaker": "bet365"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -2826,7 +2826,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T15:15:01Z",
+      "capturedAt": "2026-09-11T15:30:00Z",
       "startTime": "2026-09-11T19:00:00.000Z",
       "fixtureId": "id1200259173992438",
       "books": {
@@ -2867,6 +2867,10 @@
             [
               "2026-09-11T15:09:00.072Z",
               1.2
+            ],
+            [
+              "2026-09-11T15:25:04.143Z",
+              1.2
             ]
           ],
           "p2": [
@@ -2905,6 +2909,10 @@
             [
               "2026-09-11T15:09:00.072Z",
               4.5
+            ],
+            [
+              "2026-09-11T15:25:04.143Z",
+              4.5
             ]
           ]
         }
@@ -2918,12 +2926,12 @@
       "src": "ingestion"
     },
     "bet365Now": {
-      "p1": 1.222,
-      "p2": 4.333,
+      "p1": 1.2,
+      "p2": 4.5,
       "bookmaker": "bet365",
-      "at": "2026-09-11T14:49:32.570Z",
-      "observedAt": "2026-09-11T15:00:01Z",
-      "src": "series"
+      "at": "2026-09-11T15:09:00.072Z",
+      "observedAt": "2026-09-11T15:30:13Z",
+      "src": "live"
     },
     "pinnacleOpen": {
       "p1": 1.2,
@@ -2952,18 +2960,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.49,
-      "p2": 1.36,
-      "bookmaker": "Pncl"
+      "p1": 3.4,
+      "p2": 1.333,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.65,
-        "bookmaker": "Betano"
+        "price": 3.4,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.36,
-        "bookmaker": "Pncl"
+        "price": 1.333,
+        "bookmaker": "bet365"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -5510,7 +5518,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T15:15:01Z",
+      "capturedAt": "2026-09-11T15:30:00Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -5529,7 +5537,7 @@
               3.4
             ],
             [
-              "2026-09-11T15:08:56.600Z",
+              "2026-09-11T15:25:01.179Z",
               3.4
             ]
           ],
@@ -5547,7 +5555,7 @@
               1.333
             ],
             [
-              "2026-09-11T15:08:56.600Z",
+              "2026-09-11T15:25:01.179Z",
               1.333
             ]
           ]
@@ -5565,9 +5573,9 @@
       "p1": 3.4,
       "p2": 1.333,
       "bookmaker": "bet365",
-      "at": "2026-09-11T14:49:29.639Z",
-      "observedAt": "2026-09-11T15:00:01Z",
-      "src": "series"
+      "at": "2026-09-11T00:48:11.537Z",
+      "observedAt": "2026-09-11T15:30:13Z",
+      "src": "live"
     }
   },
   {
