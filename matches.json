@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.4,
-      "p2": 1.333,
-      "bookmaker": "bet365"
+      "p1": 3.49,
+      "p2": 1.36,
+      "bookmaker": "Pncl"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.4,
-        "bookmaker": "bet365"
+        "price": 3.65,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.333,
-        "bookmaker": "bet365"
+        "price": 1.36,
+        "bookmaker": "Pncl"
       }
     },
     "tournamentRound": "ATP US Open - Semi-finals",
@@ -2570,7 +2570,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-11T21:30:01Z",
+      "capturedAt": "2026-09-11T21:45:01Z",
       "startTime": "2026-09-11T23:00:00.000Z",
       "fixtureId": "id1200259173992440",
       "books": {
@@ -2589,7 +2589,7 @@
               3.4
             ],
             [
-              "2026-09-11T21:19:15.116Z",
+              "2026-09-11T21:39:23.649Z",
               3.4
             ]
           ],
@@ -2607,7 +2607,7 @@
               1.333
             ],
             [
-              "2026-09-11T21:19:15.116Z",
+              "2026-09-11T21:39:23.649Z",
               1.333
             ]
           ]
@@ -4980,21 +4980,21 @@
             "Service:Break Points Saved": 59.6,
             "Return:Break Points Converted": 39.3,
             "Points:Service Points Won": 70.3,
-            "Points:Return Points Won": 36.8,
-            "Points:Total Points Won": 52.8,
+            "Points:Return Points Won": 36.7,
+            "Points:Total Points Won": 52.7,
             "Points:Winners": 26.1,
             "Points:Unforced Errors": 21.1
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4871,
-            "Service:2nd Serve Points Won": 1886,
+            "Service:1st Serve Points Won": 4878,
+            "Service:2nd Serve Points Won": 1893,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6762,
-            "Points:Return Points Won": 7432,
-            "Points:Total Points Won": 14194,
+            "Points:Service Points Won": 6777,
+            "Points:Return Points Won": 7445,
+            "Points:Total Points Won": 14222,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -5036,25 +5036,25 @@
             "Service:Aces": 9.4,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54.1,
+            "Service:2nd Serve Points Won": 54,
             "Service:Break Points Saved": 63.5,
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.3,
-            "Points:Total Points Won": 52.3,
+            "Points:Total Points Won": 52.2,
             "Points:Winners": 24.4,
-            "Points:Unforced Errors": 20
+            "Points:Unforced Errors": 20.1
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4145,
-            "Service:2nd Serve Points Won": 1653,
+            "Service:1st Serve Points Won": 4152,
+            "Service:2nd Serve Points Won": 1660,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5818,
-            "Points:Return Points Won": 6266,
-            "Points:Total Points Won": 12084,
+            "Points:Service Points Won": 5833,
+            "Points:Return Points Won": 6279,
+            "Points:Total Points Won": 12112,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
@@ -15967,7 +15967,7 @@
           "lo": 14,
           "rain": 3,
           "wind": 18,
-          "humidity": 67,
+          "humidity": 69,
           "isMatch": false,
           "available": true
         },
@@ -22093,27 +22093,27 @@
             "Service:Aces": 8.1,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 74.7,
-            "Service:2nd Serve Points Won": 53.3,
+            "Service:2nd Serve Points Won": 53.4,
             "Service:Break Points Saved": 69,
             "Return:Break Points Converted": 40.6,
             "Points:Winners": 26.3,
             "Points:Unforced Errors": 27,
-            "Points:Service Points Won": 67.1,
+            "Points:Service Points Won": 67.2,
             "Points:Return Points Won": 36,
             "Points:Total Points Won": 51.5
           },
           "samples": {
             "Service:Aces": 47,
             "Service:Double Faults": 47,
-            "Service:1st Serve Points Won": 2677,
-            "Service:2nd Serve Points Won": 1496,
+            "Service:1st Serve Points Won": 2685,
+            "Service:2nd Serve Points Won": 1501,
             "Service:Break Points Saved": 274,
             "Return:Break Points Converted": 313,
             "Points:Winners": 46,
             "Points:Unforced Errors": 46,
-            "Points:Service Points Won": 4153,
-            "Points:Return Points Won": 4191,
-            "Points:Total Points Won": 8344
+            "Points:Service Points Won": 4166,
+            "Points:Return Points Won": 4206,
+            "Points:Total Points Won": 8372
           }
         },
         "p2": {
@@ -22150,30 +22150,30 @@
         "p1": {
           "matchCount": 53,
           "stats": {
-            "Service:Aces": 8.2,
+            "Service:Aces": 8.3,
             "Service:Double Faults": 2.6,
-            "Service:1st Serve Points Won": 76.6,
-            "Service:2nd Serve Points Won": 52.1,
+            "Service:1st Serve Points Won": 76.7,
+            "Service:2nd Serve Points Won": 52.2,
             "Service:Break Points Saved": 67.2,
             "Return:Break Points Converted": 38.9,
             "Points:Winners": 26.8,
             "Points:Unforced Errors": 27.3,
-            "Points:Service Points Won": 67.3,
+            "Points:Service Points Won": 67.4,
             "Points:Return Points Won": 36.1,
-            "Points:Total Points Won": 51.4
+            "Points:Total Points Won": 51.5
           },
           "samples": {
             "Service:Aces": 53,
             "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2826,
-            "Service:2nd Serve Points Won": 1732,
+            "Service:1st Serve Points Won": 2834,
+            "Service:2nd Serve Points Won": 1737,
             "Service:Break Points Saved": 299,
             "Return:Break Points Converted": 373,
             "Points:Winners": 48,
             "Points:Unforced Errors": 48,
-            "Points:Service Points Won": 4534,
-            "Points:Return Points Won": 4694,
-            "Points:Total Points Won": 9228
+            "Points:Service Points Won": 4547,
+            "Points:Return Points Won": 4709,
+            "Points:Total Points Won": 9256
           }
         },
         "p2": {
@@ -22324,7 +22324,7 @@
           "lo": 14,
           "rain": 3,
           "wind": 18,
-          "humidity": 67,
+          "humidity": 69,
           "isMatch": false,
           "available": true
         },
@@ -25886,21 +25886,21 @@
             "Service:Break Points Saved": 59.6,
             "Return:Break Points Converted": 39.3,
             "Points:Service Points Won": 70.3,
-            "Points:Return Points Won": 36.8,
-            "Points:Total Points Won": 52.8,
+            "Points:Return Points Won": 36.7,
+            "Points:Total Points Won": 52.7,
             "Points:Winners": 26.1,
             "Points:Unforced Errors": 21.1
           },
           "samples": {
             "Service:Aces": 85,
             "Service:Double Faults": 85,
-            "Service:1st Serve Points Won": 4871,
-            "Service:2nd Serve Points Won": 1886,
+            "Service:1st Serve Points Won": 4878,
+            "Service:2nd Serve Points Won": 1893,
             "Service:Break Points Saved": 265,
             "Return:Break Points Converted": 488,
-            "Points:Service Points Won": 6762,
-            "Points:Return Points Won": 7432,
-            "Points:Total Points Won": 14194,
+            "Points:Service Points Won": 6777,
+            "Points:Return Points Won": 7445,
+            "Points:Total Points Won": 14222,
             "Points:Winners": 82,
             "Points:Unforced Errors": 82
           }
@@ -25942,25 +25942,25 @@
             "Service:Aces": 9.4,
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 75.5,
-            "Service:2nd Serve Points Won": 54.1,
+            "Service:2nd Serve Points Won": 54,
             "Service:Break Points Saved": 63.5,
             "Return:Break Points Converted": 37.9,
             "Points:Service Points Won": 69.4,
             "Points:Return Points Won": 36.3,
-            "Points:Total Points Won": 52.3,
+            "Points:Total Points Won": 52.2,
             "Points:Winners": 24.4,
-            "Points:Unforced Errors": 20
+            "Points:Unforced Errors": 20.1
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4145,
-            "Service:2nd Serve Points Won": 1653,
+            "Service:1st Serve Points Won": 4152,
+            "Service:2nd Serve Points Won": 1660,
             "Service:Break Points Saved": 288,
             "Return:Break Points Converted": 480,
-            "Points:Service Points Won": 5818,
-            "Points:Return Points Won": 6266,
-            "Points:Total Points Won": 12084,
+            "Points:Service Points Won": 5833,
+            "Points:Return Points Won": 6279,
+            "Points:Total Points Won": 12112,
             "Points:Winners": 69,
             "Points:Unforced Errors": 69
           }
@@ -26113,7 +26113,7 @@
           "lo": 14,
           "rain": 3,
           "wind": 18,
-          "humidity": 67,
+          "humidity": 69,
           "isMatch": false,
           "available": true
         },
