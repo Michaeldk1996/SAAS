@@ -43,7 +43,8 @@ INTERVAL_MIN="${INTERVAL_MIN:-15}"
 METERED_EVERY="${METERED_EVERY:-4}"      # 4 x 15min = the approved flat hour
 LOOP_MINUTES="${LOOP_MINUTES:-330}"      # 5h30m; the job timeout is 350, Actions caps a job at 360
 CADENCE_FILE="odds-capture-cadence.json"
-STATE_FILES="matches.json odds-fixture-map.json odds-quota-history.json alert-state.json odds-open-monitor.json $CADENCE_FILE"
+STALENESS_FILE="odds-now-staleness.json"
+STATE_FILES="matches.json odds-fixture-map.json odds-quota-history.json alert-state.json odds-open-monitor.json $CADENCE_FILE $STALENESS_FILE"
 
 DEADLINE=$(( $(date -u +%s) + LOOP_MINUTES * 60 ))
 RUN_TAG="${GITHUB_RUN_ID:-local}/${GITHUB_RUN_ATTEMPT:-1}"
@@ -137,6 +138,20 @@ while [ "$STOPPING" -eq 0 ]; do
       echo "::warning::NOW refresh failed at iteration $ITER — retrying next tick."
     fi
   fi
+
+  # Stale-NOW monitor (founder ruling 2026-09-11, 120-minute window). Runs BEFORE the
+  # commit so this tick's measurement ships in this tick's commit rather than trailing
+  # one behind. It reads the PUBLISHED board over the network — deliberately not the
+  # file we just wrote — because capture staleness and publish staleness are different
+  # stages and the visitor sees the sum. Costs no oddspapi quota.
+  #
+  # Known and accepted limit: a monitor living inside the loop cannot report on a loop
+  # that is not running. That case is covered from the other end — the supervisor tick
+  # restarts a dead loop, and the restart's first iteration measures a board that has
+  # been sitting unrefreshed, so the alarm fires then. Late by at most one delivered
+  # cron slot, never absent.
+  python3 check-now-staleness.py || \
+    echo "::warning::Stale-NOW monitor exited non-zero at iteration $ITER."
 
   record_cadence "$MODE" "captured"
   ./ci-commit-push.sh "chore(odds): capture tick ${ITER} (${MODE}) [skip ci]" $STATE_FILES

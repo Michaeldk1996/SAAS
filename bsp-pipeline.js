@@ -4903,9 +4903,31 @@ async function runPipeline() {
     console.log(`  bet365 archive unreadable (${e.message}) — opens fall back to the live capture only.`);
   }
 
+  // TEN-179 / founder ruling 2026-09-11 — the first-sighting anchor for OPEN.
+  // odds-open-monitor.json is written by open_monitor() in refresh-odds-history.py and
+  // carries, per oddspapi fixtureId, `firstSeenAt`: the instant WE first held a bet365
+  // price for that fixture. It is stamped with setdefault() on first write and never
+  // rewritten, which is what makes it a prospective measurement rather than something
+  // re-derived (and therefore reshapeable) at pin time. Fail-soft: an absent or unreadable
+  // store leaves every open on the pre-ruling series[0] path, counted as openNoSighting.
+  const firstSeenByFixture = new Map();
+  try {
+    if (fs.existsSync('odds-open-monitor.json')) {
+      const mon = JSON.parse(fs.readFileSync('odds-open-monitor.json', 'utf8'));
+      for (const [fid, rec] of Object.entries((mon && mon.fixtures) || {})) {
+        if (rec && typeof rec.firstSeenAt === 'string' && Number.isFinite(Date.parse(rec.firstSeenAt))) {
+          firstSeenByFixture.set(fid, rec.firstSeenAt);
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`  odds-open-monitor.json unreadable (${e.message}) — opens fall back to series[0].`);
+  }
+
   let openDerived = 0, openPreserved = 0, closeDerived = 0, closePreserved = 0,
       closeHealed = 0, closeDashed = 0, crossBookDropped = 0, openFromArchive = 0,
-      nowPinned = 0, nowCarried = 0, nowFromLive = 0;
+      nowPinned = 0, nowCarried = 0, nowFromLive = 0,
+      openFromSighting = 0, openSightingNoQuote = 0, openNoSighting = 0;
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -4967,10 +4989,54 @@ async function runPipeline() {
     // the same (bet365) stream as the close/NOW. TEN-179 item 1: no longer completed-only.
     if (m.openingOdds && m.openingOdds.bookmaker !== ref) { m.openingOdds = null; openPreserved--; }
 
-    // openingOdds: first captured point. Pin once (skip if already inherited).
+    const afid = m.oddsMovement && m.oddsMovement.fixtureId;
+
+    // openingOdds — FOUNDER RULING 2026-09-11 (gate a0a2446b), TEN-179:
+    //
+    //   "OPEN is the last price Bet365 was actually showing when we first looked —
+    //    never series[0], never an ingestion instant."
+    //
+    // series[0] is the earliest point of whatever history oddspapi hands back, which is
+    // oddspapi's own INGESTION instant, not bet365's market open. The proof is one line:
+    // two unrelated US Open fixtures (Zverev, Tiafoe — different tournaments' worth of
+    // start times apart) both "opened" at 2026-09-10T13:41:00.351Z and .855Z — 504 ms
+    // apart. bet365 did not open two markets in the same half-second; that is one
+    // ingestion batch. Generalises the 91.8% (214/233) finding on TEN-179.
+    //
+    // The honest pin is therefore the last quote at or before `firstSeenAt` — the instant
+    // WE first held a price for this fixture, stamped prospectively and frozen by
+    // open_monitor() in refresh-odds-history.py. That is a price bet365 was genuinely
+    // showing at a moment we can evidence, rather than a timestamp manufactured by the
+    // data provider's batch job.
+    //
+    // FORWARD-ONLY (founder, same ruling): "the already-published opens stay as they are
+    // — I'm not retroactively changing numbers we can't verify either way." That falls
+    // out of the carry-forward above: a match that already carries an openingOdds never
+    // reaches this branch. Only a fixture pinned for the FIRST time after this ships gets
+    // the new anchor, which is exactly the ruled scope.
+    //
+    // Fallback is explicit, counted and reported, never silent: no firstSeenAt (a fixture
+    // whose series predates the open-monitor) or no quote at or before it leaves the old
+    // series[0] behaviour in place. It is not made to look like a sighting-anchored pin.
     if (!m.openingOdds) {
-      const o1 = p1[0], o2 = p2[0];
+      const fsMs = afid && firstSeenByFixture.has(afid)
+        ? Date.parse(firstSeenByFixture.get(afid)) : NaN;
+      let o1 = p1[0], o2 = p2[0], src = null;
+      if (Number.isFinite(fsMs)) {
+        const h1 = lastAtOrBefore(p1, fsMs), h2 = lastAtOrBefore(p2, fsMs);
+        if (h1 && h2) { o1 = h1; o2 = h2; src = 'first-sighting'; openFromSighting++; }
+        else openSightingNoQuote++;       // sighting known but series starts after it
+      } else {
+        openNoSighting++;                 // pre-monitor fixture: series[0], as before
+      }
       m.openingOdds = { p1: o1[1], p2: o2[1], bookmaker: ref, at: o1[0] };
+      if (src) {
+        m.openingOdds.src = src;
+        // Keep the evidence on the record next to the number it justifies, so the
+        // lag between bet365 posting and our first look stays auditable off the
+        // published board alone.
+        m.openingOdds.seenAt = new Date(fsMs).toISOString();
+      }
       openDerived++;
     }
 
@@ -4978,9 +5044,16 @@ async function runPipeline() {
     // Same book (bet365), same endpoint, so this is a strictly-earlier-timestamp swap and
     // never a cross-book or derived value. Only replaces when the archive's first point
     // predates the pinned one; ties and later points leave the pin untouched.
-    const afid = m.oddsMovement && m.oddsMovement.fixtureId;
+    //
+    // GATED by the 2026-09-11 ruling: the archive stores the same /v4/historical-odds
+    // series reduced to open + close + 22 interior points, so its first point is ALSO an
+    // oddspapi ingestion instant. Letting it overwrite a sighting-anchored pin would
+    // reintroduce, through the back door, precisely the value the ruling forbids. A
+    // fixture with no first-sighting anchor is untouched — that path is the earlier
+    // 2026-09-10 "genuinely earliest" ruling and stays live for pre-monitor fixtures.
     const arc = afid ? archiveOpens.get(afid) : null;
-    if (arc && m.openingOdds && Number.isFinite(Date.parse(m.openingOdds.at))
+    if (arc && m.openingOdds && m.openingOdds.src !== 'first-sighting'
+        && Number.isFinite(Date.parse(m.openingOdds.at))
         && arc.atMs < Date.parse(m.openingOdds.at)) {
       m.openingOdds = { p1: arc.p1, p2: arc.p2, bookmaker: BET365,
                         at: new Date(arc.atMs).toISOString(), src: 'archive' };
@@ -5020,6 +5093,20 @@ async function runPipeline() {
       } else if (n1 && n2) {
         m.bet365Now = { p1: n1[1], p2: n2[1], bookmaker: BET365,
                         at: (Date.parse(n1[0]) >= Date.parse(n2[0])) ? n1[0] : n2[0] };
+        // TEN-179 stale-NOW monitor (founder ruling 2026-09-11: measure staleness on the
+        // PUBLISHED board, at 120 minutes). Sharding strips oddsMovement before the board
+        // ships, so `capturedAt` — the only record of when we last LOOKED at bet365 on
+        // this path — does not survive to the published artefact. The live path already
+        // carries its own observedAt; stamping the series path too means both NOW paths
+        // expose a capture clock and the monitor never has to fall back to `at`, which is
+        // when bet365 last MOVED the price and would read a quiet market as a dead
+        // pipeline. src distinguishes the two without changing the keepLive test below
+        // (which requires src === 'live').
+        const capAt = m.oddsMovement && m.oddsMovement.capturedAt;
+        if (typeof capAt === 'string' && Number.isFinite(Date.parse(capAt))) {
+          m.bet365Now.observedAt = capAt;
+        }
+        m.bet365Now.src = 'series';
         nowPinned++;
       }
     } else if (m.bet365Now) {
@@ -5073,6 +5160,11 @@ async function runPipeline() {
       } else { closeDashed++; }                             // no PROVEN pre-first-ball reference -> dash (TEN-124 tighten)
     }
   }
+  // Report the anchor mix out loud. The founder asked for "how many fixtures actually
+  // change in the first week", and this line is where that number is read off: every
+  // openFromSighting is a fixture whose OPEN is now a price bet365 was provably showing
+  // when we looked, rather than an oddspapi ingestion instant.
+  console.log(`OPEN anchor (founder ruling 2026-09-11, forward-only) — ${openFromSighting} pinned to the last bet365 quote at/before our first sighting / ${openNoSighting} fell back to series[0] (no firstSeenAt: fixture predates the open-monitor) / ${openSightingNoQuote} had a first sighting but no quote at/before it. Preserved opens are untouched by this rule.`);
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
 

@@ -86,4 +86,5 @@ jobs:
           chmod +x ci-commit-push.sh
           ./ci-commit-push.sh "chore(odds): flush capture at job end [skip ci]" \
             matches.json odds-fixture-map.json odds-quota-history.json \
-            alert-state.json odds-open-monitor.json odds-capture-cadence.json || true
+            alert-state.json odds-open-monitor.json odds-capture-cadence.json \
+            odds-now-staleness.json || true
