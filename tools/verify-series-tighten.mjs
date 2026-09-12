@@ -80,10 +80,8 @@ function recomputeExpected(doc, { minLen = 6, day = 'all' } = {}) {
         if (b.st.count < a.st.count) continue;
         const B = new Set(b.st.matches.map(mkey));
         if (![...A].every((x) => B.has(x))) continue;
-        if (b.st.count === a.st.count) {
-          if (BREADTH[b.st.type] > BREADTH[a.st.type]) { suppressed.add(a); break; }
-          continue;
-        }
+        // only the narrower claim is ever suppressed (never the all-comps card)
+        if (BREADTH[b.st.type] <= BREADTH[a.st.type]) continue;
         suppressed.add(a); break;
       }
     }

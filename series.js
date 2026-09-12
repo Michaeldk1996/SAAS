@@ -381,12 +381,16 @@
           var b = group[j];
           if (b.streak.count < a.streak.count) continue;
           if (!isSubset(sets[i], sets[j])) continue;
-          // Equal length AND identical membership → the broader claim wins; anything
-          // else (b strictly longer, or b a strict superset) suppresses a.
-          if (b.streak.count === a.streak.count) {
-            if (OUTCOME_BREADTH[b.streak.type] > OUTCOME_BREADTH[a.streak.type]) { a.suppressed = 'subset-of-' + b.streak.type; return; }
-            continue;
-          }
+          // Only the NARROWER claim is ever deleted. Without this the rule reads both
+          // ways round and can eat the all-comps card: a player who wins 8 straight on
+          // clay with one hard loss buried inside has an all-comps run of 6 whose six
+          // matches are all clay — a strict subset of the clay 8. "Won 6 in a row" and
+          // "Won on Clay 8 in a row" are two findings, and the founder's rule exists to
+          // delete the repeated one, not the broader one. Zero occurrences on today's
+          // board (all 27 suppressions are surface-inside-all-comps), so this changes
+          // nothing measurable now — it stops the rule misfiring on a slate we haven't
+          // seen yet.
+          if (OUTCOME_BREADTH[b.streak.type] <= OUTCOME_BREADTH[a.streak.type]) continue;
           a.suppressed = 'subset-of-' + b.streak.type;
           return;
         }
