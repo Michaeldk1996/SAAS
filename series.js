@@ -104,43 +104,53 @@
   }
 
   // ─── plain-English streak description ────────────────────────────────────────
+  // The export states the claim WITHOUT its length, then prints the length beside
+  // it in accent blue ("Under 23.5 total games (best-of-3)" + "12 in a row"). So
+  // the claim builder below is count-free and runLabel() supplies the blue half.
+  // The modal restores the long form as "{claim} — {n} matches running" (export §5).
   var ARCH_LABEL = {}; // archetype labels ship already human-readable in the taxonomy
   function streakVerb(dir) { return dir === 'win' ? 'Won' : 'Lost'; }
   function running(n) { return n + ' matches running'; }
   function boTxt(st) { return st.bestOf ? ('best-of-' + st.bestOf) : ''; }
-  function describe(st) {
-    var n = st.count;
-    var run = n + (n === 1 ? ' match' : ' in a row');
+  function bo(st) { return st.bestOf ? (' (' + boTxt(st) + ')') : ''; }
+  function runLabel(n) { return n === 1 ? '1 match' : (n + ' in a row'); }
+  // Count-free claim. Every branch of the former describe() survives verbatim minus
+  // its embedded count, so no streak family loses its wording. Best-of stays inside
+  // the claim (never-blend rule) — ruling q3 dropped the separate best-of BADGE, not
+  // the format qualifier that makes a games line mean one thing.
+  function claimOf(st) {
     switch (st.type) {
       case 'all':
-        return streakVerb(st.direction) + ' ' + (n === 1 ? '1 match' : n + ' in a row') + ' — all competitions';
+        return streakVerb(st.direction) + ' across all competitions';
       case 'surface':
-        return streakVerb(st.direction) + ' ' + n + ' straight on ' + esc(cap(st.subtype));
+        return streakVerb(st.direction) + ' on ' + esc(cap(st.subtype));
       case 'style':
-        return streakVerb(st.direction) + ' ' + n + ' straight vs ' + esc(ARCH_LABEL[st.subtype] || st.subtype);
+        return streakVerb(st.direction) + ' vs ' + esc(ARCH_LABEL[st.subtype] || st.subtype);
       case 'pattern':
-        if (st.subtype === 'lost-first-set') return 'Lost the opening set — ' + running(n);
-        if (st.subtype === 'won-first-set')  return 'Won the opening set — ' + running(n);
-        return streakVerb(st.direction) + ' ' + run;
+        if (st.subtype === 'lost-first-set') return 'Lost the opening set';
+        if (st.subtype === 'won-first-set')  return 'Won the opening set';
+        return streakVerb(st.direction);
       case 'total':
-        return (st.over ? 'Over ' : 'Under ') + esc(String(st.line)) + ' total games (' + boTxt(st) + ') — ' + running(n);
+        return (st.over ? 'Over ' : 'Under ') + esc(String(st.line)) + ' total games' + bo(st);
       case 'handicap':
         return st.cover
-          ? 'Won by more than ' + esc(String(st.line)) + ' games — covered −' + esc(String(st.line)) + ' (' + boTxt(st) + '), ' + running(n)
-          : 'Beaten by more than ' + esc(String(st.line)) + ' games (' + boTxt(st) + ') — ' + running(n);
+          ? 'Covered −' + esc(String(st.line)) + ' games' + bo(st)
+          : 'Beaten by more than ' + esc(String(st.line)) + ' games' + bo(st);
       case 'setpat':
-        if (st.subtype === 'won-2nd-set')        return 'Won the 2nd set — ' + running(n);
-        if (st.subtype === 'lost-2nd-set')       return 'Lost the 2nd set — ' + running(n);
-        if (st.subtype === 'straight-sets-win')  return 'Won in straight sets — ' + running(n);
-        if (st.subtype === 'straight-sets-loss') return 'Lost in straight sets — ' + running(n);
-        if (st.subtype === 'went-the-distance')  return 'Went the distance (reached the deciding set) — ' + running(n);
-        if (st.subtype === 'no-set-won')         return 'Failed to win a set — ' + running(n);
-        if (st.firstSet) return 'First set ' + (st.over ? 'over ' : 'under ') + esc(String(st.line)) + ' games — ' + running(n);
-        return streakVerb(st.direction) + ' ' + run;
+        if (st.subtype === 'won-2nd-set')        return 'Won the 2nd set';
+        if (st.subtype === 'lost-2nd-set')       return 'Lost the 2nd set';
+        if (st.subtype === 'straight-sets-win')  return 'Won in straight sets';
+        if (st.subtype === 'straight-sets-loss') return 'Lost in straight sets';
+        if (st.subtype === 'went-the-distance')  return 'Went the distance (reached the deciding set)';
+        if (st.subtype === 'no-set-won')         return 'Failed to win a set';
+        if (st.firstSet) return 'First set ' + (st.over ? 'over ' : 'under ') + esc(String(st.line)) + ' games';
+        return streakVerb(st.direction);
       default:
-        return streakVerb(st.direction) + ' ' + run;
+        return streakVerb(st.direction);
     }
   }
+  // Long form, modal only.
+  function describe(st) { return claimOf(st) + ' — ' + running(st.count); }
   // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
   // correct regardless of the engine version that wrote series.json (fix #5). The former
   // 'firstset'/'setpat' families map here to the split 'setout' / 'setgames'.
@@ -154,24 +164,20 @@
     total: 'Total games', handicap: 'Handicap',
     setout: 'Set outcome', setgames: 'Set games',
   };
-  // Card colour VALENCE (fix #2). Result runs have a genuine good/bad direction for the
-  // player (win = green, loss = orange). Betting-LINE runs (total games, handicap) and
-  // volatility set-shapes (went the distance, first-set games line) have NO good/bad —
-  // over 21.5 isn't "better" than under 22.5, it's a different direction — so they are
-  // coloured NEUTRAL, never green/orange, so the border can't misread as a verdict.
+  // Direction, as a WORD (founder ruling q2, 2026-09-12 — "follow the export").
+  // The export forbids green/red on this page: "direction is carried by a word, not
+  // a colour". The same three-way split the old colour bar encoded survives intact,
+  // it is just spelled out. Result runs have a genuine good/bad direction for the
+  // player; betting-LINE runs (total games, handicap) and volatility set-shapes
+  // (went the distance, first-set games line) have NO good/bad — over 21.5 isn't
+  // "better" than under 22.5, it's a different direction — so they read Neutral.
+  // Do NOT reintroduce a sign colour here.
   function valence(st) {
     if (st.type === 'total' || st.type === 'handicap') return 'neutral';
     if (st.type === 'setpat' && (st.firstSet || st.subtype === 'went-the-distance')) return 'neutral';
     return st.direction === 'win' ? 'win' : 'loss';
   }
-  // The count block reads "wins"/"losses" only for true result streaks; the line
-  // and set-pattern types count matches meeting a condition, not wins.
-  function countUnit(st) {
-    if (st.type === 'all' || st.type === 'surface' || st.type === 'style') {
-      return st.direction === 'win' ? 'wins' : 'losses';
-    }
-    return st.count === 1 ? 'match' : 'matches';
-  }
+  var DIR_LABEL = { win: 'Winning run', loss: 'Losing run', neutral: 'Neutral' };
 
   // ─── date / age formatting ───────────────────────────────────────────────────
   function fmtDate(ymd) {
@@ -191,6 +197,32 @@
   function fmtTime(t) {
     var s = String(t || '').trim();
     return /^\d{1,2}:\d{2}/.test(s) ? s.slice(0, 5) : '';
+  }
+  // Card strip form: day + month, year stripped (export §3.3 "rendered short").
+  function fmtShort(ymd) {
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+    var p = ymd.split('-');
+    var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return Number(p[2]) + ' ' + MON[Number(p[1]) - 1];
+  }
+  // STARTED (founder ruling q5, 2026-09-12). series.json stores no startDate; the run's
+  // first match IS its start. matches[] is written oldest→newest by build-series.js and
+  // matches.length === count, so matches[0].date is the first match OF THE RUN — for a
+  // gap-cut streak that is the start of the cut run, not a pre-layoff origin. Derived,
+  // never guessed: no matches → a dash.
+  function startedOf(st) {
+    var ms = st.matches;
+    return (Array.isArray(ms) && ms.length && ms[0] && ms[0].date) ? ms[0].date : null;
+  }
+  // UPDATED (founder ruling q6): the clock off generatedAt, in UTC, so a reader can
+  // answer "is this today's slate?" at a glance. The export hardcoded "now".
+  function fmtUpdated(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    var hh = String(d.getUTCHours()); if (hh.length < 2) hh = '0' + hh;
+    var mm = String(d.getUTCMinutes()); if (mm.length < 2) mm = '0' + mm;
+    return hh + ':' + mm + ' UTC';
   }
 
   // ─── state ───────────────────────────────────────────────────────────────────
@@ -296,124 +328,151 @@
         '<span class="sr-mscore">' + score + '</span>' +
       '</div>';
     }).join('');
-    return '<div class="sr-mtable sr-mtable-4">' +
-      '<div class="sr-mrow sr-mhead">' +
-        '<span class="sr-mdate">Date</span>' +
-        '<span class="sr-mtour">Event</span>' +
-        '<span class="sr-mopp">Opponent</span>' +
-        '<span class="sr-mscore">Score</span>' +
-      '</div>' + rows +
-    '</div>';
+    // Column header is rendered once by ensureOverlay(), outside this scroll pane.
+    return rows;
   }
 
   // ─── card render ──────────────────────────────────────────────────────────────
   // idx is the card's position in the current view — the whole card is the click
   // target (founder 2026-09-07) and carries it as data-card-idx so the click
   // handler can open the matches overlay for exactly this streak.
+  // Card structure is the export's, top to bottom (export §3):
+  //   claim + blue run length → player row → tag row → STARTED/LAST/TYPE strip →
+  //   next match · History →
+  // Removed by founder ruling on 2026-09-12: the big count column and its colour
+  // (q2), the 3px valence bar (q2), the POOL cell — modal only now (q1), and the
+  // tier / opponent-archetype / Grand-Slam / best-of-badge chips (q3). The tag row
+  // is the export's own data-model row, finally rendered (README open item #4).
   function cardHtml(c, idx) {
     var p = c.player, st = c.streak, u = p.upcoming || {};
-    var v = valence(st);
-    var dirClass = v === 'win' ? 'sr-win' : (v === 'loss' ? 'sr-loss' : 'sr-neutral');
-    var tierTxt = p.tier === 'tour' ? 'Tour' : 'Chal';
+    var dash = '<span class="sr-dash">—</span>';
     var flag = emojiFlag(p.country);
-    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : '<span class="sr-dash">—</span>';
+    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : dash;
 
-    // badges: type, tier, plus the subtype (surface/archetype) where meaningful
-    var badges = '<span class="sr-badge sr-badge-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span>' +
-                 '<span class="sr-badge sr-badge-tier">' + tierTxt + '</span>';
-    if (st.type === 'surface' && st.subtype) badges += '<span class="sr-badge">' + esc(cap(st.subtype)) + '</span>';
-    if (st.type === 'style' && st.subtype)   badges += '<span class="sr-badge">' + esc(ARCH_LABEL[st.subtype] || st.subtype) + '</span>';
-    // Best-of is shown on total/handicap rows so the never-blend rule is visible: a
-    // "22.5 games" run means something different across formats, so the row says which.
-    if ((st.type === 'total' || st.type === 'handicap') && st.bestOf) badges += '<span class="sr-badge">Best of ' + esc(String(st.bestOf)) + '</span>';
+    // 1 · claim + run length
+    var claim = '<div class="sr-claim">' + claimOf(st) +
+      ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>';
 
-    // pool + recency — both mandatory, both always shown
-    var lastD = fmtDate(st.lastDate) || st.lastDate;
-    var age = fmtAge(st.ageDays);
-    var slam = st.slamExempt ? ' <span class="sr-slam" title="Most-recent match was a Grand Slam — exempt from the 45-day recency cap">· Grand Slam</span>' : '';
-    var poolRecency =
-      '<div class="sr-facts">' +
-        '<span class="sr-fact"><span class="sr-fact-k">Pool</span><span class="sr-fact-v">' + esc(String(st.pool)) + ' ' + (st.pool === 1 ? 'match' : 'matches') + '</span></span>' +
-        '<span class="sr-fact"><span class="sr-fact-k">Last</span><span class="sr-fact-v">' + esc(lastD) + (age ? ' <span class="sr-ago">(' + esc(age) + ')</span>' : '') + slam + '</span></span>' +
+    // 2 · player row (24px avatar, name, rank — dash when unknown)
+    var prow =
+      '<div class="sr-prow">' + avatarHtml(p) +
+        '<span class="sr-pid">' +
+          '<span class="sr-pname">' + (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
+            esc(p.name || u.playerName || '—') + '</span>' +
+          '<span class="sr-prank">' + rankTxt + '</span>' +
+        '</span>' +
       '</div>';
 
-    // upcoming match line
-    var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
-    var oppName = u.opponentName || '';
-    // Opponent archetype makes the vs-style relevance self-evident and auditable:
-    // a "vs Counterpuncher" run is only shown when tonight's opponent IS one.
-    var oppArch = u.opponentArch ? ' <span class="sr-opparch">· ' + esc(ARCH_LABEL[u.opponentArch] || u.opponentArch) + '</span>' : '';
-    // Played-match tag (fix #3): show whether the streak's OWN condition held —
-    // CONTINUED / BROKEN — not the match result. Excluded (couldn't evaluate) reads
-    // "not evaluable" and is left out of the summary counts. The set-tally result is
-    // kept as a quiet secondary. Legacy data with no outcome falls back to the tally.
-    var playedTag = '';
+    // 3 · tag row — the direction WORD, plus (already-played view) whether the
+    // streak's OWN condition held. Continued / Broken / Not evaluable is the
+    // condition, never the match result; "not evaluable" is excluded from the
+    // aggregate rather than guessed. No sign colour on any of them (ruling q2).
+    var tags = '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>';
     if (u.played) {
       var oc = st.outcome;
-      var resSmall = u.result ? ' <span class="sr-played-res">' + esc(u.result) + '</span>' : '';
-      if (oc && oc.held === true)        playedTag = '<span class="sr-oc sr-oc-cont">Continued</span>' + resSmall;
-      else if (oc && oc.held === false)  playedTag = '<span class="sr-oc sr-oc-broke">Broken</span>' + resSmall;
-      else if (oc && oc.evaluable === false) playedTag = '<span class="sr-oc sr-oc-na" title="The played match could not be evaluated for this streak’s condition — excluded from the continued/broken count">Not evaluable</span>' + resSmall;
-      else playedTag = '<span class="sr-played">played · ' + esc(u.result || 'result') + '</span>';
+      if (oc && oc.held === true)             tags += '<span class="sr-tag sr-tag-oc">Continued</span>';
+      else if (oc && oc.held === false)       tags += '<span class="sr-tag sr-tag-oc">Broken</span>';
+      else if (oc && oc.evaluable === false)  tags += '<span class="sr-tag sr-tag-oc-na" title="The played match could not be evaluated for this streak’s condition — excluded from the continued/broken count">Not evaluable</span>';
+      else                                    tags += '<span class="sr-tag sr-tag-oc-na">Played</span>';
+      if (u.result) tags += '<span class="sr-played-res">' + esc(u.result) + '</span>';
     }
-    var upcoming =
-      '<div class="sr-next">' +
-        '<span class="sr-next-k">Next</span>' +
-        '<span class="sr-next-v">' +
-          (when ? '<b>' + esc(when) + '</b> · ' : '') +
-          (u.tournament ? esc(u.tournament) + ' · ' : '') +
-          (oppName ? 'vs ' + esc(oppName) + oppArch : '<span class="sr-dash">—</span>') +
-        '</span>' + playedTag +
+    var tagRow = '<div class="sr-tags">' + tags + '</div>';
+
+    // 4 · STARTED · LAST · TYPE
+    var startTxt = fmtShort(startedOf(st));
+    var lastTxt = fmtShort(st.lastDate);
+    var strip =
+      '<div class="sr-strip">' +
+        '<span class="sr-cell"><span class="sr-cell-k">Started</span>' +
+          '<span class="sr-cell-v">' + (startTxt ? esc(startTxt) : dash) + '</span></span>' +
+        '<span class="sr-cell"><span class="sr-cell-k">Last</span>' +
+          '<span class="sr-cell-v">' + (lastTxt ? esc(lastTxt) : dash) + '</span></span>' +
+        '<span class="sr-cell"><span class="sr-cell-k">Type</span>' +
+          '<span class="sr-cell-v sr-cell-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span></span>' +
+      '</div>';
+
+    // 5 · footer: next match (time · vs opponent — the export drops the tour
+    // segment; the tournament is still in the modal's Event column) and History →
+    var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
+    var nextBits = [];
+    if (when) nextBits.push(esc(when));
+    if (u.opponentName) nextBits.push('vs ' + esc(u.opponentName));
+    var foot =
+      '<div class="sr-foot">' +
+        '<span class="sr-next">' + (nextBits.length ? nextBits.join(' · ') : dash) + '</span>' +
+        '<span class="sr-hist">History →</span>' +
       '</div>';
 
     // Whole card is clickable when it has a match list to show. It opens the matches
     // in an overlay (never an inline expand — that reflowed the board). Keyboard-
-    // reachable as a button; a quiet hint sits at the foot so the affordance reads.
+    // reachable as a button.
     var hasDetail = Array.isArray(st.matches) && st.matches.length > 0;
     var clickAttrs = hasDetail
       ? ' role="button" tabindex="0" aria-haspopup="dialog"' +
         ' aria-label="Show the ' + esc(String(st.count)) + ' matches in this run"' +
         ' data-card-idx="' + esc(String(idx)) + '"'
       : '';
-    var hint = hasDetail
-      ? '<div class="sr-cardhint">Show the ' + esc(String(st.count)) + ' matches <span class="sr-chev">→</span></div>'
-      : '';
 
-    return '<article class="sr-card ' + dirClass + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
-      '<div class="sr-count"><span class="sr-num">' + esc(String(st.count)) + '</span>' +
-        '<span class="sr-dir">' + esc(countUnit(st)) + '</span></div>' +
-      '<div class="sr-body">' +
-        '<div class="sr-phead">' + avatarHtml(p) +
-          '<div class="sr-pinfo">' +
-            '<div class="sr-pname">' + (flag ? '<span class="sr-flag">' + flag + '</span>' : '') + esc(p.name || u.playerName || '—') + '</div>' +
-            '<div class="sr-prank">' + rankTxt + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="sr-desc">' + describe(st) + '</div>' +
-        '<div class="sr-badges">' + badges + '</div>' +
-        poolRecency +
-        upcoming +
-        hint +
-      '</div>' +
+    return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
+      claim + prow + tagRow + strip + foot +
     '</article>';
   }
 
-  // ─── filter bar ────────────────────────────────────────────────────────────────
+  // ─── header card (export §1) ───────────────────────────────────────────────────
+  // The four stats are live and recount on every filter change: STREAKS is the card
+  // count in view, PLAYERS the distinct players inside it, LONGEST RUN the max count
+  // (a dash when the view is empty, never 0), UPDATED the clock off generatedAt.
+  var SUBTITLE = 'Current streaks for players scheduled today and tomorrow — runs of wins or ' +
+    'losses against a playing style, on a surface, straight across all competitions, or on the ' +
+    'opening set. Every streak carries the pool it was drawn from and the date of its most ' +
+    'recent match. A streak that can’t show both isn’t here.';
+  function headerHtml(view) {
+    var dash = '<span class="sr-dash">—</span>';
+    var players = {};
+    view.forEach(function (c) { players[c.player.key || c.player.name] = 1; });
+    var nPlayers = Object.keys(players).length;
+    var longest = view.length ? view.reduce(function (m, c) { return Math.max(m, c.streak.count); }, 0) : null;
+    var upd = fmtUpdated(_data && _data.generatedAt);
+    function stat(k, v, cls) {
+      return '<div class="sr-stat"><span class="sr-stat-k">' + k + '</span>' +
+             '<span class="sr-stat-v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
+    }
+    return '<div class="sr-head">' +
+      '<div><h1 class="sr-h1">Series</h1><p class="sr-subtitle">' + SUBTITLE + '</p></div>' +
+      '<div class="sr-stats">' +
+        stat('Streaks', esc(String(view.length))) +
+        stat('Players', esc(String(nPlayers))) +
+        stat('Longest run', longest != null ? esc(String(longest)) : dash, 'sr-accent') +
+        stat('Updated', upd ? esc(upd) : dash, 'sr-soft') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ─── filter bar (export §2 — two rows, labels inline, checkbox on row 2) ───────
   function seg(name, opts, cur) {
     return '<div class="sr-seg" data-seg="' + name + '">' + opts.map(function (o) {
-      return '<button class="sr-segbtn' + (o[0] === cur ? ' active' : '') + '" data-val="' + o[0] + '">' + esc(o[1]) + '</button>';
+      return '<button type="button" class="sr-segbtn' + (o[0] === cur ? ' active' : '') + '"' +
+        ' aria-pressed="' + (o[0] === cur ? 'true' : 'false') + '" data-val="' + o[0] + '">' + esc(o[1]) + '</button>';
     }).join('') + '</div>';
+  }
+  function fgroup(label, name, opts, cur) {
+    return '<span class="sr-fgroup"><span class="sr-flabel">' + esc(label) + '</span>' + seg(name, opts, cur) + '</span>';
   }
   function filterBarHtml() {
     var f = _filters;
     return '<div class="sr-filters">' +
-      '<label class="sr-flabel">Level</label>' + seg('level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
-      '<label class="sr-flabel">Day</label>' + seg('day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
-      '<label class="sr-flabel">Direction</label>' + seg('dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
-      '<label class="sr-flabel">Type</label>' + seg('type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['total','Total games'],['handicap','Handicap'],['setout','Set outcome'],['setgames','Set games']], f.type) +
-      '<label class="sr-flabel">Min length</label>' + seg('minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
-      '<label class="sr-flabel">Sort</label>' + seg('sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
-      '<label class="sr-toggle"><input type="checkbox" id="srShowPlayed"' + (f.showPlayed ? ' checked' : '') + '> Show already-played</label>' +
+      '<div class="sr-frow">' +
+        fgroup('Level', 'level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
+        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
+        fgroup('Direction', 'dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
+      '</div>' +
+      '<div class="sr-frow">' +
+        fgroup('Type', 'type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['total','Total games'],['handicap','Handicap'],['setout','Set outcome'],['setgames','Set games']], f.type) +
+        fgroup('Min length', 'minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
+        fgroup('Sort', 'sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
+        '<label class="sr-toggle"><input type="checkbox" id="srShowPlayed"' + (f.showPlayed ? ' checked' : '') + '>' +
+          '<span class="sr-box" aria-hidden="true"></span>Show already-played</label>' +
+      '</div>' +
     '</div>';
   }
 
@@ -444,18 +503,21 @@
       ? '<div class="sr-cards">' + view.map(cardHtml).join('') + '</div>'
       : emptyHtml();
 
-    root.innerHTML = filterBarHtml() + legendHtml() + outcomesSummaryHtml(view) + stamp + body + footerHtml();
+    // Export order: header card → filter rows → card grid → footnote block. The
+    // already-played aggregate sits between the filters and the grid, where it reads
+    // as a summary OF the view the checkbox just opened (it renders only then).
+    root.innerHTML = headerHtml(view) + filterBarHtml() + outcomesSummaryHtml(view) +
+                     body + footnoteHtml(stamp) + footerHtml();
     wireFilters(root);
   }
 
-  // Border-colour legend (fix #2). The card's left border encodes what KIND of run it
-  // is, and — for result runs only — its direction. Betting-line runs are neutral
-  // because over/under and handicap have no good/bad side.
-  function legendHtml() {
-    return '<div class="sr-legend" aria-hidden="false">' +
-      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-win"></span>Winning run</span>' +
-      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-loss"></span>Losing run</span>' +
-      '<span class="sr-lgi"><span class="sr-lgsw sr-lgsw-neutral"></span>Neutral run — betting lines (over/under, handicap) &amp; set-shape volatility: a direction, not good or bad</span>' +
+  // Footnote block (export §4): the direction sentence — which replaced the colour
+  // legend when the valence bar came off (ruling q2) — then the methodology line.
+  function footnoteHtml(stamp) {
+    return '<div class="sr-footnote">' +
+      '<p class="sr-fn-dir">Direction shows as a word in the tag row — <b>Winning run</b>, ' +
+      '<b>Losing run</b>, <b>Neutral</b>. Betting lines (over/under, handicap) and set-shape ' +
+      'volatility are a direction, not good or bad.</p>' + stamp +
     '</div>';
   }
 
@@ -556,12 +618,23 @@
     var back = document.createElement('div');
     back.className = 'sr-ov-back';
     back.setAttribute('hidden', '');
+    // Export §5: header (name + rank, claim + pool beneath, ✕ right) → sticky column
+    // header → scrolling rows. The column header lives OUTSIDE the scroll pane so
+    // DATE/EVENT/OPPONENT/SCORE stay visible on a 12-row run.
     back.innerHTML =
       '<div class="sr-ov" role="dialog" aria-modal="true" aria-labelledby="srOvTitle" tabindex="-1">' +
-        '<button class="sr-ov-close" type="button" aria-label="Close">✕</button>' +
         '<div class="sr-ov-head">' +
-          '<div class="sr-ov-title" id="srOvTitle"></div>' +
-          '<div class="sr-ov-sub"></div>' +
+          '<span class="sr-ov-headl">' +
+            '<span class="sr-ov-title" id="srOvTitle"></span>' +
+            '<span class="sr-ov-sub"></span>' +
+          '</span>' +
+          '<button class="sr-ov-close" type="button" aria-label="Close">✕</button>' +
+        '</div>' +
+        '<div class="sr-mhead">' +
+          '<span class="sr-mdate">Date</span>' +
+          '<span class="sr-mtour">Event</span>' +
+          '<span class="sr-mopp">Opponent</span>' +
+          '<span class="sr-mscore">Score</span>' +
         '</div>' +
         '<div class="sr-ov-body"></div>' +
       '</div>';
@@ -583,11 +656,14 @@
     var flag = emojiFlag(p.country);
     var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : '';
     back.querySelector('.sr-ov-title').innerHTML =
-      (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
-      esc(p.name || u.playerName || '—') +
-      (rankTxt ? ' <span class="sr-ov-rank">' + esc(rankTxt) + '</span>' : '');
+      '<span>' + (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
+        esc(p.name || u.playerName || '—') + '</span>' +
+      '<span class="sr-ov-rank">' + (rankTxt ? esc(rankTxt) : '<span class="sr-dash">—</span>') + '</span>';
+    // POOL lives here and only here now (founder ruling q1, 2026-09-12): the card no
+    // longer carries it, so this line is the one place a reader sees what the run was
+    // drawn from. The engine still refuses to emit a streak without it.
     back.querySelector('.sr-ov-sub').innerHTML = describe(st) +
-      ' <span class="sr-ov-pool">· ' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) +
+      ' <span class="sr-ov-sep">·</span> <span class="sr-ov-pool">' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) +
       ' ' + (st.pool === 1 ? 'match' : 'matches') + '</span>';
     back.querySelector('.sr-ov-body').innerHTML = detailTableHtml(st);
     _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
