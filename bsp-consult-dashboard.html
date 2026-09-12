@@ -3336,139 +3336,228 @@
 </div>
 
 <!-- ===================== TEN-146 DATABASE TAB ===================== -->
+<!-- TEN-196: Database presentation rebuilt to the Claude Design export
+     (design_handoff_database, README "Fidelity: high"). Colour, type, spacing and
+     grid tracks below are the export's literal values, deliberately NOT the site
+     theme variables — the export is authoritative for appearance. The data layer
+     (build-database-yield.js -> database-yield.json) is unchanged; every figure is
+     recomputed from the archive and no export constant ships. -->
 <style>
-  [data-page="database"] .pagewrap{ max-width:1360px; }
-  .db-head h1{ font-family:var(--mx-font-ui); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text); }
-  .db-head p{ font-family:var(--mx-font-ui); color:var(--text-dim); font-size:13.5px; line-height:1.55; margin:0; max-width:760px; }
-  .db-viewtabs{ display:flex; gap:2px; margin:22px 0 0; border-bottom:1px solid var(--border); }
-  .db-viewtabs button{ font-family:var(--mx-font-ui); font-size:13.5px; font-weight:600; color:var(--text-dim); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; padding:9px 15px; cursor:pointer; }
-  .db-viewtabs button.active{ color:#fff; border-color:var(--accent); }
-  .db-viewtabs button:hover{ color:var(--text); }
+  [data-page="database"] .pagewrap{ max-width:1360px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:22px; }
+  [data-page="database"]{ --db-surface:#0a0d14; --db-strip:#080a10; --db-fill:#06070a;
+    --db-bd:rgba(255,255,255,0.09); --db-bd2:rgba(255,255,255,0.14);
+    --db-txt:#e7e9ee; --db-emph:#aab3c5; --db-sec:#8b96b5; --db-ctl:#c6ccdb; --db-mute:#5b6880; --db-faint:#4b5672;
+    --db-acc:#5b9bff; --db-acc2:#4db8ff; --db-seam:#e8a84e; --db-pos:#3dd68c; --db-neg:#e0616f;
+    --db-ui:'Hanken Grotesk', sans-serif; --db-mono:'IBM Plex Mono', monospace; }
+  [data-page="database"] .db-mono{ font-family:var(--db-mono); }
+  [data-page="database"] .db-pos{ color:var(--db-pos); }
+  [data-page="database"] .db-neg{ color:var(--db-neg); }
 
-  /* header line beneath the tab row: active filter state + coverage + freshness */
-  .db-headerline{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:12px 0 18px; padding-bottom:2px; }
-  .db-headerline .db-hl-filter{ font-family:var(--mx-font-mono); font-size:11.5px; letter-spacing:0.02em; color:var(--text-dim); }
-  .db-headerline .db-hl-filter b{ color:var(--text); font-weight:600; }
-  .db-headerline .db-hl-fresh{ font-family:var(--mx-font-mono); font-size:10.5px; letter-spacing:0.04em; color:var(--text-faint); text-transform:uppercase; white-space:nowrap; }
+  /* 1 - header card */
+  .db-headcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 26px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; }
+  .db-headcard h1{ font-family:var(--db-ui); font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; color:var(--db-txt); }
+  .db-headcard p{ font-family:var(--db-ui); margin:8px 0 0; font-size:13.5px; line-height:1.55; color:var(--db-mute); max-width:640px; text-wrap:pretty; }
+  .db-headcard p strong{ color:var(--db-emph); font-weight:700; }
+  .db-fresh{ font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--db-mute); white-space:nowrap; }
 
-  .db-layout{ display:grid; grid-template-columns:216px minmax(0,1.05fr) minmax(0,1fr); gap:20px; align-items:start; }
-  @media (max-width:1080px){ .db-layout{ grid-template-columns:1fr; } }
+  /* 2 - control bar */
+  .db-ctl{ display:flex; flex-direction:column; border:1px solid var(--db-bd); border-radius:12px; position:relative; z-index:4; }
+  .db-ctltop{ display:flex; align-items:center; gap:10px; padding:11px 16px; background:var(--db-strip); border-radius:12px 12px 0 0; }
+  .db-seg{ display:inline-flex; flex:none; gap:3px; background:var(--db-surface); border:1px solid var(--db-bd); border-radius:9px; padding:2px; }
+  .db-seg button{ font-family:var(--db-ui); font-size:11.5px; font-weight:600; padding:6px 13px; border-radius:7px; white-space:nowrap;
+    background:transparent; border:1px solid rgba(255,255,255,0.07); color:var(--db-mute); cursor:pointer; transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-seg button.active{ background:rgba(91,155,255,0.16); border-color:rgba(91,155,255,0.22); color:var(--db-txt); font-weight:700; }
+  .db-ctlbot{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:11px 16px; background:var(--db-surface); border-top:1px solid var(--db-bd); border-radius:0 0 12px 12px; }
 
-  /* filter rail */
-  .db-rail{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:16px 15px; position:sticky; top:12px; }
-  .db-rail .db-railtitle{ font-family:var(--mx-font-mono); font-size:10.5px; letter-spacing:0.11em; text-transform:uppercase; color:var(--text-faint); margin:0 0 10px; }
-  .db-fgroup{ margin-bottom:16px; }
-  .db-fgroup > .db-flabel{ font-family:var(--mx-font-ui); font-size:12px; font-weight:700; color:var(--text-dim); margin:0 0 7px; display:block; }
-  .db-chips{ display:flex; flex-wrap:wrap; gap:6px; }
-  .db-chip{ font-family:var(--mx-font-ui); font-size:11.5px; font-weight:600; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--border); border-radius:999px; padding:4px 10px; cursor:pointer; user-select:none; }
-  .db-chip.active{ color:#fff; background:var(--accent-dim); border-color:var(--accent); }
-  .db-chip:hover{ color:var(--text); }
-  .db-yearrow{ display:flex; align-items:center; gap:8px; }
-  .db-yearrow select{ flex:1; font-family:var(--mx-font-mono); font-size:12px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 7px; }
-  .db-yearrow span{ color:var(--text-faint); font-size:11px; }
-  .db-reset{ font-family:var(--mx-font-ui); font-size:11.5px; font-weight:600; color:var(--accent); background:none; border:none; cursor:pointer; padding:2px 0; margin-top:2px; }
+  .db-subject{ display:inline-flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 13px; border-radius:9px;
+    background:rgba(91,155,255,0.13); border:1px solid rgba(91,155,255,0.34); white-space:nowrap; }
+  .db-subject span{ font-family:var(--db-ui); font-size:13.5px; font-weight:700; color:var(--db-txt); }
+  .db-subject button{ width:19px; height:19px; border-radius:50%; border:1px solid rgba(255,255,255,0.18); background:transparent;
+    color:#8b96b5; font-size:11px; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
+  .db-subject button:hover{ color:var(--db-txt); }
 
-  /* type-ahead search (tournament / player) */
-  .db-searchbox{ position:relative; }
-  .db-searchinput{ width:100%; box-sizing:border-box; font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px 9px; }
-  .db-searchinput:focus{ outline:none; border-color:var(--accent); }
-  .db-results{ margin-top:6px; border:1px solid var(--border); border-radius:6px; background:var(--panel-2); max-height:280px; overflow-y:auto; }
-  .db-results:empty{ display:none; }
-  .db-resultrow{ font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text-dim); padding:7px 10px; cursor:pointer; border-bottom:1px solid var(--border); }
-  .db-resultrow:last-child{ border-bottom:none; }
-  .db-resultrow:hover{ background:var(--accent-dim); color:#fff; }
-  .db-nomatch{ font-family:var(--mx-font-ui); font-size:12px; color:var(--text-faint); padding:8px 10px; }
-  .db-selname{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
-  .db-selname h2{ font-family:var(--mx-font-ui); font-size:20px; font-weight:800; letter-spacing:-0.02em; color:var(--text); margin:0; }
-  .db-selclear{ font-family:var(--mx-font-ui); font-size:12px; color:var(--text-faint); background:none; border:1px solid var(--border); border-radius:999px; width:22px; height:22px; line-height:1; cursor:pointer; padding:0; }
-  .db-selclear:hover{ color:var(--text); border-color:var(--accent); }
+  .db-search{ position:relative; flex:1 1 200px; min-width:0; max-width:290px; }
+  .db-search input{ width:100%; height:36px; background:var(--db-fill); border:1px solid var(--db-bd); border-radius:9px;
+    padding:0 12px; color:var(--db-txt); font-size:13px; font-family:var(--db-ui); outline:none; }
+  .db-search.prompting input{ border-color:rgba(91,155,255,0.45); }
+  .db-pop{ position:absolute; z-index:6; top:42px; left:0; width:290px; max-height:266px; overflow:auto;
+    background:var(--db-surface); border:1px solid var(--db-bd2); border-radius:11px; padding:7px;
+    display:flex; flex-direction:column; gap:1px; box-shadow:0 18px 40px rgba(0,0,0,0.55); }
+  .db-prow{ display:flex; align-items:baseline; gap:10px; padding:8px 10px; border-radius:7px; font-family:var(--db-ui); font-size:13px;
+    color:var(--db-ctl); font-weight:500; cursor:pointer; transition:background .14s ease,color .14s ease; }
+  .db-prow.on{ color:var(--db-txt); font-weight:700; background:rgba(91,155,255,0.13); }
+  .db-prow:hover{ background:rgba(91,155,255,0.13); }
+  .db-prow em{ margin-left:auto; font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
+  .db-pempty{ padding:10px; font-family:var(--db-ui); font-size:12.5px; color:var(--db-mute); }
 
-  /* prompt + most-played shortcuts (tournaments landing) */
-  .db-prompt{ border:1px dashed var(--border); border-radius:var(--radius); background:var(--panel); padding:30px 24px; text-align:center; }
-  .db-prompt .db-promptmark{ font-size:22px; margin-bottom:10px; color:var(--text-faint); }
-  .db-prompt .db-prompttitle{ font-family:var(--mx-font-ui); font-weight:700; font-size:14px; color:var(--text); margin-bottom:4px; }
-  .db-prompt .db-promptsub{ font-family:var(--mx-font-ui); font-size:12.5px; color:var(--text-dim); margin-bottom:16px; }
-  .db-mpl{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; }
-  .db-mplchips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .db-mplchip{ font-family:var(--mx-font-ui); font-size:12px; font-weight:600; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--border); border-radius:999px; padding:6px 13px; cursor:pointer; }
-  .db-mplchip:hover{ color:#fff; border-color:var(--accent); background:var(--accent-dim); }
+  .db-trigwrap{ position:relative; }
+  .db-trig{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 13px; border-radius:9px;
+    font-family:var(--db-ui); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer;
+    background:transparent; border:1px solid var(--db-bd); color:var(--db-ctl); transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-trig.open{ border-color:rgba(91,155,255,0.35); color:var(--db-txt); }
+  .db-trig.on{ background:rgba(91,155,255,0.16); border-color:rgba(91,155,255,0.35); color:var(--db-txt); }
+  .db-trig i{ font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
+  .db-trig.on i{ color:var(--db-acc); }
+  .db-trig u{ text-decoration:none; font-size:9px; color:var(--db-mute); }
+  .db-menu{ position:absolute; z-index:5; top:42px; left:0; min-width:260px; max-height:340px; overflow:auto;
+    background:var(--db-surface); border:1px solid var(--db-bd2); border-radius:11px; padding:7px;
+    display:flex; flex-direction:column; gap:1px; box-shadow:0 18px 40px rgba(0,0,0,0.55); }
+  .db-msearch{ position:sticky; top:0; background:var(--db-surface); padding-bottom:7px; }
+  .db-msearch input{ width:100%; height:40px; background:var(--db-fill); border:1px solid var(--db-bd2); border-radius:9px;
+    padding:0 12px; font-size:13.5px; font-family:var(--db-ui); color:var(--db-txt); outline:none; }
+  .db-mrow{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; font-family:var(--db-ui); font-size:13px;
+    color:var(--db-ctl); font-weight:500; cursor:pointer; transition:background .14s ease,color .14s ease; }
+  .db-mrow.on{ color:var(--db-txt); font-weight:700; background:rgba(91,155,255,0.13); }
+  .db-mrow:hover{ background:rgba(91,155,255,0.13); }
+  .db-box{ width:14px; height:14px; border-radius:4px; border:1px solid rgba(255,255,255,0.20); background:transparent; flex:none; }
+  .db-mrow.on .db-box{ background:var(--db-acc); border-color:var(--db-acc); }
 
-  /* centre — band tables */
-  .db-center{ display:flex; flex-direction:column; gap:16px; min-width:0; }
-  .db-booklabel{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--text-dim); display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap; }
-  .db-booklabel .db-dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 8px var(--accent); }
-  .db-booklabel .db-seamnote{ color:var(--text-faint); }
-  .db-tablecard{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); overflow:hidden; }
-  .db-tablehead{ display:flex; align-items:baseline; justify-content:space-between; padding:13px 16px 10px; border-bottom:1px solid var(--border); }
-  .db-tablehead h3{ font-family:var(--mx-font-ui); font-size:14px; font-weight:700; color:var(--text); margin:0; }
-  .db-tablehead .db-side{ font-family:var(--mx-font-mono); font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-faint); }
-  table.db-table{ width:100%; border-collapse:collapse; }
-  table.db-table th{ font-family:var(--mx-font-mono); font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-faint); font-weight:500; text-align:right; padding:9px 16px 7px; }
-  table.db-table th:first-child{ text-align:left; }
-  table.db-table td{ font-family:var(--mx-font-mono); font-size:13px; color:var(--text); text-align:right; padding:9px 16px; border-top:1px solid var(--border); vertical-align:top; }
-  table.db-table td:first-child{ text-align:left; font-family:var(--mx-font-ui); font-weight:600; }
-  table.db-table tr.db-allrow td{ border-top:1px solid var(--border); background:rgba(255,255,255,0.02); font-weight:700; }
-  table.db-table tr.db-allrow td:first-child{ color:var(--text); }
-  .db-bandname{ font-family:var(--mx-font-ui); font-size:12.5px; font-weight:700; color:var(--text); }
-  .db-bandrange{ font-family:var(--mx-font-mono); font-size:10.5px; font-weight:400; color:var(--text-faint); margin-top:1px; }
-  .db-yield.pos{ color:var(--value-pos); }
-  .db-yield.neg{ color:var(--value-neg); }
-  .db-thin{ color:var(--text-faint); font-family:var(--mx-font-ui); font-size:10px; margin-left:5px; }
-  .db-prose{ padding:9px 16px 12px; border-top:1px solid var(--border); font-family:var(--mx-font-ui); font-size:11.5px; color:var(--text-dim); line-height:1.6; }
-  .db-prose b{ color:var(--text); font-weight:600; }
+  .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; overflow:hidden; border:1px solid var(--db-bd); }
+  .db-yr.on{ border-color:rgba(91,155,255,0.35); }
+  .db-yrend{ position:relative; display:inline-flex; align-items:center; gap:6px; padding:0 10px; }
+  .db-yrend b{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-txt); }
+  .db-yrend u{ text-decoration:none; font-size:9px; color:var(--db-mute); }
+  .db-yrend select{ position:absolute; inset:0; opacity:0; appearance:none; -webkit-appearance:none; border:none; width:100%; height:100%; cursor:pointer; }
+  .db-yrsep{ display:inline-flex; align-items:center; font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:0 3px; }
+  .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db-acc); background:none; border:none; cursor:pointer; padding:0; }
+  .db-reset:hover{ color:#82b4ff; }
 
-  /* right — curve */
-  .db-curvecard{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:14px 16px 16px; position:sticky; top:12px; }
-  .db-curvehead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; gap:10px; }
-  .db-curvehead h3{ font-family:var(--mx-font-ui); font-size:14px; font-weight:700; color:var(--text); margin:0; }
-  .db-legend{ display:flex; gap:14px; font-family:var(--mx-font-mono); font-size:10.5px; color:var(--text-dim); }
-  .db-legend i{ display:inline-block; width:14px; height:2px; vertical-align:middle; margin-right:5px; }
-  .db-curvewrap{ width:100%; }
-  .db-curvewrap svg{ width:100%; height:auto; display:block; }
-  .db-axislabel{ font-family:var(--mx-font-mono); font-size:10px; fill:var(--text-faint); }
-  .db-seamcap{ font-family:var(--mx-font-ui); font-size:10.5px; color:var(--text-dim); margin-top:8px; line-height:1.5; padding-left:11px; border-left:2px solid var(--court-clay); }
+  #dbBody{ display:flex; flex-direction:column; gap:22px; }
+  .db-bookline{ font-family:var(--db-mono); font-size:11px; color:var(--db-mute); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .db-bookline i{ width:7px; height:7px; border-radius:50%; background:var(--db-acc); flex:none; }
+  .db-bookline u{ text-decoration:none; color:var(--db-faint); }
 
-  /* player view — tiles + tri-charts */
-  .db-playerwrap{ display:flex; flex-direction:column; gap:20px; min-width:0; }
-  .db-chiprows{ display:flex; flex-direction:column; gap:10px; }
-  .db-chiprow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .db-chiprow > .db-flabel{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-faint); width:58px; flex-shrink:0; }
-  .db-tiles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-  @media (max-width:820px){ .db-tiles{ grid-template-columns:1fr; } }
-  .db-tile{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:16px 18px; }
-  .db-tile .db-tilelabel{ font-family:var(--mx-font-mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; }
-  .db-tile .db-tilefig{ font-family:var(--mx-font-mono); font-size:30px; font-weight:600; letter-spacing:-0.01em; line-height:1; }
-  .db-tile .db-tilefig.pos{ color:var(--value-pos); }
-  .db-tile .db-tilefig.neg{ color:var(--value-neg); }
-  .db-tile .db-tilefig.muted{ color:var(--text-faint); }
-  .db-tile .db-tilesub{ font-family:var(--mx-font-mono); font-size:11.5px; color:var(--text-dim); margin-top:10px; line-height:1.7; }
-  .db-tile .db-tilesub b{ color:var(--text); font-weight:600; }
-  .db-chartgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-  @media (max-width:820px){ .db-chartgrid{ grid-template-columns:1fr; } }
-  .db-chartpanel{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:12px 14px 14px; }
-  .db-chartpanel h4{ font-family:var(--mx-font-ui); font-size:12.5px; font-weight:700; color:var(--text); margin:0 0 8px; }
+  /* 3 - cards */
+  .db-card{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:16px 18px; }
+  .db-bands{ display:grid; grid-template-columns:repeat(auto-fit, minmax(470px,1fr)); gap:34px; align-items:start; }
+  .db-bandpanel{ min-width:0; }
+  .db-ph{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; padding-bottom:10px; }
+  .db-ph h3{ font-family:var(--db-ui); font-size:16px; font-weight:700; color:var(--db-txt); margin:0; }
+  .db-eyebrow{ font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--db-mute); }
 
-  /* footnote / states */
-  .db-footnote{ margin-top:18px; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); font-family:var(--mx-font-ui); font-size:11.5px; color:var(--text-dim); line-height:1.7; overflow-wrap:anywhere; word-break:break-word; }
-  .db-footnote b{ color:var(--text); font-weight:600; }
+  /* Row rules must run unbroken across the table, so every row is its own grid on
+     the shared track list (the export's own construction). display:contents would
+     put the border on each cell and leave a gap at every column gutter. */
+  .db-grid{ display:block; }
+  .db-gh, .db-gr, .db-ga{ display:grid; grid-template-columns:var(--dbcols); gap:0 10px; align-items:baseline; }
+  .db-gh{ padding-bottom:9px; border-bottom:1px solid rgba(255,255,255,0.10); }
+  .db-gh > div{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--db-mute); text-align:right; }
+  .db-gh > div:first-child{ text-align:left; }
+  .db-gr{ padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .db-gr > div{ text-align:right; font-family:var(--db-mono); font-size:13px; color:var(--db-sec); }
+  .db-gr > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:14px; font-weight:700; color:var(--db-txt); }
+  .db-gmed{ font-weight:600; color:var(--db-txt) !important; }
+  .db-ga{ padding:13px 0 0; border-top:2px solid rgba(255,255,255,0.14); }
+  .db-ga > div{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-txt); }
+  .db-ga > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:14px; font-weight:700; }
+  .db-yieldcell{ font-family:var(--db-mono); font-size:14px; font-weight:700; letter-spacing:-0.01em; }
+  .db-ga .db-yieldcell{ font-size:14px; }
+  .db-tourcell{ font-family:var(--db-mono); font-size:13px; font-weight:500; color:var(--db-sec) !important; }
+  .db-tourcell.none{ color:var(--db-faint) !important; }
+  .db-thin{ display:block; margin-top:3px; font-family:var(--db-ui); font-size:10px; font-weight:500; color:var(--db-mute); white-space:nowrap; }
+  .db-note{ margin-top:9px; font-family:var(--db-mono); font-size:10.5px; color:var(--db-faint); }
+  .db-split{ margin-top:12px; font-family:var(--db-ui); font-size:13px; line-height:1.65; color:var(--db-sec); text-wrap:pretty; }
+  .db-split b{ font-family:var(--db-mono); font-weight:500; color:var(--db-sec); }
+
+  /* 4 - cumulative profit chart (Tour / Tournaments) */
+  .db-charthead{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .db-charthead h3{ font-family:var(--db-ui); font-size:19px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0; }
+  .db-legend{ display:flex; gap:16px; font-family:var(--db-ui); font-size:12px; color:var(--db-sec); }
+  .db-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .db-legend i{ width:16px; display:inline-block; }
+  .db-subline{ margin-top:6px; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
+  .db-plot{ margin-top:16px; display:flex; gap:12px; }
+  .db-yaxis{ position:relative; width:66px; height:340px; flex:none; }
+  .db-yaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db-sec); }
+  .db-plotarea{ position:relative; flex:1; min-width:0; height:340px; padding-right:104px; }
+  .db-plotinner{ position:relative; height:100%; }
+  .db-plotinner svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .db-endlab{ position:absolute; right:0; width:100px; transform:translateY(-50%); }
+  .db-endlab b{ display:block; font-family:var(--db-ui); font-size:11.5px; font-weight:700; }
+  .db-endlab span{ display:block; margin-top:2px; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-txt); }
+  .db-xaxis{ margin:8px 104px 0 78px; position:relative; height:18px; }
+  .db-xaxis div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db-sec); }
+  .db-xcap{ margin:4px 104px 0 78px; text-align:center; }
+  .db-seamfoot{ margin:16px 0 0; padding-left:12px; border-left:2px solid rgba(232,168,78,0.55);
+    font-family:var(--db-ui); font-size:12.5px; line-height:1.6; color:var(--db-sec); max-width:820px; }
+
+  /* 5 - players */
+  .db-allline{ display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 22px; padding:14px 18px;
+    background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; }
+  .db-allline .lbl{ font-family:var(--db-ui); font-size:14px; font-weight:700; color:var(--db-txt); }
+  .db-allline .big{ font-family:var(--db-mono); font-size:22px; font-weight:700; letter-spacing:-0.02em; line-height:1; }
+  .db-allline .meta{ font-family:var(--db-mono); font-size:12.5px; color:var(--db-sec); white-space:nowrap; }
+  .db-allline .meta b{ color:var(--db-txt); font-weight:700; }
+  .db-roles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+  @media (max-width:900px){ .db-roles{ grid-template-columns:1fr; } }
+  .db-role{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; display:flex; flex-direction:column; gap:18px; }
+  .db-role h3{ font-family:var(--db-ui); font-size:20px; font-weight:800; color:var(--db-txt); margin:0; }
+  .db-role .desc{ font-family:var(--db-ui); font-size:13px; color:var(--db-mute); margin-top:4px; }
+  .db-figs{ display:flex; flex-wrap:wrap; gap:14px 26px; }
+  .db-fig b{ display:block; font-family:var(--db-mono); font-size:28px; font-weight:700; color:var(--db-txt); }
+  .db-fig span{ display:block; margin-top:4px; font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--db-mute); }
+  .db-bar{ display:block; position:relative; height:9px; border-radius:5px; background:rgba(255,255,255,0.06); }
+  .db-barfill{ position:absolute; top:0; bottom:0; border-radius:5px; }
+  .db-barmark{ position:absolute; left:50%; top:-3px; bottom:-3px; width:2px; background:rgba(255,255,255,0.6); }
+  .db-barleg{ display:flex; justify-content:space-between; font-family:var(--db-ui); font-size:10.5px; color:var(--db-faint); margin-top:8px; }
+  .db-barleg i{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .db-gaprow{ border-top:1px solid rgba(255,255,255,0.06); padding-top:15px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .db-gaprow .lbl{ font-family:var(--db-ui); font-size:13.5px; color:var(--db-mute); }
+  .db-gaprow .val{ font-family:var(--db-mono); font-size:22px; font-weight:700; }
+  .db-verdict{ border-radius:11px; padding:12px 14px; display:flex; align-items:center; gap:9px; font-family:var(--db-ui); font-size:12.5px; color:var(--db-txt); }
+  .db-verdict i{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .db-rolemeta{ font-family:var(--db-mono); font-size:12.5px; color:var(--db-sec); }
+  .db-rolemeta b{ color:var(--db-txt); font-weight:700; }
+  .db-pcmain{ margin-top:16px; }
+  .db-pchead{ display:flex; align-items:baseline; gap:12px; }
+  .db-pchead h4{ font-family:var(--db-ui); font-size:16px; font-weight:700; color:var(--db-txt); margin:0; }
+  .db-pchead span{ margin-left:auto; font-family:var(--db-mono); font-size:19px; font-weight:700; }
+  .db-pcplot{ margin-top:14px; display:flex; gap:10px; }
+  .db-pcaxis{ position:relative; width:40px; flex:none; }
+  .db-pcaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); }
+  .db-pcarea{ position:relative; flex:1; min-width:0; }
+  .db-pcarea svg{ width:100%; height:100%; display:block; }
+  .db-pcticks{ margin:8px 0 0 50px; position:relative; height:14px; }
+  .db-pcticks div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); }
+  .db-pcpair{ margin-top:30px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:36px; }
+  @media (max-width:900px){ .db-pcpair{ grid-template-columns:1fr; } }
+  .db-pcpair .db-pchead h4{ font-size:14px; }
+  .db-pcpair .db-pchead span{ font-size:15px; }
+
+  /* 6 - states, footnote */
+  .db-prompt{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 26px; max-width:560px; }
+  .db-prompt h3{ font-family:var(--db-ui); font-size:19px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0 0 8px; }
+  .db-prompt p{ font-family:var(--db-ui); font-size:13.5px; line-height:1.65; color:var(--db-sec); margin:0; }
+  .db-empty{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 26px; max-width:560px; }
+  .db-empty h3{ font-family:var(--db-ui); font-size:16px; font-weight:700; color:var(--db-txt); margin:0 0 6px; }
+  .db-empty p{ font-family:var(--db-ui); font-size:13px; line-height:1.65; color:var(--db-sec); margin:0; }
+  .db-footnote{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:16px 18px;
+    font-family:var(--db-ui); font-size:12.5px; line-height:1.6; color:var(--db-sec); text-wrap:pretty; }
   .db-footnote p{ margin:0 0 8px; }
   .db-footnote p:last-child{ margin-bottom:0; }
-  .db-disclaimer{ margin-top:12px; font-family:var(--mx-font-ui); font-size:10.5px; color:var(--text-faint); line-height:1.6; }
-  .db-empty{ border:1px dashed var(--border); border-radius:var(--radius); background:var(--panel); padding:34px 24px; text-align:center; color:var(--text-dim); font-family:var(--mx-font-ui); font-size:13px; }
-  .db-empty .db-emptymark{ font-size:20px; margin-bottom:10px; color:var(--text-faint); }
-  .db-loading{ padding:40px; text-align:center; color:var(--text-faint); font-family:var(--mx-font-mono); font-size:12px; }
-  .db-loadbox{ border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); padding:40px; text-align:center; color:var(--text-faint); font-family:var(--mx-font-mono); font-size:12px; }
+  .db-footnote b{ color:var(--db-emph); font-weight:700; }
+  .db-disclaimer{ margin:16px 0 0; font-family:var(--db-ui); font-size:12px; color:var(--db-mute); }
+  .db-loading{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:40px 0; }
 </style>
 <div class="tabpage" data-page="database">
   <div class="pagewrap">
-    <div class="db-head">
-      <h1>Database</h1>
-      <p>Historical yield by odds band from our own ATP closing-line archive — <strong>Pinnacle closing prices, 2010–2026</strong> (2026 settled on Bet365, seam-marked on the curves). Back every favourite — or every underdog — at a flat 1-unit stake and read what the market actually returned, by price band, across the whole tour, one tournament, or a single player.</p>
+    <div class="db-headcard">
+      <div>
+        <h1>Database</h1>
+        <p id="dbSubtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
+      </div>
+      <div class="db-fresh" id="dbFresh"></div>
     </div>
-    <div class="db-viewtabs" id="dbViewTabs">
-      <button class="active" data-dbview="tour">Tour</button>
-      <button data-dbview="tournaments">Tournaments</button>
-      <button data-dbview="players">Players</button>
+    <div class="db-ctl" id="dbCtl">
+      <div class="db-ctltop">
+        <div class="db-seg" id="dbViewTabs">
+          <button class="active" data-dbview="tour">Tour</button>
+          <button data-dbview="tournaments">Tournaments</button>
+          <button data-dbview="players">Players</button>
+        </div>
+      </div>
+      <div class="db-ctlbot" id="dbFilters"></div>
     </div>
     <div id="dbBody"><div class="db-loading">Loading archive…</div></div>
   </div>
@@ -22981,582 +23070,933 @@ setInterval(loadMatches, 3 * 60 * 1000);
 
 <!-- ===================== TEN-146 DATABASE TAB — logic ===================== -->
 <script>
+/* TEN-196 — Database presentation rebuilt to the Claude Design export.
+ *
+ * Two sources of truth, kept apart:
+ *   - appearance comes from design_handoff_database (README "Fidelity: high");
+ *   - every number comes from database-yield.json, recomputed here. No constant
+ *     from the export ships, including the ones that happened to be right.
+ *
+ * Founder rulings encoded (interaction 911c4e8e, 2026-09-12):
+ *   C1  tour baseline  = same PRICE RANGE tour-wide (not the positional tercile)
+ *   C2  baseline gate  = keep the export's gate (Round empty AND full year range)
+ *   C3  chart x-axis   = season-dated (so the seam sits on its own season)
+ *   C8  thin samples   = keep live behaviour: always show the yield, flag the count
+ *   C9  player period  = rolling windows (52w / 2Y / 5Y), all rolling
+ *   C11 Tournaments    = no Surface filter (Round + years only)
+ *   S1/S2/S4 kept: reconciliation footnote, freshness line, per-filter book label.
+ *   S3/S5/S6/S8 deleted. Fade side computed in full — no dashes where we hold data.
+ */
 window.DatabaseTab = (function(){
   'use strict';
   var BASE_URL = './database-yield.json';
   var NAMES_URL = './database-yield-players.json';
-  var DATA = null, NAMES = null, M = null;
-  var basePromise = null, namesPromise = null;
-  var playerIndex = null;   // name -> [{p,w,b,d,fav}]
-  var built = false;
+  var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, built=false, namesBound=false;
 
-  // TEN-146/147: presentation series colours. Both sit in the blue-cyan accent
-  // family — deliberately NOT red (red is reserved for negative yield in the
-  // tables) and NOT DET's white/orange. Favourite = accent blue, underdog = cyan.
-  var COL_FAV = 'var(--accent)';   // #3E7BFA
-  var COL_DOG = '#22C7D6';         // cyan, distinct hue from the blue accent
-  var COL_ALL = '#7FA6E8';         // soft slate-blue for the combined player curve
-
-  var FAV_NAMES = ['Super Fav','Mid Fav','Slight Fav'];
-  var DOG_NAMES = ['Slight Dog','Mid Dog','Super Dog'];
+  var COL_FAV='#5b9bff', COL_DOG='#4db8ff', POS='#3dd68c', NEG='#e0616f';
+  var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];
+  var DOG_NAMES=['Slight Dog','Mid Dog','Super Dog'];
+  // C8: the live rule survives — a thin band still prints its yield, flagged with
+  // its count. There is no suppression threshold on this page.
+  var THIN=30;
 
   var state = {
-    view: 'tour',
-    levels: null, surfaces: null, rounds: null,   // Sets (null until built = "all")
-    yearMin: null, yearMax: null,
-    tournament: null, player: null,
-    tq: '', pq: '',                                // live search query strings
-    period: 'all', psurf: null                     // player-view period + surface
+    view:'tour',
+    levels:null, surfaces:null, rounds:null,
+    yearMin:null, yearMax:null,
+    tournament:null, player:null,
+    tq:'', pq:'', menu:null, menuQ:'',
+    period:'all', psurf:null, ptourn:null, stance:'back'
   };
 
-  // ---- small helpers ----
+  // ---------- helpers ----------
   function el(tag, cls, html){ var e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; }
-  function yr(dateInt){ return Math.floor(dateInt/10000); }
+  function yr(di){ return Math.floor(di/10000); }
+  function dnum(di){ var s=''+di; return Date.UTC(+s.slice(0,4), (+s.slice(4,6))-1, +s.slice(6,8))/86400000; }
   function fmtP(x){ return x==null?'—':x.toFixed(2); }
   function fmtPct(x){ if(x==null) return '—'; var v=x*100; return (v>=0?'+':'')+v.toFixed(2)+'%'; }
-  function yieldClass(x){ return x==null?'':(x>=0?'pos':'neg'); }
-  function median(arr){ if(!arr.length) return null; var a=arr.slice().sort(function(p,q){return p-q;}); var m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
+  function fmtPP(v){ return (v>=0?'+':'')+v.toFixed(2)+'pp'; }
   function fmtInt(n){ return n==null?'—':(''+n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+  function fmtU(v){ return fmtInt(Math.round(v))+'u'; }
+  function signCol(txt){ return (''+txt).replace(/^\s+/,'').charAt(0)==='+' ? POS : NEG; }
+  function median(a){ if(!a.length) return null; var s=a.slice().sort(function(p,q){return p-q;}); var m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
   var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fmtDate(iso){ if(!iso) return '—'; var p=(''+iso).split('-'); if(p.length<3) return iso; return (+p[2])+' '+MON[(+p[1])-1]+' '+p[0]; }
   function esc(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function isoOf(di){ var s=''+di; return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8); }
 
-  // ---- data load ----
+  // ---------- data ----------
   function loadBase(){
     if(basePromise) return basePromise;
-    basePromise = fetch(BASE_URL, {cache:'no-cache'}).then(function(r){
-      if(!r.ok) throw new Error('http '+r.status); return r.json();
-    }).then(function(j){ DATA=j; M=j.meta; return j; });
+    basePromise = fetch(BASE_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .then(function(j){ DATA=j; M=j.meta; return j; })
+      .catch(function(e){ basePromise=null; throw e; });   // a transient failure must stay retryable
     return basePromise;
   }
   function loadNames(){
     if(namesPromise) return namesPromise;
-    namesPromise = fetch(NAMES_URL, {cache:'no-cache'}).then(function(r){
-      if(!r.ok) throw new Error('http '+r.status); return r.json();
-    }).then(function(j){ NAMES=j; buildPlayerIndex(); return j; });
+    namesPromise = fetch(NAMES_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .then(function(j){ NAMES=j; buildPlayerIndex(); return j; })
+      .catch(function(e){ namesPromise=null; throw e; });
     return namesPromise;
   }
   function buildPlayerIndex(){
     if(playerIndex) return;
-    playerIndex = {};
+    playerIndex={};
     var rows=DATA.rows, nm=NAMES.names;
     for(var i=0;i<rows.length;i++){
-      var r=rows[i], w=nm[i][0], l=nm[i][1], favWon=r[7], book=r[8], d=r[0];
-      var lvl=r[1], surf=r[2], rnd=r[3];
-      // winner record
-      pushPlayer(w, { p: favWon? r[5]:r[6], w:1, b:book, d:d, fav: favWon===1, lvl:lvl, surf:surf, rnd:rnd });
-      // loser record
-      pushPlayer(l, { p: favWon? r[6]:r[5], w:0, b:book, d:d, fav: favWon===0, lvl:lvl, surf:surf, rnd:rnd });
+      var r=rows[i], w=nm[i][0], l=nm[i][1], favWon=r[7];
+      // p = the player's own closing price, op = his opponent's — the fade stake.
+      pushPlayer(w, { p: favWon? r[5]:r[6], op: favWon? r[6]:r[5], w:1, b:r[8], d:r[0], fav:favWon===1, surf:r[2], rnd:r[3], tour:r[4] });
+      pushPlayer(l, { p: favWon? r[6]:r[5], op: favWon? r[5]:r[6], w:0, b:r[8], d:r[0], fav:favWon===0, surf:r[2], rnd:r[3], tour:r[4] });
     }
   }
   function pushPlayer(name, rec){ if(!name) return; (playerIndex[name]||(playerIndex[name]=[])).push(rec); }
 
-  // ---- filtering (tour / tournament) → array of rows ----
+  // ---------- tour baseline index (C1: same price range, tour-wide) ----------
+  // Prices sorted once per side with a prefix sum of flat-1u profit, so the yield
+  // of any [lo,hi] price window is two binary searches. The population is the whole
+  // archive: C2's gate only lets a baseline show while Round and the year range are
+  // untouched, and the Tournaments tab carries no other filter (C11).
+  var TB=null;
+  function tourBaseIndex(){
+    if(TB) return TB;
+    var rows=DATA.rows, n=rows.length;
+    function side(pi, favSide){
+      var idx=new Array(n);
+      for(var i=0;i<n;i++) idx[i]=i;
+      idx.sort(function(a,b){ return rows[a][pi]-rows[b][pi]; });
+      var prices=new Float64Array(n), ps=new Float64Array(n+1);
+      for(var j=0;j<n;j++){
+        var r=rows[idx[j]], p=r[pi], won = favSide ? (r[7]===1) : (r[7]===0);
+        prices[j]=p; ps[j+1]=ps[j]+(won?(p-1):-1);
+      }
+      return {prices:prices, ps:ps, n:n};
+    }
+    TB={ fav:side(5,true), dog:side(6,false) };
+    return TB;
+  }
+  function lowerBound(a,v){ var lo=0,hi=a.length; while(lo<hi){ var m=(lo+hi)>>1; if(a[m]<v) lo=m+1; else hi=m; } return lo; }
+  function upperBound(a,v){ var lo=0,hi=a.length; while(lo<hi){ var m=(lo+hi)>>1; if(a[m]<=v) lo=m+1; else hi=m; } return lo; }
+  function baseRange(key, lo, hi){
+    var s=tourBaseIndex()[key], i=lowerBound(s.prices,lo), j=upperBound(s.prices,hi), n=j-i;
+    return n ? { n:n, yield:(s.ps[j]-s.ps[i])/n } : null;
+  }
+  function baseAll(key){ var s=tourBaseIndex()[key]; return { n:s.n, yield:s.ps[s.n]/s.n }; }
+  // Tour baselines for the Players tab, recomputed over the archive under the same
+  // period / surface / tournament filter the player figures use, so the comparison
+  // is like-for-like and never has to be withheld.
+  function playerBaselines(){
+    var rows=DATA.rows, anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
+    var fp=0, dp=0, n=0;
+    for(var i=0;i<rows.length;i++){
+      var r=rows[i];
+      if(state.psurf!=null && r[2]!==state.psurf) continue;
+      if(state.ptourn!=null && r[4]!==state.ptourn) continue;
+      if(!inPeriod(r[0], anchor)) continue;
+      fp += r[7] ? (r[5]-1) : -1;
+      dp += r[7] ? -1 : (r[6]-1);
+      n++;
+    }
+    return n ? { fav:fp/n, dog:dp/n, all:(fp+dp)/(2*n), n:n } : null;
+  }
+  // C2 — the export's gate, kept: a baseline is only offered while the filters that
+  // would move it are untouched.
+  // Gate on the VALUES, not on whether the control was touched — the export's gate
+  // is `y0==='2010' && y1==='2026'`, so re-picking the full range must keep the
+  // baseline rather than dashing it.
+  function fullYearRange(){
+    var ys=presentYears();
+    var lo=state.yearMin!=null?state.yearMin:ys[0], hi=state.yearMax!=null?state.yearMax:ys[ys.length-1];
+    return lo===ys[0] && hi===ys[ys.length-1];
+  }
+  function baselineAllowed(){ return state.rounds===null && fullYearRange(); }
+
+  // ---------- filtering ----------
   function filteredRows(){
     var rows=DATA.rows, out=[];
-    var useLvl = state.levels, useSurf=state.surfaces, useRnd=state.rounds;
     var tIdx = (state.view==='tournaments' && state.tournament!=null) ? M.tournaments.indexOf(state.tournament) : -2;
     for(var i=0;i<rows.length;i++){
       var r=rows[i];
       if(state.view==='tournaments'){ if(tIdx<0) return out; if(r[4]!==tIdx) continue; }
-      if(useLvl && !useLvl.has(r[1])) continue;
-      if(useSurf && !useSurf.has(r[2])) continue;
-      if(useRnd && !useRnd.has(r[3])) continue;
-      var y=yr(r[0]); if(state.yearMin!=null && y<state.yearMin) continue; if(state.yearMax!=null && y>state.yearMax) continue;
+      else {
+        if(state.levels && !state.levels.has(r[1])) continue;
+        if(state.surfaces && !state.surfaces.has(r[2])) continue;
+      }
+      if(state.rounds && !state.rounds.has(r[3])) continue;
+      var y=yr(r[0]);
+      if(state.yearMin!=null && y<state.yearMin) continue;
+      if(state.yearMax!=null && y>state.yearMax) continue;
       out.push(r);
     }
     return out;
   }
 
-  // ---- terciles: values = [{p, w, b}] → bands + ALL ----
+  // ---------- terciles ----------
+  function agg(slice){
+    if(!slice.length) return null;
+    var profit=0, prices=[], byb={0:{n:0,pr:0},1:{n:0,pr:0}};
+    for(var i=0;i<slice.length;i++){ var v=slice[i], pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); byb[v.b].n++; byb[v.b].pr+=pr; }
+    return { n:slice.length, median:median(prices), yield:profit/slice.length, lo:slice[0].p, hi:slice[slice.length-1].p,
+             book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null } };
+  }
   function bands(values){
-    var n=values.length;
-    var vs=values.slice().sort(function(a,b){return a.p-b.p;});
-    function agg(slice){
-      if(!slice.length) return null;
-      var profit=0, prices=[], byb={0:{n:0,pr:0},1:{n:0,pr:0}};
-      for(var i=0;i<slice.length;i++){ var v=slice[i]; var pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); byb[v.b].n++; byb[v.b].pr+=pr; }
-      return { n:slice.length, median:median(prices), yield:profit/slice.length, lo:slice[0].p, hi:slice[slice.length-1].p,
-               book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null } };
-    }
+    var n=values.length, vs=values.slice().sort(function(a,b){return a.p-b.p;});
     var out={ bands:[], all:agg(vs) };
     if(n>=3){
       var k1=Math.round(n/3), k2=Math.round(2*n/3);
       out.bands=[agg(vs.slice(0,k1)), agg(vs.slice(k1,k2)), agg(vs.slice(k2))];
     } else if(n>0){
-      out.bands=[agg(vs)];   // too few for 3 terciles — one honest band, count shown
-      out.single=true;
+      // Fewer than three matches cannot be split into three terciles without
+      // inventing bands. One honest band, count shown (approved empty-state 5).
+      out.bands=[agg(vs)]; out.single=true;
     }
     return out;
   }
-
-  // ---- book label from a set of rows ----
-  function bookLabel(rows){
-    var ps=false,b365=false;
-    for(var i=0;i<rows.length;i++){ if(rows[i][8]===0)ps=true; else b365=true; if(ps&&b365)break; }
-    if(ps&&b365) return {text:'Pinnacle closing · 2026 Bet365', seam:true};
-    if(b365) return {text:'Bet365 closing', seam:false};
-    if(ps) return {text:'Pinnacle closing', seam:false};
+  function bookLabel(books){
+    var ps=false,b=false;
+    for(var i=0;i<books.length;i++){ if(books[i]===0) ps=true; else b=true; if(ps&&b) break; }
+    if(ps&&b) return {text:M.books[0]+' closing · '+M.seamSeason+' '+M.books[1], seam:true};
+    if(b) return {text:M.books[1]+' closing', seam:false};
+    if(ps) return {text:M.books[0]+' closing', seam:false};
     return {text:'—', seam:false};
   }
 
-  // ==================== RENDER ====================
-  function render(){
-    var body=document.getElementById('dbBody'); if(!body) return;
-    body.innerHTML='';
-    body.appendChild(renderHeaderLine());
-    if(state.view==='players'){ renderPlayerView(body); return; }
-    renderBandView(body);
+  // ================= control bar =================
+  function trigger(label, countTxt, active, key, buildMenu){
+    var wrap=el('div','db-trigwrap');
+    var open = state.menu===key;
+    var t=el('button','db-trig'+(active?' on':'')+(open?' open':''));
+    t.innerHTML=label+' <i>'+esc(countTxt)+'</i><u>▼</u>';
+    t.onclick=function(ev){ ev.stopPropagation(); state.menu = open?null:key; state.menuQ=''; renderFilters(); };
+    wrap.appendChild(t);
+    if(open){ var m=buildMenu(); m.onclick=function(ev){ ev.stopPropagation(); }; wrap.appendChild(m); }
+    return wrap;
   }
-
-  // ---- header line: active filter + coverage + freshness ----
-  function renderHeaderLine(){
-    var line=el('div','db-headerline');
-    line.appendChild(el('div','db-hl-filter', filterSummary()));
-    line.appendChild(el('div','db-hl-fresh','Archive through '+fmtDate(M.dateRange[1])));
-    return line;
-  }
-  function namesOf(activeSet, all){ if(!activeSet) return null; var o=[]; all.forEach(function(nm,i){ if(activeSet.has(i)) o.push(nm); }); return o; }
-  function yearsLabel(){
-    if(state.yearMin==null && state.yearMax==null) return 'All years';
-    var lo=state.yearMin!=null?state.yearMin:yr(+(''+M.dateRange[0]).replace(/-/g,''));
-    var hi=state.yearMax!=null?state.yearMax:yr(+(''+M.dateRange[1]).replace(/-/g,''));
-    return lo===hi?(''+lo):(lo+'–'+hi);
-  }
-  function filterSummary(){
-    var parts=['<b>ATP</b>'];
-    if(state.view==='tournaments'){ parts.push(state.tournament?('<b>'+esc(state.tournament)+'</b>'):'All tournaments'); }
-    if(state.view==='players'){
-      parts.push(state.player?('<b>'+esc(state.player)+'</b>'):'No player selected');
-      parts.push({all:'All time',season:'Latest season',y2:'Last 2 years',y5:'Last 5 years'}[state.period]||'All time');
-      parts.push(state.psurf==null?'All surfaces':M.surfaces[state.psurf]);
-      return parts.join(' · ');
-    }
-    if(state.view!=='tournaments'){ var lv=namesOf(state.levels,M.levels); parts.push(lv?lv.join(', '):'All levels'); }
-    var sf=namesOf(state.surfaces,M.surfaces); parts.push(sf?sf.join(', '):'All surfaces');
-    var rd=namesOf(state.rounds,M.rounds); parts.push(rd?(rd.length>2?rd.length+' rounds':rd.join(', ')):'All rounds');
-    parts.push(yearsLabel());
-    return parts.join(' · ');
-  }
-
-  // ==================== TOUR / TOURNAMENTS (band view) ====================
-  function renderBandView(body){
-    var layout=el('div','db-layout');
-    layout.appendChild(renderRail());
-    var center=el('div','db-center'), curve=el('div');
-    layout.appendChild(center); layout.appendChild(curve);
-    body.appendChild(layout);
-
-    // Tournaments landing: no tournament chosen yet → prompt + most-played, not an empty result.
-    if(state.view==='tournaments' && state.tournament==null){
-      center.appendChild(tournamentPrompt());
-      renderFootnote(body, null);
-      return;
-    }
-
-    var rows=filteredRows();
-    var bl=bookLabel(rows);
-
-    if(state.view==='tournaments'){
-      var hd=el('div','db-selname'); hd.innerHTML='<h2>'+esc(state.tournament)+'</h2>';
-      var x=el('button','db-selclear','×'); x.title='Clear tournament'; x.onclick=function(){ state.tournament=null; state.tq=''; render(); };
-      hd.appendChild(x); center.appendChild(hd);
-    }
-
-    var label=el('div','db-booklabel');
-    label.innerHTML='<span class="db-dot"></span>'+bl.text+(bl.seam?' <span class="db-seamnote">— spans the book seam; per-book split below each table</span>':'');
-    center.appendChild(label);
-
-    if(!rows.length){ center.appendChild(emptyState('No matches for this filter','Widen the level, surface, round or year range.')); renderFootnote(body,0); return; }
-
-    var favVals=rows.map(function(r){return {p:r[5], w:r[7], b:r[8]};});
-    var dogVals=rows.map(function(r){return {p:r[6], w:r[7]?0:1, b:r[8]};});
-    center.appendChild(tableCard('Favourites','Back the shorter price', bands(favVals), bl.seam, FAV_NAMES));
-    center.appendChild(tableCard('Underdogs','Back the longer price', bands(dogVals), bl.seam, DOG_NAMES));
-
-    curve.appendChild(renderCurve(rows));
-    renderFootnote(body, rows.length);
-  }
-
-  function tournamentPrompt(){
-    var box=el('div','db-prompt');
-    box.innerHTML='<div class="db-promptmark">⌕</div><div class="db-prompttitle">Search for a tournament</div>'+
-                  '<div class="db-promptsub">Type a name in the filter on the left, or pick one of the most-played below.</div>'+
-                  '<div class="db-mpl">Most played</div>';
-    var wrap=el('div','db-mplchips');
-    mostPlayed(8).forEach(function(t){
-      var c=el('div','db-mplchip', esc(t.name)+' <span style="color:var(--text-faint);font-family:var(--mx-font-mono);font-size:10px;">'+fmtInt(t.n)+'</span>');
-      c.onclick=function(){ state.tournament=t.name; state.tq=''; render(); };
-      wrap.appendChild(c);
+  // The artefact's round dictionary is insertion-ordered, so 3rd/4th Round sit
+  // after The Final. Display in draw order; the stored index is unchanged.
+  var ROUND_ORDER=['1st Round','2nd Round','3rd Round','4th Round','Quarterfinals','Semifinals','The Final','Round Robin'];
+  function orderedIdx(items){
+    var idx=items.map(function(_,i){return i;});
+    if(items!==M.rounds) return idx;
+    return idx.slice().sort(function(a,b){
+      var ia=ROUND_ORDER.indexOf(items[a]), ib=ROUND_ORDER.indexOf(items[b]);
+      return (ia<0?99:ia)-(ib<0?99:ib);
     });
-    box.appendChild(wrap);
-    return box;
   }
-  function mostPlayed(k){
-    var counts={};
-    for(var i=0;i<DATA.rows.length;i++){ var ti=DATA.rows[i][4]; counts[ti]=(counts[ti]||0)+1; }
-    return Object.keys(counts).map(function(ti){ return {name:M.tournaments[+ti], n:counts[ti]}; })
-      .sort(function(a,b){return b.n-a.n;}).slice(0,k);
-  }
-
-  function tableCard(title, side, res, seam, bandNames){
-    var card=el('div','db-tablecard');
-    var head=el('div','db-tablehead'); head.innerHTML='<h3>'+title+'</h3><span class="db-side">'+side+'</span>'; card.appendChild(head);
-    if(!res.all){ card.appendChild(el('div','db-empty','No matches on this side.')); return card; }
-    var t=el('table','db-table');
-    t.innerHTML='<thead><tr><th>Band</th><th>Median</th><th>Matches</th><th>Yield</th></tr></thead>';
-    var tb=el('tbody');
-    res.bands.forEach(function(b,i){
-      if(!b) return;
-      var tr=el('tr');
-      var thin=b.n<30?'<span class="db-thin">thin</span>':'';
-      var nm = (!res.single && bandNames && bandNames[i]) ? bandNames[i] : null;
-      var first = nm
-        ? '<div class="db-bandname">'+nm+'</div><div class="db-bandrange">'+fmtP(b.lo)+' – '+fmtP(b.hi)+'</div>'
-        : '<div class="db-bandrange" style="font-size:12.5px;color:var(--text);">'+fmtP(b.lo)+' – '+fmtP(b.hi)+'</div>';
-      tr.innerHTML='<td>'+first+'</td><td>'+fmtP(b.median)+'</td><td>'+b.n+thin+'</td>'+
-                   '<td class="db-yield '+yieldClass(b.yield)+'">'+fmtPct(b.yield)+'</td>';
-      tb.appendChild(tr);
-    });
-    var a=res.all, arow=el('tr','db-allrow');
-    arow.innerHTML='<td>All</td><td>'+fmtP(a.median)+'</td><td>'+a.n+'</td><td class="db-yield '+yieldClass(a.yield)+'">'+fmtPct(a.yield)+'</td>';
-    tb.appendChild(arow); t.appendChild(tb); card.appendChild(t);
-    if(res.single){ card.appendChild(el('div','db-prose','Fewer than three matches — shown as one band rather than split into terciles.')); }
-    if(seam && a.book.ps && a.book.b365){
-      card.appendChild(el('div','db-prose','Split by book: on Pinnacle closing prices this side returned <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' matches, and on the Bet365-settled 2026 matches <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+'. The combined figure blends both — Bet365 carries the wider margin.'));
-    }
-    return card;
-  }
-
-  function emptyState(title, sub){ return el('div','db-empty','<div class="db-emptymark">—</div><div style="font-weight:700;color:var(--text);margin-bottom:4px;">'+title+'</div><div style="font-size:12px;">'+sub+'</div>'); }
-
-  // ---- filter rail (tour / tournaments) ----
-  function renderRail(){
-    var rail=el('div','db-rail');
-    rail.appendChild(el('div','db-railtitle','Filters'));
-    if(state.view==='tournaments'){
-      var tg=el('div','db-fgroup'); tg.appendChild(el('span','db-flabel','Tournament'));
-      tg.appendChild(searchBox({
-        placeholder:'Search tournaments…',
-        query:state.tq,
-        onInput:function(q){ state.tq=q; },
-        match:function(q){ var ql=q.toLowerCase(); return M.tournaments.filter(function(t){return t.toLowerCase().indexOf(ql)>=0;}).sort().slice(0,12); },
-        onPick:function(t){ state.tournament=t; state.tq=''; render(); },
-        noun:'tournament'
-      }));
-      rail.appendChild(tg);
-    }
-    // level / surface / round chip groups. Level is hidden on the tournaments view
-    // (a single tournament is one level — the filter would be a no-op); surface,
-    // round and year apply on both remaining views.
-    if(state.view!=='tournaments') rail.appendChild(chipGroup('Level', M.levels, state.levels, function(s){state.levels=s;}));
-    rail.appendChild(chipGroup('Surface', M.surfaces, state.surfaces, function(s){state.surfaces=s;}));
-    rail.appendChild(chipGroup('Round', M.rounds, state.rounds, function(s){state.rounds=s;}));
-    rail.appendChild(yearGroup());
-    var reset=el('button','db-reset','Reset filters'); reset.onclick=function(){ resetFilters(); render(); };
-    rail.appendChild(reset);
-    return rail;
-  }
-
-  // generic type-ahead search box. opts: {placeholder, query, onInput, match(q)->[items], onPick(item), noun}
-  function searchBox(opts){
-    var box=el('div','db-searchbox');
-    var inp=el('input','db-searchinput'); inp.type='text'; inp.placeholder=opts.placeholder; inp.value=opts.query||'';
-    var results=el('div','db-results');
-    function paint(){
-      var q=inp.value.trim(); results.innerHTML='';
-      if(!q){ return; }
-      var items=opts.match(q);
-      if(!items.length){ results.appendChild(el('div','db-nomatch','No '+opts.noun+' matches “'+esc(q)+'”.')); return; }
-      items.forEach(function(it){
-        var row=el('div','db-resultrow', esc(it));
-        row.onmousedown=function(ev){ ev.preventDefault(); opts.onPick(it); };
-        results.appendChild(row);
-      });
-    }
-    inp.oninput=function(){ if(opts.onInput) opts.onInput(inp.value); paint(); };
-    box.appendChild(inp); box.appendChild(results);
-    // restore any in-progress query results
-    if(opts.query){ paint(); }
-    return box;
-  }
-
-  function chipGroup(label, items, activeSet, setter){
-    var g=el('div','db-fgroup'); g.appendChild(el('span','db-flabel',label));
-    var wrap=el('div','db-chips');
-    items.forEach(function(name, idx){
-      var on = !activeSet || activeSet.has(idx);
-      var c=el('div','db-chip'+(on?' active':''), name);
-      c.onclick=function(){
-        var s = activeSet ? new Set(activeSet) : new Set(items.map(function(_,i){return i;}));
-        if(s.has(idx)) s.delete(idx); else s.add(idx);
-        if(s.size===0) s.add(idx);           // never allow empty — keep at least one
-        if(s.size===items.length) s=null;    // all selected == no filter
-        setter(s); render();
+  function multiMenu(items, activeSet, setter){
+    var m=el('div','db-menu');
+    orderedIdx(items).forEach(function(idx){
+      var name=items[idx];
+      var on = !!activeSet && activeSet.has(idx);
+      var row=el('div','db-mrow'+(on?' on':''));
+      row.innerHTML='<span class="db-box"></span><span>'+esc(name)+'</span>';
+      row.onclick=function(){
+        var st = activeSet ? new Set(activeSet) : new Set();
+        if(st.has(idx)) st.delete(idx); else st.add(idx);
+        setter(st.size===0 || st.size===items.length ? null : st);
+        render();
       };
-      wrap.appendChild(c);
+      m.appendChild(row);
     });
-    g.appendChild(wrap); return g;
+    return m;
+  }
+  function singleMenu(opts, cur, onPick, searchable){
+    var m=el('div','db-menu');
+    var list=opts;
+    if(searchable){
+      var sh=el('div','db-msearch');
+      var inp=el('input'); inp.type='text'; inp.placeholder='Search tournaments…'; inp.value=state.menuQ;
+      inp.oninput=function(){ state.menuQ=inp.value; renderFilters(); var n=document.querySelector('.db-menu input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
+      sh.appendChild(inp); m.appendChild(sh);
+      var q=state.menuQ.trim().toLowerCase();
+      if(q) list=opts.filter(function(o){ return o[1].toLowerCase().indexOf(q)>=0; });
+    }
+    if(!list.length){ m.appendChild(el('div','db-pempty','No tournament matches that.')); return m; }
+    list.forEach(function(o){
+      var on = cur===o[0];
+      var row=el('div','db-mrow'+(on?' on':''));
+      row.innerHTML='<span class="db-box"></span><span>'+esc(o[1])+'</span>';
+      row.onclick=function(){ onPick(o[0]); state.menu=null; state.menuQ=''; render(); };
+      m.appendChild(row);
+    });
+    return m;
+  }
+  function searchField(opts){
+    var wrap=el('div','db-search'+(opts.prompting?' prompting':''));
+    var inp=el('input'); inp.type='text'; inp.placeholder=opts.placeholder; inp.value=opts.query;
+    inp.oninput=function(){ opts.onInput(inp.value); renderFilters();
+      var n=document.querySelector('.db-search input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
+    inp.onclick=function(ev){ ev.stopPropagation(); };
+    wrap.appendChild(inp);
+    var q=(opts.query||'').trim();
+    if(q){
+      var pop=el('div','db-pop'); pop.onclick=function(ev){ ev.stopPropagation(); };
+      var hits=opts.pending?[]:opts.match(q);
+      if(opts.pending){ pop.appendChild(el('div','db-pempty','Loading the player archive…')); }
+      else if(!hits.length){ pop.appendChild(el('div','db-pempty','No '+opts.noun+' matches that.')); }
+      else hits.forEach(function(h){
+        var row=el('div','db-prow'+(opts.selected===h.value?' on':''));
+        row.innerHTML='<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
+        row.onmousedown=function(ev){ ev.preventDefault(); opts.onPick(h.value); };
+        pop.appendChild(row);
+      });
+      var tot = opts.total ? opts.total() : hits.length;
+      if(!opts.pending && tot>hits.length){
+        pop.appendChild(el('div','db-pempty','Showing the first '+hits.length+' of '+fmtInt(tot)+' — refine the search.'));
+      }
+      wrap.appendChild(pop);
+    }
+    return wrap;
   }
   function presentYears(){
-    var ys={}; for(var i=0;i<DATA.rows.length;i++){ ys[yr(DATA.rows[i][0])]=1; }
+    var ys={}; for(var i=0;i<DATA.rows.length;i++) ys[yr(DATA.rows[i][0])]=1;
     return Object.keys(ys).map(Number).sort(function(a,b){return a-b;});
   }
-  function yearGroup(){
-    var years=presentYears();
-    var g=el('div','db-fgroup'); g.appendChild(el('span','db-flabel','Year range'));
-    var row=el('div','db-yearrow');
-    var lo=el('select'), hi=el('select');
-    lo.innerHTML=years.map(function(y){return '<option'+((state.yearMin||years[0])===y?' selected':'')+'>'+y+'</option>';}).join('');
-    hi.innerHTML=years.map(function(y){return '<option'+((state.yearMax||years[years.length-1])===y?' selected':'')+'>'+y+'</option>';}).join('');
-    lo.onchange=function(){ state.yearMin=+lo.value; if(state.yearMax&&state.yearMin>state.yearMax){state.yearMax=state.yearMin;} render(); };
-    hi.onchange=function(){ state.yearMax=+hi.value; if(state.yearMin&&state.yearMax<state.yearMin){state.yearMin=state.yearMax;} render(); };
-    row.appendChild(lo); row.appendChild(el('span',null,'to')); row.appendChild(hi);
-    g.appendChild(row);
-    var note=el('div',null,'2009 absent — no Pinnacle coverage that season.'); note.style.cssText='font-family:var(--mx-font-ui);font-size:10px;color:var(--text-faint);margin-top:6px;';
-    if(years.indexOf(2009)<0) g.appendChild(note);
-    return g;
-  }
-  function resetFilters(){ state.levels=null; state.surfaces=null; state.rounds=null; state.yearMin=null; state.yearMax=null; }
-
-  // ==================== PLAYERS ====================
-  function renderPlayerView(body){
-    if(!NAMES){
-      body.appendChild(el('div','db-loadbox','Loading player archive…'));
-      loadNames().then(function(){ if(state.view==='players') render(); })
-        .catch(function(){ var b=document.getElementById('dbBody'); if(b){ b.innerHTML=''; b.appendChild(renderHeaderLine()); b.appendChild(el('div','db-empty','<div class="db-emptymark">—</div>The player archive could not be loaded from this environment.')); } });
-      return;
+  function yearControl(){
+    var years=presentYears(), y0=years[0], y1=years[years.length-1];
+    var lo=state.yearMin!=null?state.yearMin:y0, hi=state.yearMax!=null?state.yearMax:y1;
+    var moved = !(lo===y0 && hi===y1);
+    var box=el('div','db-yr'+(moved?' on':''));
+    function end(val, onPick){
+      var e=el('div','db-yrend','<b>'+val+'</b><u>▼</u>');
+      var s=el('select'); s.innerHTML=years.map(function(y){ return '<option'+(y===val?' selected':'')+'>'+y+'</option>'; }).join('');
+      s.onchange=function(){ onPick(+s.value); render(); };
+      e.appendChild(s); return e;
     }
-    var wrap=el('div','db-playerwrap');
-    body.appendChild(wrap);
+    box.appendChild(end(lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
+    box.appendChild(el('span','db-yrsep','–'));
+    box.appendChild(end(hi, function(v){ state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
+    return box;
+  }
+  function resetFilters(){
+    state.levels=null; state.surfaces=null; state.rounds=null;
+    state.yearMin=null; state.yearMax=null;
+    state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
+    state.period='all'; state.psurf=null; state.ptourn=null; state.stance='back';
+  }
+  function countOf(set){ return set? String(set.size) : 'All'; }
+  var lastTotal=0;
 
-    // player search
-    var sg=el('div','db-fgroup'); sg.style.maxWidth='420px'; sg.appendChild(el('span','db-flabel','Player'));
-    sg.appendChild(searchBox({
-      placeholder:'Search players…',
-      query:state.pq,
-      onInput:function(q){ state.pq=q; },
-      match:function(q){ var ql=q.toLowerCase(); return Object.keys(playerIndex).filter(function(n){return n.toLowerCase().indexOf(ql)>=0;}).sort().slice(0,12); },
-      onPick:function(n){ state.player=n; state.pq=''; render(); },
-      noun:'player'
-    }));
-    wrap.appendChild(sg);
-
-    if(!state.player){ wrap.appendChild(emptyState('Search for a player','Type a name above to see his record by odds band — as favourite, as underdog, over time.')); renderFootnote(body,null); return; }
-
-    // selected name header + clear
-    var hd=el('div','db-selname'); hd.innerHTML='<h2>'+esc(state.player)+'</h2>';
-    var x=el('button','db-selclear','×'); x.title='Clear player'; x.onclick=function(){ state.player=null; state.pq=''; render(); };
-    hd.appendChild(x); wrap.appendChild(hd);
-
-    // period + surface chip rows
-    wrap.appendChild(playerChips());
-
-    var recs=(playerIndex[state.player]||[]).filter(function(v){
-      if(state.psurf!=null && v.surf!==state.psurf) return false;
-      return inPeriod(v.d);
-    });
-
-    var bl=bookLabel(recs.map(function(v){return [0,0,0,0,0,0,0,0,v.b];}));
-
-    if(!recs.length){ wrap.appendChild(emptyState('No archive matches','No tour-level closing-line rows for '+esc(state.player)+' in the selected period and surface.')); renderFootnote(body,0); return; }
-
-    var favRecs=recs.filter(function(v){return v.fav;});
-    var dogRecs=recs.filter(function(v){return !v.fav;});
-
-    // three summary tiles
-    var tiles=el('div','db-tiles');
-    tiles.appendChild(tile('All matches', recs));
-    tiles.appendChild(tile('When favourite', favRecs));
-    tiles.appendChild(tile('When underdog', dogRecs));
-    wrap.appendChild(tiles);
-
-    // per-book split as prose (ruling: per-book stays)
-    if(bl.seam){
-      var a=aggRecs(recs);
-      if(a.book.ps && a.book.b365){
-        wrap.appendChild(el('div','db-prose','Split by book: <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' Pinnacle-priced matches, <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+' Bet365-settled 2026 matches. The tile figures blend both books; Bet365 carries the wider margin.'));
+  function renderFilters(){
+    var bar=document.getElementById('dbFilters'); if(!bar) return;
+    bar.innerHTML='';
+    if(state.view==='tour'){
+      bar.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(M.levels, state.levels, function(s){state.levels=s;}); }));
+      bar.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(M.surfaces, state.surfaces, function(s){state.surfaces=s;}); }));
+      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(M.rounds, state.rounds, function(s){state.rounds=s;}); }));
+      bar.appendChild(yearControl());
+    } else if(state.view==='tournaments'){
+      if(state.tournament){
+        var chip=el('div','db-subject','<span>'+esc(state.tournament)+'</span>');
+        var x=el('button',null,'×'); x.title='Clear tournament';
+        x.onclick=function(){ state.tournament=null; state.tq=''; render(); };
+        chip.appendChild(x); bar.appendChild(chip);
       }
+      bar.appendChild(searchField({
+        placeholder:'Search tournaments…', query:state.tq, noun:'tournament', prompting:!state.tournament,
+        onInput:function(v){ state.tq=v; },
+        match:function(q){ var ql=q.toLowerCase();
+          var hits=M.tournaments.map(function(t,i){return {label:t,value:t,i:i};})
+            .filter(function(t){ return t.label.toLowerCase().indexOf(ql)>=0; })
+            .sort(function(a,b){ return a.label<b.label?-1:1; });
+          lastTotal=hits.length;
+          return hits.slice(0,40).map(function(h){ return {label:h.label, value:h.value, meta:tournSurface(h.i)}; }); },
+        total:function(){ return lastTotal; },
+        selected:state.tournament,
+        onPick:function(t){ state.tournament=t; state.tq=''; render(); }
+      }));
+      // C11 — no Surface filter here; Round + years only, per the export.
+      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(M.rounds, state.rounds, function(s){state.rounds=s;}); }));
+      bar.appendChild(yearControl());
     } else {
-      wrap.appendChild(el('div','db-prose', bl.text+' — a single book across this selection, no seam.'));
+      if(state.player){
+        var pchip=el('div','db-subject','<span>'+esc(state.player)+'</span>');
+        var px=el('button',null,'×'); px.title='Clear player';
+        px.onclick=function(){ state.player=null; state.pq=''; state.ptourn=null; render(); };
+        pchip.appendChild(px); bar.appendChild(pchip);
+      }
+      bar.appendChild(searchField({
+        placeholder:'Search players…', query:state.pq, noun:'player', prompting:!state.player,
+        onInput:function(v){ state.pq=v; },
+        pending:!playerIndex,
+        match:function(q){ if(!playerIndex) return []; var ql=q.toLowerCase();
+          var hits=Object.keys(playerIndex).filter(function(n){ return n.toLowerCase().indexOf(ql)>=0; }).sort();
+          lastTotal=hits.length;
+          return hits.slice(0,40).map(function(n){ return {label:n, value:n, meta:fmtInt(playerIndex[n].length)}; }); },
+        total:function(){ return lastTotal; },
+        selected:state.player,
+        onPick:function(n){ state.player=n; state.pq=''; state.ptourn=null; render(); }
+      }));
+      var PERIODS=[['all','All time'],['w52','Last 52 weeks'],['y2','Last 2Y'],['y5','Last 5Y']];
+      var curP=PERIODS.filter(function(p){return p[0]===state.period;})[0];
+      bar.appendChild(trigger('Period', curP?curP[1]:'All time', state.period!=='all', 'period', function(){
+        return singleMenu(PERIODS, state.period, function(v){ state.period=v; }, false); }));
+      var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
+      bar.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
+        return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
+      var events=playerEvents();
+      bar.appendChild(trigger('Tournament', state.ptourn==null?'All':M.tournaments[state.ptourn], state.ptourn!=null, 'ptourn', function(){
+        return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
+      bar.appendChild(trigger('Side', state.stance==='back'?'Backing him':'Fading him', state.stance!=='back', 'stance', function(){
+        return singleMenu([['back','Backing him'],['fade','Fading him']], state.stance, function(v){ state.stance=v; }, false); }));
+    }
+    var reset=el('button','db-reset','Reset'); reset.onclick=function(){ resetFilters(); render(); };
+    bar.appendChild(reset);
+  }
+  // Right-aligned meta on a tournament search row: the surface the event is played
+  // on, per the export README. Events that changed surface show the dominant one
+  // with the others counted, rather than a single misleading label.
+  var TSURF=null;
+  function tournSurface(ti){
+    if(!TSURF){
+      TSURF={};
+      for(var i=0;i<DATA.rows.length;i++){
+        var r=DATA.rows[i], k=r[4];
+        (TSURF[k]||(TSURF[k]={}))[r[2]]=(TSURF[k][r[2]]||0)+1;
+      }
+    }
+    var c=TSURF[ti]; if(!c) return '';
+    var keys=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; });
+    return M.surfaces[+keys[0]] + (keys.length>1 ? ' +'+(keys.length-1) : '');
+  }
+  function playerEvents(){
+    if(!state.player || !playerIndex || !playerIndex[state.player]) return [];
+    var seen={}; playerIndex[state.player].forEach(function(v){ seen[v.tour]=(seen[v.tour]||0)+1; });
+    return Object.keys(seen).map(Number).sort(function(a,b){ return seen[b]-seen[a] || (M.tournaments[a]<M.tournaments[b]?-1:1); })
+      .map(function(i){ return [i, M.tournaments[i]]; });
+  }
+
+  // ================= render =================
+  function render(){
+    var body=document.getElementById('dbBody'); if(!body) return;
+    renderChrome();
+    renderFilters();
+    body.innerHTML='';
+    if(state.view==='players'){ renderPlayers(body); return; }
+    renderBandView(body);
+  }
+  function renderChrome(){
+    var sub=document.getElementById('dbSubtitle'), fr=document.getElementById('dbFresh');
+    if(sub){
+      var y0=(''+M.dateRange[0]).slice(0,4), y1=(''+M.dateRange[1]).slice(0,4);
+      sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
+        esc(M.books[0])+' closing prices, '+y0+'–'+y1+'</strong> ('+M.seamSeason+' settled on '+esc(M.books[1])+', seam-marked on the curves).';
+    }
+    if(fr) fr.textContent='Archive through '+fmtDate(M.dateRange[1]);
+    var tabs=document.getElementById('dbViewTabs');
+    if(tabs) tabs.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.dbview===state.view); });
+  }
+
+  // ---------- Tour / Tournaments ----------
+  function renderBandView(body){
+    if(state.view==='tournaments' && state.tournament==null){
+      var p=el('div','db-prompt');
+      p.innerHTML='<h3>Choose a tournament</h3><p>Search above to pick an event, and this tab will show its favourite and underdog yields by price band, the per-book split, and the cumulative profit curve across the whole archive.</p>';
+      body.appendChild(p); renderFootnote(body); return;
+    }
+    var rows=filteredRows();
+    var bl=bookLabel(rows.map(function(r){return r[8];}));
+    var line=el('div','db-bookline');
+    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— spans the book seam; per-book split below each table</u>':'');
+    body.appendChild(line);
+
+    if(!rows.length){
+      var e=el('div','db-empty');
+      e.innerHTML='<h3>No matches for this filter</h3><p>Widen the round or year range.</p>';
+      body.appendChild(e); renderFootnote(body); return;
     }
 
-    // three cumulative-profit charts vs date
-    var cg=el('div','db-chartgrid');
-    cg.appendChild(chartPanel('All matches', recs, COL_ALL));
-    cg.appendChild(chartPanel('When favourite', favRecs, COL_FAV));
-    cg.appendChild(chartPanel('When underdog', dogRecs, COL_DOG));
-    wrap.appendChild(cg);
+    var favVals=rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; });
+    var dogVals=rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
+    var favRes=bands(favVals), dogRes=bands(dogVals);
 
-    renderFootnote(body, recs.length);
+    var isTourn = state.view==='tournaments';
+    var card=el('div','db-card');
+    var grid=el('div','db-bands');
+    grid.appendChild(bandPanel('Favourites', favRes, FAV_NAMES, 'fav', isTourn, bl.seam));
+    grid.appendChild(bandPanel('Underdogs', dogRes, DOG_NAMES, 'dog', isTourn, bl.seam));
+    card.appendChild(grid);
+    body.appendChild(card);
+
+    body.appendChild(renderCurveCard(rows, bl.seam, isTourn));
+    renderFootnote(body);
   }
 
-  function inPeriod(dateInt){
-    if(state.period==='all') return true;
-    var maxY=yr(+(''+M.dateRange[1]).replace(/-/g,''));   // anchor to the archive's last match, not wall-clock
-    var y=yr(dateInt);
-    if(state.period==='season') return y===maxY;
-    if(state.period==='y2') return y>=maxY-1;   // latest season + the one before ≈ last 2 years
-    if(state.period==='y5') return y>=maxY-4;
-    return true;
+  function yieldCell(a){
+    var txt=fmtPct(a.yield);
+    var h='<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
+    if(a.n<THIN) h+='<span class="db-thin">thin · n='+fmtInt(a.n)+'</span>';
+    return h;
   }
-  function playerChips(){
-    var rows=el('div','db-chiprows');
-    var periods=[['all','All time'],['season','Latest season'],['y2','Last 2Y'],['y5','Last 5Y']];
-    var pr=el('div','db-chiprow'); pr.appendChild(el('span','db-flabel','Period'));
-    periods.forEach(function(p){
-      var c=el('div','db-chip'+(state.period===p[0]?' active':''), p[1]);
-      c.onclick=function(){ state.period=p[0]; render(); };
-      pr.appendChild(c);
+  function bandPanel(title, res, names, sideKey, isTourn, seam){
+    var panel=el('div','db-bandpanel');
+    var head=el('div','db-ph'); head.innerHTML='<h3>'+title+'</h3><span class="db-eyebrow"></span>';
+    panel.appendChild(head);
+    if(!res.all){ panel.appendChild(el('div','db-note','No matches on this side.')); return panel; }
+
+    var showBase = isTourn && baselineAllowed();
+    var g=el('div','db-grid');
+    g.style.setProperty('--dbcols', isTourn
+      ? 'minmax(72px,1fr) 40px 40px 52px 58px 74px 74px'
+      : 'minmax(76px,1fr) 40px 40px 56px 60px 72px');
+
+    var hdr=el('div','db-gh');
+    var cols=['Band','From','To','Median','Matches', isTourn?'Event':'Yield'];
+    if(isTourn) cols.push('Tour');
+    cols.forEach(function(c){ hdr.appendChild(el('div',null,c)); });
+    g.appendChild(hdr);
+
+    res.bands.forEach(function(b,i){
+      if(!b) return;
+      var nm = (!res.single && names[i]) ? names[i] : 'Band';
+      var isSuperDog = nm==='Super Dog';
+      var row=el('div','db-gr');
+      row.appendChild(el('div',null,esc(nm)));
+      row.appendChild(el('div',null,fmtP(b.lo)));
+      row.appendChild(el('div',null, isSuperDog ? fmtP(b.lo)+'+' : fmtP(b.hi)));
+      row.appendChild(el('div','db-gmed',fmtP(b.median)));
+      row.appendChild(el('div',null,fmtInt(b.n)));
+      row.appendChild(el('div',null,yieldCell(b)));
+      if(isTourn){
+        var bs = showBase ? baseRange(sideKey, b.lo, b.hi) : null;
+        row.appendChild(el('div','db-tourcell'+(bs?'':' none'), bs?fmtPct(bs.yield):'—'));
+      }
+      g.appendChild(row);
     });
-    rows.appendChild(pr);
-    // surface — only what the archive actually carries (Hard / Clay / Grass). No
-    // indoor/outdoor split exists in the shipped data, so no "Hard indoor" chip.
-    var sr=el('div','db-chiprow'); sr.appendChild(el('span','db-flabel','Surface'));
-    var allc=el('div','db-chip'+(state.psurf==null?' active':''),'All');
-    allc.onclick=function(){ state.psurf=null; render(); }; sr.appendChild(allc);
-    M.surfaces.forEach(function(nm,idx){
-      var c=el('div','db-chip'+(state.psurf===idx?' active':''), nm);
-      c.onclick=function(){ state.psurf=idx; render(); };
-      sr.appendChild(c);
-    });
-    rows.appendChild(sr);
-    return rows;
-  }
-  function aggRecs(recs){
-    var profit=0, prices=[], wins=0, byb={0:{n:0,pr:0},1:{n:0,pr:0}};
-    for(var i=0;i<recs.length;i++){ var v=recs[i]; var pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); if(v.w)wins++; byb[v.b].n++; byb[v.b].pr+=pr; }
-    var n=recs.length;
-    return { n:n, wins:wins, losses:n-wins, winpct:n?wins/n:null, yield:n?profit/n:null, median:median(prices),
-             book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null } }; }
-  function tile(label, recs){
-    var t=el('div','db-tile');
-    t.appendChild(el('div','db-tilelabel',label));
-    var a=aggRecs(recs);
-    if(!a.n){ t.appendChild(el('div','db-tilefig muted','—')); t.appendChild(el('div','db-tilesub','No matches in this state.')); return t; }
-    t.appendChild(el('div','db-tilefig '+yieldClass(a.yield), fmtPct(a.yield)));
-    var thin = a.n<30 ? ' <span class="db-thin">thin · n='+a.n+'</span>' : '';
-    t.appendChild(el('div','db-tilesub','<b>'+a.wins+'–'+a.losses+'</b> · '+(a.winpct==null?'—':(a.winpct*100).toFixed(0)+'% win')+thin+'<br>Median odds <b>'+fmtP(a.median)+'</b>'));
-    return t;
-  }
-  function chartPanel(title, recs, color){
-    var p=el('div','db-chartpanel');
-    p.appendChild(el('h4',null,title));
-    if(!recs.length){ p.appendChild(el('div','db-empty','No matches.')); return p; }
-    var ordered=recs.slice().sort(function(a,b){return a.d-b.d;});
-    var pts=[], c=0, xmin=ordered[0].d, xmax=ordered[ordered.length-1].d, seamX=null;
-    for(var i=0;i<ordered.length;i++){ var v=ordered[i]; c+=v.w?(v.p-1):-1; var xt=dnorm(v.d,xmin,xmax); pts.push([xt,c]); if(seamX===null && yr(v.d)>=2026) seamX=xt; }
-    var wrap=el('div','db-curvewrap');
-    var hasSeam = seamX!==null && seamX>2 && seamX<98;
-    wrap.innerHTML=svgChart([{color:color,pts:pts}], hasSeam?seamX:null, fmtDate(dateISO(xmin))+' → '+fmtDate(dateISO(xmax)), true);
-    p.appendChild(wrap);
-    return p;
-  }
-  function dateISO(di){ var s=''+di; return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8); }
 
-  // ---- curve (tour/tournament: cumulative P/L vs match index) ----
-  function renderCurve(rows){
-    var card=el('div','db-curvecard');
-    var ordered=rows.slice().sort(function(a,b){return a[0]-b[0];});
-    var favPts=[], dogPts=[], cf=0, cd=0, seamIdx=-1;
-    for(var i=0;i<ordered.length;i++){ var r=ordered[i];
-      cf += r[7]? (r[5]-1) : -1;
-      cd += r[7]? -1 : (r[6]-1);
-      favPts.push([i+1, cf]); dogPts.push([i+1, cd]);
-      if(seamIdx<0 && r[8]===1) seamIdx=i+1;
+    var a=res.all, arow=el('div','db-ga');
+    arow.appendChild(el('div',null,'All'));
+    arow.appendChild(el('div',null,''));
+    arow.appendChild(el('div',null,''));
+    arow.appendChild(el('div',null,fmtP(a.median)));
+    arow.appendChild(el('div',null,fmtInt(a.n)));
+    arow.appendChild(el('div',null,yieldCell(a)));
+    if(isTourn){
+      var ab = showBase ? baseAll(sideKey) : null;
+      arow.appendChild(el('div','db-tourcell'+(ab?'':' none'), ab?fmtPct(ab.yield):'—'));
     }
-    var head=el('div','db-curvehead');
-    head.innerHTML='<h3>Cumulative profit</h3><div class="db-legend"><span><i style="background:'+COL_FAV+'"></i>Favourites</span><span><i style="background:'+COL_DOG+'"></i>Underdogs</span></div>';
+    g.appendChild(arow);
+    panel.appendChild(g);
+
+    if(isTourn && !showBase) panel.appendChild(el('div','db-note','Tour baselines are not computed for this round or year range.'));
+    if(res.single) panel.appendChild(el('div','db-note','Fewer than three matches — shown as one band rather than split into terciles.'));
+    if(seam && a.book.ps && a.book.b365){
+      panel.appendChild(el('div','db-split','Split by book: <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' '+esc(M.books[0])+
+        '-priced matches, <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+' '+esc(M.books[1])+
+        '-settled '+M.seamSeason+' matches. The All row blends both books; '+esc(M.books[1])+' carries the wider margin.'));
+    }
+    return panel;
+  }
+
+  // ---------- cumulative profit chart ----------
+  // C3 — x is the match DATE mapped into the filtered date domain, so the season
+  // ticks and the book seam sit on the same basis. The export's index mapping put
+  // its seam 4.0pp of plot width away from the "2026" label it marks.
+  function renderCurveCard(rows, seam, isTourn){
+    var card=el('div','db-card');
+    var head=el('div','db-charthead');
+    head.innerHTML='<h3>Cumulative profit, flat 1u</h3>'+
+      '<div class="db-legend"><span><i style="border-top:2px solid '+COL_FAV+'"></i>Favourites</span>'+
+      '<span><i style="border-top:2px dashed '+COL_DOG+'"></i>Underdogs</span></div>';
     card.appendChild(head);
-    var wrap=el('div','db-curvewrap');
-    var hasSeam = seamIdx>1 && seamIdx<ordered.length;
-    wrap.innerHTML=svgChart([{color:COL_FAV,pts:favPts},{color:COL_DOG,pts:dogPts}], hasSeam?seamIdx:null, 'Match index (chronological) · flat 1u');
-    card.appendChild(wrap);
-    if(hasSeam) card.appendChild(el('div','db-seamcap','Book change at 2026 (Pinnacle → Bet365, wider margin) — the step is a book artefact, not a market move.'));
+    card.appendChild(el('div','db-subline','Units returned on a flat 1-unit stake, cumulative — below zero is a loss.'));
+
+    var ordered=rows.slice().sort(function(a,b){ return a[0]-b[0]; });
+    // Anchor the domain at 1 Jan of the first season so every season tick lands on
+    // its true date and none has to be clamped.
+    var d0=Date.UTC(yr(ordered[0][0]),0,1)/86400000;
+    var d1=dnum(ordered[ordered.length-1][0]), span=(d1-d0)||1;
+    var favV=[], dogV=[], xs=[], cf=0, cd=0, seamX=null;
+    for(var i=0;i<ordered.length;i++){
+      var r=ordered[i];
+      cf += r[7] ? (r[5]-1) : -1;
+      cd += r[7] ? -1 : (r[6]-1);
+      var x=(dnum(r[0])-d0)/span;
+      favV.push(cf); dogV.push(cd); xs.push(x);
+      if(seamX===null && r[8]===1) seamX=x;
+    }
+    var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
+    var rawLo=Math.min.apply(null,[Math.min.apply(null,favV), Math.min.apply(null,dogV)]);
+    var sp=rawHi-rawLo;
+    var step=[10,25,50,100,250,500,1000,2500].filter(function(s){ return sp/s<=10; })[0] || 5000;
+    var rnd=Math.max(10, step/10);
+    // Export rule, kept literally: only a Tournaments chart that spends time in
+    // profit gets a full labelled positive band. Measured: the Tour curves peak at
+    // +26.3u against a 2,316u span, so a data-driven "rawHi>0" test would hand the
+    // Tour chart 250u of empty headroom for a 26u blip. The tab test is the export's
+    // and it is the one that reads correctly on both tabs.
+    var hi = (isTourn && rawHi>0) ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd);
+    var lo = Math.floor(rawLo/rnd)*rnd;
+    if(hi===lo){ hi=lo+rnd; }
+    var H=300;
+    function Y(v){ return ((hi-v)/(hi-lo))*H; }
+
+    var gy=[], v;
+    for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
+    for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtInt(v)+'u'});
+
+    var ticks=seasonTicks(yr(ordered[0][0]), yr(ordered[ordered.length-1][0]), d0, span);
+
+    var plot=el('div','db-plot');
+    var yax=el('div','db-yaxis');
+    gy.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/H*100).toFixed(2)+'%'; yax.appendChild(d); });
+    plot.appendChild(yax);
+
+    var area=el('div','db-plotarea');
+    var inner=el('div','db-plotinner');
+    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by season">';
+    ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    s+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="#e8a84e" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
+    s+='<polyline points="'+poly(xs,favV,Y)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
+    s+='<polyline points="'+poly(xs,dogV,Y)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>';
+    s+='</svg>';
+    inner.innerHTML=s;
+    area.appendChild(inner);
+    [['Favourites',COL_FAV,favV[favV.length-1]],['Underdogs',COL_DOG,dogV[dogV.length-1]]].forEach(function(e){
+      var lab=el('div','db-endlab','<b style="color:'+e[1]+'">'+e[0]+'</b><span>'+fmtU(e[2])+'</span>');
+      lab.style.top=(Y(e[2])/H*100).toFixed(2)+'%';
+      area.appendChild(lab);
+    });
+    plot.appendChild(area);
+    card.appendChild(plot);
+
+    var xax=el('div','db-xaxis');
+    ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
+    card.appendChild(xax);
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
+    if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change at '+M.seamSeason+' ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
-  function dnorm(d,mn,mx){ return mx===mn?50:(d-mn)/(mx-mn)*100; }
-
-  // nice rounded axis bounds around a min/max that already bracket 0
-  function roundBounds(ymin, ymax){
-    var span=(ymax-ymin)||1;
-    var raw=span/4;
-    var mag=Math.pow(10, Math.floor(Math.log10(raw)));
-    var norm=raw/mag;
-    var step = mag * (norm<1.5?1: norm<3?2: norm<7?5:10);
-    return { lo:Math.floor(ymin/step)*step, hi:Math.ceil(ymax/step)*step, step:step };
-  }
-
-  // generic line chart → svg string. xIsPct: pts x already 0..100; else x is 1..n index
-  function svgChart(series, seamX, xcap, xIsPct){
-    var W=480,H=280,PL=48,PR=12,PT=14,PB=34;
-    var allPts=series.reduce(function(a,s){return a.concat(s.pts);},[]);
-    if(!allPts.length) return '<div class="db-empty">No points.</div>';
-    var maxN=1; series.forEach(function(s){ if(s.pts.length) maxN=Math.max(maxN, s.pts[s.pts.length-1][0]); });
-    var xmax = xIsPct?100:maxN;
-    var ys=allPts.map(function(p){return p[1];});
-    var rawmin=Math.min(0,Math.min.apply(null,ys)), rawmax=Math.max(0,Math.max.apply(null,ys));
-    var rb=roundBounds(rawmin, rawmax);
-    var ymin=rb.lo, ymax=rb.hi;
-    if(ymin===ymax){ymin-=1;ymax+=1;}
-    function X(x){ return PL + (x/(xmax||1))*(W-PL-PR); }
-    function Y(y){ return PT + (1-(y-ymin)/(ymax-ymin))*(H-PT-PB); }
-    var s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img">';
-    // zero line
-    s+='<line x1="'+PL+'" y1="'+Y(0).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(0).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';
-    // y labels (rounded top / zero / bottom)
-    s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(ymax)+9).toFixed(1)+'" text-anchor="end">'+ymax.toFixed(0)+'u</text>';
-    s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(0)+3).toFixed(1)+'" text-anchor="end">0</text>';
-    s+='<text class="db-axislabel" x="'+(PL-6)+'" y="'+(Y(ymin)+2).toFixed(1)+'" text-anchor="end">'+ymin.toFixed(0)+'u</text>';
-    // seam marker
-    if(seamX!=null){ var sx=X(seamX).toFixed(1); s+='<line x1="'+sx+'" y1="'+PT+'" x2="'+sx+'" y2="'+(H-PB)+'" stroke="var(--court-clay)" stroke-width="1" stroke-dasharray="3 3"/>'; s+='<text class="db-axislabel" x="'+sx+'" y="'+(PT+9)+'" text-anchor="middle" fill="var(--court-clay)">2026</text>'; }
-    // series
-    series.forEach(function(ser){
-      if(!ser.pts.length) return;
-      var d=ser.pts.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1);}).join(' ');
-      s+='<path d="'+d+'" fill="none" stroke="'+ser.color+'" stroke-width="1.6" stroke-linejoin="round"/>';
+  // Season ticks at their exact position in the date domain — no clamping, so a
+  // label never sits away from the date it marks.
+  function seasonTicks(y0, y1, d0, span){
+    var out=[];
+    [2,1].some(function(stp){
+      out=[];
+      for(var y=y0; y<=y1; y+=stp){
+        var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
+        if(f<0 || f>1) continue;
+        out.push({ label:String(y), x:f });
+      }
+      return out.length>=3;
     });
-    s+='<text class="db-axislabel" x="'+((PL+W-PR)/2)+'" y="'+(H-8)+'" text-anchor="middle">'+esc(xcap)+'</text>';
-    s+='</svg>';
-    return s;
+    return out;
+  }
+  // Down-sample to the viewBox's own x resolution, keeping the first, last and both
+  // y-extremes of every x bucket — the painted envelope is unchanged.
+  function poly(xs, vals, Y){
+    var n=xs.length, keep=[], b=-1, first=0, last=0, mn=0, mx=0;
+    function flush(){ var idx=[first,mn,mx,last].sort(function(a,b2){return a-b2;});
+      for(var k=0;k<4;k++){ if(k===0 || idx[k]!==idx[k-1]) keep.push(idx[k]); } }
+    for(var i=0;i<n;i++){
+      var bk=Math.round(xs[i]*1000);
+      if(bk!==b){ if(b>=0) flush(); b=bk; first=i; mn=i; mx=i; }
+      last=i;
+      if(vals[i]<vals[mn]) mn=i;
+      if(vals[i]>vals[mx]) mx=i;
+    }
+    if(b>=0) flush();
+    var out=new Array(keep.length);
+    for(var j=0;j<keep.length;j++){ var ix=keep[j]; out[j]=(xs[ix]*1000).toFixed(1)+','+Y(vals[ix]).toFixed(1); }
+    return out.join(' ');
   }
 
-  // ---- footnote (plain-prose reconciliation) ----
-  function renderFootnote(body, shown){
-    var ex=M.exclusions, bc=M.bookCounts;
-    var f=el('div','db-footnote');
-    var showing = shown!=null ? '<p><b>Showing '+fmtInt(shown)+'</b> match'+(shown===1?'':'es')+' for the current filter. Missing data is shown as a dash, never a zero.</p>' : '';
+  // ================= Players =================
+  function inPeriod(di, anchor){
+    if(state.period==='all') return true;
+    var days={w52:364, y2:730, y5:1826}[state.period];
+    return dnum(di) >= anchor-days;   // rolling window back from the archive's last match (C9)
+  }
+  function playerRecs(){
+    var all=playerIndex[state.player]||[];
+    var anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
+    return all.filter(function(v){
+      if(state.psurf!=null && v.surf!==state.psurf) return false;
+      if(state.ptourn!=null && v.tour!==state.ptourn) return false;
+      return inPeriod(v.d, anchor);
+    });
+  }
+  function aggRecs(recs, fading){
+    var profit=0, prices=[], wins=0, byb={0:{n:0,pr:0},1:{n:0,pr:0}};
+    for(var i=0;i<recs.length;i++){
+      var v=recs[i], price = fading? v.op : v.p, won = fading? (v.w?0:1) : v.w;
+      var pr = won ? (price-1) : -1;
+      profit+=pr; prices.push(price); if(won) wins++;
+      byb[v.b].n++; byb[v.b].pr+=pr;
+    }
+    var n=recs.length;
+    return { n:n, wins:wins, losses:n-wins, winpct:n?wins/n:null, yield:n?profit/n:null, median:median(prices),
+             book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null } };
+  }
+
+  function renderPlayers(body){
+    if(!NAMES){
+      body.appendChild(el('div','db-loading','Loading player archive…'));
+      // Guard the tab on BOTH paths: without it a late shard failure wipes whatever
+      // the user has since navigated to. Bind once — re-entering the tab must not
+      // stack another handler on the memoised promise.
+      if(!namesBound){
+        namesBound=true;
+        loadNames().then(function(){ if(state.view==='players') render(); })
+          .catch(function(){
+            namesBound=false;
+            if(state.view!=='players') return;
+            var b=document.getElementById('dbBody');
+            if(b){ b.innerHTML=''; b.appendChild(el('div','db-empty','<h3>Player archive unavailable</h3><p>The per-player shard could not be loaded from this environment.</p>')); }
+          });
+      }
+      return;
+    }
+    if(!state.player){
+      var p=el('div','db-prompt');
+      p.innerHTML='<h3>Choose a player</h3><p>Search above to pick a player, and this tab will show what backing — or fading — him returned at a flat 1-unit stake, split by favourite and underdog role, against the tour baseline.</p>';
+      body.appendChild(p); renderFootnote(body); return;
+    }
+    var fading = state.stance==='fade';
+    var recs=playerRecs();
+    if(!recs.length){
+      var e=el('div','db-empty');
+      e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface and tournament.</p>';
+      body.appendChild(e); renderFootnote(body); return;
+    }
+    var bl=bookLabel(recs.map(function(v){return v.b;}));
+    var line=el('div','db-bookline');
+    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— spans the book seam; per-book split below</u>':'');
+    body.appendChild(line);
+
+    var favRecs=recs.filter(function(v){ return v.fav; });
+    var dogRecs=recs.filter(function(v){ return !v.fav; });
+    var A=aggRecs(recs, fading), F=aggRecs(favRecs, fading), D=aggRecs(dogRecs, fading);
+
+    var TB2=playerBaselines();
+    var known = !!TB2;
+    var tFav=known?TB2.fav:null, tDog=known?TB2.dog:null, tAll=known?TB2.all:null;
+    // Fading crosses the sides over: the stake sits on the other price.
+    var baseF = fading ? tDog : tFav, baseD = fading ? tFav : tDog;
+
+    // 1 - all-matches line
+    var al=el('div','db-allline');
+    var ay=fmtPct(A.yield);
+    al.innerHTML='<span class="lbl">All matches</span>'+
+      '<span class="big" style="color:'+signCol(ay)+'">'+ay+'</span>'+
+      '<span class="meta"><b>'+A.wins+'–'+A.losses+'</b> · '+(A.winpct==null?'—':Math.round(A.winpct*100)+'% win')+'</span>'+
+      '<span class="meta">Median odds <b>'+fmtP(A.median)+'</b></span>'+
+      '<span class="meta">'+(known?('Tour '+fmtPct(tAll)):'Tour — not computed for this filter')+'</span>'+
+      (A.n<THIN?'<span class="meta">n='+fmtInt(A.n)+' — thin sample</span>':'');
+    body.appendChild(al);
+
+    // 2 - role cards
+    var gapF = (F.yield==null||!known) ? null : (F.yield-baseF)*100;
+    var gapD = (D.yield==null||!known) ? null : (D.yield-baseD)*100;
+    var scale = Math.max(Math.abs(gapF||0), Math.abs(gapD||0)) || 1;
+    var roles=el('div','db-roles');
+    roles.appendChild(roleCard('As Favourite', F, baseF, gapF, scale, known, fading, 'when favoured',
+      fading ? 'Matches where he was the shorter price, with his opponent backed flat 1u.' : 'Matches where he was the shorter price, backed flat 1u.'));
+    roles.appendChild(roleCard('As Underdog', D, baseD, gapD, scale, known, fading, 'as underdog',
+      fading ? 'Matches where he was the longer price, with his opponent backed flat 1u.' : 'Matches where he was the longer price, backed flat 1u.'));
+    body.appendChild(roles);
+
+    // 3 - per-book split (computed on both stances — X3/X4 ruling)
+    if(bl.seam && A.book.ps && A.book.b365){
+      body.appendChild(el('div','db-card','<div class="db-split">Split by book: <b>'+fmtPct(A.book.ps.yield)+'</b> across '+fmtInt(A.book.ps.n)+' '+esc(M.books[0])+
+        '-priced matches, <b>'+fmtPct(A.book.b365.yield)+'</b> across '+fmtInt(A.book.b365.n)+' '+esc(M.books[1])+'-settled '+M.seamSeason+
+        ' matches. The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.</div>'));
+    } else {
+      body.appendChild(el('div','db-card','<div class="db-split">'+esc(bl.text)+' — a single book across this selection, no seam.</div>'));
+    }
+
+    // 4 - charts
+    body.appendChild(playerCharts(recs, favRecs, dogRecs, fading));
+    renderFootnote(body);
+  }
+
+  function roleCard(title, a, base, gapPP, scale, known, fading, sidePhrase, desc){
+    var c=el('div','db-role');
+    c.appendChild(el('div',null,'<h3>'+title+'</h3><div class="desc">'+esc(desc)+'</div>'));
+    if(!a.n){
+      c.appendChild(el('div','db-note','No matches in this role for the current filter.'));
+      return c;
+    }
+    var ytxt=fmtPct(a.yield);
+    var figs=el('div','db-figs');
+    figs.appendChild(el('div','db-fig','<b>'+fmtInt(a.n)+'</b><span>Matches</span>'));
+    figs.appendChild(el('div','db-fig','<b style="color:'+signCol(ytxt)+'">'+ytxt+'</b><span>Flat-stake yield</span>'));
+    figs.appendChild(el('div','db-fig','<b style="color:#5b6880">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
+    c.appendChild(figs);
+
+    // Compare on the DISPLAYED precision: a gap that prints "+0.00pp" must not be
+    // coloured and captioned as a loss.
+    var gapShown = gapPP==null ? null : Number(gapPP.toFixed(2));
+    var better = gapShown!=null && gapShown>0;
+    var level  = gapShown===0;
+    var gcol = gapPP==null ? '#5b6880' : (level ? '#8b96b5' : (better?POS:NEG));
+    var barWrap=el('div');
+    var bar=el('div','db-bar');
+    if(gapPP!=null){
+      var w=Math.min(Math.abs(gapPP)/scale*45, 45);
+      var fill=el('div','db-barfill');
+      fill.style.background=gcol;
+      fill.style.width=w.toFixed(1)+'%';
+      fill.style.left = better ? '50%' : (50-w).toFixed(1)+'%';
+      bar.appendChild(fill);
+      bar.appendChild(el('div','db-barmark'));
+    }
+    barWrap.appendChild(bar);
+    barWrap.appendChild(el('div','db-barleg',
+      '<span><i style="background:'+(gapPP==null?'#3c465e':gcol)+'"></i>Gap vs tour baseline</span>'+
+      '<span style="color:'+(known?'#4b5672':'#3c465e')+'">'+(known?'| tour baseline':'tour baseline not computed')+'</span>'));
+    c.appendChild(barWrap);
+
+    c.appendChild(el('div','db-gaprow','<span class="lbl">Gap vs tour baseline</span>'+
+      '<span class="val" style="color:'+gcol+'">'+(gapPP==null?'—':fmtPP(gapPP))+'</span>'));
+
+    var note=el('div','db-verdict');
+    var verdict;
+    if(gapPP==null) verdict='Tour baseline not computed for this filter.';
+    else if(level) verdict='Level with the tour '+sidePhrase+'.';
+    else if(better && a.yield>=0) verdict='Beats the tour '+sidePhrase+', and turns a profit.';
+    else if(better) verdict='Loses less than the tour '+sidePhrase+'.';
+    else verdict='Loses more than the tour '+sidePhrase+'.';
+    note.style.background = (gapPP==null||level) ? 'rgba(255,255,255,0.04)' : (better?'rgba(61,214,140,0.10)':'rgba(224,97,111,0.10)');
+    note.innerHTML='<i style="background:'+gcol+'"></i><span>'+verdict+'</span>';
+    c.appendChild(note);
+
+    // Per-role record and median odds are live today (in the tiles the export
+    // replaces) and the export's role card has no slot for them. Kept rather than
+    // silently deleted, in the export's own meta idiom. Flagged for a ruling.
+    var extra='<b>'+a.wins+'–'+a.losses+'</b> · '+(a.winpct==null?'—':Math.round(a.winpct*100)+'% win')+
+      ' · Median odds <b>'+fmtP(a.median)+'</b>'+(a.n<THIN?' · thin · n='+fmtInt(a.n):'');
+    c.appendChild(el('div','db-rolemeta',extra));
+    return c;
+  }
+
+  function playerCharts(recs, favRecs, dogRecs, fading){
+    var card=el('div','db-card');
+    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale'));
+    var suffix = fading ? ', opponent backed' : '';
+    var series=[
+      {title:'All matches'+suffix, recs:recs, col:COL_FAV},
+      {title:'When favourite'+suffix, recs:favRecs, col:COL_FAV},
+      {title:'When underdog'+suffix, recs:dogRecs, col:COL_DOG}
+    ];
+    var anchorHi=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
+    var minD=null;
+    series.forEach(function(s){ s.recs.forEach(function(v){ var d=dnum(v.d); if(minD===null||d<minD) minD=d; }); });
+    if(minD===null){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
+    var startYear=new Date(minD*86400000).getUTCFullYear();
+    var d0=Date.UTC(startYear,0,1)/86400000, d1=Math.max(anchorHi, minD), span=(d1-d0)||1;
+
+    series.forEach(function(s){
+      var ordered=s.recs.slice().sort(function(a,b){ return a.d-b.d; });
+      var xs=[], vals=[], c=0;
+      for(var i=0;i<ordered.length;i++){
+        var v=ordered[i], price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;
+        c += won ? (price-1) : -1;
+        xs.push((dnum(v.d)-d0)/span); vals.push(c);
+      }
+      s.xs=xs; s.vals=vals; s.end=vals.length?vals[vals.length-1]:null;
+    });
+    var all=series.reduce(function(a,s){ return a.concat(s.vals); },[]);
+    if(!all.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
+    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
+    var step=[1,2,5,10,20,25,50].filter(function(s){ return (rawHi-rawLo)/s<=10; })[0] || 100;
+    var rnd=Math.max(1, step/5);
+    var hi=Math.ceil(rawHi/rnd)*rnd, lo=Math.floor(rawLo/rnd)*rnd;
+    if(hi===lo){ hi=lo+rnd; }
+    var PH=200;
+    function Y(v){ return ((hi-v)/(hi-lo))*PH; }
+    var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step) grid.push({y:Y(v), label: v===0?'0':(v+'u')});
+
+    card.appendChild(panelFor(series[0], grid, Y, PH, d0, span, 300, 2, true));
+    var pair=el('div','db-pcpair');
+    pair.appendChild(panelFor(series[1], grid, Y, PH, d0, span, 190, 4, false));
+    pair.appendChild(panelFor(series[2], grid, Y, PH, d0, span, 190, 4, false));
+    card.appendChild(pair);
+    return card;
+  }
+  function panelFor(s, grid, Y, PH, d0, span, hpx, tickStep, isMain){
+    var p=el('div', isMain?'db-pcmain':null);
+    var head=el('div','db-pchead');
+    var endTxt = s.end==null ? '—' : ((s.end>0?'+':'')+s.end.toFixed(1)+'u');
+    head.innerHTML='<h4>'+esc(s.title)+'</h4><span style="color:'+(s.end==null?'#5b6880':(s.end>=0?POS:NEG))+'">'+endTxt+'</span>';
+    p.appendChild(head);
+    if(!s.vals.length){ p.appendChild(el('div','db-note','No matches in this state for the current filter.')); return p; }
+    var plot=el('div','db-pcplot');
+    var ax=el('div','db-pcaxis'); ax.style.height=hpx+'px';
+    grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
+    plot.appendChild(ax);
+    var area=el('div','db-pcarea'); area.style.height=hpx+'px';
+    var y0=new Date(d0*86400000).getUTCFullYear(), y1=new Date((d0+span)*86400000).getUTCFullYear();
+    var ticks=[];
+    for(var y=y0; y<=y1; y+=tickStep){
+      var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
+      if(f>=-0.02 && f<=1.02) ticks.push({label:String(y), x:Math.min(1,Math.max(0,f))});
+    }
+    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit">';
+    grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    svg+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.20)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    svg+='<polyline points="'+poly(s.xs,s.vals,Y)+'" fill="none" stroke="'+s.col+'" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    svg+='</svg>';
+    area.innerHTML=svg;
+    plot.appendChild(area);
+    p.appendChild(plot);
+    var tr=el('div','db-pcticks');
+    ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; tr.appendChild(d); });
+    p.appendChild(tr);
+    return p;
+  }
+
+  // ---------- footnote (S1) + disclaimer ----------
+  function renderFootnote(body){
+    var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
     f.innerHTML=
       '<p><b>How this is built.</b> Closing prices from our own ATP archive, '+fmtDate(M.dateRange[0])+' to '+fmtDate(M.dateRange[1])+'. '+
-      'Every season through the last with Pinnacle coverage uses Pinnacle closing; 2026 uses Bet365 — the two are never blended into one unlabelled figure and never de-vigged. '+
-      'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
-      '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+fmtInt(bc.Pinnacle)+' settled on Pinnacle prices and '+fmtInt(bc.Bet365)+' on Bet365 (2026). '+
-      '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the 2010 window, '+fmtInt(ex.noResolvingBookPrice)+' with no resolving-book closing price (all of 2009, and any 2026 match not settled on Bet365), '+fmtInt(ex.walkover)+' walkovers, '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+' non-results, and '+fmtInt(ex.overroundGt115)+' with an overround above 1.15.</p>'+
-      showing;
+      'Every season through the last with '+esc(M.books[0])+' coverage uses '+esc(M.books[0])+' closing; '+M.seamSeason+' uses '+esc(M.books[1])+
+      ' — the two are never blended into one unlabelled figure and never de-vigged. '+
+      'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
+      'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
+      '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+
+      fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' ('+M.seamSeason+'). '+
+      '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the '+M.windowStart+' window, '+fmtInt(ex.noResolvingBookPrice)+
+      ' with no resolving-book closing price, '+fmtInt(ex.walkover)+' walkovers, '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+
+      ' non-results, and '+fmtInt(ex.overroundGt115)+' with an overround above 1.15. Missing data is shown as a dash, never a zero.</p>';
     body.appendChild(f);
     body.appendChild(el('div','db-disclaimer','Historical analysis for informational purposes only. Past results do not guarantee future results.'));
   }
 
-  // ==================== view tabs + init ====================
-  function bindViewTabs(){
-    var tabs=document.getElementById('dbViewTabs'); if(!tabs||tabs._bound) return; tabs._bound=true;
-    tabs.addEventListener('click', function(e){
-      var b=e.target.closest('button[data-dbview]'); if(!b) return;
-      tabs.querySelectorAll('button').forEach(function(x){x.classList.toggle('active', x===b);});
-      state.view=b.dataset.dbview;
-      render();
-    });
+  // ---------- tabs, dismissal, init ----------
+  function bindChrome(){
+    var tabs=document.getElementById('dbViewTabs');
+    if(tabs && !tabs._bound){
+      tabs._bound=true;
+      tabs.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-dbview]'); if(!b) return;
+        state.view=b.dataset.dbview; state.menu=null; state.menuQ='';
+        render();
+      });
+    }
+    if(!document._dbDismiss){
+      document._dbDismiss=true;
+      document.addEventListener('click', function(){
+        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
+      });
+      document.addEventListener('keydown', function(e){
+        if(e.key!=='Escape') return;
+        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
+      });
+    }
   }
 
   function init(){
-    if(built){ bindViewTabs(); render(); return; }
+    if(built){ bindChrome(); render(); return; }
     var body=document.getElementById('dbBody');
     loadBase().then(function(){
-      built=true;
-      bindViewTabs();
-      render();
+      built=true; bindChrome(); render();
     }).catch(function(err){
-      if(body) body.innerHTML='<div class="db-empty"><div class="db-emptymark">—</div>The archive could not be loaded from this environment.</div>';
+      if(body) body.innerHTML='<div class="db-empty"><h3>Archive unavailable</h3><p>The closing-line archive could not be loaded from this environment.</p></div>';
       console.warn('DatabaseTab load failed', err);
     });
   }

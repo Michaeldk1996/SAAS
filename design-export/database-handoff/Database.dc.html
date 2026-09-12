@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#06070a; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee; }
+  a{ color:#5b9bff; text-decoration:none; }
+  a:hover{ color:#82b4ff; }
+  .pl{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  .plink{ cursor:pointer; }
+  .plink:hover{ color:#82b4ff; }
+  input, select{ font-family:'Hanken Grotesk',sans-serif; }
+</style>
+</helmet>
+
+<div style="display:flex; align-items:flex-start; min-height:100vh; background:#06070a;">
+  <sc-if value="{{ showOwnSidebar }}" hint-placeholder-val="{{ true }}">
+  <div style="position:sticky; top:0; flex:none; align-self:flex-start; height:100vh; overflow-y:auto;">
+    <dc-import name="App Sidebar" active="Database" on-nav="{{ onNav }}" hint-size="250px,100vh"></dc-import>
+  </div>
+  </sc-if>
+
+  <main style="flex:1; min-width:0; max-width:1360px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:22px;">
+    <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0; font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">Database</h1>
+        <p style="margin:8px 0 0; font-size:13.5px; line-height:1.55; color:#5b6880; max-width:640px; text-wrap:pretty;">Historical yield by odds band from our own ATP closing-line archive — <strong style="color:#aab3c5; font-weight:700;">Pinnacle closing prices, 2010–2026</strong> (2026 settled on Bet365, seam-marked on the curves).</p>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; border:1px solid rgba(255,255,255,0.09); border-radius:12px;">
+    <div style="display:flex; align-items:center; gap:10px; padding:11px 16px; background:#080a10; border-radius:12px 12px 0 0;">
+      <span style="display:inline-flex; flex:none; gap:3px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:2px;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <span class="pl" sc-camel-on-click="{{ t.onClick }}" style="padding:6px 13px; border-radius:7px; white-space:nowrap; font-size:11.5px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span>
+        </sc-for>
+      </span>
+    </div>
+
+    <sc-if value="{{ showTourBar }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:11px 16px; background:#0a0d14; border-top:1px solid rgba(255,255,255,0.09); border-radius:0 0 12px 12px;">
+        <sc-if value="{{ hasSubject }}" hint-placeholder-val="{{ false }}">
+          <span style="display:inline-flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 13px; border-radius:9px; background:rgba(91,155,255,0.13); border:1px solid rgba(91,155,255,0.34); white-space:nowrap;">
+            <span style="font-size:13.5px; font-weight:700; color:#e7e9ee;">{{ subject }}</span>
+            <span class="pl" sc-camel-on-click="{{ onClearSubject }}" style="width:19px; height:19px; border-radius:50%; border:1px solid rgba(255,255,255,0.18); display:inline-flex; align-items:center; justify-content:center; font-size:11px; color:#8b96b5;">×</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ barSearch.on }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative; flex:1 1 200px; min-width:0; max-width:290px;">
+            <input value="{{ barSearch.value }}" sc-camel-on-input="{{ barSearch.onInput }}" placeholder="{{ barSearch.placeholder }}" style="flex:1 1 200px; min-width:0; width:100%; height:36px; background:#06070a; border:1px solid {{ barSearch.bd }}; border-radius:9px; padding:0 12px; color:#e7e9ee; font-size:13px; outline:none;">
+            <sc-if value="{{ barSearch.open }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; z-index:6; top:42px; left:0; width:290px; max-height:266px; overflow:auto; background:#0a0d14; border:1px solid rgba(255,255,255,0.14); border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:1px; box-shadow:0 18px 40px rgba(0,0,0,0.55);">
+                <sc-for list="{{ barSearch.results }}" as="o" hint-placeholder-count="5">
+                  <span class="pl" sc-camel-on-click="{{ o.onClick }}" style="display:flex; align-items:baseline; gap:10px; padding:8px 10px; border-radius:7px; font-size:13px; font-weight:{{ o.weight }}; color:{{ o.color }}; background:{{ o.bg }};">
+                    {{ o.label }}
+                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">{{ o.meta }}</span>
+                  </span>
+                </sc-for>
+                <sc-if value="{{ barSearch.empty }}" hint-placeholder-val="{{ false }}">
+                  <span style="padding:10px; font-size:12.5px; color:#5b6880;">No tournament matches that.</span>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+        <sc-for list="{{ tourTriggers }}" as="t" hint-placeholder-count="3">
+          <div style="position:relative;">
+            <span class="pl" sc-camel-on-click="{{ t.onClick }}" style="display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 13px; border-radius:9px; font-size:13px; font-weight:600; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }}; white-space:nowrap;">
+              {{ t.label }}
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:{{ t.countColor }};">{{ t.count }}</span>
+              <span style="font-size:9px; color:#5b6880;">▼</span>
+            </span>
+            <sc-if value="{{ t.open }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; z-index:5; top:42px; left:0; min-width:260px; max-height:340px; overflow:auto; background:#0a0d14; border:1px solid rgba(255,255,255,0.14); border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:1px; box-shadow:0 18px 40px rgba(0,0,0,0.55);">
+                <sc-if value="{{ t.searchOn }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex-shrink:0; flex-grow:0; flex-basis:auto; position:sticky; top:0; z-index:1; background:#0a0d14; padding-bottom:7px;">
+                    <input value="{{ t.query }}" sc-camel-on-input="{{ t.onQuery }}" placeholder="Search tournaments…" style="display:block; box-sizing:border-box; width:100%; height:40px; background:#06070a; border:1px solid rgba(255,255,255,0.14); border-radius:9px; padding:0 12px; color:#e7e9ee; font-size:13.5px; outline:none;">
+                  </div>
+                </sc-if>
+                <sc-for list="{{ t.items }}" as="o" hint-placeholder-count="4">
+                  <span class="pl" sc-camel-on-click="{{ o.onClick }}" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; font-size:13px; font-weight:{{ o.weight }}; color:{{ o.color }}; background:{{ o.bg }};">
+                    <span style="width:14px; height:14px; flex:none; border-radius:4px; border:1px solid {{ o.boxBd }}; background:{{ o.boxBg }};"></span>
+                    {{ o.label }}
+                  </span>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ showYears }}" hint-placeholder-val="{{ true }}">
+        <div style="display:inline-flex; align-items:stretch; height:36px; padding:0; border-radius:9px; border:1px solid {{ years.bd }}; overflow:hidden;">
+          <span style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer; padding:0 4px 0 10px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#e7e9ee;">{{ years.from }}</span>
+            <span style="font-size:9px; color:#5b6880;">▼</span>
+            <sc-raw-select value="{{ years.from }}" sc-camel-on-change="{{ years.onFrom }}" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; border:none; outline:none; -webkit-appearance:none; appearance:none;">
+              <sc-for list="{{ years.list }}" as="y" hint-placeholder-count="4"><option value="{{ y }}">{{ y }}</option></sc-for>
+            </sc-raw-select>
+          </span>
+          <span style="display:inline-flex; align-items:center; padding:0 3px; font-size:12px; color:#5b6880;">–</span>
+          <span style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer; padding:0 10px 0 4px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#e7e9ee;">{{ years.to }}</span>
+            <span style="font-size:9px; color:#5b6880;">▼</span>
+            <sc-raw-select value="{{ years.to }}" sc-camel-on-change="{{ years.onTo }}" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; border:none; outline:none; -webkit-appearance:none; appearance:none;">
+              <sc-for list="{{ years.list }}" as="y" hint-placeholder-count="4"><option value="{{ y }}">{{ y }}</option></sc-for>
+            </sc-raw-select>
+          </span>
+        </div>
+        </sc-if>
+        <span class="pl" sc-camel-on-click="{{ onTourReset }}" style="margin-left:auto; font-size:12.5px; font-weight:600; color:#5b9bff;">Reset</span>
+      </div>
+    </sc-if>
+    </div>
+
+    <div style="display:grid; grid-template-columns:{{ cols }}; gap:22px; align-items:start;">
+
+      <!-- FILTER RAIL -->
+      <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
+      <aside style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:18px 16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880;">Filters</div>
+
+        <sc-if value="{{ search.on }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;">
+            <div style="font-size:13px; font-weight:600; color:#e7e9ee;">{{ search.label }}</div>
+            <input value="{{ search.value }}" sc-camel-on-input="{{ search.onInput }}" placeholder="{{ search.placeholder }}" style="margin-top:9px; width:100%; height:40px; background:#06070a; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:0 12px; color:#e7e9ee; font-size:13px; outline:none;">
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ pillGroups }}" as="g" hint-placeholder-count="3">
+          <div style="margin-top:18px;">
+            <div style="font-size:13px; font-weight:600; color:#e7e9ee;">{{ g.label }}</div>
+            <div style="margin-top:9px; display:flex; flex-wrap:wrap; gap:8px;">
+              <sc-for list="{{ g.pills }}" as="p" hint-placeholder-count="4">
+                <span class="pl" sc-camel-on-click="{{ p.onClick }}" style="padding:7px 13px; border-radius:9px; font-size:12.5px; font-weight:{{ p.weight }}; color:{{ p.color }}; background:{{ p.bg }}; border:1px solid {{ p.bd }}; white-space:nowrap;">{{ p.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ years.on }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:18px;">
+            <div style="font-size:13px; font-weight:600; color:#e7e9ee;">Year range</div>
+            <div style="margin-top:9px; display:flex; align-items:center; gap:9px;">
+              <sc-raw-select value="{{ years.from }}" sc-camel-on-change="{{ years.onFrom }}" style="flex:1; min-width:0; height:38px; background:#06070a; color:#e7e9ee; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:0 8px; font-size:13px; font-family:'IBM Plex Mono',monospace;">
+                <sc-for list="{{ years.list }}" as="y" hint-placeholder-count="4">
+                  <option value="{{ y }}">{{ y }}</option>
+                </sc-for>
+              </sc-raw-select>
+              <span style="font-size:12.5px; color:#5b6880;">to</span>
+              <sc-raw-select value="{{ years.to }}" sc-camel-on-change="{{ years.onTo }}" style="flex:1; min-width:0; height:38px; background:#06070a; color:#e7e9ee; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:0 8px; font-size:13px; font-family:'IBM Plex Mono',monospace;">
+                <sc-for list="{{ years.list }}" as="y" hint-placeholder-count="4">
+                  <option value="{{ y }}">{{ y }}</option>
+                </sc-for>
+              </sc-raw-select>
+            </div>
+            <div style="margin-top:10px; font-size:11.5px; line-height:1.5; color:#5b6880;">2009 absent — no Pinnacle coverage that season.</div>
+          </div>
+        </sc-if>
+
+        <div style="margin-top:20px;"><span class="plink" sc-camel-on-click="{{ onReset }}" style="font-size:13px; font-weight:600; color:#5b9bff;">Reset filters</span></div>
+      </aside>
+      </sc-if>
+
+      <!-- CENTRE -->
+      <div style="min-width:0; display:flex; flex-direction:column; gap:22px;">
+
+        <sc-if value="{{ showBookLine }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px;">
+            <div style="display:flex; align-items:center; gap:9px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#e7e9ee;">
+              <span style="width:9px; height:9px; border-radius:50%; background:#5b9bff; flex:none;"></span>
+              Pinnacle closing · 2026 Bet365
+            </div>
+            <div style="margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880;">— spans the book seam; per-book split below each table</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showTiles }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 22px; padding:14px 18px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px;">
+              <span style="font-size:14px; font-weight:700;">All matches</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; letter-spacing:-0.02em; line-height:1; color:{{ allLine.color }};">{{ allLine.value }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8b96b5;"><span style="color:#e7e9ee; font-weight:700;">{{ allLine.record }}</span> · {{ allLine.win }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8b96b5;">Median odds <span style="color:#e7e9ee; font-weight:700;">{{ allLine.median }}</span></span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8b96b5; white-space:nowrap;">{{ allLine.baseline }}</span>
+            </div>
+
+            <div style="margin-top:16px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px;">
+              <sc-for list="{{ roles }}" as="r" hint-placeholder-count="2">
+                <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 24px; display:flex; flex-direction:column; gap:18px;">
+                  <div>
+                    <div style="font-size:20px; font-weight:800;">{{ r.title }}</div>
+                    <div style="font-size:13px; color:#5b6880; margin-top:4px;">{{ r.desc }}</div>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:14px 26px; min-width:0;">
+                    <div>
+                      <div style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700;">{{ r.matches }}</div>
+                      <div style="margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Matches</div>
+                    </div>
+                    <div>
+                      <div style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; color:{{ r.yieldColor }};">{{ r.yield }}</div>
+                      <div style="margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Flat-stake yield</div>
+                    </div>
+                    <div>
+                      <div style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; color:#5b6880;">{{ r.tour }}</div>
+                      <div style="margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Tour baseline</div>
+                    </div>
+                  </div>
+                  <div>
+                    <span style="position:relative; display:block; height:9px; border-radius:5px; background:rgba(255,255,255,0.06);">
+                      <sc-if value="{{ r.showTourMark }}" hint-placeholder-val="{{ true }}">
+                        <span style="position:absolute; top:0; height:100%; border-radius:5px; left:{{ r.gapLeft }}; width:{{ r.gapW }}; background:{{ r.gapColor }};"></span>
+                        <span style="position:absolute; top:-3px; bottom:-3px; left:{{ r.tourW }}; width:2px; background:rgba(255,255,255,0.6);"></span>
+                      </sc-if>
+                    </span>
+                    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#4b5672; margin-top:8px;">
+                      <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:2px; background:{{ r.gapColor }};"></span>Gap vs tour baseline</span>
+                      <span style="color:{{ r.legendColor }};">{{ r.legend }}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.06); padding-top:15px;">
+                    <span style="font-size:13.5px; color:#5b6880;">Gap vs tour baseline</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:{{ r.gapColor }}; white-space:nowrap;">{{ r.gap }}</span>
+                  </div>
+                  <div style="background:{{ r.noteBg }}; border-radius:11px; padding:12px 14px; display:flex; align-items:center; gap:9px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:{{ r.gapColor }}; flex:none;"></span>
+                    <span style="font-size:12.5px; color:#e7e9ee;">{{ r.note }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showTopSplit }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px; font-size:13px; line-height:1.65; color:#8b96b5; text-wrap:pretty;">
+            <sc-for list="{{ topSplit }}" as="s" hint-placeholder-count="5">
+              <span style="color:{{ s.color }}; font-weight:{{ s.weight }}; font-family:{{ s.family }};">{{ s.text }}</span>
+            </sc-for>
+          </p>
+        </sc-if>
+
+        <sc-if value="{{ showTables }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:18px;">
+            <sc-for list="{{ tables }}" as="tb" hint-placeholder-count="2">
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; overflow:hidden;">
+                <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:16px 18px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                  <span style="font-size:16px; font-weight:700;">{{ tb.title }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">{{ tb.hint }}</span>
+                </div>
+                <div style="display:grid; grid-template-columns:minmax(130px,1fr) 70px 84px 82px; gap:0 10px; padding:11px 18px; border-bottom:1px solid rgba(255,255,255,0.07); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">
+                  <span>Band</span><span style="text-align:right;">Median</span><span style="text-align:right;">Matches</span><span style="text-align:right;">Yield</span>
+                </div>
+                <sc-for list="{{ tb.rows }}" as="r" hint-placeholder-count="3">
+                  <div style="display:grid; grid-template-columns:minmax(130px,1fr) 70px 84px 82px; gap:0 10px; align-items:center; padding:13px 18px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div>
+                      <div style="font-size:13.5px; font-weight:700; color:#e7e9ee; white-space:nowrap;">{{ r.band }}</div>
+                      <div style="margin-top:3px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880; white-space:nowrap;">{{ r.range }}</div>
+                    </div>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:500; color:#e7e9ee;">{{ r.median }}</span>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:500; color:#e7e9ee;">{{ r.matches }}</span>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:600; color:{{ r.color }};">{{ r.yield }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:grid; grid-template-columns:minmax(130px,1fr) 70px 84px 82px; gap:0 10px; align-items:center; padding:14px 18px; border-top:2px solid rgba(255,255,255,0.14);">
+                  <span style="font-size:14px; font-weight:700;">All</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#e7e9ee;">{{ tb.allMedian }}</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#e7e9ee;">{{ tb.allMatches }}</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:{{ tb.allColor }};">{{ tb.allYield }}</span>
+                </div>
+                <p style="margin:0; padding:14px 18px 18px; border-top:1px solid rgba(255,255,255,0.07); font-size:12.5px; line-height:1.6; color:#8b96b5; text-wrap:pretty;">
+                  <sc-for list="{{ tb.split }}" as="s" hint-placeholder-count="5">
+                    <span style="color:{{ s.color }}; font-weight:{{ s.weight }}; font-family:{{ s.family }};">{{ s.text }}</span>
+                  </sc-for>
+                </p>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showPickPrompt }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 26px; max-width:560px;">
+            <div style="font-size:19px; font-weight:800; letter-spacing:-0.01em;">Choose a tournament</div>
+            <p style="margin:10px 0 0; font-size:13.5px; line-height:1.65; color:#8b96b5; text-wrap:pretty;">Search above to pick an event, and this tab will show its favourite and underdog yields by price band, the per-book split, and the cumulative profit curve across the whole archive.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showTourBands }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(470px,1fr)); gap:34px; align-items:start;">
+              <sc-for list="{{ tourTables }}" as="tb" hint-placeholder-count="2">
+                <div style="min-width:0;">
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; padding-bottom:10px;">
+                    <span style="font-size:16px; font-weight:700;">{{ tb.title }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">{{ tb.hint }}</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:{{ bandCols }}; gap:0 10px; padding-bottom:9px; border-bottom:1px solid rgba(255,255,255,0.10); font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880;">
+                    <span>Band</span>
+                    <span style="text-align:right;">From</span>
+                    <span style="text-align:right;">To</span>
+                    <span style="text-align:right;">Median</span>
+                    <span style="text-align:right;">Matches</span>
+                    <span style="text-align:right;">{{ yieldHead }}</span>
+                    <sc-if value="{{ showTourCol }}" hint-placeholder-val="{{ false }}">
+                      <span style="text-align:right;">Tour</span>
+                    </sc-if>
+                  </div>
+                  <sc-for list="{{ tb.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:grid; grid-template-columns:{{ bandCols }}; gap:0 10px; align-items:baseline; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                      <span style="font-size:14px; font-weight:700; color:#e7e9ee;">{{ r.band }}</span>
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b96b5;">{{ r.from }}</span>
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b96b5;">{{ r.to }}</span>
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#e7e9ee;">{{ r.median }}</span>
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b96b5;">{{ r.matches }}</span>
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:{{ r.cellSize }}; font-weight:{{ r.yieldWeight }}; letter-spacing:-0.01em; color:{{ r.yieldColor }};">{{ r.yieldText }}</span>
+                      <sc-if value="{{ r.hasBase }}" hint-placeholder-val="{{ false }}">
+                        <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; color:{{ r.tourColor }};">{{ r.tourVal }}</span>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                  <div style="display:grid; grid-template-columns:{{ bandCols }}; gap:0 10px; align-items:baseline; padding:13px 0 0; border-top:2px solid rgba(255,255,255,0.14);">
+                    <span style="font-size:14px; font-weight:700;">All</span>
+                    <span></span>
+                    <span></span>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#e7e9ee;">{{ tb.allMedian }}</span>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#e7e9ee;">{{ tb.allMatches }}</span>
+                    <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:{{ tb.allColor }};">{{ tb.allYield }}</span>
+                    <sc-if value="{{ showTourCol }}" hint-placeholder-val="{{ false }}">
+                      <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; color:#8b96b5;">{{ tb.allTour }}</span>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ showTourNote }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:9px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#4b5672;">Tour baselines are not computed for this round or year range.</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showTourChart }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px;">
+              <span style="font-size:19px; font-weight:800; letter-spacing:-0.01em;">Cumulative profit, flat 1u</span>
+              <span style="display:flex; align-items:center; gap:16px; font-size:12px; color:#8b96b5;">
+                <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:16px; height:0; border-top:2px solid #5b9bff;"></span>Favourites</span>
+                <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:16px; height:0; border-top:2px dashed #4db8ff;"></span>Underdogs</span>
+              </span>
+            </div>
+            <div style="margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">Units returned on a flat 1-unit stake, cumulative — below zero is a loss.</div>
+
+            <div style="margin-top:16px; display:flex; gap:12px;">
+              <div style="position:relative; width:66px; height:340px; flex:none;">
+                <sc-for list="{{ tourChart.gridY }}" as="g" hint-placeholder-count="5">
+                  <span style="position:absolute; right:0; top:{{ g.top }}; transform:translateY(-50%); font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b96b5;">{{ g.label }}</span>
+                </sc-for>
+              </div>
+              <div style="position:relative; flex:1; min-width:0; height:340px; padding-right:104px;">
+                <div style="position:relative; height:100%;">
+                  <svg sc-camel-view-box="0 0 1000 300" sc-camel-preserve-aspect-ratio="none" style="width:100%; height:100%; display:block; overflow:visible;">
+                    <sc-for list="{{ tourChart.ticks }}" as="t" hint-placeholder-count="5">
+                      <line x1="{{ t.x }}" y1="0" x2="{{ t.x }}" y2="300" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    </sc-for>
+                    <sc-for list="{{ tourChart.gridY }}" as="g" hint-placeholder-count="5">
+                      <line x1="0" y1="{{ g.y }}" x2="1000" y2="{{ g.y }}" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    </sc-for>
+                    <line x1="0" y1="{{ tourChart.zeroY }}" x2="1000" y2="{{ tourChart.zeroY }}" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    <line x1="{{ tourChart.seamX }}" y1="0" x2="{{ tourChart.seamX }}" y2="300" stroke="#e8a84e" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"></line>
+                    <polyline points="{{ tourChart.favPoints }}" fill="none" stroke="#5b9bff" stroke-width="1.6" vector-effect="non-scaling-stroke"></polyline>
+                    <polyline points="{{ tourChart.dogPoints }}" fill="none" stroke="#4db8ff" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"></polyline>
+                  </svg>
+                </div>
+                <div style="position:absolute; right:0; width:100px; top:{{ tourChart.favEnd.top }}; transform:translateY(-50%);">
+                  <div style="font-size:11.5px; font-weight:700; color:#5b9bff;">Favourites</div>
+                  <div style="margin-top:2px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#e7e9ee;">{{ tourChart.favEnd.label }}</div>
+                </div>
+                <div style="position:absolute; right:0; width:100px; top:{{ tourChart.dogEnd.top }}; transform:translateY(-50%);">
+                  <div style="font-size:11.5px; font-weight:700; color:#4db8ff;">Underdogs</div>
+                  <div style="margin-top:2px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#e7e9ee;">{{ tourChart.dogEnd.label }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin:8px 104px 0 78px; position:relative; height:18px;">
+              <sc-for list="{{ tourChart.ticks }}" as="t" hint-placeholder-count="5">
+                <span style="position:absolute; left:{{ t.left }}; transform:translateX(-50%); font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b96b5;">{{ t.label }}</span>
+              </sc-for>
+            </div>
+            <div style="margin:4px 104px 0 78px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Season</div>
+
+            <p style="margin:16px 0 0; padding-left:12px; border-left:2px solid rgba(232,168,78,0.55); font-size:12.5px; line-height:1.6; color:#8b96b5; max-width:820px; text-wrap:pretty;">Book change at 2026 (Pinnacle → Bet365, wider margin) — the step is a book artefact, not a market move.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showPlayerCharts }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 18px;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Cumulative profit, flat 1u · shared scale</div>
+            <div style="margin-top:16px;">
+              <div style="display:flex; align-items:baseline; gap:12px;">
+                <span style="font-size:16px; font-weight:700;">{{ playerMain.title }}</span>
+                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; color:{{ playerMain.endColor }};">{{ playerMain.end }}</span>
+              </div>
+              <div style="margin-top:14px; display:flex; gap:10px;">
+                <div style="position:relative; width:40px; height:300px; flex:none;">
+                  <sc-for list="{{ playerMain.grid }}" as="g" hint-placeholder-count="4">
+                    <span style="position:absolute; right:0; top:{{ g.top }}; transform:translateY(-50%); font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ g.label }}</span>
+                  </sc-for>
+                </div>
+                <div style="position:relative; flex:1; min-width:0; height:300px;">
+                  <svg sc-camel-view-box="0 0 1000 200" sc-camel-preserve-aspect-ratio="none" style="width:100%; height:100%; display:block; overflow:visible;">
+                    <sc-for list="{{ playerMain.grid }}" as="g" hint-placeholder-count="4">
+                      <line x1="0" y1="{{ g.y }}" x2="1000" y2="{{ g.y }}" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    </sc-for>
+                    <sc-for list="{{ playerMain.ticks }}" as="t" hint-placeholder-count="7">
+                      <line x1="{{ t.x }}" y1="0" x2="{{ t.x }}" y2="200" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    </sc-for>
+                    <line x1="0" y1="{{ playerMain.zeroY }}" x2="1000" y2="{{ playerMain.zeroY }}" stroke="rgba(255,255,255,0.20)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    <polyline points="{{ playerMain.points }}" fill="none" stroke="{{ playerMain.stroke }}" stroke-width="1.5" vector-effect="non-scaling-stroke"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div style="margin:8px 0 0 50px; position:relative; height:14px;">
+                <sc-for list="{{ playerMain.ticks }}" as="t" hint-placeholder-count="7">
+                  <span style="position:absolute; left:{{ t.left }}; transform:translateX(-50%); font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ t.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="margin-top:30px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:36px;">
+              <sc-for list="{{ playerPair }}" as="c" hint-placeholder-count="2">
+                <div>
+                  <div style="display:flex; align-items:baseline; gap:12px;">
+                    <span style="font-size:14px; font-weight:700;">{{ c.title }}</span>
+                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:{{ c.endColor }};">{{ c.end }}</span>
+                  </div>
+                  <div style="margin-top:14px; display:flex; gap:10px;">
+                    <div style="position:relative; width:40px; height:190px; flex:none;">
+                      <sc-for list="{{ c.grid }}" as="g" hint-placeholder-count="4">
+                        <span style="position:absolute; right:0; top:{{ g.top }}; transform:translateY(-50%); font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ g.label }}</span>
+                      </sc-for>
+                    </div>
+                    <div style="position:relative; flex:1; min-width:0; height:190px;">
+                      <svg sc-camel-view-box="0 0 1000 200" sc-camel-preserve-aspect-ratio="none" style="width:100%; height:100%; display:block; overflow:visible;">
+                        <sc-for list="{{ c.grid }}" as="g" hint-placeholder-count="4">
+                          <line x1="0" y1="{{ g.y }}" x2="1000" y2="{{ g.y }}" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                        </sc-for>
+                        <sc-for list="{{ c.ticks }}" as="t" hint-placeholder-count="6">
+                          <line x1="{{ t.x }}" y1="0" x2="{{ t.x }}" y2="200" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                        </sc-for>
+                        <line x1="0" y1="{{ c.zeroY }}" x2="1000" y2="{{ c.zeroY }}" stroke="rgba(255,255,255,0.20)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                        <polyline points="{{ c.points }}" fill="none" stroke="{{ c.stroke }}" stroke-width="1.5" vector-effect="non-scaling-stroke"></polyline>
+                      </svg>
+                    </div>
+                  </div>
+                  <div style="margin:8px 0 0 50px; position:relative; height:14px;">
+                    <sc-for list="{{ c.ticks }}" as="t" hint-placeholder-count="6">
+                      <span style="position:absolute; left:{{ t.left }}; transform:translateX(-50%); font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ t.label }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- RIGHT: CUMULATIVE PROFIT -->
+      <sc-if value="{{ showProfit }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:20px; grid-column:{{ profit.col }};">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+            <span style="font-size:16px; font-weight:700;">Cumulative profit</span>
+            <span style="display:flex; align-items:center; gap:14px; font-size:12px; color:#8b96b5;">
+              <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:14px; height:2px; background:#5b9bff;"></span>Favourites</span>
+              <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:14px; height:2px; background:#4db8ff;"></span>Underdogs</span>
+            </span>
+          </div>
+          <div style="margin-top:16px; position:relative; height:300px; padding-left:52px;">
+            <span style="position:absolute; left:0; top:-5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ profit.topLabel }}</span>
+            <span style="position:absolute; left:0; top:{{ profit.zeroTop }}; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">0</span>
+            <span style="position:absolute; left:0; bottom:-5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ profit.botLabel }}</span>
+            <span style="position:absolute; top:-5px; left:{{ profit.seamLeft }}; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">2026</span>
+            <svg sc-camel-view-box="0 0 1000 300" sc-camel-preserve-aspect-ratio="none" style="width:100%; height:100%; display:block; overflow:visible;">
+              <line x1="0" y1="{{ profit.zeroY }}" x2="1000" y2="{{ profit.zeroY }}" stroke="rgba(255,255,255,0.10)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+              <line x1="{{ profit.seamX }}" y1="0" x2="{{ profit.seamX }}" y2="300" stroke="#e8a84e" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"></line>
+              <polyline points="{{ profit.favPoints }}" fill="none" stroke="#5b9bff" stroke-width="1.4" vector-effect="non-scaling-stroke"></polyline>
+              <polyline points="{{ profit.dogPoints }}" fill="none" stroke="#4db8ff" stroke-width="1.4" vector-effect="non-scaling-stroke"></polyline>
+            </svg>
+          </div>
+          <div style="margin-top:14px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880;">Match index (chronological) · flat 1u</div>
+          <p style="margin:18px 0 0; padding-left:12px; border-left:2px solid rgba(232,168,78,0.55); font-size:12.5px; line-height:1.6; color:#8b96b5; text-wrap:pretty;">Book change at 2026 (Pinnacle → Bet365, wider margin) — the step is a book artefact, not a market move.</p>
+        </div>
+      </sc-if>
+
+    </div>
+
+
+    <p style="margin:16px 0 0; font-size:12px; color:#5b6880;">Historical analysis for informational purposes only. Past results do not guarantee future results.</p>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;initialTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tour&quot;,&quot;Tournaments&quot;,&quot;Players&quot;],&quot;default&quot;:&quot;Tour&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;embedded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Embedding&quot;},&quot;baselineScope&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Recompute with filters&quot;,&quot;Fixed all-time&quot;],&quot;default&quot;:&quot;Recompute with filters&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Player baselines&quot;},&quot;softGate&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:100,&quot;min&quot;:0,&quot;max&quot;:500,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Sample gates&quot;},&quot;hardGate&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30,&quot;min&quot;:0,&quot;max&quot;:200,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Sample gates&quot;}}">
+const TOURNAMENTS = [
+  ['Australian Open', 'Hard'], ['Roland Garros', 'Clay'], ['Wimbledon', 'Grass'], ['US Open', 'Hard'],
+  ['Indian Wells', 'Hard'], ['Miami', 'Hard'], ['Monte-Carlo', 'Clay'], ['Madrid', 'Clay'],
+  ['Rome', 'Clay'], ['Canada', 'Hard'], ['Cincinnati', 'Hard'], ['Shanghai', 'Hard'],
+  ['Paris', 'Hard'], ['ATP Finals', 'Hard'], ['Barcelona', 'Clay'], ['Queen\u2019s Club', 'Grass'],
+  ['Halle', 'Grass'], ['Dubai', 'Hard'], ['Rotterdam', 'Hard'], ['Vienna', 'Hard'],
+];
+
+const TOUR_DEFS = [
+  { key: 'level', label: 'Level', opts: ['Grand Slam', 'Masters 1000', 'ATP 500', 'ATP 250', 'Finals'] },
+  { key: 'surface', label: 'Surface', opts: ['Hard', 'Clay', 'Grass'] },
+  { key: 'round', label: 'Round', opts: ['1st Round', '2nd Round', '3rd Round', '4th Round', 'Quarterfinals', 'Semifinals', 'The Final', 'Round Robin'] },
+];
+
+class Component extends DCLogic {
+  state = {
+    tourSel: {}, tourMenu: null, tournPick: 'Australian Open', ptourn: 'All', menuQ: '',
+    tab: null,
+    level: [], surface: [], round: [],
+    y0: '2010', y1: '2026',
+    tq: '', pq: '',
+    period: 'All time', psurf: 'All', stance: 'Backing him',
+    subjectCleared: false,
+  };
+
+  componentDidMount() {
+    this._onResize = () => this.setState({ w: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+    this._onResize();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+
+  // deterministic curve: detrended random walk scaled to a target hump, landing on `end`
+  curve(n, end, hump, seed) {
+    let s = seed;
+    const r = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+    const w = []; let acc = 0;
+    for (let i = 0; i < n; i++) { acc += r() - 0.5; w.push(acc); }
+    const last = w[n - 1];
+    const d = w.map((v, i) => v - last * (i / (n - 1)));
+    const mx = Math.max(...d.map(Math.abs)) || 1;
+    const k = hump / mx;
+    return d.map((v, i) => v * k + end * (i / (n - 1)));
+  }
+
+  poly(vals, top, bot, H, x0) {
+    const n = vals.length, span = top - bot, a = x0 || 0;
+    return vals.map((v, i) => {
+      const x = (a + (1 - a) * (i / (n - 1))) * 1000;
+      const y = ((top - v) / span) * H;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+  }
+
+  sign(v) { return v.trim().charAt(0) === '+' ? '#3dd68c' : '#e0616f'; }
+
+  tourPicked(key) { return this.state.tourSel[key] || []; }
+
+  tourToggle(key, opt) {
+    this.setState(st => {
+      const tourSel = Object.assign({}, st.tourSel);
+      const cur = tourSel[key] || [];
+      tourSel[key] = cur.indexOf(opt) >= 0 ? cur.filter(x => x !== opt) : cur.concat([opt]);
+      return { tourSel };
+    });
+  }
+
+  // sample gates on a book split figure
+  seg(v, n, soft, hard) {
+    const MONO = "'IBM Plex Mono',monospace";
+    if (n < hard) return { text: 'n=' + n.toLocaleString('en-GB') + ' — too few matches for a yield', color: '#5b6880', weight: 500, family: MONO };
+    if (n < soft) return { text: v + ' · n=' + n.toLocaleString('en-GB'), color: '#5b6880', weight: 500, family: MONO };
+    return { text: v, color: '#e7e9ee', weight: 700, family: MONO };
+  }
+
+  renderVals() {
+    const P = this.props, S = this.state;
+    const MONO = "'IBM Plex Mono',monospace";
+    const UI = "'Hanken Grotesk',sans-serif";
+    const soft = P.softGate ?? 100, hard = P.hardGate ?? 30;
+    const txt = (t) => ({ text: t, color: '#8b96b5', weight: 400, family: UI });
+    const tab = S.tab || P.initialTab || 'Tour';
+    const narrow = (S.w || (typeof window !== 'undefined' ? window.innerWidth : 1440)) < 1200;
+
+    const tabs = ['Tour', 'Tournaments', 'Players'].map(l => {
+      const a = tab === l;
+      return { label: l, onClick: () => this.setState({ tab: l }),
+        color: a ? '#e7e9ee' : '#5b6880', weight: a ? 700 : 600, line: a ? '#5b9bff' : 'transparent',
+        bg: a ? 'rgba(91,155,255,0.16)' : 'transparent',
+        bd: a ? 'rgba(91,155,255,0.22)' : 'rgba(255,255,255,0.07)' };
+    });
+
+    const isTour = tab === 'Tour', isTourn = tab === 'Tournaments', isPlayers = tab === 'Players';
+
+    // ---------- filter rail ----------
+    const pillsFor = (label, opts, key, multi) => ({
+      label,
+      pills: opts.map(o => {
+        const on = multi ? S[key].indexOf(o) >= 0 : S[key] === o;
+        return { label: o,
+          onClick: () => this.setState(st => multi
+            ? { [key]: st[key].indexOf(o) >= 0 ? st[key].filter(x => x !== o) : st[key].concat([o]) }
+            : { [key]: o }),
+          color: on ? '#e7e9ee' : '#c6ccdb', weight: on ? 700 : 600,
+          bg: on ? 'rgba(91,155,255,0.16)' : 'transparent',
+          bd: on ? 'rgba(91,155,255,0.35)' : 'rgba(91,155,255,0.28)' };
+      }),
+    });
+
+    let pillGroups = [], search = { on: false }, years = { on: !isPlayers };
+    if (isTour) {
+      pillGroups = [
+        pillsFor('Level', ['Grand Slam', 'Masters 1000', 'ATP 500', 'ATP 250', 'Finals'], 'level', true),
+        pillsFor('Surface', ['Hard', 'Clay', 'Grass'], 'surface', true),
+        pillsFor('Round', ['1st Round', '2nd Round', 'Quarterfinals', 'Semifinals', 'The Final', '3rd Round', '4th Round', 'Round Robin'], 'round', true),
+      ];
+    } else if (isTourn) {
+      search = { on: true, label: 'Tournament', placeholder: 'Search tournaments…', value: S.tq, onInput: (e) => this.setState({ tq: e.target.value }) };
+      pillGroups = [
+        pillsFor('Surface', ['Hard', 'Clay', 'Grass'], 'surface', true),
+        pillsFor('Round', ['1st Round', '2nd Round', 'Quarterfinals', 'Semifinals', 'The Final', '3rd Round', '4th Round', 'Round Robin'], 'round', true),
+      ];
+    } else {
+      search = { on: true, label: 'Player', placeholder: 'Search players…', value: S.pq, onInput: (e) => this.setState({ pq: e.target.value }) };
+      pillGroups = [
+        pillsFor('Period', ['All time', 'Last 52 weeks', 'Last 2Y', 'Last 5Y'], 'period', false),
+        pillsFor('Surface', ['All', 'Hard', 'Clay', 'Grass'], 'psurf', false),
+      ];
+    }
+    if (years.on) {
+      const list = [];
+      for (let y = 2010; y <= 2026; y++) list.push(String(y));
+      const yDirty = S.y0 !== '2010' || S.y1 !== '2026';
+      years = { on: true, list, from: S.y0, to: S.y1,
+        bd: yDirty ? 'rgba(91,155,255,0.35)' : 'rgba(255,255,255,0.09)',
+        onFrom: (e) => this.setState({ y0: e.target.value }), onTo: (e) => this.setState({ y1: e.target.value }) };
+    }
+    const onReset = () => this.setState({ level: [], surface: [], round: [], y0: '2010', y1: '2026', tq: '', pq: '', period: 'All time', psurf: 'All', stance: 'Backing him' });
+
+    const playerDefault = S.period === 'All time' && S.psurf === 'All' && S.ptourn === 'All';
+    const filtersDirty = isPlayers
+      ? !playerDefault
+      : (S.level.length + S.surface.length + S.round.length > 0 || S.y0 !== '2010' || S.y1 !== '2026');
+
+    // ---------- demo data (locked) ----------
+    const splitSentence = (a, an, b, bn, side) => ([
+      txt('Split by book: on Pinnacle closing prices this side returned '),
+      this.seg(a, an, soft, hard),
+      txt(' across ' + an.toLocaleString('en-GB') + ' matches, and on the Bet365-settled 2026 matches '),
+      this.seg(b, bn, soft, hard),
+      txt(' across ' + bn.toLocaleString('en-GB') + '. The combined figure blends both — Bet365 carries the wider margin.'),
+    ]);
+
+    const mkTable = (title, hint, rows, all, split) => ({
+      title, hint,
+      rows: rows.map(r => ({ band: r[0], range: r[1], median: r[2], matches: r[3], yield: r[4], color: this.sign(r[4]) })),
+      allMedian: all[0], allMatches: all[1], allYield: all[2], allColor: this.sign(all[2]), split,
+    });
+
+    let tables = [], profit = null, scope = '', showingN = '', subject = '', tiles = [], playerCharts = [], topSplit = [];
+    let roles = [], allLine = {}, returnScope = '';
+
+    if (isTour) {
+      scope = 'ATP · All levels · All surfaces · All rounds · All years';
+      showingN = '41,667';
+      tables = [
+        mkTable('Favourites', 'Back the shorter price', [
+          ['Super Fav', '1.01 – 1.32', '1.18', '13889', '-1.31%'],
+          ['Mid Fav', '1.32 – 1.57', '1.44', '13889', '-1.93%'],
+          ['Slight Fav', '1.57 – 1.97', '1.72', '13889', '-3.20%'],
+        ], ['1.44', '41667', '-2.14%'], splitSentence('-2.11%', 40002, '-2.96%', 1665)),
+        mkTable('Underdogs', 'Back the longer price', [
+          ['Slight Dog', '1.88 – 2.55', '2.24', '13889', '-1.77%'],
+          ['Mid Dog', '2.55 – 3.75', '3.00', '13889', '-3.98%'],
+          ['Super Dog', '3.75 – 86.00', '5.54', '13889', '-10.57%'],
+        ], ['3.00', '41667', '-5.44%'], splitSentence('-5.29%', 40002, '-9.00%', 1665)),
+      ];
+      profit = { top: 500, bot: -2500, topLabel: '500u', botLabel: '-2500u',
+        fav: this.curve(260, -891.7, 130, 8123), dog: this.curve(260, -2266.4, 110, 4471), seam: 40002 / 41667 };
+    } else if (isTourn) {
+      scope = 'ATP · Australian Open · All surfaces · All rounds · All years';
+      showingN = '2,130';
+      subject = S.tournPick;
+      tables = [
+        mkTable('Favourites', 'Back the shorter price', [
+          ['Super Fav', '1.01 – 1.18', '1.08', '710', '+1.40%'],
+          ['Mid Fav', '1.18 – 1.45', '1.31', '710', '+0.46%'],
+          ['Slight Fav', '1.45 – 1.95', '1.65', '710', '-0.52%'],
+        ], ['1.31', '2130', '+0.45%'], splitSentence('+0.18%', 2008, '+4.78%', 122)),
+        mkTable('Underdogs', 'Back the longer price', [
+          ['Slight Dog', '1.96 – 2.98', '2.39', '710', '-5.74%'],
+          ['Mid Dog', '2.98 – 5.61', '3.84', '710', '-13.23%'],
+          ['Super Dog', '5.61 – 81.00', '10.25', '710', '-43.45%'],
+        ], ['3.84', '2130', '-20.81%'], splitSentence('-19.97%', 2008, '-34.61%', 122)),
+      ];
+      profit = { top: 100, bot: -500, topLabel: '100u', botLabel: '-500u',
+        fav: this.curve(240, 9.6, 34, 2291), dog: this.curve(240, -443.3, 40, 9137), seam: 2008 / 2130 };
+    } else {
+      scope = 'ATP · Khachanov K. · ' + S.stance + ' · ' + S.period + ' · ' + (S.psurf === 'All' ? 'All surfaces' : S.psurf);
+      showingN = '537';
+      subject = 'Khachanov K.';
+
+      // Tour-wide baselines under the same filter state (Tour tab, All filters).
+      // "All matches" = both sides of every match at flat 1u: (-2.14% + -5.44%) / 2 on equal counts.
+      const baseFixed = { all: '-3.79%', fav: '-2.14%', dog: '-5.44%' };
+      const recompute = (P.baselineScope ?? 'Recompute with filters') === 'Recompute with filters';
+      const known = !recompute || playerDefault;
+      const base = (k) => known ? 'Tour ' + baseFixed[k] : 'Tour — not computed for this filter';
+
+      const fading = S.stance === 'Fading him';
+      allLine = fading
+        ? { value: '-5.71%', color: this.sign('-5.71%'), record: '228–309', win: '42% win', median: '—', baseline: base('all') }
+        : { value: '-1.87%', color: this.sign('-1.87%'), record: '309–228', win: '58% win', median: '1.62', baseline: base('all') };
+      returnScope = S.period + ' · ' + (S.psurf === 'All' ? 'all surfaces' : S.psurf) + (S.ptourn === 'All' ? '' : ' · ' + S.ptourn);
+
+      const gapScale = 1.91; // widest gap in the pair, so both bars share one scale
+      roles = (fading ? [
+        { title: 'As Favourite', desc: 'Matches where he was the shorter price, with his opponent backed flat 1u.', matches: '363',
+          yield: '-6.51%', tourVal: -5.44, playerVal: -6.51, win: '111–252 · 31% win', median: '—' },
+        { title: 'As Underdog', desc: 'Matches where he was the longer price, with his opponent backed flat 1u.', matches: '174',
+          yield: '-4.05%', tourVal: -2.14, playerVal: -4.05, win: '117–57 · 67% win', median: '—' },
+      ] : [
+        { title: 'As Favourite', desc: 'Matches where he was the shorter price, backed flat 1u.', matches: '363',
+          yield: '-1.07%', tourVal: -2.14, playerVal: -1.07, win: '252–111 · 69% win', median: '1.45' },
+        { title: 'As Underdog', desc: 'Matches where he was the longer price, backed flat 1u.', matches: '174',
+          yield: '-3.53%', tourVal: -5.44, playerVal: -3.53, win: '57–117 · 33% win', median: '2.71' },
+      ]).map(r => {
+        const gapPP = r.playerVal - r.tourVal;
+        const better = gapPP > 0;
+        const gapColor = better ? '#3dd68c' : '#e0616f';
+        const side = r.title === 'As Favourite' ? 'when favoured' : 'as underdog';
+        return Object.assign(r, {
+          yieldColor: this.sign(r.yield),
+          tour: known ? r.tourVal.toFixed(2) + '%' : '—',
+          showTourMark: known,
+          // baseline is the fixed reference; the fill runs from it, right when above, left when below
+          tourW: '50%',
+          gapLeft: better ? '50%' : (50 - Math.min(Math.abs(gapPP) / gapScale * 45, 45)).toFixed(1) + '%',
+          gapW: Math.min(Math.abs(gapPP) / gapScale * 45, 45).toFixed(1) + '%',
+          legend: known ? '| tour baseline' : 'tour baseline not computed',
+          legendColor: known ? '#4b5672' : '#3c465e',
+          gap: known ? (gapPP > 0 ? '+' : '') + gapPP.toFixed(2) + 'pp' : '—',
+          gapColor: known ? gapColor : '#5b6880',
+          noteBg: known ? (better ? 'rgba(61,214,140,0.10)' : 'rgba(224,97,111,0.10)') : 'rgba(255,255,255,0.04)',
+          note: known
+            ? (better ? 'Loses less than the tour ' + side + '.' : 'Loses more than the tour ' + side + '.')
+            : 'Tour baseline not computed for this filter.',
+        });
+      });
+
+      const dash = { text: '—', color: '#4b5672', weight: 700, family: MONO };
+      const flat = (v, n) => (n < hard
+        ? { text: 'n=' + n.toLocaleString('en-GB') + ' — too few matches for a yield', color: '#8b96b5', weight: 500, family: MONO }
+        : { text: n < soft ? v + ' · n=' + n.toLocaleString('en-GB') : v, color: '#8b96b5', weight: 500, family: MONO });
+      topSplit = fading ? [
+        txt('Split by book: '), dash,
+        txt(' on the 506 Pinnacle-priced matches and '), dash,
+        txt(' on the 31 Bet365-settled 2026 matches — the per-book split is not wired for the fade side.'),
+      ] : [
+        txt('Split by book: '),
+        flat('-0.29%', 506),
+        txt(' across 506 Pinnacle-priced matches, '),
+        flat('-27.65%', 31),
+        txt(' Bet365-settled 2026 matches. The tile figures blend both books; Bet365 carries the wider margin.'),
+      ];
+
+      // one shared y-axis, set by the data across all three series
+      const pcRaw = fading ? [
+        { title: 'All matches, opponent backed', from: '2013', to: '2026', stroke: '#5b9bff', vals: this.curve(220, -30.5, 30, 3307) },
+        { title: 'When favourite, opponent backed', from: '2013', to: '2026', dataFrom: '2016', stroke: '#5b9bff', vals: this.curve(200, -23.7, 14, 5519) },
+        { title: 'When underdog, opponent backed', from: '2013', to: '2026', stroke: '#4db8ff', vals: this.curve(200, -7.0, 12, 7717) },
+      ] : [
+        { title: 'All matches', from: '2013', to: '2026', stroke: '#5b9bff', vals: this.curve(220, -10.0, 22, 3307) },
+        { title: 'When favourite', from: '2013', to: '2026', dataFrom: '2016', stroke: '#5b9bff', vals: this.curve(200, -3.9, 9, 5519) },
+        { title: 'When underdog', from: '2013', to: '2026', stroke: '#4db8ff', vals: this.curve(200, -6.1, 17, 7717) },
+      ];
+      const pAll = pcRaw.reduce((a, c) => a.concat(c.vals), []);
+      const pRawHi = Math.max.apply(null, pAll), pRawLo = Math.min.apply(null, pAll);
+      const pStep = [1, 2, 5, 10, 20, 25, 50].filter(s => (pRawHi - pRawLo) / s <= 10)[0] || 100;
+      const pRound = Math.max(1, pStep / 5);
+      const pHi = Math.ceil(pRawHi / pRound) * pRound, pLo = Math.floor(pRawLo / pRound) * pRound;
+      const PH = 200;
+      const pGrid = [];
+      for (let v = Math.floor(pHi / pStep) * pStep; v >= pLo; v -= pStep) {
+        const y = ((pHi - v) / (pHi - pLo)) * PH;
+        pGrid.push({ y: y.toFixed(1), top: (y / PH * 100).toFixed(2) + '%', label: v === 0 ? '0' : v + 'u' });
+      }
+      playerCharts = pcRaw.map((c, ci) => {
+        const end = c.vals[c.vals.length - 1];
+        const y0 = parseInt(c.from, 10), y1 = parseInt(c.to, 10), spanY = y1 - y0;
+        const ticks = [];
+        const tickStep = ci === 0 ? 2 : 4; // the pair panels are ~166px wide: a 2-year pitch collides
+        for (let y = y0; y <= y1; y += tickStep) {
+          const f = (y - y0) / spanY;
+          ticks.push({ label: String(y), x: (f * 1000).toFixed(1), left: (f * 100).toFixed(2) + '%' });
+        }
+        // a series that starts later keeps the shared domain and simply leaves its left stretch empty
+        const dy = c.dataFrom ? parseInt(c.dataFrom, 10) : y0;
+        const x0 = (dy - y0) / spanY;
+        return { title: c.title, from: c.dataFrom || c.from, to: c.to, stroke: c.stroke, ticks,
+          span: c.dataFrom ? (y1 - dy) + ' of ' + spanY + ' seasons covered' : spanY + ' seasons',
+          grid: pGrid,
+          zeroY: (((pHi - 0) / (pHi - pLo)) * PH).toFixed(1),
+          end: (end > 0 ? '+' : '') + end.toFixed(1) + 'u',
+          endColor: end >= 0 ? '#3dd68c' : '#e0616f',
+          points: this.poly(c.vals, pHi, pLo, PH, x0) };
+      });
+    }
+
+    // ---------- Tour / Tournaments layout (bands without the equal-tercile column, dated chart) ----------
+    const TOUR_DATA = {
+      fav: [
+        ['Super Fav', '1.01 – 1.32', '1.18', '-1.31%', 13889],
+        ['Mid Fav', '1.32 – 1.57', '1.44', '-1.93%', 13889],
+        ['Slight Fav', '1.57 – 1.97', '1.72', '-3.20%', 13889],
+      ],
+      dog: [
+        ['Slight Dog', '1.88 – 2.55', '2.24', '-1.77%', 13889],
+        ['Mid Dog', '2.55 – 3.75', '3.00', '-3.98%', 13889],
+        ['Super Dog', '3.75 – 86.00', '5.54', '-10.57%', 13889],
+      ],
+      favAll: ['1.44', '13,889', '-2.14%'], dogAll: ['3.00', '13,889', '-5.44%'],
+      favSplit: ['-2.11%', 40002, '-2.96%', 1665],
+      dogSplit: ['-5.29%', 40002, '-9.00%', 1665],
+      favCurve: [260, -891.7, 130, 8123], dogCurve: [260, -2266.4, 110, 4471],
+      seam: 40002 / 41667,
+    };
+    const TOURN_DATA = {
+      fav: [
+        ['Super Fav', '1.01 – 1.18', '1.08', '+1.40%', 710],
+        ['Mid Fav', '1.18 – 1.45', '1.31', '+0.46%', 710],
+        ['Slight Fav', '1.45 – 1.95', '1.65', '-0.52%', 710],
+      ],
+      dog: [
+        ['Slight Dog', '1.96 – 2.98', '2.39', '-5.74%', 710],
+        ['Mid Dog', '2.98 – 5.61', '3.84', '-13.23%', 710],
+        ['Super Dog', '5.61 – 81.00', '10.25', '-43.45%', 710],
+      ],
+      favAll: ['1.31', '710', '+0.45%'], dogAll: ['3.84', '710', '-20.81%'],
+      favSplit: ['+0.18%', 2008, '+4.78%', 122],
+      dogSplit: ['-19.97%', 2008, '-34.61%', 122],
+      favCurve: [240, 9.6, 34, 2291], dogCurve: [240, -443.3, 40, 9137],
+      seam: 2008 / 2130,
+    };
+    const D = isTourn ? TOURN_DATA : TOUR_DATA;
+
+    // Tour band baselines only apply to Tournaments, and only when the filters that
+    // would move them (Round, Year range) are at their defaults.
+    const tourBaseKnown = S.round.length === 0 && S.y0 === '2010' && S.y1 === '2026';
+    const tRow = (base) => (r, i) => {
+      const n = r[4];
+      const gated = n < hard
+        ? { text: 'n=' + n.toLocaleString('en-GB') + ' — too few matches for a yield', color: '#5b6880', weight: 500, size: '12.5px' }
+        : (n < soft
+          ? { text: r[3], color: '#5b6880', weight: 500, size: '17px' }
+          : { text: r[3], color: this.sign(r[3]), weight: 700, size: '17px' });
+      const b = base ? base[i][3] : null;
+      return {
+        band: r[0], range: r[1], median: r[2], yield: r[3], color: this.sign(r[3]),
+        from: r[1].split(' – ')[0],
+        to: r[0].indexOf('Super Dog') === 0 ? r[1].split(' – ')[0] + '+' : r[1].split(' – ')[1],
+        matches: n.toLocaleString('en-GB'),
+        cellSize: gated.size === '12.5px' ? '11px' : '14px',
+        sub: r[1] + ' · median ' + r[2] + ' · n=' + n.toLocaleString('en-GB'),
+        yieldText: gated.text, yieldColor: gated.color, yieldWeight: gated.weight, yieldSize: gated.size,
+        hasBase: !!b,
+        tourVal: b ? (tourBaseKnown ? b : '—') : '',
+        tourColor: b && tourBaseKnown ? '#8b96b5' : '#4b5672',
+        baseText: b ? (tourBaseKnown ? 'Tour ' + b : 'Tour — not computed for this filter') : '',
+        baseColor: tourBaseKnown ? '#8b96b5' : '#5b6880',
+      };
+    };
+    const tAllRow = (a, base) => ({ allMedian: a[0], allMatches: a[1], allYield: a[2], allColor: this.sign(a[2]),
+      allTour: isTourn ? (tourBaseKnown ? base : '—') : '' });
+    const tourTables = [
+      Object.assign({ title: 'Favourites', hint: '', rows: D.fav.map(tRow(isTourn ? TOUR_DATA.fav : null)) }, tAllRow(D.favAll, TOUR_DATA.favAll[2])),
+      Object.assign({ title: 'Underdogs', hint: '', rows: D.dog.map(tRow(isTourn ? TOUR_DATA.dog : null)) }, tAllRow(D.dogAll, TOUR_DATA.dogAll[2])),
+    ];
+
+    const tFav = this.curve.apply(this, D.favCurve);
+    const tDog = this.curve.apply(this, D.dogCurve);
+    const tAll = tFav.concat(tDog);
+    const tRawHi = Math.max.apply(null, tAll), tRawLo = Math.min.apply(null, tAll);
+    const tSpan = tRawHi - tRawLo;
+    const tStep = [10, 25, 50, 100, 250, 500, 1000, 2500].filter(s => tSpan / s <= 10)[0] || 5000;
+    const tRound = Math.max(10, tStep / 10);
+    // Tournaments spend real time in profit, so give the positive side a full labelled band
+    const posBand = isTourn && tRawHi > 0;
+    const tHi = posBand
+      ? Math.ceil(tRawHi / tStep) * tStep
+      : Math.max(tRound, Math.ceil(tRawHi / tRound) * tRound);
+    const tLo = Math.floor(tRawLo / tRound) * tRound;
+    const TH = 300, tZeroY = ((tHi - 0) / (tHi - tLo)) * TH;
+    const tGridY = [];
+    for (let v = Math.floor(tHi / tStep) * tStep; v > 0; v -= tStep) {
+      const y = ((tHi - v) / (tHi - tLo)) * TH;
+      tGridY.push({ y: y.toFixed(1), top: (y / TH * 100).toFixed(2) + '%', label: '+' + v.toLocaleString('en-GB') + 'u' });
+    }
+    for (let v = 0; v >= tLo; v -= tStep) {
+      const y = ((tHi - v) / (tHi - tLo)) * TH;
+      tGridY.push({ y: y.toFixed(1), top: (y / TH * 100).toFixed(2) + '%', label: v === 0 ? '0' : v.toLocaleString('en-GB') + 'u' });
+    }
+    const tEndTop = (v) => (((tHi - v) / (tHi - tLo)) * 100).toFixed(2) + '%';
+    const tEndLabel = (v) => Math.round(v).toLocaleString('en-GB') + 'u';
+    const tourChart = {
+      gridY: tGridY,
+      ticks: [2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024, 2026].map(y => {
+        const f = (y - 2010) / 16;
+        return { label: String(y), x: (f * 1000).toFixed(1), left: (f * 100).toFixed(2) + '%' };
+      }),
+      favEnd: { top: tEndTop(tFav[tFav.length - 1]), label: tEndLabel(tFav[tFav.length - 1]) },
+      dogEnd: { top: tEndTop(tDog[tDog.length - 1]), label: tEndLabel(tDog[tDog.length - 1]) },
+      zeroY: tZeroY.toFixed(1),
+      seamX: (D.seam * 1000).toFixed(1),
+      favPoints: this.poly(tFav, tHi, tLo, TH),
+      dogPoints: this.poly(tDog, tHi, tLo, TH),
+    };
+
+    const PLAYER_DEFS = [
+      { key: 'period', label: 'Period', opts: ['All time', 'Last 52 weeks', 'Last 2Y', 'Last 5Y'] },
+      { key: 'psurf', label: 'Surface', opts: ['All', 'Hard', 'Clay', 'Grass'] },
+      { key: 'ptourn', label: 'Tournament', opts: ['All'].concat(TOURNAMENTS.map(t => t[0])) },
+      { key: 'stance', label: 'Side', opts: ['Backing him', 'Fading him'] },
+    ];
+    const playerTriggers = PLAYER_DEFS.map(d => {
+      const cur = S[d.key], open = S.tourMenu === d.key, on = cur !== d.opts[0];
+      const searchOn = d.key === 'ptourn';
+      const mq = searchOn ? S.menuQ.trim().toLowerCase() : '';
+      const opts = mq ? d.opts.filter(o => o.toLowerCase().indexOf(mq) >= 0) : d.opts;
+      return {
+        label: d.label, count: cur,
+        searchOn, query: S.menuQ,
+        onQuery: (e) => this.setState({ menuQ: e.target.value }),
+        countColor: on ? '#5b9bff' : '#5b6880',
+        color: (on || open) ? '#e7e9ee' : '#c6ccdb',
+        bg: on ? 'rgba(91,155,255,0.16)' : 'transparent',
+        bd: (on || open) ? 'rgba(91,155,255,0.35)' : 'rgba(255,255,255,0.09)',
+        open,
+        onClick: () => this.setState(st => ({ tourMenu: st.tourMenu === d.key ? null : d.key, menuQ: '' })),
+        items: opts.map(o => {
+          const chk = cur === o;
+          return { label: o, onClick: () => this.setState({ [d.key]: o, tourMenu: null, menuQ: '' }),
+            color: chk ? '#e7e9ee' : '#c6ccdb', weight: chk ? 700 : 500,
+            bg: chk ? 'rgba(91,155,255,0.13)' : 'transparent',
+            boxBd: chk ? '#5b9bff' : 'rgba(255,255,255,0.20)',
+            boxBg: chk ? '#5b9bff' : 'transparent' };
+        }),
+      };
+    });
+
+    const barDefs = isTourn ? TOUR_DEFS.slice(2) : TOUR_DEFS;
+    const tourTriggers = barDefs.map(d => {
+      const sel = this.tourPicked(d.key), on = sel.length > 0, open = S.tourMenu === d.key;
+      return {
+        label: d.label,
+        count: on ? String(sel.length) : 'All',
+        countColor: on ? '#5b9bff' : '#5b6880',
+        color: (on || open) ? '#e7e9ee' : '#c6ccdb',
+        bg: on ? 'rgba(91,155,255,0.16)' : 'transparent',
+        bd: (on || open) ? 'rgba(91,155,255,0.35)' : 'rgba(255,255,255,0.09)',
+        open,
+        onClick: () => this.setState(st => ({ tourMenu: st.tourMenu === d.key ? null : d.key })),
+        items: d.opts.map(o => {
+          const chk = sel.indexOf(o) >= 0;
+          return { label: o, onClick: () => this.tourToggle(d.key, o),
+            color: chk ? '#e7e9ee' : '#c6ccdb', weight: chk ? 700 : 500,
+            bg: chk ? 'rgba(91,155,255,0.13)' : 'transparent',
+            boxBd: chk ? '#5b9bff' : 'rgba(255,255,255,0.20)',
+            boxBg: chk ? '#5b9bff' : 'transparent' };
+        }),
+      };
+    });
+
+    const tournReady = !isTourn || (!!S.tournPick && !S.subjectCleared);
+    const tq = S.tq.trim().toLowerCase();
+    const tHits = TOURNAMENTS.filter(t => !tq || t[0].toLowerCase().indexOf(tq) >= 0);
+    const barSearch = isTourn ? {
+      on: true, value: S.tq, placeholder: 'Search tournaments…',
+      bd: tournReady ? 'rgba(255,255,255,0.09)' : 'rgba(91,155,255,0.45)',
+      onInput: (e) => this.setState({ tq: e.target.value }),
+      open: tq.length > 0,
+      empty: tHits.length === 0,
+      results: tHits.map(t => {
+        const on = S.tournPick === t[0] && !S.subjectCleared;
+        return { label: t[0], meta: t[1],
+          onClick: () => this.setState({ tournPick: t[0], subjectCleared: false, tq: '' }),
+          color: on ? '#e7e9ee' : '#c6ccdb', weight: on ? 700 : 500,
+          bg: on ? 'rgba(91,155,255,0.13)' : 'transparent' };
+      }),
+    } : { on: false };
+
+    const PLAYERS = ['Khachanov K.', 'Alcaraz C.', 'Sinner J.', 'Djokovic N.', 'Medvedev D.', 'Zverev A.',
+      'Rublev A.', 'Ruud C.', 'Fritz T.', 'De Minaur A.', 'Tsitsipas S.', 'Hurkacz H.'];
+    const pq = S.pq.trim().toLowerCase();
+    const pHits = PLAYERS.filter(p => !pq || p.toLowerCase().indexOf(pq) >= 0);
+    const playerSearch = {
+      on: true, value: S.pq, placeholder: 'Search players…',
+      bd: 'rgba(255,255,255,0.09)',
+      onInput: (e) => this.setState({ pq: e.target.value }),
+      open: pq.length > 0,
+      empty: pHits.length === 0,
+      results: pHits.map(p => ({ label: p, meta: '',
+        onClick: () => this.setState({ pq: '', subjectCleared: false }),
+        color: '#c6ccdb', weight: 500, bg: 'transparent' })),
+    };
+
+    let profitVals = null;
+    if (profit) {
+      const H = 300, zeroY = ((profit.top - 0) / (profit.top - profit.bot)) * H;
+      profitVals = {
+        topLabel: profit.topLabel, botLabel: profit.botLabel,
+        zeroY: zeroY.toFixed(1), zeroTop: (zeroY / H * 100).toFixed(1) + '%',
+        seamX: (profit.seam * 1000).toFixed(1), seamLeft: 'calc(52px + ' + (profit.seam * 100).toFixed(1) + '% - ' + (profit.seam * 52).toFixed(1) + 'px - 14px)',
+        col: narrow ? '1 / -1' : 'auto',
+        favPoints: this.poly(profit.fav, profit.top, profit.bot, H),
+        dogPoints: this.poly(profit.dog, profit.top, profit.bot, H),
+      };
+    }
+
+    return {
+      tabs, scope, cols: 'minmax(0,1fr)',
+      search, pillGroups, years, onReset, filtersDirty,
+      hasSubject: !!subject && !S.subjectCleared, subject,
+      onClearSubject: () => this.setState({ subjectCleared: true }),
+      showOwnSidebar: !P.embedded,
+      // Standalone export: only the Database page exists here, so nav clicks stay on this page
+      // rather than navigating to a missing bundled file (which locks the tab).
+      onNav: () => {},
+      showRail: false,
+      bandCols: isTourn ? 'minmax(72px,1fr) 40px 40px 52px 58px 74px 74px' : 'minmax(76px,1fr) 40px 40px 56px 60px 72px',
+      showTourCol: isTourn, yieldHead: isTourn ? 'Event' : 'Yield',
+      showTourNote: isTourn && !tourBaseKnown,
+      showTourBar: true, showTourBands: !isPlayers && tournReady, showTourChart: !isPlayers && tournReady,
+      showPickPrompt: isTourn && !tournReady,
+      showYears: !isPlayers,
+      tourTriggers: isPlayers ? playerTriggers : tourTriggers, tourTables, tourChart,
+      barSearch: isPlayers ? playerSearch : barSearch,
+      onTourReset: () => this.setState({ tourSel: {}, tourMenu: null, y0: '2010', y1: '2026', tq: '', pq: '', period: 'All time', psurf: 'All', ptourn: 'All', stance: 'Backing him' }),
+      showBookLine: false, showTables: false, showProfit: false,
+      showTiles: isPlayers, showTopSplit: isPlayers, showPlayerCharts: isPlayers,
+      tables, tiles, topSplit, playerCharts, profit: profitVals, showingN,
+      playerMain: playerCharts[0], playerPair: playerCharts.slice(1),
+      roles, allLine, returnScope,
+    };
+  }
+}
+
+</script>
+
+
+</body></html>
