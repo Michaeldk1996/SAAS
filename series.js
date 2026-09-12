@@ -229,14 +229,34 @@
   // reader in UTC+13 on 1 Jan would otherwise see years the artifact doesn't support.
   // UTC to match the UPDATED clock. No usable generatedAt → no prior-year marking
   // (crossesYear still applies); a year is never guessed.
+  // V8's legacy date parser INVENTS a year rather than failing: new Date('Sep 12') is
+  // 2001 and new Date('0') is 1999, either of which would silently year-stamp the whole
+  // board off a reference year that appears nowhere in the data. And a timestamp with no
+  // Z or offset is read in the BROWSER's zone, reintroducing the per-timezone divergence
+  // this helper exists to prevent. So accept only an unambiguous instant — a 4-digit-year
+  // ISO date, and where a time is present an explicit Z or offset — and fall to null
+  // otherwise. build-series.js writes new Date().toISOString(), which always qualifies.
+  var ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2}))?$/;
   function yearOfIso(iso) {
-    if (!iso) return null;
+    if (!ISO_INSTANT_RE.test(String(iso == null ? '' : iso))) return null;
     var d = new Date(iso);
     if (isNaN(d.getTime())) return null;
     return String(d.getUTCFullYear());
   }
   // Gated on fmtShort for the same reason crossesYear is: an unrenderable LAST is a
   // dash, and a dash must not drag a lone year onto the STARTED cell beside it.
+  //
+  // OPEN — founder ask (raised 2026-09-12), deliberately NOT resolved here. The reverse
+  // case is asymmetric: this rule is a property of LAST alone, so when STARTED is
+  // unrenderable the card paints "Started — / Last 12 Sep ’26" — a year on one cell
+  // only. crossesYear cannot do that (it gates on both ends), and "both cells or
+  // neither" was this file's own choice, not the ruling: the founder picked "add the
+  // year only when the run crosses a year boundary" over the option that said "always
+  // show a 2-digit year on both cells". Suppressing it here would delete the very
+  // signal the prior-year ruling exists to restore, on the card that already knows
+  // least — so it is a question, not a silent fix. Unreachable from today's pipeline:
+  // build-series.js always emits a non-empty matches[], and 0 of 117 live streaks lack
+  // one. Left untested in either direction on purpose, pending the ruling.
   function priorYear(lastYmd, refIso) {
     var ry = yearOfIso(refIso);
     if (!ry || !fmtShort(lastYmd)) return false;

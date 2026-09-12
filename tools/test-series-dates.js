@@ -83,6 +83,14 @@ assert.strictEqual(priorYear('2026-09-13', '2026-09-12T06:04:14.376Z'), false,
   'a run inside the snapshot\'s own year stays bare — today\'s cards must not change');
 ok('a current-data-year run keeps the export\'s bare day + month');
 
+// The ruling says "not in the current data year" — which is a ≠, not a <. A LAST in a
+// FUTURE year relative to the snapshot is equally not-in-the-data-year and is a real
+// shape: a Jan-1-local United Cup match is 31 Dec UTC, so a fresh 31-Dec artifact can
+// carry a 1-Jan LAST. Pinned because a `<` here reads as correct and is not.
+assert.strictEqual(priorYear('2027-01-01', '2026-12-31T22:00:00Z'), true,
+  'a future-year LAST is also outside the data year');
+ok('the rule is "different year", not "earlier year"');
+
 // The reference is the DATA's year, never the client clock, or the page would read
 // differently by timezone and could disagree with the artifact it is painting.
 assert.strictEqual(yearOfIso('2027-01-01T00:00:00Z'), '2027');
@@ -104,6 +112,20 @@ assert.strictEqual(yearOfIso(null), null);
 assert.strictEqual(yearOfIso(undefined), null);
 assert.strictEqual(yearOfIso(''), null);
 assert.strictEqual(yearOfIso('not-a-date'), null);
+// V8's legacy parser invents a year instead of failing — these must NOT be accepted,
+// or a malformed generatedAt year-stamps the whole board off a year found nowhere in
+// the data. (new Date('Sep 12') is 2001; new Date('0') is 1999.)
+assert.strictEqual(yearOfIso('Sep 12'), null, "'Sep 12' parses as 2001 — a fabricated reference year");
+assert.strictEqual(yearOfIso('12'), null);
+assert.strictEqual(yearOfIso('0'), null);
+assert.strictEqual(yearOfIso('2026'), null, 'a bare year is not an instant');
+// …and a timestamp with no Z/offset is read in the BROWSER's zone, which is exactly the
+// per-timezone divergence the generatedAt reference exists to avoid.
+assert.strictEqual(yearOfIso('2026-12-31T23:00:00'), null, 'no Z/offset — ambiguous, must not be trusted');
+assert.strictEqual(yearOfIso('2026-09-12T06:04:11.197Z'), '2026', 'what build-series.js actually writes');
+assert.strictEqual(yearOfIso('2027-01-01T09:00:00+10:00'), '2026', 'an explicit offset is resolved to UTC');
+assert.strictEqual(yearOfIso('2026-09-12'), '2026', 'a bare ISO date is unambiguous');
+ok('a malformed generatedAt yields no year — V8\'s parser cannot invent one');
 // …and an unrenderable LAST must not drag a lone year onto STARTED beside its dash.
 assert.strictEqual(priorYear(null, '2027-01-20T06:04:14.376Z'), false);
 assert.strictEqual(priorYear('2026-13-05', '2027-01-20T06:04:14.376Z'), false, 'month 13 is a dash, not a year');
