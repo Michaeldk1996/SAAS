@@ -140,9 +140,16 @@
       case 'total':
         return (st.over ? 'Over ' : 'Under ') + esc(String(st.line)) + ' total games' + bo(st);
       case 'handicap':
+        // Item 2 + ruling `handicap-bestof` (a), 2026-09-12: the CARD drops the
+        // "(best-of-N)" qualifier — "Covered −3.5 games". Format-locking is unchanged
+        // as a data guarantee (a bo3 run still never renders on a bo5 match, see
+        // isRelevant/formatLocked); it simply stops being printed here. The History
+        // modal keeps it via claimLong() below, because the founder scoped the modal
+        // out ("The History modal does not change; it is correct as built"), so the
+        // reader still has one place to see the format the run was built on.
         return st.cover
-          ? 'Covered −' + esc(String(st.line)) + ' games' + bo(st)
-          : 'Beaten by more than ' + esc(String(st.line)) + ' games' + bo(st);
+          ? 'Covered −' + esc(String(st.line)) + ' games'
+          : 'Beaten by more than ' + esc(String(st.line)) + ' games';
       case 'setpat':
         if (st.subtype === 'won-2nd-set')        return 'Won the 2nd set';
         if (st.subtype === 'lost-2nd-set')       return 'Lost the 2nd set';
@@ -157,12 +164,60 @@
     }
   }
   // Long form, modal only. The History modal is out of item 6's scope ("does not
-  // change in any respect"), so it keeps the pre-shortening wording verbatim.
+  // change in any respect"), so it keeps the pre-shortening wording verbatim — and
+  // out of item 2's scope too, so the handicap claim keeps its "(best-of-N)" here.
   function claimLong(st) {
     if (st.type === 'all') return streakVerb(st.direction) + ' across all competitions';
+    if (st.type === 'handicap') return claimOf(st) + bo(st);
     return claimOf(st);
   }
   function describe(st) { return claimLong(st) + ' — ' + running(st.count); }
+
+  // ─── item 5 · the run reference sub-line (founder 2026-09-12) ────────────────
+  // "A run length stated alone is the equivalent of a bare percentage — the reader
+  // can't tell whether six is remarkable for this player." Beneath the title:
+  //
+  //     longest since 2021 9 · 4th time at 6+
+  //
+  // Both halves come from build-series.js's streakReference(), which enumerates every
+  // run of THIS streak's own condition across the player's history window using the
+  // engine's own conditionHeld(). Nothing is computed here — the card cannot invent a
+  // reference the artifact doesn't carry.
+  //
+  // Ruling `reference-label` (a): NAME the window rather than call it "career". It is
+  // five calendar years AND tier-scoped, so "career" would be a false claim (Lajovic,
+  // ATP #167, has 78 in-tier matches in it because only his Challenger matches count).
+  // The year is read from rules.referenceWindow.sinceYear — the artifact's own record
+  // of the window it searched — never from the browser clock, so the label reads the
+  // same in Sydney and in Los Angeles and can never name a window we didn't query.
+  //
+  // Ruling `reference-lone` (a): a run that is the only one ever to reach its own
+  // length prints as-is — "longest 9 · 1st time at 9+" — rather than being reworded or
+  // truncated. 12 of 117 streaks read that way on the 2026-09-12 board.
+  //
+  // Item 5: "Both components required. If either is unavailable for a streak type, the
+  // sub-line renders — rather than showing half." A missing reference (a pre-item-5
+  // artifact, or an enumeration that failed its self-check) and an unnameable window
+  // both land there. Never half a sub-line, never a guessed year.
+  function ordinal(n) {
+    var t = n % 100, d = n % 10;
+    if (t >= 11 && t <= 13) return n + 'th';
+    return n + (d === 1 ? 'st' : (d === 2 ? 'nd' : (d === 3 ? 'rd' : 'th')));
+  }
+  function referenceSinceYear() {
+    var rw = _data && _data.rules && _data.rules.referenceWindow;
+    var y = rw && rw.sinceYear;
+    return (typeof y === 'number' && isFinite(y) && y > 1900 && y < 2200) ? y : null;
+  }
+  function posInt(v) { return typeof v === 'number' && isFinite(v) && v > 0 && v === Math.floor(v); }
+  function referenceHtml(st) {
+    var ref = st && st.reference, since = referenceSinceYear();
+    if (!ref || since == null || !posInt(ref.longest) || !posInt(ref.occurrences) || !posInt(st.count)) {
+      return '<div class="sr-ref sr-ref--none">—</div>';
+    }
+    return '<div class="sr-ref">longest since ' + esc(String(since)) + ' ' + esc(String(ref.longest)) +
+      ' · ' + esc(ordinal(ref.occurrences)) + ' time at ' + esc(String(st.count)) + '+</div>';
+  }
   // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
   // correct regardless of the engine version that wrote series.json (fix #5). The former
   // 'firstset'/'setpat' families map here to the split 'setout' / 'setgames'.
@@ -412,12 +467,33 @@
   }
   function memberSetOf(c) { return memberSet(c.streak); }
 
+  // ─── item 2 · the handicap card is −3.5 only (founder 2026-09-12) ─────────────
+  // Ruling `handicap-line` (a): "Drop the −1.5/−5.5 fallback — −3.5 only, family
+  // disappears on thin days."
+  //
+  // The engine already PREFERS 3.5 (fix #4, 2026-09-07: priority 3.5 > 5.5 > 1.5), so a
+  // card arriving here on any other line means that player has no qualifying −3.5 run.
+  // The ruling is therefore not a relabel — it removes the fallback, and on a thin day
+  // the family has nothing to say. Measured on the 2026-09-12 board: −1.5 is cleared by
+  // 94.6% of won matches and by 79 of 79 straight-sets bo3 wins, so a −1.5 cover run is
+  // a straight-sets winner's win streak restated; −3.5 is cleared by 79.8%.
+  //
+  // Enforced HERE rather than in the engine, exactly as item 1's dedup is: the −1.5 run
+  // stays in series.json and stays reachable, it just never gets a card. Reversible
+  // without a data rebuild.
+  var HANDICAP_DISPLAY_LINE = 3.5;
+  function handicapLineAllowed(st) {
+    if (st.type !== 'handicap') return true;
+    return Number(st.line) === HANDICAP_DISPLAY_LINE;
+  }
+
   function flatten(data) {
     var out = [];
     (data.players || []).forEach(function (p) {
       (p.streaks || []).forEach(function (st) {
         // Non-negotiable guard: pool AND recency must both be present, else drop.
         if (st.pool == null || !st.lastDate || st.ageDays == null) return;
+        if (!handicapLineAllowed(st)) return;    // item 2
         out.push({ player: p, streak: st });
       });
     });
@@ -518,8 +594,8 @@
   // target (founder 2026-09-07) and carries it as data-card-idx so the click
   // handler can open the matches overlay for exactly this streak.
   // Card structure is the export's, top to bottom (export §3):
-  //   claim + blue run length → player row → tag row → STARTED/LAST/TYPE strip →
-  //   next match · History →
+  //   claim + blue run length → reference sub-line (item 5) → player row → tag row →
+  //   STARTED/LAST/TYPE strip → next match · History →
   // Removed by founder ruling on 2026-09-12: the big count column and its colour
   // (q2), the 3px valence bar (q2), the POOL cell — modal only now (q1), and the
   // tier / opponent-archetype / Grand-Slam / best-of-badge chips (q3). The tag row
@@ -538,6 +614,12 @@
           ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>' +
         '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>' +
       '</div>';
+
+    // 1b · reference sub-line, directly beneath the title (item 5). The run length
+    // stays where it was, in the title; this says what that length is worth for this
+    // player. Tucked to the title by a negative margin so it reads as a sub-line
+    // rather than as a fourth block of the card.
+    var refLine = referenceHtml(st);
 
     // 2 · player row — 20px avatar INLINE with the name on the same baseline (item 4),
     // name, rank. The flag is gone (item 3): nationality changes no read on this page
@@ -625,7 +707,7 @@
       '</div>';
 
     return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
-      claim + prow + tagRow + strip + foot +
+      claim + refLine + prow + tagRow + strip + foot +
     '</article>';
   }
 

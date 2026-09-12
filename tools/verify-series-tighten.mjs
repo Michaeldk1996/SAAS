@@ -62,6 +62,11 @@ function recomputeExpected(doc, { minLen = 6, day = 'all' } = {}) {
   for (const p of doc.players || []) {
     for (const st of p.streaks || []) {
       if (st.pool == null || !st.lastDate || st.ageDays == null) continue;
+      // item 2 (ruling handicap-line (a), 2026-09-12): the −1.5/−5.5 fallback no longer
+      // gets a card. Mirrored here so this probe keeps agreeing with the page it
+      // measures — without it A1/A2 would fail against a rule the founder ordered.
+      // Items 2 and 5 have their own probe: tools/verify-series-item25.mjs.
+      if (st.type === 'handicap' && Number(st.line) !== 3.5) continue;
       cards.push({ p, st });
     }
   }

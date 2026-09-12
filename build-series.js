@@ -101,6 +101,14 @@ const MAX_AGE_DAYS = 45;
 // itself split otherwise-continuous runs.
 const MAX_GAP_DAYS = 75;
 const MIN_POOL_CONDITIONAL = 8;    // style / surface / pattern / all new line+pattern types
+// History depth behind every streak AND behind item 5's reference sub-line. This
+// MIRRORS bsp-pipeline.js:fetchRecentSinglesFixtures, which queries get_fixtures from
+// `${new Date().getFullYear() - 5}-01-01` to today. It is not an independent knob: if
+// that window ever moves, this must move with it or the card will name a window we
+// did not actually search. Founder ruling `reference-label` (a): the sub-line NAMES
+// this window ("longest since 2021") rather than calling it "career", because the
+// pool is also tier-scoped and so is nobody's career.
+const HISTORY_WINDOW_YEARS = 5;
 // all-competitions: no extra pool floor (the run is its own pool).
 
 // ── LINE SETS (founder 2026-09-07 "approved as proposed"; never blend best-of) ──
@@ -768,6 +776,84 @@ function conditionHeld(st, pr) {
   }
 }
 
+// ── RUN REFERENCE (item 5, founder 2026-09-12) ───────────────────────────────
+// "A run length stated alone is the equivalent of a bare percentage — the reader
+// can't tell whether six is remarkable for this player." So every card carries a
+// sub-line beneath its title:  longest since 2021 9 · 4th time at 6+
+//
+//   longest      the longest run of THIS streak's own condition anywhere in the
+//                history window
+//   occurrences  how many distinct runs in that window reached the CURRENT run's
+//                length — the "Nth time at N+" half
+//
+// The condition is NOT re-implemented here. conditionHeld() above is the founder-
+// ruled definition already used to write CONTINUED/BROKEN into the outcomes ledger;
+// feeding it every historical record gives the enumeration the exact same domain
+// and the exact same state test that detection uses, so a reference can never
+// describe a different rule from the run it sits under.
+//
+// SELF-CHECK, and it is load-bearing: the LAST run this enumeration produces must
+// BE the streak the engine emitted — same length, same member dates. If it isn't,
+// the reference would be describing some other run, so we return null and the card
+// dashes. Never a guess, never a half sub-line.
+//
+// Founder ruling `reference-label` (a), 2026-09-12: the window is NAMED rather than
+// called "career", because it is neither — it is HISTORY_WINDOW_YEARS calendar years
+// AND tier-scoped (Lajovic shows 78 in-tier matches because only his Challenger
+// matches are in his pool). Ruling `reference-lone` (a): a run that is the only one
+// ever to reach its own length prints as-is — "longest 9 · 1st time at 9+".
+function streakReference(st, recs) {
+  if (!Array.isArray(recs) || !recs.length) return null;
+  // 1 · every run of the condition, oldest→newest. A record the condition can't be
+  // evaluated on (h === null) is outside the domain entirely — it neither extends a
+  // run nor breaks one, exactly as the ledger treats it.
+  const runs = [];
+  let cur = [];
+  let domain = 0;
+  for (const r of recs) {
+    const h = conditionHeld(st, r);
+    if (h === null) continue;
+    domain++;
+    if (h) cur.push(r);
+    else { if (cur.length) runs.push(cur); cur = []; }
+  }
+  if (cur.length) runs.push(cur);
+  // 2 · the same layoff cut mkStreak applies to the current run (fix #2), so a
+  // historical run is judged by the rule the emitted one was judged by.
+  const split = [];
+  for (const run of runs) {
+    let seg = [];
+    for (const r of run) {
+      if (seg.length) {
+        const gap = Math.floor(
+          (Date.parse(r.date + 'T00:00:00Z') - Date.parse(seg[seg.length - 1].date + 'T00:00:00Z')) / DAY_MS);
+        if (!Number.isFinite(gap)) return null;   // unparseable date → no claim
+        if (gap > MAX_GAP_DAYS) { split.push(seg); seg = []; }
+      }
+      seg.push(r);
+    }
+    if (seg.length) split.push(seg);
+  }
+  if (!split.length) return null;
+  // 3 · self-check against the emitted streak.
+  const last = split[split.length - 1];
+  const emitted = Array.isArray(st.matches) ? st.matches : [];
+  if (last.length !== st.count || emitted.length !== st.count) return null;
+  for (let i = 0; i < last.length; i++) if (last[i].date !== emitted[i].date) return null;
+  return {
+    longest: split.reduce((m, r) => Math.max(m, r.length), 0),
+    occurrences: split.filter(r => r.length >= st.count).length,
+    runs: split.length,             // total runs of this condition in the window
+    // Two DIFFERENT denominators, named apart because conflating them publishes a wrong
+    // number: `historyMatches` is the whole in-tier window, `domain` is the subset the
+    // condition can actually be evaluated on (a bo5 handicap or a grass streak sees a
+    // small fraction of it). An earlier draft published the first under the name `pool`
+    // with the second's meaning. Neither is rendered today.
+    historyMatches: recs.length,
+    domain,
+  };
+}
+
 // Load the outcomes ledger (fix #3). Returns { updatedAt, records:{} }. A missing or
 // unreadable file starts an empty ledger — never a hard fail.
 function loadLedger() {
@@ -896,6 +982,7 @@ async function main() {
   }
   let players = [];
   let done = 0, failed = 0, playersWithStreak = 0, totalStreaks = 0;
+  let refOk = 0, refDash = 0;   // item 5: streaks that carry a reference vs dash it
   // reporting accumulators (founder 2026-09-07 "report after building"): per-type
   // and per-subtype card counts, plus the default-view count (view floor applied,
   // already-played hidden). The view floor is per-type: vs-style 3, everything
@@ -947,6 +1034,14 @@ async function main() {
       if (dumpLines) for (const st of relevant) { rawSub[st.subtype || st.type] = (rawSub[st.subtype || st.type] || 0) + 1; }
       const streaks = collapseByFamily(relevant);
       if (!streaks.length) continue;
+      // item 5 (founder 2026-09-12): give every surfaced run its reference — the
+      // longest run of its own condition in this player's history window, and how
+      // many runs reached the current length. Computed only for the cards that
+      // actually ship, off the history already in hand: no extra API call.
+      for (const st of streaks) {
+        st.reference = streakReference(st, recs);
+        if (st.reference) refOk++; else refDash++;
+      }
       // fix #3: if the upcoming match has already been played, evaluate whether each
       // surfaced streak's OWN condition held in it (CONTINUED / BROKEN / excluded) and
       // append to the accumulating ledger, keyed idempotently by (eventKey|pk|family).
@@ -1049,7 +1144,39 @@ async function main() {
       families: ['total', 'handicap', 'setout', 'setgames', 'all', 'surface', 'style'],
       familySplit: 'fix#5: the former "setpat" family is split into SET OUTCOME (setout: won/lost 1st/2nd set, straight sets, went the distance, no set won — plus the first-set outcome formerly its own "firstset") and SET GAMES LINE (setgames: first-set over/under a games total).',
       handicapSelector: 'fix#4: the handicap family representative is the traded line by priority 3.5 > 5.5 > 1.5 (NOT the longest run). 1.5/5.5 remain generated as fallback when the player has no qualifying 3.5 run.',
+      // item 2 (founder ruling `handicap-line` (a), 2026-09-12): the FALLBACK no longer
+      // renders. A handicap card ships only at -3.5; a player with no qualifying 3.5 run
+      // shows no handicap card at all and on a thin day the family is empty. Enforced in
+      // the FRONT-END (series.js) rather than here, exactly as item 1's dedup is, so the
+      // 1.5/5.5 run stays in this artifact and reachable rather than being deleted from
+      // the record. Measured 2026-09-12: -1.5 is cleared by 94.6% of won matches on the
+      // board and by 79/79 straight-sets bo3 wins, which is why it says so little.
+      //
+      // DESCRIPTIVE, NOT A CONTROL. series.js owns this number as a literal and does not
+      // read it back — deliberately: item 9 was silently reverted for a whole deploy
+      // because the page ADOPTED viewFloorDefault from the artifact, so a stale or seed
+      // artifact could quietly undo a founder ruling. This field exists so series.json
+      // records the rule it was built under; tools/test-series-reference.js asserts the
+      // two cannot drift apart. (Contrast referenceWindow.sinceYear, which the page DOES
+      // read — that one is a fact about the data, not a display rule.)
+      handicapDisplayLine: 3.5,
       onePerFamily: true,
+      // item 5 (founder ruling `reference-label` (a), 2026-09-12). The front-end reads
+      // sinceYear from HERE rather than from its own clock, so the label can never
+      // name a window the artifact wasn't built from, and reads the same in every
+      // timezone. scope is stated because the pool is tier-scoped as well as dated.
+      referenceWindow: {
+        // NOT from NOW. NOW honours SERIES_NOW (the backtest override) and
+        // fetchRecentSinglesFixtures does not — so under SERIES_NOW=2023-06-01 the label
+        // would read "longest since 2018" over data that still starts 2021. The year
+        // must come from the same clock the QUERY used, or it names a window we did not
+        // search. Not reachable from pipeline.yml, which never sets SERIES_NOW; fixed
+        // here anyway because a label is a claim.
+        sinceYear: new Date().getFullYear() - HISTORY_WINDOW_YEARS,
+        years: HISTORY_WINDOW_YEARS,
+        scope: 'in-tier',
+        note: 'per-streak reference.longest / reference.occurrences are enumerated over this window with the engine\'s own conditionHeld(); a streak whose enumeration does not reproduce the emitted run carries no reference and the card dashes.',
+      },
       relevance: 'match-scoped: surface renders only on the same surface; vs-style only when the upcoming opponent is that archetype; total/handicap are FORMAT-LOCKED to the upcoming match best-of; all / first-set / set-patterns always',
       formatLocked: ['total', 'handicap'],
       formatAgnostic: ['all', 'pattern', 'setpat'],
@@ -1087,6 +1214,10 @@ async function main() {
     playersWithStreak,
     totalStreaks,                    // all emitted (collapsed) cards, any length
     defaultViewCards,                // cards visible on the default board (floor + not-played)
+    // item 5: streaks carrying a reference sub-line vs streaks that will dash it.
+    // refDash > 0 means the enumeration failed its self-check somewhere — worth a look,
+    // never a fabricated number on the card.
+    referenceOk: refOk, referenceDash: refDash,
     byFamily: famCount,
     byDirection: dirCount,
     bySubtype: subCount,
@@ -1120,5 +1251,6 @@ if (require.main === module) {
     conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES,
     upcomingBestOf, tierOf, recordFor, orderedRecords, cutOnGap, isRelevant,
     loadSurfaceMap, loadStyleMap, MAX_GAP_DAYS, MIN_LEN, VIEW_FLOOR_DEFAULT,
+    streakReference, HISTORY_WINDOW_YEARS,
   };
 }

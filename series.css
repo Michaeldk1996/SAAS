@@ -134,6 +134,32 @@
 [data-page="series"] .sr-cardtop .sr-tag-dir { flex: none; margin-top: 2px; }
 [data-page="series"] .sr-run { color: #5b9bff; }
 
+/* 3.1b reference sub-line (item 5, founder 2026-09-12): "Mono, #5b6880, same size as
+   the STARTED / LAST values" — i.e. .sr-cell-v's 14px. margin-top:-6px pulls it out of
+   the card's 12px flex gap to a 6px sit under the title, so it reads as a sub-line of
+   the claim rather than as a fourth block. It is the ONLY element between the title and
+   the player row, so nothing else shifts. The unavailable state is #4b5672, the item's
+   own stated dash colour, and it is a full-width block either way so a dash can never
+   be mistaken for a truncated value.
+
+   IT WRAPS, IT DOES NOT ELIDE — and that is a measured decision, not a default. The
+   first build had `white-space: nowrap; text-overflow: ellipsis`, copying the date
+   strip. Measured at 320-360px: the card is a GRID ITEM, so its automatic minimum is
+   min-content, and a nowrap sub-line pushed the whole card to 370px inside a 288px
+   track — the card broke out of its column and took the page with it. (The deployed
+   build measures 288/328px at the same widths, so this was ours.) The two escapes are
+   `min-width: 0` on the card, which trades the overflow for an ELLIPSIS — a corrupted
+   reference, the exact failure the year-bearing date strip was relaxed to avoid — or
+   letting the line wrap, which costs one line of height on a phone and keeps every
+   digit. Wrapping wins: a reference the reader can't finish reading is worse than a
+   reference on two lines. */
+[data-page="series"] .sr-ref {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 14px; color: #5b6880; margin-top: -6px;
+  white-space: normal; overflow-wrap: break-word;
+}
+[data-page="series"] .sr-ref--none { color: #4b5672; }
+
 /* 3.2 player row — 20px avatar, inline with the name on the same baseline (item 4).
    The wrap carries overflow:hidden for the circular crop, which makes it a scroll
    container — so per CSS Box Alignment its baseline is SYNTHESIZED from the border box,
