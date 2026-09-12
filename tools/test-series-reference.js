@@ -337,16 +337,38 @@ assert.strictEqual(eng.streakReference(mkAll(H, ['2024-01-01', '2024-01-08', '20
 assert.strictEqual(eng.streakReference(mkAll(H, ['2024-03-29']), []), null, 'an empty history yields no reference');
 ok('the self-check refuses a reference it cannot reproduce, rather than guessing');
 
-// The layoff cut (MAX_GAP_DAYS) applies to historical runs, exactly as mkStreak applies
-// it to the current one. This is the behaviour flagged to the founder on ask-gate
-// `ref-gapcut` — locked here as SHIPPED so a change to it is a deliberate act.
+// RULING `ref-gapcut` (a), founder 2026-09-12, gate 1521c810: "the reference must be
+// measured exactly the way the run on the card is". So the layoff cut (MAX_GAP_DAYS)
+// applies to HISTORICAL runs exactly as mkStreak applies it to the current one.
+// Rejected: (b) no cut for the reference, (c) no cut for SURFACE runs only.
 const GAP = eng.MAX_GAP_DAYS;
 const far = new Date(Date.parse('2024-01-15T00:00:00Z') + (GAP + 10) * 86400000).toISOString().slice(0, 10);
 const H3 = [rec('2024-01-01', true), rec('2024-01-08', true), rec('2024-01-15', true), rec(far, true)];
 const r4 = eng.streakReference(mkAll(H3, [far]), H3);
 assert.strictEqual(r4.longest, 3, 'a layoff longer than MAX_GAP_DAYS must split a HISTORICAL run too, got ' + JSON.stringify(r4));
 assert.strictEqual(r4.occurrences, 2, 'both segments reach the current length of 1');
-ok('the historical layoff cut is the engine\'s own MAX_GAP_DAYS, and is locked as shipped');
+ok('ruling ref-gapcut (a): the historical layoff cut is the engine\'s own MAX_GAP_DAYS');
+
+// …and it applies to SURFACE runs too, which is what option (c) would have exempted and
+// the ruling did not. This is the P. Martinez shape exactly: a clay run split by the
+// CLAY-SEASON boundary rather than by an absence — he plays hard courts in between, and
+// those records are outside the condition's domain, so they neither extend nor break it.
+const recS = (date, won, surface) => ({ date, won, surface, bestOf: 3 });
+const mkSurf = (tail) => ({
+  type: 'surface', family: 'surface', subtype: 'clay', direction: 'win',
+  count: tail.length, matches: tail.map((d) => ({ date: d })),
+});
+const H4 = [
+  recS('2024-04-01', true, 'clay'), recS('2024-04-15', true, 'clay'), recS('2024-05-01', true, 'clay'),
+  recS('2024-07-01', true, 'hard'), recS('2024-08-01', false, 'hard'),   // out of domain entirely
+  recS('2025-04-01', true, 'clay'), recS('2025-04-15', true, 'clay'),
+];
+const r5 = eng.streakReference(mkSurf(['2025-04-01', '2025-04-15']), H4);
+assert(r5, 'exempting SURFACE runs from the cut is ruling (c), which was rejected — the ' +
+  'merged run then fails the self-check and the card dashes instead of reading its clay best');
+assert.strictEqual(r5.longest, 3, 'the off-season must split a clay run: longest is 3, not 5 — got ' + JSON.stringify(r5));
+assert.strictEqual(r5.occurrences, 2, 'both clay segments reach the current length of 2');
+ok('ruling ref-gapcut (a): the cut applies to SURFACE runs too — (c) exempted them, and lost');
 
 // ── the artifact's record of the handicap rule cannot drift from the renderer ──
 // series.js owns HANDICAP_DISPLAY_LINE as a literal ON PURPOSE (item 9 was silently
