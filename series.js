@@ -111,7 +111,7 @@
   var ARCH_LABEL = {}; // archetype labels ship already human-readable in the taxonomy
   function streakVerb(dir) { return dir === 'win' ? 'Won' : 'Lost'; }
   function running(n) { return n + ' matches running'; }
-  function boTxt(st) { return st.bestOf ? ('best-of-' + st.bestOf) : ''; }
+  function boTxt(st) { return st.bestOf ? ('best-of-' + esc(String(st.bestOf))) : ''; }
   function bo(st) { return st.bestOf ? (' (' + boTxt(st) + ')') : ''; }
   function runLabel(n) { return n === 1 ? '1 match' : (n + ' in a row'); }
   // Count-free claim. Every branch of the former describe() survives verbatim minus
@@ -186,14 +186,9 @@
     var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return Number(p[2]) + ' ' + MON[Number(p[1]) - 1] + ' ' + p[0];
   }
-  function fmtAge(days) {
-    if (days == null || !isFinite(days)) return null;
-    if (days <= 0) return 'today';
-    if (days === 1) return 'yesterday';
-    if (days < 7) return days + ' days ago';
-    if (days < 60) return Math.round(days / 7) + 'w ago';
-    return Math.round(days / 30) + 'mo ago';
-  }
+  // fmtAge() lived here and rendered the card's "(2w ago)" alongside LAST. The export
+  // gives LAST a bare day+month cell, so the age has no slot and the helper became dead
+  // code — removed rather than left to rot. Recoverable from git if the age comes back.
   function fmtTime(t) {
     var s = String(t || '').trim();
     return /^\d{1,2}:\d{2}/.test(s) ? s.slice(0, 5) : '';
@@ -347,7 +342,7 @@
     var p = c.player, st = c.streak, u = p.upcoming || {};
     var dash = '<span class="sr-dash">—</span>';
     var flag = emojiFlag(p.country);
-    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : dash;
+    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + esc(String(p.rank))) : dash;
 
     // 1 · claim + run length
     var claim = '<div class="sr-claim">' + claimOf(st) +
@@ -391,18 +386,6 @@
           '<span class="sr-cell-v sr-cell-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span></span>' +
       '</div>';
 
-    // 5 · footer: next match (time · vs opponent — the export drops the tour
-    // segment; the tournament is still in the modal's Event column) and History →
-    var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
-    var nextBits = [];
-    if (when) nextBits.push(esc(when));
-    if (u.opponentName) nextBits.push('vs ' + esc(u.opponentName));
-    var foot =
-      '<div class="sr-foot">' +
-        '<span class="sr-next">' + (nextBits.length ? nextBits.join(' · ') : dash) + '</span>' +
-        '<span class="sr-hist">History →</span>' +
-      '</div>';
-
     // Whole card is clickable when it has a match list to show. It opens the matches
     // in an overlay (never an inline expand — that reflowed the board). Keyboard-
     // reachable as a button.
@@ -412,6 +395,24 @@
         ' aria-label="Show the ' + esc(String(st.count)) + ' matches in this run"' +
         ' data-card-idx="' + esc(String(idx)) + '"'
       : '';
+
+    // 5 · footer: next match (time · vs opponent — the export drops the tour
+    // segment; the tournament is still in the modal's Event column) and History →.
+    // The opponent slot dashes when the fixture has no opponent yet, rather than
+    // vanishing — otherwise "opponent unknown" is indistinguishable from "we don't
+    // print the opponent here" (standing rule: missing data is a dash).
+    // "History →" is gated on hasDetail: without a match list the card is not
+    // clickable, not focusable and opens nothing, so advertising it would be a dead
+    // affordance — the same guard the pre-rebuild card applied to its hint row.
+    var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
+    var nextBits = [];
+    if (when) nextBits.push(esc(when));
+    nextBits.push(u.opponentName ? 'vs ' + esc(u.opponentName) : 'vs ' + dash);
+    var foot =
+      '<div class="sr-foot">' +
+        '<span class="sr-next">' + nextBits.join(' · ') + '</span>' +
+        (hasDetail ? '<span class="sr-hist">History →</span>' : '') +
+      '</div>';
 
     return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
       claim + prow + tagRow + strip + foot +
@@ -426,25 +427,33 @@
     'losses against a playing style, on a surface, straight across all competitions, or on the ' +
     'opening set. Every streak carries the pool it was drawn from and the date of its most ' +
     'recent match. A streak that can’t show both isn’t here.';
+  // The title half renders from the FIRST paint, before any data exists. The shell no
+  // longer carries a static <h1>, so gating the whole header behind `_data` would leave
+  // the loading and fetch-failure states as one unlabelled sentence floating in the tab
+  // — the only page in the shell whose document heading depends on a network response.
+  // `view` is null on those paints; the four live stats are simply omitted, never zeroed.
   function headerHtml(view) {
     var dash = '<span class="sr-dash">—</span>';
-    var players = {};
-    view.forEach(function (c) { players[c.player.key || c.player.name] = 1; });
-    var nPlayers = Object.keys(players).length;
-    var longest = view.length ? view.reduce(function (m, c) { return Math.max(m, c.streak.count); }, 0) : null;
-    var upd = fmtUpdated(_data && _data.generatedAt);
-    function stat(k, v, cls) {
-      return '<div class="sr-stat"><span class="sr-stat-k">' + k + '</span>' +
-             '<span class="sr-stat-v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
+    var stats = '';
+    if (view) {
+      var players = {};
+      view.forEach(function (c) { players[c.player.key || c.player.name] = 1; });
+      var longest = view.length ? view.reduce(function (m, c) { return Math.max(m, c.streak.count); }, 0) : null;
+      var upd = fmtUpdated(_data && _data.generatedAt);
+      var stat = function (k, v, cls) {
+        return '<div class="sr-stat"><span class="sr-stat-k">' + k + '</span>' +
+               '<span class="sr-stat-v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
+      };
+      stats = '<div class="sr-stats">' +
+        stat('Streaks', esc(String(view.length))) +
+        stat('Players', esc(String(Object.keys(players).length))) +
+        stat('Longest run', longest != null ? esc(String(longest)) : dash, 'sr-accent') +
+        stat('Updated', upd ? esc(upd) : dash, 'sr-soft') +
+      '</div>';
     }
     return '<div class="sr-head">' +
       '<div><h1 class="sr-h1">Series</h1><p class="sr-subtitle">' + SUBTITLE + '</p></div>' +
-      '<div class="sr-stats">' +
-        stat('Streaks', esc(String(view.length))) +
-        stat('Players', esc(String(nPlayers))) +
-        stat('Longest run', longest != null ? esc(String(longest)) : dash, 'sr-accent') +
-        stat('Updated', upd ? esc(upd) : dash, 'sr-soft') +
-      '</div>' +
+      stats +
     '</div>';
   }
 
@@ -480,7 +489,7 @@
   function render() {
     var root = document.getElementById('seriesGrid');
     if (!root) return;
-    if (!_data) { root.innerHTML = '<p class="sr-empty">Loading streaks…</p>'; return; }
+    if (!_data) { root.innerHTML = headerHtml(null) + '<p class="sr-empty">Loading streaks…</p>'; return; }
     if (!_cards) _cards = flatten(_data);
 
     var view = sortCards(_cards.filter(passesFilters));
@@ -697,7 +706,9 @@
       .catch(function (e) {
         console.warn('[series] load failed:', e.message);
         var root = document.getElementById('seriesGrid');
-        if (root) root.innerHTML = '<p class="sr-empty">Streak data is not available right now. It refreshes with the daily slate — check back shortly.</p>';
+        // Keep the heading here too — a bare sentence with no title reads as a broken
+        // page rather than a temporarily empty one.
+        if (root) root.innerHTML = headerHtml(null) + '<p class="sr-empty">Streak data is not available right now. It refreshes with the daily slate — check back shortly.</p>';
       });
   }
 

@@ -246,28 +246,36 @@ body.sr-ov-open { overflow: hidden; }
   font-size: 14px; color: #8b96b5; cursor: pointer; line-height: 1;
 }
 .sr-ov-close:hover { color: #e7e9ee; }
-.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px 24px; }
+/* scrollbar-gutter keeps the column header aligned with the rows it labels: the header
+   sits OUTSIDE this scroll pane, so on a platform with classic space-taking scrollbars
+   (Windows/Linux) a long run would narrow the rows' content box and not the header's,
+   and the four columns would drift apart. Reserving the gutter always removes that. */
+.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 24px 24px; }
 
-.sr-mhead, .sr-mrow { display: grid; grid-template-columns: 110px minmax(0,1fr) 150px 110px; gap: 0 16px; }
-.sr-mhead { padding: 0 24px 10px; flex: none; }
-.sr-mhead span {
+/* Scoped under .sr-ov — these are generic enough names that a bare global selector
+   would be a collision waiting to happen on another surface. */
+.sr-ov .sr-mhead, .sr-ov .sr-mrow { display: grid; grid-template-columns: 110px minmax(0,1fr) 150px 110px; gap: 0 16px; }
+.sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
+.sr-ov .sr-mhead span {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
 }
-.sr-mhead .sr-mscore { text-align: right; }
-.sr-mrow { align-items: baseline; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07); }
-.sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; white-space: nowrap; }
-.sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; }
-.sr-mopp { font-size: 13px; color: #aab3c5; line-height: 1.45; }
-.sr-mscore { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #e7e9ee; white-space: nowrap; }
+.sr-ov .sr-mhead .sr-mscore { text-align: right; }
+.sr-ov .sr-mrow { align-items: baseline; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; white-space: nowrap; }
+.sr-ov .sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; }
+.sr-ov .sr-mopp { font-size: 13px; color: #aab3c5; line-height: 1.45; }
+.sr-ov .sr-mscore { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #e7e9ee; white-space: nowrap; }
 .sr-ov .sr-dash { color: #4b5672; }
 
 @media (max-width: 640px) {
   [data-page="series"] .sr-wrap { padding: 20px 16px 50px; }
   [data-page="series"] .sr-cards { grid-template-columns: 1fr; }
   .sr-ov-back { padding: 16px; }
-  .sr-mhead, .sr-mrow { grid-template-columns: 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
-  .sr-mhead { padding: 0 16px 10px; }
+  /* must carry the same .sr-ov scope as the base rules above, or these lose on
+     specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies */
+  .sr-ov .sr-mhead, .sr-ov .sr-mrow { grid-template-columns: 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
+  .sr-ov .sr-mhead { padding: 0 16px 10px; }
   .sr-ov-body { padding: 0 16px 16px; }
   .sr-ov-head { padding: 16px 16px 12px; }
 }
