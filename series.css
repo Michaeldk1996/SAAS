@@ -1,152 +1,273 @@
-/* series.css — TEN-168 Series page.
+/* series.css — TEN-168 Series page, presentation rebuilt from the Claude Design
+ * export (TEN-194, founder rulings 2026-09-12).
  *
- * A card grid of current streaks for players scheduled today/tomorrow. Styled to
- * sit alongside the Trading Report: same dark theme tokens (--panel / --border /
- * --accent / --text*), same IBM Plex Mono for numbers, same tier pills. Scoped
- * entirely under [data-page="series"] so it can never leak into another surface.
+ * The export is authoritative for appearance: every colour, size, radius, gap and
+ * grid track below is taken verbatim from `Series.dc.html` / its README, NOT from
+ * the app's theme tokens. That is deliberate — this page is the first surface on
+ * the export's palette, so the literal hex values are the spec, and harmonising
+ * them back toward --panel/--border would silently undo the rebuild.
+ *
+ * The live pipeline stays authoritative for content: every value rendered here
+ * comes from series.json. Nothing from the export's demo data ships.
+ *
+ * Scoped entirely under [data-page="series"] so it can never leak into another
+ * surface (the modal is a body-level layer, so its rules are scoped by .sr-ov*).
  * A separate file (not inline) so JS/CSS-only changes deploy on push via the
- * pipeline allowlist — the trading-report.js gap the founder flagged. */
+ * pipeline allowlist.
+ *
+ * Founder rulings encoded here (TEN-194 gate c9971442, 2026-09-12):
+ *   q1 → pool lives in the MODAL only; it is not a card cell.
+ *   q2 → "follow the export": no green/red anywhere. Direction is a WORD in the
+ *        tag row. The 3px valence bar, the coloured count and the swatch legend
+ *        are gone; do not reintroduce a sign colour on this page.
+ *   q3 → tier, opponent archetype, Grand-Slam marker and best-of badge are OFF
+ *        the card (best-of stays inside the claim text, where the export keeps it).
+ *   q4 → page frame widened to the export's max-width:1360px; padding:30px 40px 70px,
+ *        grid track minmax(400px,1fr).
+ *   q7 → the already-played Continued/Broken/Not-evaluable chip is kept, as a chip
+ *        in the tag row, and the aggregate bar is kept.
+ */
 
-[data-page="series"] .sr-wrap { max-width: 1280px; margin: 0 auto; padding: 24px 24px 60px; }
-[data-page="series"] .sr-titlerow { margin-bottom: 16px; }
-[data-page="series"] .sr-h1 { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px; color: var(--text,#e7e9ee); }
-[data-page="series"] .sr-subtitle { margin: 0; color: var(--text-dim,#8F98A6); font-size: 13.5px; font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); max-width: 720px; }
+/* ── page frame (export §"Page frame") ── */
+/* Export page background is #06070a, two hex off the app's --bg (#08090C). Scoped to
+   the tab so it reverts the moment another page is shown — the body is never touched. */
+[data-page="series"] { background: #06070a; min-height: 100vh; }
+[data-page="series"] .sr-wrap {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 30px 40px 70px;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+  color: #e7e9ee;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+/* The shell's static title block is superseded by the JS-rendered header card,
+   which carries the live STREAKS / PLAYERS / LONGEST RUN / UPDATED figures. */
+[data-page="series"] .sr-titlerow { display: none; }
+[data-page="series"] #seriesGrid { display: flex; flex-direction: column; gap: 22px; }
 
-/* ── filter bar ── */
-[data-page="series"] .sr-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 4px 0 12px; }
-[data-page="series"] .sr-flabel { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint,#565F6A); font-family: var(--mx-font-ui,sans-serif); margin-left: 4px; }
-[data-page="series"] .sr-flabel:first-child { margin-left: 0; }
-[data-page="series"] .sr-seg { display: inline-flex; background: var(--panel-2,#181C25); border: 1px solid var(--border,#262B35); border-radius: 8px; overflow: hidden; }
-[data-page="series"] .sr-segbtn { background: transparent; border: 0; color: var(--text-dim,#8F98A6); font-size: 12px; font-weight: 600; padding: 6px 11px; cursor: pointer; font-family: var(--mx-font-ui,sans-serif); }
-[data-page="series"] .sr-segbtn:hover { color: var(--text,#e7e9ee); }
-[data-page="series"] .sr-segbtn.active { background: var(--accent,#3E7BFA); color: #fff; }
-[data-page="series"] .sr-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); cursor: pointer; margin-left: 4px; }
-[data-page="series"] .sr-toggle input { accent-color: var(--accent,#3E7BFA); }
+/* ── 1 · header card ── */
+[data-page="series"] .sr-head {
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09); border-radius: 12px;
+  padding: 22px 26px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap;
+}
+[data-page="series"] .sr-h1 { font-size: 29px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; margin: 0; color: #e7e9ee; }
+[data-page="series"] .sr-subtitle { font-size: 13.5px; color: #5b6880; margin: 8px 0 0; max-width: 640px; line-height: 1.55; }
+[data-page="series"] .sr-stats { display: flex; gap: 34px; flex-wrap: wrap; }
+[data-page="series"] .sr-stat { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+[data-page="series"] .sr-stat-k {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #4b5672;
+}
+[data-page="series"] .sr-stat-v { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 17px; font-weight: 700; color: #e7e9ee; }
+[data-page="series"] .sr-stat-v.sr-accent { color: #5b9bff; }
+[data-page="series"] .sr-stat-v.sr-soft { color: #8b96b5; }
 
-/* ── border-colour legend (fix #2) ── */
-[data-page="series"] .sr-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 0 0 12px; font-size: 11.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); }
-[data-page="series"] .sr-lgi { display: inline-flex; align-items: center; gap: 7px; }
-[data-page="series"] .sr-lgsw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
-[data-page="series"] .sr-lgsw-win { background: #3dd68c; }
-[data-page="series"] .sr-lgsw-loss { background: #e28b4a; }
-[data-page="series"] .sr-lgsw-neutral { background: #6f86c9; }
+/* ── 2 · filters ── */
+[data-page="series"] .sr-filters { display: flex; flex-direction: column; gap: 12px; }
+[data-page="series"] .sr-frow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+[data-page="series"] .sr-fgroup { display: inline-flex; align-items: center; gap: 10px; }
+[data-page="series"] .sr-flabel {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
+}
+[data-page="series"] .sr-seg {
+  display: inline-flex; gap: 3px;
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09); border-radius: 9px; padding: 2px;
+}
+[data-page="series"] .sr-segbtn {
+  padding: 7px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
+  color: #5b6880; background: transparent; border: 0; cursor: pointer;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+[data-page="series"] .sr-segbtn:hover { color: #aab3c5; }
+[data-page="series"] .sr-segbtn.active { background: rgba(91,155,255,0.22); color: #fff; font-weight: 700; }
+[data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid #5b9bff; outline-offset: 1px; }
 
-/* ── already-played continued/broken summary (fix #3) ── */
-[data-page="series"] .sr-outsum { font-size: 12.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); background: var(--panel-2,#181C25); border: 1px solid var(--border,#262B35); border-radius: 8px; padding: 9px 12px; margin: 0 0 14px; }
-[data-page="series"] .sr-outsum-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint,#565F6A); margin-right: 6px; }
-[data-page="series"] .sr-outsum b { color: var(--text,#e7e9ee); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); }
+/* checkbox — a real <input>, visually replaced by the export's 15px box */
+[data-page="series"] .sr-toggle {
+  display: inline-flex; align-items: center; gap: 9px; font-size: 12.5px; color: #8b96b5; cursor: pointer;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); position: relative;
+}
+[data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 15px; height: 15px; margin: 0; cursor: pointer; }
+[data-page="series"] .sr-box {
+  width: 15px; height: 15px; border-radius: 4px; flex: none;
+  border: 1px solid rgba(255,255,255,0.14); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #e7e9ee; line-height: 1;
+  transition: background .14s ease, border-color .14s ease;
+}
+[data-page="series"] .sr-toggle input:checked + .sr-box { border-color: rgba(91,155,255,0.45); background: rgba(91,155,255,0.22); }
+[data-page="series"] .sr-toggle input:checked + .sr-box::after { content: '\2713'; }
+[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid #5b9bff; outline-offset: 2px; }
 
-[data-page="series"] .sr-stamp { font-size: 11.5px; color: var(--text-faint,#565F6A); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); margin: 0 0 16px; }
+/* ── already-played continued/broken aggregate (kept: ruling q7) ── */
+[data-page="series"] .sr-outsum {
+  font-size: 12.5px; color: #8b96b5;
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09); border-radius: 9px;
+  padding: 10px 14px;
+}
+[data-page="series"] .sr-outsum-k {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880; margin-right: 8px;
+}
+[data-page="series"] .sr-outsum b { color: #e7e9ee; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-weight: 700; }
 
-/* ── card grid ── */
-[data-page="series"] .sr-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-[data-page="series"] .sr-card { display: flex; gap: 14px; background: var(--panel,#12151C); border: 1px solid var(--border,#262B35); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
-[data-page="series"] .sr-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
-[data-page="series"] .sr-card.sr-win::before { background: #3dd68c; }
-[data-page="series"] .sr-card.sr-loss::before { background: #e28b4a; }
-/* NEUTRAL (fix #2): betting-line / volatility runs have no good/bad direction, so the
-   border is an informational slate-blue — never green/orange (which would misread as a
-   verdict on a metric that has none). */
-[data-page="series"] .sr-card.sr-neutral::before { background: #6f86c9; }
+/* ── 3 · card grid ── */
+[data-page="series"] .sr-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  align-items: start; gap: 14px;
+}
+[data-page="series"] .sr-card {
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09); border-radius: 14px;
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; }
+[data-page="series"] .sr-card.sr-has-detail:hover { border-color: rgba(91,155,255,0.22); }
+[data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: #6aaeff; }
+[data-page="series"] .sr-card:focus-visible { outline: 2px solid #5b9bff; outline-offset: 2px; }
 
-/* count column */
-[data-page="series"] .sr-count { flex: none; width: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-[data-page="series"] .sr-num { font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); font-size: 34px; font-weight: 700; line-height: 1; color: var(--text,#e7e9ee); }
-[data-page="series"] .sr-win .sr-num { color: #3dd68c; }
-[data-page="series"] .sr-loss .sr-num { color: #e28b4a; }
-[data-page="series"] .sr-neutral .sr-num { color: #9fb2e8; }
-[data-page="series"] .sr-dir { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint,#565F6A); margin-top: 4px; }
+/* 3.1 claim + run length */
+[data-page="series"] .sr-claim { font-size: 18px; font-weight: 800; line-height: 1.3; text-wrap: pretty; color: #e7e9ee; }
+[data-page="series"] .sr-run { color: #5b9bff; }
 
-/* body */
-[data-page="series"] .sr-body { flex: 1; min-width: 0; }
-[data-page="series"] .sr-phead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-[data-page="series"] .sr-av-wrap { position: relative; width: 38px; height: 38px; flex: none; border-radius: 50%; overflow: hidden; background: var(--panel-2,#181C25); display: inline-flex; align-items: center; justify-content: center; }
+/* 3.2 player row */
+[data-page="series"] .sr-prow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-page="series"] .sr-av-wrap {
+  position: relative; width: 24px; height: 24px; flex: none; border-radius: 50%; overflow: hidden;
+  background: #0f1420; border: 1px solid rgba(255,255,255,0.09);
+  display: inline-flex; align-items: center; justify-content: center;
+}
 [data-page="series"] .sr-av { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-[data-page="series"] .sr-mono { font-family: var(--mx-font-ui,sans-serif); font-size: 13px; font-weight: 700; color: var(--text-dim,#8F98A6); }
-[data-page="series"] .sr-pinfo { min-width: 0; }
-[data-page="series"] .sr-pname { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 14.5px; font-weight: 700; color: var(--text,#e7e9ee); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="series"] .sr-mono { font-size: 9px; font-weight: 700; color: #5b6880; letter-spacing: 0.02em; }
+[data-page="series"] .sr-pid { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 12.5px; color: #8b96b5; }
+[data-page="series"] .sr-pname { font-weight: 600; color: #e7e9ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 [data-page="series"] .sr-flag { margin-right: 5px; }
-[data-page="series"] .sr-prank { font-size: 11.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); }
+[data-page="series"] .sr-prank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: #5b6880; flex: none; }
 
-[data-page="series"] .sr-desc { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 14px; font-weight: 600; color: var(--text,#e7e9ee); margin: 8px 0 10px; line-height: 1.35; }
+/* 3.3 tag row — carries the DIRECTION WORD (ruling q2) and, in the already-played
+   view, the Continued / Broken / Not-evaluable chip (ruling q7). No sign colour:
+   the word does the work, per the export's "no green or red on this page". */
+[data-page="series"] .sr-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+[data-page="series"] .sr-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.01em; padding: 3px 9px; border-radius: 99px;
+  border: 1px solid rgba(255,255,255,0.09); background: transparent; color: #8b96b5;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+}
+[data-page="series"] .sr-tag-dir { color: #aab3c5; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+[data-page="series"] .sr-tag-oc { color: #aab3c5; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+[data-page="series"] .sr-tag-oc-na { color: #5b6880; background: transparent; border-color: rgba(255,255,255,0.09); }
+[data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: #4b5672; }
 
-[data-page="series"] .sr-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-[data-page="series"] .sr-badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; padding: 3px 8px; border-radius: 99px; background: var(--panel-2,#181C25); border: 1px solid var(--border,#262B35); color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,sans-serif); }
-[data-page="series"] .sr-badge-type { background: rgba(62,123,250,0.12); border-color: rgba(62,123,250,0.35); color: #7ea6ff; }
-[data-page="series"] .sr-badge-tier { color: var(--text-faint,#565F6A); }
-
-[data-page="series"] .sr-facts { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 9px 0; border-top: 1px solid rgba(38,43,53,0.6); border-bottom: 1px solid rgba(38,43,53,0.6); margin-bottom: 10px; }
-[data-page="series"] .sr-fact { display: flex; flex-direction: column; gap: 1px; }
-[data-page="series"] .sr-fact-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint,#565F6A); font-family: var(--mx-font-ui,sans-serif); }
-[data-page="series"] .sr-fact-v { font-size: 12.5px; color: var(--text,#e7e9ee); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); }
-[data-page="series"] .sr-ago { color: var(--text-dim,#8F98A6); }
-[data-page="series"] .sr-slam { color: #c9a24a; font-family: var(--mx-font-ui,sans-serif); font-size: 11px; }
-
-[data-page="series"] .sr-next { font-size: 12.5px; color: var(--text-dim,#8F98A6); font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
-[data-page="series"] .sr-next-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint,#565F6A); }
-[data-page="series"] .sr-next-v b { color: var(--text,#e7e9ee); }
-[data-page="series"] .sr-opparch { color: var(--text-faint,#565F6A); font-style: italic; }
-[data-page="series"] .sr-played { font-size: 10.5px; font-weight: 700; color: #e28b4a; background: rgba(226,139,74,0.1); border-radius: 99px; padding: 2px 8px; }
-/* CONTINUED / BROKEN / not-evaluable chip (fix #3). Here green=continued / orange=broken
-   is a genuine held/failed reading of the streak's OWN condition — a real binary — so
-   the colour is meaningful (unlike the neutral betting-line borders in fix #2). */
-[data-page="series"] .sr-oc { font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; border-radius: 99px; padding: 2px 9px; }
-[data-page="series"] .sr-oc-cont { color: #3dd68c; background: rgba(61,214,140,0.12); }
-[data-page="series"] .sr-oc-broke { color: #e28b4a; background: rgba(226,139,74,0.12); }
-[data-page="series"] .sr-oc-na { color: var(--text-faint,#565F6A); background: var(--panel-2,#181C25); }
-[data-page="series"] .sr-played-res { font-size: 10.5px; color: var(--text-faint,#565F6A); font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); margin-left: 6px; }
-[data-page="series"] .sr-dash { color: var(--text-faint,#565F6A); }
-
-[data-page="series"] .sr-empty { color: var(--text-dim,#8F98A6); font-size: 13.5px; font-family: var(--mx-font-ui,sans-serif); padding: 40px 0; max-width: 640px; line-height: 1.5; }
-
-/* ── clickable streak detail (the matches behind the run) ── */
-/* whole-card click affordance (opens the matches overlay) */
-[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; transition: border-color 0.12s ease, transform 0.06s ease; }
-[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--text-faint,#565F6A); }
-[data-page="series"] .sr-card.sr-has-detail:active { transform: translateY(1px); }
-[data-page="series"] .sr-card.sr-has-detail:focus-visible { outline: 2px solid var(--accent,#5b8cff); outline-offset: 2px; }
-[data-page="series"] .sr-cardhint { margin-top: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-faint,#565F6A); font-family: var(--mx-font-ui,sans-serif); display: inline-flex; align-items: center; gap: 6px; }
-[data-page="series"] .sr-card.sr-has-detail:hover .sr-cardhint { color: var(--text-dim,#8F98A6); }
-[data-page="series"] .sr-chev { font-size: 11px; }
-
-/* ── matches overlay (dialog on top of the board, no reflow underneath) ─────── */
-.sr-ov-back { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(6,8,12,0.66); backdrop-filter: blur(2px); }
-.sr-ov-back[hidden] { display: none; }
-body.sr-ov-open { overflow: hidden; }
-.sr-ov { position: relative; width: min(560px, 100%); max-height: min(80vh, 720px); overflow-y: auto; background: var(--panel,#12151C); border: 1px solid var(--border,#262B35); border-radius: 14px; padding: 22px 22px 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
-.sr-ov:focus { outline: none; }
-.sr-ov-close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 8px; background: transparent; border: 1px solid var(--border,#262B35); color: var(--text-dim,#8F98A6); font-size: 13px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
-.sr-ov-close:hover { color: var(--text,#e7e9ee); border-color: var(--text-faint,#565F6A); }
-.sr-ov-head { margin: 0 34px 14px 0; }
-.sr-ov-title { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 17px; font-weight: 800; letter-spacing: -0.01em; color: var(--text,#e7e9ee); display: flex; align-items: center; gap: 7px; }
-.sr-ov-rank { font-size: 13px; font-weight: 700; color: var(--text-dim,#8F98A6); }
-.sr-ov-sub { margin-top: 4px; font-family: var(--mx-font-ui,sans-serif); font-size: 12.5px; color: var(--text-dim,#8F98A6); }
-.sr-ov-pool { color: var(--text-faint,#565F6A); }
-.sr-ov-body { margin-top: 4px; }
-
-/* four-column match table: Date · Event · Opponent · Score — nothing truncated (fix #1) */
-.sr-mtable { display: flex; flex-direction: column; gap: 1px; }
-.sr-mrow { display: grid; grid-template-columns: 84px 1.3fr 1fr auto; align-items: baseline; gap: 12px; font-size: 12.5px; font-family: var(--mx-font-mono,'IBM Plex Mono',monospace); color: var(--text-dim,#8F98A6); padding: 6px 0; border-bottom: 1px solid rgba(38,43,53,0.4); }
-.sr-mrow:last-child { border-bottom: 0; }
-.sr-mrow.sr-mhead { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint,#565F6A); font-family: var(--mx-font-ui,sans-serif); border-bottom: 1px solid rgba(38,43,53,0.6); padding-bottom: 6px; }
-.sr-mtour { color: var(--text,#e7e9ee); white-space: normal; word-break: break-word; }
-.sr-mopp { color: var(--text,#e7e9ee); white-space: normal; word-break: break-word; }
-.sr-mscore { color: var(--text,#e7e9ee); text-align: right; white-space: nowrap; letter-spacing: 0.01em; }
-.sr-ov .sr-dash { color: var(--text-faint,#565F6A); }
-
-@media (max-width: 560px) {
-  .sr-ov { padding: 18px 16px 14px; max-height: 86vh; }
-  .sr-mrow { grid-template-columns: 58px 1.1fr 1fr auto; gap: 8px; font-size: 11.5px; }
+/* 3.4 three-column strip: STARTED · LAST · TYPE (pool is modal-only, ruling q1) */
+[data-page="series"] .sr-strip {
+  display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px;
+  padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
+}
+[data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-page="series"] .sr-cell-k {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #4b5672;
+}
+[data-page="series"] .sr-cell-v {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 14px; color: #e7e9ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+[data-page="series"] .sr-cell-v.sr-cell-type {
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); font-size: 13px;
 }
 
-/* footer honesty note */
-[data-page="series"] .sr-footer { margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--border,#262B35); max-width: 760px; }
-[data-page="series"] .sr-footer h3 { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: var(--text,#e7e9ee); margin: 0 0 10px; }
-[data-page="series"] .sr-footer p { font-family: var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size: 13px; line-height: 1.6; color: var(--text-dim,#8F98A6); margin: 0 0 11px; }
-[data-page="series"] .sr-footer b { color: var(--text,#e7e9ee); font-weight: 700; }
+/* 3.5 footer row: next match · History → */
+[data-page="series"] .sr-foot {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 11.5px; color: #5b6880;
+}
+[data-page="series"] .sr-next { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-page="series"] .sr-hist { flex: none; font-weight: 600; color: #5b9bff; transition: color .14s ease; }
 
-@media (max-width: 560px) {
+[data-page="series"] .sr-dash { color: #4b5672; }
+
+/* ── empty states ── */
+[data-page="series"] .sr-empty {
+  color: #8b96b5; font-size: 13.5px; line-height: 1.6; max-width: 640px; padding: 30px 0; margin: 0;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+}
+
+/* ── 4 · footnote block ── */
+[data-page="series"] .sr-footnote {
+  display: flex; flex-direction: column; gap: 10px;
+  padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08);
+}
+[data-page="series"] .sr-fn-dir { font-size: 12.5px; color: #5b6880; line-height: 1.6; max-width: 1130px; margin: 0; }
+[data-page="series"] .sr-fn-dir b { color: #aab3c5; font-weight: inherit; }
+[data-page="series"] .sr-stamp {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 11.5px; color: #4b5672; line-height: 1.7; margin: 0;
+}
+
+/* footer honesty note (founder-approved 2026-09-07, retained) */
+[data-page="series"] .sr-footer { max-width: 1130px; }
+[data-page="series"] .sr-footer h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: #e7e9ee; margin: 0 0 10px; }
+[data-page="series"] .sr-footer p { font-size: 12.5px; line-height: 1.6; color: #5b6880; margin: 0 0 11px; }
+[data-page="series"] .sr-footer b { color: #aab3c5; font-weight: 700; }
+
+/* ── 5 · history modal (export §5) ── */
+.sr-ov-back {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(4,5,8,0.72); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 32px;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); color: #e7e9ee;
+}
+.sr-ov-back[hidden] { display: none; }
+body.sr-ov-open { overflow: hidden; }
+.sr-ov {
+  width: 100%; max-width: 880px; max-height: 86vh;
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09); border-radius: 20px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sr-ov:focus { outline: none; }
+.sr-ov-head { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px 16px; flex: none; }
+.sr-ov-headl { min-width: 0; flex: 1; }
+.sr-ov-title { display: flex; align-items: baseline; gap: 9px; min-width: 0; font-size: 17px; font-weight: 700; color: #e7e9ee; }
+.sr-ov-rank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 13px; font-weight: 400; color: #5b6880; }
+.sr-ov-sub { display: block; font-size: 13px; color: #8b96b5; margin-top: 7px; line-height: 1.5; }
+.sr-ov-sep { color: #4b5672; }
+.sr-ov-pool { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: #5b6880; }
+.sr-ov-close {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #8b96b5; cursor: pointer; line-height: 1;
+}
+.sr-ov-close:hover { color: #e7e9ee; }
+.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px 24px; }
+
+.sr-mhead, .sr-mrow { display: grid; grid-template-columns: 110px minmax(0,1fr) 150px 110px; gap: 0 16px; }
+.sr-mhead { padding: 0 24px 10px; flex: none; }
+.sr-mhead span {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
+}
+.sr-mhead .sr-mscore { text-align: right; }
+.sr-mrow { align-items: baseline; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+.sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; white-space: nowrap; }
+.sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; }
+.sr-mopp { font-size: 13px; color: #aab3c5; line-height: 1.45; }
+.sr-mscore { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #e7e9ee; white-space: nowrap; }
+.sr-ov .sr-dash { color: #4b5672; }
+
+@media (max-width: 640px) {
+  [data-page="series"] .sr-wrap { padding: 20px 16px 50px; }
   [data-page="series"] .sr-cards { grid-template-columns: 1fr; }
-  [data-page="series"] .sr-count { width: 48px; }
-  [data-page="series"] .sr-num { font-size: 28px; }
+  .sr-ov-back { padding: 16px; }
+  .sr-mhead, .sr-mrow { grid-template-columns: 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
+  .sr-mhead { padding: 0 16px 10px; }
+  .sr-ov-body { padding: 0 16px 16px; }
+  .sr-ov-head { padding: 16px 16px 12px; }
 }

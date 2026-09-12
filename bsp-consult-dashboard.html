@@ -3106,10 +3106,12 @@
      gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
 <div class="tabpage" data-page="series">
   <div class="sr-wrap">
-    <div class="sr-titlerow">
-      <h1 class="sr-h1">Series</h1>
-      <p class="sr-subtitle">Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions, or on the opening set. Every streak carries the pool it was drawn from and the date of its most recent match. A streak that can’t show both isn’t here.</p>
-    </div>
+    <!-- TEN-194: the title + subtitle now live INSIDE the header card that series.js
+         renders, because that card also carries the live STREAKS / PLAYERS / LONGEST
+         RUN / UPDATED figures, and those recount on every filter change. A second
+         static copy here would be markup asserting something the page doesn't.
+         series.css still hides .sr-titlerow, so a cached older shell served against
+         the new CSS cannot double the heading. -->
     <div id="seriesGrid"></div>
   </div>
 </div>
