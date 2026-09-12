@@ -121,19 +121,27 @@
 [data-page="series"] .sr-card:focus-visible { outline: 2px solid #5b9bff; outline-offset: 2px; }
 
 /* 3.1 title row — claim + run length left, direction word right (item 7).
+   NAMED .sr-cardtop, deliberately NOT .sr-titlerow: that class is already owned by the
+   shell's static heading block, which line 47 hides on purpose so a cached older shell
+   cannot double the page heading. A `display:flex` rule on the same class at the same
+   specificity, later in this file, would have silently un-hidden it — caught by the
+   clean-context review, measured going 0px -> 80px.
    align-items:flex-start so a two-line claim keeps the tag pinned to the FIRST line,
    opposite the title, rather than floating to the block's centre. No height change:
    the tag is 11px/3px-padded inside an 18px/1.3 line box. */
-[data-page="series"] .sr-titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+[data-page="series"] .sr-cardtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 [data-page="series"] .sr-claim { font-size: 18px; font-weight: 800; line-height: 1.3; text-wrap: pretty; color: #e7e9ee; min-width: 0; }
-[data-page="series"] .sr-titlerow .sr-tag-dir { flex: none; margin-top: 2px; }
+[data-page="series"] .sr-cardtop .sr-tag-dir { flex: none; margin-top: 2px; }
 [data-page="series"] .sr-run { color: #5b9bff; }
 
 /* 3.2 player row — 20px avatar, inline with the name on the same baseline (item 4).
-   The wrap is an inline-flex box whose only in-flow child is the monogram span, so it
-   exposes a real text baseline to the flex line and sits ON the name's baseline rather
-   than being centred beside it as a 24px element of its own. The <img> is absolutely
-   positioned over the monogram and so does not disturb that baseline. */
+   The wrap carries overflow:hidden for the circular crop, which makes it a scroll
+   container — so per CSS Box Alignment its baseline is SYNTHESIZED from the border box,
+   not taken from the monogram inside it. (An earlier comment here claimed the opposite;
+   the clean-context review was right.) That synthesized baseline lands the 20px circle
+   flush with the name's line box — measured avatar-top == name-top to 0.1px in Chrome.
+   The probe measures the PAINTED geometry rather than trusting the mechanism, so an
+   engine that synthesizes differently fails assertion D5 instead of shipping crooked. */
 [data-page="series"] .sr-prow { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
 [data-page="series"] .sr-av-wrap {
   position: relative; width: 20px; height: 20px; flex: none; border-radius: 50%; overflow: hidden;

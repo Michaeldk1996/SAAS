@@ -315,8 +315,9 @@
     // Item 9 (founder 2026-09-12): the default min-length moves 5+ → 6+. "A five-match
     // win run is unremarkable and fills the page with cards that don't earn one." The
     // 3+/4+/5+ buttons stay, so nothing becomes unreachable — only the default view
-    // tightens. Overwritten from the data's rules.viewFloorDefault on load, which
-    // build-series.js now also carries as 6 (one source of truth, never from memory).
+    // tightens. THIS literal is the default; load() no longer adopts the artifact's
+    // rules.viewFloorDefault (see the note there — a failed build serves a seed carrying
+    // 5 and would silently revert the ruling). build-series.js carries the same 6.
     minLen: 6,
     sort: 'longest',      // longest | soonest
   };
@@ -337,21 +338,33 @@
   // build-series.js is untouched, every suppressed streak stays in series.json, and the
   // run is still reachable from the surviving card's History modal and the player page.
   //
-  // The founder also stated the surface consequence — "a surface streak earns a card
-  // only when it is LONGER than that player's all-comps run". On today's board the two
-  // formulations agree everywhere except one card, and the subset rule is the one that
-  // keeps it: Shelton's `Won vs Big Server + Complete Baseliner 4` starts 12 Aug, a
-  // month before his all-comps 6 begins, so its matches are NOT a subset — it survives.
-  // A longer-than-all-comps rule would have deleted it, and item 6 explicitly keeps that
-  // card's title. So the subset rule is implemented and the surface sentence falls out
-  // of it. Reported, not resolved silently.
+  // The founder stated a SECOND rule alongside the subset one — "a surface streak earns
+  // a card only when it is LONGER than that player's all-comps run" — and it is NOT
+  // implemented here. Only the subset rule is. The two are not equivalent, and the
+  // difference is a live founder question, reported rather than resolved:
+  //   · Subset keeps Shelton's `Won vs Big Server + Complete Baseliner 4`. It starts
+  //     12 Aug, a month before his all-comps 6 begins, so it is not a subset. The
+  //     longer-than-all-comps rule would delete it — and item 6 explicitly keeps that
+  //     card's title. (That sentence was written about SURFACE, not vs-style, so reading
+  //     it across to the style card is a stretch either way.)
+  //   · The reverse gap is real too: two DISJOINT runs, e.g. an all-comps losing run of 4
+  //     and a shorter clay losing run of 3 that ended earlier, are not in a subset
+  //     relation, so the shorter surface card survives here where the founder's sentence
+  //     would drop it. The clean-context review found exactly that shape (P. Brunclik) in
+  //     the committed seed artifact — 0 occurrences on today's live board, which is why
+  //     the earlier version of this comment wrongly said the two rules "agree everywhere
+  //     except one card". They agree on today's board; they are not the same rule.
+  // Implemented: subset only. Awaiting the founder's ruling on the second sentence.
   var OUTCOME_FAMILY = { all: 1, surface: 1, style: 1 };
   // Breadth, for the tie-break when two runs cover the IDENTICAL match set: the broader
   // claim survives. all-comps > surface > vs-style.
   var OUTCOME_BREADTH = { all: 3, surface: 2, style: 1 };
   // A run member is identified by (date, opponent). series.json's matches[] carries no
-  // eventKey, and a player cannot play two opponents on one date in one tier — the live
-  // artifact confirms it: 0 collisions across all 117 streaks / 1435 members.
+  // eventKey, and a player cannot play two opponents on one date in one tier. Measured on
+  // the live artifact of 2026-09-12: 0 collisions across 117 streaks / 472 run members.
+  // (An earlier draft of this comment said 1435 — that figure is the date count from the
+  // unrelated comment further down this file, measured on a different snapshot. Caught by
+  // the clean-context review; two numbers in one sentence cannot come from one artifact.)
   function memberKey(m) { return String(m && m.date) + '|' + String(m && m.opponent == null ? '' : m.opponent); }
   function memberSet(st) {
     var s = {};
@@ -521,7 +534,7 @@
     // opposite it (item 7, founder 2026-09-12). It previously sat under the player name,
     // in the slot that reads as player metadata; direction is a property of the RUN, so
     // it now sits on the run's own row. Still a word, never a colour (ruling q2).
-    var claim = '<div class="sr-titlerow">' +
+    var claim = '<div class="sr-cardtop">' +
         '<div class="sr-claim">' + claimOf(st) +
           ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>' +
         '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>' +
@@ -652,7 +665,8 @@
     '</div>';
   }
 
-  // ─── filter bar (export §2 — two rows, labels inline, checkbox on row 2) ───────
+  // ─── filter bar (export §2 — two segmented rows, labels inline; item 8 removed the
+  //     checkbox that used to sit on row 2) ────────────────────────────────────────
   function seg(name, opts, cur) {
     return '<div class="sr-seg" data-seg="' + name + '">' + opts.map(function (o) {
       return '<button type="button" class="sr-segbtn' + (o[0] === cur ? ' active' : '') + '"' +
@@ -711,7 +725,7 @@
 
     // Export order: header card → filter rows → card grid → footnote block. The
     // already-played aggregate sits between the filters and the grid, where it reads
-    // as a summary OF the view the checkbox just opened (it renders only then).
+    // as a summary OF the view DAY=Played just opened (it renders only then).
     root.innerHTML = headerHtml(view) + filterBarHtml() + outcomesSummaryHtml(view) +
                      body + footnoteHtml(stamp) + footerHtml();
     wireFilters(root);
@@ -902,8 +916,18 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (j) {
         _data = j; _cards = null;
-        // Adopt the engine's view floor as the default button (never from memory).
-        if (j && j.rules && j.rules.viewFloorDefault != null) _filters.minLen = j.rules.viewFloorDefault;
+        // The default min-length used to be ADOPTED from j.rules.viewFloorDefault here.
+        // That line is gone, and its removal is the whole of item 9 actually landing.
+        // The clean-context review measured the consequence: build-series.js now emits 6,
+        // but the artifact a reader is served is whatever the last successful pipeline run
+        // wrote — and pipeline.yml runs the Series build with `continue-on-error` + `|| true`,
+        // so ANY failed build falls back to the committed series.json seed, which carries
+        // viewFloorDefault: 5. Adopting from the artifact therefore silently reverts the
+        // founder's 6+ default to 5+ on every failed build, with no signal.
+        // The floor is a VIEW choice — item 9 is explicitly about the page — so the page
+        // owns it. build-series.js keeps VIEW_FLOOR_DEFAULT = 6 for its own reporting
+        // (`defaultViewCards`) and the two are kept in step by hand; the probe asserts the
+        // painted default is 6 against a literal, not against the artifact's own field.
         render();
       })
       .catch(function (e) {

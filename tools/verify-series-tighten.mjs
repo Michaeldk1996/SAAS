@@ -142,7 +142,10 @@ async function main() {
   console.log(`series.json [${DATA_FILE ? 'LOCAL ' + path.basename(DATA_FILE) : 'DEPLOYED'}] ` +
     `generatedAt=${doc.generatedAt} players=${doc.players.length} ` +
     `streaks=${doc.players.reduce((n, p) => n + p.streaks.length, 0)} viewFloorDefault=${doc.rules.viewFloorDefault}`);
-  const MINLEN = doc.rules.viewFloorDefault;
+  // Item 9's default is a LITERAL, asserted as one. Reading it back out of the same
+  // artifact the page read would be self-referential — the clean-context review caught
+  // exactly that: it compared "5+" against 5 and passed while item 9 was undelivered.
+  const MINLEN = 6;
 
   const candJs = fs.readFileSync(path.join(REPO, 'series.js'), 'utf8');
   const candCss = fs.readFileSync(path.join(REPO, 'series.css'), 'utf8');
@@ -261,6 +264,22 @@ async function main() {
     // A player CAN legitimately hold two outcome cards when neither is a subset of the
     // other; report them so the founder sees which survived and why.
     console.log('  multi-outcome players still on the board:', JSON.stringify(dupes));
+    // Assert it, don't just print it: no player may hold two match-outcome cards whose
+    // painted run lengths are equal — that is the exact duplicate item 1 exists to kill.
+    const equalLenDupes = await ev(`(function(){
+      var byP={}, bad=[];
+      Array.from(document.querySelectorAll('[data-page="series"] .sr-card')).forEach(function(e){
+        var t=e.querySelector('.sr-cell-type').textContent.trim();
+        if(['All comps','Surface','Vs style'].indexOf(t)<0) return;
+        var n=e.querySelector('.sr-pname').textContent.trim();
+        (byP[n]=byP[n]||[]).push(Number(e.getAttribute('data-count')));
+      });
+      Object.keys(byP).forEach(function(n){
+        var c=byP[n]; if (c.length !== new Set(c).size) bad.push(n+' -> '+c.join(','));
+      });
+      return bad;
+    })()`);
+    eq('B1b no player paints two equal-length match-outcome cards', equalLenDupes, []);
     const shelton = exp.suppressed.filter((c) => /Shelton/.test(c.p.name || ''));
     ok('B2 Shelton hard-6 suppressed against all-comps-6',
       shelton.some((c) => c.st.type === 'surface' && c.st.count === 6), JSON.stringify(shelton.map((c) => c.st.type)));
@@ -270,7 +289,11 @@ async function main() {
       sheltonKept.some((c) => c.st.type === 'style' && c.st.count === 4),
       JSON.stringify(sheltonKept.map((c) => `${c.st.type}:${c.st.count}`)));
     // The suppressed streak is still in the artifact (reachable), not deleted upstream
-    ok('B4 suppressed streaks remain in series.json',
+    // B4 checks the founder's "must still be reachable" clause: the suppression is
+    // front-end only, so the artifact still carries the run. Front-end code CANNOT change
+    // this, which is the point — it is a standing guard that the pass was not pushed into
+    // build-series.js by a later edit, not a test of this diff.
+    ok('B4 [standing guard] suppressed streaks remain in series.json',
       doc.players.some((p) => /Shelton/.test(p.name || '') && p.streaks.some((s) => s.type === 'surface' && s.count === 6)));
 
     /* ── 3 · item 3 · no flags on cards (modal keeps its own) ─────────────────── */
@@ -307,17 +330,46 @@ async function main() {
     ok('E2 all-comps titles read "Won|Lost N in a row"',
       allComps.length > 0 && allComps.every((r) => /^(Won|Lost) \d+ in a row$/.test(r.claim)),
       JSON.stringify(allComps.slice(0, 3).map((r) => r.claim)));
-    const surf = paintedTitles.filter((r) => r.type === 'Surface');
-    ok('E3 surface titles keep the surface',
-      surf.every((r) => /^(Won|Lost) on (Hard|Clay|Grass) \d+ in a row$/.test(r.claim)),
-      JSON.stringify(surf.slice(0, 3).map((r) => r.claim)));
+    // E3 must not be vacuous. Item 1 suppresses every surface card on some boards, so
+    // .every() over an empty array would pass while proving nothing. Drive the TYPE
+    // filter to Surface at min length 3 and, if the board still has none, say so out
+    // loud and assert the wording against a synthesised claim through the page's own
+    // renderer instead of silently scoring a pass.
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=minLen] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='3+';})[0].click()`);
+    await sleep(250);
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=type] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='Surface';})[0].click()`);
+    await sleep(300);
+    const surf = await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-card .sr-claim'))
+      .map(function(e){return e.textContent.trim();})`);
+    console.log(`  TYPE=Surface at min length 3+: ${surf.length} cards`);
+    if (surf.length) {
+      ok('E3 surface titles keep the surface',
+        surf.every((s) => /^(Won|Lost) on (Hard|Clay|Grass) \d+ in a row$/.test(s)),
+        JSON.stringify(surf.slice(0, 3)));
+    } else {
+      // Not a pass. Item 1 legitimately empties this family on today's data, so the
+      // wording is unobservable in the DOM — recorded as a REPORTED GAP, not an
+      // assertion, and surfaced to the founder rather than counted as verified.
+      fails.push('E3 UNVERIFIABLE TODAY: item 1 suppressed every surface card, so no ' +
+        'painted card can demonstrate that surface titles keep their surface (item 6). ' +
+        'Reported to the founder as a consequence of item 1, not a code defect.');
+    }
+    // restore the default view before the remaining sections measure it
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=type] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='All';})[0].click()`);
+    await sleep(200);
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=minLen] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='6+';})[0].click()`);
+    await sleep(300);
 
     /* ── 6 · item 7 · direction on the title row, right-aligned ───────────────── */
     const dir = await ev(`(function(){
       var cards=Array.from(document.querySelectorAll('[data-page="series"] .sr-card'));
       var inTitle=0, right=0, onTagRow=0, words={};
       cards.forEach(function(e){
-        var t=e.querySelector('.sr-titlerow > .sr-tag-dir');
+        var t=e.querySelector('.sr-cardtop > .sr-tag-dir');
         if(t){ inTitle++; words[t.textContent.trim()]=1;
           var rt=t.getBoundingClientRect(), rc=e.getBoundingClientRect(), rcl=e.querySelector('.sr-claim').getBoundingClientRect();
           if (rc.right - rt.right < 40 && rt.left >= rcl.right - 1) right++;
@@ -356,8 +408,13 @@ async function main() {
     ok('G7 the two rows really are on separate lines', filt.rowTops[1] > filt.rowTops[0], JSON.stringify(filt.rowTops));
 
     /* ── 8 · item 9 · min length defaults to 6+ ───────────────────────────────── */
-    eq('H1 MIN LENGTH default button = the artifact\'s published floor',
-      (filt.minActive || '').trim(), MINLEN + '+');
+    eq('H1 MIN LENGTH default button = 6+ (literal, not read back from the artifact)',
+      (filt.minActive || '').trim(), '6+');
+    // and it must hold even when the served artifact publishes a DIFFERENT floor —
+    // that is the failed-build/stale-seed case the page must not silently revert on.
+    eq('H1b the artifact\'s own viewFloorDefault is ignored',
+      doc.rules.viewFloorDefault === 6 ? 'n/a-same' : (filt.minActive || '').trim(),
+      doc.rules.viewFloorDefault === 6 ? 'n/a-same' : '6+');
     ok('H2 3+ and 4+ still available', filt.minOpts.includes('3+') && filt.minOpts.includes('4+'), JSON.stringify(filt.minOpts));
     eq('H3 no painted card is shorter than the floor (vs-style exempt)',
       paintedTitles.filter((r) => r.count < MINLEN && r.type !== 'Vs style').length, 0);
@@ -375,9 +432,31 @@ async function main() {
     })()`);
     const expPlayed = recomputeExpected(doc, { minLen: MINLEN, day: 'played' });
     eq('I1 DAY=Played card count = independent recompute', playedView.n, expPlayed.cards.length);
-    ok('I2 every played card carries a Continued/Broken/Played chip', playedView.n === 0 || playedView.allHaveOutcomeChip);
+    // The played players' runs are short, so at the 6+ default this view is empty and
+    // I2/I3 would short-circuit to a free pass (clean-context review finding). Drop the
+    // floor to 3+ so the chips and the aggregate are actually exercised on real cards.
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=minLen] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='3+';})[0].click()`);
+    await sleep(350);
+    const played3 = await ev(`(function(){
+      var cards=Array.from(document.querySelectorAll('[data-page="series"] .sr-card'));
+      return { n: cards.length,
+               allHaveOutcomeChip: cards.length>0 && cards.every(function(e){return !!e.querySelector('.sr-tags .sr-tag-oc, .sr-tags .sr-tag-oc-na');}),
+               noDirTagOnTagRow: cards.every(function(e){return !e.querySelector('.sr-tags .sr-tag-dir');}),
+               summary: !!document.querySelector('[data-page="series"] .sr-outsum'),
+               summaryText: (document.querySelector('[data-page="series"] .sr-outsum')||{}).textContent };
+    })()`);
+    const expPlayed3 = recomputeExpected(doc, { minLen: 3, day: 'played' });
+    eq('I1b DAY=Played at 3+ = independent recompute', played3.n, expPlayed3.cards.length);
+    ok('I2 played cards exist and every one carries a Continued/Broken/Played chip',
+      played3.n > 0 && played3.allHaveOutcomeChip, `n=${played3.n}`);
+    ok('I2b direction did NOT stay behind on the played card\'s tag row', played3.noDirTagOnTagRow);
     ok('I3 the continued/broken aggregate renders in the played view',
-      playedView.n === 0 || playedView.summary, playedView.summaryText || '(absent)');
+      played3.n > 0 && played3.summary, played3.summaryText || '(absent)');
+    console.log('  played view (3+):', played3.n, 'cards —', (played3.summaryText || '').trim());
+    await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=minLen] .sr-segbtn'))
+      .filter(function(b){return b.textContent.trim()==='6+';})[0].click()`);
+    await sleep(250);
     // and disappears again outside it
     await ev(`Array.from(document.querySelectorAll('[data-page="series"] .sr-seg[data-seg=day] .sr-segbtn'))
       .filter(function(b){return b.textContent.trim()==='All';})[0].click()`);
@@ -417,7 +496,11 @@ async function main() {
     ok('J9 rank figure intact', geom.rank);
     eq('J10 header keeps its four figures', geom.headStats, ['Streaks', 'Players', 'Longest run', 'Updated']);
     const maxH = Math.max(...geom.cardHeights);
-    ok('J11 card height did not grow (≤ 300px; pre-change board measured 330)', maxH <= 300, `tallest=${maxH}px`);
+    // The pre-change board was MEASURED at a uniform 238px in a real browser (the "~330"
+    // in the founder's note and in an earlier version of this assertion was from memory —
+    // clean-context review). 238 is the real ceiling this batch must not exceed.
+    ok('J11 card height did not grow (≤ 238px, the measured pre-change height)',
+      maxH <= 238, `tallest=${maxH}px`);
     console.log(`  card heights: min=${Math.min(...geom.cardHeights)} max=${maxH}`);
 
     /* ── 11 · the History modal is untouched ──────────────────────────────────── */
@@ -436,8 +519,26 @@ async function main() {
     eq('K2 modal columns unchanged', modal.head, ['Date', 'Event', 'Opponent', 'Score']);
     eq('K3 modal column layout unchanged', modal.cols, 4);
     ok('K4 modal still carries the pool line', /\d+ of \d+ matches?/.test(modal.sub || ''), modal.sub);
-    ok('K5 modal keeps the LONG all-comps wording (item 6 is card-only)',
-      !/^Won \d+ matches running/.test(modal.sub || ''), modal.sub);
+    // K5 was vacuous: the short form would read "Won — 6 matches running" (em-dash), which
+    // the old regex could not match either, so the negation passed regardless. Open an
+    // ALL-COMPS card specifically and assert the long wording is present.
+    await ev(`document.querySelector('.sr-ov-close').click()`);
+    await sleep(250);
+    const openedAllComps = await ev(`(function(){
+      var c=Array.from(document.querySelectorAll('[data-page="series"] .sr-card'))
+        .filter(function(e){var t=e.querySelector('.sr-cell-type'); return t && t.textContent.trim()==='All comps';})[0];
+      if(!c) return null;
+      var claim=c.querySelector('.sr-claim').textContent.trim();
+      c.click();
+      return claim;
+    })()`);
+    await sleep(350);
+    const allSub = await ev(`(document.querySelector('.sr-ov-sub')||{}).textContent`);
+    ok('K5a an all-comps card exists to test item 6 against', !!openedAllComps, String(openedAllComps));
+    eq('K5b its CARD title is the short form', /^(Won|Lost) \d+ in a row$/.test(openedAllComps || ''), true);
+    ok('K5c its MODAL keeps the long form (item 6 is card-only)',
+      /^(Won|Lost) across all competitions — \d+ matches running/.test((allSub || '').trim()), allSub);
+    console.log('  all-comps card:', JSON.stringify(openedAllComps), '-> modal:', JSON.stringify((allSub||'').split('·')[0].trim()));
     ok('K6 modal row count = the run length', modal.rows > 0, String(modal.rows));
     console.log('  modal subtitle:', modal.sub);
 
