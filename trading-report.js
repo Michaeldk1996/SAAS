@@ -673,17 +673,21 @@
 
   // ─── §1 header card ─────────────────────────────────────────────────────────
   function headerCardHtml(V) {
-    // The slate counts are the DAY's counts, independent of the surface/tournament
-    // narrowing — they describe the board, not the current filter.
-    var all = (S.live === 'live') ? liveRows() : slateRows();
-    var slateCount = Math.round(all.length / 2);
-    var liveCount = 0;
-    if (S.day !== 'tomorrow') {
-      var seen = {};
-      (S.live === 'live' ? all : slateRows()).forEach(function (r) {
-        if (r.live && !seen[r.matchId]) { seen[r.matchId] = 1; liveCount++; }
-      });
+    // These four stats describe the BOARD, not the current view: they are counted
+    // off the day's whole slate and are deliberately independent of the
+    // Pre-match/Live toggle, the surface/tournament narrowing, the search box and
+    // the column filters. Switching to Live must not make "Today" shrink to the
+    // in-play count.
+    var arr = Array.isArray(_matches) ? _matches : [];
+    var slateCount = 0, liveCount = 0;
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i];
+      if (!m || m.day !== S.day || !m.p1Key || !m.p2Key) continue;
+      slateCount++;
+      if (isMatchLive(m)) liveCount++;
     }
+    // Tomorrow can have nothing in play by definition (README §1).
+    if (S.day === 'tomorrow') liveCount = 0;
     var updated = _updatedAt ? fmtClock(new Date(_updatedAt).toISOString()) : (_matchesAt ? fmtClock(new Date(_matchesAt).toISOString()) : '—');
     function pair(label, value, color) {
       return '<div class="tr-pair"><span class="tr-eyebrow">' + esc(label) + '</span>' +
@@ -853,6 +857,17 @@
 
   function rowsHtml(V) {
     if (!V.list.length) {
+      // Two different empty states. The export only specifies the second one —
+      // its prototype always has a slate — but the real board is genuinely empty
+      // between tournaments, and telling a trader "no players match these
+      // filters" when no filter is set is a lie about why the board is blank.
+      if (!V.pool.length) {
+        var msg = (S.live === 'live')
+          ? 'No ATP singles in play right now.'
+          : (S.day === 'tomorrow' ? 'No ATP singles scheduled tomorrow yet.'
+                                  : 'No ATP singles scheduled today.');
+        return '<div class="tr-rows"><div class="tr-empty2"><span>' + msg + '</span></div></div>';
+      }
       return '<div class="tr-rows"><div class="tr-empty2">' +
                '<span>No players match these filters.</span>' +
                '<span class="tr-eyebrow tr-clear" data-a="clear">Clear</span>' +
@@ -1084,10 +1099,17 @@
         render();
         return;
       }
+      // A click anywhere inside an open filter menu must not bubble to the document
+      // handler that closes it, NOR reach the header cell that would sort the
+      // column. The menu is a child of that header cell, so its padding and the
+      // gaps between its rows resolve to data-a="sort" — swallow them explicitly
+      // rather than relying on stopPropagation alone.
+      var inMenu = t.closest && t.closest('[data-stop]');
+      if (inMenu) {
+        e.stopPropagation();
+        if (!(t.closest && t.closest('[data-a="tier"]'))) return;
+      }
       var act = t.closest && t.closest('[data-a]');
-      // A click inside an open filter menu must not bubble to the document handler
-      // that closes it, nor to the header cell that would sort the column.
-      if (t.closest && t.closest('[data-stop]')) e.stopPropagation();
       if (!act) return;
       var a = act.getAttribute('data-a'), v = act.getAttribute('data-v');
 
