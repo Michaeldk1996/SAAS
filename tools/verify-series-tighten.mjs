@@ -31,10 +31,13 @@ const argv = process.argv.slice(2);
 const LIVE = argv.includes('--live');
 const SHOT = argv.includes('--shot') ? argv[argv.indexOf('--shot') + 1] : null;
 const WIDTH = argv.includes('--width') ? +argv[argv.indexOf('--width') + 1] : 1400;
-// --data <file>: serve a LOCALLY BUILT series.json instead of the deployed one. The
-// deployed artifact was produced by the pre-change build-series.js and still publishes
-// viewFloorDefault=5, which the page correctly adopts — so the 6+ default (item 9) can
-// only be measured against an artifact the NEW engine wrote. Both passes are run.
+// --data <file>: serve a series.json of your choosing instead of the deployed one.
+// Item 9 needs this to be measurable at all. The page no longer ADOPTS the artifact's
+// viewFloorDefault — it did, which is how item 9 was undelivered while being reported
+// done. Now that the pipeline has rebuilt and the deployed artifact ALSO carries 6,
+// assertion H1b has nothing left to distinguish and self-skips ('n/a-same'), so a
+// green --live run does NOT on its own prove the artifact is ignored. To prove it,
+// hand it an artifact still publishing 5:   --data floor5.json
 const DATA_FILE = argv.includes('--data') ? argv[argv.indexOf('--data') + 1] : null;
 
 /* ── assertions ─────────────────────────────────────────────────────────────── */

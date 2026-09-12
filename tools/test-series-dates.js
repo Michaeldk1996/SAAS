@@ -7,8 +7,10 @@
 //     off the card into the modal, which made "Every card shows both" false. The
 //     stale sentence must stay gone; the drop guarantee must stay stated.
 //   last-year   (a) — STARTED and LAST print the export's bare day + month, and
-//     carry a 2-digit year ONLY when the run itself crosses a year boundary. The
-//     year appears on BOTH cells or neither — never one alone.
+//     carry a 2-digit year ONLY when the run itself crosses a year boundary.
+//     Whenever both ends are renderable the year lands on both. (An end that cannot
+//     render is a dash and drops its year — see `lone-year` below, which rules that
+//     asymmetry IN rather than suppressing it.)
 //   two-up      (a) — the card grid stays minmax(400px,1fr); no 340px variant.
 //
 // Plus the three defects the clean-context review caught on that build, which are
@@ -137,7 +139,59 @@ assert(/crossesYear\(startYmd, st\.lastDate\) \|\|\s*\n?\s*priorYear\(/.test(src
   'showYear no longer ORs the crossing rule with the prior-year rule');
 ok('showYear ORs last-year (a) with prior-year (a)');
 
-// ── the review's finding: one unknown end must not produce a lone year ───────
+// ── lone-year (a): an unknown START must NOT suppress the year on LAST ───────
+// Founder ruling, ask fc48bac5 (answered 2026-09-12, option a): "keep it — a lone
+// year on LAST is true and useful; lock it with a test". The asymmetry is the point:
+// prior-year is a property of LAST alone, so a streak with no usable START paints
+// "Started — / Last 12 Sep ’26". The competing option (b, suppress unless BOTH cells
+// can carry one) was rejected, so a symmetry guard added here later would silently
+// revert the ruling on the card that already knows least.
+//
+// Unreachable from today's pipeline (build-series.js always emits a non-empty
+// matches[]; 0 of 117 live streaks lack one), which is exactly why it is pinned here
+// — live data cannot exercise it in either direction.
+assert.strictEqual(priorYear('2026-09-13', '2027-01-20T06:04:14.376Z'), true,
+  'prior-year must not consult STARTED at all — it is a property of LAST');
+assert.strictEqual(fmtShort(null, true), null, 'the unknown START is a dash…');
+assert.strictEqual(fmtShort('2026-09-13', true), '13 Sep ’26', '…while LAST keeps its year');
+// …and the two helpers agreeing is not enough: what the RENDERER composes out of them
+// is what the reader sees. A source-text regex cannot hold this — a guard written as
+// `(crossesYear(...) || priorYear(...)) && !!fmtShort(startYmd)` is option (b) exactly
+// and slips past any pattern anchored on `showYear &&`. (Confirmed: an earlier regex
+// form of this check passed against that mutation.) So EXECUTE the shipped strip.
+const stripSrc = (() => {
+  const a = src.indexOf('    var startYmd = startedOf(st);');
+  const b = src.indexOf("      '</div>';", a);
+  assert(a > 0 && b > a, 'series.js strip block not found — markers moved?');
+  return src.slice(a, b + "      '</div>';".length);
+})();
+assert(/showYear/.test(stripSrc) && /sr-cell-v/.test(stripSrc), 'lifted the wrong block');
+// Real helpers, stubbed surroundings; `st` and generatedAt are the only inputs.
+function paintStrip(startYmd, lastDate, generatedAt) {
+  const fn = new Function('startedOf', 'st', '_data', 'esc', 'dash', 'FAM_BADGE', 'famOf',
+    'fmtShort', 'crossesYear', 'priorYear',
+    stripSrc + '\n return strip;');
+  return fn(() => startYmd, { lastDate, type: 'all' }, { generatedAt },
+    (s) => String(s), '—', {}, () => 'all', fmtShort, crossesYear, priorYear);
+}
+const lone = paintStrip(null, '2026-09-13', '2027-01-20T06:04:14.376Z');
+assert(/Started<\/span><span class="sr-cell-v">—</.test(lone),
+  'ruling lone-year (a): STARTED should dash when it cannot render — painted: ' + lone);
+assert(/13 Sep ’26/.test(lone),
+  'ruling lone-year (a) REVERTED: LAST dropped its year because STARTED was unknown. ' +
+  'Option (b) "no year unless BOTH cells can carry one" was rejected 2026-09-12. Painted: ' + lone);
+assert(/sr-strip--yr/.test(lone), 'the lone-year strip lost its narrow-viewport modifier — the year will elide');
+// …and the control: with BOTH ends renderable and inside the data year, still bare.
+const bare = paintStrip('2026-08-26', '2026-09-13', '2026-09-12T07:13:37.585Z');
+assert(!/’26/.test(bare) && /26 Aug/.test(bare) && /13 Sep/.test(bare),
+  'a same-data-year run must stay bare — today\'s board must not change. Painted: ' + bare);
+assert(!/sr-strip--yr/.test(bare), 'a bare strip must not carry the year modifier');
+ok('lone-year (a): the RENDERER paints "Started — / Last 13 Sep ’26", year kept on LAST');
+
+// ── the review's finding: the converse — an unknown LAST yields NO year at all ─
+// Not a contradiction of lone-year (a): there the year is carried by the cell that
+// CAN render it. Here the year's own source cell is the dash, so nothing supports a
+// year and STARTED must not be given one.
 assert.strictEqual(crossesYear(null, '2026-01-12'), false);
 assert.strictEqual(crossesYear('2025-12-05', null), false);
 assert.strictEqual(crossesYear('2026-1-5', '2027-01-12'), false, 'unpadded start is unrenderable → no crossing');

@@ -258,17 +258,16 @@
   // Gated on fmtShort for the same reason crossesYear is: an unrenderable LAST is a
   // dash, and a dash must not drag a lone year onto the STARTED cell beside it.
   //
-  // OPEN — founder ask (raised 2026-09-12), deliberately NOT resolved here. The reverse
-  // case is asymmetric: this rule is a property of LAST alone, so when STARTED is
-  // unrenderable the card paints "Started — / Last 12 Sep ’26" — a year on one cell
-  // only. crossesYear cannot do that (it gates on both ends), and "both cells or
-  // neither" was this file's own choice, not the ruling: the founder picked "add the
-  // year only when the run crosses a year boundary" over the option that said "always
-  // show a 2-digit year on both cells". Suppressing it here would delete the very
-  // signal the prior-year ruling exists to restore, on the card that already knows
-  // least — so it is a question, not a silent fix. Unreachable from today's pipeline:
-  // build-series.js always emits a non-empty matches[], and 0 of 117 live streaks lack
-  // one. Left untested in either direction on purpose, pending the ruling.
+  // The reverse direction is ASYMMETRIC ON PURPOSE — founder ruling `lone-year`
+  // (ask fc48bac5, 2026-09-12, option a: "keep it — a lone year on LAST is true and
+  // useful; lock it with a test"). This rule is a property of LAST alone, so when
+  // STARTED is unrenderable the card paints "Started — / Last 12 Sep ’26": a year on
+  // one cell. That is kept. "Both cells or neither" was this file's own symmetry
+  // preference, never the ruling — suppressing the year here would delete the very
+  // signal prior-year exists to restore, on the card that already knows least.
+  // Unreachable from today's pipeline (build-series.js always emits a non-empty
+  // matches[], and 0 of 117 live streaks lack one), so tools/test-series-dates.js is
+  // the only thing holding it — see the `lone-year` block there.
   function priorYear(lastYmd, refIso) {
     var ry = yearOfIso(refIso);
     if (!ry || !fmtShort(lastYmd)) return false;
@@ -573,8 +572,11 @@
     // 4 · STARTED · LAST · TYPE
     var startYmd = startedOf(st);
     // Ruling `last-year` (a) OR ruling `prior-year` (a) — a run that straddles a year
-    // end, or one whose LAST sits outside the snapshot's own year. Either way the year
-    // goes on BOTH cells, so the two ends stay readable against each other.
+    // end, or one whose LAST sits outside the snapshot's own year. showYear is a single
+    // flag fed to both cells, so whenever both ends are renderable the year lands on
+    // both and they stay readable against each other. An end that CANNOT render is a
+    // dash and simply drops its year — which is how ruling `lone-year` (a) produces
+    // "Started — / Last 12 Sep ’26" rather than being special-cased.
     var showYear = crossesYear(startYmd, st.lastDate) ||
                    priorYear(st.lastDate, _data && _data.generatedAt);
     var startTxt = fmtShort(startYmd, showYear);
