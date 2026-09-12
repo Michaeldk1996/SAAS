@@ -87,22 +87,11 @@
 [data-page="series"] .sr-segbtn.active { background: rgba(91,155,255,0.22); color: #fff; font-weight: 700; }
 [data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid #5b9bff; outline-offset: 1px; }
 
-/* checkbox — a real <input>, visually replaced by the export's 15px box */
-[data-page="series"] .sr-toggle {
-  display: inline-flex; align-items: center; gap: 9px; font-size: 12.5px; color: #8b96b5; cursor: pointer;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); position: relative;
-}
-[data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 15px; height: 15px; margin: 0; cursor: pointer; }
-[data-page="series"] .sr-box {
-  width: 15px; height: 15px; border-radius: 4px; flex: none;
-  border: 1px solid rgba(255,255,255,0.14); background: transparent;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; color: #e7e9ee; line-height: 1;
-  transition: background .14s ease, border-color .14s ease;
-}
-[data-page="series"] .sr-toggle input:checked + .sr-box { border-color: rgba(91,155,255,0.45); background: rgba(91,155,255,0.22); }
-[data-page="series"] .sr-toggle input:checked + .sr-box::after { content: '\2713'; }
-[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid #5b9bff; outline-offset: 2px; }
+/* The .sr-toggle / .sr-box checkbox rules lived here. Item 8 (founder 2026-09-12)
+   removed the Show-already-played checkbox — "that removes the only control on the
+   page that isn't a segmented control" — and DAY gained a fourth `Played` option in
+   its place. Nothing on the page renders either class any more, so the rules are
+   deleted rather than left to rot; git has them if the checkbox ever comes back. */
 
 /* ── already-played continued/broken aggregate (kept: ruling q7) ── */
 [data-page="series"] .sr-outsum {
