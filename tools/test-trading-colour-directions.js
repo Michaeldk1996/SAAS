@@ -30,6 +30,17 @@
 //      on the player's own window n, tier membership on the cell's own denominator.
 //      They are allowed to disagree; reconciling them needs a new ruling.
 //
+// TEN-192 (ask 57993e8d, answered 2026-09-12) — two findings, both ruled LEAVE IT
+//  13) The FIELD AVERAGE has no minimum-pool floor and no leave-one-out, and an
+//      under-10 cell is untiered yet still summed into the bar. Both asymmetries
+//      were reported with the measurement that motivated changing them; the
+//      export is the spec and they stand. The tests pin the behaviour the
+//      founder was SHOWN — reconciling either one needs a new ruling.
+//  14) matches.json's surfaceFromEvent() stays a three-branch keyword guess
+//      (Wimbledon grass, Roland Garros clay, everything else hard) and still
+//      OUTRANKS the tournament map in the Trading Report. Not worth rewriting
+//      matches.json, which every page reads.
+//
 // Plus the two structural invariants the brief calls out as easy to get wrong:
 //   9) ONE grid template, header and every row: 62px 210px 64px 40px 1fr repeat(7, 84px).
 //  10) Column positions are identical across tabs, and the tab→column and
@@ -329,5 +340,118 @@ assert(!/nOf\(row\)/.test(tierBlock),
 assert(!/c\[1\] < MIN_TIER_DEN/.test(cellBlock.split('var n = nOf(row);')[1] || ''),
   'ruling 12 is AS WRITTEN: the dim must NOT be re-expressed as the cell denominator');
 ok('dim (player n) and tier (cell denominator) kept on different numbers, as written');
+
+// ── Ruling 13 — the field average has NO pool floor, and the under-10 cell ───
+//    still counts toward it. Both were put to the founder with the measurement
+//    that motivated changing them; he ruled the export is the spec. So the tests
+//    below pin the behaviour he was SHOWN, not the behaviour I recommended —
+//    a later "tidy-up" of either asymmetry needs a new ruling, not a refactor.
+const cvBlock = fnBlock('computeView');
+// Driven with the page's OWN constants, so the engine under test cannot pass by
+// being fed thresholds the page doesn't use.
+const TIER_PTS_N = numberLiteral('TIER_PTS');
+const MIN_TIER_DEN_N = numberLiteral('MIN_TIER_DEN');
+function fieldEngine() {
+  const start = cvBlock.indexOf('var fieldAvg = {};');
+  assert(start !== -1, 'the field-average loop is missing from computeView()');
+  const end = cvBlock.indexOf('var tabFilters');
+  assert(end > start, 'tierOf must still sit between the field-average loop and the filter step');
+  const body = cvBlock.slice(start, end);
+  // No row-count guard may creep into the region that builds the bar and reads it.
+  assert(!/pool\.length/.test(body),
+    'ruling 13 is LEAVE IT: the field average may not gate on how many rows the pool holds');
+  // eslint-disable-next-line no-new-func
+  return new Function('codes', 'pool', 'cellOf', 'isInv', 'MIN_TIER_DEN', 'TIER_PTS',
+    body + '\nreturn { fieldAvg: fieldAvg, tierOf: tierOf };');
+}
+{
+  const engine = fieldEngine();
+  const cellOf = (row, mk) => row[mk] || null;
+  const isInv = (mk) => mk === 'oph';
+  const run = (pool) => engine(['spw'], pool, cellOf, isInv, MIN_TIER_DEN_N, TIER_PTS_N);
+
+  // A pool of ONE: the player IS the field. No leave-one-out, no suppression —
+  // he is measured against himself, lands at d = 0, and paints amber.
+  const one = run([{ spw: [60, 100] }]);
+  assert.strictEqual(one.fieldAvg.spw, 0.6, 'a one-row pool still publishes a bar');
+  assert.strictEqual(one.tierOf({ spw: [60, 100] }, 'spw'), 'within',
+    'ruling 13: a player is included in the field average he is measured against');
+
+  // A pool of TWO with equal denominators: the bar is the midpoint, so each
+  // player's deviation is exactly HALF the spread between them. That is the
+  // mechanism behind the all-amber finding — a spread under 6pt cannot colour
+  // either row, however far apart the two players really are from the tour.
+  const two = run([{ spw: [70, 100] }, { spw: [50, 100] }]);
+  assert.strictEqual(two.fieldAvg.spw, 0.6, 'the two-row bar is the pooled midpoint');
+  assert.strictEqual(two.tierOf({ spw: [70, 100] }, 'spw'), 'above', 'd = +10, half of the 20pt spread');
+  const near = run([{ spw: [53, 100] }, { spw: [48, 100] }]);
+  assert.strictEqual(near.tierOf({ spw: [53, 100] }, 'spw'), 'within',
+    'ruling 13: on a two-row pool a sub-6pt spread paints amber on BOTH rows, by design');
+  assert.strictEqual(near.tierOf({ spw: [48, 100] }, 'spw'), 'within',
+    'ruling 13: on a two-row pool a sub-6pt spread paints amber on BOTH rows, by design');
+
+  // The asymmetry, pinned: a cell under the tier denominator is untiered itself
+  // but IS still summed into the bar everyone else is measured against.
+  const asym = run([{ spw: [9, 10] }, { spw: [0, 4] }]);
+  assert.strictEqual(asym.fieldAvg.spw, 9 / 14,
+    'ruling 13: an under-10 cell must still be summed into the field average');
+  assert.strictEqual(asym.tierOf({ spw: [0, 4] }, 'spw'), null,
+    'ruling 13: …while remaining untiered itself — the two rules stay out of step, as ruled');
+
+  // An empty pool has no bar, and nothing tiers off it.
+  assert.strictEqual(run([]).fieldAvg.spw, null, 'an empty pool publishes no bar');
+  assert.strictEqual(run([]).tierOf({ spw: [60, 100] }, 'spw'), null, 'and nothing tiers off a null bar');
+}
+for (const dead of ['MIN_POOL', 'POOL_FLOOR', 'MIN_FIELD_POOL', 'leaveOneOut']) {
+  assert(!srcCode.includes(dead),
+    `ruling 13 is LEAVE IT: no pool floor or leave-one-out may be introduced (found ${dead})`);
+}
+ok('field average has no pool floor, no leave-one-out, under-10 cells still counted');
+
+// ── Ruling 14 — matches.json's surface heuristic stays, and so does its order ─
+//    surfaceFromEvent() is a three-branch keyword guess on the odds path (~88% of
+//    `today` rows) and it outranks the tournament map the shards are bucketed by.
+//    Put to the founder with that measurement; ruled LEAVE IT — fixing it means
+//    rewriting matches.json, which every page reads. Pinned so nobody "improves"
+//    it here and moves every other page's surface underneath it.
+{
+  const pipeSrc = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+  const start = stripComments(pipeSrc).indexOf('function surfaceFromEvent(');
+  assert(start !== -1, 'surfaceFromEvent() is missing from bsp-pipeline.js');
+  const code = stripComments(pipeSrc);
+  let i = code.indexOf('{', start), depth = 0, block = null;
+  for (let j = i; j < code.length; j++) {
+    if (code[j] === '{') depth++;
+    else if (code[j] === '}' && --depth === 0) { block = code.slice(start, j + 1); break; }
+  }
+  assert(block, 'surfaceFromEvent() is unbalanced');
+  // eslint-disable-next-line no-new-func
+  const sfe = new Function(block + '\nreturn surfaceFromEvent;')();
+  assert.strictEqual(sfe({ sport_title: 'ATP Wimbledon' }), 'grass');
+  assert.strictEqual(sfe({ sport_title: 'ATP Roland Garros' }), 'clay');
+  assert.strictEqual(sfe({ sport_title: 'ATP French Open' }), 'clay');
+  // The known-wrong branch, ruled in place: a clay event that is neither of the
+  // two named majors is published as hard. This assertion is not describing
+  // correct behaviour — it is holding a ruling. Changing it is a board decision.
+  assert.strictEqual(sfe({ sport_title: 'ATP Rome Masters' }), 'hard',
+    'ruling 14 is LEAVE IT: every non-Wimbledon, non-RG event is published as hard');
+  assert.strictEqual(sfe({ sport_title: 'ATP Monte Carlo Masters' }), 'hard',
+    'ruling 14 is LEAVE IT: every non-Wimbledon, non-RG event is published as hard');
+  assert.strictEqual(sfe({}), 'hard', 'a titleless event still defaults to hard');
+}
+// …and the Trading Report keeps the slate FIRST. The fallback added under ruling
+// 11 reads the stronger source, so inverting the two here was the tempting fix;
+// ruled against. Ruling 11's own assertion at "the slate surface wins" is what
+// enforces it — this pins that the page has not grown a second, competing path.
+assert(!/surfaceFromEvent/.test(srcCode),
+  'ruling 14: the Trading Report must not re-implement the pipeline heuristic');
+{
+  const body = stripComments(fnBlock('liveFixtureRow'));
+  const slateAt = body.indexOf('.surface');
+  const tourAt = body.indexOf('surfaceFromTournament');
+  assert(slateAt !== -1 && tourAt !== -1 && slateAt < tourAt,
+    'ruling 14: the slate surface must still be consulted BEFORE the tournament map');
+}
+ok('matches.json surface heuristic and slate-first order kept, as ruled');
 
 console.log('PASS  trading-report rulings:\n  - ' + checks.join('\n  - '));
