@@ -66,13 +66,19 @@ const ONLY_KEYS = process.env.TS_ONLY_KEYS ? process.env.TS_ONLY_KEYS.split(',')
 const NOW = process.env.TS_NOW ? new Date(process.env.TS_NOW + 'T00:00:00Z') : new Date();
 const cutoff = new Date(Date.UTC(NOW.getUTCFullYear() - 2, NOW.getUTCMonth(), NOW.getUTCDate()));
 const CUTOFF_STR = cutoff.toISOString().slice(0, 10);
-// Inner 12-month window (founder ruling 2026-09-06). Computed as its OWN window
-// — a match lands in the 12mo buckets only if its date is >= CUTOFF12_STR, with
-// its own numerator/denominator. NEVER derived from the 24mo figure (a 12mo
-// number scaled/halved out of a 24mo one is fabricated). 24mo shard shape is
-// unchanged; the 12mo view rides alongside as tiers12/window12.
-const cutoff12 = new Date(Date.UTC(NOW.getUTCFullYear() - 1, NOW.getUTCMonth(), NOW.getUTCDate()));
-const CUTOFF12_STR = cutoff12.toISOString().slice(0, 10);
+// Inner 52-WEEK window (TEN-192, founder ruling 2026-09-12 — ask 356eb544, which
+// moved this off the 12 calendar months TEN-151 shipped). 52 weeks is 364 days,
+// counted back from NOW, NOT a calendar year: the export's control says "52
+// weeks" and the founder chose to make the data match the label rather than
+// relabel the control.
+//
+// It is computed as its OWN window — a match lands in the 52w buckets only if its
+// date is >= CUTOFF52W_STR, with its own numerator and its own denominator. It is
+// NEVER derived from the 24mo figure (a 52-week number scaled out of a 24-month
+// one is fabricated, and the brief forbids it explicitly). The 24mo shard shape is
+// unchanged; the 52w view rides alongside as tiers52w / window52w.
+const cutoff52w = new Date(NOW.getTime() - 364 * 24 * 3600 * 1000);
+const CUTOFF52W_STR = cutoff52w.toISOString().slice(0, 10);
 const NOW_STR = NOW.toISOString().slice(0, 10);
 // api-tennis carries no box scores before this; a pre-floor match has no
 // `statistics` and is excluded anyway. Belt-and-suspenders (24mo cutoff already
@@ -100,8 +106,8 @@ const LOW_SAMPLE_NOTICE = 'Low sample across this slate — the {surface} filter
 // direction (player-strength: high good for most, high BAD for oph/babb/bbk/
 // bfsg). A population under RANK_MIN_POP, or one whose p25 == p75 (too flat to
 // separate), publishes NO cut for that metric → the UI leaves it neutral rather
-// than inventing a band. Both windows (24mo + 12mo) get their own cuts from
-// their own populations — a 12mo band is never sliced from a 24mo distribution.
+// than inventing a band. Both windows (24mo + 52w) get their own cuts from
+// their own populations — a 52w band is never sliced from a 24mo distribution.
 const RANK_MIN_POP = 8;
 const round4 = x => Math.round(x * 10000) / 10000;
 // Linear-interpolated quantile on an ascending-sorted array (numpy default).
@@ -328,10 +334,10 @@ async function buildPlayer(key, surfaceMap) {
   if (!Array.isArray(fixtures) || !fixtures.length) return { key, empty: true };
 
   const tiers = { tour: newTierBucket(), chal: newTierBucket() };
-  // Parallel 12mo buckets — same match rows, accumulated ONLY when the match
+  // Parallel 52w buckets — same match rows, accumulated ONLY when the match
   // falls inside the inner window, each with its own num/den (not a slice of the
   // 24mo sums).
-  const tiers12 = { tour: newTierBucket(), chal: newTierBucket() };
+  const tiers52w = { tour: newTierBucket(), chal: newTierBucket() };
   const seenEvents = new Set();
   let sampleMatches = 0, usOpen = 0;
   // Divergence tripwire (founder ruling 2026-09-05, MATCHES). The MATCHES column
@@ -342,7 +348,7 @@ async function buildPlayer(key, surfaceMap) {
   // two diverge (a match exists but has no usable stat row), that is REPORTED
   // with both counts — never silently reconciled at read time.
   const windowByTier = { tour: 0, chal: 0 };
-  const windowByTier12 = { tour: 0, chal: 0 };
+  const windowByTier52w = { tour: 0, chal: 0 };
   const tally = { parsefail: 0, recovered: 0, matchesWithParsefail: 0, matchesWithRecovery: 0 };
 
   for (const fx of fixtures) {
@@ -357,14 +363,14 @@ async function buildPlayer(key, surfaceMap) {
     const ek = String(fx.event_key || '');
     if (ek && seenEvents.has(ek)) continue;
     if (ek) seenEvents.add(ek);
-    // Inner-window membership: this 24mo match also belongs to the 12mo window
-    // when its own date is at/after the 12mo cutoff. Its num/den go into tiers12
+    // Inner-window membership: this 24mo match also belongs to the 52-week window
+    // when its own date is at/after the 52w cutoff. Its num/den go into tiers52w
     // independently — no derivation from the 24mo sums.
-    const in12 = d >= CUTOFF12_STR;
+    const in52w = d >= CUTOFF52W_STR;
     // Broad count: this match is a valid in-window ATP-singles completed match
     // for the player, counted BEFORE the box-score test below.
     windowByTier[tier] += 1;
-    if (in12) windowByTier12[tier] += 1;
+    if (in52w) windowByTier52w[tier] += 1;
 
     const before = { pf: tally.parsefail, rc: tally.recovered };
     const metricStats = metricsForPlayer(fx, key, tally);
@@ -387,16 +393,16 @@ async function buildPlayer(key, surfaceMap) {
     const tb = tiers[tier];
     addMatch(tb.all, metricStats);
     if (surfKey) addMatch(tb[surfKey], metricStats);
-    if (in12) {
-      const tb12 = tiers12[tier];
-      addMatch(tb12.all, metricStats);
-      if (surfKey) addMatch(tb12[surfKey], metricStats);
+    if (in52w) {
+      const tb52w = tiers52w[tier];
+      addMatch(tb52w.all, metricStats);
+      if (surfKey) addMatch(tb52w[surfKey], metricStats);
     }
     sampleMatches++;
     if (/US Open/i.test(fx.tournament_name || '')) usOpen++;
   }
 
-  return { key, tiers, tiers12, sampleMatches, usOpen, tally, windowByTier, windowByTier12 };
+  return { key, tiers, tiers52w, sampleMatches, usOpen, tally, windowByTier, windowByTier52w };
 }
 
 function pruneTier(tb) {
@@ -428,7 +434,7 @@ async function main() {
   // window, fed to buildCuts AFTER the whole roster is in so each metric's
   // percentile cuts rank against the full slate, not a partial one.
   const cutTrees24 = [];
-  const cutTrees12 = [];
+  const cutTrees52w = [];
 
   for (const key of roster) {
     calls++;
@@ -447,7 +453,7 @@ async function main() {
     // match count against the behind-the-splits count (matches carrying >=1
     // tracked stat). A gap means the feed held matches with no usable box score;
     // report the player key and BOTH counts rather than picking one silently.
-    // Run it on BOTH windows (24mo and 12mo) so the inner window has the same
+    // Run it on BOTH windows (24mo and 52w) so the inner window has the same
     // audit parity as the outer (founder ruling 2026-09-06). Each window is
     // compared against its OWN broad and behind-splits counts — never derived.
     for (const tier of ['tour', 'chal']) {
@@ -456,10 +462,10 @@ async function main() {
       if (broad24 !== withStats24) {
         divergences.push({ key, tier, window: '24', broad: broad24, behindSplits: withStats24, missing: broad24 - withStats24 });
       }
-      const broad12 = (r.windowByTier12 && r.windowByTier12[tier]) || 0;
-      const withStats12 = (r.tiers12 && r.tiers12[tier]) ? r.tiers12[tier].all.m : 0;
-      if (broad12 !== withStats12) {
-        divergences.push({ key, tier, window: '12', broad: broad12, behindSplits: withStats12, missing: broad12 - withStats12 });
+      const broad52w = (r.windowByTier52w && r.windowByTier52w[tier]) || 0;
+      const withStats52w = (r.tiers52w && r.tiers52w[tier]) ? r.tiers52w[tier].all.m : 0;
+      if (broad52w !== withStats52w) {
+        divergences.push({ key, tier, window: '52w', broad: broad52w, behindSplits: withStats52w, missing: broad52w - withStats52w });
       }
     }
 
@@ -467,27 +473,27 @@ async function main() {
     const chal = pruneTier(r.tiers.chal);
     if (!tour && !chal) { empty++; continue; }
 
-    // 12mo sub-tree (independent num/den; a tier with zero 12mo matches is simply
-    // omitted, never zero-filled). 12mo ⊂ 24mo, so we only reach here when 24mo
+    // 52w sub-tree (independent num/den; a tier with zero 52w matches is simply
+    // omitted, never zero-filled). 52w ⊂ 24mo, so we only reach here when 24mo
     // has data; the inner window may still be empty for a given tier.
-    const tour12 = pruneTier(r.tiers12.tour);
-    const chal12 = pruneTier(r.tiers12.chal);
+    const tour52w = pruneTier(r.tiers52w.tour);
+    const chal52w = pruneTier(r.tiers52w.chal);
 
     const shard = {
       key,
       window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR },
-      window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR },
+      window52w: { from: CUTOFF52W_STR, to: NOW_STR, floor: PBP_FLOOR },
       tiers: {},
-      tiers12: {},
+      tiers52w: {},
     };
     if (tour) shard.tiers.tour = tour;
     if (chal) shard.tiers.chal = chal;
-    if (tour12) shard.tiers12.tour = tour12;
-    if (chal12) shard.tiers12.chal = chal12;
+    if (tour52w) shard.tiers52w.tour = tour52w;
+    if (chal52w) shard.tiers52w.chal = chal52w;
     // Feed the colour-engine populations from the SAME pruned trees the shard
     // ships — the cuts rank exactly the numbers the UI renders.
     cutTrees24.push({ tour: tour || null, chal: chal || null });
-    cutTrees12.push({ tour: tour12 || null, chal: chal12 || null });
+    cutTrees52w.push({ tour: tour52w || null, chal: chal52w || null });
     const str = JSON.stringify(shard);
     atomicWrite(path.join(OUT_DIR, key + '.json'), str);
     index.push(key);
@@ -511,34 +517,34 @@ async function main() {
   // Colour-engine cut points (TEN-151), one distribution per window. Computed
   // once over the whole slate, published in the index; the UI never recomputes.
   const cuts24 = buildCuts(cutTrees24);
-  const cuts12 = buildCuts(cutTrees12);
+  const cuts52w = buildCuts(cutTrees52w);
   const countCuts = c => Object.keys(c).reduce((n, t) => n + Object.keys(c[t]).reduce((m, s) => m + Object.keys(c[t][s]).length, 0), 0);
 
   index.sort((a, b) => Number(a) - Number(b));
   const indexDoc = {
-    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
+    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window52w: { from: CUTOFF52W_STR, to: NOW_STR, floor: PBP_FLOOR }, source: 'api-tennis get_fixtures via fetchRecentSinglesFixtures', tiers: { tour: 'Atp Singles', chal: 'Challenger Men Singles' } },
     lowSample: { matchMin: LOW_SAMPLE_MATCH_MIN, slateMutePct: SLATE_MUTE_PCT, notice: LOW_SAMPLE_NOTICE },
     // Percentile bands: rate <= [0] weak-quartile, >= [1] strong-quartile,
     // between = neutral. Direction (which quartile reads good vs bad) lives in
     // the UI, not here. minPop / flat-distribution omit a metric → neutral.
     rank: { minPop: RANK_MIN_POP, floorMatches: LOW_SAMPLE_MATCH_MIN, method: 'p25/p75 within tier×surface over players with >= floorMatches matches and a non-zero denominator; population < minPop or p25==p75 → no cut (neutral)' },
     cuts: cuts24,
-    cuts12: cuts12,
+    cuts52w: cuts52w,
     meta: loadMeta(),
     players: index,
   };
   atomicWrite(INDEX_FILE, JSON.stringify(indexDoc));
 
   // Persist the MATCHES divergence report (both counts + player key + window per
-  // record). Sorted by window (24 before 12), then by gap size, then player key.
+  // record). Sorted by window (24 before 52w), then by gap size, then player key.
   divergences.sort((a, b) => (a.window || '24').localeCompare(b.window || '24') || (b.missing - a.missing) || (Number(a.key) - Number(b.key)));
   const divCount = w => divergences.filter(d => (d.window || '24') === w).length;
   const divPlayers = w => new Set(divergences.filter(d => (d.window || '24') === w).map(d => d.key)).size;
   const divergenceDoc = {
-    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window12: { from: CUTOFF12_STR, to: NOW_STR, floor: PBP_FLOOR } },
-    definition: 'broad = in-window ATP-singles completed matches for the player in the tier; behindSplits = matches carrying >=1 tracked stat (the shipped MATCHES column). window tags which sub-tree the record belongs to (24 = outer, 12 = inner); each window is compared against its own counts. A record exists only where the two differ.',
+    generated: { window: { from: CUTOFF_STR, to: NOW_STR, floor: PBP_FLOOR }, window52w: { from: CUTOFF52W_STR, to: NOW_STR, floor: PBP_FLOOR } },
+    definition: 'broad = in-window ATP-singles completed matches for the player in the tier; behindSplits = matches carrying >=1 tracked stat (the shipped MATCHES column). window tags which sub-tree the record belongs to (24 = outer 24 months, 52w = inner 52 weeks); each window is compared against its own counts. A record exists only where the two differ.',
     playersWithDivergence: new Set(divergences.map(d => d.key)).size,
-    byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '12': { players: divPlayers('12'), records: divCount('12') } },
+    byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '52w': { players: divPlayers('52w'), records: divCount('52w') } },
     records: divergences,
   };
   atomicWrite(DIVERGENCE_FILE, JSON.stringify(divergenceDoc, null, 2));
@@ -557,13 +563,13 @@ async function main() {
     // matchesWithParsefail is anything but near-zero, STOP and report.
     fallback: fb,
     // MATCHES divergence summary: players/records where broad != behindSplits,
-    // per window (24mo outer + 12mo inner — parity tripwire, founder 2026-09-06).
-    divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '12': { players: divPlayers('12'), records: divCount('12') } }, file: path.basename(DIVERGENCE_FILE) },
+    // per window (24mo outer + 52w inner — parity tripwire, founder 2026-09-06).
+    divergence: { players: new Set(divergences.map(d => d.key)).size, records: divergences.length, byWindow: { '24': { players: divPlayers('24'), records: divCount('24') }, '52w': { players: divPlayers('52w'), records: divCount('52w') } }, file: path.basename(DIVERGENCE_FILE) },
     players: index.length,
     // Colour-engine cut coverage: how many (tier×surface×metric) cells got a
     // publishable band per window. A low number after a healthy build means the
     // slate is too thin/flat to rank at that granularity — surfaced, not hidden.
-    cuts: { minPop: RANK_MIN_POP, cells24: countCuts(cuts24), cells12: countCuts(cuts12) },
+    cuts: { minPop: RANK_MIN_POP, cells24: countCuts(cuts24), cells52w: countCuts(cuts52w) },
     corpus: { rawBytes: totalBytes, gzBytes: totalGz, gzKB: +(totalGz / 1024).toFixed(1) },
     index: { rawBytes: Buffer.byteLength(JSON.stringify(indexDoc)), gzBytes: indexGz, gzKB: +(indexGz / 1024).toFixed(2) },
     perShardGz: { min: pct(0), p50: pct(0.5), p90: pct(0.9), p99: pct(0.99), max: shardSizes[shardSizes.length - 1] || 0 },

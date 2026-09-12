@@ -2628,115 +2628,145 @@
   .lo-badge.lo-frozen{ background:rgba(62,207,142,0.06); color:var(--text-faint,#888); border:1px solid rgba(62,207,142,0.15); }
   @keyframes lo-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 
-  /* TEN-151 — Trading Report (flag-gated; only page under data-page="trading") */
-  [data-page="trading"] .tr-wrap{ max-width:1280px; margin:0 auto; padding:24px 24px 60px; }
-  [data-page="trading"] .tr-titlerow{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
-  [data-page="trading"] .tr-h1{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text,#e7e9ee); }
-  [data-page="trading"] .tr-subtitle{ margin:0; color:var(--text-dim,#8F98A6); font-size:13.5px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
-  [data-page="trading"] .tr-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:#3dd68c; }
-  [data-page="trading"] .tr-status.stale{ color:#e28b4a; }
-  [data-page="trading"] .tr-status .tr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
-  /* column-set tabs */
-  [data-page="trading"]{ --tr-time-w:66px; --tr-player-w:280px; --tr-odds-w:104px; --tr-matches-w:64px; --tr-stat-w:92px; --tr-av:44px; }
-  [data-page="trading"] .tr-tabs{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; border-bottom:1px solid var(--border,#262B35); padding-bottom:2px; }
-  [data-page="trading"] .tr-tab{ background:transparent; border:0; border-bottom:2px solid transparent; color:var(--text-dim,#8F98A6); font-size:12.5px; font-weight:600; padding:8px 12px; margin-bottom:-1px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); white-space:nowrap; }
-  [data-page="trading"] .tr-tab:hover{ color:var(--text,#E6EAF0); }
-  [data-page="trading"] .tr-tab.active{ color:var(--accent,#3E7BFA); border-bottom-color:var(--accent,#3E7BFA); }
-  /* filter bar */
-  [data-page="trading"] .tr-filters{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-  [data-page="trading"] .tr-seg{ display:inline-flex; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; overflow:hidden; }
-  [data-page="trading"] .tr-segbtn{ background:transparent; border:0; color:var(--text-dim,#8F98A6); font-size:12px; font-weight:600; padding:6px 13px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-segbtn:hover{ color:var(--text,#e7e9ee); }
-  [data-page="trading"] .tr-segbtn.active{ background:var(--accent,#3E7BFA); color:#fff; }
-  [data-page="trading"] .tr-tsel,[data-page="trading"] .tr-search{ background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:8px; color:var(--text,#e7e9ee); font-size:12.5px; padding:7px 10px; font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-search{ width:150px; }
-  [data-page="trading"] .tr-period{ font-size:11.5px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); border:1px dashed var(--border,#262B35); border-radius:8px; padding:6px 10px; cursor:help; }
-  [data-page="trading"] .tr-loadslot{ margin-left:auto; display:inline-flex; align-items:center; }
-  [data-page="trading"] .tr-load{ background:var(--accent,#3E7BFA); border:0; color:#fff; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:8px; cursor:pointer; font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-load:disabled{ opacity:0.6; cursor:default; }
-  [data-page="trading"] .tr-progress{ display:inline-flex; align-items:center; gap:9px; }
-  [data-page="trading"] .tr-progbar{ width:120px; height:6px; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); border-radius:99px; overflow:hidden; }
-  [data-page="trading"] .tr-progbar span{ display:block; height:100%; background:var(--accent,#3E7BFA); transition:width 160ms ease; }
-  [data-page="trading"] .tr-progtxt{ font-size:11.5px; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-mono,monospace); white-space:nowrap; }
-  [data-page="trading"] .tr-notice{ background:rgba(226,139,74,0.1); border:1px solid rgba(226,139,74,0.3); color:#e8a86a; font-size:12.5px; border-radius:8px; padding:9px 13px; margin-bottom:12px; font-family:var(--mx-font-ui,sans-serif); }
-  /* table */
-  [data-page="trading"] .tr-tablewrap{ overflow-x:auto; border:1px solid var(--border,#262B35); border-radius:12px; position:relative; }
-  [data-page="trading"] .tr-table{ border-collapse:separate; border-spacing:0; width:100%; min-width:960px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
-  [data-page="trading"] .tr-th{ text-align:right; font-size:10.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-faint,#565F6A); padding:10px 12px; border-bottom:1px solid var(--border,#262B35); white-space:nowrap; cursor:pointer; user-select:none; background:var(--panel,#12151C); position:sticky; top:0; z-index:2; }
-  [data-page="trading"] .tr-th-nosort{ cursor:default; }
-  [data-page="trading"] .tr-th .tr-sort{ color:#3a4049; margin-left:3px; font-size:9px; }
-  [data-page="trading"] .tr-th .tr-sort-on{ color:var(--accent,#3E7BFA); }
-  [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-th[data-sort="player"]{ text-align:left; }
-  [data-page="trading"] .tr-th:hover{ color:var(--text-dim,#8F98A6); }
-  [data-page="trading"] .tr-cell{ padding:8px 12px; font-size:13px; text-align:right; vertical-align:middle; color:var(--text,#e7e9ee); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(38,43,53,0.55); }
-  [data-page="trading"] .tr-row:hover .tr-cell{ background:rgba(62,123,250,0.05); }
-  /* pinned TIME + PLAYER columns — everything to their right scrolls under them */
-  [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-time{ position:sticky; left:0; width:var(--tr-time-w); min-width:var(--tr-time-w); background:var(--panel,#12151C); z-index:1; }
-  [data-page="trading"] .tr-th[data-sort="player"],[data-page="trading"] .tr-player{ position:sticky; left:var(--tr-time-w); width:var(--tr-player-w); min-width:var(--tr-player-w); max-width:var(--tr-player-w); background:var(--panel,#12151C); z-index:1; box-shadow:1px 0 0 var(--border,#262B35); }
-  [data-page="trading"] .tr-th[data-sort="time"],[data-page="trading"] .tr-th[data-sort="player"]{ z-index:3; }
-  [data-page="trading"] .tr-row:hover .tr-time,[data-page="trading"] .tr-row:hover .tr-player{ background:#161b24; }
-  [data-page="trading"] .tr-time{ text-align:left; font-family:var(--mx-font-mono,monospace); font-size:11.5px; color:var(--text-dim,#8F98A6); white-space:nowrap; }
-  [data-page="trading"] .tr-livepip{ display:inline-block; font-size:8.5px; font-weight:800; letter-spacing:0.06em; color:#3dd68c; background:rgba(61,214,140,0.14); border-radius:4px; padding:1px 4px; margin-right:5px; vertical-align:1px; }
-  [data-page="trading"] .tr-player{ text-align:left; }
-  /* one spacing rule, every tab: TIME/PLAYER (above) + ODDS/MATCHES fixed, stat columns a single fixed width regardless of how many a tab shows; the width:100% .tr-spacer eats the remainder so the left side never shifts and stat columns start at the same x on every tab. */
-  [data-page="trading"] .tr-th[data-sort="odds"],[data-page="trading"] .tr-odds{ width:var(--tr-odds-w); min-width:var(--tr-odds-w); max-width:var(--tr-odds-w); }
-  [data-page="trading"] .tr-th[data-sort="matches"],[data-page="trading"] .tr-matches{ width:var(--tr-matches-w); min-width:var(--tr-matches-w); max-width:var(--tr-matches-w); }
-  [data-page="trading"] .tr-th[data-sort]:not([data-sort="time"]):not([data-sort="player"]):not([data-sort="odds"]):not([data-sort="matches"]),[data-page="trading"] .tr-stat{ width:var(--tr-stat-w); min-width:var(--tr-stat-w); max-width:var(--tr-stat-w); }
-  [data-page="trading"] .tr-pcell{ display:flex; align-items:center; gap:9px; min-width:0; }
-  [data-page="trading"] .tr-av-wrap{ position:relative; width:var(--tr-av); height:var(--tr-av); flex-shrink:0; }
-  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--panel-2,#181C25); border:1px solid var(--border,#262B35); font-size:15px; font-weight:700; color:var(--text-dim,#8F98A6); font-family:var(--mx-font-ui,sans-serif); }
-  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:var(--tr-av); height:var(--tr-av); border-radius:50%; object-fit:cover; background:var(--panel-2,#181C25); }
-  [data-page="trading"] .tr-pbody{ min-width:0; flex:1; }
-  [data-page="trading"] .tr-pline{ display:flex; align-items:center; gap:6px; min-width:0; }
-  [data-page="trading"] .tr-flag{ font-size:14px; line-height:1; flex-shrink:0; }
-  [data-page="trading"] .tr-pname{ font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-  [data-page="trading"] .tr-prank{ font-size:10.5px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); flex-shrink:0; }
-  [data-page="trading"] .tr-tier{ font-size:8.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; border-radius:4px; padding:1px 4px; background:var(--accent-dim,#152A4D); color:#89b4ff; flex-shrink:0; }
-  [data-page="trading"] .tr-tier2{ background:transparent; color:var(--text-faint,#565F6A); border:1px dashed var(--border,#262B35); }
-  [data-page="trading"] .tr-pmeta{ font-size:10.5px; color:var(--text-faint,#565F6A); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="trading"] .tr-stat{ line-height:1.15; }
-  [data-page="trading"] .tr-pct{ display:block; font-weight:700; font-size:13px; }
-  [data-page="trading"] .tr-frac{ display:block; font-size:10px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); margin-top:1px; }
-  [data-page="trading"] .tr-stat.thin{ opacity:0.5; }
-  /* TEN-151 Part 1 — primary-column band: the current tab's decision columns.
-     Background on the cell + a top accent bar on the header. Kept on a DIFFERENT
-     channel (background) from the strength colour (text) so the two co-render
-     without washing each other out (founder requirement). */
-  [data-page="trading"] .tr-th.tr-primary{ box-shadow:inset 0 2px 0 var(--accent,#3E7BFA); color:#9fc0ff; }
-  [data-page="trading"] .tr-cell.tr-primary{ background:rgba(62,123,250,0.06); }
-  /* TEN-151 Part 2 — player-strength colour (gate direction-list:v1). Strong
-     quartile green, weak quartile red, applied to the percentage only so the
-     fraction underneath always stays legible. Thin/neutral cells carry no band
-     (handled in statCell); direction inverts oph/babb/bbk/bfsg in JS. */
-  [data-page="trading"] .tr-stat.tr-strong .tr-pct{ color:#3dd68c; }
-  [data-page="trading"] .tr-stat.tr-weak .tr-pct{ color:#e8695f; }
-  [data-page="trading"] .tr-dash,[data-page="trading"] .tr-pending{ color:var(--text-faint,#565F6A); }
-  [data-page="trading"] .tr-dash-inline{ color:var(--text-faint,#565F6A); }
-  [data-page="trading"] .tr-odds{ white-space:nowrap; }
-  [data-page="trading"] .tr-odds .tr-price{ display:block; font-weight:700; }
-  /* greedy trailing spacer — soaks up the width:100% slack so data columns pack
-     tight against the pinned player cell instead of leaving a gap before ODDS */
-  [data-page="trading"] .tr-spacer{ width:100%; padding:0; }
-  [data-page="trading"] .tr-obook{ display:block; font-size:9px; color:var(--text-faint,#565F6A); font-family:var(--mx-font-mono,monospace); }
-  [data-page="trading"] .tr-otag{ display:inline-block; font-size:8px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; border-radius:3px; padding:0 3px; margin-top:2px; }
-  [data-page="trading"] .tr-otag-pre{ background:var(--panel-2,#181C25); color:var(--text-faint,#565F6A); border:1px solid var(--border,#262B35); }
-  [data-page="trading"] .tr-otag-close{ background:rgba(61,214,140,0.12); color:#3dd68c; }
-  [data-page="trading"] .tr-matches{ font-family:var(--mx-font-mono,monospace); color:var(--text-dim,#8F98A6); }
-  /* column tooltips: a hoverable header carries a dotted underline as an affordance */
-  [data-page="trading"] .tr-th-tip{ cursor:help; }
-  [data-page="trading"] .tr-th-tip .tr-thlabel{ border-bottom:1px dotted var(--text-faint,#565F6A); padding-bottom:1px; }
-  [data-page="trading"] .tr-th-tip:hover .tr-thlabel,[data-page="trading"] .tr-th-tip:focus .tr-thlabel{ border-bottom-color:var(--accent,#3E7BFA); }
-  [data-page="trading"] .tr-th-tip:focus{ outline:none; }
-  /* the popover itself is parented to <body> (position:fixed) so the table's overflow-x never clips it — this is why the old title/CSS tips never appeared */
-  .tr-tip{ position:fixed; z-index:99999; max-width:290px; background:#0c0f15; border:1px solid var(--border,#262B35); color:var(--text,#e7e9ee); font-size:12px; line-height:1.45; padding:9px 11px; border-radius:8px; box-shadow:0 8px 28px rgba(0,0,0,0.55); pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity 120ms ease, transform 120ms ease; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-weight:400; text-transform:none; letter-spacing:normal; white-space:normal; }
-  .tr-tip.show{ opacity:1; transform:translateY(0); }
-  .tr-tip .tr-tip-win{ display:block; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.07); color:var(--text-faint,#8F98A6); font-size:11px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
-  /* empty / small-empty */
-  [data-page="trading"] .tr-empty{ text-align:center; padding:64px 20px; }
-  [data-page="trading"] .tr-empty-sm{ padding:40px 20px; }
-  [data-page="trading"] .tr-empty-icon{ font-size:34px; color:var(--text-faint,#565F6A); margin-bottom:10px; }
-  [data-page="trading"] .tr-empty-title{ font-size:15px; font-weight:700; color:var(--text,#e7e9ee); margin:0 0 6px; }
-  [data-page="trading"] .tr-empty-sub{ font-size:12.5px; color:var(--text-dim,#8F98A6); margin:0; }
+  /* TEN-192 — Trading Report, rebuilt to design_handoff_trading_report (flag-gated;
+     only page under data-page="trading"). Every colour, size, radius, track and
+     spacing below is taken verbatim from `Trading Report.dc.html` / README
+     §"Design tokens" — the export is the authority, this page is not free to
+     disagree with it. Where a value has no export counterpart (the shard-streaming
+     pending glyph) it is called out in trading-report.js. */
+  [data-page="trading"]{ background:#06070a; }
+  [data-page="trading"] .tr-wrap{ max-width:1360px; margin:0 auto; padding:30px 40px 70px; }
+  /* the page is a single flex column, gap 22px (README §Screen) */
+  [data-page="trading"] .tr-page{ display:flex; flex-direction:column; gap:22px; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee; }
+
+  /* eyebrow spec, used throughout: mono 9.5 / 600 / 0.16em / uppercase */
+  [data-page="trading"] .tr-eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:#4b5672; }
+
+  /* §1 page header card */
+  [data-page="trading"] .tr-hdr{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; }
+  [data-page="trading"] .tr-hdr-title{ font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
+  [data-page="trading"] .tr-hdr-sub{ font-size:13.5px; color:#5b6880; margin:8px 0 0; max-width:520px; line-height:1.55; }
+  [data-page="trading"] .tr-hdr-stats{ display:flex; gap:34px; }
+  [data-page="trading"] .tr-pair{ display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+  [data-page="trading"] .tr-pairval{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; color:#e7e9ee; }
+
+  /* §2 control bar — one outer box, two stacked strips */
+  [data-page="trading"] .tr-ctl{ display:flex; flex-direction:column; border:1px solid rgba(255,255,255,0.09); border-radius:12px; }
+  [data-page="trading"] .tr-ctl-top{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; padding:11px 16px; background:#080a10; border-radius:12px 12px 0 0; }
+  [data-page="trading"] .tr-seg{ display:inline-flex; flex:none; gap:3px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:2px; }
+  [data-page="trading"] .tr-segi{ padding:6px 13px; border-radius:7px; white-space:nowrap; font-size:11.5px; cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; font-weight:600; color:#5b6880; background:transparent; border:1px solid rgba(255,255,255,0.07); }
+  [data-page="trading"] .tr-segi.on{ font-weight:700; color:#e7e9ee; background:rgba(91,155,255,0.16); border-color:rgba(91,155,255,0.22); }
+  [data-page="trading"] .tr-segi.dis{ color:#4b5672; border-color:rgba(255,255,255,0.04); cursor:default; }
+  [data-page="trading"] .tr-dd{ position:relative; z-index:40; flex:none; }
+  [data-page="trading"] .tr-dd-trig{ display:inline-flex; align-items:center; gap:10px; min-width:138px; justify-content:space-between; font-size:11.5px; font-weight:600; color:#e7e9ee; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:7px 13px; cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  [data-page="trading"] .tr-caret{ font-size:9px; color:#5b6880; }
+  [data-page="trading"] .tr-dd-lab{ display:inline-flex; align-items:center; gap:8px; }
+  [data-page="trading"] .tr-dot6{ width:6px; height:6px; border-radius:50%; flex:none; }
+  /* one menu surface, shared by the two dropdowns and the column filter menus */
+  [data-page="trading"] .tr-menu{ position:absolute; top:calc(100% + 6px); left:0; z-index:60; display:flex; flex-direction:column; gap:2px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:11px; padding:5px; min-width:200px; box-shadow:0 16px 36px -18px rgba(0,0,0,0.85); }
+  [data-page="trading"] .tr-opt{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 11px; border-radius:8px; font-size:12.5px; font-weight:600; color:#8b96b5; background:transparent; cursor:pointer; transition:background .14s ease, color .14s ease; }
+  [data-page="trading"] .tr-opt.sel{ background:rgba(91,155,255,0.13); color:#e7e9ee; }
+  [data-page="trading"] .tr-tick{ color:#5b9bff; font-size:12px; }
+  [data-page="trading"] .tr-searchwrap{ display:flex; flex:1 1 150px; min-width:132px; align-items:center; gap:9px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:7px 13px; }
+  [data-page="trading"] .tr-searchwrap input{ flex:1; min-width:0; background:transparent; border:0; outline:none; font-family:inherit; font-size:12.5px; color:#e7e9ee; }
+  [data-page="trading"] .tr-ctl-tabs{ display:flex; background:#0a0d14; border-top:1px solid rgba(255,255,255,0.09); border-radius:0 0 12px 12px; overflow:hidden; }
+  [data-page="trading"] .tr-tab{ flex:1; text-align:center; padding:11px 6px; font-size:12px; font-weight:600; color:#5b6880; background:transparent; border-right:1px solid rgba(255,255,255,0.05); white-space:nowrap; cursor:pointer; transition:color .14s ease, border-color .14s ease; }
+  [data-page="trading"] .tr-tab.on{ font-weight:700; color:#e7e9ee; background:rgba(91,155,255,0.10); }
+
+  [data-page="trading"] .tr-body{ display:flex; flex-direction:column; gap:10px; }
+
+  /* §3 filter notice */
+  [data-page="trading"] .tr-fnotice{ display:flex; align-items:center; gap:10px; }
+  [data-page="trading"] .tr-fnotice .tr-eyebrow{ color:#5b6880; }
+  [data-page="trading"] .tr-clear{ cursor:pointer; color:#5b9bff !important; transition:color .14s ease; }
+
+  /* §4 table header + §5 rows — ONE grid template, header and every row (README §4) */
+  [data-page="trading"] .tr-head,[data-page="trading"] .tr-row{ display:grid; grid-template-columns:62px 210px 64px 40px 1fr repeat(7, 84px); gap:0 12px; }
+  [data-page="trading"] .tr-head{ position:sticky; top:0; z-index:20; align-items:end; padding:10px 18px; background:#080a10; border:1px solid rgba(255,255,255,0.09); border-radius:12px; }
+  [data-page="trading"] .tr-hcell{ display:flex; flex-direction:column; align-items:stretch; gap:5px; color:#5b6880; cursor:pointer; position:relative; transition:color .14s ease; }
+  [data-page="trading"] .tr-hcell:hover{ color:#8b96b5; }
+  [data-page="trading"] .tr-hcell.on{ color:#5b9bff; }
+  [data-page="trading"] .tr-hcell.band{ color:#5b9bff; }
+  [data-page="trading"] .tr-hrow{ display:flex; align-items:center; justify-content:flex-end; gap:5px; line-height:13px; }
+  [data-page="trading"] .tr-hcode{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:inherit; white-space:nowrap; text-align:right; line-height:13px; }
+  [data-page="trading"] .tr-hrule{ height:1px; background:rgba(255,255,255,0.07); }
+  [data-page="trading"] .tr-hfield{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672; white-space:nowrap; text-align:right; line-height:12px; height:12px; }
+  [data-page="trading"] .tr-funnel{ flex:none; display:block; cursor:pointer; }
+  /* highlight bands: bleed 6px left/right, 11px above/below; the header band runs
+     21px below so it meets the first row (README §4 "Highlight bands") */
+  [data-page="trading"] .tr-bandh::before,[data-page="trading"] .tr-bandb::before{ content:''; position:absolute; left:-6px; right:-6px; top:-11px; background:rgba(91,155,255,0.06); pointer-events:none; z-index:-1; }
+  [data-page="trading"] .tr-bandh::before{ bottom:-21px; }
+  [data-page="trading"] .tr-bandb::before{ bottom:-11px; }
+
+  /* column filter menu — same surface as the dropdowns, right-aligned, 214px */
+  [data-page="trading"] .tr-fmenu{ left:auto; right:0; top:calc(100% + 8px); min-width:214px; cursor:default; }
+  [data-page="trading"] .tr-mrow{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:8px; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:600; letter-spacing:0; text-transform:none; text-align:left; color:#e7e9ee; cursor:pointer; transition:background .14s ease, color .14s ease; }
+  [data-page="trading"] .tr-mrow.off{ color:#4b5672; }
+  [data-page="trading"] .tr-box{ width:13px; height:13px; border-radius:4px; flex:none; border:1px solid rgba(255,255,255,0.18); background:transparent; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#06070a; }
+  [data-page="trading"] .tr-mrow:not(.off) .tr-box{ border-color:#5b9bff; background:#5b9bff; }
+  [data-page="trading"] .tr-mcount{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8b96b5; }
+  [data-page="trading"] .tr-mrow.off .tr-mcount{ color:#4b5672; }
+  [data-page="trading"] .tr-mlabel{ flex:1; }
+
+  /* metric header tooltip — hover only, suppressed while that column's menu is open */
+  [data-page="trading"] .tr-tip{ display:none; position:absolute; top:calc(100% + 8px); right:0; z-index:30; width:220px; padding:9px 11px; background:#0a0d13; border:1px solid rgba(255,255,255,0.15); border-radius:9px; box-shadow:0 16px 36px -18px rgba(0,0,0,0.85); font-family:'Hanken Grotesk',sans-serif; font-size:12px; font-weight:400; letter-spacing:0; text-transform:none; color:#aab3c5; line-height:1.5; text-align:left; white-space:normal; }
+  [data-page="trading"] .tr-hcell:hover .tr-tip{ display:block; }
+  [data-page="trading"] .tr-hcell.notip .tr-tip{ display:none !important; }
+
+  /* §5 rows */
+  [data-page="trading"] .tr-rows{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; overflow:hidden; }
+  [data-page="trading"] .tr-row{ align-items:center; padding:10px 18px; border-top:1px solid transparent; transition:background .14s ease; position:relative; z-index:0; }
+  [data-page="trading"] .tr-row.sep-match{ border-top-color:rgba(255,255,255,0.10); }
+  [data-page="trading"] .tr-row.sep-pair{ border-top-color:rgba(255,255,255,0.04); }
+  [data-page="trading"] .tr-row.sep-flat{ border-top-color:rgba(255,255,255,0.07); }
+  [data-page="trading"] .tr-row:hover{ background:rgba(255,255,255,0.022); }
+  [data-page="trading"] .tr-c1{ display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
+  [data-page="trading"] .tr-time{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#e7e9ee; }
+  [data-page="trading"] .tr-pill{ font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.12em; border-radius:5px; padding:2px 6px; color:#5b6880; background:transparent; border:1px solid rgba(255,255,255,0.09); }
+  [data-page="trading"] .tr-pill.live{ color:#5b9bff; background:rgba(91,155,255,0.12); border-color:rgba(91,155,255,0.35); }
+  [data-page="trading"] .tr-rankno{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#5b6880; }
+  [data-page="trading"] .tr-pl{ display:flex; align-items:center; gap:11px; min-width:0; }
+  [data-page="trading"] .tr-av-wrap{ position:relative; width:32px; height:32px; flex:none; }
+  /* the <img> stays invisible until it actually decodes, so the monogram shows
+     through the whole time the resolver chain is stepping. ATP headshots 403 on a
+     cross-origin request, so the chain ALWAYS steps at least once and an opaque
+     placeholder background here would paint a blank circle for that window. */
+  [data-page="trading"] .tr-av{ position:absolute; inset:0; width:32px; height:32px; border-radius:50%; object-fit:cover; background:transparent; border:1px solid rgba(255,255,255,0.09); opacity:0; }
+  [data-page="trading"] .tr-av.on{ opacity:1; }
+  /* founder ruling 2026-09-06, re-confirmed on the TEN-192 gate: the monogram is
+     the fallback, NOT the export's bare #0f1420 circle. Same 32px treatment. */
+  [data-page="trading"] .tr-mono{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#0f1420; border:1px solid rgba(255,255,255,0.09); font-family:'Hanken Grotesk',sans-serif; font-size:11px; font-weight:700; color:#5b6880; }
+  [data-page="trading"] .tr-pbody{ min-width:0; }
+  [data-page="trading"] .tr-pl1{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  [data-page="trading"] .tr-cc{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.1em; color:#4b5672; flex:none; }
+  [data-page="trading"] .tr-name{ font-size:14px; font-weight:700; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="trading"] .tr-pl2{ display:flex; align-items:center; gap:8px; margin-top:3px; }
+  [data-page="trading"] .tr-rank{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#5b6880; white-space:nowrap; }
+  [data-page="trading"] .tr-tag{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; font-weight:700; letter-spacing:0.12em; border-radius:4px; padding:2px 5px; color:#4b5672; border:1px solid rgba(255,255,255,0.07); }
+  [data-page="trading"] .tr-tag.t0{ color:#8b96b5; border-color:rgba(255,255,255,0.14); }
+  [data-page="trading"] .tr-ev{ font-size:11px; color:#4b5672; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="trading"] .tr-odds{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  [data-page="trading"] .tr-price{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:#e7e9ee; }
+  [data-page="trading"] .tr-book{ font-size:10px; color:#4b5672; }
+  [data-page="trading"] .tr-n{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#8b96b5; text-align:right; }
+  [data-page="trading"] .tr-cell{ display:flex; flex-direction:column; align-items:flex-end; justify-content:center; align-self:stretch; gap:2px; position:relative; }
+  [data-page="trading"] .tr-pct{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; }
+  [data-page="trading"] .tr-pct.sm{ font-size:12px; }
+  [data-page="trading"] .tr-sub{ font-family:'IBM Plex Mono',monospace; font-size:10px; }
+
+  /* empty state (§5) */
+  [data-page="trading"] .tr-empty2{ display:flex; align-items:center; justify-content:center; gap:12px; padding:34px 18px; }
+  [data-page="trading"] .tr-empty2 span:first-child{ font-size:13px; color:#5b6880; }
+
+  /* §6 footnote */
+  [data-page="trading"] .tr-foot{ font-size:11px; color:#4b5672; margin-top:12px; line-height:1.6; }
+
+  /* Below ~1200px the table scrolls rather than compressing (README §"Responsive"
+     — a narrow layout is explicitly out of this spec's scope). The tracks are
+     fixed, so pinning the min-width and letting the page scroll is enough; an
+     overflow-x wrapper would compute overflow-y to auto and kill the header's
+     position:sticky. */
+  [data-page="trading"] .tr-head,[data-page="trading"] .tr-rows{ min-width:1096px; }
 
   /* TEN-107 Slice 4 — standalone Live tab (flag-gated; only page under data-page="live") */
   [data-page="live"] .lt-wrap{ max-width:1080px; margin:0 auto; padding:24px 24px 60px; }
@@ -3061,16 +3091,14 @@
      24-month situational splits. Rendering + polling owned entirely by
      trading-report.js, gated on FEATURE_TRADING_REPORT. Reuses the Live tab's
      gate (window.LiveTab.isAtpSingles + isUnderway); changes nothing in it. -->
+<!-- TRADING REPORT (TEN-192) — the whole page, including the §1 header card and
+     its four stat pairs, is rendered by trading-report.js into #tradingGrid. The
+     stat pairs are live figures (slate count, in-play count, window, last update),
+     so there is no static title row to go stale. Styling lives in the
+     [data-page="trading"] .tr-* block above. -->
 <div class="tabpage" data-page="trading">
   <div class="tr-wrap">
-    <div class="tr-titlerow">
-      <div>
-        <h1 class="tr-h1">Trading Report</h1>
-        <p class="tr-subtitle">Today’s ATP singles — one row per player, with 24-month situational splits for the live read. Rows flip to LIVE as play starts.</p>
-        <p class="tr-status" id="tradingStatus"><span class="tr-dot"></span>Loading…</p>
-      </div>
-    </div>
-    <div class="tr-grid" id="tradingGrid"></div>
+    <div id="tradingGrid"></div>
   </div>
 </div>
 
