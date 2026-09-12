@@ -217,6 +217,31 @@
     if (!fmtShort(startYmd) || !fmtShort(lastYmd)) return false;
     return String(startYmd).slice(0, 4) !== String(lastYmd).slice(0, 4);
   }
+  // Founder ruling `prior-year` (ask 1c9de573, 2026-09-12, option a). `last-year` only
+  // fires on a CROSSING, which leaves the sibling case uncovered: the Slam recency
+  // exemption has no upper age bound, so a Sep-2026 US Open run can still be on the
+  // board in Jan 2027 reading a bare "Started 26 Aug / Last 13 Sep" — wholly in a past
+  // year, unmarked, and the card's old "(4mo ago)" has no slot in the export to judge
+  // it by. So the year ALSO appears whenever LAST is not in the snapshot's own year.
+  //
+  // The reference is generatedAt's year, NOT the client clock: the page must read the
+  // same in every timezone and must never disagree with the data it is painting — a
+  // reader in UTC+13 on 1 Jan would otherwise see years the artifact doesn't support.
+  // UTC to match the UPDATED clock. No usable generatedAt → no prior-year marking
+  // (crossesYear still applies); a year is never guessed.
+  function yearOfIso(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return String(d.getUTCFullYear());
+  }
+  // Gated on fmtShort for the same reason crossesYear is: an unrenderable LAST is a
+  // dash, and a dash must not drag a lone year onto the STARTED cell beside it.
+  function priorYear(lastYmd, refIso) {
+    var ry = yearOfIso(refIso);
+    if (!ry || !fmtShort(lastYmd)) return false;
+    return String(lastYmd).slice(0, 4) !== ry;
+  }
   // STARTED (founder ruling q5, 2026-09-12). series.json stores no startDate; the run's
   // first match IS its start. matches[] is written oldest→newest by build-series.js and
   // matches.length === count, so matches[0].date is the first match OF THE RUN — for a
@@ -392,7 +417,11 @@
 
     // 4 · STARTED · LAST · TYPE
     var startYmd = startedOf(st);
-    var showYear = crossesYear(startYmd, st.lastDate);
+    // Ruling `last-year` (a) OR ruling `prior-year` (a) — a run that straddles a year
+    // end, or one whose LAST sits outside the snapshot's own year. Either way the year
+    // goes on BOTH cells, so the two ends stay readable against each other.
+    var showYear = crossesYear(startYmd, st.lastDate) ||
+                   priorYear(st.lastDate, _data && _data.generatedAt);
     var startTxt = fmtShort(startYmd, showYear);
     var lastTxt = fmtShort(st.lastDate, showYear);
     // A year-bearing strip is 84px of mono in the LAST cell, which does NOT fit the

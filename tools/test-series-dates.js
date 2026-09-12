@@ -46,10 +46,13 @@ function lift() {
   const block = src.slice(start, end);
   assert(/function fmtShort\(/.test(block) && /function crossesYear\(/.test(block) && /function fmtDate\(/.test(block),
     'date block no longer contains fmtDate/fmtShort/crossesYear');
+  assert(/function priorYear\(/.test(block) && /function yearOfIso\(/.test(block),
+    'date block no longer contains priorYear/yearOfIso');
   // eslint-disable-next-line no-new-func
-  return new Function(block + '\n return { fmtDate: fmtDate, fmtShort: fmtShort, crossesYear: crossesYear };')();
+  return new Function(block + '\n return { fmtDate: fmtDate, fmtShort: fmtShort, crossesYear: crossesYear,' +
+    ' priorYear: priorYear, yearOfIso: yearOfIso };')();
 }
-const { fmtDate, fmtShort, crossesYear } = lift();
+const { fmtDate, fmtShort, crossesYear, priorYear, yearOfIso } = lift();
 
 // ── last-year (a): the bare export form is the default ───────────────────────
 assert.strictEqual(fmtShort('2026-09-12'), '12 Sep');
@@ -66,6 +69,51 @@ ok('a cross-year run carries a 2-digit year on both cells');
 assert.strictEqual(crossesYear('2026-08-05', '2026-09-12'), false);
 assert.strictEqual(crossesYear('2026-01-01', '2026-12-31'), false, 'a full year inside ONE year is not a crossing');
 ok('a same-year run never carries a year');
+
+// ── prior-year (a): the year also marks a run whose LAST is not in the data year ──
+// The case the crossing rule cannot reach: a Slam run wholly inside a past year.
+assert.strictEqual(crossesYear('2026-08-26', '2026-09-13'), false, 'wholly in 2026 — not a crossing');
+assert.strictEqual(priorYear('2026-09-13', '2027-01-20T06:04:14.376Z'), true,
+  'a 2026 run still on the board in 2027 must be marked');
+assert.strictEqual(fmtShort('2026-08-26', true), '26 Aug ’26');
+assert.strictEqual(fmtShort('2026-09-13', true), '13 Sep ’26');
+ok('a run wholly inside a past year carries the year on both cells');
+
+assert.strictEqual(priorYear('2026-09-13', '2026-09-12T06:04:14.376Z'), false,
+  'a run inside the snapshot\'s own year stays bare — today\'s cards must not change');
+ok('a current-data-year run keeps the export\'s bare day + month');
+
+// The reference is the DATA's year, never the client clock, or the page would read
+// differently by timezone and could disagree with the artifact it is painting.
+assert.strictEqual(yearOfIso('2027-01-01T00:00:00Z'), '2027');
+assert.strictEqual(yearOfIso('2026-12-31T23:30:00Z'), '2026', 'UTC, matching the UPDATED clock');
+assert(!/new Date\(\)\.getFullYear|getFullYear\(\)/.test(src),
+  'the year reference reads the client clock — it must come from generatedAt');
+assert(/priorYear\(st\.lastDate, _data && _data\.generatedAt\)/.test(src),
+  'priorYear is no longer fed generatedAt at the call site');
+ok('the reference year comes from generatedAt in UTC, not the browser clock');
+
+// No usable generatedAt → no marking. A year is never guessed. The LAST here is
+// deliberately in a DIFFERENT year from any year the code could plausibly hardcode:
+// testing this with a same-year date passes even against a stubbed-in constant.
+assert.strictEqual(priorYear('2026-09-13', null), false);
+assert.strictEqual(priorYear('2019-09-13', null), false, 'a missing generatedAt must not fall back to a constant');
+assert.strictEqual(priorYear('2019-09-13', ''), false);
+assert.strictEqual(priorYear('2019-09-13', 'not-a-date'), false);
+assert.strictEqual(yearOfIso(null), null);
+assert.strictEqual(yearOfIso(undefined), null);
+assert.strictEqual(yearOfIso(''), null);
+assert.strictEqual(yearOfIso('not-a-date'), null);
+// …and an unrenderable LAST must not drag a lone year onto STARTED beside its dash.
+assert.strictEqual(priorYear(null, '2027-01-20T06:04:14.376Z'), false);
+assert.strictEqual(priorYear('2026-13-05', '2027-01-20T06:04:14.376Z'), false, 'month 13 is a dash, not a year');
+assert.strictEqual(priorYear('2026-9-13', '2027-01-20T06:04:14.376Z'), false, 'unpadded LAST is unrenderable');
+ok('an unusable generatedAt or an unrenderable LAST yields no year, never a guess');
+
+// The two rulings OR together at the call site — neither may be dropped.
+assert(/crossesYear\(startYmd, st\.lastDate\) \|\|\s*\n?\s*priorYear\(/.test(src),
+  'showYear no longer ORs the crossing rule with the prior-year rule');
+ok('showYear ORs last-year (a) with prior-year (a)');
 
 // ── the review's finding: one unknown end must not produce a lone year ───────
 assert.strictEqual(crossesYear(null, '2026-01-12'), false);
