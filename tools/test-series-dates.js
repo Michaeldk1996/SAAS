@@ -1,0 +1,123 @@
+// Series page — founder-ruling lock harness for the card's date cells + footer.
+//
+// TEN-194 (ask c2719150, answered 2026-09-12). Three rulings, encoded the same
+// day so they cannot silently regress:
+//
+//   footer-note (a) — the honesty note was reworded because ruling q1 moved POOL
+//     off the card into the modal, which made "Every card shows both" false. The
+//     stale sentence must stay gone; the drop guarantee must stay stated.
+//   last-year   (a) — STARTED and LAST print the export's bare day + month, and
+//     carry a 2-digit year ONLY when the run itself crosses a year boundary. The
+//     year appears on BOTH cells or neither — never one alone.
+//   two-up      (a) — the card grid stays minmax(400px,1fr); no 340px variant.
+//
+// Plus the three defects the clean-context review caught on that build, which are
+// behaviour rather than ruling and would otherwise be invisible until December
+// (today's series.json has no cross-year run to exercise them):
+//
+//   • a year-bearing strip is 84px of mono and ELIDES to "12 Sep ’…" below ~364px
+//     unless the narrow-viewport variant relaxes it — a corrupted date is worse
+//     than the year-less one it replaced, so the CSS escape hatch is pinned here.
+//   • crossesYear must agree with fmtShort about what is renderable, or a lone
+//     "’27" prints beside an em-dash.
+//   • month 00/13 passes the \d{2} regex and would print "5 undefined" — a
+//     fabricated user-visible value, against the standing missing-data rule.
+//
+// Run: node tools/test-series-dates.js   (also wired into `npm test`)
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
+const css = fs.readFileSync(path.join(ROOT, 'series.css'), 'utf8');
+
+const checks = [];
+const ok = (name) => checks.push(name);
+
+// ── execute the SHIPPED helpers, rather than reimplementing them here. series.js
+//    is a browser IIFE with no exports, so lift the date block out by its markers
+//    and evaluate exactly those bytes.
+function lift() {
+  const start = src.indexOf('var YMD_RE =');
+  const endMarker = '\n  function startedOf(';
+  const end = src.indexOf(endMarker);
+  assert(start > 0 && end > start, 'series.js date block not found — markers moved?');
+  const block = src.slice(start, end);
+  assert(/function fmtShort\(/.test(block) && /function crossesYear\(/.test(block) && /function fmtDate\(/.test(block),
+    'date block no longer contains fmtDate/fmtShort/crossesYear');
+  // eslint-disable-next-line no-new-func
+  return new Function(block + '\n return { fmtDate: fmtDate, fmtShort: fmtShort, crossesYear: crossesYear };')();
+}
+const { fmtDate, fmtShort, crossesYear } = lift();
+
+// ── last-year (a): the bare export form is the default ───────────────────────
+assert.strictEqual(fmtShort('2026-09-12'), '12 Sep');
+assert.strictEqual(fmtShort('2026-09-12', false), '12 Sep');
+assert.strictEqual(fmtShort('2026-12-05'), '5 Dec');           // no leading zero on the day
+ok('same-year cells keep the export\'s bare day + month');
+
+// ── last-year (a): the year returns ONLY across a boundary, on BOTH cells ────
+assert.strictEqual(crossesYear('2025-12-05', '2026-01-12'), true);
+assert.strictEqual(fmtShort('2025-12-05', true), '5 Dec ’25');
+assert.strictEqual(fmtShort('2026-01-12', true), '12 Jan ’26');
+ok('a cross-year run carries a 2-digit year on both cells');
+
+assert.strictEqual(crossesYear('2026-08-05', '2026-09-12'), false);
+assert.strictEqual(crossesYear('2026-01-01', '2026-12-31'), false, 'a full year inside ONE year is not a crossing');
+ok('a same-year run never carries a year');
+
+// ── the review's finding: one unknown end must not produce a lone year ───────
+assert.strictEqual(crossesYear(null, '2026-01-12'), false);
+assert.strictEqual(crossesYear('2025-12-05', null), false);
+assert.strictEqual(crossesYear('2026-1-5', '2027-01-12'), false, 'unpadded start is unrenderable → no crossing');
+assert.strictEqual(crossesYear('2025-12-05', '2027-01-12T10:00:00Z'), false, 'timestamp end is unrenderable → no crossing');
+assert.strictEqual(fmtShort('2026-1-5'), null);
+ok('an unrenderable end yields a dash on both cells, never a lone year');
+
+// ── standing rule: never fabricate. An impossible month is a dash ────────────
+assert.strictEqual(fmtShort('2026-00-05'), null, 'month 00 must not print "5 undefined"');
+assert.strictEqual(fmtShort('2026-13-05', true), null, 'month 13 must not print "5 undefined ’26"');
+assert.strictEqual(fmtDate('2026-00-05'), null);
+assert.strictEqual(fmtDate('2026-13-05'), null);
+assert.strictEqual(fmtShort(''), null);
+assert.strictEqual(fmtShort(undefined), null);
+assert.strictEqual(fmtDate('2026-09-12'), '12 Sep 2026', 'the modal keeps the FULL year');
+ok('an impossible or missing date falls to a dash, never a fabricated string');
+
+// ── the narrow-viewport escape hatch for year-bearing strips ────────────────
+assert(/sr-strip--yr/.test(src), 'series.js no longer marks the year-bearing strip');
+assert(/showYear \? ' sr-strip--yr' : ''/.test(src), 'the sr-strip--yr modifier is no longer gated on showYear');
+const mq = css.slice(css.indexOf('@media (max-width: 640px)'));
+assert(mq.indexOf('@media') === 0 && mq.length > 0, 'the narrow-viewport media query is gone');
+assert(/\.sr-strip\.sr-strip--yr \{[^}]*grid-template-columns: 1fr 1fr/.test(mq),
+  'the narrow-viewport two-column relaxation for year-bearing strips is gone — the year will elide below ~364px');
+assert(/\.sr-strip\.sr-strip--yr .sr-cell:nth-child\(3\) \{[^}]*grid-column: 1 \/ -1/.test(mq),
+  'TYPE no longer spans on the relaxed strip');
+assert(/\[data-page="series"\] \.sr-strip\.sr-strip--yr/.test(mq),
+  'the relaxation lost its [data-page="series"] scope and will be outranked by the base rule');
+ok('a year-bearing strip still has its narrow-viewport relaxation, correctly scoped');
+
+// ── two-up (a): the export's track width stands ──────────────────────────────
+assert(/minmax\(400px, ?1fr\)/.test(css), 'the card grid is no longer the export\'s minmax(400px,1fr)');
+assert(!/minmax\(340px, ?1fr\)/.test(css), 'a 340px track reappeared — ruling two-up (a) accepted 2-up');
+ok('the card grid keeps the export\'s minmax(400px,1fr) — 2-up accepted');
+
+// ── footer-note (a): the reworded honesty note ──────────────────────────────
+// "this string must be GONE" runs against a comment-stripped view, so the code
+// can still name the sentence it replaced and say why.
+const srcCode = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+assert(!/Every card shows both/.test(srcCode), 'the stale "Every card shows both" claim is back — it is false since ruling q1');
+assert(/Every streak carries both/.test(src), 'the reworded honesty claim is gone');
+assert(/doesn’t appear/.test(src), 'the drop guarantee ("a streak that can’t show both doesn’t appear") is gone');
+assert(/open it to see the pool/.test(src), 'the footer no longer tells the reader where the pool lives');
+ok('the footer honesty note matches the build');
+
+// ── and the guarantee the footer rests on, at its source ────────────────────
+const flatten = src.slice(src.indexOf('function flatten'), src.indexOf('function passesFilters'));
+assert(/st\.pool == null \|\| !st\.lastDate \|\| st\.ageDays == null/.test(flatten),
+  'the poolless/dateless drop guard is gone — the footer\'s promise would become false');
+ok('a streak with no pool or no date is still dropped before it reaches a card');
+
+console.log('series date/footer ruling lock — ' + checks.length + ' checks pass:');
+checks.forEach((c) => console.log('  ✓ ' + c));

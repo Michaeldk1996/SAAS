@@ -180,11 +180,16 @@
   var DIR_LABEL = { win: 'Winning run', loss: 'Losing run', neutral: 'Neutral' };
 
   // ─── date / age formatting ───────────────────────────────────────────────────
+  var YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fmtDate(ymd) {
-    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+    if (!ymd || !YMD_RE.test(ymd)) return null;
     var p = ymd.split('-');
-    var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return Number(p[2]) + ' ' + MON[Number(p[1]) - 1] + ' ' + p[0];
+    var mi = Number(p[1]);
+    // The regex admits month 00 and 13; MON[-1]/MON[12] would print the literal
+    // string "undefined" into a user-visible cell. Unrenderable → null → a dash.
+    if (!(mi >= 1 && mi <= 12)) return null;
+    return Number(p[2]) + ' ' + MON[mi - 1] + ' ' + p[0];
   }
   // fmtAge() lived here and rendered the card's "(2w ago)" alongside LAST. The export
   // gives LAST a bare day+month cell, so the age has no slot and the helper became dead
@@ -194,11 +199,23 @@
     return /^\d{1,2}:\d{2}/.test(s) ? s.slice(0, 5) : '';
   }
   // Card strip form: day + month, year stripped (export §3.3 "rendered short").
-  function fmtShort(ymd) {
-    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  // Founder ruling `last-year` (2026-09-12, option a): the year comes back ONLY when
+  // the run itself crosses a year boundary — maxGapDays is 75 and Slams are exempt
+  // from the recency cap, so "Started 5 Dec / Last 12 Jan" is reachable and would
+  // otherwise read as one year. Same-year runs keep the export's bare day + month.
+  function fmtShort(ymd, withYear) {
+    if (!ymd || !YMD_RE.test(ymd)) return null;
     var p = ymd.split('-');
-    var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return Number(p[2]) + ' ' + MON[Number(p[1]) - 1];
+    var mi = Number(p[1]);
+    if (!(mi >= 1 && mi <= 12)) return null;   // month 00/13 → a dash, never "5 undefined"
+    return Number(p[2]) + ' ' + MON[mi - 1] + (withYear ? ' ’' + p[0].slice(2) : '');
+  }
+  // True only when BOTH ends are RENDERABLE and their years differ. Gated on
+  // fmtShort rather than a looser regex of its own: if one end can't render it
+  // becomes a dash, and a lone "’27" beside a dash says nothing about a crossing.
+  function crossesYear(startYmd, lastYmd) {
+    if (!fmtShort(startYmd) || !fmtShort(lastYmd)) return false;
+    return String(startYmd).slice(0, 4) !== String(lastYmd).slice(0, 4);
   }
   // STARTED (founder ruling q5, 2026-09-12). series.json stores no startDate; the run's
   // first match IS its start. matches[] is written oldest→newest by build-series.js and
@@ -374,10 +391,17 @@
     var tagRow = '<div class="sr-tags">' + tags + '</div>';
 
     // 4 · STARTED · LAST · TYPE
-    var startTxt = fmtShort(startedOf(st));
-    var lastTxt = fmtShort(st.lastDate);
+    var startYmd = startedOf(st);
+    var showYear = crossesYear(startYmd, st.lastDate);
+    var startTxt = fmtShort(startYmd, showYear);
+    var lastTxt = fmtShort(st.lastDate, showYear);
+    // A year-bearing strip is 84px of mono in the LAST cell, which does NOT fit the
+    // export's 1.2fr column below ~364px — measured eliding to "12 Jan ’…", a
+    // corrupted date and strictly worse than the bare day+month it replaces. The
+    // modifier lets series.css relax ONLY these cards on narrow viewports; same-year
+    // cards keep the export's three-column geometry untouched.
     var strip =
-      '<div class="sr-strip">' +
+      '<div class="sr-strip' + (showYear ? ' sr-strip--yr' : '') + '">' +
         '<span class="sr-cell"><span class="sr-cell-k">Started</span>' +
           '<span class="sr-cell-v">' + (startTxt ? esc(startTxt) : dash) + '</span></span>' +
         '<span class="sr-cell"><span class="sr-cell-k">Last</span>' +
@@ -574,10 +598,14 @@
 
   function footerHtml() {
     // Founder-approved (2026-09-07) honesty note. Rendered at the foot of the page.
+    // One sentence reworded 2026-09-12 on the founder's `footer-note` ruling (option a):
+    // ruling q1 moved POOL off the card into the modal, so "Every card shows both" had
+    // gone false. The guarantee behind it is unchanged — flatten still drops a streak
+    // with no pool — so only the claim about where you READ it moved.
     return '<footer class="sr-footer">' +
       '<h3>How to read the Series page</h3>' +
       '<p>Every row here is a streak — a run of results that already happened. That is the whole of it. A streak describes the past; it does not forecast the next match. The player who has won five in a row is not owed a sixth.</p>' +
-      '<p>Read two numbers before you read anything else. <b>The pool:</b> how many matches the run was drawn from — five wins from eight is worth a look; five from two hundred is a coincidence you were always going to find. <b>The date:</b> when the most recent match in the run was played — form is a live thing, and a run whose last match was months ago is history, not a signal. Every card shows both, and a streak that can’t show both doesn’t appear.</p>' +
+      '<p>Read two numbers before you read anything else. <b>The pool:</b> how many matches the run was drawn from — five wins from eight is worth a look; five from two hundred is a coincidence you were always going to find. <b>The date:</b> when the most recent match in the run was played — form is a live thing, and a run whose last match was months ago is history, not a signal. Every streak carries both, and a streak that can’t show both doesn’t appear. The card gives you the dates; open it to see the pool its run was drawn from.</p>' +
       '<p>Scan enough players across enough angles and long runs turn up by chance alone. That is exactly why the pool and the date are non-negotiable here, and why I would rather show you a short honest streak than a long manufactured one. Use this to find a situation worth a second look — then go and do the work. It is a place to start an argument, not to end one.</p>' +
     '</footer>';
   }

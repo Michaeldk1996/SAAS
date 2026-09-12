@@ -271,6 +271,15 @@ body.sr-ov-open { overflow: hidden; }
 @media (max-width: 640px) {
   [data-page="series"] .sr-wrap { padding: 20px 16px 50px; }
   [data-page="series"] .sr-cards { grid-template-columns: 1fr; }
+  /* TEN-194 `last-year` ruling: a cross-year card prints "25 Dec ’25" — 84px of
+     14px mono, which the 1.2fr LAST cell cannot hold below ~364px. Measured, it
+     elided to "12 Sep ’…": a corrupted date, worse than the year-less form it
+     replaced. Only YEAR-BEARING strips fall to two rows (STARTED · LAST above,
+     TYPE spanning beneath); every same-year card keeps the export's exact
+     three-column geometry. Scoped to match the base rule's specificity (0,3,0
+     vs 0,2,0) — under-scoping here is what nearly killed the mobile modal. */
+  [data-page="series"] .sr-strip.sr-strip--yr { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+  [data-page="series"] .sr-strip.sr-strip--yr .sr-cell:nth-child(3) { grid-column: 1 / -1; }
   .sr-ov-back { padding: 16px; }
   /* must carry the same .sr-ov scope as the base rules above, or these lose on
      specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies */
