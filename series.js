@@ -118,10 +118,17 @@
   // its embedded count, so no streak family loses its wording. Best-of stays inside
   // the claim (never-blend rule) — ruling q3 dropped the separate best-of BADGE, not
   // the format qualifier that makes a games line mean one thing.
+  //
+  // Item 6 (founder 2026-09-12): the all-competitions title drops "across all
+  // competitions" — the TYPE cell two rows down already reads "All comps", so the
+  // long form repeated it. "Won on Hard" keeps its surface (not in TYPE) and
+  // "Won vs {archetype}" keeps its styles (they ARE the information). The MODAL is
+  // explicitly out of scope for that ruling, so it keeps the long form via
+  // claimLong() below — the card shortens, the History header does not.
   function claimOf(st) {
     switch (st.type) {
       case 'all':
-        return streakVerb(st.direction) + ' across all competitions';
+        return streakVerb(st.direction);
       case 'surface':
         return streakVerb(st.direction) + ' on ' + esc(cap(st.subtype));
       case 'style':
@@ -149,8 +156,13 @@
         return streakVerb(st.direction);
     }
   }
-  // Long form, modal only.
-  function describe(st) { return claimOf(st) + ' — ' + running(st.count); }
+  // Long form, modal only. The History modal is out of item 6's scope ("does not
+  // change in any respect"), so it keeps the pre-shortening wording verbatim.
+  function claimLong(st) {
+    if (st.type === 'all') return streakVerb(st.direction) + ' across all competitions';
+    return claimOf(st);
+  }
+  function describe(st) { return claimLong(st) + ' — ' + running(st.count); }
   // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
   // correct regardless of the engine version that wrote series.json (fix #5). The former
   // 'firstset'/'setpat' families map here to the split 'setout' / 'setgames'.
@@ -291,17 +303,98 @@
 
   var _filters = {
     level: 'all',         // all | tour | chal
-    day: 'all',           // all | today | tomorrow
+    // Item 8 (founder 2026-09-12): the Show-already-played CHECKBOX is gone and its
+    // job is now a fourth DAY option. That removes the only control on the page that
+    // wasn't a segmented control, and it makes the played view mutually exclusive with
+    // the upcoming ones — which it always was in practice.
+    //   all / today / tomorrow → NOT-yet-played fixtures (the old checkbox-off state)
+    //   played                 → already-played fixtures only, any day
+    day: 'all',           // all | today | tomorrow | played
     dir: 'all',           // all | win | loss
     type: 'all',          // all | all-comp | surface | style | total | handicap | setout | setgames
-    // Default min-length = the founder's view FLOOR (5). Overwritten from the data's
-    // rules.viewFloorDefault on load. Buttons can drop BELOW it (the engine emits
-    // from 3). vs-style is exempt and floored at 3 (see passesFilters / styleFloor).
-    minLen: 5,
+    // Item 9 (founder 2026-09-12): the default min-length moves 5+ → 6+. "A five-match
+    // win run is unremarkable and fills the page with cards that don't earn one." The
+    // 3+/4+/5+ buttons stay, so nothing becomes unreachable — only the default view
+    // tightens. Overwritten from the data's rules.viewFloorDefault on load, which
+    // build-series.js now also carries as 6 (one source of truth, never from memory).
+    minLen: 6,
     sort: 'longest',      // longest | soonest
-    showPlayed: false,    // hide matches already played by default
   };
   function styleFloor() { return (_data && _data.rules && _data.rules.viewFloorStyle) || 3; }
+
+  // ─── item 1 · outcome-family de-duplication (founder 2026-09-12) ──────────────
+  // "A streak whose matches are a subset of a same-length streak in the same outcome
+  // family does not get a card." B. Shelton held `Won 6` (all comps) and `Won on Hard
+  // 6` over the IDENTICAL six matches — all six were on hard, so the surface run *is*
+  // the all-comps run counted twice.
+  //
+  // Scoped to the MATCH-OUTCOME family only — all comps, surface, vs style. Covering a
+  // handicap is a different event from winning a match, so a win streak and a handicap
+  // streak of the same length over the same matches are two findings, not one repeated.
+  // Handicap / set outcome / set games are never collapsed against these or each other.
+  //
+  // This is a SUPPRESSION PASS on detection's output, not a change to detection:
+  // build-series.js is untouched, every suppressed streak stays in series.json, and the
+  // run is still reachable from the surviving card's History modal and the player page.
+  //
+  // The founder also stated the surface consequence — "a surface streak earns a card
+  // only when it is LONGER than that player's all-comps run". On today's board the two
+  // formulations agree everywhere except one card, and the subset rule is the one that
+  // keeps it: Shelton's `Won vs Big Server + Complete Baseliner 4` starts 12 Aug, a
+  // month before his all-comps 6 begins, so its matches are NOT a subset — it survives.
+  // A longer-than-all-comps rule would have deleted it, and item 6 explicitly keeps that
+  // card's title. So the subset rule is implemented and the surface sentence falls out
+  // of it. Reported, not resolved silently.
+  var OUTCOME_FAMILY = { all: 1, surface: 1, style: 1 };
+  // Breadth, for the tie-break when two runs cover the IDENTICAL match set: the broader
+  // claim survives. all-comps > surface > vs-style.
+  var OUTCOME_BREADTH = { all: 3, surface: 2, style: 1 };
+  // A run member is identified by (date, opponent). series.json's matches[] carries no
+  // eventKey, and a player cannot play two opponents on one date in one tier — the live
+  // artifact confirms it: 0 collisions across all 117 streaks / 1435 members.
+  function memberKey(m) { return String(m && m.date) + '|' + String(m && m.opponent == null ? '' : m.opponent); }
+  function memberSet(st) {
+    var s = {};
+    (Array.isArray(st.matches) ? st.matches : []).forEach(function (m) { s[memberKey(m)] = 1; });
+    return s;
+  }
+  function isSubset(a, b) {          // every key of a present in b
+    for (var k in a) { if (Object.prototype.hasOwnProperty.call(a, k) && !b[k]) return false; }
+    return true;
+  }
+  function suppressOutcomeDuplicates(cards) {
+    var byPlayer = {};
+    cards.forEach(function (c) {
+      if (!OUTCOME_FAMILY[c.streak.type]) return;
+      // A run with no member list can't be compared and is never suppressed.
+      if (!(Array.isArray(c.streak.matches) && c.streak.matches.length)) return;
+      var k = String(c.player.key != null ? c.player.key : c.player.name) + '|' + c.player.tier;
+      (byPlayer[k] || (byPlayer[k] = [])).push(c);
+    });
+    Object.keys(byPlayer).forEach(function (k) {
+      var group = byPlayer[k];
+      if (group.length < 2) return;
+      var sets = group.map(memberSetOf);
+      group.forEach(function (a, i) {
+        for (var j = 0; j < group.length; j++) {
+          if (j === i) continue;
+          var b = group[j];
+          if (b.streak.count < a.streak.count) continue;
+          if (!isSubset(sets[i], sets[j])) continue;
+          // Equal length AND identical membership → the broader claim wins; anything
+          // else (b strictly longer, or b a strict superset) suppresses a.
+          if (b.streak.count === a.streak.count) {
+            if (OUTCOME_BREADTH[b.streak.type] > OUTCOME_BREADTH[a.streak.type]) { a.suppressed = 'subset-of-' + b.streak.type; return; }
+            continue;
+          }
+          a.suppressed = 'subset-of-' + b.streak.type;
+          return;
+        }
+      });
+    });
+    return cards.filter(function (c) { return !c.suppressed; });
+  }
+  function memberSetOf(c) { return memberSet(c.streak); }
 
   function flatten(data) {
     var out = [];
@@ -312,13 +405,23 @@
         out.push({ player: p, streak: st });
       });
     });
-    return out;
+    // Suppression runs ONCE over the whole emitted set, before any view filter, so the
+    // board can't resurrect a duplicate by narrowing the filters.
+    return suppressOutcomeDuplicates(out);
   }
 
   function passesFilters(c) {
     var p = c.player, st = c.streak, f = _filters;
     if (f.level !== 'all' && p.tier !== f.level) return false;
-    if (f.day !== 'all' && (p.upcoming && p.upcoming.day) !== f.day) return false;
+    // Item 8: DAY absorbed the Show-already-played checkbox. `played` is the only
+    // option that shows fixtures that have already been played; the other three all
+    // hide them, exactly as the unchecked box did.
+    var played = !!(p.upcoming && p.upcoming.played);
+    if (f.day === 'played') { if (!played) return false; }
+    else {
+      if (played) return false;
+      if (f.day !== 'all' && (p.upcoming && p.upcoming.day) !== f.day) return false;
+    }
     if (f.dir !== 'all' && st.direction !== f.dir) return false;
     // UI 'all' = every type; UI 'all-comp' = the engine's all-competitions type
     // ('all'). Translate so the two 'all' meanings don't collide.
@@ -331,7 +434,6 @@
     // ignores a raised button and always shows from its own floor.
     var floor = (st.type === 'style') ? styleFloor() : f.minLen;
     if (st.count < floor) return false;
-    if (!f.showPlayed && p.upcoming && p.upcoming.played) return false;
     return true;
   }
 
@@ -409,28 +511,35 @@
   function cardHtml(c, idx) {
     var p = c.player, st = c.streak, u = p.upcoming || {};
     var dash = '<span class="sr-dash">—</span>';
-    var flag = emojiFlag(p.country);
     var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + esc(String(p.rank))) : dash;
 
-    // 1 · claim + run length
-    var claim = '<div class="sr-claim">' + claimOf(st) +
-      ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>';
+    // 1 · title row — claim + run length on the left, the direction WORD right-aligned
+    // opposite it (item 7, founder 2026-09-12). It previously sat under the player name,
+    // in the slot that reads as player metadata; direction is a property of the RUN, so
+    // it now sits on the run's own row. Still a word, never a colour (ruling q2).
+    var claim = '<div class="sr-titlerow">' +
+        '<div class="sr-claim">' + claimOf(st) +
+          ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>' +
+        '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>' +
+      '</div>';
 
-    // 2 · player row (24px avatar, name, rank — dash when unknown)
+    // 2 · player row — 20px avatar INLINE with the name on the same baseline (item 4),
+    // name, rank. The flag is gone (item 3): nationality changes no read on this page
+    // and was the card's only decorative element. emojiFlag survives for the History
+    // modal, which is explicitly out of scope.
     var prow =
       '<div class="sr-prow">' + avatarHtml(p) +
         '<span class="sr-pid">' +
-          '<span class="sr-pname">' + (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
-            esc(p.name || u.playerName || '—') + '</span>' +
+          '<span class="sr-pname">' + esc(p.name || u.playerName || '—') + '</span>' +
           '<span class="sr-prank">' + rankTxt + '</span>' +
         '</span>' +
       '</div>';
 
-    // 3 · tag row — the direction WORD, plus (already-played view) whether the
-    // streak's OWN condition held. Continued / Broken / Not evaluable is the
+    // 3 · tag row — already-played view only now that direction has moved up. Whether
+    // the streak's OWN condition held: Continued / Broken / Not evaluable is the
     // condition, never the match result; "not evaluable" is excluded from the
     // aggregate rather than guessed. No sign colour on any of them (ruling q2).
-    var tags = '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>';
+    var tags = '';
     if (u.played) {
       var oc = st.outcome;
       if (oc && oc.held === true)             tags += '<span class="sr-tag sr-tag-oc">Continued</span>';
@@ -439,7 +548,10 @@
       else                                    tags += '<span class="sr-tag sr-tag-oc-na">Played</span>';
       if (u.result) tags += '<span class="sr-played-res">' + esc(u.result) + '</span>';
     }
-    var tagRow = '<div class="sr-tags">' + tags + '</div>';
+    // Empty on an upcoming card now that direction has left this row — and an empty
+    // .sr-tags would still cost the card 12px of flex gap. "Do not increase card
+    // height": no chips, no row.
+    var tagRow = tags ? '<div class="sr-tags">' + tags + '</div>' : '';
 
     // 4 · STARTED · LAST · TYPE
     var startYmd = startedOf(st);
@@ -546,20 +658,22 @@
   function fgroup(label, name, opts, cur) {
     return '<span class="sr-fgroup"><span class="sr-flabel">' + esc(label) + '</span>' + seg(name, opts, cur) + '</span>';
   }
+  // Item 8 (founder 2026-09-12): three rows plus a checkbox collapse to exactly two
+  // segmented rows — LEVEL · DAY · DIRECTION, then TYPE · MIN LENGTH · SORT. The
+  // Show-already-played checkbox is gone; `Played` is now DAY's fourth option, which
+  // leaves every control on the page the same kind of thing.
   function filterBarHtml() {
     var f = _filters;
     return '<div class="sr-filters">' +
       '<div class="sr-frow">' +
         fgroup('Level', 'level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
-        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
+        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow'],['played','Played']], f.day) +
         fgroup('Direction', 'dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
       '</div>' +
       '<div class="sr-frow">' +
         fgroup('Type', 'type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['total','Total games'],['handicap','Handicap'],['setout','Set outcome'],['setgames','Set games']], f.type) +
         fgroup('Min length', 'minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
         fgroup('Sort', 'sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
-        '<label class="sr-toggle"><input type="checkbox" id="srShowPlayed"' + (f.showPlayed ? ' checked' : '') + '>' +
-          '<span class="sr-box" aria-hidden="true"></span>Show already-played</label>' +
       '</div>' +
     '</div>';
   }
@@ -603,7 +717,11 @@
   // legend when the valence bar came off (ruling q2) — then the methodology line.
   function footnoteHtml(stamp) {
     return '<div class="sr-footnote">' +
-      '<p class="sr-fn-dir">Direction shows as a word in the tag row — <b>Winning run</b>, ' +
+      // "in the tag row" was true until item 7 moved the direction word onto the title
+      // row, opposite the streak title. The footnote is on the DO-NOT-CHANGE list, so
+      // this is the smallest edit that keeps it from pointing at a row that no longer
+      // carries it — four words, reported to the founder rather than done quietly.
+      '<p class="sr-fn-dir">Direction shows as a word beside the run length — <b>Winning run</b>, ' +
       '<b>Losing run</b>, <b>Neutral</b>. Betting lines (over/under, handicap) and set-shape ' +
       'volatility are a direction, not good or bad.</p>' + stamp +
     '</div>';
@@ -614,7 +732,7 @@
   // "not evaluable" cards are reported separately and excluded from the percentage —
   // never guessed (founder standing rule).
   function outcomesSummaryHtml(view) {
-    if (!_filters.showPlayed) return '';
+    if (_filters.day !== 'played') return '';   // item 8: the checkbox became DAY=Played
     var played = view.filter(function (c) {
       return c.player.upcoming && c.player.upcoming.played && c.streak.outcome;
     });
@@ -676,8 +794,6 @@
         render();
       });
     });
-    var cb = root.querySelector('#srShowPlayed');
-    if (cb) cb.addEventListener('change', function () { _filters.showPlayed = cb.checked; render(); });
     // Clickable streak detail (founder 2026-09-07): the WHOLE card opens the matches
     // in an overlay on top of the board — never an inline expand, which reflowed the
     // grid. Delegated on the persistent grid, wired ONCE (render() replaces the grid's

@@ -81,8 +81,15 @@ const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 // So the engine EMITS everything from length 3 up (MIN_LEN), and the front-end's
 // min-length button defaults to the VIEW FLOOR of 5 (vs-style exempt at 3) but can
 // be dropped below it. Emitting at 3 is what lets the buttons reveal shorter runs.
+//
+// Item 9 (founder 2026-09-12): the DEFAULT view floor moves 5 → 6. "A five-match win
+// run is unremarkable and fills the page with cards that don't earn one. The 3+ and 4+
+// options stay available." So only this default moves — the engine still EMITS from 3
+// (MIN_LEN) and every min-length button, including 3+/4+/5+, still reaches below it.
+// series.js carries the same 6 as its literal fallback; this constant is the source of
+// truth the page adopts on load.
 const MIN_LEN = 3;                 // engine emit floor (lowest a page button reaches)
-const VIEW_FLOOR_DEFAULT = 5;      // default front-end floor for every type ...
+const VIEW_FLOOR_DEFAULT = 6;      // default front-end floor for every type ...
 const VIEW_FLOOR_STYLE = 3;        // ... except vs-style, which the founder set at 3
 const MAX_AGE_DAYS = 45;
 // Intra-streak max gap (TEN-168 fix #2, founder ruling 2026-09-07: option g75 =
@@ -1106,5 +1113,12 @@ async function main() {
 if (require.main === module) {
   main().catch(e => { console.error('build-series: unexpected error —', e.stack || e.message); process.exit(1); });
 } else {
-  module.exports = { conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES, upcomingBestOf, tierOf };
+  // recordFor / orderedRecords / cutOnGap / loadSurfaceMap / loadStyleMap are exported
+  // for the offline probes (tools/probe-series-reference.mjs) so a measurement runs on
+  // the ENGINE's own definitions rather than a second copy of them that can drift.
+  module.exports = {
+    conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES,
+    upcomingBestOf, tierOf, recordFor, orderedRecords, cutOnGap, isRelevant,
+    loadSurfaceMap, loadStyleMap, MAX_GAP_DAYS, MIN_LEN, VIEW_FLOOR_DEFAULT,
+  };
 }
