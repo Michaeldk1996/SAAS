@@ -43,6 +43,36 @@
 // row whose match surface is unknown, or whose shard has no bucket for it, DASHES —
 // it never falls back to the blended bucket.
 //
+// TEN-192 (ask a0d8fcbe, answered 2026-09-12) — the two post-ship conflicts:
+//   7. SURFACELESS LIVE ROW → RESOLVE IT, don't dash it. An in-play fixture that is
+//      absent from matches.json has no slate surface, and under the own-surface rule
+//      the whole row (every metric AND the n column) dashed. The founder's ruling is
+//      to wire the surface up from the FIXTURE'S TOURNAMENT, so those rows carry real
+//      figures. The fixture carries `tournament_key`; tournament-surfaces.json maps it
+//      to hard/clay/grass, and it is the SAME map build-trading-splits.js buckets the
+//      shards by — so the FALLBACK is not an approximation, it is the same surface
+//      fact reaching the row by its other route. Resolution order is
+//      slate surface → fixture tournament → dash; the blended `all` bucket is still
+//      never read. Live example: Tiafoe v Shelton, US Open (tournament_key 1217),
+//      in play and absent from matches.json → hard.
+//
+//      CAVEAT, reported to the founder and NOT resolved here. The slate surface that
+//      takes priority over the fallback is a WEAKER source than the fallback itself:
+//      bsp-pipeline.js's odds-driven buildMatchObject() sets it from surfaceFromEvent(),
+//      three keyword branches — Wimbledon → grass, Roland Garros → clay, EVERYTHING
+//      ELSE → hard — and never corrects it from the matched fixture's tournament_key.
+//      (buildPastMatchObject / buildUpcomingMatchObject do use the map.) So at a clay
+//      event, one row can read the clay bucket via this fallback while its neighbour
+//      reads the hard bucket via the slate — two surfaces inside one tournament, both
+//      pooled into that column's field average. Fixing it means changing matches.json,
+//      which every other page reads, so it is a separate decision.
+//   8. DIM vs TIER → AS WRITTEN. The README dims a figure when the PLAYER'S OWN n for
+//      the window is under 10 "regardless of tier", and separately treats a cell whose
+//      OWN denominator is under 10 as untiered. Those gate on different numbers, and
+//      the founder ruled to keep both halves exactly as specified. So a dimmed cell
+//      CAN still sit in a funnel tier and pass a filter on that column — intended, and
+//      locked by a test so a later reading-tidy cannot quietly reconcile them.
+//
 // SOURCES are unchanged from TEN-151 and stay read-only:
 //   • slate       ← matches.json (the daily ATP-singles slate; row unit is a
 //                    PLAYER, two rows per match)
@@ -80,6 +110,13 @@
   var INDEX_URL          = './trading-splits-index.json';
   var SHARD_BASE         = './trading-splits/';
   var MATCHES_URL        = './matches.json';
+  // The pipeline's tournament_key → surface lookup. Already published to the site,
+  // and already the exact map build-trading-splits.js buckets the shards by, so a
+  // surface read from here and the bucket it selects are the same fact from the
+  // same source. Read so an in-play fixture that is ABSENT from matches.json still
+  // knows its own surface (founder ruling, gate a0d8fcbe — see the header block).
+  var SURFACES_URL       = './tournament-surfaces.json';
+  var SURFACES_MAX_TRIES = 3;
   var SHARD_CONCURRENCY  = 6;
 
   // Export design tokens (README §"Design tokens"). Named once, used everywhere.
@@ -195,6 +232,7 @@
   var _active = false, _timer = null, _ticking = false;
   var _underway = null, _liveFixtures = null, _updatedAt = null;
   var _matches = null, _index = null, _shards = {};
+  var _tsurf = null, _tsurfTries = 0;   // tournament_key → 'hard'|'clay'|'grass'; null until loaded
   var _loaded = false, _loading = false, _loadSig = null;
   var _bootstrapped = false, _matchesAt = 0, _matchesDirty = false, _lastUnderwaySig = null;
 
@@ -354,6 +392,32 @@
     return null;
   }
 
+  // Ruling 7 (gate a0d8fcbe). The fixture's own tournament, via the same
+  // tournament_key → surface map the shard generator buckets by. Only the three
+  // surfaces that have a bucket are accepted; anything else (null, carpet, a
+  // "- Qualification" string, an unmapped key) returns '' and the row still dashes
+  // rather than guessing. Never a blend.
+  //
+  // The map is only worth fetching when some in-play fixture is missing a usable
+  // slate surface — on a Pre-match board it is never read, so it must not sit in
+  // front of the shard pump there.
+  function needsSurfaceMap() {
+    if (!Array.isArray(_liveFixtures)) return false;
+    for (var i = 0; i < _liveFixtures.length; i++) {
+      var f = _liveFixtures[i];
+      if (!f || !f.first_player_key || !f.second_player_key) continue;
+      var m = slateMatchByKeys(f.first_player_key, f.second_player_key);
+      var s = m ? String(m.surface || '').toLowerCase() : '';
+      if (s !== 'hard' && s !== 'clay' && s !== 'grass') return true;
+    }
+    return false;
+  }
+  function surfaceFromTournament(tournamentKey) {
+    if (!_tsurf || tournamentKey == null || tournamentKey === '') return '';
+    var s = String(_tsurf[String(tournamentKey)] || '').toLowerCase();
+    return (s === 'hard' || s === 'clay' || s === 'grass') ? s : '';
+  }
+
   function liveFixtureRow(f, which) {
     var isFirst = which === 1;
     var key = String((isFirst ? f.first_player_key : f.second_player_key) || '');
@@ -366,7 +430,9 @@
       var which2 = (String(slate.p1Key) === key) ? 1 : 2;
       odds = oddsFor(slate, which2, true);
     }
+    // slate surface → the fixture's own tournament → dash. (Ruling 7.)
     var surf = slate ? String(slate.surface || '').toLowerCase() : '';
+    if (surf !== 'hard' && surf !== 'clay' && surf !== 'grass') surf = surfaceFromTournament(f.tournament_key);
     return {
       id: String(f.event_key || ''),
       matchId: String(f.event_key || pairKey(f.first_player_key, f.second_player_key)),
@@ -550,7 +616,17 @@
       fieldAvg: fieldAvg, tierOf: tierOf,
       surfaces: surfaces, surfSel: surfSel, tours: tours, tourSel: tourSel,
       tabFilters: tabFilters, filterActive: filterActive, isSorted: isSorted,
+      // The surface map is fetched lazily, so a row with no slate surface can have
+      // its shard in hand before its surface. Its figures are not absent, they are
+      // not resolved YET — and on this page a dash means "we looked and there is
+      // nothing". Such a row shows the loading dot until the map lands or the
+      // retries run out.
+      surfacePending: (!_tsurf && _tsurfTries < SURFACES_MAX_TRIES && needsSurfaceMap()),
     };
+  }
+  function rowPending(row, V) {
+    if (!(row.key in _shards)) return true;
+    return !row.surface && !!V.surfacePending;
   }
 
   // ─── cell rendering (README §"Cell display rules" — non-negotiable) ──────────
@@ -561,8 +637,7 @@
   // A real zero is a real value and renders as a figure; only ABSENT data dashes.
   function cellHtml(row, mk, V, band) {
     var cls = 'tr-cell' + (band ? ' tr-bandb' : '');
-    var loaded = (row.key in _shards);
-    if (!loaded) {
+    if (rowPending(row, V)) {
       // Not an export state: the real build streams 189 shards, the prototype had
       // every figure inline. A cell whose shard has not landed yet shows a mid dot,
       // never a dash — a dash means "we looked and there is nothing".
@@ -665,8 +740,8 @@
            '</span>';
   }
 
-  function nHtml(row) {
-    if (!(row.key in _shards)) return '<span class="tr-n" style="color:' + DASH + '">·</span>';
+  function nHtml(row, V) {
+    if (rowPending(row, V)) return '<span class="tr-n" style="color:' + DASH + '">·</span>';
     var n = nOf(row);
     return '<span class="tr-n">' + (n == null ? '<span style="color:' + DASH + '">—</span>' : n) + '</span>';
   }
@@ -849,7 +924,7 @@
       : (row.oppName ? 'v ' + shortName(row.oppName) : '');
     cells += playerHtml(row, trailing);
     cells += oddsHtml(row);
-    cells += nHtml(row);
+    cells += nHtml(row, V);
     cells += '<span></span>';
     V.codes.forEach(function (mk) { cells += cellHtml(row, mk, V, HL.indexOf(mk) !== -1); });
     return '<div class="tr-row ' + opts.rule + '">' + cells + '</div>';
@@ -943,6 +1018,22 @@
     if (!_index) jobs.push(getJSON(INDEX_URL).then(function (j) { _index = j; }).catch(function (e) {
       console.warn('[trading-report] index load failed:', e.message); _index = _index || { meta: {} };
     }));
+    // Ruling 7's lookup. Fetched only when an in-play fixture actually needs it, and
+    // left null on failure (an empty `surfaces` counts as a failure — latching a
+    // truthy {} would dash every such row forever behind one bad deploy). tick()
+    // re-arms this, so a transient 404 self-heals instead of persisting for the
+    // session; SURFACES_MAX_TRIES stops a genuinely missing file being re-fetched
+    // every poll.
+    if (!_tsurf && _tsurfTries < SURFACES_MAX_TRIES && needsSurfaceMap()) {
+      _tsurfTries++;
+      jobs.push(getJSON(SURFACES_URL).then(function (j) {
+        var m = j && j.surfaces;
+        _tsurf = (m && Object.keys(m).length) ? m : null;
+        if (!_tsurf) console.warn('[trading-report] tournament surface map is empty — live rows without a slate surface will dash');
+      }).catch(function (e) {
+        console.warn('[trading-report] tournament surface map load failed:', e.message);
+      }));
+    }
     return Promise.all(jobs);
   }
 
@@ -1047,6 +1138,10 @@
         var need = false;
         slateRows().forEach(function (r) { if (r.key && !(r.key in _shards)) need = true; });
         liveRows().forEach(function (r) { if (r.key && !(r.key in _shards)) need = true; });
+        // A shard set that is already complete never re-enters loadStats, so without
+        // this a single failed surface-map fetch would dash those rows for the whole
+        // session. Re-arm while tries remain and a live fixture still needs it.
+        if (!_tsurf && _tsurfTries < SURFACES_MAX_TRIES && needsSurfaceMap()) need = true;
         if (need) loadStats();
       }
       if (_active && !document.hidden) _timer = setTimeout(tick, POLL_INTERVAL_MS);

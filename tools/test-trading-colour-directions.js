@@ -22,6 +22,14 @@
 //   7) The FIELD-AVERAGE POOL narrows on Tournament as well as Surface.
 //   8) AVATARS keep the monogram fallback, not the export's bare circle.
 //
+// TEN-192 (ask a0d8fcbe, answered 2026-09-12) — the two post-ship conflicts
+//  11) A SURFACELESS LIVE ROW resolves its surface from the fixture's tournament
+//      (tournament-surfaces.json, the same map the shard generator buckets by),
+//      in the order slate → fixture tournament → dash. Never the blended bucket.
+//  12) DIM and TIER stay AS WRITTEN and keep gating on DIFFERENT numbers: the dim
+//      on the player's own window n, tier membership on the cell's own denominator.
+//      They are allowed to disagree; reconciling them needs a new ruling.
+//
 // Plus the two structural invariants the brief calls out as easy to get wrong:
 //   9) ONE grid template, header and every row: 62px 210px 64px 40px 1fr repeat(7, 84px).
 //  10) Column positions are identical across tabs, and the tab→column and
@@ -212,5 +220,114 @@ for (const [tab, cols] of Object.entries(COLUMN_SETS)) {
   }
 }
 ok(`${Object.keys(COLUMN_SETS).length} tabs, columns + highlights match the export`);
+
+// ── Ruling 11 — a surfaceless live row resolves from the fixture's tournament ─
+// EXECUTED, not grepped: the resolution order IS the ruling. Every extraction below
+// runs against the COMMENT-STRIPPED source, because a review pass proved that
+// matching raw `src` lets a commented-out copy satisfy the whole section while the
+// live code is gutted.
+function fnBlock(name) {
+  const code = stripComments(src);
+  const start = code.indexOf('function ' + name + '(');
+  assert(start !== -1, `${name}() is missing from trading-report.js`);
+  let i = code.indexOf('{', start), depth = 0;
+  for (let j = i; j < code.length; j++) {
+    if (code[j] === '{') depth++;
+    else if (code[j] === '}' && --depth === 0) return code.slice(start, j + 1);
+  }
+  throw new Error(`${name}() is unbalanced`);
+}
+function surfaceResolverWith(map) {
+  // eslint-disable-next-line no-new-func
+  return new Function('MAP', 'var _tsurf = MAP;\n' + fnBlock('surfaceFromTournament') + '\nreturn surfaceFromTournament;')(map);
+}
+{
+  const MAP = { 1217: 'hard', 2255: 'clay', 2361: 'Grass', 1200: null, 9999: '- Qualification', 7000: 'carpet' };
+  const f = surfaceResolverWith(MAP);
+  assert.strictEqual(f(1217), 'hard', 'US Open (tournament_key 1217) must resolve to hard');
+  assert.strictEqual(f(2255), 'clay', 'a clay tournament_key must resolve to clay');
+  assert.strictEqual(f(2361), 'grass', 'the map value must be case-folded');
+  // Everything that has no bucket DASHES. It may never become a surface or a blend.
+  for (const bad of [1200, 9999, 7000, 4242, null, undefined, '']) {
+    assert.strictEqual(f(bad), '', `unmapped/non-surface key ${String(bad)} must resolve to '' (dash), not a guess`);
+  }
+  // Before the map lands, every row still dashes — never a default surface.
+  assert.strictEqual(surfaceResolverWith(null)(1217), '', 'with no map loaded the row must dash, not default to hard');
+  // An empty published map must be treated as absent, not latched as loaded.
+  assert.strictEqual(surfaceResolverWith({})(1217), '', 'an empty map must dash, not guess');
+  assert(/Object\.keys\(m\)\.length/.test(stripComments(src)),
+    'an empty `surfaces` object must be rejected at load, or one bad deploy latches every such row to a dash for the session');
+  // The fetch must not sit in front of the shard pump on a board that never reads it,
+  // and a failed fetch must be re-armed — neither is true without these two.
+  assert(/needsSurfaceMap\(\)/.test(stripComments(fnBlock('ensureStatics'))),
+    'the surface map must only be fetched when an in-play fixture actually needs it');
+  assert(/_tsurfTries < SURFACES_MAX_TRIES && needsSurfaceMap\(\)/.test(stripComments(fnBlock('tick'))),
+    'tick() must re-arm the surface-map fetch, or one failed load dashes those rows for the whole session');
+  // Because the map is lazy, a row can hold its shard before its surface. On this
+  // page a dash means "we looked and there is nothing", so that row must show the
+  // LOADING dot until the map lands — never a dash it will take back.
+  for (const fn of ['cellHtml', 'nHtml']) {
+    assert(/rowPending\(row, V\)/.test(stripComments(fnBlock(fn))),
+      `${fn} must treat an unresolved surface as PENDING, not as absent data`);
+  }
+  assert(/!row\.surface && !!V\.surfacePending/.test(stripComments(fnBlock('rowPending'))),
+    'rowPending must hold a row whose surface has not resolved yet');
+}
+// …and liveFixtureRow must consult it, in the order slate → fixture → dash. Run the
+// WHOLE function, not the two lines: a review pass showed that lifting the lines out
+// by regex passes even if they are commented out and the live code is gutted.
+const liveRowBlock = fnBlock('liveFixtureRow');
+{
+  const run = (slate, fixture, map) => new Function('SLATE', 'MAP',
+    ['var _index = null, _tsurf = MAP;',
+     'function slateMatchByKeys(){ return SLATE; }',
+     'function pairKey(a,b){ return a+":"+b; }',
+     'function oddsFor(){ return null; }',
+     fnBlock('surfaceFromTournament'),
+     liveRowBlock,
+     'return liveFixtureRow(arguments[2], 1);'].join('\n'))(slate, map, fixture);
+  const MAP = { 1217: 'hard', 2255: 'clay' };
+  // The row object itself must carry the resolved surface — not just compute it.
+  assert.strictEqual(run(null, { tournament_key: 1217, first_player_key: 1, second_player_key: 2 }, MAP).surface, 'hard',
+    'a live fixture absent from matches.json must take its surface from its tournament');
+  assert.strictEqual(run({ surface: 'Clay', p1Key: 1 }, { tournament_key: 1217, first_player_key: 1, second_player_key: 2 }, MAP).surface, 'clay',
+    'the slate surface wins when it has one — the tournament map is a FALLBACK, not an override');
+  assert.strictEqual(run(null, { tournament_key: 7752, first_player_key: 1, second_player_key: 2 }, MAP).surface, '',
+    'an unresolvable tournament must still dash');
+  assert.strictEqual(run(null, { tournament_key: 1217, first_player_key: 1, second_player_key: 2 }, null).surface, '',
+    'with no map loaded the row must dash, not default to hard');
+  // Pins the number→string coercion at the point it is load-bearing: fixtures carry
+  // tournament_key as a NUMBER, the published map is keyed by strings.
+  assert.strictEqual(typeof { tournament_key: 1217 }.tournament_key, 'number',
+    'guard: the fixture key is a number, which is why String() is needed');
+  assert.strictEqual(run(null, { tournament_key: 2255, first_player_key: 1, second_player_key: 2 },
+    new Map(Object.entries(MAP))).surface, '',
+    'the map must be read as a plain object, not something Map-like that silently misses');
+}
+// The blended `all` bucket stays unreachable from EVERY row-facing read — bucketFor
+// picks the cell bucket, nOf feeds the n column AND the dim override.
+for (const fn of ['bucketFor', 'nOf']) {
+  const body = stripComments(fnBlock(fn));
+  assert(!/(\[\s*(['"`])all\2\s*\]|\.all\b)/.test(body),
+    `${fn} must never read the blended \`all\` bucket`);
+}
+assert(/surf !== 'hard' && surf !== 'clay' && surf !== 'grass'/.test(stripComments(fnBlock('bucketFor'))),
+  'bucketFor must still refuse any surface outside hard/clay/grass');
+ok('surfaceless live row resolves slate → fixture tournament → dash');
+
+// ── Ruling 12 — dim and tier gate on DIFFERENT numbers, as written ───────────
+// The founder ruled "as written" on the inconsistency he was shown, so the test
+// pins the disagreement in place: reconciling them is a new ruling, not a tidy-up.
+const cellBlock = stripComments(fnBlock('cellHtml'));
+assert(/var n = nOf\(row\);\s*\n\s*if \(n != null && n < MIN_TIER_DEN\) \{\s*\n\s*color = DIM;/.test(cellBlock),
+  'the dim override must gate on the PLAYER\'S OWN window n (nOf(row)), per the README');
+const tierBlock = stripComments(fnBlock('tierOf'));
+assert(/if \(!c \|\| c\[1\] < MIN_TIER_DEN\) return null;/.test(tierBlock),
+  'tier membership must gate on the CELL\'S OWN denominator, per the README');
+assert(!/nOf\(row\)/.test(tierBlock),
+  'ruling 12 is AS WRITTEN: tierOf must NOT take the player\'s n into account — that would reconcile the two rules without a ruling');
+assert(!/c\[1\] < MIN_TIER_DEN/.test(cellBlock.split('var n = nOf(row);')[1] || ''),
+  'ruling 12 is AS WRITTEN: the dim must NOT be re-expressed as the cell denominator');
+ok('dim (player n) and tier (cell denominator) kept on different numbers, as written');
 
 console.log('PASS  trading-report rulings:\n  - ' + checks.join('\n  - '));
