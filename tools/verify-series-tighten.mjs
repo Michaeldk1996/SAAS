@@ -495,6 +495,24 @@ async function main() {
     ok('J8 next-match line and History → intact', geom.hasNext && geom.hasHist);
     ok('J9 rank figure intact', geom.rank);
     eq('J10 header keeps its four figures', geom.headStats, ['Streaks', 'Players', 'Longest run', 'Updated']);
+    // REGRESSION LOCK for the defect this batch nearly shipped: the shell owns
+    // .sr-titlerow for its static heading block and series.css hides it on purpose, so a
+    // cached older shell served against new CSS cannot double the page heading. Naming
+    // the new card title row .sr-titlerow un-hid it. Inject the shell's element and
+    // assert it is still display:none — and that the card's own row is not.
+    const shellTitle = await ev(`(function(){
+      var host=document.querySelector('[data-page="series"]');
+      var d=document.createElement('div'); d.className='sr-titlerow';
+      d.innerHTML='<h1>Series</h1>'; host.appendChild(d);
+      var disp=getComputedStyle(d).display, h=Math.round(d.getBoundingClientRect().height);
+      d.remove();
+      var card=document.querySelector('[data-page="series"] .sr-card .sr-cardtop');
+      return { shellDisplay: disp, shellHeight: h, cardRowDisplay: card ? getComputedStyle(card).display : null,
+               h1s: document.querySelectorAll('[data-page="series"] h1').length };
+    })()`);
+    eq('J12 the shell\'s static .sr-titlerow stays hidden', [shellTitle.shellDisplay, shellTitle.shellHeight], ['none', 0]);
+    eq('J13 the card\'s own title row is a flex row', shellTitle.cardRowDisplay, 'flex');
+    eq('J14 exactly one <h1> on the page', shellTitle.h1s, 1);
     const maxH = Math.max(...geom.cardHeights);
     // The pre-change board was MEASURED at a uniform 238px in a real browser (the "~330"
     // in the founder's note and in an earlier version of this assertion was from memory —
