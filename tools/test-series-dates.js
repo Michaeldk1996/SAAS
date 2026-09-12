@@ -155,6 +155,14 @@ assert.strictEqual(fmtShort(undefined), null);
 assert.strictEqual(fmtDate('2026-09-12'), '12 Sep 2026', 'the modal keeps the FULL year');
 ok('an impossible or missing date falls to a dash, never a fabricated string');
 
+// The modal used to fall back to the RAW string, so an unrenderable date printed
+// verbatim there while the card beside it dashed for the same value.
+assert(!/fmtDate\(m\.date\) \|\| m\.date/.test(src),
+  'the modal prints the raw date string again when fmtDate fails — the card dashes for the same value');
+assert(/fmtDate\(m\.date\) \? esc\(fmtDate\(m\.date\)\) : dash/.test(src),
+  'the modal date cell no longer dashes on an unrenderable date');
+ok('the modal dashes an unrenderable date too, matching the card');
+
 // ── the narrow-viewport escape hatch for year-bearing strips ────────────────
 assert(/sr-strip--yr/.test(src), 'series.js no longer marks the year-bearing strip');
 assert(/showYear \? ' sr-strip--yr' : ''/.test(src), 'the sr-strip--yr modifier is no longer gated on showYear');

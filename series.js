@@ -374,7 +374,13 @@
     if (!ms.length) return '';
     var dash = '<span class="sr-dash">—</span>';
     var rows = ms.map(function (m) {
-      var d = fmtDate(m.date) || m.date || dash;
+      // `|| m.date` used to sit in the middle here, printing the RAW string when
+      // fmtDate couldn't render it — so a malformed "2026-13-05" appeared verbatim in
+      // the modal while the card beside it showed a dash for the same value. Dead code
+      // against real data (all 1435 date values in the live artifact are strict
+      // YYYY-MM-DD with a valid month) and against the standing rule everywhere else:
+      // unrenderable is unknown, and unknown is a dash.
+      var d = fmtDate(m.date) ? esc(fmtDate(m.date)) : dash;
       var tour = m.tournament ? esc(m.tournament) : dash;
       var opp = m.opponent ? esc(m.opponent) : dash;
       var score = m.score ? esc(m.score) : dash;
