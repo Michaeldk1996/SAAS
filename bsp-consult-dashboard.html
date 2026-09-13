@@ -3347,7 +3347,10 @@
   [data-page="database"]{ --db-surface:#0a0d14; --db-strip:#080a10; --db-fill:#06070a;
     --db-bd:rgba(255,255,255,0.09); --db-bd2:rgba(255,255,255,0.14);
     --db-txt:#e7e9ee; --db-emph:#aab3c5; --db-sec:#8b96b5; --db-ctl:#c6ccdb; --db-mute:#5b6880; --db-faint:#4b5672;
-    --db-acc:#5b9bff; --db-acc2:#4db8ff; --db-seam:#e8a84e; --db-pos:#3dd68c; --db-neg:#e0616f;
+    /* --db-acc2 (#4db8ff) was the underdog colour and is GONE, not merely unused:
+       leaving it declared makes it a decoy for the next reader looking for that
+       colour. Underdogs is COL_DOG in the renderer (TEN-196 2026-09-13 item 1). */
+    --db-acc:#5b9bff; --db-seam:#e8a84e; --db-pos:#3dd68c; --db-neg:#e0616f;
     --db-ui:'Hanken Grotesk', sans-serif; --db-mono:'IBM Plex Mono', monospace; }
   [data-page="database"] .db-mono{ font-family:var(--db-mono); }
   [data-page="database"] .db-pos{ color:var(--db-pos); }
@@ -3475,7 +3478,15 @@
   .db-plotinner svg{ width:100%; height:100%; display:block; overflow:visible; }
   .db-endlab{ position:absolute; right:0; width:100px; transform:translateY(-50%); }
   .db-endlab b{ display:block; font-family:var(--db-ui); font-size:11.5px; font-weight:700; }
-  .db-endlab span{ display:block; margin-top:2px; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-txt); }
+  /* The VALUE is --db-sec, not --db-txt. The export sets it to --db-txt (#e7e9ee)
+     and colours only the series name — which worked while both series were blue.
+     Underdogs is now #e7e9ee itself (TEN-196 2026-09-13 item 1), so --db-txt made
+     the "Underdogs" name and its own number the identical colour while Favourites
+     kept a blue/white contrast: on the one label whose job is to say which curve is
+     which, one side's cue was gone. Dimming the value restores the name/value
+     distinction on BOTH labels and leaves the export's "name in the series colour"
+     rule intact. */
+  .db-endlab span{ display:block; margin-top:2px; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-sec); }
   .db-xaxis{ margin:8px 104px 0 78px; position:relative; height:18px; }
   .db-xaxis div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db-sec); }
   .db-xcap{ margin:4px 104px 0 78px; text-align:center; }
@@ -23093,7 +23104,17 @@ window.DatabaseTab = (function(){
   var NAMES_URL = './database-yield-players.json';
   var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, built=false, namesBound=false;
 
-  var COL_FAV='#5b9bff', COL_DOG='#4db8ff', POS='#3dd68c', NEG='#e0616f';
+  // Series colours. The export ships #5b9bff / #4db8ff — two blues 21.2deg apart in
+  // hue and only dE2000 10.9 from each other, separated in ink by solid-vs-dashed
+  // alone. Founder ruling TEN-196 2026-09-13 item 1: on a dense chart where the two
+  // curves cross constantly that is not enough, so take a genuinely different pair
+  // from the design tokens and KEEP the dash as well (colour + line style, not
+  // either alone). #e7e9ee is the export's own primary-text near-white: dE2000 30.0
+  // from #5b9bff (2.8x the separation) and 16.0:1 on the #0a0d14 panel.
+  // The other high-contrast tokens are reserved and must not be used for a series:
+  // #3dd68c positive yield, #e0616f negative yield, #e8a84e the book-seam marker,
+  // which is drawn on this very chart.
+  var COL_FAV='#5b9bff', COL_DOG='#e7e9ee', POS='#3dd68c', NEG='#e0616f';
   var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];
   var DOG_NAMES=['Slight Dog','Mid Dog','Super Dog'];
   // C8: the live rule survives — a thin band still prints its yield, flagged with
@@ -23280,25 +23301,72 @@ window.DatabaseTab = (function(){
   // The artefact's round dictionary is insertion-ordered, so 3rd/4th Round sit
   // after The Final. Display in draw order; the stored index is unchanged.
   var ROUND_ORDER=['1st Round','2nd Round','3rd Round','4th Round','Quarterfinals','Semifinals','The Final','Round Robin'];
-  function orderedIdx(items){
-    var idx=items.map(function(_,i){return i;});
-    if(items!==M.rounds) return idx;
-    return idx.slice().sort(function(a,b){
-      var ia=ROUND_ORDER.indexOf(items[a]), ib=ROUND_ORDER.indexOf(items[b]);
+  // Fold an option out of a picker WITHOUT touching the archive: the row stops being
+  // offered, its matches stay in the data, and `All` (a null filter) still counts
+  // them. Founder ruling TEN-196 2026-09-13 item 3.
+  //
+  // Fails CLOSED, the same way playerLevels() does and for the same reason: a name
+  // filter over a live dictionary fails OPEN on a rename — rename 'Finals' in the
+  // builder and the fold silently stops applying, re-offering a row nobody ruled on.
+  // So assert the whole dictionary first and return null if it has moved, which
+  // drops the control entirely rather than offering an unruled set.
+  // The assertion is exact AND order-sensitive, so a reorder in the builder drops
+  // the control too. That is deliberate — an index-stable fold cannot be proven
+  // against a reordered dictionary — but a control vanishing in silence is the
+  // wrong diagnostic posture on this page, so say why, once.
+  var _foldWarned=false;
+  function foldedOpts(dict, expected, folded){
+    var bad = dict.length!==expected.length;
+    for(var i=0;!bad && i<expected.length;i++){ if(dict[i]!==expected[i]) bad=true; }
+    if(bad){
+      if(!_foldWarned){ _foldWarned=true;
+        console.warn('Database: level dictionary has moved — expected ['+expected.join(', ')+
+          '] but the artefact holds ['+dict.join(', ')+']. The Level filter is being DROPPED rather than '+
+          'offering a set nobody ruled on. Re-confirm the fold (TEN-196 item 3) against the new dictionary.'); }
+      return null;
+    }
+    return dict.map(function(n,ix){ return [ix,n]; })
+               .filter(function(o){ return folded.indexOf(o[1])<0; });
+  }
+  function allOpts(dict){ return dict.map(function(n,ix){ return [ix,n]; }); }
+  var LEVELS_EXPECTED=['Grand Slam','Masters 1000','ATP 500','ATP 250','Finals'];
+  var FOLDED_LEVELS=['Finals'];
+  // Offered on Tour. Finals is folded out — it is 238 rows, every one of them the
+  // Masters Cup, which stays reachable as a tournament on the Tournaments tab.
+  function tourLevelOpts(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS); }
+  // opts is [[storedIndex, name], ...]; the stored index is never renumbered, so a
+  // folded picker and the archive keep the same dictionary.
+  function orderedOpts(opts, isRounds){
+    if(!isRounds) return opts;
+    return opts.slice().sort(function(a,b){
+      var ia=ROUND_ORDER.indexOf(a[1]), ib=ROUND_ORDER.indexOf(b[1]);
       return (ia<0?99:ia)-(ib<0?99:ib);
     });
   }
-  function multiMenu(items, activeSet, setter){
+  function multiMenu(opts, activeSet, setter, isRounds){
     var m=el('div','db-menu');
-    orderedIdx(items).forEach(function(idx){
-      var name=items[idx];
+    // "every offered row on" === "no filter", counted against the OFFERED length
+    // rather than the dictionary's.
+    //
+    // NOT because 'All' would otherwise be unreachable — `st.size===0` on the same
+    // line already returns null, so clearing every box reaches it either way. It is
+    // because this is how the picker behaved before the fold, when all-checked and
+    // 'All' described the same set. They no longer do: ticking the four offered
+    // levels collapses to All = 41,667, which is the 238 folded Finals rows MORE
+    // than the four levels sum to (41,429). The trigger does flip to 'All', so
+    // nothing is misreported — but the four ruled levels can no longer be
+    // constructed as an explicit set. Reported to the founder 2026-09-13 as a
+    // consequence of item 3; NOT changed unilaterally.
+    var nOffered=opts.length;
+    orderedOpts(opts, isRounds).forEach(function(o){
+      var idx=o[0], name=o[1];
       var on = !!activeSet && activeSet.has(idx);
       var row=el('div','db-mrow'+(on?' on':''));
       row.innerHTML='<span class="db-box"></span><span>'+esc(name)+'</span>';
       row.onclick=function(){
         var st = activeSet ? new Set(activeSet) : new Set();
         if(st.has(idx)) st.delete(idx); else st.add(idx);
-        setter(st.size===0 || st.size===items.length ? null : st);
+        setter(st.size===0 || st.size===nOffered ? null : st);
         render();
       };
       m.appendChild(row);
@@ -23386,9 +23454,13 @@ window.DatabaseTab = (function(){
     var bar=document.getElementById('dbFilters'); if(!bar) return;
     bar.innerHTML='';
     if(state.view==='tour'){
-      bar.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(M.levels, state.levels, function(s){state.levels=s;}); }));
-      bar.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(M.surfaces, state.surfaces, function(s){state.surfaces=s;}); }));
-      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(M.rounds, state.rounds, function(s){state.rounds=s;}); }));
+      var lvOpts=tourLevelOpts();   // null => dictionary moved; drop the control
+      // Clear the filter alongside the control, matching the Players branch. Without
+      // it a dropped control could leave an applied filter with no way to clear it.
+      if(!lvOpts) state.levels=null;
+      if(lvOpts) bar.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }));
+      bar.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }));
+      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(allOpts(M.rounds), state.rounds, function(s){state.rounds=s;}, true); }));
       bar.appendChild(yearControl());
     } else if(state.view==='tournaments'){
       if(state.tournament){
@@ -23411,7 +23483,7 @@ window.DatabaseTab = (function(){
         onPick:function(t){ state.tournament=t; state.tq=''; render(); }
       }));
       // C11 — no Surface filter here; Round + years only, per the export.
-      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(M.rounds, state.rounds, function(s){state.rounds=s;}); }));
+      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(allOpts(M.rounds), state.rounds, function(s){state.rounds=s;}, true); }));
       bar.appendChild(yearControl());
     } else {
       if(state.player){
@@ -23480,13 +23552,9 @@ window.DatabaseTab = (function(){
   // fifth option, breaking the ruling; an index filter fails open the same way.
   // So assert the dictionary instead and return null if it has moved, which drops
   // the control entirely rather than offering a set nobody ruled on.
-  var PLAYER_LEVELS=['Grand Slam','Masters 1000','ATP 500','ATP 250'], FOLDED_LEVEL='Finals';
-  function playerLevels(){
-    var want=PLAYER_LEVELS.concat([FOLDED_LEVEL]);
-    if(M.levels.length!==want.length) return null;
-    for(var i=0;i<want.length;i++){ if(M.levels[i]!==want[i]) return null; }
-    return M.levels.map(function(n,i){ return [i,n]; }).filter(function(o){ return o[1]!==FOLDED_LEVEL; });
-  }
+  // Same fold, same dictionary assertion, same fail-closed behaviour as Tour — one
+  // definition so the two pickers cannot drift apart.
+  function playerLevels(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS); }
   // Scoped to the player AND to the active level: without the level predicate the
   // menu offers events the filter guarantees are empty (measured: Souza J. at Grand
   // Slam was offered all 28 of his tournaments, 24 of them dead).
