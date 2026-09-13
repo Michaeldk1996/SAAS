@@ -233,7 +233,8 @@ function client(wsUrl) {
     var ec=document.querySelector('${Q}.db-endcol');
     var plates=ec?[].slice.call(ec.querySelectorAll('.db-plate')).map(function(p){var r=p.getBoundingClientRect(); var cs=getComputedStyle(p);
       var b=p.querySelector('b'), s=p.querySelector('span'); var bs=getComputedStyle(b), ss=getComputedStyle(s);
-      return {cy:r.top+r.height/2, h:r.height, top:p.style.top, cls:p.className, bg:cs.backgroundColor, bd:cs.borderTopWidth+' '+cs.borderTopColor,
+      return {cy:r.top+r.height/2, h:r.height, top:p.style.top, cls:p.className,
+              l:r.left, t:r.top, rt:r.right, b:r.bottom, bg:cs.backgroundColor, bd:cs.borderTopWidth+' '+cs.borderTopColor,
               radius:cs.borderTopLeftRadius, pad:cs.paddingTop+' '+cs.paddingLeft,
               name:b.textContent, nameSize:bs.fontSize, nameWeight:bs.fontWeight, nameCol:bs.color,
               val:s.textContent, valSize:ss.fontSize, valWeight:ss.fontWeight, valCol:ss.color, valLH:ss.lineHeight};}):[];
@@ -262,7 +263,9 @@ function client(wsUrl) {
       dots:dots, plates:plates,
       yaxis:{w:yr.width, h:yr.height, size:y0&&y0.fontSize, weight:y0&&y0.fontWeight, col:y0&&y0.color, n:ya.children.length, first:ya.firstChild&&ya.firstChild.textContent},
       xaxis:{margin:getComputedStyle(xa).margin, size:xs&&xs.fontSize, col:xs&&xs.color, n:xa.children.length,
-             labels:[].slice.call(xa.children).map(function(d){return d.textContent;})},
+             labels:[].slice.call(xa.children).map(function(d){return d.textContent;}),
+             rects:[].slice.call(xa.children).map(function(d){var r=d.getBoundingClientRect();
+               return {l:r.left,t:r.top,r:r.right,b:r.bottom};})},
       cap: cap?{txt:cap.textContent, size:cs2.fontSize, weight:cs2.fontWeight, ls:cs2.letterSpacing, tt:cs2.textTransform, col:cs2.color}:null,
       endcol: ecr?{w:ecr.width, h:ecr.height}:null,
       legend:leg, title:h3s?{size:h3s.fontSize, weight:h3s.fontWeight, ls:h3s.letterSpacing, txt:h3.textContent}:null,
@@ -297,15 +300,33 @@ function client(wsUrl) {
 
   // ══ §5 layer order ═══════════════════════════════════════════════════════════
   console.log('\n── §5 · layer order inside the svg ──');
+  // §5 names an EXACT bottom-to-top sequence, so assert the sequence, not a pair of
+  // inequalities. The previous form ("some <line> exists after the first <path>") was
+  // satisfied by the SEAM line, so moving the zero line underneath both area fills —
+  // a genuine break, the fills then wash over the chart's most important reference —
+  // scored full marks. Mutation-confirmed by the clean-context review.
   const kinds = T.kids.map((k) => k.split(':')[0]);
-  ok('layer 1 is the loss-tint rect', kinds[0] === 'rect', kinds[0], 'rect');
-  const firstPath = kinds.indexOf('path'), firstPoly = kinds.indexOf('polyline');
-  const lastLineBeforePath = kinds.slice(0, firstPath).lastIndexOf('line');
-  ok('gridlines precede the area fills', lastLineBeforePath > 0 && lastLineBeforePath < firstPath, [lastLineBeforePath, firstPath], 'grid < path');
+  const nGridH = T.yaxis.n, nGridV = T.xaxis.n;
+  const wantSeq = ['rect']
+    .concat(Array(nGridH).fill('line'))    // 2 · horizontal gridlines
+    .concat(Array(nGridV).fill('line'))    // 3 · vertical gridlines
+    .concat(['path', 'path'])              // 4 · area fills, favourites then underdogs
+    .concat(['line'])                      // 5 · zero line
+    .concat(T.seamLine ? ['line'] : [])    // 6 · book seam
+    .concat(['polyline', 'polyline']);     // 7 · lines
+  ok('§5 layer sequence is exactly rect, grids, areas, zero, seam, lines',
+    kinds.join(',') === wantSeq.join(','), kinds.join(','), wantSeq.join(','));
+  // Tag-shape alone cannot tell the zero line from a gridline, so pin the zero line's
+  // INDEX and check what sits either side of it by attribute.
+  const zeroIdx = 1 + nGridH + nGridV + 2;
+  ok('the zero line sits ABOVE both area fills (index, not just presence)',
+    kinds[zeroIdx] === 'line' && kinds[zeroIdx - 1] === 'path' && kinds[zeroIdx - 2] === 'path',
+    [kinds[zeroIdx - 2], kinds[zeroIdx - 1], kinds[zeroIdx]], ['path', 'path', 'line']);
+  ok('horizontal gridlines precede vertical gridlines',
+    T.kids.slice(1, 1 + nGridH).every((k) => /0\.06\)/.test(k)) &&
+    T.kids.slice(1 + nGridH, 1 + nGridH + nGridV).every((k) => /0\.045\)/.test(k)),
+    [T.kids[1], T.kids[1 + nGridH]], ['…0.06)', '…0.045)']);
   ok('exactly two area paths', T.paths.length === 2, T.paths.length, 2);
-  ok('area fills precede the zero line', firstPath < kinds.slice(firstPath).indexOf('line') + firstPath, true, true);
-  ok('lines are the topmost layer', firstPoly > firstPath && kinds.slice(firstPoly).every((k) => k === 'polyline'),
-    kinds.slice(firstPoly).join(','), 'polyline,polyline');
   ok('underdogs drawn first, favourites on top',
     deltaE2000(parseColor(T.polylines[0].stroke), hex2rgb('#c6ccdb')) < 1 &&
     deltaE2000(parseColor(T.polylines[1].stroke), hex2rgb('#5b9bff')) < 1,
@@ -402,9 +423,36 @@ function client(wsUrl) {
   ok('underdogs plate name colour #c6ccdb', deltaE2000(parseColor(pDog.nameCol), hex2rgb('#c6ccdb')) < 1, pDog.nameCol, '#c6ccdb');
   ok('plate radius 9px and padding 7px 9px', pFav.radius === '9px' && pFav.pad === '7px 9px', [pFav.radius, pFav.pad], ['9px', '7px 9px']);
   const tourGapPct = Math.abs(tourG.Y(tourG.favEnd) - tourG.Y(tourG.dogEnd)) / 3;
-  ok('Tour ends do NOT collide, so plates sit on their true values',
-    tourGapPct > 13.5 && near(pFav.cy, favDotY, 2) && near(pDog.cy, dogDotY, 2),
-    [tourGapPct.toFixed(2) + '%', pFav.cy.toFixed(1), favDotY.toFixed(1)], 'plate == dot');
+  const favPct = tourG.Y(tourG.favEnd) / 3, dogPct = tourG.Y(tourG.dogEnd) / 3;
+  ok('precondition: the Tour ends do NOT collide (so the clamp, not the collision path, is under test)',
+    tourGapPct > 13.5, tourGapPct.toFixed(2) + '%', '>13.5%');
+  ok('no collision: the favourites plate sits on its true value',
+    near(pFav.cy, favDotY, 2), pFav.cy.toFixed(1), favDotY.toFixed(1));
+  // THE D3 SUBJECT. The Tour underdog end is at 98.55% — no collision anywhere near it,
+  // but a 54px plate centred there runs to ~420px in a 400px column and lands on the
+  // season labels. §7 words the 4%..96% clamp as the last step of the COLLISION path;
+  // applied that way this plate gets no clamp at all. Asserted here because this is the
+  // flagship chart and it is one of the 12 views that overflow without it.
+  ok('precondition: the Tour underdog end really is past 96% (the clamp must bite)',
+    dogPct > 96, dogPct.toFixed(2) + '%', '>96%');
+  ok('the underdog PLATE is clamped to 96% even with no collision',
+    near(parseFloat(pDog.top), 96, 0.02), pDog.top, '96%');
+  ok('…and the underdog DOT is NOT clamped — it keeps its true value',
+    near(dotDog.cy, dogDotY, 1.5) && !near(parseFloat(dotDog.top), 96, 0.02),
+    [dotDog.top, dogPct.toFixed(2) + '%'], 'true position, not 96%');
+  // §7's own numbers do not quite close: a ~54px plate centred at 96% of a 400px column
+  // still reaches ~411px, 11px below the column. That is not a visual defect here and
+  // the right test says so rather than asserting a proxy — the x-tick row is inset
+  // 116px on the RIGHT (§4), so it never extends under the 104px plate column. The
+  // invariant that actually matters is that no plate overlaps a season label.
+  const overlaps = (a, b) => !(a.rt <= b.l || a.l >= b.r || a.b <= b.t || a.t >= b.b);
+  ok('no end plate overlaps any season label (the real §7 invariant)',
+    T.plates.every((pl) => T.xaxis.rects.every((lr) => !overlaps(pl, lr))),
+    T.plates.map((pl) => pl.b.toFixed(0)).join('/') + ' vs labels from ' + T.xaxis.rects[0].t.toFixed(0),
+    'no intersection');
+  ok('the clamp keeps the plate out of the card’s padding (bottom within 16px of the column)',
+    pDog.b <= T.plotRect.t + T.plotRect.h + 16, pDog.b.toFixed(1),
+    '<= ' + (T.plotRect.t + T.plotRect.h + 16).toFixed(1));
 
   // ══ §8 axes ══════════════════════════════════════════════════════════════════
   console.log('\n── §8 · axes ──');
@@ -498,7 +546,7 @@ function client(wsUrl) {
   try { gwOK = await pickTourn('Gerry Weber Open'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
   if (gwOK) {
     const G = await chart();
-    if (G.error) { console.log('   (chart read failed: ' + G.error + ')'); }
+    if (G.error) { ok('Gerry Weber chart read', false, G.error, 'chart'); }
     else {
     ok('Gerry Weber: loss tint y == zeroY 150.0', near(G.tint.y, gwG.zeroY, 0.15), G.tint.y, gwG.zeroY.toFixed(1));
     ok('Gerry Weber: loss tint height 150.0, NOT the full 300',
@@ -513,14 +561,43 @@ function client(wsUrl) {
     ok('Gerry Weber: plate values match the archive',
       gFav.val === fmtU(gwG.favEnd) && gDog.val === fmtU(gwG.dogEnd), [gFav.val, gDog.val], [fmtU(gwG.favEnd), fmtU(gwG.dogEnd)]);
     }
-  } else { console.log('   (could not drive the tournament picker — these assertions did not run)'); }
+  } else { ok('Gerry Weber Open subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
+
+  console.log('\n── §8 · Brisbane International — the view that drew 12 gridlines ──');
+  // §8's "at most ten gridlines" was asserted only on Tour All, which sits at EXACTLY
+  // ten and cannot move: `step` was picked from the raw span, then hi/lo were rounded
+  // outward, and the drawn span grew. Brisbane International is where that shows.
+  const briIx = TOURN.indexOf('Brisbane International');
+  const briRows = rows.filter((r) => r[4] === briIx);
+  // What the old rule WOULD have produced, recomputed here.
+  const briS = cumSeries(briRows);
+  const bRawHi = Math.max(Math.max(...briS.fav), Math.max(...briS.dog));
+  const bRawLo = Math.min(Math.min(...briS.fav), Math.min(...briS.dog));
+  const oldStep = [10, 25, 50, 100, 250, 500, 1000, 2500].find((x) => (bRawHi - bRawLo) / x <= 10) || 5000;
+  const oldRnd = Math.max(10, oldStep / 10);
+  const oldHi = bRawHi > 0 ? Math.ceil(bRawHi / oldStep) * oldStep : Math.max(oldRnd, Math.ceil(bRawHi / oldRnd) * oldRnd);
+  const oldLo = Math.min(0, Math.floor(bRawLo / oldRnd) * oldRnd);
+  const oldCount = Math.floor(oldHi / oldStep) - Math.ceil(oldLo / oldStep) + 1;
+  ok('precondition: the raw-span rule really does overflow here (this subject can break)',
+    oldCount > 10, oldCount + ' labels under the raw-span rule', '>10');
+  let briOK = false;
+  try { briOK = await pickTourn('Brisbane International'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
+  if (briOK) {
+    const BR = await chart();
+    if (BR.error) { ok('Brisbane chart read', false, BR.error, 'chart'); }
+    else {
+      ok('Brisbane International draws at most ten gridlines (§8)', BR.yaxis.n <= 10, BR.yaxis.n, '<=10');
+      ok('…and the axis still contains the whole curve',
+        BR.tint.y >= 0 && BR.tint.y <= 300, BR.tint.y, '0..300');
+    }
+  } else { ok('Brisbane International subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
 
   console.log('\n── §7 · Open Sud de France (ends 0.42% apart — the collision branch) ──');
   let osfOK = false;
   try { osfOK = await pickTourn('Open Sud de France'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
   if (osfOK) {
     const O = await chart();
-    if (O.error) { console.log('   (chart read failed: ' + O.error + ')'); }
+    if (O.error) { ok('Open Sud chart read', false, O.error, 'chart'); }
     else {
     const oFav = O.plates.find((p) => /fav/.test(p.cls)), oDog = O.plates.find((p) => /dog/.test(p.cls));
     const dotGapPx = Math.abs(O.dots[0].cy - O.dots[1].cy);
@@ -607,7 +684,7 @@ function client(wsUrl) {
   try { plOK = await pickPlayer('Djokovic N.'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
   if (plOK) {
     const P = await panels();
-    if (P.error) { console.log('   (' + P.error + ')'); }
+    if (P.error) { ok('Djokovic panels read', false, P.error, 'panels'); }
     else {
       ok('players main viewBox 0 0 1000 200', P.main.viewBox === '0 0 1000 200', P.main.viewBox, '0 0 1000 200');
       ok('players main plot height 360px', near(P.main.h, 360, 0.6), P.main.h, 360);
@@ -640,7 +717,7 @@ function client(wsUrl) {
         P.main.zeroLines === 1 && P.main.tint.y >= 0 && P.main.tint.y + P.main.tint.h <= 200.05,
         [P.main.zeroLines, P.main.tint.y, P.main.tint.h], '1 line, tint within 0..200');
     }
-  } else { console.log('   (could not drive the player picker — these assertions did not run)'); }
+  } else { ok('Djokovic N. subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
 
   console.log('\n── §5.1 · Wu D. — y-domain excludes zero, the input that breaks §5.1 ──');
   // SUBJECT CHOICE, and a correction worth recording. Beck K. was the obvious pick —
@@ -686,7 +763,7 @@ function client(wsUrl) {
   try { bkOK = await pickPlayer('Wu D.'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
   if (bkOK) {
     const B = await panels();
-    if (B.error) { console.log('   (' + B.error + ')'); }
+    if (B.error) { ok('Wu D. panels read', false, B.error, 'panels'); }
     else {
       ok('Wu D.: loss tint stays INSIDE the viewBox (no spill through overflow:visible)',
         B.main.tint.y >= 0 && B.main.tint.h >= 0 && B.main.tint.y + B.main.tint.h <= 200.05,
@@ -697,12 +774,23 @@ function client(wsUrl) {
       const w2 = (wv[wv.length - 1] > 0 ? '+' : '') + wv[wv.length - 1].toFixed(1) + 'u';
       ok('Wu D.: end value matches the archive', B.main.end === w2, B.main.end, w2);
     }
-  } else { console.log('   (could not drive the player picker — these assertions did not run)'); }
+  } else { ok('Wu D. subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
 
   // ══ console cleanliness ══════════════════════════════════════════════════════
   console.log('\n── console ──');
   const real = errs.filter((e) => !/read only property 'BSP'/.test(e));
   ok('no page console errors (probe’s own BSP stub filtered)', real.length === 0, real.slice(0, 3), []);
+
+  // THE BACKSTOP. Without this the probe reports success when whole sections never
+  // run: renaming `.db-prow` (a plausible refactor) made it print "94 passed, 0 failed,
+  // exit 0" while silently dropping the 33 assertions its own header calls load-bearing
+  // — every non-vacuous subject. A count that must be hit cannot be skipped past.
+  const EXPECTED = 135;
+  const total = PASS + FAILS.length;
+  if (total !== EXPECTED) {
+    FAILS.push(`assertion COUNT is ${total}, expected ${EXPECTED} — a section was skipped`);
+    console.log(`\n  ✗ assertion count ${total} != ${EXPECTED}: a section did not run`);
+  } else { console.log(`\n  ✓ all ${EXPECTED} assertions ran (none skipped)`); }
 
   console.log(`\n${'═'.repeat(60)}`);
   console.log(`  ${PASS} passed, ${FAILS.length} failed`);

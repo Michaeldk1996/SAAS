@@ -23223,10 +23223,12 @@ window.DatabaseTab = (function(){
   // The new spec proposes #c6ccdb and retires the dash outright (§10). That is not
   // deference: it clears the same measured bar the last pairing was held to — dE2000
   // 22.99 from #5b9bff (the rejected pair was 10.87), contrast 12.1:1 on the #0a0d14
-  // panel, and clear of the reserved trio (dE 34.24 / 31.38 / 32.60 to #e0616f positive
-  // yield, #3dd68c negative yield, #e8a84e the book-seam marker drawn on this very
-  // chart). Two well-separated solid strokes carry the distinction that colour+dash
-  // was compensating for, so the dash goes.
+  // panel, and clear of the reserved trio: dE 31.38 to #3dd68c (POSITIVE yield), 34.24
+  // to #e0616f (NEGATIVE yield), 32.60 to #e8a84e (the book-seam marker drawn on this
+  // very chart). Check those two against POS/NEG on the line below before quoting them
+  // — an earlier draft of this comment had them the wrong way round. Two well-separated
+  // solid strokes carry the distinction that colour+dash was compensating for, so the
+  // dash goes.
   //
   // Those three reserved tokens remain reserved. A series must never take one.
   var COL_FAV='#5b9bff', COL_DOG='#c6ccdb', POS='#3dd68c', NEG='#e0616f';
@@ -23239,10 +23241,23 @@ window.DatabaseTab = (function(){
   //
   // Why this is not a presentation detail. Measured over 2,700 series (52 Tour views,
   // 338 tournament series, 2,310 player series) with a parser that imports nothing
-  // from this file: the spec's plain +/-3 centred average ERASES 161 profit crossings
-  // and 58 loss crossings. The Tour All -> Underdogs curve is in profit at exactly 9
-  // of its 41,667 points (Jan 2010, peak +1.89u at index 11) and the average paints
-  // that maximum at -0.04u — "never once in profit" on the page's headline row.
+  // from this file. Two different metrics, and they must not be confused — an earlier
+  // draft of this comment ran them together:
+  //
+  //   SIGN CHANGES. The raw series hold 11,825 between them. Down-sampling alone, as
+  //   shipped today, already loses 1,330 (11.2%) — a 260-vertex budget cannot hold
+  //   every oscillation that straddles zero, and that was always true. The spec's
+  //   plain +/-3 average loses 7,520 (63.6%); sample-then-smooth loses 8,040 (68.0%).
+  //   'guarded' loses 1,330 — EXACTLY the same set as today, nothing additional.
+  //
+  //   SERIES THAT STOP SHOWING ANY TIME IN PROFIT AT ALL. Today 0. Plain average 161
+  //   (plus 58 that stop showing any time in loss); sample-then-smooth 171 / 64;
+  //   'guarded' 0 / 0.
+  //
+  // The second metric is the one that changes what the chart CLAIMS. The Tour All ->
+  // Underdogs curve is above zero at exactly 9 of its 41,667 points (Jan 2010, peak
+  // +1.89u at index 11) and the average paints that maximum at -0.04u — "never once
+  // in profit" on the page's headline row.
   //
   // 'guarded' is the recommended mode: smooth the SAMPLED vertices, then force the raw
   // value back at the two endpoints, the global max, the global min, and any vertex
@@ -24230,26 +24245,38 @@ window.DatabaseTab = (function(){
     var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
     var rawLo=Math.min.apply(null,[Math.min.apply(null,favV), Math.min.apply(null,dogV)]);
     var sp=rawHi-rawLo;
-    var step=[10,25,50,100,250,500,1000,2500].filter(function(s){ return sp/s<=10; })[0] || 5000;
-    var rnd=Math.max(10, step/10);
-    // Export rule, kept literally: only a Tournaments chart that spends time in
-    // profit gets a full labelled positive band. Measured: the Tour curves peak at
-    // +26.3u against a 2,316u span, so a data-driven "rawHi>0" test would hand the
-    // Tour chart 250u of empty headroom for a 26u blip. The tab test is the export's
-    // and it is the one that reads correctly on both tabs.
-    var hi = (isTourn && rawHi>0) ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd);
-    var lo = Math.floor(rawLo/rnd)*rnd;
-    if(hi===lo){ hi=lo+rnd; }
-    // The zero line must be INSIDE the plot. §5.1 sizes the loss tint as
-    // `viewBoxHeight - zeroY`, and §4 sets overflow:visible, so a zero line off-scale
-    // gives a rect taller than the plot (or a negative height) that spills out of the
-    // card — the exact symptom §5.1 says it prevents. Measured: 0 of 170 Tour and
-    // Tournaments views are out of range today, so this guard is inert here. It is
-    // kept because that is a measurement, not a structural guarantee, and the same
-    // guard on the Players path is load-bearing (204 of 1,129 panels).
-    if(hi<0) hi=0;
-    if(lo>0) lo=0;
-    if(hi===lo){ hi=lo+rnd; }
+    // §8: "Step is chosen so the span carries at most ten gridlines." Choosing the
+    // step from the RAW span is not enough, because hi and lo are then rounded
+    // OUTWARD by `rnd` and the drawn span grows: clean-context review measured
+    // Brisbane International at 12 labels (+30u … -80u) and the Australian Open at
+    // 11, on 13 Tour/Tournament views in all. So the ladder is walked and each
+    // candidate is judged on the span it actually produces, not the one it started
+    // from. The first candidate that fits wins, so nothing widens unnecessarily.
+    //
+    // Export rule inside the loop, kept literally: only a Tournaments chart that
+    // spends time in profit gets a full labelled positive band. Measured: the Tour
+    // curves peak at +26.3u against a 2,316u span, so a data-driven "rawHi>0" test
+    // would hand the Tour chart 250u of empty headroom for a 26u blip.
+    var STEPS=[10,25,50,100,250,500,1000,2500,5000];
+    var step, rnd, hi, lo;
+    for(var si=0; si<STEPS.length; si++){
+      step=STEPS[si];
+      if(si<STEPS.length-1 && sp/step>10) continue;   // can't fit even before rounding
+      rnd=Math.max(10, step/10);
+      hi = (isTourn && rawHi>0) ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd);
+      lo = Math.floor(rawLo/rnd)*rnd;
+      if(hi===lo){ hi=lo+rnd; }
+      // The zero line must be INSIDE the plot. §5.1 sizes the loss tint as
+      // `viewBoxHeight - zeroY`, and §4 sets overflow:visible, so a zero line
+      // off-scale gives a rect taller than the plot that spills out of the card —
+      // the exact symptom §5.1 says it prevents. On THIS path `hi` is structurally
+      // positive (both branches floor at `rnd >= 10`), so only the `lo` guard can
+      // ever fire here; the pair is kept together because the Players path runs the
+      // same two lines and there they are load-bearing (204 of 1,129 panels).
+      if(lo>0) lo=0;
+      if(hi===lo){ hi=lo+rnd; }
+      if(Math.floor(hi/step) - Math.ceil(lo/step) + 1 <= 10) break;
+    }
     var H=300;
     function Y(v){ return ((hi-v)/(hi-lo))*H; }
     var zeroY=Y(0);
@@ -24320,9 +24347,17 @@ window.DatabaseTab = (function(){
       var hiFirst = tops[0] <= tops[1];
       tops[0] = hiFirst ? mid-half : mid+half;
       tops[1] = hiFirst ? mid+half : mid-half;
-      tops[0]=Math.max(4,Math.min(96,tops[0]));
-      tops[1]=Math.max(4,Math.min(96,tops[1]));
     }
+    // THE CLAMP IS UNCONDITIONAL, and that is a deliberate departure from §7's wording.
+    // §7 describes 4%..96% as the last step of the collision path, so a first reading
+    // puts it inside the `if`. Two ends that are far apart but one of which sits near
+    // an edge then get no clamp at all, and a 54px plate centred at 98.45% runs from
+    // 368px to 419.5px in a 400px column — past the bottom of the plot and into the
+    // season-label row, which starts at +410px. Clean-context review measured it on the
+    // built page: Shanghai Masters overlaps the x-axis labels by ~9.5px, Hall of Fame
+    // Championships by ~10.8px, and 12 of 169 tournaments are outside 4..96 without it.
+    tops[0]=Math.max(4,Math.min(96,tops[0]));
+    tops[1]=Math.max(4,Math.min(96,tops[1]));
     ends.forEach(function(e,i){
       var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span>'+fmtU(e.v)+'</span>');
       pl.style.top=tops[i].toFixed(2)+'%';
@@ -24417,8 +24452,20 @@ window.DatabaseTab = (function(){
   // fabricate a vertex to reach the export's count.
   var N_TOUR=260, N_TOURN=240, N_PMAIN=220, N_PSUB=200;
   // Sampling and smoothing are ONE pipeline and the order matters — see SMOOTH_MODE.
-  // `paintSeries` is the single place a painted curve is produced, so the polyline,
-  // the area fill, the end dot and the plate can never disagree about what was drawn.
+  // `paintSeries` is where the polyline and the area fill get their vertices; both go
+  // through `poly`, so those two can never disagree.
+  //
+  // THE END DOT AND THE PLATE DO NOT GO THROUGH IT — they read the raw `vals[n-1]`
+  // directly. They agree with the line for a structural reason, not a shared code path:
+  // `sampleKeep` pins index `n-1` in both branches and `smoothVals` forces
+  // `out[n-1] = vals[n-1]`, so the last painted vertex IS the last raw value under every
+  // SMOOTH_MODE. Remove either pin and the dot drifts off the end of the line in
+  // silence. The probe asserts the dot's PAINTED centre against the independently
+  // recomputed end value, which is what would catch that.
+  //
+  // Each series is also sampled TWICE per render (once for the area, once for the
+  // polyline) — 4x per Tour chart over 41,667 rows. Fine today; the obvious thing to
+  // memoise if this ever feels slow.
   function paintSeries(xs, vals, N){
     var i, k, sm, mx, mn, forced, out;
     if(SMOOTH_MODE==='raw-first') vals=smoothVals(vals,3);
@@ -24736,8 +24783,13 @@ window.DatabaseTab = (function(){
     var all=series.reduce(function(a,s){ return a.concat(s.vals); },[]);
     if(!all.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
-    var step=[1,2,5,10,20,25,50].filter(function(s){ return (rawHi-rawLo)/s<=10; })[0] || 100;
-    var rnd=Math.max(1, step/5);
+    // §8's ten-gridline cap, judged on the span the step ACTUALLY produces after the
+    // outward rounding — same defect and same fix as the Tour ladder above. Measured
+    // before the fix: 46 of 1,129 player panels drew 11 or 12 labels (Federer R. among
+    // them). The PLAYER_ZERO_IN_DOMAIN guard has to run inside the loop, because
+    // forcing zero into the domain widens it and can itself push the count over ten.
+    var PSTEPS=[1,2,5,10,20,25,50,100];
+    var step, rnd, hi, lo;
     // PENDING FOUNDER RULING — TEN-196 round 5, gate question `zero-domain`.
     // 204 of 1,129 players never cross zero, so the break-even line falls OUTSIDE
     // their panel. §5.1 sizes the loss tint as `viewBoxHeight - zeroY` and §4 sets
@@ -24753,14 +24805,27 @@ window.DatabaseTab = (function(){
     // panel whose domain does not contain zero — a zero line drawn outside the plot
     // is a reference pointing at nothing.
     var PLAYER_ZERO_IN_DOMAIN=false;
-    if(PLAYER_ZERO_IN_DOMAIN){ if(rawHi<0) rawHi=0; if(rawLo>0) rawLo=0; }
-    var hi=Math.ceil(rawHi/rnd)*rnd, lo=Math.floor(rawLo/rnd)*rnd;
-    if(hi===lo){ hi=lo+rnd; }
+    var dHi=rawHi, dLo=rawLo;
+    if(PLAYER_ZERO_IN_DOMAIN){ if(dHi<0) dHi=0; if(dLo>0) dLo=0; }
+    for(var psi=0; psi<PSTEPS.length; psi++){
+      step=PSTEPS[psi];
+      if(psi<PSTEPS.length-1 && (dHi-dLo)/step>10) continue;
+      rnd=Math.max(1, step/5);
+      hi=Math.ceil(dHi/rnd)*rnd; lo=Math.floor(dLo/rnd)*rnd;
+      if(hi===lo){ hi=lo+rnd; }
+      if(Math.floor(hi/step) - Math.ceil(lo/step) + 1 <= 10) break;
+    }
     var PH=200;
     function Y(v){ return ((hi-v)/(hi-lo))*PH; }
     var zeroIn = (0<=hi && 0>=lo), pZeroY = Y(0);
     var tintY = Math.max(0, Math.min(PH, pZeroY));
-    var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step) grid.push({y:Y(v), label: v===0?'0':(v+'u')});
+    // §8: positives are labelled `+250u`, zero is bare `0`, negatives `-250u`, all with
+    // thousands separators. The `+` and the separator were missing here while the Tour
+    // axis two hundred lines up had both, so the same magnitude read `20u` on a player
+    // panel and `+20u` on the Tour chart. 672 of 1,129 players render at least one
+    // positive gridline, so this was most of the tab.
+    var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)
+      grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtInt(v)+'u':fmtInt(v)+'u')});
 
     // One tick ladder per panel size, both off the SAME d0/span, so the season
     // lines on the small panels sit at the same x as on the big one.
