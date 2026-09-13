@@ -263,8 +263,24 @@ console.log('\n-- the gridlines are UNIFORMLY spaced, which is the point of the 
 const gaps = [];
 for (let i = 1; i < paint.mainTicks.length; i++) gaps.push(paint.mainTicks[i].left - paint.mainTicks[i - 1].left);
 const gmin = Math.min(...gaps), gmax = Math.max(...gaps);
-ok('main gridline gaps are equal to within 0.05pp', gaps.length >= 2 && (gmax - gmin) <= 0.05,
-  `spread ${(gmax - gmin).toFixed(4)}pp over ${gaps.length} gaps (min ${gmin.toFixed(3)}, max ${gmax.toFixed(3)})`, '<= 0.05pp');
+// The tolerance is ONE DAY OF WIDTH, not a fixed pp figure. A clean-context review
+// caught the fixed-0.05pp version as UNSATISFIABLE: a leap year is one extra day, so
+// two equal tick STEPS are legitimately different widths on a short domain. Confirmed
+// by exhaustive scan — 0.05pp fails 302 of 2,064 real ladders (`Walton A.`, debut
+// 2024, spreads 0.107pp) while the worst spread anywhere is exactly 1.0000 day of
+// width. In days the tolerance is correct at every domain length.
+// Second term: the page writes `style.left = (x*100).toFixed(2)`, so what is PAINTED
+// is quantised to 0.01pp. Each tick can move +/-0.005pp, a gap +/-0.01pp, and a
+// spread-of-gaps +/-0.02pp. Asserting a sub-0.02pp budget against a 2-decimal string
+// would be measuring the rounding, not the layout. (Caught by re-running this probe
+// after tightening it: the true spread is 0.0165pp but the DOM reads 0.0300pp.)
+const dayPP = 100 / span;
+const ROUND_PP = 0.02;
+const TOL = dayPP * 1.01 + ROUND_PP;
+ok('main gridline gaps are equal to within one leap day of width + DOM rounding',
+  gaps.length >= 2 && (gmax - gmin) <= TOL,
+  `spread ${(gmax - gmin).toFixed(4)}pp = ${((gmax - gmin) / dayPP).toFixed(3)} days of width, over ${gaps.length} gaps`,
+  `<= ${TOL.toFixed(4)}pp (1 day = ${dayPP.toFixed(4)}pp, + ${ROUND_PP}pp rounding)`);
 ok('vertical season gridlines are still drawn on the main panel',
   paint.vlinesMain.length === paint.mainTicks.length, paint.vlinesMain.length, paint.mainTicks.length);
 const vMiss = paint.vlinesMain.filter((x, i) => !near(x, paint.mainTicks[i].left * 10, 0.2)).length;
@@ -301,8 +317,9 @@ let iLad = [];
 for (const stp of [2, 1]) { iLad = []; for (let k = 0; k < iYears.length; k += stp) iLad.push(firstIx.get(iYears[k]) / iDen * 100); if (iLad.length >= 3) break; }
 const iGaps = []; for (let i = 1; i < iLad.length; i++) iGaps.push(iLad[i] - iLad[i - 1]);
 const iSpread = Math.max(...iGaps) - Math.min(...iGaps);
-ok('the same tolerance REJECTS the match-index ladder for this subject', iSpread > 0.05,
-  `index-basis spread ${iSpread.toFixed(3)}pp`, '> 0.05pp (so the test discriminates)');
+ok('the same tolerance REJECTS the match-index ladder for this subject', iSpread > TOL,
+  `index-basis spread ${iSpread.toFixed(3)}pp vs tolerance ${TOL.toFixed(4)}pp`,
+  `> ${TOL.toFixed(4)}pp (so the test still discriminates after being loosened)`);
 
 console.log('\n-- console --');
 // Scoped honestly. These three are LOCAL-ENVIRONMENT artefacts, not page defects:

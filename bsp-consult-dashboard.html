@@ -24513,14 +24513,27 @@ window.DatabaseTab = (function(){
     // I shipped and asked about. Tour and Tournaments keep the match index; the
     // Players panels go back to linear time.
     //
-    // The reason the two tabs differ is that the defect match index exists to fix is
-    // not present here. A one-week-a-year event crams 2,130 points into 58 of 1,000
-    // columns and starves the sampler; a player plays year-round, so a Players panel
-    // has little dead air to remove. What linear time buys in exchange is the thing
-    // the index axis cost: the season gridlines ruled in last round are EVENLY
-    // SPACED again, because one year is one year of width regardless of how busy it
-    // was. On the index axis an idle stretch occupied no width and a heavy season
-    // occupied more, so those gridlines bunched.
+    // What linear time buys is the thing the index axis cost: the season gridlines
+    // ruled in the round before are EVENLY SPACED again, because one year is one
+    // year of width regardless of how busy it was. On the index axis an idle stretch
+    // occupied no width and a heavy season occupied more, so those gridlines bunched.
+    //
+    // WHAT IT COSTS, measured — and do not repeat the softer version I first wrote
+    // here, which a clean-context review took apart. I claimed "a player plays
+    // year-round, so a Players panel has little dead air to remove." That is true
+    // ONLY of the unfiltered view of an active player, and this tab has four filters.
+    // Unfiltered, the median player with >220 matches paints 145 vertices against
+    // the index basis's 219. Under the tab's own filters it is worse than the case
+    // that motivated the index ruling in the first place: Nadal + Surface=Grass puts
+    // 58 points into 29 OF 1,000 COLUMNS — a tighter concentration than the
+    // Australian Open's 58/1,000 that the Tournaments charts were moved off. A
+    // career gap costs more again: Giron's widest painted gap is 313 columns
+    // against 7.
+    //
+    // No extremum is lost either way — `poly` keeps each bucket's min and max — so
+    // this is chart FIDELITY, not a wrong number. The founder ruled the axis knowing
+    // the gridlines were the point; the cost is recorded here so the next person to
+    // touch this does not "discover" it and quietly harmonise the page back.
     //
     // The domain is shared by construction: all three panels are laid out against
     // the SAME `d0`/`span`, so 50% across the Favourite panel is the same date as
@@ -24531,10 +24544,20 @@ window.DatabaseTab = (function(){
     //
     // `d0` is 1 Jan of the first season with a match — a SEASON BOUNDARY, not the
     // first match date. That is the C3 fix and it must stay: anchoring the domain at
-    // the first match and clamping the first tick put the "2010" label 4.39pp of
-    // plot width from the date it marks. `d1` is the archive's last date rather than
-    // the player's, so a retired player's curve ends where he stopped instead of
-    // being stretched to the full width.
+    // the first match and then CLAMPING the first season tick to x=0 draws that
+    // label at a position the date does not occupy. (I previously quoted "4.39pp"
+    // for this. Do not reuse it — neither a clean-context review nor I could
+    // re-derive it from the archive, on a player or on an event, so it is carried
+    // memory rather than a measurement. Re-measure before quoting a figure here.)
+    //
+    // `d1` is the archive's last date rather than the player's, so a retired
+    // player's curve ends where he stopped instead of being stretched to the full
+    // width. That is a deliberate trade — 2014 is the same x on every player's chart
+    // so two players can be compared — and it is not free: Roddick's whole career
+    // draws in 16.2% of the width. Under a rolling Period filter the same asymmetry
+    // shows on the LEFT, because d0 is a season boundary while the window is rolling:
+    // on "Last 52 weeks" the median player leaves 36.8% of the panel blank. Both are
+    // on the founder's desk; neither is a defect to fix unasked.
     var anchorHi=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
     var minD=null;
     series[0].recs.forEach(function(v){ var d=dnum(v.d); if(minD===null||d<minD) minD=d; });
@@ -24586,7 +24609,7 @@ window.DatabaseTab = (function(){
     grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
     plot.appendChild(ax);
     var area=el('div','db-pcarea'); area.style.height=hpx+'px';
-    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by date, ticks mark season starts">';
+    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit on a season axis, ticks mark season starts">';
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     // Vertical season gridlines on the player charts — founder ruling TEN-196
     // 2026-09-13 ("add them — the export wins"). One line per season tick, the
