@@ -23106,7 +23106,7 @@ window.DatabaseTab = (function(){
     yearMin:null, yearMax:null,
     tournament:null, player:null,
     tq:'', pq:'', menu:null, menuQ:'',
-    period:'all', psurf:null, ptourn:null, stance:'back'
+    period:'all', psurf:null, plevel:null, ptourn:null, stance:'back'
   };
 
   // ---------- helpers ----------
@@ -23147,8 +23147,8 @@ window.DatabaseTab = (function(){
     for(var i=0;i<rows.length;i++){
       var r=rows[i], w=nm[i][0], l=nm[i][1], favWon=r[7];
       // p = the player's own closing price, op = his opponent's — the fade stake.
-      pushPlayer(w, { p: favWon? r[5]:r[6], op: favWon? r[6]:r[5], w:1, b:r[8], d:r[0], fav:favWon===1, surf:r[2], rnd:r[3], tour:r[4] });
-      pushPlayer(l, { p: favWon? r[6]:r[5], op: favWon? r[5]:r[6], w:0, b:r[8], d:r[0], fav:favWon===0, surf:r[2], rnd:r[3], tour:r[4] });
+      pushPlayer(w, { p: favWon? r[5]:r[6], op: favWon? r[6]:r[5], w:1, b:r[8], d:r[0], fav:favWon===1, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
+      pushPlayer(l, { p: favWon? r[6]:r[5], op: favWon? r[5]:r[6], w:0, b:r[8], d:r[0], fav:favWon===0, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
     }
   }
   function pushPlayer(name, rec){ if(!name) return; (playerIndex[name]||(playerIndex[name]=[])).push(rec); }
@@ -23192,6 +23192,10 @@ window.DatabaseTab = (function(){
     for(var i=0;i<rows.length;i++){
       var r=rows[i];
       if(state.psurf!=null && r[2]!==state.psurf) continue;
+      // The baseline has to move with the Level filter too, or a player's Slam
+      // record would be scored against an all-levels denominator (founder ruling
+      // TEN-196 2026-09-13: "it has to").
+      if(state.plevel!=null && r[1]!==state.plevel) continue;
       if(state.ptourn!=null && r[4]!==state.ptourn) continue;
       if(!inPeriod(r[0], anchor)) continue;
       fp += r[7] ? (r[5]-1) : -1;
@@ -23373,7 +23377,7 @@ window.DatabaseTab = (function(){
     state.levels=null; state.surfaces=null; state.rounds=null;
     state.yearMin=null; state.yearMax=null;
     state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
-    state.period='all'; state.psurf=null; state.ptourn=null; state.stance='back';
+    state.period='all'; state.psurf=null; state.plevel=null; state.ptourn=null; state.stance='back';
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
@@ -23435,6 +23439,15 @@ window.DatabaseTab = (function(){
       var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
       bar.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
         return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
+      // Level — founder ruling TEN-196 2026-09-13: "build it with four levels,
+      // fold Finals away". Finals is 238 matches for the whole tour across 16
+      // seasons, so it is thin by construction for almost every player. It is not
+      // offered as a choice; it is NOT removed from the archive, so the default
+      // "All" still counts it and no match is hidden from the unfiltered record.
+      // Single-select, matching this tab's own Surface/Tournament controls — which
+      // also means "all four picked" can never be mistaken for "All".
+      bar.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
+        return singleMenu([[null,'All']].concat(playerLevels()), state.plevel, function(v){ state.plevel=v; }, false); }));
       var events=playerEvents();
       bar.appendChild(trigger('Tournament', state.ptourn==null?'All':M.tournaments[state.ptourn], state.ptourn!=null, 'ptourn', function(){
         return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
@@ -23459,6 +23472,11 @@ window.DatabaseTab = (function(){
     var c=TSURF[ti]; if(!c) return '';
     var keys=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; });
     return M.surfaces[+keys[0]] + (keys.length>1 ? ' +'+(keys.length-1) : '');
+  }
+  // The four levels offered on the Players tab, by name rather than by index, so a
+  // change to the artefact's level dictionary can't silently promote Finals back in.
+  function playerLevels(){
+    return M.levels.map(function(n,i){ return [i,n]; }).filter(function(o){ return o[1]!=='Finals'; });
   }
   function playerEvents(){
     if(!state.player || !playerIndex || !playerIndex[state.player]) return [];
@@ -23656,8 +23674,9 @@ window.DatabaseTab = (function(){
     gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     s+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
     if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="#e8a84e" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
-    s+='<polyline points="'+poly(xs,favV,Y)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
-    s+='<polyline points="'+poly(xs,dogV,Y)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>';
+    var NV = isTourn ? N_TOURN : N_TOUR;   // the export's own per-chart vertex budget
+    s+='<polyline points="'+poly(xs,favV,Y,NV)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
+    s+='<polyline points="'+poly(xs,dogV,Y,NV)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>';
     s+='</svg>';
     inner.innerHTML=s;
     area.appendChild(inner);
@@ -23691,22 +23710,36 @@ window.DatabaseTab = (function(){
     });
     return out;
   }
-  // Down-sample to the viewBox's own x resolution, keeping the first, last and both
-  // y-extremes of every x bucket — the painted envelope is unchanged.
-  function poly(xs, vals, Y){
-    var n=xs.length, keep=[], b=-1, first=0, last=0, mn=0, mx=0;
-    function flush(){ var idx=[first,mn,mx,last].sort(function(a,b2){return a-b2;});
-      for(var k=0;k<4;k++){ if(k===0 || idx[k]!==idx[k-1]) keep.push(idx[k]); } }
-    for(var i=0;i<n;i++){
-      var bk=Math.round(xs[i]*1000);
-      if(bk!==b){ if(b>=0) flush(); b=bk; first=i; mn=i; mx=i; }
-      last=i;
-      if(vals[i]<vals[mn]) mn=i;
-      if(vals[i]>vals[mx]) mx=i;
+  // Fixed-vertex resample at the EXPORT's own chart resolution (founder ruling
+  // TEN-196 2026-09-13, item 1). `Database.dc.html` builds each curve with
+  // `curve(n, …)` and lays it out with `poly()` at exactly n evenly-spaced x —
+  // N_TOUR 260, N_TOURN 240, N_PMAIN 220, N_PSUB 200. The previous sampler kept
+  // first/min/max/last per 1/1000 x-bucket, so it drew a vertical riser inside
+  // every occupied bucket: unfiltered that is 3,059 vertices against the export's
+  // 260, and under a Level filter — Masters 1000 clusters into nine weeks a
+  // season — the risers are most of the ink and the curve reads as noise.
+  // Step-hold: each vertex is the cumulative value AS OF that x, which is what a
+  // cumulative series means between matches. No painted number is derived from
+  // the curve, and the final vertex is pinned to the true end value so the end
+  // label still sits on the line it labels.
+  var N_TOUR=260, N_TOURN=240, N_PMAIN=220, N_PSUB=200;
+  function poly(xs, vals, Y, N){
+    var n=xs.length, out, i;
+    if(!n) return '';
+    N = N || N_TOUR;
+    if(n<=N){
+      out=new Array(n);
+      for(i=0;i<n;i++) out[i]=(xs[i]*1000).toFixed(1)+','+Y(vals[i]).toFixed(1);
+      return out.join(' ');
     }
-    if(b>=0) flush();
-    var out=new Array(keep.length);
-    for(var j=0;j<keep.length;j++){ var ix=keep[j]; out[j]=(xs[ix]*1000).toFixed(1)+','+Y(vals[ix]).toFixed(1); }
+    var x0=xs[0], x1=xs[n-1], sp=(x1-x0)||1, j=0;
+    out=new Array(N);
+    for(var k=0;k<N;k++){
+      var xk = x0 + sp*(k/(N-1));
+      while(j+1<n && xs[j+1]<=xk) j++;
+      out[k]=(xk*1000).toFixed(1)+','+Y(vals[j]).toFixed(1);
+    }
+    out[N-1]=(x1*1000).toFixed(1)+','+Y(vals[n-1]).toFixed(1);
     return out.join(' ');
   }
 
@@ -23721,6 +23754,7 @@ window.DatabaseTab = (function(){
     var anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
     return all.filter(function(v){
       if(state.psurf!=null && v.surf!==state.psurf) return false;
+      if(state.plevel!=null && v.lev!==state.plevel) return false;
       if(state.ptourn!=null && v.tour!==state.ptourn) return false;
       return inPeriod(v.d, anchor);
     });
@@ -23765,7 +23799,7 @@ window.DatabaseTab = (function(){
     var recs=playerRecs();
     if(!recs.length){
       var e=el('div','db-empty');
-      e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface and tournament.</p>';
+      e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface, level and tournament.</p>';
       body.appendChild(e); renderFootnote(body); return;
     }
     var bl=bookLabel(recs.map(function(v){return v.b;}));
@@ -23943,8 +23977,13 @@ window.DatabaseTab = (function(){
     }
     var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit">';
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    // Vertical season gridlines on the player charts — founder ruling TEN-196
+    // 2026-09-13 ("add them — the export wins"). One line per season tick, the
+    // export's own markup and opacity (`Database.dc.html` playerMain.ticks /
+    // c.ticks, rgba(255,255,255,0.05)). These panels previously drew none.
+    ticks.forEach(function(t){ svg+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+PH+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     svg+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.20)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
-    svg+='<polyline points="'+poly(s.xs,s.vals,Y)+'" fill="none" stroke="'+s.col+'" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    svg+='<polyline points="'+poly(s.xs,s.vals,Y,isMain?N_PMAIN:N_PSUB)+'" fill="none" stroke="'+s.col+'" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
     svg+='</svg>';
     area.innerHTML=svg;
     plot.appendChild(area);
