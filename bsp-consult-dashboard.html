@@ -3466,30 +3466,48 @@
   /* 4 - cumulative profit chart (Tour / Tournaments) */
   .db-charthead{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
   .db-charthead h3{ font-family:var(--db-ui); font-size:19px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0; }
-  .db-legend{ display:flex; gap:16px; font-family:var(--db-ui); font-size:12px; color:var(--db-sec); }
-  .db-legend span{ display:inline-flex; align-items:center; gap:6px; }
-  .db-legend i{ width:16px; display:inline-block; }
+  /* Legend swatches are SOLID BARS, not dashes (CHARTS.md §9, and §10 retires the
+     dashed series line that the dashed swatch used to stand for). */
+  .db-legend{ display:flex; gap:18px; font-family:var(--db-ui); font-size:12px; color:var(--db-sec); }
+  .db-legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .db-legend i{ width:18px; height:3px; border-radius:2px; display:inline-block; flex:none; }
   .db-subline{ margin-top:6px; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
-  .db-plot{ margin-top:16px; display:flex; gap:12px; }
-  .db-yaxis{ position:relative; width:66px; height:340px; flex:none; }
-  .db-yaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db-sec); }
-  .db-plotarea{ position:relative; flex:1; min-width:0; height:340px; padding-right:104px; }
-  .db-plotinner{ position:relative; height:100%; }
-  .db-plotinner svg{ width:100%; height:100%; display:block; overflow:visible; }
-  .db-endlab{ position:absolute; right:0; width:100px; transform:translateY(-50%); }
-  .db-endlab b{ display:block; font-family:var(--db-ui); font-size:11.5px; font-weight:700; }
-  /* The VALUE is --db-sec, not --db-txt. The export sets it to --db-txt (#e7e9ee)
-     and colours only the series name — which worked while both series were blue.
-     Underdogs is now #e7e9ee itself (TEN-196 2026-09-13 item 1), so --db-txt made
-     the "Underdogs" name and its own number the identical colour while Favourites
-     kept a blue/white contrast: on the one label whose job is to say which curve is
-     which, one side's cue was gone. Dimming the value restores the name/value
-     distinction on BOTH labels and leaves the export's "name in the series colour"
-     rule intact. */
-  .db-endlab span{ display:block; margin-top:2px; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-sec); }
-  .db-xaxis{ margin:8px 104px 0 78px; position:relative; height:18px; }
-  .db-xaxis div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db-sec); }
-  .db-xcap{ margin:4px 104px 0 78px; text-align:center; }
+  /* §4 — three flex columns: axis (70px), PLOT (flex:1), end-plate column (104px),
+     with the 12px gap between them supplying the spec's "+12px gap" on both sides.
+     .db-plotarea IS THE POSITIONING CONTEXT for everything drawn on the plot. It
+     previously carried `padding-right:104px` and the end labels were positioned
+     against that padded box, which is exactly the construction §4 calls out: a
+     percentage offset then includes the padding and lands off-target. The padding
+     is gone and the plates moved to their own column. */
+  .db-plot{ margin-top:18px; display:flex; gap:12px; }
+  .db-yaxis{ position:relative; width:70px; height:400px; flex:none; }
+  .db-yaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11.5px; font-weight:500; color:var(--db-sec); }
+  .db-plotarea{ position:relative; flex:1; min-width:0; height:400px; }
+  .db-plotarea svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .db-endcol{ position:relative; width:104px; height:400px; flex:none; }
+  /* §6 — HTML overlays on the plot. The opaque --db-surface background is what makes
+     these legible where they cross a gridline. */
+  .db-ovl{ position:absolute; padding:2px 7px; border-radius:5px; background:var(--db-surface);
+    font-family:var(--db-mono); font-size:9.5px; font-weight:600; text-transform:uppercase; white-space:nowrap; }
+  .db-belab{ left:8px; transform:translateY(-50%); letter-spacing:0.14em; color:var(--db-sec); }
+  .db-seamlab{ top:-9px; transform:translateX(-50%); letter-spacing:0.12em; color:#e8a84e; }
+  .db-enddot{ position:absolute; right:-4.5px; width:9px; height:9px; margin-top:-4.5px;
+    border-radius:50%; box-shadow:0 0 0 3px var(--db-surface); }
+  /* §7 — end-value plates. The tinted background and the border are what separate the
+     two plates from each other; the round-2 defect (series name and its own number
+     painting the same colour) was a FLAT text label with no other cue, which this is
+     not. Value stays --db-txt per the spec. */
+  .db-plate{ position:absolute; left:0; right:0; transform:translateY(-50%); padding:7px 9px; border-radius:9px; }
+  .db-plate b{ display:block; font-family:var(--db-ui); font-size:11px; font-weight:700; }
+  .db-plate span{ display:block; margin-top:3px; font-family:var(--db-mono); font-size:16px; font-weight:700; line-height:1; color:var(--db-txt); }
+  .db-plate.fav{ background:rgba(91,155,255,0.11); border:1px solid rgba(91,155,255,0.3); }
+  .db-plate.fav b{ color:#82b4ff; }
+  .db-plate.dog{ background:rgba(198,204,219,0.08); border:1px solid rgba(198,204,219,0.24); }
+  .db-plate.dog b{ color:#c6ccdb; }
+  /* 82px = 70px axis column + 12px gap; 116px = 104px plate column + 12px gap. */
+  .db-xaxis{ margin:10px 116px 0 82px; position:relative; height:18px; }
+  .db-xaxis div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11.5px; color:var(--db-sec); }
+  .db-xcap{ margin:4px 116px 0 82px; text-align:center; }
   .db-seamfoot{ margin:16px 0 0; padding-left:12px; border-left:2px solid rgba(232,168,78,0.55);
     font-family:var(--db-ui); font-size:12.5px; line-height:1.6; color:var(--db-sec); max-width:820px; }
 
@@ -3524,13 +3542,16 @@
   .db-pchead{ display:flex; align-items:baseline; gap:12px; }
   .db-pchead h4{ font-family:var(--db-ui); font-size:16px; font-weight:700; color:var(--db-txt); margin:0; }
   .db-pchead span{ margin-left:auto; font-family:var(--db-mono); font-size:19px; font-weight:700; }
-  .db-pcplot{ margin-top:14px; display:flex; gap:10px; }
-  .db-pcaxis{ position:relative; width:40px; flex:none; }
-  .db-pcaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); }
+  /* §4 — 52px axis column + 12px gap; the tick row is inset by their sum (64px). */
+  .db-pcplot{ margin-top:14px; display:flex; gap:12px; }
+  .db-pcaxis{ position:relative; width:52px; flex:none; }
+  .db-pcaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11.5px; font-weight:500; color:var(--db-sec); }
   .db-pcarea{ position:relative; flex:1; min-width:0; }
-  .db-pcarea svg{ width:100%; height:100%; display:block; }
-  .db-pcticks{ margin:8px 0 0 50px; position:relative; height:14px; }
-  .db-pcticks div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); }
+  .db-pcarea svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .db-pcticks{ margin:10px 0 0 64px; position:relative; height:16px; }
+  .db-pcticks div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11.5px; color:var(--db-sec); }
+  .db-pcpair .db-pcaxis div, .db-pcpair .db-pcticks div{ font-size:11px; }
+  .db-pcpair .db-enddot{ width:8px; height:8px; margin-top:-4px; }
   .db-pcpair{ margin-top:30px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:36px; }
   @media (max-width:900px){ .db-pcpair{ grid-template-columns:1fr; } }
   .db-pcpair .db-pchead h4{ font-size:14px; }
@@ -23192,17 +23213,57 @@ window.DatabaseTab = (function(){
   var NAMES_URL = './database-yield-players.json';
   var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, built=false, namesBound=false;
 
-  // Series colours. The export ships #5b9bff / #4db8ff — two blues 21.2deg apart in
-  // hue and only dE2000 10.9 from each other, separated in ink by solid-vs-dashed
-  // alone. Founder ruling TEN-196 2026-09-13 item 1: on a dense chart where the two
-  // curves cross constantly that is not enough, so take a genuinely different pair
-  // from the design tokens and KEEP the dash as well (colour + line style, not
-  // either alone). #e7e9ee is the export's own primary-text near-white: dE2000 30.0
-  // from #5b9bff (2.8x the separation) and 16.0:1 on the #0a0d14 panel.
-  // The other high-contrast tokens are reserved and must not be used for a series:
-  // #3dd68c positive yield, #e0616f negative yield, #e8a84e the book-seam marker,
-  // which is drawn on this very chart.
-  var COL_FAV='#5b9bff', COL_DOG='#e7e9ee', POS='#3dd68c', NEG='#e0616f';
+  // Series colours — CHARTS.md §2, which SUPERSEDES the round-2 pairing.
+  //
+  // History, because the reasoning matters more than the hex. The first export shipped
+  // #5b9bff / #4db8ff: two blues dE2000 10.87 apart, separated in ink by solid-vs-dashed
+  // alone. Founder ruling TEN-196 2026-09-13 item 1 overruled it on that measurement and
+  // took #e7e9ee (dE 30.02) WITH the dash kept — colour and line style, not either alone.
+  //
+  // The new spec proposes #c6ccdb and retires the dash outright (§10). That is not
+  // deference: it clears the same measured bar the last pairing was held to — dE2000
+  // 22.99 from #5b9bff (the rejected pair was 10.87), contrast 12.1:1 on the #0a0d14
+  // panel, and clear of the reserved trio (dE 34.24 / 31.38 / 32.60 to #e0616f positive
+  // yield, #3dd68c negative yield, #e8a84e the book-seam marker drawn on this very
+  // chart). Two well-separated solid strokes carry the distinction that colour+dash
+  // was compensating for, so the dash goes.
+  //
+  // Those three reserved tokens remain reserved. A series must never take one.
+  var COL_FAV='#5b9bff', COL_DOG='#c6ccdb', POS='#3dd68c', NEG='#e0616f';
+  var FILL_FAV='rgba(91,155,255,0.11)', FILL_DOG='rgba(198,204,219,0.07)';
+
+  // ---------- display smoothing (CHARTS.md §3) ----------
+  // PENDING FOUNDER RULING — TEN-196 round 5, gate `ten196:round5:smoothing...`.
+  // SMOOTH_MODE is the single switch the ruling flips. It is 'off' until then, so the
+  // page ships exactly the series the archive holds.
+  //
+  // Why this is not a presentation detail. Measured over 2,700 series (52 Tour views,
+  // 338 tournament series, 2,310 player series) with a parser that imports nothing
+  // from this file: the spec's plain +/-3 centred average ERASES 161 profit crossings
+  // and 58 loss crossings. The Tour All -> Underdogs curve is in profit at exactly 9
+  // of its 41,667 points (Jan 2010, peak +1.89u at index 11) and the average paints
+  // that maximum at -0.04u — "never once in profit" on the page's headline row.
+  //
+  // 'guarded' is the recommended mode: smooth the SAMPLED vertices, then force the raw
+  // value back at the two endpoints, the global max, the global min, and any vertex
+  // the averaging moved across zero. Measured 0 erased crossings, 0 extremum misses,
+  // worst peak loss 0.00u, while keeping 63-73% of the readability gain.
+  // 'raw-first'  = smooth then sample (the spec read literally): 161/58 erased.
+  // 'sample-first' = sample then smooth (what the export itself does): 171/64 erased,
+  //   and up to 25.90u of real drawdown lost (Grand Slam underdogs -1,112.07 -> -1,086.17).
+  var SMOOTH_MODE='off';
+  function smoothVals(vals, k){
+    var n=vals.length, out=[], i, j, a, b, s;
+    if(n<3) return vals.slice();
+    k=k||3;
+    for(i=0;i<n;i++){
+      a=Math.max(0,i-k); b=Math.min(n-1,i+k); s=0;
+      for(j=a;j<=b;j++) s+=vals[j];
+      out.push(s/(b-a+1));
+    }
+    out[0]=vals[0]; out[n-1]=vals[n-1];
+    return out;
+  }
   var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];
   var DOG_NAMES=['Slight Dog','Mid Dog','Super Dog'];
   // C8: the live rule survives — a thin band still prints its yield, flagged with
@@ -24112,8 +24173,8 @@ window.DatabaseTab = (function(){
     var card=el('div','db-card');
     var head=el('div','db-charthead');
     head.innerHTML='<h3>Cumulative profit, flat 1u</h3>'+
-      '<div class="db-legend"><span><i style="border-top:2px solid '+COL_FAV+'"></i>Favourites</span>'+
-      '<span><i style="border-top:2px dashed '+COL_DOG+'"></i>Underdogs</span></div>';
+      '<div class="db-legend"><span><i style="background:'+COL_FAV+'"></i>Favourites</span>'+
+      '<span><i style="background:'+COL_DOG+'"></i>Underdogs</span></div>';
     card.appendChild(head);
     card.appendChild(el('div','db-subline','Units returned on a flat 1-unit stake, cumulative — below zero is a loss.'));
 
@@ -24179,8 +24240,19 @@ window.DatabaseTab = (function(){
     var hi = (isTourn && rawHi>0) ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd);
     var lo = Math.floor(rawLo/rnd)*rnd;
     if(hi===lo){ hi=lo+rnd; }
+    // The zero line must be INSIDE the plot. §5.1 sizes the loss tint as
+    // `viewBoxHeight - zeroY`, and §4 sets overflow:visible, so a zero line off-scale
+    // gives a rect taller than the plot (or a negative height) that spills out of the
+    // card — the exact symptom §5.1 says it prevents. Measured: 0 of 170 Tour and
+    // Tournaments views are out of range today, so this guard is inert here. It is
+    // kept because that is a measurement, not a structural guarantee, and the same
+    // guard on the Players path is load-bearing (204 of 1,129 panels).
+    if(hi<0) hi=0;
+    if(lo>0) lo=0;
+    if(hi===lo){ hi=lo+rnd; }
     var H=300;
     function Y(v){ return ((hi-v)/(hi-lo))*H; }
+    var zeroY=Y(0);
 
     var gy=[], v;
     for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
@@ -24194,24 +24266,69 @@ window.DatabaseTab = (function(){
     plot.appendChild(yax);
 
     var area=el('div','db-plotarea');
-    var inner=el('div','db-plotinner');
-    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
-    ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    s+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
-    if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="#e8a84e" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
     var NV = isTourn ? N_TOURN : N_TOUR;   // the export's own per-chart vertex budget
-    s+='<polyline points="'+poly(xs,favV,Y,NV)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
-    s+='<polyline points="'+poly(xs,dogV,Y,NV)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>';
+    // §5 — layer order, bottom to top, exactly: loss tint, horizontal gridlines,
+    // vertical gridlines, area fills (favourites then underdogs, so the deeper series
+    // reads through), zero line, book seam, lines (underdogs then favourites on top).
+    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
+    s+='<rect x="0" y="'+zeroY.toFixed(1)+'" width="1000" height="'+(H-zeroY).toFixed(1)+'" fill="rgba(255,255,255,0.014)"/>';
+    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.045)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    s+='<path d="'+areaPath(xs,favV,Y,NV,zeroY)+'" fill="'+FILL_FAV+'" stroke="none"/>';
+    s+='<path d="'+areaPath(xs,dogV,Y,NV,zeroY)+'" fill="'+FILL_DOG+'" stroke="none"/>';
+    s+='<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="1000" y2="'+zeroY.toFixed(1)+'" stroke="rgba(255,255,255,0.40)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(232,168,78,0.75)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
+    s+='<polyline points="'+poly(xs,dogV,Y,NV)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    s+='<polyline points="'+poly(xs,favV,Y,NV)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     s+='</svg>';
-    inner.innerHTML=s;
-    area.appendChild(inner);
-    [['Favourites',COL_FAV,favV[favV.length-1]],['Underdogs',COL_DOG,dogV[dogV.length-1]]].forEach(function(e){
-      var lab=el('div','db-endlab','<b style="color:'+e[1]+'">'+e[0]+'</b><span>'+fmtU(e[2])+'</span>');
-      lab.style.top=(Y(e[2])/H*100).toFixed(2)+'%';
-      area.appendChild(lab);
+    area.innerHTML=s;
+
+    // §6 — HTML overlays, positioned against the PLOT div (not a padded parent).
+    var be=el('div','db-ovl db-belab','Break even');
+    be.style.top=(zeroY/H*100).toFixed(2)+'%';
+    area.appendChild(be);
+    if(seam && seamX!=null){
+      var sl=el('div','db-ovl db-seamlab',esc(M.books[1]));
+      sl.style.left=(seamX*100).toFixed(2)+'%';
+      area.appendChild(sl);
+    }
+
+    // The end value is the LAST PAINTED vertex, which `poly` pins to the true last
+    // point under every smoothing mode — so the dot, the plate and the line always
+    // agree. §7: the plate may be nudged to avoid a collision; THE DOT NEVER MOVES.
+    var ends=[
+      { cls:'fav', name:'Favourites', col:COL_FAV, v:favV[favV.length-1] },
+      { cls:'dog', name:'Underdogs',  col:COL_DOG, v:dogV[dogV.length-1] }
+    ];
+    ends.forEach(function(e){
+      e.pct = Y(e.v)/H*100;
+      var dot=el('div','db-enddot');
+      dot.style.top=e.pct.toFixed(2)+'%';
+      dot.style.background=e.col;
+      area.appendChild(dot);
     });
     plot.appendChild(area);
+
+    // §7 collision handling. A plate is ~54px on a 400px plot = 13.50% of the height.
+    // Measured across 207 views, 39 collide — the tightest is Open Sud de France at
+    // 0.42% (fav -15.7u, dog -15.9u), so this branch is exercised by real data and the
+    // probe asserts it THERE, not on a chart whose ends are far apart.
+    var endcol=el('div','db-endcol');
+    var MINGAP=54/400*100, tops=[ends[0].pct, ends[1].pct];
+    if(Math.abs(tops[0]-tops[1]) < MINGAP){
+      var mid=(tops[0]+tops[1])/2, half=MINGAP/2;
+      var hiFirst = tops[0] <= tops[1];
+      tops[0] = hiFirst ? mid-half : mid+half;
+      tops[1] = hiFirst ? mid+half : mid-half;
+      tops[0]=Math.max(4,Math.min(96,tops[0]));
+      tops[1]=Math.max(4,Math.min(96,tops[1]));
+    }
+    ends.forEach(function(e,i){
+      var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span>'+fmtU(e.v)+'</span>');
+      pl.style.top=tops[i].toFixed(2)+'%';
+      endcol.appendChild(pl);
+    });
+    plot.appendChild(endcol);
     card.appendChild(plot);
 
     var xax=el('div','db-xaxis');
@@ -24299,9 +24416,50 @@ window.DatabaseTab = (function(){
   // gridline ladder was built from. Under N points we draw all of them — we never
   // fabricate a vertex to reach the export's count.
   var N_TOUR=260, N_TOURN=240, N_PMAIN=220, N_PSUB=200;
+  // Sampling and smoothing are ONE pipeline and the order matters — see SMOOTH_MODE.
+  // `paintSeries` is the single place a painted curve is produced, so the polyline,
+  // the area fill, the end dot and the plate can never disagree about what was drawn.
+  function paintSeries(xs, vals, N){
+    var i, k, sm, mx, mn, forced, out;
+    if(SMOOTH_MODE==='raw-first') vals=smoothVals(vals,3);
+    k=sampleKeep(xs, vals, N||N_TOUR);
+    var px=new Array(k.length), pv=new Array(k.length);
+    for(i=0;i<k.length;i++){ px[i]=xs[k[i]]; pv[i]=vals[k[i]]; }
+    if(SMOOTH_MODE==='sample-first' || SMOOTH_MODE==='guarded'){
+      sm=smoothVals(pv,3);
+      if(SMOOTH_MODE==='sample-first'){ pv=sm; }
+      else {
+        // Guarded: restore the raw value wherever the average would misstate the
+        // series — the endpoints, the true extrema (which the gridline ladder is
+        // built from), and any vertex the averaging moved to the other side of zero.
+        mx=0; mn=0;
+        for(i=0;i<pv.length;i++){ if(pv[i]>pv[mx]) mx=i; if(pv[i]<pv[mn]) mn=i; }
+        forced={}; forced[0]=1; forced[pv.length-1]=1; forced[mx]=1; forced[mn]=1;
+        for(i=0;i<pv.length;i++){ if((pv[i]>0)!==(sm[i]>0) || (pv[i]<0)!==(sm[i]<0)) forced[i]=1; }
+        out=new Array(pv.length);
+        for(i=0;i<pv.length;i++) out[i]=forced[i]?pv[i]:sm[i];
+        pv=out;
+      }
+    }
+    return { xs:px, vals:pv };
+  }
   function poly(xs, vals, Y, N){
-    var n=xs.length, out, i;
-    if(!n) return '';
+    var p=paintSeries(xs, vals, N), out=new Array(p.xs.length), i;
+    for(i=0;i<p.xs.length;i++) out[i]=(p.xs[i]*1000).toFixed(1)+','+Y(p.vals[i]).toFixed(1);
+    return out.join(' ');
+  }
+  // §5, "Area path" — close the line down to the ZERO LINE, not to the bottom of the
+  // plot, and start/end at the series' own x range rather than at 0 and 1000 (a
+  // Players sub-series can begin later than the shared domain).
+  function areaPath(xs, vals, Y, N, zeroY){
+    var pts=poly(xs, vals, Y, N);
+    if(!pts) return '';
+    var a=pts.split(' '), z=zeroY.toFixed(1);
+    return 'M '+a[0].split(',')[0]+','+z+' L '+a.join(' L ')+' L '+a[a.length-1].split(',')[0]+','+z+' Z';
+  }
+  function sampleKeep(xs, vals, N){
+    var n=xs.length, i;
+    if(!n) return [];
     N = N || N_TOUR;
     var keep;
     if(n<=N){
@@ -24324,9 +24482,7 @@ window.DatabaseTab = (function(){
       if(keep[0]!==0) keep.unshift(0);
       if(keep[keep.length-1]!==n-1) keep.push(n-1);
     }
-    out=new Array(keep.length);
-    for(i=0;i<keep.length;i++){ var ix=keep[i]; out[i]=(xs[ix]*1000).toFixed(1)+','+Y(vals[ix]).toFixed(1); }
-    return out.join(' ');
+    return keep;
   }
 
   // ================= Players =================
@@ -24504,9 +24660,11 @@ window.DatabaseTab = (function(){
     card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale · season axis, ticks mark season starts'));
     var suffix = fading ? ', opponent backed' : '';
     var series=[
+      // §2: "The Players charts are all one player, so the second colour would carry
+      // no meaning: every Players series is blue." The underdog panel was COL_DOG.
       {title:'All matches'+suffix, recs:recs, col:COL_FAV},
       {title:'When favourite'+suffix, recs:favRecs, col:COL_FAV},
-      {title:'When underdog'+suffix, recs:dogRecs, col:COL_DOG}
+      {title:'When underdog'+suffix, recs:dogRecs, col:COL_FAV}
     ];
     // x is the CALENDAR DATE on these panels — founder ruling TEN-196 2026-09-13
     // round 3 scope call, which OVERTURNS the one-basis-for-the-whole-page position
@@ -24580,24 +24738,44 @@ window.DatabaseTab = (function(){
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
     var step=[1,2,5,10,20,25,50].filter(function(s){ return (rawHi-rawLo)/s<=10; })[0] || 100;
     var rnd=Math.max(1, step/5);
+    // PENDING FOUNDER RULING — TEN-196 round 5, gate question `zero-domain`.
+    // 204 of 1,129 players never cross zero, so the break-even line falls OUTSIDE
+    // their panel. §5.1 sizes the loss tint as `viewBoxHeight - zeroY` and §4 sets
+    // overflow:visible, which turns that into a rect up to 400 tall on a 200-tall
+    // viewBox (King-Turner D.) or a NEGATIVE height (Sergeyev I., never once in loss)
+    // — spilling out of the card, the exact symptom §5.1 claims to prevent.
+    //
+    // PLAYER_ZERO_IN_DOMAIN=true forces 0 into the domain; re-measured, that takes
+    // 204 to 0. It is false until the founder rules, because it changes the vertical
+    // scale of 204 live charts. Until then the holding behaviour below is the only
+    // one that ships nothing broken AND changes no existing scale: clamp the tint to
+    // the viewBox, and draw neither the zero line nor the "Break even" label on a
+    // panel whose domain does not contain zero — a zero line drawn outside the plot
+    // is a reference pointing at nothing.
+    var PLAYER_ZERO_IN_DOMAIN=false;
+    if(PLAYER_ZERO_IN_DOMAIN){ if(rawHi<0) rawHi=0; if(rawLo>0) rawLo=0; }
     var hi=Math.ceil(rawHi/rnd)*rnd, lo=Math.floor(rawLo/rnd)*rnd;
     if(hi===lo){ hi=lo+rnd; }
     var PH=200;
     function Y(v){ return ((hi-v)/(hi-lo))*PH; }
+    var zeroIn = (0<=hi && 0>=lo), pZeroY = Y(0);
+    var tintY = Math.max(0, Math.min(PH, pZeroY));
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step) grid.push({y:Y(v), label: v===0?'0':(v+'u')});
 
     // One tick ladder per panel size, both off the SAME d0/span, so the season
     // lines on the small panels sit at the same x as on the big one.
     var tMain=calendarTicks(d0, span, [2,1]);
     var tSub=calendarTicks(d0, span, [4,2,1]);
-    card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 300, true));
+    // §4 rendered plot heights: Players main 360px, pair panels 230px.
+    var geo={ zeroIn:zeroIn, zeroY:pZeroY, tintY:tintY };
+    card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 360, true, geo));
     var pair=el('div','db-pcpair');
-    pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 190, false));
-    pair.appendChild(panelFor(series[2], grid, Y, PH, tSub, 190, false));
+    pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 230, false, geo));
+    pair.appendChild(panelFor(series[2], grid, Y, PH, tSub, 230, false, geo));
     card.appendChild(pair);
     return card;
   }
-  function panelFor(s, grid, Y, PH, ticks, hpx, isMain){
+  function panelFor(s, grid, Y, PH, ticks, hpx, isMain, geo){
     var p=el('div', isMain?'db-pcmain':null);
     var head=el('div','db-pchead');
     var endTxt = s.end==null ? '—' : ((s.end>0?'+':'')+s.end.toFixed(1)+'u');
@@ -24609,17 +24787,34 @@ window.DatabaseTab = (function(){
     grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
     plot.appendChild(ax);
     var area=el('div','db-pcarea'); area.style.height=hpx+'px';
+    // §5 layer order, same as the Tour chart minus the book seam (Tour/Tournaments
+    // only): loss tint, horizontal gridlines, vertical gridlines, area fill, zero
+    // line, line. The tint is CLAMPED to the viewBox — see PLAYER_ZERO_IN_DOMAIN.
+    var NV=isMain?N_PMAIN:N_PSUB;
     var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit on a season axis, ticks mark season starts">';
-    grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    svg+='<rect x="0" y="'+geo.tintY.toFixed(1)+'" width="1000" height="'+(PH-geo.tintY).toFixed(1)+'" fill="rgba(255,255,255,0.014)"/>';
+    grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     // Vertical season gridlines on the player charts — founder ruling TEN-196
     // 2026-09-13 ("add them — the export wins"). One line per season tick, the
-    // export's own markup and opacity (`Database.dc.html` playerMain.ticks /
-    // c.ticks, rgba(255,255,255,0.05)). These panels previously drew none.
-    ticks.forEach(function(t){ svg+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+PH+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    svg+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.20)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
-    svg+='<polyline points="'+poly(s.xs,s.vals,Y,isMain?N_PMAIN:N_PSUB)+'" fill="none" stroke="'+s.col+'" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    // export's own markup (`Database.dc.html` playerMain.ticks / c.ticks).
+    ticks.forEach(function(t){ svg+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+PH+'" stroke="rgba(255,255,255,0.045)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    svg+='<path d="'+areaPath(s.xs,s.vals,Y,NV,geo.zeroIn?geo.zeroY:geo.tintY)+'" fill="'+FILL_FAV+'" stroke="none"/>';
+    if(geo.zeroIn) svg+='<line x1="0" y1="'+geo.zeroY.toFixed(1)+'" x2="1000" y2="'+geo.zeroY.toFixed(1)+'" stroke="rgba(255,255,255,0.40)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    svg+='<polyline points="'+poly(s.xs,s.vals,Y,NV)+'" fill="none" stroke="'+s.col+'" stroke-width="'+(isMain?'2.6':'2.2')+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     svg+='</svg>';
     area.innerHTML=svg;
+    // §6 — break-even label on the Players MAIN chart only; end marker on every chart.
+    if(isMain && geo.zeroIn){
+      var be=el('div','db-ovl db-belab','Break even');
+      be.style.top=(geo.zeroY/PH*100).toFixed(2)+'%';
+      area.appendChild(be);
+    }
+    if(s.end!=null){
+      var dot=el('div','db-enddot');
+      dot.style.top=(Y(s.end)/PH*100).toFixed(2)+'%';
+      dot.style.background=s.col;
+      area.appendChild(dot);
+    }
     plot.appendChild(area);
     p.appendChild(plot);
     var tr=el('div','db-pcticks');
