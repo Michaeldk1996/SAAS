@@ -52,7 +52,7 @@
     "p2SurfaceWinRate": 59.7,
     "p1Rank": 2,
     "p2Rank": 70,
-    "p1RecentForm": 80,
+    "p1RecentForm": 90,
     "p2RecentForm": 70,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -233,9 +233,16 @@
           ]
         },
         "hard": {
-          "won": 23,
+          "won": 24,
           "lost": 7,
           "matches": [
+            {
+              "opponent": "B. Shelton",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-13",
+              "won": true
+            },
             {
               "opponent": "K. Khachanov",
               "result": "3 - 0",
@@ -917,7 +924,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 52,
+          "won": 53,
           "lost": 13
         },
         "clay": {
@@ -925,7 +932,7 @@
           "lost": 4
         },
         "hard": {
-          "won": 23,
+          "won": 24,
           "lost": 7
         },
         "grass": {
@@ -934,7 +941,7 @@
         },
         "atp": {
           "total": {
-            "won": 52,
+            "won": 53,
             "lost": 13
           },
           "clay": {
@@ -942,7 +949,7 @@
             "lost": 4
           },
           "hard": {
-            "won": 23,
+            "won": 24,
             "lost": 7
           },
           "grass": {
@@ -1808,19 +1815,27 @@
     ],
     "p1TournamentHistory": {
       "editionsPlayed": 11,
-      "totalWon": 34,
+      "totalWon": 35,
       "totalLost": 10,
-      "longMatches": 26,
-      "longMatchesPlayed": 44,
-      "longMatchPct": 59,
+      "longMatches": 27,
+      "longMatchesPlayed": 45,
+      "longMatchPct": 60,
       "years": [
         {
           "year": "2026",
-          "matchCount": 6,
-          "won": 6,
+          "matchCount": 7,
+          "won": 7,
           "lost": 0,
-          "roundReached": "Semi-finals",
+          "roundReached": "Final",
           "matches": [
+            {
+              "date": "2026-09-13",
+              "opponent": "B. Shelton",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12162596
+            },
             {
               "date": "2026-09-11",
               "opponent": "K. Khachanov",
@@ -2498,24 +2513,24 @@
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 76,
             "Service:2nd Serve Points Won": 56,
-            "Service:Break Points Saved": 59.6,
-            "Return:Break Points Converted": 39.5,
+            "Service:Break Points Saved": 59.7,
+            "Return:Break Points Converted": 39.7,
             "Points:Service Points Won": 70.4,
-            "Points:Return Points Won": 36.7,
+            "Points:Return Points Won": 36.6,
             "Points:Total Points Won": 52.7,
-            "Points:Winners": 26.2,
-            "Points:Unforced Errors": 21.2
+            "Points:Winners": 26.4,
+            "Points:Unforced Errors": 21.3
           },
           "samples": {
             "Service:Aces": 86,
             "Service:Double Faults": 86,
-            "Service:1st Serve Points Won": 4931,
-            "Service:2nd Serve Points Won": 1922,
-            "Service:Break Points Saved": 265,
-            "Return:Break Points Converted": 491,
-            "Points:Service Points Won": 6859,
-            "Points:Return Points Won": 7535,
-            "Points:Total Points Won": 14394,
+            "Service:1st Serve Points Won": 4970,
+            "Service:2nd Serve Points Won": 1939,
+            "Service:Break Points Saved": 268,
+            "Return:Break Points Converted": 494,
+            "Points:Service Points Won": 6915,
+            "Points:Return Points Won": 7587,
+            "Points:Total Points Won": 14502,
             "Points:Winners": 83,
             "Points:Unforced Errors": 83
           }
@@ -2554,28 +2569,28 @@
         "p1": {
           "matchCount": 75,
           "stats": {
-            "Service:Aces": 9.4,
-            "Service:Double Faults": 2.1,
+            "Service:Aces": 9.5,
+            "Service:Double Faults": 2.2,
             "Service:1st Serve Points Won": 75.7,
             "Service:2nd Serve Points Won": 53.9,
-            "Service:Break Points Saved": 63.5,
-            "Return:Break Points Converted": 38.1,
+            "Service:Break Points Saved": 63.6,
+            "Return:Break Points Converted": 38.3,
             "Points:Service Points Won": 69.5,
             "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.5,
-            "Points:Unforced Errors": 20.2
+            "Points:Winners": 24.7,
+            "Points:Unforced Errors": 20.4
           },
           "samples": {
             "Service:Aces": 75,
             "Service:Double Faults": 75,
-            "Service:1st Serve Points Won": 4205,
-            "Service:2nd Serve Points Won": 1689,
-            "Service:Break Points Saved": 288,
-            "Return:Break Points Converted": 483,
-            "Points:Service Points Won": 5915,
-            "Points:Return Points Won": 6369,
-            "Points:Total Points Won": 12284,
+            "Service:1st Serve Points Won": 4244,
+            "Service:2nd Serve Points Won": 1706,
+            "Service:Break Points Saved": 291,
+            "Return:Break Points Converted": 486,
+            "Points:Service Points Won": 5971,
+            "Points:Return Points Won": 6421,
+            "Points:Total Points Won": 12392,
             "Points:Winners": 70,
             "Points:Unforced Errors": 70
           }
@@ -2613,10 +2628,10 @@
       "surfaceLabel": "hard",
       "courtSpeedRecord": {
         "p1": {
-          "wins": 17,
+          "wins": 18,
           "losses": 5,
-          "sampleSize": 22,
-          "pct": 77.3
+          "sampleSize": 23,
+          "pct": 78.3
         },
         "p2": {
           "wins": 14,
@@ -2737,11 +2752,11 @@
           "dow": "Sun",
           "label": "Sep 13",
           "code": 61,
-          "hi": 25,
+          "hi": 26,
           "lo": 20,
           "rain": 86,
           "wind": 10,
-          "humidity": 87,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         }
@@ -3708,7 +3723,7 @@
     "p2SurfaceWinRate": 57,
     "p1Rank": 2,
     "p2Rank": 50,
-    "p1RecentForm": 80,
+    "p1RecentForm": 90,
     "p2RecentForm": 50,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -3889,9 +3904,16 @@
           ]
         },
         "hard": {
-          "won": 23,
+          "won": 24,
           "lost": 7,
           "matches": [
+            {
+              "opponent": "B. Shelton",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-13",
+              "won": true
+            },
             {
               "opponent": "K. Khachanov",
               "result": "3 - 0",
@@ -4530,7 +4552,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 52,
+          "won": 53,
           "lost": 13
         },
         "clay": {
@@ -4538,7 +4560,7 @@
           "lost": 4
         },
         "hard": {
-          "won": 23,
+          "won": 24,
           "lost": 7
         },
         "grass": {
@@ -4547,7 +4569,7 @@
         },
         "atp": {
           "total": {
-            "won": 52,
+            "won": 53,
             "lost": 13
           },
           "clay": {
@@ -4555,7 +4577,7 @@
             "lost": 4
           },
           "hard": {
-            "won": 23,
+            "won": 24,
             "lost": 7
           },
           "grass": {
@@ -5431,19 +5453,27 @@
     ],
     "p1TournamentHistory": {
       "editionsPlayed": 11,
-      "totalWon": 34,
+      "totalWon": 35,
       "totalLost": 10,
-      "longMatches": 26,
-      "longMatchesPlayed": 44,
-      "longMatchPct": 59,
+      "longMatches": 27,
+      "longMatchesPlayed": 45,
+      "longMatchPct": 60,
       "years": [
         {
           "year": "2026",
-          "matchCount": 6,
-          "won": 6,
+          "matchCount": 7,
+          "won": 7,
           "lost": 0,
-          "roundReached": "Semi-finals",
+          "roundReached": "Final",
           "matches": [
+            {
+              "date": "2026-09-13",
+              "opponent": "B. Shelton",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12162596
+            },
             {
               "date": "2026-09-11",
               "opponent": "K. Khachanov",
@@ -6204,24 +6234,24 @@
             "Service:Double Faults": 2.1,
             "Service:1st Serve Points Won": 76,
             "Service:2nd Serve Points Won": 56,
-            "Service:Break Points Saved": 59.6,
-            "Return:Break Points Converted": 39.5,
+            "Service:Break Points Saved": 59.7,
+            "Return:Break Points Converted": 39.7,
             "Points:Service Points Won": 70.4,
-            "Points:Return Points Won": 36.7,
+            "Points:Return Points Won": 36.6,
             "Points:Total Points Won": 52.7,
-            "Points:Winners": 26.2,
-            "Points:Unforced Errors": 21.2
+            "Points:Winners": 26.4,
+            "Points:Unforced Errors": 21.3
           },
           "samples": {
             "Service:Aces": 86,
             "Service:Double Faults": 86,
-            "Service:1st Serve Points Won": 4932,
-            "Service:2nd Serve Points Won": 1922,
-            "Service:Break Points Saved": 265,
-            "Return:Break Points Converted": 491,
-            "Points:Service Points Won": 6860,
-            "Points:Return Points Won": 7535,
-            "Points:Total Points Won": 14395,
+            "Service:1st Serve Points Won": 4970,
+            "Service:2nd Serve Points Won": 1939,
+            "Service:Break Points Saved": 268,
+            "Return:Break Points Converted": 494,
+            "Points:Service Points Won": 6915,
+            "Points:Return Points Won": 7587,
+            "Points:Total Points Won": 14502,
             "Points:Winners": 83,
             "Points:Unforced Errors": 83
           }
@@ -6260,28 +6290,28 @@
         "p1": {
           "matchCount": 75,
           "stats": {
-            "Service:Aces": 9.4,
-            "Service:Double Faults": 2.1,
+            "Service:Aces": 9.5,
+            "Service:Double Faults": 2.2,
             "Service:1st Serve Points Won": 75.7,
             "Service:2nd Serve Points Won": 53.9,
-            "Service:Break Points Saved": 63.5,
-            "Return:Break Points Converted": 38.1,
+            "Service:Break Points Saved": 63.6,
+            "Return:Break Points Converted": 38.3,
             "Points:Service Points Won": 69.5,
             "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 52.2,
-            "Points:Winners": 24.5,
-            "Points:Unforced Errors": 20.2
+            "Points:Winners": 24.7,
+            "Points:Unforced Errors": 20.4
           },
           "samples": {
             "Service:Aces": 75,
             "Service:Double Faults": 75,
-            "Service:1st Serve Points Won": 4206,
-            "Service:2nd Serve Points Won": 1689,
-            "Service:Break Points Saved": 288,
-            "Return:Break Points Converted": 483,
-            "Points:Service Points Won": 5916,
-            "Points:Return Points Won": 6369,
-            "Points:Total Points Won": 12285,
+            "Service:1st Serve Points Won": 4244,
+            "Service:2nd Serve Points Won": 1706,
+            "Service:Break Points Saved": 291,
+            "Return:Break Points Converted": 486,
+            "Points:Service Points Won": 5971,
+            "Points:Return Points Won": 6421,
+            "Points:Total Points Won": 12392,
             "Points:Winners": 70,
             "Points:Unforced Errors": 70
           }
@@ -6319,10 +6349,10 @@
       "surfaceLabel": "hard",
       "courtSpeedRecord": {
         "p1": {
-          "wins": 17,
+          "wins": 18,
           "losses": 5,
-          "sampleSize": 22,
-          "pct": 77.3
+          "sampleSize": 23,
+          "pct": 78.3
         },
         "p2": {
           "wins": 12,
@@ -6443,11 +6473,11 @@
           "dow": "Sun",
           "label": "Sep 13",
           "code": 61,
-          "hi": 25,
+          "hi": 26,
           "lo": 20,
           "rain": 86,
           "wind": 10,
-          "humidity": 87,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         }
@@ -6461,7 +6491,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6(7), 7-6(6)",
+      "display": "6-3, 7-6, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -7265,7 +7295,7 @@
     "p1Rank": 12,
     "p2Rank": 9,
     "p1RecentForm": 80,
-    "p2RecentForm": 90,
+    "p2RecentForm": 80,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
     "p1SeasonSurface": {
@@ -7849,8 +7879,15 @@
         },
         "hard": {
           "won": 25,
-          "lost": 6,
+          "lost": 7,
           "matches": [
+            {
+              "opponent": "A. Zverev",
+              "result": "1 - 3",
+              "tournament": "US Open",
+              "date": "2026-09-13",
+              "won": false
+            },
             {
               "opponent": "F. Tiafoe",
               "result": "3 - 1",
@@ -8603,7 +8640,7 @@
         "allTier": true,
         "total": {
           "won": 39,
-          "lost": 13
+          "lost": 14
         },
         "clay": {
           "won": 12,
@@ -8611,7 +8648,7 @@
         },
         "hard": {
           "won": 25,
-          "lost": 6
+          "lost": 7
         },
         "grass": {
           "won": 2,
@@ -8620,7 +8657,7 @@
         "atp": {
           "total": {
             "won": 39,
-            "lost": 13
+            "lost": 14
           },
           "clay": {
             "won": 12,
@@ -8628,7 +8665,7 @@
           },
           "hard": {
             "won": 25,
-            "lost": 6
+            "lost": 7
           },
           "grass": {
             "won": 2,
@@ -9286,18 +9323,26 @@
     "p2TournamentHistory": {
       "editionsPlayed": 6,
       "totalWon": 16,
-      "totalLost": 5,
-      "longMatches": 12,
-      "longMatchesPlayed": 21,
-      "longMatchPct": 57,
+      "totalLost": 6,
+      "longMatches": 13,
+      "longMatchesPlayed": 22,
+      "longMatchPct": 59,
       "years": [
         {
           "year": "2026",
-          "matchCount": 6,
+          "matchCount": 7,
           "won": 6,
-          "lost": 0,
-          "roundReached": "Semi-finals",
+          "lost": 1,
+          "roundReached": "Final",
           "matches": [
+            {
+              "date": "2026-09-13",
+              "opponent": "A. Zverev",
+              "round": "Final",
+              "won": false,
+              "result": "1 - 3",
+              "eventKey": 12162596
+            },
             {
               "date": "2026-09-12",
               "opponent": "F. Tiafoe",
@@ -9553,25 +9598,25 @@
             "Service:Double Faults": 2.8,
             "Service:1st Serve Points Won": 76.6,
             "Service:2nd Serve Points Won": 57.5,
-            "Service:Break Points Saved": 69.7,
+            "Service:Break Points Saved": 69.3,
             "Return:Break Points Converted": 37.5,
-            "Points:Unforced Errors": 25.4,
+            "Points:Unforced Errors": 25.7,
             "Points:Service Points Won": 70.4,
             "Points:Return Points Won": 32.4,
             "Points:Total Points Won": 51.3,
-            "Points:Winners": 28.9
+            "Points:Winners": 29.2
           },
           "samples": {
             "Service:Aces": 62,
             "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 3691,
-            "Service:2nd Serve Points Won": 1716,
-            "Service:Break Points Saved": 274,
-            "Return:Break Points Converted": 309,
+            "Service:1st Serve Points Won": 3728,
+            "Service:2nd Serve Points Won": 1730,
+            "Service:Break Points Saved": 277,
+            "Return:Break Points Converted": 312,
             "Points:Unforced Errors": 59,
-            "Points:Service Points Won": 5400,
-            "Points:Return Points Won": 5439,
-            "Points:Total Points Won": 10839,
+            "Points:Service Points Won": 5452,
+            "Points:Return Points Won": 5494,
+            "Points:Total Points Won": 10946,
             "Points:Winners": 59
           }
         }
@@ -9613,25 +9658,25 @@
             "Service:Double Faults": 2.7,
             "Service:1st Serve Points Won": 76.4,
             "Service:2nd Serve Points Won": 55.8,
-            "Service:Break Points Saved": 69.9,
+            "Service:Break Points Saved": 69.6,
             "Return:Break Points Converted": 40.1,
-            "Points:Unforced Errors": 26.5,
+            "Points:Unforced Errors": 26.8,
             "Points:Service Points Won": 69.4,
-            "Points:Return Points Won": 34.2,
+            "Points:Return Points Won": 34.1,
             "Points:Total Points Won": 51.7,
-            "Points:Winners": 29.5
+            "Points:Winners": 29.8
           },
           "samples": {
             "Service:Aces": 74,
             "Service:Double Faults": 74,
-            "Service:1st Serve Points Won": 4058,
-            "Service:2nd Serve Points Won": 2039,
-            "Service:Break Points Saved": 356,
-            "Return:Break Points Converted": 436,
+            "Service:1st Serve Points Won": 4095,
+            "Service:2nd Serve Points Won": 2053,
+            "Service:Break Points Saved": 359,
+            "Return:Break Points Converted": 439,
             "Points:Unforced Errors": 66,
-            "Points:Service Points Won": 6120,
-            "Points:Return Points Won": 6156,
-            "Points:Total Points Won": 12276,
+            "Points:Service Points Won": 6172,
+            "Points:Return Points Won": 6211,
+            "Points:Total Points Won": 12383,
             "Points:Winners": 66
           }
         }
@@ -9646,9 +9691,9 @@
         },
         "p2": {
           "wins": 19,
-          "losses": 4,
-          "sampleSize": 23,
-          "pct": 82.6
+          "losses": 5,
+          "sampleSize": 24,
+          "pct": 79.2
         }
       }
     },
@@ -9763,11 +9808,11 @@
           "dow": "Sun",
           "label": "Sep 13",
           "code": 61,
-          "hi": 25,
+          "hi": 26,
           "lo": 20,
           "rain": 86,
           "wind": 10,
-          "humidity": 87,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         }
@@ -10564,6 +10609,4768 @@
       "p2": 1.333,
       "bookmaker": "bet365",
       "at": "2026-09-11T23:34:29.054Z"
+    }
+  },
+  {
+    "id": "past-12162596",
+    "day": "past",
+    "date": "2026-09-13",
+    "time": "20:20",
+    "p1": "A. Zverev",
+    "p2": "B. Shelton",
+    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
+    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
+    "tour": "ATP US Open",
+    "tourBadge": "ATP",
+    "surface": "hard",
+    "style": "TBD",
+    "value": null,
+    "odds": {
+      "p1": 1.67,
+      "p2": 2.36,
+      "bookmaker": "Pncl"
+    },
+    "bestOdds": {
+      "p1": {
+        "price": 1.67,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.39,
+        "bookmaker": "1xBet"
+      }
+    },
+    "tournamentRound": "ATP US Open - Final",
+    "p1Key": 1980,
+    "p2Key": 2973,
+    "h2h": {
+      "p1Wins": 6,
+      "p2Wins": 0,
+      "record": "6-0",
+      "matches": [
+        {
+          "date": "2026-09-13",
+          "tournament": "US Open",
+          "round": "ATP US Open - Final",
+          "surface": "hard",
+          "p1Won": true,
+          "result": "3 - 1",
+          "qualifying": false,
+          "eventKey": 12162596
+        },
+        {
+          "date": "2025-11-09",
+          "tournament": "Finals - Turin",
+          "round": null,
+          "surface": "hard",
+          "p1Won": true,
+          "result": "2 - 0",
+          "qualifying": false,
+          "eventKey": 12086037
+        },
+        {
+          "date": "2025-08-16",
+          "tournament": "Cincinnati",
+          "round": "Cincinnati - Quarter-finals",
+          "surface": "hard",
+          "p1Won": true,
+          "result": "2 - 0",
+          "qualifying": false,
+          "eventKey": 12062291
+        },
+        {
+          "date": "2025-06-14",
+          "tournament": "Stuttgart",
+          "round": "Stuttgart - Semi-finals",
+          "surface": "clay",
+          "p1Won": true,
+          "result": "2 - 0",
+          "qualifying": false,
+          "eventKey": 12043235
+        },
+        {
+          "date": "2025-04-20",
+          "tournament": "Munich",
+          "round": "Munich - Final",
+          "surface": "clay",
+          "p1Won": true,
+          "result": "2 - 0",
+          "qualifying": false,
+          "eventKey": 12028222
+        },
+        {
+          "date": "2024-08-17",
+          "tournament": "ATP Cincinnati",
+          "round": "ATP Cincinnati - Quarter-finals",
+          "surface": "hard",
+          "p1Won": true,
+          "result": "2 - 1",
+          "qualifying": false,
+          "eventKey": 11975623
+        }
+      ]
+    },
+    "p1SurfaceWinRate": 67.4,
+    "p2SurfaceWinRate": 66.5,
+    "p1Rank": 2,
+    "p2Rank": 9,
+    "p1RecentForm": 90,
+    "p2RecentForm": 80,
+    "p1RecentFormMatches": null,
+    "p2RecentFormMatches": null,
+    "p1SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 20,
+          "lost": 4,
+          "matches": [
+            {
+              "opponent": "F. Cobolli",
+              "result": "3 - 2",
+              "tournament": "French Open",
+              "date": "2026-06-07",
+              "won": true
+            },
+            {
+              "opponent": "J. Mensik",
+              "result": "3 - 1",
+              "tournament": "French Open",
+              "date": "2026-06-05",
+              "won": true
+            },
+            {
+              "opponent": "R. Jodar",
+              "result": "3 - 0",
+              "tournament": "French Open",
+              "date": "2026-06-02",
+              "won": true
+            },
+            {
+              "opponent": "J. De Jong",
+              "result": "3 - 0",
+              "tournament": "French Open",
+              "date": "2026-05-31",
+              "won": true
+            },
+            {
+              "opponent": "Q. Halys",
+              "result": "3 - 1",
+              "tournament": "French Open",
+              "date": "2026-05-29",
+              "won": true
+            },
+            {
+              "opponent": "T. Machac",
+              "result": "3 - 0",
+              "tournament": "French Open",
+              "date": "2026-05-27",
+              "won": true
+            },
+            {
+              "opponent": "B. Bonzi",
+              "result": "3 - 0",
+              "tournament": "French Open",
+              "date": "2026-05-24",
+              "won": true
+            },
+            {
+              "opponent": "L. Darderi",
+              "result": "1 - 2",
+              "tournament": "Rome",
+              "date": "2026-05-12",
+              "won": false
+            },
+            {
+              "opponent": "A. Blockx",
+              "result": "2 - 0",
+              "tournament": "Rome",
+              "date": "2026-05-10",
+              "won": true
+            },
+            {
+              "opponent": "D. Altmaier",
+              "result": "2 - 0",
+              "tournament": "Rome",
+              "date": "2026-05-08",
+              "won": true
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 2",
+              "tournament": "Madrid",
+              "date": "2026-05-03",
+              "won": false
+            },
+            {
+              "opponent": "A. Blockx",
+              "result": "2 - 0",
+              "tournament": "Madrid",
+              "date": "2026-05-01",
+              "won": true
+            },
+            {
+              "opponent": "F. Cobolli",
+              "result": "2 - 0",
+              "tournament": "Madrid",
+              "date": "2026-04-30",
+              "won": true
+            },
+            {
+              "opponent": "J. Mensik",
+              "result": "2 - 1",
+              "tournament": "Madrid",
+              "date": "2026-04-28",
+              "won": true
+            },
+            {
+              "opponent": "T. Atmane",
+              "result": "2 - 0",
+              "tournament": "Madrid",
+              "date": "2026-04-27",
+              "won": true
+            },
+            {
+              "opponent": "M. Navone",
+              "result": "2 - 1",
+              "tournament": "Madrid",
+              "date": "2026-04-25",
+              "won": true
+            },
+            {
+              "opponent": "F. Cobolli",
+              "result": "0 - 2",
+              "tournament": "Munich",
+              "date": "2026-04-18",
+              "won": false
+            },
+            {
+              "opponent": "F. Cerundolo",
+              "result": "2 - 1",
+              "tournament": "Munich",
+              "date": "2026-04-17",
+              "won": true
+            },
+            {
+              "opponent": "G. Diallo",
+              "result": "2 - 0",
+              "tournament": "Munich",
+              "date": "2026-04-16",
+              "won": true
+            },
+            {
+              "opponent": "M. Kecmanovic",
+              "result": "2 - 1",
+              "tournament": "Munich",
+              "date": "2026-04-14",
+              "won": true
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 2",
+              "tournament": "Monte Carlo",
+              "date": "2026-04-11",
+              "won": false
+            },
+            {
+              "opponent": "J. Fonseca",
+              "result": "2 - 1",
+              "tournament": "Monte Carlo",
+              "date": "2026-04-10",
+              "won": true
+            },
+            {
+              "opponent": "Z. Bergs",
+              "result": "2 - 0",
+              "tournament": "Monte Carlo",
+              "date": "2026-04-09",
+              "won": true
+            },
+            {
+              "opponent": "C. Garin",
+              "result": "2 - 1",
+              "tournament": "Monte Carlo",
+              "date": "2026-04-08",
+              "won": true
+            }
+          ]
+        },
+        "hard": {
+          "won": 24,
+          "lost": 7,
+          "matches": [
+            {
+              "opponent": "B. Shelton",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-13",
+              "won": true
+            },
+            {
+              "opponent": "K. Khachanov",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-11",
+              "won": true
+            },
+            {
+              "opponent": "B. Van De Zandschulp",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-10",
+              "won": true
+            },
+            {
+              "opponent": "L. Darderi",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-08",
+              "won": true
+            },
+            {
+              "opponent": "A. Tabilo",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-06",
+              "won": true
+            },
+            {
+              "opponent": "Q. Halys",
+              "result": "3 - 2",
+              "tournament": "US Open",
+              "date": "2026-09-04",
+              "won": true
+            },
+            {
+              "opponent": "L. Sonego",
+              "result": "3 - 2",
+              "tournament": "US Open",
+              "date": "2026-09-02",
+              "won": true
+            },
+            {
+              "opponent": "T. Paul",
+              "result": "1 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-19",
+              "won": false
+            },
+            {
+              "opponent": "T. Atmane",
+              "result": "2 - 0",
+              "tournament": "Cincinnati",
+              "date": "2026-08-18",
+              "won": true
+            },
+            {
+              "opponent": "C. Norrie",
+              "result": "2 - 1",
+              "tournament": "Cincinnati",
+              "date": "2026-08-16",
+              "won": true
+            },
+            {
+              "opponent": "T. Griekspoor",
+              "result": "1 - 2",
+              "tournament": "Montreal",
+              "date": "2026-08-05",
+              "won": false
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 2",
+              "tournament": "Miami",
+              "date": "2026-03-28",
+              "won": false
+            },
+            {
+              "opponent": "F. Cerundolo",
+              "result": "2 - 0",
+              "tournament": "Miami",
+              "date": "2026-03-27",
+              "won": true
+            },
+            {
+              "opponent": "Q. Halys",
+              "result": "2 - 0",
+              "tournament": "Miami",
+              "date": "2026-03-25",
+              "won": true
+            },
+            {
+              "opponent": "M. Cilic",
+              "result": "2 - 1",
+              "tournament": "Miami",
+              "date": "2026-03-23",
+              "won": true
+            },
+            {
+              "opponent": "M. Damm",
+              "result": "2 - 0",
+              "tournament": "Miami",
+              "date": "2026-03-22",
+              "won": true
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 2",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-14",
+              "won": false
+            },
+            {
+              "opponent": "A. Fils",
+              "result": "2 - 0",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-12",
+              "won": true
+            },
+            {
+              "opponent": "F. Tiafoe",
+              "result": "2 - 0",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-10",
+              "won": true
+            },
+            {
+              "opponent": "B. Nakashima",
+              "result": "2 - 1",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-08",
+              "won": true
+            },
+            {
+              "opponent": "M. Berrettini",
+              "result": "2 - 0",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-06",
+              "won": true
+            },
+            {
+              "opponent": "M. Kecmanovic",
+              "result": "1 - 2",
+              "tournament": "Acapulco",
+              "date": "2026-02-26",
+              "won": false
+            },
+            {
+              "opponent": "C. Moutet",
+              "result": "2 - 0",
+              "tournament": "Acapulco",
+              "date": "2026-02-25",
+              "won": true
+            },
+            {
+              "opponent": "C. Alcaraz",
+              "result": "2 - 3",
+              "tournament": "Australian Open",
+              "date": "2026-01-30",
+              "won": false
+            },
+            {
+              "opponent": "L. Tien",
+              "result": "3 - 1",
+              "tournament": "Australian Open",
+              "date": "2026-01-27",
+              "won": true
+            },
+            {
+              "opponent": "F. Cerundolo",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-25",
+              "won": true
+            },
+            {
+              "opponent": "C. Norrie",
+              "result": "3 - 1",
+              "tournament": "Australian Open",
+              "date": "2026-01-23",
+              "won": true
+            },
+            {
+              "opponent": "A. Muller",
+              "result": "3 - 1",
+              "tournament": "Australian Open",
+              "date": "2026-01-21",
+              "won": true
+            },
+            {
+              "opponent": "G. Diallo",
+              "result": "3 - 1",
+              "tournament": "Australian Open",
+              "date": "2026-01-18",
+              "won": true
+            },
+            {
+              "opponent": "H. Hurkacz",
+              "result": "0 - 2",
+              "tournament": "ATP United Cup",
+              "date": "2026-01-05",
+              "won": false
+            },
+            {
+              "opponent": "T. Griekspoor",
+              "result": "2 - 0",
+              "tournament": "ATP United Cup",
+              "date": "2026-01-04",
+              "won": true
+            }
+          ]
+        },
+        "grass": {
+          "won": 9,
+          "lost": 2,
+          "matches": [
+            {
+              "opponent": "J. Sinner",
+              "result": "1 - 3",
+              "tournament": "Wimbledon",
+              "date": "2026-07-12",
+              "won": false
+            },
+            {
+              "opponent": "A. Fery",
+              "result": "3 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-07-10",
+              "won": true
+            },
+            {
+              "opponent": "T. Fritz",
+              "result": "3 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-07-08",
+              "won": true
+            },
+            {
+              "opponent": "J. Lehecka",
+              "result": "3 - 1",
+              "tournament": "Wimbledon",
+              "date": "2026-07-07",
+              "won": true
+            },
+            {
+              "opponent": "M. Giron",
+              "result": "3 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-07-04",
+              "won": true
+            },
+            {
+              "opponent": "V. Royer",
+              "result": "3 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-07-02",
+              "won": true
+            },
+            {
+              "opponent": "A. Blockx",
+              "result": "3 - 1",
+              "tournament": "Wimbledon",
+              "date": "2026-06-30",
+              "won": true
+            },
+            {
+              "opponent": "T. Fritz",
+              "result": "1 - 2",
+              "tournament": "Halle",
+              "date": "2026-06-20",
+              "won": false
+            },
+            {
+              "opponent": "R. Collignon",
+              "result": "2 - 0",
+              "tournament": "Halle",
+              "date": "2026-06-19",
+              "won": true
+            },
+            {
+              "opponent": "Y. Hanfmann",
+              "result": "2 - 0",
+              "tournament": "Halle",
+              "date": "2026-06-18",
+              "won": true
+            },
+            {
+              "opponent": "V. Kopriva",
+              "result": "2 - 1",
+              "tournament": "Halle",
+              "date": "2026-06-16",
+              "won": true
+            }
+          ]
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      }
+    },
+    "p2SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 12,
+          "lost": 5,
+          "matches": [
+            {
+              "opponent": "T. Fritz",
+              "result": "2 - 1",
+              "tournament": "Stuttgart",
+              "date": "2026-06-14",
+              "won": true
+            },
+            {
+              "opponent": "S. Shimabukuro",
+              "result": "2 - 1",
+              "tournament": "Stuttgart",
+              "date": "2026-06-13",
+              "won": true
+            },
+            {
+              "opponent": "J. Lehecka",
+              "result": "2 - 1",
+              "tournament": "Stuttgart",
+              "date": "2026-06-13",
+              "won": true
+            },
+            {
+              "opponent": "M. Giron",
+              "result": "2 - 1",
+              "tournament": "Stuttgart",
+              "date": "2026-06-12",
+              "won": true
+            },
+            {
+              "opponent": "R. Collignon",
+              "result": "0 - 3",
+              "tournament": "French Open",
+              "date": "2026-05-28",
+              "won": false
+            },
+            {
+              "opponent": "D. Merida Aguilar",
+              "result": "3 - 0",
+              "tournament": "French Open",
+              "date": "2026-05-25",
+              "won": true
+            },
+            {
+              "opponent": "D. Altmaier",
+              "result": "1 - 2",
+              "tournament": "Hamburg",
+              "date": "2026-05-19",
+              "won": false
+            },
+            {
+              "opponent": "M. Giron",
+              "result": "2 - 1",
+              "tournament": "Hamburg",
+              "date": "2026-05-18",
+              "won": true
+            },
+            {
+              "opponent": "N. Basilashvili",
+              "result": "1 - 2",
+              "tournament": "Rome",
+              "date": "2026-05-09",
+              "won": false
+            },
+            {
+              "opponent": "D. Prizmic",
+              "result": "1 - 2",
+              "tournament": "Madrid",
+              "date": "2026-04-24",
+              "won": false
+            },
+            {
+              "opponent": "F. Cobolli",
+              "result": "2 - 0",
+              "tournament": "Munich",
+              "date": "2026-04-19",
+              "won": true
+            },
+            {
+              "opponent": "A. Molcan",
+              "result": "2 - 0",
+              "tournament": "Munich",
+              "date": "2026-04-18",
+              "won": true
+            },
+            {
+              "opponent": "J. Fonseca",
+              "result": "2 - 1",
+              "tournament": "Munich",
+              "date": "2026-04-17",
+              "won": true
+            },
+            {
+              "opponent": "A. Blockx",
+              "result": "2 - 0",
+              "tournament": "Munich",
+              "date": "2026-04-15",
+              "won": true
+            },
+            {
+              "opponent": "E. Nava",
+              "result": "2 - 1",
+              "tournament": "Munich",
+              "date": "2026-04-13",
+              "won": true
+            },
+            {
+              "opponent": "T. A. Tirante",
+              "result": "1 - 2",
+              "tournament": "Houston",
+              "date": "2026-04-03",
+              "won": false
+            },
+            {
+              "opponent": "Z. Zhang",
+              "result": "2 - 0",
+              "tournament": "Houston",
+              "date": "2026-04-02",
+              "won": true
+            }
+          ]
+        },
+        "hard": {
+          "won": 25,
+          "lost": 7,
+          "matches": [
+            {
+              "opponent": "A. Zverev",
+              "result": "1 - 3",
+              "tournament": "US Open",
+              "date": "2026-09-13",
+              "won": false
+            },
+            {
+              "opponent": "F. Tiafoe",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-12",
+              "won": true
+            },
+            {
+              "opponent": "C. Alcaraz",
+              "result": "3 - 2",
+              "tournament": "US Open",
+              "date": "2026-09-09",
+              "won": true
+            },
+            {
+              "opponent": "S. Tsitsipas",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-07",
+              "won": true
+            },
+            {
+              "opponent": "D. Shapovalov",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-05",
+              "won": true
+            },
+            {
+              "opponent": "H. Hurkacz",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-02",
+              "won": true
+            },
+            {
+              "opponent": "T. Griekspoor",
+              "result": "3 - 1",
+              "tournament": "US Open",
+              "date": "2026-09-01",
+              "won": true
+            },
+            {
+              "opponent": "J. Faria",
+              "result": "0 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-17",
+              "won": false
+            },
+            {
+              "opponent": "B. Nakashima",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-14",
+              "won": true
+            },
+            {
+              "opponent": "L. Tien",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-13",
+              "won": true
+            },
+            {
+              "opponent": "J. Mensik",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-12",
+              "won": true
+            },
+            {
+              "opponent": "J. Fonseca",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-10",
+              "won": true
+            },
+            {
+              "opponent": "Z. Bergs",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-07",
+              "won": true
+            },
+            {
+              "opponent": "J. Brooksby",
+              "result": "2 - 0",
+              "tournament": "Montreal",
+              "date": "2026-08-05",
+              "won": true
+            },
+            {
+              "opponent": "A. Tabilo",
+              "result": "1 - 2",
+              "tournament": "Washington",
+              "date": "2026-08-01",
+              "won": false
+            },
+            {
+              "opponent": "U. Humbert",
+              "result": "2 - 1",
+              "tournament": "Washington",
+              "date": "2026-07-31",
+              "won": true
+            },
+            {
+              "opponent": "M. Damm",
+              "result": "2 - 1",
+              "tournament": "Washington",
+              "date": "2026-07-28",
+              "won": true
+            },
+            {
+              "opponent": "A. Shevchenko",
+              "result": "1 - 2",
+              "tournament": "Miami",
+              "date": "2026-03-22",
+              "won": false
+            },
+            {
+              "opponent": "L. Tien",
+              "result": "1 - 2",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-08",
+              "won": false
+            },
+            {
+              "opponent": "R. Opelka",
+              "result": "2 - 1",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-06",
+              "won": true
+            },
+            {
+              "opponent": "D. Shapovalov",
+              "result": "2 - 1",
+              "tournament": "Dallas",
+              "date": "2026-02-15",
+              "won": true
+            },
+            {
+              "opponent": "T. Fritz",
+              "result": "2 - 1",
+              "tournament": "Dallas",
+              "date": "2026-02-15",
+              "won": true
+            },
+            {
+              "opponent": "M. Kecmanovic",
+              "result": "2 - 1",
+              "tournament": "Dallas",
+              "date": "2026-02-14",
+              "won": true
+            },
+            {
+              "opponent": "A. Mannarino",
+              "result": "2 - 1",
+              "tournament": "Dallas",
+              "date": "2026-02-13",
+              "won": true
+            },
+            {
+              "opponent": "G. Diallo",
+              "result": "2 - 0",
+              "tournament": "Dallas",
+              "date": "2026-02-10",
+              "won": true
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 3",
+              "tournament": "Australian Open",
+              "date": "2026-01-28",
+              "won": false
+            },
+            {
+              "opponent": "C. Ruud",
+              "result": "3 - 1",
+              "tournament": "Australian Open",
+              "date": "2026-01-26",
+              "won": true
+            },
+            {
+              "opponent": "V. Vacherot",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-24",
+              "won": true
+            },
+            {
+              "opponent": "D. Sweeny",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-22",
+              "won": true
+            },
+            {
+              "opponent": "U. Humbert",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-20",
+              "won": true
+            },
+            {
+              "opponent": "S. Baez",
+              "result": "0 - 2",
+              "tournament": "Auckland",
+              "date": "2026-01-16",
+              "won": false
+            },
+            {
+              "opponent": "F. Comesana",
+              "result": "2 - 0",
+              "tournament": "Auckland",
+              "date": "2026-01-13",
+              "won": true
+            }
+          ]
+        },
+        "grass": {
+          "won": 2,
+          "lost": 2,
+          "matches": [
+            {
+              "opponent": "O. Virtanen",
+              "result": "2 - 3",
+              "tournament": "Wimbledon",
+              "date": "2026-06-30",
+              "won": false
+            },
+            {
+              "opponent": "T. Fritz",
+              "result": "1 - 2",
+              "tournament": "Halle",
+              "date": "2026-06-19",
+              "won": false
+            },
+            {
+              "opponent": "E. Quinn",
+              "result": "2 - 1",
+              "tournament": "Halle",
+              "date": "2026-06-18",
+              "won": true
+            },
+            {
+              "opponent": "L. Sonego",
+              "result": "2 - 0",
+              "tournament": "Halle",
+              "date": "2026-06-17",
+              "won": true
+            }
+          ]
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      }
+    },
+    "p1Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 53,
+          "lost": 13
+        },
+        "clay": {
+          "won": 20,
+          "lost": 4
+        },
+        "hard": {
+          "won": 24,
+          "lost": 7
+        },
+        "grass": {
+          "won": 9,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 53,
+            "lost": 13
+          },
+          "clay": {
+            "won": 20,
+            "lost": 4
+          },
+          "hard": {
+            "won": 24,
+            "lost": 7
+          },
+          "grass": {
+            "won": 9,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 56,
+          "lost": 25
+        },
+        "clay": {
+          "won": 21,
+          "lost": 8
+        },
+        "hard": {
+          "won": 30,
+          "lost": 15
+        },
+        "grass": {
+          "won": 3,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 56,
+            "lost": 25
+          },
+          "clay": {
+            "won": 21,
+            "lost": 8
+          },
+          "hard": {
+            "won": 30,
+            "lost": 15
+          },
+          "grass": {
+            "won": 3,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 70,
+          "lost": 21
+        },
+        "clay": {
+          "won": 20,
+          "lost": 5
+        },
+        "hard": {
+          "won": 41,
+          "lost": 13
+        },
+        "grass": {
+          "won": 9,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 70,
+            "lost": 21
+          },
+          "clay": {
+            "won": 20,
+            "lost": 5
+          },
+          "hard": {
+            "won": 41,
+            "lost": 13
+          },
+          "grass": {
+            "won": 9,
+            "lost": 3
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 56,
+          "lost": 26
+        },
+        "clay": {
+          "won": 20,
+          "lost": 7
+        },
+        "hard": {
+          "won": 30,
+          "lost": 16
+        },
+        "grass": {
+          "won": 5,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 56,
+            "lost": 26
+          },
+          "clay": {
+            "won": 20,
+            "lost": 7
+          },
+          "hard": {
+            "won": 30,
+            "lost": 16
+          },
+          "grass": {
+            "won": 5,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2022",
+        "allTier": true,
+        "total": {
+          "won": 29,
+          "lost": 11
+        },
+        "clay": {
+          "won": 15,
+          "lost": 5
+        },
+        "hard": {
+          "won": 12,
+          "lost": 6
+        },
+        "grass": null,
+        "atp": {
+          "total": {
+            "won": 29,
+            "lost": 11
+          },
+          "clay": {
+            "won": 15,
+            "lost": 5
+          },
+          "hard": {
+            "won": 12,
+            "lost": 6
+          },
+          "grass": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2021",
+        "allTier": true,
+        "total": {
+          "won": 33,
+          "lost": 6
+        },
+        "clay": null,
+        "hard": {
+          "won": 23,
+          "lost": 4
+        },
+        "grass": {
+          "won": 10,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 33,
+            "lost": 6
+          },
+          "clay": null,
+          "hard": {
+            "won": 23,
+            "lost": 4
+          },
+          "grass": {
+            "won": 10,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2020",
+        "allTier": false,
+        "total": {
+          "won": 34,
+          "lost": 11
+        },
+        "clay": {
+          "won": 3,
+          "lost": 1
+        },
+        "hard": {
+          "won": 31,
+          "lost": 10
+        },
+        "grass": null,
+        "atp": {
+          "total": {
+            "won": 34,
+            "lost": 11
+          },
+          "clay": {
+            "won": 3,
+            "lost": 1
+          },
+          "hard": {
+            "won": 31,
+            "lost": 10
+          },
+          "grass": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2019",
+        "allTier": false,
+        "total": {
+          "won": 47,
+          "lost": 26
+        },
+        "clay": {
+          "won": 16,
+          "lost": 8
+        },
+        "hard": {
+          "won": 29,
+          "lost": 15
+        },
+        "grass": {
+          "won": 2,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 47,
+            "lost": 26
+          },
+          "clay": {
+            "won": 16,
+            "lost": 8
+          },
+          "hard": {
+            "won": 29,
+            "lost": 15
+          },
+          "grass": {
+            "won": 2,
+            "lost": 3
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2018",
+        "allTier": false,
+        "total": {
+          "won": 61,
+          "lost": 22
+        },
+        "clay": {
+          "won": 21,
+          "lost": 4
+        },
+        "hard": {
+          "won": 38,
+          "lost": 16
+        },
+        "grass": {
+          "won": 2,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 61,
+            "lost": 22
+          },
+          "clay": {
+            "won": 21,
+            "lost": 4
+          },
+          "hard": {
+            "won": 38,
+            "lost": 16
+          },
+          "grass": {
+            "won": 2,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2017",
+        "allTier": false,
+        "total": {
+          "won": 59,
+          "lost": 23
+        },
+        "clay": {
+          "won": 16,
+          "lost": 4
+        },
+        "hard": {
+          "won": 34,
+          "lost": 16
+        },
+        "grass": {
+          "won": 9,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 59,
+            "lost": 23
+          },
+          "clay": {
+            "won": 16,
+            "lost": 4
+          },
+          "hard": {
+            "won": 34,
+            "lost": 16
+          },
+          "grass": {
+            "won": 9,
+            "lost": 3
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2016",
+        "allTier": false,
+        "total": {
+          "won": 45,
+          "lost": 26
+        },
+        "clay": {
+          "won": 13,
+          "lost": 7
+        },
+        "hard": {
+          "won": 26,
+          "lost": 17
+        },
+        "grass": {
+          "won": 6,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 45,
+            "lost": 26
+          },
+          "clay": {
+            "won": 13,
+            "lost": 7
+          },
+          "hard": {
+            "won": 26,
+            "lost": 17
+          },
+          "grass": {
+            "won": 6,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2015",
+        "allTier": false,
+        "total": {
+          "won": 38,
+          "lost": 28
+        },
+        "clay": {
+          "won": 14,
+          "lost": 8
+        },
+        "hard": {
+          "won": 19,
+          "lost": 16
+        },
+        "grass": {
+          "won": 5,
+          "lost": 4
+        },
+        "atp": {
+          "total": {
+            "won": 38,
+            "lost": 28
+          },
+          "clay": {
+            "won": 14,
+            "lost": 8
+          },
+          "hard": {
+            "won": 19,
+            "lost": 16
+          },
+          "grass": {
+            "won": 5,
+            "lost": 4
+          }
+        },
+        "chitf": null
+      }
+    ],
+    "p2Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 39,
+          "lost": 14
+        },
+        "clay": {
+          "won": 12,
+          "lost": 5
+        },
+        "hard": {
+          "won": 25,
+          "lost": 7
+        },
+        "grass": {
+          "won": 2,
+          "lost": 2
+        },
+        "atp": {
+          "total": {
+            "won": 39,
+            "lost": 14
+          },
+          "clay": {
+            "won": 12,
+            "lost": 5
+          },
+          "hard": {
+            "won": 25,
+            "lost": 7
+          },
+          "grass": {
+            "won": 2,
+            "lost": 2
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 41,
+          "lost": 24
+        },
+        "clay": {
+          "won": 10,
+          "lost": 6
+        },
+        "hard": {
+          "won": 27,
+          "lost": 15
+        },
+        "grass": {
+          "won": 4,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 41,
+            "lost": 24
+          },
+          "clay": {
+            "won": 10,
+            "lost": 6
+          },
+          "hard": {
+            "won": 27,
+            "lost": 15
+          },
+          "grass": {
+            "won": 4,
+            "lost": 3
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 41,
+          "lost": 26
+        },
+        "clay": {
+          "won": 8,
+          "lost": 5
+        },
+        "hard": {
+          "won": 29,
+          "lost": 17
+        },
+        "grass": {
+          "won": 4,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 41,
+            "lost": 26
+          },
+          "clay": {
+            "won": 8,
+            "lost": 5
+          },
+          "hard": {
+            "won": 29,
+            "lost": 17
+          },
+          "grass": {
+            "won": 4,
+            "lost": 3
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 28,
+          "lost": 25
+        },
+        "clay": {
+          "won": 4,
+          "lost": 8
+        },
+        "hard": {
+          "won": 22,
+          "lost": 14
+        },
+        "grass": {
+          "won": 2,
+          "lost": 3
+        },
+        "atp": {
+          "total": {
+            "won": 26,
+            "lost": 24
+          },
+          "clay": {
+            "won": 2,
+            "lost": 7
+          },
+          "hard": {
+            "won": 22,
+            "lost": 14
+          },
+          "grass": {
+            "won": 2,
+            "lost": 3
+          }
+        },
+        "chitf": {
+          "total": {
+            "won": 2,
+            "lost": 1
+          },
+          "clay": {
+            "won": 2,
+            "lost": 1
+          },
+          "hard": null,
+          "grass": null
+        }
+      },
+      {
+        "year": "2022",
+        "allTier": true,
+        "total": {
+          "won": 40,
+          "lost": 12
+        },
+        "clay": null,
+        "hard": {
+          "won": 40,
+          "lost": 12
+        },
+        "grass": null,
+        "atp": {
+          "total": {
+            "won": 3,
+            "lost": 4
+          },
+          "clay": null,
+          "hard": {
+            "won": 3,
+            "lost": 4
+          },
+          "grass": null
+        },
+        "chitf": {
+          "total": {
+            "won": 37,
+            "lost": 8
+          },
+          "clay": null,
+          "hard": {
+            "won": 37,
+            "lost": 8
+          },
+          "grass": null
+        }
+      },
+      {
+        "year": "2021",
+        "allTier": true,
+        "total": {
+          "won": 14,
+          "lost": 6
+        },
+        "clay": {
+          "won": 1,
+          "lost": 1
+        },
+        "hard": {
+          "won": 13,
+          "lost": 5
+        },
+        "grass": null,
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": {
+            "won": 1,
+            "lost": 1
+          },
+          "grass": null
+        },
+        "chitf": {
+          "total": {
+            "won": 13,
+            "lost": 5
+          },
+          "clay": {
+            "won": 1,
+            "lost": 1
+          },
+          "hard": {
+            "won": 12,
+            "lost": 4
+          },
+          "grass": null
+        }
+      }
+    ],
+    "p1TournamentHistory": {
+      "editionsPlayed": 11,
+      "totalWon": 35,
+      "totalLost": 10,
+      "longMatches": 27,
+      "longMatchesPlayed": 45,
+      "longMatchPct": 60,
+      "years": [
+        {
+          "year": "2026",
+          "matchCount": 7,
+          "won": 7,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2026-09-13",
+              "opponent": "B. Shelton",
+              "round": "Final",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12162596
+            },
+            {
+              "date": "2026-09-11",
+              "opponent": "K. Khachanov",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12162244
+            },
+            {
+              "date": "2026-09-10",
+              "opponent": "B. Van De Zandschulp",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12161539
+            },
+            {
+              "date": "2026-09-08",
+              "opponent": "L. Darderi",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12160857
+            },
+            {
+              "date": "2026-09-06",
+              "opponent": "A. Tabilo",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12160426
+            },
+            {
+              "date": "2026-09-04",
+              "opponent": "Q. Halys",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 2",
+              "eventKey": 12159719
+            },
+            {
+              "date": "2026-09-02",
+              "opponent": "L. Sonego",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2",
+              "eventKey": 12158126
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2025-08-31",
+              "opponent": "F. Auger-Aliassime",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 3",
+              "eventKey": 12066145
+            },
+            {
+              "date": "2025-08-29",
+              "opponent": "J. Fearnley",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12065510
+            },
+            {
+              "date": "2025-08-27",
+              "opponent": "A. Tabilo",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12064198
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 5,
+          "won": 4,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2024-09-03",
+              "opponent": "T. Fritz",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "1 - 3",
+              "eventKey": 11979877
+            },
+            {
+              "date": "2024-09-01",
+              "opponent": "B. Nakashima",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11979458
+            },
+            {
+              "date": "2024-08-31",
+              "opponent": "T. M. Etcheverry",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11979065
+            },
+            {
+              "date": "2024-08-28",
+              "opponent": "A. Muller",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 11978426
+            },
+            {
+              "date": "2024-08-26",
+              "opponent": "M. Marterer",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11977711
+            }
+          ]
+        },
+        {
+          "year": "2023",
+          "matchCount": 5,
+          "won": 4,
+          "lost": 1,
+          "roundReached": "Quarter-finals",
+          "matches": [
+            {
+              "date": "2023-09-07",
+              "opponent": "C. Alcaraz",
+              "round": "Quarter-finals",
+              "won": false,
+              "result": "0 - 3",
+              "eventKey": 11894928
+            },
+            {
+              "date": "2023-09-05",
+              "opponent": "J. Sinner",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 2",
+              "eventKey": 11894320
+            },
+            {
+              "date": "2023-09-03",
+              "opponent": "G. Dimitrov",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11893889
+            },
+            {
+              "date": "2023-08-31",
+              "opponent": "D. Altmaier",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11893228
+            },
+            {
+              "date": "2023-08-29",
+              "opponent": "A. Vukic",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 11891978
+            }
+          ]
+        },
+        {
+          "year": "2022",
+          "matchCount": 0,
+          "won": 0,
+          "lost": 0,
+          "roundReached": "Withdrawal",
+          "matches": [],
+          "withdrew": true
+        },
+        {
+          "year": "2021",
+          "matchCount": 6,
+          "won": 5,
+          "lost": 1,
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2021-09-11",
+              "opponent": "N. Djokovic",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "2 - 3",
+              "eventKey": 3397
+            },
+            {
+              "date": "2021-09-08",
+              "opponent": "L. Harris",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 3394
+            },
+            {
+              "date": "2021-09-06",
+              "opponent": "J. Sinner",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 3388
+            },
+            {
+              "date": "2021-09-05",
+              "opponent": "J. Sock",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 3383
+            },
+            {
+              "date": "2021-09-02",
+              "opponent": "A. Ramos",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 3357
+            },
+            {
+              "date": "2021-08-31",
+              "opponent": "S. Querrey",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 3313
+            }
+          ]
+        },
+        {
+          "year": "2020",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "D. Thiem",
+              "round": "Final",
+              "won": false,
+              "result": "2 - 3"
+            },
+            {
+              "date": "",
+              "opponent": "P. Carreno Busta",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "B. Coric",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "A. Davidovich Fokina",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "A. Mannarino",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "B. Nakashima",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "K. Anderson",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2019",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
+          "roundReached": "1/8-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "D. Schwartzman",
+              "round": "1/8-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "",
+              "opponent": "A. Bedene",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "F. Tiafoe",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 2"
+            },
+            {
+              "date": "",
+              "opponent": "R. Albot",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 2"
+            }
+          ]
+        },
+        {
+          "year": "2018",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "P. Kohlschreiber",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "",
+              "opponent": "N. Mahut",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "P. Polansky",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2017",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "B. Coric",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "",
+              "opponent": "D. King",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2016",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "1/32-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "D. Evans",
+              "round": "1/32-finals",
+              "won": false,
+              "result": "1 - 3"
+            },
+            {
+              "date": "",
+              "opponent": "D. Brands",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2015",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "P. Kohlschreiber",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "2 - 3"
+            }
+          ]
+        }
+      ]
+    },
+    "p2TournamentHistory": {
+      "editionsPlayed": 6,
+      "totalWon": 16,
+      "totalLost": 6,
+      "longMatches": 13,
+      "longMatchesPlayed": 22,
+      "longMatchPct": 59,
+      "years": [
+        {
+          "year": "2026",
+          "matchCount": 7,
+          "won": 6,
+          "lost": 1,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "2026-09-13",
+              "opponent": "A. Zverev",
+              "round": "Final",
+              "won": false,
+              "result": "1 - 3",
+              "eventKey": 12162596
+            },
+            {
+              "date": "2026-09-12",
+              "opponent": "F. Tiafoe",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12161947
+            },
+            {
+              "date": "2026-09-09",
+              "opponent": "C. Alcaraz",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 2",
+              "eventKey": 12161078
+            },
+            {
+              "date": "2026-09-07",
+              "opponent": "S. Tsitsipas",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12160546
+            },
+            {
+              "date": "2026-09-05",
+              "opponent": "D. Shapovalov",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12160124
+            },
+            {
+              "date": "2026-09-02",
+              "opponent": "H. Hurkacz",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12159174
+            },
+            {
+              "date": "2026-09-01",
+              "opponent": "T. Griekspoor",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 12158137
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2025-08-29",
+              "opponent": "A. Mannarino",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "2 - 2",
+              "eventKey": 12065903
+            },
+            {
+              "date": "2025-08-28",
+              "opponent": "P. Carreno-Busta",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12064660
+            },
+            {
+              "date": "2025-08-24",
+              "opponent": "I. Buse",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 12064397
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 3,
+          "won": 2,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2024-08-30",
+              "opponent": "F. Tiafoe",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "2 - 3",
+              "eventKey": 11979105
+            },
+            {
+              "date": "2024-08-28",
+              "opponent": "R. Bautista-Agut",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 11978270
+            },
+            {
+              "date": "2024-08-26",
+              "opponent": "D. Thiem",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 0",
+              "eventKey": 11977449
+            }
+          ]
+        },
+        {
+          "year": "2023",
+          "matchCount": 6,
+          "won": 5,
+          "lost": 1,
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2023-09-08",
+              "opponent": "N. Djokovic",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 3",
+              "eventKey": 11895425
+            },
+            {
+              "date": "2023-09-06",
+              "opponent": "F. Tiafoe",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11894465
+            },
+            {
+              "date": "2023-09-03",
+              "opponent": "T. Paul",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11894061
+            },
+            {
+              "date": "2023-09-01",
+              "opponent": "A. Karatsev",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11893642
+            },
+            {
+              "date": "2023-08-30",
+              "opponent": "D. Thiem",
+              "round": "1/32-finals",
+              "won": true,
+              "result": "1 - 0",
+              "eventKey": 11892751
+            },
+            {
+              "date": "2023-08-28",
+              "opponent": "P. Cachin",
+              "round": "1/64-finals",
+              "won": true,
+              "result": "3 - 1",
+              "eventKey": 11892071
+            }
+          ]
+        },
+        {
+          "year": "2022",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/64-finals",
+          "matches": [
+            {
+              "date": "2022-08-29",
+              "opponent": "N. Borges",
+              "round": "1/64-finals",
+              "won": false,
+              "result": "2 - 3",
+              "eventKey": 11687044
+            }
+          ]
+        },
+        {
+          "year": "2021",
+          "matchCount": 2,
+          "won": 1,
+          "lost": 1,
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2021-08-26",
+              "opponent": "B. Van De Zandschulp",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "1 - 2",
+              "eventKey": 3244
+            },
+            {
+              "date": "2021-08-25",
+              "opponent": "M. Mmoh",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 3200
+            }
+          ]
+        }
+      ]
+    },
+    "extraStats": {
+      "last52Weeks": {
+        "p1": {
+          "matchCount": 86,
+          "stats": {
+            "Service:Aces": 9.2,
+            "Service:Double Faults": 2.1,
+            "Service:1st Serve Points Won": 76,
+            "Service:2nd Serve Points Won": 56,
+            "Service:Break Points Saved": 59.7,
+            "Return:Break Points Converted": 39.7,
+            "Points:Service Points Won": 70.4,
+            "Points:Return Points Won": 36.6,
+            "Points:Total Points Won": 52.7,
+            "Points:Winners": 26.4,
+            "Points:Unforced Errors": 21.3
+          },
+          "samples": {
+            "Service:Aces": 86,
+            "Service:Double Faults": 86,
+            "Service:1st Serve Points Won": 4970,
+            "Service:2nd Serve Points Won": 1939,
+            "Service:Break Points Saved": 268,
+            "Return:Break Points Converted": 494,
+            "Points:Service Points Won": 6915,
+            "Points:Return Points Won": 7587,
+            "Points:Total Points Won": 14502,
+            "Points:Winners": 83,
+            "Points:Unforced Errors": 83
+          }
+        },
+        "p2": {
+          "matchCount": 62,
+          "stats": {
+            "Service:Aces": 10,
+            "Service:Double Faults": 2.8,
+            "Service:1st Serve Points Won": 76.6,
+            "Service:2nd Serve Points Won": 57.5,
+            "Service:Break Points Saved": 69.3,
+            "Return:Break Points Converted": 37.5,
+            "Points:Unforced Errors": 25.7,
+            "Points:Service Points Won": 70.4,
+            "Points:Return Points Won": 32.4,
+            "Points:Total Points Won": 51.3,
+            "Points:Winners": 29.2
+          },
+          "samples": {
+            "Service:Aces": 62,
+            "Service:Double Faults": 62,
+            "Service:1st Serve Points Won": 3728,
+            "Service:2nd Serve Points Won": 1730,
+            "Service:Break Points Saved": 277,
+            "Return:Break Points Converted": 312,
+            "Points:Unforced Errors": 59,
+            "Points:Service Points Won": 5452,
+            "Points:Return Points Won": 5494,
+            "Points:Total Points Won": 10946,
+            "Points:Winners": 59
+          }
+        }
+      },
+      "surface": {
+        "p1": {
+          "matchCount": 75,
+          "stats": {
+            "Service:Aces": 9.5,
+            "Service:Double Faults": 2.2,
+            "Service:1st Serve Points Won": 75.7,
+            "Service:2nd Serve Points Won": 53.9,
+            "Service:Break Points Saved": 63.6,
+            "Return:Break Points Converted": 38.3,
+            "Points:Service Points Won": 69.5,
+            "Points:Return Points Won": 36.2,
+            "Points:Total Points Won": 52.2,
+            "Points:Winners": 24.7,
+            "Points:Unforced Errors": 20.4
+          },
+          "samples": {
+            "Service:Aces": 75,
+            "Service:Double Faults": 75,
+            "Service:1st Serve Points Won": 4244,
+            "Service:2nd Serve Points Won": 1706,
+            "Service:Break Points Saved": 291,
+            "Return:Break Points Converted": 486,
+            "Points:Service Points Won": 5971,
+            "Points:Return Points Won": 6421,
+            "Points:Total Points Won": 12392,
+            "Points:Winners": 70,
+            "Points:Unforced Errors": 70
+          }
+        },
+        "p2": {
+          "matchCount": 74,
+          "stats": {
+            "Service:Aces": 9.8,
+            "Service:Double Faults": 2.7,
+            "Service:1st Serve Points Won": 76.4,
+            "Service:2nd Serve Points Won": 55.8,
+            "Service:Break Points Saved": 69.6,
+            "Return:Break Points Converted": 40.1,
+            "Points:Unforced Errors": 26.8,
+            "Points:Service Points Won": 69.4,
+            "Points:Return Points Won": 34.1,
+            "Points:Total Points Won": 51.7,
+            "Points:Winners": 29.8
+          },
+          "samples": {
+            "Service:Aces": 74,
+            "Service:Double Faults": 74,
+            "Service:1st Serve Points Won": 4095,
+            "Service:2nd Serve Points Won": 2053,
+            "Service:Break Points Saved": 359,
+            "Return:Break Points Converted": 439,
+            "Points:Unforced Errors": 66,
+            "Points:Service Points Won": 6172,
+            "Points:Return Points Won": 6211,
+            "Points:Total Points Won": 12383,
+            "Points:Winners": 66
+          }
+        }
+      },
+      "surfaceLabel": "hard",
+      "courtSpeedRecord": {
+        "p1": {
+          "wins": 18,
+          "losses": 5,
+          "sampleSize": 23,
+          "pct": 78.3
+        },
+        "p2": {
+          "wins": 19,
+          "losses": 5,
+          "sampleSize": 24,
+          "pct": 79.2
+        }
+      }
+    },
+    "venue": {
+      "city": "New York",
+      "country": "US",
+      "category": "Grand Slam",
+      "indoor": false
+    },
+    "courtSpeed": {
+      "speed": 56,
+      "altitude": 10,
+      "abstractSpeed": 0.98,
+      "abstractSpeedYear": 2025,
+      "as2023": 1.01,
+      "as2024": 0.98,
+      "as2025": 0.98,
+      "firstServeWon": 72,
+      "serviceHold": 78,
+      "cpi": 42.8,
+      "cpiYear": 2024,
+      "category": "Medium"
+    },
+    "weather": {
+      "temperature": 25.4,
+      "windSpeed": 4.6,
+      "humidity": 84,
+      "source": "Open-Meteo",
+      "historical": true,
+      "weekRange": "Sep 7 – 13, 2026",
+      "week": [
+        {
+          "date": "2026-09-07",
+          "dow": "Mon",
+          "label": "Sep 7",
+          "code": 1,
+          "hi": 27,
+          "lo": 15,
+          "rain": 2,
+          "wind": 12,
+          "humidity": 63,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-08",
+          "dow": "Tue",
+          "label": "Sep 8",
+          "code": 2,
+          "hi": 28,
+          "lo": 16,
+          "rain": 0,
+          "wind": 15,
+          "humidity": 57,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-09",
+          "dow": "Wed",
+          "label": "Sep 9",
+          "code": 3,
+          "hi": 29,
+          "lo": 19,
+          "rain": 3,
+          "wind": 21,
+          "humidity": 72,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-10",
+          "dow": "Thu",
+          "label": "Sep 10",
+          "code": 3,
+          "hi": 31,
+          "lo": 22,
+          "rain": 20,
+          "wind": 19,
+          "humidity": 67,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-11",
+          "dow": "Fri",
+          "label": "Sep 11",
+          "code": 3,
+          "hi": 28,
+          "lo": 20,
+          "rain": 5,
+          "wind": 15,
+          "humidity": 54,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-12",
+          "dow": "Sat",
+          "label": "Sep 12",
+          "code": 3,
+          "hi": 26,
+          "lo": 17,
+          "rain": 1,
+          "wind": 19,
+          "humidity": 67,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-13",
+          "dow": "Sun",
+          "label": "Sep 13",
+          "code": 61,
+          "hi": 26,
+          "lo": 20,
+          "rain": 86,
+          "wind": 10,
+          "humidity": 86,
+          "isMatch": true,
+          "available": true
+        }
+      ]
+    },
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "6-3, 7-6(2), 5-7, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 3,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false,
+    "matchStats": {
+      "p1": {
+        "Service:Aces": 9,
+        "Service:Double Faults": 6,
+        "Service:1st serve percentage": 69,
+        "Service:1st serve points won": 85,
+        "Service:2nd serve points won": 47.2,
+        "Service:Break Points Saved": 66.7,
+        "Return:1st return points won": 28.7,
+        "Return:2nd return points won": 42.9,
+        "Return:Break Points Converted": 66.7,
+        "Points:Winners": 35,
+        "Points:Unforced errors": 31,
+        "Points:Total Points Won": 52.5,
+        "Points:Service Points Won": 73.3,
+        "Points:Return Points Won": 32.8,
+        "Games:Service games won": 95,
+        "Games:Return games won": 19,
+        "Points:Net points won": 86.2,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 68,
+            "total": 80
+          },
+          "Service:2nd serve points won": {
+            "won": 17,
+            "total": 36
+          },
+          "Service:Break Points Saved": {
+            "won": 2,
+            "total": 3
+          },
+          "Return:1st return points won": {
+            "won": 25,
+            "total": 87
+          },
+          "Return:2nd return points won": {
+            "won": 15,
+            "total": 35
+          },
+          "Return:Break Points Converted": {
+            "won": 4,
+            "total": 6
+          },
+          "Points:Total Points Won": {
+            "won": 125,
+            "total": 238
+          },
+          "Points:Service Points Won": {
+            "won": 85,
+            "total": 116
+          },
+          "Points:Return Points Won": {
+            "won": 40,
+            "total": 122
+          },
+          "Games:Service games won": {
+            "won": 19,
+            "total": 20
+          },
+          "Games:Return games won": {
+            "won": 4,
+            "total": 21
+          },
+          "Points:Net points won": {
+            "won": 25,
+            "total": 29
+          }
+        },
+        "wue": {
+          "winners": 35,
+          "unforcedErrors": 31,
+          "ratio": 1.13,
+          "source": "api-tennis"
+        }
+      },
+      "p2": {
+        "Service:Aces": 10,
+        "Service:Double Faults": 4,
+        "Service:1st serve percentage": 71,
+        "Service:1st serve points won": 71.3,
+        "Service:2nd serve points won": 57.1,
+        "Service:Break Points Saved": 33.3,
+        "Return:1st return points won": 15,
+        "Return:2nd return points won": 52.8,
+        "Return:Break Points Converted": 33.3,
+        "Points:Winners": 47,
+        "Points:Unforced errors": 47,
+        "Points:Total Points Won": 47.5,
+        "Points:Service Points Won": 67.2,
+        "Points:Return Points Won": 26.7,
+        "Games:Service games won": 81,
+        "Games:Return games won": 5,
+        "Points:Net points won": 69,
+        "raw": {
+          "Service:1st serve points won": {
+            "won": 62,
+            "total": 87
+          },
+          "Service:2nd serve points won": {
+            "won": 20,
+            "total": 35
+          },
+          "Service:Break Points Saved": {
+            "won": 2,
+            "total": 6
+          },
+          "Return:1st return points won": {
+            "won": 12,
+            "total": 80
+          },
+          "Return:2nd return points won": {
+            "won": 19,
+            "total": 36
+          },
+          "Return:Break Points Converted": {
+            "won": 1,
+            "total": 3
+          },
+          "Points:Total Points Won": {
+            "won": 113,
+            "total": 238
+          },
+          "Points:Service Points Won": {
+            "won": 82,
+            "total": 122
+          },
+          "Points:Return Points Won": {
+            "won": 31,
+            "total": 116
+          },
+          "Games:Service games won": {
+            "won": 17,
+            "total": 21
+          },
+          "Games:Return games won": {
+            "won": 1,
+            "total": 20
+          },
+          "Points:Net points won": {
+            "won": 29,
+            "total": 42
+          }
+        },
+        "wue": {
+          "winners": 47,
+          "unforcedErrors": 47,
+          "ratio": 1,
+          "source": "api-tennis"
+        }
+      },
+      "wueSource": "api-tennis"
+    },
+    "setStats": {
+      "1": {
+        "p1": {
+          "Service:Aces": 1,
+          "Service:Double Faults": 2,
+          "Service:1st serve percentage": 70,
+          "Service:1st serve points won": 93.8,
+          "Service:2nd serve points won": 14.3,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 35.3,
+          "Return:2nd return points won": 45.5,
+          "Return:Break Points Converted": 100,
+          "Points:Winners": 8,
+          "Points:Unforced errors": 9,
+          "Points:Total Points Won": 52.9,
+          "Points:Service Points Won": 69.6,
+          "Points:Return Points Won": 39.3,
+          "Games:Service games won": 100,
+          "Games:Return games won": 40,
+          "Points:Net points won": 83.3,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 15,
+              "total": 16
+            },
+            "Service:2nd serve points won": {
+              "won": 1,
+              "total": 7
+            },
+            "Return:1st return points won": {
+              "won": 6,
+              "total": 17
+            },
+            "Return:2nd return points won": {
+              "won": 5,
+              "total": 11
+            },
+            "Return:Break Points Converted": {
+              "won": 2,
+              "total": 2
+            },
+            "Points:Total Points Won": {
+              "won": 27,
+              "total": 51
+            },
+            "Points:Service Points Won": {
+              "won": 16,
+              "total": 23
+            },
+            "Points:Return Points Won": {
+              "won": 11,
+              "total": 28
+            },
+            "Games:Service games won": {
+              "won": 4,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 2,
+              "total": 5
+            },
+            "Points:Net points won": {
+              "won": 5,
+              "total": 6
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 4,
+          "Service:Double Faults": 2,
+          "Service:1st serve percentage": 61,
+          "Service:1st serve points won": 64.7,
+          "Service:2nd serve points won": 54.5,
+          "Service:Break Points Saved": 0,
+          "Return:1st return points won": 6.3,
+          "Return:2nd return points won": 85.7,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 8,
+          "Points:Unforced errors": 11,
+          "Points:Total Points Won": 47.1,
+          "Points:Service Points Won": 60.7,
+          "Points:Return Points Won": 30.4,
+          "Games:Service games won": 60,
+          "Games:Return games won": 0,
+          "Points:Net points won": 75,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 11,
+              "total": 17
+            },
+            "Service:2nd serve points won": {
+              "won": 6,
+              "total": 11
+            },
+            "Service:Break Points Saved": {
+              "won": 0,
+              "total": 2
+            },
+            "Return:1st return points won": {
+              "won": 1,
+              "total": 16
+            },
+            "Return:2nd return points won": {
+              "won": 6,
+              "total": 7
+            },
+            "Points:Total Points Won": {
+              "won": 24,
+              "total": 51
+            },
+            "Points:Service Points Won": {
+              "won": 17,
+              "total": 28
+            },
+            "Points:Return Points Won": {
+              "won": 7,
+              "total": 23
+            },
+            "Games:Service games won": {
+              "won": 3,
+              "total": 5
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 6,
+              "total": 8
+            }
+          }
+        }
+      },
+      "2": {
+        "p1": {
+          "Service:Aces": 5,
+          "Service:Double Faults": 3,
+          "Service:1st serve percentage": 67,
+          "Service:1st serve points won": 92.3,
+          "Service:2nd serve points won": 53.8,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 28.1,
+          "Return:2nd return points won": 40,
+          "Return:Break Points Converted": 0,
+          "Points:Winners": 10,
+          "Points:Unforced errors": 9,
+          "Points:Total Points Won": 54.3,
+          "Points:Service Points Won": 79.5,
+          "Points:Return Points Won": 31,
+          "Games:Service games won": 100,
+          "Games:Return games won": 0,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 24,
+              "total": 26
+            },
+            "Service:2nd serve points won": {
+              "won": 7,
+              "total": 13
+            },
+            "Return:1st return points won": {
+              "won": 9,
+              "total": 32
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 10
+            },
+            "Return:Break Points Converted": {
+              "won": 0,
+              "total": 1
+            },
+            "Points:Total Points Won": {
+              "won": 44,
+              "total": 81
+            },
+            "Points:Service Points Won": {
+              "won": 31,
+              "total": 39
+            },
+            "Points:Return Points Won": {
+              "won": 13,
+              "total": 42
+            },
+            "Games:Service games won": {
+              "won": 6,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 5,
+              "total": 5
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 3,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 76,
+          "Service:1st serve points won": 71.9,
+          "Service:2nd serve points won": 60,
+          "Service:Break Points Saved": 100,
+          "Return:1st return points won": 7.7,
+          "Return:2nd return points won": 46.2,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 17,
+          "Points:Unforced errors": 18,
+          "Points:Total Points Won": 45.7,
+          "Points:Service Points Won": 69,
+          "Points:Return Points Won": 20.5,
+          "Games:Service games won": 100,
+          "Games:Return games won": 0,
+          "Points:Net points won": 61.5,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 23,
+              "total": 32
+            },
+            "Service:2nd serve points won": {
+              "won": 6,
+              "total": 10
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 1
+            },
+            "Return:1st return points won": {
+              "won": 2,
+              "total": 26
+            },
+            "Return:2nd return points won": {
+              "won": 6,
+              "total": 13
+            },
+            "Points:Total Points Won": {
+              "won": 37,
+              "total": 81
+            },
+            "Points:Service Points Won": {
+              "won": 29,
+              "total": 42
+            },
+            "Points:Return Points Won": {
+              "won": 8,
+              "total": 39
+            },
+            "Games:Service games won": {
+              "won": 6,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 8,
+              "total": 13
+            }
+          }
+        }
+      },
+      "3": {
+        "p1": {
+          "Service:Aces": 2,
+          "Service:Double Faults": 0,
+          "Service:1st serve percentage": 76,
+          "Service:1st serve points won": 69.2,
+          "Service:2nd serve points won": 50,
+          "Service:Break Points Saved": 66.7,
+          "Return:1st return points won": 9.5,
+          "Return:2nd return points won": 28.6,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 10,
+          "Points:Unforced errors": 11,
+          "Points:Total Points Won": 41.9,
+          "Points:Service Points Won": 64.7,
+          "Points:Return Points Won": 14.3,
+          "Games:Service games won": 83.3,
+          "Games:Return games won": 0,
+          "Points:Net points won": 66.7,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 18,
+              "total": 26
+            },
+            "Service:2nd serve points won": {
+              "won": 4,
+              "total": 8
+            },
+            "Service:Break Points Saved": {
+              "won": 2,
+              "total": 3
+            },
+            "Return:1st return points won": {
+              "won": 2,
+              "total": 21
+            },
+            "Return:2nd return points won": {
+              "won": 2,
+              "total": 7
+            },
+            "Points:Total Points Won": {
+              "won": 26,
+              "total": 62
+            },
+            "Points:Service Points Won": {
+              "won": 22,
+              "total": 34
+            },
+            "Points:Return Points Won": {
+              "won": 4,
+              "total": 28
+            },
+            "Games:Service games won": {
+              "won": 5,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 6,
+              "total": 9
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 2,
+          "Service:Double Faults": 0,
+          "Service:1st serve percentage": 75,
+          "Service:1st serve points won": 90.5,
+          "Service:2nd serve points won": 71.4,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 30.8,
+          "Return:2nd return points won": 50,
+          "Return:Break Points Converted": 33.3,
+          "Points:Winners": 14,
+          "Points:Unforced errors": 7,
+          "Points:Total Points Won": 58.1,
+          "Points:Service Points Won": 85.7,
+          "Points:Return Points Won": 35.3,
+          "Games:Service games won": 100,
+          "Games:Return games won": 16.7,
+          "Points:Net points won": 80,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 19,
+              "total": 21
+            },
+            "Service:2nd serve points won": {
+              "won": 5,
+              "total": 7
+            },
+            "Return:1st return points won": {
+              "won": 8,
+              "total": 26
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 8
+            },
+            "Return:Break Points Converted": {
+              "won": 1,
+              "total": 3
+            },
+            "Points:Total Points Won": {
+              "won": 36,
+              "total": 62
+            },
+            "Points:Service Points Won": {
+              "won": 24,
+              "total": 28
+            },
+            "Points:Return Points Won": {
+              "won": 12,
+              "total": 34
+            },
+            "Games:Service games won": {
+              "won": 6,
+              "total": 6
+            },
+            "Games:Return games won": {
+              "won": 1,
+              "total": 6
+            },
+            "Points:Net points won": {
+              "won": 8,
+              "total": 10
+            }
+          }
+        }
+      },
+      "4": {
+        "p1": {
+          "Service:Aces": 1,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 60,
+          "Service:1st serve points won": 91.7,
+          "Service:2nd serve points won": 62.5,
+          "Service:Break Points Saved": null,
+          "Return:1st return points won": 47.1,
+          "Return:2nd return points won": 57.1,
+          "Return:Break Points Converted": 66.7,
+          "Points:Winners": 7,
+          "Points:Unforced errors": 2,
+          "Points:Total Points Won": 63.6,
+          "Points:Service Points Won": 80,
+          "Points:Return Points Won": 50,
+          "Games:Service games won": 100,
+          "Games:Return games won": 50,
+          "Points:Net points won": 100,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 11,
+              "total": 12
+            },
+            "Service:2nd serve points won": {
+              "won": 5,
+              "total": 8
+            },
+            "Return:1st return points won": {
+              "won": 8,
+              "total": 17
+            },
+            "Return:2nd return points won": {
+              "won": 4,
+              "total": 7
+            },
+            "Return:Break Points Converted": {
+              "won": 2,
+              "total": 3
+            },
+            "Points:Total Points Won": {
+              "won": 28,
+              "total": 44
+            },
+            "Points:Service Points Won": {
+              "won": 16,
+              "total": 20
+            },
+            "Points:Return Points Won": {
+              "won": 12,
+              "total": 24
+            },
+            "Games:Service games won": {
+              "won": 4,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 2,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 9,
+              "total": 9
+            }
+          }
+        },
+        "p2": {
+          "Service:Aces": 1,
+          "Service:Double Faults": 1,
+          "Service:1st serve percentage": 71,
+          "Service:1st serve points won": 52.9,
+          "Service:2nd serve points won": 42.9,
+          "Service:Break Points Saved": 33.3,
+          "Return:1st return points won": 8.3,
+          "Return:2nd return points won": 37.5,
+          "Return:Break Points Converted": null,
+          "Points:Winners": 8,
+          "Points:Unforced errors": 11,
+          "Points:Total Points Won": 36.4,
+          "Points:Service Points Won": 50,
+          "Points:Return Points Won": 20,
+          "Games:Service games won": 50,
+          "Games:Return games won": 0,
+          "Points:Net points won": 63.6,
+          "raw": {
+            "Service:1st serve points won": {
+              "won": 9,
+              "total": 17
+            },
+            "Service:2nd serve points won": {
+              "won": 3,
+              "total": 7
+            },
+            "Service:Break Points Saved": {
+              "won": 1,
+              "total": 3
+            },
+            "Return:1st return points won": {
+              "won": 1,
+              "total": 12
+            },
+            "Return:2nd return points won": {
+              "won": 3,
+              "total": 8
+            },
+            "Points:Total Points Won": {
+              "won": 16,
+              "total": 44
+            },
+            "Points:Service Points Won": {
+              "won": 12,
+              "total": 24
+            },
+            "Points:Return Points Won": {
+              "won": 4,
+              "total": 20
+            },
+            "Games:Service games won": {
+              "won": 2,
+              "total": 4
+            },
+            "Games:Return games won": {
+              "won": 0,
+              "total": 4
+            },
+            "Points:Net points won": {
+              "won": 7,
+              "total": 11
+            }
+          }
+        }
+      }
+    },
+    "finishedAt": "2026-09-13T22:41:28.953Z",
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-13T22:50:43Z",
+      "startTime": "2026-09-13T18:15:00.000Z",
+      "fixtureId": "id1200259173992442",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-13T18:53:29.958Z",
+              1.667
+            ],
+            [
+              "2026-09-13T19:05:05.889Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:05:06.050Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:05:43.600Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:06:11.402Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:07:06.830Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:07:31.594Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:07:58.044Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:08:14.128Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:08:57.895Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:09:35.475Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:10:08.395Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:11:07.466Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:11:51.110Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:12:47.457Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:12:50.724Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:13:46.569Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:15:12.191Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:16:41.090Z",
+              1.667
+            ],
+            [
+              "2026-09-13T19:17:57.981Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:18:21.615Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:19:14.979Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:19:58.237Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:20:41.234Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:20:51.108Z",
+              1.2
+            ],
+            [
+              "2026-09-13T19:21:23.335Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:22:06.191Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:22:55.385Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:24:28.167Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:26:25.315Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:29:12.886Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:30:38.684Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:31:38.191Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:33:09.817Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:34:15.792Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:35:06.831Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:35:38.644Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:36:19.693Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:38:07.437Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:42:01.563Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:42:06.031Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:43:04.073Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:44:13.952Z",
+              1.364
+            ],
+            [
+              "2026-09-13T19:44:31.222Z",
+              1.333
+            ],
+            [
+              "2026-09-13T19:44:34.797Z",
+              1.667
+            ],
+            [
+              "2026-09-13T19:45:22.042Z",
+              1.3
+            ],
+            [
+              "2026-09-13T19:45:51.302Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:46:22.256Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:48:16.963Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:48:48.475Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:49:12.619Z",
+              1.2
+            ],
+            [
+              "2026-09-13T19:49:44.849Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:50:23.340Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:50:44.750Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:51:22.358Z",
+              1.286
+            ],
+            [
+              "2026-09-13T19:52:22.111Z",
+              1.25
+            ],
+            [
+              "2026-09-13T19:57:00.043Z",
+              1.2
+            ],
+            [
+              "2026-09-13T19:57:23.193Z",
+              1.167
+            ],
+            [
+              "2026-09-13T19:57:51.722Z",
+              1.143
+            ],
+            [
+              "2026-09-13T19:58:29.648Z",
+              1.2
+            ],
+            [
+              "2026-09-13T19:59:12.045Z",
+              1.222
+            ],
+            [
+              "2026-09-13T19:59:45.747Z",
+              1.25
+            ],
+            [
+              "2026-09-13T20:00:27.363Z",
+              1.2
+            ],
+            [
+              "2026-09-13T20:01:16.211Z",
+              1.25
+            ],
+            [
+              "2026-09-13T20:02:59.764Z",
+              1.222
+            ],
+            [
+              "2026-09-13T20:04:03.880Z",
+              1.143
+            ],
+            [
+              "2026-09-13T20:05:05.675Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:05:43.620Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:06:10.305Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:06:53.187Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:07:48.673Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:08:58.673Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:09:28.455Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:17:52.862Z",
+              1.05
+            ],
+            [
+              "2026-09-13T20:18:37.143Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:21:12.979Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:22:01.865Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:22:22.082Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:22:53.207Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:23:23.362Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:24:24.878Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:25:05.445Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:27:01.391Z",
+              1.667
+            ],
+            [
+              "2026-09-13T20:27:44.736Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:27:45.171Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:27:47.328Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:28:32.982Z",
+              1.062
+            ],
+            [
+              "2026-09-13T20:30:02.218Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:30:57.233Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:14.167Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:34:27.251Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:27.444Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:29.861Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:34:30.553Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:31.912Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:34:34.219Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:34.369Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:34:37.530Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:34:38.148Z",
+              1.071
+            ],
+            [
+              "2026-09-13T20:35:27.583Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:36:24.263Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:37:03.561Z",
+              1.143
+            ],
+            [
+              "2026-09-13T20:38:45.274Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:39:32.099Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:41:15.100Z",
+              1.083
+            ],
+            [
+              "2026-09-13T20:41:41.711Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:44:41.260Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:45:27.916Z",
+              1.125
+            ],
+            [
+              "2026-09-13T20:46:08.430Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:46:39.091Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:47:47.790Z",
+              1.125
+            ],
+            [
+              "2026-09-13T20:48:28.333Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:49:22.254Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:49:47.083Z",
+              1.1
+            ],
+            [
+              "2026-09-13T20:50:33.844Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:53:07.207Z",
+              1.125
+            ],
+            [
+              "2026-09-13T20:55:12.528Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:55:49.048Z",
+              1.143
+            ],
+            [
+              "2026-09-13T20:56:59.955Z",
+              1.125
+            ],
+            [
+              "2026-09-13T20:57:40.632Z",
+              1.111
+            ],
+            [
+              "2026-09-13T20:59:26.990Z",
+              1.125
+            ],
+            [
+              "2026-09-13T21:00:10.331Z",
+              1.143
+            ],
+            [
+              "2026-09-13T21:00:47.653Z",
+              1.125
+            ],
+            [
+              "2026-09-13T21:03:50.958Z",
+              1.167
+            ],
+            [
+              "2026-09-13T21:05:10.295Z",
+              1.222
+            ],
+            [
+              "2026-09-13T21:06:10.439Z",
+              1.3
+            ],
+            [
+              "2026-09-13T21:06:57.045Z",
+              1.333
+            ],
+            [
+              "2026-09-13T21:07:17.336Z",
+              1.3
+            ],
+            [
+              "2026-09-13T21:07:45.276Z",
+              1.286
+            ],
+            [
+              "2026-09-13T21:08:28.034Z",
+              1.364
+            ],
+            [
+              "2026-09-13T21:11:51.223Z",
+              1.4
+            ],
+            [
+              "2026-09-13T21:12:23.742Z",
+              1.444
+            ],
+            [
+              "2026-09-13T21:12:52.871Z",
+              1.4
+            ],
+            [
+              "2026-09-13T21:13:14.773Z",
+              1.364
+            ],
+            [
+              "2026-09-13T21:13:36.873Z",
+              1.333
+            ],
+            [
+              "2026-09-13T21:14:09.345Z",
+              1.222
+            ],
+            [
+              "2026-09-13T21:14:44.518Z",
+              1.2
+            ],
+            [
+              "2026-09-13T21:14:56.237Z",
+              1.3
+            ],
+            [
+              "2026-09-13T21:15:31.099Z",
+              1.222
+            ],
+            [
+              "2026-09-13T21:15:56.154Z",
+              1.2
+            ],
+            [
+              "2026-09-13T21:16:39.098Z",
+              1.083
+            ],
+            [
+              "2026-09-13T21:17:53.885Z",
+              1.071
+            ],
+            [
+              "2026-09-13T21:18:20.516Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:20:17.542Z",
+              1.071
+            ],
+            [
+              "2026-09-13T21:21:02.811Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:21:46.561Z",
+              1.05
+            ],
+            [
+              "2026-09-13T21:22:22.627Z",
+              1.03
+            ],
+            [
+              "2026-09-13T21:23:13.692Z",
+              1.04
+            ],
+            [
+              "2026-09-13T21:23:51.495Z",
+              1.05
+            ],
+            [
+              "2026-09-13T21:24:38.119Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:25:21.418Z",
+              1.071
+            ],
+            [
+              "2026-09-13T21:26:51.273Z",
+              1.667
+            ],
+            [
+              "2026-09-13T21:28:06.199Z",
+              1.05
+            ],
+            [
+              "2026-09-13T21:30:01.178Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:30:44.932Z",
+              1.083
+            ],
+            [
+              "2026-09-13T21:32:16.301Z",
+              1.1
+            ],
+            [
+              "2026-09-13T21:32:46.455Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:33:23.234Z",
+              1.071
+            ],
+            [
+              "2026-09-13T21:33:59.367Z",
+              1.05
+            ],
+            [
+              "2026-09-13T21:34:52.179Z",
+              1.062
+            ],
+            [
+              "2026-09-13T21:40:28.727Z",
+              1.05
+            ],
+            [
+              "2026-09-13T21:41:00.158Z",
+              1.04
+            ],
+            [
+              "2026-09-13T21:42:04.366Z",
+              1.03
+            ],
+            [
+              "2026-09-13T21:44:08.430Z",
+              1.025
+            ],
+            [
+              "2026-09-13T21:44:45.934Z",
+              1.02
+            ],
+            [
+              "2026-09-13T21:45:14.748Z",
+              1.01
+            ],
+            [
+              "2026-09-13T21:54:19.946Z",
+              1.667
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-13T18:53:29.958Z",
+              2.3
+            ],
+            [
+              "2026-09-13T19:05:05.889Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:05:06.050Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:05:43.600Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:06:11.402Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:07:06.830Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:07:31.594Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:07:58.044Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:08:14.128Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:08:57.895Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:09:35.475Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:10:08.395Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:11:07.466Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:11:51.110Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:12:47.457Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:12:50.724Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:13:46.569Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:15:12.191Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:16:41.090Z",
+              2.3
+            ],
+            [
+              "2026-09-13T19:17:57.981Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:18:21.615Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:19:14.979Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:19:58.237Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:20:41.234Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:20:51.108Z",
+              4.5
+            ],
+            [
+              "2026-09-13T19:21:23.335Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:22:06.191Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:22:55.385Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:24:28.167Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:26:25.315Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:29:12.886Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:30:38.684Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:31:38.191Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:33:09.817Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:34:15.792Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:35:06.831Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:35:38.644Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:36:19.693Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:38:07.437Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:42:01.563Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:42:06.031Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:43:04.073Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:44:13.952Z",
+              3.2
+            ],
+            [
+              "2026-09-13T19:44:31.222Z",
+              3.4
+            ],
+            [
+              "2026-09-13T19:44:34.797Z",
+              2.3
+            ],
+            [
+              "2026-09-13T19:45:22.042Z",
+              3.5
+            ],
+            [
+              "2026-09-13T19:45:51.302Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:46:22.256Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:48:16.963Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:48:48.475Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:49:12.619Z",
+              4.5
+            ],
+            [
+              "2026-09-13T19:49:44.849Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:50:23.340Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:50:44.750Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:51:22.358Z",
+              3.75
+            ],
+            [
+              "2026-09-13T19:52:22.111Z",
+              4.0
+            ],
+            [
+              "2026-09-13T19:57:00.043Z",
+              4.5
+            ],
+            [
+              "2026-09-13T19:57:23.193Z",
+              5.0
+            ],
+            [
+              "2026-09-13T19:57:51.722Z",
+              5.5
+            ],
+            [
+              "2026-09-13T19:58:29.648Z",
+              4.5
+            ],
+            [
+              "2026-09-13T19:59:12.045Z",
+              4.333
+            ],
+            [
+              "2026-09-13T19:59:45.747Z",
+              4.0
+            ],
+            [
+              "2026-09-13T20:00:27.363Z",
+              4.5
+            ],
+            [
+              "2026-09-13T20:01:16.211Z",
+              4.0
+            ],
+            [
+              "2026-09-13T20:02:59.764Z",
+              4.333
+            ],
+            [
+              "2026-09-13T20:04:03.880Z",
+              5.5
+            ],
+            [
+              "2026-09-13T20:05:05.675Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:05:43.620Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:06:10.305Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:06:53.187Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:07:48.673Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:08:58.673Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:09:28.455Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:17:52.862Z",
+              11.0
+            ],
+            [
+              "2026-09-13T20:18:37.143Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:21:12.979Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:22:01.865Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:22:22.082Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:22:53.207Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:23:23.362Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:24:24.878Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:25:05.445Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:27:01.391Z",
+              2.3
+            ],
+            [
+              "2026-09-13T20:27:44.736Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:27:45.171Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:27:47.328Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:28:32.982Z",
+              10.0
+            ],
+            [
+              "2026-09-13T20:30:02.218Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:30:57.233Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:14.167Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:34:27.251Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:27.444Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:29.861Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:34:30.553Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:31.912Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:34:34.219Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:34.369Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:34:37.530Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:34:38.148Z",
+              9.0
+            ],
+            [
+              "2026-09-13T20:35:27.583Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:36:24.263Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:37:03.561Z",
+              5.5
+            ],
+            [
+              "2026-09-13T20:38:45.274Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:39:32.099Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:41:15.100Z",
+              8.0
+            ],
+            [
+              "2026-09-13T20:41:41.711Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:44:41.260Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:45:27.916Z",
+              6.0
+            ],
+            [
+              "2026-09-13T20:46:08.430Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:46:39.091Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:47:47.790Z",
+              6.0
+            ],
+            [
+              "2026-09-13T20:48:28.333Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:49:22.254Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:49:47.083Z",
+              7.0
+            ],
+            [
+              "2026-09-13T20:50:33.844Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:53:07.207Z",
+              6.0
+            ],
+            [
+              "2026-09-13T20:55:12.528Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:55:49.048Z",
+              5.5
+            ],
+            [
+              "2026-09-13T20:56:59.955Z",
+              6.0
+            ],
+            [
+              "2026-09-13T20:57:40.632Z",
+              6.5
+            ],
+            [
+              "2026-09-13T20:59:26.990Z",
+              6.0
+            ],
+            [
+              "2026-09-13T21:00:10.331Z",
+              5.5
+            ],
+            [
+              "2026-09-13T21:00:47.653Z",
+              6.0
+            ],
+            [
+              "2026-09-13T21:03:50.958Z",
+              5.0
+            ],
+            [
+              "2026-09-13T21:05:10.295Z",
+              4.333
+            ],
+            [
+              "2026-09-13T21:06:10.439Z",
+              3.5
+            ],
+            [
+              "2026-09-13T21:06:57.045Z",
+              3.4
+            ],
+            [
+              "2026-09-13T21:07:17.336Z",
+              3.5
+            ],
+            [
+              "2026-09-13T21:07:45.276Z",
+              3.75
+            ],
+            [
+              "2026-09-13T21:08:28.034Z",
+              3.2
+            ],
+            [
+              "2026-09-13T21:11:51.223Z",
+              3.0
+            ],
+            [
+              "2026-09-13T21:12:23.742Z",
+              2.75
+            ],
+            [
+              "2026-09-13T21:12:52.871Z",
+              3.0
+            ],
+            [
+              "2026-09-13T21:13:14.773Z",
+              3.2
+            ],
+            [
+              "2026-09-13T21:13:36.873Z",
+              3.4
+            ],
+            [
+              "2026-09-13T21:14:09.345Z",
+              4.333
+            ],
+            [
+              "2026-09-13T21:14:44.518Z",
+              4.5
+            ],
+            [
+              "2026-09-13T21:14:56.237Z",
+              3.5
+            ],
+            [
+              "2026-09-13T21:15:31.099Z",
+              4.333
+            ],
+            [
+              "2026-09-13T21:15:56.154Z",
+              4.5
+            ],
+            [
+              "2026-09-13T21:16:39.098Z",
+              8.0
+            ],
+            [
+              "2026-09-13T21:17:53.885Z",
+              9.0
+            ],
+            [
+              "2026-09-13T21:18:20.516Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:20:17.542Z",
+              9.0
+            ],
+            [
+              "2026-09-13T21:21:02.811Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:21:46.561Z",
+              11.0
+            ],
+            [
+              "2026-09-13T21:22:22.627Z",
+              15.0
+            ],
+            [
+              "2026-09-13T21:23:13.692Z",
+              13.0
+            ],
+            [
+              "2026-09-13T21:23:51.495Z",
+              11.0
+            ],
+            [
+              "2026-09-13T21:24:38.119Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:25:21.418Z",
+              9.0
+            ],
+            [
+              "2026-09-13T21:26:51.273Z",
+              2.3
+            ],
+            [
+              "2026-09-13T21:28:06.199Z",
+              11.0
+            ],
+            [
+              "2026-09-13T21:30:01.178Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:30:44.932Z",
+              8.0
+            ],
+            [
+              "2026-09-13T21:32:16.301Z",
+              7.0
+            ],
+            [
+              "2026-09-13T21:32:46.455Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:33:23.234Z",
+              9.0
+            ],
+            [
+              "2026-09-13T21:33:59.367Z",
+              11.0
+            ],
+            [
+              "2026-09-13T21:34:52.179Z",
+              10.0
+            ],
+            [
+              "2026-09-13T21:40:28.727Z",
+              11.0
+            ],
+            [
+              "2026-09-13T21:41:00.158Z",
+              13.0
+            ],
+            [
+              "2026-09-13T21:42:04.366Z",
+              15.0
+            ],
+            [
+              "2026-09-13T21:44:08.430Z",
+              17.0
+            ],
+            [
+              "2026-09-13T21:44:45.934Z",
+              19.0
+            ],
+            [
+              "2026-09-13T21:45:14.748Z",
+              26.0
+            ],
+            [
+              "2026-09-13T21:45:59.068Z",
+              101.0
+            ],
+            [
+              "2026-09-13T21:50:08.179Z",
+              101.0
+            ],
+            [
+              "2026-09-13T21:50:26.631Z",
+              67.0
+            ],
+            [
+              "2026-09-13T21:51:00.622Z",
+              101.0
+            ],
+            [
+              "2026-09-13T21:54:19.946Z",
+              2.3
+            ]
+          ]
+        }
+      }
     }
   }
 ]
