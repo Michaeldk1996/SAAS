@@ -23550,11 +23550,17 @@ window.DatabaseTab = (function(){
     res.bands.forEach(function(b,i){
       if(!b) return;
       var nm = (!res.single && names[i]) ? names[i] : 'Band';
-      var isSuperDog = nm==='Super Dog';
       var row=el('div','db-gr');
       row.appendChild(el('div',null,esc(nm)));
       row.appendChild(el('div',null,fmtP(b.lo)));
-      row.appendChild(el('div',null, isSuperDog ? fmtP(b.lo)+'+' : fmtP(b.hi)));
+      // Founder ruling, 2026-09-13 (TEN-196): the top band prints its REAL upper
+      // bound, not an open-ended "lo+". The export's `Super Dog -> from + '+'` rule
+      // is overturned. b.hi is the band's own highest closing price, so the cell now
+      // reports what the archive holds (Tour 86.00, AO 81.00) instead of hiding it.
+      // Do not reinstate the '+' suffix: on a page whose claim is "our own archive,
+      // real closing prices", a band that hides its top end is the one cell not
+      // telling you what it knows.
+      row.appendChild(el('div',null,fmtP(b.hi)));
       row.appendChild(el('div','db-gmed',fmtP(b.median)));
       row.appendChild(el('div',null,fmtInt(b.n)));
       row.appendChild(el('div',null,yieldCell(b)));
