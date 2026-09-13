@@ -23314,15 +23314,15 @@ window.DatabaseTab = (function(){
   // the control too. That is deliberate — an index-stable fold cannot be proven
   // against a reordered dictionary — but a control vanishing in silence is the
   // wrong diagnostic posture on this page, so say why, once.
-  var _foldWarned=false;
-  function foldedOpts(dict, expected, folded){
+  var _foldWarned={};
+  function foldedOpts(dict, expected, folded, what, ruling){
     var bad = dict.length!==expected.length;
     for(var i=0;!bad && i<expected.length;i++){ if(dict[i]!==expected[i]) bad=true; }
     if(bad){
-      if(!_foldWarned){ _foldWarned=true;
-        console.warn('Database: level dictionary has moved — expected ['+expected.join(', ')+
-          '] but the artefact holds ['+dict.join(', ')+']. The Level filter is being DROPPED rather than '+
-          'offering a set nobody ruled on. Re-confirm the fold (TEN-196 item 3) against the new dictionary.'); }
+      if(!_foldWarned[what]){ _foldWarned[what]=true;
+        console.warn('Database: '+what+' dictionary has moved — expected ['+expected.join(', ')+
+          '] but the artefact holds ['+dict.join(', ')+']. The '+what+' filter is being DROPPED rather than '+
+          'offering a set nobody ruled on. Re-confirm the fold ('+ruling+') against the new dictionary.'); }
       return null;
     }
     return dict.map(function(n,ix){ return [ix,n]; })
@@ -23333,7 +23333,22 @@ window.DatabaseTab = (function(){
   var FOLDED_LEVELS=['Finals'];
   // Offered on Tour. Finals is folded out — it is 238 rows, every one of them the
   // Masters Cup, which stays reachable as a tournament on the Tournaments tab.
-  function tourLevelOpts(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS); }
+  function tourLevelOpts(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS, 'level', 'TEN-196 item 3'); }
+  // Round Robin folded out of EVERY Round picker — founder ruling TEN-196
+  // 2026-09-13 item 4, in his words: "Remove Round Robin from all filters".
+  //
+  // Not tidying. 191 rows, and every one of them is the Masters Cup, i.e. a STRICT
+  // SUBSET of the 238 Finals rows item 3 folded out of the Level picker. Leaving it
+  // left a back door: `Round = Round Robin` selected a slice that was 100% the
+  // folded level while the Level trigger still read "All". Folding it shuts that
+  // door. The rows stay in the archive and `All` still counts all 191.
+  //
+  // The dictionary is insertion-ordered, NOT draw order — that is why the expected
+  // list below reads 1st/2nd/QF/SF/Final/3rd/4th and not ROUND_ORDER. Asserting it
+  // exactly is the point: a name-only filter fails OPEN on a rename.
+  var ROUNDS_EXPECTED=['1st Round','2nd Round','Quarterfinals','Semifinals','The Final','3rd Round','4th Round','Round Robin'];
+  var FOLDED_ROUNDS=['Round Robin'];
+  function roundOpts(){ return foldedOpts(M.rounds, ROUNDS_EXPECTED, FOLDED_ROUNDS, 'round', 'TEN-196 item 4'); }
   // opts is [[storedIndex, name], ...]; the stored index is never renumbered, so a
   // folded picker and the archive keep the same dictionary.
   function orderedOpts(opts, isRounds){
@@ -23345,19 +23360,19 @@ window.DatabaseTab = (function(){
   }
   function multiMenu(opts, activeSet, setter, isRounds){
     var m=el('div','db-menu');
-    // "every offered row on" === "no filter", counted against the OFFERED length
-    // rather than the dictionary's.
+    // Checked boxes mean EXACTLY those boxes — founder ruling TEN-196 2026-09-13,
+    // overturning the previous "all offered rows checked collapses to All".
     //
-    // NOT because 'All' would otherwise be unreachable — `st.size===0` on the same
-    // line already returns null, so clearing every box reaches it either way. It is
-    // because this is how the picker behaved before the fold, when all-checked and
-    // 'All' described the same set. They no longer do: ticking the four offered
-    // levels collapses to All = 41,667, which is the 238 folded Finals rows MORE
-    // than the four levels sum to (41,429). The trigger does flip to 'All', so
-    // nothing is misreported — but the four ruled levels can no longer be
-    // constructed as an explicit set. Reported to the founder 2026-09-13 as a
-    // consequence of item 3; NOT changed unilaterally.
-    var nOffered=opts.length;
+    // That collapse predated the folds and was harmless while all-checked and 'All'
+    // described the same set. They stopped describing the same set the moment a row
+    // was folded out of a picker: ticking the four offered levels used to collapse
+    // to All = 41,667, which is the 238 folded Finals rows MORE than the four levels
+    // sum to (41,429), so the four ruled levels could not be built as an explicit
+    // set at all. Now they can — the trigger reads '4' and the page shows 41,429.
+    //
+    // 'All' is still reachable, by clearing every box: `st.size===0` returns null on
+    // the same line. Same rule on the Round picker, where all seven offered rounds
+    // now means 41,476 rather than the unfiltered 41,667.
     orderedOpts(opts, isRounds).forEach(function(o){
       var idx=o[0], name=o[1];
       var on = !!activeSet && activeSet.has(idx);
@@ -23366,7 +23381,7 @@ window.DatabaseTab = (function(){
       row.onclick=function(){
         var st = activeSet ? new Set(activeSet) : new Set();
         if(st.has(idx)) st.delete(idx); else st.add(idx);
-        setter(st.size===0 || st.size===nOffered ? null : st);
+        setter(st.size===0 ? null : st);
         render();
       };
       m.appendChild(row);
@@ -23381,8 +23396,11 @@ window.DatabaseTab = (function(){
       var inp=el('input'); inp.type='text'; inp.placeholder='Search tournaments…'; inp.value=state.menuQ;
       inp.oninput=function(){ state.menuQ=inp.value; renderFilters(); var n=document.querySelector('.db-menu input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
       sh.appendChild(inp); m.appendChild(sh);
-      var q=state.menuQ.trim().toLowerCase();
-      if(q) list=opts.filter(function(o){ return o[1].toLowerCase().indexOf(q)>=0; });
+      var q=state.menuQ.trim();
+      // o[0] is the stored tournament index on the Players Tournament menu (the only
+      // searchable singleMenu), so match on the same official/common/city terms the
+      // Tournaments search uses rather than on the displayed label alone.
+      if(q) list=opts.filter(function(o){ return typeof o[0]==='number' ? tournHit(o[0], q) : nrm(o[1]).indexOf(nrm(q))>=0; });
     }
     if(!list.length){ m.appendChild(el('div','db-pempty','No tournament matches that.')); return m; }
     list.forEach(function(o){
@@ -23460,11 +23478,13 @@ window.DatabaseTab = (function(){
       if(!lvOpts) state.levels=null;
       if(lvOpts) bar.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }));
       bar.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }));
-      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(allOpts(M.rounds), state.rounds, function(s){state.rounds=s;}, true); }));
+      var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
+      if(!rdOpts) state.rounds=null;
+      if(rdOpts) bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
       bar.appendChild(yearControl());
     } else if(state.view==='tournaments'){
       if(state.tournament){
-        var chip=el('div','db-subject','<span>'+esc(state.tournament)+'</span>');
+        var chip=el('div','db-subject','<span>'+esc(tournLabelOf(state.tournament))+'</span>');
         var x=el('button',null,'×'); x.title='Clear tournament';
         x.onclick=function(){ state.tournament=null; state.tq=''; render(); };
         chip.appendChild(x); bar.appendChild(chip);
@@ -23472,9 +23492,12 @@ window.DatabaseTab = (function(){
       bar.appendChild(searchField({
         placeholder:'Search tournaments…', query:state.tq, noun:'tournament', prompting:!state.tournament,
         onInput:function(v){ state.tq=v; },
-        match:function(q){ var ql=q.toLowerCase();
-          var hits=M.tournaments.map(function(t,i){return {label:t,value:t,i:i};})
-            .filter(function(t){ return t.label.toLowerCase().indexOf(ql)>=0; })
+        match:function(q){
+          // Searches the official archive string, the common name AND the city, and
+          // displays the common name (founder ruling TEN-196 2026-09-13 item 5).
+          // `value` stays the OFFICIAL string — it is what state and filtering key on.
+          var hits=M.tournaments.map(function(t,i){return {label:tournLabel(i),value:t,i:i};})
+            .filter(function(t){ return tournHit(t.i, q); })
             .sort(function(a,b){ return a.label<b.label?-1:1; });
           lastTotal=hits.length;
           return hits.slice(0,40).map(function(h){ return {label:h.label, value:h.value, meta:tournSurface(h.i)}; }); },
@@ -23483,7 +23506,9 @@ window.DatabaseTab = (function(){
         onPick:function(t){ state.tournament=t; state.tq=''; render(); }
       }));
       // C11 — no Surface filter here; Round + years only, per the export.
-      bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(allOpts(M.rounds), state.rounds, function(s){state.rounds=s;}, true); }));
+      var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
+      if(!rdOpts) state.rounds=null;
+      if(rdOpts) bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
       bar.appendChild(yearControl());
     } else {
       if(state.player){
@@ -23523,7 +23548,7 @@ window.DatabaseTab = (function(){
         return singleMenu([[null,'All']].concat(PL), state.plevel, function(v){ state.plevel=v; state.ptourn=null; }, false); }));
       else state.plevel=null;   // dictionary moved: fail closed, and never filter on a stale index
       var events=playerEvents();
-      bar.appendChild(trigger('Tournament', state.ptourn==null?'All':M.tournaments[state.ptourn], state.ptourn!=null, 'ptourn', function(){
+      bar.appendChild(trigger('Tournament', state.ptourn==null?'All':tournLabel(state.ptourn), state.ptourn!=null, 'ptourn', function(){
         return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
       bar.appendChild(trigger('Side', state.stance==='back'?'Backing him':'Fading him', state.stance!=='back', 'stance', function(){
         return singleMenu([['back','Backing him'],['fade','Fading him']], state.stance, function(v){ state.stance=v; }, false); }));
@@ -23531,6 +23556,267 @@ window.DatabaseTab = (function(){
     var reset=el('button','db-reset','Reset'); reset.onclick=function(){ resetFilters(); render(); };
     bar.appendChild(reset);
   }
+  // ================= tournament alias layer =================
+  // Founder ruling TEN-196 2026-09-13 item 5: "common name displayed; search matches
+  // BOTH names and the city". Source of truth is the hand-authored + machine-checked
+  // `merge-table` document on TEN-196 — 169 of 169 archive strings covered, every
+  // per-string match count re-derived against the deployed artefact.
+  //
+  // THIS IS A DISPLAY AND SEARCH LAYER ONLY. 169 strings in, 169 groups out. No
+  // match moves between events, no yield changes, nothing is merged. The founder
+  // walled grouping off as archive integrity and that is untouched — `filteredRows`
+  // still keys on the stored index, and `state.tournament` still holds the OFFICIAL
+  // archive string, so a bookmark or a stale state survives an alias edit.
+  //
+  // Six strings the merge table marks `M` are DELIBERATELY ABSENT and display their
+  // official name: they are proposals that need the founder's knowledge, not mine,
+  // and an alias is a claim about what an event IS. Absent, they make no claim.
+  // A string that is in neither list is new to the archive and also makes no claim —
+  // it shows its official name and is named once in a console warning. That is the
+  // right failure posture HERE (unlike the Level fold, which drops its control): the
+  // risk of an alias is a WRONG label, and an unlabelled row is merely unaliased.
+  var TOURN_COMMON = {
+    "Masters Cup":"ATP Finals",
+    "Abierto Mexicano":"Acapulco",
+    "Adelaide International":"Adelaide",
+    "Adelaide International 1":"Adelaide",
+    "Adelaide International 2":"Adelaide",
+    "Almaty Open":"Almaty",
+    "Antalya Open":"Antalya",
+    "European Open":"Antwerp",
+    "Hellenic Championship":"Athens",
+    "Atlanta Open":"Atlanta",
+    "Atlanta Tennis Championships":"Atlanta",
+    "BB&T Atlanta Open":"Atlanta",
+    "ASB Classic":"Auckland",
+    "Heineken Open":"Auckland",
+    "Australian Open":"Australian Open",
+    "Thailand Open":"Bangkok",
+    "Srpska Open":"Banja Luka",
+    "Barcelona Open":"Barcelona",
+    "Open Banco Sabadell":"Barcelona",
+    "Swiss Indoors":"Basel",
+    "Nordea Open":"Bastad",
+    "SkiStar Swedish Open":"Bastad",
+    "China Open":"Beijing",
+    "Belgrade Open":"Belgrade",
+    "Serbia Open":"Belgrade",
+    "Claro Open Colombia":"Bogota",
+    "Brisbane International":"Brisbane",
+    "BRD Nastase Tiriac Trophy":"Bucharest",
+    "Open Romania":"Bucharest",
+    "Tiriac Open":"Bucharest",
+    "Gazprom Hungarian Open":"Budapest",
+    "Hungarian Open":"Budapest",
+    "Argentina Open":"Buenos Aires",
+    "Copa Claro":"Buenos Aires",
+    "Copa Telmex":"Buenos Aires",
+    "Canadian Open":"Canada",
+    "Rogers Masters":"Canada",
+    "Chengdu Open":"Chengdu",
+    "Chennai Open":"Chennai",
+    "Western & Southern Financial Group Masters":"Cincinnati",
+    "bett1HULKS Championship":"Cologne",
+    "bett1HULKS Indoors":"Cologne",
+    "Cordoba Open":"Cordoba",
+    "Dallas Open":"Dallas",
+    "Delray Beach Open":"Delray Beach",
+    "Qatar Exxon Mobil Open":"Doha",
+    "Dubai Tennis Championships":"Dubai",
+    "Dusseldorf Open":"Dusseldorf",
+    "Power Horse Cup":"Dusseldorf",
+    "AEGON International":"Eastbourne",
+    "Eastbourne International":"Eastbourne",
+    "Viking International":"Eastbourne",
+    "Estoril Open":"Estoril",
+    "Millenium Estoril Open":"Estoril",
+    "Millennium Estoril Open":"Estoril",
+    "Firenze Open":"Florence",
+    "Geneva Open":"Geneva",
+    "Gijon Open":"Gijon",
+    "Allianz Suisse Open":"Gstaad",
+    "Crédit Agricole Suisse Open Gstaad":"Gstaad",
+    "Suisse Open Gstaad":"Gstaad",
+    "Gerry Weber Open":"Halle",
+    "Halle Open":"Halle",
+    "German Open Tennis Championships":"Hamburg",
+    "German Tennis Championships":"Hamburg",
+    "Hamburg Open":"Hamburg",
+    "bet-at-home Open":"Hamburg",
+    "Hangzhou Open":"Hangzhou",
+    "Hong Kong Tennis Open":"Hong Kong",
+    "U.S. Men's Clay Court Championships":"Houston",
+    "U.S.Men's Clay Court Championships":"Houston",
+    "BNP Paribas Open":"Indian Wells",
+    "Istanbul Open":"Istanbul",
+    "SA Tennis Open":"Johannesburg",
+    "Bet-At-Home Cup":"Kitzbuhel",
+    "Generali Open":"Kitzbuhel",
+    "Malaysian Open":"Kuala Lumpur",
+    "Proton Malaysian Open":"Kuala Lumpur",
+    "Farmers Classic":"Los Angeles",
+    "Abierto Mexicano Mifel":"Los Cabos",
+    "Los Cabos Open":"Los Cabos",
+    "Mifel Open":"Los Cabos",
+    "Lyon Open":"Lyon",
+    "Mutua Madrid Open":"Madrid",
+    "Mutua Madrileña Madrid Open":"Madrid",
+    "Mallorca Championships":"Mallorca",
+    "AnyTech365 Andalucia Open":"Marbella",
+    "Grand Prix Hassan II":"Marrakech",
+    "Open 13":"Marseille",
+    "Great Ocean Road Open":"Melbourne",
+    "Melbourne Summer Set":"Melbourne",
+    "Murray River Open":"Melbourne",
+    "Memphis Open":"Memphis",
+    "Regions Morgan Keegan Championships":"Memphis",
+    "U.S. National Indoor Tennis Championships":"Memphis",
+    "Open de Moselle":"Metz",
+    "Miami Open":"Miami",
+    "Sony Ericsson Open":"Miami",
+    "Monte Carlo Masters":"Monte-Carlo",
+    "Open Sud de France":"Montpellier",
+    "Kremlin Cup":"Moscow",
+    "BMW Open":"Munich",
+    "Napoli Cup":"Naples",
+    "Pilot Pen Tennis":"New Haven",
+    "New York Open":"New York",
+    "Hall of Fame Championships":"Newport",
+    "Open de Nice Côte d’Azur":"Nice",
+    "AEGON Open":"Nottingham",
+    "BNP Paribas Masters":"Paris",
+    "Emilia-Romagna Open":"Parma",
+    "Maharashtra Open":"Pune",
+    "Tata Open":"Pune",
+    "AEGON Championships":"Queen's Club",
+    "Queen's Club Championships":"Queen's Club",
+    "Ecuador Open":"Quito",
+    "Rio Open":"Rio de Janeiro",
+    "French Open":"Roland Garros",
+    "Internazionali BNL d'Italia":"Rome",
+    "ABN AMRO World Tennis Tournament":"Rotterdam",
+    "San Diego Open":"San Diego",
+    "SAP Open":"San Jose",
+    "Chile Open":"Santiago",
+    "Brasil Open":"Sao Paulo",
+    "Forte Village Sardegna Open":"Sardinia",
+    "Sardegna Open":"Sardinia",
+    "Korea Open":"Seoul",
+    "Shanghai Masters":"Shanghai",
+    "Shenzhen Open":"Shenzhen",
+    "Singapore Open":"Singapore",
+    "Garanti Koza Sofia Open":"Sofia",
+    "Sofia Open":"Sofia",
+    "St. Petersburg Open":"St. Petersburg",
+    "Nordic Open":"Stockholm",
+    "Stockholm Open":"Stockholm",
+    "Mercedes Cup":"Stuttgart",
+    "Stuttgart Open":"Stuttgart",
+    "Apia International":"Sydney",
+    "Medibank International":"Sydney",
+    "Sydney International":"Sydney",
+    "Sydney Tennis Classic":"Sydney",
+    "Tel Aviv Open":"Tel Aviv",
+    "Japan Open Tennis Championships":"Tokyo",
+    "Rakuten Japan Open Tennis Championships":"Tokyo",
+    "US Open":"US Open",
+    "ATP Vegeta Croatia Open":"Umag",
+    "Croatia Open":"Umag",
+    "Konzum Croatia Open":"Umag",
+    "Studena Croatia Open":"Umag",
+    "Valencia Open 500":"Valencia",
+    "BA-CA Tennis Trophy":"Vienna",
+    "Erste Bank Open":"Vienna",
+    "Vienna Open":"Vienna",
+    "Citi Open":"Washington",
+    "Legg Mason Classic":"Washington",
+    "Wimbledon":"Wimbledon",
+    "Winston-Salem Open at Wake Forest University":"Winston-Salem",
+    "PBZ Zagreb Indoors":"Zagreb",
+    "Zhuhai Championships":"Zhuhai",
+    "Zhuhai Open":"Zhuhai",
+    "Ricoh Open":"s-Hertogenbosch",
+    "Rosmalen Grass Court Championships":"s-Hertogenbosch",
+    "Topshelf Open":"s-Hertogenbosch",
+    "Unicef Open":"s-Hertogenbosch",
+  };
+  var TOURN_HELD = ["International Championships", "Portugal Open", "Astana Open", "Movistar Open", "VTR Open", "Royal Guard Open Chile"];
+  // City search terms ONLY where the city differs from the common name. Everywhere
+  // else the common name IS the city, so it is already searchable.
+  var TOURN_CITY = {
+    'Canada':['Toronto','Montreal'],
+    "Queen's Club":['London'],
+    'Wimbledon':['London'],
+    'Roland Garros':['Paris'],
+    'Australian Open':['Melbourne'],
+    'US Open':['New York'],
+    'ATP Finals':['Masters Cup','Tour Finals','World Tour Finals'],
+    's-Hertogenbosch':['Den Bosch','Rosmalen'],
+    'Monte-Carlo':['Monaco'],
+    'Indian Wells':['California'],
+    'Vina del Mar':['Chile'],
+    'Los Cabos':['Mexico']
+  };
+  // Diacritic- and punctuation-insensitive, so "Kitzbuhel" finds "Kitzbühel",
+  // "Vina" finds "Viña", and "Queens" finds "Queen's Club".
+  function nrm(s){
+    s=(s==null?'':String(s));
+    if(s.normalize) s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/^ | $/g,'');
+  }
+  var TLAB=null, _aliasWarned=false;
+  function tournLabels(){
+    if(TLAB) return TLAB;
+    var T=M.tournaments, i, t, c;
+    // How many OFFERED strings share each common name. Only those get a season
+    // range, so the 106 unambiguous venues stay clean one-word labels.
+    var shared={};
+    for(i=0;i<T.length;i++){ c=TOURN_COMMON[T[i]]; if(c) shared[c]=(shared[c]||0)+1; }
+    // Season range straight from the archive rows — a live figure, never hard-coded,
+    // so a string that picks up a new season says so the next build.
+    var y0=[], y1=[], rws=DATA.rows;
+    for(i=0;i<rws.length;i++){
+      var ti=rws[i][4], y=yr(rws[i][0]);
+      if(y0[ti]==null || y<y0[ti]) y0[ti]=y;
+      if(y1[ti]==null || y>y1[ti]) y1[ti]=y;
+    }
+    TLAB={lab:[], terms:[], aliased:0, ranged:0};
+    var unknown=[];
+    for(i=0;i<T.length;i++){
+      t=T[i]; c=TOURN_COMMON[t];
+      var terms=[nrm(t)];
+      if(!c){
+        TLAB.lab[i]=t;
+        if(TOURN_HELD.indexOf(t)<0) unknown.push(t);
+      } else {
+        TLAB.aliased++;
+        if(shared[c]>1 && y0[i]!=null){ TLAB.lab[i]=c+' '+y0[i]+'\u2013'+y1[i]; TLAB.ranged++; }
+        else TLAB.lab[i]=c;
+        terms.push(nrm(c));
+        var extra=TOURN_CITY[c];
+        if(extra) for(var k=0;k<extra.length;k++) terms.push(nrm(extra[k]));
+      }
+      TLAB.terms[i]=terms;
+    }
+    if(unknown.length && !_aliasWarned){
+      _aliasWarned=true;
+      console.warn('Database: '+unknown.length+' tournament string(s) have no entry in the alias table and are '+
+        'showing their official archive name: ['+unknown.join(', ')+']. Add them to TOURN_COMMON '+
+        '(TEN-196 item 5, merge-table document) or confirm they should stay unaliased.');
+    }
+    return TLAB;
+  }
+  // Display name for a stored tournament index.
+  function tournLabel(i){ return tournLabels().lab[i]; }
+  function tournLabelOf(name){ var i=M.tournaments.indexOf(name); return i<0 ? name : tournLabel(i); }
+  // Search: official string OR common name OR city, all normalised.
+  function tournHit(i, q){
+    var qs=nrm(q); if(!qs) return true;
+    var t=tournLabels().terms[i];
+    for(var k=0;k<t.length;k++) if(t[k].indexOf(qs)>=0) return true;
+    return false;
+  }
+
   // Right-aligned meta on a tournament search row: the surface the event is played
   // on, per the export README. Events that changed surface show the dominant one
   // with the others counted, rather than a single misleading label.
@@ -23554,7 +23840,7 @@ window.DatabaseTab = (function(){
   // the control entirely rather than offering a set nobody ruled on.
   // Same fold, same dictionary assertion, same fail-closed behaviour as Tour — one
   // definition so the two pickers cannot drift apart.
-  function playerLevels(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS); }
+  function playerLevels(){ return foldedOpts(M.levels, LEVELS_EXPECTED, FOLDED_LEVELS, 'level', 'TEN-196 item 3'); }
   // Scoped to the player AND to the active level: without the level predicate the
   // menu offers events the filter guarantees are empty (measured: Souza J. at Grand
   // Slam was offered all 28 of his tournaments, 24 of them dead).
@@ -23563,8 +23849,8 @@ window.DatabaseTab = (function(){
     var seen={}; playerIndex[state.player].forEach(function(v){
       if(state.plevel!=null && v.lev!==state.plevel) return;
       seen[v.tour]=(seen[v.tour]||0)+1; });
-    return Object.keys(seen).map(Number).sort(function(a,b){ return seen[b]-seen[a] || (M.tournaments[a]<M.tournaments[b]?-1:1); })
-      .map(function(i){ return [i, M.tournaments[i]]; });
+    return Object.keys(seen).map(Number).sort(function(a,b){ return seen[b]-seen[a] || (tournLabel(a)<tournLabel(b)?-1:1); })
+      .map(function(i){ return [i, tournLabel(i)]; });
   }
 
   // ================= render =================
@@ -23709,16 +23995,35 @@ window.DatabaseTab = (function(){
     card.appendChild(el('div','db-subline','Units returned on a flat 1-unit stake, cumulative — below zero is a loss.'));
 
     var ordered=rows.slice().sort(function(a,b){ return a[0]-b[0]; });
-    // Anchor the domain at 1 Jan of the first season so every season tick lands on
-    // its true date and none has to be clamped.
-    var d0=Date.UTC(yr(ordered[0][0]),0,1)/86400000;
-    var d1=dnum(ordered[ordered.length-1][0]), span=(d1-d0)||1;
+    // x is MATCH INDEX, not calendar date — founder ruling TEN-196 2026-09-13 item 2.
+    //
+    // The charts read as "a child's drawing" on the Tournaments tab, and the cause
+    // was measured before anything was changed: the Australian Open curve carries
+    // 2,130 real vertices (one per match), drawn as a plain polyline with no step
+    // function and no smoothing anywhere. But a one-week-a-year event on a CALENDAR
+    // axis puts all 2,130 of them into 53 of the viewBox's 1,000 columns and leaves
+    // 947 empty. The vertical drops were a whole season crushed into ~3px; the long
+    // flat runs were eleven real months in which that event did not play. Median
+    // across 141 events: 23 occupied columns, 253px longest flat run.
+    //
+    // Match index draws the SAME points in the SAME order and invents nothing — it
+    // only removes the dead air. It also FIXES conflict C3 rather than regressing
+    // it: with season ticks at match-index positions the book seam lands exactly on
+    // the season tick it marks (0.0000pp, against 0.05pp on the calendar axis),
+    // because the first Bet365 row and the first 2026 row are the same row.
+    //
+    // The honest cost, and why the caption had to change: the axis is no longer
+    // linear in time. A busier season takes more width and an idle stretch takes
+    // none. It is captioned "Match index (chronological)" — the export's own wording
+    // on its other profit chart — and must never be captioned "Season" again while
+    // it is an index axis.
     var favV=[], dogV=[], xs=[], cf=0, cd=0, seamX=null;
+    var den=(ordered.length-1)||1;
     for(var i=0;i<ordered.length;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
-      var x=(dnum(r[0])-d0)/span;
+      var x=i/den;
       favV.push(cf); dogV.push(cd); xs.push(x);
       if(seamX===null && r[8]===1) seamX=x;
     }
@@ -23742,7 +24047,7 @@ window.DatabaseTab = (function(){
     for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
     for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtInt(v)+'u'});
 
-    var ticks=seasonTicks(yr(ordered[0][0]), yr(ordered[ordered.length-1][0]), d0, span);
+    var ticks=seasonTicks(ordered, function(r){ return yr(r[0]); }, [2,1]);
 
     var plot=el('div','db-plot');
     var yax=el('div','db-yaxis');
@@ -23751,7 +24056,7 @@ window.DatabaseTab = (function(){
 
     var area=el('div','db-plotarea');
     var inner=el('div','db-plotinner');
-    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by season">';
+    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
     ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     s+='<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
@@ -23773,21 +24078,29 @@ window.DatabaseTab = (function(){
     var xax=el('div','db-xaxis');
     ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
     card.appendChild(xax);
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Match index (chronological) \u00b7 ticks mark season starts</span>'));
     if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change at '+M.seamSeason+' ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
-  // Season ticks at their exact position in the date domain — no clamping, so a
-  // label never sits away from the date it marks.
-  function seasonTicks(y0, y1, d0, span){
+  // Season ticks on the match-index axis: each label sits at the index of that
+  // season's FIRST match, so it marks the exact point the season begins — there is
+  // no rounding and nothing to clamp.
+  //
+  // Only seasons that actually hold a match get a tick. On a calendar axis an empty
+  // season still occupied width and still drew a label; on an index axis it occupies
+  // none, and labelling it would put two labels on one pixel claiming different
+  // things. `ordered` must already be sorted ascending.
+  //
+  // `steps` is tried in order and the first that yields >=3 ticks wins, so a short
+  // event still gets a readable ladder instead of one lonely label.
+  function seasonTicks(ordered, yearOf, steps){
+    var n=ordered.length, den=(n-1)||1, i, y;
+    var years=[], firstIx={};
+    for(i=0;i<n;i++){ y=yearOf(ordered[i]); if(firstIx[y]==null){ firstIx[y]=i; years.push(y); } }
     var out=[];
-    [2,1].some(function(stp){
+    (steps||[2,1]).some(function(stp){
       out=[];
-      for(var y=y0; y<=y1; y+=stp){
-        var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
-        if(f<0 || f>1) continue;
-        out.push({ label:String(y), x:f });
-      }
+      for(var k=0;k<years.length;k+=stp) out.push({ label:String(years[k]), x:firstIx[years[k]]/den });
       return out.length>=3;
     });
     return out;
@@ -24020,30 +24333,42 @@ window.DatabaseTab = (function(){
 
   function playerCharts(recs, favRecs, dogRecs, fading){
     var card=el('div','db-card');
-    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale'));
+    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale · match index (chronological), ticks mark season starts'));
     var suffix = fading ? ', opponent backed' : '';
     var series=[
       {title:'All matches'+suffix, recs:recs, col:COL_FAV},
       {title:'When favourite'+suffix, recs:favRecs, col:COL_FAV},
       {title:'When underdog'+suffix, recs:dogRecs, col:COL_DOG}
     ];
-    var anchorHi=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
-    var minD=null;
-    series.forEach(function(s){ s.recs.forEach(function(v){ var d=dnum(v.d); if(minD===null||d<minD) minD=d; }); });
-    if(minD===null){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
-    var startYear=new Date(minD*86400000).getUTCFullYear();
-    var d0=Date.UTC(startYear,0,1)/86400000, d1=Math.max(anchorHi, minD), span=(d1-d0)||1;
+    // Same match-index basis as the Tour and Tournaments charts (founder ruling
+    // TEN-196 2026-09-13 item 2) — one x basis for every chart on the page, because
+    // two bases on one page is worse than either.
+    //
+    // The domain is the ALL-matches series' index, NOT each panel's own. The card
+    // says "shared scale" and that has to keep meaning what it says: 50% across the
+    // Favourite panel must be the same match as 50% across the Underdog panel. The
+    // sub-series are `recs.filter(...)`, i.e. the SAME objects, so each one's
+    // position in the base is exact — nothing is interpolated or matched by value.
+    var base=series[0].recs.slice().sort(function(a,b){ return a.d-b.d; });
+    if(!base.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
+    var bden=(base.length-1)||1, pos=new Map();
+    base.forEach(function(v,i){ pos.set(v,i); });
 
+    var orphan=0;
     series.forEach(function(s){
       var ordered=s.recs.slice().sort(function(a,b){ return a.d-b.d; });
       var xs=[], vals=[], c=0;
       for(var i=0;i<ordered.length;i++){
         var v=ordered[i], price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;
         c += won ? (price-1) : -1;
-        xs.push((dnum(v.d)-d0)/span); vals.push(c);
+        var ix=pos.get(v);
+        if(ix===undefined){ orphan++; ix=i; }   // cannot happen while the sub-series are filters of the base
+        xs.push(ix/bden); vals.push(c);
       }
       s.xs=xs; s.vals=vals; s.end=vals.length?vals[vals.length-1]:null;
     });
+    if(orphan) console.warn('Database: '+orphan+' player-chart record(s) are not in the all-matches series; '+
+      'the sub-panels are no longer on a shared x domain. The sub-series must stay filters of `recs`.');
     var all=series.reduce(function(a,s){ return a.concat(s.vals); },[]);
     if(!all.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
@@ -24055,14 +24380,18 @@ window.DatabaseTab = (function(){
     function Y(v){ return ((hi-v)/(hi-lo))*PH; }
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step) grid.push({y:Y(v), label: v===0?'0':(v+'u')});
 
-    card.appendChild(panelFor(series[0], grid, Y, PH, d0, span, 300, 2, true));
+    // One tick ladder per panel size, both off the SAME base series, so the season
+    // lines on the small panels sit at the same x as on the big one.
+    var tMain=seasonTicks(base, function(v){ return yr(v.d); }, [2,1]);
+    var tSub=seasonTicks(base, function(v){ return yr(v.d); }, [4,2,1]);
+    card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 300, true));
     var pair=el('div','db-pcpair');
-    pair.appendChild(panelFor(series[1], grid, Y, PH, d0, span, 190, 4, false));
-    pair.appendChild(panelFor(series[2], grid, Y, PH, d0, span, 190, 4, false));
+    pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 190, false));
+    pair.appendChild(panelFor(series[2], grid, Y, PH, tSub, 190, false));
     card.appendChild(pair);
     return card;
   }
-  function panelFor(s, grid, Y, PH, d0, span, hpx, tickStep, isMain){
+  function panelFor(s, grid, Y, PH, ticks, hpx, isMain){
     var p=el('div', isMain?'db-pcmain':null);
     var head=el('div','db-pchead');
     var endTxt = s.end==null ? '—' : ((s.end>0?'+':'')+s.end.toFixed(1)+'u');
@@ -24074,13 +24403,7 @@ window.DatabaseTab = (function(){
     grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
     plot.appendChild(ax);
     var area=el('div','db-pcarea'); area.style.height=hpx+'px';
-    var y0=new Date(d0*86400000).getUTCFullYear(), y1=new Date((d0+span)*86400000).getUTCFullYear();
-    var ticks=[];
-    for(var y=y0; y<=y1; y+=tickStep){
-      var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
-      if(f>=-0.02 && f<=1.02) ticks.push({label:String(y), x:Math.min(1,Math.max(0,f))});
-    }
-    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit">';
+    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by match index">';
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     // Vertical season gridlines on the player charts — founder ruling TEN-196
     // 2026-09-13 ("add them — the export wins"). One line per season tick, the
