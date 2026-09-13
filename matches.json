@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.69,
-      "p2": 2.28,
-      "bookmaker": "Pncl"
+      "p1": 1.66,
+      "p2": 2.3,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.75,
-        "bookmaker": "1xBet"
+        "price": 1.67,
+        "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 2.3,
-        "bookmaker": "Betano"
+        "price": 2.39,
+        "bookmaker": "1xBet"
       }
     },
     "tournamentRound": "ATP US Open - Final",
@@ -2644,6 +2644,14 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
+    "openingOdds": {
+      "p1": 1.66,
+      "p2": 2.3,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-13T16:00:21.851Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
     "oddsMovement": null
   },
   {
