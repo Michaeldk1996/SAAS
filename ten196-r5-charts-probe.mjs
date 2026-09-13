@@ -907,6 +907,81 @@ function client(wsUrl) {
     }
   } else { ok('Monte Carlo Masters subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
 
+  // ══ FOUNDER RULING: smoothing ships UNSTATED ═════════════════════════════════
+  // Gate a1f6bbfc, 2026-09-13, option `no-caption-confirmed`. The founder was shown
+  // the conflict explicitly — guarded smoothing averages ~95% of interior vertices,
+  // against his own earlier "it must be stated on the page… don't ship it unstated"
+  // — and ruled the caption OFF anyway. That overrides the earlier instruction, and
+  // it is the kind of ruling a later agent "helpfully" undoes, so it is locked here.
+  //
+  // THE FIRST VERSION OF THIS TEST WAS VACUOUS AND MUTATION FOUND IT. It read
+  // `${Q}.db-card` — the FIRST `.db-card` in the panel, which is the BAND TABLE
+  // (716 chars, no plot), not the chart. Its "anchor" then came from a *different*
+  // element (`.db-xcap` queried off the document), so the pair proved nothing about
+  // the text actually being scanned: injecting the real caption into the chart card
+  // scored a clean 149/149. Anchor and negative must be ONE element.
+  //
+  // Now: the scope is the chart card SELECTED BY CONTAINING THE PLOT, the anchor is
+  // that same card's own x-caption read from inside it, and the negative runs over
+  // that same card's text — plus a second, wider pass across ALL THREE TABS, each
+  // with its own anchor.
+  console.log('\n── founder ruling: smoothing is unstated (gate a1f6bbfc) ──');
+  const capTxt = await ev(`(function(){
+    var cards=[].slice.call(document.querySelectorAll('${Q}.db-card'));
+    var card=cards.filter(function(c){return !!c.querySelector('.db-plotarea');})[0];
+    if(!card) return {error:'no chart card (none of '+cards.length+' .db-card holds a .db-plotarea)'};
+    var xc=card.querySelector('.db-xcap');
+    return {txt:card.innerText||'', len:(card.innerText||'').length,
+            xcap:xc?(xc.textContent||''):'(no .db-xcap INSIDE the chart card)',
+            svgs:card.querySelectorAll('.db-plotarea svg').length};
+  })()`);
+  if (capTxt.error) {
+    ok('chart card located for the caption ruling', false, capTxt.error, 'the .db-card holding .db-plotarea');
+    ok('(chart-card caption scan did not run)', false, '-', '-');
+  } else {
+    ok('ANCHOR: the scanned element IS the chart card — its own .db-xcap and a painted svg are inside it',
+      /Match index \(chronological\)/.test(capTxt.xcap) && capTxt.svgs >= 1 && capTxt.len > 200,
+      [capTxt.xcap.slice(0, 44), capTxt.svgs, capTxt.len], ['Match index (chronological)…', '>=1 svg', '>200 chars']);
+    ok('NO smoothing caption on the chart card — founder ruled it unstated',
+      !/smooth|averaged|moving average/i.test(capTxt.txt),
+      (capTxt.txt.match(/.{0,40}(smooth|averaged|moving average).{0,40}/i) || ['(none)'])[0].trim(), '(none)');
+  }
+
+  // The card pass alone is NOT sufficient, and a mutant proves it: a caption appended
+  // to the reconciliation footnote — where a "how this is built" note would most
+  // naturally go — sits OUTSIDE the chart card, and the card pass scores clean on it.
+  // This pass fails 1 on it.
+  //
+  // (A first attempt at that mutant appended to the footnote element BEFORE the code
+  // assigns its `innerHTML`, so the page wiped it and nothing reached the DOM. It read
+  // as "the wider pass missed it" and I nearly wrote that down as a finding. A mutant
+  // that does not reach the DOM measures nothing — confirm the mutation is PRESENT in
+  // what the browser painted before drawing any conclusion from its score, in either
+  // direction.)
+  //
+  // All three tabs, so the scan does not depend on whichever tab the probe happens to
+  // be sitting on when it reaches this line (Tournaments, left over from the Monte
+  // Carlo section above). The footnote renders on all three, so that mutant is caught
+  // on any of them; the Players tab carries its own copy and its own panels, and a
+  // caption placed there is reachable only here.
+  const TABS = ['tour', 'tournaments', 'players'];
+  const scans = [];
+  for (const t of TABS) {
+    await ev(`(function(){var b=document.querySelector('#dbViewTabs [data-dbview="${t}"]'); if(b) b.click();})()`);
+    await sleep(1100);
+    scans.push(await ev(`(function(){
+      var p=document.querySelector('[data-page="database"]');
+      return {tab:'${t}', txt:p?(p.innerText||''):'', len:p?(p.innerText||'').length:0};
+    })()`));
+  }
+  const thin = scans.filter((s) => s.len < 500).map((s) => s.tab);
+  ok('ANCHOR: all three Database tabs were driven and each painted real content',
+    scans.length === 3 && thin.length === 0, scans.map((s) => `${s.tab}:${s.len}`).join(' '), 'three tabs, each >500 chars');
+  const hits = scans.map((s) => [s.tab, (s.txt.match(/.{0,40}(smooth|averaged|moving average).{0,40}/i) || [null])[0]])
+    .filter(([, h]) => h);
+  ok('NO smoothing caption anywhere on ANY Database tab — founder ruled it unstated',
+    hits.length === 0, hits.length ? hits.map(([t, h]) => `${t}: ${h.trim()}`) : '(none on tour/tournaments/players)', '(none)');
+
   // ══ console cleanliness ══════════════════════════════════════════════════════
   console.log('\n── console ──');
   const real = errs.filter((e) => !/read only property 'BSP'/.test(e));
@@ -916,7 +991,7 @@ function client(wsUrl) {
   // run: renaming `.db-prow` (a plausible refactor) made it print "94 passed, 0 failed,
   // exit 0" while silently dropping the 33 assertions its own header calls load-bearing
   // — every non-vacuous subject. A count that must be hit cannot be skipped past.
-  const EXPECTED = 147;
+  const EXPECTED = 151;
   const total = PASS + FAILS.length;
   if (total !== EXPECTED) {
     FAILS.push(`assertion COUNT is ${total}, expected ${EXPECTED} — a section was skipped`);
