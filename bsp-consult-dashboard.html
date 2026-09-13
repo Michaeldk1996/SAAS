@@ -24246,6 +24246,33 @@ window.DatabaseTab = (function(){
     });
     return out;
   }
+  // Season ticks on a CALENDAR axis — the Players panels only. `seasonTicks` above
+  // is the match-index ladder used by Tour and Tournaments; the two bases coexist on
+  // the page by founder ruling (TEN-196 2026-09-13 round 3), so they are two
+  // functions rather than one with a mode flag.
+  //
+  // Same `steps` contract as `seasonTicks`: the first entry yielding >=3 ticks wins,
+  // so a short career gets every season labelled rather than every other one.
+  //
+  // Nothing is clamped, and nothing needs to be: callers pass `d0` = 1 Jan of the
+  // first season in the domain, so the first tick lands at exactly x=0, and the last
+  // season's 1 Jan cannot exceed d0+span. A tick outside [0,1] is dropped rather
+  // than pulled to the edge — a clamped tick is a label pointing at a date it does
+  // not mark, which is the C3 defect.
+  function calendarTicks(d0, span, steps){
+    var y0=new Date(d0*86400000).getUTCFullYear(),
+        y1=new Date((d0+span)*86400000).getUTCFullYear(), out=[];
+    (steps||[2,1]).some(function(stp){
+      out=[];
+      for(var y=y0; y<=y1; y+=stp){
+        var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
+        if(f<0 || f>1) continue;
+        out.push({ label:String(y), x:f });
+      }
+      return out.length>=3;
+    });
+    return out;
+  }
   // Down-sample to the EXPORT's own chart vertex budget, WITHOUT losing the
   // envelope (founder ruling TEN-196 2026-09-13 item 1, then its clean-context
   // review the same day). `Database.dc.html` builds each curve with `curve(n, …)`
@@ -24474,42 +24501,57 @@ window.DatabaseTab = (function(){
 
   function playerCharts(recs, favRecs, dogRecs, fading){
     var card=el('div','db-card');
-    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale · match index (chronological), ticks mark season starts'));
+    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale · season axis, ticks mark season starts'));
     var suffix = fading ? ', opponent backed' : '';
     var series=[
       {title:'All matches'+suffix, recs:recs, col:COL_FAV},
       {title:'When favourite'+suffix, recs:favRecs, col:COL_FAV},
       {title:'When underdog'+suffix, recs:dogRecs, col:COL_DOG}
     ];
-    // Same match-index basis as the Tour and Tournaments charts (founder ruling
-    // TEN-196 2026-09-13 item 2) — one x basis for every chart on the page, because
-    // two bases on one page is worse than either.
+    // x is the CALENDAR DATE on these panels — founder ruling TEN-196 2026-09-13
+    // round 3 scope call, which OVERTURNS the one-basis-for-the-whole-page position
+    // I shipped and asked about. Tour and Tournaments keep the match index; the
+    // Players panels go back to linear time.
     //
-    // The domain is the ALL-matches series' index, NOT each panel's own. The card
-    // says "shared scale" and that has to keep meaning what it says: 50% across the
-    // Favourite panel must be the same match as 50% across the Underdog panel. The
-    // sub-series are `recs.filter(...)`, i.e. the SAME objects, so each one's
-    // position in the base is exact — nothing is interpolated or matched by value.
-    var base=series[0].recs.slice().sort(function(a,b){ return a.d-b.d; });
-    if(!base.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
-    var bden=(base.length-1)||1, pos=new Map();
-    base.forEach(function(v,i){ pos.set(v,i); });
+    // The reason the two tabs differ is that the defect match index exists to fix is
+    // not present here. A one-week-a-year event crams 2,130 points into 58 of 1,000
+    // columns and starves the sampler; a player plays year-round, so a Players panel
+    // has little dead air to remove. What linear time buys in exchange is the thing
+    // the index axis cost: the season gridlines ruled in last round are EVENLY
+    // SPACED again, because one year is one year of width regardless of how busy it
+    // was. On the index axis an idle stretch occupied no width and a heavy season
+    // occupied more, so those gridlines bunched.
+    //
+    // The domain is shared by construction: all three panels are laid out against
+    // the SAME `d0`/`span`, so 50% across the Favourite panel is the same date as
+    // 50% across the Underdog panel, and the card's "shared scale" keeps meaning
+    // what it says. (The index basis had to map each record through the base
+    // series to achieve that; a date needs no such lookup, so the orphan guard that
+    // went with it is gone.)
+    //
+    // `d0` is 1 Jan of the first season with a match — a SEASON BOUNDARY, not the
+    // first match date. That is the C3 fix and it must stay: anchoring the domain at
+    // the first match and clamping the first tick put the "2010" label 4.39pp of
+    // plot width from the date it marks. `d1` is the archive's last date rather than
+    // the player's, so a retired player's curve ends where he stopped instead of
+    // being stretched to the full width.
+    var anchorHi=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
+    var minD=null;
+    series[0].recs.forEach(function(v){ var d=dnum(v.d); if(minD===null||d<minD) minD=d; });
+    if(minD===null){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
+    var d0=Date.UTC(new Date(minD*86400000).getUTCFullYear(),0,1)/86400000;
+    var span=(Math.max(anchorHi, minD)-d0)||1;
 
-    var orphan=0;
     series.forEach(function(s){
       var ordered=s.recs.slice().sort(function(a,b){ return a.d-b.d; });
       var xs=[], vals=[], c=0;
       for(var i=0;i<ordered.length;i++){
         var v=ordered[i], price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;
         c += won ? (price-1) : -1;
-        var ix=pos.get(v);
-        if(ix===undefined){ orphan++; ix=i; }   // cannot happen while the sub-series are filters of the base
-        xs.push(ix/bden); vals.push(c);
+        xs.push((dnum(v.d)-d0)/span); vals.push(c);
       }
       s.xs=xs; s.vals=vals; s.end=vals.length?vals[vals.length-1]:null;
     });
-    if(orphan) console.warn('Database: '+orphan+' player-chart record(s) are not in the all-matches series; '+
-      'the sub-panels are no longer on a shared x domain. The sub-series must stay filters of `recs`.');
     var all=series.reduce(function(a,s){ return a.concat(s.vals); },[]);
     if(!all.length){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
@@ -24521,10 +24563,10 @@ window.DatabaseTab = (function(){
     function Y(v){ return ((hi-v)/(hi-lo))*PH; }
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step) grid.push({y:Y(v), label: v===0?'0':(v+'u')});
 
-    // One tick ladder per panel size, both off the SAME base series, so the season
+    // One tick ladder per panel size, both off the SAME d0/span, so the season
     // lines on the small panels sit at the same x as on the big one.
-    var tMain=seasonTicks(base, function(v){ return yr(v.d); }, [2,1]);
-    var tSub=seasonTicks(base, function(v){ return yr(v.d); }, [4,2,1]);
+    var tMain=calendarTicks(d0, span, [2,1]);
+    var tSub=calendarTicks(d0, span, [4,2,1]);
     card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 300, true));
     var pair=el('div','db-pcpair');
     pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 190, false));
@@ -24544,7 +24586,7 @@ window.DatabaseTab = (function(){
     grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
     plot.appendChild(ax);
     var area=el('div','db-pcarea'); area.style.height=hpx+'px';
-    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by match index">';
+    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by date, ticks mark season starts">';
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     // Vertical season gridlines on the player charts — founder ruling TEN-196
     // 2026-09-13 ("add them — the export wins"). One line per season tick, the
