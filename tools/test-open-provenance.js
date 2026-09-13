@@ -320,5 +320,69 @@ t('the fallback log reports both counters', () => {
   assert.ok(/0 carried vendor pin\(s\) held/.test(line), line);
 });
 
+// ---------------------------------------------------------------------------
+// TEN-198 close-out — NO RETROACTIVE BACKFILL (founder ruling 2026-09-13,
+// gate b2d536ed). Asked whether to import the one evidenced bet365 sighting for
+// Zverev-Shelton (1 of 42 collector polls, 2026-09-12T16:10:21.048Z, 1.66/2.30)
+// he chose A: leave it dashed. "The fix is forward-looking and that is all it
+// claims." So an OPEN may only ever be an observation THIS pipeline's own live
+// poll made. The 11/11 coverage figure was measured by REPLAYING the TEN-164
+// collector archive (/Users/Michael/ten164-odds-probe, outside the repo) — that
+// replay is a measurement artefact and must never become a pipeline input. The
+// obvious "improvement" next month is to wire it in; this is the tripwire.
+// ---------------------------------------------------------------------------
+console.log('\nTEN-198 no retroactive backfill (founder ruling 2026-09-13, gate b2d536ed)');
+
+t('a sighting our own live poll did not make mints nothing', () => {
+  // Everything a replay/backfill would plausibly hang the value off — but no
+  // apiTennisBet365, because no live poll of this run saw bet365.
+  const m = noMovement({
+    collectorSighting:      { ...SIGHT },
+    apiTennisBet365History: [{ ...SIGHT }],
+    vendorOpenBackfill:     { ...SIGHT },
+  });
+  runBlock({ matches: [m] });
+  assert.ok(!m.openingOdds,
+    'the OPEN may only come from the live carrier — no backfill field mints one');
+});
+
+t('the live get_odds call is the ONLY writer of the sighting carrier', () => {
+  // A third write site is by definition a new provenance path for a published
+  // OPEN. If you are adding one, you are re-opening gate b2d536ed: take it to
+  // the founder rather than deleting this assertion.
+  const writes = lines
+    .map((l, i) => ({ n: i + 1, text: l.trim() }))
+    .filter(o => /\bapiTennisBet365\s*=/.test(o.text));
+  assert.strictEqual(writes.length, 2,
+    `expected exactly 2 carrier write sites, found ${writes.length}:\n` +
+    writes.map(o => `  L${o.n}: ${o.text}`).join('\n'));
+  for (const o of writes) {
+    assert.ok(/^if \((pastOdds|upOdds)\.bet365\) match\.apiTennisBet365 = \1\.bet365;$/.test(o.text),
+      `L${o.n} does not assign straight from a live fetchApiTennisMatchOdds() result: ${o.text}`);
+  }
+  // ...and both of those variables must actually be that live call, not a re-bind.
+  for (const v of ['pastOdds', 'upOdds']) {
+    const decl = lines.filter(l => new RegExp(`(const|let|var)\\s+${v}\\b|\\b${v}\\s*\\]`).test(l));
+    assert.ok(decl.length > 0, `no declaration found for ${v}`);
+    const src = lines.join('\n');
+    assert.ok(new RegExp(`${v}\\s*\\]?\\s*=?[\\s\\S]{0,200}?fetchApiTennisMatchOdds\\(`).test(src),
+      `${v} is not bound to a live fetchApiTennisMatchOdds() call`);
+  }
+});
+
+t('the pipeline reads no out-of-repo collector or replay artefact', () => {
+  const src = lines.join('\n');
+  for (const needle of ['ten164-odds-probe', 'collector.mjs', 'collector.log', '.ten198-probe']) {
+    assert.ok(!src.includes(needle),
+      `bsp-pipeline.js references ${needle} — a measurement artefact is not a feed`);
+  }
+  // No open may be built from a file read at all: the two legitimate stored
+  // sources (odds-archive/, the previous matches.json) reach the block as
+  // archiveOpens/priorOdds, both passed in by runPipeline, not read here.
+  const block = BLOCK;
+  assert.ok(!/readFileSync|readFile\(|require\(/.test(block),
+    'the OPEN block must not read the filesystem — its inputs are passed in');
+});
+
 console.log(`\n${pass} passed, ${fail} failed.`);
 process.exit(fail ? 1 : 0);
