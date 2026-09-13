@@ -925,23 +925,60 @@ function client(wsUrl) {
   // that same card's own x-caption read from inside it, and the negative runs over
   // that same card's text — plus a second, wider pass across ALL THREE TABS, each
   // with its own anchor.
+  //
+  // AND THE WORD MATCH IS NOT THE LOCK. A clean-context review mutation-tested the
+  // first version of this section and found it word-specific: the drafted caption
+  // ("Line smoothed for display…") failed 2 as intended, but
+  // "Line SIMPLIFIED for display; peaks and troughs are exact archive figures."
+  // scored a clean pass. A later run restoring a caption under the founder's earlier
+  // "don't ship it unstated" would not have to reach for any of those three word
+  // stems, so the ruling could be reversed while the probe stayed green — the exact
+  // undo this section exists to prevent. The lock is therefore STRUCTURAL: the chart
+  // card's element inventory is pinned, so ANY added caption element fails on any
+  // wording, and the two static copy strings are pinned exactly, so a caption merged
+  // into existing copy fails too. The word scan stays as a cheap complement that also
+  // covers the footnote and the other tabs.
+  //
+  // A `display:none` caption passes, and that is correct rather than a hole: `innerText`
+  // skips it, and an invisible caption is not "stated on the page" in either direction.
   console.log('\n── founder ruling: smoothing is unstated (gate a1f6bbfc) ──');
+  // db-seamfoot is CONDITIONAL (`if(seam && seamX!=null)`), so the inventory is
+  // asserted as "nothing outside this set, and these four always present" rather than
+  // as an exact ordered list, which would fail on any event that predates the book seam.
+  const CARD_ALLOWED = ['db-charthead', 'db-subline', 'db-plot', 'db-xaxis', 'db-xcap', 'db-seamfoot'];
+  const CARD_REQUIRED = ['db-charthead', 'db-subline', 'db-plot', 'db-xcap'];
+  const SUB_COPY = 'Units returned on a flat 1-unit stake, cumulative — below zero is a loss.';
+  const HEAD_COPY = 'Cumulative profit, flat 1u\nFavourites\nUnderdogs';
   const capTxt = await ev(`(function(){
     var cards=[].slice.call(document.querySelectorAll('${Q}.db-card'));
     var card=cards.filter(function(c){return !!c.querySelector('.db-plotarea');})[0];
     if(!card) return {error:'no chart card (none of '+cards.length+' .db-card holds a .db-plotarea)'};
-    var xc=card.querySelector('.db-xcap');
+    var xc=card.querySelector('.db-xcap'), hd=card.querySelector('.db-charthead'), sb=card.querySelector('.db-subline');
     return {txt:card.innerText||'', len:(card.innerText||'').length,
             xcap:xc?(xc.textContent||''):'(no .db-xcap INSIDE the chart card)',
-            svgs:card.querySelectorAll('.db-plotarea svg').length};
+            svgs:card.querySelectorAll('.db-plotarea svg').length,
+            kids:[].slice.call(card.children).map(function(n){return String(n.className||'(no class)');}),
+            headKids:hd?[].slice.call(hd.children).map(function(n){return n.tagName.toLowerCase()+'.'+String(n.className||'');}):null,
+            headTxt:hd?(hd.innerText||''):null, subTxt:sb?(sb.innerText||''):null};
   })()`);
   if (capTxt.error) {
     ok('chart card located for the caption ruling', false, capTxt.error, 'the .db-card holding .db-plotarea');
-    ok('(chart-card caption scan did not run)', false, '-', '-');
+    ok('(chart-card structural lock did not run)', false, '-', '-');
+    ok('(chart-card copy lock did not run)', false, '-', '-');
+    ok('(chart-card word scan did not run)', false, '-', '-');
   } else {
     ok('ANCHOR: the scanned element IS the chart card — its own .db-xcap and a painted svg are inside it',
       /Match index \(chronological\)/.test(capTxt.xcap) && capTxt.svgs >= 1 && capTxt.len > 200,
       [capTxt.xcap.slice(0, 44), capTxt.svgs, capTxt.len], ['Match index (chronological)…', '>=1 svg', '>200 chars']);
+    const stray = capTxt.kids.filter((c) => !CARD_ALLOWED.includes(c));
+    const missing = CARD_REQUIRED.filter((c) => !capTxt.kids.includes(c));
+    const headStray = (capTxt.headKids || []).filter((c) => c !== 'h3.' && c !== 'div.db-legend');
+    ok('STRUCTURAL LOCK: the chart card carries NO element beyond its pinned inventory — any caption, any wording',
+      stray.length === 0 && missing.length === 0 && headStray.length === 0,
+      { stray, missing, headStray, kids: capTxt.kids }, 'nothing outside ' + CARD_ALLOWED.join('/'));
+    ok('COPY LOCK: the head and subline read EXACTLY their pinned strings (a caption merged into existing copy fails here)',
+      capTxt.headTxt === HEAD_COPY && capTxt.subTxt === SUB_COPY,
+      [JSON.stringify(capTxt.headTxt), JSON.stringify(capTxt.subTxt)], [JSON.stringify(HEAD_COPY), JSON.stringify(SUB_COPY)]);
     ok('NO smoothing caption on the chart card — founder ruled it unstated',
       !/smooth|averaged|moving average/i.test(capTxt.txt),
       (capTxt.txt.match(/.{0,40}(smooth|averaged|moving average).{0,40}/i) || ['(none)'])[0].trim(), '(none)');
@@ -991,7 +1028,7 @@ function client(wsUrl) {
   // run: renaming `.db-prow` (a plausible refactor) made it print "94 passed, 0 failed,
   // exit 0" while silently dropping the 33 assertions its own header calls load-bearing
   // — every non-vacuous subject. A count that must be hit cannot be skipped past.
-  const EXPECTED = 151;
+  const EXPECTED = 153;
   const total = PASS + FAILS.length;
   if (total !== EXPECTED) {
     FAILS.push(`assertion COUNT is ${total}, expected ${EXPECTED} — a section was skipped`);

@@ -23238,16 +23238,38 @@ window.DatabaseTab = (function(){
   // FOUNDER RULING, TEN-196 round 5, gate e8453243 (2026-09-13): SMOOTH_MODE='guarded'.
   // He was given all four options with the measurements below and chose the guarded one.
   //
-  // Why this is not a presentation detail. Measured over 2,700 series (52 Tour views,
-  // 338 tournament series, 2,310 player series) with a parser that imports nothing
+  // Why this is not a presentation detail. Measured with a parser that imports nothing
   // from this file. Two different metrics, and they must not be confused — an earlier
-  // draft of this comment ran them together:
+  // draft of this comment ran them together.
   //
-  //   SIGN CHANGES. The raw series hold 11,825 between them. Down-sampling alone, as
-  //   shipped today, already loses 1,330 (11.2%) — a 260-vertex budget cannot hold
-  //   every oscillation that straddles zero, and that was always true. The spec's
-  //   plain +/-3 average loses 7,520 (63.6%); sample-then-smooth loses 8,040 (68.0%).
-  //   'guarded' loses 1,330 — EXACTLY the same set as today, nothing additional.
+  // THE ABSOLUTE COUNTS BELOW ARE NOT REPRODUCIBLE FROM THE UNIVERSE THEY WERE ONCE
+  // ATTRIBUTED TO, and the wrong reading to take from that is that the argument is
+  // soft. A clean-context review rebuilt the sweep from the artefact and could not
+  // construct "2,700 series (52 Tour views, 338 tournament series, 2,310 player
+  // series)": 338 tournament series reproduces exactly (169 events x 2 sides), but the
+  // Tour tab's own controls give 17 views = 34 series, not 52, and 1,129 players x 3
+  // panels is 2,877 non-empty series, not 2,310 (no min-length threshold yields it).
+  // Its own universe is 3,249 series, on which it measures raw sign changes 11,400,
+  // sampler-only loss 1,374 (12.1%), guarded loss 1,374 (12.1%), plain average 7,242
+  // (63.5%), sample-first 7,751 (68.0%). DIFFERENT TOTALS, SAME RATIOS, and the
+  // erased-series figure for plain averaging is 161/58 on the nose either way.
+  // Quote the reproducible universe, not the older totals.
+  //
+  //   SIGN CHANGES. Over 3,249 series the raw curves hold 11,400 between them.
+  //   Down-sampling alone, as shipped today, already loses 1,374 (12.1%) — a
+  //   260-vertex budget cannot hold every oscillation that straddles zero, and that
+  //   was always true. The spec's plain +/-3 average loses 7,242 (63.5%);
+  //   sample-then-smooth loses 7,751 (68.0%). 'guarded' loses 1,374 — EXACTLY the
+  //   same set as today, nothing additional.
+  //
+  //   AND THAT EQUALITY IS BY CONSTRUCTION, NOT LUCK — the strongest form of the
+  //   argument, and it was being undersold as a measurement. The guard forces the raw
+  //   value at every vertex where sign(pv[i]) !== sign(sm[i]); non-forced vertices
+  //   keep their sign, forced ones are exact. So the painted SIGN SEQUENCE is
+  //   identical to the sampled sign sequence for any input, measured or not.
+  //   Independently verified on all 3,249 series: 0 mismatches, 0 extremum misses,
+  //   worst peak loss 0.0000u, and 0 vertices outside the raw convex hull — so
+  //   nothing can escape the gridline ladder, which is built from the true extrema.
   //
   //   SERIES THAT STOP SHOWING ANY TIME IN PROFIT AT ALL. Today 0. Plain average 161
   //   (plus 58 that stop showing any time in loss); sample-then-smooth 171 / 64;
@@ -24798,12 +24820,39 @@ window.DatabaseTab = (function(){
     //
     // PLAYER_ZERO_IN_DOMAIN=true forces 0 into the domain; re-measured, that takes
     // 204 to 0, so every panel now shows the break-even line its own caption refers
-    // to. The cost, accepted in the ruling: a never-in-profit player's curve sits in
-    // the lower part of his panel instead of filling it.
+    // to.
+    //
+    // THE COST IS LARGER THAN THIS COMMENT USED TO SAY, AND IT NAMED THE WRONG HALF.
+    // It read "a never-in-profit player's curve sits in the lower part of his panel
+    // instead of filling it", which is the mild case. Measured over all 1,129 panels
+    // by a clean-context review: of the 204 that move, 165 land at zeroY = 0 (the top
+    // edge) and 39 at zeroY = 200 (the bottom edge) — ALL 204 land on an extreme edge,
+    // none mid-panel. The severe case is the one that went unmentioned, the
+    // never-in-LOSS player, whose whole curve is squeezed against the top:
+    //
+    //   Wang C.      +10.25 .. +11.25u   50% of panel height ->  8.3%
+    //   Gomez A.      +8.15 ..  +9.15u   50%                 -> 10%
+    //   Bennani K.       +9 ..    +10u  100%                 -> 10%
+    //   median of the 204                                    -> 50%
+    //
+    // A 1u swing drawn across 16 of 200 viewBox units reads as a flat line. This is
+    // honest rather than wrong — the axis labels still say what the scale is — but it
+    // is the real trade the ruling bought, and the founder should be re-asked before
+    // anyone "improves" these panels on the assumption the cost was cosmetic.
+    //
+    // LATENT, measured in Chrome, clears today on every panel: the break-even label
+    // this ruling newly draws sits 0.875px above the tick row at the bottom edge
+    // (Olivetti A.: .db-belab bottom 1400.047 vs .db-pcticks top 1400.922), and at the
+    // top edge spills 9.13px into .db-pcplot's 14px margin-top, leaving 4.88px of
+    // clearance. .db-belab is font-size:9.5px, padding:2px 7px, translateY(-50%) — any
+    // type-scale or margin edit flips the bottom case into an overlap on 39 panels.
     //
     // THE CLAMP AND THE zeroIn GUARD BELOW STAY. They are unreachable while this flag
-    // is true, and they are the reason a future edit to the step ladder or the
-    // rounding cannot silently reintroduce a rect taller than its own viewBox.
+    // is true — proven both analytically (with zero forced, hi >= 0 >= lo, so zeroIn is
+    // always true and Y(0) is always inside the plot) and empirically (0 of 1,129
+    // panels have zeroIn false, 0 of 1,129 have tintY !== zeroY) — and they are the
+    // reason a future edit to the step ladder or the rounding cannot silently
+    // reintroduce a rect taller than its own viewBox.
     var PLAYER_ZERO_IN_DOMAIN=true;   // FOUNDER RULING, gate e8453243: 'force-zero'.
     var dHi=rawHi, dLo=rawLo;
     if(PLAYER_ZERO_IN_DOMAIN){ if(dHi<0) dHi=0; if(dLo>0) dLo=0; }
