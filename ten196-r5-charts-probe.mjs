@@ -121,6 +121,26 @@ function chartGeom(rows, isTourn) {
 const fmtInt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const fmtU = (v) => fmtInt(Math.round(v)) + 'u';
 
+// Independent port of the page's extrema-preserving sampler, used ONLY to build the
+// unsmoothed baseline the guarded line is compared against.
+function sampleKeepJS(xs, vals, N) {
+  const n = xs.length;
+  if (n <= N) return Array.from({ length: n }, (_, i) => i);
+  const B = Math.max(1, Math.floor((N - 2) / 2)), x0 = xs[0], sp = (xs[n - 1] - x0) || 1;
+  const keep = []; let b = -1, mn = 0, mx = 0;
+  const flush = () => { const a = Math.min(mn, mx), z = Math.max(mn, mx); keep.push(a); if (z !== a) keep.push(z); };
+  for (let i = 0; i < n; i++) {
+    let bk = Math.floor((xs[i] - x0) / sp * B); if (bk >= B) bk = B - 1; if (bk < 0) bk = 0;
+    if (bk !== b) { if (b >= 0) flush(); b = bk; mn = i; mx = i; }
+    if (vals[i] < vals[mn]) mn = i;
+    if (vals[i] > vals[mx]) mx = i;
+  }
+  if (b >= 0) flush();
+  if (keep[0] !== 0) keep.unshift(0);
+  if (keep[keep.length - 1] !== n - 1) keep.push(n - 1);
+  return keep;
+}
+
 // ── CDP ────────────────────────────────────────────────────────────────────────
 function client(wsUrl) {
   const ws = new WebSocket(wsUrl);
@@ -765,16 +785,127 @@ function client(wsUrl) {
     const B = await panels();
     if (B.error) { ok('Wu D. panels read', false, B.error, 'panels'); }
     else {
-      ok('Wu D.: loss tint stays INSIDE the viewBox (no spill through overflow:visible)',
+      // FOUNDER RULING `force-zero`: zero is now forced into the domain, so the panel
+      // that used to have zero off-scale must now DRAW the zero line rather than
+      // suppress it. Asserted here rather than on a player who was never affected.
+      ok('Wu D.: zero is now inside the domain and the zero line IS drawn',
+        B.main.zeroLines === 1, B.main.zeroLines, 1);
+      ok('Wu D.: the "Break even" label is present on the main panel',
+        B.main.hasBE === true, B.main.hasBE, true);
+      ok('Wu D.: loss tint is valid and inside the viewBox',
         B.main.tint.y >= 0 && B.main.tint.h >= 0 && B.main.tint.y + B.main.tint.h <= 200.05,
         [B.main.tint.y, B.main.tint.h], 'within 0..200');
-      ok('Wu D.: no zero line drawn where zero is off-scale', B.main.zeroLines === 0, B.main.zeroLines, 0);
-      ok('Wu D.: no "Break even" label pointing outside the plot', B.main.hasBE === false, B.main.hasBE, false);
+      // The tint must now start at the TRUE zero line, not at the clamped edge — that
+      // is the difference between the ruling being applied and the holding behaviour
+      // still being in force.
+      // The discriminating consequence of `force-zero` on THIS subject: before the
+      // ruling his domain was hi=-1, lo=-13, so zeroY was -16.67 — outside the viewBox
+      // entirely. Forcing zero in makes hi=0, so the zero line lands exactly on the top
+      // edge (his maximum IS his break-even) and the tint covers the full panel. Both
+      // numbers are pinned, because "inside the viewBox" alone is also true of the
+      // clamped holding behaviour this replaced.
+      ok('Wu D.: zeroY is 0 — the ruling applied (it was -16.67, outside the viewBox)',
+        Math.abs(B.main.zeroY) < 0.15, B.main.zeroY, 0);
+      ok('Wu D.: the tint starts at the zero line',
+        Math.abs(B.main.tint.y - B.main.zeroY) < 0.15, [B.main.tint.y, B.main.zeroY], 'equal');
       const wv = playerVals('Wu D.');
       const w2 = (wv[wv.length - 1] > 0 ? '+' : '') + wv[wv.length - 1].toFixed(1) + 'u';
-      ok('Wu D.: end value matches the archive', B.main.end === w2, B.main.end, w2);
+      ok('Wu D.: end value still matches the archive', B.main.end === w2, B.main.end, w2);
     }
   } else { ok('Wu D. subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
+
+  // ══ GUARDED SMOOTHING — the founder's ruling, asserted where it can break ═══════
+  console.log('\n── §3 · guarded smoothing (founder ruling: `guarded`) ──');
+  // The whole point of the guard is that the extrema and the zero crossings survive.
+  // The Tour underdog curve is the subject a plain average provably breaks: above zero
+  // at 9 of 41,667 points, painted at -0.04u by the unguarded form. If the guard is
+  // ever dropped, THIS is the assertion that goes red.
+  {
+    const T2 = await (async () => { await ev(`(function(){var b=document.querySelector('#dbViewTabs [data-dbview="tour"]'); if(b) b.click();})()`); await sleep(1200); return chart(); })();
+    if (T2.error) { ok('Tour chart re-read after guarded smoothing', false, T2.error, 'chart'); }
+    else {
+      const fY = paintedY(T2.polylines[1].pts), dY = paintedY(T2.polylines[0].pts);
+      ok('guarded: favourites painted maximum IS STILL the raw maximum',
+        Math.min(...fY) === +tourG.Y(Math.max(...tourG.fav)).toFixed(1),
+        Math.min(...fY), +tourG.Y(Math.max(...tourG.fav)).toFixed(1));
+      ok('guarded: underdogs painted maximum IS STILL the raw maximum (+1.89u)',
+        Math.min(...dY) === +tourG.Y(Math.max(...tourG.dog)).toFixed(1),
+        Math.min(...dY), +tourG.Y(Math.max(...tourG.dog)).toFixed(1));
+      ok('guarded: underdogs painted minimum IS STILL the raw minimum',
+        Math.max(...dY) === +tourG.Y(Math.min(...tourG.dog)).toFixed(1),
+        Math.max(...dY), +tourG.Y(Math.min(...tourG.dog)).toFixed(1));
+      ok('guarded: the underdog curve STILL shows its time in profit',
+        Math.min(...dY) < tourG.zeroY, Math.min(...dY).toFixed(1), '< zeroY ' + tourG.zeroY.toFixed(1));
+      ok('guarded: the end values are still exact archive figures',
+        T2.plates.find((p) => /fav/.test(p.cls)).val === fmtU(tourG.favEnd) &&
+        T2.plates.find((p) => /dog/.test(p.cls)).val === fmtU(tourG.dogEnd),
+        T2.plates.map((p) => p.val), [fmtU(tourG.favEnd), fmtU(tourG.dogEnd)]);
+      // …and that it is ACTUALLY smoothing: the painted line must be measurably
+      // smoother than the unsmoothed sample, or the ruling has silently not applied.
+      // …and that it IS actually smoothing. The baseline is recomputed here on the
+      // SAME scale the page uses (the chart's rounded hi/lo across both series), not on
+      // the single series' own span — mixing those two normalisations makes the numbers
+      // differ by ~2.5x and the comparison meaningless.
+      const dy = (ys) => { let t = 0; for (let i = 1; i < ys.length; i++) t += Math.abs(ys[i] - ys[i - 1]); return t / (ys.length - 1); };
+      const favRaw = tourG.fav, nR = favRaw.length;
+      const xsR = Array.from({ length: nR }, (_, i) => i / (nR - 1));
+      const keepR = sampleKeepJS(xsR, favRaw, 260);
+      const unsmoothedDy = dy(keepR.map((i) => tourG.Y(favRaw[i])));
+      ok('guarded: the painted line is measurably smoother than the same vertices unsmoothed',
+        dy(fY) < unsmoothedDy * 0.6,
+        `${dy(fY).toFixed(2)} vs unsmoothed ${unsmoothedDy.toFixed(2)} (same scale)`, '< 60% of it');
+    }
+  }
+
+  // ── the ZERO-CROSSER half of the guard, on a subject that isolates it ──────────
+  // Mutation exposed a real hole: dropping the zero-crossing clause and keeping only
+  // the extrema clause scored 143/143. Every assertion above is satisfied by the
+  // extrema guard alone, because on the Tour chart the underdog maximum IS the global
+  // maximum, so forcing the global max back also happens to preserve that crossing.
+  // Monte Carlo Masters separates them: its favourite curve oscillates across zero
+  // well away from its extremes.
+  console.log('\n── §3 · Monte Carlo Masters — isolates the zero-crosser clause ──');
+  const mcIx = TOURN.indexOf('Monte Carlo Masters');
+  const mcRows = rows.filter((r) => r[4] === mcIx);
+  ok('precondition: Monte Carlo Masters still holds 867 rows', mcRows.length === 867, mcRows.length, 867);
+  const signChanges = (vals) => { let c = 0, prev = 0; for (const x of vals) { const sg = x > 0 ? 1 : x < 0 ? -1 : 0; if (!sg) continue; if (prev && sg !== prev) c++; prev = sg; } return c; };
+  const smoothJS = (v, k = 3) => { const n = v.length; if (n < 3) return v.slice(); const o = []; for (let i = 0; i < n; i++) { const a = Math.max(0, i - k), b = Math.min(n - 1, i + k); let t = 0; for (let j = a; j <= b; j++) t += v[j]; o.push(t / (b - a + 1)); } o[0] = v[0]; o[n - 1] = v[n - 1]; return o; };
+  const guardJS = (v, N, withCrossers) => {
+    const n = v.length, xs = Array.from({ length: n }, (_, i) => i / ((n - 1) || 1));
+    const keep = sampleKeepJS(xs, v, N), kv = keep.map((i) => v[i]), sm = smoothJS(kv, 3);
+    let mx = 0, mn = 0; kv.forEach((x, i) => { if (x > kv[mx]) mx = i; if (x < kv[mn]) mn = i; });
+    const f = new Set([0, kv.length - 1, mx, mn]);
+    if (withCrossers) kv.forEach((a, i) => { if ((a > 0) !== (sm[i] > 0) || (a < 0) !== (sm[i] < 0)) f.add(i); });
+    return kv.map((x, i) => (f.has(i) ? x : sm[i]));
+  };
+  const mcS = cumSeries(mcRows);
+  const withG = signChanges(guardJS(mcS.fav, 240, true));
+  const withoutG = signChanges(guardJS(mcS.fav, 240, false));
+  ok('precondition: the crosser clause CHANGES this curve (34 crossings vs 10 without it)',
+    withG > withoutG + 15, `${withG} with, ${withoutG} without`, 'materially different');
+  let mcOK = false;
+  try { mcOK = await pickTourn('Monte Carlo Masters'); } catch (e) { console.log('   (picker: ' + e.message + ')'); }
+  if (mcOK) {
+    const MC = await chart();
+    if (MC.error) { ok('Monte Carlo chart read', false, MC.error, 'chart'); }
+    else {
+      // Counted in PAINTED space on both sides — a vertex is "in profit" when its y is
+      // above the zero line. Inverting y back to units and counting there loses ~4
+      // crossings to the emitted `.toFixed(1)` (0.1 viewBox unit is 0.2u on this
+      // chart's 590u span, and a crossing can sit inside that), which is a property of
+      // the coordinate format, not of the guard.
+      const mcGeom = chartGeom(mcRows, true);
+      const zY = +mcGeom.zeroY.toFixed(1);
+      const crossY = (ys) => { let c = 0, prev = 0; for (const y of ys) { const sg = y < zY ? 1 : y > zY ? -1 : 0; if (!sg) continue; if (prev && sg !== prev) c++; prev = sg; } return c; };
+      const paintedCross = crossY(paintedY(MC.polylines[1].pts));
+      const expectCross = crossY(guardJS(mcS.fav, 240, true).map((v) => +mcGeom.Y(v).toFixed(1)));
+      const withoutCross = crossY(guardJS(mcS.fav, 240, false).map((v) => +mcGeom.Y(v).toFixed(1)));
+      ok('the PAINTED favourite curve keeps its zero crossings (crosser clause live)',
+        paintedCross === expectCross, paintedCross, expectCross);
+      ok('…and that count is unreachable without the crosser clause',
+        paintedCross > withoutCross + 10, [paintedCross, withoutCross], 'guarded, not extrema-only');
+    }
+  } else { ok('Monte Carlo Masters subject was driven (its assertions must RUN)', false, 'picker failed', 'driven'); }
 
   // ══ console cleanliness ══════════════════════════════════════════════════════
   console.log('\n── console ──');
@@ -785,7 +916,7 @@ function client(wsUrl) {
   // run: renaming `.db-prow` (a plausible refactor) made it print "94 passed, 0 failed,
   // exit 0" while silently dropping the 33 assertions its own header calls load-bearing
   // — every non-vacuous subject. A count that must be hit cannot be skipped past.
-  const EXPECTED = 135;
+  const EXPECTED = 147;
   const total = PASS + FAILS.length;
   if (total !== EXPECTED) {
     FAILS.push(`assertion COUNT is ${total}, expected ${EXPECTED} — a section was skipped`);

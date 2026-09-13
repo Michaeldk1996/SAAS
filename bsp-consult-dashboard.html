@@ -23235,9 +23235,8 @@ window.DatabaseTab = (function(){
   var FILL_FAV='rgba(91,155,255,0.11)', FILL_DOG='rgba(198,204,219,0.07)';
 
   // ---------- display smoothing (CHARTS.md §3) ----------
-  // PENDING FOUNDER RULING — TEN-196 round 5, gate `ten196:round5:smoothing...`.
-  // SMOOTH_MODE is the single switch the ruling flips. It is 'off' until then, so the
-  // page ships exactly the series the archive holds.
+  // FOUNDER RULING, TEN-196 round 5, gate e8453243 (2026-09-13): SMOOTH_MODE='guarded'.
+  // He was given all four options with the measurements below and chose the guarded one.
   //
   // Why this is not a presentation detail. Measured over 2,700 series (52 Tour views,
   // 338 tournament series, 2,310 player series) with a parser that imports nothing
@@ -23266,7 +23265,7 @@ window.DatabaseTab = (function(){
   // 'raw-first'  = smooth then sample (the spec read literally): 161/58 erased.
   // 'sample-first' = sample then smooth (what the export itself does): 171/64 erased,
   //   and up to 25.90u of real drawdown lost (Grand Slam underdogs -1,112.07 -> -1,086.17).
-  var SMOOTH_MODE='off';
+  var SMOOTH_MODE='guarded';   // FOUNDER RULING, gate e8453243, 2026-09-13: 'guarded'.
   function smoothVals(vals, k){
     var n=vals.length, out=[], i, j, a, b, s;
     if(n<3) return vals.slice();
@@ -24790,21 +24789,22 @@ window.DatabaseTab = (function(){
     // forcing zero into the domain widens it and can itself push the count over ten.
     var PSTEPS=[1,2,5,10,20,25,50,100];
     var step, rnd, hi, lo;
-    // PENDING FOUNDER RULING — TEN-196 round 5, gate question `zero-domain`.
-    // 204 of 1,129 players never cross zero, so the break-even line falls OUTSIDE
+    // FOUNDER RULING, TEN-196 round 5, gate e8453243: `force-zero`.
+    // 204 of 1,129 players never crossed zero, so the break-even line fell OUTSIDE
     // their panel. §5.1 sizes the loss tint as `viewBoxHeight - zeroY` and §4 sets
     // overflow:visible, which turns that into a rect up to 400 tall on a 200-tall
     // viewBox (King-Turner D.) or a NEGATIVE height (Sergeyev I., never once in loss)
     // — spilling out of the card, the exact symptom §5.1 claims to prevent.
     //
     // PLAYER_ZERO_IN_DOMAIN=true forces 0 into the domain; re-measured, that takes
-    // 204 to 0. It is false until the founder rules, because it changes the vertical
-    // scale of 204 live charts. Until then the holding behaviour below is the only
-    // one that ships nothing broken AND changes no existing scale: clamp the tint to
-    // the viewBox, and draw neither the zero line nor the "Break even" label on a
-    // panel whose domain does not contain zero — a zero line drawn outside the plot
-    // is a reference pointing at nothing.
-    var PLAYER_ZERO_IN_DOMAIN=false;
+    // 204 to 0, so every panel now shows the break-even line its own caption refers
+    // to. The cost, accepted in the ruling: a never-in-profit player's curve sits in
+    // the lower part of his panel instead of filling it.
+    //
+    // THE CLAMP AND THE zeroIn GUARD BELOW STAY. They are unreachable while this flag
+    // is true, and they are the reason a future edit to the step ladder or the
+    // rounding cannot silently reintroduce a rect taller than its own viewBox.
+    var PLAYER_ZERO_IN_DOMAIN=true;   // FOUNDER RULING, gate e8453243: 'force-zero'.
     var dHi=rawHi, dLo=rawLo;
     if(PLAYER_ZERO_IN_DOMAIN){ if(dHi<0) dHi=0; if(dLo>0) dLo=0; }
     for(var psi=0; psi<PSTEPS.length; psi++){
