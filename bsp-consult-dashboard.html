@@ -6721,7 +6721,9 @@ function driftScore(m){ // largest absolute open→close move on either side
 // and drift excludes the vendor pin — counting it would claim coverage the ordering
 // cannot use, which is the exact "partial board looking whole" failure this function
 // exists to prevent. The card still SHOWS that open; only the drift denominator is
-// silent about it.
+// silent about it. Consequence flagged to the founder: on a slate where every card has
+// an open and one of them is vendor-pinned, this footnote reads "N-1 of N" while N
+// opens are visible on screen. His call, not a bug to route around.
 function mcOpenCoverage(list){
   const total = list.length;
   const withOpen = list.filter(m => !_openPinIsVendor(m) && m.openingOdds
@@ -12711,7 +12713,7 @@ function buildOddsReduced(m){
   };
   // TEN-198 (founder ruling 2026-09-13, option A) — the vendor is surfaced by EXTENDING
   // this existing provenance strip rather than marking the price or changing the row
-  // label: "Opening   bet365 via api-tennis · Sep 12, 16:10".
+  // label: "Opening   bet365 via api-tennis · Sep 12, 16:10 · seen by us".
   //
   // The same edit finally discharges the 2026-09-11 ruling "report which of the two each
   // published open came from". `openingOdds.src` has been stored since that ruling
@@ -12722,8 +12724,12 @@ function buildOddsReduced(m){
   // back to `seenAt`. A vendor pin carries seenAt ONLY, deliberately: api-tennis serves
   // no timestamp, so the only instant we can evidence is when we looked, and inventing an
   // `at` for it would be exactly the manufactured timestamp the 2026-09-11 ruling threw
-  // out. Closing snapshots carry neither src nor vendor, so this reads unchanged for them.
-  const SRC_TEXT = { 'first-sighting': 'first sighting', 'vendor-sighting': 'first sighting',
+  // out. That is also why the vendor wording is "seen by us" and NOT "first sighting":
+  // the two would read as the same claim, but the oddspapi pin prints bet365's own clock
+  // while this one prints OURS, and the price behind it may be up to 14.6h older. Calling
+  // both "first sighting" was flagged in clean-context review. Closing snapshots carry
+  // neither src nor vendor, so this reads unchanged for them.
+  const SRC_TEXT = { 'first-sighting': 'first sighting', 'vendor-sighting': 'seen by us',
                      ingestion: 'ingestion point', archive: 'archive' };
   const ocRow = (label, snap) => {
     if (!snap || (snap.p1 == null && snap.p2 == null)) return '';

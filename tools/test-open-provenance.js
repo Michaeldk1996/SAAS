@@ -192,5 +192,133 @@ t('no bet365 stream -> no open at all (dash), never a cross-book artefact', () =
   assert.ok(!m.openingOdds, 'an open must not be minted from another book');
 });
 
+// ---------------------------------------------------------------------------
+// TEN-198 — the api-tennis bet365 OPEN fallback (founder ruling 2026-09-13,
+// gate 05ded3ab): write-once capture, into m.openingOdds, vendor-tagged.
+// ---------------------------------------------------------------------------
+console.log('\nTEN-198 api-tennis bet365 OPEN fallback (founder ruling 2026-09-13)');
+
+const SIGHT = { p1: 1.66, p2: 2.30, seenAt: '2026-09-12T16:10:21.000Z' };
+// The real Zverev-Shelton shape: oddspapi 404s /v4/historical-odds, so the pipeline
+// attaches NO oddsMovement at all and the old code `continue`d straight past it.
+const noMovement = (over) => ({ id: 'm1', date: '2026-09-13', p1: 'A. Zverev', p2: 'B. Shelton', ...over });
+
+t('no oddspapi movement at all + an api-tennis sighting -> a vendor-tagged OPEN', () => {
+  const m = noMovement({ apiTennisBet365: { ...SIGHT } });
+  runBlock({ matches: [m] });
+  assert.ok(m.openingOdds, 'the fixture this issue was opened about must get an open');
+  assert.strictEqual(m.openingOdds.p1, 1.66);
+  assert.strictEqual(m.openingOdds.p2, 2.30);
+  assert.strictEqual(m.openingOdds.bookmaker, 'bet365', 'it IS bet365 — same book, second vendor');
+  assert.strictEqual(m.openingOdds.vendor, 'api-tennis');
+  assert.strictEqual(m.openingOdds.src, 'vendor-sighting');
+  assert.strictEqual(m.openingOdds.seenAt, '2026-09-12T16:10:21.000Z');
+  assert.ok(!('at' in m.openingOdds),
+    'api-tennis serves no timestamp — a vendor pin must not manufacture an `at`');
+});
+
+t('oddspapi has books but no bet365 legs + a sighting -> vendor OPEN (2nd exit path)', () => {
+  const m = mk({ apiTennisBet365: { ...SIGHT } });
+  m.oddsMovement.books = { pinnacle: { p1: series(['2026-09-10T13:00:00Z', 1.5]), p2: series(['2026-09-10T13:00:00Z', 2.5]) } };
+  runBlock({ matches: [m] });
+  assert.strictEqual(m.openingOdds.vendor, 'api-tennis');
+  assert.strictEqual(m.openingOdds.p1, 1.66);
+});
+
+t('oddspapi bet365 WINS when both are available — the fallback is a fallback', () => {
+  const m = mk({ apiTennisBet365: { ...SIGHT } });
+  runBlock({ matches: [m], firstSeenByFixture: new Map([['fx1', '2026-09-10T19:00:00Z']]) });
+  assert.strictEqual(m.openingOdds.src, 'first-sighting');
+  assert.strictEqual(m.openingOdds.p1, 1.22);
+  assert.ok(!m.openingOdds.vendor, 'the primary vendor must not be tagged as the fallback');
+});
+
+t('WRITE-ONCE: a sighting never overwrites an already-published open', () => {
+  const m = noMovement({ apiTennisBet365: { ...SIGHT } });
+  const prior = new Map([['id:m1', { openingOdds: { p1: 1.70, p2: 2.20, bookmaker: 'bet365', at: '2026-09-11T10:00:00.000Z', src: 'ingestion' } }]]);
+  runBlock({ matches: [m], priorOdds: prior });
+  assert.strictEqual(m.openingOdds.p1, 1.70, 'forward-only: a published open must not move');
+  assert.ok(!m.openingOdds.vendor);
+});
+
+t('a carried VENDOR pin is HELD against a later bet365-less oddspapi stream', () => {
+  // The regression that would make the fix self-defeating: the dash branch nulls a
+  // carried open because it assumes it is cross-book. A vendor pin is bet365.
+  const m = mk();
+  m.oddsMovement.books = { pinnacle: { p1: series(['2026-09-10T13:00:00Z', 1.5]), p2: series(['2026-09-10T13:00:00Z', 2.5]) } };
+  const prior = new Map([['id:m1', { openingOdds: { p1: 1.66, p2: 2.30, bookmaker: 'bet365', seenAt: SIGHT.seenAt, src: 'vendor-sighting', vendor: 'api-tennis' } }]]);
+  runBlock({ matches: [m], priorOdds: prior });
+  assert.ok(m.openingOdds, 'a vendor pin must survive a bet365-less oddspapi stream');
+  assert.strictEqual(m.openingOdds.p1, 1.66);
+  assert.strictEqual(m.openingOdds.vendor, 'api-tennis');
+});
+
+t('the provenance census does NOT relabel a vendor pin as an ingestion point', () => {
+  const m = noMovement({ apiTennisBet365: { ...SIGHT } });
+  const logs = runBlock({ matches: [m] });
+  assert.strictEqual(m.openingOdds.src, 'vendor-sighting', 'the vendor tag must survive the census');
+  const line = logs.find(l => l.includes('OPEN provenance split'));
+  assert.ok(/1 \(100\.0%\) bet365 via api-tennis/.test(line), line);
+});
+
+t('the archive does NOT overwrite a vendor pin', () => {
+  const m = mk({ apiTennisBet365: { ...SIGHT } });
+  m.oddsMovement.books = { pinnacle: { p1: series(['2026-09-10T13:00:00Z', 1.5]), p2: series(['2026-09-10T13:00:00Z', 2.5]) } };
+  runBlock({ matches: [m], archiveOpens: new Map([['fx1', { p1: 9.99, p2: 1.01, atMs: Date.parse('2026-09-01T00:00:00Z') }]]) });
+  assert.strictEqual(m.openingOdds.p1, 1.66, 'an ingestion instant must not replace a sighting');
+  assert.strictEqual(m.openingOdds.vendor, 'api-tennis');
+});
+
+t('a malformed sighting mints nothing — missing seenAt, or a non-positive price', () => {
+  const a = noMovement({ apiTennisBet365: { p1: 1.66, p2: 2.30 } });               // no seenAt
+  const b = noMovement({ id: 'm2', apiTennisBet365: { p1: 1.66, p2: 0, seenAt: SIGHT.seenAt } });
+  const c = noMovement({ id: 'm3', apiTennisBet365: { p1: 1.66, p2: 2.30, seenAt: 'not-a-date' } });
+  runBlock({ matches: [a, b, c] });
+  assert.ok(!a.openingOdds, 'no observation instant -> no pin');
+  assert.ok(!b.openingOdds, 'one leg only would be a cross-feed artefact -> no pin');
+  assert.ok(!c.openingOdds, 'an unparseable instant -> no pin');
+});
+
+t('a COMPLETED fixture never pins a post-match api-tennis price as its OPEN', () => {
+  // api-tennis keeps serving Home/Away after the match ends and buildPastMatchObject()
+  // calls get_odds for completed fixtures — so an unguarded pin would publish a
+  // post-match price under the word "Opening", permanently (write-once).
+  const m = noMovement({ finalScore: { winner: 'p1', p1Sets: 3, p2Sets: 1 },
+                         apiTennisBet365: { p1: 1.02, p2: 15.0, seenAt: '2026-09-13T21:00:00.000Z' } });
+  const logs = runBlock({ matches: [m] });
+  assert.ok(!m.openingOdds, 'a settled fixture must dash, not pin a post-match price');
+  const line = logs.find(l => l.includes('OPEN fallback (founder ruling 2026-09-13'));
+  assert.ok(/1 post-match sighting\(s\) REJECTED/.test(line), line);
+});
+
+t('an open captured while UPCOMING survives into the settled card', () => {
+  // The other half of the rule above: write-once + the existing carry-forward is what
+  // makes a completed card able to show an open at all on this path.
+  const m = noMovement({ id: 'past-1', date: '2026-09-13', p1: 'A. Zverev', p2: 'B. Shelton',
+                         finalScore: { winner: 'p2', p1Sets: 1, p2Sets: 3 } });
+  const prior = new Map([['np:2026-09-13|azverev|bshelton',
+    { openingOdds: { p1: 1.66, p2: 2.30, bookmaker: 'bet365', seenAt: SIGHT.seenAt, src: 'vendor-sighting', vendor: 'api-tennis' } }]]);
+  runBlock({ matches: [m], priorOdds: prior });
+  assert.strictEqual(m.openingOdds.p1, 1.66);
+  assert.strictEqual(m.openingOdds.vendor, 'api-tennis');
+});
+
+t('the transient sighting carrier never reaches matches.json', () => {
+  const m = noMovement({ apiTennisBet365: { ...SIGHT } });
+  const m2 = mk({ id: 'm2', apiTennisBet365: { ...SIGHT } });
+  runBlock({ matches: [m, m2], firstSeenByFixture: new Map([['fx1', '2026-09-10T19:00:00Z']]) });
+  assert.ok(!('apiTennisBet365' in m), 'stripped on the fallback path');
+  assert.ok(!('apiTennisBet365' in m2), 'stripped on the oddspapi-wins path too');
+});
+
+t('the fallback log reports both counters', () => {
+  const m = noMovement({ apiTennisBet365: { ...SIGHT } });
+  const logs = runBlock({ matches: [m] });
+  const line = logs.find(l => l.includes('OPEN fallback (founder ruling 2026-09-13'));
+  assert.ok(line, 'no TEN-198 fallback line emitted');
+  assert.ok(/1 open\(s\) pinned to bet365 via api-tennis/.test(line), line);
+  assert.ok(/0 carried vendor pin\(s\) held/.test(line), line);
+});
+
 console.log(`\n${pass} passed, ${fail} failed.`);
 process.exit(fail ? 1 : 0);
