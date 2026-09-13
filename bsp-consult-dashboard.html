@@ -23234,6 +23234,42 @@ window.DatabaseTab = (function(){
   var COL_FAV='#5b9bff', COL_DOG='#c6ccdb', POS='#3dd68c', NEG='#e0616f';
   var FILL_FAV='rgba(91,155,255,0.11)', FILL_DOG='rgba(198,204,219,0.07)';
 
+  // ---------- y-axis step ladder (CHARTS.md §8) ----------
+  // FOUNDER RULING, TEN-196 round 6, gate 41497cb8 (2026-09-13): `spec-ladder`.
+  //
+  // §8 verbatim: "Step is chosen so the span carries at most ten gridlines, from
+  // [10, 25, 50, 100, 250, 500, 1000, 2500]." ONE ladder, all five charts. Before
+  // this ruling the Players charts carried their own [1,2,5,10,20,25,50,100] and
+  // the Tour/Tournaments ladder appended a 5000 the spec does not list.
+  //
+  // THE 5000 WAS UNREACHABLE, MEASURED, NOT ASSUMED. The two ladders diverge only
+  // when a span needs a step above 2500 — i.e. above 25,000u. Widest span over
+  // every single-filter view the tab can produce (level, surface, round, each of
+  // the 169 tournaments, each season, and unfiltered) is 2,316.1u, on the
+  // unfiltered Tour chart. 10.8x of headroom. Dropping it changes no chart today.
+  //
+  // WHAT IT COSTS THE PLAYERS CHARTS, measured over all 1,129 panels. This is the
+  // number to quote, not the five-subject sample that went into the gate:
+  //
+  //            only label is "0"   <=2 gridlines   median gridlines
+  //   all 1,129        699              877               1
+  //   n>=30 (395)       36              144               3
+  //   n>=100 (251)       2               46               4
+  //   n>=300 (88)        0                5               5
+  //
+  // So on most player panels the y axis carries the break-even line and nothing
+  // else — the scale is no longer readable off the chart. Sinner (n=413, raw
+  // -5.1..+12.6u) paints two labels, `+10u` and `0`. That is the ruled trade, and
+  // it was re-put to the founder with these figures rather than the sampled ones.
+  //
+  // THE ROUNDING GRANULARITY IS NOT RULED BY §8 and is deliberately NOT unified.
+  // Each path keeps its own `rnd` (Tour max(10,step/10), Players max(1,step/5)),
+  // which is what holds the player domains tight: with the ladder swapped and the
+  // Players rnd kept, median panel fill goes 87.1% -> 75.0%; adopting the Tour rnd
+  // as well would take it to 31.4% and squeeze Prado Angelo J.C. from 100% to 10%.
+  // §8 rules the step, not the domain.
+  var STEP_LADDER=[10,25,50,100,250,500,1000,2500];
+
   // ---------- display smoothing (CHARTS.md §3) ----------
   // FOUNDER RULING, TEN-196 round 5, gate e8453243 (2026-09-13): SMOOTH_MODE='guarded'.
   // He was given all four options with the measurements below and chose the guarded one.
@@ -24278,7 +24314,7 @@ window.DatabaseTab = (function(){
     // spends time in profit gets a full labelled positive band. Measured: the Tour
     // curves peak at +26.3u against a 2,316u span, so a data-driven "rawHi>0" test
     // would hand the Tour chart 250u of empty headroom for a 26u blip.
-    var STEPS=[10,25,50,100,250,500,1000,2500,5000];
+    var STEPS=STEP_LADDER;   // §8, ruled: one ladder for all five charts.
     var step, rnd, hi, lo;
     for(var si=0; si<STEPS.length; si++){
       step=STEPS[si];
@@ -24809,7 +24845,13 @@ window.DatabaseTab = (function(){
     // before the fix: 46 of 1,129 player panels drew 11 or 12 labels (Federer R. among
     // them). The PLAYER_ZERO_IN_DOMAIN guard has to run inside the loop, because
     // forcing zero into the domain widens it and can itself push the count over ten.
-    var PSTEPS=[1,2,5,10,20,25,50,100];
+    // FOUNDER RULING, TEN-196 round 6, gate 41497cb8: `spec-ladder` — the Players
+    // charts lost their own [1,2,5,10,20,25,50,100] and read §8's single ladder.
+    // The cost, measured over all 1,129 panels, is in the STEP_LADDER comment at
+    // the top of this module. `rnd` below stays on the Players formula: §8 rules
+    // the step, not the outward rounding, and unifying that too would take median
+    // panel fill from 75.0% to 31.4%.
+    var PSTEPS=STEP_LADDER;
     var step, rnd, hi, lo;
     // FOUNDER RULING, TEN-196 round 5, gate e8453243: `force-zero`.
     // 204 of 1,129 players never crossed zero, so the break-even line fell OUTSIDE
