@@ -23446,8 +23446,10 @@ window.DatabaseTab = (function(){
       // "All" still counts it and no match is hidden from the unfiltered record.
       // Single-select, matching this tab's own Surface/Tournament controls — which
       // also means "all four picked" can never be mistaken for "All".
-      bar.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
-        return singleMenu([[null,'All']].concat(playerLevels()), state.plevel, function(v){ state.plevel=v; }, false); }));
+      var PL=playerLevels();
+      if(PL) bar.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
+        return singleMenu([[null,'All']].concat(PL), state.plevel, function(v){ state.plevel=v; state.ptourn=null; }, false); }));
+      else state.plevel=null;   // dictionary moved: fail closed, and never filter on a stale index
       var events=playerEvents();
       bar.appendChild(trigger('Tournament', state.ptourn==null?'All':M.tournaments[state.ptourn], state.ptourn!=null, 'ptourn', function(){
         return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
@@ -23473,14 +23475,26 @@ window.DatabaseTab = (function(){
     var keys=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; });
     return M.surfaces[+keys[0]] + (keys.length>1 ? ' +'+(keys.length-1) : '');
   }
-  // The four levels offered on the Players tab, by name rather than by index, so a
-  // change to the artefact's level dictionary can't silently promote Finals back in.
+  // The four levels offered on the Players tab. A name filter for 'Finals' FAILS
+  // OPEN — rename it in the builder's LEVEL_ORDER and Finals silently becomes a
+  // fifth option, breaking the ruling; an index filter fails open the same way.
+  // So assert the dictionary instead and return null if it has moved, which drops
+  // the control entirely rather than offering a set nobody ruled on.
+  var PLAYER_LEVELS=['Grand Slam','Masters 1000','ATP 500','ATP 250'], FOLDED_LEVEL='Finals';
   function playerLevels(){
-    return M.levels.map(function(n,i){ return [i,n]; }).filter(function(o){ return o[1]!=='Finals'; });
+    var want=PLAYER_LEVELS.concat([FOLDED_LEVEL]);
+    if(M.levels.length!==want.length) return null;
+    for(var i=0;i<want.length;i++){ if(M.levels[i]!==want[i]) return null; }
+    return M.levels.map(function(n,i){ return [i,n]; }).filter(function(o){ return o[1]!==FOLDED_LEVEL; });
   }
+  // Scoped to the player AND to the active level: without the level predicate the
+  // menu offers events the filter guarantees are empty (measured: Souza J. at Grand
+  // Slam was offered all 28 of his tournaments, 24 of them dead).
   function playerEvents(){
     if(!state.player || !playerIndex || !playerIndex[state.player]) return [];
-    var seen={}; playerIndex[state.player].forEach(function(v){ seen[v.tour]=(seen[v.tour]||0)+1; });
+    var seen={}; playerIndex[state.player].forEach(function(v){
+      if(state.plevel!=null && v.lev!==state.plevel) return;
+      seen[v.tour]=(seen[v.tour]||0)+1; });
     return Object.keys(seen).map(Number).sort(function(a,b){ return seen[b]-seen[a] || (M.tournaments[a]<M.tournaments[b]?-1:1); })
       .map(function(i){ return [i, M.tournaments[i]]; });
   }
@@ -23710,36 +23724,59 @@ window.DatabaseTab = (function(){
     });
     return out;
   }
-  // Fixed-vertex resample at the EXPORT's own chart resolution (founder ruling
-  // TEN-196 2026-09-13, item 1). `Database.dc.html` builds each curve with
-  // `curve(n, …)` and lays it out with `poly()` at exactly n evenly-spaced x —
-  // N_TOUR 260, N_TOURN 240, N_PMAIN 220, N_PSUB 200. The previous sampler kept
-  // first/min/max/last per 1/1000 x-bucket, so it drew a vertical riser inside
-  // every occupied bucket: unfiltered that is 3,059 vertices against the export's
-  // 260, and under a Level filter — Masters 1000 clusters into nine weeks a
-  // season — the risers are most of the ink and the curve reads as noise.
-  // Step-hold: each vertex is the cumulative value AS OF that x, which is what a
-  // cumulative series means between matches. No painted number is derived from
-  // the curve, and the final vertex is pinned to the true end value so the end
-  // label still sits on the line it labels.
+  // Down-sample to the EXPORT's own chart vertex budget, WITHOUT losing the
+  // envelope (founder ruling TEN-196 2026-09-13 item 1, then its clean-context
+  // review the same day). `Database.dc.html` builds each curve with `curve(n, …)`
+  // and lays it out at exactly n evenly-spaced x — N_TOUR 260, N_TOURN 240,
+  // N_PMAIN 220, N_PSUB 200. The sampler this replaces bucketed at the viewBox's
+  // full 1/1000 resolution, so it drew a vertical riser inside every occupied
+  // bucket: 3,059 vertices against the export's 260 unfiltered, and under a Level
+  // filter — Masters 1000 is nine event weeks a season, not a stream — the risers
+  // were most of the ink and the curve read as noise. That is what "the graphic is
+  // going everywhere" was.
+  //
+  // The obvious fix — resample at N evenly-spaced x and step-hold the value — is
+  // WRONG and was caught in review before it shipped. It keeps no extremum between
+  // samples, so it FLATTENS PEAKS: the Australian Open underdog curve really
+  // reaches +4.4u but step-hold painted its maximum at −3.8u, turning "in profit
+  // twice" into "never once in profit" on 24 of 169 event curves. It also broke the
+  // axis, which is scaled from the TRUE extrema: the Masters 1000 underdog curve
+  // peaks at +58.8u and step-hold drew +43.8u, so the ink never reached the top
+  // labelled gridline and reading the maximum off the chart understated it by 26%.
+  //
+  // So: bucket at N/2 (not 1000) and keep each bucket's HIGHEST and LOWEST point in
+  // index order. Vertex budget is honoured, every extremum survives, no zero
+  // crossing can be flattened away, and the curve always reaches the bounds the
+  // gridline ladder was built from. Under N points we draw all of them — we never
+  // fabricate a vertex to reach the export's count.
   var N_TOUR=260, N_TOURN=240, N_PMAIN=220, N_PSUB=200;
   function poly(xs, vals, Y, N){
     var n=xs.length, out, i;
     if(!n) return '';
     N = N || N_TOUR;
+    var keep;
     if(n<=N){
-      out=new Array(n);
-      for(i=0;i<n;i++) out[i]=(xs[i]*1000).toFixed(1)+','+Y(vals[i]).toFixed(1);
-      return out.join(' ');
+      keep=new Array(n);
+      for(i=0;i<n;i++) keep[i]=i;
+    } else {
+      // (N-2)/2 buckets x 2 vertices + the two pinned endpoints <= N.
+      var B=Math.max(1, Math.floor((N-2)/2)), x0=xs[0], sp=(xs[n-1]-x0)||1;
+      keep=[];
+      var b=-1, mn=0, mx=0;
+      function flush(){ var a=mn<mx?mn:mx, z=mn<mx?mx:mn; keep.push(a); if(z!==a) keep.push(z); }
+      for(i=0;i<n;i++){
+        var bk=Math.floor((xs[i]-x0)/sp*B); if(bk>=B) bk=B-1; if(bk<0) bk=0;
+        if(bk!==b){ if(b>=0) flush(); b=bk; mn=i; mx=i; }
+        if(vals[i]<vals[mn]) mn=i;
+        if(vals[i]>vals[mx]) mx=i;
+      }
+      if(b>=0) flush();
+      // Pin the true first and last point, so the end label sits on its own line.
+      if(keep[0]!==0) keep.unshift(0);
+      if(keep[keep.length-1]!==n-1) keep.push(n-1);
     }
-    var x0=xs[0], x1=xs[n-1], sp=(x1-x0)||1, j=0;
-    out=new Array(N);
-    for(var k=0;k<N;k++){
-      var xk = x0 + sp*(k/(N-1));
-      while(j+1<n && xs[j+1]<=xk) j++;
-      out[k]=(xk*1000).toFixed(1)+','+Y(vals[j]).toFixed(1);
-    }
-    out[N-1]=(x1*1000).toFixed(1)+','+Y(vals[n-1]).toFixed(1);
+    out=new Array(keep.length);
+    for(i=0;i<keep.length;i++){ var ix=keep[i]; out[i]=(xs[ix]*1000).toFixed(1)+','+Y(vals[ix]).toFixed(1); }
     return out.join(' ');
   }
 
