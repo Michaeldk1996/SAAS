@@ -225,17 +225,37 @@ for (const [name, query] of [['Wimbledon', 'Wimbledon'], ['US Open', 'US Open']]
 // Khachanov is the seam-crossing subject named in the gate: 31 Bet365 2026 matches
 // against 506 Pinnacle. A pre-2026 retiree would be immune to clause (2) and score
 // clean on a broken build, so the footnote assertion must run HERE.
-for (const who of ['Khachanov', 'Sinner J']) {
+// THIRD SUBJECT, and it is the one the first version of this probe was missing.
+// Khachanov (5 gridlines) and Sinner (2) both sit in the well-behaved tail. The
+// population this ruling actually creates is the 699 panels whose axis collapses
+// to a bare "0", and nothing asserted on it — so an arithmetic defect that empties
+// or mis-draws those axes scored clean. Michelsen A. is the largest such sample
+// (n=150, raw -7.6..+6.9u). A clean-context review proved the gap: an off-by-one
+// at the bottom of the label loop leaves 57 panels with a COMPLETELY EMPTY y axis
+// and the two-subject probe scored 36 of 36 against it.
+// Michelsen alone was NOT enough and the mutation run proved it: his axis is the
+// bare "0", and 0 > lo, so the off-by-one leaves him untouched. The defect only
+// shows on a panel whose BOTTOM gridline sits exactly on `lo`. Murray A. (n=667)
+// is the largest: [+10u, 0, -10u, -20u, -30u] loses its -30u. 159 panels move,
+// 58 are left with no axis at all.
+for (const who of ['Khachanov', 'Sinner J', 'Michelsen A', 'Murray A']) {
   await pick('players', who, new RegExp(who.replace(/[.\s]/g, '.'), 'i').toString());
   await waitFor('[data-page="database"] .db-pcarea svg', 3);
   const P = await ev(READ_PLAYER_AXIS);
-  const full = who === 'Khachanov' ? 'Khachanov K.' : 'Sinner J.';
+  const full = { Khachanov: 'Khachanov K.', 'Sinner J': 'Sinner J.', 'Michelsen A': 'Michelsen A.', 'Murray A': 'Murray A.' }[who];
   const e = playerExpect(full);
+  ok(`P·${full} axis is never empty`, P.axes.every((a) => a.length >= 1), P.axes.map((a) => a.length), '>=1');
+  if (who === 'Michelsen A') {
+    ok(`P·${full} is in the only-"0" population (the ruling's real cost)`, JSON.stringify(e.labels) === '["0"]', e.labels, ['0']);
+    eq(`P·${full} paints a bare "0" and nothing else`, P.axes[0], ['0']);
+  }
   eq(`P·${full} main-panel labels`, P.axes[0], e.labels);
   ok(`P·${full} step ${e.step} is on §8 ladder`, SPEC_LADDER.includes(e.step), e.step, SPEC_LADDER);
-  ok(`P·${full} no label is off the §8 ladder`, P.axes.every(a => a.every(l => {
-    const v = Number(String(l).replace(/[+u,]/g, '')); return v === 0 || SPEC_LADDER.some(s => Math.abs(v) % s === 0);
-  })), P.axes, '§8 multiples');
+  // Multiples of the CHOSEN STEP, not "of some rung on the ladder" — the weaker
+  // form passes a chart on step 25 that paints +20u, because 20 % 10 === 0.
+  ok(`P·${full} every label is a multiple of the chosen step ${e.step}`, P.axes.every(a => a.every(l => {
+    const v = Number(String(l).replace(/[+u,]/g, '')); return v % e.step === 0;
+  })), P.axes, `multiples of ${e.step}`);
   ok(`P·${full} all three panels share one ladder`, P.axes.every(a => JSON.stringify(a) === JSON.stringify(P.axes[0])), P.axes, 'identical');
   ok(`P·${full} gridline count <=10`, P.axes[0].length <= 10, P.axes[0].length, '<=10');
   ok(`P·${full} break-even 0 is on the axis`, P.axes[0].includes('0'), P.axes[0], 'contains 0');
@@ -258,14 +278,28 @@ for (const who of ['Khachanov', 'Sinner J']) {
 const src = await (await fetch(`${BASE}/bsp-consult-dashboard.html`)).text();
 const ladderLits = [...src.matchAll(/var (STEP_LADDER|STEPS|PSTEPS)\s*=\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]);
 eq('S1 STEP_LADDER is §8 verbatim', ladderLits.find((l) => l[0] === 'STEP_LADDER')?.[1], '[10,25,50,100,250,500,1000,2500]');
-ok('S2 STEPS reads the shared ladder', ladderLits.some((l) => l[0] === 'STEPS' && /^STEP_LADDER\b/.test(l[1])), ladderLits.find((l) => l[0] === 'STEPS')?.[1], 'STEP_LADDER');
-ok('S3 PSTEPS reads the shared ladder', ladderLits.some((l) => l[0] === 'PSTEPS' && /^STEP_LADDER\b/.test(l[1])), ladderLits.find((l) => l[0] === 'PSTEPS')?.[1], 'STEP_LADDER');
-ok('S4 no 5000 step anywhere in a ladder', !ladderLits.some((l) => /\b5000\b/.test(l[1])), ladderLits, 'no 5000');
+// EXACT, not a prefix match: `STEP_LADDER.concat([5e3])` satisfies /^STEP_LADDER\b/
+// and reinstates the removed rung while every DOM assertion still passes. A review
+// mutant did exactly that and survived 36/36.
+eq('S2 STEPS is exactly the shared ladder', ladderLits.find((l) => l[0] === 'STEPS')?.[1].replace(/\s*\/\/.*$/, '').trim(), 'STEP_LADDER');
+eq('S3 PSTEPS is exactly the shared ladder', ladderLits.find((l) => l[0] === 'PSTEPS')?.[1].replace(/\s*\/\/.*$/, '').trim(), 'STEP_LADDER');
+// Any rung above 2500, however spelled — 5000, 5e3, 2500*2. Scans the whole
+// ladder region, not just the three declarations.
+const ladderRegion = src.slice(src.indexOf('var STEP_LADDER'), src.indexOf('var STEP_LADDER') + 200);
+const nums = [...ladderRegion.matchAll(/\b(\d+(?:\.\d+)?(?:e\d+)?)\b/gi)].map((m) => Number(m[1])).filter((n) => Number.isFinite(n));
+ok('S4 no ladder rung above 2500, however spelled', !nums.some((n) => n > 2500), nums.filter((n) => n > 2500), 'none');
+ok('S4b STEPS/PSTEPS are not extended at the use site', !ladderLits.some((l) => /concat|push|\.\.\./.test(l[1])), ladderLits.map((l) => l[1]), 'no concat/push/spread');
 // Scoped to an ASSIGNMENT, not a mention: the two prose references to the retired
 // ladder are in the ruling comments that exist to stop it coming back, and a bare
 // text scan fails on those. The defect shape is the literal being given to a name.
 ok('S5 the retired Players ladder is never assigned', !/=\s*\[\s*1\s*,\s*2\s*,\s*5\s*,\s*10\s*,\s*20\s*,\s*25\s*,\s*50\s*,\s*100\s*\]/.test(src), 'found an assignment of [1,2,5,10,20,25,50,100]', 'absent');
 ok('S6 exactly one ladder literal in the file', ladderLits.filter((l) => /^\[/.test(l[1])).length === 1, ladderLits.filter((l) => /^\[/.test(l[1])).length, 1);
+// The two `rnd` formulas. NOT part of the founder's ruling — but the 699 bare-"0"
+// axes are an artefact of the Players `rnd`, not of the ladder (with the Tour rnd
+// the same ladder gives 0 of them), so whoever changes one of these is inverting
+// the measured trade the ruling was taken on. Pinning them makes that deliberate.
+const rnds = [...src.matchAll(/rnd\s*=\s*Math\.max\(([^)]*)\)/g)].map((m) => m[1].replace(/\s/g, ''));
+eq('S7 the two rnd formulas are exactly the two ruled-on ones', rnds, ['10,step/10', '1,step/5']);
 
 console.log(`\n${pass + fail} assertions, ${pass} pass, ${fail} fail, ${skipped} skipped`);
 if (fails.length) console.log('\nFAILURES:\n' + fails.join('\n'));

@@ -25,6 +25,26 @@ const MUTANTS = [
       "    card.appendChild(pair);\n    card.appendChild(el('div','db-seamfoot','Book change at 2026.'));\n    return card;"),
     marker: "el('div','db-seamfoot','Book change at 2026.')",
     expects: ['P·Khachanov K. renders NO seam footnote', 'P·Khachanov K. renders NO amber element'] },
+
+  // ── the three a clean-context review found and the first probe did NOT catch ──
+  // All three scored a clean 36 of 36 against the two-subject, prefix-matching
+  // version. They are kept here permanently: each names a hole that was real.
+  { name: 'M4 · Tour rnd unified onto the Players formula (the thing CLAUDE.md says MUST NOT happen)',
+    apply: (s) => s.replace('rnd=Math.max(10, step/10);', 'rnd=Math.max(1, step/5);'),
+    marker: 'rnd=Math.max(1, step/5);\n      hi = (isTourn',
+    expects: ['S7'] },
+  { name: 'M5 · off-by-one at the bottom of the Players label loop (57 panels left with an EMPTY axis)',
+    apply: (s) => s.replace("var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)",
+                            "var grid=[]; for(var v=Math.floor(hi/step)*step; v>lo; v-=step)"),
+    marker: 'v>lo; v-=step)',
+    // Michelsen is IMMUNE to this one and the first run proved it: his axis is the
+    // bare "0", and 0 > lo, so the off-by-one never reaches him. Murray is the
+    // subject the bug can move.
+    expects: ['P·Murray A.'] },
+  { name: 'M6 · the removed rung put back at the use site, spelled 5e3',
+    apply: (s) => s.replace('var STEPS=STEP_LADDER;', 'var STEPS=STEP_LADDER.concat([5e3]);'),
+    marker: 'STEP_LADDER.concat([5e3])',
+    expects: ['S2', 'S4b'] },
 ];
 
 let allGood = true;
@@ -33,9 +53,19 @@ for (const m of MUTANTS) {
   if (mutated === orig) { console.log(`${m.name}\n  SKIPPED — the mutation did not apply, so it measures nothing.\n`); allGood = false; continue; }
   fs.writeFileSync(F, mutated);
   let out = '';
-  try { out = execSync('node verify-r7.mjs 2>&1', { encoding: 'utf8', maxBuffer: 1 << 24 }); }
-  catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); }
+  // Retry once: the probe binds port 8199 for its own http server, and a previous
+  // mutant's server can still hold it for a moment. A run that dies on EADDRINUSE
+  // produces no score line, which reads as "the probe missed it" — the same false
+  // negative this whole file exists to prevent. Diagnostics are printed either way.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { out = execSync('node verify-r7.mjs 2>&1', { encoding: 'utf8', maxBuffer: 1 << 24 }); }
+    catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); }
+    if (/^\d+ assertions/m.test(out)) break;
+    execSync('sleep 3');
+  }
   fs.writeFileSync(F, orig);
+  if (!/^\d+ assertions/m.test(out))
+    console.log(`  !! probe produced no score line (${out.length} bytes). tail: ${out.slice(-300).replace(/\n/g, ' ')}`);
 
   // confirm the mutation reached the served file, not just the disk
   const present = mutated.includes(m.marker);

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  .sbseg { cursor:pointer; transition:border-color 120ms ease, color 120ms ease, background 120ms ease; }
+</style>
+</helmet>
+<aside style="width:250px; flex:none; align-self:stretch; background:#0a0d13; border-right:1px solid rgba(255,255,255,0.07); display:flex; flex-direction:column; padding:22px 16px; position:sticky; top:0; height:100vh; box-sizing:border-box; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee;">
+  <div style="display:flex; align-items:center; gap:11px; padding:4px 8px 22px;">
+    <span style="width:38px; height:38px; border-radius:10px; background:#0a0d14; border:1px solid rgba(91,155,255,0.35); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><defs><linearGradient id="stSideC" x1="2" y1="3" x2="16" y2="17" gradientUnits="userSpaceOnUse"><stop stop-color="#4db8ff"></stop><stop offset="1" stop-color="#3a5bd0"></stop></linearGradient></defs><path d="M3.2 3.6 H16.8 L13.4 7.4 H11.2 V15.6 Q11.2 16.6 10 16 L8.4 15.1 V7.4 H3.2 Z" fill="url(#stSideC)"></path></svg></span>
+    <div style="line-height:1.1;"><div style="font-size:15px; font-weight:800; letter-spacing:0.01em;">Stennisfy</div><div style="font-size:9px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.16em; color:#5b6880; margin-top:3px;">ANALYTICS</div></div>
+  </div>
+
+  <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#4b5361; padding:8px 12px 8px;">Analyse</div>
+  <nav style="display:flex; flex-direction:column; gap:2px;">
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+      <span class="sbseg" onClick="{{ n.onClick }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:{{ n.color }}; background:{{ n.bg }}; border:1px solid {{ n.bd }};">
+        <span style="width:17px; height:17px; display:inline-flex; color:{{ n.icon }};" data-om-raster="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="{{ n.path }}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        {{ n.label }}
+      </span>
+    </sc-for>
+  </nav>
+
+  <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px;">
+    <div style="position:relative;">
+      <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:0; right:0; bottom:calc(100% + 8px); background:#0a0d13; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:6px; display:flex; flex-direction:column; z-index:40;">
+          <span class="sbseg" onClick="{{ onProfileClick }}" style="padding:9px 11px; border-radius:8px; font-size:14px; color:#e7e9ee;" style-hover="background:rgba(255,255,255,0.04);">Account settings</span>
+          <span class="sbseg" onClick="{{ onBillingClick }}" style="padding:9px 11px; border-radius:8px; font-size:14px; color:#e7e9ee;" style-hover="background:rgba(255,255,255,0.04);">Billing / plan</span>
+          <span style="height:1px; background:rgba(255,255,255,0.07); margin:5px 0;"></span>
+          <span class="sbseg" onClick="{{ onLogoutClick }}" style="padding:9px 11px; border-radius:8px; font-size:14px; color:#e7e9ee;" style-hover="background:rgba(255,255,255,0.04);">Log out</span>
+        </div>
+      </sc-if>
+      <div class="sbseg" onClick="{{ onMenuToggle }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:11px; background:{{ chipBg }}; border:1px solid {{ chipBd }};">
+        <span style="width:30px; height:30px; border-radius:50%; background:rgba(91,155,255,0.16); border:1px solid rgba(91,155,255,0.22); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:#5b9bff; flex:none;">AM</span>
+        <div style="min-width:0; flex:1;"><div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">alex.morgan</div><div style="font-size:10px; color:#4b5672;">Free plan</div></div>
+        <span style="color:#5b6880; font-size:13px; transition:transform 0.15s; transform:{{ chevron }};">›</span>
+      </div>
+    </div>
+    <span class="sbseg" style="text-align:center; padding:10px; border-radius:10px; font-size:13px; font-weight:700; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35);" style-hover="border-color:rgba(91,155,255,0.6); color:#6aaeff;">Upgrade to Pro</span>
+  </div>
+</aside>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:250,&quot;height&quot;:900},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Matches&quot;,&quot;Live&quot;,&quot;Series&quot;,&quot;Trading Report&quot;,&quot;Players&quot;,&quot;Head to Head&quot;,&quot;Tournaments&quot;,&quot;Database&quot;,&quot;Stennisfy Model&quot;,&quot;Playing Styles&quot;,&quot;News&quot;],&quot;default&quot;:&quot;News&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;acctActive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onNav&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(name: string) =&gt; void&quot;},&quot;onProfile&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onBilling&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onLogout&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { menu: false };
+  renderVals() {
+    const P = this.props, S = this.state, BLUE = '#5b9bff';
+    // Standalone fallback targets when no on-nav handler is provided (bundled page files)
+    const HREF = {
+      'Matches': './matches-upcoming.html',
+      'Live': './matches-upcoming.html#Live',
+      'Trading Report': './matches-upcoming.html#Trading Report',
+      'Series': './matches-upcoming.html#Series',
+      'Players': './matches-upcoming.html#Players',
+      'Head to Head': './matches-upcoming.html#Head to Head',
+      'Tournaments': './matches-upcoming.html#Tournaments',
+      'Database': './Database.dc.html',
+      'Entry Lists': './Entry Lists.dc.html',
+      'Stennisfy Model': './stennisfy-model.html',
+      'Playing Styles': './playing-styles.html',
+      'News': './news.html',
+    };
+    const active = P.active || '';
+    const navItems = [
+      ['Matches', 'M3 6.5h14M3 10h14M3 13.5h14'],
+      ['Live', 'M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8'],
+      ['Trading Report', 'M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7'],
+      ['Series', 'M3 14.5c2.5 0 3.2-3.4 5-3.4s2.3 2.2 4 2.2 2.6-4.8 5-4.8'],
+      ['Players', 'M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0'],
+      ['Head to Head', 'M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3'],
+      ['Tournaments', 'M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5'],
+      ['Database', 'M10 3.4c3 0 5.4.8 5.4 1.9v9.4c0 1.1-2.4 1.9-5.4 1.9s-5.4-.8-5.4-1.9V5.3c0-1.1 2.4-1.9 5.4-1.9ZM4.6 5.3c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9M4.6 10c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9'],
+      ['Entry Lists', 'M4.5 4h11v12h-11zM7 7.5h6M7 10h6M7 12.5h3.5'],
+      ['Stennisfy Model', 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z'],
+      ['Playing Styles', 'M4 15V9M8 15V5M12 15v-4M16 15V7'],
+      ['News', 'M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5'],
+    ].map(n => {
+      const on = active === n[0];
+      return { label: n[0], path: n[1],
+        onClick: () => { if (typeof P.onNav === 'function') P.onNav(n[0]); else if (HREF[n[0]]) window.location.href = HREF[n[0]]; },
+        color: on ? '#fff' : '#5b6880', bg: on ? 'rgba(91,155,255,0.13)' : 'transparent',
+        bd: on ? 'rgba(91,155,255,0.34)' : 'transparent', icon: on ? BLUE : '#7a8494' };
+    });
+    const acctActive = !!P.acctActive;
+    return {
+      navItems,
+      menuOpen: S.menu,
+      onMenuToggle: () => this.setState(st => ({ menu: !st.menu })),
+      chevron: S.menu ? 'rotate(-90deg)' : 'rotate(90deg)',
+      chipBg: acctActive ? 'rgba(91,155,255,0.13)' : '#0a0d14',
+      chipBd: acctActive ? 'rgba(91,155,255,0.34)' : 'rgba(255,255,255,0.07)',
+      onProfileClick: () => { this.setState({ menu: false }); if (typeof P.onProfile === 'function') P.onProfile(); else window.location.href = './account-settings.html'; },
+      onBillingClick: () => { this.setState({ menu: false }); if (typeof P.onBilling === 'function') P.onBilling(); else window.location.href = './account-settings.html'; },
+      onLogoutClick: () => { this.setState({ menu: false }); if (typeof P.onLogout === 'function') P.onLogout(); else window.location.href = './login.html'; },
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -24882,6 +24882,15 @@ window.DatabaseTab = (function(){
     // is the real trade the ruling bought, and the founder should be re-asked before
     // anyone "improves" these panels on the assumption the cost was cosmetic.
     //
+    // *** THAT "the axis labels still say what the scale is" DEFENCE NO LONGER HOLDS
+    // ON MOST PANELS. *** The §8 step-ladder ruling (gate 41497cb8) took 699 of 1,129
+    // panels to an axis whose ONLY label is `0`. On those the labels say nothing about
+    // scale, so the argument that carried `force-zero` is void for them. The two
+    // rulings were taken separately and neither was re-put in the light of the other.
+    // The per-panel counts in the block above (204 rescued, 165 at zeroY 0 / 39 at 200)
+    // were measured on the OLD ladder and have not been re-derived for the new one —
+    // re-measure before quoting them, and do not assume they still hold.
+    //
     // LATENT, measured in Chrome, clears today on every panel: the break-even label
     // this ruling newly draws sits 0.875px above the tick row at the bottom edge
     // (Olivetti A.: .db-belab bottom 1400.047 vs .db-pcticks top 1400.922), and at the
@@ -24913,8 +24922,14 @@ window.DatabaseTab = (function(){
     // §8: positives are labelled `+250u`, zero is bare `0`, negatives `-250u`, all with
     // thousands separators. The `+` and the separator were missing here while the Tour
     // axis two hundred lines up had both, so the same magnitude read `20u` on a player
-    // panel and `+20u` on the Tour chart. 672 of 1,129 players render at least one
-    // positive gridline, so this was most of the tab.
+    // panel and `+20u` on the Tour chart.
+    //
+    // THE SCOPE FIGURE HERE IS NOW MUCH SMALLER — the §8 ladder ruling cut it. This
+    // comment used to read "672 of 1,129 players render at least one positive
+    // gridline, so this was most of the tab." Re-measured on the ruled build it is
+    // **246 of 1,129** (21.8%); on the old ladder my own parser gets 667, not the 672
+    // written here, so treat neither carried number as authoritative — re-measure.
+    // The formatting is still right; it just no longer covers most of the tab.
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)
       grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtInt(v)+'u':fmtInt(v)+'u')});
 
