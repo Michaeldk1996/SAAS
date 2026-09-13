@@ -6680,8 +6680,29 @@ function upsetScore(m){ // winner's closing odds — bigger underdog win = bigge
 // cannot fall out of sync (the export's stated reason for this design). Upcoming only:
 // a completed card has its own open→close journey block and is unaffected by the sort.
 function mxDriftView(){ return state.view !== 'completed' && state.sort === 'drift'; }
+// TEN-198 — FOUNDER RULING 2026-09-13 (gate 05ded3ab). When oddspapi has no bet365
+// series for a fixture, the OPEN falls back to the same book read off api-tennis, and
+// the pinned value lands IN m.openingOdds carrying `vendor:'api-tennis'` (he chose that
+// over a sibling field, overruling my recommendation, having been shown the consequence).
+//
+// His scope is explicit and narrow: "fallback applies to the OPEN anchor ONLY. Never to
+// NOW, never to drift, never to closing-line value." Because the value lives in the
+// shared field, that scope is NOT structural — it holds only as long as every derived
+// consumer asks this question first. These helpers are that question, in one place.
+//
+// The measured reason it matters: api-tennis TRUNCATES the bet365 price rather than
+// rounding it (1.667 -> 1.66; zero counter-examples in 394 agreeing observations), so it
+// is never better than oddspapi's and up to 0.01 worse — a systematic, always-downward
+// shade — and it lags a median 5.2h (max 14.6h). Harmless as a one-shot anchor; fiction
+// as one end of a move being measured in percent.
+//
+// _openAnchorOf  -> the OPEN to DISPLAY (vendor pin included; that is the whole fix).
+// _openDerivedOf -> the OPEN a DERIVED number may be computed from (vendor pin excluded).
+function _openPinIsVendor(m){ return !!(m && m.openingOdds && m.openingOdds.vendor); }
+function _openAnchorOf(m, who){ return m?.openingOdds?.[who] ?? null; }
+function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : (m?.openingOdds?.[who] ?? null); }
 function driftScore(m){ // largest absolute open→close move on either side
-  const o1 = m.openingOdds?.p1, o2 = m.openingOdds?.p2;
+  const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
   const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
   const d1 = (o1 != null && c1 != null) ? Math.abs(c1 - o1) : 0;
   const d2 = (o2 != null && c2 != null) ? Math.abs(c2 - o2) : 0;
@@ -6695,9 +6716,15 @@ function driftScore(m){ // largest absolute open→close move on either side
 // returns the denominator so every drift figure can state what it was computed over.
 // A match counts as covered when it carries an opening price for EITHER side, matching the
 // condition driftScore()/the box actually require to say anything at all.
+// TEN-198: a VENDOR-pinned open is deliberately NOT counted here. This denominator's
+// stated contract is "matching the condition driftScore()/the box actually require",
+// and drift excludes the vendor pin — counting it would claim coverage the ordering
+// cannot use, which is the exact "partial board looking whole" failure this function
+// exists to prevent. The card still SHOWS that open; only the drift denominator is
+// silent about it.
 function mcOpenCoverage(list){
   const total = list.length;
-  const withOpen = list.filter(m => m.openingOdds
+  const withOpen = list.filter(m => !_openPinIsVendor(m) && m.openingOdds
     && (m.openingOdds.p1 != null || m.openingOdds.p2 != null)).length;
   return {
     total, withOpen,
@@ -6717,7 +6744,8 @@ function closingScore(m){ // strongest closing favourite first (lowest favourite
 // FRACTION of the opening price (same basis as the odds-journey delta and the
 // "Biggest market move" story panel). 0 when a match has no open/close pair.
 function moveScore(m){
-  const o1 = m.openingOdds?.p1, o2 = m.openingOdds?.p2;
+  // TEN-198: vendor pin excluded — this is a signed % move, the "never to drift" leg.
+  const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
   const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
   const p1 = (o1 != null && c1 != null && o1 > 0) ? Math.abs(c1 / o1 - 1) : 0;
   const p2 = (o2 != null && c2 != null && o2 > 0) ? Math.abs(c2 / o2 - 1) : 0;
@@ -6739,7 +6767,11 @@ function marketWrongScore(m){
 // at least one settled match actually carries an opening AND a closing price; then they
 // light up automatically — no code change needed when the feed arrives.
 function _mcOddsLanded(){
-  return matches.some(m => m.finalScore
+  // TEN-198: vendor pin excluded. This gate enables the 'Biggest move' and 'Market got
+  // it wrong' sorts, both of which read the open through _openDerivedOf and would
+  // therefore order nothing — enabling them off a vendor pin would light up a control
+  // that provably cannot rank the card that lit it.
+  return matches.some(m => m.finalScore && !_openPinIsVendor(m)
     && m.openingOdds && (m.openingOdds.p1 != null || m.openingOdds.p2 != null)
     && (_mcCloseOf(m, 'p1') != null || _mcCloseOf(m, 'p2') != null));
 }
@@ -7338,8 +7370,22 @@ function oddsPctDelta(open, close){
 // (#4b5672 via --mc-muted-2), the lane renders a neutral rule, and the delta is blank.
 // That is the path every upcoming match takes today — see the TEN-179 findings comment.
 // When real opens land this function needs no layout change; the values simply fill in.
-function mcDriftCell(open, now){
+// TEN-198 — `anchorOnly` (a vendor-sourced OPEN, see _openPinIsVendor) renders the OPEN
+// price but NO bar and NO delta. The founder scoped the fallback to the OPEN anchor and
+// excluded drift explicitly; a signed % computed between a truncated, up-to-14.6h-stale
+// api-tennis price and a live oddspapi NOW is a number about the two vendors, not about
+// the market. Blanking the whole cell instead would have been the other way to honour
+// the ruling — and it would put the em dash back on precisely the fixture this issue was
+// opened about. So: the value shows, the derived number does not.
+function mcDriftCell(open, now, anchorOnly){
   const nowTxt = (now != null) ? now.toFixed(2) : '—';
+  if (open != null && anchorOnly){
+    return `<span class="mc-drifted">`
+      + `<span class="mc-drifted__open">${open.toFixed(2)}</span>`
+      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
+      + `<span class="mc-drifted__now">${nowTxt}</span>`
+      + `<span class="mc-drifted__pct"></span></span>`;
+  }
   if (open == null){
     return `<span class="mc-drifted">`
       + `<span class="mc-drifted__open nodata">—</span>`
@@ -7360,8 +7406,18 @@ function mcDriftCell(open, now){
 }
 // Completed odds journey for one player: open → gradient track → close, plus the
 // signed-percentage delta (direction-coloured). Any value never recorded is omitted.
-function mcJourney(open, close){
+// TEN-198 — `anchorOnly` is the completed-card twin of the mcDriftCell rule above: a
+// vendor-sourced OPEN shows its price and its recorded close, with the sparkline and the
+// signed delta suppressed. Same ruling, same reasoning; a completed card must not start
+// asserting a move the moment the fixture settles when the upcoming card refused to.
+function mcJourney(open, close, anchorOnly){
   if (open == null && close == null) return '';
+  if (open != null && close != null && anchorOnly) {
+    return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span>`
+      + `<span class="mc-journey__lane"></span>`
+      + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
+      + `<span class="mc-journey__delta"></span></span>`;
+  }
   // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
   // reads as broken, so render an em dash under OPEN ("no data", the design-system
   // rule), keep the recorded close under CLOSE, and suppress the sparkline + delta.
@@ -7915,8 +7971,11 @@ function renderMatches(){
     // the "close" (the phantom Fearnley 1.80->3.41 move). The pipeline now
     // recovers a genuine pre-play close where onset was unconfirmable; where no
     // pre-play close exists at all the value dashes — never a placeholder.
-    const p1Open  = finalScore ? (m.openingOdds?.p1 ?? null) : null;
-    const p2Open  = finalScore ? (m.openingOdds?.p2 ?? null) : null;
+    // TEN-198: the DISPLAY anchor (vendor pin included — showing it is the fix); the
+    // journey's bar + delta are suppressed for a vendor pin via `openAnchorOnly` below.
+    const p1Open  = finalScore ? _openAnchorOf(m, 'p1') : null;
+    const p2Open  = finalScore ? _openAnchorOf(m, 'p2') : null;
+    const openAnchorOnly = _openPinIsVendor(m);
     const p1Close = finalScore ? (m.closingOdds?.p1 ?? null) : null;
     const p2Close = finalScore ? (m.closingOdds?.p2 ?? null) : null;
     const finOddsCell = (open, close) => {
@@ -7998,27 +8057,27 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p1Open, p1Close)}
+            ${mcJourney(p1Open, p1Close, openAnchorOnly)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p2Open, p2Close)}
+            ${mcJourney(p2Open, p2Close, openAnchorOnly)}
           </div>
         </div>`
       : `<div class="mc-players up">
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(m.openingOdds?.p1 ?? null, _mcNowOf(m, 'p1'))
+              ? mcDriftCell(_openAnchorOf(m, 'p1'), _mcNowOf(m, 'p1'), openAnchorOnly)
               : `<span class="mc-oddswrap"><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(m.openingOdds?.p2 ?? null, _mcNowOf(m, 'p2'))
+              ? mcDriftCell(_openAnchorOf(m, 'p2'), _mcNowOf(m, 'p2'), openAnchorOnly)
               : `<span class="mc-oddswrap"><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p2RecentForm)}
           </div>
@@ -8048,7 +8107,7 @@ function renderMatches(){
   //     graded-pick log that doesn't exist yet (matches.json is a ~3-day window), so it is
   //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
-    const openOf  = (m, who) => (m.finalScore ? (m.openingOdds?.[who] ?? null) : null);
+    const openOf  = (m, who) => (m.finalScore ? _openDerivedOf(m, who) : null); // TEN-198: vendor pin excluded — this feeds the signed-% 'Biggest market move' panel.
     const closeOf = (m, who) => (m.finalScore ? (m.closingOdds?.[who] ?? null) : null); // TEN-124: pinned pre-play close only — never a live fallback.
 
     // 1. Biggest market move — per (match, player) with both legs recorded.
@@ -8145,7 +8204,10 @@ function renderMatches(){
     let bmv = null;
     daySlate.forEach(m => {
       ['p1','p2'].forEach(who => {
-        const o = m.openingOdds?.[who] ?? null, c = priceOf(m, who);
+        // TEN-198: vendor pin excluded — this box is a signed open→now %, the "never to
+        // drift" leg of the founder's scope, and its heading claims "Bet365 open → now"
+        // off a single oddspapi stream.
+        const o = _openDerivedOf(m, who), c = priceOf(m, who);
         if (o == null || c == null || o <= 0) return;
         const d = oddsPctDelta(o, c);
         if (d.pct === 0) return;
@@ -12647,11 +12709,31 @@ function buildOddsReduced(m){
     return d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
       + ' ' + d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
   };
+  // TEN-198 (founder ruling 2026-09-13, option A) — the vendor is surfaced by EXTENDING
+  // this existing provenance strip rather than marking the price or changing the row
+  // label: "Opening   bet365 via api-tennis · Sep 12, 16:10".
+  //
+  // The same edit finally discharges the 2026-09-11 ruling "report which of the two each
+  // published open came from". `openingOdds.src` has been stored since that ruling
+  // shipped and rendered NOWHERE, so the reporting requirement was true of the JSON and
+  // not of the card. Every open now names its source here.
+  //
+  // Timestamp: prefer `at` (when bet365 last MOVED the price — the honest instant), fall
+  // back to `seenAt`. A vendor pin carries seenAt ONLY, deliberately: api-tennis serves
+  // no timestamp, so the only instant we can evidence is when we looked, and inventing an
+  // `at` for it would be exactly the manufactured timestamp the 2026-09-11 ruling threw
+  // out. Closing snapshots carry neither src nor vendor, so this reads unchanged for them.
+  const SRC_TEXT = { 'first-sighting': 'first sighting', 'vendor-sighting': 'first sighting',
+                     ingestion: 'ingestion point', archive: 'archive' };
   const ocRow = (label, snap) => {
     if (!snap || (snap.p1 == null && snap.p2 == null)) return '';
     const a = snap.p1 != null ? snap.p1.toFixed(2) : '·';
     const b = snap.p2 != null ? snap.p2.toFixed(2) : '·';
-    const meta = [snap.bookmaker, ocSnapAt(snap.at)].filter(Boolean).join(' · ');
+    const book = snap.bookmaker
+      ? (snap.vendor ? `${snap.bookmaker} via ${snap.vendor}` : snap.bookmaker)
+      : '';
+    const meta = [book, ocSnapAt(snap.at || snap.seenAt), SRC_TEXT[snap.src] || '']
+      .filter(Boolean).join(' · ');
     return `<div class="aodds-brow">
       <span class="aob-name"><b>${label}</b>${meta ? `<span style="color:#4b5672;font-size:11px;font-family:'IBM Plex Mono',monospace;margin-left:7px;">${meta}</span>` : ''}</span>
       <span class="aob-cell"><span class="aodds-price">${a}</span></span>
@@ -23498,7 +23580,7 @@ window.DatabaseTab = (function(){
           // `value` stays the OFFICIAL string — it is what state and filtering key on.
           var hits=M.tournaments.map(function(t,i){return {label:tournLabel(i),value:t,i:i};})
             .filter(function(t){ return tournHit(t.i, q); })
-            .sort(function(a,b){ return a.label<b.label?-1:1; });
+            .sort(function(a,b){ return a.label<b.label ? -1 : a.label>b.label ? 1 : (a.value<b.value?-1:1); });
           lastTotal=hits.length;
           return hits.slice(0,40).map(function(h){ return {label:h.label, value:h.value, meta:tournSurface(h.i)}; }); },
         total:function(){ return lastTotal; },
@@ -23743,6 +23825,10 @@ window.DatabaseTab = (function(){
   var TOURN_HELD = ["International Championships", "Portugal Open", "Astana Open", "Movistar Open", "VTR Open", "Royal Guard Open Chile"];
   // City search terms ONLY where the city differs from the common name. Everywhere
   // else the common name IS the city, so it is already searchable.
+  // Every key here MUST be a value in TOURN_COMMON. A key that is not is dead code,
+  // and worse, reads as if that venue were aliased when it is held — 'Vina del Mar'
+  // sat here until the clean-context review, while all three Viña strings are in
+  // TOURN_HELD and must make no venue claim at all.
   var TOURN_CITY = {
     'Canada':['Toronto','Montreal'],
     "Queen's Club":['London'],
@@ -23754,7 +23840,6 @@ window.DatabaseTab = (function(){
     's-Hertogenbosch':['Den Bosch','Rosmalen'],
     'Monte-Carlo':['Monaco'],
     'Indian Wells':['California'],
-    'Vina del Mar':['Chile'],
     'Los Cabos':['Mexico']
   };
   // Diacritic- and punctuation-insensitive, so "Kitzbuhel" finds "Kitzbühel",
@@ -23768,8 +23853,10 @@ window.DatabaseTab = (function(){
   function tournLabels(){
     if(TLAB) return TLAB;
     var T=M.tournaments, i, t, c;
-    // How many OFFERED strings share each common name. Only those get a season
-    // range, so the 106 unambiguous venues stay clean one-word labels.
+    // How many strings share each common name. 106 distinct common names over 163
+    // aliased strings: 68 venues are 1:1 and keep a bare label, the other 38 are
+    // split across 95 strings and take a season range so the split stays visible
+    // rather than becoming a silent duplicate.
     var shared={};
     for(i=0;i<T.length;i++){ c=TOURN_COMMON[T[i]]; if(c) shared[c]=(shared[c]||0)+1; }
     // Season range straight from the archive rows — a live figure, never hard-coded,
@@ -23780,7 +23867,7 @@ window.DatabaseTab = (function(){
       if(y0[ti]==null || y<y0[ti]) y0[ti]=y;
       if(y1[ti]==null || y>y1[ti]) y1[ti]=y;
     }
-    TLAB={lab:[], terms:[], aliased:0, ranged:0};
+    TLAB={lab:[], terms:[], aliased:0, ranged:0, disamb:0};
     var unknown=[];
     for(i=0;i<T.length;i++){
       t=T[i]; c=TOURN_COMMON[t];
@@ -23790,14 +23877,31 @@ window.DatabaseTab = (function(){
         if(TOURN_HELD.indexOf(t)<0) unknown.push(t);
       } else {
         TLAB.aliased++;
-        if(shared[c]>1 && y0[i]!=null){ TLAB.lab[i]=c+' '+y0[i]+'\u2013'+y1[i]; TLAB.ranged++; }
-        else TLAB.lab[i]=c;
+        if(shared[c]>1 && y0[i]!=null){
+          TLAB.lab[i]=c+' '+(y0[i]===y1[i] ? y0[i] : y0[i]+'\u2013'+y1[i]);
+          TLAB.ranged++;
+        } else TLAB.lab[i]=c;
         terms.push(nrm(c));
         var extra=TOURN_CITY[c];
         if(extra) for(var k=0;k<extra.length;k++) terms.push(nrm(extra[k]));
       }
       TLAB.terms[i]=terms;
     }
+    // A season range cannot disambiguate two strings that ran in the SAME seasons,
+    // and three pairs do: `bett1HULKS Indoors`/`bett1HULKS Championship` (Cologne
+    // 2020), `Great Ocean Road Open`/`Murray River Open` (Melbourne 2021) and
+    // `Adelaide International 1`/`2` (2022-23). Without this pass they paint the
+    // IDENTICAL label — and behind the two Cologne rows sit favourite yields of
+    // -28.78% and +12.11%, a 40.9pp spread under one name, on the page whose whole
+    // claim is the archive. Caught in clean-context review. Fall back to the
+    // official archive string, which is unique by definition.
+    var seen={}, dup={};
+    for(i=0;i<T.length;i++){ var L=TLAB.lab[i]; if(seen[L]) dup[L]=1; seen[L]=1; }
+    for(i=0;i<T.length;i++) if(dup[TLAB.lab[i]]){ TLAB.lab[i]=TLAB.lab[i]+' \u00b7 '+T[i]; TLAB.disamb++; }
+    // The rendered label is searchable too. Typing what is on screen has to find the
+    // row: before this, "Miami 2010" returned "No tournament matches that." on all
+    // 95 ranged rows, and the label is the only handle a user has on the pairs above.
+    for(i=0;i<T.length;i++){ var lb=nrm(TLAB.lab[i]); if(TLAB.terms[i].indexOf(lb)<0) TLAB.terms[i].push(lb); }
     if(unknown.length && !_aliasWarned){
       _aliasWarned=true;
       console.warn('Database: '+unknown.length+' tournament string(s) have no entry in the alias table and are '+
@@ -23811,7 +23915,18 @@ window.DatabaseTab = (function(){
   function tournLabelOf(name){ var i=M.tournaments.indexOf(name); return i<0 ? name : tournLabel(i); }
   // Search: official string OR common name OR city, all normalised.
   function tournHit(i, q){
-    var qs=nrm(q); if(!qs) return true;
+    var raw=(q==null?'':String(q)).trim();
+    if(!raw) return true;                       // no query at all -> everything
+    var qs=nrm(q);
+    if(!qs){
+      // The query is punctuation only, e.g. "&". nrm() strips it to '', and an empty
+      // NORMALISED query must not be read as "no query" — that made "&" list 40
+      // arbitrary events where it used to return only `BB&T Atlanta Open`.
+      // (Clean-context review.) Fall back to a raw case-insensitive match.
+      var lo=raw.toLowerCase();
+      return M.tournaments[i].toLowerCase().indexOf(lo)>=0 ||
+             tournLabels().lab[i].toLowerCase().indexOf(lo)>=0;
+    }
     var t=tournLabels().terms[i];
     for(var k=0;k<t.length;k++) if(t[k].indexOf(qs)>=0) return true;
     return false;
@@ -23849,7 +23964,8 @@ window.DatabaseTab = (function(){
     var seen={}; playerIndex[state.player].forEach(function(v){
       if(state.plevel!=null && v.lev!==state.plevel) return;
       seen[v.tour]=(seen[v.tour]||0)+1; });
-    return Object.keys(seen).map(Number).sort(function(a,b){ return seen[b]-seen[a] || (tournLabel(a)<tournLabel(b)?-1:1); })
+    return Object.keys(seen).map(Number).sort(function(a,b){
+      return seen[b]-seen[a] || (tournLabel(a)<tournLabel(b) ? -1 : tournLabel(a)>tournLabel(b) ? 1 : a-b); })
       .map(function(i){ return [i, tournLabel(i)]; });
   }
 
@@ -23982,9 +24098,10 @@ window.DatabaseTab = (function(){
   }
 
   // ---------- cumulative profit chart ----------
-  // C3 — x is the match DATE mapped into the filtered date domain, so the season
-  // ticks and the book seam sit on the same basis. The export's index mapping put
-  // its seam 4.0pp of plot width away from the "2026" label it marks.
+  // x is the MATCH INDEX (founder ruling TEN-196 2026-09-13 round 3, superseding the
+  // C3 date basis). The season ticks and the book seam sit on that same basis, which
+  // is what puts the seam ON the tick it marks rather than beside it — full note
+  // inside the function.
   function renderCurveCard(rows, seam, isTourn){
     var card=el('div','db-card');
     var head=el('div','db-charthead');
@@ -23998,19 +24115,35 @@ window.DatabaseTab = (function(){
     // x is MATCH INDEX, not calendar date — founder ruling TEN-196 2026-09-13 item 2.
     //
     // The charts read as "a child's drawing" on the Tournaments tab, and the cause
-    // was measured before anything was changed: the Australian Open curve carries
-    // 2,130 real vertices (one per match), drawn as a plain polyline with no step
+    // was measured before anything was changed: the Australian Open series carries
+    // 2,130 real points (one per match), drawn as a plain polyline with no step
     // function and no smoothing anywhere. But a one-week-a-year event on a CALENDAR
-    // axis puts all 2,130 of them into 53 of the viewBox's 1,000 columns and leaves
-    // 947 empty. The vertical drops were a whole season crushed into ~3px; the long
-    // flat runs were eleven real months in which that event did not play. Median
-    // across 141 events: 23 occupied columns, 253px longest flat run.
+    // axis puts all 2,130 of them into 58 of the viewBox's 1,000 columns and leaves
+    // 942 empty — median across all 169 chartable events, 21 occupied columns and a
+    // 200-column longest gap.
+    //
+    // AND THAT STARVED THE DOWN-SAMPLER, which is the half that made it look drawn
+    // by hand. `poly()` buckets by x, so with every point crammed into 58 columns
+    // only ~21 of its 119 buckets ever received one: the deployed page PAINTED 42
+    // vertices out of 2,130, with a 65-column gap in the line. On match index the
+    // same curve paints 240 across 235 columns, widest gap 10.8. (An earlier report
+    // of mine said the sampler was not involved. It was measuring the median event,
+    // which is under budget and drawn point-for-point; the Australian Open is not.)
     //
     // Match index draws the SAME points in the SAME order and invents nothing — it
     // only removes the dead air. It also FIXES conflict C3 rather than regressing
     // it: with season ticks at match-index positions the book seam lands exactly on
-    // the season tick it marks (0.0000pp, against 0.05pp on the calendar axis),
-    // because the first Bet365 row and the first 2026 row are the same row.
+    // the season tick it marks — MEASURED 0.0000pp against 0.0496pp on the calendar
+    // axis, because the first Bet365 row and the first 2026 row are today the same
+    // row (both index 40,002).
+    //
+    // That is a MEASUREMENT, not a structural guarantee, and the difference matters.
+    // The seam keys on r[8], which `build-database-yield.js` assigns from the CSV's
+    // FILENAME season; the tick keys on yr(r[0]), the DATE year. The archive already
+    // holds 101 rows where those two disagree (40 in 2014.csv dated 2013, 27 in
+    // 2025.csv dated 2024, ...). None in 2026, so they coincide today. The probe
+    // asserts the painted gap directly, so a future divergence fails loudly rather
+    // than drifting in silence.
     //
     // The honest cost, and why the caption had to change: the axis is no longer
     // linear in time. A busier season takes more width and an idle stretch takes
@@ -24091,8 +24224,10 @@ window.DatabaseTab = (function(){
   // none, and labelling it would put two labels on one pixel claiming different
   // things. `ordered` must already be sorted ascending.
   //
-  // `steps` is tried in order and the first that yields >=3 ticks wins, so a short
-  // event still gets a readable ladder instead of one lonely label.
+  // `steps` is tried in order and the first that yields >=3 ticks wins, so an event
+  // with a handful of seasons gets every season labelled rather than every other
+  // one. It cannot manufacture ticks below the season count: a single-season event
+  // such as `Copa Telmex` draws exactly one label, at x=0.
   function seasonTicks(ordered, yearOf, steps){
     var n=ordered.length, den=(n-1)||1, i, y;
     var years=[], firstIx={};

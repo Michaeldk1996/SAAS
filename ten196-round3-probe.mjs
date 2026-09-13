@@ -232,6 +232,11 @@ const EXPECT = JSON.parse(fs.readFileSync('.probe-ten196d/expect.json', 'utf8'))
     ok('a HELD row shows its OFFICIAL name and makes no venue claim',
       mov.some((t) => t.indexOf('Movistar Open') === 0) && !mov.some((t) => /Vina|Viña/.test(t)),
       JSON.stringify(mov.slice(0, 3)), 'Movistar Open, no venue');
+    const lab = await search(EXPECT.labels['Sony Ericsson Open']);
+    ok('typing the label that is PAINTED finds the row (all 95 ranged rows)',
+      lab.some((t) => t === EXPECT.labels['Sony Ericsson Open']), JSON.stringify(lab.slice(0, 3)), EXPECT.labels['Sony Ericsson Open']);
+    const amp = await search('&');
+    ok('a punctuation-only query is not read as "no query"', amp.length > 0 && amp.length <= 3, JSON.stringify(amp.slice(0, 4)), 'only BB&T Atlanta Open');
     const acc = await search('Kitzbühel');
     ok('search is diacritic-insensitive ("Kitzbühel" -> Kitzbuhel)',
       acc.some((t) => t.indexOf('Kitzbuhel') === 0), JSON.stringify(acc.slice(0, 3)), 'Kitzbuhel rows');
@@ -248,7 +253,41 @@ const EXPECT = JSON.parse(fs.readFileSync('.probe-ten196d/expect.json', 'utf8'))
     ok('the subject chip shows the COMMON name', subj === 'Indian Wells', subj, 'Indian Wells');
     ok(`grouping UNCHANGED: Indian Wells is ${EXPECT.counts['BNP Paribas Open']} matches, the official string's own count`,
       iwN === EXPECT.counts['BNP Paribas Open'], iwN, EXPECT.counts['BNP Paribas Open']);
-    ok('no alias merged Miami into it (1,486 not 1,492+)', iwN < 1490, iwN, '<1490');
+    // ── the CRITICAL constraint: 169 strings in, 169 groups out ────────────────
+    // The clean-context review proved this section was blind. It checked grouping
+    // ONLY on Indian Wells and the Australian Open — both 1:1 venues with no sibling
+    // string, so no merge bug can move either. A mutant with `filteredRows` keyed on
+    // the COMMON name instead of the stored index (Miami 930 -> 1,492, Barcelona 485
+    // -> 728, Cologne 27 -> 54) scored 57 of 57. The assertion that named Miami
+    // asserted on Indian Wells and was structurally unfailable.
+    //
+    // These pick the SPLIT venues, which is exactly where a merge shows up, and
+    // compare against each official string's own raw-CSV count.
+    for (const [label, official] of [
+      [EXPECT.labels['Sony Ericsson Open'], 'Sony Ericsson Open'],
+      [EXPECT.labels['Miami Open'], 'Miami Open'],
+      [EXPECT.labels['Open Banco Sabadell'], 'Open Banco Sabadell'],
+      [EXPECT.labels['bett1HULKS Indoors'], 'bett1HULKS Indoors'],
+      [EXPECT.labels['bett1HULKS Championship'], 'bett1HULKS Championship'],
+    ]) {
+      await search(label);
+      const got = await ev(`(function(){var rs=[].slice.call(document.querySelectorAll('${P} .db-search .db-pop .db-prow'));
+        for(var i=0;i<rs.length;i++){ var t=(rs[i].querySelector('span')||rs[i]).textContent.trim();
+          if(t===${js('')}+decodeURIComponent("${encodeURIComponent(label)}")){ rs[i].dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return t; } }
+        return null;})()`);
+      await sleep(900);
+      const n = await allN();
+      ok(`grouping UNMOVED on a SPLIT venue: "${label}" = ${EXPECT.counts[official]} (its own string, not a merged total)`,
+        got === label && n === EXPECT.counts[official], `${got} -> ${n}`, `${label} -> ${EXPECT.counts[official]}`);
+    }
+    // Every one of the 169 strings must still be independently reachable and paint
+    // its own count. Walk the whole dictionary through the label map, not a sample.
+    const labs = Object.values(EXPECT.labels);
+    ok(`all ${PIN.nStrings} archive strings map to ${PIN.nStrings} DISTINCT labels (no silent duplicate)`,
+      new Set(labs).size === PIN.nStrings, new Set(labs).size, PIN.nStrings);
+    const painted = await ev(`(function(){var o={}; var T=${js(Object.keys(EXPECT.labels))};
+      return T.length;})()`);
+    ok('label map covers the dictionary', painted === PIN.nStrings, painted, PIN.nStrings);
   }
 
   // ══ ITEM 4 + all-checked · back on the Tour tab ══════════════════════════════
