@@ -268,6 +268,23 @@ jobs:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: node build-series.js || true
 
+      # TEN-204 item 2.8 — FAIL-CLOSED row-integrity gate on the artifact this run just
+      # wrote. `npm test` above runs the same gate, but it runs BEFORE build-series.js, so
+      # there it only audits the committed seed. This is the one that audits what ships:
+      #
+      #   A · every row inside every generated streak satisfies that streak's own claim
+      #       (re-derived from the score string by the gate's OWN parser, never by calling
+      #       build-series.js's conditionHeld — a predicate cannot validate itself)
+      #   B · the modal's row count equals the count printed on the card
+      #   C · the card's price/proof cell and the modal's rows come from ONE row builder
+      #
+      # Deliberately NOT `continue-on-error`. The step above is best-effort because an
+      # absent Series refresh costs nothing — the committed seed is served in its place. A
+      # streak whose own evidence contradicts its claim is different in kind: it is a wrong
+      # number in front of a paying reader, and it must stop the deploy.
+      - name: Series row-integrity gate (fail-closed)
+        run: node tools/test-series-rows.js
+
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
       #

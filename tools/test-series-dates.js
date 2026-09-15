@@ -56,34 +56,49 @@ function lift() {
 }
 const { fmtDate, fmtShort, crossesYear, priorYear, yearOfIso } = lift();
 
-// ── last-year (a): the bare export form is the default ───────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// TEN-204 item 2.3 SUPERSEDES the three date rulings below.
+//
+//   Brief, 2026-09-15, verbatim: "Four columns, 1fr 1fr 1fr 1.2fr: STARTED (with year,
+//   '5 Aug 2026') / LAST (short, '13 Sep') / PRICE CELL / TYPE."
+//
+// So the year is now UNCONDITIONAL on STARTED, ABSENT from LAST, and FOUR digits. That
+// replaces `last-year` (a), `prior-year` (a) and `lone-year` (a) — all 2026-09-12 — which
+// put a 2-digit year on BOTH cells, but only on a year-crossing or prior-year run.
+//
+// The new rule is strictly stronger for the reader, which is why it is implemented rather
+// than queried: every card now states the year its run began, so "Started 5 Dec 2025 /
+// Last 12 Jan" is unambiguous without any conditional, and there is no longer a case where
+// the card knows the year and withholds it.
+//
+// crossesYear() / priorYear() / yearOfIso() are KEPT and still unit-tested below, even
+// though the strip no longer calls them. They encode founder rulings that are being
+// superseded on the strength of one line in a brief; keeping them live makes a reversal a
+// one-line change at the call site instead of a rebuild. That is a deliberate retention,
+// not rot — every one of them is exercised here.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── TEN-204 2.3: the two cell forms ─────────────────────────────────────────
 assert.strictEqual(fmtShort('2026-09-12'), '12 Sep');
 assert.strictEqual(fmtShort('2026-09-12', false), '12 Sep');
 assert.strictEqual(fmtShort('2026-12-05'), '5 Dec');           // no leading zero on the day
-ok('same-year cells keep the export\'s bare day + month');
+ok('LAST keeps the export\'s bare day + month');
 
-// ── last-year (a): the year returns ONLY across a boundary, on BOTH cells ────
+assert.strictEqual(fmtShort('2026-08-05', true), '5 Aug 2026', 'the brief\'s worked example, verbatim');
+assert.strictEqual(fmtShort('2025-12-05', true), '5 Dec 2025');
+assert.strictEqual(fmtShort('2026-01-12', true), '12 Jan 2026');
+assert(!/’/.test(String(fmtShort('2026-01-12', true))),
+  'the 2-digit apostrophe year is back — TEN-204 2.3 asks for the full four digits');
+ok('STARTED carries the FULL four-digit year ("5 Aug 2026")');
+
+// The superseded helpers still behave, so a reversal is a call-site change.
 assert.strictEqual(crossesYear('2025-12-05', '2026-01-12'), true);
-assert.strictEqual(fmtShort('2025-12-05', true), '5 Dec ’25');
-assert.strictEqual(fmtShort('2026-01-12', true), '12 Jan ’26');
-ok('a cross-year run carries a 2-digit year on both cells');
-
 assert.strictEqual(crossesYear('2026-08-05', '2026-09-12'), false);
 assert.strictEqual(crossesYear('2026-01-01', '2026-12-31'), false, 'a full year inside ONE year is not a crossing');
-ok('a same-year run never carries a year');
-
-// ── prior-year (a): the year also marks a run whose LAST is not in the data year ──
-// The case the crossing rule cannot reach: a Slam run wholly inside a past year.
-assert.strictEqual(crossesYear('2026-08-26', '2026-09-13'), false, 'wholly in 2026 — not a crossing');
 assert.strictEqual(priorYear('2026-09-13', '2027-01-20T06:04:14.376Z'), true,
-  'a 2026 run still on the board in 2027 must be marked');
-assert.strictEqual(fmtShort('2026-08-26', true), '26 Aug ’26');
-assert.strictEqual(fmtShort('2026-09-13', true), '13 Sep ’26');
-ok('a run wholly inside a past year carries the year on both cells');
-
-assert.strictEqual(priorYear('2026-09-13', '2026-09-12T06:04:14.376Z'), false,
-  'a run inside the snapshot\'s own year stays bare — today\'s cards must not change');
-ok('a current-data-year run keeps the export\'s bare day + month');
+  'a 2026 run still on the board in 2027 would be marked, were the conditional live');
+assert.strictEqual(priorYear('2026-09-13', '2026-09-12T06:04:14.376Z'), false);
+ok('the superseded crossesYear/priorYear rules still hold at the helper level');
 
 // The ruling says "not in the current data year" — which is a ≠, not a <. A LAST in a
 // FUTURE year relative to the snapshot is equally not-in-the-data-year and is a real
@@ -97,11 +112,13 @@ ok('the rule is "different year", not "earlier year"');
 // differently by timezone and could disagree with the artifact it is painting.
 assert.strictEqual(yearOfIso('2027-01-01T00:00:00Z'), '2027');
 assert.strictEqual(yearOfIso('2026-12-31T23:30:00Z'), '2026', 'UTC, matching the UPDATED clock');
-assert(!/new Date\(\)\.getFullYear|getFullYear\(\)/.test(src),
-  'the year reference reads the client clock — it must come from generatedAt');
-assert(/priorYear\(st\.lastDate, _data && _data\.generatedAt\)/.test(src),
-  'priorYear is no longer fed generatedAt at the call site');
-ok('the reference year comes from generatedAt in UTC, not the browser clock');
+// Comment-stripped, so the code may still NAME the build-side expression it is contrasting
+// itself with (`new Date().getFullYear() - 5`) without tripping its own guard. The rule is
+// about what EXECUTES, not about what is written down.
+const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+assert(!/new Date\(\)\.getFullYear|getFullYear\(\)/.test(noComments),
+  'the year reference reads the client clock — it must come from the data');
+ok('no client-clock year anywhere in the executed page code');
 
 // No usable generatedAt → no marking. A year is never guessed. The LAST here is
 // deliberately in a DIFFERENT year from any year the code could plausibly hardcode:
@@ -134,31 +151,20 @@ assert.strictEqual(priorYear('2026-13-05', '2027-01-20T06:04:14.376Z'), false, '
 assert.strictEqual(priorYear('2026-9-13', '2027-01-20T06:04:14.376Z'), false, 'unpadded LAST is unrenderable');
 ok('an unusable generatedAt or an unrenderable LAST yields no year, never a guess');
 
-// The two rulings OR together at the call site — neither may be dropped.
-assert(/crossesYear\(startYmd, st\.lastDate\) \|\|\s*\n?\s*priorYear\(/.test(src),
-  'showYear no longer ORs the crossing rule with the prior-year rule');
-ok('showYear ORs last-year (a) with prior-year (a)');
-
-// ── lone-year (a): an unknown START must NOT suppress the year on LAST ───────
-// Founder ruling, ask fc48bac5 (answered 2026-09-12, option a): "keep it — a lone
-// year on LAST is true and useful; lock it with a test". The asymmetry is the point:
-// prior-year is a property of LAST alone, so a streak with no usable START paints
-// "Started — / Last 12 Sep ’26". The competing option (b, suppress unless BOTH cells
-// can carry one) was rejected, so a symmetry guard added here later would silently
-// revert the ruling on the card that already knows least.
+// ── TEN-204 2.3 · what the RENDERER actually paints ─────────────────────────
+// Asserted against the shipped strip, not against the helpers: what the reader sees is what
+// the renderer composes, and a source-text regex cannot hold this. That lesson is already
+// recorded below in the `lone-year` block, and it applies unchanged to the new rule.
 //
-// Unreachable from today's pipeline (build-series.js always emits a non-empty
-// matches[]; 0 of 117 live streaks lack one), which is exactly why it is pinned here
-// — live data cannot exercise it in either direction.
-assert.strictEqual(priorYear('2026-09-13', '2027-01-20T06:04:14.376Z'), true,
-  'prior-year must not consult STARTED at all — it is a property of LAST');
-assert.strictEqual(fmtShort(null, true), null, 'the unknown START is a dash…');
-assert.strictEqual(fmtShort('2026-09-13', true), '13 Sep ’26', '…while LAST keeps its year');
-// …and the two helpers agreeing is not enough: what the RENDERER composes out of them
-// is what the reader sees. A source-text regex cannot hold this — a guard written as
-// `(crossesYear(...) || priorYear(...)) && !!fmtShort(startYmd)` is option (b) exactly
-// and slips past any pattern anchored on `showYear &&`. (Confirmed: an earlier regex
-// form of this check passed against that mutation.) So EXECUTE the shipped strip.
+// ── lone-year (a), now superseded: an unknown START no longer affects LAST ───
+// Under TEN-204 2.3 the two cells are independent by construction — STARTED always carries
+// its year, LAST never does — so the asymmetry that ruling `lone-year` (a) had to defend is
+// no longer reachable. What still has to hold is the standing rule underneath it: an
+// unrenderable STARTED is a dash, and it must not damage LAST beside it.
+//
+// EXECUTE the shipped strip. A source-text regex cannot hold this: a guard written as
+// `... && !!fmtShort(startYmd)` slips past any pattern anchored on `showYear &&`, and an
+// earlier regex form of this very check passed against exactly that mutation.
 const stripSrc = (() => {
   const a = src.indexOf('    var startYmd = startedOf(st);');
   const b = src.indexOf("      '</div>';", a);
@@ -169,24 +175,47 @@ assert(/showYear/.test(stripSrc) && /sr-cell-v/.test(stripSrc), 'lifted the wron
 // Real helpers, stubbed surroundings; `st` and generatedAt are the only inputs.
 function paintStrip(startYmd, lastDate, generatedAt) {
   const fn = new Function('startedOf', 'st', '_data', 'esc', 'dash', 'FAM_BADGE', 'famOf',
-    'fmtShort', 'crossesYear', 'priorYear',
+    'fmtShort', 'crossesYear', 'priorYear', 'proofSummary',
     stripSrc + '\n return strip;');
   return fn(() => startYmd, { lastDate, type: 'all' }, { generatedAt },
-    (s) => String(s), '—', {}, () => 'all', fmtShort, crossesYear, priorYear);
+    (s) => String(s), '—', {}, () => 'all', fmtShort, crossesYear, priorYear,
+    () => ({ label: 'Avg price', value: null }));
 }
+// The headline rule, painted: STARTED with a four-digit year, LAST without one.
+const std = paintStrip('2026-08-05', '2026-09-13', '2026-09-15T01:44:07.908Z');
+assert(/Started<\/span><span class="sr-cell-v">5 Aug 2026</.test(std),
+  'TEN-204 2.3: STARTED must paint "5 Aug 2026" — painted: ' + std);
+assert(/Last<\/span><span class="sr-cell-v">13 Sep</.test(std),
+  'TEN-204 2.3: LAST must paint the short form with no year — painted: ' + std);
+assert(!/13 Sep 2026|13 Sep ’26/.test(std), 'LAST grew a year back — the brief asks for "13 Sep"');
+ok('TEN-204 2.3: the RENDERER paints "Started 5 Aug 2026 / Last 13 Sep"');
+
+// A same-year run is no longer a special case — it gets the year too.
+const sameYear = paintStrip('2026-08-26', '2026-09-13', '2026-09-12T07:13:37.585Z');
+assert(/26 Aug 2026/.test(sameYear) && /13 Sep</.test(sameYear),
+  'a same-year run must still stamp STARTED — the conditional is gone. Painted: ' + sameYear);
+ok('the year is unconditional — a same-year run carries it too');
+
+// Standing rule: an unrenderable STARTED is a dash and does not damage LAST.
 const lone = paintStrip(null, '2026-09-13', '2027-01-20T06:04:14.376Z');
 assert(/Started<\/span><span class="sr-cell-v">—</.test(lone),
-  'ruling lone-year (a): STARTED should dash when it cannot render — painted: ' + lone);
-assert(/13 Sep ’26/.test(lone),
-  'ruling lone-year (a) REVERTED: LAST dropped its year because STARTED was unknown. ' +
-  'Option (b) "no year unless BOTH cells can carry one" was rejected 2026-09-12. Painted: ' + lone);
-assert(/sr-strip--yr/.test(lone), 'the lone-year strip lost its narrow-viewport modifier — the year will elide');
-// …and the control: with BOTH ends renderable and inside the data year, still bare.
-const bare = paintStrip('2026-08-26', '2026-09-13', '2026-09-12T07:13:37.585Z');
-assert(!/’26/.test(bare) && /26 Aug/.test(bare) && /13 Sep/.test(bare),
-  'a same-data-year run must stay bare — today\'s board must not change. Painted: ' + bare);
-assert(!/sr-strip--yr/.test(bare), 'a bare strip must not carry the year modifier');
-ok('lone-year (a): the RENDERER paints "Started — / Last 13 Sep ’26", year kept on LAST');
+  'an unrenderable STARTED must dash — painted: ' + lone);
+assert(/Last<\/span><span class="sr-cell-v">13 Sep</.test(lone),
+  'an unrenderable STARTED must not blank LAST beside it. Painted: ' + lone);
+assert(/sr-strip--yr/.test(lone), 'the strip lost its narrow-viewport modifier — the year will elide');
+ok('an unrenderable STARTED dashes without damaging LAST');
+
+// ── the fourth cell (TEN-204 2.3) ───────────────────────────────────────────
+assert(/sr-cell-proof/.test(stripSrc), 'the strip no longer renders the price/proof cell');
+assert(/proofSummary\(st\)/.test(stripSrc),
+  'the strip computes its fourth cell from something other than proofSummary() — the ' +
+  'card and the modal would no longer share one row builder (export §3.3)');
+assert(/1fr 1fr 1fr 1\.2fr/.test(css), 'the card strip is no longer the export\'s four tracks');
+// A match-result family must show a DASH under AVG PRICE, never a number, until Phase 3.
+assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv">—</.test(std),
+  'a match-result card is printing something other than a dash under AVG PRICE, but Phase 3 ' +
+  'has not been authorised. Painted: ' + std);
+ok('the strip has four tracks and a dashed AVG PRICE until Phase 3');
 
 // ── the review's finding: the converse — an unknown LAST yields NO year at all ─
 // Not a contradiction of lone-year (a): there the year is carried by the cell that
@@ -201,7 +230,7 @@ ok('an unrenderable end yields a dash on both cells, never a lone year');
 
 // ── standing rule: never fabricate. An impossible month is a dash ────────────
 assert.strictEqual(fmtShort('2026-00-05'), null, 'month 00 must not print "5 undefined"');
-assert.strictEqual(fmtShort('2026-13-05', true), null, 'month 13 must not print "5 undefined ’26"');
+assert.strictEqual(fmtShort('2026-13-05', true), null, 'month 13 must not print "5 undefined 2026"');
 assert.strictEqual(fmtDate('2026-00-05'), null);
 assert.strictEqual(fmtDate('2026-13-05'), null);
 assert.strictEqual(fmtShort(''), null);
@@ -211,9 +240,9 @@ ok('an impossible or missing date falls to a dash, never a fabricated string');
 
 // The modal used to fall back to the RAW string, so an unrenderable date printed
 // verbatim there while the card beside it dashed for the same value.
-assert(!/fmtDate\(m\.date\) \|\| m\.date/.test(src),
+assert(!/fmtDate\(r\.date\) \|\| r\.date/.test(src),
   'the modal prints the raw date string again when fmtDate fails — the card dashes for the same value');
-assert(/fmtDate\(m\.date\) \? esc\(fmtDate\(m\.date\)\) : dash/.test(src),
+assert(/fmtDate\(r\.date\) \? esc\(fmtDate\(r\.date\)\) : dash/.test(src),
   'the modal date cell no longer dashes on an unrenderable date');
 ok('the modal dashes an unrenderable date too, matching the card');
 
@@ -222,13 +251,15 @@ assert(/sr-strip--yr/.test(src), 'series.js no longer marks the year-bearing str
 assert(/showYear \? ' sr-strip--yr' : ''/.test(src), 'the sr-strip--yr modifier is no longer gated on showYear');
 const mq = css.slice(css.indexOf('@media (max-width: 640px)'));
 assert(mq.indexOf('@media') === 0 && mq.length > 0, 'the narrow-viewport media query is gone');
+// TEN-204 2.3: every card is year-bearing now AND the strip is four cells wide, so the
+// relaxation applies to `.sr-strip` outright and lays out 2x2 rather than spanning TYPE.
 assert(/\.sr-strip\.sr-strip--yr \{[^}]*grid-template-columns: 1fr 1fr/.test(mq),
-  'the narrow-viewport two-column relaxation for year-bearing strips is gone — the year will elide below ~364px');
-assert(/\.sr-strip\.sr-strip--yr .sr-cell:nth-child\(3\) \{[^}]*grid-column: 1 \/ -1/.test(mq),
-  'TYPE no longer spans on the relaxed strip');
+  'the narrow-viewport two-column relaxation is gone — four mono cells will elide below ~364px');
+assert(/\[data-page="series"\] \.sr-strip,\s*\n\s*\[data-page="series"\] \.sr-strip\.sr-strip--yr/.test(mq),
+  'the relaxation no longer covers the unmodified .sr-strip — a four-cell strip needs it on every card');
 assert(/\[data-page="series"\] \.sr-strip\.sr-strip--yr/.test(mq),
   'the relaxation lost its [data-page="series"] scope and will be outranked by the base rule');
-ok('a year-bearing strip still has its narrow-viewport relaxation, correctly scoped');
+ok('the four-cell strip still has its narrow-viewport relaxation, correctly scoped');
 
 // ── two-up (a): the export's track width stands ──────────────────────────────
 assert(/minmax\(400px, ?1fr\)/.test(css), 'the card grid is no longer the export\'s minmax(400px,1fr)');

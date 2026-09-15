@@ -231,6 +231,46 @@ function loadMeta() {
   return meta;
 }
 
+// TEN-204 2.1 · the RANK join, fixed.
+//
+// loadMeta() above is not broken — it keys player-profiles.json by the same api-tennis
+// player_key the Series slate carries, and the join logic is right. The FILE is the
+// problem: pipeline.yml REBUILDS player-profiles.json earlier in the same run, scoped to
+// the main dashboard's ATP slate, and this build then reads that rebuilt file. Measured
+// on the deployed artifact of 2026-09-15: 136 profiles, 135 with a rank, and **2 of the
+// 95 Series players present**. The Series board is 100% Challenger; the profiles file is
+// ATP main tour. The two sets barely intersect, so 20 of 20 cards painted a dash.
+//
+// get_standings is the ATP ranking table itself — 2,342 rows, keyed by `player_key`, the
+// SAME key space. Measured against the live slate: 95 of 95 resolve. One extra call per
+// build, no pacing concern, and it is the authoritative source for the number rather than
+// a by-product of a profile fetch.
+//
+// PROFILES STILL WIN when they carry a rank. They are the source every other surface
+// reads, so a Series card and a player page can never print different numbers for a player
+// both of them know; standings only fill the hole. Every resolution is stamped with its
+// origin in `rankSource` so the artifact says where each number came from.
+async function loadStandings() {
+  try {
+    const rows = await apiGet(
+      `${API_TENNIS_BASE}?method=get_standings&event_type=ATP&APIkey=${API_TENNIS_KEY}`);
+    const m = {};
+    for (const r of rows) {
+      if (!r || r.player_key == null) continue;
+      const place = Number(r.place);
+      if (!Number.isFinite(place) || place <= 0) continue;   // never a 0, never a guess
+      m[String(r.player_key)] = place;
+    }
+    console.error(`build-series: get_standings resolved ${Object.keys(m).length} ATP ranks.`);
+    return m;
+  } catch (e) {
+    // A failed standings call must not fail the build — it degrades to the profiles-only
+    // behaviour that shipped before this change, i.e. a dash. Never a stale or invented rank.
+    console.error(`build-series: get_standings failed (${e.message}) — ranks fall back to player-profiles.json only.`);
+    return {};
+  }
+}
+
 async function apiGet(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -840,7 +880,28 @@ function streakReference(st, recs) {
   const emitted = Array.isArray(st.matches) ? st.matches : [];
   if (last.length !== st.count || emitted.length !== st.count) return null;
   for (let i = 0; i < last.length; i++) if (last[i].date !== emitted[i].date) return null;
+  // TEN-204 2.4 · the window the card NAMES is now derived from the data, not the clock.
+  //
+  // rules.referenceWindow.sinceYear is `new Date().getFullYear() - 5` — it names the window
+  // we QUERIED, which is not the window we have DATA for. Measured 2026-09-15: I. Simakin has
+  // 3 in-tier records in 2021 against 96 in 2024, so "since 2021" described a record that
+  // effectively starts in 2022. sinceYear below is the year of this player's EARLIEST in-tier
+  // record, so the label can only name a year the enumeration actually saw.
+  //
+  // yearGaps is the safety rail the brief asks for ("never an understated 1st run"). A
+  // calendar year inside the window with ZERO in-tier records means the enumeration could
+  // have been broken by MISSING DATA rather than by a loss — which would shorten a run and
+  // undercount occurrences. The front-end dashes the sub-line when this is non-empty rather
+  // than publishing a reference it cannot stand behind.
+  const years = recs.map(r => Number(String(r.date).slice(0, 4))).filter(Number.isFinite);
+  const sinceYear = years.length ? Math.min(...years) : null;
+  const lastYear = years.length ? Math.max(...years) : null;
+  const seen = new Set(years);
+  const yearGaps = [];
+  if (sinceYear != null) for (let y = sinceYear; y <= lastYear; y++) if (!seen.has(y)) yearGaps.push(y);
   return {
+    sinceYear,
+    yearGaps,
     longest: split.reduce((m, r) => Math.max(m, r.length), 0),
     occurrences: split.filter(r => r.length >= st.count).length,
     runs: split.length,             // total runs of this condition in the window
@@ -917,7 +978,9 @@ async function main() {
   const surfaceMap = loadSurfaceMap();
   const styleMap = loadStyleMap();
   const meta = loadMeta();
+  const standings = await loadStandings();   // TEN-204 2.1: the Challenger rank source
   const ledger = loadLedger();   // fix #3: accumulates CONTINUED/BROKEN across days
+  const rankStats = { profiles: 0, standings: 0, none: 0 };
 
   const slate = await fetchSlate();
   if (!slate.length) {
@@ -1071,11 +1134,19 @@ async function main() {
         }
       }
       const m = meta[pk] || {};
+      // TEN-204 2.1 · profiles first, standings as the fill. `rankSource` records which
+      // one answered so the artifact is auditable and a regression is visible as a
+      // distribution shift rather than as a silent board of dashes.
+      let rank = (m.rank != null ? m.rank : null);
+      let rankSource = rank != null ? 'profiles' : null;
+      if (rank == null && standings[pk] != null) { rank = standings[pk]; rankSource = 'standings'; }
+      rankStats[rankSource || 'none']++;
       players.push({
         key: pk,
         tier,
         name: m.name || ctx.playerName || null,
-        rank: (m.rank != null ? m.rank : null),
+        rank,
+        rankSource,
         country: m.country || null,
         totalMatches: recs.length,          // in-tier countable pool behind streaks
         upcoming: ctx,
@@ -1172,7 +1243,14 @@ async function main() {
         // must come from the same clock the QUERY used, or it names a window we did not
         // search. Not reachable from pipeline.yml, which never sets SERIES_NOW; fixed
         // here anyway because a label is a claim.
+        // TEN-204 2.4: this field is now DESCRIPTIVE ONLY — it records the window the
+        // build QUERIED. The card no longer reads it. Each streak carries its own
+        // `reference.sinceYear`, the year of that player's earliest in-tier record, so the
+        // printed year is derived from the data rather than from a clock. Kept here because
+        // the query window is still a fact worth recording about the run.
+        queriedSinceYear: new Date().getFullYear() - HISTORY_WINDOW_YEARS,
         sinceYear: new Date().getFullYear() - HISTORY_WINDOW_YEARS,
+        perStreakSinceYear: 'reference.sinceYear — earliest in-tier record year for THAT player; reference.yearGaps lists calendar years inside the window with zero in-tier records (the card dashes when non-empty).',
         years: HISTORY_WINDOW_YEARS,
         scope: 'in-tier',
         note: 'per-streak reference.longest / reference.occurrences are enumerated over this window with the engine\'s own conditionHeld(); a streak whose enumeration does not reproduce the emitted run carries no reference and the card dashes.',
@@ -1218,6 +1296,10 @@ async function main() {
     // refDash > 0 means the enumeration failed its self-check somewhere — worth a look,
     // never a fabricated number on the card.
     referenceOk: refOk, referenceDash: refDash,
+    // TEN-204 2.1: where each card's rank came from. `none` is the only honest dash.
+    // A run where `profiles + standings` collapses toward 0 is the regression this
+    // ticket fixed coming back, and it is visible here rather than only on the board.
+    rankResolved: rankStats,
     byFamily: famCount,
     byDirection: dirCount,
     bySubtype: subCount,

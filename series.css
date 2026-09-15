@@ -152,10 +152,15 @@
    reference, the exact failure the year-bearing date strip was relaxed to avoid — or
    letting the line wrap, which costs one line of height on a phone and keeps every
    digit. Wrapping wins: a reference the reader can't finish reading is worse than a
-   reference on two lines. */
+   reference on two lines.
+
+   TEN-204 2.4 drops it from 14px to 11.5px. At 14px it matched .sr-cell-v exactly, which put
+   it at the same visual weight as the STARTED/LAST figures and made the card read as having
+   two equally important number rows. The brief's ask — "secondary to the claim and the strip"
+   — is what 11.5px buys. Colour and the wrapping decision above are unchanged. */
 [data-page="series"] .sr-ref {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 14px; color: #5b6880; margin-top: -6px;
+  font-size: 11.5px; color: #5b6880; margin-top: -6px;
   white-space: normal; overflow-wrap: break-word;
 }
 [data-page="series"] .sr-ref--none { color: #4b5672; }
@@ -196,11 +201,16 @@
 [data-page="series"] .sr-tag-oc-na { color: #5b6880; background: transparent; border-color: rgba(255,255,255,0.09); }
 [data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: #4b5672; }
 
-/* 3.4 three-column strip: STARTED · LAST · TYPE (pool is modal-only, ruling q1) */
+/* 3.4 FOUR-column strip (TEN-204 2.3): STARTED · LAST · PRICE/PROOF · TYPE, tracks
+   1fr 1fr 1fr 1.2fr per the export. Pool stays modal-only (ruling q1). */
 [data-page="series"] .sr-strip {
-  display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
   padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
 }
+/* The export makes the fourth figure "the only bold value in the strip" — that is what marks
+   it as the cell carrying the finding rather than the metadata. Kept for the proof figures
+   that ship today so the emphasis is already in place when Phase 3 lands a price here. */
+[data-page="series"] .sr-cell-v.sr-cell-pv { font-weight: 700; }
 [data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 [data-page="series"] .sr-cell-k {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
@@ -283,22 +293,58 @@ body.sr-ov-open { overflow: hidden; }
    sits OUTSIDE this scroll pane, so on a platform with classic space-taking scrollbars
    (Windows/Linux) a long run would narrow the rows' content box and not the header's,
    and the four columns would drift apart. Reserving the gutter always removes that. */
-.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 24px 24px; }
+/* 8px, not 24px: the total line now sits below this pane and owns the panel's bottom
+   padding, so the old 24px would have opened a gap between the last row and the rule. */
+.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 24px 8px; }
 
 /* Scoped under .sr-ov — these are generic enough names that a bare global selector
    would be a collision waiting to happen on another surface. */
-.sr-ov .sr-mhead, .sr-ov .sr-mrow { display: grid; grid-template-columns: 110px minmax(0,1fr) 150px 110px; gap: 0 16px; }
+/* TEN-204 2.7 · two track sets, one per modal shape. The header, every row AND the total
+   line share the shape's template and gap, so all verticals line up down the panel — that
+   alignment is the whole reason the export renders the header once, outside the scroll pane,
+   instead of per row.
+
+   .sr-m--result — eight tracks, the export's own geometry with HOME/AWAY renamed to
+   PLAYER/OPP. .sr-m--line — six tracks: no price columns at all, not dashed ones, and the
+   width they would have taken goes to EVENT, which on a Challenger carries names like
+   "Phan Thiet 3 (Vietnam) - Qualification". */
+.sr-ov .sr-mhead, .sr-ov .sr-mrow { display: grid; gap: 0 16px; }
+.sr-ov .sr-m--result { grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 54px 54px 64px; }
+.sr-ov .sr-m--line   { grid-template-columns: 14px 92px minmax(0,1.4fr) minmax(0,1fr) 118px 74px; }
 .sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
 .sr-ov .sr-mhead span {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
 }
-.sr-ov .sr-mhead .sr-mscore { text-align: right; }
+.sr-ov .sr-mhead .sr-mscore,
+.sr-ov .sr-mhead .sr-mp1,
+.sr-ov .sr-mhead .sr-mp2,
+.sr-ov .sr-mhead .sr-mpl,
+.sr-ov .sr-mhead .sr-mproof { text-align: right; }
 .sr-ov .sr-mrow { align-items: baseline; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07); }
 .sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; white-space: nowrap; }
-.sr-ov .sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; }
+.sr-ov .sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; overflow: hidden; text-overflow: ellipsis; }
 .sr-ov .sr-mopp { font-size: 13px; color: #aab3c5; line-height: 1.45; }
 .sr-ov .sr-mscore { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #e7e9ee; white-space: nowrap; }
+/* Result letter. Sign colour is used in exactly ONE place on this page — here and, when
+   Phase 3 lands, the P&L column. The export is explicit that the cards carry direction as a
+   WORD, never a colour; do not let these two greens leak upward. */
+.sr-ov .sr-mrow .sr-mres { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; font-weight: 700; }
+.sr-ov .sr-mres.sr-w { color: #3dd68c; }
+.sr-ov .sr-mres.sr-l { color: #e0616f; }
+/* PLAYER bold / OPP dim is what marks which side is his — the header names the column, the
+   weight split does the reading. Both dash until Phase 3 is authorised. */
+.sr-ov .sr-mp1 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; font-weight: 700; color: #e7e9ee; }
+.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #5b6880; }
+.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; }
+.sr-ov .sr-mproof { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; font-weight: 700; color: #e7e9ee; }
+/* Total line — shares the rows' left and right edges, below the scroll pane. */
+.sr-ov-foot { flex: none; padding: 0 24px 20px; }
+.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,0.09); }
+.sr-ov-total-k {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
+}
 .sr-ov .sr-dash { color: #4b5672; }
 
 @media (max-width: 640px) {
@@ -311,13 +357,54 @@ body.sr-ov-open { overflow: hidden; }
      TYPE spanning beneath); every same-year card keeps the export's exact
      three-column geometry. Scoped to match the base rule's specificity (0,3,0
      vs 0,2,0) — under-scoping here is what nearly killed the mobile modal. */
+  /* TEN-204 2.3: STARTED now always carries a four-digit year, so EVERY card is a
+     year-bearing card and the strip is four cells wide. Four mono cells do not fit 320px,
+     so below 640px it becomes a 2x2 block — same cells, same order, no ellipsis and no
+     corrupted date. The --yr modifier is still emitted by series.js and is kept as the
+     hook, but it is now true of every card rather than of the rare cross-year one. */
+  [data-page="series"] .sr-strip,
   [data-page="series"] .sr-strip.sr-strip--yr { grid-template-columns: 1fr 1fr; row-gap: 12px; }
-  [data-page="series"] .sr-strip.sr-strip--yr .sr-cell:nth-child(3) { grid-column: 1 / -1; }
+  [data-page="series"] .sr-strip.sr-strip--yr .sr-cell:nth-child(3) { grid-column: auto; }
   .sr-ov-back { padding: 16px; }
   /* must carry the same .sr-ov scope as the base rules above, or these lose on
-     specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies */
-  .sr-ov .sr-mhead, .sr-ov .sr-mrow { grid-template-columns: 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
+     specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies.
+     TEN-204 2.7: the price / proof columns are the first thing to go on a phone — EVENT
+     and SCORE are what make a row readable — so both shapes collapse to the same five
+     tracks and the trailing cells are hidden rather than squeezed to an ellipsis. */
+  .sr-ov .sr-m--result, .sr-ov .sr-m--line { grid-template-columns: 14px 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
+  .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl, .sr-ov .sr-mproof,
+  .sr-ov .sr-mhead .sr-mp1, .sr-ov .sr-mhead .sr-mp2,
+  .sr-ov .sr-mhead .sr-mpl, .sr-ov .sr-mhead .sr-mproof { display: none; }
   .sr-ov .sr-mhead { padding: 0 16px 10px; }
-  .sr-ov-body { padding: 0 16px 16px; }
+  .sr-ov-body { padding: 0 16px 8px; }
+  .sr-ov-foot { padding: 0 16px 16px; }
   .sr-ov-head { padding: 16px 16px 12px; }
+}
+
+/* TEN-204 2.6 · TYPE, MIN LENGTH and SORT on one row from a 1300px viewport up.
+   MEASURED, not guessed. Row 2 carries 8 + 6 + 2 = 16 segment buttons plus three labels.
+   At the export's own `padding: 7px 14px` / `gap: 3px` / `gap: 14px` it needs 1137px. Our
+   shell gives the content column `viewport − 250px sidebar − 80px padding`, capped at
+   1360px — so a 1300px viewport leaves only 984px and SORT wrapped to a third row on every
+   ordinary desktop. (The export fits because Series.dc.html previews standalone at 1300px
+   of CONTENT, with no sidebar taking a quarter of it.)
+   Two steps, so the export's exact metrics survive wherever they actually fit:
+     1300px+ — shave 157px out of horizontal padding and gaps only. Nothing vertical moves:
+               the segment height, the 12.5px type and every colour are untouched, so the
+               bar keeps its rhythm and only its density changes.
+     1660px+ — content reaches ~1330px, past the 1137px the export needs, so hand every
+               value back to the export and render it exactly as designed.
+   Below 1300px the bar wraps, which is the export's own stated behaviour ("the filter rows
+   wrap"). */
+@media (min-width: 1300px) {
+  [data-page="series"] .sr-frow { gap: 10px; }
+  [data-page="series"] .sr-fgroup { gap: 6px; }
+  [data-page="series"] .sr-seg { gap: 2px; padding: 1px; }
+  [data-page="series"] .sr-segbtn { padding: 7px 6px; }
+}
+@media (min-width: 1660px) {
+  [data-page="series"] .sr-frow { gap: 14px; }
+  [data-page="series"] .sr-fgroup { gap: 10px; }
+  [data-page="series"] .sr-seg { gap: 3px; padding: 2px; }
+  [data-page="series"] .sr-segbtn { padding: 7px 14px; }
 }

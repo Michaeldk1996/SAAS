@@ -9,11 +9,16 @@
 //   handicap-bestof  (a) — the CARD drops the "(best-of-N)" qualifier: "Covered −3.5
 //     games". The History modal is out of scope and keeps it, so the format the run
 //     was built on is still visible somewhere.
-//   reference-label  (a) — the sub-line NAMES the window ("longest since 2021 9"),
-//     never "career": the pool is five calendar years AND tier-scoped, so "career"
-//     would be a false claim. The year comes from the ARTIFACT, never the clock.
+//   reference-label  (a) — the sub-line NAMES the window, never "career": the pool is
+//     five calendar years AND tier-scoped, so "career" would be a false claim.
 //   reference-lone   (a) — a run that is the only one ever to reach its own length
-//     prints as-is: "longest 9 · 1st time at 9+".
+//     prints as-is rather than being reworded or truncated.
+//
+// TEN-204 item 2.4 (2026-09-15) REWORDS the sub-line and RE-SOURCES its year:
+//   "longest since 2021 9 · 1st time at 9+"  ->  "Best since 2021: 9 · 1st run of 9+",
+//   the year comes from the STREAK (earliest in-tier record) rather than the artifact's
+//   query window, the type drops 14px -> 11.5px, and a player with a coverage YEAR GAP
+//   dashes the line. Both rulings above survive in substance and are still asserted.
 //
 // Plus item 5's own standing requirement: "Both components required. If either is
 // unavailable for a streak type, the sub-line renders — rather than showing half."
@@ -54,30 +59,67 @@ const ARTIFACT = { rules: { referenceWindow: { sinceYear: 2021, years: 5, scope:
 const refApi = (data) => liftRef(src)(data === undefined ? ARTIFACT : data, esc);
 const { referenceHtml, ordinal } = refApi();
 
-// ── reference-label (a): the window is NAMED, and named from the artifact ────
-const zverev = referenceHtml({ count: 6, reference: { longest: 15, occurrences: 12 } });
-assert(/longest since 2021 15/.test(zverev),
-  'ruling reference-label (a): the sub-line must name the window. Painted: ' + zverev);
-assert(/12th time at 6\+/.test(zverev), 'the occurrence half is wrong. Painted: ' + zverev);
+// TEN-204 item 2.4 REWORDS this sub-line and RE-SOURCES its year. Both rulings below
+// survive in substance — the window is still NAMED, never called "career", and a lone run
+// still prints in full — but:
+//   · "longest since {y} {n} · {k}th time at {c}+"  becomes
+//     "Best since {y}: {n} · {k}th run of {c}+"   (a colon, so the number reads as the
+//     PLAYER'S record rather than as this run; "run" because occurrences counts runs).
+//   · {y} is now the streak's OWN reference.sinceYear — the year of that player's earliest
+//     in-tier record — instead of rules.referenceWindow.sinceYear, which was the year the
+//     build QUERIED (`getFullYear() - 5`) and over-claimed for anyone whose record starts
+//     later. The artifact field survives as a fallback only, for pre-2.4 artifacts.
+//   · a player whose in-tier history has a YEAR GAP dashes the whole line, because a run
+//     could have been cut by missing data rather than by a loss, which understates both
+//     halves ("never an understated 1st run").
+const FULL = (over) => Object.assign({ sinceYear: 2021, yearGaps: [] }, over);
+
+const zverev = referenceHtml({ count: 6, reference: FULL({ longest: 15, occurrences: 12 }) });
+assert(/Best since 2021: 15/.test(zverev),
+  'TEN-204 2.4: the sub-line must read "Best since {year}: {n}". Painted: ' + zverev);
+assert(/12th run of 6\+/.test(zverev), 'the occurrence half is wrong. Painted: ' + zverev);
 assert(!/career/i.test(zverev),
   'ruling reference-label (a) REVERTED: "career" is back. Option (d) "career longest is close ' +
   'enough" was rejected 2026-09-12 — the window is 5 years AND tier-scoped, so it is nobody\'s career.');
-ok('reference-label (a): the sub-line names the window and never says "career"');
+ok('TEN-204 2.4: "Best since {year}: {n} · {k}th run of {c}+", and never "career"');
 
-// The year is the ARTIFACT's, not this machine's clock and not a constant. A different
-// artifact must move the label; that is what makes it a record rather than a guess.
-const shifted = refApi({ rules: { referenceWindow: { sinceYear: 2019 } } }).referenceHtml(
-  { count: 6, reference: { longest: 15, occurrences: 12 } });
-assert(/longest since 2019 15/.test(shifted),
-  'the window year is hard-coded — it must be read from rules.referenceWindow.sinceYear. Painted: ' + shifted);
-ok('the window year is read from the artifact, never from the clock or a literal');
+// The year is the STREAK's own, and it beats the artifact's window. Pinned with the two
+// deliberately DIFFERENT: an implementation that still read the artifact would print 2021.
+const perStreak = refApi({ rules: { referenceWindow: { sinceYear: 2021 } } }).referenceHtml(
+  { count: 6, reference: FULL({ longest: 15, occurrences: 12, sinceYear: 2023 }) });
+assert(/Best since 2023: 15/.test(perStreak),
+  'TEN-204 2.4: the year must come from the STREAK\'s reference.sinceYear (the earliest year ' +
+  'in that player\'s data), not from the artifact\'s query window. Painted: ' + perStreak);
+ok('the year is the streak\'s own earliest data year, not the build\'s query window');
+
+// …and the artifact remains the fallback for a pre-2.4 artifact, so the first deploy after
+// this change does not dash every card while the pipeline catches up.
+const fallback = refApi({ rules: { referenceWindow: { sinceYear: 2019 } } }).referenceHtml(
+  { count: 6, reference: { longest: 15, occurrences: 12, yearGaps: [] } });
+assert(/Best since 2019: 15/.test(fallback),
+  'a pre-2.4 artifact with no per-streak sinceYear must fall back to the window year rather ' +
+  'than dashing the whole board. Painted: ' + fallback);
+ok('a pre-2.4 artifact falls back to the window year rather than dashing');
+
+// ── coverage gate (TEN-204 2.4): a year gap dashes the line ──────────────────
+[[2022], [2023, 2024], [2021]].forEach((gaps) => {
+  const out = referenceHtml({ count: 6, reference: FULL({ longest: 15, occurrences: 12, yearGaps: gaps }) });
+  assert(/sr-ref--none/.test(out) && !/Best since/.test(out),
+    'TEN-204 2.4: a player with a year gap in the in-tier window must DASH — a run cut by ' +
+    'missing data understates both halves. gaps=' + JSON.stringify(gaps) + ' painted: ' + out);
+});
+// …and "no yearGaps field at all" is unknown, not clean. Absence of evidence is not coverage.
+const noField = referenceHtml({ count: 6, reference: { sinceYear: 2021, longest: 15, occurrences: 12 } });
+assert(/sr-ref--none/.test(noField),
+  'an artifact that does not report yearGaps must dash rather than assume clean coverage. Painted: ' + noField);
+ok('a year gap — or an unknown coverage state — dashes the sub-line');
 
 // ── reference-lone (a): a first-ever run at this length prints as-is ─────────
-const simakin = referenceHtml({ count: 9, reference: { longest: 9, occurrences: 1 } });
-assert(/longest since 2021 9 · 1st time at 9\+/.test(simakin),
-  'ruling reference-lone (a): a lone run must print in full — "longest 9 · 1st time at 9+". ' +
-  'Options (b) "his best run" and (c) "first component only" were rejected. Painted: ' + simakin);
-ok('reference-lone (a): the only-ever run at this length prints "1st time at N+" in full');
+const simakin = referenceHtml({ count: 9, reference: FULL({ longest: 9, occurrences: 1 }) });
+assert(/Best since 2021: 9 · 1st run of 9\+/.test(simakin),
+  'ruling reference-lone (a): a lone run must print in full. Options (b) "his best run" and ' +
+  '(c) "first component only" were rejected. Painted: ' + simakin);
+ok('reference-lone (a): the only-ever run at this length prints "1st run of N+" in full');
 
 // ── item 5: both components required, else a dash — never half a sub-line ────
 const halves = [
@@ -93,7 +135,7 @@ halves.forEach(([why, st]) => {
   const out = referenceHtml(st);
   assert(/class="sr-ref sr-ref--none"/.test(out) && />—</.test(out),
     'item 5: ' + why + ' must dash the WHOLE sub-line. Painted: ' + out);
-  assert(!/longest|time at/.test(out), 'item 5: half a sub-line shipped for ' + why + '. Painted: ' + out);
+  assert(!/Best since|run of/.test(out), 'item 5: half a sub-line shipped for ' + why + '. Painted: ' + out);
 });
 ok('item 5: a missing half dashes the whole sub-line, never shows the other half');
 
@@ -102,7 +144,7 @@ ok('item 5: a missing half dashes the whole sub-line, never shows the other half
 [{}, { rules: {} }, { rules: { referenceWindow: {} } }, { rules: { referenceWindow: { sinceYear: '2021' } } }]
   .forEach((data) => {
     const out = refApi(data).referenceHtml({ count: 6, reference: { longest: 9, occurrences: 3 } });
-    assert(/sr-ref--none/.test(out) && !/longest/.test(out),
+    assert(/sr-ref--none/.test(out) && !/Best since/.test(out),
       'an artifact with no usable window year must dash, not print an unlabelled or half label. Painted: ' + out);
   });
 ok('an artifact that cannot name its window dashes rather than labelling it wrongly');
@@ -193,17 +235,25 @@ assert.strictEqual(thin.filter((s) => s.type === 'handicap').length, 0,
 assert.strictEqual(thin.length, 1, 'the rest of that player\'s board must survive');
 ok('handicap-line (a): a player with no −3.5 run shows no handicap card at all');
 
-// ── the sub-line's shipped styling, item 5's own spec ────────────────────────
-// "Mono, #5b6880, same size as the STARTED / LAST values" — .sr-cell-v is 14px.
+// ── the sub-line's shipped styling ───────────────────────────────────────────
+// TEN-204 2.4 SUPERSEDES item 5's "same size as the STARTED / LAST values": "mono 11.5px,
+// #5b6880, directly under the player row — secondary to the claim and strip". At 14px it
+// matched .sr-cell-v exactly and the card read as having two equally weighted number rows.
+// Mono and #5b6880 are unchanged, and the SECONDARY relationship is what is pinned here:
+// the sub-line must be strictly smaller than the strip values it sits above, so a later
+// tweak to either one cannot quietly flatten the hierarchy again.
 const refCss = css.slice(css.indexOf('[data-page="series"] .sr-ref {'));
 assert(refCss.indexOf('[data-page="series"] .sr-ref {') === 0, '.sr-ref has no scoped rule — it will inherit card type');
 const refRule = refCss.slice(0, refCss.indexOf('}') + 1);
-assert(/IBM Plex Mono/.test(refRule), 'item 5: the sub-line must be mono');
-assert(/font-size: 14px/.test(refRule), 'item 5: the sub-line must match the STARTED/LAST value size (14px)');
-assert(/color: #5b6880/.test(refRule), 'item 5: the sub-line colour must be #5b6880');
+assert(/IBM Plex Mono/.test(refRule), 'the sub-line must be mono');
+assert(/font-size: 11\.5px/.test(refRule), 'TEN-204 2.4: the sub-line must be 11.5px');
+assert(/color: #5b6880/.test(refRule), 'the sub-line colour must be #5b6880');
 const cellV = css.slice(css.indexOf('[data-page="series"] .sr-cell-v {'));
-assert(/font-size: 14px/.test(cellV.slice(0, cellV.indexOf('}'))),
-  'the STARTED/LAST value size moved — the sub-line no longer matches it');
+const cellVRule = cellV.slice(0, cellV.indexOf('}'));
+const sizeOf = (rule) => Number((/font-size: ([\d.]+)px/.exec(rule) || [])[1]);
+assert(sizeOf(refRule) < sizeOf(cellVRule),
+  'TEN-204 2.4: the sub-line must read SECONDARY to the strip values — it is ' +
+  sizeOf(refRule) + 'px against the strip\'s ' + sizeOf(cellVRule) + 'px');
 assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: #4b5672/.test(css),
   'item 5: the unavailable state must be #4b5672');
 // The sub-line must WRAP, never elide. Measured at 320-360px: a nowrap sub-line makes
@@ -216,7 +266,7 @@ assert(!/white-space:\s*nowrap/.test(refRule),
 assert(/white-space:\s*normal/.test(refRule), 'the sub-line must be allowed to wrap');
 assert(!/text-overflow:\s*ellipsis/.test(refRule),
   'an ellipsis on the sub-line would print a TRUNCATED reference — never a partial value');
-ok('the sub-line ships mono / 14px / #5b6880, with the dash state at #4b5672');
+ok('the sub-line ships mono / 11.5px / #5b6880, secondary to the strip, dash state #4b5672');
 
 // …and nothing later in the file may quietly outrank those three declarations. The
 // review's point: a `[data-page="series"] .sr-card .sr-ref { font-size: 9px }` added
@@ -246,18 +296,22 @@ function liftCard(source) {
   assert(/referenceHtml\(/.test(block), 'lifted the wrong block');
   // eslint-disable-next-line no-new-func
   return new Function('esc', 'cap', 'avatarHtml', 'claimOf', 'runLabel', 'valence', 'DIR_LABEL',
-    'startedOf', 'fmtShort', 'crossesYear', 'priorYear', 'fmtTime', 'famOf', 'FAM_BADGE', 'referenceHtml', '_data',
+    'startedOf', 'fmtShort', 'crossesYear', 'priorYear', 'fmtTime', 'famOf', 'FAM_BADGE', 'referenceHtml',
+    'proofSummary', '_data',
     block + '\n return cardHtml;');
 }
+// TEN-204 2.3 added the strip's fourth cell, so cardHtml now also closes over proofSummary().
+// Stubbed to the match-result shape (a dashed AVG PRICE), which is what this streak is.
 const mkCard = (refHtmlFn) => liftCard(src)(
   esc, (s) => String(s), () => '<span class="sr-av-wrap"></span>', () => 'Won', (n) => n + ' in a row',
   () => 'win', { win: 'Winning run' }, (st) => st.lastDate, (d) => d, () => false, () => false,
-  (t) => t, () => 'all', { all: 'All comps' }, refHtmlFn, ARTIFACT);
+  (t) => t, () => 'all', { all: 'All comps' }, refHtmlFn,
+  () => ({ label: 'Avg price', value: null }), ARTIFACT);
 const CARD_ST = { type: 'all', direction: 'win', count: 6, lastDate: '2026-09-12',
-  matches: [{ date: '2026-09-01' }], reference: { longest: 9, occurrences: 4 } };
+  matches: [{ date: '2026-09-01' }], reference: { sinceYear: 2021, yearGaps: [], longest: 9, occurrences: 4 } };
 const CARD_C = { player: { name: 'X', rank: 5, upcoming: { day: 'today', time: '11:00', opponentName: 'Y' } }, streak: CARD_ST };
 const html = mkCard(referenceHtml)(CARD_C, 0);
-assert(/longest since 2021 9 · 4th time at 6\+/.test(html),
+assert(/Best since 2021: 9 · 4th run of 6\+/.test(html),
   'item 5: cardHtml does not put the sub-line on the card. Painted: ' + html.slice(0, 400));
 // …and in the ruled POSITION: after the title block, before the player row.
 const iTop = html.indexOf('sr-cardtop'), iRef = html.indexOf('sr-ref'), iProw = html.indexOf('sr-prow');
@@ -272,7 +326,7 @@ ok('cardHtml really paints the sub-line, between the title and the player row');
 // The dash state reaches the card too — not just the helper in isolation.
 const dashHtml = mkCard(referenceHtml)({ player: CARD_C.player, streak: Object.assign({}, CARD_ST, { reference: undefined }) }, 0);
 assert(/class="sr-ref sr-ref--none">—</.test(dashHtml), 'a reference-less streak must paint the dashed sub-line on the CARD');
-assert(!/longest|time at/.test(dashHtml), 'half a sub-line reached the card');
+assert(!/Best since|run of/.test(dashHtml), 'half a sub-line reached the card');
 ok('a reference-less streak paints the dash on the card itself');
 
 // ── the ENGINE half of item 5, executed ──────────────────────────────────────

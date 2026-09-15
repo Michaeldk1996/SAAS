@@ -173,6 +173,99 @@
   }
   function describe(st) { return claimLong(st) + ' — ' + running(st.count); }
 
+  // ─── TEN-204 · THE ONE ROW BUILDER ───────────────────────────────────────────
+  // The export's rule, kept verbatim: "AVG PRICE must be computed from the same rows the
+  // modal lists. In the prototype both come from one builder (seriesRows(card)) so the card
+  // average and the modal's prices can never disagree; keep that single-source rule in
+  // production." This IS that builder. The card's fourth strip cell and the modal's rows are
+  // both derived from its output and from nothing else, and tools/test-series-rows.js fails
+  // the build if either grows a second source.
+  //
+  // Rows come back OLDEST FIRST — the order build-series.js writes matches[] in, which is the
+  // order startedOf() and streakReference()'s self-check both depend on. The modal reverses
+  // for display; the proof aggregate is order-independent.
+  //
+  // `proof` is the value the claim is JUDGED ON, parsed from the same score string the row
+  // renders. It is never a price: no source prices a Challenger games line with a timestamped
+  // close (TEN-204 Phase 1 §1.2e — 23%-38% exact-line coverage, bet365 0%-13%, no timestamps),
+  // so a price under a line claim would be an invention. Unparseable score -> proof null -> a
+  // dash, and a null is EXCLUDED from the average rather than counted as zero.
+  var SET_RE = /^(\d+)-(\d+)(?:\(\d+\))?$/;
+  function setsOf(score) {
+    var toks = String(score == null ? '' : score).trim().split(/\s+/).filter(Boolean);
+    if (!toks.length) return null;
+    var out = [];
+    for (var i = 0; i < toks.length; i++) {
+      var m = SET_RE.exec(toks[i]);
+      if (!m) return null;                     // one bad token invalidates the line
+      out.push([Number(m[1]), Number(m[2])]);
+    }
+    return out;
+  }
+  // Which proof figure a family is judged on, and what the card's fourth cell calls it.
+  // Match-result families have no proof figure — the thing they are judged on IS the W/L the
+  // modal already prints — so their cell is the export's AVG PRICE over a dash until the
+  // founder rules on Phase 3.
+  var PROOF_SPEC = {
+    total:    { key: 'games',    label: 'Avg games',         dp: 1 },
+    handicap: { key: 'margin',   label: 'Avg margin',        dp: 1, signed: true },
+    setgames: { key: 'set1',     label: 'Avg 1st-set games', dp: 1 },
+    setout:   { key: null,       label: 'Proof',             dp: 0 },
+    all:      { key: null,       label: 'Avg price',         dp: 0 },
+    surface:  { key: null,       label: 'Avg price',         dp: 0 },
+    style:    { key: null,       label: 'Avg price',         dp: 0 },
+  };
+  function proofOf(st, m) {
+    var s = setsOf(m && m.score);
+    if (!s) return null;
+    var fam = famOf(st), i, tot = 0, mine = 0, theirs = 0;
+    if (fam === 'total') {
+      for (i = 0; i < s.length; i++) tot += s[i][0] + s[i][1];
+      return tot;
+    }
+    if (fam === 'handicap') {
+      // Player-POV signed game margin. series.json writes the score from the player's side
+      // (build-series.js), so s[i][0] is always his games — the same convention the total
+      // and first-set figures read, and the reason a handicap proof can be signed at all.
+      for (i = 0; i < s.length; i++) { mine += s[i][0]; theirs += s[i][1]; }
+      return mine - theirs;
+    }
+    if (fam === 'setgames') return s[0][0] + s[0][1];
+    return null;
+  }
+  function streakRows(st) {
+    var ms = Array.isArray(st.matches) ? st.matches : [];
+    return ms.map(function (m) {
+      return {
+        date: m.date || null,
+        event: m.tournament || null,
+        opponent: m.opponent || null,
+        score: m.score || null,
+        won: (typeof m.won === 'boolean') ? m.won : null,
+        proof: proofOf(st, m),
+        // Phase 3 is NOT built. These stay null so the modal's price and P&L cells render the
+        // standing dash rather than a placeholder that could be mistaken for a real figure.
+        price: null,
+        oppPrice: null,
+      };
+    });
+  }
+  // The card's fourth cell, computed from streakRows() and nothing else.
+  function proofSummary(st) {
+    var spec = PROOF_SPEC[famOf(st)] || PROOF_SPEC.all;
+    if (!spec.key) return { label: spec.label, value: null };
+    var rows = streakRows(st), sum = 0, n = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (typeof rows[i].proof === 'number' && isFinite(rows[i].proof)) { sum += rows[i].proof; n++; }
+    }
+    if (!n) return { label: spec.label, value: null };
+    var avg = sum / n;
+    var txt = avg.toFixed(spec.dp);
+    if (spec.signed && avg > 0) txt = '+' + txt;
+    // A partly-parseable run says so rather than averaging a subset silently.
+    return { label: spec.label, value: txt, n: n, of: rows.length };
+  }
+
   // ─── item 5 · the run reference sub-line (founder 2026-09-12) ────────────────
   // "A run length stated alone is the equivalent of a bare percentage — the reader
   // can't tell whether six is remarkable for this player." Beneath the title:
@@ -204,19 +297,48 @@
     if (t >= 11 && t <= 13) return n + 'th';
     return n + (d === 1 ? 'st' : (d === 2 ? 'nd' : (d === 3 ? 'rd' : 'th')));
   }
-  function referenceSinceYear() {
+  // TEN-204 2.4 · the year now comes from THE STREAK, not from the artifact's query window.
+  //
+  // referenceSinceYear() read rules.referenceWindow.sinceYear, which build-series.js computes
+  // as `new Date().getFullYear() - 5`. That names the window the build QUERIED, not the window
+  // it has DATA for — measured 2026-09-15, I. Simakin has 3 in-tier records in 2021 against 96
+  // in 2024, so the card claimed a five-year record over a file that effectively starts in
+  // 2022. reference.sinceYear is that player's own earliest in-tier record year, so the label
+  // can only name a year the enumeration actually saw.
+  //
+  // The artifact field is still read as a FALLBACK, and only as one: an artifact built before
+  // this change carries no per-streak sinceYear, and dashing every card on the first deploy
+  // would look like an outage. The fallback is clearly worse (it is the old, over-claiming
+  // number), so it is used only when the better one is absent.
+  function referenceSinceYear(st) {
+    var y = st && st.reference && st.reference.sinceYear;
+    if (typeof y === 'number' && isFinite(y) && y > 1900 && y < 2200) return y;
     var rw = _data && _data.rules && _data.rules.referenceWindow;
-    var y = rw && rw.sinceYear;
-    return (typeof y === 'number' && isFinite(y) && y > 1900 && y < 2200) ? y : null;
+    var f = rw && rw.sinceYear;
+    return (typeof f === 'number' && isFinite(f) && f > 1900 && f < 2200) ? f : null;
   }
   function posInt(v) { return typeof v === 'number' && isFinite(v) && v > 0 && v === Math.floor(v); }
   function referenceHtml(st) {
-    var ref = st && st.reference, since = referenceSinceYear();
+    var ref = st && st.reference, since = referenceSinceYear(st);
     if (!ref || since == null || !posInt(ref.longest) || !posInt(ref.occurrences) || !posInt(st.count)) {
       return '<div class="sr-ref sr-ref--none">—</div>';
     }
-    return '<div class="sr-ref">longest since ' + esc(String(since)) + ' ' + esc(String(ref.longest)) +
-      ' · ' + esc(ordinal(ref.occurrences)) + ' time at ' + esc(String(st.count)) + '+</div>';
+    // "If history coverage for that player's level is incomplete, show a dash instead of the
+    // line. Never an understated 1st run." A calendar year inside the window with ZERO in-tier
+    // records means a run could have been cut by MISSING DATA rather than by a loss, which
+    // would both shorten `longest` and undercount `occurrences` — the exact understatement the
+    // brief forbids. An artifact with no yearGaps field is treated as "unknown", not as "clean":
+    // absence of evidence is not coverage.
+    if (!Array.isArray(ref.yearGaps) || ref.yearGaps.length) {
+      return '<div class="sr-ref sr-ref--none">—</div>';
+    }
+    // Wording per the brief: a colon after the label so the number reads as the PLAYER'S
+    // record, not as this run, and "run" rather than "time" because occurrences counts runs.
+    // `occurrences` INCLUDES the current run — streakReference() self-checks that the last
+    // enumerated run IS the emitted one — so "1st run of 14+" is true of a run that is the
+    // only one ever to reach 14. Verified against build-series.js:streakReference.
+    return '<div class="sr-ref">Best since ' + esc(String(since)) + ': ' + esc(String(ref.longest)) +
+      ' · ' + esc(ordinal(ref.occurrences)) + ' run of ' + esc(String(st.count)) + '+</div>';
   }
   // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
   // correct regardless of the engine version that wrote series.json (fix #5). The former
@@ -275,7 +397,11 @@
     var p = ymd.split('-');
     var mi = Number(p[1]);
     if (!(mi >= 1 && mi <= 12)) return null;   // month 00/13 → a dash, never "5 undefined"
-    return Number(p[2]) + ' ' + MON[mi - 1] + (withYear ? ' ’' + p[0].slice(2) : '');
+    // TEN-204 2.3: the year is now the FULL four digits ("5 Aug 2026"), per the brief's
+    // worked example. The apostrophe-two-digit form ("5 Aug ’26") was chosen when the year
+    // was a rare conditional extra and column width was the binding constraint; STARTED now
+    // carries it on every card, where a bare "’26" reads as noise rather than as a date.
+    return Number(p[2]) + ' ' + MON[mi - 1] + (withYear ? ' ' + p[0] : '');
   }
   // True only when BOTH ends are RENDERABLE and their years differ. Gated on
   // fmtShort rather than a looser regex of its own: if one end can't render it
@@ -529,16 +655,37 @@
     return true;
   }
 
+  // One sortable number per fixture. Built from the feed's own `date` + `time` with a fixed
+  // zone, NEVER from the browser clock, so the board reads in the same order everywhere.
+  // Unknown or unrenderable -> Infinity, which sorts last.
+  function kickoffOf(u) {
+    var d = u && u.date;
+    if (!d || !YMD_RE.test(d)) return Infinity;
+    var t = fmtTime(u.time);
+    var ms = Date.parse(d + 'T' + (t || '00:00') + ':00Z');
+    return isFinite(ms) ? ms : Infinity;
+  }
+
   function sortCards(arr) {
     var f = _filters;
     if (f.sort === 'soonest') {
+      // TEN-204 2.6 · sort the real kickoff instant, not two display strings.
+      //
+      // The old comparator compared `date` then `time` lexicographically. That is right on
+      // well-formed rows but wrong on the edges: a missing `time` sorted as '' — FIRST, ahead
+      // of an 08:00 fixture — so a card with no kickoff time jumped the queue on a board whose
+      // whole point is "what plays next". kickoffOf() folds both fields into one number and
+      // sends an unknown kickoff to the END, where an unknown belongs.
+      //
+      // TIMEZONE, measured not assumed (TEN-204 §1.4): api-tennis `event_time` is UTC+2 —
+      // 127 of 144 fixtures joined against the capture store's UTC start epoch sit at exactly
+      // +2.0h. So a card reading "Today 08:00" is 06:00 UTC. The ORDER is unaffected (one
+      // constant offset across every row), which is why this is a comment and not an
+      // adjustment — silently shifting the printed time would change what the feed said.
+      // The label gap is reported to the founder rather than patched here.
       arr.sort(function (a, b) {
-        var da = (a.player.upcoming && a.player.upcoming.date) || '9999';
-        var db = (b.player.upcoming && b.player.upcoming.date) || '9999';
-        if (da !== db) return da < db ? -1 : 1;
-        var ta = (a.player.upcoming && a.player.upcoming.time) || '';
-        var tb = (b.player.upcoming && b.player.upcoming.time) || '';
-        if (ta !== tb) return ta < tb ? -1 : 1;
+        var ka = kickoffOf(a.player.upcoming), kb = kickoffOf(b.player.upcoming);
+        if (ka !== kb) return ka - kb;
         return b.streak.count - a.streak.count;
       });
     } else {
@@ -563,30 +710,99 @@
   // member whether a 12-match run came against qualifiers or seeds. The score is the
   // set scores as played, tiebreaks included (e.g. "7-6(5) 6-4"), read straight from
   // the engine's `score` field; a missing field is a dash, never a guess. Newest first.
+  // TEN-204 2.7 · the modal is now TWO shapes, chosen by family, on one shared grid.
+  //
+  //   MATCH-RESULT (all comps / surface / vs style) — eight tracks:
+  //     W-L · DATE · EVENT · OPPONENT · SCORE · PLAYER · OPP · P&L
+  //     The last three are the export's HOME / AWAY / P&L renamed. "HOME is always the
+  //     player this page is about" — so the honest header is his side, not a fixture role
+  //     that does not exist in tennis. The brief is explicit: never HOME/AWAY. PLAYER is
+  //     bold, OPP is dim, exactly as the export's weight split specifies.
+  //     Price and P&L render a dash until Phase 3 is authorised. No zeroes, no placeholders.
+  //
+  //   LINE / SET (total games / handicap / set outcome / set games) — six tracks:
+  //     W-L · DATE · EVENT · OPPONENT · SCORE · PROOF
+  //     No price and no P&L columns AT ALL — not dashed ones. A price column under a line
+  //     claim would imply a market we have no timestamped close for at this tier
+  //     (Phase 1 §1.2e). PROOF carries the value the claim is judged on.
+  //
+  // W/L is the MATCH RESULT and is labelled as such in the header, because on a line family
+  // the match result and the streak condition are different things — a player can lose a
+  // match inside an Under 23.5 run — and an unlabelled letter would read as the streak's own
+  // outcome. Result and score both come from the same row object, never from independent
+  // sources (export §5).
+  function modalShapeOf(st) {
+    var fam = famOf(st);
+    return (fam === 'all' || fam === 'surface' || fam === 'style') ? 'result' : 'line';
+  }
+  var PROOF_COL = {
+    total: 'Games', handicap: 'Margin', setgames: '1st-set games', setout: 'Proof',
+  };
+  function modalHeadHtml(st) {
+    var shape = modalShapeOf(st);
+    var cells = '<span class="sr-mres">W/L</span>' +
+      '<span class="sr-mdate">Date</span>' +
+      '<span class="sr-mtour">Event</span>' +
+      '<span class="sr-mopp">Opponent</span>' +
+      '<span class="sr-mscore">Score</span>';
+    if (shape === 'result') {
+      cells += '<span class="sr-mp1">Player</span>' +
+               '<span class="sr-mp2">Opp</span>' +
+               '<span class="sr-mpl">P&amp;L</span>';
+    } else {
+      cells += '<span class="sr-mproof">' + esc(PROOF_COL[famOf(st)] || 'Proof') + '</span>';
+    }
+    return '<div class="sr-mhead sr-m--' + shape + '">' + cells + '</div>';
+  }
+  function fmtProofCell(st, v) {
+    if (typeof v !== 'number' || !isFinite(v)) return null;
+    // The handicap proof is a signed margin, so a win by five reads "+5" and a loss by
+    // three reads "−3". Everything else is a count and carries no sign.
+    if (famOf(st) === 'handicap') return (v > 0 ? '+' : (v < 0 ? '−' : '')) + String(Math.abs(v));
+    return String(v);
+  }
   function detailTableHtml(st) {
-    var ms = Array.isArray(st.matches) ? st.matches.slice().reverse() : []; // newest first
-    if (!ms.length) return '';
+    // streakRows() is the ONE builder (see its block above). The modal reverses for display —
+    // newest first — which is a render choice and changes no value.
+    var rows = streakRows(st).slice().reverse();
+    if (!rows.length) return '';
+    var shape = modalShapeOf(st);
     var dash = '<span class="sr-dash">—</span>';
-    var rows = ms.map(function (m) {
-      // `|| m.date` used to sit in the middle here, printing the RAW string when
-      // fmtDate couldn't render it — so a malformed "2026-13-05" appeared verbatim in
-      // the modal while the card beside it showed a dash for the same value. Dead code
-      // against real data (all 1435 date values in the live artifact are strict
-      // YYYY-MM-DD with a valid month) and against the standing rule everywhere else:
-      // unrenderable is unknown, and unknown is a dash.
-      var d = fmtDate(m.date) ? esc(fmtDate(m.date)) : dash;
-      var tour = m.tournament ? esc(m.tournament) : dash;
-      var opp = m.opponent ? esc(m.opponent) : dash;
-      var score = m.score ? esc(m.score) : dash;
-      return '<div class="sr-mrow">' +
-        '<span class="sr-mdate">' + esc(d) + '</span>' +
-        '<span class="sr-mtour">' + tour + '</span>' +
-        '<span class="sr-mopp">' + opp + '</span>' +
-        '<span class="sr-mscore">' + score + '</span>' +
-      '</div>';
+    return rows.map(function (r) {
+      // `|| r.date` used to sit in the middle here, printing the RAW string when fmtDate
+      // couldn't render it — so a malformed "2026-13-05" appeared verbatim in the modal while
+      // the card beside it showed a dash for the same value. Unrenderable is unknown, and
+      // unknown is a dash.
+      var d = fmtDate(r.date) ? esc(fmtDate(r.date)) : dash;
+      var res = (r.won === true) ? '<span class="sr-mres sr-w">W</span>'
+              : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
+              : '<span class="sr-mres sr-dash">—</span>';
+      var cells = res +
+        '<span class="sr-mdate">' + d + '</span>' +
+        '<span class="sr-mtour">' + (r.event ? esc(r.event) : dash) + '</span>' +
+        '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : dash) + '</span>' +
+        '<span class="sr-mscore">' + (r.score ? esc(r.score) : dash) + '</span>';
+      if (shape === 'result') {
+        // Phase 3 not authorised: price and P&L are dashes fed from streakRows()'s nulls, so
+        // wiring a real price later is one assignment in the builder and changes nothing here.
+        cells += '<span class="sr-mp1">' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
+                 '<span class="sr-mp2">' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>' +
+                 '<span class="sr-mpl">' + dash + '</span>';
+      } else {
+        var pv = fmtProofCell(st, r.proof);
+        cells += '<span class="sr-mproof">' + (pv == null ? dash : esc(pv)) + '</span>';
+      }
+      return '<div class="sr-mrow sr-m--' + shape + '">' + cells + '</div>';
     }).join('');
-    // Column header is rendered once by ensureOverlay(), outside this scroll pane.
-    return rows;
+  }
+  // Total line (export §5). Phase 3 carries the unit total and yield; until it is authorised
+  // this states only what is true — the family and the row count. No figures, no "0.00u".
+  function modalTotalHtml(st) {
+    var rows = streakRows(st);
+    return '<div class="sr-ov-total">' +
+      '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
+        esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>' +
+    '</div>';
   }
 
   // ─── card render ──────────────────────────────────────────────────────────────
@@ -651,7 +867,7 @@
     // height": no chips, no row.
     var tagRow = tags ? '<div class="sr-tags">' + tags + '</div>' : '';
 
-    // 4 · STARTED · LAST · TYPE
+    // 4 · STARTED · LAST · PRICE CELL · TYPE  (TEN-204 2.3)
     var startYmd = startedOf(st);
     // Ruling `last-year` (a) OR ruling `prior-year` (a) — a run that straddles a year
     // end, or one whose LAST sits outside the snapshot's own year. showYear is a single
@@ -659,21 +875,40 @@
     // both and they stay readable against each other. An end that CANNOT render is a
     // dash and simply drops its year — which is how ruling `lone-year` (a) produces
     // "Started — / Last 12 Sep ’26" rather than being special-cased.
-    var showYear = crossesYear(startYmd, st.lastDate) ||
-                   priorYear(st.lastDate, _data && _data.generatedAt);
-    var startTxt = fmtShort(startYmd, showYear);
-    var lastTxt = fmtShort(st.lastDate, showYear);
+    //
+    // TEN-204 2.3 SUPERSEDES the conditional form above: "STARTED (with year, '5 Aug 2026') /
+    // LAST (short, '13 Sep')". The year is now UNCONDITIONAL on STARTED and ABSENT from LAST.
+    //
+    // This deliberately replaces three earlier founder rulings — `last-year` (a), `prior-year`
+    // (a) and `lone-year` (a), all 2026-09-12 — which put the year on BOTH cells, but only on
+    // a year-crossing or a prior-year run. The new rule is strictly stronger for the reader:
+    // every card now states the year its run began, so "Started 5 Dec 2025 / Last 12 Jan" is
+    // unambiguous without the conditional, and there is no longer a case where the card knows
+    // the year and does not say it. crossesYear()/priorYear() are kept and are still exercised
+    // by tools/test-series-dates.js, which now locks the new rule instead of the old one.
+    var startTxt = fmtShort(startYmd, true);       // "5 Aug 2026"
+    var lastTxt = fmtShort(st.lastDate, false);    // "13 Sep"
+    var showYear = true;
     // A year-bearing strip is 84px of mono in the LAST cell, which does NOT fit the
     // export's 1.2fr column below ~364px — measured eliding to "12 Jan ’…", a
     // corrupted date and strictly worse than the bare day+month it replaces. The
     // modifier lets series.css relax ONLY these cards on narrow viewports; same-year
     // cards keep the export's three-column geometry untouched.
+    // The third cell (TEN-204 2.3). Match-result families read AVG PRICE over a dash —
+    // Phase 3 is not built and no price is invented. Line and set-games families read the
+    // family's own proof figure, computed by proofSummary() from streakRows() — the SAME
+    // builder the modal's rows come from, so the card average and the modal can never
+    // disagree. Set outcome has no agreed proof figure, so it reads PROOF over a dash.
+    var ps = proofSummary(st);
+    var proofCell = ps.value == null ? dash : esc(ps.value);
     var strip =
       '<div class="sr-strip' + (showYear ? ' sr-strip--yr' : '') + '">' +
         '<span class="sr-cell"><span class="sr-cell-k">Started</span>' +
           '<span class="sr-cell-v">' + (startTxt ? esc(startTxt) : dash) + '</span></span>' +
         '<span class="sr-cell"><span class="sr-cell-k">Last</span>' +
           '<span class="sr-cell-v">' + (lastTxt ? esc(lastTxt) : dash) + '</span></span>' +
+        '<span class="sr-cell sr-cell-proof"><span class="sr-cell-k">' + esc(ps.label) + '</span>' +
+          '<span class="sr-cell-v sr-cell-pv">' + proofCell + '</span></span>' +
         '<span class="sr-cell"><span class="sr-cell-k">Type</span>' +
           '<span class="sr-cell-v sr-cell-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span></span>' +
       '</div>';
@@ -792,12 +1027,23 @@
     var meta = _data.rules || {};
     var gen = _data.generatedAt ? new Date(_data.generatedAt) : null;
 
+    // TEN-204 2.7 · every value here is read from the LIVE config or counted from the live
+    // view. Two changes from the shipped line:
+    //   · the 75-day intra-streak gap rule is PRINTED. It is one of the engine's load-bearing
+    //     rules — it is what makes "12 in a row" mean twelve consecutive matches rather than
+    //     twelve spread over two seasons — and the footnote never mentioned it.
+    //   · `maxAgeDays` and `minPoolConditional` used to fall back to the literals '45' and '8'
+    //     when the artifact did not carry them. A hardcoded fallback in a methodology line is
+    //     the worst place for one: it states a rule the build may not have run under. They
+    //     dash now, like every other unknown on this page.
+    var num = function (v) { return (typeof v === 'number' && isFinite(v)) ? esc(String(v)) : '—'; };
     var stamp = '<p class="sr-stamp">' +
       esc(String(view.length)) + ' streak' + (view.length === 1 ? '' : 's') +
       ' · min length ' + esc(String(_filters.minLen)) + '+ (vs-style ' + esc(String(styleFloor())) + '+)' +
       ' · one card per player per family' +
-      ' · recency cap ' + esc(String(meta.maxAgeDays != null ? meta.maxAgeDays : '45')) + 'd (Grand Slams exempt)' +
-      ' · pool floor ' + esc(String(meta.minPoolConditional != null ? meta.minPoolConditional : '8')) + ' for conditional & line types' +
+      ' · recency cap ' + num(meta.maxAgeDays) + 'd (Grand Slams exempt)' +
+      ' · runs cut by a gap over ' + num(meta.maxGapDays) + 'd' +
+      ' · pool floor ' + num(meta.minPoolConditional) + ' for conditional & line types' +
       ' · best-of never blended (games lines locked to the match format)' +
       ' · only streaks that bear on the scheduled match' +
       (gen ? ' · data ' + esc(gen.toISOString().slice(0, 10)) : '') +
@@ -940,13 +1186,13 @@
           '</span>' +
           '<button class="sr-ov-close" type="button" aria-label="Close">✕</button>' +
         '</div>' +
-        '<div class="sr-mhead">' +
-          '<span class="sr-mdate">Date</span>' +
-          '<span class="sr-mtour">Event</span>' +
-          '<span class="sr-mopp">Opponent</span>' +
-          '<span class="sr-mscore">Score</span>' +
-        '</div>' +
+        // TEN-204 2.7: the column header is no longer a fixed four-cell block — its track
+        // count and its labels depend on the streak's family — so it is rendered per open
+        // by modalHeadHtml() into this slot, still OUTSIDE the scroll pane so it stays
+        // visible on a 14-row run. The total line sits below the pane, sharing its edges.
+        '<div class="sr-mhead-slot"></div>' +
         '<div class="sr-ov-body"></div>' +
+        '<div class="sr-ov-foot"></div>' +
       '</div>';
     document.body.appendChild(back);
     // Click-outside: a click landing on the backdrop (not the panel) closes.
@@ -975,7 +1221,9 @@
     back.querySelector('.sr-ov-sub').innerHTML = describe(st) +
       ' <span class="sr-ov-sep">·</span> <span class="sr-ov-pool">' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) +
       ' ' + (st.pool === 1 ? 'match' : 'matches') + '</span>';
+    back.querySelector('.sr-mhead-slot').innerHTML = modalHeadHtml(st);
     back.querySelector('.sr-ov-body').innerHTML = detailTableHtml(st);
+    back.querySelector('.sr-ov-foot').innerHTML = modalTotalHtml(st);
     _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
     back.removeAttribute('hidden');
     document.body.classList.add('sr-ov-open');
