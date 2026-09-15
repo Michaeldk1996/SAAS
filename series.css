@@ -345,6 +345,29 @@ body.sr-ov-open { overflow: hidden; }
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
 }
+/* TEN-204 Phase 3 · the ledger figures and their provenance. The total wraps so the
+   caveat always gets its own line: it is a condition of the founder's ruling to keep a
+   circular P&L, so it must never be the thing that gets elided on a narrow panel. */
+.sr-ov-total { flex-wrap: wrap; }
+.sr-ov-total-v {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 13px; font-weight: 700; color: #e7e9ee;
+}
+.sr-ov-total-n {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 10.5px; font-weight: 500; color: #5b6880; margin-left: auto;
+}
+.sr-ov-caveat {
+  flex-basis: 100%; margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: #6b7891; max-width: 62ch;
+}
+/* The "MATCH ODDS · PRE-MATCH" band, on the rows' own grid so it aligns to the two
+   price tracks rather than floating. The label spans PLAYER+OPP (columns 6-7). */
+.sr-ov .sr-mgroup { display: grid; gap: 0 16px; padding: 0 24px 4px; flex: none; }
+.sr-ov .sr-mgrouplab {
+  grid-column: 6 / span 2; text-align: right;
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 8.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #4b5672;
+}
 .sr-ov .sr-dash { color: #4b5672; }
 
 @media (max-width: 640px) {
@@ -375,6 +398,11 @@ body.sr-ov-open { overflow: hidden; }
   .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl, .sr-ov .sr-mproof,
   .sr-ov .sr-mhead .sr-mp1, .sr-ov .sr-mhead .sr-mp2,
   .sr-ov .sr-mhead .sr-mpl, .sr-ov .sr-mhead .sr-mproof { display: none; }
+  /* The price columns are hidden on a phone, so the band that labels them must go too —
+     otherwise "MATCH ODDS" sits over the SCORE column and mislabels it. The total line
+     keeps its figures and its caveat; only the column band is dropped. */
+  .sr-ov .sr-mgroup { display: none; }
+  .sr-ov-total-n { margin-left: 0; flex-basis: 100%; }
   .sr-ov .sr-mhead { padding: 0 16px 10px; }
   .sr-ov-body { padding: 0 16px 8px; }
   .sr-ov-foot { padding: 0 16px 16px; }

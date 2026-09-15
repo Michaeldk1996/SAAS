@@ -164,13 +164,13 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
 
   // famOf lives further down the file; supply the same mapping so the lifted block runs.
   // eslint-disable-next-line no-new-func
-  const lift = new Function('famOf', block + '; return { streakRows, proofSummary, proofOf, setsOf, PROOF_SPEC };');
+  const lift = new Function('famOf', block + '; return { streakRows, proofSummary, proofOf, setsOf, PROOF_SPEC, ledgerOf, avgPriceOf, isMatchResultFam };');
   const famOf = (st) => (st.type === 'pattern' ? 'setout'
     : st.type === 'setpat' ? (st.firstSet ? 'setgames' : 'setout')
     : (st.family || st.type));
   const B = lift(famOf);
 
-  let checked = 0, withProof = 0;
+  let checked = 0, withProof = 0, withPrice = 0, withLedger = 0;
   eachStreak((p, st) => {
     const rows = B.streakRows(st);
     // the modal renders exactly these rows
@@ -181,7 +181,26 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
     const vals = rows.map(r => r.proof).filter(v => typeof v === 'number' && isFinite(v));
     const summary = B.proofSummary(st);
     const spec = B.PROOF_SPEC[famOf(st)];
-    if (spec && spec.key && vals.length) {
+    if (B.isMatchResultFam(st)) {
+      // TEN-204 Phase 3 · a match-result card publishes AVG PRICE over the SAME rows the
+      // modal lists. Recomputed here from the builder's own output, to 2dp.
+      const prices = rows.map(r => r.price).filter(v => typeof v === 'number' && isFinite(v));
+      if (prices.length) {
+        // Recomputed in exact cents AND in the modal's display order (reversed), so the
+        // assertion only holds if the average is genuinely order-independent. Summing
+        // floats here instead would reproduce the very bug this is guarding.
+        const cents = prices.slice().reverse().reduce((a, b) => a + Math.round(b * 100), 0);
+        const want = (Math.round(cents / prices.length) / 100).toFixed(2);
+        assert.strictEqual(summary.value, want,
+          `TEN-204 2.8 C — card AVG PRICE "${summary.value}" != mean of the modal's own priced rows ` +
+          `"${want}" (${p.name} · ${st.type}).`);
+        withPrice++;
+      } else {
+        assert.strictEqual(summary.value, null,
+          `TEN-204 2.8 C — an unpriced match-result streak published "${summary.value}" instead of a ` +
+          `dash (${p.name} · ${st.type}). A missing price is a dash, never a zero.`);
+      }
+    } else if (spec && spec.key && vals.length) {
       const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
       let want = mean.toFixed(spec.dp);
       if (spec.signed && mean > 0) want = '+' + want;
@@ -194,12 +213,63 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
         `TEN-204 2.8 C — a family with no proof figure published "${summary.value}" instead of a dash ` +
         `(${p.name} · ${st.type}).`);
     }
-    // Phase 3 is not authorised: no row may carry a price.
+
+    // ── TEN-204 Phase 3 · price + ledger integrity ────────────────────────────
     for (const r of rows) {
-      assert.strictEqual(r.price, null,
-        `TEN-204 2.8 C — a row carries a price before Phase 3 was authorised (${p.name}).`);
-      assert.strictEqual(r.oppPrice, null,
-        `TEN-204 2.8 C — a row carries an opponent price before Phase 3 was authorised (${p.name}).`);
+      // A price is only ever a PAIR from ONE book. A half-priced row would let the modal
+      // print a player price against a dash and still feed the ledger.
+      if (r.price != null) {
+        assert(r.oppPrice != null && r.book,
+          `TEN-204 Phase 3 — a row carries a price with no opponent price or no book (${p.name}).`);
+        assert(r.price > 1 && r.oppPrice > 1,
+          `TEN-204 Phase 3 — a decimal price must exceed 1.0 (${p.name}: ${r.price}/${r.oppPrice}).`);
+        assert(r.book === 'Pinnacle' || r.book === 'bet365',
+          `TEN-204 Phase 3 — row priced by an unruled book "${r.book}" (${p.name}). The founder's ` +
+          `2026-09-15 ruling names Pinnacle, filled by bet365, and nothing else.`);
+      }
+      // A LINE/SET family must carry NO odds at all. This is the substitution the founder
+      // banned outright: no source prices a Challenger games line, so a price under a line
+      // claim would be an invention regardless of where it came from.
+      if (!B.isMatchResultFam(st)) {
+        assert.strictEqual(r.price, null,
+          `TEN-204 Phase 3 — a LINE/SET family row carries a match price (${p.name} · ${st.type}). ` +
+          `Match odds must never appear under a line claim.`);
+      }
+    }
+
+    // The ledger is the modal's own rows, re-summed here with the ruled rounding:
+    // each row rounded to 2dp FIRST, total = sum of the rounded rows, yield = total ÷ priced.
+    const L = B.ledgerOf(st);
+    if (B.isMatchResultFam(st)) {
+      assert(L, `TEN-204 Phase 3 — a match-result streak produced no ledger (${p.name}).`);
+      // Same discipline as the average: integer cents, accumulated in the REVERSED order,
+      // so an order-dependent ledger fails here instead of shipping a cent adrift.
+      let wantC = 0, priced = 0;
+      for (const r of rows.slice().reverse()) {
+        if (r.price == null || r.won == null) continue;
+        priced++;
+        wantC += r.won ? (Math.round(r.price * 100) - 100) : -100;
+      }
+      const want = wantC / 100;
+      assert.strictEqual(L.priced, priced,
+        `TEN-204 Phase 3 — ledger counted ${L.priced} priced rows, the modal lists ${priced} (${p.name}).`);
+      assert.strictEqual(L.of, rows.length,
+        `TEN-204 Phase 3 — ledger denominator ${L.of} != modal row count ${rows.length} (${p.name}).`);
+      if (priced) {
+        assert.strictEqual(L.total, want,
+          `TEN-204 Phase 3 — ledger total ${L.total}u != sum of the modal's own rounded rows ` +
+          `${want}u (${p.name}).`);
+        assert.strictEqual(L.yield, Math.round(1000 * wantC / priced / 100) / 10,
+          `TEN-204 Phase 3 — yield is not total ÷ priced count (${p.name}).`);
+        withLedger++;
+      } else {
+        assert.strictEqual(L.total, null,
+          `TEN-204 Phase 3 — an unpriced ledger published a total instead of a dash (${p.name}).`);
+      }
+    } else {
+      assert.strictEqual(L, null,
+        `TEN-204 Phase 3 — a LINE/SET family produced a P&L ledger (${p.name} · ${st.type}). ` +
+        `Founder A3: no P&L column, no unit total, no yield on line families.`);
     }
     checked++;
   });
@@ -207,7 +277,114 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
   assert(withProof > 0,
     'TEN-204 2.8 C — no streak produced a proof figure. Either the board carries no line/set ' +
     'family at all, or proofOf() has stopped parsing scores. Investigate before trusting a pass.');
-  ok(`C · ${checked} streaks: card cell recomputed from the modal's own rows (${withProof} with a proof figure)`);
+  // Without these the price assertions above are all vacuously true on an unpriced artifact —
+  // exactly the state this file was in before Phase 3, when it passed while measuring nothing.
+  //
+  // Scoped to artifacts that CLAIM to carry odds. pipeline.yml runs `npm test` BEFORE
+  // build-series.js, so there this file audits the committed seed; a seed written by a
+  // pre-Phase-3 builder has no odds block and must not red the pipeline for lacking prices
+  // it was never built with. The moment an artifact carries `odds`, the vacuity guard is
+  // mandatory again — so the post-build gate (which audits what actually ships) is strict.
+  if (doc.odds) {
+    assert(withPrice > 0,
+      'TEN-204 Phase 3 — series.json carries an odds block but not one match-result streak ' +
+      'was priced. The odds pass is failing silently and the price gate is measuring nothing.');
+    assert(withLedger > 0,
+      'TEN-204 Phase 3 — series.json carries an odds block but no ledger was computed.');
+    // A collapse to a handful of rows is the failure mode that would otherwise read as
+    // "working": the census records what the build itself saw, so compare against it.
+    const c = doc.odds.census || {};
+    if (typeof c.priced === 'number' && typeof c.priceableRows === 'number' && c.priceableRows > 0) {
+      const pct = 100 * c.priced / c.priceableRows;
+      assert(pct >= 40,
+        `TEN-204 Phase 3 — odds coverage collapsed to ${pct.toFixed(1)}% of priceable rows ` +
+        `(${c.priced}/${c.priceableRows}). It ran 83-89% when the pass was built; this is a ` +
+        `feed or join failure, not a quiet day.`);
+    }
+  } else {
+    console.log('test-series-rows: artifact predates the Phase 3 odds pass — price checks not applicable.');
+  }
+  ok(`C · ${checked} streaks: card cell recomputed from the modal's own rows (${withProof} with a proof figure, ${withPrice} with AVG PRICE, ${withLedger} ledgers)`);
+}
+
+// ── E · MONEY IS ORDER-INDEPENDENT ──────────────────────────────────────────
+// The regression this pins, with the real numbers that produced it: F. Diaz Acosta's ten
+// Pinnacle prices. Added oldest-first (the artifact's order) they reach exactly 1.415 and
+// the card printed 1.42. Added newest-first (the order the MODAL lists them) the same ten
+// values reach 1.4149999999999998 and an auditor computes 1.41. Both are correct float
+// arithmetic; the card was simply averaging in the opposite direction to the panel that
+// evidences it. Caught by an independent recompute, not by any assertion in this file at
+// the time — which is why it is now an assertion in this file.
+{
+  const P = [1.13, 1.15, 1.33, 1.46, 1.28, 1.27, 1.35, 1.57, 1.99, 1.62];
+  const fwd = P.reduce((a, b) => a + b, 0) / P.length;
+  const rev = P.slice().reverse().reduce((a, b) => a + b, 0) / P.length;
+  // The float hazard is real and still present in the language — if this ever stops being
+  // true the case has changed and the guard below needs a new witness, not deleting.
+  assert.notStrictEqual(fwd.toFixed(2), rev.toFixed(2),
+    'the float-order witness no longer diverges; pick a new witness rather than dropping this gate');
+
+  const cents = (xs) => Math.round(xs.reduce((a, b) => a + Math.round(b * 100), 0) / xs.length) / 100;
+  assert.strictEqual(cents(P).toFixed(2), cents(P.slice().reverse()).toFixed(2),
+    'TEN-204 — the cent-based average is not order-independent');
+  assert.strictEqual(cents(P).toFixed(2), '1.42',
+    'TEN-204 — the exact average of the witness set is 1.415, which rounds half-up to 1.42');
+
+  // And the shipped page must be using that arithmetic, not floats.
+  const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
+  assert(/function cents\s*\(/.test(src) && /Math\.round\(x \* 100\)/.test(src),
+    'TEN-204 — series.js no longer defines the integer-cent helper; money is back on floats.');
+  ok('E · money sums in exact cents, order-independent (witness: the 1.415 card)');
+}
+
+// ── D · NOTHING ON THIS PAGE MAY BE CALLED A CLOSING PRICE ──────────────────
+// Founder A4: "Label prices 'pre-match' everywhere, not 'closing', unless the row comes
+// from a source confirmed as a true close." No such source exists for this board —
+// api-tennis get_odds carries no time field of any kind, so every price here is a snapshot
+// of unknown age. The word is therefore banned from the page's user-visible strings, and
+// the artifact must keep saying it has no timestamps.
+//
+// Scanned against STRING LITERALS ONLY, so the explanatory comments (which must be free to
+// use the word to explain why it is wrong) cannot trip it and, more importantly, cannot
+// mask it: a comment mentioning "closing" is not what a reader sees.
+{
+  const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
+  const stripped = src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').map(l => l.replace(/(^|[^:'"])\/\/.*$/, '$1')).join('\n');
+  const literals = stripped.match(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g) || [];
+  // "Close" the verb is legitimate and everywhere — the modal's ✕ button, its aria-label
+  // and its class name. What is banned is the CLAIM: calling a price a close. So the
+  // pattern is "closing" in any form, plus "close" only when it sits next to a price word.
+  const CLOSE_CLAIM = /\bclosing\b|\bclos(e|ed)\s+(price|odds|line|quote)|\b(price|odds|line|quote)s?\s+at\s+close\b/i;
+  const offenders = literals.filter(s => CLOSE_CLAIM.test(s));
+  assert.deepStrictEqual(offenders, [],
+    `TEN-204 A4 — series.js ships a user-visible string calling a price a close: ${offenders.join(' | ')}. ` +
+    `No source timestamps these prices, so none of them is a closing price.`);
+
+  // NEGATIVE CONTROL. The filter above must actually be able to see a literal — if the
+  // comment-stripper or the literal regex silently matched nothing, the assertion would
+  // pass on any file at all.
+  assert(literals.length > 50,
+    `TEN-204 A4 — only ${literals.length} string literals extracted from series.js; the scanner ` +
+    `is not reading the file and the ban is vacuous.`);
+  const planted = ["'closing price'", "'the closing odds'", "'Closing'", "'closed price'"]
+    .filter(s => CLOSE_CLAIM.test(s));
+  assert.strictEqual(planted.length, 4, 'the close-claim detector no longer detects a close claim');
+  // …and must NOT fire on the legitimate verb, or the gate becomes noise and gets loosened.
+  const benign = ["'Close'", "'.sr-ov-close'", "'close the panel'"].filter(s => CLOSE_CLAIM.test(s));
+  assert.deepStrictEqual(benign, [], 'the close-claim detector is firing on the verb "close"');
+
+  // And the artifact must not quietly start claiming a timestamp it does not have.
+  if (doc.odds) {
+    assert(/^none\b/.test(String(doc.odds.timestamps || '')),
+      `TEN-204 A4 — series.json now claims odds timestamps ("${doc.odds.timestamps}"). If a real ` +
+      `timestamped source has been wired, this gate and the "pre-match" labels must be revisited ` +
+      `deliberately, not drift.`);
+    assert.strictEqual(doc.odds.label, 'pre-match',
+      `TEN-204 A4 — series.json labels its odds "${doc.odds.label}" rather than "pre-match".`);
+  }
+  ok(`D · no user-visible string calls a price a close (${literals.length} literals scanned)`);
 }
 
 // ── the proof figure's ROUNDING TIE-BREAK, pinned ───────────────────────────

@@ -243,16 +243,86 @@
         score: m.score || null,
         won: (typeof m.won === 'boolean') ? m.won : null,
         proof: proofOf(st, m),
-        // Phase 3 is NOT built. These stay null so the modal's price and P&L cells render the
-        // standing dash rather than a placeholder that could be mistaken for a real figure.
-        price: null,
-        oppPrice: null,
+        // TEN-204 Phase 3 · match-winner prices, attached by build-series.js's attachOdds().
+        // READ, never computed here: the page cannot mint a price the artifact doesn't carry,
+        // so an un-priced row is a dash and stays a dash. `book` is the book that actually
+        // priced THIS row — Pinnacle or bet365 under the founder's 2026-09-15 fill ruling —
+        // and is printed rather than hidden, because a two-book ledger that looks like a
+        // one-book ledger is the dishonest version of his instruction.
+        price: (typeof m.price === 'number' && isFinite(m.price) && m.price > 1) ? m.price : null,
+        oppPrice: (typeof m.oppPrice === 'number' && isFinite(m.oppPrice) && m.oppPrice > 1) ? m.oppPrice : null,
+        book: m.book || null,
       };
     });
+  }
+  // ─── TEN-204 Phase 3 · the flat-1u ledger (founder ruling A2 + `pnl`=keep) ───
+  // Match-result families only. Win = price − 1, loss = −1.00, EVERY ROW ROUNDED TO 2dp
+  // BEFORE summing, total = sum of the rounded rows, yield = total ÷ priced count. An
+  // un-priced row is excluded from both the total and the count — never counted as 0.
+  //
+  // CIRCULARITY, stated because the founder ruled to keep it anyway: a streak is DEFINED
+  // by its rows' outcomes, so a winning run is all wins and a losing run all losses by
+  // construction — measured 2026-09-15, 15 all-win / 26 all-loss / 0 mixed across the
+  // board's match-result streaks. The sign of every one of these ledgers is therefore
+  // fixed before a single price is read. The page carries a caveat saying so.
+  var MATCH_RESULT_FAMS = { all: 1, surface: 1, style: 1 };
+  function isMatchResultFam(st) { return !!MATCH_RESULT_FAMS[famOf(st)]; }
+
+  // Money is summed in INTEGER HUNDREDTHS, never in floats.
+  //
+  // Not premature rigour — it was a real, painted defect. F. Diaz Acosta's ten Pinnacle
+  // prices sum to exactly 1.415 in the artifact's oldest-first order and print 1.42; summed
+  // in the order the MODAL displays them (newest first) the same ten values accumulate to
+  // 1.4149999999999998 and print 1.41. Float addition is not associative, so the card's
+  // average depended on which direction you added it — and the modal shows the rows in the
+  // opposite order to the one the card totals them in, so an auditor reading the panel
+  // top-to-bottom and an auditor reading the artifact would disagree by a cent and both be
+  // reading the code correctly. A price is exact to 2dp by construction, so hundredths make
+  // the arithmetic exact and ORDER-INDEPENDENT, and the disagreement cannot recur.
+  function cents(x) { return Math.round(x * 100); }
+  function ledgerOf(st) {
+    if (!isMatchResultFam(st)) return null;
+    var rows = streakRows(st), totalC = 0, priced = 0, books = {};
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.price == null || r.won == null) continue;
+      priced++;
+      // win = price − 1 (rounded to the cent), loss = −1.00 flat. Integer cents throughout.
+      totalC += r.won ? (cents(r.price) - 100) : -100;
+      if (r.book) books[r.book] = (books[r.book] || 0) + 1;
+    }
+    if (!priced) return { priced: 0, of: rows.length, total: null, yield: null, books: [] };
+    var total = totalC / 100;
+    return {
+      priced: priced, of: rows.length, total: total,
+      // yield = total ÷ priced count, to one decimal. Computed off the exact cent total.
+      yield: Math.round(1000 * totalC / priced / 100) / 10,
+      books: Object.keys(books).sort(),
+    };
+  }
+  // The card's AVG PRICE cell for match-result families — mean of the SAME rows the modal
+  // lists (the single-source rule), over priced rows only, in exact cents.
+  function avgPriceOf(st) {
+    var rows = streakRows(st), sumC = 0, n = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].price != null) { sumC += cents(rows[i].price); n++; }
+    }
+    if (!n) return null;
+    // Half-away-from-zero on the exact cent sum — the same tie-break the proof figure was
+    // pinned to, so the two cells on one card never round by different conventions.
+    var v = Math.round(sumC / n) / 100;
+    return { value: v.toFixed(2), n: n, of: rows.length };
   }
   // The card's fourth cell, computed from streakRows() and nothing else.
   function proofSummary(st) {
     var spec = PROOF_SPEC[famOf(st)] || PROOF_SPEC.all;
+    // TEN-204 Phase 3 (founder B1): match-result families now carry a REAL AVG PRICE.
+    // setout has no proof figure and no price cell agreed, so it keeps its dash.
+    if (isMatchResultFam(st)) {
+      var ap = avgPriceOf(st);
+      if (!ap) return { label: spec.label, value: null };
+      return { label: spec.label, value: ap.value, n: ap.n, of: ap.of };
+    }
     if (!spec.key) return { label: spec.label, value: null };
     var rows = streakRows(st), sum = 0, n = 0;
     for (var i = 0; i < rows.length; i++) {
@@ -746,13 +816,28 @@
       '<span class="sr-mopp">Opponent</span>' +
       '<span class="sr-mscore">Score</span>';
     if (shape === 'result') {
+      // TEN-204 Phase 3 / founder A1: the two price tracks sit under a "MATCH ODDS" group
+      // label, so PLAYER/OPP are unambiguously prices and not another pair of name columns.
+      // A4: these are snapshots with no timestamp anywhere in the source, so the group says
+      // PRE-MATCH and the word "closing" appears nowhere on this page.
       cells += '<span class="sr-mp1">Player</span>' +
                '<span class="sr-mp2">Opp</span>' +
                '<span class="sr-mpl">P&amp;L</span>';
     } else {
       cells += '<span class="sr-mproof">' + esc(PROOF_COL[famOf(st)] || 'Proof') + '</span>';
     }
-    return '<div class="sr-mhead sr-m--' + shape + '">' + cells + '</div>';
+    var band = '';
+    if (shape === 'result') {
+      // Spacers keep the band on the SAME grid as the header and the rows, so the label
+      // sits exactly over the two price tracks instead of floating above the table.
+      band = '<div class="sr-mgroup sr-m--' + shape + '">' +
+        '<span class="sr-mres"></span><span class="sr-mdate"></span><span class="sr-mtour"></span>' +
+        '<span class="sr-mopp"></span><span class="sr-mscore"></span>' +
+        '<span class="sr-mgrouplab">Match odds · pre-match</span>' +
+        '<span class="sr-mpl"></span>' +
+      '</div>';
+    }
+    return band + '<div class="sr-mhead sr-m--' + shape + '">' + cells + '</div>';
   }
   function fmtProofCell(st, v) {
     if (typeof v !== 'number' || !isFinite(v)) return null;
@@ -783,11 +868,19 @@
         '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : dash) + '</span>' +
         '<span class="sr-mscore">' + (r.score ? esc(r.score) : dash) + '</span>';
       if (shape === 'result') {
-        // Phase 3 not authorised: price and P&L are dashes fed from streakRows()'s nulls, so
-        // wiring a real price later is one assignment in the builder and changes nothing here.
-        cells += '<span class="sr-mp1">' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
-                 '<span class="sr-mp2">' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>' +
-                 '<span class="sr-mpl">' + dash + '</span>';
+        // TEN-204 Phase 3 · real pre-match prices + the flat-1u P&L cell. The row's own
+        // book is exposed via title= so a mixed ledger can be audited row by row rather
+        // than taken on trust (founder's fill ruling 2026-09-15).
+        var bookAttr = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
+        var plTxt = dash;
+        if (r.price != null && r.won != null) {
+          var u = r.won ? Number((r.price - 1).toFixed(2)) : -1.00;
+          plTxt = '<span class="' + (u >= 0 ? 'sr-w' : 'sr-l') + '">' +
+                  (u > 0 ? '+' : (u < 0 ? '−' : '')) + esc(Math.abs(u).toFixed(2)) + '</span>';
+        }
+        cells += '<span class="sr-mp1"' + bookAttr + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
+                 '<span class="sr-mp2"' + bookAttr + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>' +
+                 '<span class="sr-mpl">' + plTxt + '</span>';
       } else {
         var pv = fmtProofCell(st, r.proof);
         cells += '<span class="sr-mproof">' + (pv == null ? dash : esc(pv)) + '</span>';
@@ -795,13 +888,37 @@
       return '<div class="sr-mrow sr-m--' + shape + '">' + cells + '</div>';
     }).join('');
   }
-  // Total line (export §5). Phase 3 carries the unit total and yield; until it is authorised
-  // this states only what is true — the family and the row count. No figures, no "0.00u".
+  // Total line (export §5). TEN-204 Phase 3 · match-result families now carry the unit
+  // total, the yield and "X of N priced". Line/set families still state only the family
+  // and the row count — they have no ledger and must not grow one.
+  //
+  // The book disclosure is not decoration: under the founder's 2026-09-15 fill ruling a
+  // single ledger can be drawn from two books whose prices differ systematically
+  // (Pinnacle ran +2.99% richer than bet365 across the 643 rows both priced on the day
+  // the ruling was made), so a ledger that mixes them says which ones it mixed.
   function modalTotalHtml(st) {
     var rows = streakRows(st);
-    return '<div class="sr-ov-total">' +
-      '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
-        esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>' +
+    var head = '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
+      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>';
+    var L = ledgerOf(st);
+    if (!L || !L.priced) {
+      if (L) head += '<span class="sr-ov-total-v sr-dash">— 0 of ' + esc(String(L.of)) + ' priced</span>';
+      return '<div class="sr-ov-total">' + head + '</div>';
+    }
+    var sign = L.total > 0 ? '+' : (L.total < 0 ? '−' : '');
+    head += '<span class="sr-ov-total-v ' + (L.total >= 0 ? 'sr-w' : 'sr-l') + '">' +
+      sign + esc(Math.abs(L.total).toFixed(2)) + 'u · ' +
+      (L.yield > 0 ? '+' : (L.yield < 0 ? '−' : '')) + esc(Math.abs(L.yield).toFixed(1)) + '%</span>' +
+      '<span class="sr-ov-total-n">' + esc(String(L.priced)) + ' of ' + esc(String(L.of)) + ' priced · ' +
+      esc(L.books.join(' + ') || 'no book') + ' · pre-match</span>';
+    return '<div class="sr-ov-total">' + head +
+      // The caveat is generated, not hardcoded, and it is not optional: the founder ruled
+      // to KEEP this P&L after being shown it is circular, on condition it carries the
+      // caveat on the page. A streak is selected FOR its rows' outcomes, so the sign of
+      // this total was fixed before any price was read.
+      '<div class="sr-ov-caveat">Flat 1u at the pre-match price. A run is selected for its ' +
+      'results, so this total’s direction is set by the run itself, not by the market — ' +
+      'read it as the price of the run, not as an edge.</div>' +
     '</div>';
   }
 

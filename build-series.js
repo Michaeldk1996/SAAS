@@ -417,6 +417,11 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   return {
     date: d,
     eventKey: String(fx.event_key || ''),
+    // TEN-204 Phase 3 · which side of api-tennis' Home/Away market this player is.
+    // get_odds keys its books under Home/Away, and Home is ALWAYS event_first_player,
+    // so the player's own price is unreadable without this. Carried on the row rather
+    // than re-derived later, because the fixture object is not in scope by then.
+    side: me === 'first' ? 'Home' : 'Away',
     won,
     surface,
     opponent: String(oppName || ''),
@@ -532,6 +537,12 @@ function mkStreak(base, run, pool, poolFloor, minLen) {
     surface: r.surface || null,
     score: r.score || null,
     won: r.won,
+    // TEN-204 Phase 3 · the join key and market side for the odds pass below. Prices are
+    // NOT attached here: attachOdds() runs once over the finished board so the whole run
+    // costs one get_odds call per distinct DATE (78 on a real board) instead of one per
+    // row (809). price / oppPrice / book are written in by that pass.
+    eventKey: r.eventKey || null,
+    side: r.side || null,
   }));
   return Object.assign({
     count,
@@ -949,6 +960,111 @@ function streaksFor(recs, tier) {
 //   surface : only if the upcoming match is on that surface.
 //   style   : only if the upcoming opponent is classified as that EXACT archetype.
 //             Opponent unclassified (oppArch null) → the streak does not render.
+// ─── TEN-204 Phase 3 · MATCH-ODDS PASS ───────────────────────────────────────
+// Founder ruling 2026-09-15 (gate b64c7673, quoted): "Use Pinnacle for what's
+// possible and fill it with bet365 for what's missing."
+//
+// This SUPERSEDES the A2.2 rule "one bookmaker per ledger — never mix books inside
+// one streak's P&L", which was his own earlier instruction. Because it supersedes it
+// rather than satisfying it, the mixing is made VISIBLE rather than silent: every row
+// carries the `book` that priced it, the modal prints it, and a ledger drawn from two
+// books says so on its total line. Measured on the 809-row board of 2026-09-15:
+// Pinnacle alone prices 83.4%, bet365 alone 84.9%, the fill 88.9% (+44 rows), and
+// Pinnacle runs a systematic +2.99% richer than bet365 on the 643 rows both price —
+// so a filled row is a genuinely cheaper price, not a like-for-like substitute.
+//
+// SOURCE + HONESTY CONSTRAINTS:
+//   · api-tennis get_odds carries NO timestamps anywhere in the payload. These are
+//     therefore PRE-MATCH SNAPSHOTS and must never be labelled "closing" (founder A4).
+//   · Match winner only. No line market is priced here — a price under a games or
+//     handicap claim would be an invention, so line/set families get no odds at all.
+//   · A missing price is null => a dash. Never 0, never a nearby line, never implied.
+const ODDS_BOOK_ORDER = ['Pncl', 'bet365'];   // ruling order: Pinnacle first, bet365 fills
+const ODDS_BOOK_LABEL = { Pncl: 'Pinnacle', bet365: 'bet365' };
+
+async function fetchOddsForDate(date) {
+  const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}&date_start=${date}&date_stop=${date}`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.result && typeof data.result === 'object') return data.result;
+      return null;                       // a well-formed empty day is not an error
+    } catch (_) {
+      await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+    }
+  }
+  return null;                           // transient failure -> rows dash, never guess
+}
+
+// Walks every emitted row, fetches one get_odds page per distinct date, and writes
+// price / oppPrice / book onto the row. Returns a census for meta.
+// A streak's family, using the SAME legacy mapping the front-end's famOf() applies, so
+// "which families may carry odds" cannot answer differently on the two sides.
+function oddsFamilyOf(st) {
+  if (st.type === 'pattern') return 'setout';
+  if (st.type === 'setpat') return st.firstSet ? 'setgames' : 'setout';
+  return st.family || st.type;
+}
+const ODDS_MATCH_RESULT_FAMS = new Set(['all', 'surface', 'style']);
+
+async function attachOdds(players) {
+  // ONLY match-result families are priced. A line or set family gets no price written at
+  // all — not a hidden one the renderer happens not to print. Founder B3: "No odds of any
+  // kind shown under a line claim." The renderer already omits those columns, but an
+  // artifact that carries a match price under an "Under 23.5 games" run is one careless
+  // render change away from publishing a substitution he banned outright, so the data is
+  // never created. tools/test-series-rows.js fails the build if one appears.
+  const rows = [];
+  for (const p of players) {
+    for (const st of p.streaks) {
+      if (!ODDS_MATCH_RESULT_FAMS.has(oddsFamilyOf(st))) continue;
+      for (const m of st.matches) rows.push(m);
+    }
+  }
+
+  const dates = [...new Set(rows.map(m => m.date).filter(Boolean))].sort();
+  const byEvent = new Map();
+  let calls = 0, failedDates = 0;
+  for (const d of dates) {
+    const result = await fetchOddsForDate(d);
+    calls++;
+    if (!result) { failedDates++; continue; }
+    for (const [ek, markets] of Object.entries(result)) byEvent.set(String(ek), markets);
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  // `rows` counts PRICEABLE rows (match-result families only), not the whole board —
+  // quoting a coverage % against every row on the board would understate it by counting
+  // rows we deliberately never price.
+  let boardRows = 0;
+  for (const p of players) for (const st of p.streaks) boardRows += st.matches.length;
+  const census = {
+    boardRows, priceableRows: rows.length, rows: rows.length,
+    priced: 0, byBook: {}, noEventKey: 0, noMarket: 0, calls, failedDates,
+  };
+  for (const m of rows) {
+    m.price = null; m.oppPrice = null; m.book = null;
+    if (!m.eventKey || !m.side) { census.noEventKey++; continue; }
+    const markets = byEvent.get(String(m.eventKey));
+    const ha = markets && markets['Home/Away'];
+    if (!ha || !ha.Home || !ha.Away) { census.noMarket++; continue; }
+    const mine = m.side;                          // 'Home' | 'Away'
+    const theirs = m.side === 'Home' ? 'Away' : 'Home';
+    for (const book of ODDS_BOOK_ORDER) {
+      const a = parseFloat(ha[mine] && ha[mine][book]);
+      const b = parseFloat(ha[theirs] && ha[theirs][book]);
+      // Both sides must come from the SAME book, or the pair is not a market.
+      if (!(a > 1) || !(b > 1)) continue;
+      m.price = a; m.oppPrice = b; m.book = ODDS_BOOK_LABEL[book] || book;
+      census.priced++;
+      census.byBook[m.book] = (census.byBook[m.book] || 0) + 1;
+      break;
+    }
+  }
+  return census;
+}
+
 function isRelevant(st, ctx) {
   switch (st.type) {
     case 'all':
@@ -1168,6 +1284,13 @@ async function main() {
 
   players.sort((a, b) => b.streaks[0].count - a.streaks[0].count);
 
+  // TEN-204 Phase 3 · attach match-winner prices (Pinnacle first, bet365 fill).
+  // Runs AFTER the board is final so it only prices rows that actually ship.
+  const oddsCensus = await attachOdds(players);
+  console.error(`build-series: odds ${oddsCensus.priced}/${oddsCensus.rows} rows priced ` +
+    `(${Object.entries(oddsCensus.byBook).map(([b, n]) => `${b} ${n}`).join(', ') || 'none'}) ` +
+    `via ${oddsCensus.calls} get_odds calls, ${oddsCensus.failedDates} date(s) failed`);
+
   // fix #3: accumulated hit-rate per family from the whole ledger (all days). Excluded
   // (held=null) rows are counted separately and kept OUT of the continued/broken rate.
   const ledgerRows = Object.values(ledger.records || {});
@@ -1267,6 +1390,18 @@ async function main() {
     // The front-end renders TODAY's slice from the played cards in view; this carries the
     // running record for our own read of which patterns hold up over weeks.
     outcomes: { accumulated: accum, ledgerSize: ledgerRows.length, ledgerUpdatedAt: generatedAt },
+    // TEN-204 Phase 3 · what the odds pass actually found, so the page never has to
+    // guess and a coverage collapse is visible in the artifact rather than as silent
+    // dashes. `timestamps: none` is the reason nothing may be called a close.
+    odds: {
+      market: 'match winner (api-tennis get_odds, Home/Away)',
+      bookOrder: ODDS_BOOK_ORDER.map(b => ODDS_BOOK_LABEL[b] || b),
+      policy: 'founder ruling 2026-09-15: Pinnacle where available, bet365 fills the gaps. Rows carry the book that priced them; a ledger may therefore mix books and says so.',
+      label: 'pre-match',
+      timestamps: 'none — api-tennis get_odds carries no time field; these are snapshots, never closing prices',
+      lineMarkets: 'not priced: no source offers a timestamped close on a Challenger games/handicap/first-set line, so line and set families carry a PROOF figure and no odds',
+      census: oddsCensus,
+    },
     meta,
     players,
   };
