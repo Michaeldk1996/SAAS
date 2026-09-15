@@ -65,7 +65,11 @@ const VIEW = [
   { player: { upcoming: { played: true } }, streak: { outcome: { held: false } } },
   { player: { upcoming: { played: true } }, streak: { outcome: { evaluable: false } } },
 ];
-const FILTERS = { day: 'played' };
+// §3.5 (founder 2026-09-15) moved the already-played selector off the DAY control and back
+// onto the restored "Show already-played" checkbox, so the state this block gates on is now
+// `showPlayed: true` rather than `day: 'played'`. Same predicate, different widget — and the
+// negative control below is what caught the rename rather than letting check A go vacuous.
+const FILTERS = { showPlayed: true };
 
 // ── A · shipped bytes render nothing ────────────────────────────────────────
 {

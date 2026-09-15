@@ -553,13 +553,14 @@
 
   var _filters = {
     level: 'all',         // all | tour | chal
-    // Item 8 (founder 2026-09-12): the Show-already-played CHECKBOX is gone and its
-    // job is now a fourth DAY option. That removes the only control on the page that
-    // wasn't a segmented control, and it makes the played view mutually exclusive with
-    // the upcoming ones — which it always was in practice.
-    //   all / today / tomorrow → NOT-yet-played fixtures (the old checkbox-off state)
-    //   played                 → already-played fixtures only, any day
-    day: 'all',           // all | today | tomorrow | played
+    // §3.5 (2026-09-15) · DAY is back to the design's three options and the
+    // Show-already-played CHECKBOX is restored, reversing TEN-194 item 8 which had folded
+    // the checkbox in as a fourth DAY option. The predicate is unchanged — see
+    // passesFilters(): showPlayed=false keeps DAY filtering not-yet-played fixtures exactly
+    // as before, showPlayed=true selects already-played ones, which is precisely what
+    // day==='played' did. Only the widget moved.
+    day: 'all',           // all | today | tomorrow
+    showPlayed: false,    // §3.5 checkbox — the old day==='played' state
     dir: 'all',           // all | win | loss
     type: 'all',          // all | all-comp | surface | style | total | handicap | setout | setgames
     // Item 9 (founder 2026-09-12): the default min-length moves 5+ → 6+. "A five-match
@@ -701,11 +702,13 @@
   function passesFilters(c) {
     var p = c.player, st = c.streak, f = _filters;
     if (f.level !== 'all' && p.tier !== f.level) return false;
-    // Item 8: DAY absorbed the Show-already-played checkbox. `played` is the only
-    // option that shows fixtures that have already been played; the other three all
-    // hide them, exactly as the unchecked box did.
+    // §3.5 · the checkbox, not a DAY option. `showPlayed` selects already-played fixtures
+    // and hides the upcoming ones; unchecked keeps DAY filtering upcoming fixtures only.
+    // This is the SAME predicate item 8 ran under `f.day === 'played'` — the branch is
+    // keyed off a different flag and is otherwise byte-for-byte what it was, so the played
+    // view is still defined by p.upcoming.played (the isUnderway-backed field) alone.
     var played = !!(p.upcoming && p.upcoming.played);
-    if (f.day === 'played') { if (!played) return false; }
+    if (f.showPlayed) { if (!played) return false; }
     else {
       if (played) return false;
       if (f.day !== 'all' && (p.upcoming && p.upcoming.day) !== f.day) return false;
@@ -801,61 +804,39 @@
   // match inside an Under 23.5 run — and an unlabelled letter would read as the streak's own
   // outcome. Result and score both come from the same row object, never from independent
   // sources (export §5).
-  function modalShapeOf(st) {
-    var fam = famOf(st);
-    return (fam === 'all' || fam === 'surface' || fam === 'style') ? 'result' : 'line';
-  }
-  var PROOF_COL = {
-    total: 'Games', handicap: 'Margin', setgames: '1st-set games', setout: 'Proof',
-  };
+  // §1.2 · the column header, rendered ONCE, on the same eight tracks as every row:
+  //   [empty cell] · DATE · EVENT · OPPONENT · SCORE · HOME · AWAY · P&L
+  // The "W/L" label is gone (the design leaves that cell empty). The stacked
+  // "MATCH ODDS · PRE-MATCH" band is gone entirely — §1.8 makes the total line the one
+  // place "pre-match" is said, so the band would have been the second.
+  //
+  // HOME / AWAY, not PLAYER / OPP. §1.3 defines HOME as the player this page is about and
+  // AWAY as the opponent; the original brief's "never HOME/AWAY" is explicitly reversed by
+  // the pixel pass, and the handoff wins every conflict.
+  //
+  // §1.7 · the P&L track exists on EVERY family, so the eight columns are identical panel to
+  // panel. On a line/set family the header cell and the row cells are BLANK — not a dash:
+  // a dash reads as "we looked and found nothing", and we never ran a ledger on a market we
+  // did not price at all. isMatchResultFam() is the same predicate the card and the ledger
+  // use, so the three can never disagree about which families carry a P&L.
   function modalHeadHtml(st) {
-    var shape = modalShapeOf(st);
-    var cells = '<span class="sr-mres">W/L</span>' +
+    return '<div class="sr-mhead">' +
+      '<span class="sr-mres"></span>' +
       '<span class="sr-mdate">Date</span>' +
       '<span class="sr-mtour">Event</span>' +
       '<span class="sr-mopp">Opponent</span>' +
-      '<span class="sr-mscore">Score</span>';
-    if (shape === 'result') {
-      // TEN-204 Phase 3 / founder A1: the two price tracks sit under a "MATCH ODDS" group
-      // label, so PLAYER/OPP are unambiguously prices and not another pair of name columns.
-      // A4: these are snapshots with no timestamp anywhere in the source, so the group says
-      // PRE-MATCH and the word "closing" appears nowhere on this page.
-      cells += '<span class="sr-mp1">Player</span>' +
-               '<span class="sr-mp2">Opp</span>' +
-               '<span class="sr-mpl">P&amp;L</span>';
-    } else {
-      // Founder A1 + A3: a line family gets the PROOF column AND the two match-odds
-      // tracks, but NO P&L — there is no ledger to run on a market we did not price.
-      cells += '<span class="sr-mproof">' + esc(PROOF_COL[famOf(st)] || 'Proof') + '</span>' +
-               '<span class="sr-mp1">Player</span>' +
-               '<span class="sr-mp2">Opp</span>';
-    }
-    // Spacers keep the band on the SAME grid as the header and the rows, so the label sits
-    // exactly over the two price tracks instead of floating above the table. BOTH shapes
-    // carry it (founder A1): on a line family the band is precisely the thing that stops a
-    // match-winner price being read as the price of the games line.
-    var band = '<div class="sr-mgroup sr-m--' + shape + '">' +
-      '<span class="sr-mres"></span><span class="sr-mdate"></span><span class="sr-mtour"></span>' +
-      '<span class="sr-mopp"></span><span class="sr-mscore"></span>' +
-      (shape === 'line' ? '<span class="sr-mproof"></span>' : '') +
-      '<span class="sr-mgrouplab">Match odds · pre-match</span>' +
-      (shape === 'result' ? '<span class="sr-mpl"></span>' : '') +
+      '<span class="sr-mscore">Score</span>' +
+      '<span class="sr-mp1">Home</span>' +
+      '<span class="sr-mp2">Away</span>' +
+      '<span class="sr-mpl">' + (isMatchResultFam(st) ? 'P&amp;L' : '') + '</span>' +
     '</div>';
-    return band + '<div class="sr-mhead sr-m--' + shape + '">' + cells + '</div>';
-  }
-  function fmtProofCell(st, v) {
-    if (typeof v !== 'number' || !isFinite(v)) return null;
-    // The handicap proof is a signed margin, so a win by five reads "+5" and a loss by
-    // three reads "−3". Everything else is a count and carries no sign.
-    if (famOf(st) === 'handicap') return (v > 0 ? '+' : (v < 0 ? '−' : '')) + String(Math.abs(v));
-    return String(v);
   }
   function detailTableHtml(st) {
     // streakRows() is the ONE builder (see its block above). The modal reverses for display —
     // newest first — which is a render choice and changes no value.
     var rows = streakRows(st).slice().reverse();
     if (!rows.length) return '';
-    var shape = modalShapeOf(st);
+    var isResult = isMatchResultFam(st);
     var dash = '<span class="sr-dash">—</span>';
     return rows.map(function (r) {
       // `|| r.date` used to sit in the middle here, printing the RAW string when fmtDate
@@ -871,28 +852,26 @@
         '<span class="sr-mtour">' + (r.event ? esc(r.event) : dash) + '</span>' +
         '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : dash) + '</span>' +
         '<span class="sr-mscore">' + (r.score ? esc(r.score) : dash) + '</span>';
-      if (shape === 'result') {
-        // TEN-204 Phase 3 · real pre-match prices + the flat-1u P&L cell. The row's own
-        // book is exposed via title= so a mixed ledger can be audited row by row rather
-        // than taken on trust (founder's fill ruling 2026-09-15).
-        var bookAttr = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
-        var plTxt = dash;
+      // §1.3 · HOME / AWAY prices on every family. The row's own book is exposed via title=
+      // so a mixed ledger can be audited row by row rather than taken on trust (founder's
+      // fill ruling 2026-09-15). An unpriced row is a dash, never a zero.
+      var bookAttr = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
+      cells += '<span class="sr-mp1"' + bookAttr + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
+               '<span class="sr-mp2"' + bookAttr + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>';
+      // §1.7 · the P&L cell. Match-result families carry the flat-1u figure; line/set
+      // families render the cell EMPTY so the track — and therefore every column to its
+      // left — stays exactly where it is, with no dash and no value inside it.
+      var plTxt = '';
+      if (isResult) {
+        plTxt = dash;
         if (r.price != null && r.won != null) {
           var u = r.won ? Number((r.price - 1).toFixed(2)) : -1.00;
           plTxt = '<span class="' + (u >= 0 ? 'sr-w' : 'sr-l') + '">' +
                   (u > 0 ? '+' : (u < 0 ? '−' : '')) + esc(Math.abs(u).toFixed(2)) + '</span>';
         }
-        cells += '<span class="sr-mp1"' + bookAttr + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
-                 '<span class="sr-mp2"' + bookAttr + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>' +
-                 '<span class="sr-mpl">' + plTxt + '</span>';
-      } else {
-        var pv = fmtProofCell(st, r.proof);
-        var lb = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
-        cells += '<span class="sr-mproof">' + (pv == null ? dash : esc(pv)) + '</span>' +
-                 '<span class="sr-mp1"' + lb + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
-                 '<span class="sr-mp2"' + lb + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>';
       }
-      return '<div class="sr-mrow sr-m--' + shape + '">' + cells + '</div>';
+      cells += '<span class="sr-mpl">' + plTxt + '</span>';
+      return '<div class="sr-mrow">' + cells + '</div>';
     }).join('');
   }
   // Total line (export §5). TEN-204 Phase 3 · match-result families now carry the unit
@@ -905,25 +884,49 @@
   // the ruling was made), so a ledger that mixes them says which ones it mixed.
   function modalTotalHtml(st) {
     var rows = streakRows(st);
+    // §1.8 · the left side is "{FAMILY} · {N} MATCHES · PRE-MATCH ODDS" in the eyebrow
+    // style, and it is the ONLY place "pre-match" appears on the page now that §1.2 has
+    // removed the column band. The count is the row count, never the artifact's own claim.
     var head = '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
-      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>';
+      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') +
+      ' · pre-match odds</span>';
+    // §1.7 · line/set families get NO units and NO yield — the left eyebrow is the whole
+    // total line for them. ledgerOf() already returns null on those families (locked by the
+    // CI gate), so this is the same predicate, not a second opinion about it.
     var L = ledgerOf(st);
-    if (!L || !L.priced) {
-      if (L) head += '<span class="sr-ov-total-v sr-dash">— 0 of ' + esc(String(L.of)) + ' priced</span>';
+    if (!L) return '<div class="sr-ov-total">' + head + '</div>';
+    if (!L.priced) {
+      head += '<span class="sr-ov-total-r">' +
+        '<span class="sr-ov-total-k">0 of ' + esc(String(L.of)) + ' priced</span>' +
+        '<span class="sr-ov-total-v sr-dash">—</span></span>';
       return '<div class="sr-ov-total">' + head + '</div>';
     }
+    // §1.7 right group: "{n} PRICED" eyebrow, then units at mono 15px/700 and yield at
+    // mono 15px/400, both sign-coloured. The book stays in the eyebrow: under the founder's
+    // 2026-09-15 fill ruling one ledger can mix two books whose prices differ systematically
+    // (Pinnacle ran +2.99% richer than bet365 across the 643 rows both priced), so a ledger
+    // that mixes them has to say which ones it mixed.
+    var cls = L.total >= 0 ? 'sr-w' : 'sr-l';
     var sign = L.total > 0 ? '+' : (L.total < 0 ? '−' : '');
-    head += '<span class="sr-ov-total-v ' + (L.total >= 0 ? 'sr-w' : 'sr-l') + '">' +
-      sign + esc(Math.abs(L.total).toFixed(2)) + 'u · ' +
-      (L.yield > 0 ? '+' : (L.yield < 0 ? '−' : '')) + esc(Math.abs(L.yield).toFixed(1)) + '%</span>' +
-      '<span class="sr-ov-total-n">' + esc(String(L.priced)) + ' of ' + esc(String(L.of)) + ' priced · ' +
-      esc(L.books.join(' + ') || 'no book') + ' · pre-match</span>';
+    head += '<span class="sr-ov-total-r">' +
+      '<span class="sr-ov-total-k">' + esc(String(L.priced)) + ' of ' + esc(String(L.of)) +
+        ' priced · ' + esc(L.books.join(' + ') || 'no book') + '</span>' +
+      '<span class="sr-ov-total-v ' + cls + '">' + sign + esc(Math.abs(L.total).toFixed(2)) + 'u</span>' +
+      '<span class="sr-ov-total-y ' + cls + '">' +
+        (L.yield > 0 ? '+' : (L.yield < 0 ? '−' : '')) + esc(Math.abs(L.yield).toFixed(1)) + '%</span>' +
+    '</span>';
     return '<div class="sr-ov-total">' + head +
       // The caveat is generated, not hardcoded, and it is not optional: the founder ruled
       // to KEEP this P&L after being shown it is circular, on condition it carries the
       // caveat on the page. A streak is selected FOR its rows' outcomes, so the sign of
       // this total was fixed before any price was read.
-      '<div class="sr-ov-caveat">Flat 1u at the pre-match price. A run is selected for its ' +
+      // §1.8 makes the total line the ONE place the pre-match label appears, and this
+      // caveat sat directly beneath it saying "at the pre-match price" — the second
+      // occurrence. Reworded to point AT that line ("the price above") rather than repeat
+      // its label. The disclosure itself is unchanged and is not optional: the founder
+      // ruled to keep this P&L after being shown it is circular, on condition the caveat
+      // ships with it.
+      '<div class="sr-ov-caveat">Flat 1u at the price above. A run is selected for its ' +
       'results, so this total’s direction is set by the run itself, not by the market — ' +
       'read it as the price of the run, not as an edge.</div>' +
     '</div>';
@@ -1023,16 +1026,28 @@
     // family's own proof figure, computed by proofSummary() from streakRows() — the SAME
     // builder the modal's rows come from, so the card average and the modal can never
     // disagree. Set outcome has no agreed proof figure, so it reads PROOF over a dash.
-    var ps = proofSummary(st);
-    var proofCell = ps.value == null ? dash : esc(ps.value);
+    // §2.3 · the third track. Match-result families read AVG PRICE over the mean of the
+    // SAME rows the modal lists — proofSummary() is the one builder, so the card figure and
+    // the modal can never disagree. Line and set families render an EMPTY track: no "PROOF"
+    // label, no "AVG GAMES", no "AVG 1ST-SET GAMES", no dash. The cell is still emitted so
+    // TYPE stays in the fourth column and the strip lines up with the cards beside it.
+    //
+    // This drops the proof FIGURE from the card. It is still computed — proofOf() is what
+    // the fail-closed CI gate uses to check that every row satisfies its claim (2.8), which
+    // is on the do-not-touch list — it is simply no longer painted.
+    var isResultFam = isMatchResultFam(st);
+    var ps = isResultFam ? proofSummary(st) : null;
+    var thirdCell = isResultFam
+      ? '<span class="sr-cell sr-cell-proof"><span class="sr-cell-k">' + esc(ps.label) + '</span>' +
+          '<span class="sr-cell-v sr-cell-pv">' + (ps.value == null ? dash : esc(ps.value)) + '</span></span>'
+      : '<span class="sr-cell sr-cell-blank"></span>';
     var strip =
       '<div class="sr-strip' + (showYear ? ' sr-strip--yr' : '') + '">' +
         '<span class="sr-cell"><span class="sr-cell-k">Started</span>' +
           '<span class="sr-cell-v">' + (startTxt ? esc(startTxt) : dash) + '</span></span>' +
         '<span class="sr-cell"><span class="sr-cell-k">Last</span>' +
           '<span class="sr-cell-v">' + (lastTxt ? esc(lastTxt) : dash) + '</span></span>' +
-        '<span class="sr-cell sr-cell-proof"><span class="sr-cell-k">' + esc(ps.label) + '</span>' +
-          '<span class="sr-cell-v sr-cell-pv">' + proofCell + '</span></span>' +
+        thirdCell +
         '<span class="sr-cell"><span class="sr-cell-k">Type</span>' +
           '<span class="sr-cell-v sr-cell-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span></span>' +
       '</div>';
@@ -1119,16 +1134,20 @@
   function fgroup(label, name, opts, cur) {
     return '<span class="sr-fgroup"><span class="sr-flabel">' + esc(label) + '</span>' + seg(name, opts, cur) + '</span>';
   }
-  // Item 8 (founder 2026-09-12): three rows plus a checkbox collapse to exactly two
-  // segmented rows — LEVEL · DAY · DIRECTION, then TYPE · MIN LENGTH · SORT. The
-  // Show-already-played checkbox is gone; `Played` is now DAY's fourth option, which
-  // leaves every control on the page the same kind of thing.
+  // §3.4 · two segmented rows — LEVEL · DAY · DIRECTION, then TYPE · MIN LENGTH · SORT —
+  // followed by §3.5's restored "Show already-played" checkbox.
+  //
+  // §3.5 reverses TEN-194 item 8, which had removed the checkbox and made `Played` a fourth
+  // DAY option so that every control was a segmented one. DAY is back to its three design
+  // options and the checkbox is back below the rows. ONLY the control changed: `showPlayed`
+  // drives the same isUnderway-backed predicate in passesFilters() that `day === 'played'`
+  // drove, so the played view is reached by a different widget and by no different logic.
   function filterBarHtml() {
     var f = _filters;
     return '<div class="sr-filters">' +
       '<div class="sr-frow">' +
         fgroup('Level', 'level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
-        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow'],['played','Played']], f.day) +
+        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
         fgroup('Direction', 'dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
       '</div>' +
       '<div class="sr-frow">' +
@@ -1136,6 +1155,11 @@
         fgroup('Min length', 'minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
         fgroup('Sort', 'sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
       '</div>' +
+      '<label class="sr-toggle">' +
+        '<input type="checkbox" data-toggle="showPlayed"' + (f.showPlayed ? ' checked' : '') + '>' +
+        '<span class="sr-box" aria-hidden="true"></span>' +
+        '<span>Show already-played</span>' +
+      '</label>' +
     '</div>';
   }
 
@@ -1216,7 +1240,7 @@
   // never guessed (founder standing rule).
   function outcomesSummaryHtml(view) {
     if (OUTCOME_SUMMARY_HIDDEN) return '';      // founder ruling 2026-09-15 — see above
-    if (_filters.day !== 'played') return '';   // item 8: the checkbox became DAY=Played
+    if (!_filters.showPlayed) return '';        // §3.5: DAY=Played became the checkbox again
     var played = view.filter(function (c) {
       return c.player.upcoming && c.player.upcoming.played && c.streak.outcome;
     });
@@ -1275,6 +1299,15 @@
         var key = segEl.getAttribute('data-seg');
         var val = b.getAttribute('data-val');
         _filters[key] = (key === 'minLen') ? Number(val) : val;
+        render();
+      });
+    });
+    // §3.5 · the restored checkbox. `change`, not `click`: the visible box is a sibling
+    // <span>, so a click lands on the label and the browser forwards it to the input —
+    // listening for click here would fire twice and toggle back to where it started.
+    root.querySelectorAll('.sr-toggle input[data-toggle]').forEach(function (box) {
+      box.addEventListener('change', function () {
+        _filters[box.getAttribute('data-toggle')] = !!box.checked;
         render();
       });
     });
