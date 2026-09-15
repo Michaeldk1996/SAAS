@@ -1075,11 +1075,23 @@
     '</div>';
   }
 
+  // HIDDEN by founder ruling 2026-09-15 (TEN-204 interaction d6a15334, tracker="hide").
+  // The figure it printed was circular: the engine graded a match that is already inside
+  // the streak's own row list, so a winning run could only ever report "continued" — the
+  // whole ledger read 993 continued · 1 broken · 47 not evaluable (99.9% held), six of
+  // seven families at exactly 100%. That is a property of how a streak is defined, not a
+  // measurement of anything. Ruling was hide now, fix properly later: grade the NEXT
+  // match, the one AFTER the run, which is a real out-of-sample test.
+  // The body below is left intact and unreferenced on purpose — the proper fix changes
+  // which match is graded, not this markup, so re-enabling is deleting the line below.
+  var OUTCOME_SUMMARY_HIDDEN = true;
+
   // CONTINUED/BROKEN summary (fix #3), shown only in the already-played view. Counts
   // over the played cards CURRENTLY in view whose condition could be evaluated; the
   // "not evaluable" cards are reported separately and excluded from the percentage —
   // never guessed (founder standing rule).
   function outcomesSummaryHtml(view) {
+    if (OUTCOME_SUMMARY_HIDDEN) return '';      // founder ruling 2026-09-15 — see above
     if (_filters.day !== 'played') return '';   // item 8: the checkbox became DAY=Played
     var played = view.filter(function (c) {
       return c.player.upcoming && c.player.upcoming.played && c.streak.outcome;
