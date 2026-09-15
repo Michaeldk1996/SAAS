@@ -305,12 +305,14 @@ body.sr-ov-open { overflow: hidden; }
    instead of per row.
 
    .sr-m--result — eight tracks, the export's own geometry with HOME/AWAY renamed to
-   PLAYER/OPP. .sr-m--line — six tracks: no price columns at all, not dashed ones, and the
-   width they would have taken goes to EVENT, which on a Challenger carries names like
+   PLAYER/OPP. .sr-m--line — eight tracks: PROOF plus the two match-odds tracks (founder
+   A1, 2026-09-15 — "all families show PLAYER / OPP match odds per row"), but no P&L,
+   because we did not price the line the claim is judged on and so cannot run a ledger on
+   it. EVENT keeps the larger share because on a Challenger it carries names like
    "Phan Thiet 3 (Vietnam) - Qualification". */
-.sr-ov .sr-mhead, .sr-ov .sr-mrow { display: grid; gap: 0 16px; }
+.sr-ov .sr-mhead, .sr-ov .sr-mrow, .sr-ov .sr-mgroup { display: grid; gap: 0 16px; }
 .sr-ov .sr-m--result { grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 54px 54px 64px; }
-.sr-ov .sr-m--line   { grid-template-columns: 14px 92px minmax(0,1.4fr) minmax(0,1fr) 118px 74px; }
+.sr-ov .sr-m--line   { grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 74px 54px 54px; }
 .sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
 .sr-ov .sr-mhead span {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
@@ -362,9 +364,14 @@ body.sr-ov-open { overflow: hidden; }
 }
 /* The "MATCH ODDS · PRE-MATCH" band, on the rows' own grid so it aligns to the two
    price tracks rather than floating. The label spans PLAYER+OPP (columns 6-7). */
-.sr-ov .sr-mgroup { display: grid; gap: 0 16px; padding: 0 24px 4px; flex: none; }
+.sr-ov .sr-mgroup { padding: 0 24px 4px; flex: none; }
+/* Result shape: PLAYER+OPP are tracks 6-7. Line shape: PROOF takes 6, so they are 7-8.
+   Stated per shape rather than with a single span, because a band one column adrift
+   labels the wrong data — which is the entire failure this band exists to prevent. */
+.sr-ov .sr-m--result .sr-mgrouplab { grid-column: 6 / span 2; }
+.sr-ov .sr-m--line   .sr-mgrouplab { grid-column: 7 / span 2; }
 .sr-ov .sr-mgrouplab {
-  grid-column: 6 / span 2; text-align: right;
+  text-align: right;
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 8.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #4b5672;
 }

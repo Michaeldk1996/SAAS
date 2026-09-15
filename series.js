@@ -824,19 +824,23 @@
                '<span class="sr-mp2">Opp</span>' +
                '<span class="sr-mpl">P&amp;L</span>';
     } else {
-      cells += '<span class="sr-mproof">' + esc(PROOF_COL[famOf(st)] || 'Proof') + '</span>';
+      // Founder A1 + A3: a line family gets the PROOF column AND the two match-odds
+      // tracks, but NO P&L — there is no ledger to run on a market we did not price.
+      cells += '<span class="sr-mproof">' + esc(PROOF_COL[famOf(st)] || 'Proof') + '</span>' +
+               '<span class="sr-mp1">Player</span>' +
+               '<span class="sr-mp2">Opp</span>';
     }
-    var band = '';
-    if (shape === 'result') {
-      // Spacers keep the band on the SAME grid as the header and the rows, so the label
-      // sits exactly over the two price tracks instead of floating above the table.
-      band = '<div class="sr-mgroup sr-m--' + shape + '">' +
-        '<span class="sr-mres"></span><span class="sr-mdate"></span><span class="sr-mtour"></span>' +
-        '<span class="sr-mopp"></span><span class="sr-mscore"></span>' +
-        '<span class="sr-mgrouplab">Match odds · pre-match</span>' +
-        '<span class="sr-mpl"></span>' +
-      '</div>';
-    }
+    // Spacers keep the band on the SAME grid as the header and the rows, so the label sits
+    // exactly over the two price tracks instead of floating above the table. BOTH shapes
+    // carry it (founder A1): on a line family the band is precisely the thing that stops a
+    // match-winner price being read as the price of the games line.
+    var band = '<div class="sr-mgroup sr-m--' + shape + '">' +
+      '<span class="sr-mres"></span><span class="sr-mdate"></span><span class="sr-mtour"></span>' +
+      '<span class="sr-mopp"></span><span class="sr-mscore"></span>' +
+      (shape === 'line' ? '<span class="sr-mproof"></span>' : '') +
+      '<span class="sr-mgrouplab">Match odds · pre-match</span>' +
+      (shape === 'result' ? '<span class="sr-mpl"></span>' : '') +
+    '</div>';
     return band + '<div class="sr-mhead sr-m--' + shape + '">' + cells + '</div>';
   }
   function fmtProofCell(st, v) {
@@ -883,7 +887,10 @@
                  '<span class="sr-mpl">' + plTxt + '</span>';
       } else {
         var pv = fmtProofCell(st, r.proof);
-        cells += '<span class="sr-mproof">' + (pv == null ? dash : esc(pv)) + '</span>';
+        var lb = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
+        cells += '<span class="sr-mproof">' + (pv == null ? dash : esc(pv)) + '</span>' +
+                 '<span class="sr-mp1"' + lb + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
+                 '<span class="sr-mp2"' + lb + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>';
       }
       return '<div class="sr-mrow sr-m--' + shape + '">' + cells + '</div>';
     }).join('');

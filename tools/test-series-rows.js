@@ -170,7 +170,7 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
     : (st.family || st.type));
   const B = lift(famOf);
 
-  let checked = 0, withProof = 0, withPrice = 0, withLedger = 0;
+  let checked = 0, withProof = 0, withPrice = 0, withLedger = 0, sawPricedLine = 0;
   eachStreak((p, st) => {
     const rows = B.streakRows(st);
     // the modal renders exactly these rows
@@ -227,14 +227,9 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
           `TEN-204 Phase 3 — row priced by an unruled book "${r.book}" (${p.name}). The founder's ` +
           `2026-09-15 ruling names Pinnacle, filled by bet365, and nothing else.`);
       }
-      // A LINE/SET family must carry NO odds at all. This is the substitution the founder
-      // banned outright: no source prices a Challenger games line, so a price under a line
-      // claim would be an invention regardless of where it came from.
-      if (!B.isMatchResultFam(st)) {
-        assert.strictEqual(r.price, null,
-          `TEN-204 Phase 3 — a LINE/SET family row carries a match price (${p.name} · ${st.type}). ` +
-          `Match odds must never appear under a line claim.`);
-      }
+      // A LINE/SET family MAY carry a match-winner price — founder A1 asks for it in the
+      // modal, under a header naming the market. What it may never do is let that price
+      // reach the CARD cell (B3) or a P&L (A3); both are asserted below, per streak.
     }
 
     // The ledger is the modal's own rows, re-summed here with the ruled rounding:
@@ -270,6 +265,28 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
       assert.strictEqual(L, null,
         `TEN-204 Phase 3 — a LINE/SET family produced a P&L ledger (${p.name} · ${st.type}). ` +
         `Founder A3: no P&L column, no unit total, no yield on line families.`);
+      // Founder B3: "No odds of any kind shown under a line claim on the card." The modal
+      // may show the match-odds tracks; the CARD cell must stay the proof figure. If a
+      // priced line streak ever published a price-looking cell, that is the substitution.
+      const cell = B.proofSummary(st);
+      const spec2 = B.PROOF_SPEC[famOf(st)];
+      const priced = rows.filter(r => r.price != null);
+      if (priced.length) {
+        sawPricedLine++;
+        if (spec2 && spec2.key) {
+          const vals2 = rows.map(r => r.proof).filter(v => typeof v === 'number' && isFinite(v));
+          if (vals2.length) {
+            const mean2 = vals2.reduce((a, b) => a + b, 0) / vals2.length;
+            let want2 = mean2.toFixed(spec2.dp);
+            if (spec2.signed && mean2 > 0) want2 = '+' + want2;
+            assert.strictEqual(cell.value, want2,
+              `TEN-204 B3 — a priced LINE family's card cell is "${cell.value}", not its proof ` +
+              `figure "${want2}" (${p.name} · ${st.type}). A price must never reach a line card.`);
+          }
+        }
+        assert(!/price/i.test(String(cell.label)),
+          `TEN-204 B3 — a LINE family's card cell is labelled "${cell.label}" (${p.name}).`);
+      }
     }
     checked++;
   });
@@ -291,6 +308,11 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
       'was priced. The odds pass is failing silently and the price gate is measuring nothing.');
     assert(withLedger > 0,
       'TEN-204 Phase 3 — series.json carries an odds block but no ledger was computed.');
+    // Founder A1 asks for match odds on EVERY family. If no line family ever carried a
+    // price, the B3 card-protection assertions above never ran and are vacuous.
+    assert(sawPricedLine > 0,
+      'TEN-204 A1 — not one LINE/SET streak carried a match price, so the modal is not ' +
+      'showing odds on all families and the B3 card guard is measuring nothing.');
     // A collapse to a handful of rows is the failure mode that would otherwise read as
     // "working": the census records what the build itself saw, so compare against it.
     const c = doc.odds.census || {};

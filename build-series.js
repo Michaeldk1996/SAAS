@@ -1009,19 +1009,20 @@ function oddsFamilyOf(st) {
 const ODDS_MATCH_RESULT_FAMS = new Set(['all', 'surface', 'style']);
 
 async function attachOdds(players) {
-  // ONLY match-result families are priced. A line or set family gets no price written at
-  // all — not a hidden one the renderer happens not to print. Founder B3: "No odds of any
-  // kind shown under a line claim." The renderer already omits those columns, but an
-  // artifact that carries a match price under an "Under 23.5 games" run is one careless
-  // render change away from publishing a substitution he banned outright, so the data is
-  // never created. tools/test-series-rows.js fails the build if one appears.
+  // EVERY family is priced, including line and set families. Founder A1, 2026-09-15:
+  // "All families: show PLAYER / OPP match odds per row. Column group header MATCH ODDS."
+  // That ruling is later than, and supersedes, item 2.7's "no price columns" for line
+  // families — 2.7 was written before he had seen the built modal.
+  //
+  // The rule it does NOT relax is the substitution ban, and the two are easy to confuse:
+  //   · A MATCH-WINNER price, labelled "MATCH ODDS", shown beside a total-games run is a
+  //     different market plainly named. That is what A1 asks for.
+  //   · A match-winner price presented AS the price of the games line is the invention he
+  //     banned. Nothing here does that: the price never reaches the line family's CARD
+  //     cell (founder B3), never feeds a P&L (founder A3), and sits under a header that
+  //     names the market it belongs to.
   const rows = [];
-  for (const p of players) {
-    for (const st of p.streaks) {
-      if (!ODDS_MATCH_RESULT_FAMS.has(oddsFamilyOf(st))) continue;
-      for (const m of st.matches) rows.push(m);
-    }
-  }
+  for (const p of players) for (const st of p.streaks) for (const m of st.matches) rows.push(m);
 
   const dates = [...new Set(rows.map(m => m.date).filter(Boolean))].sort();
   const byEvent = new Map();
