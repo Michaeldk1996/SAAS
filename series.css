@@ -201,10 +201,24 @@
 [data-page="series"] .sr-tag-oc-na { color: #5b6880; background: transparent; border-color: rgba(255,255,255,0.09); }
 [data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: #4b5672; }
 
-/* 3.4 FOUR-column strip (TEN-204 2.3): STARTED · LAST · PRICE/PROOF · TYPE, tracks
-   1fr 1fr 1fr 1.2fr per the export. Pool stays modal-only (ruling q1). */
+/* 3.4 FOUR-column strip (TEN-204 2.3): STARTED · LAST · PRICE/PROOF · TYPE.
+   Pool stays modal-only (ruling q1).
+
+   The brief writes the tracks as "1fr 1fr 1fr 1.2fr". Measured on the deployed 3-up
+   grid that same brief specifies (2.2: minmax(400px,1fr) inside a 1360px column →
+   417px cards → 345.3px of track space), that ratio gives STARTED 82.2px and STARTED
+   wants 92.4px, so it ellipsised on 22 of 22 cards: "28 Jul 2026" painted as
+   "28 Jul 20…". A truncated year is a corrupted date, and 2.3's own worked example is
+   'STARTED (with year, "5 Aug 2026")' — the ratio as written cannot render the content
+   as written, so the two halves of 2.3 are in conflict and the content half wins.
+
+   This is a redistribution, NOT extra width: in-situ intrinsic widths are
+   STARTED 92.4 · LAST 50.4 · PRICE/PROOF 82.2 · TYPE 73.2 = 298.2px against 345.3px
+   available. LAST had 31.8px spare and TYPE 25.5px; STARTED needed 10.2px. Moving the
+   first track to 1.2fr yields 94.2 / 78.5 / 78.5 / 94.2 — every cell above its
+   intrinsic width, nothing clipped. The 1.2fr on TYPE is untouched. */
 [data-page="series"] .sr-strip {
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
+  display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.2fr; gap: 10px;
   padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
 }
 /* The export makes the fourth figure "the only bold value in the strip" — that is what marks

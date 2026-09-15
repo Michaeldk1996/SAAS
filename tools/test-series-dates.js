@@ -210,7 +210,23 @@ assert(/sr-cell-proof/.test(stripSrc), 'the strip no longer renders the price/pr
 assert(/proofSummary\(st\)/.test(stripSrc),
   'the strip computes its fourth cell from something other than proofSummary() — the ' +
   'card and the modal would no longer share one row builder (export §3.3)');
-assert(/1fr 1fr 1fr 1\.2fr/.test(css), 'the card strip is no longer the export\'s four tracks');
+// The brief's literal ratio was 1fr 1fr 1fr 1.2fr. Measured on the 3-up grid the same
+// brief specifies, that gave STARTED 82.2px against an intrinsic 92.4px and ellipsised
+// the year on 22 of 22 cards ("28 Jul 20…"). The first track carries a full date and is
+// widened to match; TYPE's 1.2fr is unchanged. Locked so the clip cannot come back, and
+// so the wider STARTED cannot be quietly narrowed again.
+assert(/grid-template-columns: 1\.2fr 1fr 1fr 1\.2fr/.test(css),
+  'the card strip is no longer the four tracks 1.2fr 1fr 1fr 1.2fr — if the first track '
+  + 'goes back to 1fr, STARTED ellipsises its year on every card');
+// STARTED must be at least as wide as TYPE: it is the only cell carrying a full date.
+{
+  const m = /\.sr-strip \{[^}]*grid-template-columns: ([^;]+);/.exec(css);
+  const tr = m && m[1].trim().split(/\s+/).map((x) => parseFloat(x));
+  assert(tr && tr.length === 4, 'the strip is not four tracks');
+  assert(tr[0] >= tr[1] && tr[0] >= tr[2],
+    'STARTED is no longer the widest of the three metadata tracks, but it is the only one '
+    + 'carrying a four-digit year — it will clip before LAST or PRICE do');
+}
 // A match-result family must show a DASH under AVG PRICE, never a number, until Phase 3.
 assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv">—</.test(std),
   'a match-result card is printing something other than a dash under AVG PRICE, but Phase 3 ' +
