@@ -3,18 +3,11 @@
     "maxGapMin": 17.2,
     "medianGapMin": 15.0,
     "note": "Measured gap between consecutive captures. Compare against the configured interval; the difference IS the delivery shortfall.",
-    "spanHours": 96.99,
-    "ticks": 389
+    "spanHours": 99.75,
+    "ticks": 400
   },
   "schema": "odds-capture-cadence/1",
   "ticks": [
-    {
-      "at": "2026-09-11T01:30:42Z",
-      "iter": 1,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "34550941721/1"
-    },
     {
       "at": "2026-09-11T01:45:01Z",
       "iter": 2,
@@ -2730,6 +2723,90 @@
       "mode": "free",
       "outcome": "captured",
       "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T02:45:01Z",
+      "iter": 16,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T03:00:01Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T03:15:01Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T03:30:01Z",
+      "iter": 19,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T03:45:01Z",
+      "iter": 20,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T04:00:01Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T04:15:01Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34906618154/1"
+    },
+    {
+      "at": "2026-09-15T04:30:20Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "34916062959/1"
+    },
+    {
+      "at": "2026-09-15T04:45:02Z",
+      "iter": 2,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "34916062959/1"
+    },
+    {
+      "at": "2026-09-15T05:00:01Z",
+      "iter": 3,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34916062959/1"
+    },
+    {
+      "at": "2026-09-15T05:15:02Z",
+      "iter": 4,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "34916062959/1"
+    },
+    {
+      "at": "2026-09-15T05:30:01Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "34916062959/1"
     }
   ]
 }
