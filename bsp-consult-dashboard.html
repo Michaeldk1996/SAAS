@@ -24278,6 +24278,17 @@ window.DatabaseTab = (function(){
     // spends time in profit gets a full labelled positive band. Measured: the Tour
     // curves peak at +26.3u against a 2,316u span, so a data-driven "rawHi>0" test
     // would hand the Tour chart 250u of empty headroom for a 26u blip.
+    // ===== FOUNDER RULING TEN-196, gate `b6f04a43` (2026-09-14): `keep-as-is`. =====
+    // THIS PAGE KEEPS TWO LADDERS. `CHARTS.md` §8 — in this repo at
+    // design-export/database-handoff-4/CHARTS.md:221-222 — asks for ONE shared ladder
+    // `[10…2500]` across all five charts. THAT WAS BUILT, PUT TO THE FOUNDER, AND
+    // REJECTED. Do not conform this to §8 as a spec fix; that is the exact revert the
+    // ruling exists to stop. §8 is one file against three: README.md:273 and
+    // Database.dc.html:935 specify this ladder `else 5000`, and README.md:343 /
+    // Database.dc.html:821 give the Players panels a deliberately different one.
+    // The cost that decided it: §8 takes 699 of 1,129 player panels to an axis whose
+    // only label is `0`. Full rule + measurements in CLAUDE.md; locked by
+    // .probe-ten196h/verify-r8.mjs (S1-S7). Same marker sits above PSTEPS.
     var STEPS=[10,25,50,100,250,500,1000,2500,5000];
     var step, rnd, hi, lo;
     for(var si=0; si<STEPS.length; si++){
@@ -24806,9 +24817,21 @@ window.DatabaseTab = (function(){
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all);
     // §8's ten-gridline cap, judged on the span the step ACTUALLY produces after the
     // outward rounding — same defect and same fix as the Tour ladder above. Measured
-    // before the fix: 46 of 1,129 player panels drew 11 or 12 labels (Federer R. among
-    // them). The PLAYER_ZERO_IN_DOMAIN guard has to run inside the loop, because
+    // before the fix: **52** of 1,129 player panels drew 11 or 12 labels (Federer R.
+    // among them). (This read 46 until 2026-09-14; re-derived twice independently as
+    // 52, and the same 52 are exactly the panels whose axis differs from the export's
+    // one-pass rule — i.e. the export's own literal algorithm violates §8's
+    // ten-gridline cap on every one of them.) The PLAYER_ZERO_IN_DOMAIN guard has to run inside the loop, because
     // forcing zero into the domain widens it and can itself push the count over ten.
+    // ===== FOUNDER RULING TEN-196, gate `b6f04a43` (2026-09-14): `keep-as-is`. =====
+    // THIS LADDER IS DELIBERATELY NOT THE TOUR ONE, AND NOT `CHARTS.md` §8's.
+    // It is README.md:343 / Database.dc.html:821 — `[1,2,5,10,20,25,50]` else 100,
+    // with `rnd = max(1, step/5)`. Conforming these three panels to §8's `[10…2500]`
+    // was built and REJECTED: it moves 1,097 of 1,129 panels and leaves 699 of them
+    // with `0` as their only y-axis label (Michelsen A., n=150, goes from eight
+    // gridlines to a bare `0`). The `rnd` below is load-bearing for that — §8's
+    // ladder with the TOUR `rnd` gives 0 blank axes but drops median panel fill to
+    // 31.4%. Do not unify either. See the marker above `var STEPS`.
     var PSTEPS=[1,2,5,10,20,25,50,100];
     var step, rnd, hi, lo;
     // FOUNDER RULING, TEN-196 round 5, gate e8453243: `force-zero`.
@@ -24871,8 +24894,10 @@ window.DatabaseTab = (function(){
     // §8: positives are labelled `+250u`, zero is bare `0`, negatives `-250u`, all with
     // thousands separators. The `+` and the separator were missing here while the Tour
     // axis two hundred lines up had both, so the same magnitude read `20u` on a player
-    // panel and `+20u` on the Tour chart. 672 of 1,129 players render at least one
-    // positive gridline, so this was most of the tab.
+    // panel and `+20u` on the Tour chart. **667** of 1,129 players render at least one
+    // positive gridline, so this was most of the tab. (This read 672 until 2026-09-14;
+    // two independent parsers both get 667 off the shipped ladder. 672 was carried,
+    // never measured. Re-measure before quoting it again.)
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)
       grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtInt(v)+'u':fmtInt(v)+'u')});
 
