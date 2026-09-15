@@ -87,11 +87,34 @@
 [data-page="series"] .sr-segbtn.active { background: rgba(91,155,255,0.22); color: #fff; font-weight: 700; }
 [data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid #5b9bff; outline-offset: 1px; }
 
-/* The .sr-toggle / .sr-box checkbox rules lived here. Item 8 (founder 2026-09-12)
-   removed the Show-already-played checkbox — "that removes the only control on the
-   page that isn't a segmented control" — and DAY gained a fourth `Played` option in
-   its place. Nothing on the page renders either class any more, so the rules are
-   deleted rather than left to rot; git has them if the checkbox ever comes back. */
+/* PIXEL PASS §3.5 · the design's "Show already-played" checkbox is RESTORED, and `Played`
+   comes back off the DAY control. This reverses TEN-194 item 8 (founder 2026-09-12), which
+   had folded the checkbox into DAY so that every control on the page was a segmented one —
+   the handoff is the spec and it wins the conflict. Only the CONTROL changes: the filter
+   still runs through the same isUnderway-backed predicate, which is on the DO-NOT-TOUCH
+   list, so the played view is reached by a different widget and by no different logic. */
+[data-page="series"] .sr-toggle {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 12.5px; color: #8b96b5; cursor: pointer; user-select: none;
+  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+}
+[data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+[data-page="series"] .sr-box {
+  width: 15px; height: 15px; flex: none; border-radius: 4px;
+  background: #0a0d14; border: 1px solid rgba(255,255,255,0.09);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .14s ease, border-color .14s ease;
+}
+[data-page="series"] .sr-box::after {
+  content: ''; width: 7px; height: 4px; margin-top: -2px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg); opacity: 0;
+}
+[data-page="series"] .sr-toggle input:checked + .sr-box {
+  background: rgba(91,155,255,0.22); border-color: rgba(91,155,255,0.45);
+}
+[data-page="series"] .sr-toggle input:checked + .sr-box::after { opacity: 1; }
+[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid #5b9bff; outline-offset: 2px; }
 
 /* ── already-played continued/broken aggregate (kept: ruling q7) ── */
 [data-page="series"] .sr-outsum {
@@ -173,14 +196,25 @@
    flush with the name's line box — measured avatar-top == name-top to 0.1px in Chrome.
    The probe measures the PAINTED geometry rather than trusting the mechanism, so an
    engine that synthesizes differently fails assertion D5 instead of shipping crooked. */
-[data-page="series"] .sr-prow { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+/* PIXEL PASS §2.2 (founder OVERRIDE of the design's 24px) — the avatar is 34px. Everything
+   else about the circle is the design's: object-fit cover, #0f1420 fallback, 1px border.
+
+   Two knock-ons the override forces, both stated by §2.2 itself:
+   · align-items goes baseline -> CENTRE. The 20px circle sat flush with the name's line box
+     because overflow:hidden makes it a scroll container, so its baseline is SYNTHESIZED from
+     the bottom border edge — at 34px that same mechanism drops the circle 14px below the
+     name. Centre is what "name + rank stay vertically centred with the larger avatar" means,
+     and it is measured (|Δcentre| <= 1px) rather than eyeballed.
+   · the row gap scales with the circle: 7px at 20px -> 12px at 34px (same 0.35 ratio,
+     rounded to the card's 12px rhythm). */
+[data-page="series"] .sr-prow { display: flex; align-items: center; gap: 12px; min-width: 0; }
 [data-page="series"] .sr-av-wrap {
-  position: relative; width: 20px; height: 20px; flex: none; border-radius: 50%; overflow: hidden;
+  position: relative; width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden;
   background: #0f1420; border: 1px solid rgba(255,255,255,0.09);
   display: inline-flex; align-items: center; justify-content: center;
 }
 [data-page="series"] .sr-av { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-[data-page="series"] .sr-mono { font-size: 8px; font-weight: 700; color: #5b6880; letter-spacing: 0.02em; }
+[data-page="series"] .sr-mono { font-size: 12px; font-weight: 700; color: #5b6880; letter-spacing: 0.02em; }
 [data-page="series"] .sr-pid { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 12.5px; color: #8b96b5; }
 [data-page="series"] .sr-pname { font-weight: 600; color: #e7e9ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* .sr-flag is card-dead after item 3 but still styles the History modal's flag. */
@@ -201,29 +235,27 @@
 [data-page="series"] .sr-tag-oc-na { color: #5b6880; background: transparent; border-color: rgba(255,255,255,0.09); }
 [data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: #4b5672; }
 
-/* 3.4 FOUR-column strip (TEN-204 2.3): STARTED · LAST · PRICE/PROOF · TYPE.
+/* 3.4 FOUR-column strip (PIXEL PASS §2.3): STARTED · LAST · AVG PRICE | [empty] · TYPE.
    Pool stays modal-only (ruling q1).
 
-   The brief writes the tracks as "1fr 1fr 1fr 1.2fr". Measured on the deployed 3-up
-   grid that same brief specifies (2.2: minmax(400px,1fr) inside a 1360px column →
-   417px cards → 345.3px of track space), that ratio gives STARTED 82.2px and STARTED
-   wants 92.4px, so it ellipsised on 22 of 22 cards: "28 Jul 2026" painted as
-   "28 Jul 20…". A truncated year is a corrupted date, and 2.3's own worked example is
-   'STARTED (with year, "5 Aug 2026")' — the ratio as written cannot render the content
-   as written, so the two halves of 2.3 are in conflict and the content half wins.
-
-   This is a redistribution, NOT extra width: in-situ intrinsic widths are
-   STARTED 92.4 · LAST 50.4 · PRICE/PROOF 82.2 · TYPE 73.2 = 298.2px against 345.3px
-   available. LAST had 31.8px spare and TYPE 25.5px; STARTED needed 10.2px. Moving the
-   first track to 1.2fr yields 94.2 / 78.5 / 78.5 / 94.2 — every cell above its
-   intrinsic width, nothing clipped. The 1.2fr on TYPE is untouched. */
+   TRACKS ARE THE SPEC'S "1fr 1fr 1fr 1.2fr", restored. TEN-204 2.3 had shipped
+   1.2fr on the first track: at that time the 3-up grid gave 345.3px of track space and
+   STARTED wanted 92.4px, so the even ratio ellipsised "28 Jul 2026" to "28 Jul 20…" on 22
+   of 22 cards. §2.3 of the pixel pass re-states the even ratio, so the override is reverted
+   and the outcome re-measured rather than assumed:
+     · at the 1300px compare width of §4.1 the grid is 2-up, the strip is 443px, the even
+       ratio gives STARTED 98.3px against an intrinsic 84px — clears it by 14px, nothing
+       clips. The spec ratio is correct at the width the spec asks to be compared at.
+     · from a 1544px viewport the grid goes 3-up, the strip falls to 358-375px and STARTED
+       gets 78-82px against that same 84px. That is the residual, measured and reported,
+       NOT silently re-overridden. The founder re-specified this number after seeing the
+       override; reverting it back a second time would be deciding for him. */
 [data-page="series"] .sr-strip {
-  display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.2fr; gap: 10px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
   padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
 }
-/* The export makes the fourth figure "the only bold value in the strip" — that is what marks
-   it as the cell carrying the finding rather than the metadata. Kept for the proof figures
-   that ship today so the emphasis is already in place when Phase 3 lands a price here. */
+/* §2.3 · "AVG PRICE (700, only bold value)". The modifier is emitted ONLY on the AVG PRICE
+   cell — line/set families render an empty track there and so can never carry it. */
 [data-page="series"] .sr-cell-v.sr-cell-pv { font-weight: 700; }
 [data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 [data-page="series"] .sr-cell-k {
@@ -313,47 +345,64 @@ body.sr-ov-open { overflow: hidden; }
 
 /* Scoped under .sr-ov — these are generic enough names that a bare global selector
    would be a collision waiting to happen on another surface. */
-/* TEN-204 2.7 · two track sets, one per modal shape. The header, every row AND the total
-   line share the shape's template and gap, so all verticals line up down the panel — that
-   alignment is the whole reason the export renders the header once, outside the scroll pane,
-   instead of per row.
+/* PIXEL PASS §1.1 · ONE grid for everything. The column header, every row and the total
+   line share this single template and gap, so every date sits under DATE and every price
+   under its own header, with no column able to shift between rows.
 
-   .sr-m--result — eight tracks, the export's own geometry with HOME/AWAY renamed to
-   PLAYER/OPP. .sr-m--line — eight tracks: PROOF plus the two match-odds tracks (founder
-   A1, 2026-09-15 — "all families show PLAYER / OPP match odds per row"), but no P&L,
-   because we did not price the line the claim is judged on and so cannot run a ledger on
-   it. EVENT keeps the larger share because on a Challenger it carries names like
-   "Phan Thiet 3 (Vietnam) - Qualification". */
-.sr-ov .sr-mhead, .sr-ov .sr-mrow, .sr-ov .sr-mgroup { display: grid; gap: 0 16px; }
-.sr-ov .sr-m--result { grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 54px 54px 64px; }
-.sr-ov .sr-m--line   { grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 74px 54px 54px; }
+   This REPLACES the two-shape geometry (.sr-m--result / .sr-m--line) that TEN-204 2.7
+   shipped. That pair gave the line families a PROOF track and pushed the price columns one
+   track right, so the two modal shapes did not line up with each other — and §1.1 is
+   explicit that there is one grid. §1.4 removes PROOF outright; §1.7 keeps the P&L TRACK on
+   every family (blank cells on line/set) precisely so the eight columns stay identical.
+   EVENT keeps the larger share because on a Challenger it carries names like
+   "Phan Thiet 3 (Vietnam) - Qualification" — now clipped to one line (§1.5), never wrapped. */
+.sr-ov .sr-mhead, .sr-ov .sr-mrow {
+  display: grid;
+  grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 54px 54px 64px;
+  gap: 0 18px;
+}
 .sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
 .sr-ov .sr-mhead span {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
 }
-.sr-ov .sr-mhead .sr-mscore,
+/* §1.2 · HOME / AWAY / P&L are right-aligned. SCORE is NOT — §1.5 makes it left-aligned,
+   which is also what keeps a 3-set score reading as one block under its header. */
 .sr-ov .sr-mhead .sr-mp1,
 .sr-ov .sr-mhead .sr-mp2,
-.sr-ov .sr-mhead .sr-mpl,
-.sr-ov .sr-mhead .sr-mproof { text-align: right; }
-.sr-ov .sr-mrow { align-items: baseline; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07); }
-.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; white-space: nowrap; }
-.sr-ov .sr-mtour { font-size: 13px; color: #e7e9ee; line-height: 1.45; text-wrap: pretty; overflow: hidden; text-overflow: ellipsis; }
-.sr-ov .sr-mopp { font-size: 13px; color: #aab3c5; line-height: 1.45; }
-.sr-ov .sr-mscore { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #e7e9ee; white-space: nowrap; }
+.sr-ov .sr-mhead .sr-mpl { text-align: right; }
+/* §1.5 · align-items:center, not baseline. With eight cells at four different font sizes a
+   baseline row hangs the 11px result letter off the 12.5px opponent's baseline; centre is
+   what the spec asks for and what makes the W/L letter sit level with the name beside it. */
+.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: #5b6880; white-space: nowrap; }
+/* SINGLE LINE, ellipsis, never wraps (§1.5). nowrap + overflow:hidden are BOTH required for
+   text-overflow to do anything — `text-wrap: pretty` previously let it wrap to two lines,
+   which is what made rows in the Phan Thiet streak twice the height of their neighbours. */
+.sr-ov .sr-mtour {
+  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
+  font-size: 11.5px; color: #8a93a6; line-height: 1.45;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-ov .sr-mopp {
+  font-size: 12.5px; color: #e7e9ee; line-height: 1.45;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-ov .sr-mscore { text-align: left; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: #8b96b5; white-space: nowrap; }
 /* Result letter. Sign colour is used in exactly ONE place on this page — here and, when
    Phase 3 lands, the P&L column. The export is explicit that the cards carry direction as a
    WORD, never a colour; do not let these two greens leak upward. */
 .sr-ov .sr-mrow .sr-mres { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; font-weight: 700; }
 .sr-ov .sr-mres.sr-w { color: #3dd68c; }
 .sr-ov .sr-mres.sr-l { color: #e0616f; }
-/* PLAYER bold / OPP dim is what marks which side is his — the header names the column, the
-   weight split does the reading. Both dash until Phase 3 is authorised. */
-.sr-ov .sr-mp1 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; font-weight: 700; color: #e7e9ee; }
-.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #5b6880; }
-.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; color: #8b96b5; }
-.sr-ov .sr-mproof { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 12.5px; font-weight: 700; color: #e7e9ee; }
+/* §1.3 · HOME bold / AWAY dim is what marks which side is his — the header names the column,
+   the weight split does the reading. HOME is always the player the panel is about.
+   (This restores the export's own HOME/AWAY wording. TEN-204 2.7 had renamed them
+   PLAYER/OPP under the original brief's "never HOME/AWAY"; §1.2 of the pixel pass reverses
+   that explicitly and the handoff wins, so the rename is undone rather than kept.) */
+.sr-ov .sr-mp1 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; font-weight: 700; color: #e7e9ee; }
+.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: #5b6880; }
+.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: #8b96b5; }
 /* Total line — shares the rows' left and right edges, below the scroll pane. */
 .sr-ov-foot { flex: none; padding: 0 24px 20px; }
 .sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,0.09); }
@@ -361,34 +410,31 @@ body.sr-ov-open { overflow: hidden; }
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #5b6880;
 }
-/* TEN-204 Phase 3 · the ledger figures and their provenance. The total wraps so the
-   caveat always gets its own line: it is a condition of the founder's ruling to keep a
+/* §1.7 · the total line's right-hand group: "{n} PRICED" eyebrow, then the unit total at
+   mono 15px/700 and the yield at mono 15px/400, both sign-coloured. The whole group is
+   absent on a line/set family — those carry no ledger at all (§1.7). The total wraps so
+   the caveat always gets its own line: it is a condition of the founder's ruling to keep a
    circular P&L, so it must never be the thing that gets elided on a narrow panel. */
 .sr-ov-total { flex-wrap: wrap; }
+.sr-ov-total-r { display: flex; align-items: baseline; gap: 10px; margin-left: auto; }
 .sr-ov-total-v {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 13px; font-weight: 700; color: #e7e9ee;
+  font-size: 15px; font-weight: 700;
 }
-.sr-ov-total-n {
+.sr-ov-total-y {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 10.5px; font-weight: 500; color: #5b6880; margin-left: auto;
+  font-size: 15px; font-weight: 400;
 }
+.sr-ov-total-v.sr-w, .sr-ov-total-y.sr-w { color: #3dd68c; }
+.sr-ov-total-v.sr-l, .sr-ov-total-y.sr-l { color: #e0616f; }
+.sr-ov-total-v.sr-dash { color: #4b5672; font-weight: 700; }
 .sr-ov-caveat {
   flex-basis: 100%; margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: #6b7891; max-width: 62ch;
 }
-/* The "MATCH ODDS · PRE-MATCH" band, on the rows' own grid so it aligns to the two
-   price tracks rather than floating. The label spans PLAYER+OPP (columns 6-7). */
-.sr-ov .sr-mgroup { padding: 0 24px 4px; flex: none; }
-/* Result shape: PLAYER+OPP are tracks 6-7. Line shape: PROOF takes 6, so they are 7-8.
-   Stated per shape rather than with a single span, because a band one column adrift
-   labels the wrong data — which is the entire failure this band exists to prevent. */
-.sr-ov .sr-m--result .sr-mgrouplab { grid-column: 6 / span 2; }
-.sr-ov .sr-m--line   .sr-mgrouplab { grid-column: 7 / span 2; }
-.sr-ov .sr-mgrouplab {
-  text-align: right;
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 8.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #4b5672;
-}
+/* §1.2 removed the stacked "MATCH ODDS · PRE-MATCH" band outright — the .sr-mgroup /
+   .sr-mgrouplab rules that positioned it over the two price tracks are deleted with it,
+   rather than left to rot. §1.8 makes the total line the ONLY place "pre-match" appears.
+   §1.4 likewise deletes .sr-mproof. git has both if they are ever wanted back. */
 .sr-ov .sr-dash { color: #4b5672; }
 
 @media (max-width: 640px) {
@@ -412,48 +458,30 @@ body.sr-ov-open { overflow: hidden; }
   .sr-ov-back { padding: 16px; }
   /* must carry the same .sr-ov scope as the base rules above, or these lose on
      specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies.
-     TEN-204 2.7: the price / proof columns are the first thing to go on a phone — EVENT
-     and SCORE are what make a row readable — so both shapes collapse to the same five
-     tracks and the trailing cells are hidden rather than squeezed to an ellipsis. */
-  .sr-ov .sr-m--result, .sr-ov .sr-m--line { grid-template-columns: 14px 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
-  .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl, .sr-ov .sr-mproof,
+     The price columns are the first thing to go on a phone — EVENT and SCORE are what make
+     a row readable — so the grid collapses to five tracks and the trailing cells are hidden
+     rather than squeezed to an ellipsis. Now ONE selector pair, matching §1.1's one grid. */
+  .sr-ov .sr-mhead, .sr-ov .sr-mrow { grid-template-columns: 14px 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
+  .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl,
   .sr-ov .sr-mhead .sr-mp1, .sr-ov .sr-mhead .sr-mp2,
-  .sr-ov .sr-mhead .sr-mpl, .sr-ov .sr-mhead .sr-mproof { display: none; }
-  /* The price columns are hidden on a phone, so the band that labels them must go too —
-     otherwise "MATCH ODDS" sits over the SCORE column and mislabels it. The total line
-     keeps its figures and its caveat; only the column band is dropped. */
-  .sr-ov .sr-mgroup { display: none; }
-  .sr-ov-total-n { margin-left: 0; flex-basis: 100%; }
+  .sr-ov .sr-mhead .sr-mpl { display: none; }
+  .sr-ov-total-r { margin-left: 0; flex-basis: 100%; }
   .sr-ov .sr-mhead { padding: 0 16px 10px; }
   .sr-ov-body { padding: 0 16px 8px; }
   .sr-ov-foot { padding: 0 16px 16px; }
   .sr-ov-head { padding: 16px 16px 12px; }
 }
 
-/* TEN-204 2.6 · TYPE, MIN LENGTH and SORT on one row from a 1300px viewport up.
-   MEASURED, not guessed. Row 2 carries 8 + 6 + 2 = 16 segment buttons plus three labels.
-   At the export's own `padding: 7px 14px` / `gap: 3px` / `gap: 14px` it needs 1137px. Our
-   shell gives the content column `viewport − 250px sidebar − 80px padding`, capped at
-   1360px — so a 1300px viewport leaves only 984px and SORT wrapped to a third row on every
-   ordinary desktop. (The export fits because Series.dc.html previews standalone at 1300px
-   of CONTENT, with no sidebar taking a quarter of it.)
-   Two steps, so the export's exact metrics survive wherever they actually fit:
-     1300px+ — shave 157px out of horizontal padding and gaps only. Nothing vertical moves:
-               the segment height, the 12.5px type and every colour are untouched, so the
-               bar keeps its rhythm and only its density changes.
-     1660px+ — content reaches ~1330px, past the 1137px the export needs, so hand every
-               value back to the export and render it exactly as designed.
-   Below 1300px the bar wraps, which is the export's own stated behaviour ("the filter rows
-   wrap"). */
-@media (min-width: 1300px) {
-  [data-page="series"] .sr-frow { gap: 10px; }
-  [data-page="series"] .sr-fgroup { gap: 6px; }
-  [data-page="series"] .sr-seg { gap: 2px; padding: 1px; }
-  [data-page="series"] .sr-segbtn { padding: 7px 6px; }
-}
-@media (min-width: 1660px) {
-  [data-page="series"] .sr-frow { gap: 14px; }
-  [data-page="series"] .sr-fgroup { gap: 10px; }
-  [data-page="series"] .sr-seg { gap: 3px; padding: 2px; }
-  [data-page="series"] .sr-segbtn { padding: 7px 14px; }
-}
+/* PIXEL PASS §3.2 · "The live items are cramped — restore full padding."
+   TEN-204 2.6 had shaved horizontal padding and gaps from 1300px up (segbtn 7px 14px ->
+   7px 6px, seg gap 3px -> 2px, seg padding 2px -> 1px, fgroup gap 10px -> 6px, frow gap
+   14px -> 10px) so that row 2's sixteen segment buttons fitted on one line inside our
+   sidebar-reduced content column. Those two media queries are DELETED: §3.1-§3.3 state the
+   padding and gaps as absolutes, and §3.4 says the rows "wrap only below design width",
+   which makes wrapping the sanctioned behaviour rather than the thing to engineer around.
+
+   Measured consequence, reported not hidden: at the design's own canvas (a ~1294px content
+   column) row 2 holds on one line. Inside our shell the content column is
+   `viewport − sidebar − 80px`, so row 2 fits from roughly a 1373px viewport up and wraps
+   below it — including at the 1300px width §4.1 compares at. That is the design's stated
+   wrap, not a regression, and it is the price of the full padding §3.2 asks for. */

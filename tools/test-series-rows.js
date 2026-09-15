@@ -265,9 +265,15 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
       assert.strictEqual(L, null,
         `TEN-204 Phase 3 — a LINE/SET family produced a P&L ledger (${p.name} · ${st.type}). ` +
         `Founder A3: no P&L column, no unit total, no yield on line families.`);
-      // Founder B3: "No odds of any kind shown under a line claim on the card." The modal
-      // may show the match-odds tracks; the CARD cell must stay the proof figure. If a
-      // priced line streak ever published a price-looking cell, that is the substitution.
+      // Founder B3: "No odds of any kind shown under a line claim on the card."
+      //
+      // As of the 2026-09-15 pixel pass (§2.3) a line/set card paints NOTHING in this track
+      // — the empty-track rule is asserted against the PAINTED renderer in
+      // tools/test-series-dates.js, which is the only place that can see it. What is checked
+      // here is the layer below: proofSummary() still feeds the match-result AVG PRICE cell
+      // from the same builder, so if it ever started returning a price-shaped value for a
+      // line family, a future run reinstating this cell would reinstate the substitution.
+      // Keeping the builder honest is cheap; it is not a claim about what renders.
       const cell = B.proofSummary(st);
       const spec2 = B.PROOF_SPEC[famOf(st)];
       const priced = rows.filter(r => r.price != null);

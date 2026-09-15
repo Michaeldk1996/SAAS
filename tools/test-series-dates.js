@@ -173,13 +173,16 @@ const stripSrc = (() => {
 })();
 assert(/showYear/.test(stripSrc) && /sr-cell-v/.test(stripSrc), 'lifted the wrong block');
 // Real helpers, stubbed surroundings; `st` and generatedAt are the only inputs.
-function paintStrip(startYmd, lastDate, generatedAt) {
+// §2.3 (2026-09-15) added isMatchResultFam() to the strip: it chooses between the AVG PRICE
+// cell and a line/set family's EMPTY third track. `isResult` defaults true so every existing
+// date assertion keeps painting the match-result shape it was written against.
+function paintStrip(startYmd, lastDate, generatedAt, isResult) {
   const fn = new Function('startedOf', 'st', '_data', 'esc', 'dash', 'FAM_BADGE', 'famOf',
-    'fmtShort', 'crossesYear', 'priorYear', 'proofSummary',
+    'fmtShort', 'crossesYear', 'priorYear', 'proofSummary', 'isMatchResultFam',
     stripSrc + '\n return strip;');
   return fn(() => startYmd, { lastDate, type: 'all' }, { generatedAt },
     (s) => String(s), '—', {}, () => 'all', fmtShort, crossesYear, priorYear,
-    () => ({ label: 'Avg price', value: null }));
+    () => ({ label: 'Avg price', value: '1.42' }), () => isResult !== false);
 }
 // The headline rule, painted: STARTED with a four-digit year, LAST without one.
 const std = paintStrip('2026-08-05', '2026-09-13', '2026-09-15T01:44:07.908Z');
@@ -205,33 +208,82 @@ assert(/Last<\/span><span class="sr-cell-v">13 Sep</.test(lone),
 assert(/sr-strip--yr/.test(lone), 'the strip lost its narrow-viewport modifier — the year will elide');
 ok('an unrenderable STARTED dashes without damaging LAST');
 
-// ── the fourth cell (TEN-204 2.3) ───────────────────────────────────────────
-assert(/sr-cell-proof/.test(stripSrc), 'the strip no longer renders the price/proof cell');
-assert(/proofSummary\(st\)/.test(stripSrc),
-  'the strip computes its fourth cell from something other than proofSummary() — the ' +
-  'card and the modal would no longer share one row builder (export §3.3)');
-// The brief's literal ratio was 1fr 1fr 1fr 1.2fr. Measured on the 3-up grid the same
-// brief specifies, that gave STARTED 82.2px against an intrinsic 92.4px and ellipsised
-// the year on 22 of 22 cards ("28 Jul 20…"). The first track carries a full date and is
-// widened to match; TYPE's 1.2fr is unchanged. Locked so the clip cannot come back, and
-// so the wider STARTED cannot be quietly narrowed again.
-assert(/grid-template-columns: 1\.2fr 1fr 1fr 1\.2fr/.test(css),
-  'the card strip is no longer the four tracks 1.2fr 1fr 1fr 1.2fr — if the first track '
-  + 'goes back to 1fr, STARTED ellipsises its year on every card');
-// STARTED must be at least as wide as TYPE: it is the only cell carrying a full date.
+// ── the third cell (PIXEL PASS §2.3, founder 2026-09-15) ────────────────────
+// The ruling: a match-result family reads AVG PRICE over the mean of its own rows; a
+// line/set family renders an EMPTY track — "No 'PROOF' label, no 'AVG 1ST-SET GAMES',
+// no dash" — while TYPE stays in the fourth column so neighbouring cards line up.
+//
+// PAINTED, not pattern-matched. Both shapes are rendered from the shipped bytes and the
+// output inspected, because "the label is absent" is exactly the kind of claim a source
+// regex will happily confirm against a build that still prints it under another name.
+{
+  const resultStrip = paintStrip('2026-08-05', '2026-09-13', '2026-09-15T01:44:07.908Z', true);
+  assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv">1\.42</.test(resultStrip),
+    '§2.3: a match-result card must read AVG PRICE over its figure. Painted: ' + resultStrip);
+
+  const lineStrip = paintStrip('2026-08-05', '2026-09-13', '2026-09-15T01:44:07.908Z', false);
+  // Four cells still, so TYPE stays in track four.
+  assert((lineStrip.match(/class="sr-cell[ "]/g) || []).length === 4,
+    '§2.3: a line/set card must still emit FOUR strip cells so TYPE stays in the fourth ' +
+    'track and the card aligns with its neighbours. Painted: ' + lineStrip);
+  assert(/<span class="sr-cell sr-cell-blank"><\/span>/.test(lineStrip),
+    '§2.3: a line/set card\'s third track must be EMPTY. Painted: ' + lineStrip);
+  // The three rejected renderings, each named, each asserted absent from the PAINTED cell.
+  assert(!/Proof|Avg games|Avg margin|1st-set games|Avg price/i.test(lineStrip),
+    '§2.3: a line/set card is printing a price-or-proof LABEL in its third track — the ' +
+    'founder removed all of them ("no PROOF label, no AVG 1ST-SET GAMES"). Painted: ' + lineStrip);
+  assert(!/sr-cell-pv/.test(lineStrip),
+    '§2.3: a line/set card carries the bold price modifier — AVG PRICE is the only bold ' +
+    'value in the strip. Painted: ' + lineStrip);
+  // A dash is NOT the empty state here: the founder ruled the track blank, and a dash
+  // reads as "we looked and found nothing" for a figure we deliberately stopped showing.
+  const third = /sr-cell-v">([^<]*)<\/span><\/span><span class="sr-cell"><span class="sr-cell-k">Type/.exec(lineStrip);
+  assert(!third, '§2.3: a line/set card still paints a VALUE (a dash or a figure) between ' +
+    'LAST and TYPE. The track must be empty. Painted: ' + lineStrip);
+}
+// §2.3's literal ratio, restored. TEN-204 had overridden the first track to 1.2fr because
+// on the 3-up grid the even ratio gave STARTED 82.2px against an intrinsic 84-92px and
+// ellipsised the year. The founder re-specified the even ratio after being shown that, so
+// the spec value is what ships and the clip is reported rather than re-overridden.
+// Locked so a later run cannot quietly reinstate the override without a new ruling.
+assert(/grid-template-columns: 1fr 1fr 1fr 1\.2fr/.test(css),
+  '§2.3: the card strip is no longer the four tracks "1fr 1fr 1fr 1.2fr". That ratio is a '
+  + 'founder ruling of 2026-09-15, made in full knowledge that it clips STARTED on the 3-up '
+  + 'grid — it must not be re-widened without a new ruling.');
 {
   const m = /\.sr-strip \{[^}]*grid-template-columns: ([^;]+);/.exec(css);
   const tr = m && m[1].trim().split(/\s+/).map((x) => parseFloat(x));
   assert(tr && tr.length === 4, 'the strip is not four tracks');
-  assert(tr[0] >= tr[1] && tr[0] >= tr[2],
-    'STARTED is no longer the widest of the three metadata tracks, but it is the only one '
-    + 'carrying a four-digit year — it will clip before LAST or PRICE do');
+  assert(tr[0] === 1 && tr[1] === 1 && tr[2] === 1 && Math.abs(tr[3] - 1.2) < 1e-9,
+    '§2.3: the strip tracks are ' + JSON.stringify(tr) + ', not 1 / 1 / 1 / 1.2');
 }
-// A match-result family must show a DASH under AVG PRICE, never a number, until Phase 3.
-assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv">—</.test(std),
-  'a match-result card is printing something other than a dash under AVG PRICE, but Phase 3 ' +
-  'has not been authorised. Painted: ' + std);
-ok('the strip has four tracks and a dashed AVG PRICE until Phase 3');
+// AVG PRICE renders whatever proofSummary() returns, and DASHES when it returns null.
+//
+// This replaces "must show a DASH ... until Phase 3 is authorised", which had gone stale:
+// Phase 3 was authorised and prices shipped live on 2026-09-15, so the rule it enforced no
+// longer existed. It kept passing only because this file's own stub returned `value: null` —
+// its expectation came from the stub rather than from the code, so it could not fail for the
+// right reason. Both branches are now painted from the shipped bytes with a stub that
+// actually varies, which is what makes the pair able to fail.
+{
+  const priced = paintStrip('2026-08-05', '2026-09-13', '2026-09-15T01:44:07.908Z', true);
+  assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv">1\.42</.test(priced),
+    'a priced match-result card must paint its AVG PRICE figure. Painted: ' + priced);
+  const unpriced = (() => {
+    const fn = new Function('startedOf', 'st', '_data', 'esc', 'dash', 'FAM_BADGE', 'famOf',
+      'fmtShort', 'crossesYear', 'priorYear', 'proofSummary', 'isMatchResultFam',
+      stripSrc + '\n return strip;');
+    return fn(() => '2026-08-05', { lastDate: '2026-09-13', type: 'all' },
+      { generatedAt: '2026-09-15T01:44:07.908Z' }, (s) => String(s),
+      '<span class="sr-dash">—</span>', {}, () => 'all', fmtShort, crossesYear, priorYear,
+      () => ({ label: 'Avg price', value: null }), () => true);
+  })();
+  assert(/Avg price<\/span><span class="sr-cell-v sr-cell-pv"><span class="sr-dash">—<\/span></.test(unpriced),
+    'an UNPRICED match-result card must dash under AVG PRICE — never a zero, never a ' +
+    'plausible default (standing rule). Painted: ' + unpriced);
+  assert(!/>0\.00<|>0<|>—0/.test(unpriced), 'an unpriced AVG PRICE painted a zero. Painted: ' + unpriced);
+}
+ok('the strip has four tracks; AVG PRICE paints its figure and dashes when unpriced');
 
 // ── the review's finding: the converse — an unknown LAST yields NO year at all ─
 // Not a contradiction of lone-year (a): there the year is carried by the cell that

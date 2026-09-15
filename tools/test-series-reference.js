@@ -297,16 +297,18 @@ function liftCard(source) {
   // eslint-disable-next-line no-new-func
   return new Function('esc', 'cap', 'avatarHtml', 'claimOf', 'runLabel', 'valence', 'DIR_LABEL',
     'startedOf', 'fmtShort', 'crossesYear', 'priorYear', 'fmtTime', 'famOf', 'FAM_BADGE', 'referenceHtml',
-    'proofSummary', '_data',
+    'proofSummary', 'isMatchResultFam', '_data',
     block + '\n return cardHtml;');
 }
-// TEN-204 2.3 added the strip's fourth cell, so cardHtml now also closes over proofSummary().
-// Stubbed to the match-result shape (a dashed AVG PRICE), which is what this streak is.
+// TEN-204 2.3 added the strip's third cell, so cardHtml closes over proofSummary(); the
+// 2026-09-15 pixel pass added isMatchResultFam(), which picks between the AVG PRICE cell and
+// a line/set family's empty track. Stubbed to the match-result shape, which is what this
+// streak is — the empty-track branch is painted and asserted in tools/test-series-dates.js.
 const mkCard = (refHtmlFn) => liftCard(src)(
   esc, (s) => String(s), () => '<span class="sr-av-wrap"></span>', () => 'Won', (n) => n + ' in a row',
   () => 'win', { win: 'Winning run' }, (st) => st.lastDate, (d) => d, () => false, () => false,
   (t) => t, () => 'all', { all: 'All comps' }, refHtmlFn,
-  () => ({ label: 'Avg price', value: null }), ARTIFACT);
+  () => ({ label: 'Avg price', value: null }), () => true, ARTIFACT);
 const CARD_ST = { type: 'all', direction: 'win', count: 6, lastDate: '2026-09-12',
   matches: [{ date: '2026-09-01' }], reference: { sinceYear: 2021, yearGaps: [], longest: 9, occurrences: 4 } };
 const CARD_C = { player: { name: 'X', rank: 5, upcoming: { day: 'today', time: '11:00', opponentName: 'Y' } }, streak: CARD_ST };
