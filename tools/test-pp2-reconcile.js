@@ -485,9 +485,9 @@ mustFail('tournament check would catch a dropped edition', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// 12 · BEST SPLIT / BEST BAND (founder ruling sel-0) — one rule, two callers.
+// 12 · BIGGEST SPLIT / BIGGEST BAND (founder ruling sel-0) — one rule, two callers.
 // ════════════════════════════════════════════════════════════════════════════
-console.log('\n12 · Best split / best band (largest |pp| vs own baseline, n>=10)');
+console.log('\n12 · Biggest split / biggest band (largest |pp| vs own baseline, n>=10)');
 
 check('the picked split really is the largest |pp| among those clearing n>=10', () => {
   let tested = 0;
@@ -530,7 +530,7 @@ check('a split under ten matches can never be picked', () => {
   assert.strictEqual(got.pick.id, 'big', 'a 9-match split was picked');
 });
 
-mustFail('best-split check would catch an off-by-one floor', () => {
+mustFail('biggest-split check would catch an off-by-one floor', () => {
   const got = I.pickByLargestGap([
     { id: 'big', label: 'Big', won: 50, lost: 50 },
     { id: 'tiny', label: 'Tiny', won: 9, lost: 0 },
@@ -538,10 +538,46 @@ mustFail('best-split check would catch an off-by-one floor', () => {
   assert.strictEqual(got.pick.id, 'tiny', 'floor is not at ten');
 });
 
+// ─── gate-3 ruling bw-0: keep the sign-blind rule, fix the word ──────────────
+// The founder's objection was that "best split" can name the player's WORST
+// split. He ruled the rule stays and the label becomes "biggest". These two
+// pin both halves: the selection must still be allowed to go negative, and no
+// user-facing string may say "best split"/"best band" again.
+check('the pick is allowed to be negative — the rule is sign-blind by ruling', () => {
+  // One split far BELOW the weighted baseline, one modestly above it. The
+  // larger |pp| is the negative one and it must win.
+  const got = I.pickByLargestGap([
+    { id: 'strong', label: 'Strong', won: 60, lost: 40 },   // 60.0%
+    { id: 'weak', label: 'Weak', won: 2, lost: 18 },        // 10.0%
+  ]);
+  const baseline = 100 * 62 / 120;                          // 51.67%
+  assert(Math.abs(got.baseline - baseline) < 1e-9);
+  assert.strictEqual(got.pick.id, 'weak', 'the sign-blind rule did not pick the negative split');
+  assert(got.pick.gap < 0, `expected a negative gap, got ${got.pick.gap}`);
+});
+
+check('no user-facing string calls it the "best" split or band', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  // Strip // comments: the ruling's own rationale quotes the old wording.
+  const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
+  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
+  assert.strictEqual(offenders.length, 0,
+    `ruling bw-0 regressed — user-facing text still says: ${offenders.join(', ')}`);
+  // The replacement must actually be present, or this check passes vacuously
+  // on a file that simply dropped the support line.
+  assert(/'biggest split /.test(code), 'the "biggest split" support line is gone entirely');
+});
+
+mustFail('[neg] the wording lock would catch a revert to "best split"', () => {
+  const code = "support: 'best split ' + MIDDOT";
+  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
+  assert.strictEqual(offenders.length, 0, 'lock is inert');
+});
+
 check('splits box headline and the modal agree on the picked split', () => {
   let shown = 0;
   for (const p of SAMPLE) {
-    const bs = I.bestSplit(p);
+    const bs = I.biggestSplit(p);
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!bs) { assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`); continue; }
     assert.strictEqual(vals.splits.headline, bs.pick.label);
@@ -550,7 +586,7 @@ check('splits box headline and the modal agree on the picked split', () => {
       `${p.name}: modal does not disclose the baseline the headline was measured against`);
     shown++;
   }
-  console.log(`        ${shown} of ${SAMPLE.length} sample players have a best split`);
+  console.log(`        ${shown} of ${SAMPLE.length} sample players have a biggest split`);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -669,6 +705,220 @@ check('a rate is never printed below the ten-match gate anywhere in a shard', ()
       });
     });
   }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 14 · CALENDAR RECORD (founder ruling cal-0, gate 3).
+//      §4's "Calendar grid total = career total" is DROPPED by that ruling —
+//      the archive is ATP tour main draw only. These checks are what replaced
+//      it: the grid must be a labelled SUBSET of the spine, and the label must
+//      state both numbers. Every figure is recomputed here from the shard rows
+//      rather than read back off the renderer.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n14 · Calendar record (ruling cal-0 — dated rows from the priced archive)');
+
+const CAL_PLAYERS = Object.keys(MARKET).slice(0, 80);
+
+check('the heat grid accounts for every priced row, and only those', () => {
+  let checked = 0;
+  for (const k of CAL_PLAYERS) {
+    const p = PLAYERS[k];
+    if (!p) continue;
+    const rows = I.calRows(p);
+    assert.strictEqual(rows.length, MARKET[k].matches.length,
+      `${k}: calRows dropped rows`);
+    // Recompute the grid total independently of calGrid().
+    let gridTotal = 0;
+    I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { gridTotal += c.won + c.lost; }));
+    let raw = 0;
+    MARKET[k].matches.forEach((m) => {
+      if (/^\d{4}-\d{2}/.test(m.date)) raw += 1;
+    });
+    assert.strictEqual(gridTotal, raw, `${k}: grid holds ${gridTotal} of ${raw} dated rows`);
+    checked++;
+  }
+  assert(checked > 50, `only ${checked} players checked`);
+  console.log(`        ${checked} players — every dated row lands in a grid cell`);
+});
+
+// The archive and the spine OVERLAP, they do not nest — the archive is narrower
+// by tier and deeper in time. Measured: 11 of 356 players have more priced rows
+// than the spine holds (Djokovic 1,277 vs 601), because careerByYear is a
+// window. So the label must never be phrased as a fraction. This pins that.
+check('the calendar never claims to be a subset it is not', () => {
+  const inverted = [];
+  for (const k of Object.keys(MARKET)) {
+    const p = PLAYERS[k];
+    if (!p) continue;
+    const c = I.calScope(p);
+    assert.strictEqual(c.nested, c.n <= c.m, `${p.name}: nested flag disagrees with the counts`);
+    if (!c.nested) inverted.push(`${p.name} ${c.n}>${c.m}`);
+  }
+  // The inversion is real and must stay visible — if it ever reads zero, either
+  // the spine widened or the archive was silently truncated, and both are news.
+  assert(inverted.length > 0, 'no player inverts — the scopes changed, re-measure the label');
+  console.log(`        ${inverted.length} of ${Object.keys(MARKET).length} players hold MORE priced ` +
+    `rows than the spine (e.g. ${inverted[0]}) — why the label is not a fraction`);
+});
+
+check('the scope label states both numbers without asserting nesting', () => {
+  let shown = 0;
+  for (const k of CAL_PLAYERS.slice(0, 20)) {
+    const p = PLAYERS[k];
+    if (!p) continue;
+    const c = I.calScope(p);
+    if (!c.n) continue;
+    const html = I.renderSeasonModal(p);
+    assert(html.includes(`${c.n} priced`), `${p.name}: modal never prints its own row count`);
+    assert(html.includes(`career record above holds ${c.m}`),
+      `${p.name}: modal drops the spine total, leaving the scope uncomparable`);
+    assert(/tour main draw/.test(html), `${p.name}: modal does not name the scope`);
+    assert(!html.includes(`${c.n} of ${c.m}`),
+      `${p.name}: the label reverted to a fraction, which inverts for veterans`);
+    shown++;
+  }
+  assert(shown > 10, `only ${shown} modals rendered`);
+  console.log(`        ${shown} modals carry both counts, neither phrased as a fraction`);
+});
+
+mustFail('[neg] the label check would catch a revert to the "N of M" fraction', () => {
+  const c = { n: 1277, m: 601 };
+  const html = `tour main draw · ${c.n} of ${c.m}`;
+  assert(!html.includes(`${c.n} of ${c.m}`), 'fraction wording is back');
+});
+
+check('runs partition the sequence — lengths sum to the match count', () => {
+  for (const k of CAL_PLAYERS) {
+    const p = PLAYERS[k];
+    if (!p) continue;
+    const rows = I.calRows(p);
+    const runs = I.calRuns(rows);
+    const summed = runs.reduce((a, r) => a + r.len, 0);
+    assert.strictEqual(summed, rows.length, `${k}: runs sum to ${summed}, not ${rows.length}`);
+    // adjacent runs must alternate, or they were not runs
+    for (let i = 1; i < runs.length; i++) {
+      assert(runs[i].res !== runs[i - 1].res, `${k}: two ${runs[i].res} runs in a row`);
+    }
+    // the longest win run must really be the longest streak of wins
+    let cur = 0, best = 0;
+    rows.forEach((r) => { cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
+    const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
+    assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
+  }
+  console.log(`        ${CAL_PLAYERS.length} players — runs alternate and sum to n`);
+});
+
+check('the Indoors segment reads the archive court column, not the surface', () => {
+  const p = PLAYERS[Object.keys(MARKET).find(k => MARKET[k].matches.some(m => m.court === 'Indoor'))];
+  assert(p, 'no shard carries an Indoor row — the court column did not survive the build');
+  const all = I.calRows(p);
+  // Indoor rows must be a mix of surfaces, which is the whole point: "Indoors"
+  // overlaps Hard/Clay/Grass rather than being a fourth surface.
+  const indoor = all.filter(m => m.court === 'Indoor');
+  assert(indoor.length > 0);
+  assert(indoor.every(m => ['Hard', 'Clay', 'Grass'].includes(m.surface)),
+    'an Indoor row carries no surface — the two axes got conflated');
+  let total = 0, ind = 0;
+  Object.keys(MARKET).forEach((k) => {
+    MARKET[k].matches.forEach((m) => { total++; if (m.court === 'Indoor') ind++; });
+  });
+  assert.strictEqual(total, Object.keys(MARKET).reduce((a, k) => a + MARKET[k].matches.length, 0));
+  const missing = Object.keys(MARKET).reduce((a, k) =>
+    a + MARKET[k].matches.filter(m => !m.court).length, 0);
+  assert.strictEqual(missing, 0, `${missing} shard rows have no court type — the column is not 100%`);
+  console.log(`        ${ind} of ${total} shard rows are Indoor (${(100 * ind / total).toFixed(1)}%), 0 unlabelled`);
+});
+
+check('every tab and segment renders without leaking NaN/undefined into the DOM', () => {
+  const p = PLAYERS[Object.keys(MARKET).find(k => (MARKET[k].matches || []).length > 200)];
+  assert(p, 'no shard large enough to exercise the segments');
+  const saved = { ...I.state };
+  let rendered = 0;
+  try {
+    for (const tab of ['calendar', 'streaks']) {
+      for (const s of ['all', 'hard', 'clay', 'grass', 'indoors']) {
+        I.state.calTab = tab; I.state.calSurface = s;
+        I.state.calCell = null; I.state.calRun = null;
+        const html = I.renderSeasonModal(p);
+        ['NaN', 'undefined', 'Infinity', '[object'].forEach((t) => {
+          assert(!html.includes(t), `${tab}/${s}: "${t}" reached the DOM`);
+        });
+        rendered++;
+      }
+    }
+    // Surfaces partition the rows; "Indoors" does NOT — it is a court type that
+    // overlaps them. If indoors ever equals the leftover, the axes got conflated.
+    I.state.calTab = 'calendar';
+    const all = (I.state.calSurface = 'all', I.calFiltered(p).length);
+    const bySurf = ['hard', 'clay', 'grass']
+      .reduce((a, s) => (I.state.calSurface = s, a + I.calFiltered(p).length), 0);
+    assert.strictEqual(bySurf, all, `surfaces hold ${bySurf} of ${all} — they must partition`);
+    I.state.calSurface = 'indoors';
+    const ind = I.calFiltered(p).length;
+    assert(ind > 0 && ind < all, `indoors holds ${ind} of ${all} — not an overlapping subset`);
+
+    // Both drills must open and stay clean.
+    I.state.calSurface = 'all';
+    const grid = I.calGrid(I.calRows(p));
+    const mi = grid[0].cells.findIndex(c => c.won + c.lost > 0);
+    I.state.calCell = `${grid[0].year}-${mi}`;
+    let h = I.renderSeasonModal(p);
+    assert(h.includes('rgba(91,155,255,0.3)'), 'cell drill did not open');
+    assert(!/NaN|undefined/.test(h), 'cell drill leaked a non-number');
+    I.state.calCell = null; I.state.calTab = 'streaks'; I.state.calRun = 0;
+    h = I.renderSeasonModal(p);
+    assert(h.includes('rgba(91,155,255,0.3)'), 'run detail did not open');
+    assert(!/NaN|undefined/.test(h), 'run detail leaked a non-number');
+  } finally {
+    Object.assign(I.state, saved);
+  }
+  console.log(`        ${rendered} tab x segment combinations + both drills render clean`);
+});
+
+check('Erdos-Renyi expectations match the design formula, and degenerate rates dash', () => {
+  // Transcribed independently here from the .dc.html comment, not from the
+  // module — if the module drifts, these disagree.
+  const expLong = (n, p) => Math.round(Math.log(n * (1 - p)) / Math.log(1 / p)
+    + 0.5772 / Math.log(1 / p) - 0.5);
+  const exp5 = (n, p) => Math.round(n * (1 - p) * Math.pow(p, 5) + n * p * Math.pow(1 - p, 5));
+  [[678, 0.544], [413, 0.806], [100, 0.5], [50, 0.2]].forEach(([n, p]) => {
+    assert.strictEqual(I.expectedLongest(n, p), expLong(n, p), `expectedLongest(${n},${p})`);
+    assert.strictEqual(I.expectedRuns5(n, p), exp5(n, p), `expectedRuns5(${n},${p})`);
+  });
+  // A player who never lost (or never won) makes the formula undefined. It must
+  // dash, not render Infinity or NaN as if it were a number.
+  assert.strictEqual(I.expectedLongest(20, 1), null);
+  assert.strictEqual(I.expectedLongest(20, 0), null);
+  assert.strictEqual(I.expectedRuns5(20, 1), null);
+  console.log('        expected-longest and runs-of-5+ match the .dc.html formula');
+});
+
+check('month "vs other months" gaps are weighted, and Consistent counts seasons', () => {
+  for (const k of CAL_PLAYERS.slice(0, 40)) {
+    const p = PLAYERS[k];
+    if (!p) continue;
+    const rows = I.calRows(p);
+    const info = I.calMonths(rows);
+    let sumN = 0;
+    info.months.forEach((x) => { sumN += x.n; });
+    assert.strictEqual(sumN, rows.length, `${k}: month buckets hold ${sumN} of ${rows.length}`);
+    info.months.forEach((x) => {
+      // Consistent can never exceed the seasons on record.
+      assert(x.above <= x.seasons, `${k}/${x.m}: consistent ${x.above} > ${x.seasons} seasons`);
+      if (x.n === 0) assert.strictEqual(x.yield, null, `${k}/${x.m}: yield on an empty month`);
+    });
+    // Recompute one month's gap the long way and compare.
+    const m0 = info.months.find(x => x.n > 0 && x.gap != null);
+    if (m0) {
+      const mine = rows.filter(r => parseInt(r.date.slice(5, 7), 10) - 1 === m0.m);
+      const others = rows.filter(r => parseInt(r.date.slice(5, 7), 10) - 1 !== m0.m);
+      const y = 100 * mine.reduce((a, r) => a + r.pl, 0) / mine.length;
+      const o = 100 * others.reduce((a, r) => a + r.pl, 0) / others.length;
+      assert(Math.abs((y - o) - m0.gap) < 1e-6,
+        `${k}: month ${m0.m} gap ${m0.gap} but a direct recompute says ${(y - o)}`);
+    }
+  }
+  console.log('        month buckets partition the rows; gaps recomputed the long way agree');
 });
 
 // ════════════════════════════════════════════════════════════════════════════

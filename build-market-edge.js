@@ -213,6 +213,13 @@ function main() {
         stats.sides += 1;
         const side = {
           date: row.date, event: row.tournament, level, surface: row.surface,
+          // Court type (Indoor/Outdoor). The archive's `court` column is 100%
+          // populated across 2004-2026 (59,433 rows, 10,412 Indoor) — measured,
+          // not assumed — so this is carried through rather than derived. It is
+          // what the Calendar modal's Indoors segment reads. Scope is the
+          // archive's: ATP tour MAIN DRAW only, which is why the Record-by-season
+          // grid cannot use it and reads api-tennis's "(Indoor)" surface instead.
+          court: (row.court || '').trim() || null,
           round: row.round, season,
           opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
           book: bk.book, bookLabel: bk.label,
@@ -308,7 +315,8 @@ function main() {
       // Per-row detail for the drills. Every row carries its own book so the modal can
       // print "Pinnacle" or "Bet365 close" beside the price rather than a blanket claim.
       matches: sides.map((s) => ({
-        date: s.date, event: s.event, level: s.level, surface: s.surface, round: s.round,
+        date: s.date, event: s.event, level: s.level, surface: s.surface,
+        court: s.court, round: s.round,
         opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
         book: s.book, role: s.role, pl: Math.round((s.won ? s.price - 1 : -1) * 100) / 100,
       })),

@@ -234,11 +234,18 @@
     return out;
   }
 
-  // ─── RULING · best split / best band (TEN-206 gate 2, answered 2026-09-16) ──
-  // Founder ruled sel-0: use the Key-insights rule for BOTH — the split whose
-  // win rate differs from the player's OWN baseline by the largest |pp|, with
+  // ─── RULING · biggest split / biggest band (TEN-206 gates 2 + 3) ───────────
+  // Gate 2 (sel-0): use the Key-insights rule for BOTH — the split whose win
+  // rate differs from the player's OWN baseline by the largest |pp|, with
   // n >= 10. That is now the one selection rule on this page, so the Splits
   // headline, the Market band headline and Key insights cannot drift apart.
+  //
+  // Gate 3 (bw-0): that rule is sign-BLIND, so under the label "best split" it
+  // can select the player's WORST split — Alcaraz's vs. Top 10 at -11.7pp is his
+  // most distinctive split, not his best. Founder ruled: keep the rule, fix the
+  // word. Everything user-facing now reads "biggest", which is what |pp| means.
+  // Only the label changed; test-pp2-reconcile §12 pins the selection itself,
+  // including a case where the pick is negative and the word must still hold.
   //
   // "His own baseline" is the pooled rate over the SAME scope the candidates are
   // drawn from, weighted by match count (README §4: "pooled figures weight by
@@ -701,12 +708,12 @@
       ? { headline: ctx.archetype, support: 'style signature' }
       : { headline: null, support: 'no archetype on record' };
 
-    // 6 · Splits — "best split" now has a definition: the founder ruled the
+    // 6 · Splits — "biggest split" has a definition: the founder ruled the
     // Key-insights rule governs it (largest |pp| vs his own baseline, n >= 10).
-    var bs = bestSplit(p);
+    var bs = biggestSplit(p);
     v.splits = bs
       ? { headline: bs.pick.label,
-          support: 'best split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
+          support: 'biggest split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
             bs.pick.n + ' matches ' + MIDDOT + ' ' + signed(bs.pick.gap, 1, 'pp') + ' vs his baseline' }
       : { headline: null, support: 'no split clears the ten-match minimum' };
 
@@ -755,7 +762,7 @@
     if (!s) return null;
     return (scope === 'last52' ? s.last52 : s.career) || null;
   }
-  // Candidates for the "best split" selection: every named split in the five
+  // Candidates for the "biggest split" selection: every named split in the five
   // groups that the scope actually carries. A split the file omits is absent,
   // not zero.
   function splitCandidates(key, scope) {
@@ -771,7 +778,7 @@
     });
     return out;
   }
-  function bestSplit(p) {
+  function biggestSplit(p) {
     return pickByLargestGap(splitCandidates(p.key, 'career'));
   }
 
@@ -783,8 +790,8 @@
     var store = window.marketEdge || {};
     return store[String(key)] || null;
   }
-  // Best price band, by the SAME rule the founder ruled for best split.
-  function bestBand(key) {
+  // Biggest price band, by the SAME rule the founder ruled for biggest split.
+  function biggestBand(key) {
     var mk = marketFor(key);
     if (!mk || !mk.bands) return null;
     var cands = [];
@@ -1248,12 +1255,414 @@
     return latest || DASH;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.4 CALENDAR RECORD — Calendar + Streaks tabs
+  // ---------------------------------------------------------------------------
+  // RULING cal-0 (TEN-206 gate 3, answered 2026-09-16). The heat grid needs a
+  // DATED row per match and nothing else we hold provides one: careerByYear is
+  // year-level, and recentForm's earliest date is 2026 for 363 of 428 players.
+  // The founder ruled: build it from the market-edge dated rows and label the
+  // scope, rather than hold the block or dash it.
+  //
+  // The same ruling DROPS §4's "Calendar grid total = career total". It cannot
+  // hold: odds-archive is ATP tour MAIN DRAW only, so the grid is a labelled
+  // SUBSET of the spine, never its equal (Alcaraz 337 of 353; Jacquet 12 of
+  // 172). What replaced the equality is the subset relation plus a visible
+  // "N of M" label — both asserted in test-pp2-reconcile §14, so the scope can
+  // never silently widen or the label silently disappear.
+  var MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Every priced row this player has, oldest first. These are the ONLY dated
+  // career rows we hold, which is the whole reason for ruling cal-0.
+  function calRows(p) {
+    var mk = marketFor(p.key);
+    if (!mk || !mk.matches) return [];
+    return mk.matches.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+  // The surface segment. "Indoors" is a COURT type, not a surface — it reads the
+  // archive's `court` column (100% populated over 2004-2026, measured), so it
+  // overlaps Hard/Clay/Grass rather than sitting beside them. The note under the
+  // grid says so; it is not presented as a fourth surface.
+  var CAL_SURFACES = [
+    { id: 'all', label: 'All surfaces' }, { id: 'hard', label: 'Hard' },
+    { id: 'clay', label: 'Clay' }, { id: 'grass', label: 'Grass' },
+    { id: 'indoors', label: 'Indoors' }
+  ];
+  function calFiltered(p) {
+    var rows = calRows(p);
+    var s = state.calSurface || 'all';
+    if (s === 'all') return rows;
+    if (s === 'indoors') return rows.filter(function (r) { return r.court === 'Indoor'; });
+    return rows.filter(function (r) { return String(r.surface || '').toLowerCase() === s; });
+  }
+  // The scope label ruling cal-0 requires — with one correction the ruling could
+  // not have anticipated. cal-0 asked for "tour main draw, N of M". For 345 of
+  // 356 players that is true. For 11 it INVERTS: the spine is a window, not a
+  // career (Mannarino's careerByYear starts at 2015), while the archive reaches
+  // back to 2004 — so Djokovic shows 1,277 priced rows against a 601-match
+  // spine. "1277 of 601" is not a scope label, it is a false claim of nesting.
+  //
+  // The two sets are OVERLAPPING, not nested: the archive is narrower by tier
+  // (tour main draw only) and deeper in time. So both numbers are still shown —
+  // which is what the ruling was for — but as two scopes side by side rather
+  // than as a fraction. Flagged to the founder; the "of M" wording is his call.
+  function calScope(p) {
+    var rows = calRows(p);
+    return {
+      n: rows.length,
+      m: spineTotal(p).n,
+      from: rows.length ? String(rows[0].date).slice(0, 4) : null,
+      to: rows.length ? String(rows[rows.length - 1].date).slice(0, 4) : null,
+      nested: rows.length <= spineTotal(p).n
+    };
+  }
+  function calScopeText(p) {
+    var c = calScope(p);
+    if (!c.n) return 'no priced matches on record';
+    return 'tour main draw ' + MIDDOT + ' ' + c.n + ' priced ' + MIDDOT + ' ' +
+      (c.from === c.to ? c.from : c.from + ENDASH + c.to) +
+      ' ' + MIDDOT + ' career record above holds ' + c.m;
+  }
+
+  // Year x month buckets over the filtered rows.
+  function calGrid(rows) {
+    var years = {};
+    rows.forEach(function (r) {
+      var y = String(r.date).slice(0, 4);
+      var m = parseInt(String(r.date).slice(5, 7), 10) - 1;
+      if (!/^\d{4}$/.test(y) || !(m >= 0 && m < 12)) return;
+      if (!years[y]) { years[y] = []; for (var i = 0; i < 12; i++) years[y].push({ won: 0, lost: 0, pl: 0 }); }
+      var c = years[y][m];
+      c[r.won ? 'won' : 'lost']++;
+      if (typeof r.pl === 'number') c.pl += r.pl;
+    });
+    return Object.keys(years).sort(function (a, b) { return b < a ? -1 : 1; })
+      .map(function (y) { return { year: y, cells: years[y] }; });
+  }
+
+  // Per-calendar-month totals pooled across seasons, plus the design's own two
+  // derived figures. Both definitions are the .dc.html's, quoted in the report:
+  //   yield gap  = this month's yield vs the OTHER ELEVEN months combined
+  //   consistent = seasons on record in which this month finished above .500;
+  //                a season with no matches that month counts as NOT above.
+  function calMonths(rows) {
+    var grid = calGrid(rows);
+    var out = [];
+    for (var m = 0; m < 12; m++) out.push({ m: m, won: 0, lost: 0, pl: 0, above: 0 });
+    grid.forEach(function (yr) {
+      yr.cells.forEach(function (c, m) {
+        out[m].won += c.won; out[m].lost += c.lost; out[m].pl += c.pl;
+        if (c.won + c.lost > 0 && c.won / (c.won + c.lost) > 0.5) out[m].above++;
+      });
+    });
+    var totalN = 0, totalU = 0;
+    out.forEach(function (x) { totalN += x.won + x.lost; totalU += x.pl; });
+    out.forEach(function (x) {
+      var n = x.won + x.lost;
+      x.n = n;
+      x.seasons = grid.length;
+      x.yield = n ? 100 * x.pl / n : null;
+      var on = totalN - n;
+      var other = on ? 100 * (totalU - x.pl) / on : null;
+      x.gap = (x.yield == null || other == null) ? null : x.yield - other;
+    });
+    return { months: out, seasons: grid.length, grid: grid };
+  }
+
+  // Win/loss runs over the dated sequence, oldest first.
+  function calRuns(rows) {
+    var runs = [];
+    rows.forEach(function (r) {
+      var res = r.won ? 'W' : 'L';
+      var last = runs[runs.length - 1];
+      if (last && last.res === res) { last.len++; last.to = r.date; last.rows.push(r); }
+      else runs.push({ res: res, len: 1, from: r.date, to: r.date, rows: [r] });
+    });
+    return runs;
+  }
+  // The design's Erdos-Renyi longest-run approximation, transcribed from the
+  // .dc.html script (§6.4 asked for the definition behind "expected longest"
+  // and "runs of 5+" — it exists there, and this is it, not a reinvention):
+  //   expected longest run = log_{1/p}(n(1-p)) + gamma/ln(1/p) - 1/2
+  //   expected runs of 5+  = n(1-p)p^5 + n·p(1-p)^5
+  // Degenerate rates (p = 0 or 1) make both undefined — they return null and the
+  // tile shows a dash, rather than an Infinity rendered as a number.
+  function expectedLongest(n, p) {
+    if (!n || !(p > 0 && p < 1)) return null;
+    var lg = Math.log(1 / p);
+    return Math.round(Math.log(n * (1 - p)) / lg + 0.5772 / lg - 0.5);
+  }
+  function expectedRuns5(n, p) {
+    if (!n || !(p > 0 && p < 1)) return null;
+    return Math.round(n * (1 - p) * Math.pow(p, 5) + n * p * Math.pow(1 - p, 5));
+  }
+
+  function calTile(cap, value, sub, colour) {
+    return '<div style="background:#0a0d14;border-radius:12px;padding:15px 16px;text-align:center;">' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;letter-spacing:0.14em;' +
+        'text-transform:uppercase;color:#4b5672;">' + esc(cap) + '</div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;margin-top:4px;' +
+        'color:' + (value === DASH ? DASH_COLOUR : (colour || '#e8ecf4')) + ';">' + esc(value) + '</div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;margin-top:3px;">' +
+        esc(sub) + '</div></div>';
+  }
+  function calSegBtn(attr, id, label, on) {
+    return '<button type="button" data-pp2="' + attr + '" data-v="' + esc(id) + '" style="padding:6px 14px;' +
+      'border-radius:7px;font-size:12px;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';' +
+      'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+      'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
+  }
+
+  function renderSeasonModal(p) {
+    var tab = state.calTab === 'streaks' ? 'streaks' : 'calendar';
+    var seg = '<div style="display:flex;gap:2px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+      'border-radius:9px;padding:3px;align-self:flex-start;">' +
+      calSegBtn('cal-tab', 'calendar', 'Calendar', tab === 'calendar') +
+      calSegBtn('cal-tab', 'streaks', 'Streaks', tab === 'streaks') + '</div>';
+    var scopeNote = '<div style="font-size:11px;color:#5b6880;margin-top:14px;line-height:1.6;">' +
+      'This block is built from the priced tour archive ' + MIDDOT + ' ' + esc(calScopeText(p)) + '. ' +
+      'It is a subset of the career record above, not the whole of it: the archive covers ATP tour ' +
+      'main draw only, so qualifying and Challenger matches are absent by scope, not missing. ' +
+      '&ldquo;Indoors&rdquo; is a court type and overlaps Hard, Clay and Grass rather than sitting beside them. ' +
+      'Rates show at full size from five matches up; under five show W' + ENDASH + 'L only and a dash for the rate.' +
+      '</div>';
+    if (!calRows(p).length) {
+      return seg + '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;margin-top:14px;">No priced matches on record, ' +
+        'so there is no dated row to place in a calendar.</div>';
+    }
+    return seg + (tab === 'calendar' ? renderCalTab(p) : renderStreakTab(p)) + scopeNote;
+  }
+
+  function renderCalTab(p) {
+    var rows = calFiltered(p);
+    var info = calMonths(rows);
+    var months = info.months;
+    var withN = months.filter(function (x) { return x.n > 0 && x.gap != null; });
+    var bestM = withN.slice().sort(function (a, b) { return b.gap - a.gap; })[0] || null;
+    var worstM = withN.slice().sort(function (a, b) { return a.gap - b.gap; })[0] || null;
+    // "Best / worst stretch": the highest- and lowest-yielding SEASON on record.
+    // The prototype's stretch is a seeded constant; a season is the only span
+    // this data defines without inventing a window.
+    var seasons = info.grid.map(function (yr) {
+      var w = 0, l = 0, pl = 0;
+      yr.cells.forEach(function (c) { w += c.won; l += c.lost; pl += c.pl; });
+      return { year: yr.year, won: w, lost: l, n: w + l, yield: (w + l) ? 100 * pl / (w + l) : null };
+    }).filter(function (s) { return s.n > 0; });
+    var byY = seasons.slice().sort(function (a, b) { return b.yield - a.yield; });
+    var bestS = byY[0] || null, worstS = byY[byY.length - 1] || null;
+
+    function mTile(cap, x) {
+      if (!x) return calTile(cap, DASH, 'no month clears a comparison', null);
+      return calTile(cap, MON_FULL[x.m], signed(x.gap, 1, 'pp') + ' ' + MIDDOT + ' n=' + x.n +
+        ' ' + MIDDOT + ' ' + x.above + ' of ' + x.seasons, x.gap > 0 ? '#3dd68c' : x.gap < 0 ? '#e0616f' : null);
+    }
+    function sTile(cap, s) {
+      if (!s || s.yield == null) return calTile(cap, DASH, 'no season on record', null);
+      return calTile(cap, s.year, neg(s.yield, 1, '%') + ' ' + MIDDOT + ' ' + recordText(s.won, s.lost),
+        s.yield > 0 ? '#3dd68c' : s.yield < 0 ? '#e0616f' : null);
+    }
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 18px;">' +
+      sTile('Best stretch', bestS) + sTile('Worst stretch', worstS) +
+      mTile('Best month', bestM) + mTile('Worst month', worstM) + '</div>';
+
+    var surfSeg = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+      eyebrow('Calendar form ' + MIDDOT + ' career') +
+      '<div style="display:flex;gap:2px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+      'border-radius:9px;padding:3px;">' +
+      CAL_SURFACES.map(function (s) {
+        return calSegBtn('cal-surface', s.id, s.label, (state.calSurface || 'all') === s.id);
+      }).join('') + '</div></div>';
+
+    var grid = calGrid(rows);
+    var head = '<div style="display:contents;">' +
+      '<div style="position:sticky;left:0;top:0;z-index:3;background:#0a0d14;"></div>' +
+      MON3.map(function (m) {
+        return '<div style="position:sticky;top:0;z-index:2;background:#0a0d14;font-family:\'IBM Plex Mono\',monospace;' +
+          'font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;' +
+          'text-align:center;padding:6px 0;">' + m + '</div>';
+      }).join('') + '</div>';
+    var body = grid.map(function (yr) {
+      return '<div style="position:sticky;left:0;z-index:1;background:#0a0d14;font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:11.5px;font-weight:700;padding:7px 8px 7px 0;">' + esc(yr.year) + '</div>' +
+        yr.cells.map(function (c, m) {
+          var n = c.won + c.lost;
+          var open = state.calCell === yr.year + '-' + m;
+          var bg = 'transparent';
+          if (n) {
+            var r = c.won / n;
+            bg = r > 0.5 ? 'rgba(61,214,140,' + (0.10 + 0.32 * (r - 0.5) * 2).toFixed(3) + ')'
+              : r < 0.5 ? 'rgba(224,97,111,' + (0.10 + 0.32 * (0.5 - r) * 2).toFixed(3) + ')'
+                : 'rgba(255,255,255,0.07)';
+          }
+          return '<div ' + (n ? 'data-pp2="cal-cell" data-v="' + yr.year + '-' + m + '" ' : '') +
+            'style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;text-align:center;padding:7px 0;' +
+            'border-radius:4px;background:' + bg + ';' + (n ? 'cursor:pointer;' : 'color:#3f4860;') +
+            (open ? 'box-shadow:inset 0 0 0 1px rgba(91,155,255,0.75);' : '') + '">' +
+            (n ? c.won + ENDASH + c.lost : DASH) + '</div>';
+        }).join('');
+    }).join('');
+
+    var drill = '';
+    if (state.calCell) {
+      var parts = String(state.calCell).split('-');
+      var dy = parts[0], dm = parseInt(parts[1], 10);
+      var cellRows = rows.filter(function (r) {
+        return String(r.date).slice(0, 4) === dy && parseInt(String(r.date).slice(5, 7), 10) - 1 === dm;
+      });
+      if (cellRows.length) {
+        var cw = cellRows.filter(function (r) { return r.won; }).length;
+        var cpl = cellRows.reduce(function (a, r) { return a + (typeof r.pl === 'number' ? r.pl : 0); }, 0);
+        drill = '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+          'margin-top:12px;padding:13px 15px;">' +
+          '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">' +
+            '<div style="font-size:14px;font-weight:700;">' + esc(MON_FULL[dm] + ' ' + dy) +
+              ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;' +
+              'font-weight:400;">' + recordText(cw, cellRows.length - cw) + '</span></div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' +
+              (cpl > 0 ? '#3dd68c' : cpl < 0 ? '#e0616f' : '#8b96b5') + ';">' +
+              signed(cpl, 2, 'u') + '</div></div>' +
+          cellRows.map(function (r) {
+            return '<div style="display:grid;grid-template-columns:14px 44px minmax(0,1.1fr) minmax(0,1.3fr) 62px 72px;' +
+              'gap:0 14px;align-items:center;padding:5px 0;">' +
+              '<div style="width:7px;height:7px;border-radius:50%;background:' +
+                (r.won ? '#3dd68c' : '#e0616f') + ';"></div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+                esc(r.round || DASH) + '</div>' +
+              '<div style="font-size:12.5px;">' + esc(r.event || DASH) + '</div>' +
+              '<div style="font-size:12.5px;color:#8b96b5;">' + esc(r.opp || DASH) + '</div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:#8b96b5;">' +
+                (r.price != null ? r.price.toFixed(2) : DASH) + '</div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
+                (r.pl > 0 ? '#3dd68c' : r.pl < 0 ? '#e0616f' : '#8b96b5') + ';">' +
+                (typeof r.pl === 'number' ? signed(r.pl, 2, 'u') : DASH) + '</div></div>';
+          }).join('') + '</div>';
+      }
+    }
+
+    // Month footer — the two derived rows whose definitions the .dc.html fixes.
+    var foot = '<div style="display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;' +
+      'min-width:880px;margin-top:16px;border-top:1px solid rgba(255,255,255,0.09);padding-top:10px;">' +
+      [['n', function (x) { return x.n ? String(x.n) : DASH; }, null],
+       ['Yield', function (x) { return x.yield == null ? DASH : neg(x.yield, 1, '%'); },
+         function (x) { return x.yield == null ? DASH_COLOUR : x.yield > 0 ? '#3dd68c' : x.yield < 0 ? '#e0616f' : '#8b96b5'; }],
+       ['Vs other months', function (x) { return x.gap == null ? DASH : signed(x.gap, 1, 'pp'); },
+         function (x) { return x.gap == null ? DASH_COLOUR : x.gap > 0 ? '#3dd68c' : x.gap < 0 ? '#e0616f' : '#8b96b5'; }],
+       ['Consistent', function (x) { return x.seasons ? x.above + ' of ' + x.seasons : DASH; }, null]
+      ].map(function (row) {
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;padding:5px 0;">' + row[0] + '</div>' +
+          months.map(function (x) {
+            return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;text-align:center;' +
+              'padding:5px 0;color:' + (row[2] ? row[2](x) : '#8b96b5') + ';">' + esc(row[1](x)) + '</div>';
+          }).join('');
+      }).join('') + '</div>';
+
+    return tiles + surfSeg +
+      '<div style="overflow:auto;max-height:400px;">' +
+      '<div style="display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;min-width:880px;">' +
+      head + body + '</div></div>' + drill +
+      '<div style="overflow-x:auto;">' + foot + '</div>' +
+      '<div style="font-size:11px;color:#5b6880;margin-top:12px;line-height:1.6;">' +
+        'Grid cells are W' + ENDASH + 'L only. The tint shows whether that month finished above .500 that ' +
+        'season, not a yield comparison. ' + esc('Vs other months') + ' compares a month&#39;s yield to the ' +
+        'other eleven combined, weighted by matches. ' + esc('Consistent') + ' counts, out of the seasons on ' +
+        'record, those in which the month finished above .500; a season with no matches that month counts as ' +
+        'not above.</div>';
+  }
+
+  function renderStreakTab(p) {
+    var rows = calFiltered(p);
+    var runs = calRuns(rows);
+    var n = rows.length;
+    var wins = rows.filter(function (r) { return r.won; }).length;
+    var pr = n ? wins / n : 0;
+    var longestW = runs.filter(function (r) { return r.res === 'W'; })
+      .sort(function (a, b) { return b.len - a.len; })[0] || null;
+    var longestL = runs.filter(function (r) { return r.res === 'L'; })
+      .sort(function (a, b) { return b.len - a.len; })[0] || null;
+    var obs5 = runs.filter(function (r) { return r.len >= 5; }).length;
+    var exp5 = expectedRuns5(n, pr);
+    var expW = expectedLongest(n, pr);
+    function span(r) {
+      if (!r) return DASH;
+      return fmtDayMonth(r.from) + (r.from === r.to ? '' : ' ' + ENDASH + ' ' + fmtDayMonth(r.to));
+    }
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 18px;">' +
+      calTile('Runs of 5+', String(obs5),
+        exp5 == null ? runs.length + ' runs' : 'expected ' + exp5 + ' ' + MIDDOT + ' ' + runs.length + ' runs', null) +
+      calTile('Longest win run', longestW ? String(longestW.len) : DASH, span(longestW), longestW ? '#3dd68c' : null) +
+      calTile('Longest loss run', longestL ? String(longestL.len) : DASH, span(longestL), longestL ? '#e0616f' : null) +
+      calTile('Expected longest', expW == null ? DASH : String(expW),
+        expW == null ? 'undefined at this win rate'
+          : 'at ' + (pr * 100).toFixed(1) + '% over ' + n + ' matches', null) + '</div>';
+
+    var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1);
+    var bars = runs.map(function (x, i) {
+      var hh = Math.max(3, Math.round(x.len / maxRun * 68));
+      var on = state.calRun === i;
+      var up = x.res === 'W';
+      return '<div data-pp2="cal-run" data-v="' + i + '" title="' + esc(x.res + x.len) + '" ' +
+        'style="width:6px;margin-right:1px;height:140px;display:flex;flex-direction:column;' +
+        'justify-content:' + (up ? 'flex-end' : 'flex-start') + ';cursor:pointer;flex:0 0 auto;">' +
+        (up ? '<div style="height:' + (68 - hh) + 'px;"></div>' : '<div style="height:68px;"></div>') +
+        '<div style="height:' + hh + 'px;background:' +
+          (up ? (on ? '#3dd68c' : 'rgba(61,214,140,0.62)') : (on ? '#e0616f' : 'rgba(224,97,111,0.62)')) +
+          ';"></div></div>';
+    }).join('');
+
+    var detail = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0.1em;' +
+      'text-transform:uppercase;color:#4b5672;margin-top:10px;">Click a run for its matches</div>';
+    var sel = runs[state.calRun];
+    if (sel) {
+      var spl = sel.rows.reduce(function (a, r) { return a + (typeof r.pl === 'number' ? r.pl : 0); }, 0);
+      detail = '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+        'margin-top:12px;padding:12px 14px;">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">' +
+          '<div style="font-size:14px;font-weight:700;">' + esc(sel.res + sel.len) + ' ' + MIDDOT + ' ' +
+            esc(sel.rows[0].event || DASH) +
+            (sel.rows.length > 1 ? ' &rarr; ' + esc(sel.rows[sel.rows.length - 1].event || DASH) : '') +
+            ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;' +
+            'font-weight:400;">' + esc(span(sel)) + '</span></div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' +
+            (spl > 0 ? '#3dd68c' : spl < 0 ? '#e0616f' : '#8b96b5') + ';">' + signed(spl, 2, 'u') + '</div></div>' +
+        sel.rows.map(function (r) {
+          return '<div style="display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) 56px 56px;' +
+            'gap:0 14px;align-items:center;padding:4px 0;">' +
+            '<div style="width:7px;height:7px;border-radius:50%;background:' +
+              (r.won ? '#3dd68c' : '#e0616f') + ';"></div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+              esc(r.round || DASH) + '</div>' +
+            '<div style="font-size:12.5px;">' + esc(r.event || DASH) + '</div>' +
+            '<div style="font-size:12.5px;color:#8b96b5;">' + esc(r.opp || DASH) + '</div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:#8b96b5;">' +
+              (r.price != null ? r.price.toFixed(2) : DASH) + '</div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
+              (r.pl > 0 ? '#3dd68c' : r.pl < 0 ? '#e0616f' : '#8b96b5') + ';">' +
+              (typeof r.pl === 'number' ? signed(r.pl, 2, 'u') : DASH) + '</div></div>';
+        }).join('') + '</div>';
+    }
+
+    return tiles +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+        eyebrow('Run timeline ' + MIDDOT + ' career order') +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' +
+          runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</div></div>' +
+      '<div style="overflow-x:auto;"><div style="display:flex;align-items:stretch;' +
+        'background:linear-gradient(to bottom,transparent 68px,rgba(255,255,255,0.09) 68px,' +
+        'rgba(255,255,255,0.09) 69px,transparent 69px);">' + bars + '</div></div>' +
+      detail;
+  }
+
   function renderModal(p, ctx) {
     var k = state.modal;
     if (!k) return '';
     var body;
     if (k === 'career') body = renderCareerModal(p, ctx);
     else if (k === 'tourn') body = renderTournModal(p);
+    else if (k === 'season') body = renderSeasonModal(p);
     else if (k === 'splits') body = renderSplitsModal(p);
     else if (k === 'market') body = renderMarketModal(p);
     else {
@@ -1271,7 +1680,10 @@
   var state = {
     key: null, ledgerOpen: false, surfaces: [], priceFilters: [], modal: null,
     careerScope: 'career', splitScope: 'career', marketRole: 'all',
-    tournQuery: '', tournOpen: null
+    tournQuery: '', tournOpen: null,
+    // §5.4 Calendar record. calSurface 'all' is the default segment; calCell is
+    // "YYYY-m" (month index, not 1-based) and calRun is an index into calRuns().
+    calTab: 'calendar', calSurface: 'all', calCell: null, calRun: null
   };
 
   function build(p) {
@@ -1327,11 +1739,26 @@
       spineTotal: spineTotal,
       spineBySurface: spineBySurface,
       spineFirstYear: spineFirstYear,
+      // §5.4 Calendar record (ruling cal-0). `state` is exported so the tests can
+      // drive the Streaks tab and the surface segments through the SAME state the
+      // page mutates — otherwise those branches are unreachable and would be
+      // covered only by inspection.
+      state: state,
+      calRows: calRows,
+      calFiltered: calFiltered,
+      calGrid: calGrid,
+      calMonths: calMonths,
+      calRuns: calRuns,
+      calScope: calScope,
+      calScopeText: calScopeText,
+      expectedLongest: expectedLongest,
+      expectedRuns5: expectedRuns5,
+      renderSeasonModal: renderSeasonModal,
       spineYears: spineYears,
       pickByLargestGap: pickByLargestGap,
       splitCandidates: splitCandidates,
-      bestSplit: bestSplit,
-      bestBand: bestBand,
+      biggestSplit: biggestSplit,
+      biggestBand: biggestBand,
       buildBoxVals: buildBoxVals,
       renderCareerModal: renderCareerModal,
       renderTournModal: renderTournModal,
