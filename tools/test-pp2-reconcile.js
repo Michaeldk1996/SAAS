@@ -1742,6 +1742,44 @@ check('the dashboard actually loads player-profile-v2.js', () => {
     'no player-profile-v2.js script tag — the module is unreachable from the page');
 });
 
+// The deploy is an explicit `cp` allowlist, so a NEW local file is committed,
+// passes every test, and then 404s on the live site. That has bitten this repo
+// before (bsp-pipeline.js, TEN-157) and it bit this ticket twice at once:
+// neither player-profile-v2.js NOR holdbreak-heatmap.js was copied. The second
+// is the worse of the two — the Live tab now calls that engine, so the missing
+// copy would have broken a DON'T-TOUCH surface, not this one.
+//
+// Rather than trust a hand-maintained list, this derives the requirement from
+// the dashboard itself: every local script it loads must be copied AND asserted.
+check('every script the dashboard loads is deployed and assert-gated', () => {
+  const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+  const srcs = [...DASHBOARD.matchAll(/<script src="([^"]+)"/g)]
+    .map(m => m[1].replace(/^\.\//, ''))         // the page writes both ./x.js and x.js
+    .filter(s => !/^https?:|^\/\//.test(s));     // local files only
+  assert(srcs.length > 0, 'found no local <script src> in the dashboard — the regex is wrong');
+  const cpLine = (s) => (wf.match(new RegExp(`^\\s*cp[^\\n]*\\b${s.replace(/\./g, '\\.')}\\b[^\\n]*$`, 'm')) || [])[0];
+  const notCopied = srcs.filter(s => !cpLine(s));
+  assert.deepStrictEqual(notCopied, [],
+    `the dashboard loads these but the deploy never copies them (they 404 live): ${notCopied.join(', ')}`);
+  // A copy ending in `|| true` is an explicit decision that the file is
+  // optional (admin-config.js), so it is exempt from the assert list. Anything
+  // copied unconditionally is load-bearing and must be gated, or a silent cp
+  // failure ships a page whose scripts 404.
+  const assertBlock = wf.slice(wf.indexOf('for f in index.html'), wf.indexOf('MISSING from _site'));
+  const required = srcs.filter(s => !/\|\|\s*true/.test(cpLine(s)));
+  const notAsserted = required.filter(s => !assertBlock.includes(s));
+  assert.deepStrictEqual(notAsserted, [],
+    `copied but not assert-gated, so a silent cp failure ships a broken page: ${notAsserted.join(', ')}`);
+  console.log(`        ${srcs.length} local scripts, all copied; ${required.length} required and assert-gated`);
+});
+
+mustFail('the deploy-allowlist check would catch a script that is never copied', () => {
+  const srcs = ['live-tab.js', 'player-profile-v2.js'];
+  const wf = 'cp live-tab.js _site/';
+  const notCopied = srcs.filter(s => !new RegExp(`cp[^\\n]*${s.replace(/\./g, '\\.')}`).test(wf));
+  assert.deepStrictEqual(notCopied, [], `never copied: ${notCopied.join(', ')}`);
+});
+
 check('FEATURE_PP2 is set BEFORE the module tag, not at profile-open time', () => {
   const flagAt = DASHBOARD.indexOf('window.FEATURE_PP2 =');
   const tagAt = DASHBOARD.indexOf(PP2_TAG);

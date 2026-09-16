@@ -303,6 +303,25 @@ jobs:
           # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
           # dark even with the flag on. Public Supabase creds are injected below.
           cp live-tab.js _site/
+          # TEN-206 ruling 7: the shared hold/break engine, lifted OUT of the
+          # dashboard so the Live tab and the Player Profile run one engine. The
+          # Live tab's inline renderer now CALLS it, so a missing copy here is
+          # not a Player-Profile bug — it breaks the Live tab, a don't-touch
+          # surface. Required; asserted below.
+          cp holdbreak-heatmap.js _site/
+          # TEN-206: the rebuilt Player Profile page. Not copied = 404 =>
+          # window.PlayerProfileV2 never defines => every profile open falls back
+          # to the legacy renderer, so the rebuild would look shipped while being
+          # unreachable. Required; asserted below.
+          cp player-profile-v2.js _site/
+          # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
+          # and the per-player market-edge shards + index (build-market-edge.js).
+          # The shards also feed the full ledger's two closing-odds columns.
+          # Index-gated on the client, so a missing shard degrades to a dash with
+          # a stated reason rather than a broken table — tolerant copy.
+          cp court-speed-map.json _site/ 2>/dev/null || true
+          cp market-edge-index.json _site/ 2>/dev/null || true
+          cp -r market-edge _site/ 2>/dev/null || true
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
@@ -495,6 +514,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js \
+                   holdbreak-heatmap.js player-profile-v2.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    points-at-risk.json \
                    player-atp-aliases.json \
