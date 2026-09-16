@@ -17498,6 +17498,23 @@ function ppRepaint(){
   if (!profile) return;
   const view = document.getElementById('playerProfileView');
   if (!view) return;
+  // TEN-206. Three lazy loaders (points-at-risk, ASAP signals, holdbreak) call
+  // ppRepaint() when they resolve, and line ~17667 does too. With v2 mounted
+  // those land on a view that v2 owns, and the unguarded body below would
+  // overwrite the rebuilt page with the LEGACY one mid-session — the reader
+  // watches the profile silently change shape. Reproduced in headless Chrome
+  // before this guard existed.
+  //
+  // ppRepaint is the documented single choke point ("never write
+  // playerProfileView.innerHTML directly"), so guarding here covers all of its
+  // call sites rather than each loader separately. Ownership is read off the
+  // DOM, not off the flag: what matters is which renderer actually painted.
+  if (view.querySelector('.pp2-main') && window.PlayerProfileV2
+      && typeof window.PlayerProfileV2.repaint === 'function') {
+    pp2Bridge();
+    window.PlayerProfileV2.repaint();
+    return;
+  }
   formOpenPanel['ppform'] = null;
   formOpenPanel['ppcareer'] = null;
   view.innerHTML = buildPlayerProfileHtml(profile);

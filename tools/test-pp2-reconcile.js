@@ -1816,6 +1816,27 @@ mustFail('the bridge check would catch a store left unassigned', () => {
   assert.deepStrictEqual(missing, [], `unassigned: ${missing.join(', ')}`);
 });
 
+// Reproduced live before this guard existed: opening a v2 profile and then
+// firing ppRepaint() (which three lazy loaders do when they resolve) replaced
+// the rebuilt page with the LEGACY one, mid-session, in front of the reader.
+check('ppRepaint hands back to v2 instead of overwriting it with the legacy page', () => {
+  const body = DASHBOARD.slice(DASHBOARD.indexOf('function ppRepaint()'));
+  const fn = body.slice(0, body.indexOf('\n}'));
+  const guardAt = fn.indexOf('PlayerProfileV2.repaint()');
+  const legacyAt = fn.indexOf('buildPlayerProfileHtml(profile)');
+  assert(guardAt > -1, 'ppRepaint does not delegate to v2 — a lazy loader will clobber the page');
+  assert(legacyAt > -1, 'ppRepaint no longer paints the legacy page at all — verify that was intended');
+  assert(guardAt < legacyAt,
+    'the v2 delegation comes AFTER the legacy innerHTML write, so it cannot prevent the clobber');
+  assert(/return;/.test(fn.slice(guardAt, legacyAt)),
+    'the v2 branch does not return — it falls through and repaints legacy anyway');
+});
+
+mustFail('the ppRepaint-guard check would catch the guard being removed', () => {
+  const fn = 'const view=x; view.innerHTML = buildPlayerProfileHtml(profile);';
+  assert(fn.indexOf('PlayerProfileV2.repaint()') > -1, 'ppRepaint does not delegate to v2');
+});
+
 check('the bridge hands playerProfiles the shape the module reads', () => {
   // archetypeFor and profileFor both read window.playerProfiles.players. The
   // dashboard's own binding IS the players map, so bridging it directly would
