@@ -805,14 +805,32 @@
   }
 
   // ─── archetype (v5.1) ──────────────────────────────────────────────────────
-  var stylesStore = null;
+  // playing-styles.json is a LIST keyed by display NAME, not an object keyed by
+  // player key — every other store this page reads is key-shaped and this one is
+  // not. It was previously left as an unassigned `stylesStore`, so archetypeFor
+  // returned null for all 428 players and box 5's headline was permanently dashed
+  // while looking exactly like a legitimate "not held". Indexed by name on first
+  // use, through the key -> name step the profile already carries.
+  var stylesByName = null;
+  function styleIndex() {
+    if (stylesByName) return stylesByName;
+    stylesByName = {};
+    var src = window.playingStyles;
+    var list = (src && src.players) || (Array.isArray(src) ? src : []);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].name) stylesByName[list[i].name] = list[i];
+    }
+    return stylesByName;
+  }
   function archetypeFor(key) {
-    if (!stylesStore) return null;
-    var rec = stylesStore[String(key)];
+    var players = (window.playerProfiles && window.playerProfiles.players) || {};
+    var p = players[String(key)];
+    if (!p || !p.name) return null;
+    var rec = styleIndex()[p.name];
     if (!rec) return null;
     // v5.1 labels verbatim — no renaming, no "Pure"/"High-Risk" qualifiers
     // (those appear only in the README and do not exist in the taxonomy).
-    return rec.archetype || rec.label || rec.primary || null;
+    return rec.archetype_label || null;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -837,6 +855,7 @@
       case 'splits': return 'Record and win rate by surface, level, format, round and opponent';
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
+      case 'styles': return 'Win rate against each playing style ' + possessive(sn) + ' record covers';
       default: return '';
     }
   }
@@ -2005,6 +2024,243 @@
   };
   function shortRound(r) { return ROUND_SHORT[r] || (r == null ? DASH : String(r)); }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.6 VERSUS PLAYING STYLES
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Taxonomy: the board-finalised v5.1 set in playing-styles.json, which
+  // matchup-matrix.json also names as its own source. Eight labels, carried
+  // verbatim. The ticket asks for "v5.2 names and IDs exactly" — no v5.2 exists in
+  // this repo (reported at recon); the prototype's own row labels are v5.1 verbatim,
+  // so the export and our data already agree.
+  //
+  // Source: market-edge rows, which build-market-edge.js now stamps with the
+  // OPPONENT's archetype using the same name resolver that joins the row's subject.
+  //
+  // Coverage is the honest constraint and the modal states it. The labelled roster is
+  // the CURRENT 250 players, so a long career's early opponents are mostly unlabelled
+  // by construction: Djokovic 424 of 1,277, against a 75.8% median for players whose
+  // careers sit inside the roster era.
+
+  /**
+   * Serve-first to baseline-first, the design's x order, with All Court Elite held
+   * out to the right of the divider as its own tier.
+   *
+   * ABBREVIATIONS: BS / BS+FS / BS+CB / AB / SB / ACE are the design's own. CP and SD
+   * are NOT — the export never plots Counterpuncher or Solid Defender (they were that
+   * player's two under-minimum rows), so those two are derived here and flagged in the
+   * report rather than presented as specified.
+   */
+  var STYLE_AXIS = [
+    { label: 'Big Server', abbr: 'BS' },
+    { label: 'Big Server + First Strike', abbr: 'BS+FS' },
+    { label: 'Big Server + Complete Baseliner', abbr: 'BS+CB' },
+    { label: 'Attacking Baseliner', abbr: 'AB' },
+    { label: 'Solid Baseliner', abbr: 'SB' },
+    { label: 'Counterpuncher', abbr: 'CP', derivedAbbr: true },
+    { label: 'Solid Defender', abbr: 'SD', derivedAbbr: true },
+    { label: 'All Court Elite', abbr: 'ACE', elite: true }
+  ];
+
+  /** Per-archetype record over the priced rows, plus the rows carrying no label. */
+  function styleRows(p) {
+    var agg = {};
+    STYLE_AXIS.forEach(function (a) { agg[a.label] = { axis: a, won: 0, lost: 0, pl: 0, rows: [] }; });
+    var unlabelled = 0;
+    speedRows(p).forEach(function (m) {
+      var a = m.oppArchetype && agg[m.oppArchetype];
+      if (!a) { unlabelled += 1; return; }
+      if (m.won) a.won += 1; else a.lost += 1;
+      a.pl += (m.pl == null ? 0 : m.pl);
+      a.rows.push(m);
+    });
+    var out = STYLE_AXIS.map(function (a) { return agg[a.label]; });
+    out.unlabelled = unlabelled;
+    return out;
+  }
+
+  function renderStylesModal(p) {
+    var rows = styleRows(p);
+    var total = speedRows(p).length;
+    if (!total) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No priced matches on record, ' +
+        'so no opponent can be archetyped.</div>';
+    }
+    return renderStyleBubbles(rows) + renderStyleList(rows) + renderStyleNote(rows, total);
+  }
+
+  /**
+   * Bubble plot. Y is fixed 40-80% as the design specifies, so a rate outside that
+   * range is CLAMPED for position and still printed exactly — a bubble pinned to the
+   * axis is honest about its value; a silently rescaled axis is not.
+   */
+  function renderStyleBubbles(rows) {
+    var plotted = rows.filter(function (r) {
+      var n = r.won + r.lost;
+      return gateFor(n) !== GATE.NONE && gateFor(n) !== GATE.THIN;
+    });
+    if (!plotted.length) {
+      return '<div style="background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+        'padding:20px 22px 16px;margin-bottom:16px;">' +
+        '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No archetype clears the five-match ' +
+        'minimum, so the chart has nothing to plot.</div></div>';
+    }
+    // The design's radius is 16 + n/47*22, where 47 was that player's busiest
+    // archetype — placeholder scale, not a constant. Re-derived from this player's max
+    // so the biggest bubble still lands at 38px.
+    var maxN = plotted.reduce(function (m, r) { return Math.max(m, r.won + r.lost); }, 1);
+    var regular = plotted.filter(function (r) { return !r.axis.elite; });
+    var elite = plotted.filter(function (r) { return r.axis.elite; });
+
+    var ticks = [80, 70, 60, 50, 40].map(function (t) {
+      var y = (80 - t) / 40 * 100;
+      return '<div style="position:absolute;right:calc(100% + 6px);top:' + y + '%;transform:translateY(-50%);' +
+        'font-size:10px;color:#4b5672;">' + t + '%</div>' +
+        '<div style="position:absolute;left:0;right:0;top:' + y + '%;height:1px;background:' +
+        (t === 50 ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.05)') + ';"></div>' +
+        (t === 50 ? '<div style="position:absolute;left:4px;top:' + y + '%;transform:translateY(-130%);' +
+          'font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#5b6880;">even</div>' : '');
+    }).join('');
+
+    function bubble(r, leftPct) {
+      var n = r.won + r.lost;
+      var rate = 100 * r.won / n;
+      var clamped = Math.max(40, Math.min(80, rate));
+      var y = (80 - clamped) / 40 * 100;
+      var size = 16 + (n / maxN) * 22;
+      var op = 0.25 + ((clamped - 40) / 40) * 0.75;
+      return '<div data-pp2="style-row" data-v="' + esc(r.axis.label) + '" ' +
+        'style="position:absolute;left:' + leftPct + '%;top:' + y + '%;transform:translate(-50%,-50%);' +
+        'cursor:pointer;">' +
+        '<div style="position:absolute;left:50%;bottom:' + (size / 2 + 4).toFixed(1) + 'px;' +
+          'transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
+          'font-weight:700;color:#e7e9ee;white-space:nowrap;">' + rate.toFixed(0) + '%</div>' +
+        '<div style="width:' + size.toFixed(1) + 'px;height:' + size.toFixed(1) + 'px;border-radius:50%;' +
+          'background:rgba(91,155,255,' + op.toFixed(2) + ');border:1px solid rgba(91,155,255,0.5);"></div>' +
+        '</div>';
+    }
+    function xlabel(r, leftPct) {
+      var on = state.styleRow === r.axis.label;
+      return '<div data-pp2="style-row" data-v="' + esc(r.axis.label) + '" ' +
+        'style="position:absolute;left:' + leftPct + '%;top:6px;transform:translateX(-50%);' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.08em;cursor:pointer;' +
+        'white-space:nowrap;padding:2px 5px;border-radius:4px;' +
+        (on ? 'background:rgba(91,155,255,0.16);font-weight:700;border-bottom:1px solid #5b9bff;color:#e7e9ee;'
+            : 'color:#5b6880;') + '">' + esc(r.axis.abbr) + '</div>';
+    }
+
+    var bubbles = '', labels = '';
+    regular.forEach(function (r, i) {
+      var x = regular.length === 1 ? 43 : 8 + (i / (regular.length - 1)) * 70;
+      bubbles += bubble(r, x); labels += xlabel(r, x);
+    });
+    elite.forEach(function (r) { bubbles += bubble(r, 92); labels += xlabel(r, 92); });
+
+    return '<div style="background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+      'padding:20px 22px 16px;margin-bottom:16px;">' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;margin-bottom:16px;">' +
+        'Win rate by archetype ' + MIDDOT + ' bubble size is match count</div>' +
+      '<div style="display:grid;grid-template-columns:52px 1fr;">' +
+        '<div style="position:relative;">' +
+          '<div style="position:absolute;left:8px;top:50%;transform:translateY(-50%) rotate(-90deg);' +
+            'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.14em;' +
+            'text-transform:uppercase;color:#4b5672;white-space:nowrap;">Win rate</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="position:relative;height:240px;border-left:1px solid rgba(255,255,255,0.12);' +
+            'border-bottom:1px solid rgba(255,255,255,0.12);">' +
+            ticks +
+            (elite.length ? '<div style="position:absolute;left:86%;top:0;bottom:0;width:0;' +
+              'border-left:1px dashed rgba(255,255,255,0.14);"></div>' : '') +
+            bubbles +
+          '</div>' +
+          '<div style="position:relative;height:26px;">' + labels + '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-family:\'IBM Plex Mono\',monospace;' +
+            'font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#3f4860;margin-top:2px;">' +
+            '<span>Serve</span><span>Baseline</span><span>Archetype</span></div>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  /** Row list, §5.2A spec (1fr 300px 58px). All eight kept — dashed when under gate. */
+  function renderStyleList(rows) {
+    var tw = 0, tl = 0, tpl = 0;
+    var body = rows.map(function (r) {
+      var n = r.won + r.lost;
+      var gate = gateFor(n);
+      var open = state.styleRow === r.axis.label;
+      var openable = gate !== GATE.NONE && gate !== GATE.THIN;
+      tw += r.won; tl += r.lost; tpl += r.pl;
+      var rate = rateText(r.won, r.lost);
+      var row = '<div' + (openable ? ' data-pp2="style-row" data-v="' + esc(r.axis.label) + '"' : '') +
+        ' style="display:grid;grid-template-columns:1fr 300px 58px;gap:0 12px;padding:7px 0;' +
+        'border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' +
+        'cursor:' + (openable ? 'pointer' : 'default') + ';' +
+        (open ? 'background:rgba(91,155,255,0.06);' : '') + '">' +
+        '<div style="font-size:12.5px;font-weight:700;color:' + (openable ? '#e7e9ee' : '#3f4860') + ';">' +
+          esc(r.axis.label) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;text-align:right;">' +
+          (n ? recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record') + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;text-align:right;' +
+          'color:' + (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' +
+          rate + '</div>' +
+      '</div>';
+      return row + (open ? renderStyleDetail(r) : '');
+    }).join('');
+
+    var totalRow = '<div style="display:grid;grid-template-columns:1fr 300px 58px;gap:0 12px;padding:9px 0;' +
+      'border-top:1px solid rgba(255,255,255,0.09);align-items:baseline;">' +
+      '<div style="font-size:12.5px;font-weight:600;color:#8b96b5;">Career</div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:600;color:#8b96b5;' +
+        'text-align:right;">' + recordText(tw, tl) + ' ' + MIDDOT + ' ' +
+        '<span style="color:' + (tpl >= 0 ? '#3dd68c' : '#e0616f') + ';">' + signed(tpl, 1, 'u') + '</span></div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;text-align:right;' +
+        'color:' + (rateText(tw, tl) === DASH ? DASH_COLOUR : '#8b96b5') + ';">' + rateText(tw, tl) + '</div>' +
+    '</div>';
+    return body + totalRow;
+  }
+
+  function renderStyleDetail(r) {
+    var rows = r.rows.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    var out = rows.map(function (m) {
+      return '<div data-pp2="sheet" data-v="' + esc(m.date + '|' + m.opp) + '" ' +
+        'style="display:grid;grid-template-columns:16px 64px 1.1fr 1fr 38px 104px 48px 48px 58px;gap:0 8px;' +
+        'padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;cursor:pointer;' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' +
+        '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
+        '<span style="color:#5b6880;">' + esc(m.date) + '</span>' +
+        '<span style="font-family:inherit;color:#e8ecf4;">' + esc(m.opp) + '</span>' +
+        '<span style="font-family:inherit;color:#8b96b5;">' + esc(m.event) + '</span>' +
+        '<span style="color:#5b6880;">' + esc(shortRound(m.round)) + '</span>' +
+        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
+        '<span style="text-align:right;color:#e8ecf4;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
+        '<span style="text-align:right;color:#5b6880;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
+        '<span style="text-align:right;font-weight:700;color:' + (m.pl >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+          signed(m.pl, 2, 'u') + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:11px;' +
+      'padding:10px 14px;margin:6px 0 10px;max-height:420px;overflow-y:auto;">' + out + '</div>';
+  }
+
+  function renderStyleNote(rows, total) {
+    var thin = rows.filter(function (r) { var n = r.won + r.lost; return n > 0 && n < 5; });
+    var parts = ['Click an archetype for the matches behind it.'];
+    if (thin.length) {
+      parts.push((thin.length === 1 ? 'One sits' : thin.length + ' sit') + ' below the five-match minimum and ' +
+        (thin.length === 1 ? 'stays' : 'stay') + ' listed with a dash rather than dropping out ' + ENDASH +
+        ' an absent row reads as an absent opponent.');
+    }
+    if (rows.unlabelled) {
+      parts.push(rows.unlabelled + ' of ' + total + ' priced matches were against an opponent who carries no ' +
+        'archetype. The labelled roster is the current 250 players, so a long career&#39;s early opponents are ' +
+        'mostly absent by construction, not by omission.');
+    }
+    return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' + parts.join(' ') + '</div>';
+  }
+
   function renderModal(p, ctx) {
     var k = state.modal;
     if (!k) return '';
@@ -2015,6 +2271,7 @@
     else if (k === 'splits') body = renderSplitsModal(p);
     else if (k === 'market') body = renderMarketModal(p);
     else if (k === 'speed') body = renderSpeedModal(p);
+    else if (k === 'styles') body = renderStylesModal(p);
     else {
       // Not yet built. The modal opens and says so — a box that silently does
       // nothing reads as a broken page.
@@ -2036,7 +2293,10 @@
     calTab: 'calendar', calSurface: 'all', calCell: null, calRun: null,
     // §5.5 Court speed. speedBand null means "let the modal pick the best openable
     // band" rather than defaulting to a band the player may have never played.
-    speedSurf: 'all', speedBand: null
+    speedSurf: 'all', speedBand: null,
+    // §5.6 Versus playing styles. styleRow is the opened archetype LABEL (v5.1
+    // verbatim), so the bubble, its x label and the row all key on one value.
+    styleRow: null
   };
 
   function build(p) {
@@ -2130,6 +2390,11 @@
       SPEED_SURFACES: SPEED_SURFACES,
       shortDate: shortDate,
       shortRound: shortRound,
+      // §5.6 Versus playing styles
+      renderStylesModal: renderStylesModal,
+      styleRows: styleRows,
+      STYLE_AXIS: STYLE_AXIS,
+      archetypeFor: archetypeFor,
       SPLIT_GROUPS: SPLIT_GROUPS,
       state: state
     }

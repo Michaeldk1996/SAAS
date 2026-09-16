@@ -215,6 +215,33 @@ function main() {
     return cands.length === 1 ? cands[0] : null;
   }
 
+  /**
+   * TEN-206 §5.6 — the OPPONENT's archetype, stamped per row.
+   *
+   * SSOT is playing-styles.json `archetype_label`, the board-finalised v5.1 roster
+   * that matchup-matrix.json also declares as its own source. Labels and IDs are
+   * carried verbatim; the modal does no renaming. (The ticket asks for "v5.2" — no
+   * such taxonomy exists in this repo, reported at recon.)
+   *
+   * Resolution reuses `resolve` above, the same archive-name matcher that joins the
+   * SUBJECT of every row, so an opponent and a subject can never disagree about who
+   * a name refers to. Unlabelled -> null, which the modal reads as "not archetyped"
+   * and counts out loud. It is not a small residue for long careers: the roster is
+   * the CURRENT 250 players, so a 2008 opponent is usually absent by construction.
+   */
+  const stylesPath = path.join(ROOT, 'playing-styles.json');
+  const archetypeByName = new Map();
+  if (fs.existsSync(stylesPath)) {
+    for (const s of JSON.parse(fs.readFileSync(stylesPath, 'utf8')).players || []) {
+      if (s && s.name && s.archetype_label) archetypeByName.set(s.name, s.archetype_label);
+    }
+  }
+  log(`archetype roster: ${archetypeByName.size} labelled players`);
+  const archetypeOf = (archiveName) => {
+    const hit = resolve(archiveName);
+    return hit ? (archetypeByName.get(hit.name) || null) : null;
+  };
+
   const seasons = fs.readdirSync(ARCHIVE_DIR).filter((f) => /^\d{4}\.csv$/.test(f)).sort();
   if (!seasons.length) throw new Error(`no season files in ${ARCHIVE_DIR}`);
 
@@ -261,6 +288,7 @@ function main() {
           court: (row.court || '').trim() || null,
           round: row.round, season,
           speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
+          oppArchetype: archetypeOf(s.opp),
           opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
           book: bk.book, bookLabel: bk.label,
           // role: strictly "was he the shorter price". An exact tie is neither, and is
@@ -362,6 +390,9 @@ function main() {
         // surface. The modal counts those out loud rather than dropping them.
         venue: s.speed ? s.speed.venue : null,
         speed: s.speed ? s.speed.speed : null,
+        // §5.6 Versus playing styles. Null = this opponent is not on the labelled
+        // roster; the modal counts those rather than folding them into a bucket.
+        oppArchetype: s.oppArchetype,
         opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
         book: s.book, role: s.role, pl: Math.round((s.won ? s.price - 1 : -1) * 100) / 100,
       })),

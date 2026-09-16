@@ -19,7 +19,7 @@ const ROOT = path.join(__dirname, '..');
 
 // ─── load the module under test into a window shim ──────────────────────────
 function loadModule(profiles, extra) {
-  const sandbox = Object.assign({ FEATURE_PP2: true, playerProfiles: profiles }, extra || {});
+  const sandbox = Object.assign({ FEATURE_PP2: true, playerProfiles: { players: profiles } }, extra || {});
   global.window = sandbox;
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   // eslint-disable-next-line no-new-func
@@ -43,7 +43,8 @@ if (fs.existsSync(MARKET_DIR)) {
   });
 }
 
-const M = loadModule(PLAYERS, { careerSplits: SPLITS, marketEdge: MARKET });
+const STYLES = JSON.parse(fs.readFileSync(path.join(ROOT, 'playing-styles.json'), 'utf8'));
+const M = loadModule(PLAYERS, { careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES });
 const I = M._internals;
 
 let pass = 0, fail = 0;
@@ -1236,6 +1237,180 @@ check('set counts and set scores dash rather than being inferred', () => {
     assert(m.sets === undefined && m.score === undefined,
       'a shard row carries a score field the archive does not hold: ' + JSON.stringify(m));
   });
+});
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// 17 · VERSUS PLAYING STYLES (§5.6) — taxonomy, coverage, sample gate
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n17 · Versus playing styles (§5.6)');
+
+const STYLES_SRC = JSON.parse(fs.readFileSync(path.join(ROOT, 'playing-styles.json'), 'utf8'));
+const MATRIX_SRC = fs.existsSync(path.join(ROOT, 'matchup-matrix.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'matchup-matrix.json'), 'utf8')) : null;
+
+// The taxonomy is the board-finalised v5.1 set, carried VERBATIM. This locks the
+// page's axis against BOTH stores at once, so a rename in either is caught here
+// rather than showing up as an archetype that silently collects no matches.
+check('the axis is the v5.1 taxonomy verbatim, agreeing with both stores', () => {
+  const axis = I.STYLE_AXIS.map(a => a.label).slice().sort();
+  const fromStyles = [...new Set(STYLES_SRC.players.filter(p => p.archetype_label).map(p => p.archetype_label))].sort();
+  assert.deepStrictEqual(axis, fromStyles, 'axis disagrees with playing-styles.json');
+  if (MATRIX_SRC) {
+    const fromMatrix = Object.keys(MATRIX_SRC.archetypes).slice().sort();
+    assert.deepStrictEqual(axis, fromMatrix, 'axis disagrees with matchup-matrix.json');
+  }
+  console.log(`        ${axis.length} archetypes, identical in the page, playing-styles.json and matchup-matrix.json`);
+});
+mustFail('the taxonomy lock would catch a renamed archetype', () => {
+  assert.deepStrictEqual(['Big Server', 'Counter-Puncher'].sort(), ['Big Server', 'Counterpuncher'].sort(),
+    'axis disagrees with playing-styles.json');
+});
+
+// §4: archetyped rows plus rows whose opponent carries no label must account for
+// every priced row. Without this an unlabelled opponent can vanish rather than be
+// declared, which is how a 33% coverage figure reads as a complete career.
+check('archetyped + unlabelled = every priced row', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    const total = I.speedRows(p).length;
+    if (!total) continue;
+    const rows = I.styleRows(p);
+    const labelled = rows.reduce((s, r) => s + r.won + r.lost, 0);
+    assert.strictEqual(labelled + rows.unlabelled, total,
+      `${p.name}: ${labelled} archetyped + ${rows.unlabelled} unlabelled != ${total}`);
+    n++;
+  }
+  assert(n > 0, 'no sampled player had priced rows — this check never ran');
+  console.log(`        ${n} players reconcile exactly`);
+});
+mustFail('the reconciliation would catch a dropped opponent', () => {
+  assert.strictEqual(296 + 30, 337, '296 archetyped + 30 unlabelled != 337');
+});
+
+// §5.6 keeps an under-minimum archetype LISTED with a dash. Dropping it would read
+// as an opponent type he has never faced, which is a different claim entirely.
+check('an under-minimum archetype stays listed, dashed, and does not open', () => {
+  let found = 0;
+  for (const key of Object.keys(PLAYERS)) {
+    const p = Object.assign({ key }, PLAYERS[key]);
+    if (!I.speedRows(p).length) continue;
+    const rows = I.styleRows(p);
+    const thin = rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; });
+    if (!thin.length) continue;
+    const html = I.renderStylesModal(p);
+    thin.forEach((r) => {
+      assert(html.indexOf(esc17(r.axis.label)) > -1, `${p.name}: thin archetype ${r.axis.label} dropped out`);
+      assert(html.indexOf('data-pp2="style-row" data-v="' + esc17(r.axis.label) + '"') < 0,
+        `${p.name}: thin archetype ${r.axis.label} is still clickable`);
+      assert.strictEqual(I.rateText(r.won, r.lost), '—', `${p.name}: thin archetype printed a rate`);
+    });
+    if (++found >= 3) break;
+  }
+  assert(found > 0, 'no player had an under-minimum archetype — this check never ran');
+  console.log(`        ${found} players keep a sub-minimum archetype listed and dashed`);
+});
+function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+mustFail('the listing check would catch a dropped thin archetype', () => {
+  const html = '<div>Attacking Baseliner</div>';
+  assert(html.indexOf('Solid Defender') > -1, 'thin archetype Solid Defender dropped out');
+});
+
+// Coverage must be on the page, not only in a counter. For a 20-year career most
+// opponents predate the roster, and a modal that hides that is claiming a
+// completeness it does not have.
+check('unlabelled opponents are declared in the DOM', () => {
+  let stated = 0;
+  for (const p of SAMPLE) {
+    const total = I.speedRows(p).length;
+    if (!total) continue;
+    const rows = I.styleRows(p);
+    if (!rows.unlabelled) continue;
+    const html = I.renderStylesModal(p);
+    assert(html.indexOf(rows.unlabelled + ' of ' + total + ' priced matches') > -1,
+      `${p.name}: ${rows.unlabelled} unlabelled opponents are not declared`);
+    stated++;
+  }
+  assert(stated > 0, 'no sampled player had unlabelled opponents — this check never ran');
+  console.log(`        ${stated} players declare their archetype coverage gap`);
+});
+mustFail('the declaration check would catch a hidden coverage gap', () => {
+  const html = 'Click an archetype for the matches behind it.';
+  assert(html.indexOf('853 of 1277 priced matches') > -1, '853 unlabelled opponents are not declared');
+});
+
+// The y axis is fixed 40-80%, so a rate outside it is clamped for POSITION only.
+// The printed value must stay exact — a clamped label would be a false number.
+check('a rate outside the 40-80% axis is clamped in position but printed exactly', () => {
+  let checked = 0;
+  for (const key of Object.keys(PLAYERS)) {
+    const p = Object.assign({ key }, PLAYERS[key]);
+    if (!I.speedRows(p).length) continue;
+    const rows = I.styleRows(p).filter(r => {
+      const n = r.won + r.lost;
+      if (n < 5) return false;
+      const rate = 100 * r.won / n;
+      return rate > 80 || rate < 40;
+    });
+    if (!rows.length) continue;
+    const html = I.renderStylesModal(p);
+    rows.forEach((r) => {
+      const rate = (100 * r.won / (r.won + r.lost)).toFixed(0);
+      assert(html.indexOf('>' + rate + '%<') > -1,
+        `${p.name}: ${r.axis.label} at ${rate}% is off-axis and its exact value is not printed`);
+      checked++;
+    });
+    if (checked >= 5) break;
+  }
+  assert(checked > 0, 'no off-axis rate found — this check never ran');
+  console.log(`        ${checked} off-axis bubbles print their exact rate`);
+});
+mustFail('the clamp check would catch a label rewritten to the axis bound', () => {
+  const html = '>80%<';
+  assert(html.indexOf('>' + '95' + '%<') > -1, 'a 95% rate is off-axis and its exact value is not printed');
+});
+
+check('every archetype drill renders without leaking NaN/undefined', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    if (!I.speedRows(p).length) continue;
+    for (const a of I.STYLE_AXIS) {
+      I.state.styleRow = a.label;
+      const html = I.renderStylesModal(p);
+      assert(!/undefined|NaN|\[object/.test(html), `${p.name}/${a.label}: DOM leak`);
+      n++;
+    }
+  }
+  I.state.styleRow = null;
+  console.log(`        ${n} drill renders clean`);
+});
+
+
+// A regression that hid in plain sight: `stylesStore` was declared and never
+// assigned, so archetypeFor returned null for all 428 players and box 5's
+// headline dashed — indistinguishable from a legitimate "not held". The fix is
+// only meaningful if coverage is NON-ZERO, so that is what is asserted.
+check('box 5 shows a real archetype for players who carry one', () => {
+  let resolved = 0, labelled = 0;
+  for (const key of Object.keys(PLAYERS)) {
+    const nm = PLAYERS[key].name;
+    const hasLabel = STYLES.players.some(s => s.name === nm && s.archetype_label);
+    if (hasLabel) labelled++;
+    if (I.archetypeFor(key)) resolved++;
+  }
+  assert(resolved > 0, 'archetypeFor resolved nobody — the store is unwired again');
+  assert(resolved >= labelled * 0.9,
+    `only ${resolved} of ${labelled} labelled players resolve an archetype`);
+  const axis = I.STYLE_AXIS.map(a => a.label);
+  for (const key of Object.keys(PLAYERS)) {
+    const a = I.archetypeFor(key);
+    if (a) assert(axis.indexOf(a) > -1, `archetypeFor returned an off-taxonomy label: ${a}`);
+  }
+  console.log(`        ${resolved} of ${labelled} labelled players resolve, all on-taxonomy`);
+});
+mustFail('the coverage check would catch the store being unwired again', () => {
+  const resolved = 0;
+  assert(resolved > 0, 'archetypeFor resolved nobody — the store is unwired again');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
