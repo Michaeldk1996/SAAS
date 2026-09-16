@@ -261,7 +261,13 @@
     // Blocks that DO want a leading (the provenance notes, the insight bodies)
     // already carry an inline line-height, and an inline declaration outranks any
     // selector — so they are unaffected and only the inherited 1.5 is undone.
-    '{line-height:normal;}</style>';
+    '{line-height:normal;}' +
+    // §5.3 item 7 — the file gives the tournament row a hover fill
+    // (`style-hover="background:rgba(255,255,255,0.02)"`, Player Stat Boxes
+    // .dc.html:489). An inline style cannot express :hover, so it lands here,
+    // scoped to the one class that carries it. The selected row sets its own
+    // inline background, which outranks this.
+    '.pp2-trow:hover{background:rgba(255,255,255,0.02);}</style>';
 
   var SPINE_SURFACES = ['hard', 'clay', 'grass'];
   var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
@@ -1500,7 +1506,11 @@
         (fy ? ' ' + MIDDOT + ' since ' + fy : '');
       // §3: the export's "678 matches · 2016-2026" is placeholder copy; both
       // halves are real counts here or the clause is dropped entirely.
-      case 'tourn': return 'Career win' + ENDASH + 'loss at every event ' + possessive(sn) + ' record carries';
+      // Item 2. Reverted to the design string verbatim (README §5.1). The
+      // previous wording ("every event Zverev's record carries") was a truthful
+      // hedge about coverage, but the export wins — and the same fact is now
+      // stated in the modal's own footnote where it belongs.
+      case 'tourn': return 'Career win' + ENDASH + 'loss at every event he has played';
       case 'season': return 'Where in the calendar his results sit' +
         (ct.n ? ' ' + MIDDOT + ' ' + ct.n + ' matches' : '');
       case 'splits': return 'Record and win rate by surface, level, format, round and opponent';
@@ -2155,92 +2165,644 @@
     }
   }
 
-  // §5.3 Record per tournament.
-  function renderTournModal(p) {
-    var list = (p.tournamentHistory || []).slice().sort(function (a, b) {
-      var an = (a.won || 0) + (a.lost || 0), bn = (b.won || 0) + (b.lost || 0);
-      return bn - an;
-    });
-    var q = String(state.tournQuery || '').toLowerCase();
-    var shown = q ? list.filter(function (t) { return String(t.name || '').toLowerCase().indexOf(q) >= 0; }) : list;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.3 RECORD PER TOURNAMENT — data layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // The modal's spine is `tournamentHistory`: it is the only store that groups
+  // matches by EVENT and by EDITION, and the box headline ("N tournaments on
+  // record") counts its rows. But it is also the thinnest — an edition match
+  // carries only `{res, round, opp, oppKey, score}`. Every other column the
+  // design asks for (date, surface, price, set scores, tier) has to be joined
+  // in from a store that holds it:
+  //
+  //   career-history/{key}.json   775 rows for Zverev, 2013-2026. date, surface,
+  //                               level, tournament, round, result. NO set
+  //                               scores (the pipeline drops fixture.scores when
+  //                               it writes the shard), NO price.
+  //   market-edge/{key}.json      727 rows. date, event, level, surface, venue,
+  //                               opp, price, oppPrice, book, pl. THE price
+  //                               source, and the only one carrying a book.
+  //   recentForm.matches          53 rows, rolling window. The ONLY per-set
+  //                               score source, and the only `retired`/`walkover`
+  //                               flags we hold.
+  //
+  // All three key differently from the edition store, so everything below joins
+  // on ONE derived key — year + opponent surname — and refuses to guess when
+  // that key is not unique. See oppKeyOf() for why a surname needs three name
+  // shapes ("B. Bonzi", "Martinez P.", "Zverev, Alexander").
+  //
+  // ⚠️ Do NOT join these stores on the event NAME. They use three different
+  // event vocabularies: tournamentHistory says "Madrid", market-edge says
+  // "Mutua Madrid Open", career-history says "Madrid". Measured on Zverev: 7 of
+  // 59 market events name-match tournamentHistory. The name join is 12%; the
+  // year+surname join is 99.3%.
+  function oppKeyOf(name) {
+    var s = String(name || '').trim();
+    var c = s.indexOf(',');
+    if (c > 0) s = s.slice(0, c);                              // "Zverev, Alexander"
+    else if (/^[A-Za-z]\.\s+/.test(s)) s = s.replace(/^[A-Za-z]\.\s+/, '');   // "B. Bonzi"
+    else s = s.replace(/(\s+[A-Za-z]\.)+$/, '');               // "Diaz Acosta F."
+    return s.toLowerCase().replace(/[^a-z]/g, '');
+  }
+  function tkey(year, opp) { return String(year) + '|' + oppKeyOf(opp); }
 
-    var head = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;gap:0 14px;">' +
-      ['Tournament', 'Seasons', 'Best result', 'W' + ENDASH + 'L', 'Win%'].map(function (h, i) {
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;' + (i >= 3 ? 'text-align:right;' : '') +
-          '">' + h + '</div>';
+  // The event half of the strong key. career-history and recentForm write the
+  // same events three ways ("Vienna", "ATP Vienna", "ATP Finals - Turin"), so
+  // the prefix and the trailing " - <city>" come off before comparison. This
+  // normalises a LOOKUP only — it never merges two tournamentHistory rows, so
+  // no published W-L can move because of it.
+  function evKeyOf(name) {
+    var s = String(name || '');
+    var i = s.indexOf(' - ');
+    if (i > 0) s = s.slice(0, i);
+    s = s.replace(/^(ATP|WTA|ITF)\s+/i, '');
+    return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+  function ekey(year, event, opp) {
+    return String(year) + '|' + evKeyOf(event) + '|' + oppKeyOf(opp);
+  }
+
+  // ─── why the key is year + EVENT + surname, and not year + surname ─────────
+  //
+  // Measured on Zverev's 740 edition rows: keying on (year, surname) alone
+  // leaves 353 of them — 48% — sharing a key with another row, because a top
+  // player meets the same opponent several times a season at different events.
+  // §3 forbids picking one of an ambiguous pair, so half the rows would dash
+  // their date and price. Adding the event takes the collision down to 2 rows.
+  //
+  // The event is not always spelled the same way in both stores, so the join
+  // falls back to (year, surname) when the event key misses AND that weaker key
+  // is unique on both sides. Zverev 740 rows: 700 on the event key, 11 on the
+  // fallback, 29 unmatched (96.1%). Martinez 203: 198 / 4 / 1 (99.5%).
+  function pairIndex(list, yearOf, eventOf, oppOf) {
+    var byEvent = {}, byYear = {};
+    function put(map, k, row) {
+      if (Object.prototype.hasOwnProperty.call(map, k)) map[k] = null;
+      else map[k] = row;
+    }
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i], y = yearOf(r);
+      put(byEvent, ekey(y, eventOf(r), oppOf(r)), r);
+      put(byYear, tkey(y, oppOf(r)), r);
+    }
+    return { byEvent: byEvent, byYear: byYear };
+  }
+
+  function careerHistoryFor(key) {
+    var store = window.careerHistory || {};
+    return store[String(key)] || null;
+  }
+
+  // Per-player join of all four stores. Memoised on the player key AND on the
+  // identity of the two lazy stores, because both land after first paint and a
+  // cache keyed on the player alone would freeze the pre-fetch (empty) state.
+  function tournJoin(p) {
+    var mk = marketFor(p.key);
+    var ch = careerHistoryFor(p.key);
+    if (tournJoin._k === p.key && tournJoin._mk === mk && tournJoin._ch === ch && tournJoin._v) {
+      return tournJoin._v;
+    }
+    var th = p.tournamentHistory || [];
+
+    // 1 · every edition match, keyed. A key claimed by two different tournaments
+    //     is dropped rather than attributed to one of them.
+    var thOwner = {};
+    th.forEach(function (t) {
+      (t.editions || []).forEach(function (e) {
+        (e.matches || []).forEach(function (m) {
+          var k = tkey(e.year, m.opp);
+          if (!Object.prototype.hasOwnProperty.call(thOwner, k)) thOwner[k] = t.name;
+          else if (thOwner[k] !== t.name) thOwner[k] = null;
+        });
+      });
+    });
+
+    // 2 · market rows -> a tournament. Two passes: the unambiguous key join
+    //     first, then a per-player event-name alias VOTED from what that join
+    //     proved. The alias never crosses players, so a merge that is right for
+    //     one player's history cannot leak into another's.
+    var mrows = (mk && mk.matches) || [];
+    var mCount = {};
+    mrows.forEach(function (r) {
+      var k = tkey(String(r.date || '').slice(0, 4), r.opp);
+      mCount[k] = (mCount[k] || 0) + 1;
+    });
+    var owner = new Array(mrows.length);
+    var votes = {};
+    mrows.forEach(function (r, i) {
+      var k = tkey(String(r.date || '').slice(0, 4), r.opp);
+      if (mCount[k] !== 1) return;                 // ambiguous on the market side
+      var t = thOwner[k];
+      if (!t) return;                              // absent or ambiguous on the th side
+      owner[i] = t;
+      var v = votes[r.event] = votes[r.event] || {};
+      v[t] = (v[t] || 0) + 1;
+    });
+    var alias = {};
+    Object.keys(votes).forEach(function (ev) {
+      var v = votes[ev];
+      alias[ev] = Object.keys(v).sort(function (a, b) { return v[b] - v[a]; })[0];
+    });
+    mrows.forEach(function (r, i) { if (!owner[i] && alias[r.event]) owner[i] = alias[r.event]; });
+
+    // 3 · per-tournament aggregates from the assigned market rows: BACKING
+    //     (Pinnacle closing only, §5 / item 12), plus the tier and surface the
+    //     design's name column and SURFACE column need.
+    var agg = {};
+    function bucket(name) {
+      return agg[name] || (agg[name] = {
+        pinPl: 0, pinN: 0, anyN: 0, surf: {}, level: {}, lastLevelYear: null, lastLevel: null
+      });
+    }
+    mrows.forEach(function (r, i) {
+      var name = owner[i];
+      if (!name) return;
+      var b = bucket(name);
+      b.anyN++;
+      if (r.book === 'pinnacle' && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }
+      if (r.surface) b.surf[r.surface] = (b.surf[r.surface] || 0) + 1;
+      var y = String(r.date || '').slice(0, 4);
+      if (r.level) {
+        b.level[r.level] = (b.level[r.level] || 0) + 1;
+        // A tournament can change tier (Munich ATP 250 -> ATP 500). The design
+        // shows ONE tier, so it is the most recent one, not the most common.
+        if (!b.lastLevelYear || y > b.lastLevelYear) { b.lastLevelYear = y; b.lastLevel = r.level; }
+      }
+    });
+
+    // 4 · per-match enrichment. Each store is indexed on BOTH keys and the
+    //     edition row asks for the strong one first. A row the edition side
+    //     itself cannot key uniquely is never enriched, in either direction.
+    var edRows = [];
+    th.forEach(function (t) {
+      (t.editions || []).forEach(function (e) {
+        (e.matches || []).forEach(function (m) { edRows.push({ y: e.year, t: t.name, o: m.opp }); });
+      });
+    });
+    var edIdx = pairIndex(edRows,
+      function (r) { return r.y; }, function (r) { return r.t; }, function (r) { return r.o; });
+
+    var chIdx = pairIndex((ch || []).filter(function (r) { return r && r.date; }),
+      function (r) { return String(r.date).slice(0, 4); },
+      function (r) { return r.tournament; },
+      function (r) { return r.opponent; });
+    // The market shard's event vocabulary is its own, so its rows are indexed
+    // under the tournamentHistory name step 2 assigned them, not under `event`.
+    var mkTagged = mrows.map(function (r, i) {
+      return { r: r, ev: owner[i] || r.event };
+    });
+    var mkIdx = pairIndex(mkTagged,
+      function (x) { return String(x.r.date || '').slice(0, 4); },
+      function (x) { return x.ev; },
+      function (x) { return x.r.opp; });
+    var rfIdx = pairIndex(ledgerRows(p),
+      function (x) { return String(x.m.date || '').slice(0, 4); },
+      function (x) { return x.m.tournament; },
+      function (x) { return x.m.opponent; });
+
+    // Resolve one edition row against one store: strong key if unique on both
+    // sides, else the weak key if unique on both sides, else nothing.
+    function pick(idx, ke, ky) {
+      if (edIdx.byEvent[ke] && idx.byEvent[ke]) return idx.byEvent[ke];
+      if (edIdx.byYear[ky] && idx.byYear[ky]) return idx.byYear[ky];
+      return null;
+    }
+
+    var enrich = {};
+    var joinStats = { rows: 0, strong: 0, weak: 0, none: 0 };
+    edRows.forEach(function (r) {
+      var ke = ekey(r.y, r.t, r.o), ky = tkey(r.y, r.o);
+      var e = enrich[ke] = enrich[ke] || {};
+      joinStats.rows++;
+      var got = false;
+
+      var c = pick(chIdx, ke, ky);
+      if (c) {
+        e.date = c.date; e.surface = c.surface || null; e.level = c.level || null;
+        e.sheetId = c.date + '|' + (c.opponent || '');
+        got = true;
+      }
+
+      var mx = pick(mkIdx, ke, ky);
+      if (mx) {
+        var mrow = mx.r;
+        if (!e.date) e.date = mrow.date;
+        if (!e.surface) e.surface = mrow.surface || null;
+        e.price = mrow.price != null ? mrow.price : null;
+        e.oppPrice = mrow.oppPrice != null ? mrow.oppPrice : null;
+        e.book = mrow.book || null;
+        e.sheetId = mrow.date + '|' + (mrow.opp || '');
+        got = true;
+      }
+
+      var x = pick(rfIdx, ke, ky);
+      if (x) {
+        var m = x.m;
+        e.date = m.date || e.date;
+        if (m.surface) e.surface = String(m.surface);
+        e.setScores = setScoreText(m, ', ');
+        e.retired = !!m.retired; e.walkover = !!m.walkover;
+        // recentForm is the ledger's own price join and outranks the shard: it
+        // is the one place a price is chosen (correction-pass item 19).
+        if (x.price != null) { e.price = x.price; e.oppPrice = x.oppPrice; e.book = x.book; }
+        e.sheetId = m.date + '|' + (m.opponent || '');
+        got = true;
+      }
+
+      if (!got) joinStats.none++;
+      else if (edIdx.byEvent[ke] && (chIdx.byEvent[ke] || mkIdx.byEvent[ke] || rfIdx.byEvent[ke])) joinStats.strong++;
+      else joinStats.weak++;
+    });
+
+    var out = { agg: agg, enrich: enrich, alias: alias, marketRows: mrows.length,
+                marketAssigned: owner.filter(Boolean).length, joinStats: joinStats,
+                hasMarket: !!mk, hasCareerHistory: !!ch };
+    tournJoin._k = p.key; tournJoin._mk = mk; tournJoin._ch = ch; tournJoin._v = out;
+    return out;
+  }
+
+  // ─── display names (item 10) ───────────────────────────────────────────────
+  // The design writes "Roland Garros", "Cincinnati Masters 1000", "Indian Wells
+  // Masters 1000", "Estoril ATP 250" — a COMMON event name plus its tier, and no
+  // tier on a Slam. Our feed already stores city names, so the map below holds
+  // only the names that genuinely differ; everything else falls through to the
+  // feed name (item 10: "unknown -> feed name, logged").
+  //
+  // ⚠️ It deliberately does NOT merge the feed's fragmented pairs ("Indian Wells"
+  // / "Indian Wells Masters", "Rome" / "Rome Masters"). Those are two rows in the
+  // store with two different W-L records; collapsing them by name would change a
+  // published number on a guess. See the report — they are listed with counts.
+  var EVENT_DISPLAY = { 'French Open': 'Roland Garros' };
+  var EVENT_DISPLAY_UNKNOWN = {};
+  var SLAM_NAMES = { 'Australian Open': 1, 'French Open': 1, 'Roland Garros': 1,
+                     'Wimbledon': 1, 'US Open': 1 };
+  function tournDisplayName(name, level) {
+    var base = EVENT_DISPLAY[name];
+    if (!base) { EVENT_DISPLAY_UNKNOWN[name] = true; base = String(name || ''); }
+    if (!level || level === 'Grand Slam') return base;
+    // "Rome Masters" already carries the tier word; appending "Masters 1000"
+    // would read as a stutter. The bare "Rome" row takes the suffix.
+    if (/\b(Masters|Finals)$/.test(base)) return base;
+    return base + ' ' + level;
+  }
+  function isSlamTourn(name, level) {
+    return level === 'Grand Slam' || !!SLAM_NAMES[name];
+  }
+
+  // §9 win-rate colour in tables: >= 55% accent, otherwise neutral value.
+  function winRateColour(won, lost) {
+    var n = (won || 0) + (lost || 0);
+    var g = gateFor(n);
+    if (g === GATE.NONE || g === GATE.THIN) return DASH_COLOUR;
+    if (g === GATE.SMALL) return '#5b6880';
+    return (100 * won / n) >= 55 ? '#5b9bff' : '#c6ccdb';
+  }
+
+  // One row per edition match, enriched and ordered newest-first. The stored
+  // order is draw order (R128 -> F); the design lists the most recent match
+  // first, so rows sort on ROUND DEPTH, which is chronological within a knockout
+  // draw and does not depend on a date we may not hold.
+  function tournEditionRows(p, t) {
+    var j = tournJoin(p);
+    return (t.editions || []).map(function (e) {
+      var ms = (e.matches || []).map(function (m, i) {
+        var x = j.enrich[ekey(e.year, t.name, m.opp)] || {};
+        var nm = normaliseEdition(m);
+        var code = qualifyingCode(m.round) || roundOfN(m.round) || String(m.round || '');
+        return {
+          year: e.year, res: m.res, won: m.res === 'W', opp: m.opp || null,
+          round: code, rawRound: m.round || null, order: i,
+          depth: CODE_N[code] != null ? CODE_N[code] : 999,
+          sets: nm.oriented ? (nm.subjSets + ' - ' + nm.oppSets) : null,
+          rawSets: nm.raw || null, oriented: nm.oriented,
+          totalSets: nm.oriented ? (nm.subjSets + nm.oppSets) : null,
+          qualifying: !!qualifyingCode(m.round),
+          date: x.date || null, surface: x.surface || null,
+          setScores: x.setScores || null,
+          price: x.price != null ? x.price : null,
+          oppPrice: x.oppPrice != null ? x.oppPrice : null,
+          book: x.book || null, sheetId: x.sheetId || null,
+          retired: !!x.retired, walkover: !!x.walkover
+        };
+      });
+      ms.sort(function (a, b) {
+        if (a.depth !== b.depth) return a.depth - b.depth;    // F first
+        return b.order - a.order;
+      });
+      var w = 0, l = 0;
+      ms.forEach(function (m) { if (m.res === 'W') w++; else if (m.res === 'L') l++; });
+      return { year: e.year, finish: e.finish || null, won: w, lost: l, matches: ms };
+    }).sort(function (a, b) { return Number(b.year) - Number(a.year); });
+  }
+
+  // The per-tournament view every column and tile reads, so the list row and its
+  // open detail cannot disagree.
+  function tournViews(p) {
+    var j = tournJoin(p);
+    return (p.tournamentHistory || []).map(function (t) {
+      var eds = tournEditionRows(p, t);
+      // §4: "Tournament W-L = sum of its listed editions". Recomputed from the
+      // edition rows rather than trusting the stored pair — measured across the
+      // whole roster, all 9,419 tournament rows agree, and this keeps it so.
+      var w = 0, l = 0, n = 0;
+      eds.forEach(function (e) { w += e.won; l += e.lost; n += e.matches.length; });
+      var b = j.agg[t.name] || null;
+      var level = b && b.lastLevel ? b.lastLevel : null;
+      var surf = null, best = 0;
+      if (b) Object.keys(b.surf).forEach(function (s) { if (b.surf[s] > best) { best = b.surf[s]; surf = s; } });
+      // A tournament the market shard never reached still has a surface if any
+      // of its matches carried one through career-history.
+      if (!surf) {
+        var votes = {};
+        eds.forEach(function (e) { e.matches.forEach(function (m) {
+          if (m.surface) votes[m.surface] = (votes[m.surface] || 0) + 1; }); });
+        Object.keys(votes).forEach(function (s) { if (votes[s] > best) { best = votes[s]; surf = s; } });
+      }
+      var bestYears = (t.bestYears || []).slice().sort(function (a, c) { return c - a; });
+      return {
+        name: t.name,
+        display: tournDisplayName(t.name, level),
+        level: level,
+        surface: surf ? surf.charAt(0).toUpperCase() + surf.slice(1).toLowerCase() : null,
+        won: w, lost: l, n: n,
+        storedWon: t.won || 0, storedLost: t.lost || 0,
+        reconciles: w === (t.won || 0) && l === (t.lost || 0),
+        // item 8 — the best result carries the year of its most recent edition.
+        best: t.bestResult ? (bestYears.length ? t.bestResult + ' ' + bestYears[0] : t.bestResult) : null,
+        titles: t.titles || 0,
+        lastYear: eds.length ? eds[0].year : (t.lastYear || null),
+        editions: eds,
+        pinPl: b && b.pinN ? b.pinPl : null,
+        pinN: b ? b.pinN : 0,
+        isSlam: isSlamTourn(t.name, level)
+      };
+    }).sort(function (a, b) { return b.n - a.n; });
+  }
+
+  // Over 3.5 sets (item 15): best-of-5 COMPLETED main-draw matches only.
+  // Retirements and walkovers are excluded where a flag exists, and Slam
+  // qualifying is best-of-3 so it is excluded outright. A match whose stored
+  // score would not orient has no set count and is not counted either way — it
+  // reduces M, it never quietly lands in the "under" bucket.
+  function over35Of(views) {
+    var over = 0, tot = 0, unknown = 0;
+    views.forEach(function (v) {
+      v.editions.forEach(function (e) {
+        e.matches.forEach(function (m) {
+          if (m.qualifying || m.retired || m.walkover) return;
+          if (m.totalSets == null) { unknown++; return; }
+          tot++;
+          if (m.totalSets >= 4) over++;
+        });
+      });
+    });
+    return { over: over, tot: tot, unknown: unknown, pct: tot ? 100 * over / tot : null };
+  }
+
+  // §5.3 Record per tournament — rebuilt to `Player Stat Boxes.dc.html`:475-541
+  // (markup) and :2323-2430 (the row/tile model). Every length, colour and grid
+  // track below is the file's own inline style.
+  function renderTournModal(p) {
+    var views = tournViews(p);
+    var q = String(state.tournQuery || '').toLowerCase();
+    var shown = q
+      ? views.filter(function (t) {
+          return t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0;
+        })
+      : views;
+
+    var GRID = 'display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;gap:0 14px;' +
+      'align-items:center;';
+    var HEAD = [['Tournament', 'left'], ['Surface', 'left'], ['Best result', 'left'],
+                ['W' + ENDASH + 'L', 'right'], ['Win%', 'right'], ['Backing', 'right']];
+    var head = '<div style="' + GRID + 'padding:14px 10px 0;">' +
+      HEAD.map(function (h) {
+        return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
+          'text-transform:uppercase;color:#4b5672;text-align:' + h[1] + ';padding-bottom:9px;">' +
+          esc(h[0]) + '</span>';
       }).join('') + '</div>';
 
     var rows = shown.map(function (t) {
-      var n = (t.won || 0) + (t.lost || 0);
-      // §4: "Tournament W-L = sum of its listed editions". Recomputed here from
-      // the edition rows rather than trusting the stored pair — measured across
-      // the whole roster, all 9,419 tournament rows agree, and this keeps it so.
-      var ew = 0, el = 0;
-      (t.editions || []).forEach(function (e) {
-        (e.matches || []).forEach(function (m) { if (m.res === 'W') ew++; else if (m.res === 'L') el++; });
-      });
-      var reconciles = ew === (t.won || 0) && el === (t.lost || 0);
-      var best = (t.editions || []).map(function (e) { return e.finish; }).filter(Boolean)[0] || DASH;
-      var span = t.firstYear && t.lastYear
-        ? (t.firstYear === t.lastYear ? String(t.firstYear) : t.firstYear + ENDASH + t.lastYear) : DASH;
-      return '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" ' +
-        'style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;gap:0 14px;' +
-        'padding:11px 10px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer;align-items:center;">' +
-        '<div style="font-size:13.5px;font-weight:700;">' + esc(t.name) +
-          (reconciles ? '' : ' <span style="color:' + DASH_COLOUR + ';font-size:10px;">editions incomplete</span>') + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' + span + '</div>' +
-        '<div style="font-size:12px;color:#8b96b5;">' + esc(best) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;text-align:right;">' +
-          recordText(ew, el) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;text-align:right;color:' +
-          (gateFor(n) === GATE.FULL ? '#e8ecf4' : DASH_COLOUR) + ';">' + rateText(ew, el) + '</div>' +
-        '</div>' + (state.tournOpen === t.name ? renderTournDetail(t) : '');
+      var open = state.tournOpen === t.name;
+      var pin = t.pinN ? t.pinPl : null;
+      return '<div style="flex:none;">' +
+        '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
+          'padding:11px 10px;cursor:pointer;border-top:1px solid rgba(255,255,255,0.06);' +
+          'background:' + (open ? 'rgba(91,155,255,0.1)' : 'transparent') + ';">' +
+          '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;' +
+            'text-overflow:ellipsis;">' + esc(t.display) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;' +
+            'white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
+          '<span style="font-size:12px;color:#8b96b5;white-space:nowrap;overflow:hidden;' +
+            'text-overflow:ellipsis;">' + (t.best ? esc(t.best) : DASH) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+            'text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;text-align:right;' +
+            'white-space:nowrap;color:' + winRateColour(t.won, t.lost) + ';">' +
+            rateText0(t.won, t.lost) +
+            (gateFor(t.n) === GATE.SMALL
+              ? ' <span style="font-size:9px;color:' + DASH_COLOUR + ';">small</span>' : '') + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;text-align:right;' +
+            'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+            (pin == null ? DASH : signed(pin, 1, 'u')) + '</span>' +
+        '</div>' +
+        (open ? renderTournDetail(p, t) : '') +
+        '</div>';
     }).join('');
 
+    var j = tournJoin(p);
     return '' +
-      '<div style="font-size:13px;color:#5b6880;margin-bottom:12px;">Search a tournament to see ' +
-        esc(possessive(shortName(p))) + ' full career win' + ENDASH + 'loss record there.</div>' +
-      '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
-        'placeholder="Search a tournament..." style="width:100%;background:#06070a;' +
-        'border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:14px 18px;font-size:14px;' +
-        'color:#e7e9ee;margin-bottom:14px;box-sizing:border-box;">' +
+      '<div style="font-size:13.5px;color:#5b6880;margin-bottom:16px;line-height:1.5;">Search a ' +
+        'tournament to see ' + esc(possessive(shortName(p))) + ' full career win' + ENDASH +
+        'loss record there.</div>' +
+      '<label style="display:flex;align-items:center;gap:12px;background:#06070a;' +
+        'border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:14px 18px;">' +
+        '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
+          '<circle cx="9" cy="9" r="6" stroke="#5b6880" stroke-width="1.7"></circle>' +
+          '<path d="m14 14 3 3" stroke="#5b6880" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
+        '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
+          'placeholder="Search a tournament..." style="flex:1;background:transparent;border:0;' +
+          'outline:none;font-family:inherit;font-size:14px;color:#e7e9ee;min-width:0;"></label>' +
       head +
-      (shown.length ? rows :
-        '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#5b6880;">No tournament matches that search.</div>') +
+      '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;' +
+        'flex-direction:column;">' +
+        (shown.length ? rows :
+          '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:#5b6880;">No tournament matches that search.</div>') +
+      '</div>' +
       '<div style="font-size:11px;color:#5b6880;margin-top:14px;line-height:1.6;">' +
-        'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. ' +
+        'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. Backing is a flat 1u ' +
+        'stake at the Pinnacle closing price, so an event Pinnacle never priced shows a dash rather ' +
+        'than a zero' + (j.hasMarket ? '' : ' (the price shard has not loaded)') + '. ' +
         'This block is the tournament record we hold per event and does not sum to the career ' +
         'total above ' + MIDDOT + ' it carries only events with stored edition detail.</div>';
   }
 
-  function renderTournDetail(t) {
-    var eds = (t.editions || []).slice();
+  function tile(cap, value, sub, colour) {
+    return '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:11px;' +
+      'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;' +
+      'gap:8px;min-width:0;">' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;">' + esc(cap) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:23px;font-weight:700;' +
+        'line-height:1.05;color:' + (colour || '#fff') + ';overflow:hidden;text-overflow:ellipsis;">' +
+        value + '</span>' +
+      '<span style="font-size:10.5px;color:#4b5672;">' + esc(sub == null ? '' : sub) + '</span>' +
+      '</div>';
+  }
+
+  function renderTournDetail(p, t) {
+    var views = tournViews(p);
+    var n = 0;
+    t.editions.forEach(function (e) { n += e.matches.length; });
+
+    // ── the five tiles, from the FILE (:2381-2418) ──────────────────────────
+    // README §5.3 gives a DIFFERENT non-Slam set ("Titles won", "Win rate");
+    // the file's is W-L record / Best result / Sets won / Last played / Backing
+    // him here. README §Fidelity makes the file the authority, so the file wins
+    // and the difference is in the report.
+    var pinTxt = t.pinN ? signed(t.pinPl, 1, 'u') : DASH;
+    var pinColour = !t.pinN ? DASH_COLOUR : t.pinPl >= 0 ? '#3dd68c' : '#e0616f';
+    // The file's fifth-tile sub is "+3.4pt vs market" — a prototype constant
+    // with no formula anywhere in the export. §3 forbids inventing one, so the
+    // sub states the priced count instead (item 12: "partly priced -> keep the
+    // figure and add the priced count in the detail").
+    // Deliberately NOT "N of M priced": the priced count comes from the market
+    // shard and M from the edition list, and the two stores do not agree on how
+    // many matches an event held (Zverev's Australian Open: 46 shard rows, 42
+    // edition rows). Printing them as a fraction would invent a shortfall.
+    var pinSub = t.pinN
+      ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle closing'
+      : 'Pinnacle priced none of these';
+    var backTile = tile('Backing him here', pinTxt, pinSub, pinColour);
+    var wlTile = tile('W' + ENDASH + 'L record', recordText(t.won, t.lost),
+      rateText0(t.won, t.lost) + ' ' + MIDDOT + ' main draw');
+
+    var tiles;
+    if (t.isSlam) {
+      var slams = views.filter(function (v) { return v.isSlam; });
+      var sw = 0, sl = 0;
+      slams.forEach(function (v) { sw += v.won; sl += v.lost; });
+      var here = over35Of([t]);
+      var all = over35Of(slams);
+      var oOver = all.over - here.over, oTot = all.tot - here.tot;
+      var oPct = oTot ? 100 * oOver / oTot : null;
+      var gap = (here.pct != null && oPct != null) ? here.pct - oPct : null;
+      tiles = [
+        wlTile,
+        tile('Grand Slam career', recordText(sw, sl),
+          rateText0(sw, sl) + ' ' + MIDDOT + ' ' + slams.length +
+          (slams.length === 1 ? ' major' : ' majors') + ' on record'),
+        tile('Over 3.5 sets ' + MIDDOT + ' this event',
+          here.pct == null ? DASH : Math.round(here.pct) + '%',
+          here.tot ? here.over + ' of ' + here.tot + ' matches went over'
+                   : 'no completed match with a readable score'),
+        tile('Over 3.5 sets ' + MIDDOT + ' other majors',
+          oPct == null ? DASH : Math.round(oPct) + '%',
+          oTot ? oOver + ' of ' + oTot + ' went over ' + MIDDOT + ' ' +
+                 (gap == null ? DASH : signed(gap, 1, 'pp')) + ' vs this event'
+               : 'no other major on record'),
+        backTile
+      ];
+    } else {
+      // The file reads its "Sets won" off the SETS string ("2 - 1"), so this
+      // does the same: the subject's sets are its first half and the total is
+      // both halves. A row that would not orient contributes to neither.
+      var sW = 0, sT = 0;
+      t.editions.forEach(function (e) { e.matches.forEach(function (m) {
+        if (!m.oriented) return;
+        var parts = String(m.sets).split(' - ');
+        sW += Number(parts[0]); sT += m.totalSets;
+      }); });
+      tiles = [
+        wlTile,
+        tile('Best result', t.best || DASH, 'furthest here'),
+        tile('Sets won', sT ? Math.round(100 * sW / sT) + '%' : DASH,
+          sT ? sW + ' of ' + sT + ' sets listed' : 'no readable set count'),
+        tile('Last played', t.lastYear == null ? DASH : String(t.lastYear),
+          t.editions.length + (t.editions.length === 1 ? ' edition listed' : ' editions listed')),
+        backTile
+      ];
+    }
+
+    // ── the match grid (file :512-536) ──────────────────────────────────────
+    var MGRID = 'display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
+      'minmax(0,1.3fr) 46px 46px;gap:0 10px;align-items:center;';
+    var MHEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
+                 ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
+    var mhead = MHEAD.map(function (h) {
+      return '<span style="position:sticky;top:0;background:#06070a;font-family:\'IBM Plex Mono\',' +
+        'monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;' +
+        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</span>';
+    }).join('');
+
+    var body = t.editions.map(function (e) {
+      var grp = '<span style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
+        'padding:9px 0 5px;border-top:1px solid rgba(255,255,255,0.07);">' +
+        '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
+          esc(t.display + ' ' + e.year) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;' +
+          'white-space:nowrap;">' + esc((e.finish || DASH) + ' ' + MIDDOT + ' ' +
+          recordText(e.won, e.lost)) + '</span></span>';
+      return grp + e.matches.map(function (m) {
+        var wl = m.won ? '#3dd68c' : '#e0616f';
+        // §3: only advertise a click the sheet can actually resolve. The sheet
+        // looks the row up by "date|opponent" in the ledger and then the market
+        // shard, so a row neither store reached has no sheet to open.
+        var hook = m.sheetId ? sheetHook(m.sheetId) : '';
+        var cur = hook ? sheetCursor() : '';
+        var cell = function (style, txt) {
+          return '<span ' + hook + 'style="' + cur + style + '">' + txt + '</span>';
+        };
+        return '' +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;padding:5px 0;',
+               m.date ? esc(fmtDotDate(m.date) + '.') : DASH) +
+          cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
+          cell('font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 0;',
+               esc(m.opp ? surnameFirst(m.opp) : DASH)) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;padding:5px 0;',
+               esc(m.round || DASH)) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + wl +
+               ';padding:5px 0;', m.sets ? esc(m.sets) : (m.rawSets ? esc(m.rawSets) : DASH)) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;white-space:nowrap;' +
+               'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#c6ccdb;text-align:right;' +
+               'padding:5px 0;', oddsText(m.price)) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;text-align:right;' +
+               'padding:5px 0;', oddsText(m.oppPrice));
+      }).join('');
+    }).join('');
+
+    var priced = 0, dated = 0, scored = 0;
+    t.editions.forEach(function (e) { e.matches.forEach(function (m) {
+      if (m.price != null) priced++;
+      if (m.date) dated++;
+      if (m.setScores) scored++;
+    }); });
+
     return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
       'margin:7px 0 9px;padding:13px 15px;">' +
-      eds.map(function (e) {
-        var ms = (e.matches || []).map(function (m) {
-          var nm = normaliseEdition(m);
-          var w = m.res === 'W';
-          return '<div style="display:grid;grid-template-columns:12px 36px minmax(0,1.3fr) 60px;gap:0 12px;' +
-            'align-items:center;padding:5px 0;">' +
-            '<div style="width:7px;height:7px;border-radius:50%;background:' + (w ? '#3dd68c' : '#e0616f') + ';"></div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
-              esc(m.round || DASH) + '</div>' +
-            '<div style="font-size:12.5px;">' + esc(m.opp || DASH) + '</div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;text-align:right;">' +
-              editionScoreText(nm) + '</div>' +
-            '</div>';
-        }).join('');
-        return '<div style="margin-bottom:10px;">' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-            'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;margin-bottom:4px;">' +
-            esc(String(e.year)) + ' ' + MIDDOT + ' ' + esc(e.finish || DASH) + '</div>' + ms + '</div>';
-      }).join('') +
-      '<div style="font-size:10.5px;color:#4b5672;line-height:1.5;">Set scores are shown from ' +
-        'this player&#39;s side. A score the feed left unparseable is printed as stored rather than ' +
-        'turned round on a guess.</div>' +
+      '<div style="display:flex;align-items:center;gap:11px;margin-bottom:9px;">' +
+        '<span style="font-size:13px;font-weight:700;white-space:nowrap;">' + esc(t.display) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;' +
+          'white-space:nowrap;flex:none;">' + esc(recordText(t.won, t.lost) + ' ' + MIDDOT + ' ' +
+          rateText0(t.won, t.lost) + ' ' + MIDDOT + ' showing ' + n + ' matches') + '</span>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:4px 0 12px;">' +
+        tiles.join('') + '</div>' +
+      '<div style="max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto;">' +
+        '<div style="' + MGRID + '">' + mhead + body + '</div>' +
+      '</div>' +
+      '<div style="font-size:10.5px;color:#4b5672;line-height:1.5;margin-top:10px;">' +
+        'Sets are oriented from ' + esc(shortName(p)) + '&#39;s side off the result, not the feed&#39;s ' +
+        'listing order. Dates reach ' + dated + ' of ' + n + ' rows and prices ' + priced + ' of ' + n +
+        '; set scores reach ' + scored + ' of ' + n + ' because the career shard stores a match result ' +
+        'but not its per-set scores.' +
+        (t.reconciles ? '' : ' The stored record for this event reads ' +
+          recordText(t.storedWon, t.storedLost) + ' against ' + recordText(t.won, t.lost) +
+          ' in the editions listed.') +
+      '</div>' +
       '</div>';
   }
 
@@ -3475,6 +4037,26 @@
         fromShard: true
       };
     }
+    // §5.3 item 21 · third source. The tournament modal dates 97% of its rows
+    // but only 81% of them reach a ledger or market row, so without this a row
+    // would carry a pointer cursor and open nothing. career-history is dated and
+    // subject-relative; it carries no per-set score and no price, and the sheet
+    // already renders both of those as dashes with a stated reason.
+    var chRows = careerHistoryFor(p.key) || [];
+    for (i = 0; i < chRows.length; i++) {
+      var c = chRows[i];
+      if (!c || !c.date) continue;
+      if (c.date + '|' + (c.opponent || '') !== id) continue;
+      return {
+        m: {
+          date: c.date, opponent: c.opponent || null, tournament: c.tournament || null,
+          round: c.round || null, surface: c.surface || null, won: !!c.won,
+          sets: [], result: c.result || null, eventKey: c.eventKey || null
+        },
+        price: null, oppPrice: null, role: null, book: null, basis: null,
+        fromCareerHistory: true
+      };
+    }
     return null;
   }
 
@@ -4173,6 +4755,17 @@
       CAREER_ROWS: CAREER_ROWS,
       ENDASH: ENDASH,
       renderTournModal: renderTournModal,
+      // §5.3 rebuild — the harness asserts on the real join and the real view
+      // model, not on a re-derivation of them.
+      renderTournDetail: renderTournDetail,
+      tournJoin: tournJoin,
+      tournViews: tournViews,
+      tournDisplayName: tournDisplayName,
+      over35Of: over35Of,
+      winRateColour: winRateColour,
+      oppKeyOf: oppKeyOf,
+      EVENT_DISPLAY: EVENT_DISPLAY,
+      EVENT_DISPLAY_UNKNOWN: EVENT_DISPLAY_UNKNOWN,
       renderSplitsModal: renderSplitsModal,
       renderMarketModal: renderMarketModal,
       // §5.5 Court speed

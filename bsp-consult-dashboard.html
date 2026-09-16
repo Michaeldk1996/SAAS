@@ -16870,6 +16870,11 @@ function pp2Bridge(){
   // rather than to a broken column.
   window.bet365History = window.bet365History || {};
   if (!('matchStats' in window)) window.matchStats = null;
+  // §5.3 Record per tournament: the edition store carries no date, no surface
+  // and no price, so the modal joins career-history/{key}.json for the date and
+  // surface columns. Same lazy-with-repaint posture as the market shard — an
+  // absent fetch dashes those two columns and the footnote says so.
+  window.careerHistory = window.careerHistory || {};
 }
 // ── item 11 · bet365 capture months ────────────────────────────────────────
 // The odds archive stops at 2026-07-26, which is why every post-cutoff ledger row
@@ -16946,6 +16951,21 @@ async function loadPp2MarketShard(key){
     window.PlayerProfileV2.repaint();
   }
 }
+// §5.3 item 18 · the date column. career-history/{key}.json is the only store
+// that dates a match older than the rolling recentForm window — 775 rows back to
+// 2013 for Zverev against recentForm's 53. It is already fetched by the legacy
+// renderer's career drill (loadCareerHistory above); this reuses that loader and
+// its cache rather than opening a second one, and only publishes the result onto
+// the bridge the module reads.
+async function loadPp2CareerHistory(key){
+  const k = String(key);
+  try {
+    const rows = await loadCareerHistory(k);
+    window.careerHistory = window.careerHistory || {};
+    window.careerHistory[k] = rows || [];
+  } catch (e) { /* additive; the date/surface columns dash and the note says why */ }
+  pp2RepaintIfOpen(k);
+}
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
@@ -16958,6 +16978,7 @@ function showPlayerProfileV2(key){
   if (!window.PlayerProfileV2.mount(view, key)) return false;
   loadPp2MarketShard(key);
   loadPp2Bet365(key);
+  loadPp2CareerHistory(key);
   window.scrollTo(0, 0);
   return true;
 }

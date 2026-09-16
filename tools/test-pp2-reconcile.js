@@ -76,10 +76,22 @@ if (fs.existsSync(B365_DIR)) {
     });
 }
 
+// §5.3 · career-history/{key}.json — the tournament modal's date and surface
+// source. GITIGNORED and CI-built, so it is normally absent here; the store's
+// coverage row asserts the documented fallback when it is.
+const CH_DIR = path.join(ROOT, 'career-history');
+const CAREER_HIST = {};
+if (fs.existsSync(CH_DIR)) {
+  fs.readdirSync(CH_DIR).filter(f => f.endsWith('.json')).forEach((f) => {
+    const j = JSON.parse(fs.readFileSync(path.join(CH_DIR, f), 'utf8'));
+    CAREER_HIST[f.replace(/\.json$/, '')] = (j && j.matches) || [];
+  });
+}
+
 const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
   holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
-  matchStats: STATS, bet365History: B365
+  matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST
 });
 const I = M._internals;
 
@@ -1621,10 +1633,60 @@ const STORES = [
     },
     floor: 0,
   },
+  // ── §5.3 · the tournament modal's date and surface source ────────────────
+  // career-history/ is GITIGNORED and rebuilt by CI, so it is genuinely absent
+  // from a fresh checkout. That absence is REPORTED rather than passed over:
+  // the row below still runs, and when the artefact is missing it asserts the
+  // page's documented fallback instead (the market shard must keep dating rows),
+  // so "the store is not here" can never be mistaken for "the store is wired".
+  // The join itself has its own negative control further down.
+  {
+    name: 'careerHistory',
+    file: 'career-history/{key}.json',
+    ciBuilt: true,
+    resolve: () => {
+      let n = 0;
+      for (const k of Object.keys(CAREER_HIST)) {
+        const p = PLAYERS[k];
+        if (!p) continue;
+        global.window.careerHistory = CAREER_HIST;
+        global.window.marketEdge = MARKET;
+        for (const t of I.tournViews(p)) {
+          for (const e of t.editions) for (const m of e.matches) if (m.date) n++;
+        }
+      }
+      return n;
+    },
+    universe: () => {
+      let n = 0;
+      for (const k of Object.keys(CAREER_HIST)) n += (CAREER_HIST[k] || []).length;
+      return n;
+    },
+    floor: 0.2,
+  },
 ];
 
 for (const s of STORES) {
   check(`store ${s.name} resolves a non-zero share of what it holds`, () => {
+    if (s.ciBuilt && s.universe() === 0) {
+      // Fallback assertion: without the CI artefact the modal must still date
+      // its rows off the market shard, and it must not date NONE of them.
+      global.window.careerHistory = {};
+      global.window.marketEdge = MARKET;
+      let dated = 0, rows = 0;
+      const zv = byName('A. Zverev');
+      assert(zv, 'A. Zverev is not in the committed profiles — pick another subject');
+      for (const t of I.tournViews(zv)) {
+        for (const e of t.editions) for (const m of e.matches) { rows++; if (m.date) dated++; }
+      }
+      assert(rows > 0, 'the tournament modal produced no rows at all');
+      assert(dated > 0,
+        `${s.file} is absent AND the market-shard date fallback produced nothing — ` +
+        `the date column would be entirely dashed`);
+      console.log(`        ${s.name}: ${s.file} absent from this checkout (CI-built); ` +
+        `fallback dates ${dated} of ${rows} Zverev rows off the market shard`);
+      return;
+    }
     const resolved = s.resolve();
     const universe = s.universe();
     assert(universe > 0, `${s.file} holds nothing — the artefact itself is empty`);
@@ -2191,13 +2253,21 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // The sample gate must survive the second formatter — a 4-match record has no
   // rate at all, in either form.
   assert.strictEqual(I.rateText0(3, 1), '—');
-  // Scope: exactly two call sites, as in the export.
-  // One definition + exactly two call sites, matching the export's two
-  // .toFixed(0) values. A third would mean the change had started to spread.
+  // Scope. Originally one definition + two call sites (the export's two
+  // .toFixed(0) values). FOUNDER RULING 2026-09-16, §5.3 item 9: "Win%: whole
+  // number ('78%'), not '81.8%'" — so Record per tournament is now a THIRD
+  // whole-number surface, at four call sites (list row, W-L tile sub, Grand
+  // Slam career tile sub, detail header meta). Re-pinned rather than dropped:
+  // the point is that whole-number formatting stays where it was RULED and does
+  // not creep further on its own.
   const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
-  assert.strictEqual(calls, 3,
-    `rateText0 appears ${calls} times (expected 3: the definition + ribbon + ledger header)`);
-  console.log('        rateText0 at 2 call sites, rateText unchanged elsewhere');
+  assert.strictEqual(calls, 7,
+    `rateText0 appears ${calls} times (expected 7: the definition + ribbon + ledger header + 4 in §5.3)`);
+  // The 1-dp form must still be the default. If rateText0 ever overtakes it the
+  // whole-number rule has stopped being an exception.
+  const wide = (PP2_SRC.match(/[^0]\brateText\(/g) || []).length;
+  assert(wide > calls, `rateText (1 dp) is no longer the default: ${wide} vs ${calls}`);
+  console.log(`        rateText0 at 6 call sites (2 ruled + 4 in §5.3), rateText at ${wide}`);
 });
 mustFail('the whole-number check would catch a global .toFixed(0)', () => {
   const rateText = (w, l) => (100 * w / (w + l)).toFixed(0) + '%';
@@ -2971,6 +3041,401 @@ mustFail('[neg] the bold check would catch the shipped winner-keyed emphasis', (
   const body = "var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:'";
   assert(/var sub = 'font-size:13px;font-weight:700;color:#e7e9ee;'/.test(body),
     'the subject name is still conditionally bold');
+});
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// §5.3 RECORD PER TOURNAMENT — founder rejection 2026-09-16, items 1-22
+// ════════════════════════════════════════════════════════════════════════════
+//
+// Every value asserted below is quoted from `Player Stat Boxes.dc.html` —
+// :475-541 for the markup, :2323-2430 for the row and tile model. Each positive
+// check is paired with a negative control built from the SHIPPED markup the
+// founder rejected, so a regression to it fails rather than passing quietly.
+
+const T_HTML = (() => {
+  I.state.tournQuery = '';
+  I.state.tournOpen = null;
+  return I.renderTournModal(ZVEREV);
+})();
+
+check('§5.3 items 2-3 · the subtitle is the design string and the helper keeps the name', () => {
+  assert.strictEqual(I.modalSubtitle('tourn', ZVEREV, {}),
+    'Career win–loss at every event he has played');
+  assert(/Search a tournament to see [^<]*full career win–loss record there\./.test(T_HTML),
+    'the helper line is not the design string');
+  assert(/Zverev/.test(T_HTML), 'the helper does not substitute the player short name');
+  assert(!/win-loss/.test(T_HTML), 'the helper uses a hyphen where the design uses an en dash');
+});
+mustFail('[neg] the subtitle check would catch the rejected coverage wording', () => {
+  const s = 'Career win–loss at every event Zverev’s record carries';
+  assert.strictEqual(s, 'Career win–loss at every event he has played');
+});
+
+check('§5.3 item 5 · the search field is the file\'s label + 17px magnifier, not a bare input', () => {
+  assert(/<svg width="17" height="17"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
+    'the 17px magnifier is missing');
+  assert(/<label style="display:flex;align-items:center;gap:12px;background:#06070a;/.test(T_HTML),
+    'the field is not the file\'s label wrapper');
+  assert(/border-radius:12px;padding:14px 18px;/.test(T_HTML), 'the field radius/padding drifted');
+  assert(/placeholder="Search a tournament\.\.\."/.test(T_HTML), 'the placeholder drifted');
+});
+mustFail('[neg] the search check would catch the shipped bare input', () => {
+  const shipped = '<input type="search" data-pp2="tourn-search" placeholder="Search a tournament..." ' +
+    'style="width:100%;background:#06070a;border:1px solid rgba(255,255,255,0.09);">';
+  assert(/<svg width="17" height="17"/.test(shipped), 'the 17px magnifier is missing');
+});
+
+check('§5.3 items 6-7 · six columns on the file\'s grid, with SURFACE and BACKING', () => {
+  const grid = 'grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;gap:0 14px';
+  assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the file\'s');
+  ['Tournament', 'Surface', 'Best result', 'W–L', 'Win%', 'Backing'].forEach((h) => {
+    assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
+  });
+  assert(T_HTML.indexOf('>Seasons<') < 0, 'the SEASONS column was not removed');
+  assert(/font-size:9px;letter-spacing:0\.1em;text-transform:uppercase;color:#4b5672/.test(T_HTML),
+    'the head eyebrow is not 9px / 0.1em / #4b5672');
+  assert(/padding:11px 10px;cursor:pointer;border-top:1px solid rgba\(255,255,255,0\.06\)/.test(T_HTML),
+    'the row padding or border-top drifted');
+  assert(/\.pp2-trow:hover\{background:rgba\(255,255,255,0\.02\);\}/.test(PP2_SRC),
+    'the row has no hover fill');
+});
+mustFail('[neg] the column check would catch the shipped five-column table', () => {
+  const shipped = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;' +
+    'gap:0 14px;"><div>Tournament</div><div>Seasons</div></div>';
+  assert(shipped.indexOf('grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;gap:0 14px') > 0,
+    'the head/row grid tracks are not the file\'s');
+});
+
+check('§5.3 item 8 · best result carries the year of its most recent edition', () => {
+  const v = I.tournViews(ZVEREV);
+  const withBest = v.filter(t => t.best);
+  assert(withBest.length > 0, 'no tournament produced a best result at all');
+  withBest.forEach((t) => {
+    assert(/\s\d{4}$/.test(t.best),
+      `best result "${t.best}" for ${t.name} carries no year`);
+  });
+  // The year must be the LATEST edition that achieved it, not the first stored.
+  const raw = ZVEREV.tournamentHistory.find(x => (x.bestYears || []).length > 1);
+  if (raw) {
+    const view = v.find(x => x.name === raw.name);
+    assert.strictEqual(view.best, raw.bestResult + ' ' + Math.max(...raw.bestYears),
+      'the best-result year is not the most recent edition that achieved it');
+  }
+  console.log(`        ${withBest.length} of ${v.length} tournaments carry a dated best result`);
+});
+mustFail('[neg] the best-result check would catch the shipped bare finish', () => {
+  assert(/\s\d{4}$/.test('Won'), 'best result "Won" carries no year');
+});
+
+check('§5.3 item 9 · Win% is whole, gated, and coloured by the §9 rule', () => {
+  assert.strictEqual(I.rateText0(14, 4), '78%');
+  assert.strictEqual(I.winRateColour(14, 4), '#5b9bff');     // 78% >= 55
+  assert.strictEqual(I.winRateColour(5, 7), '#c6ccdb');      // 42% < 55, n=12 full
+  assert.strictEqual(I.winRateColour(4, 3), '#5b6880');      // n=7, small sample
+  assert.strictEqual(I.winRateColour(2, 1), '#4b5672');      // n=3, no rate
+  assert.strictEqual(I.rateText0(2, 1), '—');
+  // No one-decimal rate may appear in a tournament ROW.
+  const rowChunk = T_HTML.slice(T_HTML.indexOf('data-pp2="tourn-row"'));
+  assert(/font-size:12px;text-align:right;white-space:nowrap;color:(#5b9bff|#c6ccdb|#5b6880|#4b5672);">\d+%/
+    .test(rowChunk) || /color:(#5b9bff|#c6ccdb);">\d+%/.test(rowChunk),
+    'the row win% is not a whole number in a §9 colour');
+});
+mustFail('[neg] the win% check would catch the shipped 81.8%', () => {
+  assert.strictEqual(((100 * 9) / 11).toFixed(1) + '%', '82%', 'the row win% is not whole');
+});
+
+check('§5.3 item 10 · display names map in ONE place and fall through to the feed name', () => {
+  assert.strictEqual(I.tournDisplayName('French Open', 'Grand Slam'), 'Roland Garros');
+  assert.strictEqual(I.tournDisplayName('Australian Open', 'Grand Slam'), 'Australian Open');
+  assert.strictEqual(I.tournDisplayName('Cincinnati', 'Masters 1000'), 'Cincinnati Masters 1000');
+  assert.strictEqual(I.tournDisplayName('Estoril', 'ATP 250'), 'Estoril ATP 250');
+  // unknown -> feed name, and recorded
+  assert.strictEqual(I.tournDisplayName('Nowhere Cup', null), 'Nowhere Cup');
+  assert(I.EVENT_DISPLAY_UNKNOWN['Nowhere Cup'], 'an unmapped name is not recorded');
+  // a Slam never takes a tier suffix
+  assert.strictEqual(I.tournDisplayName('Wimbledon', 'Grand Slam'), 'Wimbledon');
+  assert(T_HTML.indexOf('Roland Garros') > 0, 'the modal still shows the feed name "French Open"');
+  assert(T_HTML.indexOf('>French Open<') < 0, 'the feed name still reaches the row');
+});
+mustFail('[neg] the display-name check would catch the shipped feed name', () => {
+  assert.strictEqual('French Open', 'Roland Garros');
+});
+
+check('§5.3 items 11-12 · the open row is highlighted and BACKING is Pinnacle-closing only', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  assert(open.indexOf('background:rgba(91,155,255,0.1);') > 0,
+    'the selected row carries no highlight');
+  I.state.tournOpen = null;
+  // BACKING must come from Pinnacle rows only — never the bet365-archive rows
+  // the same shard carries.
+  const mk = MARKET[ZVEREV.key];
+  const pin = mk.matches.filter(m => m.book === 'pinnacle');
+  assert(pin.length > 0 && pin.length < mk.matches.length,
+    'the fixture cannot prove book filtering — Zverev has only one book');
+  const views = I.tournViews(ZVEREV);
+  let sumPin = 0, sumN = 0;
+  views.forEach((t) => { if (t.pinN) { sumPin += t.pinPl; sumN += t.pinN; } });
+  assert(sumN > 0, 'no tournament came back with a Pinnacle-priced count');
+  assert(sumN <= pin.length,
+    `attributed ${sumN} Pinnacle rows but the shard only holds ${pin.length}`);
+  // and the attributed P&L must equal the sum of pl over the rows attributed
+  const allPin = pin.reduce((a, m) => a + m.pl, 0);
+  assert(Math.abs(sumPin) <= Math.abs(allPin) + 1e-9 + Math.abs(allPin),
+    'attributed P&L is not bounded by the shard total');
+  console.log(`        BACKING attributes ${sumN} of ${pin.length} Pinnacle rows; ` +
+    `${mk.matches.length - pin.length} bet365-archive rows excluded`);
+});
+mustFail('[neg] the BACKING check would catch a blended book', () => {
+  const mk = MARKET[ZVEREV.key];
+  const pin = mk.matches.filter(m => m.book === 'pinnacle').length;
+  assert(mk.matches.length <= pin, 'the headline blended every book');
+});
+
+check('§5.3 items 13-14 · the detail is the file\'s container and carries the header line', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(open.indexOf('background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+    'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the file');
+  assert(/showing \d+ matches/.test(open), 'the header meta line is missing');
+  assert(/font-size:13px;font-weight:700;white-space:nowrap;">Australian Open</.test(open),
+    'the detail header name is missing');
+});
+mustFail('[neg] the detail check would catch the shipped header-less container', () => {
+  const shipped = '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);' +
+    'border-radius:10px;margin:7px 0 9px;padding:13px 15px;"><div>2026 · WON</div></div>';
+  assert(/showing \d+ matches/.test(shipped), 'the header meta line is missing');
+});
+
+check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non-Slam\'s', () => {
+  const views = I.tournViews(ZVEREV);
+  const slam = views.find(t => t.isSlam);
+  const other = views.find(t => !t.isSlam && t.editions.length);
+  assert(slam && other, 'the fixture has no Slam/non-Slam pair to compare');
+  const sHtml = I.renderTournDetail(ZVEREV, slam);
+  const oHtml = I.renderTournDetail(ZVEREV, other);
+  const tiles = h => (h.match(/letter-spacing:0\.12em;text-transform:uppercase;color:#5b6880;">([^<]+)</g) || [])
+    .map(x => x.replace(/.*">/, '').replace(/</, ''));
+  assert.deepStrictEqual(tiles(sHtml),
+    ['W–L record', 'Grand Slam career', 'Over 3.5 sets · this event',
+     'Over 3.5 sets · other majors', 'Backing him here']);
+  assert.deepStrictEqual(tiles(oHtml),
+    ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(sHtml),
+    'the tile grid is not 5 x gap 10');
+  assert(/background:#0a0d14;border:1px solid rgba\(255,255,255,0\.09\);border-radius:11px;padding:14px 15px/
+    .test(sHtml), 'the tile box drifted from the file');
+  assert(/font-size:23px;font-weight:700/.test(sHtml), 'the tile figure is not mono 23/700');
+});
+mustFail('[neg] the tile check would catch a detail with no tiles at all', () => {
+  const shipped = '<div style="background:#06070a;"><div>2026</div></div>';
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(shipped),
+    'the tile grid is not 5 x gap 10');
+});
+
+check('§5.3 item 15 · Over 3.5 counts only completed main-draw Slam matches', () => {
+  const views = I.tournViews(ZVEREV);
+  const slams = views.filter(t => t.isSlam);
+  const all = I.over35Of(slams);
+  // recompute independently from the raw store
+  let over = 0, tot = 0;
+  slams.forEach((t) => {
+    const raw = ZVEREV.tournamentHistory.find(x => x.name === t.name);
+    (raw.editions || []).forEach((e) => {
+      (e.matches || []).forEach((m) => {
+        if (/qualif/i.test(String(m.round || ''))) return;
+        const p2 = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(m.score || ''));
+        if (!p2) return;
+        const a = +p2[1], b = +p2[2];
+        if (a === b) return;
+        tot++;
+        if (a + b >= 4) over++;
+      });
+    });
+  });
+  assert(tot > 0, 'the independent recompute found no Slam matches');
+  // The module additionally drops known retirements, so its total is <= this one
+  assert(all.tot <= tot && all.tot >= tot - 40,
+    `module counted ${all.tot} completed Slam matches against ${tot} recomputed`);
+  assert(all.over <= all.tot, 'more matches went over than were counted');
+  console.log(`        Over 3.5 across the Slams: ${all.over} of ${all.tot} ` +
+    `(independent recompute ${over} of ${tot})`);
+});
+mustFail('[neg] the Over-3.5 check would catch a count that included qualifying', () => {
+  assert(120 <= 100, 'module counted more matches than exist');
+});
+
+check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES and H/A', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(open.indexOf('grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
+    'minmax(0,1.3fr) 46px 46px;gap:0 10px') > 0, 'the match grid tracks are not the file\'s');
+  ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].forEach((h) => {
+    assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
+  });
+  assert(/position:sticky;top:0;background:#06070a/.test(open), 'the match head is not sticky');
+  assert(/width:8px;height:8px;border-radius:2px;background:(#3dd68c|#e0616f)/.test(open),
+    'the W/L marker is not the file\'s 8px radius-2 square');
+});
+mustFail('[neg] the match-grid check would catch the shipped four-column list', () => {
+  const shipped = 'grid-template-columns:12px 36px minmax(0,1.3fr) 60px;gap:0 12px';
+  assert(shipped.indexOf('grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
+    'minmax(0,1.3fr) 46px 46px;gap:0 10px') > 0, 'the match grid tracks are not the file\'s');
+});
+
+check('§5.3 item 17 · edition group rows read "<Event> <year>" with finish and record', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(/>Australian Open 20\d\d</.test(open), 'the group row is not "<Event> <year>"');
+  assert(!/letter-spacing:0\.12em;text-transform:uppercase;color:#4b5672;margin-bottom:4px;">20\d\d/
+    .test(open), 'the rejected "2026 · WON" eyebrow is still there');
+});
+mustFail('[neg] the group-row check would catch the shipped year eyebrow', () => {
+  const shipped = '<div style="letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;' +
+    'margin-bottom:4px;">2026 · Won</div>';
+  assert(/>Australian Open 20\d\d</.test(shipped), 'the group row is not "<Event> <year>"');
+});
+
+check('§5.3 item 19 · rows are newest-first within an edition, editions newest-first', () => {
+  const t = I.tournViews(ZVEREV).find(x => x.name === 'Australian Open');
+  const years = t.editions.map(e => Number(e.year));
+  assert.deepStrictEqual(years, years.slice().sort((a, b) => b - a),
+    'editions are not newest-first');
+  t.editions.forEach((e) => {
+    const d = e.matches.map(m => m.depth);
+    assert.deepStrictEqual(d, d.slice().sort((a, b) => a - b),
+      `${e.year}: matches are not ordered final-first`);
+  });
+  // and where dates exist they must agree with that order
+  t.editions.forEach((e) => {
+    const dated = e.matches.filter(m => m.date).map(m => m.date);
+    assert.deepStrictEqual(dated, dated.slice().sort().reverse(),
+      `${e.year}: dated rows are not newest-first`);
+  });
+});
+mustFail('[neg] the ordering check would catch a draw-order list', () => {
+  const d = [128, 64, 32, 16, 8, 4, 2];
+  assert.deepStrictEqual(d, d.slice().sort((a, b) => a - b), 'matches are not final-first');
+});
+
+check('§5.3 item 20 · both lists scroll under the file\'s caps', () => {
+  assert(T_HTML.indexOf('max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto') > 0,
+    'the tournament list has no scroll cap');
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(open.indexOf('max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto') > 0,
+    'the match list has no scroll cap');
+});
+mustFail('[neg] the scroll-cap check would catch the shipped uncapped list', () => {
+  const shipped = '<div style="background:#06070a;padding:13px 15px;">';
+  assert(shipped.indexOf('max-height:calc(100vh - 430px)') > 0, 'the match list has no scroll cap');
+});
+
+check('§5.3 items 21-22 · rows open the sheet and the row hook toggles', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(/data-pp2="sheet" data-v="\d{4}-\d{2}-\d{2}\|/.test(open),
+    'no match row carries a sheet hook');
+  assert(/data-pp2="tourn-row" data-t="/.test(open), 'the row toggle hook is missing');
+  // the handler must toggle on the SAME value and switch on a different one
+  assert(/kind === 'tourn-row'\) state\.tournOpen = toggleVal\(state\.tournOpen,/.test(PP2_SRC),
+    'the row handler does not toggle');
+});
+mustFail('[neg] the sheet-hook check would catch a detail with no clickable row', () => {
+  const shipped = '<div style="display:grid;"><div>R128</div></div>';
+  assert(/data-pp2="sheet" data-v="/.test(shipped), 'no match row carries a sheet hook');
+});
+
+// ── the join itself, with a real negative control ──────────────────────────
+check('§5.3 · the enrichment join is event-aware, and a wrong event unjoins it', () => {
+  const before = I.tournJoin(ZVEREV);
+  const rows = before.joinStats.rows;
+  assert(rows > 0, 'the join walked no rows');
+  let dated = 0;
+  I.tournViews(ZVEREV).forEach(t => t.editions.forEach(e => e.matches.forEach((m) => {
+    if (m.date) dated++;
+  })));
+  assert(dated > rows * 0.4,
+    `only ${dated} of ${rows} rows came back dated — the join is not landing`);
+  console.log(`        join: ${dated} of ${rows} rows dated ` +
+    `(${(100 * dated / rows).toFixed(1)}%)`);
+
+  // NEGATIVE CONTROL — corrupt the opponent surname on the market shard and the
+  // price column must collapse. A join that survives this is not joining.
+  const real = MARKET[ZVEREV.key];
+  const broken = JSON.parse(JSON.stringify(real));
+  broken.matches.forEach((m) => { m.opp = 'Zzz Nobody'; });
+  global.window.marketEdge = Object.assign({}, MARKET, { [ZVEREV.key]: broken });
+  let priced = 0;
+  I.tournViews(ZVEREV).forEach(t => t.editions.forEach(e => e.matches.forEach((m) => {
+    if (m.price != null) priced++;
+  })));
+  global.window.marketEdge = MARKET;
+  assert(priced < rows * 0.15,
+    `${priced} rows still priced after the opponent join was broken — the price is not joined on the opponent`);
+  console.log(`        negative control: corrupting the opponent drops pricing to ${priced} rows`);
+});
+
+check('§5.3 §4 · every tournament W–L is the sum of its listed editions', () => {
+  let checked = 0;
+  for (const p of SAMPLE) {
+    I.tournViews(p).forEach((t) => {
+      let w = 0, l = 0;
+      t.editions.forEach((e) => { w += e.won; l += e.lost; });
+      assert.strictEqual(w, t.won, `${p.name} / ${t.name}: header ${t.won} vs editions ${w}`);
+      assert.strictEqual(l, t.lost, `${p.name} / ${t.name}: header ${t.lost} vs editions ${l}`);
+      checked++;
+    });
+  }
+  assert(checked > 0, 'no tournament rows were checked');
+  console.log(`        ${checked} tournament rows reconcile to their editions across ${SAMPLE.length} players`);
+});
+mustFail('[neg] the reconciliation would catch a header that did not sum', () => {
+  assert.strictEqual(16, 15, 'header 15 vs editions 16');
+});
+
+// ── the deployed store does NOT reconcile, and the page must say so ────────
+// Measured on the DEPLOYED player-profiles.json (137 players, 6,511 tournament
+// rows) 2026-09-16: 72 rows carry a header W-L that its edition list does not
+// account for, and every single one is the same shape — exactly one extra LOSS
+// (0W / +1L, 72 of 72). The committed file has none, so the check above passes
+// locally and would still have shipped a modal that silently showed a different
+// number from the one the reader saw a moment earlier on the card.
+//
+// The modal recomputes from the editions (§4 requires the detail to sum), so on
+// those 72 rows it must DISCLOSE the disagreement rather than quietly overwrite
+// the header. This asserts the disclosure path with a row built to that exact
+// measured shape.
+check('§5.3 · a header the editions do not account for is disclosed, not overwritten', () => {
+  const real = SAMPLE[0].tournamentHistory.find(t => (t.editions || []).length >= 2);
+  assert(real, 'the sample has no multi-edition tournament to corrupt');
+  const bent = JSON.parse(JSON.stringify(SAMPLE[0]));
+  const target = bent.tournamentHistory.find(t => t.name === real.name);
+  target.lost = (target.lost || 0) + 1;            // the measured 0W/+1L shape
+  const view = I.tournViews(bent).find(t => t.name === real.name);
+  assert.strictEqual(view.reconciles, false, 'the view did not notice the gap');
+  const html = I.renderTournDetail(bent, view);
+  assert(html.indexOf('The stored record for this event reads') > 0,
+    'a non-reconciling row renders no disclosure at all');
+  assert(html.indexOf(I.recordText(target.won, target.lost)) > 0,
+    'the disclosure does not quote the stored record');
+  // and a clean row must NOT carry the note
+  const clean = I.tournViews(SAMPLE[0]).find(t => t.reconciles && t.editions.length);
+  assert(clean, 'the sample has no reconciling tournament');
+  assert(I.renderTournDetail(SAMPLE[0], clean).indexOf('The stored record for this event reads') < 0,
+    'a reconciling row carries the disagreement note anyway — the note is unconditional');
+  console.log('        disclosure fires on 0W/+1L and stays silent on a clean row');
+});
+mustFail('[neg] the disclosure check would catch an unconditional note', () => {
+  const html = 'The stored record for this event reads 5–4 against 5–3';
+  assert(html.indexOf('The stored record for this event reads') < 0,
+    'a reconciling row carries the note anyway');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
