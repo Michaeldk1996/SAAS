@@ -25599,14 +25599,20 @@ function renderVals(){
   // MATCH / SET n scope (§4) reads the feed's own stat_period — the export's
   // "scale countable figures to ~55%" device is gone; set figures are real.
   const curSetPer='set'+nSets;
-  const per=S.scope==='MATCH'?'match':curSetPer;
+  // Resolved further down, once we know which scopes the feed has rows for. It
+  // starts at 'match' so that a row builder called before the scope is settled
+  // reads a real period rather than throwing.
+  let per='match';
 
   // api-tennis nulls stat_won/stat_total on some rows (break points at premier
   // events) and carries the pair only in stat_value as "X/Y". Number(null) is 0,
   // so reading the counts blindly turns a MISSING row into a zero — parse the
   // fraction out of stat_value instead, and keep null as null.
-  function cell(pkey,name){
-    const r=lf?lf.stat(idx,pkey,per,name):null;
+  // `p` defaults to the selected scope. It is passed explicitly only by the
+  // fixture-wide absence test below, which has to look at every period the feed
+  // carries, not just the one on screen.
+  function cell(pkey,name,p){
+    const r=lf?lf.stat(idx,pkey,p||per,name):null;
     if(!r) return null;
     let w=r.won,t=r.total;
     if(w==null||t==null){
@@ -25634,13 +25640,13 @@ function renderVals(){
   const denOf=c=>(c&&c.won!=null&&c.total!=null&&c.total>0)?'('+c.won+'/'+c.total+')':'';
   // R5: precision is not fixed — Number→String strips the trailing zero, so
   // 71.7% and 40% sit in the same column exactly as the export has them.
-  const pctRow=(label,name)=>{
-    const a=cell(pA,name),b=cell(pB,name),av=rateOf(a),bv=rateOf(b);
+  const pctRow=(label,name,p)=>{
+    const a=cell(pA,name,p),b=cell(pB,name,p),av=rateOf(a),bv=rateOf(b);
     return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b));
   };
   const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
-  const cntRow=(label,name)=>{
-    const a=cntOf(cell(pA,name)),b=cntOf(cell(pB,name));
+  const cntRow=(label,name,p)=>{
+    const a=cntOf(cell(pA,name,p)),b=cntOf(cell(pB,name,p));
     return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b));
   };
 
@@ -25648,54 +25654,71 @@ function renderVals(){
   // score (live-tab.js), so the Live tab and the model cannot diverge. Under the
   // sample floor a rating dashes rather than printing a noisy figure.
   const r0=v=>v==null?null:Math.round(v);
-  const svR=[r0(lf?lf.serveRating(idx,pA,per).rating:null),r0(lf?lf.serveRating(idx,pB,per).rating:null)];
-  const rtR=[r0(lf?lf.returnRating(idx,pA,per).rating:null),r0(lf?lf.returnRating(idx,pB,per).rating:null)];
-  const drRaw=[lf?lf.dominance(idx,pA,per):null,lf?lf.dominance(idx,pB,per):null];
-  const drV=[drRaw[0]==null?null:+drRaw[0].toFixed(2),drRaw[1]==null?null:+drRaw[1].toFixed(2)];
+  const svRat=p=>[r0(lf?lf.serveRating(idx,pA,p||per).rating:null),r0(lf?lf.serveRating(idx,pB,p||per).rating:null)];
+  const rtRat=p=>[r0(lf?lf.returnRating(idx,pA,p||per).rating:null),r0(lf?lf.returnRating(idx,pB,p||per).rating:null)];
+  const drRat=p=>{
+    const raw=[lf?lf.dominance(idx,pA,p||per):null,lf?lf.dominance(idx,pB,p||per):null];
+    return [raw[0]==null?null:+raw[0].toFixed(2),raw[1]==null?null:+raw[1].toFixed(2)];
+  };
 
-  const drRow=lbl=>twoSided(lbl,drV[0],drV[1],drV[0]===null?'':drV[0].toFixed(2),drV[1]===null?'':drV[1].toFixed(2));
-  const svRow=lbl=>twoSided(lbl,svR[0],svR[1],svR[0]===null?'':String(svR[0]),svR[1]===null?'':String(svR[1]));
-  const rtRow=lbl=>twoSided(lbl,rtR[0],rtR[1],rtR[0]===null?'':String(rtR[0]),rtR[1]===null?'':String(rtR[1]));
+  const drRow=(lbl,p)=>{const v=drRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':v[0].toFixed(2),v[1]===null?'':v[1].toFixed(2));};
+  const svRow=(lbl,p)=>{const v=svRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]));};
+  const rtRow=(lbl,p)=>{const v=rtRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]));};
 
   // §4 panel order and row lists, with "Pressure points" dropped — the feed has
   // no such stat and synthesising one would print an invented metric beside real
   // ones (founder ruling, 2026-09-11).
-  const statSections=[
-    {title:'Dominance',rows:[drRow('Dominance ratio')]},
+  const sectionsAt=p=>[
+    {title:'Dominance',rows:[drRow('Dominance ratio',p)]},
     {title:'Service',rows:[
-      svRow('Serve rating'),
-      cntRow('Aces','Aces'),
-      cntRow('Double faults','Double Faults'),
-      pctRow('1st serve percentage','1st serve percentage'),
-      pctRow('1st serve points won','1st serve points won'),
-      pctRow('2nd serve points won','2nd serve points won'),
-      pctRow('Break points saved','Break Points Saved'),
+      svRow('Serve rating',p),
+      cntRow('Aces','Aces',p),
+      cntRow('Double faults','Double Faults',p),
+      pctRow('1st serve percentage','1st serve percentage',p),
+      pctRow('1st serve points won','1st serve points won',p),
+      pctRow('2nd serve points won','2nd serve points won',p),
+      pctRow('Break points saved','Break Points Saved',p),
     ]},
     {title:'Return',rows:[
-      rtRow('Return rating'),
-      pctRow('1st return points won','1st return points won'),
-      pctRow('2nd return points won','2nd return points won'),
-      pctRow('Break points converted','Break Points Converted'),
+      rtRow('Return rating',p),
+      pctRow('1st return points won','1st return points won',p),
+      pctRow('2nd return points won','2nd return points won',p),
+      pctRow('Break points converted','Break Points Converted',p),
     ]},
     {title:'Points won',rows:[
-      cntRow('Winners','Winners'),
-      cntRow('Unforced errors','Unforced errors'),
-      pctRow('Net points won','Net points won'),
-      pctRow('Service points won','Service Points Won'),
-      pctRow('Return points won','Return Points Won'),
-      pctRow('Total points won','Total Points Won'),
+      cntRow('Winners','Winners',p),
+      cntRow('Unforced errors','Unforced errors',p),
+      pctRow('Net points won','Net points won',p),
+      pctRow('Service points won','Service Points Won',p),
+      pctRow('Return points won','Return Points Won',p),
+      pctRow('Total points won','Total Points Won',p),
     ]},
   ];
-
   // TEN-210 · Some tournaments publish no box score at all. Measured on the feed
   // 2026-09-16 over three Davis Cup weeks: ZERO of 86 "ATP Davis Cup - World Group
   // II" fixtures carry a statistics row, 2 of 79 in World Group I, against 56 of 82
-  // in the top-tier World Group. The panel rendered all 21 rows as em-dashes, which
-  // reads as a broken panel rather than an absent source. Say it once instead.
+  // in the top-tier World Group. The panel rendered all 18 rows as em-dashes, which
+  // reads as a broken panel rather than an absent source. Founder ruling
+  // 2026-09-16: do not explain the absence in a card either — REMOVE the card.
+  //
+  // One rule, applied at both levels: a scope is offered only if the feed has rows
+  // for it, and the Stats tab exists only if some scope is offered. That also
+  // covers the case the scope-blind version got wrong — the feed emits stats once
+  // per set, so a live match early in a new set has match rows but no set-N rows.
+  // Keying the card off the selected scope alone would have shown a 36-dash ladder
+  // (or, before this, a note blaming Davis Cup) under the MATCH → SET n click.
+  //
   // A row that dashes because a rate does not exist (0 break points faced) is NOT
-  // this case — that is one honest dash beside real numbers — so the note fires
-  // only when EVERY row in EVERY section is empty for the selected scope.
-  const statsAbsent=statSections.every(sec=>sec.rows.every(r=>r.aVal===DASH&&r.bVal===DASH));
+  // this case — that is one honest dash beside real numbers — so a scope drops only
+  // when EVERY row in EVERY section is empty for it.
+  const scopeHasRows=p=>sectionsAt(p).some(sec=>sec.rows.some(r=>r.aVal!==DASH||r.bVal!==DASH));
+  const scopeOpts=[{id:'MATCH',per:'match',label:'MATCH'},{id:'SET',per:curSetPer,label:'SET '+nSets}]
+    .filter(o=>scopeHasRows(o.per));
+  const statsAbsent=scopeOpts.length===0;
+  const effScope=scopeOpts.some(o=>o.id===S.scope)?S.scope:(scopeOpts.length?scopeOpts[0].id:'MATCH');
+  per=effScope==='MATCH'?'match':curSetPer;
+
+  const statSections=sectionsAt(per);
 
   // ── Points tab (§5) — the real point log ──
   const entry=lf?lf.pbpGet(m.ek):null;
@@ -25785,6 +25808,12 @@ function renderVals(){
   const wueDen=(w,u)=>{const wp=perPt(w,totalPlayed),up=perPt(u,totalPlayed);return(wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
   ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(wnA,ueA),wueDen(wnB,ueB)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
 
+  // A tab whose only card has been removed is not a tab. `S.tab` is set to 'Stats'
+  // every time a card is opened, so the selected tab has to be resolved against the
+  // tabs this fixture actually has or the modal body would render empty.
+  const tabs=['Stats','Points','Ratings','Break/Hold'].filter(t=>!(t==='Stats'&&statsAbsent));
+  const effTab=tabs.indexOf(S.tab)>=0?S.tab:tabs[0];
+
   const momentumSvg=momentumChart(momentumBands(pbpGames,m),A,B);
   const heatA=heatFor(m.keys[0],S.hb,m.bo),heatB=heatFor(m.keys[1],S.hb,m.bo);
   const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,color:n>(m.bo===3?3:5)?'#2b3348':'#5b6880'}));
@@ -25797,9 +25826,9 @@ function renderVals(){
       aScore:scoreCells(0),bScore:scoreCells(1),
       aDot:m.serving===0?'#3dd68c':'transparent',bDot:m.serving===1?'#3dd68c':'transparent',
     },
-    tabs:['Stats','Points','Ratings','Break/Hold'],tab:S.tab,
-    scope:S.scope,nSets,
-    statSections,statsAbsent,statsAbsentHasPbp:pbpGames.length>0,
+    tabs,tab:effTab,
+    scope:effScope,scopeOpts,nSets,
+    statSections,statsAbsent,
     setTabs:m.sets.map((_,i)=>i+1),pset:setNum,
     setScoreLabel,games,pbpLoading,pbpError,
     ratingRows,momentumSvg,
@@ -25965,25 +25994,20 @@ function render(){
     const scoreLine=cells=>cells.map(s=>`<span style="width:20px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:${s.weight};color:${s.color};">${e(s.v)}</span>`).join('');
 
     // tabs
-    const tabsHtml=['Stats','Points','Ratings','Break/Hold'].map(t=>{
-      const on=S.tab===t;const sg=seg(on);
+    const tabsHtml=d.tabs.map(t=>{
+      const on=d.tab===t;const sg=seg(on);
       return `<span class="lvseg" data-tab="${t}" style="text-align:center;padding:11px 0;border-radius:10px;font-size:13.5px;font-weight:${on?700:600};color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${t}</span>`;
     }).join('');
 
     // ── Stats body ──
     let bodyHtml='';
-    if(S.tab==='Stats'){
-      const nSets=d.nSets;
-      const scopeTabsHtml=['MATCH','SET '+nSets].map((l,i)=>{
-        const on=(i===0?S.scope==='MATCH':S.scope==='SET');const sg=seg(on);
-        return `<span class="lvseg" data-scope="${i===0?'MATCH':'SET'}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${l}</span>`;
+    if(d.tab==='Stats'){
+      // Only the scopes the feed actually has rows for (see renderVals).
+      const scopeTabsHtml=d.scopeOpts.map(o=>{
+        const on=d.scope===o.id;const sg=seg(on);
+        return `<span class="lvseg" data-scope="${o.id}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${e(o.label)}</span>`;
       }).join('');
-      const absentHtml=`
-<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:34px 24px;text-align:center;">
-  <div style="font-size:14px;font-weight:600;color:#8b96b5;">No match statistics for this tournament</div>
-  <div style="margin-top:8px;font-size:12.5px;line-height:1.55;color:#5b6880;">The feed publishes no box score for this match — Davis Cup World Group I and II ties carry none.${d.statsAbsentHasPbp?' The point log is on the <span style="color:#8b96b5;">Points</span> tab.':''}</div>
-</div>`;
-      const sectionsHtml=d.statsAbsent?absentHtml:d.statSections.map(sec=>`
+      const sectionsHtml=d.statSections.map(sec=>`
 <div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;">
   <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5b6880;margin-bottom:16px;">${e(sec.title)}</div>
   <div style="display:flex;flex-direction:column;gap:16px;">${sec.rows.map(statRowHtml).join('')}</div>
@@ -25994,7 +26018,7 @@ ${sectionsHtml}`;
     }
 
     // ── Points body ──
-    if(S.tab==='Points'){
+    if(d.tab==='Points'){
       const setTabsHtml=d.setTabs.map(n=>{
         const on=d.pset===n;const sg=seg(on);
         return `<span class="lvseg" data-pset="${n}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">SET ${n}</span>`;
@@ -26042,11 +26066,16 @@ ${sectionsHtml}`;
     }
 
     // ── Ratings body ──
-    if(S.tab==='Ratings'){
-      bodyHtml=`
+    if(d.tab==='Ratings'){
+      // Every rating row is a function of the box score, so on a fixture with no box
+      // score this card is four more em-dashes. Same ruling, same treatment: the card
+      // goes. Momentum comes off the point log and survives on its own.
+      const ratingCardHtml=d.statsAbsent?'':`
 <div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:16px;">
   ${d.ratingRows.map(ratingRowHtml).join('')}
-</div>
+</div>`;
+      bodyHtml=`
+${ratingCardHtml}
 <div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 20px 12px;">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;">Momentum · point swing by game</span>
@@ -26060,7 +26089,7 @@ ${sectionsHtml}`;
     }
 
     // ── Break/Hold body ──
-    if(S.tab==='Break/Hold'){
+    if(d.tab==='Break/Hold'){
       const hbTabsHtml=['HOLD','BREAK'].map(l=>{
         const on=S.hb===l;const sg=seg(on);
         return `<span class="lvseg" data-hb="${l}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${l}</span>`;
@@ -26101,7 +26130,7 @@ ${sectionsHtml}`;
         <img src="${mm.bAv}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#0f1420;border:1px solid rgba(255,255,255,0.09);flex:none;">
       </span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 24px 16px;flex:none;">${tabsHtml}</div>
+    <div style="display:grid;grid-template-columns:repeat(${d.tabs.length},1fr);gap:8px;padding:0 24px 16px;flex:none;">${tabsHtml}</div>
     <div style="flex:1;min-height:0;overflow-y:auto;padding:0 24px 24px;display:flex;flex-direction:column;gap:14px;">${bodyHtml}</div>
   </div>
 </div>`;
