@@ -856,6 +856,15 @@
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
       case 'styles': return 'Win rate against each playing style ' + possessive(sn) + ' record covers';
+      // §5.9. The subtitle names the SOURCE's window, not a career span — this
+      // modal is the only block on the page fed by the point-by-point rollup and
+      // its horizon is shorter than the ledger's.
+      case 'profile': return (function () {
+        var c = hbCoverage(p);
+        return c
+          ? 'Holds and breaks by service game ' + MIDDOT + ' ' + c.matches + ' matches with point-by-point data'
+          : 'Holds and breaks by service game';
+      })();
       default: return '';
     }
   }
@@ -2272,6 +2281,7 @@
     else if (k === 'market') body = renderMarketModal(p);
     else if (k === 'speed') body = renderSpeedModal(p);
     else if (k === 'styles') body = renderStylesModal(p);
+    else if (k === 'profile') body = renderProfileModal(p);
     else {
       // Not yet built. The modal opens and says so — a box that silently does
       // nothing reads as a broken page.
@@ -2279,6 +2289,194 @@
         'text-align:center;font-size:13px;color:#5b6880;">Not built yet.</div>';
     }
     return modalShell(k, p, ctx, body);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.9 PLAYING PROFILE — hold/break heatmap
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // FOUNDER RULING 7 (2026-09-16): "we already built a hold/break heatmap for
+  // live bets. Reuse that same data source and logic for the pre-match heatmap
+  // in Playing profile. Don't build a second engine. Coverage should hold for
+  // most players; where a player's matches lack the per-game data, the heatmap
+  // states its match count, like the Situational rows. Never estimate."
+  //
+  // So this block computes NOTHING. Every figure comes from window.HoldBreakHeatmap
+  // (holdbreak-heatmap.js), the engine lifted out of the Live tab; this is a
+  // renderer over the model it returns. tools/test-holdbreak-engine.js proves the
+  // Live tab still renders exactly what it did before that extraction.
+  //
+  // SOURCE: holdbreak.json — the nightly 24-month rollup built from the keyed
+  // point-by-point cache (build-holdbreak.js). Founder rulings TEN-107 fix its
+  // window (24M), its axis (six service-game ordinals within the set) and its
+  // set split (S1..S5). None of those is re-litigated here.
+  //
+  // BEST-OF: the Live tab knows the match it is rendering, so it dims the sets
+  // that format cannot reach. A career profile spans best-of-3 and best-of-5, so
+  // there is no single format to dim by — we pass 5 and let the real cell counts
+  // speak. A player who has never played a fifth set shows n=0 there and dashes,
+  // which is the truth; dimming it "set not played in this format" would not be.
+  var HB_BEST_OF = 5;
+
+  // The shard carries all / hard / clay / grass. It does NOT carry an indoor
+  // split (the Indoors carve-out lives on the api-tennis court_type join, not in
+  // the point-by-point rollup), so there is deliberately no Indoors chip here —
+  // an empty chip would imply we hold something we do not.
+  var HB_SURFACES = [
+    { id: 'all', label: 'All' },
+    { id: 'hard', label: 'Hard' },
+    { id: 'clay', label: 'Clay' },
+    { id: 'grass', label: 'Grass' }
+  ];
+
+  function hbEngine() { return window.HoldBreakHeatmap || null; }
+  function hbStore() { return window.holdbreak || null; }
+
+  // Provenance for the modal footer. Returns null when we hold nothing for this
+  // player, so the caller can say "no per-game data" rather than print a zero.
+  function hbCoverage(p) {
+    var E = hbEngine();
+    if (!E) return null;
+    var c = E.coverageFor(hbStore(), p.key);
+    return c && c.held ? c : null;
+  }
+
+  // One cell of the grid. The engine has already applied the sample ladder and
+  // chosen the text; this only paints it. `c.pct` is already '—', 'won/n' or
+  // 'NN%' — it is never re-derived here, so the figure and the colour cannot
+  // disagree with the Live tab's.
+  function hbCellHtml(c) {
+    return '' +
+      '<div data-pp2="hb-cell" title="' + esc(c.tipHead + (c.tipRate ? ' ' + MIDDOT + ' ' + c.tipRate : '') +
+        (c.tipNote ? ' ' + MIDDOT + ' ' + c.tipNote : '')) + '" ' +
+      'style="border:1px solid ' + c.bd + ';background:' + c.bg + ';border-radius:8px;padding:8px 4px;' +
+      'text-align:center;min-width:0;opacity:' + c.opacity + ';">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;line-height:1;' +
+          'font-size:' + c.size + ';color:' + c.color + ';">' + esc(c.pct) + '</div>' +
+        (c.frac && c.frac !== 'raw'
+          ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;margin-top:3px;' +
+            'color:rgba(231,233,238,0.55);">' + esc(c.frac) + '</div>'
+          : '') +
+      '</div>';
+  }
+
+  function hbPanelHtml(title, sub, model) {
+    var cols = '96px repeat(5,minmax(0,1fr)) 74px';
+    var head = '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;margin-bottom:7px;">' +
+      '<span></span>' +
+      [1, 2, 3, 4, 5].map(function (s) {
+        return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
+          'text-transform:uppercase;color:#5b6880;text-align:center;">Set ' + s + '</span>';
+      }).join('') +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
+        'text-transform:uppercase;color:#5b6880;text-align:center;">All</span>' +
+      '</div>';
+
+    var rows = model.rows.map(function (r) {
+      return '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;margin-bottom:6px;' +
+        'align-items:stretch;">' +
+        '<div style="display:flex;flex-direction:column;justify-content:center;">' +
+          '<span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">' + esc(r.bucket) + '</span>' +
+          '<span style="font-size:9px;color:#4b5672;">' + esc(r.sub) + '</span>' +
+        '</div>' +
+        r.cells.map(hbCellHtml).join('') +
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+          'border-left:1px solid rgba(255,255,255,0.07);">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+            'color:' + r.gColor + ';">' + esc(r.gPct) + '</span>' +
+          (r.gFrac ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#4b5672;">' +
+            esc(r.gFrac) + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;background:#070a10;' +
+      'padding:15px 16px;min-width:0;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">' +
+        '<span style="font-size:13.5px;font-weight:800;color:#e7e9ee;">' + esc(title) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+          esc(sub) + '</span>' +
+      '</div>' + head + rows + '</div>';
+  }
+
+  function renderProfileModal(p) {
+    var E = hbEngine();
+    var HB = hbStore();
+    // The store is not wired / has not loaded. Say so — an empty grid would read
+    // as "this player has no data", which is a different and untrue statement.
+    if (!E || !HB) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">' +
+        'Hold/break data is not loaded.</div>';
+    }
+
+    var cov = hbCoverage(p);
+    var sn = shortName(p);
+    var surf = state.hbSurf || 'all';
+
+    // Ruling 7: "where a player's matches lack the per-game data, the heatmap
+    // states its match count, like the Situational rows." A player outside the
+    // shard's roster has NO per-game data at all — that is stated in words, with
+    // no grid, rather than drawn as 60 dashes that look like a rendering fault.
+    if (!cov) {
+      var rosterN = (HB.meta && HB.meta.players) || null;
+      var winN = (HB.meta && HB.meta.windowMonths) || null;
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
+        esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
+        (rosterN && winN
+          ? '<br>The rollup covers ' + rosterN + ' players over the last ' + winN + ' months.'
+          : '') +
+        '</div>';
+    }
+
+    var chips = HB_SURFACES.map(function (s) {
+      var on = surf === s.id;
+      return '<button type="button" data-pp2="hb-surf" data-v="' + s.id + '" style="padding:6px 13px;' +
+        'border-radius:8px;font-size:11.5px;cursor:pointer;color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+        esc(s.label) + '</button>';
+    }).join('');
+
+    var hold = E.heatFor(HB, p.key, 'HOLD', HB_BEST_OF, surf);
+    var brk = E.heatFor(HB, p.key, 'BREAK', HB_BEST_OF, surf);
+
+    var surfLabel = surf === 'all' ? 'all surfaces' : surf + ' only';
+    // Every count printed below is the shard's own, never a career figure: the
+    // parse reached `matches` matches and `svcGames` service games. Printing
+    // "75 matches" beside a career total of 1,200 would be a coverage claim we
+    // cannot make, so both the number and what it counts are spelled out.
+    var note = 'Point-by-point parsed for ' + cov.matches + ' of ' + esc(sn) + '’s matches ' +
+      MIDDOT + ' ' + cov.svcGames + ' service games ' + MIDDOT + ' ' +
+      (cov.from && cov.to ? cov.from + ' ' + ENDASH + ' ' + cov.to : cov.windowMonths + '-month window') +
+      '. Cells with fewer than 5 service games show the raw count instead of a rate; ' +
+      '5' + ENDASH + '9 are greyed as a small sample. Nothing here is estimated.';
+
+    return '' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;' +
+        'flex-wrap:wrap;margin-bottom:14px;">' +
+        '<div style="font-size:12.5px;color:#5b6880;line-height:1.5;max-width:560px;">' +
+          'How often ' + esc(sn) + ' holds serve, and breaks on return, as the service games run ' +
+          'deeper into a set. Rows are his own service-game order within the set; columns are the set.' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + chips + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
+          'border-radius:7px;background:rgba(255,255,255,0.04);color:#c6ccdb;">' +
+          esc(hold.globalLabel) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
+          'border-radius:7px;background:rgba(255,255,255,0.04);color:#c6ccdb;">' +
+          esc(brk.globalLabel) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
+          'border-radius:7px;color:#5b6880;">' + esc(surfLabel) + '</span>' +
+      '</div>' +
+      '<div class="pp2-hb-grids" style="display:grid;grid-template-columns:1fr;gap:14px;">' +
+        hbPanelHtml('Service holds', 'hold %', hold) +
+        hbPanelHtml('Return breaks', 'break %', brk) +
+      '</div>' +
+      '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:13px;">' + note + '</div>';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2296,7 +2494,13 @@
     speedSurf: 'all', speedBand: null,
     // §5.6 Versus playing styles. styleRow is the opened archetype LABEL (v5.1
     // verbatim), so the bubble, its x label and the row all key on one value.
-    styleRow: null
+    styleRow: null,
+    // §5.9 Playing profile. The hold/break shard's surface node — 'all' unless
+    // the reader picks one. Deliberately separate from `surfaces` (the ledger
+    // filter) and `speedSurf`: those key on api-tennis surface names, this keys
+    // on the shard's own node names, and conflating them would silently read the
+    // wrong node.
+    hbSurf: 'all'
   };
 
   function build(p) {
@@ -2390,6 +2594,13 @@
       SPEED_SURFACES: SPEED_SURFACES,
       shortDate: shortDate,
       shortRound: shortRound,
+      // §5.9 Playing profile — hold/break heatmap (founder ruling 7)
+      renderProfileModal: renderProfileModal,
+      hbCoverage: hbCoverage,
+      hbEngine: hbEngine,
+      hbStore: hbStore,
+      HB_SURFACES: HB_SURFACES,
+      HB_BEST_OF: HB_BEST_OF,
       // §5.6 Versus playing styles
       renderStylesModal: renderStylesModal,
       styleRows: styleRows,

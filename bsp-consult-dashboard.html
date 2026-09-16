@@ -25053,6 +25053,12 @@ window.DatabaseTab = (function(){
   window.FEATURE_LIVE_DETAIL = true;
 </script>
 <script src="live-tab.js" defer></script>
+<!-- TEN-206 ruling 7: the single hold/break heatmap engine, shared by the Live
+     tab's DataEdge panel and the Player Profile's Playing-profile modal.
+     Deliberately NOT deferred: the Live-tab renderer below is an inline IIFE
+     that parses at this point in the document, and a deferred module would not
+     exist yet. It is ~6 KB of pure functions with no side effects. -->
+<script src="holdbreak-heatmap.js"></script>
 
 <!-- TEN-151: Trading Report feature flag. DEFAULT ON (founder 2026-09-05 "Turn it
      on properly — default ON, no query param": platform is pre-revenue R&D, so
@@ -25154,12 +25160,14 @@ const LF = () => window.LiveFeed || null;
 let FEED = { ready:false, live:[], isStale:false, ageMs:0, updatedAt:null, connected:false };
 let LIVE = [];   // one view model per live match, rebuilt on every snapshot
 
-const BUCKETS = [['Game 1-2','1st svc game'],['Game 3-4','2nd svc game'],['Game 5-6','3rd svc game'],
-                 ['Game 7-8','4th svc game'],['Game 9-10','5th svc game'],['Game 11-12+','6th+ svc game']];
-// holdbreak.json keys its six buckets '1'–'6' on the same axis and the same
-// boundaries as the design's six rows (the server's service-game ordinal within
-// the set, 7th+ folded into row 6). Same order, so index i ↔ id String(i+1).
-const HB_SETS = ['1','2','3','4','5'];
+// BUCKETS / HB_SETS / band() / hbSum() / heatFor() moved to holdbreak-heatmap.js
+// (TEN-206 founder ruling 7, 2026-09-16: one hold/break engine, shared by this
+// tab and the Player Profile's Playing-profile modal). The move is proved
+// behaviour-identical over every player × metric × best-of by
+// tools/test-holdbreak-engine.js, which replays this file's pre-extraction
+// source out of git and deep-compares. Row and set labels travel inside the
+// returned model, so the renderer below is unchanged.
+const HBE = () => window.HoldBreakHeatmap || null;
 
 const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
 const INTERRUPTED_RE = /interrupt|suspend/i;
@@ -25241,84 +25249,21 @@ function setState(patch){ ST = Object.assign({}, ST, patch); render(); }
 // ── style helpers ─────────────────────────────────────────────────────────────
 function seg(on){ return { color: on?'#e7e9ee':'#5b6880', bg: on?'rgba(91,155,255,0.22)':'transparent', bd: on?'rgba(91,155,255,0.45)':'transparent' }; }
 
-function band(rate, metric){
-  const T = metric==='HOLD'?[85,70]:[30,18];
-  const pct = Math.round(rate*100);
-  if(pct>=T[0]) return { bg:'rgba(45,226,145,0.20)', bd:'rgba(45,226,145,0.48)', color:'#4ff0a4', tag:'strong' };
-  if(pct>=T[1]) return { bg:'rgba(255,164,43,0.18)',  bd:'rgba(255,164,43,0.46)',  color:'#ffb454', tag:'mid'    };
-  return              { bg:'rgba(255,90,106,0.18)',   bd:'rgba(255,90,106,0.46)',   color:'#ff7d89', tag:'weak'   };
-}
-
 // ── heatmap data ──────────────────────────────────────────────────────────────
 // Real source: holdbreak.json, the nightly 24-month rollup (build-holdbreak.js).
-// players[key].serve.all[set][bucket] = {pct,n,won} for HOLD, .return.all for
-// BREAK. The export's 0.88/0.24 constant and its name-hash are gone — the global
-// pill is now the player's OWN weighted rate.
+// The engine itself now lives in holdbreak-heatmap.js so this tab and the Player
+// Profile share ONE implementation (founder ruling 7). This wrapper keeps the
+// call signature the renderer below already uses; the Live tab is always the
+// all-surfaces view, so no surface argument is passed.
 //
-// Sums are exact: numerators and denominators summed, never an average of
-// percentages. Every band decision is taken on the PRINTED integer, so the
-// colour and the figure can never disagree (§7, build item 18).
-function hbSum(cells){
-  let won=0,n=0,any=false;
-  for(const c of cells){ if(c && c.n && c.won!=null){ won+=c.won; n+=c.n; any=true; } }
-  return { won, n, pct: (any && n) ? (won/n)*100 : null };
-}
-
+// If the module has not loaded, this returns an empty model and the grid dashes
+// — it must never fall back to a locally-defined copy of the maths, which is
+// exactly how the two implementations drifted apart in the first place.
 function heatFor(pkey, metric, bo){
+  const E = HBE();
   const HB = LF() ? LF().holdbreak() : null;
-  const pd = (HB && HB.players) ? HB.players[String(pkey)] : null;
-  const node = pd ? (metric==='HOLD' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all)) : null;
-  const DEAD = { pct:'—', frac:'', bg:'rgba(255,255,255,0.02)', bd:'rgba(255,255,255,0.05)', color:'#4b5672', size:'13px', opacity:1, tipHead:'', tipRate:'—', tipNote:'no matches on record' };
-  const maxSet = bo===3?3:5;
-
-  const rows = BUCKETS.map((b,bi)=>{
-    const id = String(bi+1);
-    const rowCells = HB_SETS.map(s => (node && node[s]) ? node[s][id] : null);
-    const g = hbSum(rowCells);
-    const gPctInt = g.pct===null ? null : Math.round(g.pct);
-    const gBand = g.pct===null ? null : band(g.pct/100, metric);
-    const cells = [1,2,3,4,5].map(si=>{
-      const head = b[0]+' · Set '+si;
-      // A set the format cannot reach is not missing data — it is impossible.
-      if(si>maxSet) return Object.assign({},DEAD,{tipHead:head, tipNote:'set not played in this format'});
-      const c = rowCells[si-1];
-      const den = (c && c.n!=null) ? c.n : 0;
-      const num = (c && c.won!=null) ? c.won : null;
-      // n=0 (or no numerator at all) → em dash. Never a 0%.
-      if(!den || num===null) return Object.assign({},DEAD,{tipHead:head});
-      // n<5 → the raw count only, neutral background, NO percentage: too few
-      // service games for a rate to mean anything (§7 sample gates).
-      if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'rgba(255,255,255,0.03)', bd:'rgba(255,255,255,0.07)', color:'#8b96b5', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
-      const rate = num/den;
-      const pctInt = Math.round(rate*100);
-      const bd2 = band(rate, metric);
-      const small = den<10;                         // n 5–9 → smaller, greyed, band bg kept
-      const dPts = gPctInt===null ? null : (pctInt - gPctInt);
-      return {
-        pct:pctInt+'%', frac:num+'/'+den,
-        bg:bd2.bg, bd:bd2.bd,
-        color:small?'#8b96b5':bd2.color,
-        size:small?'12px':'15px', opacity:small?0.72:1,
-        tipHead:head,
-        tipRate:pctInt+'%  ·  '+num+'/'+den,
-        tipNote:bd2.tag+' band'+(dPts===null?'':' · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+gPctInt+'%')+(small?' · small sample':''),
-      };
-    });
-    return {
-      bucket:b[0], sub:b[1],
-      gPct: gPctInt===null ? '—' : gPctInt+'%',
-      gFrac: g.pct===null ? '' : g.won+'/'+g.n,
-      gColor: gBand ? gBand.color : '#4b5672',
-      cells,
-    };
-  });
-
-  // The pill is the player's weighted global across every bucket and set — the
-  // same numerator/denominator sum, not an average of the row percentages.
-  const all=[];
-  for(const s of HB_SETS) for(let bi=0;bi<BUCKETS.length;bi++) all.push((node && node[s]) ? node[s][String(bi+1)] : null);
-  const agg = hbSum(all);
-  return { rows, globalLabel: metric+' '+(agg.pct===null ? '—' : agg.pct.toFixed(1)+'%') };
+  if(!E) return { rows: [], globalLabel: metric+' —' };
+  return E.heatFor(HB, pkey, metric, bo);
 }
 
 // ── momentum chart (SVG string) ───────────────────────────────────────────────

@@ -44,7 +44,24 @@ if (fs.existsSync(MARKET_DIR)) {
 }
 
 const STYLES = JSON.parse(fs.readFileSync(path.join(ROOT, 'playing-styles.json'), 'utf8'));
-const M = loadModule(PLAYERS, { careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES });
+// §5.9 Playing profile reads the hold/break rollup through the SHARED engine
+// (founder ruling 7). Both are loaded into the same window shim the page uses,
+// so a wiring mistake shows up here rather than as a silent grid of dashes.
+const HOLDBREAK = JSON.parse(fs.readFileSync(path.join(ROOT, 'holdbreak.json'), 'utf8'));
+function loadEngine() {
+  const sandbox = {};
+  const src = fs.readFileSync(path.join(ROOT, 'holdbreak-heatmap.js'), 'utf8');
+  // eslint-disable-next-line no-new-func
+  new Function('window', src)(sandbox);
+  if (!sandbox.HoldBreakHeatmap) throw new Error('holdbreak-heatmap.js did not export HoldBreakHeatmap');
+  return sandbox.HoldBreakHeatmap;
+}
+const ENGINE = loadEngine();
+
+const M = loadModule(PLAYERS, {
+  careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
+  holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE
+});
 const I = M._internals;
 
 let pass = 0, fail = 0;
@@ -1411,6 +1428,277 @@ check('box 5 shows a real archetype for players who carry one', () => {
 mustFail('the coverage check would catch the store being unwired again', () => {
   const resolved = 0;
   assert(resolved > 0, 'archetypeFor resolved nobody — the store is unwired again');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 18 · ALL STORES — founder ruling 6 (2026-09-16), approved.
+//
+//   "Extend the non-zero coverage assertion to every data store this page reads,
+//    so no other unwired store can hide behind a dash."
+//
+// The stylesStore bug was invisible because a declared-but-unassigned store and
+// a genuinely empty dataset render identically: an em dash. The dash is correct
+// behaviour, so no visual check can tell them apart. The only thing that can is
+// an assertion that each store resolves a NON-ZERO number of real values through
+// the SAME accessor the page calls.
+//
+// This table is the gate. A new store wired into this page without a row here is
+// a store that can silently go dark, so the last check asserts the table covers
+// every window.* the module actually reads.
+// ════════════════════════════════════════════════════════════════════════════
+const STORES = [
+  {
+    name: 'playerProfiles',
+    file: 'player-profiles.json',
+    // every block's spine — career, ribbon, ledger, calendar, header
+    resolve: () => Object.keys(PLAYERS).filter(k => I.spineTotal(PLAYERS[k]).n > 0).length,
+    universe: () => Object.keys(PLAYERS).length,
+    floor: 0.5,
+  },
+  {
+    name: 'careerSplits',
+    file: 'career-splits.json',
+    // splitCandidates takes the KEY, not the player object. The first draft of
+    // this row passed the object, got [] for everyone, and reported the store
+    // "unwired" — a false alarm from the gate's own accessor. Call the page's
+    // accessors the way the page calls them or the gate measures itself.
+    resolve: () => Object.keys(PLAYERS).filter(k => (I.splitCandidates(k, 'career') || []).length > 0).length,
+    universe: () => Object.keys(SPLITS).length,
+    floor: 0.5,
+  },
+  {
+    name: 'marketEdge',
+    file: 'market-edge/{key}.json',
+    resolve: () => Object.keys(PLAYERS).filter((k) => {
+      const v = I.buildBoxVals(PLAYERS[k], { rows: I.ledgerMatches(PLAYERS[k]), archetype: null });
+      return v.market && v.market.headline != null;
+    }).length,
+    universe: () => Object.keys(MARKET).length,
+    floor: 0.5,
+  },
+  {
+    name: 'playingStyles',
+    file: 'playing-styles.json',
+    resolve: () => Object.keys(PLAYERS).filter(k => I.archetypeFor(k)).length,
+    // The universe is the labelled rows that CAN reach this page — i.e. those
+    // whose name matches a profiled player. The rows that cannot are a separate,
+    // measured defect (see "the archetype name join" check below); folding them
+    // in here would turn a store-wiring gate into a join-coverage gate and blur
+    // two different failures into one number.
+    universe: () => {
+      const names = new Set(Object.keys(PLAYERS).map(k => PLAYERS[k].name));
+      return (STYLES.players || []).filter(s => s.archetype_label && names.has(s.name)).length;
+    },
+    floor: 0.9,
+  },
+  {
+    name: 'holdbreak',
+    file: 'holdbreak.json',
+    resolve: () => Object.keys(PLAYERS).filter(k => I.hbCoverage(PLAYERS[k])).length,
+    universe: () => Object.keys(HOLDBREAK.players).length,
+    floor: 0.9,
+  },
+];
+
+for (const s of STORES) {
+  check(`store ${s.name} resolves a non-zero share of what it holds`, () => {
+    const resolved = s.resolve();
+    const universe = s.universe();
+    assert(universe > 0, `${s.file} holds nothing — the artefact itself is empty`);
+    assert(resolved > 0,
+      `${s.name} resolved NOTHING through the page's own accessor — the store is unwired (this is the stylesStore bug)`);
+    assert(resolved >= universe * s.floor,
+      `${s.name}: only ${resolved} of ${universe} rows in ${s.file} reach the page (floor ${Math.round(s.floor * 100)}%)`);
+    console.log(`        ${s.name}: ${resolved} of ${universe} rows in ${s.file} reach the page`);
+  });
+}
+
+mustFail('the all-stores gate would catch any one store going dark', () => {
+  const resolved = 0, universe = 428;
+  assert(resolved > 0,
+    `store resolved NOTHING through the page's own accessor — the store is unwired`);
+});
+
+mustFail('the all-stores gate would catch a store that resolves only a token few', () => {
+  const resolved = 3, universe = 428, floor = 0.5;
+  assert(resolved >= universe * floor, `only ${resolved} of ${universe} rows reach the page`);
+});
+
+// ── the archetype name join — OPEN DEFECT, pinned at its measured size ───────
+// Found by the ruling-6 gate on its first run, 2026-09-16.
+//
+// playing-styles.json joins to the page by NAME ONLY (its rows carry no player
+// key). The artefact mixes two name forms: most rows are short form ("N. Djokovic")
+// but 43 are full form ("Zsombor Piros"). archetypeFor does an exact-name lookup,
+// so every full-form row misses — and 40 of those 40-odd players ARE profiled.
+// They render a dashed archetype box despite carrying a hand-assigned label.
+//
+// NOT FIXED HERE, deliberately. The only page-level join available is surname
+// matching, and this repo has been bitten by exactly that: api-tennis reorders
+// multi-part surnames, so "Felipe Meligeni Alves" sits beside a profile row
+// reading "M. Alves". A wrong surname match would paint the WRONG archetype on a
+// player, which is worse than the dash it replaces. The fix belongs upstream in
+// classify-styles.js — emit one name form, or better, emit the player key.
+//
+// This check pins the gap at its measured size so it cannot quietly grow while
+// the ruling is pending. It is a report in code, not a resolution.
+const NAME_JOIN_UNMATCHED = 42;
+check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled rows (open defect)`, () => {
+  const names = new Set(Object.keys(PLAYERS).map(k => PLAYERS[k].name));
+  const labelled = (STYLES.players || []).filter(s => s.archetype_label);
+  const unmatched = labelled.filter(s => !names.has(s.name));
+  // surname-rescuable = players who ARE on this site but whose label never lands
+  const surname = n => String(n).trim().split(/\s+/).pop().toLowerCase();
+  const profSurnames = new Set(Object.keys(PLAYERS).map(k => surname(PLAYERS[k].name)));
+  const rescuable = unmatched.filter(s => profSurnames.has(surname(s.name)));
+  assert.strictEqual(unmatched.length, NAME_JOIN_UNMATCHED,
+    `the name-format gap moved: ${unmatched.length} labelled rows now miss (pinned at ${NAME_JOIN_UNMATCHED}). ` +
+    `If it shrank, the upstream fix landed — re-pin. If it grew, classify-styles.js regressed.`);
+  console.log(`        ${unmatched.length} labelled rows miss the name join; ${rescuable.length} of them are profiled players showing a dash`);
+});
+
+mustFail('the name-join pin would catch the gap growing', () => {
+  assert.strictEqual(58, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
+});
+
+// The gate is only as good as its coverage of the stores that actually exist.
+// This reads the module's source for every window.* it touches and asserts each
+// data store among them has a row above — so wiring a new store without
+// extending this table fails the build rather than passing quietly.
+check('the all-stores table covers every data store the module reads', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const read = new Set((src.match(/window\.[A-Za-z_][A-Za-z0-9_]*/g) || [])
+    .map(s => s.replace('window.', '')));
+  // Not data stores: the feature flag, the module's own export, and the two
+  // shared helper singletons (logic, not data — they carry no player rows).
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap']);
+  const covered = new Set(STORES.map(s => s.name));
+  const missing = [...read].filter(n => !NOT_STORES.has(n) && !covered.has(n));
+  assert.deepStrictEqual(missing, [],
+    `these stores are read by the page but have no coverage row: ${missing.join(', ')}`);
+  console.log(`        ${read.size} window.* reads, ${covered.size} data stores, all covered`);
+});
+
+mustFail('the table-coverage check would catch a newly wired store', () => {
+  const read = new Set(['playerProfiles', 'careerSplits', 'someNewStore']);
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap']);
+  const covered = new Set(['playerProfiles', 'careerSplits']);
+  const missing = [...read].filter(n => !NOT_STORES.has(n) && !covered.has(n));
+  assert.deepStrictEqual(missing, [], `uncovered: ${missing.join(', ')}`);
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 19 · §5.9 PLAYING PROFILE — hold/break heatmap (founder ruling 7)
+// ════════════════════════════════════════════════════════════════════════════
+const HB_KEYS = Object.keys(PLAYERS).filter(k => I.hbCoverage(PLAYERS[k]));
+
+check('the Playing profile modal renders real figures, not a grid of dashes', () => {
+  assert(HB_KEYS.length > 0, 'no profiled player resolves hold/break coverage');
+  let withFigures = 0, leaks = 0;
+  for (const key of HB_KEYS) {
+    I.state.modal = 'profile'; I.state.hbSurf = 'all';
+    const html = I.renderProfileModal(PLAYERS[key]);
+    if (/undefined|NaN|\[object/.test(html)) leaks++;
+    if (/>\d+%</.test(html)) withFigures++;
+  }
+  assert.strictEqual(leaks, 0, `${leaks} profiles leaked undefined/NaN into the DOM`);
+  assert(withFigures >= HB_KEYS.length * 0.9,
+    `only ${withFigures} of ${HB_KEYS.length} covered players print a percentage`);
+  console.log(`        ${withFigures} of ${HB_KEYS.length} covered players print real rates, 0 DOM leaks`);
+});
+
+mustFail('the render check would catch an all-dash grid', () => {
+  const html = '<div>—</div><div>—</div>';
+  assert(/>\d+%</.test(html), 'no percentage printed');
+});
+
+check('the modal states its own match count, never the career total', () => {
+  let stated = 0;
+  for (const key of HB_KEYS.slice(0, 60)) {
+    const p = PLAYERS[key];
+    I.state.modal = 'profile'; I.state.hbSurf = 'all';
+    const html = I.renderProfileModal(p);
+    const cov = I.hbCoverage(p);
+    assert(html.indexOf('Point-by-point parsed for ' + cov.matches + ' of ') > -1,
+      `${p.name}: the modal does not state its parsed match count`);
+    // The shard's horizon is 24 months; the ledger is a whole career. If the
+    // modal ever printed the career total it would claim coverage we lack.
+    const career = I.spineTotal(p).n;
+    assert(cov.matches <= career,
+      `${p.name}: parsed ${cov.matches} matches but the career spine holds only ${career}`);
+    stated++;
+  }
+  console.log(`        ${stated} modals state a parsed count that is <= the career total`);
+});
+
+mustFail('the match-count check would catch a career total standing in for coverage', () => {
+  const parsed = 1200, career = 75;
+  assert(parsed <= career, `parsed ${parsed} but the career spine holds only ${career}`);
+});
+
+check('a player with no point-by-point data says so instead of drawing an empty grid', () => {
+  const missing = Object.keys(PLAYERS).find(k => !I.hbCoverage(PLAYERS[k]));
+  assert(missing, 'every profiled player is in the shard — this branch is unreachable');
+  I.state.modal = 'profile';
+  const html = I.renderProfileModal(PLAYERS[missing]);
+  assert(html.indexOf('no point-by-point data on record') > -1,
+    'an uncovered player did not get the explicit no-data statement');
+  assert(!/>\d+%</.test(html), 'an uncovered player printed a percentage out of nowhere');
+  console.log(`        uncovered example ${PLAYERS[missing].name}: stated, no invented figures`);
+});
+
+mustFail('the no-data check would catch a figure invented for an uncovered player', () => {
+  const html = '<div>no point-by-point data on record</div><div>72%</div>';
+  assert(!/>\d+%</.test(html), 'an uncovered player printed a percentage out of nowhere');
+});
+
+check('the surface chips read their own node and change the figures', () => {
+  // Same susceptibility discipline as the engine test: assert the SUBJECT can
+  // move before asserting that it does.
+  const subject = HB_KEYS.find((k) => {
+    const a = ENGINE.heatFor(HOLDBREAK, k, 'HOLD', 5, 'all');
+    const c = ENGINE.heatFor(HOLDBREAK, k, 'HOLD', 5, 'clay');
+    return a.globalLabel !== c.globalLabel && c.globalLabel !== 'HOLD —';
+  });
+  assert(subject, 'no covered player has clay figures distinct from all — the check would be immune');
+  I.state.modal = 'profile';
+  I.state.hbSurf = 'all';
+  const all = I.renderProfileModal(PLAYERS[subject]);
+  I.state.hbSurf = 'clay';
+  const clay = I.renderProfileModal(PLAYERS[subject]);
+  I.state.hbSurf = 'all';
+  assert.notStrictEqual(all, clay, `${PLAYERS[subject].name}: the clay chip rendered the all-surfaces grid`);
+  assert(clay.indexOf('clay only') > -1, 'the clay view does not label itself');
+  console.log(`        ${PLAYERS[subject].name}: all vs clay render differently and are labelled`);
+});
+
+mustFail('the surface-chip check would catch a chip that does nothing', () => {
+  const all = '<div>same</div>', clay = '<div>same</div>';
+  assert.notStrictEqual(all, clay, 'the clay chip rendered the all-surfaces grid');
+});
+
+check('the modal computes nothing itself — every figure comes from the engine', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const from = src.indexOf('§5.9 PLAYING PROFILE');
+  const to = src.indexOf('// MOUNT', from);
+  assert(from > -1 && to > from, 'could not locate the §5.9 block');
+  // Scan CODE only. The first draft matched the literal string "won/n" inside
+  // this block's own explanatory comment and reported a second engine that does
+  // not exist — a regex that reads prose is not reading the implementation.
+  const block = src.slice(from, to)
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  // A second engine would have to divide, or re-band a rate, to exist.
+  assert(!/\/\s*(den|n)\b|Math\.round\([^)]*\*\s*100/.test(block),
+    '§5.9 contains rate arithmetic — that is a second engine, which ruling 7 forbids');
+  assert(/E\.heatFor\(/.test(block), '§5.9 does not call the shared engine');
+  console.log('        §5.9 contains no rate arithmetic and calls E.heatFor');
+});
+
+mustFail('the no-second-engine check would catch re-derived arithmetic', () => {
+  const block = 'var pct = Math.round(won / den * 100);';
+  assert(!/\/\s*(den|n)\b|Math\.round\([^)]*\*\s*100/.test(block),
+    '§5.9 contains rate arithmetic');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
