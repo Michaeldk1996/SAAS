@@ -163,6 +163,21 @@ jobs:
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
 
+      # TEN-206 published-roster gate. The profile roster used to be rebuilt from
+      # today's board alone, so a quiet week published 137 players where a full
+      # tour week published 428 — a valid file, two thirds empty, and the shrink
+      # propagated to build-news-feed.js and build-trading-splits.js below, both
+      # of which read this file as their roster. The pipeline now unions the
+      # profile cache back in; this asserts the union actually happened.
+      #
+      # DELIBERATELY NON-BLOCKING for now (continue-on-error). It gates a
+      # regression-diff, not a schema break, and a red gate here would stop the
+      # whole board updating — a worse outcome than a short roster. Read it in the
+      # run log; promote it to fail-closed once it has run green for a few days.
+      - name: Published-roster gate (TEN-206, report-only)
+        continue-on-error: true
+        run: node tools/test-profile-roster.js
+
       # Backfill the stats + point logs behind the Overview / Career-record
       # drill-down, ONE call per tracked player (the player-keyed fixture window
       # already carries both inline). Runs BEFORE the shard build on purpose:

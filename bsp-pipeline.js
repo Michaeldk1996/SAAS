@@ -30,6 +30,7 @@
 
 require('dotenv').config();
 const fs = require('fs');
+const zlib = require('zlib');   // TEN-206: report the over-the-wire size of player-profiles.json
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
 const { canonicalTournament } = require('./tournament-identity');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
@@ -4383,6 +4384,11 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   for (const [key, name] of seedPlayers) {
     const { profile, opponents } = await buildOneProfile(key, name, surfaceMap);
     if (profile) profiles[key] = profile;
+    // TEN-206: seed profiles are cached too. They used to be the ONE class of
+    // player that never entered the cache, so a player who appeared on the board
+    // and never turned up in anyone's recent form left the roster permanently.
+    // Cheap (it is already built) and it is what makes the roster cumulative.
+    if (profile) cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile };
     for (const [oppKey, oppName] of opponents) {
       if (!seedPlayers.has(oppKey) && !opponentPool.has(oppKey)) opponentPool.set(oppKey, oppName);
     }
@@ -4412,6 +4418,33 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     built++;
     if (profile) profiles[key] = profile; else skippedNull++;
   }
+
+  // ─── TEN-206 · the published roster is CUMULATIVE ──────────────────────────
+  //
+  // Everything above builds `profiles` from today's board: the seed players on
+  // matches.json plus the opponents discovered in THEIR recent form. Nothing
+  // ever unioned in the players already sitting in player-profiles-cache.json,
+  // so the published roster was a pure function of how many matches ran that
+  // day. Measured 2026-09-16: a 5-match board (6 seeds) published 137 players;
+  // the 2026-07-22 snapshot of a full tour week published 428. Same code, same
+  // cache — a quiet week silently dropped two thirds of the roster off the site,
+  // and off every downstream builder that reads this file as its roster
+  // (build-news-feed.js and build-trading-splits.js both run after it in CI).
+  //
+  // Fix: publish cache ∪ this-run. Freshly built profiles always win — a cached
+  // entry is only ever used for a player this run did not reach. Negative cache
+  // entries (profile:null, the players the feed has no stats for) stay excluded,
+  // exactly as pass 2 already treats them.
+  let restored = 0;
+  for (const key of Object.keys(cachedPlayers)) {
+    if (profiles[key]) continue;                  // this run's build wins
+    const c = cachedPlayers[key];
+    if (!c || !c.profile) continue;               // negative cache stays out
+    profiles[key] = c.profile;
+    restored++;
+  }
+  console.log(`Roster union: ${restored} player(s) restored from cache `
+    + `→ ${Object.keys(profiles).length} published (was ${Object.keys(profiles).length - restored} before the union).`);
 
   // Cap EVERY served profile's recentForm to current-year + last-10 — the only
   // slice the Player Profile page reads. buildOneProfile already caps freshly
@@ -5541,7 +5574,19 @@ async function runPipeline() {
   await writeCareerHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
 
   writeJsonAtomic('player-profiles.json', playerProfiles, true);
-  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+  // TEN-206: this file is on the browser's critical path, and the roster union
+  // above made it grow with the cache rather than with today's board. Report BOTH
+  // the raw and the over-the-wire size every run — Pages serves it gzipped, so
+  // raw MB alone has repeatedly overstated the real cost (measured 2026-09-16:
+  // 7.17 MB raw = 0.92 MB transferred). A regression that matters shows up here.
+  try {
+    const _ppRaw = fs.statSync('player-profiles.json').size;
+    const _ppGz = zlib.gzipSync(fs.readFileSync('player-profiles.json'), { level: 6 }).length;
+    console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)) — `
+      + `${(_ppRaw / 1048576).toFixed(2)} MB raw, ${(_ppGz / 1048576).toFixed(2)} MB gzipped (what the browser downloads).`);
+  } catch (e) {
+    console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+  }
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
