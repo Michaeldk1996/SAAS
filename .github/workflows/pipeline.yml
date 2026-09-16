@@ -407,6 +407,14 @@ jobs:
           # source the builder reads, never fetched by the browser.
           cp odds-performance-index.json _site/ 2>/dev/null || true
           cp -r odds-performance _site/ 2>/dev/null || true
+          # TEN-207 whole-career tournament history: HALF of player-profiles.json
+          # (5.67 MB of 11.24 MB measured across 428 players), moved off the eager
+          # path into one shard per player. The index gates the fetch AND carries the
+          # header count, so index-missing = the record card reads "0 on record" for
+          # everyone; dir-missing = every shard 404s and the card never fills. Both
+          # are asserted below — publish both or neither.
+          cp tournament-history-index.json _site/ 2>/dev/null || true
+          cp -r tournament-history _site/ 2>/dev/null || true
           # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
@@ -485,6 +493,7 @@ jobs:
                    dna-apitennis-ratings.json \
                    style-meetings-index.json \
                    odds-performance-index.json odds-index.json \
+                   tournament-history-index.json \
                    series.js series.css; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
@@ -494,6 +503,20 @@ jobs:
           # shard. Enforce the diff's "publish both or neither".
           [ -d _site/style-meetings ] && [ -n "$(ls -A _site/style-meetings 2>/dev/null)" ] \
             || { echo "MISSING from _site: style-meetings/ shard dir is absent or empty"; exit 1; }
+          # TEN-207: same "publish both or neither" rule for the tournament-history
+          # shards. Additionally assert the LITE profile store actually shed the
+          # field — if a future edit reverts the write to the full object, the site
+          # still works and nothing complains, we just silently pay the 700 KB again.
+          [ -d _site/tournament-history ] && [ -n "$(ls -A _site/tournament-history 2>/dev/null)" ] \
+            || { echo "MISSING from _site: tournament-history/ shard dir is absent or empty"; exit 1; }
+          node -e '
+            const p = JSON.parse(require("fs").readFileSync("_site/player-profiles.json","utf8")).players || {};
+            const bad = Object.keys(p).filter(k => p[k] && p[k].tournamentHistory !== undefined);
+            if (bad.length) { console.error(`player-profiles.json still carries tournamentHistory on ${bad.length} player(s) (e.g. ${bad.slice(0,3).join(", ")}) — TEN-207 sharding regressed`); process.exit(1); }
+            const idx = JSON.parse(require("fs").readFileSync("_site/tournament-history-index.json","utf8")).players || {};
+            if (!Object.keys(idx).length) { console.error("tournament-history-index.json is empty — the record card would read 0 on record for every player"); process.exit(1); }
+            console.log(`TEN-207: profiles lite, ${Object.keys(idx).length} tournament-history shard(s) indexed.`);
+          '
           echo "All referenced files present in _site."
 
       # TEN-178 scope item 2 — the merge-ancestor guard.

@@ -3389,6 +3389,84 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   return index;
 }
 
+// =================================================================
+// TOURNAMENT-HISTORY SHARDS  (TEN-207)
+// -----------------------------------------------------------------
+// tournamentHistory is HALF of player-profiles.json — measured 2026-09-16 at
+// 5.67 MB of 11.24 MB across 428 players (50.4%), and 133 KB of Djokovic's
+// 166 KB. player-profiles.json is on the eager path: the matches board blocks
+// on it before a single profile is opened, so every visitor pays for 428
+// players' whole-career records to look at today's card.
+//
+// So it moves to one lazy shard per player, fetched when a profile is opened.
+// Measured effect on the eager payload: 1359 KB -> 658 KB gzipped (-51.6%);
+// a shard costs a median of 1 KB and at worst 12 KB gzipped on open.
+//
+// Two rules this block must not break:
+//   1. NON-MUTATING. The published profile is a shallow clone with the field
+//      omitted; `profiles` itself keeps tournamentHistory so the in-process
+//      steps that run AFTER the write (career-backfill's match backfill) still
+//      see it. writeCareerHistoryShards can `delete` its carrier because
+//      careerMatches has no later reader; this field does.
+//   2. NO PRUNING of stale shards. The published roster tracks today's board,
+//      not the cache (137 vs 428 on a measured day), so a player off today's
+//      board is absent from `profiles` — deleting his shard would 404 the
+//      record card the moment he plays again. Shards are gitignored, rebuilt
+//      every run, and cost ~1 KB each; accumulating them is the cheap side.
+const TOURNAMENT_HISTORY_SHARD_DIR = 'tournament-history';
+const TOURNAMENT_HISTORY_INDEX_PATH = 'tournament-history-index.json';
+const TOURNAMENT_HISTORY_SHARD_SCHEMA_VERSION = 1;
+
+// The index is what the client renders the header count and the empty state
+// against BEFORE the shard lands. Without it "Record by tournament" would read
+// "0 on record" and then flash the real number, and the honest "isn't on record
+// for this player yet" copy would show for every player mid-fetch — telling the
+// user we have no data when we simply have not fetched it yet.
+function writeTournamentHistoryShards(profiles, opts = {}) {
+  const log = opts.log || (() => {});
+  fs.mkdirSync(TOURNAMENT_HISTORY_SHARD_DIR, { recursive: true });
+  const index = {};
+  let bytes = 0, tourTotal = 0, matchTotal = 0;
+
+  for (const [key, p] of Object.entries(profiles)) {
+    const hist = (p && Array.isArray(p.tournamentHistory)) ? p.tournamentHistory : [];
+    if (!hist.length) continue;
+    const file = `${TOURNAMENT_HISTORY_SHARD_DIR}/${key}.json`;
+    writeJsonAtomic(file, {
+      v: TOURNAMENT_HISTORY_SHARD_SCHEMA_VERSION, key, tournamentHistory: hist,
+    }, true);
+    bytes += fs.statSync(file).size;
+    // `m` (total match rows) is not used by the card today. It is what tells a
+    // later reader whether a shard is worth fetching at all, and it is free here.
+    let m = 0;
+    for (const t of hist) for (const ed of (t.editions || [])) m += (ed.matches || []).length;
+    index[key] = { n: hist.length, m };
+    tourTotal += hist.length;
+    matchTotal += m;
+  }
+
+  writeJsonAtomic(TOURNAMENT_HISTORY_INDEX_PATH,
+    { v: TOURNAMENT_HISTORY_SHARD_SCHEMA_VERSION, builtAt: new Date().toISOString(), players: index }, true);
+  log(`Wrote ${Object.keys(index).length} tournament-history shard(s) to ${TOURNAMENT_HISTORY_SHARD_DIR}/ `
+    + `(${tourTotal} tournaments, ${matchTotal} match rows, ${(bytes / 1024 / 1024).toFixed(1)} MB total, `
+    + `lazy — off the player-profiles.json critical path).`);
+  return index;
+}
+
+// The published view of the profile store: every field except tournamentHistory,
+// which now ships as shards. Shallow clone per player — the arrays underneath are
+// shared, so this costs a few hundred small objects, not a copy of the data.
+function profilesWithoutTournamentHistory(playerProfiles) {
+  const out = {};
+  for (const [key, p] of Object.entries(playerProfiles.players || {})) {
+    if (!p) { out[key] = p; continue; }
+    const lite = { ...p };
+    delete lite.tournamentHistory;
+    out[key] = lite;
+  }
+  return { ...playerProfiles, players: out };
+}
+
 // Per-book odds timelines move OUT of matches.json into one lazy shard per match.
 //
 // Measured on the first full capture after the refresher was fixed: 44 fixtures
@@ -5331,8 +5409,15 @@ async function runPipeline() {
   console.log('Building career-record drill-down shards...');
   await writeCareerHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
 
-  writeJsonAtomic('player-profiles.json', playerProfiles, true);
-  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+  // TEN-207: tournamentHistory ships as lazy per-player shards, not inside the
+  // eager profile store. Must run BEFORE the write (it is the source of the
+  // shards) and the write must publish the LITE view. Non-mutating on purpose —
+  // backfillMatchesTournamentHistory below still reads playerProfiles.players.
+  console.log('Building tournament-history shards...');
+  writeTournamentHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
+
+  writeJsonAtomic('player-profiles.json', profilesWithoutTournamentHistory(playerProfiles), true);
+  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s), tournamentHistory sharded).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
@@ -5623,5 +5708,7 @@ module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTour
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
+  writeTournamentHistoryShards, profilesWithoutTournamentHistory,
+  TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
   fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
   TOURNAMENT_HISTORY_SCHEMA_VERSION };

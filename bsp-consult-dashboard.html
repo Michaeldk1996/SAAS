@@ -16922,8 +16922,22 @@ function ppStatRows(defs, stats, color, samples){
 // full-career get_fixtures call per player). Pick a tournament → see the career
 // win-loss record there, across every season on record. No fabricated data: if
 // a player has no career history yet, the search says so plainly. ----
+// TEN-207: the rows now arrive in a lazy per-player shard, so this getter reads
+// the shard cache. Inline tournamentHistory still wins when a profiles file
+// carries it (see loadTourHistShard rule 2).
 function ppCareerHistory(p){
-  return (p && Array.isArray(p.tournamentHistory)) ? p.tournamentHistory : [];
+  if (p && Array.isArray(p.tournamentHistory)) return p.tournamentHistory;
+  if (!p || p.key == null) return [];
+  const rows = _tourHistShards[String(p.key)];
+  return Array.isArray(rows) ? rows : [];
+}
+// Distinguishes "we have not fetched it yet" from "there is nothing to fetch".
+// The index says a shard exists; the cache says whether it has landed. Only the
+// second state may render the "isn't on record yet" copy — see rule 1 above.
+function ppCareerHistoryPending(p){
+  if (!p || p.key == null) return false;
+  if (Array.isArray(p.tournamentHistory)) return false;
+  return tourHistCount(p.key) > 0 && !(String(p.key) in _tourHistShards);
 }
 function ppFindTournament(p, name){
   const n = String(name == null ? '' : name).toLowerCase();
@@ -16979,6 +16993,11 @@ function ppTournamentDropdownHtml(p, query){
 // The selected tournament's career record card, Design 21a:
 // header + 5 KPI tiles + "Fixtures by edition" (round-by-round who he beat/lost to).
 function ppTournamentResultHtml(p, name){
+  // TEN-207: the shard may still be in flight. Saying "isn't on record yet" then
+  // would be a false negative about our own data, so the pending state says so.
+  if (ppCareerHistoryPending(p)){
+    return `<div style="font-size:12.5px;color:#5b6880;padding:14px 2px;line-height:1.5;font-family:'IBM Plex Mono',monospace;">Loading career tournament history\u2026</div>`;
+  }
   if (ppCareerHistory(p).length === 0){
     return `<div style="font-size:12.5px;color:#4b5672;padding:14px 2px;line-height:1.5;">Career tournament history isn\u2019t on record for this player yet\u2014it fills in automatically on the next data refresh.</div>`;
   }
@@ -17477,6 +17496,65 @@ function loadOddsPerfShardThenRerender(playerKey){
     // showPlayerProfile() already locked the Recent form card's height, and rebuilding
     // the markup without re-running ppSyncCareerHeight() drops that inline lock — the
     // card then springs to its full natural height on its own, seconds after open.
+    if (view && profile && view.style.display !== 'none') ppRepaint();
+  });
+}
+
+// ---- Whole-career tournament history, lazily sharded (TEN-207) ----------------
+//
+// Built by bsp-pipeline.js writeTournamentHistoryShards(). This field used to ride
+// inside player-profiles.json and was HALF of it (measured 5.67 MB of 11.24 MB
+// across 428 players), which every visitor to the matches board paid for before
+// opening a single profile. It is now fetched per player, on profile open.
+//
+// Three rules this block must not break:
+//   1. The INDEX is authoritative for "does this player have a record at all".
+//      Deciding that from the shard cache would make a player mid-fetch
+//      indistinguishable from a player with no history, and the card's empty
+//      state says "isn't on record for this player yet" — i.e. it would tell the
+//      user we have no data when we simply have not fetched it yet.
+//   2. A profile served WITH tournamentHistory inline still wins. The field is
+//      only absent because the current builder omits it; an older or hand-built
+//      profiles file must keep working rather than silently empty the card.
+//   3. The H2H page needs this too, not just the profile — h2hFromHist() is the
+//      only source of pre-2021 meetings, so a pair that has met would read
+//      "never met" if the shard were fetched on profile open alone.
+let tourHistIndex = {};
+const _tourHistShards = {};
+const _tourHistPromises = {};
+async function loadTourHistIndex(){
+  try {
+    const res = await fetch('./tournament-history-index.json', { cache: 'no-cache' });
+    if (res.ok){ const d = await res.json(); tourHistIndex = d.players || {}; }
+  } catch (err){ console.warn('tournament history index load failed:', err.message); }
+}
+// How many tournaments this player has on record, per the index — available
+// before the shard lands so the header count never flashes 0 and then fills.
+function tourHistCount(playerKey){
+  const e = tourHistIndex[String(playerKey == null ? '' : playerKey)];
+  return e && e.n ? e.n : 0;
+}
+function loadTourHistShard(playerKey){
+  const pk = String(playerKey == null ? '' : playerKey);
+  if (!pk) return Promise.resolve(null);
+  if (pk in _tourHistShards) return Promise.resolve(_tourHistShards[pk]);
+  if (_tourHistPromises[pk]) return _tourHistPromises[pk];
+  _tourHistPromises[pk] = fetch(`./tournament-history/${pk}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      _tourHistShards[pk] = (d && Array.isArray(d.tournamentHistory)) ? d.tournamentHistory : null;
+      return _tourHistShards[pk];
+    })
+    .catch(err => { console.warn(`tournament history shard ${pk} load failed:`, err.message); _tourHistShards[pk] = null; return null; });
+  return _tourHistPromises[pk];
+}
+// Re-render the open profile once the shard lands, so the record card fills in
+// place. Same ppRepaint() reasoning as loadOddsPerfShardThenRerender above.
+function loadTourHistShardThenRerender(playerKey){
+  loadTourHistShard(playerKey).then(() => {
+    if (String(ppState.key) !== String(playerKey)) return;
+    const view = document.getElementById('playerProfileView');
+    const profile = playerProfiles[String(playerKey)];
     if (view && profile && view.style.display !== 'none') ppRepaint();
   });
 }
@@ -18225,8 +18303,14 @@ function buildPlayerProfileHtml(p){
 
   // ---- Record by tournament (whole-career history) ----
   const surname = (p.name || '').split(' ').pop();
+  // TEN-207: kick the lazy shard on profile open and repaint when it lands.
+  // Same shape as the market-performance fetch below: index gates the request, so
+  // a player with no history on record never fires one.
+  if (ppCareerHistoryPending(p)) loadTourHistShardThenRerender(p.key);
   const careerHistory = ppCareerHistory(p);
-  const tournamentCount = careerHistory.length;
+  // Count comes from the INDEX while the shard is in flight, so the header reads
+  // the true number immediately instead of flashing "0 on record".
+  const tournamentCount = careerHistory.length || tourHistCount(p.key);
   const tournamentDropdownHtml = ppTournamentDropdownHtml(p, ppState.tournamentQuery || '');
   const tournamentResultHtml = ppTournamentResultHtml(p, ppState.tournamentPicked);
   // Split to match the export: the SEARCH card lives in the left rail (beneath
@@ -21272,7 +21356,7 @@ function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
 
 /* ---------- HEAD TO HEAD (full comparison page — TEN-8) ---------- */
 // Expose the `let`-scoped datasets the H2H module reads (not window props otherwise).
-window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards, holdbreak: () => holdbreak };
+window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards, holdbreak: () => holdbreak, tourHistShards: () => _tourHistShards };
 
 /* ============================================================================
    HEAD-TO-HEAD PAGE  (ported from design_handoff_head_to_head, high-fidelity)
@@ -22935,7 +23019,23 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (Object.keys(surf).length) { e.surf = surf; e.season = { w, l }; }
     }
     // whole-career tournament history (item 4 — powers the tournament selector).
+    // TEN-207: this is now a lazy shard, and it is NOT enough to fetch it on
+    // profile open — h2hFromHist() reads e.tourHist and is the ONLY source of
+    // pre-2021 meetings, so without this kick a pair that has met 9 times would
+    // render "never met" on the H2H page. Mirrors the loadStyleMeetShard fetch
+    // immediately below: fetch once per player, then re-render this pairing.
     e.tourHist = (prof && Array.isArray(prof.tournamentHistory)) ? prof.tournamentHistory : null;
+    // _tourHistShards is a main-script `const`, so it is NOT on window — it must
+    // come through the __h2hEnv getter bridge, exactly like oddsPerfShards.
+    if (!e.tourHist && e.key != null) {
+      const cached = (DV('tourHistShards') || {})[String(e.key)];
+      if (Array.isArray(cached)) e.tourHist = cached;
+      else if (cached === undefined && !e._tourHistKicked) {
+        e._tourHistKicked = true;
+        const lth = fn('loadTourHistShard');
+        if (lth) lth(e.key).then(rows => { e.tourHist = rows || null; render(); }).catch(() => {});
+      }
+    }
 
     // Record vs opponent's archetype AND the expandable list of those matches, both
     // from the ONE TEN-88 per-player career-meeting shard (Option A, TEN-117; founder
@@ -23070,7 +23170,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadHoldbreak(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

@@ -39,6 +39,13 @@ odds-index.json
 # ~480 players — derived output that would churn the whole set on every run.
 career-history/
 career-history-index.json
+
+# TEN-207 whole-career tournament-history shards + their index: one file per
+# player, split out of player-profiles.json (it was 50% of that file). Rebuilt
+# every run from player-tournament-history.json, exactly like career-history/ —
+# derived output that would churn the whole set on every run.
+tournament-history/
+tournament-history-index.json
 mcp-cache/
 tml-cache/
 chall-cache/
