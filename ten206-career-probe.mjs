@@ -78,7 +78,11 @@ await sleep(2500);
 // Open the Career record box.
 await ev(`(function(){var b=document.querySelector('[data-pp2="box"][data-box="career"]'); if(b) b.click(); return !!b;})()`);
 await sleep(900);
-if (process.env.PP_CLICK) { await ev(process.env.PP_CLICK); await sleep(800); }
+// PP_CLICK drives the scripted interaction test. Its RETURN VALUE is printed —
+// an interaction probe that only fires clicks and never reads the result proves
+// nothing about what the clicks did.
+let clickResult = null;
+if (process.env.PP_CLICK) { clickResult = await ev(process.env.PP_CLICK); await sleep(800); }
 
 const out = await ev(`(function(){
   var __m=(typeof playerProfiles!=='undefined'&&playerProfiles)?(playerProfiles.players||playerProfiles):{};
@@ -133,7 +137,9 @@ const out = await ev(`(function(){
   o.errors=window.__e;
   return JSON.stringify(o);
 })()`);
-console.log(out);
+const parsed = JSON.parse(out);
+if (clickResult) parsed.interaction = JSON.parse(clickResult);
+console.log(JSON.stringify(parsed));
 if (SHOT) {
   const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
   if (r.result?.data) (await import('node:fs')).writeFileSync(SHOT, Buffer.from(r.result.data, 'base64'));

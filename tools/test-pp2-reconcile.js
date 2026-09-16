@@ -2882,6 +2882,80 @@ mustFail('[neg] the shortfall check would catch a drill that claimed to show eve
     'a partial list claims to be complete');
 });
 
+check('a year drill takes ONE store — the union double-counted on the live page', () => {
+  // Regression lock for a defect the unit suite did NOT catch and the deployed
+  // probe did: Zverev's 2026 Total drill listed 98 rows under a 66-match cell.
+  // Two causes, both locked here — a round code spelled two ways defeating the
+  // dedup key, and the union of two stores that disagree.
+  const dual = {
+    key: '__dual', name: 'D. Ual',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 2, lost: 0 },
+      clay: { won: 2, lost: 0 }, hard: null, grass: null, indoor: null }],
+    recentForm: { matches: [
+      { opponent: 'B. Bonzi', date: '2026-05-26', tournament: 'French Open',
+        round: 'ATP French Open - 3rd Round', surface: 'clay', won: true,
+        sets: [{ p: 6, o: 3 }], tier: 'atp' },
+      { opponent: 'T. Machac', date: '2026-05-28', tournament: 'French Open',
+        round: 'ATP French Open - Quarter-final', surface: 'clay', won: true,
+        sets: [{ p: 6, o: 4 }], tier: 'atp' },
+    ] },
+    // the SAME two matches as the edition store spells them: raw draw codes
+    tournamentHistory: [{ name: 'French Open', won: 2, lost: 0, editions: [
+      { year: '2026', matches: [
+        { res: 'W', round: 'R32', opp: 'B. Bonzi', score: '3 - 0' },
+        { res: 'W', round: 'QF', opp: 'T. Machac', score: '3 - 0' },
+      ] },
+    ] }],
+  };
+  const saved = { ...I.state };
+  try {
+    I.state.key = dual.key;
+    const rows = I.drillRows(dual, null, '2026');
+    assert.strictEqual(rows.length, 2,
+      `the 2026 drill lists ${rows.length} rows for 2 matches — the stores were unioned`);
+    assert(rows.every(r => r.src === 'form'),
+      'the drill mixed stores instead of preferring the dated one');
+    // and the round spelling must not be what holds them apart
+    assert.strictEqual(I.drillSpine(dual).filter(r => r.year === '2026').length, 2,
+      'the spine itself carries the duplicate');
+  } finally { Object.assign(I.state, saved); }
+});
+mustFail('[neg] the one-store check would catch the unioned list measured live', () => {
+  const rows = 98, cell = 66;   // Zverev 2026, deployed, before the fix
+  assert.strictEqual(rows, cell, `the 2026 drill lists ${rows} rows for ${cell} matches`);
+});
+
+check('a drill holding MORE than its record says so, and does not name a cause', () => {
+  // The provider's season aggregate can be SHORT (Norrie 2021: season row 36,
+  // per-match store 85 across 30 events, and 85 is the number that matches his
+  // real season). So the note must state the disagreement without blaming a side.
+  const over = {
+    key: '__ov', name: 'O. Ver',
+    careerByYear: [{ year: '2021', allTier: true, total: { won: 2, lost: 1 },
+      clay: { won: 2, lost: 1 }, hard: null, grass: null, indoor: null }],
+    tournamentHistory: [{ name: 'Big Event', won: 5, lost: 2, editions: [
+      { year: '2021', matches: Array.from({ length: 7 }, (_, i) => ({
+        res: i < 5 ? 'W' : 'L', round: 'R' + (128 >> i), opp: 'P' + i + '. Layer', score: '3 - 0',
+      })) },
+    ] }],
+  };
+  const saved = { ...I.state };
+  let html;
+  try {
+    I.state.key = over.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'cell', year: '2021', surf: '' };
+    html = I.renderCareerModal(over, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  assert(/7 matches on record here against a 3-match season row · the two sources disagree/.test(html),
+    'the overflow is not stated on the page');
+  assert(!/double-count/.test(html), 'the note asserts a cause it cannot know');
+  assert(!/All 7 matches/.test(html), 'an overflowing list still claims to be complete');
+});
+mustFail('[neg] the overflow check would catch the "All N matches" wording that hid it', () => {
+  const html = 'All 7 matches';
+  assert(!/All 7 matches/.test(html), 'an overflowing list still claims to be complete');
+});
+
 check('the bold name in a ledger row is the SUBJECT, in both orders', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const fn = src.slice(src.indexOf('function ledgerRowHtml'));

@@ -1722,9 +1722,22 @@
   // spine (§4), so it stays the headline; the drill reports its own count against
   // it. Raised to the founder as gate item (ii) — this is the one thing standing
   // between "records open" and "records open and reconcile".
-  function drillKey(year, event, round, opp) {
-    return String(year) + '|' + String(event || '').toLowerCase() + '|' +
-      String(round || '').toLowerCase() + '|' + surnameOf(String(opp || '')).toLowerCase();
+  // The dedup key deliberately EXCLUDES the round.
+  //
+  // The two stores do not spell it the same way: recentForm goes through
+  // roundLabel(), which renders early rounds draw-relative ("3R"), while the
+  // edition store carries the raw draw code ("R32"). Keying on the round made
+  // every shared match look like two matches. Measured on the deployed page:
+  // Zverev's 2026 Total drill listed 98 rows against a 66-match season cell,
+  // and all 32 edition rows were duplicates of form rows.
+  //
+  // year + event + opponent identifies a match: a player meets a given opponent
+  // at a given event in a given year at most once outside a round robin, and the
+  // round-robin events seed one group meeting.
+  function drillKey(year, event, opp) {
+    return String(year) + '|' +
+      String(event || '').toLowerCase().replace(/[^a-z0-9]/g, '') + '|' +
+      surnameOf(String(opp || '')).toLowerCase();
   }
   function drillSpine(p) {
     if (drillSpine._k === p.key && drillSpine._v) return drillSpine._v;
@@ -1734,7 +1747,7 @@
     ledgerRows(p).forEach(function (x) {
       var m = x.m;
       var ev = eventName(m), rd = roundLabel(m);
-      var k = drillKey(String(m.date).slice(0, 4), ev, rd, m.opponent);
+      var k = drillKey(String(m.date).slice(0, 4), ev, m.opponent);
       seen[k] = true;
       out.push({
         date: m.date || null, year: String(m.date || '').slice(0, 4),
@@ -1748,7 +1761,7 @@
     (p.tournamentHistory || []).forEach(function (t) {
       (t.editions || []).forEach(function (e) {
         (e.matches || []).forEach(function (mm) {
-          var k = drillKey(e.year, t.name, mm.round, mm.opp);
+          var k = drillKey(e.year, t.name, mm.opp);
           if (seen[k]) return;
           seen[k] = true;
           out.push({
@@ -1782,9 +1795,36 @@
   }
 
   var DRILL_CAP = 200;   // a scroll list, not a pager; stated when it bites
+
+  // ONE STORE PER YEAR — never the union.
+  //
+  // Deduping the two stores by (year, event, opponent) took Zverev's 2026 Total
+  // drill from 98 rows to 74 against a 66-match cell, but it did not reach zero,
+  // and a roster census found 282 of 1,329 year-cells (21.2%) still listing MORE
+  // matches than the record above them — worst case Norrie 2021, 85 rows against
+  // a 36-match cell. That residue is not a key problem: the two stores genuinely
+  // disagree about how many matches a season held (Zverev 2021: season row 33-6,
+  // edition rows 62-15), so no key can reconcile them.
+  //
+  // Mixing two stores that disagree cannot produce a trustworthy count, so a year
+  // takes ONE of them. recentForm wins where it has anything for that year: it is
+  // dated, subject-relative, carries per-set scores and is the store the ledger's
+  // price join is built over. Where it is silent, the edition store is all we hold.
+  // A year the form store covers only partly then reads "Showing 13 of 81" — a
+  // coverage statement, which is true, rather than 94 rows, which is not.
+  function drillSourceFor(p, year) {
+    if (!year) return null;                       // career scope spans both
+    var rows = drillSpine(p);
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].year === String(year) && rows[i].src === 'form') return 'form';
+    }
+    return 'edition';
+  }
   function drillRows(p, surf, year) {
+    var only = drillSourceFor(p, year);
     return drillSpine(p).filter(function (r) {
       if (year && r.year !== String(year)) return false;
+      if (only && r.src !== only) return false;
       if (!surf) return true;
       // Indoors is a COURT TYPE carved out of the surfaces; recentForm carries a
       // surface but no court type, so an Indoors drill has no per-match source at
@@ -1810,6 +1850,18 @@
     } else if (rows.length < cellN) {
       note = 'Showing ' + rows.length + ' of ' + cellN + ' ' + MIDDOT +
         ' the rest are not in the per-match store';
+    } else if (rows.length > cellN) {
+      // OVERFLOW — the list holds MORE than the record it sits under.
+      //
+      // Do NOT name a cause here. The first draft of this note called it a
+      // double-count in the per-match store; checking one case showed the
+      // opposite. Norrie 2021: the season row reads 36 matches, the per-match
+      // store holds 85 across 30 events, and 85 is the number that matches his
+      // actual 2021. It is the provider's season aggregate that is short, not
+      // the match list that is long. Which source is wrong varies, so the note
+      // states the DISAGREEMENT and leaves the cause to the report.
+      note = rows.length + ' matches on record here against a ' + cellN +
+        '-match season row ' + MIDDOT + ' the two sources disagree';
     } else if (shown.length < rows.length) {
       note = 'Showing ' + shown.length + ' of ' + rows.length + ' ' + MIDDOT + ' scroll for more';
     } else {
