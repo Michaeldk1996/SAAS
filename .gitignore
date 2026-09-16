@@ -73,3 +73,4 @@ trading-splits-divergence.json
 # alone, so "this hour is already paid for" survives a push race. That is the whole
 # mechanism; committing it would defeat it.
 .metered-spend-marker
+.design-ten206/
