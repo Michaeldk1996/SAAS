@@ -25666,6 +25666,16 @@ function renderVals(){
     ]},
   ];
 
+  // TEN-210 · Some tournaments publish no box score at all. Measured on the feed
+  // 2026-09-16 over three Davis Cup weeks: ZERO of 86 "ATP Davis Cup - World Group
+  // II" fixtures carry a statistics row, 2 of 79 in World Group I, against 56 of 82
+  // in the top-tier World Group. The panel rendered all 21 rows as em-dashes, which
+  // reads as a broken panel rather than an absent source. Say it once instead.
+  // A row that dashes because a rate does not exist (0 break points faced) is NOT
+  // this case — that is one honest dash beside real numbers — so the note fires
+  // only when EVERY row in EVERY section is empty for the selected scope.
+  const statsAbsent=statSections.every(sec=>sec.rows.every(r=>r.aVal===DASH&&r.bVal===DASH));
+
   // ── Points tab (§5) — the real point log ──
   const entry=lf?lf.pbpGet(m.ek):null;
   const pbpGames=(entry&&Array.isArray(entry.games))?entry.games:[];
@@ -25768,7 +25778,7 @@ function renderVals(){
     },
     tabs:['Stats','Points','Ratings','Break/Hold'],tab:S.tab,
     scope:S.scope,nSets,
-    statSections,
+    statSections,statsAbsent,statsAbsentHasPbp:pbpGames.length>0,
     setTabs:m.sets.map((_,i)=>i+1),pset:setNum,
     setScoreLabel,games,pbpLoading,pbpError,
     ratingRows,momentumSvg,
@@ -25947,7 +25957,12 @@ function render(){
         const on=(i===0?S.scope==='MATCH':S.scope==='SET');const sg=seg(on);
         return `<span class="lvseg" data-scope="${i===0?'MATCH':'SET'}" style="padding:7px 15px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:${sg.color};background:${sg.bg};">${l}</span>`;
       }).join('');
-      const sectionsHtml=d.statSections.map(sec=>`
+      const absentHtml=`
+<div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:34px 24px;text-align:center;">
+  <div style="font-size:14px;font-weight:600;color:#8b96b5;">No match statistics for this tournament</div>
+  <div style="margin-top:8px;font-size:12.5px;line-height:1.55;color:#5b6880;">The feed publishes no box score for this match — Davis Cup World Group I and II ties carry none.${d.statsAbsentHasPbp?' The point log is on the <span style="color:#8b96b5;">Points</span> tab.':''}</div>
+</div>`;
+      const sectionsHtml=d.statsAbsent?absentHtml:d.statSections.map(sec=>`
 <div style="background:#080b11;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;">
   <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5b6880;margin-bottom:16px;">${e(sec.title)}</div>
   <div style="display:flex;flex-direction:column;gap:16px;">${sec.rows.map(statRowHtml).join('')}</div>
