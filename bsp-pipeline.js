@@ -4383,18 +4383,52 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   for (const [key, name] of seedPlayers) {
     const { profile, opponents } = await buildOneProfile(key, name, surfaceMap);
     if (profile) profiles[key] = profile;
+    // Seeds are cached too. They used not to be, and that leaked roster: a player
+    // who appeared on the board once and never turned up in anyone else's recent
+    // form was never written to `cachedPlayers`, so he fell out of the roster the
+    // next day with nothing left to rebuild him from. Pass 2 now reads the cache
+    // as its pool, so this write is what keeps him in it.
+    cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile: profile || null };
     for (const [oppKey, oppName] of opponents) {
       if (!seedPlayers.has(oppKey) && !opponentPool.has(oppKey)) opponentPool.set(oppKey, oppName);
     }
   }
 
-  // Pass 2 — opponents, TTL-cached and throttled. Fresh cache entries are
-  // reused as-is (including negatively-cached nulls); stale/missing ones are
-  // rebuilt up to MAX_OPPONENT_BUILDS_PER_RUN, and any not reached this run
-  // fall back to their stale cached profile so they stay searchable meanwhile.
+  // Pass 2 — the rest of the roster, TTL-cached and throttled.
+  //
+  // TEN-206 founder ruling Q2(b), 2026-09-16: "the cache is ONLY a skip-rebuild
+  // optimisation. An entry is reused only if schema version matches AND it is
+  // within TTL; otherwise rebuild."
+  //
+  // Two things follow, and both are changes from the prior behaviour:
+  //
+  //   1. The pool is `opponentPool ∪ everyone already in the cache`, not just the
+  //      opponents discovered on today's board. Publishing only today's board is
+  //      what made the roster track how busy the tour is (measured 2026-09-16: a
+  //      5-match slate published 137 players, a full July week 428) — one browser
+  //      fetch and 27 node scripts read this file, so a quiet Monday used to cut
+  //      the news feed's name list by two thirds.
+  //
+  //   2. There is NO stale fallback. The old code, on hitting the per-run build
+  //      cap, republished `cached.profile` whatever version it was. Under (b) that
+  //      is exactly what must not happen: the committed cache is v7/undefined
+  //      (measured: 372 v7, 95 undefined, 467 of 467 past TTL) and 95 of those
+  //      entries have no careerByYear, so the fallback would republish the old
+  //      formula's numbers indefinitely — nothing would ever rebuild them, because
+  //      a republished profile looks like a success. A player we cannot build at
+  //      the current schema is simply not published this run; the cap means the
+  //      roster refills over the next few runs instead of all at once.
   const now = Date.now();
-  let built = 0, reused = 0, skippedNull = 0;
-  for (const [key, name] of opponentPool) {
+  const rebuildPool = new Map(opponentPool);
+  for (const key of Object.keys(cachedPlayers)) {
+    if (seedPlayers.has(key) || rebuildPool.has(key)) continue;
+    const cachedName = cachedPlayers[key] && cachedPlayers[key].profile
+      && (cachedPlayers[key].profile.name || cachedPlayers[key].profile.playerName);
+    rebuildPool.set(key, cachedName || String(key));
+  }
+
+  let built = 0, reused = 0, skippedNull = 0, deferred = 0;
+  for (const [key, name] of rebuildPool) {
     const cached = cachedPlayers[key];
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
@@ -4403,14 +4437,15 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       if (cached.profile) { profiles[key] = cached.profile; reused++; } else skippedNull++;
       continue;
     }
-    if (built >= MAX_OPPONENT_BUILDS_PER_RUN) {
-      if (cached && cached.profile) { profiles[key] = cached.profile; reused++; }
-      continue;
-    }
+    if (built >= MAX_OPPONENT_BUILDS_PER_RUN) { deferred++; continue; }
     const { profile } = await buildOneProfile(key, name, surfaceMap);
     cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile: profile || null };
     built++;
     if (profile) profiles[key] = profile; else skippedNull++;
+  }
+  if (deferred) {
+    console.log(`Player profiles: ${deferred} player(s) past the ${MAX_OPPONENT_BUILDS_PER_RUN}-build cap, `
+      + 'not published this run — they rebuild on the next runs (ruling Q2b: no stale fallback).');
   }
 
   // Cap EVERY served profile's recentForm to current-year + last-10 — the only
@@ -4512,10 +4547,26 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     profiles[key].insights = buildPlayerInsights(profiles[key], tourAverage);
   }
 
+  // TEN-206 founder ruling Q2(c), 2026-09-16: "Never publish a profile missing
+  // careerByYear (the career spine)." A profile without it is a searchable ghost —
+  // the Player Profile page's Career record, Calendar grid, Splits and run timeline
+  // all read that field, so the page opens to a wall of dashes and the header claims
+  // a player we cannot describe. Dropping him is the honest state: he is simply not
+  // on the roster until a run rebuilds him from source.
+  //
+  // This is a DROP, not a repair, so tools/test-roster-gate.js also asserts the
+  // roster did not collapse — otherwise "publish nothing" would satisfy the rule.
+  const shells = Object.keys(profiles).filter(k => !profiles[k] || !profiles[k].careerByYear);
+  for (const key of shells) delete profiles[key];
+  if (shells.length) {
+    console.log(`Player profiles: dropped ${shells.length} shell profile(s) with no careerByYear `
+      + `(ruling Q2c) — keys ${shells.slice(0, 10).join(', ')}${shells.length > 10 ? ', …' : ''}`);
+  }
+
   fs.writeFileSync(PLAYER_PROFILE_CACHE_PATH,
     JSON.stringify({ fetchedAt: new Date().toISOString(), players: cachedPlayers }, null, 2));
   console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
-    + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}] `
+    + `roster [built ${built}, reused ${reused}, no-stats ${skippedNull}, shells dropped ${shells.length}] `
     + `→ ${Object.keys(profiles).length} searchable.`);
 
   return {
@@ -5833,4 +5884,12 @@ module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSingle
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
   fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
-  TOURNAMENT_HISTORY_SCHEMA_VERSION };
+  TOURNAMENT_HISTORY_SCHEMA_VERSION,
+  // TEN-206 Q2: the one-off roster rebuild (tools/rebuild-profile-roster.js) drives
+  // the SAME per-player builder the pipeline uses, so a rebuilt entry is exactly what
+  // the pipeline would have produced. Exported, not re-implemented — a second copy of
+  // the builder would drift from PROFILE_SCHEMA_VERSION silently.
+  buildOneProfile, backfillProfilesHistory, buildPlayerInsights, computeTourAverage,
+  loadTournamentSurfaceMap,
+  PROFILE_SCHEMA_VERSION, OPPONENT_PROFILE_MAX_AGE_MS,
+  PLAYER_PROFILE_CACHE_PATH, TOURNAMENT_HISTORY_CACHE_PATH };

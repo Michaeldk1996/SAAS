@@ -285,6 +285,18 @@ jobs:
       - name: Series row-integrity gate (fail-closed)
         run: node tools/test-series-rows.js
 
+      # TEN-206 founder ruling Q2(c), 2026-09-16: "Never publish a profile missing
+      # careerByYear (the career spine). The roster gate asserts 0 shells, not <10%."
+      #
+      # Runs HERE — after the pipeline has rebuilt player-profiles.json and before
+      # "Assemble site" copies it — because the artifact it must judge is the one
+      # about to ship, not the committed cold-start seed. Fail-closed: a roster of
+      # searchable ghosts, or a roster that quietly collapsed to today's board, stops
+      # the deploy rather than reaching a paying reader. One browser fetch and 27 node
+      # scripts read this file, so a bad roster is not confined to the profile page.
+      - name: Player roster gate (fail-closed)
+        run: node tools/test-roster-gate.js
+
       # Assemble the static site: the dashboard as index.html + the JSON files it
       # fetches (all same-origin, relative paths) + the health file.
       #
