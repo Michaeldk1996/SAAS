@@ -1030,6 +1030,214 @@ check('real committed profiles are unaffected until the pipeline repopulates', (
   console.log(`        ${dashed} committed season rows unchanged; Indoors dashes pending a pipeline run`);
 });
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// 16 · COURT SPEED (§5.5) — venue join, era guard, band reconciliation
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n16 · Court speed (§5.5)');
+
+const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
+const SPEED_MAP = fs.existsSync(SPEED_MAP_PATH)
+  ? JSON.parse(fs.readFileSync(SPEED_MAP_PATH, 'utf8')) : null;
+
+// The join that matters most. Roland Garros (clay, AS 0.68) and Paris-Bercy
+// (indoor hard, AS 0.97) are two courts in one city. tournament-venues.json
+// geocodes "French Open" to the Paris city centre, so ANY coordinate-based or
+// city-name join silently bands 2,900 clay matches off an indoor hard reading.
+// This locks the outcome, not the mechanism — a future rewrite of the matcher
+// is free, reintroducing the collision is not.
+check('"French Open" resolves to Roland Garros, never to Paris', () => {
+  assert(SPEED_MAP, 'court-speed-map.json is missing — run build-court-speed-map.js');
+  const e = SPEED_MAP.events['French Open'];
+  assert(e, '"French Open" is unmapped');
+  assert.strictEqual(e.venue, 'Roland Garros', 'French Open mapped to ' + e.venue);
+});
+mustFail('the venue lock would catch French Open pointing at Paris', () => {
+  const e = { venue: 'Paris' };
+  assert.strictEqual(e.venue, 'Roland Garros', 'French Open mapped to ' + e.venue);
+});
+
+// The era guard keeps the surface the RATING was taken in, not the one with the
+// most rows. Stuttgart is the case that separates the two rules: its clay era is
+// longer (369 rows) than its grass era (297), but the 2025 rating is a grass
+// reading. A modal-frequency guard passes every other venue and fails this one.
+check('the surface guard keeps the rating-year era, not the commonest one', () => {
+  assert(SPEED_MAP, 'court-speed-map.json is missing');
+  const g = SPEED_MAP.surfaceGuard;
+  Object.keys(g).forEach((venue) => {
+    const kept = g[venue];
+    kept.drop.forEach((d) => {
+      assert(d.lastSeen < kept.keptThrough,
+        `${venue}: kept era ends ${kept.keptThrough} but dropped era "${d.key}" ran to ${d.lastSeen}`);
+    });
+  });
+  const st = g['Stuttgart'];
+  if (st) {
+    assert.strictEqual(st.keep, 'Grass/Outdoor', 'Stuttgart kept ' + st.keep + ', not its rated grass era');
+    assert(st.drop.some(d => d.rows > st.keptRows),
+      'Stuttgart no longer has a LARGER dropped era — this check has stopped separating the two rules');
+  }
+});
+mustFail('the era check would catch a guard that kept the commonest era', () => {
+  const kept = { keep: 'Clay/Outdoor', keptThrough: 2014, keptRows: 369, drop: [{ key: 'Grass/Outdoor', rows: 297, lastSeen: 2026 }] };
+  kept.drop.forEach((d) => {
+    assert(d.lastSeen < kept.keptThrough,
+      `kept era ends ${kept.keptThrough} but dropped era "${d.key}" ran to ${d.lastSeen}`);
+  });
+});
+
+// §4: the bands plus the rows no band could rate must account for EVERY priced
+// row. A shortfall here is how a coverage gap disguises itself as a small career.
+check('banded + unbanded = every priced row, on every surface chip', () => {
+  let combos = 0;
+  for (const p of SAMPLE) {
+    const total = I.speedRows(p).length;
+    if (!total) continue;
+    for (const s of I.SPEED_SURFACES.map(x => x.id)) {
+      I.state.speedSurf = s;
+      const bands = I.speedBands(p);
+      const banded = bands.reduce((n, b) => n + b.won + b.lost, 0);
+      const inSurface = I.speedRows(p).filter(m => I.speedSurfaceMatch(m, s)).length;
+      assert.strictEqual(banded + bands.unbanded, inSurface,
+        `${p.name}/${s}: ${banded} banded + ${bands.unbanded} unbanded != ${inSurface} rows`);
+      combos++;
+    }
+  }
+  I.state.speedSurf = 'all';
+  console.log(`        ${combos} player x surface combinations reconcile exactly`);
+});
+mustFail('the reconciliation would catch a band that dropped rows', () => {
+  assert.strictEqual(300 + 24, 337, '300 banded + 24 unbanded != 337 rows');
+});
+
+// The band order is a README-vs-file conflict resolved in the file's favour:
+// win rate descending, un-rateable bands last. Locking it stops a future tidy-up
+// from "restoring" the README's slow-to-fast order.
+check('bands sort by win rate descending, un-rateable last', () => {
+  for (const p of SAMPLE) {
+    if (!I.speedRows(p).length) continue;
+    const bands = I.speedBands(p);
+    let lastRate = Infinity, seenNull = false;
+    bands.forEach((b) => {
+      const n = b.won + b.lost;
+      const rateable = n >= 5;
+      if (!rateable) { seenNull = true; return; }
+      assert(!seenNull, `${p.name}: a rateable band sits below an un-rateable one`);
+      const r = b.won / n;
+      assert(r <= lastRate + 1e-9, `${p.name}: ${b.band.label} at ${r} follows a lower rate`);
+      lastRate = r;
+    });
+  }
+});
+mustFail('the sort check would catch an ascending band list', () => {
+  let lastRate = Infinity;
+  [0.4, 0.8].forEach((r) => {
+    assert(r <= lastRate + 1e-9, 'band at ' + r + ' follows a lower rate');
+    lastRate = r;
+  });
+});
+
+// A band under the five-match minimum shows its record and a dash, and does not
+// open. §5.5 keeps it listed: an absent band reads as a court he never played.
+check('a sub-minimum band dashes its rate and is not openable', () => {
+  let found = 0;
+  for (const p of Object.values(PLAYERS).slice(0, 120)) {
+    const pk = Object.assign({ key: Object.keys(PLAYERS).find(k => PLAYERS[k] === p) }, p);
+    if (!I.speedRows(pk).length) continue;
+    const bands = I.speedBands(pk);
+    const thin = bands.filter(b => { const n = b.won + b.lost; return n > 0 && n < 5; });
+    if (!thin.length) continue;
+    found++;
+    const html = I.renderSpeedModal(pk);
+    thin.forEach((b) => {
+      assert(html.indexOf('data-pp2="speed-band" data-v="' + b.band.id + '"') < 0,
+        `${p.name}: thin band ${b.band.label} (n=${b.won + b.lost}) is still clickable`);
+      assert.strictEqual(I.rateText(b.won, b.lost), '—',
+        `${p.name}: thin band ${b.band.label} printed a rate`);
+    });
+    if (found >= 3) break;
+  }
+  assert(found > 0, 'no player in the scan had a sub-minimum band — this check never ran');
+  console.log(`        ${found} players with a sub-minimum band: listed, dashed, not openable`);
+});
+mustFail('the openability check would catch a clickable thin band', () => {
+  const html = '<div data-pp2="speed-band" data-v="vfast">';
+  assert(html.indexOf('data-pp2="speed-band" data-v="vfast"') < 0, 'thin band vfast is still clickable');
+});
+
+// Units are the LISTED rows only, and the footer says so. The two scopes living
+// in one card is the design's own construction (speedTotal.unitsSub); what must
+// not happen is a units figure summed over an n the label does not state.
+check('the footer units equal the sum of the listed rows, and name their n', () => {
+  for (const p of SAMPLE) {
+    if (!I.speedRows(p).length) continue;
+    I.state.speedSurf = 'all';
+    const bands = I.speedBands(p);
+    const priced = bands.reduce((n, b) => n + b.priced, 0);
+    const pl = bands.reduce((n, b) => n + b.pl, 0);
+    const html = I.renderSpeedModal(p);
+    if (!priced) continue;
+    assert(html.indexOf('on ' + priced + ' listed') > -1,
+      `${p.name}: footer does not state its own n of ${priced}`);
+    const rows = bands.reduce((n, b) => n + b.rows.length, 0);
+    assert.strictEqual(rows, priced, `${p.name}: ${rows} listed rows but units summed over ${priced}`);
+    assert(isFinite(pl), `${p.name}: units are not finite`);
+  }
+});
+mustFail('the footer check would catch units summed over an unstated n', () => {
+  const html = 'on 313 listed';
+  assert(html.indexOf('on ' + 250 + ' listed') > -1, 'footer does not state its own n of 250');
+});
+
+check('every surface chip renders without leaking NaN/undefined', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    for (const s of I.SPEED_SURFACES.map(x => x.id)) {
+      I.state.speedSurf = s;
+      const html = I.renderSpeedModal(p);
+      assert(!/undefined|NaN|\[object/.test(html), `${p.name}/${s}: DOM leak`);
+      n++;
+    }
+  }
+  I.state.speedSurf = 'all';
+  console.log(`        ${n} chip renders clean`);
+});
+
+// The rows the modal cannot band must be visible in the DOM, not just in a
+// counter. This is the difference between a stated gap and a hidden one.
+check('unbanded rows are declared in the note, not silently absorbed', () => {
+  let stated = 0;
+  for (const p of SAMPLE) {
+    const total = I.speedRows(p).length;
+    if (!total) continue;
+    I.state.speedSurf = 'all';
+    const bands = I.speedBands(p);
+    if (!bands.unbanded) continue;
+    const html = I.renderSpeedModal(p);
+    assert(html.indexOf(bands.unbanded + ' of ' + total + ' priced matches') > -1,
+      `${p.name}: ${bands.unbanded} unbanded rows are not declared on the page`);
+    stated++;
+  }
+  assert(stated > 0, 'no sampled player had unbanded rows — this check never ran');
+  console.log(`        ${stated} players declare their unbanded rows in the DOM`);
+});
+mustFail('the declaration check would catch a silently absorbed gap', () => {
+  const html = 'Bands are Tennis Abstract speed.';
+  assert(html.indexOf('24 of 337 priced matches') > -1, '24 unbanded rows are not declared on the page');
+});
+
+// Set counts and set scores are genuinely absent — the odds archive drops
+// Tennis-Data's per-set columns at ingest. They must dash, never be inferred.
+check('set counts and set scores dash rather than being inferred', () => {
+  const p = SAMPLE.find(x => I.speedRows(x).length);
+  assert(p, 'no sampled player has priced rows');
+  const rows = I.speedRows(p);
+  rows.slice(0, 200).forEach((m) => {
+    assert(m.sets === undefined && m.score === undefined,
+      'a shard row carries a score field the archive does not hold: ' + JSON.stringify(m));
+  });
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n' + '='.repeat(64));
 console.log(`PASS ${pass}   FAIL ${fail}`);

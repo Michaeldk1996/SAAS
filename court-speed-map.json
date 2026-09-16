@@ -1,0 +1,1022 @@
+{
+ "schemaVersion": 1,
+ "builtAt": "2026-09-16T08:32:51.026Z",
+ "basis": "archive event name -> rated venue, voted from (year, opponent) co-occurrence with api-tennis tournamentHistory",
+ "acceptance": {
+  "minVotes": 20,
+  "marginOverRunnerUp": 3
+ },
+ "ratingBasis": "Tennis Abstract abstractSpeed, COURT_CONDITIONS (bsp-pipeline.js), one current reading per venue",
+ "coverage": {
+  "archiveRows": 59433,
+  "distinctEvents": 229,
+  "substringOnlyRows": 22762,
+  "resolvedRows": 45594,
+  "resolvedPct": 76.7,
+  "excludedBySurfaceGuard": 1397,
+  "derivedEntries": 92,
+  "ambiguousEvents": 32
+ },
+ "events": {
+  "Australian Open": {
+   "venue": "Australian Open",
+   "via": "Australian Open",
+   "votes": 1369,
+   "runnerUp": 32,
+   "rows": 2921
+  },
+  "Abierto Mexicano": {
+   "venue": "Acapulco",
+   "via": "Acapulco",
+   "votes": 392,
+   "runnerUp": 10,
+   "rows": 713
+  },
+  "Estoril Open": {
+   "venue": "Estoril",
+   "via": "Estoril",
+   "votes": 108,
+   "runnerUp": 3,
+   "rows": 348
+  },
+  "French Open": {
+   "venue": "Roland Garros",
+   "via": "French Open",
+   "votes": 1439,
+   "runnerUp": 30,
+   "rows": 2921
+  },
+  "Wimbledon": {
+   "venue": "Wimbledon",
+   "via": "Wimbledon",
+   "votes": 1421,
+   "runnerUp": 20,
+   "rows": 2794
+  },
+  "Mercedes Cup": {
+   "venue": "Stuttgart",
+   "via": "Stuttgart",
+   "votes": 159,
+   "runnerUp": 3,
+   "rows": 558
+  },
+  "Croatia Open": {
+   "venue": "Umag",
+   "via": "Umag",
+   "votes": 293,
+   "runnerUp": 3,
+   "rows": 367
+  },
+  "Open de Moselle": {
+   "venue": "Metz",
+   "via": "Metz",
+   "votes": 304,
+   "runnerUp": 4,
+   "rows": 587
+  },
+  "Swiss Indoors": {
+   "venue": "Basel",
+   "via": "Basel",
+   "votes": 310,
+   "runnerUp": 5,
+   "rows": 465
+  },
+  "BNP Paribas": {
+   "venue": "Paris",
+   "via": "Paris",
+   "votes": 22,
+   "runnerUp": 1,
+   "rows": 235
+  },
+  "Qatar Exxon Mobil Open": {
+   "venue": "Doha",
+   "via": "Doha",
+   "votes": 290,
+   "runnerUp": 6,
+   "rows": 693
+  },
+  "Open 13": {
+   "venue": "Marseille",
+   "via": "Marseille",
+   "votes": 299,
+   "runnerUp": 4,
+   "rows": 618
+  },
+  "ABN AMRO World Tennis Tournament": {
+   "venue": "Rotterdam",
+   "via": "Rotterdam",
+   "votes": 386,
+   "runnerUp": 9,
+   "rows": 713
+  },
+  "Pacific Life Open": {
+   "venue": "Indian Wells",
+   "via": "Indian Wells",
+   "votes": 25,
+   "runnerUp": 2,
+   "rows": 475
+  },
+  "Monte Carlo Masters": {
+   "venue": "Monte Carlo",
+   "via": "Monte Carlo",
+   "votes": 659,
+   "runnerUp": 20,
+   "rows": 1234
+  },
+  "Hamburg TMS": {
+   "venue": "Hamburg",
+   "via": "Hamburg",
+   "votes": 20,
+   "runnerUp": 1,
+   "rows": 299
+  },
+  "Allianz Suisse Open": {
+   "venue": "Gstaad",
+   "via": "Gstaad",
+   "votes": 30,
+   "runnerUp": 1,
+   "rows": 240
+  },
+  "Western & Southern Financial Group Masters": {
+   "venue": "Cincinnati",
+   "via": "Cincinnati",
+   "votes": 743,
+   "runnerUp": 19,
+   "rows": 1274
+  },
+  "US Open": {
+   "venue": "US Open",
+   "via": "US Open",
+   "votes": 1438,
+   "runnerUp": 22,
+   "rows": 2794
+  },
+  "Madrid Masters": {
+   "venue": "Madrid",
+   "via": "Madrid",
+   "votes": 22,
+   "runnerUp": 1,
+   "rows": 235
+  },
+  "Heineken Open": {
+   "venue": "Auckland",
+   "via": "Auckland",
+   "votes": 25,
+   "runnerUp": 1,
+   "rows": 375
+  },
+  "Dubai Tennis Championships": {
+   "venue": "Dubai",
+   "via": "Dubai",
+   "votes": 356,
+   "runnerUp": 9,
+   "rows": 665
+  },
+  "Gerry Weber Open": {
+   "venue": "Halle",
+   "via": "Halle",
+   "votes": 77,
+   "runnerUp": 2,
+   "rows": 453
+  },
+  "Rogers Masters": {
+   "venue": "Montreal",
+   "via": "Canada Masters",
+   "votes": 286,
+   "runnerUp": 7,
+   "rows": 770
+  },
+  "BA-CA Tennis Trophy": {
+   "venue": "Vienna",
+   "via": "Vienna",
+   "votes": 25,
+   "runnerUp": 2,
+   "rows": 182
+  },
+  "Sony Ericsson Open": {
+   "venue": "Miami",
+   "via": "Miami",
+   "votes": 348,
+   "runnerUp": 9,
+   "rows": 1235
+  },
+  "Internazionali BNL d'Italia": {
+   "venue": "Rome",
+   "via": "Rome",
+   "votes": 901,
+   "runnerUp": 19,
+   "rows": 1259
+  },
+  "Legg Mason Classic": {
+   "venue": "Washington",
+   "via": "Washington",
+   "votes": 22,
+   "runnerUp": 1,
+   "rows": 344
+  },
+  "China Open": {
+   "venue": "Beijing",
+   "via": "Beijing",
+   "votes": 277,
+   "runnerUp": 7,
+   "rows": 585
+  },
+  "U.S. Men's Clay Court Championships": {
+   "venue": "Houston",
+   "via": "Houston",
+   "votes": 130,
+   "runnerUp": 3,
+   "rows": 537
+  },
+  "BMW Open": {
+   "venue": "Munich",
+   "via": "Munich",
+   "votes": 287,
+   "runnerUp": 4,
+   "rows": 634
+  },
+  "Grand Prix Hassan II": {
+   "venue": "Marrakech",
+   "via": "Marrakech",
+   "votes": 267,
+   "runnerUp": 27,
+   "rows": 603
+  },
+  "Stockholm Open": {
+   "venue": "Stockholm",
+   "via": "Stockholm",
+   "votes": 179,
+   "runnerUp": 3,
+   "rows": 510
+  },
+  "Brisbane International": {
+   "venue": "Brisbane",
+   "via": "Brisbane",
+   "votes": 229,
+   "runnerUp": 5,
+   "rows": 406
+  },
+  "BNP Paribas Open": {
+   "venue": "Indian Wells",
+   "via": "Indian Wells",
+   "votes": 969,
+   "runnerUp": 17,
+   "rows": 1615
+  },
+  "Open Banco Sabadell": {
+   "venue": "Barcelona",
+   "via": "Barcelona",
+   "votes": 152,
+   "runnerUp": 4,
+   "rows": 549
+  },
+  "Mutua Madrileña Madrid Open": {
+   "venue": "Madrid",
+   "via": "Madrid",
+   "votes": 24,
+   "runnerUp": 1,
+   "rows": 165
+  },
+  "AEGON International": {
+   "venue": "Eastbourne",
+   "via": "Eastbourne",
+   "votes": 53,
+   "runnerUp": 2,
+   "rows": 201
+  },
+  "Rakuten Japan Open Tennis Championships": {
+   "venue": "Tokyo",
+   "via": "Tokyo",
+   "votes": 202,
+   "runnerUp": 4,
+   "rows": 372
+  },
+  "Shanghai Masters": {
+   "venue": "Shanghai",
+   "via": "Shanghai",
+   "votes": 696,
+   "runnerUp": 8,
+   "rows": 890
+  },
+  "BNP Paribas Masters": {
+   "venue": "Paris",
+   "via": "Paris",
+   "votes": 674,
+   "runnerUp": 16,
+   "rows": 847
+  },
+  "SkiStar Swedish Open": {
+   "venue": "Bastad",
+   "via": "Bastad",
+   "votes": 90,
+   "runnerUp": 1,
+   "rows": 270
+  },
+  "Open Sud de France": {
+   "venue": "Montpellier",
+   "via": "Montpellier",
+   "votes": 315,
+   "runnerUp": 8,
+   "rows": 432
+  },
+  "Copa Claro": {
+   "venue": "Buenos Aires",
+   "via": "Buenos Aires",
+   "votes": 25,
+   "runnerUp": 2,
+   "rows": 124
+  },
+  "Hall of Fame Championships": {
+   "venue": "Newport",
+   "via": "Newport",
+   "votes": 162,
+   "runnerUp": 3,
+   "rows": 584
+  },
+  "Winston-Salem Open at Wake Forest University": {
+   "venue": "Winston-Salem",
+   "via": "Winston-Salem",
+   "votes": 442,
+   "runnerUp": 4,
+   "rows": 658
+  },
+  "Erste Bank Open": {
+   "venue": "Vienna",
+   "via": "Vienna",
+   "votes": 119,
+   "runnerUp": 4,
+   "rows": 294
+  },
+  "BRD Nastase Tiriac Trophy": {
+   "venue": "Bucharest",
+   "via": "Bucharest",
+   "votes": 39,
+   "runnerUp": 1,
+   "rows": 135
+  },
+  "Mutua Madrid Open": {
+   "venue": "Madrid",
+   "via": "Madrid",
+   "votes": 791,
+   "runnerUp": 15,
+   "rows": 930
+  },
+  "ATP Vegeta Croatia Open": {
+   "venue": "Umag",
+   "via": "Umag",
+   "votes": 24,
+   "runnerUp": 2,
+   "rows": 81
+  },
+  "Topshelf Open": {
+   "venue": "Hertogenbosch",
+   "via": "'s-Hertogenbosch",
+   "votes": 21,
+   "runnerUp": 1,
+   "rows": 116
+  },
+  "Citi Open": {
+   "venue": "Washington",
+   "via": "Washington",
+   "votes": 459,
+   "runnerUp": 8,
+   "rows": 595
+  },
+  "Delray Beach Open": {
+   "venue": "Delray Beach",
+   "via": "Delray Beach",
+   "votes": 303,
+   "runnerUp": 6,
+   "rows": 379
+  },
+  "Rio Open": {
+   "venue": "Rio de Janeiro",
+   "via": "Rio de Janeiro",
+   "votes": 285,
+   "runnerUp": 9,
+   "rows": 368
+  },
+  "Argentina Open": {
+   "venue": "Buenos Aires",
+   "via": "Buenos Aires",
+   "votes": 229,
+   "runnerUp": 6,
+   "rows": 324
+  },
+  "Millenium Estoril Open": {
+   "venue": "Estoril",
+   "via": "Estoril",
+   "votes": 29,
+   "runnerUp": 1,
+   "rows": 81
+  },
+  "Geneva Open": {
+   "venue": "Geneva",
+   "via": "Geneva",
+   "votes": 279,
+   "runnerUp": 2,
+   "rows": 297
+  },
+  "Suisse Open Gstaad": {
+   "venue": "Gstaad",
+   "via": "Gstaad",
+   "votes": 264,
+   "runnerUp": 4,
+   "rows": 297
+  },
+  "Generali Open": {
+   "venue": "Kitzbuhel",
+   "via": "Kitzbuhel",
+   "votes": 290,
+   "runnerUp": 4,
+   "rows": 465
+  },
+  "ASB Classic": {
+   "venue": "Auckland",
+   "via": "Auckland",
+   "votes": 196,
+   "runnerUp": 30,
+   "rows": 243
+  },
+  "German Tennis Championships": {
+   "venue": "Hamburg",
+   "via": "Hamburg",
+   "votes": 103,
+   "runnerUp": 3,
+   "rows": 155
+  },
+  "Chengdu Open": {
+   "venue": "Chengdu",
+   "via": "Chengdu",
+   "votes": 193,
+   "runnerUp": 2,
+   "rows": 189
+  },
+  "Lyon Open": {
+   "venue": "Lyon",
+   "via": "Lyon",
+   "votes": 171,
+   "runnerUp": 2,
+   "rows": 189
+  },
+  "Ricoh Open": {
+   "venue": "Hertogenbosch",
+   "via": "'s-Hertogenbosch",
+   "votes": 33,
+   "runnerUp": 1,
+   "rows": 54
+  },
+  "Millennium Estoril Open": {
+   "venue": "Estoril",
+   "via": "Estoril",
+   "votes": 85,
+   "runnerUp": 2,
+   "rows": 108
+  },
+  "Eastbourne International": {
+   "venue": "Eastbourne",
+   "via": "Eastbourne",
+   "votes": 215,
+   "runnerUp": 7,
+   "rows": 189
+  },
+  "Cordoba Open": {
+   "venue": "Cordoba",
+   "via": "Cordoba",
+   "votes": 101,
+   "runnerUp": 4,
+   "rows": 162
+  },
+  "Rosmalen Grass Court Championships": {
+   "venue": "Hertogenbosch",
+   "via": "Hertogenbosch",
+   "votes": 198,
+   "runnerUp": 31,
+   "rows": 162
+  },
+  "Halle Open": {
+   "venue": "Halle",
+   "via": "Halle",
+   "votes": 267,
+   "runnerUp": 4,
+   "rows": 217
+  },
+  "Queen's Club Championships": {
+   "venue": "London",
+   "via": "London",
+   "votes": 266,
+   "runnerUp": 29,
+   "rows": 217
+  },
+  "Adelaide International": {
+   "venue": "Adelaide",
+   "via": "Adelaide",
+   "votes": 127,
+   "runnerUp": 24,
+   "rows": 108
+  },
+  "Chile Open": {
+   "venue": "Santiago",
+   "via": "Santiago",
+   "votes": 168,
+   "runnerUp": 4,
+   "rows": 189
+  },
+  "Miami Open": {
+   "venue": "Miami",
+   "via": "Miami",
+   "votes": 657,
+   "runnerUp": 12,
+   "rows": 570
+  },
+  "Barcelona Open": {
+   "venue": "Barcelona",
+   "via": "Barcelona",
+   "votes": 274,
+   "runnerUp": 5,
+   "rows": 250
+  },
+  "Mallorca Championships": {
+   "venue": "Mallorca",
+   "via": "Mallorca",
+   "votes": 212,
+   "runnerUp": 3,
+   "rows": 162
+  },
+  "Viking International": {
+   "venue": "Eastbourne",
+   "via": "Eastbourne",
+   "votes": 27,
+   "runnerUp": 0,
+   "rows": 27
+  },
+  "Nordea Open": {
+   "venue": "Bastad",
+   "via": "Bastad",
+   "votes": 212,
+   "runnerUp": 4,
+   "rows": 162
+  },
+  "Mifel Open": {
+   "venue": "Los Cabos",
+   "via": "Los Cabos",
+   "votes": 23,
+   "runnerUp": 1,
+   "rows": 27
+  },
+  "Canadian Open": {
+   "venue": "Montreal",
+   "via": "Canada Masters",
+   "votes": 453,
+   "runnerUp": 3,
+   "rows": 307
+  },
+  "Vienna Open": {
+   "venue": "Vienna",
+   "via": "Vienna",
+   "votes": 217,
+   "runnerUp": 6,
+   "rows": 155
+  },
+  "Adelaide International 2": {
+   "venue": "Adelaide",
+   "via": "Adelaide 2",
+   "votes": 75,
+   "runnerUp": 1,
+   "rows": 54
+  },
+  "Dallas Open": {
+   "venue": "Dallas",
+   "via": "Dallas",
+   "votes": 206,
+   "runnerUp": 4,
+   "rows": 143
+  },
+  "Los Cabos Open": {
+   "venue": "Los Cabos",
+   "via": "Los Cabos",
+   "votes": 154,
+   "runnerUp": 2,
+   "rows": 108
+  },
+  "Stuttgart Open": {
+   "venue": "Stuttgart",
+   "via": "Stuttgart",
+   "votes": 143,
+   "runnerUp": 3,
+   "rows": 108
+  },
+  "Japan Open Tennis Championships": {
+   "venue": "Tokyo",
+   "via": "Tokyo",
+   "votes": 151,
+   "runnerUp": 5,
+   "rows": 93
+  },
+  "Nordic Open": {
+   "venue": "Stockholm",
+   "via": "Stockholm",
+   "votes": 138,
+   "runnerUp": 2,
+   "rows": 81
+  },
+  "Hong Kong Tennis Open": {
+   "venue": "Hong Kong",
+   "via": "Hong Kong",
+   "votes": 105,
+   "runnerUp": 2,
+   "rows": 81
+  },
+  "Tiriac Open": {
+   "venue": "Bucharest",
+   "via": "Bucharest",
+   "votes": 123,
+   "runnerUp": 2,
+   "rows": 81
+  },
+  "Hangzhou Open": {
+   "venue": "Hangzhou",
+   "via": "Hangzhou",
+   "votes": 85,
+   "runnerUp": 1,
+   "rows": 54
+  },
+  "Almaty Open": {
+   "venue": "Almaty",
+   "via": "Almaty",
+   "votes": 92,
+   "runnerUp": 1,
+   "rows": 54
+  },
+  "U.S.Men's Clay Court Championships": {
+   "venue": "Houston",
+   "via": "Houston",
+   "votes": 68,
+   "runnerUp": 2,
+   "rows": 54
+  },
+  "Hamburg Open": {
+   "venue": "Hamburg",
+   "via": "Hamburg",
+   "votes": 84,
+   "runnerUp": 2,
+   "rows": 62
+  }
+ },
+ "ambiguous": [
+  {
+   "event": "European Open",
+   "top": "Antwerp",
+   "votes": 260,
+   "runnerUp": "Hamburg",
+   "runnerUpVotes": 138,
+   "rows": 390
+  },
+  {
+   "event": "International Championships",
+   "top": "Delray Beach",
+   "votes": 13,
+   "runnerUp": "Houston",
+   "runnerUpVotes": 2,
+   "rows": 310
+  },
+  {
+   "event": "NASDAQ-100 Open",
+   "top": "Miami",
+   "votes": 8,
+   "runnerUp": "Paris",
+   "runnerUpVotes": 1,
+   "rows": 285
+  },
+  {
+   "event": "Open Romania",
+   "top": "Bucharest",
+   "votes": 16,
+   "runnerUp": "Palermo",
+   "runnerUpVotes": 1,
+   "rows": 240
+  },
+  {
+   "event": "Open Seat Godo",
+   "top": "Barcelona",
+   "votes": 14,
+   "runnerUp": "Zagreb",
+   "runnerUpVotes": 1,
+   "rows": 220
+  },
+  {
+   "event": "Ordina Open",
+   "top": "'s-Hertogenbosch",
+   "votes": 9,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 186
+  },
+  {
+   "event": "Grand Prix de Lyon",
+   "top": "Lyon",
+   "votes": 14,
+   "runnerUp": "Davis Cup WG QF: FRA vs RUS",
+   "runnerUpVotes": 1,
+   "rows": 186
+  },
+  {
+   "event": "Movistar Open",
+   "top": "Santiago",
+   "votes": 5,
+   "runnerUp": "Vina del Mar",
+   "runnerUpVotes": 3,
+   "rows": 182
+  },
+  {
+   "event": "German Open Tennis Championships",
+   "top": "Hamburg",
+   "votes": 18,
+   "runnerUp": "Valencia",
+   "runnerUpVotes": 2,
+   "rows": 172
+  },
+  {
+   "event": "Davidoff Swiss Indoors",
+   "top": "Basel",
+   "votes": 16,
+   "runnerUp": "Cincinnati",
+   "runnerUpVotes": 1,
+   "rows": 155
+  },
+  {
+   "event": "Copa Telmex",
+   "top": "Buenos Aires",
+   "votes": 5,
+   "runnerUp": "Amersfoort",
+   "runnerUpVotes": 1,
+   "rows": 155
+  },
+  {
+   "event": "Japan Open",
+   "top": "Tokyo",
+   "votes": 1,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 141
+  },
+  {
+   "event": "Telecom Italia Masters Roma",
+   "top": "Rome",
+   "votes": 2,
+   "runnerUp": "Nottingham",
+   "runnerUpVotes": 1,
+   "rows": 126
+  },
+  {
+   "event": "Studena Croatia Open",
+   "top": "Umag",
+   "votes": 15,
+   "runnerUp": "St. Petersburg",
+   "runnerUpVotes": 1,
+   "rows": 112
+  },
+  {
+   "event": "Austrian Open",
+   "top": "Kitzbuhel",
+   "votes": 2,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 109
+  },
+  {
+   "event": "Bet-At-Home Cup",
+   "top": "Kitzbuhel",
+   "votes": 8,
+   "runnerUp": "Queen's Club",
+   "runnerUpVotes": 1,
+   "rows": 108
+  },
+  {
+   "event": "Abierto Mexicano Mifel",
+   "top": "Los Cabos",
+   "votes": 58,
+   "runnerUp": "Cabo San Lucas",
+   "runnerUpVotes": 26,
+   "rows": 108
+  },
+  {
+   "event": "AIG Japan Open Tennis Championships",
+   "top": "Tokyo",
+   "votes": 13,
+   "runnerUp": "Masters Cup",
+   "runnerUpVotes": 1,
+   "rows": 94
+  },
+  {
+   "event": "Next Generation Adelaide International",
+   "top": "Adelaide",
+   "votes": 7,
+   "runnerUp": "Davis Cup WG PO: SRB vs AUS",
+   "runnerUpVotes": 1,
+   "rows": 93
+  },
+  {
+   "event": "Unicef Open",
+   "top": "'s-Hertogenbosch",
+   "votes": 3,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 89
+  },
+  {
+   "event": "Catella Swedish Open",
+   "top": "Bastad",
+   "votes": 2,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 85
+  },
+  {
+   "event": "Crédit Agricole Suisse Open Gstaad",
+   "top": "Gstaad",
+   "votes": 6,
+   "runnerUp": "London Olympics",
+   "runnerUpVotes": 1,
+   "rows": 81
+  },
+  {
+   "event": "bet-at-home Open",
+   "top": "Hamburg",
+   "votes": 19,
+   "runnerUp": "Acapulco",
+   "runnerUpVotes": 1,
+   "rows": 78
+  },
+  {
+   "event": "Rogers Cup",
+   "top": "Canada Masters",
+   "votes": 3,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 63
+  },
+  {
+   "event": "Campionati Internazional d'Italia",
+   "top": "Rome",
+   "votes": 6,
+   "runnerUp": "Miami",
+   "runnerUpVotes": 1,
+   "rows": 63
+  },
+  {
+   "event": "Swedish Open",
+   "top": "Bastad",
+   "votes": 2,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 62
+  },
+  {
+   "event": "Adelaide International 1",
+   "top": "Adelaide 2",
+   "votes": 51,
+   "runnerUp": "Adelaide",
+   "runnerUpVotes": 37,
+   "rows": 58
+  },
+  {
+   "event": "Open Sabadell Atlántico 2008",
+   "top": "Barcelona",
+   "votes": 7,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 55
+  },
+  {
+   "event": "Konzum Croatia Open",
+   "top": "Umag",
+   "votes": 17,
+   "runnerUp": "Rio de Janeiro",
+   "runnerUpVotes": 1,
+   "rows": 54
+  },
+  {
+   "event": "International German Open",
+   "top": "Hamburg",
+   "votes": 3,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 47
+  },
+  {
+   "event": "AAPT Championships",
+   "top": "Adelaide",
+   "votes": 1,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 31
+  },
+  {
+   "event": "ATP Buenos Aires 2004",
+   "top": "Buenos Aires",
+   "votes": 4,
+   "runnerUp": null,
+   "runnerUpVotes": 0,
+   "rows": 31
+  }
+ ],
+ "surfaceGuard": {
+  "Acapulco": {
+   "keep": "Hard/Outdoor",
+   "keptRows": 403,
+   "ratingYear": 2025,
+   "keptThrough": 2026,
+   "drop": [
+    {
+     "key": "Clay/Outdoor",
+     "rows": 310,
+     "lastSeen": 2013
+    }
+   ]
+  },
+  "Stuttgart": {
+   "keep": "Grass/Outdoor",
+   "keptRows": 297,
+   "ratingYear": 2025,
+   "keptThrough": 2026,
+   "drop": [
+    {
+     "key": "Clay/Outdoor",
+     "rows": 369,
+     "lastSeen": 2014
+    }
+   ]
+  },
+  "Washington": {
+   "keep": "Hard/Outdoor",
+   "keptRows": 908,
+   "ratingYear": 2025,
+   "keptThrough": 2025,
+   "drop": [
+    {
+     "key": "Clay/Outdoor",
+     "rows": 31,
+     "lastSeen": 2004
+    }
+   ]
+  },
+  "Lyon": {
+   "keep": "Clay/Outdoor",
+   "keptRows": 189,
+   "ratingYear": 2023,
+   "keptThrough": 2024,
+   "drop": [
+    {
+     "key": "Hard/Indoor",
+     "rows": 31,
+     "lastSeen": 2009
+    },
+    {
+     "key": "Carpet/Indoor",
+     "rows": 155,
+     "lastSeen": 2008
+    }
+   ]
+  },
+  "Madrid": {
+   "keep": "Clay/Outdoor",
+   "keptRows": 1095,
+   "ratingYear": 2025,
+   "keptThrough": 2026,
+   "drop": [
+    {
+     "key": "Hard/Indoor",
+     "rows": 235,
+     "lastSeen": 2008
+    }
+   ]
+  },
+  "Basel": {
+   "keep": "Hard/Indoor",
+   "keptRows": 434,
+   "ratingYear": 2025,
+   "keptThrough": 2025,
+   "drop": [
+    {
+     "key": "Carpet/Indoor",
+     "rows": 31,
+     "lastSeen": 2004
+    }
+   ]
+  },
+  "Paris": {
+   "keep": "Hard/Indoor",
+   "keptRows": 847,
+   "ratingYear": 2025,
+   "keptThrough": 2025,
+   "drop": [
+    {
+     "key": "Carpet/Indoor",
+     "rows": 235,
+     "lastSeen": 2008
+    }
+   ]
+  }
+ }
+}

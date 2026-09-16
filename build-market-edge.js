@@ -50,8 +50,45 @@ const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
 const OUT_DIR = path.join(ROOT, 'market-edge');
 const INDEX_PATH = path.join(ROOT, 'market-edge-index.json');
 const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
+const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
 
 const SCHEMA_VERSION = 1;
+
+/**
+ * TEN-206 §5.5 — venue + Tennis Abstract speed, stamped per row so the Court speed
+ * modal reads one field instead of re-deriving a name join in the browser.
+ *
+ * The map is built by build-court-speed-map.js (voted out of data, never hand-written);
+ * this pass only CONSUMES it. With the map absent every row carries venue/speed null
+ * and the modal dashes — the correct behaviour for "not wired", not a crash.
+ */
+function loadSpeedMap() {
+  if (!fs.existsSync(SPEED_MAP_PATH)) return null;
+  let helper;
+  try { helper = require('./build-court-speed-map.js'); } catch (e) { return null; }
+  const m = JSON.parse(fs.readFileSync(SPEED_MAP_PATH, 'utf8'));
+  const CC = helper.loadCourtConditions();
+  const ccKeys = Object.keys(CC).filter((k) => CC[k].abstractSpeed != null);
+  const venueOf = helper.makeVenueMatcher(ccKeys);
+  const cache = new Map();
+  return {
+    /** { venue, speed, ratingYear } or null when this row must not be banded. */
+    forRow(event, surface, court) {
+      if (!cache.has(event)) cache.set(event, venueOf(event) || (m.events[event] && m.events[event].venue) || null);
+      const venue = cache.get(event);
+      if (!venue || !CC[venue]) return null;
+      // Surface guard: a row from an era the venue no longer plays is NOT banded off
+      // today's rating. See build-court-speed-map.js for why this is era-based and
+      // not modal-frequency based.
+      const guard = m.surfaceGuard[venue];
+      if (guard) {
+        const sk = (surface || '?').trim() + '/' + ((court || '?').trim() || '?');
+        if (sk !== guard.keep) return null;
+      }
+      return { venue, speed: CC[venue].abstractSpeed, ratingYear: CC[venue].abstractSpeedYear || null };
+    },
+  };
+}
 
 /**
  * Sample gate, README §9. Identical to the page's gate so a band that renders a rate
@@ -148,6 +185,8 @@ function main() {
   const log = (...a) => { if (!quiet) console.log(...a); };
 
   const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')).players || {};
+  const speedMap = loadSpeedMap();
+  log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
 
   const byFullKey = new Map();
   const bySurname = new Map();
@@ -221,6 +260,7 @@ function main() {
           // grid cannot use it and reads api-tennis's "(Indoor)" surface instead.
           court: (row.court || '').trim() || null,
           round: row.round, season,
+          speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
           opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
           book: bk.book, bookLabel: bk.label,
           // role: strictly "was he the shorter price". An exact tie is neither, and is
@@ -317,6 +357,11 @@ function main() {
       matches: sides.map((s) => ({
         date: s.date, event: s.event, level: s.level, surface: s.surface,
         court: s.court, round: s.round,
+        // §5.5 Court speed. Null means "this row cannot be banded" — either we hold no
+        // Abstract rating for the venue or the row predates the venue's current
+        // surface. The modal counts those out loud rather than dropping them.
+        venue: s.speed ? s.speed.venue : null,
+        speed: s.speed ? s.speed.speed : null,
         opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
         book: s.book, role: s.role, pl: Math.round((s.won ? s.price - 1 : -1) * 100) / 100,
       })),

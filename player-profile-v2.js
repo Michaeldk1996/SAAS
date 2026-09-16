@@ -836,6 +836,7 @@
         (ct.n ? ' ' + MIDDOT + ' ' + ct.n + ' matches' : '');
       case 'splits': return 'Record and win rate by surface, level, format, round and opponent';
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
+      case 'speed': return 'Win rate by court pace band';
       default: return '';
     }
   }
@@ -1743,6 +1744,267 @@
       detail;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.5 COURT SPEED
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Source: the market-edge shard rows, which build-market-edge.js now stamps with
+  // `venue` and `speed` from court-speed-map.json. A row carries speed:null when we
+  // hold no Abstract rating for its venue OR the row predates the venue's current
+  // surface (Stuttgart's clay era cannot be banded off a 2025 grass reading). Those
+  // rows are COUNTED OUT LOUD under the band list, never dropped silently — an
+  // unexplained shortfall against the Career tile reads as a broken page.
+  //
+  // Two scopes live in this modal on purpose, and the design says so itself: the
+  // band record/n covers every banded match, while units cover only the rows listed
+  // in the panel, labelled "on N listed" (`speedTotal.unitsSub` in the .dc.html).
+
+  /** Surface chips. "Indoors" is a carve-out of the court column, not a surface. */
+  var SPEED_SURFACES = [
+    { id: 'all', label: 'All' },
+    { id: 'Hard', label: 'Hard' },
+    { id: 'Clay', label: 'Clay' },
+    { id: 'Grass', label: 'Grass' },
+    { id: 'Indoors', label: 'Indoors' }
+  ];
+
+  function speedRows(p) {
+    var mk = marketFor(p.key);
+    return (mk && mk.matches) ? mk.matches : [];
+  }
+
+  function speedSurfaceMatch(m, surf) {
+    if (surf === 'all') return true;
+    if (surf === 'Indoors') return String(m.court || '') === 'Indoor';
+    return String(m.surface || '') === surf;
+  }
+
+  /**
+   * Bands for the current surface chip. Returns every band including empty ones —
+   * §5.5 keeps under-minimum bands listed with a dash rather than dropping them,
+   * because an absent band reads as an absent court, not an absent sample.
+   */
+  function speedBands(p) {
+    var surf = state.speedSurf || 'all';
+    var agg = {};
+    SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0, pl: 0, priced: 0, rows: [] }; });
+    var unbanded = 0;
+    speedRows(p).forEach(function (m) {
+      if (!speedSurfaceMatch(m, surf)) return;
+      if (m.speed == null) { unbanded += 1; return; }
+      var b = speedBandFor(m.speed);
+      if (!b) { unbanded += 1; return; }
+      var a = agg[b.id];
+      if (m.won) a.won += 1; else a.lost += 1;
+      a.rows.push(m);
+      // Every archive row is priced by construction (an unpriced row never reaches a
+      // shard), so `listed` and `priced` coincide here. They are still counted
+      // separately: the day a non-archive row set feeds this modal they diverge, and
+      // a units figure silently summed over a different n is the bug that hides.
+      if (m.pl != null) { a.pl += m.pl; a.priced += 1; }
+    });
+    var out = SPEED_BANDS.map(function (b) { return agg[b.id]; });
+    // FILE over README: README §5.5 lists the bands slowest-to-fastest, but the
+    // .dc.html returns them fast(72) · medium(66) · vslow(61) · slow(54) · vfast(—)
+    // — win rate descending, with un-rateable bands last. The file wins.
+    out.sort(function (x, y) {
+      var nx = x.won + x.lost, ny = y.won + y.lost;
+      var rx = gateFor(nx) === GATE.NONE || gateFor(nx) === GATE.THIN ? null : x.won / nx;
+      var ry = gateFor(ny) === GATE.NONE || gateFor(ny) === GATE.THIN ? null : y.won / ny;
+      if (rx == null && ry == null) return ny - nx;
+      if (rx == null) return 1;
+      if (ry == null) return -1;
+      return ry - rx;
+    });
+    out.unbanded = unbanded;
+    return out;
+  }
+
+  /** The band the panel shows: the current selection if it can open, else the best that can. */
+  function speedSelected(bands) {
+    var openable = bands.filter(function (b) { return gateFor(b.won + b.lost) !== GATE.NONE && gateFor(b.won + b.lost) !== GATE.THIN; });
+    var cur = state.speedBand;
+    var hit = cur && openable.filter(function (b) { return b.band.id === cur; })[0];
+    return hit || openable[0] || null;
+  }
+
+  function renderSpeedModal(p) {
+    var bands = speedBands(p);
+    var total = speedRows(p).length;
+    if (!total) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No priced matches on record, so no court can be rated.</div>';
+    }
+
+    var chips = SPEED_SURFACES.map(function (s) {
+      var on = (state.speedSurf || 'all') === s.id;
+      return '<button type="button" data-pp2="speed-surf" data-v="' + s.id + '" style="padding:6px 13px;' +
+        'border-radius:8px;font-size:11.5px;cursor:pointer;color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+        esc(s.label) + '</button>';
+    }).join('');
+
+    var sel = speedSelected(bands);
+    var cards = bands.map(function (b) {
+      var n = b.won + b.lost;
+      var gate = gateFor(n);
+      var openable = gate !== GATE.NONE && gate !== GATE.THIN;
+      var on = sel && sel.band.id === b.band.id;
+      var rate = rateText(b.won, b.lost);
+      return '<div' + (openable ? ' data-pp2="speed-band" data-v="' + b.band.id + '"' : '') +
+        ' style="display:grid;grid-template-columns:1fr auto;gap:10px;border-radius:9px;padding:11px 13px;' +
+        'align-items:center;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.10)' : 'transparent') + ';' +
+        'cursor:' + (openable ? 'pointer' : 'default') + ';">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:700;color:' + (openable ? '#e7e9ee' : '#3f4860') + ';">' +
+            esc(b.band.label) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-top:3px;">' +
+            (n ? recordText(b.won, b.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record') +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;color:' +
+            (b.priced ? (b.pl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+            (b.priced ? signed(b.pl, 1, 'u') : DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;margin-top:2px;color:' +
+            (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' + rate + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Career footer. Summed from the SAME band objects the cards render, so the
+    // footer cannot disagree with the list above it (§4).
+    var tw = 0, tl = 0, tpl = 0, tpriced = 0;
+    bands.forEach(function (b) { tw += b.won; tl += b.lost; tpl += b.pl; tpriced += b.priced; });
+    var tn = tw + tl;
+    var surfLabel = (state.speedSurf || 'all') === 'all' ? 'Career' : 'Career ' + MIDDOT + ' ' + state.speedSurf;
+    var footer = '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 13px;' +
+      'border-top:1px solid rgba(255,255,255,0.09);margin-top:2px;align-items:center;">' +
+      '<div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">' + esc(surfLabel) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-top:4px;">' +
+          (tn ? tn + ' matches' : DASH) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;">' +
+        '<div><span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
+          (tpriced ? (tpl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+          (tpriced ? signed(tpl, 1, 'u') : DASH) + '</span> ' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#4b5672;">' +
+          (tpriced ? 'on ' + tpriced + ' listed' : '') + '</span></div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
+          (rateText(tw, tl) === DASH ? DASH_COLOUR : '#8b96b5') + ';">' + rateText(tw, tl) + '</div>' +
+      '</div>' +
+    '</div>';
+
+    return '' +
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">' + chips + '</div>' +
+      '<div class="pp2-speed" style="display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;">' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' + cards + footer + '</div>' +
+        renderSpeedPanel(sel) +
+      '</div>' +
+      renderSpeedNote(bands, total);
+  }
+
+  function renderSpeedPanel(sel) {
+    if (!sel) {
+      return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+        'overflow:hidden;"><div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;' +
+        'padding:26px;margin:18px;text-align:center;font-size:13px;color:#5b6880;">' +
+        'No band clears the five-match minimum, so none opens.</div></div>';
+    }
+    var head = '<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;' +
+      'border-bottom:1px solid rgba(255,255,255,0.07);">' +
+      '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;">' + esc(sel.band.label) + ' courts</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;flex:none;">' +
+        recordText(sel.won, sel.lost) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-left:auto;' +
+        'flex:none;">' + esc(SPEED_BASIS) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;flex:none;color:' +
+        (sel.priced ? (sel.pl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+        (sel.priced ? signed(sel.pl, 1, 'u') : DASH) + '</span>' +
+    '</div>';
+
+    // Newest first, grouped by event — the design groups a run of matches under the
+    // tournament they were played at rather than repeating the event on every row.
+    var rows = sel.rows.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    var out = '', lastGroup = null;
+    rows.forEach(function (m) {
+      var g = m.event + '|' + m.date.slice(0, 4);
+      if (g !== lastGroup) {
+        lastGroup = g;
+        out += '<div style="display:flex;gap:8px;align-items:baseline;padding:12px 0 5px;">' +
+          '<span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">' + esc(m.event) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#4b5672;">' +
+            esc([m.surface, m.court === 'Indoor' ? 'Indoors' : null, m.level, m.date.slice(0, 4)]
+              .filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+          (m.venue && m.venue !== m.event
+            ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#3f4860;">' +
+              esc(m.venue) + '</span>' : '') +
+        '</div>';
+      }
+      out += '<div data-pp2="sheet" data-v="' + esc(m.date + '|' + m.opp) + '" ' +
+        'style="display:grid;grid-template-columns:52px 12px 1.1fr 38px 44px 1.3fr 48px 48px;gap:0 8px;' +
+        'padding:6px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;cursor:pointer;' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;">' +
+        '<span style="color:#5b6880;">' + esc(shortDate(m.date)) + '</span>' +
+        '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
+        '<span style="font-family:inherit;color:#e8ecf4;">' + esc(m.opp) + '</span>' +
+        '<span style="color:#5b6880;">' + esc(shortRound(m.round)) + '</span>' +
+        // Set counts and set scores: the odds archive drops Tennis-Data's per-set
+        // columns at ingest, so neither is held for these rows. Dashed, not guessed.
+        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
+        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
+        '<span style="text-align:right;color:#e8ecf4;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
+        '<span style="text-align:right;color:#5b6880;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
+      '</div>';
+    });
+
+    return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;overflow:hidden;">' +
+      head +
+      '<div style="height:calc(100vh - 340px);min-height:340px;max-height:560px;overflow-y:auto;padding:12px 18px;">' +
+        (out || '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:#5b6880;">No matches in this band.</div>') +
+      '</div></div>';
+  }
+
+  /**
+   * The note carries the two things this modal cannot show and must not hide: the
+   * bands that fell under the minimum, and the matches no band could rate.
+   */
+  function renderSpeedNote(bands, total) {
+    var thin = bands.filter(function (b) {
+      var n = b.won + b.lost;
+      return n > 0 && (gateFor(n) === GATE.THIN);
+    });
+    var parts = [];
+    thin.forEach(function (b) {
+      var n = b.won + b.lost;
+      parts.push(b.band.label + ' courts have ' + n + ' match' + (n === 1 ? '' : 'es') + ' on record, ' +
+        'short of the five-match minimum ' + ENDASH + ' the band reads as a dash and does not open.');
+    });
+    if (bands.unbanded) {
+      parts.push(bands.unbanded + ' of ' + total + ' priced matches sit at a venue with no Tennis Abstract ' +
+        'rating, or in an era before the venue&#39;s current surface, and are not banded.');
+    }
+    parts.push('Bands are ' + SPEED_BASIS + '. Units are the listed rows only.');
+    return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' +
+      parts.join(' ') + '</div>';
+  }
+
+  /** "2024-01-05" -> "05.01." — the design's row date format. */
+  function shortDate(d) {
+    var s = String(d || '');
+    return s.length >= 10 ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' : DASH;
+  }
+  /** Archive round labels are draw-relative prose; the design's column is 38px wide. */
+  var ROUND_SHORT = {
+    '1st Round': 'R1', '2nd Round': 'R2', '3rd Round': 'R3', '4th Round': 'R4',
+    'Quarterfinals': 'QF', 'Semifinals': 'SF', 'The Final': 'F', 'Round Robin': 'RR'
+  };
+  function shortRound(r) { return ROUND_SHORT[r] || (r == null ? DASH : String(r)); }
+
   function renderModal(p, ctx) {
     var k = state.modal;
     if (!k) return '';
@@ -1752,6 +2014,7 @@
     else if (k === 'season') body = renderSeasonModal(p);
     else if (k === 'splits') body = renderSplitsModal(p);
     else if (k === 'market') body = renderMarketModal(p);
+    else if (k === 'speed') body = renderSpeedModal(p);
     else {
       // Not yet built. The modal opens and says so — a box that silently does
       // nothing reads as a broken page.
@@ -1770,7 +2033,10 @@
     tournQuery: '', tournOpen: null,
     // §5.4 Calendar record. calSurface 'all' is the default segment; calCell is
     // "YYYY-m" (month index, not 1-based) and calRun is an index into calRuns().
-    calTab: 'calendar', calSurface: 'all', calCell: null, calRun: null
+    calTab: 'calendar', calSurface: 'all', calCell: null, calRun: null,
+    // §5.5 Court speed. speedBand null means "let the modal pick the best openable
+    // band" rather than defaulting to a band the player may have never played.
+    speedSurf: 'all', speedBand: null
   };
 
   function build(p) {
@@ -1855,6 +2121,15 @@
       renderTournModal: renderTournModal,
       renderSplitsModal: renderSplitsModal,
       renderMarketModal: renderMarketModal,
+      // §5.5 Court speed
+      renderSpeedModal: renderSpeedModal,
+      speedRows: speedRows,
+      speedBands: speedBands,
+      speedSelected: speedSelected,
+      speedSurfaceMatch: speedSurfaceMatch,
+      SPEED_SURFACES: SPEED_SURFACES,
+      shortDate: shortDate,
+      shortRound: shortRound,
       SPLIT_GROUPS: SPLIT_GROUPS,
       state: state
     }
