@@ -1572,11 +1572,29 @@ check('the all-stores table covers every data store the module reads', () => {
   // Not data stores: the feature flag, the module's own export, and the two
   // shared helper singletons (logic, not data — they carry no player rows).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap']);
+  // Host callbacks the mount calls back into (navigation, not data). Exempt from
+  // the coverage table but NOT from scrutiny: the module must not assume the
+  // host defined them, so each is asserted to be typeof-guarded at its call
+  // site. Simply widening NOT_STORES would have let any future window.* through
+  // the gate by being named plausibly.
+  const HOST_CALLBACKS = new Set(['showPlayerList']);
+  for (const cb of HOST_CALLBACKS) {
+    assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
+      `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
+  }
   const covered = new Set(STORES.map(s => s.name));
-  const missing = [...read].filter(n => !NOT_STORES.has(n) && !covered.has(n));
+  const missing = [...read].filter(n =>
+    !NOT_STORES.has(n) && !HOST_CALLBACKS.has(n) && !covered.has(n));
   assert.deepStrictEqual(missing, [],
     `these stores are read by the page but have no coverage row: ${missing.join(', ')}`);
-  console.log(`        ${read.size} window.* reads, ${covered.size} data stores, all covered`);
+  console.log(`        ${read.size} window.* reads, ${covered.size} data stores, ` +
+    `${HOST_CALLBACKS.size} guarded host callback, all covered`);
+});
+
+mustFail('the host-callback guard check would catch an unguarded call', () => {
+  const src = 'if (window.showPlayerList) window.showPlayerList();';
+  assert(/typeof window\.showPlayerList === 'function'/.test(src),
+    'window.showPlayerList is called without a typeof guard');
 });
 
 mustFail('the table-coverage check would catch a newly wired store', () => {
@@ -1699,6 +1717,211 @@ mustFail('the no-second-engine check would catch re-derived arithmetic', () => {
   const block = 'var pct = Math.round(won / den * 100);';
   assert(!/\/\s*(den|n)\b|Math\.round\([^)]*\*\s*100/.test(block),
     '§5.9 contains rate arithmetic');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 20 · §4 FULL LEDGER + THE MOUNT
+// ════════════════════════════════════════════════════════════════════════════
+//
+// The mount checks read bsp-consult-dashboard.html as SOURCE. That is unusual
+// for this harness, which otherwise runs the module — but the defect they exist
+// to catch is not in the module at all. player-profile-v2.js passed 120 checks
+// while being completely unreachable: no <script src>, no flag, no wiring, no
+// store bridge. Every figure below was already correct and none of it was on
+// the site. A test that only ever loads the module cannot see that.
+const DASH_CH = '—';
+const DASHBOARD = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+// The CLOSING tag is part of the needle on purpose. Matching the opening tag
+// alone found a code COMMENT that mentions it (pp2Bridge explains why the flag
+// is not set there) 568 KB earlier in the file, which made the load-order check
+// below report a failure that did not exist.
+const PP2_TAG = '<script src="player-profile-v2.js"></script>';
+
+check('the dashboard actually loads player-profile-v2.js', () => {
+  assert(DASHBOARD.indexOf(PP2_TAG) > -1,
+    'no player-profile-v2.js script tag — the module is unreachable from the page');
+});
+
+check('FEATURE_PP2 is set BEFORE the module tag, not at profile-open time', () => {
+  const flagAt = DASHBOARD.indexOf('window.FEATURE_PP2 =');
+  const tagAt = DASHBOARD.indexOf(PP2_TAG);
+  assert(flagAt > -1, 'window.FEATURE_PP2 is never assigned by the page');
+  assert(tagAt > -1, 'the module tag is missing');
+  assert(flagAt < tagAt,
+    'FEATURE_PP2 is assigned after the <script> tag. The module reads the flag at PARSE time and ' +
+    'returns immediately when falsy, so it would never define window.PlayerProfileV2 and every ' +
+    'profile open would silently fall back to the legacy page.');
+});
+
+mustFail('the flag-order check would catch the flag being set too late', () => {
+  const src = '<script src="player-profile-v2.js"></script>\nwindow.FEATURE_PP2 = true;';
+  assert(src.indexOf('window.FEATURE_PP2 =') < src.indexOf(PP2_TAG),
+    'FEATURE_PP2 is assigned after the script tag');
+});
+
+check('the host bridges every data store the module reads onto window', () => {
+  // The dashboard holds these in `let` bindings, which do NOT create window
+  // properties. Miss one and that block renders a grid of dashes that looks
+  // exactly like "we hold no data" — the stylesStore failure, again.
+  const bridge = DASHBOARD.slice(DASHBOARD.indexOf('function pp2Bridge()'));
+  const body = bridge.slice(0, bridge.indexOf('\n}'));
+  const needed = ['playerProfiles', 'careerSplits', 'playingStyles', 'holdbreak', 'marketEdge'];
+  const missing = needed.filter(n => !new RegExp(`window\\.${n}\\s*=`).test(body));
+  assert.deepStrictEqual(missing, [], `pp2Bridge does not assign: ${missing.join(', ')}`);
+  console.log(`        pp2Bridge assigns all ${needed.length} stores`);
+});
+
+mustFail('the bridge check would catch a store left unassigned', () => {
+  const body = 'window.playerProfiles = x; window.careerSplits = y;';
+  const needed = ['playerProfiles', 'careerSplits', 'playingStyles', 'holdbreak', 'marketEdge'];
+  const missing = needed.filter(n => !new RegExp(`window\\.${n}\\s*=`).test(body));
+  assert.deepStrictEqual(missing, [], `unassigned: ${missing.join(', ')}`);
+});
+
+check('the bridge hands playerProfiles the shape the module reads', () => {
+  // archetypeFor and profileFor both read window.playerProfiles.players. The
+  // dashboard's own binding IS the players map, so bridging it directly would
+  // make every key miss.
+  assert(/window\.playerProfiles\s*=\s*\{\s*players:\s*playerProfiles\s*\}/.test(DASHBOARD),
+    'playerProfiles is bridged in the wrong shape — the module reads .players');
+});
+
+check('every data-pp2 hook the module paints has a handler in the mount', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  // Hooks emitted with a literal value. (The one computed hook is calSegBtn's
+  // `attr`, whose two call sites pass 'cal-tab' and 'cal-surface'.)
+  const painted = new Set((src.match(/data-pp2="([a-z-]+)"/g) || [])
+    .map(s => s.replace(/data-pp2="|"/g, '')));
+  painted.add('cal-tab'); painted.add('cal-surface');
+  // 'sheet' appears in the source inside sheetHook(), but MATCH_SHEET_BUILT
+  // gates it out of the emitted markup — §8 is not built. Requiring a handler
+  // for it would force the mount to wire a click to a modal that does not
+  // exist. The "no affordance advertises the unbuilt match sheet" check above
+  // is what holds the other side of this: it is never PAINTED while the
+  // constant is false. Drop the exemption when §8 lands.
+  if (I.MATCH_SHEET_BUILT === false) painted.delete('sheet');
+  const onClick = src.slice(src.indexOf('function onClick(e)'));
+  const handled = new Set((onClick.slice(0, onClick.indexOf('\n  function onInput'))
+    .match(/kind === '([a-z-]+)'/g) || []).map(s => s.replace(/kind === '|'/g, '')));
+  handled.add('tourn-search');   // an input hook, handled in onInput
+  const unhandled = [...painted].filter(h => !handled.has(h));
+  assert.deepStrictEqual(unhandled, [],
+    `these hooks are painted but nothing handles the click: ${unhandled.join(', ')}`);
+  console.log(`        ${painted.size} painted hooks, all handled`);
+});
+
+mustFail('the hook-coverage check would catch an unwired affordance', () => {
+  const painted = ['box', 'close', 'speed-band'];
+  const handled = new Set(['box', 'close']);
+  const unhandled = painted.filter(h => !handled.has(h));
+  assert.deepStrictEqual(unhandled, [], `unwired: ${unhandled.join(', ')}`);
+});
+
+check('no affordance advertises the unbuilt match sheet', () => {
+  // §8 is not built. This repo's rule is that an affordance promises content,
+  // so while MATCH_SHEET_BUILT is false no element may carry the sheet hook.
+  const anyRows = I.ledgerRows(byName('N. Djokovic'));
+  assert(anyRows.length > 0, 'no ledger rows to inspect');
+  I.state.ledgerOpen = true;
+  const html = I.renderLedger(byName('N. Djokovic'), {
+    ledgerOpen: true, ledgerRows: anyRows, ledgerFiltered: I.ledgerFiltered(anyRows)
+  });
+  I.state.ledgerOpen = false;
+  assert(!/data-pp2="sheet"/.test(html),
+    'the ledger paints a match-sheet hook while MATCH_SHEET_BUILT is false');
+  assert.strictEqual(I.MATCH_SHEET_BUILT, false,
+    'MATCH_SHEET_BUILT flipped — re-check that §8 really landed before relaxing this');
+});
+
+// §4: "Recent-form ribbon W-L and % = the strip shown = the ledger's last-N
+// rows." Caught live: the ledger header rated the WHOLE filtered set while its
+// strip drew only the last 18, so Djokovic read "75.0% win · 20 matches" over
+// an 18-square strip. Two figures for one claim, on one screen.
+check('the ledger rate is taken over exactly the rows its strip draws', () => {
+  const keys = Object.keys(PLAYERS).filter(k => (PLAYERS[k].recentForm || {}).matches);
+  let checked = 0, over = 0;
+  for (const key of keys) {
+    const p = PLAYERS[key];
+    I.state.surfaces = []; I.state.priceFilters = [];
+    const rows = I.ledgerRows(p);
+    const filtered = I.ledgerFiltered(rows);
+    if (!filtered.length) continue;
+    if (filtered.length > I.LEDGER_CAP) over++;
+    const strip = filtered.slice(-I.LEDGER_CAP);
+    I.state.ledgerOpen = true;
+    const html = I.renderLedger(p, { ledgerOpen: true, ledgerRows: rows, ledgerFiltered: filtered });
+    I.state.ledgerOpen = false;
+    const w = strip.filter(x => x.m.won && !(x.m.walkover && !x.m.won)).length;
+    const l = strip.filter(x => !x.m.won && !(x.m.walkover && !x.m.won)).length;
+    const n = w + l;
+    const expected = n >= 5 ? (100 * w / n).toFixed(1) + '%' : DASH_CH;
+    const m = html.match(/font-weight:700;">([^<]+) win<\/span>\s*·\s*(\d+) match/);
+    assert(m, `${p.name}: could not read the ledger headline`);
+    assert.strictEqual(m[1], expected,
+      `${p.name}: headline rate ${m[1]} but the strip's ${n} rows give ${expected}`);
+    assert.strictEqual(Number(m[2]), n,
+      `${p.name}: headline says ${m[2]} matches but the strip draws ${n}`);
+    checked++;
+  }
+  assert(checked > 100, `only ${checked} players had a ledger to check`);
+  assert(over > 0, 'no player exceeded the cap — the over-cap branch went untested');
+  console.log(`        ${checked} ledgers agree with their strip (${over} of them over the ${I.LEDGER_CAP}-row cap)`);
+});
+
+mustFail('the strip-agreement check would catch a rate taken over the wrong set', () => {
+  const strip = [{ won: true }, { won: false }];       // 50.0% over 2
+  const wholeSet = [{ won: true }, { won: true }, { won: false }];  // 66.7% over 3
+  const rate = a => (100 * a.filter(x => x.won).length / a.length).toFixed(1) + '%';
+  assert.strictEqual(rate(wholeSet), rate(strip), 'headline rate disagrees with the strip');
+});
+
+// H / A orientation. Founder ruling 1: H is the SUBJECT product-wide. The shard
+// is subject-relative, so H must be `price` and A `oppPrice` — never reversed.
+check('the ledger H column is the subject price and A the opponent price', () => {
+  const p = byName('N. Djokovic');
+  const rows = I.ledgerRows(p).filter(x => x.price != null && x.oppPrice != null);
+  assert(rows.length > 0, 'no priced ledger rows for the orientation check');
+  const shard = MARKET[String(p.key)];
+  const byDate = {};
+  (shard.matches || []).forEach(m => {
+    if (byDate[m.date] === undefined) byDate[m.date] = m; else byDate[m.date] = null;
+  });
+  let agree = 0;
+  for (const x of rows) {
+    const src = byDate[x.m.date];
+    assert(src, `${x.m.date} resolved a price from an ambiguous or absent day`);
+    assert.strictEqual(x.price, src.price, `${x.m.date}: H is not the subject price`);
+    assert.strictEqual(x.oppPrice, src.oppPrice, `${x.m.date}: A is not the opponent price`);
+    agree++;
+  }
+  console.log(`        ${agree} priced rows oriented subject-first`);
+});
+
+mustFail('the orientation check would catch H and A being swapped', () => {
+  const x = { price: 1.17, oppPrice: 5.0 };
+  const src = { price: 1.17, oppPrice: 5.0 };
+  assert.strictEqual(x.oppPrice, src.price, 'H is not the subject price');
+});
+
+// A day the archive priced twice cannot be resolved to one match (the shard
+// carries no opponent key), so it must dash rather than pick the first row.
+check('an ambiguous priced date dashes instead of guessing a match', () => {
+  const idx = I.ledgerPriceIndex('1905');
+  const shard = MARKET['1905'];
+  const counts = {};
+  (shard.matches || []).forEach(m => { counts[m.date] = (counts[m.date] || 0) + 1; });
+  const dupes = Object.keys(counts).filter(d => counts[d] > 1);
+  assert(dupes.length > 0, 'this player has no duplicated priced date — pick another subject');
+  dupes.forEach(d => assert.strictEqual(idx[d], null,
+    `${d} has ${counts[d]} priced rows but the index resolved one of them`));
+  console.log(`        ${dupes.length} ambiguous dates left unresolved for N. Djokovic`);
+});
+
+mustFail('the ambiguity check would catch a first-row-wins index', () => {
+  const rows = [{ date: '2026-01-01', price: 1.5 }, { date: '2026-01-01', price: 2.5 }];
+  const idx = {};
+  rows.forEach(r => { if (idx[r.date] === undefined) idx[r.date] = r; });  // first wins — wrong
+  assert.strictEqual(idx['2026-01-01'], null, 'an ambiguous date resolved to a row');
 });
 
 // ════════════════════════════════════════════════════════════════════════════

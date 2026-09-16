@@ -16828,9 +16828,87 @@ function ppTrendSvg(series, color){
   </svg>`;
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// TEN-206 — Player Profile v2 mount
+// ════════════════════════════════════════════════════════════════════════════
+//
+// player-profile-v2.js was built as a pure render function and never mounted:
+// no <script src>, no flag, no event wiring. It was reachable only from the
+// tests, so none of the rebuild was on the site. This block is the whole host
+// side of it — a flag, a store bridge and one lazy shard fetch.
+//
+// FLAG. Default ON: TEN-206 is the player profile now. `?pp2=0` (or
+// localStorage stennisfy.flags.pp2=0) restores the legacy renderer instantly,
+// without a deploy, which is the revert path if anything is wrong live.
+function pp2FlagOn(){
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('pp2')) return q.get('pp2') !== '0';
+    const ls = localStorage.getItem('stennisfy.flags.pp2');
+    if (ls != null) return ls !== '0';
+  } catch (e) { /* private mode — fall through to the default */ }
+  return true;
+}
+// The module reads its data off `window`. The dashboard holds these in `let`
+// bindings, which do NOT create window properties — so without this bridge
+// every store reads undefined and the page renders a full grid of dashes that
+// is indistinguishable from "we hold nothing". That exact failure has shipped
+// here twice (stylesStore, the stale hold/break axis), so the bridge is rebuilt
+// on every open rather than once at load: these bindings are reassigned by
+// their lazy loaders after the first profile may already be on screen.
+function pp2Bridge(){
+  // FEATURE_PP2 is deliberately NOT set here — see the inline block next to the
+  // <script src="player-profile-v2.js"> tag. The module reads it at parse time.
+  window.playerProfiles = { players: playerProfiles };
+  window.careerSplits = careerSplits;
+  window.playingStyles = (playerStyles && playerStyles.data) || null;
+  window.holdbreak = holdbreak;
+  window.marketEdge = window.marketEdge || {};
+}
+// Market edge + the ledger's two odds columns read one per-player shard. Same
+// posture as the odds-performance shards: nothing is fetched until a profile
+// asks, and a miss is cached as null so a 404 is not re-requested on every
+// repaint. Repaints in place when it lands (the lazy-race idiom used by
+// loadHoldbreak / loadAsapSignals above) — without that the shard arrives after
+// first paint and the columns stay dashed forever.
+const _pp2Shards = {};
+async function loadPp2MarketShard(key){
+  const k = String(key);
+  if (Object.prototype.hasOwnProperty.call(_pp2Shards, k)) return;
+  _pp2Shards[k] = null;
+  try {
+    const res = await fetch(`./market-edge/${encodeURIComponent(k)}.json`, { cache: 'no-cache' });
+    if (res.ok) _pp2Shards[k] = await res.json();
+  } catch (e) { /* additive; the columns dash and say why */ }
+  window.marketEdge = window.marketEdge || {};
+  window.marketEdge[k] = _pp2Shards[k];
+  const view = document.getElementById('playerProfileView');
+  if (view && view.style.display !== 'none' && window.PlayerProfileV2
+      && window.PlayerProfileV2.repaint && ppState.key === k) {
+    pp2Bridge();
+    window.PlayerProfileV2.repaint();
+  }
+}
+function showPlayerProfileV2(key){
+  const profile = playerProfiles[String(key)];
+  if (!profile) return false;
+  if (!window.PlayerProfileV2 || !window.PlayerProfileV2.mount) return false;
+  ppState.key = String(key);
+  document.getElementById('playerListView').style.display = 'none';
+  const view = document.getElementById('playerProfileView');
+  view.style.display = '';
+  pp2Bridge();
+  if (!window.PlayerProfileV2.mount(view, key)) return false;
+  loadPp2MarketShard(key);
+  window.scrollTo(0, 0);
+  return true;
+}
 function showPlayerProfile(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return;
+  // v2 first; a false return (module absent, key unknown) falls through to the
+  // legacy renderer rather than leaving the reader on a blank page.
+  if (pp2FlagOn() && showPlayerProfileV2(key)) return;
   ppState.key = String(key);
   if (typeof loadPointsAtRisk === 'function') loadPointsAtRisk();  // lazy; repaints tile on completion
   ppState.surface = 'All';
@@ -25051,6 +25129,14 @@ window.DatabaseTab = (function(){
   // Points/Ratings-chart read path needs the live_pbp migration + poller redeploy,
   // which land at the same gate (doc `detail-panel-staging`).
   window.FEATURE_LIVE_DETAIL = true;
+
+  // TEN-206. player-profile-v2.js reads this flag at PARSE time and returns
+  // immediately when it is falsy, so it has to be set before that <script> tag
+  // runs — not in pp2Bridge(), which only fires when a profile is opened. Set
+  // it there and the module would return early, never define
+  // window.PlayerProfileV2, and every open would silently fall back to the
+  // legacy page: the rebuild would look shipped and be unreachable.
+  window.FEATURE_PP2 = (typeof pp2FlagOn === 'function') ? pp2FlagOn() : false;
 </script>
 <script src="live-tab.js" defer></script>
 <!-- TEN-206 ruling 7: the single hold/break heatmap engine, shared by the Live
@@ -25059,6 +25145,13 @@ window.DatabaseTab = (function(){
      that parses at this point in the document, and a deferred module would not
      exist yet. It is ~6 KB of pure functions with no side effects. -->
 <script src="holdbreak-heatmap.js"></script>
+<!-- TEN-206: the rebuilt Player Profile. Guarded by window.FEATURE_PP2, which
+     pp2Bridge() sets immediately before the first mount — the module reads the
+     flag at parse time, so it must be set BEFORE this tag executes for the
+     module body to run. It is set in the inline block above for that reason.
+     Not deferred: showPlayerProfile() may fire from a deep link on first paint
+     and a deferred module would not have defined window.PlayerProfileV2 yet. -->
+<script src="player-profile-v2.js"></script>
 
 <!-- TEN-151: Trading Report feature flag. DEFAULT ON (founder 2026-09-05 "Turn it
      on properly — default ON, no query param": platform is pre-revenue R&D, so

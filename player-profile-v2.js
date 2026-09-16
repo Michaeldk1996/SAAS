@@ -274,10 +274,30 @@
   function surfColour(s) { return SURF_COLOUR[String(s || '').toLowerCase()] || '#5b6880'; }
 
   // ─── data access ───────────────────────────────────────────────────────────
-  function profileFor(key) {
-    var store = window.playerProfiles || {};
-    return store[String(key)] || null;
+  // window.playerProfiles is the WHOLE file ({meta, players}), not the players
+  // map — the host page bridges it in that shape and archetypeFor() already
+  // read it that way. This accessor used to index the file directly, so it
+  // returned undefined for every key; it was dead code, which is the only
+  // reason that never showed. One shape, one accessor.
+  function playersMap() {
+    var store = window.playerProfiles;
+    return (store && store.players) || {};
   }
+  function profileFor(key) {
+    return playersMap()[String(key)] || null;
+  }
+
+  // §8 match sheet / match panel / full-screen match page are NOT built yet.
+  // The export makes ribbon chips, court-speed rows and style-detail rows open
+  // a match sheet; until that exists those elements must not advertise a click.
+  // This repo's rule is that an affordance promises content (see the Recent-form
+  // chevron gate), so the hook and the pointer cursor are emitted only when the
+  // sheet exists. Flip this constant when §8 lands — nothing else changes.
+  var MATCH_SHEET_BUILT = false;
+  function sheetHook(id) {
+    return MATCH_SHEET_BUILT ? 'data-pp2="sheet" data-v="' + esc(id) + '" ' : '';
+  }
+  function sheetCursor() { return MATCH_SHEET_BUILT ? 'cursor:pointer;' : ''; }
   // Short name for templated copy: the export hard-codes "Jodar's" in helper
   // text; production must substitute the real player's short name.
   function shortName(p) {
@@ -514,9 +534,10 @@
 
     var chipHtml = chips.map(function (m) {
       var w = !!m.won;
-      return '<div class="pp2-chip" data-pp2="sheet" data-ev="' + esc(m.eventKey || '') + '" ' +
+      return '<div class="pp2-chip" ' +
+        (MATCH_SHEET_BUILT ? 'data-pp2="sheet" data-ev="' + esc(m.eventKey || '') + '" ' : '') +
         'style="display:flex;gap:8px;padding:7px 10px;border:1px solid rgba(255,255,255,0.08);' +
-        'border-radius:8px;white-space:nowrap;flex:none;cursor:pointer;align-items:center;">' +
+        'border-radius:8px;white-space:nowrap;flex:none;' + sheetCursor() + 'align-items:center;">' +
         '<div style="width:20px;height:20px;border-radius:5px;display:flex;align-items:center;' +
           'justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
           'background:' + (w ? 'rgba(61,214,140,0.16)' : 'rgba(224,97,111,0.16)') + ';' +
@@ -559,6 +580,263 @@
   function eyebrow(text) {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
       'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;margin-top:6px;">' + text + '</div>';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §4 FULL LEDGER (toggled from the ribbon)
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Rows are recentForm.matches — the ONLY per-match source that carries a date
+  // and is already subject-relative. It is a rolling window, not a career: the
+  // card is titled "Recent form" for that reason and the subtitle prints the
+  // real row count, never a career total.
+  //
+  // H / A COLUMNS. recentForm carries no price, so the two odds columns are
+  // joined from the player's market-edge shard BY DATE. Founder ruling 1 fixes
+  // the orientation product-wide: H is the SUBJECT, A is the opponent — so H is
+  // the shard's `price` and A its `oppPrice`, with no positional guessing.
+  //
+  // The join is deliberately strict. A date with anything other than exactly one
+  // priced row is left as a dash: the shard has no opponent key, so a day on
+  // which two rows exist cannot be resolved to this match, and the archive is
+  // tour main-draw only, so most Challenger rows have no priced partner at all.
+  // A dash here means "not priced", and §3 forbids inventing one.
+  var LEDGER_CAP = 18;
+  function ledgerPriceIndex(key) {
+    var mk = marketFor(key);
+    var rows = (mk && mk.matches) || [];
+    var byDate = {};
+    for (var i = 0; i < rows.length; i++) {
+      var d = rows[i].date;
+      if (!d) continue;
+      if (byDate[d] === undefined) byDate[d] = rows[i];
+      else byDate[d] = null;   // ambiguous day — never guess which match it was
+    }
+    return byDate;
+  }
+  // Attaches price/role to each ledger row. Rows the archive never priced keep
+  // price null, which both the odds columns and the price filters read as "not
+  // held" rather than as a role.
+  function ledgerRows(p) {
+    var idx = ledgerPriceIndex(p.key);
+    return ledgerMatches(p).map(function (m) {
+      var mk = idx[m.date] || null;
+      return {
+        m: m,
+        price: mk && mk.price != null ? mk.price : null,
+        oppPrice: mk && mk.oppPrice != null ? mk.oppPrice : null,
+        role: mk && mk.role ? mk.role : null,
+        book: mk && mk.book ? mk.book : null
+      };
+    });
+  }
+
+  var LEDGER_SURFACES = [
+    { id: 'all', label: 'All' },
+    { id: 'grass', label: 'Grass' },
+    { id: 'hard', label: 'Hard' },
+    { id: 'clay', label: 'Clay' }
+  ];
+  var LEDGER_PRICES = [
+    { id: 'fav', label: 'Favourite' },
+    { id: 'dog', label: 'Underdog' }
+  ];
+
+  function ledgerChip(attr, id, label, on) {
+    return '<span data-pp2="' + attr + '" data-v="' + esc(id) + '" ' +
+      'style="font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;' +
+      'font-weight:' + (on ? '700' : '600') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+      'background:' + (on ? 'rgba(91,155,255,0.22)' : 'transparent') + ';' +
+      'border:1px solid ' + (on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.12)') + ';">' +
+      esc(label) + '</span>';
+  }
+  function ledgerPriceChip(id, label, on) {
+    return '<span data-pp2="ledger-price" data-v="' + esc(id) + '" ' +
+      'style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;' +
+      'padding:5px 10px;border-radius:8px;cursor:pointer;' +
+      'color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+      'background:' + (on ? 'rgba(91,155,255,0.18)' : 'transparent') + ';' +
+      'border:1px solid ' + (on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.12)') + ';">' +
+      '<span style="width:11px;height:11px;border-radius:3px;flex:none;' +
+        (on ? 'background:#5b9bff;' : 'border:1px solid rgba(255,255,255,0.22);') + '"></span>' +
+      esc(label) + '</span>';
+  }
+
+  // Ledger rows carry their own price, so the price filter is applied here
+  // rather than in applyFilters() — which keys only on surface and is shared
+  // with callers that have no shard loaded.
+  function ledgerFiltered(rows) {
+    var surf = state.surfaces;
+    var prices = state.priceFilters;
+    return rows.filter(function (r) {
+      if (surf.length && surf.indexOf(String(r.m.surface || '').toLowerCase()) < 0) return false;
+      if (prices.length && (!r.role || prices.indexOf(r.role) < 0)) return false;
+      return true;
+    });
+  }
+
+  function oddsText(v) {
+    return v == null ? DASH : Number(v).toFixed(2);
+  }
+
+  function renderLedger(p, ctx) {
+    if (!ctx.ledgerOpen) return '';
+    var all = ctx.ledgerRows;
+    var rows = ctx.ledgerFiltered;
+    // §4 reconciliation: "Recent-form ribbon W-L and % = the strip shown = the
+    // ledger's last-N rows." The ribbon rates its last 18; this card must rate
+    // the SAME 18, not the whole filtered set. Rating all of them printed
+    // "75.0% win · 20 matches" over an 18-square strip — two different figures
+    // for one claim, on the same screen.
+    var stripRows = rows.slice(-LEDGER_CAP);
+    var r = formRate(stripRows.map(function (x) { return x.m; }));
+    var surfOn = state.surfaces;
+    var chips = LEDGER_SURFACES.map(function (s) {
+      var on = s.id === 'all' ? !surfOn.length : surfOn.indexOf(s.id) >= 0;
+      return ledgerChip('ledger-surf', s.id, s.label, on);
+    }).join('');
+    var priceChips = LEDGER_PRICES.map(function (x) {
+      return ledgerPriceChip(x.id, x.label, state.priceFilters.indexOf(x.id) >= 0);
+    }).join('');
+
+    // Strip is the same slice the rate above was taken over (README §3), so the
+    // two cannot disagree.
+    var strip = stripRows.map(function (x) {
+      var w = !!x.m.won;
+      return '<div style="flex:1;height:26px;border-radius:5px;display:flex;align-items:center;' +
+        'justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
+        'background:' + (w ? 'rgba(61,214,140,0.22)' : 'rgba(224,97,111,0.22)') + ';' +
+        'color:' + (w ? '#3dd68c' : '#e0616f') + ';">' + (w ? 'W' : 'L') + '</div>';
+    }).join('');
+
+    var head = '' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;' +
+        'flex-wrap:wrap;margin-bottom:14px;">' +
+        '<div style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">Recent form</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#5b6880;">' +
+          '<span style="color:#5b9bff;font-weight:700;">' + rateText(r.won, r.lost) + ' win</span> ' +
+          MIDDOT + ' ' + r.n + ' match' + (r.n === 1 ? '' : 'es') + '</div>' +
+      '</div>';
+
+    var legend = '' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#4b5672;">' +
+          '<span style="width:10px;height:10px;border-radius:3px;background:rgba(61,214,140,0.22);"></span>Win</span>' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#4b5672;">' +
+          '<span style="width:10px;height:10px;border-radius:3px;background:rgba(224,97,111,0.22);"></span>Loss</span>' +
+        '<span style="width:1px;height:14px;background:rgba(255,255,255,0.12);"></span>' +
+        priceChips +
+      '</div>';
+
+    var body;
+    if (!rows.length) {
+      body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No matches with these filters.</div>';
+    } else {
+      // Newest first, grouped by event. A group header repeats only when the
+      // event changes, so a player who played one event twice in the window
+      // gets two headers — which is what the export shows.
+      var ordered = rows.slice().reverse();
+      var shown = state.ledgerExpanded ? ordered : ordered.slice(0, LEDGER_CAP);
+      var lastEvent = null;
+      var out = '';
+      shown.forEach(function (x) {
+        var ev = eventName(x.m);
+        if (ev !== lastEvent) {
+          lastEvent = ev;
+          out += '<div style="display:grid;grid-template-columns:52px minmax(150px,1fr) 44px ' +
+            'minmax(160px,0.9fr) 48px 48px;gap:10px;background:rgba(91,155,255,0.12);border-radius:7px;' +
+            'padding:7px 8px;margin-top:12px;align-items:center;">' +
+            '<div style="grid-column:1/3;display:flex;align-items:center;gap:8px;">' +
+              '<span style="width:7px;height:7px;border-radius:2px;flex:none;background:' +
+                surfColour(x.m.surface) + ';"></span>' +
+              '<span style="font-size:12.5px;font-weight:800;">' + esc(ev) + '</span>' +
+            '</div>' +
+            ledgerEyebrow('Rd', 'left') + ledgerEyebrow('Result', 'left') +
+            ledgerEyebrow('H', 'right') + ledgerEyebrow('A', 'right') +
+          '</div>';
+        }
+        out += ledgerRowHtml(x);
+      });
+      var capped = !state.ledgerExpanded && ordered.length > LEDGER_CAP;
+      body = '<div style="' + (capped ? 'max-height:560px;overflow-y:auto;' : '') + '">' + out + '</div>';
+      if (ordered.length > LEDGER_CAP) {
+        body += '<div style="display:flex;justify-content:center;margin-top:14px;">' +
+          '<span data-pp2="ledger-more" style="font-size:13px;font-weight:700;color:#5b9bff;' +
+            'padding:10px 18px;border:1px solid rgba(91,155,255,0.35);border-radius:11px;cursor:pointer;">' +
+            (state.ledgerExpanded ? 'Show less' : 'See all ' + ordered.length + ' results') + '</span>' +
+        '</div>';
+      }
+    }
+
+    // Provenance for the two odds columns: how many of the shown rows the
+    // archive actually priced. A column of dashes with no explanation reads as
+    // a broken join, which is exactly the failure mode this page keeps hitting.
+    var priced = rows.filter(function (x) { return x.price != null; }).length;
+    var note = priced === rows.length
+      ? 'H / A are closing prices from the odds archive, subject first (' + priced + ' of ' + rows.length + ' priced).'
+      : 'H / A are closing prices from the odds archive, subject first ' + MIDDOT + ' ' +
+        priced + ' of ' + rows.length + ' rows priced. The archive is tour main-draw only and carries no ' +
+        'opponent key, so a date with no priced row — or more than one — is left as a dash rather than guessed.';
+
+    return '' +
+      '<div class="pp2-ledger" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
+        'border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;">' +
+        head +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">' + chips + '</div>' +
+        (rows.length ? '<div style="display:flex;gap:4px;">' + strip + '</div>' : '') +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;' +
+          'flex-wrap:wrap;margin-top:6px;">' +
+          eyebrow('oldest ' + '→' + ' most recent') + legend +
+        '</div>' +
+        body +
+        '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:13px;">' +
+          esc(note) + ' Window: ' + all.length + ' match' + (all.length === 1 ? '' : 'es') +
+          ' on record in this player’s recent-form feed.</div>' +
+      '</div>';
+  }
+
+  function ledgerEyebrow(text, align) {
+    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;font-weight:600;' +
+      'letter-spacing:0.1em;text-transform:uppercase;color:#8b96b5;text-align:' + align + ';">' +
+      esc(text) + '</div>';
+  }
+
+  function ledgerRowHtml(x) {
+    var m = x.m;
+    var subjWin = !!m.won;
+    var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:' +
+      (subjWin ? '#e7e9ee' : '#8b96b5') + ';';
+    var opp = 'font-size:13px;font-weight:' + (subjWin ? '400' : '700') + ';color:' +
+      (subjWin ? '#8b96b5' : '#e7e9ee') + ';';
+    return '<div class="pp2-ledger-row" ' + sheetHook(m.date + '|' + (m.opponent || '')) +
+      'style="display:grid;grid-template-columns:52px minmax(150px,1fr) 44px minmax(160px,0.9fr) ' +
+      '48px 48px;gap:10px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);' +
+      'border-radius:6px;align-items:baseline;' + sheetCursor() + '">' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' +
+        esc(fmtDayMonth(m.date)) + '</span>' +
+      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        '<span style="' + sub + '">' + esc(x.subjectName || 'Subject') + '</span>' +
+        '<span style="font-size:13px;color:#3f4860;"> ' + ENDASH + ' </span>' +
+        '<span style="' + opp + '">' + esc(m.opponent || DASH) + '</span></span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+        esc(roundLabel(m)) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;' +
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(setScoreText(m)) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+        'text-align:right;color:#e7e9ee;">' + oddsText(x.price) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+        'text-align:right;color:#5b6880;">' + oddsText(x.oppPrice) + '</span>' +
+    '</div>';
+  }
+
+  // Per-set scores, already subject-relative in recentForm (`p` = the subject's
+  // games). Hyphens are correct here — §3's en-dash rule governs W-L records,
+  // not scorelines, and the design file renders '7-5' that way.
+  function setScoreText(m) {
+    var sets = m.sets || [];
+    if (!sets.length) return m.result ? String(m.result) : DASH;
+    return sets.map(function (s) { return s.p + '-' + s.o; }).join(' ');
   }
 
   // §5 Eight stat boxes
@@ -1972,9 +2250,9 @@
               esc(m.venue) + '</span>' : '') +
         '</div>';
       }
-      out += '<div data-pp2="sheet" data-v="' + esc(m.date + '|' + m.opp) + '" ' +
+      out += '<div ' + sheetHook(m.date + '|' + m.opp) +
         'style="display:grid;grid-template-columns:52px 12px 1.1fr 38px 44px 1.3fr 48px 48px;gap:0 8px;' +
-        'padding:6px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;cursor:pointer;' +
+        'padding:6px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' + sheetCursor() +
         'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;">' +
         '<span style="color:#5b6880;">' + esc(shortDate(m.date)) + '</span>' +
         '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
@@ -2234,9 +2512,9 @@
   function renderStyleDetail(r) {
     var rows = r.rows.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
     var out = rows.map(function (m) {
-      return '<div data-pp2="sheet" data-v="' + esc(m.date + '|' + m.opp) + '" ' +
+      return '<div ' + sheetHook(m.date + '|' + m.opp) +
         'style="display:grid;grid-template-columns:16px 64px 1.1fr 1fr 38px 104px 48px 48px 58px;gap:0 8px;' +
-        'padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;cursor:pointer;' +
+        'padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' + sheetCursor() +
         'font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' +
         '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
         '<span style="color:#5b6880;">' + esc(m.date) + '</span>' +
@@ -2483,7 +2761,8 @@
   // MOUNT
   // ═══════════════════════════════════════════════════════════════════════════
   var state = {
-    key: null, ledgerOpen: false, surfaces: [], priceFilters: [], modal: null,
+    key: null, ledgerOpen: false, ledgerExpanded: false,
+    surfaces: [], priceFilters: [], modal: null,
     careerScope: 'career', splitScope: 'career', marketRole: 'all',
     tournQuery: '', tournOpen: null,
     // §5.4 Calendar record. calSurface 'all' is the default segment; calCell is
@@ -2505,9 +2784,18 @@
 
   function build(p) {
     var rows = ledgerMatches(p);
+    // One filtered set, shared by the ribbon strip/rate/chips and the ledger.
+    // README §3 requires them to agree, and the only way to guarantee that is
+    // for both to read the same array rather than two parallel filter passes.
+    var lrows = ledgerRows(p);
+    var subj = shortName(p);
+    lrows.forEach(function (x) { x.subjectName = subj; });
+    var lfiltered = ledgerFiltered(lrows);
     var ctx = {
       rows: rows,
-      filtered: applyFilters(rows),
+      ledgerRows: lrows,
+      ledgerFiltered: lfiltered,
+      filtered: lfiltered.map(function (x) { return x.m; }),
       archetype: archetypeFor(p.key),
       ledgerOpen: state.ledgerOpen,
       nextMatch: null
@@ -2519,6 +2807,7 @@
         renderBackLink() +
         renderHeader(p, ctx) +
         renderRibbon(ctx) +
+        renderLedger(p, ctx) +
         renderBoxes(ctx) +
         renderInsights(p) +
       '</div>' +
@@ -2533,8 +2822,144 @@
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOUNT — the host page's entry point
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Until this existed the module was a pure render function reachable only from
+  // the tests: no <script src>, no event wiring, nothing on the page. Every
+  // interactive affordance it paints (20 hook kinds) writes module state and
+  // repaints, so the wiring belongs here with the state rather than in the
+  // dashboard — the host only has to hand over a container and a key.
+
+  var mounted = null;   // the container the delegated listeners are bound to
+
+  // A fresh player must not inherit the previous player's open drawers. This is
+  // the same rule the legacy renderer follows (ppState reset in
+  // showPlayerProfile) and it exists because a "Last 8" or an open tournament
+  // silently reframes a different career.
+  function resetState(key) {
+    state.key = String(key);
+    state.ledgerOpen = false; state.ledgerExpanded = false;
+    state.surfaces = []; state.priceFilters = []; state.modal = null;
+    state.careerScope = 'career'; state.splitScope = 'career'; state.marketRole = 'all';
+    state.tournQuery = ''; state.tournOpen = null;
+    state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.calRun = null;
+    state.speedSurf = 'all'; state.speedBand = null;
+    state.styleRow = null;
+    state.hbSurf = 'all';
+  }
+
+  function toggleIn(list, id) {
+    var i = list.indexOf(id);
+    if (i >= 0) list.splice(i, 1); else list.push(id);
+    return list;
+  }
+  function toggleVal(cur, id) { return String(cur) === String(id) ? null : id; }
+
+  function repaint() {
+    if (!mounted || !state.key) return;
+    var p = profileFor(state.key);
+    if (!p) return;
+    // The search field is the one control that cannot survive a full repaint
+    // untouched — innerHTML destroys the focused node, so the caret is captured
+    // and restored. Everything else is stateless markup.
+    var active = document.activeElement;
+    var hadSearch = active && active.getAttribute &&
+      active.getAttribute('data-pp2') === 'tourn-search';
+    var caret = hadSearch ? active.selectionStart : null;
+    mounted.innerHTML = build(p);
+    if (hadSearch) {
+      var next = mounted.querySelector('[data-pp2="tourn-search"]');
+      if (next) {
+        next.focus();
+        if (caret != null) { try { next.setSelectionRange(caret, caret); } catch (e) { /* non-text input */ } }
+      }
+    }
+  }
+
+  // Every hook is a pure state write followed by one repaint. Nothing below
+  // computes a figure — if a handler ever needs to, it belongs in a renderer.
+  function onClick(e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-pp2]') : null;
+    if (!el || !mounted.contains(el)) return;
+    var kind = el.getAttribute('data-pp2');
+    var v = el.getAttribute('data-v');
+
+    // The scrim only closes when the click landed on the scrim itself; a click
+    // that bubbled up out of the card must not close the modal (README §5.1).
+    if (kind === 'scrim' && e.target !== el) return;
+    if (kind === 'card' || kind === 'hb-cell') return;   // inert: container / tooltip only
+
+    if (kind === 'back') {
+      e.preventDefault();
+      if (typeof window.showPlayerList === 'function') window.showPlayerList();
+      return;
+    }
+
+    e.preventDefault();
+    if (kind === 'ledger') { state.ledgerOpen = !state.ledgerOpen; state.ledgerExpanded = false; }
+    else if (kind === 'ledger-more') state.ledgerExpanded = !state.ledgerExpanded;
+    else if (kind === 'ledger-surf') {
+      // 'All' is not a member — it is the empty selection, so picking it clears
+      // rather than adding a fifth surface that would match nothing.
+      if (v === 'all') state.surfaces = []; else toggleIn(state.surfaces, v);
+    }
+    else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
+    else if (kind === 'box') state.modal = el.getAttribute('data-box');
+    else if (kind === 'close' || kind === 'scrim') state.modal = null;
+    else if (kind === 'career-scope') state.careerScope = el.getAttribute('data-scope');
+    else if (kind === 'split-scope') state.splitScope = el.getAttribute('data-scope');
+    else if (kind === 'market-role') state.marketRole = el.getAttribute('data-role');
+    else if (kind === 'tourn-row') state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t'));
+    else if (kind === 'cal-tab') state.calTab = v;
+    else if (kind === 'cal-surface') { state.calSurface = v; state.calCell = null; state.calRun = null; }
+    else if (kind === 'cal-cell') state.calCell = toggleVal(state.calCell, v);
+    else if (kind === 'cal-run') state.calRun = state.calRun === Number(v) ? null : Number(v);
+    else if (kind === 'speed-surf') { state.speedSurf = v; state.speedBand = null; }
+    else if (kind === 'speed-band') state.speedBand = toggleVal(state.speedBand, v);
+    else if (kind === 'style-row') state.styleRow = toggleVal(state.styleRow, v);
+    else if (kind === 'hb-surf') state.hbSurf = v;
+    else return;   // unknown hook: do nothing rather than repaint blindly
+    repaint();
+  }
+
+  function onInput(e) {
+    var el = e.target;
+    if (!el || !el.getAttribute || el.getAttribute('data-pp2') !== 'tourn-search') return;
+    state.tournQuery = el.value || '';
+    repaint();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape' && state.modal) { state.modal = null; repaint(); }
+  }
+
+  // Bound once per container. Re-opening a different player re-uses the same
+  // listeners — rebinding on every open is how duplicate-handler bugs start.
+  function mount(container, key) {
+    if (!container) return false;
+    var p = profileFor(key);
+    if (!p) return false;
+    if (mounted !== container) {
+      if (mounted) {
+        mounted.removeEventListener('click', onClick);
+        mounted.removeEventListener('input', onInput);
+      }
+      container.addEventListener('click', onClick);
+      container.addEventListener('input', onInput);
+      if (!mount._key) { document.addEventListener('keydown', onKey); mount._key = true; }
+      mounted = container;
+    }
+    resetState(key);
+    repaint();
+    return true;
+  }
+
   window.PlayerProfileV2 = {
     render: build,
+    mount: mount,
+    repaint: repaint,
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
@@ -2551,6 +2976,18 @@
       currentRun: currentRun,
       formRate: formRate,
       ledgerMatches: ledgerMatches,
+      // §4 Full ledger
+      ledgerRows: ledgerRows,
+      ledgerFiltered: ledgerFiltered,
+      ledgerPriceIndex: ledgerPriceIndex,
+      renderLedger: renderLedger,
+      setScoreText: setScoreText,
+      LEDGER_CAP: LEDGER_CAP,
+      MATCH_SHEET_BUILT: MATCH_SHEET_BUILT,
+      // mount
+      resetState: resetState,
+      onClick: onClick,
+      profileFor: profileFor,
       STAT_ROWS: STAT_ROWS,
       MARKET_NOTE: MARKET_NOTE,
       spineTotal: spineTotal,
