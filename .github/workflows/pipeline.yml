@@ -129,6 +129,23 @@ jobs:
       - name: Progression source-guard (fail-closed pre-deploy gate)
         run: npm test
 
+      # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16: "key per day".
+      # The key below said per-day in the comment and was `github.run_id` in fact, so
+      # every 10-minute run minted its own 33.9 MB entry: measured 2026-09-16, 314
+      # entries = 10,219 of the 10,240 MB repo ceiling (99.8%), LRU-evicting anything
+      # older than ~78 hours. A per-day key is one entry a day instead of ~144.
+      #
+      # What per-day costs: work done in runs 2..N of a day is not saved (the key is
+      # already taken), so it repeats until tomorrow's first run. Measured before
+      # shipping, across 13 runs spanning 24h: `opponents [built 0 ...]` on every one
+      # and `history-backfill: ... no calls made` — the steady-state loss is nil. The
+      # exposure is a draw-release day where a new seed's opponents appear AFTER the
+      # day's first run; those rebuild each run until the next day. Bounded by
+      # MAX_OPPONENT_BUILDS_PER_RUN and by the committed .gz floor below.
+      - name: Cache day key
+        id: cacheday
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
       # Persist the heavy derived caches + TML archive between runs so each run
       # is fast and makes minimal API calls (matches how the local run reuses
       # them). Keyed per-day so it refreshes but still restores older caches.
@@ -146,9 +163,25 @@ jobs:
             model-output.json
             news-feed.json
             tournament-entries.json
-          key: bsp-caches-${{ github.run_id }}
+          key: bsp-caches-${{ steps.cacheday.outputs.day }}
           restore-keys: |
             bsp-caches-
+
+      # TEN-206 Q2(d) ch-1, second half: "commit one gzipped file daily."
+      # player-profiles-cache.json was ALREADY tracked — 57.4 MB of pretty JSON frozen
+      # at 2026-07-22, 467 players at schema v7 with 95 shells, every entry 56 days past
+      # its 14-day TTL. The Actions cache restores over it, so it was invisible; but on
+      # any cache miss that July file IS what the pipeline builds and publishes from.
+      # It is the floor, not a spare, and the floor had rotted.
+      #
+      # So the durable copy stays in git, gzipped + minified (4.4 MB, not 57), and the
+      # run below refreshes it once a UTC day. This step picks whichever of {restored
+      # cache, committed .gz} carries the newer fetchedAt — without the comparison a
+      # stale warm cache would shadow a fresh commit for up to 14 days. Best-effort by
+      # design: a missing or corrupt .gz warns and leaves the restored copy alone. It
+      # must never be why a deploy goes red.
+      - name: Hydrate profile caches from the committed floor
+        run: node tools/profile-cache-store.js hydrate || true
 
       - name: Run pipeline (with retry + health tracking)
         env:
@@ -692,6 +725,38 @@ jobs:
             git pull --rebase --autostash origin main || true
           done
           echo "::error::Could not push series-outcomes after 3 attempts."; exit 1
+
+      # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day
+      # + commit one gzipped file daily". Runs AFTER the deploy has published, like the
+      # two ledgers above, so a git failure here can never cost a deploy.
+      #
+      # `freeze` minifies + gzips the live caches and rewrites the committed .gz only
+      # when the committed copy's fetchedAt is from an earlier UTC day. That day-guard
+      # is the whole mechanism: seed profiles are rebuilt with a fresh builtAt every
+      # run, so the content differs on all ~144 runs a day and a plain "commit if
+      # changed" would commit ~144 times. It also refuses to overwrite a newer commit
+      # with an older live store, and refuses any store carrying no fetchedAt stamp.
+      # gzip is written without an mtime header, so a genuinely idle day produces an
+      # identical blob and git sees nothing to commit.
+      # Locked by tools/test-profile-cache-store.js (16 checks, each with a mutating
+      # negative control), wired into `npm test` above.
+      - name: Refresh the committed profile-cache floor (once a UTC day)
+        run: |
+          node tools/profile-cache-store.js freeze || true
+          if [ -z "$(git status --porcelain -- player-profiles-cache.json.gz player-tournament-history.json.gz)" ]; then
+            echo "Committed profile-cache floor already carries today's stamp — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-profile-cache-bot"
+          git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
+          git add player-profiles-cache.json.gz player-tournament-history.json.gz
+          git commit -m "chore(profiles): refresh committed profile-cache floor [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing."
+            git pull --rebase --autostash origin main || true
+          done
+          echo "::warning::Could not push the profile-cache floor after 3 attempts — the next run retries."
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
