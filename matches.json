@@ -12,18 +12,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 10.7,
-      "p2": 1.05,
-      "bookmaker": "1xBet"
+      "p1": 7,
+      "p2": 1.08,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 10.7,
-        "bookmaker": "1xBet"
+        "price": 7,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.05,
-        "bookmaker": "1xBet"
+        "price": 1.08,
+        "bookmaker": "bet365"
       }
     },
     "tournamentRound": "",
@@ -1417,6 +1417,14 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/38100_t-al-azmeh.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1896_b-hassan.jpg",
+    "openingOdds": {
+      "p1": 7,
+      "p2": 1.08,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-16T18:50:23.102Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
     "oddsMovement": null
   },
   {
