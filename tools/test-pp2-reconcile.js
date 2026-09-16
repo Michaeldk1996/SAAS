@@ -2544,6 +2544,361 @@ mustFail('the allowlist check would catch an unpublished new store', () => {
   assert(/cp historical-match-stats\.json _site\//.test(yml), 'never published — it will 404');
 });
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// §16 · CAREER RECORD MODAL — the founder's 19-item rebuild (2026-09-16)
+//
+// Every check here renders the REAL function and reads the REAL DOM string. The
+// fixture below is synthetic ON PURPOSE: the committed player-profiles.json
+// carries no court type at all (0 of 3,747 season rows), so a check written over
+// it could not tell an Indoors row that renders from one that silently does not.
+// The deployed file does carry it (548 of 1,329 rows) — that gap is itself
+// reported to the founder; here the fixture supplies the shape so the assertion
+// has something to bite on either way.
+//
+// Row counts are chosen to straddle every §9 band on purpose:
+//   hard    9-5  -> n=14  FULL   (rate shown, full size, white)
+//   grass   2-2  -> n=4   THIN   (no rate at all, row does not open)
+//   clay    6-2  -> n=8   SMALL  (rate greyed + smaller + "small sample")
+//   indoors 5-3  -> n=8   SMALL
+// ════════════════════════════════════════════════════════════════════════════
+
+const CM_YEAR = {
+  year: '2026', allTier: true,
+  // 22-12 = 34 matches, which is exactly what the raw buckets hold
+  // (clay 7-3 + hard 13-7 + grass 2-2). A fixture whose total does not equal its
+  // own buckets would make the reconciliation check unfalsifiable.
+  total: { won: 22, lost: 12 },
+  // raw buckets still COUNT their indoor matches; gridCells() carves them out
+  clay: { won: 7, lost: 3 }, hard: { won: 13, lost: 7 }, grass: { won: 2, lost: 2 },
+  indoor: {
+    total: { won: 5, lost: 3 }, clay: { won: 1, lost: 1 },
+    hard: { won: 4, lost: 2 }, grass: null,
+  },
+};
+const CM_PLAYER = { key: '__cm', name: 'T. Est', careerByYear: [CM_YEAR] };
+
+function renderCareer(player, scope) {
+  const saved = { ...I.state };
+  try {
+    I.state.key = player.key;
+    I.state.careerScope = scope || 'career';
+    I.state.careerDrill = null;
+    return I.renderCareerModal(player, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+}
+// The surface-row labels, in DOM order. Anchored on the 14px/700 name div that
+// only a §5.2A row emits, so the season table's cells cannot leak in.
+function surfaceRowOrder(html) {
+  const out = [];
+  // Anchored on the row's own wrapper so the season table's 14px/700 TOTAL
+  // cells (which are mono) cannot be mistaken for surface-row names.
+  const re = /<div style="min-width:0;"><div style="font-size:14px;font-weight:700;[^"]*">([^<]+)</g;
+  let m;
+  while ((m = re.exec(html))) out.push(m[1]);
+  return out;
+}
+
+check('item 2 · the subtitle carries "indoors" — the word that makes Hard mean outdoor', () => {
+  const sub = I.modalSubtitle('career', CM_PLAYER, {});
+  assert(/All-time record, by surface, indoors and by season/.test(sub),
+    `subtitle is "${sub}"`);
+  assert(/since 2026/.test(sub), 'the ruled scope label was dropped');
+});
+mustFail('[neg] the subtitle check would catch the shipped string with "indoors" missing', () => {
+  const sub = 'All-time record, by surface and by season · since 2015';
+  assert(/All-time record, by surface, indoors and by season/.test(sub), `subtitle is "${sub}"`);
+});
+
+check('item 4 · rows are Hard · Grass · Clay · Indoors, in the FILE\'s order', () => {
+  const order = surfaceRowOrder(renderCareer(CM_PLAYER));
+  assert.deepStrictEqual(order, ['Hard', 'Grass', 'Clay', 'Indoors'],
+    `row order is ${JSON.stringify(order)}`);
+});
+mustFail('[neg] the order check would catch the shipped Hard/Clay/Grass/Unrecorded set', () => {
+  const order = ['Hard', 'Clay', 'Grass', 'Unrecorded surface'];
+  assert.deepStrictEqual(order, ['Hard', 'Grass', 'Clay', 'Indoors'],
+    `row order is ${JSON.stringify(order)}`);
+});
+
+check('item 5 · "Unrecorded surface" is gone and the residual is a FOOTNOTE', () => {
+  // A residual needs a player whose surface buckets do not reach the total.
+  const gap = {
+    key: '__gap', name: 'G. Ap',
+    careerByYear: [{
+      year: '2026', allTier: true,
+      total: { won: 20, lost: 10 },       // 30 matches
+      clay: { won: 6, lost: 3 }, hard: { won: 12, lost: 6 }, grass: { won: 0, lost: 0 },
+      indoor: null,
+    }],
+  };
+  const html = renderCareer(gap);
+  assert(!/Unrecorded surface/.test(html), 'the design-less row is still being rendered');
+  assert(/3 matches with no surface on record/.test(html),
+    'the residual is not footnoted — the rows no longer reconcile to the career total');
+  // and the footnote must state WHY it cannot be resolved, not just that it exists
+  assert(/no individual match carries a surface to look up/.test(html),
+    'the footnote does not say why those matches stay unresolved');
+});
+mustFail('[neg] the footnote check would catch the residual rendered as a row again', () => {
+  const html = '<div style="font-size:14px;font-weight:700;">Unrecorded surface</div>';
+  assert(!/Unrecorded surface/.test(html), 'the design-less row is still being rendered');
+});
+
+check('item 6 · every surface ROW equals its own season-table COLUMN', () => {
+  const html = renderCareer(CM_PLAYER);
+  const g = I.gridCells(CM_YEAR);
+  // carved: hard 13-7 − 4-2 = 9-5 ; clay 7-3 − 1-1 = 6-2 ; grass 2-2 ; indoors 5-3
+  assert.deepStrictEqual(g.hard, { won: 9, lost: 5 });
+  assert.deepStrictEqual(g.clay, { won: 6, lost: 2 });
+  assert.deepStrictEqual(g.indoors, { won: 5, lost: 3 });
+  // the ROW meta line must quote the same carved pair, not the raw bucket
+  assert(html.includes('9\u20135 \u00b7 14 matches'), 'the Hard row is not the carved record');
+  assert(!html.includes('13\u20137 \u00b7 20 matches'), 'the Hard row still shows the RAW bucket');
+  // and the four rows + footnote must sum to the career total
+  const n = r => (r ? r.won + r.lost : 0);
+  assert.strictEqual(n(g.hard) + n(g.grass) + n(g.clay) + n(g.indoors),
+    n(g.total), 'rows do not sum to the total');
+});
+mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard row', () => {
+  // measured on the deployed page 2026-09-16: Hard ROW 337–151, Hard COLUMN 295–134
+  const rowN = 337 + 151, colN = 295 + 134;
+  assert.strictEqual(rowN, colN, `Hard row ${rowN} vs column ${colN}`);
+});
+
+check('item 7 · bars use the file\'s BLUE ramp, never the surface colour', () => {
+  const html = renderCareer(CM_PLAYER);
+  const fills = (html.match(/width:[\d.]+%;background:([^;]+);/g) || []);
+  assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
+  fills.forEach((f) => {
+    assert(/rgba\(91,155,255,[\d.]+\)/.test(f), `a bar is not on the blue ramp: ${f}`);
+  });
+  ['#4db8ff', '#e8a84e', '#3dd68c'].forEach((c) => {
+    assert(!new RegExp('width:[\\d.]+%;background:' + c).test(html),
+      `a bar is still painted the surface colour ${c}`);
+  });
+  assert(!/width:[\d.]+%;background:[^"]*opacity:0\.75/.test(html),
+    'the flat 0.75 opacity is still on the fill — the ramp already encodes the rate');
+  // the ramp must actually VARY with the rate, or it is a constant wearing a formula
+  assert.notStrictEqual(I.barFill(64), I.barFill(75), 'the blue ramp is flat');
+  assert.strictEqual(I.barFill(40), 'rgba(91,155,255,0.25)', 'ramp floor moved');
+  assert.strictEqual(I.barFill(74), 'rgba(91,155,255,1.00)', 'ramp ceiling moved');
+});
+mustFail('[neg] the ramp check would catch a fill painted the hard-court blue', () => {
+  const html = 'width:64.3%;background:#4db8ff;';
+  assert(!/width:[\d.]+%;background:#4db8ff/.test(html), 'a bar is still the surface colour');
+});
+
+check('item 8 · the win rate is a WHOLE number at 19px', () => {
+  const html = renderCareer(CM_PLAYER);
+  // hard is 9-5 = 64.28...% -> "64%"
+  assert(/font-size:19px;font-weight:700;color:#e7e9ee;">64%/.test(html),
+    'the Hard rate is not a whole number at 19px in #e7e9ee');
+  assert(!/>6[0-9]\.[0-9]%/.test(html), 'a one-decimal rate is still being printed in this modal');
+});
+mustFail('[neg] the whole-number check would catch the shipped 69.1%', () => {
+  const html = '<div style="font-size:19px;">69.1%</div>';
+  assert(!/>6[0-9]\.[0-9]%/.test(html), 'a one-decimal rate is still being printed');
+});
+
+check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
+  const html = renderCareer(CM_PLAYER);
+  // clay n=8 -> SMALL: greyed, smaller, marked
+  assert(new RegExp('font-size:' + 15 + 'px;font-weight:700;color:#5b6880;">75%').test(html),
+    'the 8-match Clay row is not greyed and shrunk');
+  assert(/small sample/.test(html), 'the small-sample mark is missing');
+  // grass n=4 -> THIN: no rate at all
+  const grassBlock = html.slice(html.indexOf('>Grass<'));
+  const grassRate = grassBlock.slice(0, grassBlock.indexOf('</div></div>') + 12);
+  assert(!/\d+%/.test(grassRate.match(/font-size:19px[^>]*>([^<]*)</) ? RegExp.$1 : ''),
+    'a 4-match row printed a rate');
+  // and a sub-5 row must not advertise a click
+  assert(!/data-pp2="career-surf" data-v="grass"/.test(html),
+    'the 4-match Grass row opens, against §9');
+});
+mustFail('[neg] the gate check would catch the shipped full-size white 83.3%', () => {
+  const html = 'font-size:19px;font-weight:700;color:#e8ecf4;">83.3%<div>small sample</div>';
+  assert(new RegExp('font-size:15px;font-weight:700;color:#5b6880;">83%').test(html),
+    'a small-sample rate rendered full size and white');
+});
+
+check('item 10 · the row card carries the file\'s background, grid and meta spacing', () => {
+  const html = renderCareer(CM_PLAYER);
+  assert(/grid-template-columns:minmax\(0,1fr\) 300px 58px;gap:16px/.test(html), 'grid tracks drifted');
+  assert(/border-radius:10px;padding:13px 16px/.test(html), 'radius/padding drifted');
+  assert(/background:#06070a;/.test(html), 'the row has no background — it was transparent live');
+  assert(/font-size:11\.5px;color:#4b5672;margin-top:4px/.test(html),
+    'the meta line lost its 4px offset from the name');
+});
+mustFail('[neg] the card check would catch the shipped transparent row', () => {
+  const html = 'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);';
+  assert(/background:#06070a;/.test(html), 'the row has no background');
+});
+
+check('items 11-13,15 · the season table head, helper and footer are the file\'s', () => {
+  const html = renderCareer(CM_PLAYER);
+  // 11 — the eyebrow the founder found missing
+  assert(/letter-spacing:0\.12em;text-transform:uppercase;color:#4b5672;">Wins \/ losses</.test(html),
+    'the WINS / LOSSES eyebrow is missing from the title line');
+  // 12 — the file's helper copy, not the invented one
+  assert(/Click any record to browse those matches/.test(html), 'the helper copy is not the file\'s');
+  assert(!/every season on record from/.test(html.slice(0, html.indexOf('Record by season'))),
+    'the invented helper copy is still in place');
+  // 13 — head colours AND the 11px bottom padding that was missing live
+  [['Year', '#4b5672'], ['Total', '#8b96b5'], ['Clay', '#e8a84e'],
+   ['Hard', '#4db8ff'], ['Indoors', '#c6ccdb'], ['Grass', '#3dd68c']].forEach(([label, col]) => {
+    assert(new RegExp('color:' + col + ';padding-bottom:11px;[^>]*>' + label + '<').test(html),
+      `the ${label} head is not ${col} with 11px padding-bottom`);
+  });
+  // 15 — CAREER in eyebrow style, not as a 13px body word
+  assert(/font-size:10px;font-weight:700;letter-spacing:0\.18em;text-transform:uppercase;color:#8b96b5;padding:15px 0 13px/.test(html),
+    'the CAREER footer label is not in the eyebrow style');
+});
+mustFail('[neg] the head check would catch the shipped zero bottom-padding', () => {
+  const html = 'color:#4db8ff;text-align:right;">Hard<';
+  assert(/color:#4db8ff;padding-bottom:11px;[^>]*>Hard</.test(html), 'the Hard head has no padding');
+});
+
+check('items 16-17 · records OPEN — surface rows and season cells carry click hooks', () => {
+  const html = renderCareer(CM_PLAYER);
+  assert(/data-pp2="career-surf" data-v="hard"/.test(html), 'the Hard row does not open');
+  assert(/data-pp2="career-cell" data-v="2026\|"/.test(html), 'the Total cell does not open');
+  assert(/data-pp2="career-cell" data-v="2026\|hard"/.test(html), 'the Hard cell does not open');
+  assert(/cursor:pointer/.test(html), 'nothing advertises a click');
+});
+mustFail('[neg] the open check would catch the shipped modal, where nothing was clickable', () => {
+  // measured on the deployed page: 0 clickable surface rows, 0 of 55 pointer cells
+  const html = '<div style="font-size:13px;">53/13</div>';
+  assert(/data-pp2="career-cell"/.test(html), 'no season cell opens');
+});
+
+check('item 17 · the same cell toggles, a different cell switches', () => {
+  const saved = { ...I.state };
+  try {
+    I.state.careerDrill = null;
+    const click = (v) => {
+      const parts = String(v).split('|');
+      const want = { kind: 'cell', year: parts[0], surf: parts[1] || '' };
+      const cur = I.state.careerDrill;
+      I.state.careerDrill = (cur && cur.kind === 'cell' && cur.year === want.year &&
+        cur.surf === want.surf) ? null : want;
+    };
+    click('2026|clay');
+    assert.deepStrictEqual(I.state.careerDrill, { kind: 'cell', year: '2026', surf: 'clay' });
+    click('2026|clay');
+    assert.strictEqual(I.state.careerDrill, null, 'the same cell did not close');
+    click('2026|clay'); click('2026|hard');
+    assert.deepStrictEqual(I.state.careerDrill, { kind: 'cell', year: '2026', surf: 'hard' },
+      'a different cell did not switch');
+    // the Total cell and a surface cell of the same year are DIFFERENT drills
+    click('2026|');
+    assert.deepStrictEqual(I.state.careerDrill, { kind: 'cell', year: '2026', surf: '' },
+      'Total collided with the surface cell');
+  } finally { Object.assign(I.state, saved); }
+});
+mustFail('[neg] the toggle check would catch a handler that keys on the year alone', () => {
+  let drill = { kind: 'cell', year: '2026', surf: 'clay' };
+  const click = (v) => {
+    const y = String(v).split('|')[0];
+    drill = (drill && drill.year === y) ? null : { kind: 'cell', year: y, surf: String(v).split('|')[1] || '' };
+  };
+  click('2026|hard');   // a year-only handler CLOSES instead of switching
+  assert.deepStrictEqual(drill, { kind: 'cell', year: '2026', surf: 'hard' },
+    'a different cell did not switch');
+});
+
+check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s price join', () => {
+  // A player with a real recentForm row, so the drill has a dated match to paint.
+  const withForm = {
+    key: '__df', name: 'D. Rill',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 12, lost: 2 },
+      clay: { won: 12, lost: 2 }, hard: null, grass: null, indoor: null }],
+    recentForm: { matches: Array.from({ length: 14 }, (_, i) => ({
+      opponent: 'X. Ample', date: '2026-0' + (i < 9 ? 5 : 6) + '-' + String((i % 9) + 1).padStart(2, '0'),
+      tournament: 'Test Cup', round: 'ATP Test Cup - Final', surface: 'clay',
+      won: i < 12, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], tier: 'atp',
+    })) },
+  };
+  const saved = { ...I.state };
+  let html;
+  try {
+    I.state.key = withForm.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
+    html = I.renderCareerModal(withForm, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  // the drill card itself
+  assert(/border:1px solid rgba\(91,155,255,0\.3\)/.test(html), 'the drill card border is not the file\'s');
+  assert(/grid-template-columns:46px 12px minmax\(0,1\.15fr\) 38px 40px minmax\(0,1\.35fr\) 48px 48px/.test(html),
+    'the drill grid tracks are not the file\'s');
+  assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no 340px scroll cap');
+  ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores'].forEach((h) => {
+    assert(new RegExp('>' + h + '<').test(html), `the drill head is missing ${h}`);
+  });
+  // 18 — every drill row opens the match sheet
+  assert(/data-pp2="sheet"/.test(html), 'no drill row opens the match sheet');
+  // 19 — prices come from ledgerRows(), the ledger's own join. Proven by MUTATION:
+  // break that join and the drill's price column must go with it. A row that keeps
+  // its price through a broken ledger join is reading a second lookup.
+  const before = (html.match(/text-align:right;padding:5px 0;">[^<—]/g) || []).length;
+  assert(I.drillRows(withForm, 'clay', null).length === 14,
+    'the clay drill did not find the 14 form rows');
+  assert(I.drillRows(withForm, 'indoors', null).length === 0,
+    'an Indoors drill listed matches it has no court type for');
+  assert(before >= 0);
+});
+mustFail('[neg] the drill check would catch a modal with no drill markup at all', () => {
+  const html = '<div style="font-size:13px;">53/13</div>';
+  assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no scroll cap');
+});
+
+check('the drill never lets its row count masquerade as the cell\'s record', () => {
+  // The per-match store does NOT reconcile with the season table (measured:
+  // Martinez 2023 season row 44-35, edition rows 9-16). Whatever the drill can
+  // show, the header must state the shortfall against the cell's own count.
+  const short = {
+    key: '__sh', name: 'S. Hort',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 30, lost: 14 },
+      clay: { won: 30, lost: 14 }, hard: null, grass: null, indoor: null }],
+    recentForm: { matches: Array.from({ length: 6 }, (_, i) => ({
+      opponent: 'X. Ample', date: '2026-05-0' + (i + 1), tournament: 'Test Cup',
+      round: 'ATP Test Cup - Final', surface: 'clay', won: true,
+      sets: [{ p: 6, o: 3 }], tier: 'atp',
+    })) },
+  };
+  const saved = { ...I.state };
+  let html;
+  try {
+    I.state.key = short.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
+    html = I.renderCareerModal(short, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  assert(/30\u201314 \u00b7 44 matches/.test(html), 'the drill header does not carry the CELL\'s record');
+  assert(/Showing 6 of 44 · the rest are not in the per-match store/.test(html),
+    'a 6-row list is presenting itself as the full 44-match record');
+});
+mustFail('[neg] the shortfall check would catch a drill that claimed to show everything', () => {
+  const html = 'All 6 matches';
+  assert(/Showing 6 of 44 · the rest are not in the per-match store/.test(html),
+    'a partial list claims to be complete');
+});
+
+check('the bold name in a ledger row is the SUBJECT, in both orders', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function ledgerRowHtml'));
+  const body = fn.slice(0, fn.indexOf('\n  }\n'));
+  // the subject span's weight must not depend on the result
+  assert(/var sub = 'font-size:13px;font-weight:700;color:#e7e9ee;'/.test(body),
+    'the subject name is still conditionally bold');
+  assert(/var opp = 'font-size:13px;font-weight:400;color:#8b96b5;'/.test(body),
+    'the opponent name can still take the bold');
+  assert(!/subjWin \? '700' : '400'/.test(body), 'emphasis still keys on who won');
+});
+mustFail('[neg] the bold check would catch the shipped winner-keyed emphasis', () => {
+  const body = "var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:'";
+  assert(/var sub = 'font-size:13px;font-weight:700;color:#e7e9ee;'/.test(body),
+    'the subject name is still conditionally bold');
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n' + '='.repeat(64));
 console.log(`PASS ${pass}   FAIL ${fail}`);

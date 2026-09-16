@@ -40,7 +40,20 @@
   var ENDASH = '–';  // ranges
   var MIDDOT = '·';  // separators
   var DASH = '—';    // the "not held" em dash
+  var EMDASH = '—';  // the same glyph used as PUNCTUATION, not as a missing value
   var DASH_COLOUR = '#4b5672';
+
+  // §5.2A row set and ORDER, from `Player Stat Boxes.dc.html`:1650 — Hard,
+  // Grass, Clay, Indoors. README §5.2A gives a different order ("Hard, Clay,
+  // Grass, Indoors"); the file wins per README §Fidelity. The ids are the keys
+  // gridCells()/careerGridCells() return, so a row and its season-table column
+  // are the same number by construction rather than by agreement.
+  var CAREER_ROWS = [
+    { id: 'hard', label: 'Hard' },
+    { id: 'grass', label: 'Grass' },
+    { id: 'clay', label: 'Clay' },
+    { id: 'indoors', label: 'Indoors' }
+  ];
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -1110,11 +1123,15 @@
 
   function ledgerRowHtml(x) {
     var m = x.m;
-    var subjWin = !!m.won;
-    var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:' +
-      (subjWin ? '#e7e9ee' : '#8b96b5') + ';';
-    var opp = 'font-size:13px;font-weight:' + (subjWin ? '400' : '700') + ';color:' +
-      (subjWin ? '#8b96b5' : '#e7e9ee') + ';';
+    // ── the bold-name bug (founder, 2026-09-16) ───────────────────────────────
+    // Emphasis was keyed on who WON, so a loss bolded the opponent: his Cincinnati
+    // 19.08 row read "Zverev – Paul T." with Paul T. bold on Zverev's own page.
+    // The subject of the page is always the bold name, whatever the result and
+    // whatever position he is listed in. The result already has three other
+    // carriers on this row (the W/L dot, the sets colour, the score), so nothing
+    // is lost by taking it off the typography.
+    var sub = 'font-size:13px;font-weight:700;color:#e7e9ee;';
+    var opp = 'font-size:13px;font-weight:400;color:#8b96b5;';
     // Correction-pass item 13: the export aligns the row's cells on `center`
     // (this read `baseline`) and sets the OUTER name span to 13px, which the
     // two inner spans then inherit — this inherited the card's 14px.
@@ -1476,7 +1493,11 @@
     var fy = spineFirstYear(p);
     var ct = spineTotal(p);
     switch (key) {
-      case 'career': return 'All-time record, by surface and by season' + (fy ? ' ' + MIDDOT + ' since ' + fy : '');
+      // Item 2. The design string is "All-time record, by surface, indoors and by
+      // season" — we had dropped "indoors", which is the one word that tells the
+      // reader the Hard row is outdoor-only. The ruled scope label stays appended.
+      case 'career': return 'All-time record, by surface, indoors and by season' +
+        (fy ? ' ' + MIDDOT + ' since ' + fy : '');
       // §3: the export's "678 matches · 2016-2026" is placeholder copy; both
       // halves are real counts here or the clause is dropped entirely.
       case 'tourn': return 'Career win' + ENDASH + 'loss at every event ' + possessive(sn) + ' record carries';
@@ -1528,29 +1549,81 @@
       '</div>';
   }
 
-  // A record row with a bar track — the shared row spec (README §5.2A), reused by
-  // the Career surface rows and the Splits table so the two cannot drift.
-  function barRow(label, meta, won, lost, colour) {
-    var n = (won || 0) + (lost || 0);
+  // ─── the §5.2A record row, taken from the FILE rather than the README ──────
+  //
+  // Every value below is lifted from `Player Stat Boxes.dc.html` — the template
+  // for the markup (grid `minmax(0,1fr) 300px 58px`, gap 16, radius 10, padding
+  // 13x16, name 14/700, meta mono 11.5 #4b5672 margin-top 4, bar track 16px
+  // rgba(255,255,255,0.04) radius 4, rate mono 19/700) and `row()` at :1398 for
+  // the fill, the background and the rate format. Three of those had drifted and
+  // the founder caught all three:
+  //
+  //   FILL  the file computes ONE blue ramp for every row —
+  //         rgba(91,155,255, clamp(0.25 .. 1 over a 40->74% win rate)) — so the
+  //         bar encodes the RATE. We were painting the SURFACE colour at a flat
+  //         0.75, which encodes the category instead and leaves the strongest and
+  //         weakest surface looking identical. Surface colours stay where the file
+  //         puts them: the season-table column heads.
+  //   RATE  the file prints `pct + '%'` over an integer percentage — a whole
+  //         number. rateText() gives one decimal, right for the tables it was
+  //         written for and wrong here.
+  //   BG    `bg: thin ? 'rgba(255,255,255,0.012)' : '#06070a'`. We drew no
+  //         background at all, so the row sat flat on the modal card.
+  //
+  // The 5-9 band is the one value the file does NOT carry for this element:
+  // `row()` is called with min=1 from the career box, so no career row ever
+  // reaches it. README §9 says "rate #5b6880, smaller, `small sample` mark"
+  // without a size. 15px is the only shrink the export applies to a right-aligned
+  // mono rate of its own accord (§5.5 band card). FLAGGED to the founder as a
+  // choice, not a measurement — the single number here I could not read off the
+  // file.
+  var SMALL_RATE_PX = 15;
+  var DIM_COLOUR = '#3f4860';
+  function barFill(pct) {
+    if (pct == null) return 'transparent';
+    var a = Math.max(0.25, Math.min(1, 0.25 + (pct - 40) / 34 * 0.75));
+    return 'rgba(91,155,255,' + a.toFixed(2) + ')';
+  }
+  // opts: { label, meta, won, lost, hook, v, open, detail }
+  function barRow(opts) {
+    var won = opts.won || 0, lost = opts.lost || 0;
+    var n = won + lost;
     var g = gateFor(n);
-    var pct = n ? 100 * won / n : 0;
-    var rate = rateText(won, lost);
+    var pct = n ? 100 * won / n : null;
+    // §9 gate, enforced at the one place this rate is printed:
+    //   >=10  whole-number rate, 19px, #e7e9ee
+    //   5-9   whole-number rate, #5b6880, smaller, "small sample" mark
+    //   1-4   NO rate (the W-L still shows in the meta line) and the row does not open
+    //   0     em dash
+    var rate, rateColour, ratePx, mark = '';
+    if (g === GATE.FULL) { rate = Math.round(pct) + '%'; rateColour = '#e7e9ee'; ratePx = 19; }
+    else if (g === GATE.SMALL) {
+      rate = Math.round(pct) + '%'; rateColour = '#5b6880'; ratePx = SMALL_RATE_PX;
+      mark = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+        'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;">small sample</div>';
+    } else { rate = DASH; rateColour = DASH_COLOUR; ratePx = 19; }
+
+    var thin = g === GATE.NONE || g === GATE.THIN;
+    var clickable = !!opts.hook && !thin;
     return '' +
-      '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;' +
-      'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);">' +
-        '<div><div style="font-size:14px;font-weight:700;' +
-          (g === GATE.NONE ? 'color:' + DASH_COLOUR + ';' : '') + '">' + esc(label) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;">' +
-            esc(meta) + '</div></div>' +
+      '<div' + (clickable ? ' data-pp2="' + opts.hook + '" data-v="' + esc(String(opts.v)) + '"' : '') +
+      ' style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;' +
+      'border-radius:10px;padding:13px 16px;' +
+      'border:1px solid ' + (opts.open ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.07)') + ';' +
+      'background:' + (thin ? 'rgba(255,255,255,0.012)' : '#06070a') + ';' +
+      (clickable ? 'cursor:pointer;' : '') + '">' +
+        '<div style="min-width:0;"><div style="font-size:14px;font-weight:700;' +
+          (thin ? 'color:' + DIM_COLOUR + ';' : '') + '">' + esc(opts.label) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
+            'margin-top:4px;">' + esc(opts.meta) + '</div></div>' +
         '<div style="height:16px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;">' +
-          (n ? '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + colour + ';opacity:0.75;"></div>' : '') +
+          (thin ? '' : '<div style="height:100%;width:' + pct.toFixed(1) + '%;' +
+            'background:' + barFill(pct) + ';border-radius:4px;"></div>') +
         '</div>' +
-        '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:19px;font-weight:700;' +
-          'color:' + (rate === DASH ? DASH_COLOUR : '#e8ecf4') + ';">' + rate +
-          (g === GATE.SMALL ? '<div style="font-size:9px;font-weight:600;letter-spacing:0.12em;' +
-            'text-transform:uppercase;color:#4b5672;">small sample</div>' : '') +
+        '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:' + ratePx + 'px;' +
+          'font-weight:700;color:' + rateColour + ';">' + rate + mark +
         '</div>' +
-      '</div>';
+      '</div>' + (opts.detail || '');
   }
 
   // ─── RULING · Indoors column (TEN-206 gate 3) ───────────────────────────────
@@ -1618,96 +1691,403 @@
     };
   }
 
-  // §5.2 Career record — surface rows over the spine + Record by season.
-  function renderCareerModal(p, ctx) {
-    var scopeYear = state.careerScope === 'season' ? currentYear() : null;
-    var bys = spineBySurface(p, scopeYear);
-    var rows = ['hard', 'clay', 'grass', 'other'].map(function (s) {
-      var r = bys[s];
-      var n = r.won + r.lost;
-      // The residual row exists only when the feed actually lost a surface. A
-      // zero residual is not a row — it would read as a real, empty category.
-      if (s === 'other' && n === 0) return '';
-      return barRow(SPINE_LABEL[s],
-        n ? recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record',
-        r.won, r.lost, surfColour(s));
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.2 DRILL SPINE — the per-match rows behind a surface row or a season cell
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // The design opens a drill under any record and lists DATE · OPPONENT · RD ·
+  // SETS · SET SCORES · H · A. We hold TWO per-match stores and neither one can
+  // fill that alone. Measured on the deployed file:
+  //
+  //   recentForm.matches          Zverev 66 rows. Carries date, surface,
+  //                               tournament, round, per-set scores, tier — i.e.
+  //                               every column. Covers a rolling window only
+  //                               (all 66 fall in 2026/late-2025).
+  //   tournamentHistory editions  Zverev 829 rows. Carries event, edition YEAR,
+  //                               round, opponent and a sets score. Carries NO
+  //                               date, NO surface, NO per-set scores, NO price.
+  //
+  // So a drill is built from whichever store can answer the question asked:
+  //   * a SURFACE drill needs per-match surface -> recentForm only;
+  //   * a YEAR (Total) drill needs only the year -> both, form preferred.
+  //
+  // Rows from the edition store therefore dash their date, set scores and prices.
+  // That is the §3 rule applied honestly ("a dash only when no source holds it"),
+  // not a gap being papered over — and the drill header states the shortfall
+  // rather than letting a partial list read as complete.
+  //
+  // ⚠️ The edition store does NOT reconcile with the season table. Zverev 2023:
+  // season row 56-26, editions 55-27. Martinez 2023: season row 44-35, editions
+  // 9-16. The season table is the provider's season aggregate and is the ruled
+  // spine (§4), so it stays the headline; the drill reports its own count against
+  // it. Raised to the founder as gate item (ii) — this is the one thing standing
+  // between "records open" and "records open and reconcile".
+  function drillKey(year, event, round, opp) {
+    return String(year) + '|' + String(event || '').toLowerCase() + '|' +
+      String(round || '').toLowerCase() + '|' + surnameOf(String(opp || '')).toLowerCase();
+  }
+  function drillSpine(p) {
+    if (drillSpine._k === p.key && drillSpine._v) return drillSpine._v;
+    var out = [], seen = {};
+    // 1. recentForm, through the LEDGER's own price join — item 19: one join,
+    //    not a second lookup. ledgerRows() is the single place a price is chosen.
+    ledgerRows(p).forEach(function (x) {
+      var m = x.m;
+      var ev = eventName(m), rd = roundLabel(m);
+      var k = drillKey(String(m.date).slice(0, 4), ev, rd, m.opponent);
+      seen[k] = true;
+      out.push({
+        date: m.date || null, year: String(m.date || '').slice(0, 4),
+        surface: m.surface ? String(m.surface).toLowerCase() : null,
+        event: ev, round: rd, opp: m.opponent || null, won: !!m.won,
+        sets: setsScoreOf(m), setScores: setScoreText(m),
+        price: x.price, oppPrice: x.oppPrice, src: 'form', m: m
+      });
+    });
+    // 2. tournamentHistory editions for everything the form window never saw.
+    (p.tournamentHistory || []).forEach(function (t) {
+      (t.editions || []).forEach(function (e) {
+        (e.matches || []).forEach(function (mm) {
+          var k = drillKey(e.year, t.name, mm.round, mm.opp);
+          if (seen[k]) return;
+          seen[k] = true;
+          out.push({
+            date: null, year: String(e.year),
+            surface: null,                       // no surface on this store, by measurement
+            event: t.name || null, round: mm.round || null, opp: mm.opp || null,
+            won: mm.res === 'W', sets: mm.score || null, setScores: null,
+            price: null, oppPrice: null, src: 'edition', m: null
+          });
+        });
+      });
+    });
+    // Most recent first; undated (edition) rows sort after the dated ones of the
+    // same year, because an unknown date cannot claim a position among known ones.
+    out.sort(function (a, b) {
+      if (a.year !== b.year) return a.year < b.year ? 1 : -1;
+      if (!!a.date !== !!b.date) return a.date ? -1 : 1;
+      if (a.date && b.date) return a.date < b.date ? 1 : -1;
+      return 0;
+    });
+    drillSpine._k = p.key; drillSpine._v = out;
+    return out;
+  }
+  // "3 - 1" from the per-set array — the design's SETS column.
+  function setsScoreOf(m) {
+    var sets = (m && m.sets) || [];
+    if (!sets.length) return m && m.result ? String(m.result) : null;
+    var w = 0, l = 0;
+    sets.forEach(function (s) { if ((s.p || 0) > (s.o || 0)) w++; else if ((s.o || 0) > (s.p || 0)) l++; });
+    return w + ' - ' + l;
+  }
+
+  var DRILL_CAP = 200;   // a scroll list, not a pager; stated when it bites
+  function drillRows(p, surf, year) {
+    return drillSpine(p).filter(function (r) {
+      if (year && r.year !== String(year)) return false;
+      if (!surf) return true;
+      // Indoors is a COURT TYPE carved out of the surfaces; recentForm carries a
+      // surface but no court type, so an Indoors drill has no per-match source at
+      // all and must say so rather than silently listing hard-court matches.
+      if (surf === 'indoors') return false;
+      return r.surface === surf;
+    });
+  }
+
+  // The drill card (README §5.2B) — used by both the surface rows and the season
+  // cells, so the two cannot drift apart.
+  function renderDrill(p, opts) {
+    var rows = drillRows(p, opts.surf, opts.year);
+    var shown = rows.slice(0, DRILL_CAP);
+    var cellN = (opts.won || 0) + (opts.lost || 0);
+    // The note is the design's own field. It states real coverage: the cell's own
+    // count is the authority, and the list says how much of it it can show.
+    var note;
+    if (!rows.length) {
+      note = opts.surf === 'indoors'
+        ? 'no per-match court type on record'
+        : 'no matches in the per-match store for this record';
+    } else if (rows.length < cellN) {
+      note = 'Showing ' + rows.length + ' of ' + cellN + ' ' + MIDDOT +
+        ' the rest are not in the per-match store';
+    } else if (shown.length < rows.length) {
+      note = 'Showing ' + shown.length + ' of ' + rows.length + ' ' + MIDDOT + ' scroll for more';
+    } else {
+      note = 'All ' + shown.length + ' matches';
+    }
+
+    var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
+                ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
+    var GRID = 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px ' +
+      'minmax(0,1.35fr) 48px 48px;gap:0 10px;align-items:center;';
+    var head = HEAD.map(function (h) {
+      return '<div style="position:sticky;top:0;background:#06070a;font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;' +
+        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
 
+    var lastEvent = null;
+    var body = shown.map(function (r) {
+      var grp = '';
+      if (r.event !== lastEvent) {
+        lastEvent = r.event;
+        grp = '<div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
+          'padding:9px 0 5px;border-top:1px solid rgba(255,255,255,0.07);">' +
+          '<div style="font-size:12.5px;font-weight:700;color:#e7e9ee;white-space:nowrap;">' +
+            esc(r.event || DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;' +
+            'white-space:nowrap;">' + esc(eventMetaOf(r)) + '</div></div>';
+      }
+      var wl = r.won ? '#3dd68c' : '#e0616f';
+      // Only a form-sourced row has a match sheet to open — the sheet is keyed on
+      // date|opponent and an edition row has no date. §3: do not advertise a click
+      // that cannot land.
+      var hook = (r.src === 'form' && r.date) ? sheetHook(r.date + '|' + (r.opp || '')) : '';
+      var cur = hook ? sheetCursor() : '';
+      var cell = function (style, txt) {
+        return '<div ' + hook + 'style="' + cur + style + '">' + txt + '</div>';
+      };
+      return grp +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#5b6880;padding:5px 0;',
+             esc(r.date ? fmtDotDate(r.date) + '.' : DASH)) +
+        cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
+        cell('font-size:12.5px;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;' +
+             'white-space:nowrap;padding:5px 0;', esc(r.opp ? surnameFirst(r.opp) : DASH)) +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;padding:5px 0;',
+             esc(r.round || DASH)) +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
+             ';padding:5px 0;', esc(r.sets || DASH)) +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;' +
+             'white-space:nowrap;padding:5px 0;', esc(r.setScores || DASH)) +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:#e7e9ee;' +
+             'text-align:right;padding:5px 0;', oddsText(r.price)) +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
+             'text-align:right;padding:5px 0;', oddsText(r.oppPrice));
+    }).join('');
+
+    return '<div style="' + (opts.span ? 'grid-column:1 / -1;' : '') + 'background:#06070a;' +
+      'border:1px solid rgba(91,155,255,0.3);border-radius:' + (opts.span ? 11 : 10) + 'px;' +
+      'padding:' + (opts.span ? '15px 17px' : '13px 15px') + ';margin:10px 0 14px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
+        '<div style="font-size:14px;font-weight:700;">' + esc(opts.title) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#8b96b5;' +
+          'white-space:nowrap;">' + esc(recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' +
+          cellN + ' matches') + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;' +
+          'white-space:nowrap;">' + esc(note) + '</div>' +
+        '<button type="button" data-pp2="career-drill-close" style="margin-left:auto;background:none;' +
+          'border:0;color:#5b6880;font-size:11px;font-family:\'IBM Plex Mono\',monospace;' +
+          'letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Close</button>' +
+      '</div>' +
+      (shown.length
+        ? '<div style="max-height:340px;overflow-y:auto;"><div style="' + GRID + '">' +
+            head + body + '</div></div>'
+        : '') +
+      '</div>';
+  }
+  // "Clay · Grand Slam" under the event group row. Only stated where held.
+  function eventMetaOf(r) {
+    var bits = [];
+    if (r.surface) bits.push(r.surface.charAt(0).toUpperCase() + r.surface.slice(1));
+    if (r.m && r.m.tier) bits.push(String(r.m.tier).toUpperCase() === 'ATP' ? 'ATP' : String(r.m.tier));
+    return bits.join(' ' + MIDDOT + ' ');
+  }
+
+  // §5.2 Career record — surface rows over the spine + Record by season.
+  // §5.2 Career record — surface rows + Record by season, rebuilt to the FILE.
+  //
+  // The founder rejected the first build on 19 counts. The three that changed the
+  // DATA rather than the paint:
+  //
+  //  (4/6) The surface rows and the season table were reading DIFFERENT splits.
+  //        The rows used the provider's raw per-surface buckets; the table carves
+  //        the indoor matches out into their own column. Measured live on Zverev:
+  //        the Hard ROW read 337-151 while the Hard COLUMN read 295-134 and
+  //        Indoors read 42-17 — and 295+42 = 337 exactly. Two true numbers under
+  //        one label. Both now come from the SAME carved cells, so the row set is
+  //        Hard · Grass · Clay · Indoors and each row equals its own column.
+  //
+  //    (4) Row ORDER is the file's, not the README's. `Player Stat Boxes.dc.html`
+  //        :1650 lists Hard, Grass, Clay, Indoors; README §5.2A says "Hard, Clay,
+  //        Grass, Indoors". The file wins (README §Fidelity says so explicitly).
+  //        Reported as a README-vs-file difference.
+  //
+  //    (5) "Unrecorded surface" was never a design row and is gone. It is a
+  //        FOOTNOTE now, so the rows still reconcile to the career total.
+  //        The founder asked for those matches to be resolved through the
+  //        tournament surface map first. Measured: they cannot be, for two
+  //        independent reasons, and neither is fixable at this layer.
+  //          a. There are no matches to resolve. The residual is an ARITHMETIC
+  //             gap inside the provider's own season aggregate — Zverev 2025
+  //             reads total 56-25 while its own surface buckets sum to 54-25.
+  //             No match identity is attached to the missing 2.
+  //          b. Even given identities, the join does not exist. The surface map
+  //             is keyed by `tournament_key` (10,280 numeric ids); the per-match
+  //             store carries only an event NAME. 0 of 203 residual-year matches
+  //             joined, for both sampled players.
+  //        So: before 6 matches, after 6 matches, reason stated on the page.
+  function renderCareerModal(p, ctx) {
+    var scopeYear = state.careerScope === 'season' ? currentYear() : null;
+
+    // ── rows: the carved cells, so a row cannot disagree with its column ──────
+    var cells, total;
+    if (scopeYear) {
+      var yr = spineYears(p).filter(function (y) { return String(y.year) === String(scopeYear); })[0];
+      cells = yr ? gridCells(yr) : { total: null, hard: null, grass: null, clay: null, indoors: null };
+      total = yr && yr.total ? { won: yr.total.won || 0, lost: yr.total.lost || 0 } : { won: 0, lost: 0 };
+    } else {
+      cells = careerGridCells(p);
+      var ct0 = spineTotal(p);
+      total = { won: ct0.won, lost: ct0.lost };
+    }
+    // The footnoted residual: whatever the carved rows do not account for.
+    var sw = 0, sl = 0;
+    CAREER_ROWS.forEach(function (s) {
+      var c = cells[s.id];
+      if (c) { sw += c.won || 0; sl += c.lost || 0; }
+    });
+    var resid = { won: (total.won || 0) - sw, lost: (total.lost || 0) - sl };
+    var residN = resid.won + resid.lost;
+
+    var rows = CAREER_ROWS.map(function (s) {
+      var c = cells[s.id];
+      var w = c ? (c.won || 0) : 0, l = c ? (c.lost || 0) : 0, n = w + l;
+      var open = state.careerDrill && state.careerDrill.kind === 'surface' &&
+                 state.careerDrill.surf === s.id;
+      return barRow({
+        label: s.label,
+        meta: c === null && s.id === 'indoors'
+          ? 'no court type on record'
+          : (n ? recordText(w, l) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record'),
+        won: w, lost: l,
+        hook: 'career-surf', v: s.id, open: open,
+        detail: open ? renderDrill(p, {
+          surf: s.id, year: scopeYear,
+          title: s.label + ' ' + MIDDOT + ' ' + (scopeYear || 'career'),
+          won: w, lost: l, span: false
+        }) : ''
+      });
+    }).join('');
+
+    // ── Record by season ─────────────────────────────────────────────────────
     var years = spineYears(p).slice().sort(function (a, b) {
       return String(b.year) < String(a.year) ? -1 : 1;
     });
-    var head = '<div style="display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:0 14px;">' +
-      ['Year', 'Total', 'Clay', 'Hard', 'Indoors', 'Grass'].map(function (h, i) {
-        var col = ['#4b5672', '#8b96b5', '#e8a84e', '#4db8ff', '#c6ccdb', '#3dd68c'][i];
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.18em;text-transform:uppercase;color:' + col + ';' +
-          (i ? 'text-align:right;' : '') + '">' + h + '</div>';
-      }).join('');
+    var HEADS = [
+      { label: 'Year', colour: '#4b5672', id: null },
+      { label: 'Total', colour: '#8b96b5', id: 'total' },
+      { label: 'Clay', colour: '#e8a84e', id: 'clay' },
+      { label: 'Hard', colour: '#4db8ff', id: 'hard' },
+      { label: 'Indoors', colour: '#c6ccdb', id: 'indoors' },
+      { label: 'Grass', colour: '#3dd68c', id: 'grass' }
+    ];
+    var head = HEADS.map(function (h, i) {
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+        'letter-spacing:0.18em;text-transform:uppercase;color:' + h.colour + ';' +
+        'padding-bottom:11px;' + (i ? 'text-align:right;' : '') + '">' + h.label + '</div>';
+    }).join('');
+
     var body = years.map(function (y) {
       var g = gridCells(y);
-      var cells = ['total', 'clay', 'hard', 'indoors', 'grass'].map(function (c) {
-        var r = g[c];
+      var yearStr = String(y.year);
+      var openCell = state.careerDrill && state.careerDrill.kind === 'cell' &&
+        state.careerDrill.year === yearStr ? state.careerDrill.surf : null;
+      var cellsHtml = HEADS.slice(1).map(function (h) {
+        var r = g[h.id];
         var txt = r ? (r.won || 0) + '/' + (r.lost || 0) : DASH;
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
-          (c === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
+        var n = r ? (r.won || 0) + (r.lost || 0) : 0;
+        // §9: a cell under five matches does not open. A cell with no record at
+        // all is a dash and is inert — clicking a dash must not paint an empty card.
+        var can = n >= 5 && !(h.id === 'indoors');
+        var on = openCell === (h.id === 'total' ? '' : h.id);
+        return '<div' + (can ? ' data-pp2="career-cell" data-v="' + yearStr + '|' +
+            (h.id === 'total' ? '' : h.id) + '"' : '') +
+          ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
+          (h.id === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
           'padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);' +
-          (r ? '' : 'color:#3f4860;') + '">' + txt + '</div>';
+          (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
+          (on ? 'color:#5b9bff;' : '') + '">' + txt + '</div>';
       }).join('');
-      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;padding:11px 0;' +
-        'border-top:1px solid rgba(255,255,255,0.05);">' + esc(String(y.year)) + '</div>' + cells;
+      var drill = '';
+      if (openCell !== null) {
+        var surf = openCell || null;
+        var rec = surf ? g[surf] : g.total;
+        drill = renderDrill(p, {
+          surf: surf, year: yearStr, span: true,
+          title: (surf ? HEADS.filter(function (h) { return h.id === surf; })[0].label : 'All matches') +
+            ' ' + MIDDOT + ' ' + yearStr,
+          won: rec ? rec.won || 0 : 0, lost: rec ? rec.lost || 0 : 0
+        });
+      }
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+        'letter-spacing:0.02em;padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);">' +
+        esc(yearStr) + '</div>' + cellsHtml + drill;
     }).join('');
+
     var ct = spineTotal(p);
-    var cs = spineBySurface(p, null);
     var cf = careerGridCells(p);
-    var footer = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
-      'padding:15px 0 13px;border-top:1px solid rgba(255,255,255,0.18);">Career</div>' +
-      ['total', 'clay', 'hard', 'indoors', 'grass'].map(function (c) {
-        var r = c === 'total' ? ct : (c === 'indoors' ? cf.indoors : cf[c]);
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
+    // Footer label is the file's EYEBROW (mono 10/700 0.18em uppercase #8b96b5),
+    // not a 13px body word — item 15.
+    var footer = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
+      'letter-spacing:0.18em;text-transform:uppercase;color:#8b96b5;padding:15px 0 13px;' +
+      'border-top:1px solid rgba(255,255,255,0.18);">Career</div>' +
+      HEADS.slice(1).map(function (h) {
+        var r = h.id === 'total' ? ct : cf[h.id];
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
-          (r ? '' : 'color:#3f4860;') +
+          (r ? '' : 'color:' + DIM_COLOUR + ';') +
           'border-top:1px solid rgba(255,255,255,0.18);">' +
           (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
-      }).join('') + '</div>';
+      }).join('');
 
     var fy = spineFirstYear(p);
+    var ic = indoorCoverage(p);
     return '' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
         eyebrow(scopeYear ? scopeYear + ' by surface' : 'Career by surface') +
-        '<div style="display:flex;gap:2px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
-          'border-radius:9px;padding:2px;">' +
+        '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+          'border-radius:9px;padding:2px;margin-left:auto;">' +
           scopeBtn('career', 'Career', state.careerScope !== 'season') +
           scopeBtn('season', currentYear(), state.careerScope === 'season') +
         '</div>' +
       '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:8px;">' + rows + '</div>' +
-      '<div style="font-size:20px;font-weight:800;margin:24px 0 4px;">Record by season</div>' +
-      '<div style="font-size:13px;color:#5b6880;margin-bottom:10px;">Wins / losses' +
-        (fy ? ' ' + MIDDOT + ' every season on record from ' + fy : '') + '.</div>' +
-      head + body + footer +
-      // The spine is a window and the page says so rather than implying a whole
-      // career. It is also the reason the surface rows can carry a residual.
+      '<div style="display:flex;flex-direction:column;gap:7px;">' + rows + '</div>' +
+      // Item 5 — the residual as a footnote, with the reason it cannot be resolved.
+      (residN
+        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#4b5672;' +
+            'margin-top:10px;">' + residN + ' match' + (residN === 1 ? '' : 'es') +
+            ' with no surface on record</div>'
+        : '') +
+      // §5.2B header line — title + the "WINS / LOSSES" eyebrow the founder
+      // found missing (item 11), then the file's helper copy (item 12).
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 6px;">' +
+        '<div style="font-size:20px;font-weight:800;">Record by season</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.12em;' +
+          'text-transform:uppercase;color:#4b5672;">Wins / losses</div>' +
+      '</div>' +
+      '<div style="font-size:13px;color:#5b6880;line-height:1.5;margin-bottom:14px;">' +
+        'Click any record to browse those matches ' + EMDASH + ' a surface cell for that surface ' +
+        'alone, the year for all of them.</div>' +
+      '<div style="display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:0 14px;' +
+        'align-items:center;">' + head + body + footer + '</div>' +
       '<div style="font-size:11px;color:#5b6880;margin-top:14px;line-height:1.6;">' +
         'Season rows are the record we hold per year' + (fy ? ' from ' + fy : '') +
         '; the career line is their sum, so the two always agree. ' +
-        (cs.other.won + cs.other.lost
-          ? 'A separate ' + (cs.other.won + cs.other.lost) + '-match row carries matches whose ' +
-            'surface the feed never recorded, so the surface rows still add up to the career total. '
+        (residN
+          ? 'The ' + residN + ' footnoted match' + (residN === 1 ? '' : 'es') + ' above ' +
+            (residN === 1 ? 'is' : 'are') + ' the gap between the provider’s season total and ' +
+            'its own surface buckets, so no individual match carries a surface to look up. '
           : '') +
         (function () {
-          // The column's own coverage, stated rather than implied. Court type
-          // reaches only the fixtures-era rows; the provider's season aggregate
-          // behind the older rows carries none, so those read as a dash.
-          var ic = indoorCoverage(p);
           if (!ic.rows) return '';
           if (!ic.withCourt) {
-            return 'Indoors is a court type carved out of the surface columns, so Hard, Clay and ' +
-              'Grass here are outdoor only. No season on record carries court type yet, so the ' +
-              'column reads as a dash throughout.';
+            return 'Indoors is a court type carved out of the surface rows and columns, so Hard, ' +
+              'Clay and Grass here are outdoor only. No season on record carries court type yet, ' +
+              'so it reads as a dash throughout.';
           }
-          return 'Indoors is a court type carved out of the surface columns, so Hard, Clay and Grass ' +
-            'here are outdoor only and the five columns still sum to the total. Court type reaches ' +
-            ic.withCourt + ' of ' + ic.rows + ' seasons' +
+          return 'Indoors is a court type carved out of the surface rows and columns, so Hard, Clay ' +
+            'and Grass here are outdoor only and the five columns still sum to the total. Court type ' +
+            'reaches ' + ic.withCourt + ' of ' + ic.rows + ' seasons' +
             (ic.withCourt < ic.rows
               ? '; the older rows come from a season aggregate that carries none, and dash rather ' +
                 'than reading as no indoor matches played'
@@ -3487,7 +3867,8 @@
     state.key = String(key);
     state.ledgerOpen = false; state.ledgerExpanded = false;
     state.surfaces = []; state.priceFilters = []; state.modal = null;
-    state.careerScope = 'career'; state.splitScope = 'career'; state.marketRole = 'all';
+    state.careerScope = 'career'; state.careerDrill = null;
+    state.splitScope = 'career'; state.marketRole = 'all';
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.calRun = null;
     state.speedSurf = 'all'; state.speedBand = null;
@@ -3554,8 +3935,24 @@
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
     else if (kind === 'box') state.modal = el.getAttribute('data-box');
-    else if (kind === 'close' || kind === 'scrim') state.modal = null;
-    else if (kind === 'career-scope') state.careerScope = el.getAttribute('data-scope');
+    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; }
+    else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
+    // §5.2A — a surface row toggles its own drill; opening one closes the other.
+    else if (kind === 'career-surf') {
+      state.careerDrill = (state.careerDrill && state.careerDrill.kind === 'surface' &&
+        state.careerDrill.surf === v) ? null : { kind: 'surface', surf: v, year: null };
+    }
+    // §5.2B — `data-v` is "YYYY|surf", surf empty for the Total column. Clicking
+    // the same cell closes it; clicking another switches, which falls out of
+    // comparing the whole descriptor rather than just the year.
+    else if (kind === 'career-cell') {
+      var parts = String(v || '').split('|');
+      var want = { kind: 'cell', year: parts[0], surf: parts[1] || '' };
+      var cur = state.careerDrill;
+      state.careerDrill = (cur && cur.kind === 'cell' && cur.year === want.year &&
+        cur.surf === want.surf) ? null : want;
+    }
+    else if (kind === 'career-drill-close') state.careerDrill = null;
     else if (kind === 'split-scope') state.splitScope = el.getAttribute('data-scope');
     else if (kind === 'market-role') state.marketRole = el.getAttribute('data-role');
     else if (kind === 'tourn-row') state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t'));
@@ -3713,6 +4110,16 @@
       biggestBand: biggestBand,
       buildBoxVals: buildBoxVals,
       renderCareerModal: renderCareerModal,
+      // §5.2 rebuild — exported so the harness asserts on the real functions
+      // rather than re-deriving their logic, which is how a check goes vacuous.
+      modalSubtitle: modalSubtitle,
+      barFill: barFill,
+      barRow: barRow,
+      drillRows: drillRows,
+      drillSpine: drillSpine,
+      renderDrill: renderDrill,
+      CAREER_ROWS: CAREER_ROWS,
+      ENDASH: ENDASH,
       renderTournModal: renderTournModal,
       renderSplitsModal: renderSplitsModal,
       renderMarketModal: renderMarketModal,
