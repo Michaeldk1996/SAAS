@@ -82,6 +82,57 @@ function utcDay(ms) {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
+// Schema-version census, so a store's QUALITY is visible in the run log and not just
+// its entry count. 493 entries is not automatically better than 470 — measured
+// 2026-09-16, the first CI run under this store kept a 493-entry warm cache over the
+// 470-entry v14 floor purely on age, and nothing in the log said what those 493 were.
+function census(obj) {
+  const players = (obj && obj.players) || {};
+  const byVersion = {};
+  let shells = 0;
+  for (const k of Object.keys(players)) {
+    const e = players[k];
+    const v = e && e.v !== undefined ? e.v : 'none';
+    byVersion[v] = (byVersion[v] || 0) + 1;
+    if (e && e.profile && !e.profile.careerByYear) shells++;
+  }
+  const parts = Object.keys(byVersion).sort().map((v) => `v${v}:${byVersion[v]}`);
+  return `${Object.keys(players).length} entries [${parts.join(' ')}] shells:${shells}`;
+}
+
+// Per-entry comparison. A profile built by NEWER code wins outright — that is what
+// PROFILE_SCHEMA_VERSION exists to say, and an old-schema entry serves numbers from a
+// superseded formula however recently it was touched. Only within one version does
+// recency decide.
+function betterEntry(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const va = typeof a.v === 'number' ? a.v : -1;
+  const vb = typeof b.v === 'number' ? b.v : -1;
+  if (va !== vb) return va > vb ? a : b;
+  const ta = Date.parse(a.builtAt || '') || 0;
+  const tb = Date.parse(b.builtAt || '') || 0;
+  return ta >= tb ? a : b;
+}
+
+// UNION, not replace. Both stores are append-only views of the same population, so
+// taking one whole and discarding the other throws away real work: on 2026-09-16 the
+// committed floor held a 470-player v14 rebuild that cost 2,360 api-tennis requests,
+// and CI's warm cache was newer by five minutes. Age alone would have discarded the
+// rebuild the next morning. Merging cannot lose an entry and cannot downgrade one.
+function mergeStores(a, b) {
+  const pa = (a && a.players) || {};
+  const pb = (b && b.players) || {};
+  const players = {};
+  for (const k of Object.keys(pa)) players[k] = pa[k];
+  for (const k of Object.keys(pb)) players[k] = betterEntry(players[k], pb[k]);
+  const stamps = [stampOf(a), stampOf(b)].filter((s) => s !== null);
+  return {
+    fetchedAt: stamps.length ? new Date(Math.max.apply(null, stamps)).toISOString() : undefined,
+    players,
+  };
+}
+
 function hydrate(root) {
   let changed = 0;
   for (const pair of PAIRS) {
@@ -93,21 +144,18 @@ function hydrate(root) {
       continue;
     }
     const fromPlain = readJson(plainPath);
-    const gzStamp = stampOf(fromGz);
-    const plainStamp = stampOf(fromPlain);
-    if (fromPlain && plainStamp !== null && (gzStamp === null || plainStamp >= gzStamp)) {
-      console.log(
-        `hydrate: keeping restored ${pair.plain} (${countPlayers(fromPlain)} entries, ` +
-        `fetchedAt ${fromPlain.fetchedAt}) — not older than committed ${pair.gz}.`
-      );
+    if (!fromPlain) {
+      fs.writeFileSync(plainPath, JSON.stringify(fromGz));
+      changed++;
+      console.log(`hydrate: ${pair.plain} <- ${pair.gz} (${census(fromGz)}); nothing was restored.`);
       continue;
     }
-    fs.writeFileSync(plainPath, JSON.stringify(fromGz));
+    const merged = mergeStores(fromGz, fromPlain);
+    fs.writeFileSync(plainPath, JSON.stringify(merged));
     changed++;
     console.log(
-      `hydrate: ${pair.plain} <- ${pair.gz} (${countPlayers(fromGz)} entries, ` +
-      `fetchedAt ${fromGz.fetchedAt}); restored copy was ` +
-      (fromPlain ? `older (${fromPlain.fetchedAt || 'unstamped'})` : 'absent') + '.'
+      `hydrate: ${pair.plain} = restored (${census(fromPlain)}) ` +
+      `UNION committed ${pair.gz} (${census(fromGz)}) -> ${census(merged)}.`
     );
   }
   return changed;
@@ -167,7 +215,7 @@ function freeze(root, opts) {
     fs.writeFileSync(gzPath, buf);
     written++;
     console.log(
-      `freeze: ${pair.gz} <- ${pair.plain} (${countPlayers(live)} entries, ` +
+      `freeze: ${pair.gz} <- ${pair.plain} (${census(live)}, ` +
       `fetchedAt ${live.fetchedAt}, ${(buf.length / 1e6).toFixed(2)} MB gzipped).`
     );
   }

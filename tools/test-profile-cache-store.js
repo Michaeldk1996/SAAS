@@ -44,10 +44,13 @@ function tmpRoot() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'pcstore-'));
 }
 
-function makeStore(fetchedAt, n, tag) {
+function makeStore(fetchedAt, n, tag, opts) {
+  const o = opts || {};
+  const from = o.from || 0;
+  const v = o.v === undefined ? 14 : o.v;
   const players = {};
-  for (let i = 0; i < n; i++) {
-    players[`p${i}`] = { builtAt: fetchedAt, v: 14, profile: { careerByYear: {}, tag: tag || 'x' } };
+  for (let i = from; i < from + n; i++) {
+    players[`p${i}`] = { builtAt: o.builtAt || fetchedAt, v, profile: { careerByYear: {}, tag: tag || 'x' } };
   }
   return { fetchedAt, players };
 }
@@ -73,45 +76,75 @@ const NEW = '2026-09-16T11:44:15.331Z'; // the real stamp on the v14/470 rebuild
 
 console.log('test-profile-cache-store:');
 
-// ---- A. hydrate prefers the newer store -------------------------------------
-check('A1 · committed .gz NEWER than the restored cache wins', () => {
+// ---- A. hydrate UNIONS the two stores ---------------------------------------
+// This block was originally written for replace-by-age semantics and had to be
+// rewritten. The first CI run under it proved why: CI's warm cache carried 493
+// entries against the 470-entry v14 floor and won on age alone, which would have
+// discarded a 2,360-request rebuild the following morning. Neither store is a
+// subset of the other, so neither may be thrown away.
+check('A1 · the union loses NOTHING — every key from both stores survives', () => {
   const root = tmpRoot();
-  writePlain(root, makeStore(OLD, 3, 'stale-cache'));
-  writeGz(root, makeStore(NEW, 5, 'fresh-commit'));
+  writePlain(root, makeStore(NEW, 493, 'ci-warm-cache'));            // p0..p492
+  writeGz(root, makeStore(OLD, 470, 'committed-floor', { from: 400 })); // p400..p869
   store.hydrate(root);
   const got = readPlain(root);
-  assert.strictEqual(got.fetchedAt, NEW, `expected the ${NEW} store, got ${got.fetchedAt}`);
-  assert.strictEqual(Object.keys(got.players).length, 5);
+  assert.strictEqual(Object.keys(got.players).length, 870, 'union dropped entries');
+  assert.ok(got.players.p0, 'lost an entry held only by the restored cache');
+  assert.ok(got.players.p869, 'lost an entry held only by the committed floor');
 });
 
-check('A2 · NEG — flip the stamps and the restored cache must survive untouched', () => {
+check('A2 · NEG — replace-by-age would have returned 493, not 870', () => {
   const root = tmpRoot();
-  // Same two files as A1, stamps swapped. If hydrate ignored fetchedAt and always
-  // took the .gz, this would come back with 5 entries and the test would fail.
-  writePlain(root, makeStore(NEW, 3, 'fresh-cache'));
-  writeGz(root, makeStore(OLD, 5, 'stale-commit'));
+  writePlain(root, makeStore(NEW, 493, 'ci-warm-cache'));
+  writeGz(root, makeStore(OLD, 470, 'committed-floor', { from: 400 }));
+  store.hydrate(root);
+  assert.notStrictEqual(Object.keys(readPlain(root).players).length, 493,
+    'hydrate is still replacing by age — the 470-entry floor was discarded');
+});
+
+check('A3 · a HIGHER schema version wins a conflict even when it is older', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(NEW, 3, 'recent-but-v7', { v: 7 }));
+  writeGz(root, makeStore(OLD, 3, 'older-but-v14', { v: 14 }));
   store.hydrate(root);
   const got = readPlain(root);
-  assert.strictEqual(got.fetchedAt, NEW, `hydrate clobbered a newer cache with an older commit (${got.fetchedAt})`);
-  assert.strictEqual(Object.keys(got.players).length, 3);
+  assert.strictEqual(got.players.p0.v, 14, 'a v7 entry beat a v14 one on recency');
+  assert.strictEqual(got.players.p0.profile.tag, 'older-but-v14');
 });
 
-check('A3 · equal stamps keep the restored cache (no pointless rewrite)', () => {
+check('A4 · NEG — swap the versions and the winner must swap with them', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(NEW, 3, 'recent-and-v14', { v: 14 }));
+  writeGz(root, makeStore(OLD, 3, 'older-and-v7', { v: 7 }));
+  store.hydrate(root);
+  const got = readPlain(root);
+  assert.strictEqual(got.players.p0.v, 14, 'version comparison is not live — it always picks the .gz');
+  assert.strictEqual(got.players.p0.profile.tag, 'recent-and-v14');
+});
+
+check('A5 · WITHIN one schema version, the newer builtAt wins', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(NEW, 3, 'newer'));
+  writeGz(root, makeStore(OLD, 3, 'older'));
+  store.hydrate(root);
+  assert.strictEqual(readPlain(root).players.p0.profile.tag, 'newer');
+});
+
+check('A6 · NEG — swap the builtAt stamps and the winner must swap with them', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(OLD, 3, 'older'));
+  writeGz(root, makeStore(NEW, 3, 'newer'));
+  store.hydrate(root);
+  assert.strictEqual(readPlain(root).players.p0.profile.tag, 'newer',
+    'recency comparison is not live within a version');
+});
+
+check('A7 · the merged store carries the LATER fetchedAt (freeze must not see it as a regression)', () => {
   const root = tmpRoot();
   writePlain(root, makeStore(NEW, 3, 'cache'));
-  writeGz(root, makeStore(NEW, 5, 'commit'));
-  store.hydrate(root);
-  assert.strictEqual(Object.keys(readPlain(root).players).length, 3);
-});
-
-check('A4 · an UNSTAMPED restored cache never beats a stamped commit', () => {
-  const root = tmpRoot();
-  const unstamped = makeStore(NEW, 3, 'cache');
-  delete unstamped.fetchedAt;
-  writePlain(root, unstamped);
   writeGz(root, makeStore(OLD, 5, 'commit'));
   store.hydrate(root);
-  assert.strictEqual(Object.keys(readPlain(root).players).length, 5, 'unstamped cache was allowed to win');
+  assert.strictEqual(readPlain(root).fetchedAt, NEW);
 });
 
 // ---- B. hydrate is the cache-miss floor -------------------------------------
