@@ -32,7 +32,11 @@ async function ev(expr, await_ = true) {
   if (r.result?.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 400));
   return r.result?.result?.value;
 }
-await send('Page.enable'); await send('Runtime.enable');
+await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
+// GitHub Pages sits behind a CDN and the page's own scripts are long-cached. A
+// probe that reads a cached bundle reports the PREVIOUS deploy as the live one —
+// which is exactly how a "still broken" false alarm gets written up.
+await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: DPR, mobile: false });
 // Memory: CDP deployed-page auth bypass — neuter BSP.requireVerified via init script.
 await send('Page.addScriptToEvaluateOnNewDocument', { source:
