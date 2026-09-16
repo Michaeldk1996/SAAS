@@ -894,6 +894,71 @@
       '</div>';
   }
 
+  // ─── RULING · Indoors column (TEN-206 gate 3) ───────────────────────────────
+  // The gate offered four columns + a footnote, five columns of dashes, or a
+  // pipeline ticket. The founder picked none and corrected the premise: "We
+  // should have it through api tennis." He was right. API-Tennis spells indoor
+  // events "Hard (Indoor)" / "Clay (Indoor)" / "Grass (Indoor)" — 680 of 10,280
+  // tournaments — and OUR normaliser was collapsing them to a bare surface. The
+  // pipeline now keeps a `courts` map and careerByYear rows carry an `indoor`
+  // breakdown; see tools/test-indoor-court.js.
+  //
+  // The column is a CARVE-OUT, not a fifth peer: an indoor hard match is hard
+  // AND indoor, so listing both inclusively would double-count and break the
+  // "columns sum to Total" chain the founder's spine ruling established. Hard,
+  // Clay and Grass therefore render OUTDOOR-only here and Indoors takes the
+  // rest. Measured on live fixtures: indoor is 12-17% of a top player's window
+  // and, for all three sampled, falls entirely inside Hard.
+  //
+  // Pre-window rows (before currentYear-5) come from the provider's ATP season
+  // aggregate, which has no court type at all. Those dash — `indoor: null` is
+  // deliberately distinct from a 0-0 record.
+  function carveIndoor(surfRec, indRec) {
+    if (!surfRec) return null;
+    if (!indRec) return surfRec;
+    var won = (surfRec.won || 0) - (indRec.won || 0);
+    var lost = (surfRec.lost || 0) - (indRec.lost || 0);
+    return (won + lost) > 0 ? { won: won, lost: lost } : null;
+  }
+  function gridCells(y) {
+    var ind = y.indoor || null;
+    return {
+      total: y.total,
+      clay: carveIndoor(y.clay, ind && ind.clay),
+      hard: carveIndoor(y.hard, ind && ind.hard),
+      grass: carveIndoor(y.grass, ind && ind.grass),
+      // No court-type source for this row -> dash, not a zero record.
+      indoors: ind ? ind.total : null
+    };
+  }
+  // Career footer: the same carve-out summed over the rows that can carry it.
+  function careerGridCells(p) {
+    var out = { clay: null, hard: null, grass: null, indoors: null };
+    var add = function (acc, r) {
+      if (!r) return acc;
+      if (!acc) return { won: r.won || 0, lost: r.lost || 0 };
+      return { won: acc.won + (r.won || 0), lost: acc.lost + (r.lost || 0) };
+    };
+    spineYears(p).forEach(function (y) {
+      var g = gridCells(y);
+      out.clay = add(out.clay, g.clay);
+      out.hard = add(out.hard, g.hard);
+      out.grass = add(out.grass, g.grass);
+      out.indoors = add(out.indoors, g.indoors);
+    });
+    return out;
+  }
+  // How many spine rows can actually carry the column — the number the footnote
+  // quotes, so the page states its own coverage instead of implying completeness.
+  function indoorCoverage(p) {
+    var rows = spineYears(p);
+    return {
+      rows: rows.length,
+      withCourt: rows.filter(function (y) { return !!y.indoor; }).length,
+      window: rows.filter(function (y) { return y.allTier !== false; }).length
+    };
+  }
+
   // §5.2 Career record — surface rows over the spine + Record by season.
   function renderCareerModal(p, ctx) {
     var scopeYear = state.careerScope === 'season' ? currentYear() : null;
@@ -912,16 +977,17 @@
     var years = spineYears(p).slice().sort(function (a, b) {
       return String(b.year) < String(a.year) ? -1 : 1;
     });
-    var head = '<div style="display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:0 14px;">' +
-      ['Year', 'Total', 'Clay', 'Hard', 'Grass'].map(function (h, i) {
-        var col = ['#4b5672', '#8b96b5', '#e8a84e', '#4db8ff', '#3dd68c'][i];
+    var head = '<div style="display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:0 14px;">' +
+      ['Year', 'Total', 'Clay', 'Hard', 'Indoors', 'Grass'].map(function (h, i) {
+        var col = ['#4b5672', '#8b96b5', '#e8a84e', '#4db8ff', '#c6ccdb', '#3dd68c'][i];
         return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
           'letter-spacing:0.18em;text-transform:uppercase;color:' + col + ';' +
           (i ? 'text-align:right;' : '') + '">' + h + '</div>';
       }).join('');
     var body = years.map(function (y) {
-      var cells = ['total', 'clay', 'hard', 'grass'].map(function (c) {
-        var r = y[c];
+      var g = gridCells(y);
+      var cells = ['total', 'clay', 'hard', 'indoors', 'grass'].map(function (c) {
+        var r = g[c];
         var txt = r ? (r.won || 0) + '/' + (r.lost || 0) : DASH;
         return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
           (c === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
@@ -933,13 +999,16 @@
     }).join('');
     var ct = spineTotal(p);
     var cs = spineBySurface(p, null);
+    var cf = careerGridCells(p);
     var footer = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
       'padding:15px 0 13px;border-top:1px solid rgba(255,255,255,0.18);">Career</div>' +
-      ['total', 'clay', 'hard', 'grass'].map(function (c) {
-        var r = c === 'total' ? ct : cs[c];
+      ['total', 'clay', 'hard', 'indoors', 'grass'].map(function (c) {
+        var r = c === 'total' ? ct : (c === 'indoors' ? cf.indoors : cf[c]);
         return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
           'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
-          'border-top:1px solid rgba(255,255,255,0.18);">' + (r.won || 0) + '/' + (r.lost || 0) + '</div>';
+          (r ? '' : 'color:#3f4860;') +
+          'border-top:1px solid rgba(255,255,255,0.18);">' +
+          (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
       }).join('') + '</div>';
 
     var fy = spineFirstYear(p);
@@ -966,7 +1035,25 @@
           ? 'A separate ' + (cs.other.won + cs.other.lost) + '-match row carries matches whose ' +
             'surface the feed never recorded, so the surface rows still add up to the career total. '
           : '') +
-        'Indoor and outdoor are not split: the season rows do not carry court type.' +
+        (function () {
+          // The column's own coverage, stated rather than implied. Court type
+          // reaches only the fixtures-era rows; the provider's season aggregate
+          // behind the older rows carries none, so those read as a dash.
+          var ic = indoorCoverage(p);
+          if (!ic.rows) return '';
+          if (!ic.withCourt) {
+            return 'Indoors is a court type carved out of the surface columns, so Hard, Clay and ' +
+              'Grass here are outdoor only. No season on record carries court type yet, so the ' +
+              'column reads as a dash throughout.';
+          }
+          return 'Indoors is a court type carved out of the surface columns, so Hard, Clay and Grass ' +
+            'here are outdoor only and the five columns still sum to the total. Court type reaches ' +
+            ic.withCourt + ' of ' + ic.rows + ' seasons' +
+            (ic.withCourt < ic.rows
+              ? '; the older rows come from a season aggregate that carries none, and dash rather ' +
+                'than reading as no indoor matches played'
+              : '') + '.';
+        })() +
       '</div>';
 
     function scopeBtn(id, label, on) {
@@ -1739,6 +1826,10 @@
       spineTotal: spineTotal,
       spineBySurface: spineBySurface,
       spineFirstYear: spineFirstYear,
+      gridCells: gridCells,
+      careerGridCells: careerGridCells,
+      carveIndoor: carveIndoor,
+      indoorCoverage: indoorCoverage,
       // §5.4 Calendar record (ruling cal-0). `state` is exported so the tests can
       // drive the Streaks tab and the surface segments through the SAME state the
       // page mutates — otherwise those branches are unreachable and would be

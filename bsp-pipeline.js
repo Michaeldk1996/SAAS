@@ -562,12 +562,31 @@ const isWalkoverGiven = (f, won) => f.event_status === 'Walk Over' && !won;
 // flagged allTier:false so the UI can mark them. Newest-first; fully-empty years
 // dropped; a surface cell is null when the player had no match on it that year
 // (mirrors the provider-aggregate shape so the table renders identically).
-function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfaceMap) {
+// `courtMap` (tournament_key -> 'indoor'|'outdoor') is OPTIONAL and additive.
+// When present each tier gains an `indoor` breakdown ALONGSIDE the existing
+// clay/hard/grass buckets, which keep counting indoor matches exactly as they
+// do today — nothing that reads those fields changes. The Record-by-season grid
+// carves the Indoors column out at render time (hard_outdoor = hard - indoor.hard),
+// which is the only arrangement where the columns still sum to Total.
+//
+// Only the fixtures-era rows can carry it. Pre-window rows come from
+// yearlyBreakdown(playerStats) — the provider's ATP season aggregate, which has
+// clay/hard/grass and no court type at all — so they carry `indoor: null` and
+// the column dashes there rather than silently reading as zero indoor matches.
+function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfaceMap, courtMap) {
+  // Defaulted from the cache rather than threaded through every caller: this has
+  // eight call sites across three match builders, and a new required parameter
+  // on all of them is more surface area than the feature is worth. Passing one
+  // explicitly (the tests do) still wins.
+  if (courtMap === undefined) courtMap = defaultCourtMap();
   const cutoff = currentYear - 5;
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
   const tierOf = f => /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
   const blank = () => ({ won: 0, lost: 0 });
-  const blankTier = () => ({ total: blank(), clay: blank(), hard: blank(), grass: blank() });
+  const blankTier = () => ({
+    total: blank(), clay: blank(), hard: blank(), grass: blank(),
+    indoor: { total: blank(), clay: blank(), hard: blank(), grass: blank() },
+  });
   const byYear = {}; // year -> { atp: {...}, chitf: {...} }
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
@@ -590,10 +609,31 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     bucket.total[won ? 'won' : 'lost']++;
     const surface = surfaceMap.get(String(f.tournament_key));
     if (surface && bucket[surface]) bucket[surface][won ? 'won' : 'lost']++;
+    // Additive: the surface buckets above are left counting indoor matches, so
+    // no existing consumer moves. Indoor is recorded a second time, per surface,
+    // purely so the grid can subtract it.
+    if (courtMap && courtMap.get(String(f.tournament_key)) === 'indoor') {
+      bucket.indoor.total[won ? 'won' : 'lost']++;
+      if (surface && bucket.indoor[surface]) bucket.indoor[surface][won ? 'won' : 'lost']++;
+    }
   }
   const nn = b => (b.won + b.lost > 0 ? b : null);
   const sum = (a, b) => ((a || b) ? { won: (a ? a.won : 0) + (b ? b.won : 0), lost: (a ? a.lost : 0) + (b ? b.lost : 0) } : null);
-  const tierObj = t => ({ total: nn(t.total), clay: nn(t.clay), hard: nn(t.hard), grass: nn(t.grass) });
+  const indoorObj = (i) => {
+    const o = { total: nn(i.total), clay: nn(i.clay), hard: nn(i.hard), grass: nn(i.grass) };
+    return o.total ? o : null;      // a year with no indoor match carries no key
+  };
+  const sumIndoor = (a, b) => {
+    if (!a && !b) return null;
+    return {
+      total: sum(a && a.total, b && b.total), clay: sum(a && a.clay, b && b.clay),
+      hard: sum(a && a.hard, b && b.hard), grass: sum(a && a.grass, b && b.grass),
+    };
+  };
+  const tierObj = t => ({
+    total: nn(t.total), clay: nn(t.clay), hard: nn(t.hard), grass: nn(t.grass),
+    indoor: indoorObj(t.indoor),
+  });
   const hasAny = t => t.total || t.clay || t.hard || t.grass;
   // 2021+ rows carry per-tier (atp / chitf) splits AND a combined all-tier view
   // (total/clay/hard/grass) so the default "All" render is unchanged.
@@ -602,16 +642,20 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     return {
       year, allTier: true,
       total: sum(atp.total, chitf.total), clay: sum(atp.clay, chitf.clay), hard: sum(atp.hard, chitf.hard), grass: sum(atp.grass, chitf.grass),
+      indoor: sumIndoor(atp.indoor, chitf.indoor),
       atp: hasAny(atp) ? atp : null, chitf: hasAny(chitf) ? chitf : null,
     };
   });
   // Pre-window rows: ATP-only provider aggregates (no all-tier data that far back).
+  // `indoor: null` is load-bearing — it is the difference between "this player
+  // played no indoor matches in 2018" and "2018 predates any court-type source",
+  // and the grid must dash the second rather than print 0-0.
   const preRows = yearlyBreakdown(playerStats)
     .filter(r => parseInt(r.year, 10) < cutoff)
     .map(r => ({
       year: r.year, allTier: false,
-      total: r.total, clay: r.clay, hard: r.hard, grass: r.grass,
-      atp: { total: r.total, clay: r.clay, hard: r.hard, grass: r.grass }, chitf: null,
+      total: r.total, clay: r.clay, hard: r.hard, grass: r.grass, indoor: null,
+      atp: { total: r.total, clay: r.clay, hard: r.hard, grass: r.grass, indoor: null }, chitf: null,
     }));
   return [...allTierRows, ...preRows]
     .filter(r => r.total || r.clay || r.hard || r.grass)
@@ -813,21 +857,59 @@ async function fetchAllTournaments() {
   return Array.isArray(data.result) ? data.result : [];
 }
 
+// COURT TYPE. API-Tennis spells indoor events as "Hard (Indoor)" / "Clay
+// (Indoor)" / "Grass (Indoor)" in `tournament_sourface` — measured over a full
+// get_tournaments census: 635 + 43 + 2 of 10,280 tournaments. normalizeSurface()
+// above matches on the substring, so "Hard (Indoor)" has always collapsed to
+// "hard" and the court type was being discarded HERE, not missing upstream.
+//
+// Captured as a SEPARATE map rather than folded into the surface value: nine
+// files read tournament-surfaces.json expecting clay|hard|grass|null, and a
+// fourth value would change surface tallies across Series, hold/break,
+// classify-styles and trading-splits. `surfaces` stays byte-identical; `courts`
+// is a new sibling key those readers never look at.
+function isIndoorTournament(t) {
+  return /\(\s*indoor\s*\)/i.test(String(t.tournament_sourface || ''));
+}
+
 async function loadTournamentSurfaceMap() {
   if (fs.existsSync(TOURNAMENT_SURFACE_CACHE_PATH)) {
     const cache = JSON.parse(fs.readFileSync(TOURNAMENT_SURFACE_CACHE_PATH, 'utf8'));
-    if (Date.now() - new Date(cache.fetchedAt).getTime() < TOURNAMENT_SURFACE_CACHE_MAX_AGE_MS) {
+    // A cache written before court capture existed is refreshed even while it is
+    // otherwise fresh — otherwise `courts` would not appear for up to 30 days.
+    if (Date.now() - new Date(cache.fetchedAt).getTime() < TOURNAMENT_SURFACE_CACHE_MAX_AGE_MS
+        && cache.courts) {
       return new Map(Object.entries(cache.surfaces));
     }
   }
   console.log('Refreshing tournament surface lookup from API-Tennis...');
   const tournaments = await fetchAllTournaments();
   const surfaces = {};
+  const courts = {};
   for (const t of tournaments) {
     surfaces[t.tournament_key] = correctTournamentSurface(t);
+    courts[t.tournament_key] = isIndoorTournament(t) ? 'indoor' : 'outdoor';
   }
-  fs.writeFileSync(TOURNAMENT_SURFACE_CACHE_PATH, JSON.stringify({ fetchedAt: new Date().toISOString(), surfaces }, null, 2));
+  fs.writeFileSync(TOURNAMENT_SURFACE_CACHE_PATH, JSON.stringify({ fetchedAt: new Date().toISOString(), surfaces, courts }, null, 2));
   return new Map(Object.entries(surfaces));
+}
+
+// Read-only companion to the map above. Returns an EMPTY map when the cache
+// predates court capture, so callers degrade to "no court type on record" (a
+// dash) rather than throwing or, worse, reporting every match as outdoor.
+function loadTournamentCourtMap() {
+  try {
+    const cache = JSON.parse(fs.readFileSync(TOURNAMENT_SURFACE_CACHE_PATH, 'utf8'));
+    return new Map(Object.entries(cache.courts || {}));
+  } catch (e) {
+    return new Map();
+  }
+}
+// Memoized so a 428-player run reads the cache once, not once per player.
+let _courtMapMemo = null;
+function defaultCourtMap() {
+  if (!_courtMapMemo) _courtMapMemo = loadTournamentCourtMap();
+  return _courtMapMemo;
 }
 
 async function fetchPlayerFixturesForYear(playerKey, year) {
@@ -5745,7 +5827,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

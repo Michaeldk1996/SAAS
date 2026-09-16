@@ -922,6 +922,115 @@ check('month "vs other months" gaps are weighted, and Consistent counts seasons'
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// 15 · INDOORS COLUMN (founder's gate-3 correction: "We should have it through
+//      api tennis" — he was right; our normaliser was dropping "(Indoor)").
+//      The committed player-profiles.json predates the pipeline change, so real
+//      rows carry no `indoor` key and the carve-out is currently a NO-OP. These
+//      tests therefore drive SYNTHETIC rows: without them the column would be
+//      untested until the next pipeline run, and a grid that renders nothing is
+//      indistinguishable from a grid that renders correctly.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n15 · Indoors column (carve-out, not a fifth surface)');
+
+// 20 hard (6 of them indoor), 10 clay, 4 grass, 2 indoor clay => total 34.
+const IND_YEAR = {
+  year: String(new Date().getFullYear()), allTier: true,
+  total: { won: 20, lost: 14 },
+  clay: { won: 7, lost: 3 }, hard: { won: 11, lost: 9 }, grass: { won: 2, lost: 2 },
+  indoor: {
+    total: { won: 5, lost: 3 }, clay: { won: 1, lost: 1 },
+    hard: { won: 4, lost: 2 }, grass: null,
+  },
+};
+const IND_PRE = {
+  year: '2015', allTier: false,
+  total: { won: 30, lost: 20 }, clay: { won: 10, lost: 5 },
+  hard: { won: 18, lost: 13 }, grass: { won: 2, lost: 2 }, indoor: null,
+};
+const IND_PLAYER = { key: '__ind', name: 'T. Est', careerByYear: [IND_YEAR, IND_PRE] };
+
+check('the carve-out subtracts indoor from its own surface', () => {
+  const g = I.gridCells(IND_YEAR);
+  // hard 11-9 minus indoor-hard 4-2 => 7-7
+  assert.deepStrictEqual(g.hard, { won: 7, lost: 7 }, `hard ${JSON.stringify(g.hard)}`);
+  assert.deepStrictEqual(g.clay, { won: 6, lost: 2 }, `clay ${JSON.stringify(g.clay)}`);
+  // grass has no indoor component and must pass through untouched
+  assert.deepStrictEqual(g.grass, { won: 2, lost: 2 });
+  assert.deepStrictEqual(g.indoors, { won: 5, lost: 3 });
+});
+
+check('the five columns sum to Total — the chain the spine ruling established', () => {
+  const g = I.gridCells(IND_YEAR);
+  const n = r => (r ? r.won + r.lost : 0);
+  const parts = n(g.clay) + n(g.hard) + n(g.grass) + n(g.indoors);
+  assert.strictEqual(parts, n(g.total),
+    `columns hold ${parts} of ${n(g.total)} — the carve-out double-counts or drops`);
+  const won = (g.clay.won + g.hard.won + g.grass.won + g.indoors.won);
+  assert.strictEqual(won, g.total.won, `wins ${won} vs total ${g.total.won}`);
+});
+
+mustFail('[neg] the sum check would catch Indoors listed as a fifth peer', () => {
+  // The bug this rules out: leaving the surface buckets inclusive AND showing
+  // indoors beside them, which counts every indoor match twice.
+  const g = I.gridCells(IND_YEAR);
+  const n = r => (r ? r.won + r.lost : 0);
+  const peer = n(IND_YEAR.clay) + n(IND_YEAR.hard) + n(IND_YEAR.grass) + n(g.indoors);
+  assert.strictEqual(peer, n(g.total), 'inclusive columns still sum');
+});
+
+check('a row with no court-type source dashes rather than reading as zero indoor', () => {
+  const g = I.gridCells(IND_PRE);
+  assert.strictEqual(g.indoors, null, 'a pre-window row invented an indoor record');
+  // its surface cells must be untouched by a carve-out that cannot apply
+  assert.deepStrictEqual(g.hard, IND_PRE.hard);
+  assert.deepStrictEqual(g.clay, IND_PRE.clay);
+});
+
+check('the rendered grid shows the Indoors column and the dash, in the DOM', () => {
+  const saved = { ...I.state };
+  try {
+    I.state.careerScope = 'career';
+    const html = I.renderCareerModal(IND_PLAYER, { archetype: null });
+    assert(html.includes('Indoors'), 'the header has no Indoors column');
+    // six columns now: auto + repeat(5)
+    assert(/repeat\(5,minmax\(0,1fr\)\)/.test(html),
+      'the grid track count did not widen to five data columns');
+    // the carved hard cell (7/7) must be painted, and the raw 11/9 must NOT be
+    assert(html.includes('>7/7<'), 'the carved Hard cell is not in the DOM');
+    assert(!html.includes('>11/9<'), 'the DOM still shows the uncarved Hard record');
+    assert(html.includes('>5/3<'), 'the Indoors cell is not in the DOM');
+    // the pre-window row must paint a dash in the Indoors column
+    assert(html.includes('2015'), 'the pre-window row is missing');
+    // coverage must be stated, not implied
+    assert(/Court type reaches 1 of 2 seasons/.test(html),
+      'the footnote does not state the column\'s coverage');
+  } finally { Object.assign(I.state, saved); }
+});
+
+mustFail('[neg] the DOM check would catch a grid that never widened', () => {
+  const html = '<div style="grid-template-columns:auto repeat(4,minmax(0,1fr));">Grass</div>';
+  assert(/repeat\(5,minmax\(0,1fr\)\)/.test(html), 'grid is still four columns');
+});
+
+check('real committed profiles are unaffected until the pipeline repopulates', () => {
+  // The capture is additive by design. Until a pipeline run writes `indoor`,
+  // every real row must render exactly as it did before — no zeros, no shifted
+  // surface records, just a dashed column.
+  let dashed = 0;
+  for (const p of SAMPLE) {
+    const years = I.spineYears(p);
+    years.forEach((y) => {
+      const g = I.gridCells(y);
+      assert.strictEqual(g.indoors, null, `${p.name}/${y.year}: indoor data appeared from nowhere`);
+      assert.deepStrictEqual(g.hard, y.hard || null, `${p.name}/${y.year}: hard moved`);
+      assert.deepStrictEqual(g.clay, y.clay || null, `${p.name}/${y.year}: clay moved`);
+    });
+    dashed += years.length;
+  }
+  console.log(`        ${dashed} committed season rows unchanged; Indoors dashes pending a pipeline run`);
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 console.log('\n' + '='.repeat(64));
 console.log(`PASS ${pass}   FAIL ${fail}`);
 if (failures.length) {
