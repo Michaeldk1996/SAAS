@@ -1,0 +1,2276 @@
+{
+ "schemaVersion": 1,
+ "priceBasis": "closing price, Pinnacle where present, else Bet365 archive close, labelled per row",
+ "tour": {
+  "all": {
+   "n": 113494,
+   "wins": 56747,
+   "losses": 56747,
+   "gate": "full",
+   "winRate": 50,
+   "expectedWinRate": 50,
+   "vsMarket": 0,
+   "yield": -4.7,
+   "ci95": [
+    -0.3,
+    0.3
+   ],
+   "avgPrice": 2.93,
+   "book": {
+    "pinnacle": 104538,
+    "bet365": 8956
+   }
+  },
+  "level": {
+   "ATP 250": {
+    "n": 48856,
+    "wins": 24428,
+    "losses": 24428,
+    "gate": "full",
+    "winRate": 50,
+    "expectedWinRate": 50,
+    "vsMarket": 0,
+    "yield": -4.1,
+    "ci95": [
+     -0.4,
+     0.4
+    ],
+    "avgPrice": 2.55,
+    "book": {
+     "pinnacle": 45160,
+     "bet365": 3696
+    }
+   },
+   "Grand Slam": {
+    "n": 21760,
+    "wins": 10880,
+    "losses": 10880,
+    "gate": "full",
+    "winRate": 50,
+    "expectedWinRate": 50,
+    "vsMarket": 0,
+    "yield": -8.4,
+    "ci95": [
+     -0.6,
+     0.6
+    ],
+    "avgPrice": 4.01,
+    "book": {
+     "pinnacle": 20034,
+     "bet365": 1726
+    }
+   },
+   "ATP 500": {
+    "n": 17394,
+    "wins": 8697,
+    "losses": 8697,
+    "gate": "full",
+    "winRate": 50,
+    "expectedWinRate": 50,
+    "vsMarket": 0,
+    "yield": -4.8,
+    "ci95": [
+     -0.7,
+     0.7
+    ],
+    "avgPrice": 2.82,
+    "book": {
+     "pinnacle": 15918,
+     "bet365": 1476
+    }
+   },
+   "Masters 1000": {
+    "n": 24836,
+    "wins": 12418,
+    "losses": 12418,
+    "gate": "full",
+    "winRate": 50,
+    "expectedWinRate": 50,
+    "vsMarket": 0,
+    "yield": -2.4,
+    "ci95": [
+     -0.6,
+     0.6
+    ],
+    "avgPrice": 2.83,
+    "book": {
+     "pinnacle": 22812,
+     "bet365": 2024
+    }
+   },
+   "Tour Finals": {
+    "n": 648,
+    "wins": 324,
+    "losses": 324,
+    "gate": "full",
+    "winRate": 50,
+    "expectedWinRate": 50,
+    "vsMarket": 0,
+    "yield": -3.3,
+    "ci95": [
+     -3.4,
+     3.4
+    ],
+    "avgPrice": 2.79,
+    "book": {
+     "pinnacle": 614,
+     "bet365": 34
+    }
+   }
+  }
+ },
+ "coverage": {
+  "pinnacleEndByLevel": {
+   "ATP 250": "2026-01-13",
+   "Grand Slam": "2025-09-07",
+   "ATP 500": "2025-10-22",
+   "Masters 1000": "2025-11-01",
+   "Tour Finals": "2025-11-16"
+  },
+  "bet365ArchiveEndByLevel": {
+   "ATP 250": "2026-07-26",
+   "Grand Slam": "2026-07-12",
+   "ATP 500": "2026-06-21",
+   "Masters 1000": "2026-05-17",
+   "Tour Finals": "2025-11-16"
+  }
+ },
+ "players": {
+  "67": {
+   "n": 438,
+   "yield": -1.3,
+   "pinnacle": 438,
+   "bet365": 0
+  },
+  "207": {
+   "n": 307,
+   "yield": 2.2,
+   "pinnacle": 305,
+   "bet365": 2
+  },
+  "357": {
+   "n": 11,
+   "yield": -42.7,
+   "pinnacle": 11,
+   "bet365": 0
+  },
+  "358": {
+   "n": 175,
+   "yield": -5.7,
+   "pinnacle": 141,
+   "bet365": 34
+  },
+  "359": {
+   "n": 115,
+   "yield": -6.5,
+   "pinnacle": 105,
+   "bet365": 10
+  },
+  "360": {
+   "n": 147,
+   "yield": -14.7,
+   "pinnacle": 133,
+   "bet365": 14
+  },
+  "362": {
+   "n": 16,
+   "yield": -45.8,
+   "pinnacle": 12,
+   "bet365": 4
+  },
+  "363": {
+   "n": 224,
+   "yield": -5,
+   "pinnacle": 224,
+   "bet365": 0
+  },
+  "364": {
+   "n": 52,
+   "yield": -7.2,
+   "pinnacle": 51,
+   "bet365": 1
+  },
+  "366": {
+   "n": 50,
+   "yield": 16.7,
+   "pinnacle": 23,
+   "bet365": 27
+  },
+  "367": {
+   "n": 5,
+   "yield": -58.6,
+   "pinnacle": 5,
+   "bet365": 0
+  },
+  "370": {
+   "n": 8,
+   "yield": -34.9,
+   "pinnacle": 8,
+   "bet365": 0
+  },
+  "372": {
+   "n": 164,
+   "yield": 14.7,
+   "pinnacle": 120,
+   "bet365": 44
+  },
+  "374": {
+   "n": 130,
+   "yield": 2.5,
+   "pinnacle": 117,
+   "bet365": 13
+  },
+  "376": {
+   "n": 26,
+   "yield": -47.2,
+   "pinnacle": 26,
+   "bet365": 0
+  },
+  "377": {
+   "n": 29,
+   "yield": -39.5,
+   "pinnacle": 29,
+   "bet365": 0
+  },
+  "378": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "379": {
+   "n": 44,
+   "yield": 37.8,
+   "pinnacle": 42,
+   "bet365": 2
+  },
+  "384": {
+   "n": 5,
+   "yield": -63.8,
+   "pinnacle": 3,
+   "bet365": 2
+  },
+  "386": {
+   "n": 53,
+   "yield": 11.5,
+   "pinnacle": 47,
+   "bet365": 6
+  },
+  "388": {
+   "n": 80,
+   "yield": 52.5,
+   "pinnacle": 53,
+   "bet365": 27
+  },
+  "389": {
+   "n": 37,
+   "yield": -45,
+   "pinnacle": 36,
+   "bet365": 1
+  },
+  "391": {
+   "n": 58,
+   "yield": -2.7,
+   "pinnacle": 58,
+   "bet365": 0
+  },
+  "392": {
+   "n": 12,
+   "yield": -11.7,
+   "pinnacle": 12,
+   "bet365": 0
+  },
+  "395": {
+   "n": 55,
+   "yield": 27.9,
+   "pinnacle": 39,
+   "bet365": 16
+  },
+  "397": {
+   "n": 67,
+   "yield": -19.5,
+   "pinnacle": 67,
+   "bet365": 0
+  },
+  "400": {
+   "n": 220,
+   "yield": 3,
+   "pinnacle": 219,
+   "bet365": 1
+  },
+  "401": {
+   "n": 82,
+   "yield": -7.1,
+   "pinnacle": 53,
+   "bet365": 29
+  },
+  "408": {
+   "n": 11,
+   "yield": -4.3,
+   "pinnacle": 11,
+   "bet365": 0
+  },
+  "409": {
+   "n": 6,
+   "yield": -100,
+   "pinnacle": 6,
+   "bet365": 0
+  },
+  "411": {
+   "n": 6,
+   "yield": -35,
+   "pinnacle": 6,
+   "bet365": 0
+  },
+  "412": {
+   "n": 53,
+   "yield": -8.8,
+   "pinnacle": 39,
+   "bet365": 14
+  },
+  "415": {
+   "n": 80,
+   "yield": -6.2,
+   "pinnacle": 80,
+   "bet365": 0
+  },
+  "416": {
+   "n": 37,
+   "yield": 14.5,
+   "pinnacle": 33,
+   "bet365": 4
+  },
+  "418": {
+   "n": 23,
+   "yield": -0.4,
+   "pinnacle": 20,
+   "bet365": 3
+  },
+  "420": {
+   "n": 9,
+   "yield": 39.3,
+   "pinnacle": 8,
+   "bet365": 1
+  },
+  "421": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 0
+  },
+  "422": {
+   "n": 236,
+   "yield": 9.8,
+   "pinnacle": 223,
+   "bet365": 13
+  },
+  "424": {
+   "n": 310,
+   "yield": 6.7,
+   "pinnacle": 297,
+   "bet365": 13
+  },
+  "426": {
+   "n": 156,
+   "yield": 2.1,
+   "pinnacle": 154,
+   "bet365": 2
+  },
+  "427": {
+   "n": 226,
+   "yield": 3.9,
+   "pinnacle": 203,
+   "bet365": 23
+  },
+  "430": {
+   "n": 424,
+   "yield": -2.3,
+   "pinnacle": 388,
+   "bet365": 36
+  },
+  "431": {
+   "n": 404,
+   "yield": -4.6,
+   "pinnacle": 380,
+   "bet365": 24
+  },
+  "433": {
+   "n": 126,
+   "yield": -3.7,
+   "pinnacle": 124,
+   "bet365": 2
+  },
+  "434": {
+   "n": 104,
+   "yield": -26.4,
+   "pinnacle": 103,
+   "bet365": 1
+  },
+  "435": {
+   "n": 531,
+   "yield": -3,
+   "pinnacle": 500,
+   "bet365": 31
+  },
+  "436": {
+   "n": 101,
+   "yield": 11.9,
+   "pinnacle": 84,
+   "bet365": 17
+  },
+  "437": {
+   "n": 250,
+   "yield": 4.3,
+   "pinnacle": 250,
+   "bet365": 0
+  },
+  "438": {
+   "n": 671,
+   "yield": -6.1,
+   "pinnacle": 636,
+   "bet365": 35
+  },
+  "439": {
+   "n": 73,
+   "yield": 12.8,
+   "pinnacle": 72,
+   "bet365": 1
+  },
+  "440": {
+   "n": 12,
+   "yield": -12.5,
+   "pinnacle": 12,
+   "bet365": 0
+  },
+  "557": {
+   "n": 6,
+   "yield": -56.5,
+   "pinnacle": 4,
+   "bet365": 2
+  },
+  "558": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "561": {
+   "n": 9,
+   "yield": 40.4,
+   "pinnacle": 8,
+   "bet365": 1
+  },
+  "566": {
+   "n": 130,
+   "yield": 2.6,
+   "pinnacle": 106,
+   "bet365": 24
+  },
+  "567": {
+   "n": 48,
+   "yield": -32.6,
+   "pinnacle": 32,
+   "bet365": 16
+  },
+  "574": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "576": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 1
+  },
+  "579": {
+   "n": 10,
+   "yield": -58.8,
+   "pinnacle": 10,
+   "bet365": 0
+  },
+  "581": {
+   "n": 26,
+   "yield": 16.3,
+   "pinnacle": 25,
+   "bet365": 1
+  },
+  "585": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 1
+  },
+  "590": {
+   "n": 143,
+   "yield": 13.6,
+   "pinnacle": 128,
+   "bet365": 15
+  },
+  "593": {
+   "n": 281,
+   "yield": 1.3,
+   "pinnacle": 277,
+   "bet365": 4
+  },
+  "594": {
+   "n": 35,
+   "yield": 1.8,
+   "pinnacle": 34,
+   "bet365": 1
+  },
+  "627": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 2
+  },
+  "657": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 0
+  },
+  "663": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "690": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "717": {
+   "n": 10,
+   "yield": -26.4,
+   "pinnacle": 6,
+   "bet365": 4
+  },
+  "731": {
+   "n": 6,
+   "yield": -35.2,
+   "pinnacle": 6,
+   "bet365": 0
+  },
+  "742": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 2
+  },
+  "745": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "767": {
+   "n": 25,
+   "yield": -6.9,
+   "pinnacle": 19,
+   "bet365": 6
+  },
+  "796": {
+   "n": 54,
+   "yield": -25.1,
+   "pinnacle": 53,
+   "bet365": 1
+  },
+  "798": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "810": {
+   "n": 9,
+   "yield": 44.3,
+   "pinnacle": 9,
+   "bet365": 0
+  },
+  "818": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 2
+  },
+  "824": {
+   "n": 31,
+   "yield": -0.2,
+   "pinnacle": 15,
+   "bet365": 16
+  },
+  "825": {
+   "n": 39,
+   "yield": -0.3,
+   "pinnacle": 17,
+   "bet365": 22
+  },
+  "827": {
+   "n": 10,
+   "yield": 91.7,
+   "pinnacle": 7,
+   "bet365": 3
+  },
+  "833": {
+   "n": 8,
+   "yield": -100,
+   "pinnacle": 6,
+   "bet365": 2
+  },
+  "876": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "884": {
+   "n": 36,
+   "yield": -22.3,
+   "pinnacle": 35,
+   "bet365": 1
+  },
+  "902": {
+   "n": 117,
+   "yield": 31,
+   "pinnacle": 83,
+   "bet365": 34
+  },
+  "906": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "907": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "938": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "943": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 0
+  },
+  "945": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "949": {
+   "n": 113,
+   "yield": -13.9,
+   "pinnacle": 81,
+   "bet365": 32
+  },
+  "954": {
+   "n": 39,
+   "yield": -35.1,
+   "pinnacle": 18,
+   "bet365": 21
+  },
+  "978": {
+   "n": 17,
+   "yield": 10.8,
+   "pinnacle": 0,
+   "bet365": 17
+  },
+  "987": {
+   "n": 17,
+   "yield": -7.2,
+   "pinnacle": 12,
+   "bet365": 5
+  },
+  "1056": {
+   "n": 243,
+   "yield": -5.5,
+   "pinnacle": 218,
+   "bet365": 25
+  },
+  "1057": {
+   "n": 127,
+   "yield": -9.6,
+   "pinnacle": 120,
+   "bet365": 7
+  },
+  "1059": {
+   "n": 109,
+   "yield": -9.3,
+   "pinnacle": 109,
+   "bet365": 0
+  },
+  "1064": {
+   "n": 120,
+   "yield": -11.2,
+   "pinnacle": 92,
+   "bet365": 28
+  },
+  "1065": {
+   "n": 71,
+   "yield": 9.7,
+   "pinnacle": 71,
+   "bet365": 0
+  },
+  "1066": {
+   "n": 64,
+   "yield": -13.9,
+   "pinnacle": 52,
+   "bet365": 12
+  },
+  "1067": {
+   "n": 61,
+   "yield": -2.2,
+   "pinnacle": 58,
+   "bet365": 3
+  },
+  "1070": {
+   "n": 113,
+   "yield": -35.7,
+   "pinnacle": 113,
+   "bet365": 0
+  },
+  "1072": {
+   "n": 13,
+   "yield": 14.5,
+   "pinnacle": 13,
+   "bet365": 0
+  },
+  "1073": {
+   "n": 26,
+   "yield": -20.2,
+   "pinnacle": 24,
+   "bet365": 2
+  },
+  "1074": {
+   "n": 194,
+   "yield": -3.1,
+   "pinnacle": 193,
+   "bet365": 1
+  },
+  "1077": {
+   "n": 40,
+   "yield": -46.7,
+   "pinnacle": 39,
+   "bet365": 1
+  },
+  "1079": {
+   "n": 291,
+   "yield": 3.5,
+   "pinnacle": 264,
+   "bet365": 27
+  },
+  "1082": {
+   "n": 94,
+   "yield": -30.1,
+   "pinnacle": 90,
+   "bet365": 4
+  },
+  "1083": {
+   "n": 66,
+   "yield": 2,
+   "pinnacle": 35,
+   "bet365": 31
+  },
+  "1086": {
+   "n": 85,
+   "yield": 6.1,
+   "pinnacle": 85,
+   "bet365": 0
+  },
+  "1089": {
+   "n": 128,
+   "yield": -17,
+   "pinnacle": 128,
+   "bet365": 0
+  },
+  "1090": {
+   "n": 146,
+   "yield": -14.2,
+   "pinnacle": 145,
+   "bet365": 1
+  },
+  "1091": {
+   "n": 752,
+   "yield": 2.4,
+   "pinnacle": 711,
+   "bet365": 41
+  },
+  "1092": {
+   "n": 13,
+   "yield": -36.2,
+   "pinnacle": 13,
+   "bet365": 0
+  },
+  "1093": {
+   "n": 588,
+   "yield": 2.1,
+   "pinnacle": 547,
+   "bet365": 41
+  },
+  "1094": {
+   "n": 942,
+   "yield": -3.7,
+   "pinnacle": 904,
+   "bet365": 38
+  },
+  "1095": {
+   "n": 201,
+   "yield": -13.9,
+   "pinnacle": 199,
+   "bet365": 2
+  },
+  "1096": {
+   "n": 98,
+   "yield": -0.3,
+   "pinnacle": 76,
+   "bet365": 22
+  },
+  "1097": {
+   "n": 37,
+   "yield": 13.2,
+   "pinnacle": 37,
+   "bet365": 0
+  },
+  "1098": {
+   "n": 118,
+   "yield": -0.7,
+   "pinnacle": 116,
+   "bet365": 2
+  },
+  "1099": {
+   "n": 198,
+   "yield": -7.6,
+   "pinnacle": 164,
+   "bet365": 34
+  },
+  "1101": {
+   "n": 230,
+   "yield": -12.3,
+   "pinnacle": 194,
+   "bet365": 36
+  },
+  "1102": {
+   "n": 122,
+   "yield": 13.1,
+   "pinnacle": 113,
+   "bet365": 9
+  },
+  "1103": {
+   "n": 413,
+   "yield": 2.1,
+   "pinnacle": 384,
+   "bet365": 29
+  },
+  "1104": {
+   "n": 262,
+   "yield": 6.7,
+   "pinnacle": 220,
+   "bet365": 42
+  },
+  "1105": {
+   "n": 323,
+   "yield": -5.3,
+   "pinnacle": 281,
+   "bet365": 42
+  },
+  "1106": {
+   "n": 453,
+   "yield": -7,
+   "pinnacle": 411,
+   "bet365": 42
+  },
+  "1179": {
+   "n": 17,
+   "yield": -21.6,
+   "pinnacle": 17,
+   "bet365": 0
+  },
+  "1180": {
+   "n": 6,
+   "yield": -56.2,
+   "pinnacle": 1,
+   "bet365": 5
+  },
+  "1183": {
+   "n": 24,
+   "yield": -20.3,
+   "pinnacle": 21,
+   "bet365": 3
+  },
+  "1185": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "1186": {
+   "n": 25,
+   "yield": -14.8,
+   "pinnacle": 24,
+   "bet365": 1
+  },
+  "1187": {
+   "n": 12,
+   "yield": 63.2,
+   "pinnacle": 12,
+   "bet365": 0
+  },
+  "1189": {
+   "n": 23,
+   "yield": -32,
+   "pinnacle": 23,
+   "bet365": 0
+  },
+  "1192": {
+   "n": 139,
+   "yield": -0.3,
+   "pinnacle": 121,
+   "bet365": 18
+  },
+  "1195": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "1197": {
+   "n": 11,
+   "yield": -13.9,
+   "pinnacle": 11,
+   "bet365": 0
+  },
+  "1205": {
+   "n": 13,
+   "yield": -81.5,
+   "pinnacle": 13,
+   "bet365": 0
+  },
+  "1206": {
+   "n": 12,
+   "yield": -63.4,
+   "pinnacle": 12,
+   "bet365": 0
+  },
+  "1207": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 2
+  },
+  "1208": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "1209": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "1212": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "1242": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "1261": {
+   "n": 6,
+   "yield": 10.3,
+   "pinnacle": 6,
+   "bet365": 0
+  },
+  "1274": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "1297": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 3
+  },
+  "1304": {
+   "n": 9,
+   "yield": 25.8,
+   "pinnacle": 7,
+   "bet365": 2
+  },
+  "1307": {
+   "n": 6,
+   "yield": -44.2,
+   "pinnacle": 6,
+   "bet365": 0
+  },
+  "1308": {
+   "n": 10,
+   "yield": -13.6,
+   "pinnacle": 7,
+   "bet365": 3
+  },
+  "1317": {
+   "n": 18,
+   "yield": -5.2,
+   "pinnacle": 4,
+   "bet365": 14
+  },
+  "1324": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "1331": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "1335": {
+   "n": 12,
+   "yield": -30.6,
+   "pinnacle": 5,
+   "bet365": 7
+  },
+  "1735": {
+   "n": 116,
+   "yield": -0.8,
+   "pinnacle": 115,
+   "bet365": 1
+  },
+  "1739": {
+   "n": 12,
+   "yield": -41.4,
+   "pinnacle": 12,
+   "bet365": 0
+  },
+  "1746": {
+   "n": 70,
+   "yield": -12.5,
+   "pinnacle": 68,
+   "bet365": 2
+  },
+  "1748": {
+   "n": 219,
+   "yield": -10.2,
+   "pinnacle": 213,
+   "bet365": 6
+  },
+  "1751": {
+   "n": 34,
+   "yield": -20.7,
+   "pinnacle": 34,
+   "bet365": 0
+  },
+  "1754": {
+   "n": 20,
+   "yield": -22.4,
+   "pinnacle": 12,
+   "bet365": 8
+  },
+  "1755": {
+   "n": 56,
+   "yield": -36.8,
+   "pinnacle": 56,
+   "bet365": 0
+  },
+  "1758": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 1
+  },
+  "1759": {
+   "n": 147,
+   "yield": 10.6,
+   "pinnacle": 118,
+   "bet365": 29
+  },
+  "1762": {
+   "n": 7,
+   "yield": -0.1,
+   "pinnacle": 4,
+   "bet365": 3
+  },
+  "1764": {
+   "n": 198,
+   "yield": 0.5,
+   "pinnacle": 162,
+   "bet365": 36
+  },
+  "1766": {
+   "n": 292,
+   "yield": -4.4,
+   "pinnacle": 268,
+   "bet365": 24
+  },
+  "1771": {
+   "n": 135,
+   "yield": 0.3,
+   "pinnacle": 127,
+   "bet365": 8
+  },
+  "1775": {
+   "n": 201,
+   "yield": -12,
+   "pinnacle": 189,
+   "bet365": 12
+  },
+  "1777": {
+   "n": 215,
+   "yield": -15.2,
+   "pinnacle": 173,
+   "bet365": 42
+  },
+  "1849": {
+   "n": 62,
+   "yield": -3,
+   "pinnacle": 51,
+   "bet365": 11
+  },
+  "1852": {
+   "n": 43,
+   "yield": 25.7,
+   "pinnacle": 19,
+   "bet365": 24
+  },
+  "1854": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "1858": {
+   "n": 10,
+   "yield": -21,
+   "pinnacle": 3,
+   "bet365": 7
+  },
+  "1863": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "1872": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "1873": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 1
+  },
+  "1879": {
+   "n": 10,
+   "yield": -77.6,
+   "pinnacle": 10,
+   "bet365": 0
+  },
+  "1880": {
+   "n": 34,
+   "yield": 5.7,
+   "pinnacle": 26,
+   "bet365": 8
+  },
+  "1882": {
+   "n": 10,
+   "yield": -33.3,
+   "pinnacle": 7,
+   "bet365": 3
+  },
+  "1894": {
+   "n": 365,
+   "yield": 0.2,
+   "pinnacle": 323,
+   "bet365": 42
+  },
+  "1895": {
+   "n": 366,
+   "yield": 12.1,
+   "pinnacle": 323,
+   "bet365": 43
+  },
+  "1896": {
+   "n": 6,
+   "yield": -100,
+   "pinnacle": 5,
+   "bet365": 1
+  },
+  "1899": {
+   "n": 11,
+   "yield": 15.4,
+   "pinnacle": 10,
+   "bet365": 1
+  },
+  "1900": {
+   "n": 198,
+   "yield": -10,
+   "pinnacle": 186,
+   "bet365": 12
+  },
+  "1902": {
+   "n": 218,
+   "yield": 3.7,
+   "pinnacle": 187,
+   "bet365": 31
+  },
+  "1903": {
+   "n": 13,
+   "yield": 12.5,
+   "pinnacle": 10,
+   "bet365": 3
+  },
+  "1905": {
+   "n": 1277,
+   "yield": 2.8,
+   "pinnacle": 1162,
+   "bet365": 115
+  },
+  "1906": {
+   "n": 525,
+   "yield": -1.6,
+   "pinnacle": 493,
+   "bet365": 32
+  },
+  "1925": {
+   "n": 161,
+   "yield": -13.7,
+   "pinnacle": 130,
+   "bet365": 31
+  },
+  "1926": {
+   "n": 252,
+   "yield": -8,
+   "pinnacle": 227,
+   "bet365": 25
+  },
+  "1949": {
+   "n": 6,
+   "yield": -43.5,
+   "pinnacle": 5,
+   "bet365": 1
+  },
+  "1969": {
+   "n": 25,
+   "yield": -25.6,
+   "pinnacle": 25,
+   "bet365": 0
+  },
+  "1972": {
+   "n": 271,
+   "yield": 11,
+   "pinnacle": 271,
+   "bet365": 0
+  },
+  "1974": {
+   "n": 45,
+   "yield": -7.4,
+   "pinnacle": 44,
+   "bet365": 1
+  },
+  "1976": {
+   "n": 129,
+   "yield": -2.4,
+   "pinnacle": 129,
+   "bet365": 0
+  },
+  "1980": {
+   "n": 727,
+   "yield": 3.2,
+   "pinnacle": 670,
+   "bet365": 57
+  },
+  "2001": {
+   "n": 13,
+   "yield": -0.5,
+   "pinnacle": 4,
+   "bet365": 9
+  },
+  "2002": {
+   "n": 53,
+   "yield": -6.2,
+   "pinnacle": 46,
+   "bet365": 7
+  },
+  "2019": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "2022": {
+   "n": 6,
+   "yield": -51.5,
+   "pinnacle": 4,
+   "bet365": 2
+  },
+  "2071": {
+   "n": 229,
+   "yield": 2.7,
+   "pinnacle": 219,
+   "bet365": 10
+  },
+  "2072": {
+   "n": 413,
+   "yield": 4.6,
+   "pinnacle": 361,
+   "bet365": 52
+  },
+  "2073": {
+   "n": 429,
+   "yield": -3.9,
+   "pinnacle": 385,
+   "bet365": 44
+  },
+  "2083": {
+   "n": 284,
+   "yield": -13.2,
+   "pinnacle": 260,
+   "bet365": 24
+  },
+  "2084": {
+   "n": 70,
+   "yield": 34.8,
+   "pinnacle": 50,
+   "bet365": 20
+  },
+  "2100": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "2103": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "2112": {
+   "n": 63,
+   "yield": -4.8,
+   "pinnacle": 42,
+   "bet365": 21
+  },
+  "2167": {
+   "n": 889,
+   "yield": -1.6,
+   "pinnacle": 797,
+   "bet365": 92
+  },
+  "2168": {
+   "n": 894,
+   "yield": 1,
+   "pinnacle": 830,
+   "bet365": 64
+  },
+  "2169": {
+   "n": 136,
+   "yield": -0.3,
+   "pinnacle": 113,
+   "bet365": 23
+  },
+  "2227": {
+   "n": 26,
+   "yield": 8.7,
+   "pinnacle": 18,
+   "bet365": 8
+  },
+  "2382": {
+   "n": 337,
+   "yield": 5.4,
+   "pinnacle": 303,
+   "bet365": 34
+  },
+  "2384": {
+   "n": 750,
+   "yield": -0.5,
+   "pinnacle": 725,
+   "bet365": 25
+  },
+  "2385": {
+   "n": 568,
+   "yield": -3.5,
+   "pinnacle": 565,
+   "bet365": 3
+  },
+  "2386": {
+   "n": 299,
+   "yield": -5.6,
+   "pinnacle": 294,
+   "bet365": 5
+  },
+  "2406": {
+   "n": 220,
+   "yield": -14.1,
+   "pinnacle": 219,
+   "bet365": 1
+  },
+  "2408": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "2409": {
+   "n": 8,
+   "yield": -29.1,
+   "pinnacle": 8,
+   "bet365": 0
+  },
+  "2410": {
+   "n": 9,
+   "yield": -12.1,
+   "pinnacle": 8,
+   "bet365": 1
+  },
+  "2413": {
+   "n": 75,
+   "yield": -5.9,
+   "pinnacle": 70,
+   "bet365": 5
+  },
+  "2467": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "2501": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "2672": {
+   "n": 81,
+   "yield": -22.9,
+   "pinnacle": 78,
+   "bet365": 3
+  },
+  "2674": {
+   "n": 220,
+   "yield": -3.9,
+   "pinnacle": 195,
+   "bet365": 25
+  },
+  "2675": {
+   "n": 429,
+   "yield": -2.6,
+   "pinnacle": 421,
+   "bet365": 8
+  },
+  "2677": {
+   "n": 81,
+   "yield": -6.9,
+   "pinnacle": 60,
+   "bet365": 21
+  },
+  "2830": {
+   "n": 122,
+   "yield": -8.4,
+   "pinnacle": 122,
+   "bet365": 0
+  },
+  "2831": {
+   "n": 478,
+   "yield": -6.6,
+   "pinnacle": 454,
+   "bet365": 24
+  },
+  "2832": {
+   "n": 532,
+   "yield": -2.7,
+   "pinnacle": 498,
+   "bet365": 34
+  },
+  "2833": {
+   "n": 325,
+   "yield": -6.4,
+   "pinnacle": 305,
+   "bet365": 20
+  },
+  "2834": {
+   "n": 136,
+   "yield": -4,
+   "pinnacle": 136,
+   "bet365": 0
+  },
+  "2835": {
+   "n": 293,
+   "yield": 3.1,
+   "pinnacle": 292,
+   "bet365": 1
+  },
+  "2838": {
+   "n": 254,
+   "yield": -13.3,
+   "pinnacle": 225,
+   "bet365": 29
+  },
+  "2839": {
+   "n": 254,
+   "yield": -9.1,
+   "pinnacle": 245,
+   "bet365": 9
+  },
+  "2840": {
+   "n": 248,
+   "yield": 4.6,
+   "pinnacle": 233,
+   "bet365": 15
+  },
+  "2841": {
+   "n": 353,
+   "yield": 2.6,
+   "pinnacle": 332,
+   "bet365": 21
+  },
+  "2842": {
+   "n": 316,
+   "yield": 0.4,
+   "pinnacle": 278,
+   "bet365": 38
+  },
+  "2843": {
+   "n": 356,
+   "yield": -4.4,
+   "pinnacle": 336,
+   "bet365": 20
+  },
+  "2844": {
+   "n": 312,
+   "yield": 0.8,
+   "pinnacle": 287,
+   "bet365": 25
+  },
+  "2845": {
+   "n": 877,
+   "yield": 5.2,
+   "pinnacle": 811,
+   "bet365": 66
+  },
+  "2846": {
+   "n": 455,
+   "yield": -2.6,
+   "pinnacle": 413,
+   "bet365": 42
+  },
+  "2847": {
+   "n": 573,
+   "yield": 1.3,
+   "pinnacle": 532,
+   "bet365": 41
+  },
+  "2848": {
+   "n": 347,
+   "yield": -14,
+   "pinnacle": 317,
+   "bet365": 30
+  },
+  "2849": {
+   "n": 293,
+   "yield": 5.7,
+   "pinnacle": 271,
+   "bet365": 22
+  },
+  "2959": {
+   "n": 204,
+   "yield": 7.1,
+   "pinnacle": 168,
+   "bet365": 36
+  },
+  "2970": {
+   "n": 336,
+   "yield": -7.2,
+   "pinnacle": 324,
+   "bet365": 12
+  },
+  "2972": {
+   "n": 225,
+   "yield": 14.1,
+   "pinnacle": 196,
+   "bet365": 29
+  },
+  "2973": {
+   "n": 214,
+   "yield": -0.7,
+   "pinnacle": 175,
+   "bet365": 39
+  },
+  "2978": {
+   "n": 109,
+   "yield": -13.3,
+   "pinnacle": 86,
+   "bet365": 23
+  },
+  "2980": {
+   "n": 84,
+   "yield": -46.7,
+   "pinnacle": 80,
+   "bet365": 4
+  },
+  "2981": {
+   "n": 127,
+   "yield": 10,
+   "pinnacle": 105,
+   "bet365": 22
+  },
+  "2982": {
+   "n": 159,
+   "yield": 1.5,
+   "pinnacle": 124,
+   "bet365": 35
+  },
+  "2983": {
+   "n": 21,
+   "yield": -0.9,
+   "pinnacle": 14,
+   "bet365": 7
+  },
+  "2984": {
+   "n": 287,
+   "yield": 9.1,
+   "pinnacle": 284,
+   "bet365": 3
+  },
+  "2985": {
+   "n": 606,
+   "yield": 9,
+   "pinnacle": 598,
+   "bet365": 8
+  },
+  "2986": {
+   "n": 45,
+   "yield": 2.7,
+   "pinnacle": 26,
+   "bet365": 19
+  },
+  "3135": {
+   "n": 133,
+   "yield": -6.3,
+   "pinnacle": 133,
+   "bet365": 0
+  },
+  "3136": {
+   "n": 372,
+   "yield": 5,
+   "pinnacle": 372,
+   "bet365": 0
+  },
+  "3145": {
+   "n": 333,
+   "yield": -12.2,
+   "pinnacle": 328,
+   "bet365": 5
+  },
+  "3316": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 0
+  },
+  "3317": {
+   "n": 108,
+   "yield": -7.6,
+   "pinnacle": 88,
+   "bet365": 20
+  },
+  "3319": {
+   "n": 50,
+   "yield": -4.8,
+   "pinnacle": 48,
+   "bet365": 2
+  },
+  "3604": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "3679": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "3696": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 3
+  },
+  "3915": {
+   "n": 10,
+   "yield": -31.4,
+   "pinnacle": 10,
+   "bet365": 0
+  },
+  "4053": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 1
+  },
+  "4077": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "5744": {
+   "n": 10,
+   "yield": -10.7,
+   "pinnacle": 10,
+   "bet365": 0
+  },
+  "5791": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "5979": {
+   "n": 19,
+   "yield": -38.6,
+   "pinnacle": 10,
+   "bet365": 9
+  },
+  "5980": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "7006": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "7009": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "7011": {
+   "n": 158,
+   "yield": 15.4,
+   "pinnacle": 146,
+   "bet365": 12
+  },
+  "7102": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "7310": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "7641": {
+   "n": 5,
+   "yield": -56,
+   "pinnacle": 3,
+   "bet365": 2
+  },
+  "8130": {
+   "n": 19,
+   "yield": 7.2,
+   "pinnacle": 10,
+   "bet365": 9
+  },
+  "8158": {
+   "n": 18,
+   "yield": 10.9,
+   "pinnacle": 18,
+   "bet365": 0
+  },
+  "8174": {
+   "n": 19,
+   "yield": 26.6,
+   "pinnacle": 5,
+   "bet365": 14
+  },
+  "8218": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "8442": {
+   "n": 30,
+   "yield": -16.2,
+   "pinnacle": 27,
+   "bet365": 3
+  },
+  "8762": {
+   "n": 8,
+   "yield": -46.5,
+   "pinnacle": 7,
+   "bet365": 1
+  },
+  "8781": {
+   "n": 145,
+   "yield": -3.5,
+   "pinnacle": 99,
+   "bet365": 46
+  },
+  "8926": {
+   "n": 21,
+   "yield": 39,
+   "pinnacle": 7,
+   "bet365": 14
+  },
+  "9035": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "9037": {
+   "n": 15,
+   "yield": -29.7,
+   "pinnacle": 14,
+   "bet365": 1
+  },
+  "9193": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "9209": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "9210": {
+   "n": 6,
+   "yield": -43.3,
+   "pinnacle": 1,
+   "bet365": 5
+  },
+  "9217": {
+   "n": 14,
+   "yield": -32.1,
+   "pinnacle": 0,
+   "bet365": 14
+  },
+  "9219": {
+   "n": 12,
+   "yield": -54.7,
+   "pinnacle": 11,
+   "bet365": 1
+  },
+  "9222": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "9225": {
+   "n": 65,
+   "yield": -23.1,
+   "pinnacle": 38,
+   "bet365": 27
+  },
+  "9230": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "9234": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "9362": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "9368": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 2
+  },
+  "9385": {
+   "n": 15,
+   "yield": -10.1,
+   "pinnacle": 3,
+   "bet365": 12
+  },
+  "9514": {
+   "n": 38,
+   "yield": 15.5,
+   "pinnacle": 6,
+   "bet365": 32
+  },
+  "9515": {
+   "n": 7,
+   "yield": 1.1,
+   "pinnacle": 0,
+   "bet365": 7
+  },
+  "9596": {
+   "n": 32,
+   "yield": -4,
+   "pinnacle": 10,
+   "bet365": 22
+  },
+  "9608": {
+   "n": 21,
+   "yield": -12.1,
+   "pinnacle": 10,
+   "bet365": 11
+  },
+  "9909": {
+   "n": 87,
+   "yield": -3.7,
+   "pinnacle": 64,
+   "bet365": 23
+  },
+  "10018": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 3
+  },
+  "10070": {
+   "n": 64,
+   "yield": 2.1,
+   "pinnacle": 48,
+   "bet365": 16
+  },
+  "10071": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "10148": {
+   "n": 147,
+   "yield": 22.8,
+   "pinnacle": 114,
+   "bet365": 33
+  },
+  "10520": {
+   "n": 92,
+   "yield": 11.5,
+   "pinnacle": 56,
+   "bet365": 36
+  },
+  "10840": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 4,
+   "bet365": 0
+  },
+  "10869": {
+   "n": 33,
+   "yield": -9.6,
+   "pinnacle": 14,
+   "bet365": 19
+  },
+  "10884": {
+   "n": 151,
+   "yield": -3.4,
+   "pinnacle": 122,
+   "bet365": 29
+  },
+  "12744": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 1
+  },
+  "12951": {
+   "n": 47,
+   "yield": -21.9,
+   "pinnacle": 37,
+   "bet365": 10
+  },
+  "13091": {
+   "n": 55,
+   "yield": 4.6,
+   "pinnacle": 27,
+   "bet365": 28
+  },
+  "14435": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 3
+  },
+  "15184": {
+   "n": 6,
+   "yield": -41.2,
+   "pinnacle": 0,
+   "bet365": 6
+  },
+  "15270": {
+   "n": 27,
+   "yield": -26.9,
+   "pinnacle": 20,
+   "bet365": 7
+  },
+  "17463": {
+   "n": 7,
+   "yield": -30.6,
+   "pinnacle": 5,
+   "bet365": 2
+  },
+  "18341": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "19536": {
+   "n": 5,
+   "yield": 148,
+   "pinnacle": 5,
+   "bet365": 0
+  },
+  "21704": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 3
+  },
+  "28260": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "28615": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 1
+  },
+  "32558": {
+   "n": 5,
+   "yield": -100,
+   "pinnacle": 3,
+   "bet365": 2
+  },
+  "37897": {
+   "n": 6,
+   "yield": -60.3,
+   "pinnacle": 3,
+   "bet365": 3
+  },
+  "38043": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 2,
+   "bet365": 0
+  },
+  "38261": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "38264": {
+   "n": 13,
+   "yield": -52.2,
+   "pinnacle": 6,
+   "bet365": 7
+  },
+  "38298": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "38784": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 3,
+   "bet365": 0
+  },
+  "38798": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "39675": {
+   "n": 12,
+   "yield": -52.9,
+   "pinnacle": 6,
+   "bet365": 6
+  },
+  "39862": {
+   "n": 8,
+   "yield": -42,
+   "pinnacle": 8,
+   "bet365": 0
+  },
+  "39864": {
+   "n": 31,
+   "yield": -5.7,
+   "pinnacle": 12,
+   "bet365": 19
+  },
+  "39913": {
+   "n": 31,
+   "yield": 6.4,
+   "pinnacle": 9,
+   "bet365": 22
+  },
+  "40058": {
+   "n": 76,
+   "yield": -2.7,
+   "pinnacle": 45,
+   "bet365": 31
+  },
+  "50323": {
+   "n": 36,
+   "yield": -1.8,
+   "pinnacle": 0,
+   "bet365": 36
+  },
+  "52070": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "52704": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "53790": {
+   "n": 3,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 2
+  },
+  "54466": {
+   "n": 10,
+   "yield": -48.7,
+   "pinnacle": 8,
+   "bet365": 2
+  },
+  "55060": {
+   "n": 12,
+   "yield": 46.8,
+   "pinnacle": 10,
+   "bet365": 2
+  },
+  "55163": {
+   "n": 9,
+   "yield": -46.1,
+   "pinnacle": 4,
+   "bet365": 5
+  },
+  "55858": {
+   "n": 4,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 3
+  },
+  "56893": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 2
+  },
+  "57540": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "57825": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "59291": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 0
+  },
+  "63402": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "65519": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "68751": {
+   "n": 8,
+   "yield": 50,
+   "pinnacle": 0,
+   "bet365": 8
+  },
+  "69093": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  },
+  "71261": {
+   "n": 2,
+   "yield": null,
+   "pinnacle": 1,
+   "bet365": 1
+  },
+  "73846": {
+   "n": 1,
+   "yield": null,
+   "pinnacle": 0,
+   "bet365": 1
+  }
+ }
+}

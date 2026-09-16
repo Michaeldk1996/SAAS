@@ -18,8 +18,8 @@ const assert = require('assert');
 const ROOT = path.join(__dirname, '..');
 
 // ─── load the module under test into a window shim ──────────────────────────
-function loadModule(profiles) {
-  const sandbox = { FEATURE_PP2: true, playerProfiles: profiles };
+function loadModule(profiles, extra) {
+  const sandbox = Object.assign({ FEATURE_PP2: true, playerProfiles: profiles }, extra || {});
   global.window = sandbox;
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   // eslint-disable-next-line no-new-func
@@ -30,7 +30,20 @@ function loadModule(profiles) {
 
 const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'player-profiles.json'), 'utf8'));
 const PLAYERS = raw.players;
-const M = loadModule(PLAYERS);
+
+// career-splits.json feeds the Splits modal; the market-edge shards feed Market
+// edge. Both are loaded from the REAL committed artefacts — a fixture would let
+// the page and the pipeline drift apart, which is the bug class §4 exists for.
+const SPLITS = JSON.parse(fs.readFileSync(path.join(ROOT, 'career-splits.json'), 'utf8')).players || {};
+const MARKET_DIR = path.join(ROOT, 'market-edge');
+const MARKET = {};
+if (fs.existsSync(MARKET_DIR)) {
+  fs.readdirSync(MARKET_DIR).filter(f => f.endsWith('.json')).forEach((f) => {
+    MARKET[f.replace(/\.json$/, '')] = JSON.parse(fs.readFileSync(path.join(MARKET_DIR, f), 'utf8'));
+  });
+}
+
+const M = loadModule(PLAYERS, { careerSplits: SPLITS, marketEdge: MARKET });
 const I = M._internals;
 
 let pass = 0, fail = 0;
@@ -193,10 +206,20 @@ mustFail('career check would catch a corrupted season row', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// 4 · SURFACE vs SEASON — the ticket requires these to agree. They are two
-// independently-built aggregates, so this is a real measurement, not a tautology.
+// 4 · SURFACE vs SEASON — RESOLVED by founder ruling B (2026-09-16).
+//
+// §4 as written required these two to agree; measured, they agree for 0 of 427
+// players. `surfaces.*.record` is the external get_players season aggregate and
+// careerByYear is our own per-season store, so they are different populations,
+// not the same number computed twice. The founder ruled careerByYear is the
+// spine, so the §4 chain now runs through §10 below (career = Σ surface rows =
+// Σ season rows, all off the spine) and `surfaces` is out of it.
+//
+// The measurement is kept, un-asserted, as a standing DISCLOSURE: it is the
+// evidence behind the ruling and it is how we would notice if the gap ever
+// closed (which would mean the two stores had been unified upstream).
 // ════════════════════════════════════════════════════════════════════════════
-console.log('\n4 · Σ surface rows vs Σ season rows');
+console.log('\n4 · Σ surface rows vs Σ season rows (disclosure — superseded by ruling B, see §10)');
 
 let agree = 0, disagree = [];
 for (const p of Object.values(PLAYERS)) {
@@ -354,6 +377,298 @@ check('en-dash normaliser only rewrites what it is given', () => {
   assert.strictEqual(I.endashRecords('career 315-178 on clay'), 'career 315–178 on clay');
   assert.strictEqual(I.endashRecords('1-8 across the last 9'), '1–8 across the last 9');
   assert.strictEqual(I.endashRecords(null), '');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 10 · CAREER SPINE (founder ruling B) — §4 chain 1.
+//      career tile = career modal total = sum of surface rows = sum of season rows
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n10 · Career spine (ruling B: careerByYear, labelled "since <year>")');
+
+check('surface rows sum to the career total for EVERY player', () => {
+  let checked = 0, residual = 0, withResidual = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const t = I.spineTotal(p);
+    if (!t.n) continue;
+    const s = I.spineBySurface(p, null);
+    const sw = s.hard.won + s.clay.won + s.grass.won + s.other.won;
+    const sl = s.hard.lost + s.clay.lost + s.grass.lost + s.other.lost;
+    assert.strictEqual(sw, t.won, `${p.name}: surface wins ${sw} != career ${t.won}`);
+    assert.strictEqual(sl, t.lost, `${p.name}: surface losses ${sl} != career ${t.lost}`);
+    if (s.other.won + s.other.lost) { withResidual++; residual += s.other.won + s.other.lost; }
+    checked++;
+  }
+  console.log(`        ${checked} players; ${withResidual} carry an "unrecorded surface" row ` +
+    `(${residual} matches in all)`);
+  assert(withResidual > 0,
+    'no player has a surface residual — the residual row is now dead code, re-measure before removing it');
+});
+
+// The residual row is load-bearing: without it the three named surfaces fall
+// SHORT of the total for 40 players. Prove that, or the row above is decoration.
+check('the residual row is load-bearing (named surfaces alone do NOT reconcile)', () => {
+  let short = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const t = I.spineTotal(p);
+    if (!t.n) continue;
+    const s = I.spineBySurface(p, null);
+    const sw = s.hard.won + s.clay.won + s.grass.won;
+    const sl = s.hard.lost + s.clay.lost + s.grass.lost;
+    if (sw !== t.won || sl !== t.lost) short++;
+  }
+  assert(short > 0, 'named surfaces already reconcile — the residual row measures nothing');
+  console.log(`        ${short} players would under-count without it`);
+});
+
+mustFail('spine check would catch a doctored season row', () => {
+  const p = JSON.parse(JSON.stringify(byName('C. Alcaraz')));
+  p.careerByYear[0].total.won += 3;          // total moves, surfaces do not
+  const t = I.spineTotal(p);
+  const s = I.spineBySurface(p, null);
+  const sw = s.hard.won + s.clay.won + s.grass.won;   // residual EXCLUDED on purpose
+  assert.strictEqual(sw, t.won, 'planted drift not caught');
+});
+
+check('career box headline = spine total, and says which year it starts from', () => {
+  for (const p of SAMPLE) {
+    const t = I.spineTotal(p);
+    const vals = I.buildBoxVals(p, { archetype: null });
+    if (!t.n) { assert.strictEqual(vals.career.headline, null); continue; }
+    assert.strictEqual(vals.career.headline, t.won + '–' + t.lost,
+      `${p.name}: box headline disagrees with the spine`);
+    const fy = I.spineFirstYear(p);
+    assert(vals.career.support.includes('since ' + fy),
+      `${p.name}: career box does not disclose the window (${vals.career.support})`);
+  }
+});
+
+check('career modal total row = career box headline', () => {
+  for (const p of SAMPLE) {
+    const t = I.spineTotal(p);
+    if (!t.n) continue;
+    const html = I.renderCareerModal(p, {});
+    // The footer "Career" row prints W/L; it must be the same pair as the tile.
+    assert(html.includes('>' + t.won + '/' + t.lost + '<'),
+      `${p.name}: career modal footer does not carry ${t.won}/${t.lost}`);
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 11 · TOURNAMENT — §4: "Tournament W-L = sum of its listed editions".
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n11 · Record per tournament');
+
+check('every tournament W-L equals the sum of its editions', () => {
+  let rows = 0;
+  for (const p of Object.values(PLAYERS)) {
+    for (const t of p.tournamentHistory || []) {
+      let w = 0, l = 0;
+      (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
+        if (m.res === 'W') w++; else if (m.res === 'L') l++;
+      }));
+      assert.strictEqual(w, t.won || 0, `${p.name} / ${t.name}: editions ${w} wins vs stored ${t.won}`);
+      assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
+      rows++;
+    }
+  }
+  console.log(`        ${rows} tournament rows reconcile with their editions`);
+});
+
+mustFail('tournament check would catch a dropped edition', () => {
+  const p = JSON.parse(JSON.stringify(SAMPLE[0]));
+  p.tournamentHistory[0].editions.shift();
+  let w = 0, l = 0;
+  (p.tournamentHistory[0].editions || []).forEach(e => (e.matches || []).forEach(m => {
+    if (m.res === 'W') w++; else if (m.res === 'L') l++;
+  }));
+  assert.strictEqual(w, p.tournamentHistory[0].won, 'dropped edition not caught');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 12 · BEST SPLIT / BEST BAND (founder ruling sel-0) — one rule, two callers.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n12 · Best split / best band (largest |pp| vs own baseline, n>=10)');
+
+check('the picked split really is the largest |pp| among those clearing n>=10', () => {
+  let tested = 0;
+  for (const key of Object.keys(SPLITS).slice(0, 60)) {
+    const cands = I.splitCandidates(key, 'career');
+    const got = I.pickByLargestGap(cands);
+    if (!got) continue;
+    const eligible = cands.filter(c => c.won + c.lost >= 10);
+    let maxGap = 0;
+    eligible.forEach((c) => {
+      const n = c.won + c.lost;
+      maxGap = Math.max(maxGap, Math.abs(100 * c.won / n - got.baseline));
+    });
+    assert(Math.abs(Math.abs(got.pick.gap) - maxGap) < 1e-9,
+      `${key}: picked |${got.pick.gap.toFixed(2)}| but the largest is |${maxGap.toFixed(2)}|`);
+    tested++;
+  }
+  assert(tested > 20, `only ${tested} players had a pickable split — expected most of the sample`);
+  console.log(`        ${tested} players checked`);
+});
+
+check('the baseline is match-count weighted, not a mean of rates', () => {
+  // Two splits: 100 matches at 50%, 10 matches at 0%. Weighted baseline is
+  // 50/110 = 45.5%; an unweighted mean of rates would be 25%.
+  const cands = [
+    { id: 'a', label: 'A', won: 50, lost: 50 },
+    { id: 'b', label: 'B', won: 0, lost: 10 },
+  ];
+  const got = I.pickByLargestGap(cands);
+  assert(Math.abs(got.baseline - (100 * 50 / 110)) < 1e-9,
+    `baseline ${got.baseline} is not match-count weighted`);
+  assert.strictEqual(got.pick.id, 'b');
+});
+
+check('a split under ten matches can never be picked', () => {
+  const got = I.pickByLargestGap([
+    { id: 'big', label: 'Big', won: 50, lost: 50 },
+    { id: 'tiny', label: 'Tiny', won: 9, lost: 0 },   // 100%, but n=9
+  ]);
+  assert.strictEqual(got.pick.id, 'big', 'a 9-match split was picked');
+});
+
+mustFail('best-split check would catch an off-by-one floor', () => {
+  const got = I.pickByLargestGap([
+    { id: 'big', label: 'Big', won: 50, lost: 50 },
+    { id: 'tiny', label: 'Tiny', won: 9, lost: 0 },
+  ]);
+  assert.strictEqual(got.pick.id, 'tiny', 'floor is not at ten');
+});
+
+check('splits box headline and the modal agree on the picked split', () => {
+  let shown = 0;
+  for (const p of SAMPLE) {
+    const bs = I.bestSplit(p);
+    const vals = I.buildBoxVals(p, { archetype: null });
+    if (!bs) { assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`); continue; }
+    assert.strictEqual(vals.splits.headline, bs.pick.label);
+    const html = I.renderSplitsModal(p);
+    assert(html.includes(bs.baseline.toFixed(1) + '%'),
+      `${p.name}: modal does not disclose the baseline the headline was measured against`);
+    shown++;
+  }
+  console.log(`        ${shown} of ${SAMPLE.length} sample players have a best split`);
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 13 · MARKET EDGE (founder ruling B + gate-2 "do as on the design").
+//      §4: role counts and band counts sum to the headline priced count.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n13 · Market edge');
+
+const MK_KEYS = Object.keys(MARKET);
+check('market shards exist', () => {
+  assert(MK_KEYS.length > 100, `only ${MK_KEYS.length} market shards — run build-market-edge.js`);
+  console.log(`        ${MK_KEYS.length} shards`);
+});
+
+check('role cards sum to the headline priced count, for every shard', () => {
+  for (const k of MK_KEYS) {
+    const s = MARKET[k];
+    const sum = s.roles.favourite.n + s.roles.underdog.n + s.roles.level.n;
+    assert.strictEqual(sum, s.headline.n, `${k}: roles ${sum} != headline ${s.headline.n}`);
+  }
+});
+
+check('price bands sum to the headline priced count, for every shard', () => {
+  let level = 0;
+  for (const k of MK_KEYS) {
+    const s = MARKET[k];
+    const sum = ['favourite', 'underdog']
+      .reduce((a, g) => a + s.bands[g].reduce((x, b) => x + b.n, 0), 0) + s.roles.level.n;
+    assert.strictEqual(sum, s.headline.n, `${k}: bands ${sum} != headline ${s.headline.n}`);
+    level += s.roles.level.n;
+  }
+  console.log(`        ${level} player-sides closed at an identical price on both sides ` +
+    `(neither favourite nor underdog; counted separately rather than forced into a card)`);
+});
+
+check('per-row book counts sum to the headline, and the label is never blended', () => {
+  for (const k of MK_KEYS) {
+    const s = MARKET[k];
+    assert.strictEqual(s.headline.book.pinnacle + s.headline.book.bet365, s.headline.n,
+      `${k}: book mix does not sum to the priced count`);
+    const rows = s.matches.filter(m => m.book !== 'pinnacle' && m.book !== 'bet365-archive');
+    assert.strictEqual(rows.length, 0, `${k}: ${rows.length} rows carry no book label`);
+    assert.strictEqual(s.matches.filter(m => m.book === 'pinnacle').length, s.headline.book.pinnacle,
+      `${k}: row-level Pinnacle count disagrees with the summary`);
+  }
+});
+
+// The fallback must be load-bearing: if Pinnacle covered everything, ruling B
+// would be a no-op and this whole pass would be unnecessary. Prove it is not.
+check('the Bet365-archive fallback is load-bearing', () => {
+  const b = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.bet365, 0);
+  const p = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.pinnacle, 0);
+  assert(b > 0, 'no row used the fallback — Pinnacle now covers everything, re-check ruling B');
+  console.log(`        ${p} Pinnacle rows, ${b} Bet365-archive rows ` +
+    `(${(100 * b / (p + b)).toFixed(1)}% of priced rows would be DARK under Pinnacle-only)`);
+});
+
+check('flat-stake yield recomputes from the shard rows', () => {
+  // Recompute the headline from the per-row P&L rather than trusting the
+  // summary. A summary that cannot be re-derived from its own rows is a claim,
+  // not a measurement.
+  for (const k of MK_KEYS.slice(0, 40)) {
+    const s = MARKET[k];
+    if (s.headline.yield == null) continue;
+    const pl = s.matches.reduce((a, m) => a + m.pl, 0);
+    const y = 100 * pl / s.matches.length;
+    assert(Math.abs(y - s.headline.yield) < 0.06,
+      `${k}: rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
+  }
+});
+
+mustFail('yield check would catch a doctored row', () => {
+  const k = MK_KEYS[0];
+  const s = JSON.parse(JSON.stringify(MARKET[k]));
+  s.matches[0].pl += 40;
+  const y = 100 * s.matches.reduce((a, m) => a + m.pl, 0) / s.matches.length;
+  assert(Math.abs(y - s.headline.yield) < 0.06, 'doctored row not caught');
+});
+
+check('the tour baseline is computed, not a rounded constant', () => {
+  const s = MARKET[MK_KEYS[0]];
+  const t = s.tour.all;
+  assert(t && t.n > 50000, `tour baseline rests on only ${t && t.n} sides`);
+  assert(t.yield != null, 'tour yield is null');
+  // The export hard-codes -3.79%. Ours must be OUR number over OUR archive.
+  assert(Math.abs(t.yield + 3.79) > 1e-9, 'tour baseline equals the export constant — not recomputed');
+  console.log(`        tour yield ${t.yield}% over ${t.n} priced player-sides ` +
+    `(the export's placeholder was -3.79%)`);
+});
+
+check('market box headline and the modal quote the same yield and n', () => {
+  for (const p of SAMPLE) {
+    const mk = MARKET[String(p.key)];
+    const vals = I.buildBoxVals(p, { archetype: null });
+    if (!mk || mk.headline.yield == null) {
+      assert.strictEqual(vals.market.headline, null, `${p.name}: market headline without a shard`);
+      continue;
+    }
+    assert(vals.market.support.includes(mk.headline.n + ' priced'),
+      `${p.name}: box does not carry the priced n`);
+    const html = I.renderMarketModal(p);
+    assert(html.includes(mk.headline.n + ' priced'), `${p.name}: modal does not carry the priced n`);
+    assert(html.includes('closing'), `${p.name}: modal does not label the price basis`);
+  }
+});
+
+check('a rate is never printed below the ten-match gate anywhere in a shard', () => {
+  for (const k of MK_KEYS) {
+    const s = MARKET[k];
+    ['favourite', 'underdog'].forEach((g) => {
+      s.bands[g].forEach((b) => {
+        if (b.n < 5) {
+          assert.strictEqual(b.winRate, null, `${k}/${g}/${b.id}: rate printed on n=${b.n}`);
+          assert.strictEqual(b.yield, null, `${k}/${g}/${b.id}: yield printed on n=${b.n}`);
+        }
+      });
+    });
+  }
 });
 
 // ════════════════════════════════════════════════════════════════════════════

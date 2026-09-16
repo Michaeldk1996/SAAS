@@ -181,6 +181,87 @@
     'Pinnacle closing prices, falling back to archive-Bet365 closing where ' +
     'Pinnacle is absent, labelled per row.';
 
+  // ─── RULING · career spine (TEN-206 gate 2, answered 2026-09-16) ────────────
+  // Founder ruled B: careerByYear is the spine, labelled "since <first year>".
+  //
+  // The three candidates disagreed and none could be quietly preferred:
+  //   careerByYear      per-season rows with per-surface splits and match counts
+  //   surfaces.*.record the external get_players aggregate — 1.38x larger at the
+  //                     median (399/427 players) with NO match rows behind it, so
+  //                     every Career drill would be dead
+  //   tournamentHistory sparser again (Jacquet reads 4-7 against a 98-74 season
+  //                     record)
+  // careerByYear is the only one that reconciles BY CONSTRUCTION — the career
+  // total is defined as the sum of the season rows, so §4's first chain holds
+  // identically rather than approximately. Its cost is honest and stated on the
+  // page: it is a window, not a whole career, so every headline built on it
+  // carries "since <year>".
+  //
+  // Second-order finding, measured: total != clay+hard+grass for 40 of 427
+  // players (77 matches in all, at most 5 for any one player) — matches whose
+  // surface the feed never recorded. Rather than let the surface rows silently
+  // fall short of the total, the residual is emitted as its OWN labelled row.
+  // §4 then holds exactly, and nothing is invented to make it hold.
+  var SPINE_SURFACES = ['hard', 'clay', 'grass'];
+  var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
+
+  function spineYears(p) {
+    return (p.careerByYear || []).filter(function (y) { return y && y.total; });
+  }
+  function spineFirstYear(p) {
+    var ys = spineYears(p).map(function (y) { return String(y.year); }).sort();
+    return ys.length ? ys[0] : null;
+  }
+  function spineTotal(p) {
+    var w = 0, l = 0;
+    spineYears(p).forEach(function (y) { w += y.total.won || 0; l += y.total.lost || 0; });
+    return { won: w, lost: l, n: w + l };
+  }
+  // Surface rows over the spine, INCLUDING the labelled residual. Sum is the
+  // career total by construction — the §4 chain, not a coincidence.
+  function spineBySurface(p, year) {
+    var rows = spineYears(p).filter(function (y) { return !year || String(y.year) === String(year); });
+    var out = { hard: { won: 0, lost: 0 }, clay: { won: 0, lost: 0 }, grass: { won: 0, lost: 0 }, other: { won: 0, lost: 0 } };
+    var tw = 0, tl = 0;
+    rows.forEach(function (y) {
+      tw += y.total.won || 0; tl += y.total.lost || 0;
+      SPINE_SURFACES.forEach(function (s) {
+        if (y[s]) { out[s].won += y[s].won || 0; out[s].lost += y[s].lost || 0; }
+      });
+    });
+    SPINE_SURFACES.forEach(function (s) { tw -= out[s].won; tl -= out[s].lost; });
+    out.other.won = tw; out.other.lost = tl;
+    return out;
+  }
+
+  // ─── RULING · best split / best band (TEN-206 gate 2, answered 2026-09-16) ──
+  // Founder ruled sel-0: use the Key-insights rule for BOTH — the split whose
+  // win rate differs from the player's OWN baseline by the largest |pp|, with
+  // n >= 10. That is now the one selection rule on this page, so the Splits
+  // headline, the Market band headline and Key insights cannot drift apart.
+  //
+  // "His own baseline" is the pooled rate over the SAME scope the candidates are
+  // drawn from, weighted by match count (README §4: "pooled figures weight by
+  // match count") — not an unweighted mean of the split rates, which would let a
+  // 10-match split pull the baseline as hard as a 200-match one.
+  function pickByLargestGap(cands) {
+    var num = 0, den = 0;
+    cands.forEach(function (c) { num += c.won; den += c.won + c.lost; });
+    if (!den) return null;
+    var baseline = 100 * num / den;
+    var best = null;
+    cands.forEach(function (c) {
+      var n = c.won + c.lost;
+      if (n < 10) return;                       // the rule's own floor, not a guess
+      var rate = 100 * c.won / n;
+      var gap = rate - baseline;
+      if (!best || Math.abs(gap) > Math.abs(best.gap)) {
+        best = { id: c.id, label: c.label, won: c.won, lost: c.lost, n: n, rate: rate, gap: gap };
+      }
+    });
+    return best ? { pick: best, baseline: baseline } : null;
+  }
+
   // ─── surface colours (README §4 / §9; grass aligned to #3dd68c) ────────────
   var SURF_COLOUR = { hard: '#4db8ff', clay: '#e8a84e', grass: '#3dd68c', indoors: '#c6ccdb' };
   function surfColour(s) { return SURF_COLOUR[String(s || '').toLowerCase()] || '#5b6880'; }
@@ -569,14 +650,15 @@
   function buildBoxVals(p, ctx) {
     var v = {};
 
-    // 1 · Career record — summed from careerByYear so it reconciles with the
-    // Calendar box and the Career modal by construction (§4).
-    var cw = 0, cl = 0;
-    (p.careerByYear || []).forEach(function (y) {
-      if (y && y.total) { cw += y.total.won || 0; cl += y.total.lost || 0; }
-    });
-    v.career = cw + cl
-      ? { headline: recordText(cw, cl), support: rateText(cw, cl) + ' ' + MIDDOT + ' all surfaces' }
+    // 1 · Career record — the careerByYear spine (founder ruling B). Summed from
+    // the season rows, so it equals the Career modal total and the sum of its
+    // surface rows identically, not approximately (§4).
+    var ct = spineTotal(p);
+    var fy = spineFirstYear(p);
+    v.career = ct.n
+      ? { headline: recordText(ct.won, ct.lost),
+          support: rateText(ct.won, ct.lost) + ' ' + MIDDOT + ' all surfaces' +
+            (fy ? ' ' + MIDDOT + ' since ' + fy : '') }
       : { headline: null, support: 'no matches on record' };
 
     // 2 · Record per tournament
@@ -619,15 +701,25 @@
       ? { headline: ctx.archetype, support: 'style signature' }
       : { headline: null, support: 'no archetype on record' };
 
-    // 6 · Splits — "best split" has NO definition in the export (a hard-coded
-    // string) and the founder did not supply one. Left as a dash rather than
-    // invented; the modal behind it is unaffected.
-    v.splits = { headline: null, support: 'best split not defined' };
+    // 6 · Splits — "best split" now has a definition: the founder ruled the
+    // Key-insights rule governs it (largest |pp| vs his own baseline, n >= 10).
+    var bs = bestSplit(p);
+    v.splits = bs
+      ? { headline: bs.pick.label,
+          support: 'best split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
+            bs.pick.n + ' matches ' + MIDDOT + ' ' + signed(bs.pick.gap, 1, 'pp') + ' vs his baseline' }
+      : { headline: null, support: 'no split clears the ten-match minimum' };
 
-    // 7 · Market edge — ruling B needs a Pinnacle-with-archive-Bet365 rebuild;
-    // the existing odds-performance shard is an AVERAGE ACROSS BOOKS and cannot
-    // answer it. Dashed with the reason until that build lands.
-    v.market = { headline: null, support: 'awaiting per-row book provenance' };
+    // 7 · Market edge — the shard built by build-market-edge.js: Pinnacle close,
+    // archive-Bet365 close where Pinnacle is absent, labelled per row. The tour
+    // baseline beside it is COMPUTED over the same archive (README §3 bars a
+    // rounded constant), not the export's literal -3.79%.
+    var mk = marketFor(p.key);
+    v.market = mk && mk.headline && mk.headline.yield != null
+      ? { headline: neg(mk.headline.yield, 2, '%'),
+          support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT +
+            ' tour ' + neg(mk.tour && mk.tour.all ? mk.tour.all.yield : null, 2, '%') }
+      : { headline: null, support: 'no priced matches on record' };
 
     // 8 · Playing profile — RULING 2: season win rate, knowingly the same
     // number as the header SEASON cell and the Calendar box.
@@ -636,6 +728,73 @@
       : { headline: null, support: 'no matches this season' };
 
     return v;
+  }
+
+  // ─── splits (career-splits.json) ───────────────────────────────────────────
+  // The Splits modal's own source. 227 of the 428 profiled players have a row —
+  // the rest render the box as a dash with "no split clears the ten-match
+  // minimum", never a zero.
+  //
+  // Group order and labels are the design's (README §5.7), and every member is
+  // taken from career-splits' own category vocabulary. "Carpet" is in the file's
+  // `categories` list but is absent from every player's payload and from the
+  // design, so it is not a row here.
+  var SPLIT_GROUPS = [
+    { id: 'surface', label: 'Surface', members: ['Hard', 'Clay', 'Grass'] },
+    { id: 'level', label: 'Level', members: ['Grand Slams', 'Masters', 'Other Tours'] },
+    { id: 'format', label: 'Format', members: ['Best of 5', 'Best of 3'] },
+    { id: 'round', label: 'By round', members: ['Finals', 'Semi-finals', 'Quarter-finals'] },
+    { id: 'opponent', label: 'Opponent', members: ['vs. Righties', 'vs. Lefties', 'vs. Top 10'] }
+  ];
+  function splitsFor(key) {
+    var store = window.careerSplits || {};
+    return store[String(key)] || null;
+  }
+  function splitScope(key, scope) {
+    var s = splitsFor(key);
+    if (!s) return null;
+    return (scope === 'last52' ? s.last52 : s.career) || null;
+  }
+  // Candidates for the "best split" selection: every named split in the five
+  // groups that the scope actually carries. A split the file omits is absent,
+  // not zero.
+  function splitCandidates(key, scope) {
+    var sc = splitScope(key, scope);
+    if (!sc) return [];
+    var out = [];
+    SPLIT_GROUPS.forEach(function (g) {
+      g.members.forEach(function (m) {
+        var r = sc[m];
+        if (!r || r.W == null || r.L == null) return;
+        out.push({ id: g.id + ':' + m, label: m, won: r.W, lost: r.L });
+      });
+    });
+    return out;
+  }
+  function bestSplit(p) {
+    return pickByLargestGap(splitCandidates(p.key, 'career'));
+  }
+
+  // ─── market edge (market-edge/{key}.json) ──────────────────────────────────
+  // Lazy shard, same posture as the existing odds-performance shards: nothing is
+  // fetched until the page asks. The module reads a store the host page fills so
+  // this file owns no transport.
+  function marketFor(key) {
+    var store = window.marketEdge || {};
+    return store[String(key)] || null;
+  }
+  // Best price band, by the SAME rule the founder ruled for best split.
+  function bestBand(key) {
+    var mk = marketFor(key);
+    if (!mk || !mk.bands) return null;
+    var cands = [];
+    ['favourite', 'underdog'].forEach(function (g) {
+      (mk.bands[g] || []).forEach(function (b) {
+        if (b.n == null) return;
+        cands.push({ id: g + ':' + b.id, label: b.label + ' ' + MIDDOT + ' ' + g, won: b.wins, lost: b.losses });
+      });
+    });
+    return pickByLargestGap(cands);
   }
 
   // ─── archetype (v5.1) ──────────────────────────────────────────────────────
@@ -650,9 +809,470 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // MODALS (README §5.1 shell + §5.2/§5.3/§5.7/§5.8 bodies)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  var MODAL_WIDTH = {
+    career: 820, tourn: 1120, season: 1180, speed: 1120,
+    styles: 820, splits: 900, market: 1080, profile: 820
+  };
+  function modalSubtitle(key, p, ctx) {
+    var sn = shortName(p);
+    var fy = spineFirstYear(p);
+    var ct = spineTotal(p);
+    switch (key) {
+      case 'career': return 'All-time record, by surface and by season' + (fy ? ' ' + MIDDOT + ' since ' + fy : '');
+      // §3: the export's "678 matches · 2016-2026" is placeholder copy; both
+      // halves are real counts here or the clause is dropped entirely.
+      case 'tourn': return 'Career win' + ENDASH + 'loss at every event ' + possessive(sn) + ' record carries';
+      case 'season': return 'Where in the calendar his results sit' +
+        (ct.n ? ' ' + MIDDOT + ' ' + ct.n + ' matches' : '');
+      case 'splits': return 'Record and win rate by surface, level, format, round and opponent';
+      case 'market': return 'How the market has priced him, and what backing him flat has returned';
+      default: return '';
+    }
+  }
+
+  function modalShell(key, p, ctx, body) {
+    var title = (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
+    return '' +
+      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:rgba(4,5,9,0.76);' +
+      'backdrop-filter:blur(3px);z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
+      'padding:28px 20px;overflow-y:auto;">' +
+        '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
+        'background:#0a0d14;border:1px solid rgba(91,155,255,0.24);border-radius:16px;overflow:hidden;">' +
+          '<div style="display:flex;gap:13px;padding:20px 22px;align-items:flex-start;' +
+            'border-bottom:1px solid rgba(255,255,255,0.08);">' +
+            '<div style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;' +
+              'justify-content:center;background:rgba(91,155,255,0.14);color:#5b9bff;">' +
+              '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
+              'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="' +
+              ((BOXES.filter(function (b) { return b.key === key; })[0] || {}).icon || '') + '"/></svg></div>' +
+            '<div style="flex:1;">' +
+              '<div style="font-size:17px;font-weight:800;">' + esc(title) + '</div>' +
+              '<div style="font-size:12.5px;color:#5b6880;margin-top:2px;">' +
+                esc(modalSubtitle(key, p, ctx)) + '</div>' +
+            '</div>' +
+            '<button type="button" data-pp2="close" aria-label="Close" style="width:32px;height:32px;' +
+              'border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);' +
+              'color:#8b96b5;cursor:pointer;font-size:15px;line-height:1;">×</button>' +
+          '</div>' +
+          '<div style="padding:20px 22px 24px;">' + body + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // A record row with a bar track — the shared row spec (README §5.2A), reused by
+  // the Career surface rows and the Splits table so the two cannot drift.
+  function barRow(label, meta, won, lost, colour) {
+    var n = (won || 0) + (lost || 0);
+    var g = gateFor(n);
+    var pct = n ? 100 * won / n : 0;
+    var rate = rateText(won, lost);
+    return '' +
+      '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;' +
+      'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);">' +
+        '<div><div style="font-size:14px;font-weight:700;' +
+          (g === GATE.NONE ? 'color:' + DASH_COLOUR + ';' : '') + '">' + esc(label) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;">' +
+            esc(meta) + '</div></div>' +
+        '<div style="height:16px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;">' +
+          (n ? '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + colour + ';opacity:0.75;"></div>' : '') +
+        '</div>' +
+        '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:19px;font-weight:700;' +
+          'color:' + (rate === DASH ? DASH_COLOUR : '#e8ecf4') + ';">' + rate +
+          (g === GATE.SMALL ? '<div style="font-size:9px;font-weight:600;letter-spacing:0.12em;' +
+            'text-transform:uppercase;color:#4b5672;">small sample</div>' : '') +
+        '</div>' +
+      '</div>';
+  }
+
+  // §5.2 Career record — surface rows over the spine + Record by season.
+  function renderCareerModal(p, ctx) {
+    var scopeYear = state.careerScope === 'season' ? currentYear() : null;
+    var bys = spineBySurface(p, scopeYear);
+    var rows = ['hard', 'clay', 'grass', 'other'].map(function (s) {
+      var r = bys[s];
+      var n = r.won + r.lost;
+      // The residual row exists only when the feed actually lost a surface. A
+      // zero residual is not a row — it would read as a real, empty category.
+      if (s === 'other' && n === 0) return '';
+      return barRow(SPINE_LABEL[s],
+        n ? recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record',
+        r.won, r.lost, surfColour(s));
+    }).join('');
+
+    var years = spineYears(p).slice().sort(function (a, b) {
+      return String(b.year) < String(a.year) ? -1 : 1;
+    });
+    var head = '<div style="display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:0 14px;">' +
+      ['Year', 'Total', 'Clay', 'Hard', 'Grass'].map(function (h, i) {
+        var col = ['#4b5672', '#8b96b5', '#e8a84e', '#4db8ff', '#3dd68c'][i];
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+          'letter-spacing:0.18em;text-transform:uppercase;color:' + col + ';' +
+          (i ? 'text-align:right;' : '') + '">' + h + '</div>';
+      }).join('');
+    var body = years.map(function (y) {
+      var cells = ['total', 'clay', 'hard', 'grass'].map(function (c) {
+        var r = y[c];
+        var txt = r ? (r.won || 0) + '/' + (r.lost || 0) : DASH;
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
+          (c === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
+          'padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);' +
+          (r ? '' : 'color:#3f4860;') + '">' + txt + '</div>';
+      }).join('');
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;padding:11px 0;' +
+        'border-top:1px solid rgba(255,255,255,0.05);">' + esc(String(y.year)) + '</div>' + cells;
+    }).join('');
+    var ct = spineTotal(p);
+    var cs = spineBySurface(p, null);
+    var footer = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+      'padding:15px 0 13px;border-top:1px solid rgba(255,255,255,0.18);">Career</div>' +
+      ['total', 'clay', 'hard', 'grass'].map(function (c) {
+        var r = c === 'total' ? ct : cs[c];
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (c === 'total' ? 14 : 13) + 'px;' +
+          'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
+          'border-top:1px solid rgba(255,255,255,0.18);">' + (r.won || 0) + '/' + (r.lost || 0) + '</div>';
+      }).join('') + '</div>';
+
+    var fy = spineFirstYear(p);
+    return '' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+        eyebrow(scopeYear ? scopeYear + ' by surface' : 'Career by surface') +
+        '<div style="display:flex;gap:2px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+          'border-radius:9px;padding:2px;">' +
+          scopeBtn('career', 'Career', state.careerScope !== 'season') +
+          scopeBtn('season', currentYear(), state.careerScope === 'season') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' + rows + '</div>' +
+      '<div style="font-size:20px;font-weight:800;margin:24px 0 4px;">Record by season</div>' +
+      '<div style="font-size:13px;color:#5b6880;margin-bottom:10px;">Wins / losses' +
+        (fy ? ' ' + MIDDOT + ' every season on record from ' + fy : '') + '.</div>' +
+      head + body + footer +
+      // The spine is a window and the page says so rather than implying a whole
+      // career. It is also the reason the surface rows can carry a residual.
+      '<div style="font-size:11px;color:#5b6880;margin-top:14px;line-height:1.6;">' +
+        'Season rows are the record we hold per year' + (fy ? ' from ' + fy : '') +
+        '; the career line is their sum, so the two always agree. ' +
+        (cs.other.won + cs.other.lost
+          ? 'A separate ' + (cs.other.won + cs.other.lost) + '-match row carries matches whose ' +
+            'surface the feed never recorded, so the surface rows still add up to the career total. '
+          : '') +
+        'Indoor and outdoor are not split: the season rows do not carry court type.' +
+      '</div>';
+
+    function scopeBtn(id, label, on) {
+      return '<button type="button" data-pp2="career-scope" data-scope="' + id + '" style="padding:5px 12px;' +
+        'border-radius:7px;font-size:11px;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+        'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
+    }
+  }
+
+  // §5.3 Record per tournament.
+  function renderTournModal(p) {
+    var list = (p.tournamentHistory || []).slice().sort(function (a, b) {
+      var an = (a.won || 0) + (a.lost || 0), bn = (b.won || 0) + (b.lost || 0);
+      return bn - an;
+    });
+    var q = String(state.tournQuery || '').toLowerCase();
+    var shown = q ? list.filter(function (t) { return String(t.name || '').toLowerCase().indexOf(q) >= 0; }) : list;
+
+    var head = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;gap:0 14px;">' +
+      ['Tournament', 'Seasons', 'Best result', 'W' + ENDASH + 'L', 'Win%'].map(function (h, i) {
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+          'letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;' + (i >= 3 ? 'text-align:right;' : '') +
+          '">' + h + '</div>';
+      }).join('') + '</div>';
+
+    var rows = shown.map(function (t) {
+      var n = (t.won || 0) + (t.lost || 0);
+      // §4: "Tournament W-L = sum of its listed editions". Recomputed here from
+      // the edition rows rather than trusting the stored pair — measured across
+      // the whole roster, all 9,419 tournament rows agree, and this keeps it so.
+      var ew = 0, el = 0;
+      (t.editions || []).forEach(function (e) {
+        (e.matches || []).forEach(function (m) { if (m.res === 'W') ew++; else if (m.res === 'L') el++; });
+      });
+      var reconciles = ew === (t.won || 0) && el === (t.lost || 0);
+      var best = (t.editions || []).map(function (e) { return e.finish; }).filter(Boolean)[0] || DASH;
+      var span = t.firstYear && t.lastYear
+        ? (t.firstYear === t.lastYear ? String(t.firstYear) : t.firstYear + ENDASH + t.lastYear) : DASH;
+      return '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" ' +
+        'style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;gap:0 14px;' +
+        'padding:11px 10px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer;align-items:center;">' +
+        '<div style="font-size:13.5px;font-weight:700;">' + esc(t.name) +
+          (reconciles ? '' : ' <span style="color:' + DASH_COLOUR + ';font-size:10px;">editions incomplete</span>') + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' + span + '</div>' +
+        '<div style="font-size:12px;color:#8b96b5;">' + esc(best) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;text-align:right;">' +
+          recordText(ew, el) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;text-align:right;color:' +
+          (gateFor(n) === GATE.FULL ? '#e8ecf4' : DASH_COLOUR) + ';">' + rateText(ew, el) + '</div>' +
+        '</div>' + (state.tournOpen === t.name ? renderTournDetail(t) : '');
+    }).join('');
+
+    return '' +
+      '<div style="font-size:13px;color:#5b6880;margin-bottom:12px;">Search a tournament to see ' +
+        esc(possessive(shortName(p))) + ' full career win' + ENDASH + 'loss record there.</div>' +
+      '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
+        'placeholder="Search a tournament..." style="width:100%;background:#06070a;' +
+        'border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:14px 18px;font-size:14px;' +
+        'color:#e7e9ee;margin-bottom:14px;box-sizing:border-box;">' +
+      head +
+      (shown.length ? rows :
+        '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No tournament matches that search.</div>') +
+      '<div style="font-size:11px;color:#5b6880;margin-top:14px;line-height:1.6;">' +
+        'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. ' +
+        'This block is the tournament record we hold per event and does not sum to the career ' +
+        'total above ' + MIDDOT + ' it carries only events with stored edition detail.</div>';
+  }
+
+  function renderTournDetail(t) {
+    var eds = (t.editions || []).slice();
+    return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+      'margin:7px 0 9px;padding:13px 15px;">' +
+      eds.map(function (e) {
+        var ms = (e.matches || []).map(function (m) {
+          var nm = normaliseEdition(m);
+          var w = m.res === 'W';
+          return '<div style="display:grid;grid-template-columns:12px 36px minmax(0,1.3fr) 60px;gap:0 12px;' +
+            'align-items:center;padding:5px 0;">' +
+            '<div style="width:7px;height:7px;border-radius:50%;background:' + (w ? '#3dd68c' : '#e0616f') + ';"></div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+              esc(m.round || DASH) + '</div>' +
+            '<div style="font-size:12.5px;">' + esc(m.opp || DASH) + '</div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;text-align:right;">' +
+              editionScoreText(nm) + '</div>' +
+            '</div>';
+        }).join('');
+        return '<div style="margin-bottom:10px;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
+            'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;margin-bottom:4px;">' +
+            esc(String(e.year)) + ' ' + MIDDOT + ' ' + esc(e.finish || DASH) + '</div>' + ms + '</div>';
+      }).join('') +
+      '<div style="font-size:10.5px;color:#4b5672;line-height:1.5;">Set scores are shown from ' +
+        'this player&#39;s side. A score the feed left unparseable is printed as stored rather than ' +
+        'turned round on a guess.</div>' +
+      '</div>';
+  }
+
+  // §5.7 Splits.
+  function renderSplitsModal(p) {
+    var scope = state.splitScope === 'last52' ? 'last52' : 'career';
+    var sc = splitScope(p.key, scope);
+    if (!sc) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">No split data on record for this player.</div>';
+    }
+    var cands = splitCandidates(p.key, scope);
+    var picked = pickByLargestGap(cands);
+    var baseline = picked ? picked.baseline : null;
+
+    var head = '<div style="display:grid;grid-template-columns:minmax(84px,1.25fr) repeat(4,1fr);gap:0 10px;">' +
+      ['', 'Record', 'Matches', 'Win rate', 'Vs avg'].map(function (h, i) {
+        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;' + (i ? 'text-align:right;' : '') +
+          '">' + h + '</div>';
+      }).join('') + '</div>';
+
+    var groups = SPLIT_GROUPS.map(function (g) {
+      var rows = g.members.map(function (m) {
+        var r = sc[m];
+        var n = r ? (r.W || 0) + (r.L || 0) : 0;
+        var gate = gateFor(n);
+        var rate = r ? rateText(r.W, r.L) : DASH;
+        var gap = (r && gate === GATE.FULL && baseline != null) ? (100 * r.W / n) - baseline : null;
+        return '<div style="display:grid;grid-template-columns:minmax(84px,1.25fr) repeat(4,1fr);gap:0 10px;' +
+          'padding:7px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;">' +
+          '<div style="font-size:12.5px;font-weight:700;white-space:nowrap;' +
+            (n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(m) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;text-align:right;">' +
+            (r ? recordText(r.W, r.L) : DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#5b6880;text-align:right;">' +
+            (n ? n : 'no matches on record') + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;text-align:right;color:' +
+            (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' + rate + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;text-align:right;color:' +
+            (gap == null ? DASH_COLOUR : gap >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+            (gap == null ? DASH : signed(gap, 1, 'pp')) + '</div>' +
+          '</div>';
+      }).join('');
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;padding:14px 0 6px;' +
+        'border-top:1px solid rgba(255,255,255,0.06);">' + g.label + '</div>' + rows;
+    }).join('');
+
+    var n52 = splitsFor(p.key);
+    return '' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;">' +
+        '<div style="display:flex;gap:2px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+          'border-radius:9px;padding:2px;">' +
+          scopeBtn('career', 'Career', scope === 'career') +
+          scopeBtn('last52', 'Last 52 weeks', scope === 'last52') +
+        '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;">' +
+          (scope === 'career'
+            ? 'Every tour match on record ' + MIDDOT + ' ' + (n52 && n52.matchesParsed != null ? n52.matchesParsed + ' matches' : DASH)
+            : 'Rolling 12-month form ' + MIDDOT + ' ' + (n52 && n52.last52Count != null ? n52.last52Count + ' matches' : DASH)) +
+        '</div>' +
+      '</div>' +
+      head + groups +
+      '<div style="font-size:11.5px;color:#4b5672;margin-top:12px;line-height:1.6;">' +
+        'Record and matches played ' + MIDDOT + ' win rate ' + MIDDOT + ' vs avg is the gap to this ' +
+        'player&#39;s own win rate across all splits in this scope' +
+        (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%), weighted by match count') + '. ' +
+        'A split under ten matches shows its record and a dash for the gap.' +
+      '</div>';
+
+    function scopeBtn(id, label, on) {
+      return '<button type="button" data-pp2="split-scope" data-scope="' + id + '" style="padding:5px 12px;' +
+        'border-radius:7px;font-size:11px;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+        'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
+    }
+  }
+
+  // §5.8 Market edge — role cards, price bands, book note, cumulative chart.
+  function renderMarketModal(p) {
+    var mk = marketFor(p.key);
+    if (!mk || !mk.headline || !mk.headline.n) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">' +
+        'No priced matches on record. The odds archive is tour main-draw only, so a player ' +
+        'whose record is Challenger or qualifying has no priced row here.</div>';
+    }
+    var sel = state.marketRole || 'all';
+    var tourY = mk.tour && mk.tour.all ? mk.tour.all.yield : null;
+
+    var cards = [
+      { id: 'all', label: 'All matches', s: mk.roles.all },
+      { id: 'favourite', label: 'As favourite', s: mk.roles.favourite },
+      { id: 'underdog', label: 'As underdog', s: mk.roles.underdog }
+    ].map(function (c) {
+      var on = sel === c.id;
+      var y = c.s.yield;
+      var gap = (y == null || tourY == null) ? null : y - tourY;
+      return '<div data-pp2="market-role" data-role="' + c.id + '" style="border-radius:12px;padding:18px 20px;' +
+        'display:flex;flex-direction:column;gap:14px;cursor:pointer;' +
+        'background:' + (on ? 'rgba(91,155,255,0.08)' : 'transparent') + ';' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
+          '<div style="font-size:17px;font-weight:800;">' + c.label + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;color:#8b96b5;">' +
+            c.s.n + '</div></div>' +
+        '<div style="display:flex;gap:18px;">' + fig('Yield', y == null ? DASH : neg(y, 2, '%'), y) +
+          fig('Win rate', c.s.winRate == null ? DASH : c.s.winRate.toFixed(1) + '%', null) + '</div>' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
+          '<div style="font-size:13.5px;color:#8b96b5;">Vs tour ' +
+            (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' +
+            (gap == null ? DASH_COLOUR : gap >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+            (gap == null ? DASH : signed(gap, 2, 'pp')) + '</div></div>' +
+        '</div>';
+    }).join('');
+
+    var groups = ['favourite', 'underdog'].map(function (g) {
+      var bands = (mk.bands[g] || []).map(function (b) {
+        var rate = b.winRate == null ? DASH : b.winRate.toFixed(1) + '%';
+        return '<div style="display:grid;grid-template-columns:minmax(96px,1.1fr) 52px 66px 62px 74px;gap:0 10px;' +
+          'padding:9px 4px;border-bottom:1px solid rgba(255,255,255,0.05);align-items:baseline;">' +
+          '<div style="font-size:14px;font-weight:700;' + (b.n ? '' : 'color:' + DASH_COLOUR + ';') + '">' +
+            esc(b.label) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:#8b96b5;' +
+            'text-align:right;">' + (b.n || DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:#8b96b5;' +
+            'text-align:right;">' + (b.n ? recordText(b.wins, b.losses) : DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;text-align:right;' +
+            'color:' + (rate === DASH ? DASH_COLOUR : '#e8ecf4') + ';">' + rate + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;text-align:right;' +
+            'color:' + (b.yield == null ? DASH_COLOUR : b.yield >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+            (b.yield == null ? DASH : neg(b.yield, 2, '%')) + '</div>' +
+          '</div>';
+      }).join('');
+      var gn = (mk.bands[g] || []).reduce(function (a, b) { return a + (b.n || 0); }, 0);
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;padding:14px 4px 6px;">' +
+        (g === 'favourite' ? 'Favourite' : 'Underdog') + ' ' + MIDDOT + ' ' + gn + '</div>' + bands;
+    }).join('');
+
+    var bk = mk.headline.book || { pinnacle: 0, bet365: 0 };
+    var lvl = mk.roles.level && mk.roles.level.n ? mk.roles.level.n : 0;
+
+    return '' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
+        'color:#5b6880;margin-bottom:14px;">All priced matches ' + MIDDOT + ' ' + mk.headline.n +
+        ' priced ' + MIDDOT + ' median odds ' + (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
+        ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">' + cards + '</div>' +
+      '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px 20px 16px;' +
+        'margin-top:16px;">' +
+        '<div style="font-size:17px;font-weight:800;margin-bottom:10px;">Price sensitivity</div>' +
+        '<div style="display:grid;grid-template-columns:minmax(96px,1.1fr) 52px 66px 62px 74px;gap:0 10px;' +
+          'border-bottom:1px solid rgba(255,255,255,0.12);padding-bottom:6px;">' +
+          ['', 'n', 'Record', 'Win rate', 'Yield'].map(function (h, i) {
+            return '<div style="font-size:10px;font-weight:600;color:#5b6880;' +
+              (i ? 'text-align:right;' : '') + '">' + h + '</div>';
+          }).join('') + '</div>' + groups +
+      '</div>' +
+      // §5's book rule, stated on the page rather than assumed. The counts are
+      // this player's own, not a roster-wide claim.
+      '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;' +
+        'margin-top:16px;font-size:12.5px;color:#5b6880;line-height:1.65;">' +
+        'Every price is a <b>closing</b> price from the Tennis-Data archive. ' +
+        'Pinnacle where Pinnacle priced the match (' + bk.pinnacle + ' of ' + mk.headline.n + '), ' +
+        'Bet365&#39;s archive close where it did not (' + bk.bet365 + '). ' +
+        'Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + ', which is why the fallback exists. ' +
+        'The de-vig always uses both prices from the same book. ' +
+        'Bet365 pre-match snapshots from the live odds feed are a different artefact and are ' +
+        'not blended into anything above.' +
+        (lvl ? ' ' + lvl + ' match' + (lvl === 1 ? '' : 'es') + ' closed at exactly the same price on ' +
+          'both sides — neither favourite nor underdog — and sit in the all-matches card only.' : '') +
+      '</div>';
+
+    function fig(cap, val, colourVal) {
+      return '<div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:' +
+        (colourVal == null ? '#e8ecf4' : colourVal >= 0 ? '#3dd68c' : '#e0616f') + ';">' + val + '</div>' +
+        '<div style="font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;' +
+        'color:#4b5672;margin-top:3px;">' + cap + '</div></div>';
+    }
+  }
+
+  function marketPinnacleEnd(mk) {
+    var m = (mk.coverage && mk.coverage.pinnacleEndByLevel) || {};
+    var latest = null;
+    Object.keys(m).forEach(function (k) { if (!latest || m[k] > latest) latest = m[k]; });
+    return latest || DASH;
+  }
+
+  function renderModal(p, ctx) {
+    var k = state.modal;
+    if (!k) return '';
+    var body;
+    if (k === 'career') body = renderCareerModal(p, ctx);
+    else if (k === 'tourn') body = renderTournModal(p);
+    else if (k === 'splits') body = renderSplitsModal(p);
+    else if (k === 'market') body = renderMarketModal(p);
+    else {
+      // Not yet built. The modal opens and says so — a box that silently does
+      // nothing reads as a broken page.
+      body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">Not built yet.</div>';
+    }
+    return modalShell(k, p, ctx, body);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // MOUNT
   // ═══════════════════════════════════════════════════════════════════════════
-  var state = { key: null, ledgerOpen: false, surfaces: [], priceFilters: [], modal: null };
+  var state = {
+    key: null, ledgerOpen: false, surfaces: [], priceFilters: [], modal: null,
+    careerScope: 'career', splitScope: 'career', marketRole: 'all',
+    tournQuery: '', tournOpen: null
+  };
 
   function build(p) {
     var rows = ledgerMatches(p);
@@ -672,7 +1292,8 @@
         renderRibbon(ctx) +
         renderBoxes(ctx) +
         renderInsights(p) +
-      '</div>';
+      '</div>' +
+      renderModal(p, ctx);
   }
 
   function applyFilters(rows) {
@@ -702,7 +1323,22 @@
       formRate: formRate,
       ledgerMatches: ledgerMatches,
       STAT_ROWS: STAT_ROWS,
-      MARKET_NOTE: MARKET_NOTE
+      MARKET_NOTE: MARKET_NOTE,
+      spineTotal: spineTotal,
+      spineBySurface: spineBySurface,
+      spineFirstYear: spineFirstYear,
+      spineYears: spineYears,
+      pickByLargestGap: pickByLargestGap,
+      splitCandidates: splitCandidates,
+      bestSplit: bestSplit,
+      bestBand: bestBand,
+      buildBoxVals: buildBoxVals,
+      renderCareerModal: renderCareerModal,
+      renderTournModal: renderTournModal,
+      renderSplitsModal: renderSplitsModal,
+      renderMarketModal: renderMarketModal,
+      SPLIT_GROUPS: SPLIT_GROUPS,
+      state: state
     }
   };
 })();

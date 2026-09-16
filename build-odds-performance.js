@@ -650,4 +650,10 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { keyFromOurName, keyFromArchiveName, devig, summarize };
+// readCsv/ourCandidateKeys/fullKey are exported so build-market-edge.js can join on the
+// SAME name logic rather than a second copy of it. A duplicated joiner is exactly the
+// drift that lost Vallejo and Shang from career-splits; one implementation, two callers.
+module.exports = {
+  keyFromOurName, keyFromArchiveName, devig, summarize,
+  readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES,
+};
