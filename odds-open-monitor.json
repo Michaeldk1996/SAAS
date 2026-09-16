@@ -1,5 +1,31 @@
 {
   "fixtures": {
+    "id1200210074759260": {
+      "alerted": true,
+      "alertedAt": "2026-09-16T10:48:15Z",
+      "captureLagH": null,
+      "date": "2026-09-17",
+      "hoursOutAtAlert": 2.86,
+      "openAt": null,
+      "p1": "T. Al Azmeh",
+      "p2": "B. Hassan",
+      "postingLeadH": null,
+      "startTime": "2026-09-16T13:40:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074759262": {
+      "alerted": true,
+      "alertedAt": "2026-09-16T10:48:15Z",
+      "captureLagH": null,
+      "date": "2026-09-17",
+      "hoursOutAtAlert": 4.03,
+      "openAt": null,
+      "p1": "H. Naw",
+      "p2": "F. Bidan",
+      "postingLeadH": null,
+      "startTime": "2026-09-16T14:50:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
     "id1200259173992438": {
       "alerted": false,
       "captureLagH": 4.38,
@@ -40,5 +66,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-13T22:50:43Z"
+  "updatedAt": "2026-09-16T10:48:15Z"
 }
