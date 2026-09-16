@@ -33,7 +33,7 @@
     "p2SurfaceWinRate": 48.6,
     "p1Rank": 971,
     "p2Rank": 422,
-    "p1RecentForm": 30,
+    "p1RecentForm": 20,
     "p2RecentForm": 60,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
@@ -477,7 +477,7 @@
         "allTier": true,
         "total": {
           "won": 5,
-          "lost": 8
+          "lost": 9
         },
         "clay": {
           "won": 4,
@@ -492,7 +492,7 @@
         "atp": {
           "total": {
             "won": 1,
-            "lost": 1
+            "lost": 2
           },
           "clay": null,
           "hard": null,
@@ -2254,7 +2254,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 6,
+          "won": 7,
           "lost": 5
         },
         "clay": {
@@ -2264,7 +2264,16 @@
         "hard": null,
         "grass": null,
         "indoor": null,
-        "atp": null,
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 0
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
         "chitf": {
           "total": {
             "won": 6,
@@ -9254,6 +9263,710 @@
     "matchStats": null,
     "setStats": null,
     "finishedAt": "2026-09-16T12:40:30.497Z",
+    "oddsMovement": null
+  },
+  {
+    "id": "past-12163623",
+    "day": "past",
+    "date": "2026-09-16",
+    "time": "14:45",
+    "p1": "T. Al Azmeh",
+    "p2": "F. Bidan",
+    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/38100_t-al-azmeh.jpg",
+    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/58948_f-bidan.jpg",
+    "tour": "ATP ATP Davis Cup - World Group II",
+    "tourBadge": "ATP",
+    "surface": "hard",
+    "style": "TBD",
+    "value": null,
+    "odds": {
+      "p1": 1.87,
+      "p2": 1.87,
+      "bookmaker": "Betano"
+    },
+    "bestOdds": {
+      "p1": {
+        "price": 1.87,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.87,
+        "bookmaker": "Betano"
+      }
+    },
+    "tournamentRound": "",
+    "p1Key": 38100,
+    "p2Key": 58948,
+    "h2h": {
+      "p1Wins": 0,
+      "p2Wins": 1,
+      "record": "0-1",
+      "matches": [
+        {
+          "date": "2026-09-16",
+          "tournament": "ATP Davis Cup - World Group II",
+          "round": null,
+          "surface": null,
+          "p1Won": false,
+          "result": "0 - 2",
+          "qualifying": false,
+          "eventKey": 12163623
+        }
+      ]
+    },
+    "p1SurfaceWinRate": 47.4,
+    "p2SurfaceWinRate": 33.3,
+    "p1Rank": 971,
+    "p2Rank": 1250,
+    "p1RecentForm": 20,
+    "p2RecentForm": 50,
+    "p1RecentFormMatches": null,
+    "p2RecentFormMatches": null,
+    "p1SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 4,
+          "lost": 6,
+          "matches": [
+            {
+              "opponent": "O. Krutykh",
+              "result": "1 - 2",
+              "tournament": "M15 Uslar",
+              "date": "2026-07-15",
+              "won": false
+            },
+            {
+              "opponent": "J. Nicod",
+              "result": "1 - 2",
+              "tournament": "M25 The Hague",
+              "date": "2026-07-09",
+              "won": false
+            },
+            {
+              "opponent": "H. Naw",
+              "result": "2 - 0",
+              "tournament": "M25 The Hague",
+              "date": "2026-07-08",
+              "won": true
+            },
+            {
+              "opponent": "B. Bozemoj",
+              "result": "0 - 2",
+              "tournament": "M15 Amstelveen",
+              "date": "2026-06-30",
+              "won": false
+            },
+            {
+              "opponent": "J. Filip",
+              "result": "1 - 2",
+              "tournament": "M15 Kamen",
+              "date": "2026-06-25",
+              "won": false
+            },
+            {
+              "opponent": "T. Sickenberger",
+              "result": "2 - 0",
+              "tournament": "M15 Kamen",
+              "date": "2026-06-24",
+              "won": true
+            },
+            {
+              "opponent": "V. Marysko",
+              "result": "0 - 2",
+              "tournament": "M15 Saarlouis",
+              "date": "2026-06-17",
+              "won": false
+            },
+            {
+              "opponent": "K. Wehnelt",
+              "result": "0 - 2",
+              "tournament": "M15 Rosbach (Germany)",
+              "date": "2026-06-05",
+              "won": false
+            },
+            {
+              "opponent": "D. Markovina",
+              "result": "2 - 0",
+              "tournament": "M15 Rosbach (Germany)",
+              "date": "2026-06-04",
+              "won": true
+            },
+            {
+              "opponent": "M. De Krom",
+              "result": "2 - 0",
+              "tournament": "M15 Rosbach (Germany)",
+              "date": "2026-06-02",
+              "won": true
+            }
+          ]
+        },
+        "hard": {
+          "won": 0,
+          "lost": 1,
+          "matches": [
+            {
+              "opponent": "J. Connel",
+              "result": "0 - 2",
+              "tournament": "M15 Monastir 30",
+              "date": "2026-09-09",
+              "won": false
+            }
+          ]
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      }
+    },
+    "p2SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 6,
+          "lost": 5,
+          "matches": [
+            {
+              "opponent": "G. A. Bailly",
+              "result": "0 - 2",
+              "tournament": "M25 Koksijde",
+              "date": "2026-08-14",
+              "won": false
+            },
+            {
+              "opponent": "E. Khoeblal",
+              "result": "2 - 0",
+              "tournament": "M25 Koksijde",
+              "date": "2026-08-13",
+              "won": true
+            },
+            {
+              "opponent": "L. Langenaken",
+              "result": "2 - 1",
+              "tournament": "M25 Koksijde",
+              "date": "2026-08-11",
+              "won": true
+            },
+            {
+              "opponent": "S. Pontjodikromo",
+              "result": "0 - 2",
+              "tournament": "M15 Eupen",
+              "date": "2026-08-04",
+              "won": false
+            },
+            {
+              "opponent": "G. Campana Lee",
+              "result": "0 - 2",
+              "tournament": "Liege (Belgium) - Qualification",
+              "date": "2026-07-05",
+              "won": false
+            },
+            {
+              "opponent": "D. Dietrich",
+              "result": "0 - 1",
+              "tournament": "M25 Brussels",
+              "date": "2026-06-26",
+              "won": false
+            },
+            {
+              "opponent": "N. Ifi",
+              "result": "2 - 0",
+              "tournament": "M25 Brussels",
+              "date": "2026-06-25",
+              "won": true
+            },
+            {
+              "opponent": "N. Ratiu",
+              "result": "2 - 0",
+              "tournament": "M25 Brussels",
+              "date": "2026-06-24",
+              "won": true
+            },
+            {
+              "opponent": "A. F. Rubio Fierros",
+              "result": "1 - 2",
+              "tournament": "M15 Curtea de Arges",
+              "date": "2026-06-12",
+              "won": false
+            },
+            {
+              "opponent": "D. N. Cazacu",
+              "result": "2 - 1",
+              "tournament": "M15 Curtea de Arges",
+              "date": "2026-06-11",
+              "won": true
+            },
+            {
+              "opponent": "V. Dell'Elba",
+              "result": "2 - 1",
+              "tournament": "M15 Curtea de Arges",
+              "date": "2026-06-10",
+              "won": true
+            }
+          ]
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      }
+    },
+    "p1Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 5,
+          "lost": 9
+        },
+        "clay": {
+          "won": 4,
+          "lost": 6
+        },
+        "hard": {
+          "won": 0,
+          "lost": 1
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 4,
+            "lost": 7
+          },
+          "clay": {
+            "won": 4,
+            "lost": 6
+          },
+          "hard": {
+            "won": 0,
+            "lost": 1
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 7,
+          "lost": 8
+        },
+        "clay": {
+          "won": 3,
+          "lost": 6
+        },
+        "hard": {
+          "won": 4,
+          "lost": 2
+        },
+        "grass": null,
+        "indoor": {
+          "total": {
+            "won": 4,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": {
+            "won": 4,
+            "lost": 1
+          },
+          "grass": null
+        },
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 7,
+            "lost": 8
+          },
+          "clay": {
+            "won": 3,
+            "lost": 6
+          },
+          "hard": {
+            "won": 4,
+            "lost": 2
+          },
+          "grass": null,
+          "indoor": {
+            "total": {
+              "won": 4,
+              "lost": 1
+            },
+            "clay": null,
+            "hard": {
+              "won": 4,
+              "lost": 1
+            },
+            "grass": null
+          }
+        }
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 5,
+          "lost": 9
+        },
+        "clay": {
+          "won": 2,
+          "lost": 2
+        },
+        "hard": {
+          "won": 1,
+          "lost": 4
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 2,
+            "lost": 3
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 3,
+            "lost": 6
+          },
+          "clay": {
+            "won": 2,
+            "lost": 2
+          },
+          "hard": {
+            "won": 1,
+            "lost": 4
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 6,
+          "lost": 9
+        },
+        "clay": {
+          "won": 4,
+          "lost": 7
+        },
+        "hard": {
+          "won": 2,
+          "lost": 2
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 6,
+            "lost": 9
+          },
+          "clay": {
+            "won": 4,
+            "lost": 7
+          },
+          "hard": {
+            "won": 2,
+            "lost": 2
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2022",
+        "allTier": true,
+        "total": {
+          "won": 2,
+          "lost": 8
+        },
+        "clay": {
+          "won": 0,
+          "lost": 6
+        },
+        "hard": {
+          "won": 2,
+          "lost": 2
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 2,
+            "lost": 8
+          },
+          "clay": {
+            "won": 0,
+            "lost": 6
+          },
+          "hard": {
+            "won": 2,
+            "lost": 2
+          },
+          "grass": null,
+          "indoor": null
+        }
+      }
+    ],
+    "p2Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 7,
+          "lost": 5
+        },
+        "clay": {
+          "won": 6,
+          "lost": 5
+        },
+        "hard": null,
+        "grass": null,
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 0
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 6,
+            "lost": 5
+          },
+          "clay": {
+            "won": 6,
+            "lost": 5
+          },
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 8,
+          "lost": 15
+        },
+        "clay": {
+          "won": 4,
+          "lost": 8
+        },
+        "hard": {
+          "won": 3,
+          "lost": 6
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 7,
+            "lost": 14
+          },
+          "clay": {
+            "won": 4,
+            "lost": 8
+          },
+          "hard": {
+            "won": 3,
+            "lost": 6
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 7,
+          "lost": 15
+        },
+        "clay": {
+          "won": 6,
+          "lost": 11
+        },
+        "hard": {
+          "won": 1,
+          "lost": 4
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 7,
+            "lost": 15
+          },
+          "clay": {
+            "won": 6,
+            "lost": 11
+          },
+          "hard": {
+            "won": 1,
+            "lost": 4
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 2,
+          "lost": 4
+        },
+        "clay": {
+          "won": 1,
+          "lost": 1
+        },
+        "hard": {
+          "won": 1,
+          "lost": 3
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 2,
+            "lost": 4
+          },
+          "clay": {
+            "won": 1,
+            "lost": 1
+          },
+          "hard": {
+            "won": 1,
+            "lost": 3
+          },
+          "grass": null,
+          "indoor": null
+        }
+      }
+    ],
+    "p1TournamentHistory": null,
+    "p2TournamentHistory": null,
+    "extraStats": {
+      "last52Weeks": {
+        "p1": null,
+        "p2": null
+      },
+      "surface": {
+        "p1": null,
+        "p2": null
+      },
+      "surfaceLabel": "hard",
+      "courtSpeedRecord": null
+    },
+    "venue": null,
+    "courtSpeed": null,
+    "weather": null,
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": {
+      "display": "2-6, 3-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "retired": false,
+    "walkover": false,
+    "matchStats": null,
+    "setStats": null,
+    "finishedAt": "2026-09-16T14:10:38.365Z",
     "oddsMovement": null
   }
 ]
