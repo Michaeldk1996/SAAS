@@ -58,9 +58,28 @@ function loadEngine() {
 }
 const ENGINE = loadEngine();
 
+// Correction pass. Both stores are loaded from the REAL committed artefacts for
+// the same reason as the others: a fixture would let the page and the pipeline
+// drift apart silently.
+//  * historical-match-stats.json — the §8.1 match sheet, joined by the
+//    api-tennis eventKey recentForm carries.
+//  * bet365-history/ — the ledger's second price source, for the rows after the
+//    Tennis-Data archive's 2026-07-26 cutoff.
+const STATS = JSON.parse(fs.readFileSync(path.join(ROOT, 'historical-match-stats.json'), 'utf8'));
+const B365_DIR = path.join(ROOT, 'bet365-history');
+const B365 = {};
+if (fs.existsSync(B365_DIR)) {
+  fs.readdirSync(B365_DIR)
+    .filter(f => /^\d{4}-\d{2}\.json$/.test(f))
+    .forEach((f) => {
+      B365[f.replace(/\.json$/, '')] = JSON.parse(fs.readFileSync(path.join(B365_DIR, f), 'utf8'));
+    });
+}
+
 const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
-  holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE
+  holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+  matchStats: STATS, bet365History: B365
 });
 const I = M._internals;
 
@@ -1562,6 +1581,46 @@ const STORES = [
     universe: () => Object.keys(HOLDBREAK.players).length,
     floor: 0.9,
   },
+  // ── correction pass · the two stores wired this run ──────────────────────
+  // Both are LOW-coverage by nature and their floors say so honestly rather
+  // than being set where they would always pass. The gate's job is to catch a
+  // store going DARK (the stylesStore bug), not to assert a coverage target.
+  {
+    name: 'matchStats',
+    file: 'historical-match-stats.json',
+    // Measured through the page's own accessor: recentForm rows whose eventKey
+    // reaches a populated stats block. api-tennis only fills the statistics
+    // block from 2024, so most of a long career is legitimately absent.
+    resolve: () => {
+      let n = 0;
+      for (const k of Object.keys(PLAYERS)) {
+        for (const m of I.ledgerMatches(PLAYERS[k])) if (I.statsFor(m.eventKey)) { n++; }
+      }
+      return n;
+    },
+    universe: () => Object.keys(STATS).filter(k => STATS[k] && STATS[k].matchStats).length,
+    floor: 0.5,
+  },
+  {
+    name: 'bet365History',
+    file: 'bet365-history/{month}.json',
+    // The capture only exists to price rows the archive never reached, so the
+    // gate measures exactly that: ledger rows that came back priced on the
+    // pre-match basis rather than on an archive close.
+    resolve: () => {
+      let n = 0;
+      for (const k of Object.keys(PLAYERS)) {
+        for (const r of I.ledgerRows(PLAYERS[k])) if (r.basis === 'prematch') n++;
+      }
+      return n;
+    },
+    universe: () => {
+      let n = 0;
+      for (const mo of Object.keys(B365)) n += Object.keys((B365[mo] || {}).fixtures || {}).length;
+      return n;
+    },
+    floor: 0,
+  },
 ];
 
 for (const s of STORES) {
@@ -1641,7 +1700,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // host defined them, so each is asserted to be typeof-guarded at its call
   // site. Simply widening NOT_STORES would have let any future window.* through
   // the gate by being named plausibly.
-  const HOST_CALLBACKS = new Set(['showPlayerList']);
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -1940,20 +1999,39 @@ mustFail('the hook-coverage check would catch an unwired affordance', () => {
   assert.deepStrictEqual(unhandled, [], `unwired: ${unhandled.join(', ')}`);
 });
 
-check('no affordance advertises the unbuilt match sheet', () => {
-  // §8 is not built. This repo's rule is that an affordance promises content,
-  // so while MATCH_SHEET_BUILT is false no element may carry the sheet hook.
-  const anyRows = I.ledgerRows(byName('N. Djokovic'));
+// §8.1 landed in the correction pass, so this check inverts: the affordance and
+// the content must ship TOGETHER. The old form asserted the hook was absent
+// while the sheet did not exist; this one asserts that every row advertising a
+// click resolves to a sheet that actually renders. Either half alone is the bug
+// (a dead cursor, or a sheet nothing can open).
+check('every ledger row that advertises a click opens a sheet that renders', () => {
+  const p = byName('N. Djokovic');
+  const anyRows = I.ledgerRows(p);
   assert(anyRows.length > 0, 'no ledger rows to inspect');
   I.state.ledgerOpen = true;
-  const html = I.renderLedger(byName('N. Djokovic'), {
-    ledgerOpen: true, ledgerRows: anyRows, ledgerFiltered: I.ledgerFiltered(anyRows)
-  });
+  const ctx = { ledgerOpen: true, ledgerRows: anyRows, ledgerFiltered: I.ledgerFiltered(anyRows) };
+  const html = I.renderLedger(p, ctx);
   I.state.ledgerOpen = false;
-  assert(!/data-pp2="sheet"/.test(html),
-    'the ledger paints a match-sheet hook while MATCH_SHEET_BUILT is false');
-  assert.strictEqual(I.MATCH_SHEET_BUILT, false,
-    'MATCH_SHEET_BUILT flipped — re-check that §8 really landed before relaxing this');
+  assert.strictEqual(I.MATCH_SHEET_BUILT, true, 'MATCH_SHEET_BUILT is false but §8.1 is built');
+  const ids = (html.match(/data-pp2="sheet" data-v="([^"]+)"/g) || [])
+    .map(s => s.replace(/data-pp2="sheet" data-v="|"/g, ''));
+  assert(ids.length > 0, 'the ledger paints no match-sheet hook although §8.1 is built');
+  assert(/cursor:pointer/.test(html), 'the rows advertise no pointer cursor');
+  let rendered = 0;
+  for (const id of ids) {
+    I.state.sheet = id.replace(/&amp;/g, '&');
+    const sheet = I.renderSheet(p, ctx);
+    if (/Dominance ratio/.test(sheet)) rendered++;
+  }
+  I.state.sheet = null;
+  assert.strictEqual(rendered, ids.length,
+    `${ids.length - rendered} of ${ids.length} ledger hooks open nothing`);
+  console.log(`        ${ids.length} ledger hooks, all open a rendered sheet`);
+});
+
+mustFail('the affordance check would catch a hook that opens nothing', () => {
+  const ids = ['a', 'b'], rendered = 1;
+  assert.strictEqual(rendered, ids.length, `${ids.length - rendered} of ${ids.length} hooks open nothing`);
 });
 
 // §4: "Recent-form ribbon W-L and % = the strip shown = the ledger's last-N
@@ -1977,7 +2055,10 @@ check('the ledger rate is taken over exactly the rows its strip draws', () => {
     const w = strip.filter(x => x.m.won && !(x.m.walkover && !x.m.won)).length;
     const l = strip.filter(x => !x.m.won && !(x.m.walkover && !x.m.won)).length;
     const n = w + l;
-    const expected = n >= 5 ? (100 * w / n).toFixed(1) + '%' : DASH_CH;
+    // Correction-pass item 3: the ledger header is one of the export's two
+    // .toFixed(0) values, so the expectation is a whole number here and stays at
+    // one decimal everywhere else.
+    const expected = n >= 5 ? (100 * w / n).toFixed(0) + '%' : DASH_CH;
     const m = html.match(/font-weight:700;">([^<]+) win<\/span>\s*·\s*(\d+) match/);
     assert(m, `${p.name}: could not read the ledger headline`);
     assert.strictEqual(m[1], expected,
@@ -2045,6 +2126,422 @@ mustFail('the ambiguity check would catch a first-row-wins index', () => {
   const idx = {};
   rows.forEach(r => { if (idx[r.date] === undefined) idx[r.date] = r; });  // first wins — wrong
   assert.strictEqual(idx['2026-01-01'], null, 'an ambiguous date resolved to a row');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 22 · CORRECTION PASS — the founder's items 1-15, each locked
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n22 · Correction pass (items 1-15)');
+
+const PP2_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+const ZVEREV = byName('A. Zverev') || SAMPLE[0];
+
+function ledgerHtmlFor(p) {
+  I.state.surfaces = []; I.state.priceFilters = []; I.state.ledgerOpen = true;
+  const rows = I.ledgerRows(p);
+  // build() stamps subjectName onto every row before rendering; a helper that
+  // skips it renders the placeholder and measures nothing.
+  rows.forEach((x) => { x.subjectName = p.name; });
+  const html = I.renderLedger(p, {
+    ledgerOpen: true, ledgerRows: rows, ledgerFiltered: I.ledgerFiltered(rows)
+  });
+  I.state.ledgerOpen = false;
+  return html;
+}
+
+// ── item 1 ──────────────────────────────────────────────────────────────────
+check('item 1 · the back link reads "Back to Players"', () => {
+  const html = I.renderBackLink();
+  assert(/>\s*Back to Players<\/a>/.test(html), `back link is: ${html.slice(-40)}`);
+});
+mustFail('the back-link check would catch the old one-word label', () => {
+  assert(/>\s*Back to Players<\/a>/.test('<a>Players</a>'), 'back link is wrong');
+});
+
+// ── items 2 / 5 / 13 · the one shared rule ─────────────────────────────────
+check('items 2/5/13 · the line-height override is scoped to this page, not to body', () => {
+  assert(/line-height:normal/.test(I.PP2_STYLE), 'no line-height override is emitted');
+  assert(/\.pp2-main/.test(I.PP2_STYLE), 'the override does not target .pp2-main');
+  // Founder ruling lh-0: `body` is shared by Matches, Live, Series and H2H. An
+  // override that reached it would re-flow four don't-touch surfaces.
+  assert(!/(^|[^-\w.])body\b/.test(I.PP2_STYLE),
+    'the override targets body — that is ruling lh-1, which was NOT chosen');
+  assert(PP2_SRC.indexOf('PP2_STYLE +') > 0, 'the style block is never emitted by build()');
+});
+mustFail('the scoping check would catch an override that reached body', () => {
+  const s = '<style>body{line-height:normal;}</style>';
+  assert(!/(^|[^-\w.])body\b/.test(s), 'the override targets body');
+});
+
+check('item 13 · ledger rows align on center and set the outer name span to 13px', () => {
+  const html = ledgerHtmlFor(ZVEREV);
+  const row = html.slice(html.indexOf('class="pp2-ledger-row"'));
+  assert(/align-items:center/.test(row.slice(0, 400)), 'the row still aligns on baseline');
+  assert(/<span style="font-size:13px;overflow:hidden/.test(html),
+    'the outer name span does not set 13px, so it inherits the card size');
+});
+mustFail('the row-alignment check would catch a baseline row', () => {
+  assert(/align-items:center/.test('align-items:baseline;'), 'the row still aligns on baseline');
+});
+
+// ── item 3 · whole numbers, and ONLY in the export's two places ────────────
+check('item 3 · the ribbon and ledger headlines are whole numbers, every other rate is not', () => {
+  assert.strictEqual(I.rateText0(15, 3), '83%');
+  assert.strictEqual(I.rateText(15, 3), '83.3%');
+  // The sample gate must survive the second formatter — a 4-match record has no
+  // rate at all, in either form.
+  assert.strictEqual(I.rateText0(3, 1), '—');
+  // Scope: exactly two call sites, as in the export.
+  // One definition + exactly two call sites, matching the export's two
+  // .toFixed(0) values. A third would mean the change had started to spread.
+  const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
+  assert.strictEqual(calls, 3,
+    `rateText0 appears ${calls} times (expected 3: the definition + ribbon + ledger header)`);
+  console.log('        rateText0 at 2 call sites, rateText unchanged elsewhere');
+});
+mustFail('the whole-number check would catch a global .toFixed(0)', () => {
+  const rateText = (w, l) => (100 * w / (w + l)).toFixed(0) + '%';
+  assert.strictEqual(rateText(15, 3), '83.3%', 'every rate went whole-number');
+});
+
+// ── item 4 + 8 · name forms ────────────────────────────────────────────────
+check('items 4/8 · names are re-ordered at the initial, never token-swapped', () => {
+  assert.strictEqual(I.surnameFirst('B. Shelton'), 'Shelton B.');
+  assert.strictEqual(I.surnameOf('P. Martinez'), 'Martinez');
+  // The trap: api-tennis reorders multi-part surnames, so a whitespace swap
+  // would mangle these two. Everything after the initial is carried intact.
+  assert.strictEqual(I.surnameFirst('B. Van De Zandschulp'), 'Van De Zandschulp B.');
+  assert.strictEqual(I.surnameFirst('F. Meligeni Alves'), 'Meligeni Alves F.');
+  // A name with no initial prefix is left exactly as it arrived.
+  assert.strictEqual(I.surnameFirst('Zsombor Piros'), 'Zsombor Piros');
+  const html = ledgerHtmlFor(ZVEREV);
+  assert(!/>Zverev\s+A\.</.test(html), 'the SUBJECT is rendered surname-first; the export has it bare');
+  assert(/>Zverev</.test(html), 'the subject surname is missing from the ledger');
+});
+mustFail('the name-form check would catch a whitespace token swap', () => {
+  const swap = n => n.split(/\s+/).reverse().join(' ');
+  assert.strictEqual(swap('B. Van De Zandschulp'), 'Van De Zandschulp B.', 'multi-part surname mangled');
+});
+
+// ── item 7 · dd.mm ─────────────────────────────────────────────────────────
+check('item 7 · ledger dates are dd.mm and the header prose is not', () => {
+  assert.strictEqual(I.fmtDotDate('2026-09-13'), '13.09');
+  const html = ledgerHtmlFor(ZVEREV);
+  const dates = (html.match(/font-size:11px;color:#5b6880;">([^<]+)</g) || [])
+    .map(s => s.replace(/.*">|</g, ''));
+  assert(dates.length > 0, 'no ledger date cells found');
+  dates.forEach(d => assert(/^\d{2}\.\d{2}$/.test(d), `ledger date "${d}" is not dd.mm`));
+  console.log(`        ${dates.length} ledger dates, all dd.mm`);
+});
+mustFail('the date-format check would catch "13 Sep"', () => {
+  assert(/^\d{2}\.\d{2}$/.test('13 Sep'), 'ledger date is not dd.mm');
+});
+
+// ── item 9 · round codes ───────────────────────────────────────────────────
+// The module cannot require() the SSOT (it is CommonJS under tools/ and this is
+// a browser file), so it mirrors roundShort(). This check loads the REAL SSOT
+// and asserts the mirror agrees on every round string in the roster — the copy
+// cannot drift without failing the build.
+const RC = require(path.join(ROOT, 'tools', 'points-at-risk', 'round-classify.js'));
+check('item 9 · the round-of-N mirror agrees with round-classify.js on every roster row', () => {
+  const seen = new Set();
+  for (const k of Object.keys(PLAYERS)) {
+    for (const m of ((PLAYERS[k].recentForm || {}).matches || [])) if (m.round) seen.add(m.round);
+  }
+  assert(seen.size > 20, `only ${seen.size} distinct round strings to compare`);
+  let bad = 0;
+  for (const r of seen) if (I.roundOfN(r) !== RC.roundShort(r)) bad++;
+  assert.strictEqual(bad, 0, `${bad} of ${seen.size} round strings disagree with the SSOT`);
+  console.log(`        ${seen.size} distinct round strings, mirror == SSOT on all`);
+});
+mustFail('the SSOT-agreement check would catch a drifted mirror', () => {
+  assert.strictEqual(RC.roundShort('x - 1/8-finals'), 'R8', 'mirror drifted');
+});
+
+check('item 9 · every ledger round cell is a short code on one line', () => {
+  let cells = 0, long = 0;
+  for (const k of Object.keys(PLAYERS)) {
+    for (const m of I.ledgerMatches(PLAYERS[k])) {
+      const lab = I.roundLabel(m);
+      cells++;
+      // The defect was prose ("Quarter-finals", "1/16-finals") in a 44px track.
+      if (lab.length > 4 || /[\s/]/.test(lab)) long++;
+    }
+  }
+  assert(cells > 5000, `only ${cells} rows inspected`);
+  assert.strictEqual(long, 0, `${long} of ${cells} round cells are still prose`);
+  const html = ledgerHtmlFor(ZVEREV);
+  assert(/font-size:10.5px;color:#5b6880;white-space:nowrap/.test(html),
+    'the round cell does not set white-space:nowrap');
+  console.log(`        ${cells} round cells, all <=4 chars and nowrap`);
+});
+mustFail('the round-code check would catch a prose label', () => {
+  const lab = '1/16-finals';
+  assert(!(lab.length > 4 || /[\s/]/.test(lab)), 'round cell is still prose');
+});
+
+check('item 9 · a draw size is only numbered when the round chain PROVES it', () => {
+  // A complete chain down to the Final proves the draw.
+  assert.strictEqual(I.provenDraw({ R128: 1, R64: 1, R32: 1, R16: 1, QF: 1, SF: 1, F: 1 }), 128);
+  // A hole anywhere in the chain, or a missing Final, proves nothing — and the
+  // row then keeps its round-of-N code rather than being given a guessed "1R".
+  assert.strictEqual(I.provenDraw({ R128: 1, R32: 1, R16: 1, QF: 1, SF: 1, F: 1 }), 0);
+  assert.strictEqual(I.provenDraw({ R32: 1, R16: 1, QF: 1, SF: 1 }), 0);
+  const idx = I.drawIndex();
+  const slam = Object.keys(idx).filter(k => /^(US Open|Wimbledon|French Open|Australian Open)\|/.test(k));
+  assert(slam.length > 0, 'no Slam editions in the draw index');
+  // A Slam main draw is 128. Older editions are thinly covered by today's
+  // roster, so many derive 0 (unproven) and their rows keep R32/R64/R128 —
+  // that is the rule working. What must NEVER happen is a Slam edition deriving
+  // some OTHER draw size, which would number its rounds wrongly.
+  const proven = slam.filter(k => idx[k] > 0);
+  assert(proven.length > 0, 'not one Slam edition could be proven');
+  proven.forEach(k => assert.strictEqual(idx[k], 128, `${k} derived a draw of ${idx[k]}, not 128`));
+  // No edition may derive a draw that is not a power of two.
+  Object.keys(idx).forEach((k) => {
+    const d = idx[k];
+    assert(d === 0 || (d >= 2 && Number.isInteger(Math.log2(d))),
+      `${k} derived a non-power-of-two draw: ${d}`);
+  });
+  console.log(`        ${proven.length} of ${slam.length} Slam editions proven, all at 128`);
+  // Coverage, reported rather than asserted at a target: the rows that fall back.
+  let pre = 0, numbered = 0;
+  for (const k of Object.keys(PLAYERS)) {
+    for (const m of I.ledgerMatches(PLAYERS[k])) {
+      const code = I.roundOfN(m.round);
+      if (!/^R(32|64|128|256)$/.test(code)) continue;
+      pre++;
+      if (/^\d+R$/.test(I.roundLabel(m))) numbered++;
+    }
+  }
+  console.log(`        ${numbered} of ${pre} pre-R16 rows numbered ` +
+    `(${(100 * numbered / pre).toFixed(1)}%), the rest keep R32/R64/R128`);
+});
+mustFail('the proven-draw check would catch a lower-bound guess', () => {
+  const guess = set => Math.max(...Object.keys(set).map(c => ({ F: 2, SF: 4, QF: 8, R16: 16, R32: 32, R64: 64, R128: 128 })[c] || 0));
+  assert.strictEqual(guess({ R32: 1, R16: 1, QF: 1, SF: 1 }), 0, 'an unproven draw was numbered anyway');
+});
+
+// ── item 10 · score format + tiebreak points ───────────────────────────────
+check('item 10 · set scores are comma-separated with tiebreak points where held', () => {
+  assert.strictEqual(I.setText({ p: 7, o: 6, pTb: 7, oTb: 2 }), '7-6(2)');
+  assert.strictEqual(I.setText({ p: 6, o: 7, pTb: 4, oTb: 7 }), '6-7(4)');
+  // No points held → no bracket, never an invented margin.
+  assert.strictEqual(I.setText({ p: 7, o: 6 }), '7-6');
+  assert.strictEqual(
+    I.setScoreText({ sets: [{ p: 6, o: 3 }, { p: 7, o: 6, pTb: 7, oTb: 2 }] }), '6-3, 7-6(2)');
+  // The ribbon uses the same values, space-joined, exactly as the export does.
+  assert.strictEqual(
+    I.setScoreText({ sets: [{ p: 6, o: 3 }, { p: 7, o: 6, pTb: 7, oTb: 2 }] }, ' '), '6-3 7-6(2)');
+  let tbSets = 0, missing = 0;
+  for (const k of Object.keys(PLAYERS)) {
+    for (const m of I.ledgerMatches(PLAYERS[k])) {
+      for (const s of (m.sets || [])) {
+        if ((s.p === 7 && s.o === 6) || (s.p === 6 && s.o === 7)) tbSets++;
+      }
+      missing += I.tiebreaksMissing(m);
+    }
+  }
+  assert(tbSets > 0, 'no tiebreak sets in the roster to check');
+  console.log(`        ${tbSets} tiebreak sets in ledger rows, ${missing} without points ` +
+    `(${(100 * missing / tbSets).toFixed(1)}%) — those print 7-6 with no bracket`);
+});
+mustFail('the score-format check would catch a space-joined ledger score', () => {
+  assert.strictEqual('6-3 7-6(2)', '6-3, 7-6(2)', 'ledger score is not comma-separated');
+});
+
+// ── item 6 · segmented control ─────────────────────────────────────────────
+check('item 6 · only the selected surface chip carries a border', () => {
+  const on = I.ledgerChip('ledger-surf', 'all', 'All', true);
+  const off = I.ledgerChip('ledger-surf', 'hard', 'Hard', false);
+  assert(/border:1px solid rgba\(91,155,255,0\.45\)/.test(on), 'the selected chip lost its border');
+  assert(/border:1px solid transparent/.test(off), 'an unselected chip still draws a visible border');
+  assert(!/rgba\(255,255,255,0\.12\)/.test(off), 'the unselected chip keeps the old box border');
+});
+mustFail('the segmented-control check would catch a bordered unselected chip', () => {
+  const off = 'border:1px solid rgba(255,255,255,0.12);';
+  assert(/border:1px solid transparent/.test(off), 'an unselected chip still draws a visible border');
+});
+
+// ── items 12 + 15 · the shared eyebrow helper ──────────────────────────────
+// Values quoted from the export's `.cap` class, Player Profile.dc.html:25:
+//   font-size 9.5px · letter-spacing 0.16em · colour #5b6880
+check('items 12/15 · every eyebrow matches the export .cap', () => {
+  const e = I.eyebrow('Recent form');
+  assert(/font-size:9\.5px/.test(e), `eyebrow size drifted: ${e}`);
+  assert(/letter-spacing:0\.16em/.test(e), `eyebrow tracking drifted: ${e}`);
+  assert(/color:#5b6880/.test(e), `eyebrow colour drifted: ${e}`);
+  const le = I.ledgerEyebrow('Rd', 'left');
+  assert(/font-size:8\.5px/.test(le) && /letter-spacing:0\.16em/.test(le) && /color:#8b96b5/.test(le),
+    `group-header label drifted: ${le}`);
+});
+mustFail('the eyebrow check would catch the pre-correction values', () => {
+  const e = 'font-size:10.5px;letter-spacing:0.14em;color:#4b5672;';
+  assert(/font-size:9\.5px/.test(e), 'eyebrow size drifted');
+});
+
+// ── item 11 · the second price source ──────────────────────────────────────
+check('item 11 · the bet365 capture prices rows the archive never reached', () => {
+  // Roster-wide, not per player: the capture starts 2026-03 and any one
+  // player's committed window may sit entirely before it (A. Zverev's does —
+  // the committed file is a 22-Jul seed and his last row is 2026-01-23). A
+  // single-player assertion would have been measuring the seed, not the join.
+  let close = 0, pre = 0, dash = 0, tot = 0;
+  const lifted = new Set();
+  for (const k of Object.keys(PLAYERS)) {
+    for (const r of I.ledgerRows(PLAYERS[k])) {
+      tot++;
+      if (r.basis === 'close') close++;
+      else if (r.basis === 'prematch') {
+        pre++; lifted.add(PLAYERS[k].name);
+        assert.strictEqual(r.book, 'bet365', 'a pre-match row is labelled with the wrong book');
+        assert(I.b365PriceFor(PLAYERS[k].name, r.m), 'a pre-match row has no capture behind it');
+      } else { dash++; assert.strictEqual(r.price, null, 'an unlabelled row carries a price'); }
+    }
+  }
+  assert.strictEqual(close + pre + dash, tot, 'a row is counted twice or not at all');
+  assert(pre > 0, 'the capture priced nothing — the second source is not reaching the ledger');
+  console.log(`        ${tot} ledger rows — ${close} archive closing, ${pre} bet365 pre-match ` +
+    `(${lifted.size} players), ${dash} unpriced; priced share ` +
+    `${(100 * (close + pre) / tot).toFixed(1)}% vs ${(100 * close / tot).toFixed(1)}% before`);
+});
+mustFail('the price-basis check would catch a row labelled priced with no source', () => {
+  const r = { basis: 'prematch', book: 'pinnacle' };
+  assert.strictEqual(r.book, 'bet365', 'a pre-match row is labelled with the wrong book');
+});
+
+check('item 11 · the capture join needs BOTH names and dashes on an ambiguous pair', () => {
+  // Name normalisation folds the capture's "Surname, First" and the feed's
+  // "I. Surname" onto the same token, with no whitespace splitting.
+  assert.strictEqual(I.b365Norm('Van de Zandschulp, Botic'), I.b365Norm('B. Van De Zandschulp'));
+  assert.strictEqual(I.b365Norm('Zverev, Alexander'), 'zverev');
+  // A pair the capture does not hold must not resolve to a neighbouring fixture.
+  assert.strictEqual(I.b365PriceFor('A. Zverev', { date: '2026-09-13', opponent: 'Nobody Here' }), null);
+  // The close is the LAST observed point, which the artefact pins to the last
+  // quote at or before the start — never an in-play price.
+  assert.strictEqual(I.b365Close([[1, 1.5], [2, 1.7]]), 1.7);
+  assert.strictEqual(I.b365Close([]), null);
+});
+mustFail('the capture-join check would catch a first-point close', () => {
+  const close = s => s[0][1];
+  assert.strictEqual(close([[1, 1.5], [2, 1.7]]), 1.7, 'the close is not the last observed point');
+});
+
+// ── item 14 · the match sheet ──────────────────────────────────────────────
+check('item 14 · the match sheet renders real stats and dashes what we do not hold', () => {
+  const rows = I.ledgerRows(ZVEREV);
+  const withStats = rows.filter(r => I.statsFor(r.m.eventKey));
+  assert(withStats.length > 0, `${ZVEREV.name} has no ledger row with a stats block`);
+  const ctx = { ledgerOpen: true, ledgerRows: rows, ledgerFiltered: I.ledgerFiltered(rows) };
+  const target = withStats[withStats.length - 1];
+  I.state.sheet = target.m.date + '|' + (target.m.opponent || '');
+  const html = I.renderSheet(ZVEREV, ctx);
+  I.state.sheet = null;
+  assert(/Dominance ratio/.test(html), 'the sheet did not render');
+  // The three rows we genuinely do not hold must be dashed, on every sheet.
+  ['Serve rating', 'Return rating', 'Net points won'].forEach((label) => {
+    const at = html.indexOf(label);
+    assert(at > 0, `${label} row is missing from the sheet`);
+    const before = html.slice(Math.max(0, at - 420), at);
+    assert(/color:#4b5672;">—</.test(before), `${label} rendered a value — we do not hold it`);
+  });
+  // ...and a stat we DO hold must not be dashed on a match that carries it.
+  const rec = I.statsFor(target.m.eventKey);
+  const side = String(rec.p1Key) === String(ZVEREV.key) ? rec.matchStats.p1 : rec.matchStats.p2;
+  const aces = side['Service:Aces'];
+  if (aces != null) {
+    assert(html.indexOf('>' + Math.round(aces) + '<') > 0,
+      `the sheet does not show the stored ace count (${aces})`);
+  }
+  console.log(`        sheet for ${ZVEREV.name} ${target.m.date}: real stats rendered, ` +
+    `3 unheld rows dashed`);
+});
+mustFail('the match-sheet check would catch an estimated net-points value', () => {
+  const html = 'color:#5b9bff;">12</span>...Net points won';
+  const at = html.indexOf('Net points won');
+  assert(/color:#4b5672;">—</.test(html.slice(0, at)), 'Net points won rendered a value');
+});
+
+check('item 14 · no sheet is painted with the opponent’s numbers under this player’s name', () => {
+  // Orientation is proven by the api-tennis player key, never by position.
+  let checked = 0, oriented = 0;
+  for (const k of Object.keys(PLAYERS).slice(0, 60)) {
+    const p = PLAYERS[k];
+    for (const m of I.ledgerMatches(p)) {
+      const rec = I.statsFor(m.eventKey);
+      if (!rec) continue;
+      checked++;
+      if (String(rec.p1Key) === String(p.key) || String(rec.p2Key) === String(p.key)) oriented++;
+    }
+  }
+  assert(checked > 0, 'no stats rows to orient');
+  // A row naming neither player is a join error; the sheet must dash rather than
+  // pick a side. Report the rate rather than assert a target.
+  console.log(`        ${oriented} of ${checked} stats rows name the subject by key ` +
+    `(${(100 * oriented / checked).toFixed(1)}%); the rest render as unjoinable`);
+  assert(oriented > 0, 'not one stats row could be oriented by key — the join is broken');
+});
+mustFail('the orientation check would catch a positional guess', () => {
+  const rec = { p1Key: 999, p2Key: 888 }, key = 1980;
+  assert(String(rec.p1Key) === String(key) || String(rec.p2Key) === String(key),
+    'the row names neither player');
+});
+
+check('item 14 · dominance ratio uses the repo’s own definition', () => {
+  // dna-apitennis-ratings.js:411 — "returnPtsWon% / (100 − servicePtsWon%)".
+  const mine = {
+    'Service:1st serve percentage': 60, 'Service:1st serve points won': 70,
+    'Service:2nd serve points won': 50,
+    'Return:1st return points won': 40, 'Return:2nd return points won': 60
+  };
+  const theirs = {
+    'Service:1st serve percentage': 50, 'Service:1st serve points won': 60,
+    'Service:2nd serve points won': 40,
+    'Return:1st return points won': 30, 'Return:2nd return points won': 50
+  };
+  const spw = 0.6 * 70 + 0.4 * 50;                 // 62
+  const rpw = 0.5 * 40 + 0.5 * 60;                 // 50
+  assert.strictEqual(I.spwPct(mine), spw);
+  assert.strictEqual(I.rpwPct(mine, theirs), rpw);
+  assert(Math.abs(I.drFor(mine, theirs) - rpw / (100 - spw)) < 1e-12);
+  // A missing input dashes the whole ratio — never a partial composition.
+  assert.strictEqual(I.drFor({ 'Service:1st serve percentage': 60 }, theirs), null);
+  assert.strictEqual(I.spwPct(null), null);
+});
+mustFail('the DR check would catch a ratio built from the wrong denominator', () => {
+  const spw = 62, rpw = 50;
+  assert(Math.abs((rpw / spw) - rpw / (100 - spw)) < 1e-12, 'DR uses the wrong denominator');
+});
+
+check('item 14 · bars are drawn only when both sides are held', () => {
+  assert.deepStrictEqual(I.sheetBars(null, 12), ['0%', '0%']);
+  assert.deepStrictEqual(I.sheetBars(12, null), ['0%', '0%']);
+  assert.deepStrictEqual(I.sheetBars(0, 0), ['0%', '0%']);
+  assert.deepStrictEqual(I.sheetBars(30, 10), ['75.0%', '25.0%']);
+});
+mustFail('the bar check would catch a one-sided bar filling the track', () => {
+  const bars = (a, b) => b == null ? ['100%', '0%'] : ['50%', '50%'];
+  assert.deepStrictEqual(bars(12, null), ['0%', '0%'], 'a one-sided bar filled the track');
+});
+
+// ── deploy allowlist · the recurring 404 ───────────────────────────────────
+check('the two new stores are in the deploy allowlist', () => {
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
+  // Derived from what the HOST actually fetches, so adding a third lazy store
+  // without publishing it fails here rather than 404ing on the live page.
+  const host = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  const fetched = new Set((host.match(/fetch\(\s*[`'"]\.\/([A-Za-z0-9_.\-]+)/g) || [])
+    .map(s => s.replace(/.*\.\//, '')));
+  assert(fetched.has('historical-match-stats.json'), 'the host does not fetch the stats store');
+  assert(fetched.has('bet365-history'), 'the host does not fetch the bet365 capture');
+  assert(/cp historical-match-stats\.json _site\//.test(yml),
+    'historical-match-stats.json is fetched by the page but never published — it will 404');
+  assert(/cp -r bet365-history _site\//.test(yml),
+    'bet365-history/ is fetched by the page but never published — it will 404');
+});
+mustFail('the allowlist check would catch an unpublished new store', () => {
+  const yml = 'cp player-profile-v2.js _site/';
+  assert(/cp historical-match-stats\.json _site\//.test(yml), 'never published — it will 404');
 });
 
 // ════════════════════════════════════════════════════════════════════════════

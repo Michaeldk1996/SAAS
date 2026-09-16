@@ -82,6 +82,17 @@
     if (g === GATE.NONE || g === GATE.THIN) return DASH;
     return (100 * won / n).toFixed(1) + '%';
   }
+  // Correction-pass item 3. The export is NOT whole-number throughout: it calls
+  // .toFixed(0) on exactly two values — `ribbonPct` (Player Profile.dc.html:1835)
+  // and `formPct` (:1827, the ledger header) — and .toFixed(1) in ~40 other
+  // places. A global change would be wrong, so this is a second formatter used by
+  // those two call sites only, sharing rateText's sample gate.
+  function rateText0(won, lost) {
+    var n = (won || 0) + (lost || 0);
+    var g = gateFor(n);
+    if (g === GATE.NONE || g === GATE.THIN) return DASH;
+    return (100 * won / n).toFixed(0) + '%';
+  }
   function recordText(won, lost) {
     if (won == null && lost == null) return DASH;
     return (won || 0) + ENDASH + (lost || 0);
@@ -217,6 +228,28 @@
   // surface the feed never recorded. Rather than let the surface rows silently
   // fall short of the total, the residual is emitted as its OWN labelled row.
   // §4 then holds exactly, and nothing is invented to make it hold.
+  // ─── correction-pass §0.2 · the one shared rule behind "renders larger" ─────
+  //
+  // The founder read the live page as visibly larger than the export at the same
+  // viewport. It is not font-size, zoom, DPR or column width — all four already
+  // match (html 16px, body 14px, zoom 1, transform none; the live content column
+  // is 2.8% WIDER, the opposite direction). The dashboard shell sets
+  // `body { line-height: 1.5 }`; the export sets none, i.e. `normal`. Measured
+  // live, a 14px line box is 21px under the shell vs 18px at normal — every line
+  // 16.7% taller, compounding over the header, the two-line ribbon chips and 18
+  // ledger rows. A single-line ledger row measured 38px against a ~30px pitch in
+  // the founder's own design screenshot.
+  //
+  // Founder ruling (gate 4ce54369, option lh-0): SCOPE it. `body` is shared by
+  // Matches, Live, Series and H2H, so the override lands on this page's own
+  // roots only and nothing else re-flows.
+  var PP2_STYLE =
+    '<style>.pp2-main,.pp2-main *,.pp2-scrim,.pp2-scrim *,.pp2-sheet,.pp2-sheet *' +
+    // Blocks that DO want a leading (the provenance notes, the insight bodies)
+    // already carry an inline line-height, and an inline declaration outranks any
+    // selector — so they are unaffected and only the inherited 1.5 is undone.
+    '{line-height:normal;}</style>';
+
   var SPINE_SURFACES = ['hard', 'clay', 'grass'];
   var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
 
@@ -308,7 +341,7 @@
   // This repo's rule is that an affordance promises content (see the Recent-form
   // chevron gate), so the hook and the pointer cursor are emitted only when the
   // sheet exists. Flip this constant when §8 lands — nothing else changes.
-  var MATCH_SHEET_BUILT = false;
+  var MATCH_SHEET_BUILT = true;
   function sheetHook(id) {
     return MATCH_SHEET_BUILT ? 'data-pp2="sheet" data-v="' + esc(id) + '" ' : '';
   }
@@ -329,6 +362,30 @@
     var surname = i >= 0 ? n.slice(i + 2) : n;
     return surname.split(/\s+/).filter(Boolean).slice(0, 2)
       .map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+  }
+  // ─── correction-pass items 4 + 8 · NAME FORMS ──────────────────────────────
+  // The export writes the subject as a bare surname ("Martinez") and everyone
+  // else surname-first ("Shelton B."). Our feed names arrive as "B. Shelton".
+  //
+  // This is a re-ORDER of the two parts the feed already separates at the ". ",
+  // NOT a token swap on the surname: api-tennis reorders multi-part surnames
+  // (see the name-order scramble that breaks the Wikidata photo join), so
+  // splitting "Felipe Meligeni Alves" on whitespace would mint a wrong name.
+  // Everything after the "initial + full stop" prefix is carried through intact,
+  // including multi-word surnames like "Van De Zandschulp".
+  function surnameOf(name) {
+    var n = String(name || '').trim();
+    var m = /^([A-Za-z])\.\s+(.+)$/.exec(n);
+    return m ? m[2] : n;
+  }
+  function initialOf(name) {
+    var m = /^([A-Za-z])\.\s+/.exec(String(name || '').trim());
+    return m ? m[1] : '';
+  }
+  /** "B. Shelton" -> "Shelton B."; a name with no initial prefix is unchanged. */
+  function surnameFirst(name) {
+    var s = surnameOf(name), i = initialOf(name);
+    return i ? s + ' ' + i + '.' : s;
   }
 
   // recentForm.matches is the only per-match source that carries a DATE, and it
@@ -389,6 +446,14 @@
     if (p.length !== 3) return DASH;
     return String(+p[2]) + ' ' + MON[+p[1] - 1];
   }
+  // Correction-pass item 7. The ledger column is dd.mm (mono) in the export;
+  // the header's prose subs stay "12 Sep" — the export uses both forms and they
+  // are not interchangeable, so they get separate formatters.
+  function fmtDotDate(iso) {
+    var s = String(iso || '');
+    if (s.length < 10) return DASH;
+    return s.slice(8, 10) + '.' + s.slice(5, 7);
+  }
   function daysAgo(iso) {
     if (!iso) return null;
     var then = Date.parse(iso + 'T00:00:00Z');
@@ -404,17 +469,114 @@
     return d + ' days ago';
   }
 
-  // Round label straight off the feed string ("ATP Barcelona - 1/8-finals").
-  // round-classify.js is the SSOT for round naming elsewhere; reuse it when the
-  // page global is present rather than minting a second taxonomy here.
-  function roundLabel(m) {
-    if (window.RoundClassify && typeof window.RoundClassify.shortLabel === 'function') {
-      var r = window.RoundClassify.shortLabel(m.round);
-      if (r) return r;
+  // ─── correction-pass item 9 · ROUND SHORT CODES ────────────────────────────
+  //
+  // `window.RoundClassify` is undefined on the deployed page — round-classify.js
+  // exists only at tools/points-at-risk/round-classify.js, is not in the deploy
+  // allowlist and exports no `shortLabel`. So roundLabel() always fell through to
+  // the raw feed tail and printed "Semi-finals" / "1/16-finals" into a 44px track
+  // with white-space:normal: 16 of Zverev's 18 ledger rows wrapped to two lines,
+  // which is most of the row-height defect the founder reported.
+  //
+  // The mapping has two halves and only the first is unambiguous:
+  //   * F / SF / QF / R16 are fixed points of any draw, whatever its size.
+  //   * Anything earlier is draw-RELATIVE in the export ("3R", "2R", "1R") and
+  //     therefore needs the draw size, which no store we hold carries.
+  //
+  // So the draw size is DERIVED FROM THE DATA, and used only where it is PROVEN:
+  // an edition qualifies when the roster's own rows show an unbroken chain of
+  // rounds from the largest observed round down to the Final. R128→R64→R32→R16→
+  // QF→SF→F at a Slam proves a 128 draw; a lone R32 row at a Challenger proves
+  // nothing, and those rows keep the round-of-N code (R32/R64/R128) rather than a
+  // guessed "1R" — a wrong round number is exactly what the standing rule forbids.
+  // Measured on the committed roster: 11,340 of 11,340 rows map to a code, and
+  // 5,069 of 5,850 pre-R16 rows (86.6%) sit at an edition with a proven draw.
+  //
+  // ROUND_OF_N mirrors round-classify.js's roundShort() — the module is CommonJS
+  // under tools/ and cannot be required in the browser. test-pp2-reconcile.js
+  // loads the real SSOT and asserts the two agree on every round string in the
+  // roster, so the copy cannot drift.
+  var ROUND_FRAC = { '2': 'SF', '4': 'QF', '8': 'R16', '16': 'R32', '32': 'R64', '64': 'R128', '128': 'R256' };
+  var ROUND_WORD = { '16': 'R16', '32': 'R32', '64': 'R64', '128': 'R128', '256': 'R256' };
+  var CODE_N = { F: 2, SF: 4, QF: 8, R16: 16, R32: 32, R64: 64, R128: 128, R256: 256 };
+  function roundOfN(round) {
+    if (!round) return '';
+    var r = String(round);
+    if (r.indexOf(' - ') >= 0) r = r.split(' - ').pop();
+    r = r.trim();
+    var frac = r.match(/1\/(\d+)/);
+    if (frac) return ROUND_FRAC[frac[1]] || r;
+    if (/semi[-\s]?final/i.test(r)) return 'SF';
+    if (/quarter[-\s]?final/i.test(r)) return 'QF';
+    var ro = r.match(/round of (\d+)/i);
+    if (ro) return ROUND_WORD[ro[1]] || ('R' + ro[1]);
+    if (/final/i.test(r)) return 'F';
+    return r;
+  }
+  // Qualifying is its own ladder and never draw-relative. recentForm carries no
+  // qualifying row today (censused: 0 of 11,340), so this is the guard that keeps
+  // one from being numbered as a main-draw round if the feed ever emits one.
+  function qualifyingCode(round) {
+    var s = String(round || '');
+    if (!/qualif/i.test(s)) return null;
+    var n = s.match(/(\d)\s*(?:st|nd|rd|th)?\s*(?:round)?\s*$/i);
+    return n ? 'Q' + n[1] : 'Q';
+  }
+
+  // Proven draw size per "tournament|year", derived across the WHOLE roster —
+  // one player only ever sees his own rounds, so the evidence has to be pooled.
+  // Rebuilt when the store identity changes (the lazy loaders reassign it).
+  var _drawIdx = null, _drawIdxSrc = null;
+  function drawIndex() {
+    var store = window.playerProfiles;
+    if (_drawIdx && _drawIdxSrc === store) return _drawIdx;
+    var seen = {};
+    var players = playersMap();
+    for (var k in players) {
+      if (!Object.prototype.hasOwnProperty.call(players, k)) continue;
+      var ms = (players[k] && players[k].recentForm && players[k].recentForm.matches) || [];
+      for (var i = 0; i < ms.length; i++) {
+        var m = ms[i];
+        if (!m || !m.date || !m.tournament) continue;
+        if (qualifyingCode(m.round)) continue;
+        var code = roundOfN(m.round);
+        if (!CODE_N[code]) continue;
+        var ek = m.tournament + '|' + String(m.date).slice(0, 4);
+        (seen[ek] = seen[ek] || {})[code] = true;
+      }
     }
-    var s = String(m.round || '');
-    var i = s.lastIndexOf(' - ');
-    return i >= 0 ? s.slice(i + 3) : s;
+    var out = {};
+    for (var ev in seen) {
+      if (!Object.prototype.hasOwnProperty.call(seen, ev)) continue;
+      out[ev] = provenDraw(seen[ev]);
+    }
+    _drawIdx = out; _drawIdxSrc = store;
+    return out;
+  }
+  // A draw size is proven only by an UNBROKEN chain down to the Final. Any hole
+  // (or a missing Final) leaves it 0 and the row keeps its round-of-N code.
+  function provenDraw(set) {
+    if (!set.F) return 0;
+    var max = 0;
+    for (var c in set) { if (CODE_N[c] > max) max = CODE_N[c]; }
+    for (var n = max; n >= 2; n /= 2) {
+      var code = n === 2 ? 'F' : n === 4 ? 'SF' : n === 8 ? 'QF' : 'R' + n;
+      if (!set[code]) return 0;
+    }
+    return max;
+  }
+  function roundLabel(m) {
+    var q = qualifyingCode(m && m.round);
+    if (q) return q;
+    var code = roundOfN(m && m.round);
+    var n = CODE_N[code];
+    // F / SF / QF / R16 need no draw size; earlier rounds are draw-relative in
+    // the export and are only numbered when the draw size is proven.
+    if (!n || n <= 16) return code || DASH;
+    var draw = (m && m.date && m.tournament)
+      ? (drawIndex()[m.tournament + '|' + String(m.date).slice(0, 4)] || 0) : 0;
+    if (!draw || draw < n) return code;
+    return String(Math.round(Math.log(draw / n) / Math.LN2) + 1) + 'R';
   }
   function eventName(m) {
     return String(m.tournament || '') || DASH;
@@ -431,8 +593,8 @@
       'style="display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;' +
       'color:#5b6880;align-self:flex-start;text-decoration:none;">' +
       '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
-      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l-6 6 6 6"/></svg>' +
-      'Players</a>';
+      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>' +
+      'Back to Players</a>';
   }
 
   // §2 Header
@@ -549,8 +711,7 @@
 
     var chipHtml = chips.map(function (m) {
       var w = !!m.won;
-      return '<div class="pp2-chip" ' +
-        (MATCH_SHEET_BUILT ? 'data-pp2="sheet" data-ev="' + esc(m.eventKey || '') + '" ' : '') +
+      return '<div class="pp2-chip" ' + sheetHook(m.date + '|' + (m.opponent || '')) +
         'style="display:flex;gap:8px;padding:7px 10px;border:1px solid rgba(255,255,255,0.08);' +
         'border-radius:8px;white-space:nowrap;flex:none;' + sheetCursor() + 'align-items:center;">' +
         '<div style="width:20px;height:20px;border-radius:5px;display:flex;align-items:center;' +
@@ -558,15 +719,20 @@
           'background:' + (w ? 'rgba(61,214,140,0.16)' : 'rgba(224,97,111,0.16)') + ';' +
           'color:' + (w ? '#3dd68c' : '#e0616f') + ';">' + (w ? 'W' : 'L') + '</div>' +
         '<div style="display:flex;flex-direction:column;gap:2px;">' +
-          '<div style="font-size:12px;font-weight:700;">' + esc(m.opponent || DASH) + '</div>' +
+          // Correction-pass item 4a: surname-first, as the export writes every
+          // name that is not the subject.
+          '<div style="font-size:12px;font-weight:700;">' +
+            esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#5b6880;">' +
             esc(eventName(m) + ' ' + roundLabel(m)) + ' ' + MIDDOT + ' ' +
+            // Correction-pass item 4b: the export's chip meta is the SET SCORES
+            // (space-joined — Player Profile.dc.html:1838 replaces its own ", "),
+            // not recentForm's "3 - 1" sets COUNT, which is what we were printing.
             // Feed SCORE strings keep their hyphens — the design file renders
-            // '7-5' / '2-0' that way and that is the tennis convention. The
-            // en-dash rule in §3 governs W-L RECORDS, not scorelines. Tagged
-            // so the typography check can tell the two apart.
-            '<span class="pp2-score">' +
-              (m.result && m.result !== '-' ? esc(m.result) : DASH) + '</span></div>' +
+            // '7-5' that way and that is the tennis convention. The en-dash rule
+            // in §3 governs W-L RECORDS, not scorelines. Tagged so the typography
+            // check can tell the two apart.
+            '<span class="pp2-score">' + esc(setScoreText(m, ' ')) + '</span></div>' +
         '</div></div>';
     }).join('');
 
@@ -576,7 +742,7 @@
       'gap:22px;align-items:center;">' +
         '<div style="white-space:nowrap;">' + eyebrow('Recent form') +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:700;line-height:1;">' +
-            '<span style="color:#5b9bff;">' + (r.n ? rateText(r.won, r.lost) : DASH) + '</span> ' +
+            '<span style="color:#5b9bff;">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
             '<span style="font-size:13px;font-weight:600;color:#5b6880;">' +
               (r.n ? recordText(r.won, r.lost) : 'no matches on record') + '</span>' +
           '</div></div>' +
@@ -592,9 +758,13 @@
       '</div>';
   }
 
+  // Correction-pass items 12 + 15. This helper paints every eyebrow on the page
+  // and had drifted three ways from the export's `.cap` class
+  // (Player Profile.dc.html:25) — 10.5px vs 9.5px, 0.14em vs 0.16em, #4b5672 vs
+  // #5b6880. One edit, page-wide reach.
   function eyebrow(text) {
-    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;margin-top:6px;">' + text + '</div>';
+    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+      'letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;margin-top:6px;">' + text + '</div>';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -629,20 +799,125 @@
     }
     return byDate;
   }
-  // Attaches price/role to each ledger row. Rows the archive never priced keep
+  // ─── correction-pass item 11 · the second price source ─────────────────────
+  //
+  // The founder read the ledger as "dashes on every row". Measured, it was 7
+  // priced / 11 dashed for Zverev, and the split is a clean date cut: everything
+  // to 12 Jul priced, everything from 5 Aug dashed. That is the Tennis-Data
+  // archive ending — build-market-edge.js records archiveLatest 2026-07-26. His
+  // screenshot showed the top of the ledger, which is entirely post-cutoff.
+  //
+  // So the fix is a SOURCE, not a join. `bet365-history/YYYY-MM.json` is our own
+  // capture: a reduced per-fixture bet365 match-winner series whose last point is
+  // pinned to the last quote at or before the fixture start — never in-play.
+  // Index: 10,662 fixtures, 2026-03 → 2026-09, 81.2% coverage.
+  //
+  // ⚠️ This is a bet365 PRE-MATCH last price, not a Pinnacle close. §5 forbids
+  // blending the two in the Market edge headline and nothing here touches that
+  // modal — the ledger labels its rows per book and the card note names both
+  // sources with their counts, which is the same posture build-market-edge.js
+  // already takes for its per-row Pinnacle / archive-Bet365 choice.
+  //
+  // The join is stricter than the archive's: the archive shard carries no
+  // opponent key, so it can only match on date and a duplicated date dashes. The
+  // capture carries BOTH names ("Zverev, Alexander"), so it matches on the
+  // surname PAIR plus the date, and the date is allowed ±1 day because `start`
+  // is a UTC timestamp while recentForm's date is the tournament's local day.
+  function b365Norm(name) {
+    var s = String(name || '');
+    var c = s.indexOf(',');
+    if (c >= 0) s = s.slice(0, c);            // capture form: "Surname, First"
+    else s = surnameOf(s);                     // feed form: "A. Zverev"
+    return s.toLowerCase().replace(/[^a-z]/g, '');
+  }
+  function b365Close(series) {
+    if (!series || !series.length) return null;
+    var last = series[series.length - 1];
+    var v = last && last[1];
+    return v == null || !isFinite(Number(v)) ? null : Number(v);
+  }
+  function b365DayOf(epochSeconds) {
+    var d = new Date(Number(epochSeconds) * 1000);
+    if (!isFinite(d.getTime())) return null;
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') +
+      '-' + String(d.getUTCDate()).padStart(2, '0');
+  }
+  var _b365Idx = null, _b365Src = null;
+  function b365Index() {
+    var store = window.bet365History;
+    if (_b365Idx && _b365Src === store) return _b365Idx;
+    var out = {};
+    for (var month in (store || {})) {
+      if (!Object.prototype.hasOwnProperty.call(store, month)) continue;
+      var fx = (store[month] && store[month].fixtures) || {};
+      for (var id in fx) {
+        if (!Object.prototype.hasOwnProperty.call(fx, id)) continue;
+        var f = fx[id];
+        var a = b365Norm(f.p1), b = b365Norm(f.p2);
+        if (!a || !b) continue;
+        var day = b365DayOf(f.start);
+        if (!day) continue;
+        var pair = a < b ? a + '|' + b : b + '|' + a;
+        (out[pair] = out[pair] || []).push({
+          day: day, a: a, b: b, closeA: b365Close(f.s1), closeB: b365Close(f.s2)
+        });
+      }
+    }
+    _b365Idx = out; _b365Src = store;
+    return out;
+  }
+  function b365PriceFor(subjName, m) {
+    var s = b365Norm(subjName), o = b365Norm(m && m.opponent);
+    if (!s || !o || !m || !m.date) return null;
+    var list = b365Index()[s < o ? s + '|' + o : o + '|' + s];
+    if (!list) return null;
+    var hits = list.filter(function (r) { return dayGap(r.day, m.date) <= 1; });
+    // Two capture fixtures for one surname pair within two days cannot be told
+    // apart — dash rather than pick one.
+    if (hits.length !== 1) return null;
+    var h = hits[0];
+    var mine = h.a === s ? h.closeA : h.closeB;
+    var theirs = h.a === s ? h.closeB : h.closeA;
+    if (mine == null && theirs == null) return null;
+    return { price: mine, oppPrice: theirs, book: 'bet365' };
+  }
+  function dayGap(a, b) {
+    var x = Date.parse(a + 'T00:00:00Z'), y = Date.parse(b + 'T00:00:00Z');
+    if (!isFinite(x) || !isFinite(y)) return Infinity;
+    return Math.abs(x - y) / 86400000;
+  }
+
+  // Attaches price/role to each ledger row. Rows neither source priced keep
   // price null, which both the odds columns and the price filters read as "not
   // held" rather than as a role.
   function ledgerRows(p) {
     var idx = ledgerPriceIndex(p.key);
     return ledgerMatches(p).map(function (m) {
       var mk = idx[m.date] || null;
-      return {
-        m: m,
-        price: mk && mk.price != null ? mk.price : null,
-        oppPrice: mk && mk.oppPrice != null ? mk.oppPrice : null,
-        role: mk && mk.role ? mk.role : null,
-        book: mk && mk.book ? mk.book : null
-      };
+      if (mk && mk.price != null) {
+        return {
+          m: m,
+          price: mk.price,
+          oppPrice: mk.oppPrice != null ? mk.oppPrice : null,
+          role: mk.role || null,
+          book: mk.book || null,
+          basis: 'close'
+        };
+      }
+      // Archive silent (or ambiguous on that date) — fall back to the capture.
+      var cap = b365PriceFor(p.name, m);
+      if (cap) {
+        return {
+          m: m, price: cap.price, oppPrice: cap.oppPrice,
+          // The capture carries no favourite/underdog role of its own; derive it
+          // only when both sides are held, never from one price alone.
+          role: (cap.price != null && cap.oppPrice != null)
+            ? (cap.price < cap.oppPrice ? 'fav' : cap.price > cap.oppPrice ? 'dog' : 'level')
+            : null,
+          book: 'bet365', basis: 'prematch'
+        };
+      }
+      return { m: m, price: null, oppPrice: null, role: null, book: null, basis: null };
     });
   }
 
@@ -657,12 +932,18 @@
     { id: 'dog', label: 'Underdog' }
   ];
 
+  // Correction-pass item 6. The export is a SEGMENTED control: the selected chip
+  // carries the fill and the border, the rest carry neither — `bd: on ?
+  // 'rgba(91,155,255,0.45)' : 'transparent'` (Player Profile.dc.html:1553). We
+  // were drawing rgba(255,255,255,0.12) on every chip, which reads as four
+  // buttons rather than one control. The transparent border is kept (not
+  // dropped) so the selected and unselected chips stay the same size.
   function ledgerChip(attr, id, label, on) {
     return '<span data-pp2="' + attr + '" data-v="' + esc(id) + '" ' +
-      'style="font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;' +
+      'style="font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;white-space:nowrap;' +
       'font-weight:' + (on ? '700' : '600') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
       'background:' + (on ? 'rgba(91,155,255,0.22)' : 'transparent') + ';' +
-      'border:1px solid ' + (on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.12)') + ';">' +
+      'border:1px solid ' + (on ? 'rgba(91,155,255,0.45)' : 'transparent') + ';">' +
       esc(label) + '</span>';
   }
   function ledgerPriceChip(id, label, on) {
@@ -729,7 +1010,7 @@
         'flex-wrap:wrap;margin-bottom:14px;">' +
         '<div style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">Recent form</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#5b6880;">' +
-          '<span style="color:#5b9bff;font-weight:700;">' + rateText(r.won, r.lost) + ' win</span> ' +
+          '<span style="color:#5b9bff;font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> ' +
           MIDDOT + ' ' + r.n + ' match' + (r.n === 1 ? '' : 'es') + '</div>' +
       '</div>';
 
@@ -788,11 +1069,19 @@
     // archive actually priced. A column of dashes with no explanation reads as
     // a broken join, which is exactly the failure mode this page keeps hitting.
     var priced = rows.filter(function (x) { return x.price != null; }).length;
-    var note = priced === rows.length
-      ? 'H / A are closing prices from the odds archive, subject first (' + priced + ' of ' + rows.length + ' priced).'
-      : 'H / A are closing prices from the odds archive, subject first ' + MIDDOT + ' ' +
-        priced + ' of ' + rows.length + ' rows priced. The archive is tour main-draw only and carries no ' +
-        'opponent key, so a date with no priced row — or more than one — is left as a dash rather than guessed.';
+    var closes = rows.filter(function (x) { return x.basis === 'close'; }).length;
+    var pre = rows.filter(function (x) { return x.basis === 'prematch'; }).length;
+    // Two sources, never pooled into one claim: the archive close and our own
+    // bet365 pre-match capture are different artefacts and the note says which
+    // supplied how many, with the reason the rest are dashes.
+    var note = 'H / A are subject first ' + MIDDOT + ' ' + priced + ' of ' + rows.length +
+      ' rows priced' + (priced ? ' (' + closes + ' archive closing, ' + pre +
+      ' bet365 pre-match)' : '') + '.';
+    if (priced < rows.length) {
+      note += ' The odds archive is tour main-draw only, ends 2026-07-26 and carries no opponent ' +
+        'key, so a date it never priced — or priced twice — falls through to the bet365 capture, ' +
+        'which starts 2026-03. A row neither source holds is left as a dash rather than guessed.';
+    }
 
     return '' +
       '<div class="pp2-ledger" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
@@ -811,9 +1100,11 @@
       '</div>';
   }
 
+  // The export's group-header labels are `.cap` with two overrides (8.5px,
+  // #8b96b5) — the tracking stays 0.16em, where this had drifted to 0.1em.
   function ledgerEyebrow(text, align) {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;font-weight:600;' +
-      'letter-spacing:0.1em;text-transform:uppercase;color:#8b96b5;text-align:' + align + ';">' +
+      'letter-spacing:0.16em;text-transform:uppercase;color:#8b96b5;text-align:' + align + ';">' +
       esc(text) + '</div>';
   }
 
@@ -824,18 +1115,25 @@
       (subjWin ? '#e7e9ee' : '#8b96b5') + ';';
     var opp = 'font-size:13px;font-weight:' + (subjWin ? '400' : '700') + ';color:' +
       (subjWin ? '#8b96b5' : '#e7e9ee') + ';';
+    // Correction-pass item 13: the export aligns the row's cells on `center`
+    // (this read `baseline`) and sets the OUTER name span to 13px, which the
+    // two inner spans then inherit — this inherited the card's 14px.
     return '<div class="pp2-ledger-row" ' + sheetHook(m.date + '|' + (m.opponent || '')) +
       'style="display:grid;grid-template-columns:52px minmax(150px,1fr) 44px minmax(160px,0.9fr) ' +
       '48px 48px;gap:10px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);' +
-      'border-radius:6px;align-items:baseline;' + sheetCursor() + '">' +
+      'border-radius:6px;align-items:center;' + sheetCursor() + '">' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' +
-        esc(fmtDayMonth(m.date)) + '</span>' +
-      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-        '<span style="' + sub + '">' + esc(x.subjectName || 'Subject') + '</span>' +
+        esc(fmtDotDate(m.date)) + '</span>' +
+      '<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        // Item 8: the subject is a bare surname, the opponent surname-first.
+        '<span style="' + sub + '">' + esc(surnameOf(x.subjectName || '') || 'Subject') + '</span>' +
         '<span style="font-size:13px;color:#3f4860;"> ' + ENDASH + ' </span>' +
-        '<span style="' + opp + '">' + esc(m.opponent || DASH) + '</span></span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
-        esc(roundLabel(m)) + '</span>' +
+        '<span style="' + opp + '">' +
+          esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></span>' +
+      // Item 9: nowrap as well as the short code — a code alone would still wrap
+      // if a future feed string failed to map, and a wrapped row is the defect.
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;' +
+        'white-space:nowrap;">' + esc(roundLabel(m)) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;' +
         'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(setScoreText(m)) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
@@ -848,10 +1146,35 @@
   // Per-set scores, already subject-relative in recentForm (`p` = the subject's
   // games). Hyphens are correct here — §3's en-dash rule governs W-L records,
   // not scorelines, and the design file renders '7-5' that way.
-  function setScoreText(m) {
+  //
+  // Correction-pass item 10, two parts:
+  //  * separator — the export joins with ", " ("6-3, 7-6(2), 5-7, 6-2"), we
+  //    joined with a bare space.
+  //  * tiebreak points — a previous pass reported these as "not held at all".
+  //    That was wrong: recentForm's set objects carry `pTb`/`oTb` on 4,439 of
+  //    27,451 sets in the committed roster, against 4,591 sets that finished
+  //    7-6 or 6-7 — so 96.7% of tiebreak sets have their points and the other
+  //    3.3% print "7-6" with no bracket, never an invented margin.
+  // The bracket shows the LOSER's points, which is the convention the export's
+  // own strings follow ("7-6(2)" = the 7-6 set won on a 7-2 breaker).
+  function setScoreText(m, sep) {
     var sets = m.sets || [];
     if (!sets.length) return m.result ? String(m.result) : DASH;
-    return sets.map(function (s) { return s.p + '-' + s.o; }).join(' ');
+    return sets.map(setText).join(sep == null ? ', ' : sep);
+  }
+  function setText(s) {
+    var base = s.p + '-' + s.o;
+    if (s.pTb == null || s.oTb == null) return base;
+    var lo = Math.min(Number(s.pTb), Number(s.oTb));
+    if (!isFinite(lo)) return base;
+    return base + '(' + lo + ')';
+  }
+  /** Tiebreak sets on a row that carry no points — reported, never guessed. */
+  function tiebreaksMissing(m) {
+    return (m.sets || []).filter(function (s) {
+      var tb = (s.p === 7 && s.o === 6) || (s.p === 6 && s.o === 7);
+      return tb && (s.pTb == null || s.oTb == null);
+    }).length;
   }
 
   // §5 Eight stat boxes
@@ -2576,6 +2899,298 @@
     return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' + parts.join(' ') + '</div>';
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §8.1 MATCH SHEET (correction-pass item 14)
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Opened from a ledger row or a ribbon chip. MATCH_SHEET_BUILT gates the hook
+  // and the pointer cursor; it is now true, so the affordance and the content
+  // ship together (this repo's rule — an affordance promises content).
+  //
+  // SOURCE. historical-match-stats.json, keyed by the api-tennis event key that
+  // recentForm already carries on every row (`eventKey`), with `p1Key`/`p2Key`
+  // giving the orientation — so this is a key join, not a name join, and none of
+  // the name-scramble traps apply. It is a pipeline CACHE that was never in the
+  // deploy allowlist; pipeline.yml now copies it and the host fetches it lazily
+  // on the first sheet open.
+  //
+  // COVERAGE IS THE HONEST CONSTRAINT and the sheet states it per section.
+  // Committed roster: 1,811 of 11,340 recentForm rows (16.0%) carry a stats
+  // block; api-tennis only began populating the statistics block in 2024.
+  //
+  // WHAT WE DO NOT HOLD, and why each dashes rather than being estimated:
+  //  * Serve rating / Return rating — the repo's own definitions
+  //    (dna-apitennis-ratings.js) need hold% and return-games-won%, which this
+  //    per-match store does not carry. Dashed, never a partial sum.
+  //  * Net points won — does not exist in api-tennis at all (a full census found
+  //    zero net keys, including the nested `raw` object). Never derived from
+  //    winners.
+  //  * Point FRACTIONS under each value — the feed emits rates, not denominators.
+  var SHEET_SECTIONS = [
+    { title: 'Service', rows: [
+      { label: 'Serve rating', held: false, why: 'rating formula needs hold%' },
+      { label: 'Aces', field: 'Service:Aces', kind: 'count' },
+      { label: 'Double faults', field: 'Service:Double Faults', kind: 'count', lowerBetter: true },
+      { label: '1st serve %', field: 'Service:1st serve percentage', kind: 'pct' },
+      { label: '1st serve points won', field: 'Service:1st serve points won', kind: 'pct' },
+      { label: '2nd serve points won', field: 'Service:2nd serve points won', kind: 'pct' },
+      { label: 'Break points saved', field: 'Service:Break Points Saved', kind: 'pct' }
+    ] },
+    { title: 'Return', rows: [
+      { label: 'Return rating', held: false, why: 'rating formula needs return-games-won%' },
+      { label: '1st return points won', field: 'Return:1st return points won', kind: 'pct' },
+      { label: '2nd return points won', field: 'Return:2nd return points won', kind: 'pct' },
+      { label: 'Break points converted', field: 'Return:Break Points Converted', kind: 'pct' }
+    ] },
+    { title: 'Points won', rows: [
+      { label: 'Winners', field: 'Points:Winners', kind: 'count' },
+      { label: 'Unforced errors', field: 'Points:Unforced errors', kind: 'count', lowerBetter: true },
+      { label: 'Net points won', held: false, why: 'not an api-tennis field' },
+      { label: 'Service points won', derived: 'spw', kind: 'pct' },
+      { label: 'Return points won', derived: 'rpw', kind: 'pct' }
+    ] }
+  ];
+
+  function statsStore() { return window.matchStats || null; }
+  function statsFor(eventKey) {
+    var s = statsStore();
+    if (!s || eventKey == null) return null;
+    var row = s[String(eventKey)];
+    return row && row.matchStats ? row : null;
+  }
+  function num(v) { return v == null || v === '' || !isFinite(Number(v)) ? null : Number(v); }
+  /** Service points won % — the exact weighted mean of the two serve rates. */
+  function spwPct(side) {
+    if (!side) return null;
+    var inPct = num(side['Service:1st serve percentage']);
+    var w1 = num(side['Service:1st serve points won']);
+    var w2 = num(side['Service:2nd serve points won']);
+    if (inPct == null || w1 == null || w2 == null) return null;
+    var f = inPct / 100;
+    return f * w1 + (1 - f) * w2;
+  }
+  /** Return points won % — same composition, weighted by the OPPONENT's 1st-in. */
+  function rpwPct(side, opp) {
+    if (!side || !opp) return null;
+    var oppIn = num(opp['Service:1st serve percentage']);
+    var r1 = num(side['Return:1st return points won']);
+    var r2 = num(side['Return:2nd return points won']);
+    if (oppIn == null || r1 == null || r2 == null) return null;
+    var f = oppIn / 100;
+    return f * r1 + (1 - f) * r2;
+  }
+  // Dominance ratio, using the repo's OWN definition verbatim
+  // (dna-apitennis-ratings.js:411 — "returnPtsWon% / (100 − servicePtsWon%)").
+  // Not a new metric and not a new normalisation.
+  function drFor(side, opp) {
+    var r = rpwPct(side, opp), s = spwPct(side);
+    if (r == null || s == null) return null;
+    var denom = 100 - s;
+    if (!(denom > 0)) return null;
+    return r / denom;
+  }
+  function sheetValue(row, mine, theirs) {
+    if (row.held === false) return null;
+    if (row.derived === 'spw') return spwPct(mine);
+    if (row.derived === 'rpw') return rpwPct(mine, theirs);
+    return num(mine && mine[row.field]);
+  }
+  function sheetText(row, v) {
+    if (v == null) return DASH;
+    return row.kind === 'pct' ? v.toFixed(1) + '%' : String(Math.round(v));
+  }
+  /** Bars are a share of the pair, and only drawn when BOTH sides are held. */
+  function sheetBars(a, b) {
+    if (a == null || b == null) return ['0%', '0%'];
+    var t = Math.abs(a) + Math.abs(b);
+    if (!(t > 0)) return ['0%', '0%'];
+    return [(100 * Math.abs(a) / t).toFixed(1) + '%', (100 * Math.abs(b) / t).toFixed(1) + '%'];
+  }
+
+  /**
+   * The row a sheet id ("2026-09-13|B. Shelton") points at, or null.
+   *
+   * Two populations open the sheet and they are NOT the same rows. The ledger and
+   * the ribbon draw recentForm — a rolling window that carries the api-tennis
+   * `eventKey`, so those sheets can reach the stats store. The court-speed and
+   * playing-styles drills draw the market-edge shard, which runs back to 2004 and
+   * carries no event key at all. Both must open, because the founder asked for
+   * "any drill row"; the shard-sourced sheet paints its header from the shard and
+   * says why every stat row is a dash, rather than opening blank.
+   */
+  function sheetRowFor(p, ctx, id) {
+    var rows = ctx.ledgerRows || [];
+    var i;
+    for (i = 0; i < rows.length; i++) {
+      var m = rows[i].m;
+      if (m.date + '|' + (m.opponent || '') === id) return rows[i];
+    }
+    var mk = marketFor(p.key);
+    var mrows = (mk && mk.matches) || [];
+    for (i = 0; i < mrows.length; i++) {
+      var r = mrows[i];
+      if (r.date + '|' + (r.opp || '') !== id) continue;
+      return {
+        m: {
+          date: r.date, opponent: r.opp || null, tournament: r.event || null,
+          round: r.round || null, surface: r.surface || null, won: !!r.won,
+          sets: [], result: null, eventKey: null
+        },
+        price: r.price != null ? r.price : null,
+        oppPrice: r.oppPrice != null ? r.oppPrice : null,
+        role: r.role || null, book: r.book || null,
+        basis: r.price != null ? 'close' : null,
+        fromShard: true
+      };
+    }
+    return null;
+  }
+
+  function renderSheet(p, ctx) {
+    if (!state.sheet) return '';
+    var x = sheetRowFor(p, ctx, state.sheet);
+    if (!x) return '';
+    var m = x.m;
+    var rec = statsFor(m.eventKey);
+    var mine = null, theirs = null;
+    if (rec) {
+      var subjIsP1 = String(rec.p1Key) === String(p.key);
+      var subjIsP2 = String(rec.p2Key) === String(p.key);
+      // Orientation must be PROVEN by the key. A row whose keys name neither the
+      // subject nor his opponent is a join error, and painting it either way
+      // would hand the reader the wrong player's match.
+      if (subjIsP1 || subjIsP2) {
+        mine = subjIsP1 ? rec.matchStats.p1 : rec.matchStats.p2;
+        theirs = subjIsP1 ? rec.matchStats.p2 : rec.matchStats.p1;
+      }
+    }
+
+    var won = !!m.won;
+    var priceLine;
+    if (x.price != null && x.oppPrice != null) {
+      priceLine = (x.basis === 'close' ? 'Closing ' : 'Pre-match ') +
+        Number(x.price).toFixed(2) + ' v ' + Number(x.oppPrice).toFixed(2) +
+        ' ' + MIDDOT + ' P&L ' + signed(won ? (Number(x.price) - 1) : -1, 2, 'u');
+    } else {
+      priceLine = 'No price on record';
+    }
+
+    var head = '' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
+        '<div style="display:flex;flex-direction:column;gap:5px;min-width:0;">' +
+          '<span style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' +
+            esc(surnameOf(p.name)) + ' v ' +
+            esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
+            // The two populations label rounds differently: recentForm carries the
+            // api-tennis feed string (roundLabel), the shard carries the archive's
+            // own prose (shortRound). Using one map on both prints raw prose.
+            'color:#5b6880;">' + esc(fmtDotDate(m.date) + ' ' + MIDDOT + ' ' + eventName(m) + ' ' +
+            MIDDOT + ' ' + (x.fromShard ? shortRound(m.round) : roundLabel(m)) + ' ' + MIDDOT + ' ' +
+            (m.surface ? String(m.surface) : DASH)) + '</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:16px;flex:none;">' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
+              'color:' + (won ? '#3dd68c' : '#e0616f') + ';">' +
+              esc(((won ? 'Won ' : 'Lost ') +
+                ((m.sets && m.sets.length) ? setScoreText(m, ' ') : '')).trim()) + '</span>' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
+              esc(priceLine) + '</span>' +
+          '</div>' +
+          '<span data-pp2="sheet-close" style="background:rgba(255,255,255,0.05);' +
+            'border:1px solid rgba(255,255,255,0.12);border-radius:8px;width:30px;height:30px;' +
+            'color:#8b96b5;font-size:15px;line-height:1;cursor:pointer;display:flex;' +
+            'align-items:center;justify-content:center;">' + '×' + '</span>' +
+        '</div>' +
+      '</div>';
+
+    var dA = drFor(mine, theirs), dB = drFor(theirs, mine);
+    var dr = '' +
+      '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);' +
+        'align-items:center;gap:14px;background:#06070a;border:1px solid rgba(255,255,255,0.08);' +
+        'border-radius:10px;padding:13px 16px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
+          'color:' + (dA == null ? DASH_COLOUR : '#5b9bff') + ';">' +
+          (dA == null ? DASH : dA.toFixed(2)) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
+          'letter-spacing:0.16em;text-transform:uppercase;color:#8b96b5;">Dominance ratio</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
+          'text-align:right;color:' + (dB == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
+          (dB == null ? DASH : dB.toFixed(2)) + '</span>' +
+      '</div>';
+
+    var held = 0, total = 0;
+    var sections = SHEET_SECTIONS.map(function (sec) {
+      var rows = sec.rows.map(function (row) {
+        var a = sheetValue(row, mine, theirs);
+        var b = sheetValue(row, theirs, mine);
+        total++; if (a != null) held++;
+        var bars = sheetBars(a, b);
+        return '' +
+          '<div style="display:flex;flex-direction:column;gap:6px;">' +
+            '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);' +
+              'align-items:baseline;gap:12px;">' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+                'color:' + (a == null ? DASH_COLOUR : '#5b9bff') + ';">' + sheetText(row, a) + '</span>' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;text-align:center;">' +
+                esc(row.label) + '</span>' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+                'text-align:right;color:' + (b == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
+                sheetText(row, b) + '</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+              '<span style="display:flex;justify-content:flex-end;height:7px;' +
+                'background:rgba(255,255,255,0.05);border-radius:4px;">' +
+                '<span style="height:7px;width:' + bars[0] + ';background:#5b9bff;border-radius:4px;">' +
+                '</span></span>' +
+              '<span style="display:flex;height:7px;background:rgba(255,255,255,0.05);' +
+                'border-radius:4px;"><span style="height:7px;width:' + bars[1] +
+                ';background:rgba(255,255,255,0.75);border-radius:4px;"></span></span>' +
+            '</div>' +
+          '</div>';
+      }).join('');
+      return '' +
+        '<div style="display:flex;flex-direction:column;gap:13px;">' +
+          '<span style="display:block;text-align:center;font-family:\'IBM Plex Mono\',monospace;' +
+            'font-size:9.5px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;' +
+            'color:#5b6880;background:#06070a;border:1px solid rgba(255,255,255,0.07);' +
+            'border-radius:8px;padding:8px 0;">' + esc(sec.title) + '</span>' + rows +
+        '</div>';
+    }).join('');
+
+    var note;
+    if (x.fromShard) {
+      note = 'This row comes from the odds archive, which carries no match key, so no per-match ' +
+        'stats can be joined to it. The header, result and price above are the archive’s own.';
+    } else if (!rec) {
+      note = 'No per-match stats on record for this match. api-tennis only populates its ' +
+        'statistics block from 2024, so older matches carry none.';
+    } else if (!mine) {
+      note = 'The stats row for this fixture names neither player by key, so it is not shown — ' +
+        'a mis-oriented sheet would put the opponent’s numbers under this player’s name.';
+    } else {
+      note = held + ' of ' + total + ' rows held for this match. Serve rating and Return rating ' +
+        'need hold% and return-games-won%, which the per-match feed does not carry; net points ' +
+        'is not an api-tennis field at all. Service and Return points won are composed from the ' +
+        'serve rates on this row. Dominance ratio uses our own definition, return points won ' +
+        'over service points lost.';
+    }
+
+    return '' +
+      '<div class="pp2-sheet" data-pp2="sheet-scrim" style="position:fixed;inset:0;z-index:80;' +
+        'background:rgba(3,5,9,0.72);display:flex;align-items:flex-start;justify-content:center;' +
+        'padding:40px 24px;overflow-y:auto;">' +
+        '<div style="position:relative;width:100%;max-width:760px;background:#0a0d14;' +
+          'border:1px solid rgba(91,155,255,0.3);border-radius:14px;padding:22px 24px 26px;' +
+          'display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,0.6);">' +
+          head + dr + sections +
+          '<div style="font-size:11px;color:#4b5361;line-height:1.55;">' + esc(note) + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
   function renderModal(p, ctx) {
     var k = state.modal;
     if (!k) return '';
@@ -2831,6 +3446,7 @@
     ctx.boxVals = buildBoxVals(p, ctx);
 
     return '' +
+      PP2_STYLE +
       '<div class="pp2-main" style="display:flex;flex-direction:column;gap:22px;max-width:1440px;">' +
         renderBackLink() +
         renderHeader(p, ctx) +
@@ -2839,7 +3455,8 @@
         renderBoxes(ctx) +
         renderInsights(p) +
       '</div>' +
-      renderModal(p, ctx);
+      renderModal(p, ctx) +
+      renderSheet(p, ctx);
   }
 
   function applyFilters(rows) {
@@ -2876,6 +3493,7 @@
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
     state.hbSurf = 'all';
+    state.sheet = null;
   }
 
   function toggleIn(list, id) {
@@ -2917,6 +3535,7 @@
     // The scrim only closes when the click landed on the scrim itself; a click
     // that bubbled up out of the card must not close the modal (README §5.1).
     if (kind === 'scrim' && e.target !== el) return;
+    if (kind === 'sheet-scrim' && e.target !== el) return;
     if (kind === 'card' || kind === 'hb-cell') return;   // inert: container / tooltip only
 
     if (kind === 'back') {
@@ -2948,6 +3567,14 @@
     else if (kind === 'speed-band') state.speedBand = toggleVal(state.speedBand, v);
     else if (kind === 'style-row') state.styleRow = toggleVal(state.styleRow, v);
     else if (kind === 'hb-surf') state.hbSurf = v;
+    // §8.1 match sheet. The host is told which match opened so it can pull the
+    // stats shard; the sheet paints its own "no stats on record" state until it
+    // lands rather than blocking the open.
+    else if (kind === 'sheet') {
+      state.sheet = v;
+      if (typeof window.onPp2SheetOpen === 'function') window.onPp2SheetOpen(state.key, v);
+    }
+    else if (kind === 'sheet-close' || kind === 'sheet-scrim') state.sheet = null;
     else return;   // unknown hook: do nothing rather than repaint blindly
     repaint();
   }
@@ -2960,7 +3587,10 @@
   }
 
   function onKey(e) {
-    if (e.key === 'Escape' && state.modal) { state.modal = null; repaint(); }
+    if (e.key !== 'Escape') return;
+    // The sheet sits above the modal, so Escape closes the topmost layer only.
+    if (state.sheet) { state.sheet = null; repaint(); return; }
+    if (state.modal) { state.modal = null; repaint(); }
   }
 
   // Bound once per container. Re-opening a different player re-uses the same
@@ -3011,8 +3641,43 @@
       ledgerPriceIndex: ledgerPriceIndex,
       renderLedger: renderLedger,
       setScoreText: setScoreText,
+      setText: setText,
+      tiebreaksMissing: tiebreaksMissing,
       LEDGER_CAP: LEDGER_CAP,
       MATCH_SHEET_BUILT: MATCH_SHEET_BUILT,
+      // correction pass
+      PP2_STYLE: PP2_STYLE,
+      rateText0: rateText0,
+      fmtDotDate: fmtDotDate,
+      surnameOf: surnameOf,
+      surnameFirst: surnameFirst,
+      roundOfN: roundOfN,
+      roundLabel: roundLabel,
+      qualifyingCode: qualifyingCode,
+      provenDraw: provenDraw,
+      drawIndex: drawIndex,
+      eyebrow: eyebrow,
+      ledgerEyebrow: ledgerEyebrow,
+      ledgerChip: ledgerChip,
+      ledgerRowHtml: ledgerRowHtml,
+      renderRibbon: renderRibbon,
+      renderBackLink: renderBackLink,
+      // §8.1 match sheet
+      renderSheet: renderSheet,
+      sheetRowFor: sheetRowFor,
+      SHEET_SECTIONS: SHEET_SECTIONS,
+      statsFor: statsFor,
+      spwPct: spwPct,
+      rpwPct: rpwPct,
+      drFor: drFor,
+      sheetValue: sheetValue,
+      sheetBars: sheetBars,
+      // item 11 — the bet365 capture fallback
+      b365Norm: b365Norm,
+      b365Index: b365Index,
+      b365PriceFor: b365PriceFor,
+      b365Close: b365Close,
+      b365DayOf: b365DayOf,
       // mount
       resetState: resetState,
       onClick: onClick,

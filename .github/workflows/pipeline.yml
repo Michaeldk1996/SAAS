@@ -322,6 +322,19 @@ jobs:
           cp court-speed-map.json _site/ 2>/dev/null || true
           cp market-edge-index.json _site/ 2>/dev/null || true
           cp -r market-edge _site/ 2>/dev/null || true
+          # TEN-206 correction pass items 11 + 14.
+          #  * bet365-history/ — the ledger's SECOND price source. The Tennis-Data
+          #    archive behind market-edge stops 2026-07-26, which is why every
+          #    post-cutoff ledger row dashed; this capture covers 2026-03 onward.
+          #    Fetched per MONTH, only the months a player's window touches.
+          #  * historical-match-stats.json — the match sheet's per-match stats.
+          #    Until now it was cache-only (restored between runs, never published),
+          #    so the sheet would have 404'd on the live page while every local test
+          #    passed — the exact failure mode the allowlist keeps re-hitting.
+          # Both are client-side gated: a missing file dashes with a stated reason
+          # rather than breaking a table, so these are tolerant copies.
+          cp -r bet365-history _site/ 2>/dev/null || true
+          cp historical-match-stats.json _site/ 2>/dev/null || true
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/

@@ -16864,6 +16864,63 @@ function pp2Bridge(){
   window.playingStyles = (playerStyles && playerStyles.data) || null;
   window.holdbreak = holdbreak;
   window.marketEdge = window.marketEdge || {};
+  // TEN-206 correction pass: the ledger's second price source (item 11) and the
+  // match sheet's per-match stats (item 14). Both are lazy and both default to an
+  // empty store, so an absent fetch degrades to a dash with a stated reason
+  // rather than to a broken column.
+  window.bet365History = window.bet365History || {};
+  if (!('matchStats' in window)) window.matchStats = null;
+}
+// ── item 11 · bet365 capture months ────────────────────────────────────────
+// The odds archive stops at 2026-07-26, which is why every post-cutoff ledger row
+// dashed. bet365-history/YYYY-MM.json is our own capture and covers 2026-03
+// onward. The months are 0.25-1.2 MB each, so only the months this player's
+// ledger window actually touches are fetched — never the whole store.
+const _pp2B365 = {};
+async function loadPp2Bet365(key){
+  const profile = playerProfiles[String(key)];
+  if (!profile) return;
+  const rows = ((profile.recentForm && profile.recentForm.matches) || [])
+    .filter(m => m && m.date).sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 18);
+  const months = [...new Set(rows.map(m => String(m.date).slice(0,7)))]
+    .filter(mo => mo >= '2026-03').sort().reverse().slice(0, 3);
+  let landed = false;
+  for (const mo of months){
+    if (Object.prototype.hasOwnProperty.call(_pp2B365, mo)) continue;
+    _pp2B365[mo] = null;
+    try {
+      const res = await fetch(`./bet365-history/${mo}.json`, { cache: 'no-cache' });
+      if (res.ok) _pp2B365[mo] = await res.json();
+    } catch (e) { /* additive; the rows dash and the card note says why */ }
+    if (_pp2B365[mo]) { window.bet365History[mo] = _pp2B365[mo]; landed = true; }
+  }
+  if (!landed) return;
+  // New store identity so the module's memoised index rebuilds (it keys on the
+  // object it was built from, which is why this reassigns rather than mutates).
+  window.bet365History = Object.assign({}, window.bet365History);
+  pp2RepaintIfOpen(key);
+}
+// ── item 14 · per-match stats for the match sheet ──────────────────────────
+// historical-match-stats.json is a pipeline cache that was never deployed; it is
+// keyed by the api-tennis event key recentForm already carries. Fetched once, on
+// the first sheet open, not on profile open — most readers never open a sheet.
+let _pp2StatsPromise = null;
+function loadPp2MatchStats(key){
+  if (_pp2StatsPromise) return _pp2StatsPromise;
+  _pp2StatsPromise = fetch('./historical-match-stats.json', { cache: 'no-cache' })
+    .then(res => res.ok ? res.json() : null)
+    .then(j => { window.matchStats = j || {}; pp2RepaintIfOpen(key); })
+    .catch(() => { window.matchStats = {}; pp2RepaintIfOpen(key); });
+  return _pp2StatsPromise;
+}
+window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); };
+function pp2RepaintIfOpen(key){
+  const view = document.getElementById('playerProfileView');
+  if (view && view.style.display !== 'none' && window.PlayerProfileV2
+      && window.PlayerProfileV2.repaint && ppState.key === String(key)) {
+    pp2Bridge();
+    window.PlayerProfileV2.repaint();
+  }
 }
 // Market edge + the ledger's two odds columns read one per-player shard. Same
 // posture as the odds-performance shards: nothing is fetched until a profile
@@ -16900,6 +16957,7 @@ function showPlayerProfileV2(key){
   pp2Bridge();
   if (!window.PlayerProfileV2.mount(view, key)) return false;
   loadPp2MarketShard(key);
+  loadPp2Bet365(key);
   window.scrollTo(0, 0);
   return true;
 }
