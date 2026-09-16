@@ -18,15 +18,28 @@
  * rebuilt entry is exactly what the pipeline would have produced — no second
  * implementation to drift from the schema version.
  *
- * Usage:
- *   node tools/rebuild-profile-roster.js --measure --limit 6   # cost probe, writes nothing
- *   node tools/rebuild-profile-roster.js --limit 50            # partial, resumable
- *   node tools/rebuild-profile-roster.js                       # full roster
+ * Usage (note the raised heap — see below, it is not optional at full roster size):
+ *   node tools/rebuild-profile-roster.js --measure --limit 6                 # cost probe, writes nothing
+ *   node --max-old-space-size=8192 tools/rebuild-profile-roster.js --limit 50  # partial
+ *   node --max-old-space-size=8192 tools/rebuild-profile-roster.js             # full roster
  *
  * Resumable by construction: every completed player is written back to the cache
  * (checkpointed every --checkpoint players), and a re-run skips anything already
  * at the current schema version and within TTL. A crash costs at most one
  * checkpoint interval, never the whole run.
+ *
+ * ⚠️ WHY THE RAISED HEAP. Measured 2026-09-16: the first full run died at player
+ * 427 of 470 with "Ineffective mark-compacts near heap limit" against node's
+ * default ~2 GB. The cause is not this script — it is `_recentSinglesFixturesCache`
+ * in bsp-pipeline.js, which memoizes each player's FULL 5-year fixture list for the
+ * lifetime of the process and never evicts. That memo is deliberate (it is what
+ * lets recentForm and the Career-record rows share one fetch) and it is harmless at
+ * today's published roster, but it grows linearly with the pool — so the pipeline
+ * inherits this same ceiling the moment pass 2 starts iterating the whole cache.
+ * Raising the heap is the workaround here; evicting a player's entry once he is
+ * finished is the fix, and it belongs in the pipeline, not in this one-off.
+ * The resume path made the crash cheap: 425 of 470 were already checkpointed, and
+ * the re-run correctly skipped exactly those 425.
  */
 require('dotenv').config();
 const fs = require('fs');
