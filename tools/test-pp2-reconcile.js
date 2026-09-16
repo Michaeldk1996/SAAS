@@ -3286,6 +3286,34 @@ mustFail('[neg] the match-grid check would catch the shipped four-column list', 
     'minmax(0,1.3fr) 46px 46px;gap:0 10px') > 0, 'the match grid tracks are not the file\'s');
 });
 
+check('§5.3 item 18 · the opponent takes the FILE\'s name form, not the ledger\'s', () => {
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  // `Player Stat Boxes.dc.html`:2325 writes "J. Sinner" (initial-first) while
+  // `Player Profile.dc.html`:838 writes the ledger's "Shelton B." The modal is
+  // owned by the Stat Boxes file (README §12), so it carries the feed form.
+  const names = (open.match(/white-space:nowrap;padding:5px 0;">([^<]+)</g) || [])
+    .map(x => x.replace(/.*">/, '').replace(/</, ''))
+    .filter(x => /[A-Za-z]/.test(x) && !/^\d/.test(x));
+  assert(names.length > 0, 'no opponent cell was found at all');
+  const initialFirst = names.filter(n => /^[A-Z]\.\s/.test(n)).length;
+  const surnameFirst = names.filter(n => /\s[A-Z]\.$/.test(n)).length;
+  assert(initialFirst > surnameFirst,
+    `the modal renders ${surnameFirst} surname-first names against ${initialFirst} ` +
+    `initial-first — it is following the ledger's rule, not the file's`);
+  // and the LEDGER must be unchanged — this ruling is scoped to §5.3 only
+  assert(/surnameFirst\(r\.opp\)/.test(PP2_SRC),
+    'renderDrill stopped using surnameFirst — the ledger ruling was broken');
+  console.log(`        §5.3 opponents: ${initialFirst} initial-first, ${surnameFirst} surname-first`);
+});
+mustFail('[neg] the name-form check would catch the ledger rule leaking in', () => {
+  const names = ['Sinner J.', 'Alcaraz C.', 'Fils A.'];
+  const i = names.filter(n => /^[A-Z]\.\s/.test(n)).length;
+  const sfn = names.filter(n => /\s[A-Z]\.$/.test(n)).length;
+  assert(i > sfn, 'the modal is following the ledger rule, not the file\'s');
+});
+
 check('§5.3 item 17 · edition group rows read "<Event> <year>" with finish and record', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);

@@ -2759,8 +2759,17 @@
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;padding:5px 0;',
                m.date ? esc(fmtDotDate(m.date) + '.') : DASH) +
           cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
+          // ⚠️ NAME FORM — the export contradicts itself and the file wins here.
+          // `Player Profile.dc.html`:838 writes the LEDGER's opponent surname-
+          // first ("Shelton B."), which is what correction-pass items 4/8 ruled
+          // and what renderDrill still does. `Player Stat Boxes.dc.html`:2325 —
+          // the file that owns this modal (README §12) and the first file in the
+          // founder's own precedence order — writes it initial-first
+          // ("J. Sinner"). So this block carries the feed form unchanged. The
+          // page is internally inconsistent as a result; that is reported, not
+          // silently reconciled in either direction.
           cell('font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 0;',
-               esc(m.opp ? surnameFirst(m.opp) : DASH)) +
+               esc(m.opp || DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;padding:5px 0;',
                esc(m.round || DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + wl +
