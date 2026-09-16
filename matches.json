@@ -12,13 +12,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 8.45,
+      "p2": 1.08,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 8.45,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 1.08,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "",
     "p1Key": 38100,
