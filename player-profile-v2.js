@@ -159,6 +159,21 @@
     }
     return SPEED_BANDS[SPEED_BANDS.length - 1];
   }
+  function bandById(id) {
+    for (var i = 0; i < SPEED_BANDS.length; i++) if (SPEED_BANDS[i].id === id) return SPEED_BANDS[i];
+    return null;
+  }
+
+  // ─── RULING · grass is always Very fast (founder, 2026-09-16) ───────────────
+  // Grass courts are classified Very fast REGARDLESS of their Tennis Abstract
+  // rating. The quintile cut-offs above still govern every other venue. This is
+  // deliberately unconditional: it also bands the grass rows we hold no Abstract
+  // reading for, which previously fell into the `unbanded` shortfall.
+  function speedBandForRow(m) {
+    if (!m) return null;
+    if (String(m.surface || '') === 'Grass') return bandById('vfast');
+    return speedBandFor(m.speed);
+  }
 
   // ─── RULING 6 · match-stat provenance ──────────────────────────────────────
   // Winners and Unforced errors ARE native api-tennis fields ("Points:Winners",
@@ -962,23 +977,37 @@
           support: currentYear() + ' season ' + MIDDOT + ' win rate ' + rateText(sw, sl) }
       : { headline: null, support: 'no matches this season' };
 
-    // 4 · Court speed — the FILE's headline is the best SURFACE (the README's
-    // "Fast courts" is a pace band and the two taxonomies disagree; the file
-    // wins per §0). Best surface by win rate among surfaces clearing the gate.
-    var best = null;
-    Object.keys(p.surfaces || {}).forEach(function (s) {
-      var rec = p.surfaces[s] && p.surfaces[s].record;
-      if (!rec) return;
-      var n = (rec.won || 0) + (rec.lost || 0);
-      if (gateFor(n) !== GATE.FULL) return;
-      var pct = 100 * rec.won / n;
-      if (!best || pct > best.pct) best = { surf: s, pct: pct, rec: rec, n: n };
-    });
-    v.speed = best
-      ? { headline: best.surf + ' courts',
-          support: best.pct.toFixed(1) + '% ' + MIDDOT + ' ' +
-            recordText(best.rec.won, best.rec.lost) + ' ' + MIDDOT + ' ' + best.n + ' matches' }
-      : { headline: null, support: 'no surface clears the ten-match minimum' };
+    // 4 · Court speed — FOUNDER RULING 2026-09-16: the headline is always one of
+    // the five PACE BANDS (Very slow · Slow · Medium · Fast · Very fast) or a
+    // dash. It is never a surface name. It used to read "Grass courts" because
+    // it ranked p.surfaces by win rate, which is a different taxonomy from the
+    // thing the box is named after; the box is Court SPEED, so it headlines a
+    // speed band.
+    //
+    // The band shown is his best banded win rate over ALL surfaces, using the
+    // same rows, the same grass-is-Very-fast rule and the same n >= 10 gate the
+    // modal behind it uses — so the box and the modal can never disagree.
+    var speedBest = null;
+    (function () {
+      var agg = {};
+      SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0 }; });
+      speedRows(p).forEach(function (m) {
+        var b = speedBandForRow(m);
+        if (!b) return;
+        if (m.won) agg[b.id].won += 1; else agg[b.id].lost += 1;
+      });
+      SPEED_BANDS.forEach(function (b) {
+        var a = agg[b.id], n = a.won + a.lost;
+        if (gateFor(n) !== GATE.FULL) return;
+        var pct = 100 * a.won / n;
+        if (!speedBest || pct > speedBest.pct) speedBest = { band: b, pct: pct, won: a.won, lost: a.lost, n: n };
+      });
+    }());
+    v.speed = speedBest
+      ? { headline: speedBest.band.label,
+          support: speedBest.pct.toFixed(1) + '% ' + MIDDOT + ' ' +
+            recordText(speedBest.won, speedBest.lost) + ' ' + MIDDOT + ' ' + speedBest.n + ' matches' }
+      : { headline: null, support: 'no speed band clears the ten-match minimum' };
 
     // 5 · Versus playing styles — RULING 2: the headline is his OWN archetype,
     // by design, even though the modal behind it reads by OPPOSING archetype.
@@ -2096,8 +2125,7 @@
     var unbanded = 0;
     speedRows(p).forEach(function (m) {
       if (!speedSurfaceMatch(m, surf)) return;
-      if (m.speed == null) { unbanded += 1; return; }
-      var b = speedBandFor(m.speed);
+      var b = speedBandForRow(m);
       if (!b) { unbanded += 1; return; }
       var a = agg[b.id];
       if (m.won) a.won += 1; else a.lost += 1;
@@ -2966,6 +2994,7 @@
       normaliseEdition: normaliseEdition,
       editionScoreText: editionScoreText,
       speedBandFor: speedBandFor,
+      speedBandForRow: speedBandForRow,
       SPEED_BANDS: SPEED_BANDS,
       SPEED_BASIS: SPEED_BASIS,
       gateFor: gateFor,

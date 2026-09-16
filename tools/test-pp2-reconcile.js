@@ -1128,6 +1128,70 @@ mustFail('the reconciliation would catch a band that dropped rows', () => {
   assert.strictEqual(300 + 24, 337, '300 banded + 24 unbanded != 337 rows');
 });
 
+// ─── FOUNDER RULING 2026-09-16 · grass is Very fast, headline is a band ──────
+// Two rules, locked together because they arrived as one ruling:
+//   (1) a Grass row lands in Very fast REGARDLESS of its Abstract rating;
+//   (2) the Court speed box headline is always one of the five band labels or a
+//       dash — never a surface name (it used to read "Grass courts").
+check('every Grass row lands in Very fast, whatever its Abstract rating', () => {
+  let grassRows = 0, offRating = 0, players = 0;
+  for (const k of Object.keys(PLAYERS)) {
+    const p = Object.assign({ key: k }, PLAYERS[k]);
+    const rows = I.speedRows(p);
+    if (!rows.length) continue;
+    const grass = rows.filter(m => String(m.surface || '') === 'Grass');
+    if (!grass.length) continue;
+    players++;
+    grass.forEach((m) => {
+      grassRows++;
+      const b = I.speedBandForRow(m);
+      assert(b, `${p.name}: a Grass row was left unbanded (speed=${m.speed})`);
+      assert.strictEqual(b.id, 'vfast',
+        `${p.name}: Grass row at ${m.event || m.date} banded ${b.label}, not Very fast`);
+      // Count the rows whose raw Abstract reading would NOT have been vfast, so
+      // the check is provably doing work rather than agreeing by coincidence.
+      const raw = I.speedBandFor(m.speed);
+      if (!raw || raw.id !== 'vfast') offRating++;
+    });
+  }
+  assert(grassRows > 0, 'no Grass rows in the whole file — this check never ran');
+  assert(offRating > 0,
+    `all ${grassRows} Grass rows were already Very fast by rating — the override is untested here`);
+  console.log(`        ${grassRows} Grass rows across ${players} players, all Very fast; ` +
+    `${offRating} of them (${(100 * offRating / grassRows).toFixed(1)}%) would have banded ` +
+    'elsewhere on rating alone');
+});
+mustFail('the grass rule would catch a row banded off its rating', () => {
+  // A real pre-ruling grass reading: Abstract 0.90 falls in Slow, not Very fast.
+  const b = I.speedBandFor(0.90);
+  assert.strictEqual(b.id, 'vfast', `Grass row banded ${b.label}, not Very fast`);
+});
+
+check('the Court speed headline is a band name or a dash, never a surface', () => {
+  const LABELS = I.SPEED_BANDS.map(b => b.label);
+  const SURFACES = ['Hard', 'Clay', 'Grass', 'Carpet', 'Indoor'];
+  let headlined = 0, dashed = 0;
+  for (const k of Object.keys(PLAYERS)) {
+    const p = Object.assign({ key: k }, PLAYERS[k]);
+    const v = I.buildBoxVals(p, { archetype: null });
+    const h = v.speed.headline;
+    if (h == null) { dashed++; continue; }
+    headlined++;
+    assert(LABELS.indexOf(h) > -1,
+      `${p.name}: Court speed headline "${h}" is not one of ${LABELS.join(' · ')}`);
+    SURFACES.forEach(s => assert(h.indexOf(s) < 0,
+      `${p.name}: Court speed headline "${h}" names a surface`));
+  }
+  assert(headlined > 0, 'no player produced a Court speed headline — this check never ran');
+  console.log(`        ${headlined} band headlines, ${dashed} dashes, 0 surface names ` +
+    `across ${headlined + dashed} players`);
+});
+mustFail('the headline check would catch the old "Grass courts" wording', () => {
+  const LABELS = I.SPEED_BANDS.map(b => b.label);
+  const h = 'Grass courts';
+  assert(LABELS.indexOf(h) > -1, `Court speed headline "${h}" is not one of ${LABELS.join(' · ')}`);
+});
+
 // The band order is a README-vs-file conflict resolved in the file's favour:
 // win rate descending, un-rateable bands last. Locking it stops a future tidy-up
 // from "restoring" the README's slow-to-fast order.
