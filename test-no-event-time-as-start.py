@@ -25,6 +25,12 @@ fixtures sit on a 5-minute grid; it lands EARLIER than the actual start 42.4% of
 the time, and where it lands later it is p95 +11.2 min INSIDE the live match.
 
     python3 test-no-event-time-as-start.py
+
+RUN IT AGAINST A FRESH CHECKOUT. It walks the working tree, and this repo's
+working tree is shared between concurrent agent runs and drifts behind
+origin/main. The first version of this file passed locally and went red in CI on
+a site (series.js:753) that the stale local tree did not contain -- which is the
+guard working, and a reminder that a local PASS here is not evidence.
 """
 import os
 import re
@@ -63,6 +69,11 @@ ALLOWED = {
     },
     'build-series.js': {
         "time: String(fx.event_time || ''),",                               # displayed clock
+    },
+    'series.js': {
+        # TEN-204 §1.4 note on the sort order. Explicitly says the offset is NOT
+        # applied, which is the opposite of using it as a start time.
+        "// TIMEZONE, measured not assumed (TEN-204 §1.4): api-tennis `event_time` is UTC+2 —",
     },
     'bsp-consult-dashboard.html': {
         "// Records without a startTs carry `event_time` in the feed's ACCOUNT zone, which",
