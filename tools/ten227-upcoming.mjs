@@ -511,26 +511,50 @@ async function cmdSelect() {
 
   // ---- 4. api-tennis presence, read from the TEN-216 collector's stored data
   //         (read-only; the brief forbids touching that collector).
-  // The table carries `match_key`, not home/away columns (measured via
-  // information_schema in `diag` — the first pass guessed `event_key` and got a
-  // 400, which is exactly the kind of miss that becomes a silent zero).
-  let apitennisKeys = [];
+  // TEN-216's `match_key` is api-tennis's NUMERIC event_key ("12163137"), not a
+  // name string — measured, after a name-substring matcher returned a
+  // plausible-looking 0/32 overlap. Matching names against it can never hit, so
+  // the names have to come from api-tennis itself and the ids are intersected.
+  // This reads the TEN-216 table and calls api-tennis directly; it writes
+  // nothing the collector owns.
+  let collected = new Set();
   try {
     const rows = await sbSelect(`select distinct match_key from ten216_test_odds_changes
       where observed_at > now() - interval '3 days' limit 2000`);
-    apitennisKeys = (rows || []).map((r) => ({ raw: r.match_key, n: norm(r.match_key) }));
-    log(`TEN-216 stored api-tennis: ${apitennisKeys.length} distinct match_key in the last 3 days`);
-    for (const s of apitennisKeys.slice(0, 5)) log(`    example match_key: ${s.raw}`);
+    collected = new Set((rows || []).map((r) => String(r.match_key)));
+    log(`TEN-216 stored api-tennis: ${collected.size} distinct event_key in the last 3 days`);
   } catch (err) {
     log(`::warning::TEN-216 stored data unreadable (${redact(err.message).slice(0, 120)}) — api-tennis overlap reported as unknown`);
   }
-  for (const p of paired) {
-    // Both surnames must appear in the same match_key. A single surname is not
-    // enough; ambiguity (two candidate keys) is a drop, not a coin flip.
-    const a = nameKey(p.home), b = nameKey(p.away);
-    const hits = (a && b) ? apitennisKeys.filter((k) => k.n.includes(a) && k.n.includes(b)) : [];
-    p.apitennisKey = hits.length === 1 ? hits[0].raw : null;
+  let atFixtures = [];
+  if (API_TENNIS_KEY) {
+    try {
+      const ds = new Date(winStart - 86400_000).toISOString().slice(0, 10);
+      const de = new Date(winEnd + 86400_000).toISOString().slice(0, 10);
+      const r = await fetch(`https://api.api-tennis.com/tennis/?method=get_fixtures&APIkey=${encodeURIComponent(API_TENNIS_KEY)}&date_start=${ds}&date_stop=${de}`);
+      const j = await r.json();
+      atFixtures = (j?.result || []).map((f) => ({
+        key: String(f.event_key),
+        h: norm(f.event_first_player), a: norm(f.event_second_player),
+      }));
+      log(`api-tennis fixtures ${ds}..${de}: ${atFixtures.length}`);
+    } catch (err) {
+      log(`::warning::api-tennis get_fixtures failed (${redact(err.message).slice(0, 100)}) — overlap reported as unknown`);
+    }
   }
+  let inAt = 0, inBoth = 0;
+  for (const p of paired) {
+    const a = nameKey(p.home), b = nameKey(p.away);
+    // Both surnames must appear on the same fixture, either orientation.
+    // Two candidate fixtures is a DROP, not a coin flip.
+    const hits = (a && b) ? atFixtures.filter((f) =>
+      (f.h.includes(a) && f.a.includes(b)) || (f.h.includes(b) && f.a.includes(a))) : [];
+    p.apitennisKey = hits.length === 1 ? hits[0].key : null;
+    if (p.apitennisKey) inAt++;
+    if (p.apitennisKey && collected.has(p.apitennisKey)) inBoth++;
+  }
+  log(`api-tennis pairing: ${inAt}/${paired.length} matched to a fixture, ` +
+      `${inBoth} of those already carry TEN-216 stored odds`);
 
   // ---- 5. Take the sample. Prefer matches present in all three feeds; fall back
   //         to BetsAPI+Oddspapi and SAY SO rather than quietly shrinking n.
@@ -577,6 +601,8 @@ async function cmdSelect() {
     oddspapi_fixtures: fixtures.length,
     pairing: { matched: paired.length, rate_pct: rate, ambiguous, unmatched },
     apitennis_overlap: sample.filter((s) => s.apitennisKey).length,
+    apitennis_fixtures_seen: atFixtures.length,
+    ten216_collected_keys: collected.size,
     sample_size: sample.length, by_level: byLevel,
     betsapi_requests: betsapiReq, oddspapi_units: oddspapiUnits,
   };
