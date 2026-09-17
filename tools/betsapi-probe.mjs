@@ -190,6 +190,67 @@ async function cmdShape() {
   save('shape.json', out);
 }
 
+// The shape dump exposed a counting error I have to correct rather than paper
+// over: on 2017 matches /v2/event/odds/summary returns `"13_1": null` — the KEY
+// is present, the VALUE is empty. cmdBooks counted Object.keys(), so it scored
+// those as coverage. Every number it produced is therefore "the book had a slot
+// for this market", not "the book quoted this market".
+//
+// FonBet is the only book that scored 13_2/13_3 at all, so the entire
+// handicap/total finding rests on whether ITS values are populated. This
+// re-measures with a non-null test and dumps the payload verbatim so the answer
+// is readable rather than inferred, and also pulls the FonBet price series to
+// see whether a handicap LINE (not just a market slot) actually comes back.
+async function cmdFonbet() {
+  const out = { ran_at: new Date().toISOString(), days: {}, samples: [], tally: {} };
+  const nonNull = (v) => v !== null && v !== undefined && typeof v === 'object';
+  const tally = { matches: 0, fonbet_present: 0, fonbet_nonnull: { '13_1': 0, '13_2': 0, '13_3': 0 } };
+  const bet365 = { '13_1': 0, '13_2': 0, '13_3': 0 };
+
+  for (const day of ['20250909', '20250723', '20250520', '20250311']) {
+    const ended = await api('/v3/events/ended', { sport_id: TENNIS, day });
+    const evs = (ended.body?.results || []).filter((e) => classify(e.league?.name)).slice(0, 10);
+    out.days[day] = evs.length;
+    for (const ev of evs) {
+      let r; try { r = await api('/v2/event/odds/summary', { event_id: ev.id }); }
+      catch (e) { if (e instanceof BudgetExhausted) break; throw e; }
+      if (!r.ok) continue;
+      tally.matches++;
+      const books = r.body?.results || {};
+      for (const m of ['13_1', '13_2', '13_3']) {
+        const b = books.Bet365?.odds;
+        if (b && (nonNull(b.start?.[m]) || nonNull(b.kickoff?.[m]) || nonNull(b.end?.[m]))) bet365[m]++;
+      }
+      const f = books.FonBet;
+      if (!f) continue;
+      tally.fonbet_present++;
+      for (const m of ['13_1', '13_2', '13_3']) {
+        if (nonNull(f.odds?.start?.[m]) || nonNull(f.odds?.kickoff?.[m]) || nonNull(f.odds?.end?.[m])) tally.fonbet_nonnull[m]++;
+      }
+      if (out.samples.length < 3) {
+        // Verbatim, plus the series, so the handicap LINE is visible if one exists.
+        const series = await api('/v2/event/odds', { event_id: ev.id, source: 'fonbet' });
+        out.samples.push({
+          event: { id: ev.id, league: ev.league?.name, home: ev.home?.name, away: ev.away?.name, time: ev.time, ss: ev.ss },
+          fonbet_summary: f,
+          fonbet_series_counts: Object.fromEntries(Object.entries(series.body?.results?.odds || {}).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0])),
+          fonbet_series_first_rows: Object.fromEntries(Object.entries(series.body?.results?.odds || {}).map(([k, v]) => [k, Array.isArray(v) ? v.slice(-3) : null])),
+        });
+        log(`\n=== ${ev.id} "${ev.league?.name}" ${ev.home?.name} vs ${ev.away?.name}`);
+        log(`  FonBet summary verbatim:\n${JSON.stringify(f, null, 2)}`);
+        log(`  FonBet /v2/event/odds row counts: ${JSON.stringify(out.samples.at(-1).fonbet_series_counts)}`);
+        log(`  FonBet earliest rows: ${JSON.stringify(out.samples.at(-1).fonbet_series_first_rows)}`);
+      }
+    }
+  }
+  out.tally = { ...tally, bet365_nonnull: bet365 };
+  log(`\nmatches summarised: ${tally.matches}`);
+  log(`FonBet present on:  ${tally.fonbet_present}  (${pct(tally.fonbet_present, tally.matches)})`);
+  log(`FonBet NON-NULL  13_1=${tally.fonbet_nonnull['13_1']} 13_2=${tally.fonbet_nonnull['13_2']} 13_3=${tally.fonbet_nonnull['13_3']}`);
+  log(`Bet365 NON-NULL  13_1=${bet365['13_1']} 13_2=${bet365['13_2']} 13_3=${bet365['13_3']}`);
+  save('fonbet.json', out);
+}
+
 async function cmdStatus() {
   const out = { ran_at: new Date().toISOString(), probes: [] };
   const rec = async (label, path, params) => {
@@ -893,6 +954,7 @@ try {
   else if (cmd === 'markets') await cmdMarkets();
   else if (cmd === 'books') await cmdBooks();
   else if (cmd === 'shape') await cmdShape();
+  else if (cmd === 'fonbet') await cmdFonbet();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
   if (err instanceof BudgetExhausted) log(`STOPPED: ${err.message} after ${reqCount} requests`);
