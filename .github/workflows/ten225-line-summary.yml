@@ -1,0 +1,216 @@
+name: TEN-225 line summary
+
+# Creates oddspapi_line_summary + oddspapi_fixtures and loads them from the raw
+# bucket and bet365-history/. Michael's scope ruling 2026-09-17T07:33Z, with the
+# two follow-up calls settled on gate 0ef55f38 (2026-09-17T08:07Z):
+#   key          -> UNIQUE NULLS NOT DISTINCT
+#   close window -> 21 days (the stated rule), not the <=3d reading
+#
+# Sizing cleared the gate BEFORE this job was written: four families, all
+# levels, 0.106 GB/yr against the 2.00 GB/yr line (5.3%) — doc `summary-sizing`.
+#
+# SEPARATE CONCURRENCY GROUP from the raw archive on purpose: that job holds
+# `bsp-oddspapi-raw-archive` for hours while it paces through the rate-limited
+# oddspapi key. This job makes ZERO odds-API calls — it reads the bucket the
+# archive already wrote — so the two can run side by side with no contention
+# for the key and no metered unit spent.
+#
+# NOTHING MEMBER-VISIBLE. Two new tables, both with RLS on and no policy at all,
+# so no browser role can read them. No existing table, policy, publication or
+# pg_cron job is referenced; all four are DO-NOT-TOUCH on TEN-225. Nothing on
+# the site reads these tables until Parts 2-4 are built and Michael says go.
+
+on:
+  workflow_dispatch:
+    inputs:
+      schema:
+        description: 'Apply the DDL (idempotent: every statement is IF NOT EXISTS)'
+        type: boolean
+        default: true
+      history:
+        description: 'Load bet365-history/ (match winner, Mar-Sep 2026)'
+        type: boolean
+        default: true
+      bucket:
+        description: 'Load the oddspapi-raw bucket (all four ruled families)'
+        type: boolean
+        default: true
+      fixtures:
+        description: 'Load oddspapi_fixtures from the 180d sweep index'
+        type: boolean
+        default: true
+  schedule:
+    # 06:25 UTC, an hour after the raw archive's 05:25 start, so each night's
+    # newly archived fixtures land in the summary the same night.
+    - cron: '25 6 * * *'
+
+concurrency:
+  group: ten225-line-summary
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      MGMT: https://api.supabase.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Preconditions + derive project ref
+        run: |
+          set -euo pipefail
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_URL SUPABASE_SECRET_KEY; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
+            || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
+          echo "Derived project ref: $REF"
+
+      # The harness runs BEFORE the DDL. A broken close rule or a dropped
+      # handicap join should fail the job while the table does not yet exist,
+      # not after 50k wrong rows are in it.
+      - name: Offline harness (no network, no Supabase, no odds-API call)
+        run: |
+          set -euo pipefail
+          {
+            echo '## TEN-225 loader — offline harness'
+            echo '```'
+            python3 test-ten225-load-line-summary.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply the schema
+        if: ${{ inputs.schema || github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-line-summary-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::schema apply failed ($code): $body"; exit 1
+          fi
+          echo 'schema applied (idempotent).' | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Proves the posture rather than asserting it: RLS on, zero policies.
+      - name: Verify RLS is on and no policy exists
+        if: ${{ inputs.schema || github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT c.relname,
+                 c.relrowsecurity AS rls_enabled,
+                 (SELECT count(*) FROM pg_policies p
+                   WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public'
+             AND c.relname IN ('oddspapi_line_summary','oddspapi_fixtures')
+           ORDER BY 1;
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          { echo '## TEN-225 — RLS posture'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$body" | jq -e 'type=="array" and length==2
+            and all(.[]; .rls_enabled == true and (.policies|tonumber) == 0)' >/dev/null \
+            || { echo "::error::RLS is not on with zero policies on both tables"; exit 1; }
+
+      - name: Load the summary
+        run: |
+          # pipefail is load-bearing: without it the exit status of
+          # `{ ...; python3 ...; } | tee` is tee's, so a failed load would be
+          # reported as a green run. That happened on run 35196686216.
+          set -euo pipefail
+          ARGS=""
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS="--fixtures --history --bucket"
+          else
+            [ "${{ inputs.fixtures }}" = "true" ] && ARGS="$ARGS --fixtures"
+            [ "${{ inputs.history }}"  = "true" ] && ARGS="$ARGS --history"
+            [ "${{ inputs.bucket }}"   = "true" ] && ARGS="$ARGS --bucket"
+          fi
+          [ -n "$ARGS" ] || { echo "::error::no source selected"; exit 1; }
+          {
+            echo '## TEN-225 oddspapi_line_summary — load'
+            echo '```'
+            python3 ten225-load-line-summary.py $ARGS
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Read the table back and report what is actually in it. A load that
+      # upserted 0 rows, or landed them all with close_reliable false, should be
+      # visible in the summary rather than inferred from "the job was green".
+      - name: Read back — coverage by month, source and family
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT to_char(date_trunc('month', coalesce(s.start_ts, s.open_ts)), 'YYYY-MM') AS month,
+                 s.source,
+                 s.market,
+                 count(*)                                        AS rows,
+                 count(*) FILTER (WHERE s.open_price  IS NOT NULL) AS with_open,
+                 count(*) FILTER (WHERE s.close_price IS NOT NULL) AS with_close,
+                 count(*) FILTER (WHERE s.close_reliable)          AS close_reliable,
+                 count(*) FILTER (WHERE s.start_ts IS NULL)        AS no_start
+            FROM oddspapi_line_summary s
+           GROUP BY 1,2,3 ORDER BY 1 DESC, 2, 3;
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          body=$(printf '%s' "$resp" | sed '$d')
+          { echo '## TEN-225 — read-back: Open/Close coverage'
+            echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Table size on the instance
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT relname,
+                 n_live_tup AS rows,
+                 pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
+                 CASE WHEN n_live_tup > 0
+                      THEN round(pg_total_relation_size(c.oid)::numeric / n_live_tup, 1)
+                 END AS bytes_per_row
+            FROM pg_stat_user_tables t JOIN pg_class c ON c.oid = t.relid
+           WHERE relname IN ('oddspapi_line_summary','oddspapi_fixtures');
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          body=$(printf '%s' "$resp" | sed '$d')
+          { echo '## TEN-225 — measured table size (vs the 255.9 B/row the gate cleared on)'
+            echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the load artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten225-line-summary-load
+          path: ten225-load-line-summary.json
+          if-no-files-found: warn
