@@ -57,8 +57,16 @@ for (let i = 0; i < 150; i++) {
   if (n > 100) break;
   await sleep(500);
 }
-await ev(`(function(){document.querySelectorAll('.tabpage').forEach(p=>p.classList.toggle('active',p.dataset.page==='players'));
-  showPlayerProfile('${KEY}');})()`);
+// The DEPLOYED page ships only ~31 eager profiles and fetches the rest as a
+// shard when the reader clicks a search hit (TEN-206/TEN-207). Calling
+// showPlayerProfile() straight off returns early for anyone else and paints
+// nothing — which reads exactly like a broken build. Hydrate the shard through
+// the page's OWN loader first, so the probe walks the reader's path.
+await ev(`(async function(){
+  document.querySelectorAll('.tabpage').forEach(p=>p.classList.toggle('active',p.dataset.page==='players'));
+  if(typeof ensurePlayerProfile==='function') await ensurePlayerProfile('${KEY}');
+  showPlayerProfile('${KEY}');
+  return true;})()`, true);
 for (let i = 0; i < 40; i++) {
   const ok = await ev(`!!(window.careerHistory&&window.careerHistory['${KEY}']&&window.careerHistory['${KEY}'].length)`);
   if (ok) break;
@@ -126,7 +134,14 @@ console.log('── LONGEST RUN OPEN ──');
 console.log(JSON.stringify(drill, null, 1));
 
 // ── the independent recompute, from the raw shard in THIS process ──────────
-const ch = JSON.parse(readFileSync(`career-history/${KEY}.json`, 'utf8')).matches
+// The recompute source must be the SAME store the page just read. Against a
+// deployed BASE that means fetching the shard over HTTP: the repo copy lags the
+// published one (measured 665 rows against 775), and recomputing off the stale
+// file would report a disagreement that is really two different stores.
+const chRaw = /^https?:/.test(BASE)
+  ? await (await fetch(`${BASE}/career-history/${KEY}.json?cb=${Date.now()}`, { cache: 'no-store' })).json()
+  : JSON.parse(readFileSync(`career-history/${KEY}.json`, 'utf8'));
+const ch = chRaw.matches
   .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)))
   .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 const runs = [];
