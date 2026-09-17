@@ -1,0 +1,1392 @@
+{
+ "started_utc": "2026-09-17T23:17:05Z",
+ "probes": [
+  {
+   "label": "no params at all",
+   "path": "/info/markets",
+   "params": {},
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:11.682Z",
+    "request_uuid": "c5635695-d578-4e54-88f9-c747afbb4b52"
+   }
+  },
+  {
+   "label": "fixture_id only",
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:13.218Z",
+    "request_uuid": "8be59095-7f5e-40f8-ac36-c09202eefde7"
+   }
+  },
+  {
+   "label": "fixture_id + feed_source 43",
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877,
+    "feed_source_id": 43
+   },
+   "status": 200,
+   "bytes": 1525,
+   "rows": 2,
+   "envelope_keys": [
+    "api_key",
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200,
+   "body": {
+    "code": 200,
+    "description": "api success",
+    "api_key": "get_sport_market_info_by_interest:markets",
+    "result": [
+     {
+      "participants": [
+       {
+        "participant_id": 45977,
+        "participant_side_id": 2,
+        "participant_rotation": 0,
+        "market_id": 3503475909,
+        "feed_source_id": 43,
+        "fixture_id": 726877,
+        "fixture_participant_id": 1095628,
+        "market_type_id": 1,
+        "segment_id": 1,
+        "point": 0.0,
+        "price_american": 170,
+        "price_decimal": 2.7,
+        "price_fraction": "17/10",
+        "is_live": false,
+        "is_opener": false,
+        "is_previous": false,
+        "is_current": true,
+        "inserted_on": "2026-09-17T23:11:27.115Z",
+        "is_main": true,
+        "uuid": null,
+        "market_status_id": 1,
+        "side_id": 2,
+        "betting_type_id": 1,
+        "alt_id": 0,
+        "routing_key": "get.info.markets.0.5.19.0.2.726877.43.1.1.1.0",
+        "inserted_on_epoch": 1789686687115762,
+        "max_limit": 0.0,
+        "info": {},
+        "misc": {
+         "market_side_id": null
+        }
+       }
+      ]
+     },
+     {
+      "participants": [
+       {
+        "participant_id": 10584,
+        "participant_side_id": 3,
+        "participant_rotation": 0,
+        "market_id": 3503475915,
+        "feed_source_id": 43,
+        "fixture_id": 726877,
+        "fixture_participant_id": 1095629,
+        "market_type_id": 1,
+        "segment_id": 1,
+        "point": 0.0,
+        "price_american": -213,
+        "price_decimal": 1.469,
+        "price_fraction": "100/213",
+        "is_live": false,
+        "is_opener": false,
+        "is_previous": false,
+        "is_current": true,
+        "inserted_on": "2026-09-17T23:11:27.126Z",
+        "is_main": true,
+        "uuid": null,
+        "market_status_id": 1,
+        "side_id": 3,
+        "betting_type_id": 1,
+        "alt_id": 0,
+        "routing_key": "get.info.markets.0.5.19.0.2.726877.43.1.1.1.0",
+        "inserted_on_epoch": 1789686687126705,
+        "max_limit": 0.0,
+        "info": {},
+        "misc": {
+         "market_side_id": null
+        }
+       }
+      ]
+     }
+    ],
+    "timestamp": "2026-09-17T23:17:14.750Z",
+    "request_uuid": "7cdb57aa-e602-439a-98ce-2416dcc84849"
+   }
+  },
+  {
+   "label": "fixture_id + is_current false",
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877,
+    "is_current": false
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:16.490Z",
+    "request_uuid": "3a12cb89-5063-42d9-885f-a28c30cb745f"
+   }
+  },
+  {
+   "label": "fixture_id batch of 10",
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": "726877,726878,727014,726841,726901,725485,726849,726850,726851"
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:18.044Z",
+    "request_uuid": "8841b766-427e-4de8-abc1-d51bd4b4267b"
+   }
+  },
+  {
+   "label": "league only, no window",
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:19.551Z",
+    "request_uuid": "a30f1968-0dbf-483b-8bb4-5f5ab958c794"
+   }
+  },
+  {
+   "label": "league + window",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:21.063Z",
+    "request_uuid": "781087b6-1e1b-4c13-bfc9-159d4674d6c8"
+   }
+  },
+  {
+   "label": "league + window + feed_source 43",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": "19,537,962",
+    "feed_source_id": 43
+   },
+   "status": 200,
+   "bytes": 158939,
+   "rows": 240,
+   "envelope_keys": [
+    "api_key",
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200
+  },
+  {
+   "label": "ATP alone, no window",
+   "path": "/info/markets",
+   "params": {
+    "league_id": 19
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:24.441Z",
+    "request_uuid": "8fa5b69e-31c7-4529-96f8-7b8fd6b88a59"
+   }
+  },
+  {
+   "label": "since_last_updated 7d",
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "since_last_updated": "2026-09-10T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:25.940Z",
+    "request_uuid": "24634719-048a-4237-939c-f20de5df77cf"
+   }
+  },
+  {
+   "label": "NBA league_id=3, no window",
+   "path": "/info/markets",
+   "params": {
+    "league_id": 3
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:27.572Z",
+    "request_uuid": "6ce2a075-178f-4017-a8ea-de0be645cee8"
+   }
+  },
+  {
+   "label": "NBA league_id=3 + window",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 3
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:29.069Z",
+    "request_uuid": "7774e9ca-3efe-4ec5-a6f2-de6429f672b0"
+   }
+  },
+  {
+   "label": "markets for National Football League (1)",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 1
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:34.346Z",
+    "request_uuid": "3b01a543-1f44-434e-bd01-43152c18b8f7"
+   },
+   "control_fixtures": 481
+  },
+  {
+   "label": "markets for NCAA Mens Football (2)",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 2
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:38.497Z",
+    "request_uuid": "e0f36dcc-8138-4a41-acb1-19c7d53713a2"
+   },
+   "control_fixtures": 1360
+  },
+  {
+   "label": "markets for Womens National Basketball Association (4)",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 4
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:43.321Z",
+    "request_uuid": "fab5e4de-a77e-4959-a144-60120836b23b"
+   },
+   "control_fixtures": 79
+  },
+  {
+   "label": "markets for National Hockey League (8)",
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 8
+   },
+   "status": 200,
+   "bytes": 156,
+   "rows": 0,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "has_result_key": false,
+   "description": "minimum of 1 feed_source_id needed",
+   "code_field": 413,
+   "body": {
+    "code": 413,
+    "description": "minimum of 1 feed_source_id needed",
+    "timestamp": "2026-09-17T23:17:49.594Z",
+    "request_uuid": "a17a0667-bb62-4d1a-a558-dc0e40547209"
+   },
+   "control_fixtures": 11
+  },
+  {
+   "label": "last-updated, all",
+   "path": "/info/markets-last-updated",
+   "params": {},
+   "status": 200,
+   "bytes": 14738,
+   "rows": 58,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200
+  },
+  {
+   "label": "last-updated, tennis sport 5",
+   "path": "/info/markets-last-updated",
+   "params": {
+    "sport_id": 5
+   },
+   "status": 200,
+   "bytes": 1143,
+   "rows": 4,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200,
+   "body": {
+    "code": 200,
+    "description": "api success",
+    "result": [
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:537:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 537,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:12:09.448Z",
+      "minutes_ago": 6,
+      "seconds_ago": 345
+     },
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:19:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 19,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:11:27.139Z",
+      "minutes_ago": 7,
+      "seconds_ago": 387
+     },
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:643:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 643,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:12:22.394Z",
+      "minutes_ago": 6,
+      "seconds_ago": 332
+     },
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:20:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 20,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:17:14.777Z",
+      "minutes_ago": 1,
+      "seconds_ago": 39
+     }
+    ],
+    "timestamp": "2026-09-17T23:17:53.636Z",
+    "request_uuid": "c0560db6-1e46-4be4-818c-82e4cf913249"
+   }
+  },
+  {
+   "label": "last-updated, men's leagues",
+   "path": "/info/markets-last-updated",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 644,
+   "rows": 2,
+   "envelope_keys": [
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200,
+   "body": {
+    "code": 200,
+    "description": "api success",
+    "result": [
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:537:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 537,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:12:09.448Z",
+      "minutes_ago": 6,
+      "seconds_ago": 347
+     },
+     {
+      "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:19:1",
+      "feed_source_id": 43,
+      "name": "sports411",
+      "sport_id": 5,
+      "league_id": 19,
+      "betting_type_id": 1,
+      "updated_on": "2026-09-17T23:11:27.139Z",
+      "minutes_ago": 7,
+      "seconds_ago": 390
+     }
+    ],
+    "timestamp": "2026-09-17T23:17:56.165Z",
+    "request_uuid": "c8de4f92-f1da-4901-b1cd-a99bbe4b68ad"
+   }
+  },
+  {
+   "label": "markets-alerts, men's leagues",
+   "path": "/info/markets-alerts",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 206,
+   "rows": 0,
+   "envelope_keys": [
+    "api_key",
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200,
+   "body": {
+    "code": 200,
+    "description": "api success",
+    "api_key": "get_sport_market_info_by_interest:markets-alerts",
+    "result": [],
+    "timestamp": "2026-09-17T23:17:58.796Z",
+    "request_uuid": "02d66c93-bb6a-4596-b013-5ca47bcbf92e"
+   }
+  },
+  {
+   "label": "reference/sportsbooks (no filter)",
+   "path": "/reference/sportsbooks",
+   "params": {},
+   "status": 200,
+   "bytes": 510,
+   "rows": 1,
+   "envelope_keys": [
+    "api_key",
+    "code",
+    "description",
+    "request_uuid",
+    "result",
+    "timestamp"
+   ],
+   "has_result_key": true,
+   "description": "api success",
+   "code_field": 200
+  }
+ ],
+ "sample_fixtures": [
+  {
+   "fixture_id": 726877,
+   "league_id": 19,
+   "start_time": "2026-09-18T05:00:00.000Z",
+   "name": "6112 Dhakshineswar Suresh vs Soonwoo Kwon",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726878,
+   "league_id": 19,
+   "start_time": "2026-09-18T06:30:00.000Z",
+   "name": "6114 Sumit Nagal vs Hyeon Chung",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 727014,
+   "league_id": 19,
+   "start_time": "2026-09-19T13:20:00.000Z",
+   "name": "6116 Nicolas Mejia vs Botic Van de Zandschulp",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726841,
+   "league_id": 537,
+   "start_time": "2026-09-18T02:00:00.000Z",
+   "name": "9998 Petr Bar Biryukov vs Mitsuki Wei Kang Leong",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726901,
+   "league_id": 537,
+   "start_time": "2026-09-18T02:00:00.000Z",
+   "name": "10000 Alexandr Binda vs Bernard Tomic",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 725485,
+   "league_id": 537,
+   "start_time": "2026-09-18T03:00:00.000Z",
+   "name": "16002 Philip Sekulic vs Rodrigo Pacheco Mendez",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726849,
+   "league_id": 962,
+   "start_time": "2026-09-18T02:00:00.000Z",
+   "name": "9334 Nino Ehrenschneider vs Nikolai Barsukov",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726850,
+   "league_id": 962,
+   "start_time": "2026-09-18T02:00:00.000Z",
+   "name": "9336 Yun Seong Chung vs Leo Borg",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  },
+  {
+   "fixture_id": 726851,
+   "league_id": 962,
+   "start_time": "2026-09-18T03:00:00.000Z",
+   "name": "9338 Chase Ferguson vs Sheng Tang",
+   "feed_source_id": 25,
+   "fixture_type_id": 2,
+   "sport_id": 5
+  }
+ ],
+ "fixture_feed_sources": {
+  "25": 9
+ },
+ "n_leagues_visible": 359,
+ "control_leagues_tried": 4,
+ "books": [
+  {
+   "feed_source_id": 43,
+   "name": "Sports411",
+   "tag": "sports411",
+   "feed_type_id": 2,
+   "metadata": {
+    "tier": "primary",
+    "offered": true
+   }
+  }
+ ],
+ "books_by_feed_type": {
+  "2": [
+   {
+    "feed_source_id": 43,
+    "name": "Sports411"
+   }
+  ]
+ },
+ "feed_types": [
+  {
+   "feed_type_id": 0,
+   "name": "Universal",
+   "abrv": "UN",
+   "inserted_on": "2025-01-27T14:11:42.232Z",
+   "inserted_on_epoch": 1737958302232496
+  },
+  {
+   "feed_type_id": 1,
+   "name": "Feed Provider",
+   "abrv": "FEED",
+   "inserted_on": "2022-01-31T03:45:56.106Z",
+   "inserted_on_epoch": 1643600756106529
+  },
+  {
+   "feed_type_id": 2,
+   "name": "Sportsbook",
+   "abrv": "SB",
+   "inserted_on": "2022-01-31T03:45:56.106Z",
+   "inserted_on_epoch": 1643600756106529
+  },
+  {
+   "feed_type_id": 3,
+   "name": "Exchange",
+   "abrv": "EX",
+   "inserted_on": "2022-01-31T03:45:56.106Z",
+   "inserted_on_epoch": 1643600756106529
+  },
+  {
+   "feed_type_id": 4,
+   "name": "API Gateway",
+   "abrv": "API",
+   "inserted_on": "2022-01-31T03:45:56.106Z",
+   "inserted_on_epoch": 1643600756106529
+  },
+  {
+   "feed_type_id": 5,
+   "name": "Dashboard",
+   "abrv": "DASH",
+   "inserted_on": "2022-12-17T22:51:19.409Z",
+   "inserted_on_epoch": 1671317479409454
+  }
+ ],
+ "calls": 39,
+ "bytes_down": 2527006,
+ "call_log": [
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 19,
+    "start_time": "2026-09-17T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 4878,
+   "seconds": 0.58,
+   "rate_headers": {},
+   "rows": 3
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 537,
+    "start_time": "2026-09-17T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 36539,
+   "seconds": 0.39,
+   "rate_headers": {},
+   "rows": 23
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 962,
+    "start_time": "2026-09-17T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 56908,
+   "seconds": 0.52,
+   "rate_headers": {},
+   "rows": 37
+  },
+  {
+   "path": "/info/markets",
+   "params": {},
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.29,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877,
+    "feed_source_id": 43
+   },
+   "status": 200,
+   "bytes": 1525,
+   "seconds": 0.29,
+   "rate_headers": {},
+   "rows": 2
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": 726877,
+    "is_current": "false"
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.48,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "fixture_id": "726877,726878,727014,726841,726901,725485,726849,726850,726851"
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.3,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.26,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.26,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": "19,537,962",
+    "feed_source_id": 43
+   },
+   "status": 200,
+   "bytes": 158939,
+   "seconds": 0.6,
+   "rate_headers": {},
+   "rows": 240
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": 19
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.28,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "since_last_updated": "2026-09-10T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": 3
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.38,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 3
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/reference/leagues",
+   "params": {},
+   "status": 200,
+   "bytes": 69273,
+   "seconds": 0.44,
+   "rate_headers": {},
+   "rows": 359
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 1,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 551010,
+   "seconds": 0.84,
+   "rate_headers": {},
+   "rows": 481
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 1
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 2,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 1518628,
+   "seconds": 1.28,
+   "rate_headers": {},
+   "rows": 1360
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 2
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.37,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 3,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 200,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 4,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 88595,
+   "seconds": 0.45,
+   "rate_headers": {},
+   "rows": 79
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 4
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.37,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 5,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 200,
+   "seconds": 0.32,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 6,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 200,
+   "seconds": 0.28,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/info/fixtures",
+   "params": {
+    "league_id": 8,
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z"
+   },
+   "status": 200,
+   "bytes": 18211,
+   "seconds": 0.39,
+   "rate_headers": {},
+   "rows": 11
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "start_time": "2026-09-16T23:17:05Z",
+    "end_time": "2026-09-20T23:17:05Z",
+    "league_id": 8
+   },
+   "status": 200,
+   "bytes": 156,
+   "seconds": 0.28,
+   "rate_headers": {},
+   "unrecognised_envelope": [
+    "code",
+    "description",
+    "request_uuid",
+    "timestamp"
+   ],
+   "rows": 0
+  },
+  {
+   "path": "/info/markets-last-updated",
+   "params": {},
+   "status": 200,
+   "bytes": 14738,
+   "seconds": 1.1,
+   "rate_headers": {},
+   "rows": 58
+  },
+  {
+   "path": "/info/markets-last-updated",
+   "params": {
+    "sport_id": 5
+   },
+   "status": 200,
+   "bytes": 1143,
+   "seconds": 1.4,
+   "rate_headers": {},
+   "rows": 4
+  },
+  {
+   "path": "/info/markets-last-updated",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 644,
+   "seconds": 1.45,
+   "rate_headers": {},
+   "rows": 2
+  },
+  {
+   "path": "/info/markets-alerts",
+   "params": {
+    "league_id": "19,537,962"
+   },
+   "status": 200,
+   "bytes": 206,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {},
+   "status": 200,
+   "bytes": 510,
+   "seconds": 0.37,
+   "rate_headers": {},
+   "rows": 1
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 1
+   },
+   "status": 200,
+   "bytes": 198,
+   "seconds": 0.31,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 2
+   },
+   "status": 200,
+   "bytes": 510,
+   "seconds": 0.4,
+   "rate_headers": {},
+   "rows": 1
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 3
+   },
+   "status": 200,
+   "bytes": 198,
+   "seconds": 0.29,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 4
+   },
+   "status": 200,
+   "bytes": 198,
+   "seconds": 0.28,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 5
+   },
+   "status": 200,
+   "bytes": 198,
+   "seconds": 0.25,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/sportsbooks",
+   "params": {
+    "feed_type_id": 6
+   },
+   "status": 200,
+   "bytes": 198,
+   "seconds": 0.28,
+   "rate_headers": {},
+   "rows": 0
+  },
+  {
+   "path": "/reference/feed-types",
+   "params": {},
+   "status": 200,
+   "bytes": 975,
+   "seconds": 0.32,
+   "rate_headers": {},
+   "rows": 6
+  }
+ ],
+ "verdict": {
+  "tennis_market_rows": 242,
+  "control_market_rows": 0,
+  "control_calls": 2,
+  "any_result_key_on_markets": true,
+  "reading": "markets work for tennis too"
+ }
+}
