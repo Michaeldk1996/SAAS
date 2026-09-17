@@ -3953,6 +3953,22 @@ const MAX_SHARD_BUILDS_PER_RUN = 60;
 // the pass also stops on wall time regardless of how many it managed.
 const SHARD_BUILD_BUDGET_MS = 6 * 60 * 1000;
 
+// What the profile cache should hold after a shard rebuild attempt (TEN-206).
+// Pure so it can be tested without the network; the rule it encodes is a
+// data-loss guard, not a formatting choice.
+//
+// The shard roster is seeded FROM this cache, so writing `null` over a profile
+// we already hold drops that player out of shardPool on every later run. Anyone
+// outside the MAX_SHARD_RANK window has no other route back in — one transient
+// API failure would evict him permanently. So a failed rebuild keeps the old
+// profile and just restamps the clock; only a player we hold nothing for is
+// negative-cached.
+function nextShardCacheEntry(cached, profile, nowIso) {
+  if (profile) return { builtAt: nowIso, v: PROFILE_SCHEMA_VERSION, profile };
+  if (cached && cached.profile) return { ...cached, builtAt: nowIso };
+  return { builtAt: nowIso, v: PROFILE_SCHEMA_VERSION, profile: null };
+}
+
 // Bump whenever a change alters the CONTENT of a built profile (a stat formula,
 // a new/removed field, a cap). The TTL above only answers "is this data old?" —
 // it cannot answer "was this built by the current code?", so without this a
@@ -4510,9 +4526,12 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       continue;
     }
     const { profile } = await buildOneProfile(key, name, surfaceMap);
-    cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile: profile || null };
+    const entry = nextShardCacheEntry(cached, profile, new Date().toISOString());
+    cachedPlayers[key] = entry;
     built++; shardBuilt++;
     if (profile) profiles[key] = profile;
+    else if (entry.profile && entry.v === PROFILE_SCHEMA_VERSION) { profiles[key] = entry.profile; shardReused++; }
+    else if (!entry.profile) shardPending++;
   }
   // Never silently truncate: say how many players this run deliberately left
   // without a profile, so "pending" is visible in the log rather than read as
@@ -6026,6 +6045,6 @@ module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSingle
   // TEN-206 search/shard split. loadAtpStandings is exported alongside the two
   // writers because the index is built from the rows it keeps as a side effect —
   // the verifier has to prove those two agree, not just that each runs.
-  loadAtpStandings, writePlayerShardsAndIndex, MAX_SHARD_RANK,
+  loadAtpStandings, writePlayerShardsAndIndex, MAX_SHARD_RANK, nextShardCacheEntry,
   _standingRows: () => atpStandingRows,
   _setStandingRowsForTest: (rows) => { atpStandingRows = rows; } };

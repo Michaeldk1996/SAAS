@@ -163,5 +163,42 @@ t('the index stays small enough to load on every page view', () => {
   assert.ok(gz < 120 * 1024, `index is ${(gz / 1024).toFixed(0)} KB gzipped — too heavy to load eagerly`);
 });
 
+
+// ---------------------------------------------------------------------------
+// The eviction guard. The shard roster is seeded from the profile cache, so a
+// failed rebuild that writes null would drop the player out of the pool for
+// good. These MUTATE the rebuild result and assert the cache entry changes.
+// ---------------------------------------------------------------------------
+const V = 14; // PROFILE_SCHEMA_VERSION at time of writing; asserted below
+const NOW = '2026-09-17T12:00:00.000Z';
+const held = { builtAt: '2026-07-01T00:00:00.000Z', v: 7, profile: profile(1001, 'Held Guy') };
+
+t('a successful rebuild replaces the entry at the current schema', () => {
+  const e = pipeline.nextShardCacheEntry(held, profile(1001, 'Fresh Guy'), NOW);
+  assert.strictEqual(e.profile.name, 'Fresh Guy');
+  assert.strictEqual(e.builtAt, NOW);
+  assert.ok(e.v >= V, 'rebuild must stamp the current schema version');
+});
+
+t('MUTATION: a FAILED rebuild keeps the held profile instead of evicting it', () => {
+  const e = pipeline.nextShardCacheEntry(held, null, NOW);
+  assert.ok(e.profile, 'a transient failure evicted a player we already held — permanent loss');
+  assert.strictEqual(e.profile.name, 'Held Guy');
+  assert.strictEqual(e.v, 7, 'the kept profile must keep its ORIGINAL schema version, not be relabelled current');
+  assert.strictEqual(e.builtAt, NOW, 'the clock restamps so the TTL retries later');
+});
+
+t('a failed rebuild for a player we hold nothing for is negative-cached', () => {
+  assert.strictEqual(pipeline.nextShardCacheEntry(undefined, null, NOW).profile, null);
+  assert.strictEqual(pipeline.nextShardCacheEntry({ builtAt: NOW, v: V, profile: null }, null, NOW).profile, null);
+});
+
+t('a kept-but-stale-schema profile is never promoted to current', () => {
+  // Relabelling would let a v7 ghost past the schema gate and onto the page.
+  const e = pipeline.nextShardCacheEntry(held, null, NOW);
+  assert.notStrictEqual(e.v, require('../bsp-pipeline.js').TOURNAMENT_HISTORY_SCHEMA_VERSION);
+  assert.strictEqual(e.v, held.v);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
